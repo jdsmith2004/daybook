@@ -17,7 +17,7 @@ import { View } from 'react-native';
 import { Flame } from '@/components/flame';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard, FlameCard, QuestsCard } from '@/components/today';
-import { CareCard, LogLink, RekindleCard, TodaySoFar } from '@/components/today-log';
+import { CareCard, LogLink, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
 import { Button, Card, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { useStore } from '@/lib/store';
@@ -37,6 +37,7 @@ export default function Today() {
   return (
     <Screen eyebrow={fmtDate(tk, { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + phaseLabel(tk, st)} title="Today">
       <RekindleCard snap={snap} tk={tk} />
+      <PauseBanner />
       <FlameCard g={g} />
       <LogLink />
       <CountNotes snap={snap} tk={tk} />
@@ -45,7 +46,7 @@ export default function Today() {
       <CareCard snap={snap} tk={tk} />
       <QuestsCard g={g} />
       <T v="small" tone="muted" style={{ textAlign: 'center', marginTop: 4 }}>
-        This is an early build. SOS, check-ins, Learn and the journal come next.
+        This is an early build. Check-ins, Learn and the journal come next.
       </T>
     </Screen>
   );

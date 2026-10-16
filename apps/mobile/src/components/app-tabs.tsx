@@ -11,6 +11,10 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'sun.max', selected: 'sun.max.fill' }} md="wb_sunny" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="tools">
+        <NativeTabs.Trigger.Label>Tools</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'lifepreserver', selected: 'lifepreserver.fill' }} md="handyman" />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} md="settings" />

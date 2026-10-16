@@ -4,10 +4,12 @@
 import {
   addEvent,
   addOption,
+  changeSettings,
   clockOf,
   didIds,
   didToggle,
   entryLabel,
+  eventsOf,
   gameCompute,
   isTime,
   optList,
@@ -20,11 +22,13 @@ import {
   rkStepFor,
   RK_CARDS,
   RK_STEPS,
+  UR_STR_NAME,
+  urMinText,
   type DayEvent,
   type Outcome,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
@@ -35,22 +39,47 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { LineNote } from '@/components/line-note';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
 type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rk1' | 'rk2' | 'rk3' | 'rkl';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rk1', 'rk2', 'rk3', 'rkl'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
-  const { snap, tk, now, update, say } = useStore();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const { snap, tk, now, update, apply, say } = useStore();
+  /* SOS and the 10-minute pause save the entry first, then hand it over here, at the step that comes next */
+  const params = useLocalSearchParams<{
+    date?: string;
+    evId?: string;
+    outcome?: string;
+    step?: string;
+    from?: string;
+    pts0?: string;
+    st?: string;
+    m?: string;
+    night?: string;
+    full?: string;
+    kl?: string;
+  }>();
+  const sos = useSos();
   const st = snap.settings;
   const [date] = useState(() => (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : tk));
-  const [step, setStep] = useState<Step>('q1');
-  const [hist, setHist] = useState<Step[]>([]);
-  const [evId, setEvId] = useState<string | null>(null);
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [pts0, setPts0] = useState(0);
+  const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
+  const [from] = useState<'urge' | 'pause' | 'hero'>(() => (params.from === 'urge' || params.from === 'pause' ? params.from : 'hero'));
+  const [step, setStep] = useState<Step>(() => (handed && STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1'));
+  const [hist, setHist] = useState<Step[]>(() => (handed ? ['q1'] : []));
+  const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));
+  const [outcome, setOutcome] = useState<Outcome | null>(() => (handed ? (params.outcome as Outcome) : null));
+  const [pts0, setPts0] = useState(() => (handed ? Number(params.pts0) || 0 : 0));
+  /* what SOS kept: how strong it was at the start, and how long it took */
+  const [sosInfo] = useState(() =>
+    from === 'urge' && handed && params.m != null && params.m !== '' ? { st: params.st || null, m: Number(params.m) || 0 } : null,
+  );
+  const [night] = useState(() => params.night === '1');
+  const [full] = useState(() => params.full === '1');
+  const [askNote, setAskNote] = useState<boolean | null>(null);
   const [lit, setLit] = useState(false);
   const [rkSeen, setRkSeen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -60,7 +89,13 @@ export default function Log() {
   const [timeText, setTimeText] = useState('');
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
+  /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing */
+  const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim());
+  useEffect(() => {
+    if (step === 'done' && askNote == null) setAskNote(askNow);
+  }, [step, askNote, askNow]);
   if (!st || !g) return <Redirect href="/" />;
+  const ask = askNote ?? askNow;
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
   const hour = new Date(now).getHours();
@@ -91,7 +126,9 @@ export default function Log() {
             s.days,
             date,
             id!,
-            v === 'rode' ? { outcome: 'rode', recovered: false, paused: null, did: null } : { outcome: 'slipped', paused: null, did: null },
+            v === 'rode'
+              ? { outcome: 'rode', recovered: false, paused: full ? true : null, did: from === 'pause' ? didIds(['pause']) : null }
+              : { outcome: 'slipped', paused: null, did: null },
           ),
         })).days;
     } else {
@@ -132,6 +169,11 @@ export default function Log() {
   };
   const undo = () => {
     if (evId) update((s) => ({ ...s, days: removeEvent(s.days, date, evId) }));
+    if (from === 'urge')
+      sos.setMem((m) => {
+        const { last: _last, ...rest } = m;
+        return rest;
+      });
     close();
     say('Removed. Nothing was saved.');
   };
@@ -143,7 +185,7 @@ export default function Log() {
   const noteAndTime = ev ? (
     <View style={{ width: '100%', gap: 10 }}>
       <View style={s.row}>
-        <Chip label={ev.note ? 'Edit note' : 'Add a note'} on={noteOpen} onPress={() => setNoteOpen(!noteOpen)} />
+        <Chip label={ev.note ? 'Edit note' : ask && step === 'done' ? 'Entry note' : 'Add a note'} on={noteOpen} onPress={() => setNoteOpen(!noteOpen)} />
         <Chip
           label="Change time"
           on={timeOpen}
@@ -185,21 +227,26 @@ export default function Log() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let sky: Sky = 'sky';
-  let title = 'Quick check-in';
+  let title = from === 'urge' ? 'SOS' : 'Quick check-in';
   let dots: { n: number; i: number; label: string } | null = { n: 3, i: CI_STEP[step] ?? 3, label: 'Question ' + ((CI_STEP[step] ?? 0) + 1) + ' of 3' };
 
   if (step === 'q1') {
+    const pause = from === 'pause' || from === 'urge';
     body = (
       <>
         <Flame level={Math.max(1, g.level.n)} size={84} />
         <T v="title" style={s.h} accessibilityRole="header">
-          What happened?
+          {pause ? 'How is the urge now?' : 'What happened?'}
         </T>
         <T tone="muted" style={s.center}>
           One tap. You can stop after that.
         </T>
         <View style={s.opts}>
-          <BigOption tone="mint" icon="wave" title="I rode it out" sub="The urge came and I did not act on it." selected={outcome ? outcome === 'rode' : null} onPress={() => pick('rode')} />
+          {pause ? (
+            <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." selected={outcome ? outcome === 'rode' : null} onPress={() => pick('rode')} />
+          ) : (
+            <BigOption tone="mint" icon="wave" title="I rode it out" sub="The urge came and I did not act on it." selected={outcome ? outcome === 'rode' : null} onPress={() => pick('rode')} />
+          )}
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." selected={outcome ? outcome === 'slipped' : null} onPress={() => pick('slipped')} />
         </View>
       </>
@@ -372,7 +419,10 @@ export default function Log() {
       </>
     );
   } else {
-    const head = 'Saved. That counts.';
+    /* after an urge passes in SOS: how it went, and (only while there is no note yet) a line to read next time */
+    const mt = sosInfo ? urMinText(sosInfo.m) : '';
+    const rodeN = sosInfo ? eventsOf(snap.days).filter((e) => e.outcome === 'rode').length : 0;
+    const head = sosInfo ? 'It passed. You rode it out.' : 'Saved. That counts.';
     sky = 'mint';
     dots = { n: 3, i: 3, label: 'All done' };
     body = (
@@ -385,6 +435,29 @@ export default function Log() {
           {ev ? entryLabel(ev) : ''}
           {gain ? <T v="label" tone="mintText">{`  +${gain} points`}</T> : null}
         </T>
+        {sosInfo ? (
+          <>
+            <T style={s.center}>
+              {(sosInfo.st && UR_STR_NAME[sosInfo.st] ? UR_STR_NAME[sosInfo.st] + ' at the start. ' : '') + 'Passed in ' + mt + '.'}
+            </T>
+            <T style={s.center}>{'That makes ' + rodeN + ' urge' + (rodeN === 1 ? '' : 's') + ' ridden out.'}</T>
+          </>
+        ) : null}
+        {ask ? (
+          <View style={{ alignSelf: 'stretch', gap: 6 }}>
+            <Field
+              label="A note for your next hard moment"
+              multiline
+              maxLength={600}
+              defaultValue={st.note || ''}
+              placeholder={'Like: It passed in ' + (mt || 'a few minutes') + '. It will pass again.'}
+              onChangeText={(t) => apply({ st: changeSettings(st, (x) => void (x.note = t)) })}
+            />
+            <T v="small" tone="muted">
+              SOS shows it to you first next time. You can change it in My plan.
+            </T>
+          </View>
+        ) : null}
         {noteAndTime}
         <Button label="Done" onPress={close} />
         <Link label="Undo this entry" onPress={undo} />
@@ -392,6 +465,7 @@ export default function Log() {
     );
   }
 
+  if (night && sky !== 'ember') sky = 'night';
   return (
     <SceneFrame
       title={title}

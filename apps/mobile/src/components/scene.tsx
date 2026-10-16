@@ -1,12 +1,14 @@
-/* The frame for a full-screen moment (logging, Rekindle, the sunrise check): a soft sky, a top bar with Back and Close,
-   progress dots, the card, and a quiet link at the bottom. Like the legacy "scene". */
+/* The frame for a full-screen moment (logging, Rekindle, the sunrise check, SOS): a soft sky, a top bar with Back and Close,
+   progress dots, the card, and a quiet link at the bottom, or a sheet along the bottom edge (SOS). Like the legacy "scene".
+   A dark sky (night, ember) gives everything inside it the night colors, in either theme. */
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, InkContext, T } from '@/components/ui';
-import { MAX_WIDTH, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
+import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
 
 export function SceneFrame({
   title,
@@ -15,6 +17,7 @@ export function SceneFrame({
   onClose,
   dots,
   footer,
+  sheet,
   children,
 }: {
   title: string;
@@ -23,6 +26,8 @@ export function SceneFrame({
   onClose: () => void;
   dots?: { n: number; i: number; label: string } | null;
   footer?: ReactNode;
+  /** a sheet along the bottom edge, below the card (the first SOS screen) */
+  sheet?: ReactNode;
   children: ReactNode;
 }) {
   const c = useTheme();
@@ -35,7 +40,7 @@ export function SceneFrame({
     <View style={{ flex: 1 }}>
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
-        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: inset.bottom + 24 }]}
+        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? 0 : inset.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
         <View style={s.col}>
           <View style={s.top}>
@@ -70,10 +75,36 @@ export function SceneFrame({
           <View style={s.card}>{children}</View>
           {footer ? <View style={s.foot}>{footer}</View> : null}
         </View>
+        {sheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
     </View>
   );
-  return dark ? <InkContext.Provider value={{ ink: nightInk.ink, muted: nightInk.muted }}>{body}</InkContext.Provider> : body;
+  return dark ? (
+    <NightContext.Provider value={true}>
+      <StatusBar style="light" />
+      <InkContext.Provider value={{ ink: nightInk.ink, muted: nightInk.muted }}>{body}</InkContext.Provider>
+    </NightContext.Provider>
+  ) : (
+    body
+  );
+}
+
+/* the sheet below the horizon: edge to edge on a phone, a floating card on a wide screen */
+function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
+  const c = useTheme();
+  const wide = useWindowDimensions().width >= 600;
+  return (
+    <InkContext.Provider value={null}>
+      <View
+        style={[
+          s.sheet,
+          { backgroundColor: c.surface, shadowColor: c.lip },
+          wide ? { alignSelf: 'center', width: '100%', marginTop: 8, marginBottom: bottom + 20, borderRadius: 30, maxWidth: MAX_WIDTH } : { marginHorizontal: -16, paddingBottom: Math.max(20, bottom + 12) },
+        ]}>
+        {children}
+      </View>
+    </InkContext.Provider>
+  );
 }
 
 const s = StyleSheet.create({
@@ -86,4 +117,16 @@ const s = StyleSheet.create({
   dot: { flex: 1, height: 6, borderRadius: 3 },
   card: { flexGrow: 1, alignItems: 'center', gap: 14, paddingTop: 8 },
   foot: { alignItems: 'center', paddingTop: 4 },
+  sheet: {
+    alignSelf: 'stretch',
+    gap: 14,
+    marginTop: 18,
+    padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowOffset: { width: 0, height: -14 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 12,
+  },
 });

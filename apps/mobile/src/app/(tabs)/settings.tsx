@@ -15,10 +15,12 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 
 export default function Settings() {
   const { snap, tk, apply, replace, erase, say, dirty } = useStore();
+  const sos = useSos();
   const st = snap.settings;
   const [sure, setSure] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -112,6 +114,7 @@ export default function Settings() {
                   kind="danger"
                   onPress={async () => {
                     await erase();
+                    await sos.forget();
                     setSure(false);
                     say('This device is erased.');
                   }}

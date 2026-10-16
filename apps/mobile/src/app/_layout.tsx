@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { Toast } from '@/components/toast';
+import { SosProvider } from '@/lib/sos';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -39,8 +40,8 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
         <Stack.Screen name="(tabs)" />
-        {/* the full-screen moments: logging, Rekindle, the sunrise check, going deeper, good night */}
-        {['log', 'sunrise', 'deeper', 'night'].map((name) => (
+        {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, going deeper, good night */}
+        {['sos', 'tool/[id]', 'log', 'sunrise', 'deeper', 'night'].map((name) => (
           <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
         ))}
       </Stack>
@@ -52,7 +53,9 @@ function Shell() {
 export default function RootLayout() {
   return (
     <StoreProvider>
-      <Shell />
+      <SosProvider>
+        <Shell />
+      </SosProvider>
     </StoreProvider>
   );
 }

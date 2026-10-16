@@ -1,4 +1,5 @@
 /* Colors and type, taken from the legacy app's :root tokens so the new app looks like the one people already know. */
+import { createContext, useContext } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 
 const light = {
@@ -13,6 +14,7 @@ const light = {
   accentInk: '#FFFFFF',
   accentSoft: '#ECE7FF',
   accentText: '#4A33C2',
+  accentDeep: '#3F2AAE',
   sun: '#FFC832',
   sun2: '#FFA23A',
   onSun: '#3A2A00',
@@ -40,6 +42,10 @@ const light = {
   lip: 'rgba(42,35,80,0.14)',
   scBtn: 'rgba(255,255,255,0.74)',
   heroTop: '#BEE3FF',
+  sos: '#D83A2E',
+  sosInk: '#FFFFFF',
+  sosDeep: '#9E241B',
+  sosSoft: 'rgba(255,255,255,0.24)',
   heroBottom: '#FFF1C4',
 };
 
@@ -57,6 +63,7 @@ const dark: Palette = {
   accentInk: '#1A1250',
   accentSoft: '#332C7A',
   accentText: '#C5BBFF',
+  accentDeep: '#7C6BE0',
   sun: '#FFD25A',
   sun2: '#FFB347',
   onSun: '#3A2A00',
@@ -84,6 +91,10 @@ const dark: Palette = {
   lip: 'rgba(0,0,0,0.3)',
   scBtn: 'rgba(255,255,255,0.16)',
   heroTop: '#2A2275',
+  sos: '#FF8A7E',
+  sosInk: '#3A0D08',
+  sosDeep: '#C9524A',
+  sosSoft: 'rgba(58,13,8,0.16)',
   heroBottom: '#3B2C6E',
 };
 
@@ -114,9 +125,21 @@ export const skies: Record<'light' | 'dark', Record<Sky, [string, string]>> = {
 /* on a night sky, the words are light */
 export const nightInk = { ink: '#F7F3FF', muted: '#CFC8F2', btn: 'rgba(255,255,255,0.16)' };
 
+/* late at night, SOS, Go to bed and the ember screen turn dark and quiet in either theme: the legacy "#scene-root.night" tokens */
+const night: Palette = {
+  ...dark,
+  surface: '#221E58',
+  muted: '#C4BCEB',
+  lip: 'rgba(0,0,0,0.32)',
+  scBtn: 'rgba(255,255,255,0.13)',
+};
+/** a dark scene sets this, so everything inside it (cards, buttons, sheets) takes the night colors */
+export const NightContext = createContext(false);
+
 export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  return { ...palettes[scheme], scheme };
+  const sys = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const forced = useContext(NightContext);
+  return forced ? { ...night, scheme: 'dark' } : { ...palettes[sys], scheme: sys };
 }
 
 /* Fredoka for numbers and headings, Instrument Sans for everything else (both loaded in the root layout) */

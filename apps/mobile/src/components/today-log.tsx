@@ -4,6 +4,7 @@ import {
   blankP,
   changeDay,
   clockOf,
+  fmtClock,
   countText,
   eventRow,
   gameCompute,
@@ -23,6 +24,8 @@ import { Flames, Missions } from '@/components/rekindle';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useNow } from '@/lib/now';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -127,15 +130,61 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 /* the link under the flame: for when it already happened */
+/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Then the quiet "already happened" link. */
 export function LogLink() {
   const c = useTheme();
   return (
+    <View style={{ gap: 10 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="SOS. I am having an urge. Tap for help right now."
+        onPress={() => router.push('/sos')}
+        style={({ pressed }) => [
+          s.sos,
+          { backgroundColor: c.sos, shadowColor: c.sosDeep, shadowOffset: { width: 0, height: pressed ? 1 : 5 }, transform: [{ translateY: pressed ? 4 : 0 }] },
+        ]}>
+        <View style={[s.sosIc, { backgroundColor: c.sosSoft }]}>
+          <Icon name="life" size={28} color={c.sosInk} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.sosB, { color: c.sosInk }]}>SOS</Text>
+          <Text style={[s.sosS, { color: c.sosInk }]}>I'm having an urge</Text>
+        </View>
+        <Icon name="next" size={22} color={c.sosInk} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/log')}
+        style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
+        <Text style={[s.logT, { color: c.accentText }]}>Already happened? Log what happened</Text>
+        <Icon name="next" size={18} color={c.accentText} />
+      </Pressable>
+    </View>
+  );
+}
+
+/* a pause in progress (or one that just ended) keeps a banner on Today, so it is one tap back (legacy timerBanner) */
+export function PauseBanner() {
+  const c = useTheme();
+  const sos = useSos();
+  const now = useNow(1000);
+  const t = sos.timer;
+  if (!t) return null;
+  const left = t.start + t.dur - now;
+  const done = left <= 0;
+  return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push('/log')}
-      style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
-      <Text style={[s.logT, { color: c.accentText }]}>Already happened? Log what happened</Text>
-      <Icon name="next" size={18} color={c.accentText} />
+      onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'pause' } })}
+      style={[s.banner, { backgroundColor: done ? c.mintSoft : c.violetSoft }]}>
+      <T v="label" style={{ flex: 1, color: done ? c.mintText : c.violetText }}>
+        {done
+          ? (t.early ? 'Your pause ended' : 'Your 10-minute pause finished') + ' at ' + fmtClock(clockOf(t.start + t.dur)) + '.'
+          : 'Pause in progress · about ' + Math.max(1, Math.ceil(left / 60000)) + ' min left'}
+      </T>
+      <View style={[s.bannerBtn, { backgroundColor: c.surface }]}>
+        <Text style={{ fontFamily: font.bodySemi, color: done ? c.mintText : c.violetText, fontSize: 15 }}>{done ? 'See how it went' : 'Resume'}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -211,6 +260,12 @@ const s = StyleSheet.create({
   quote: { padding: 12, borderRadius: 14, borderWidth: 1.5 },
   log: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2 },
   logT: { fontFamily: font.bodySemi, fontSize: 15 },
+  sos: { flexDirection: 'row', alignItems: 'center', gap: 11, minHeight: 72, paddingVertical: 11, paddingLeft: 12, paddingRight: 14, borderRadius: 22, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  sosIc: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  sosB: { fontFamily: font.display, fontSize: 28, letterSpacing: 1.5, lineHeight: 30 },
+  sosS: { fontFamily: font.bodyMedium, fontSize: 13.5, marginTop: 2, opacity: 0.95 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, borderRadius: 16 },
+  bannerBtn: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1 },
   mark: { width: 12, height: 12, borderRadius: 6 },

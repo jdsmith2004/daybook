@@ -19,6 +19,18 @@ variable "github_repo" {
   default     = "jdsmith2004/daybook"
 }
 
+variable "github_owner_id" {
+  description = "The numeric id of the repository's owner (gh api users/<owner> --jq .id). GitHub puts it in the deploy token's subject, so a renamed or re-created account cannot deploy."
+  type        = string
+  default     = "97774477"
+}
+
+variable "github_repo_id" {
+  description = "The numeric id of the repository (gh api repos/<owner>/<name> --jq .id). GitHub puts it in the deploy token's subject, so a repository re-created under the same name cannot deploy."
+  type        = string
+  default     = "1422351306"
+}
+
 variable "alert_email" {
   description = "Where AWS sends budget alerts. Put it in terraform.tfvars (kept out of git), never in this file."
   type        = string

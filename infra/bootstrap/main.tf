@@ -111,7 +111,8 @@ resource "aws_iam_role" "deploy" {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           # only a workflow running on main: not a pull request, not another branch, not a fork
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:ref:refs/heads/main"
+          # GitHub's immutable subject: owner and repository by name and by id, so only this exact repository matches
+          "token.actions.githubusercontent.com:sub" = "repo:${split("/", var.github_repo)[0]}@${var.github_owner_id}/${split("/", var.github_repo)[1]}@${var.github_repo_id}:ref:refs/heads/main"
         }
       }
     }]

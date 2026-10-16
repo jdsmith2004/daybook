@@ -236,6 +236,40 @@ export const LESSONS: Lesson[];
 export const OB_THEN: Record<string, [number, string, string, string[]]>;
 export const OB_GOALS: { id: string; t: string; s: string; ic: string; goal: string; d1: number; mode: CountMode }[];
 export function normOnb(o: unknown): Settings['onb'];
+/** an answer: [id, label, ...]. Some lists add an icon, a number, or words for a sentence. */
+export type ObOpt = [string, string, ...(string | number)[]];
+export const OB_SECS: [string, string, string, string][];
+export const OB_AIM: [string, string, string][];
+export const OB_FREQ: [string, string, number, string][];
+export const OB_MINS: [string, string, number, string][];
+export const OB_YEARS: [string, string, number][];
+export const OB_TRIED: [string, string, string][];
+export const OB_FAITH: [string, string, string][];
+export const OB_BPS: string[];
+export const OB_BPS_C: [string, string][];
+export const OB_COST: [string, string, string][];
+export const OB_WHEN: [string, string, string][];
+export const OB_TOP: string[];
+export const OB_PEAK: Record<string, number>;
+export const OB_SO: string[];
+export const OB_GWHY: Record<string, { h: string; p: string; f: string; src: string }>;
+export const OB_RS: Record<string, string[]>;
+export const OB_RS_BASE: string[];
+export const OB_BIBLE_H: number;
+export const OB_LANG_H: number;
+export const OB_GUESS: number[];
+export const OB_SRC: Record<string, [string, string]>;
+export const OB_KEYS: string[];
+export const REASON_DEFAULT: string[];
+export function obLab(list: ObOpt[], v: unknown): string;
+export function obCap(s: string): string;
+export function obScore(a: Record<string, unknown>): { s: number; n: number };
+export interface ObHours { f: [string, string, number, string]; m: [string, string, number, string]; wk: number; yr: number; ten: number; past: number | null }
+export function obHours(a: Record<string, unknown>): ObHours | null;
+export function obRnd(h: number): number;
+export function obHrs(h: number): string;
+export function obTop(a: Record<string, unknown>): string;
+export function obTool(t: string): Tool;
 
 /* ---------- icons ---------- */
 export const ICO: Record<string, string>;

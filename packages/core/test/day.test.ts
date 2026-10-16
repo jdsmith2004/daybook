@@ -10,7 +10,7 @@ import type { Days, Settings } from '../src/types';
 const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logs: any[] = readdirSync(dir)
-  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'rekindle-words.json', 'tools-words.json'].includes(f))
+  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'setup-flow.json', 'rekindle-words.json', 'tools-words.json'].includes(f))
   .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')));
 const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
 

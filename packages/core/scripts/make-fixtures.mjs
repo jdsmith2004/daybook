@@ -513,6 +513,51 @@ const setup = await page.evaluate(() => {
 });
 writeFileSync(join(outDir, 'setup.json'), JSON.stringify(setup));
 
+/* the setup's pages and the plan it builds, for a few sets of answers and three starting points: a new person, someone before
+   Day 1, and someone already counting. The clock is noon on the fixture day. */
+await page.clock.setFixedTime(new Date(chicago(T, '12:00')));
+const setupFlow = await page.evaluate(() => {
+  const tk = todayKey(), st0 = Store.settings;
+  const text = (h) => String(h).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+  const before = normSettings({ start: '2026-10-12', day1: '2026-10-19', rollover: 4, screensOff: '23:00', u: 1, reasons: ['Clear mornings and steady energy'], safePerson: 'Sam' });
+  const counting = normSettings({ start: '2026-09-01', day1: '2026-09-08', rollover: 4, screensOff: '22:30', u: 1, cleanMode: 'gentle', reasons: ['Keeping my word to myself', 'Not carrying a secret'],
+    plan: [{ when: "I'm in bed late at night", then: 'Read a book.' }], onb: { n: 1, at: 1, a: { aim: 'quit', freq: 'f2', faith: 'some', b0: '1' }, hist: [{ d: '2026-09-01', s: 4 }] } });
+  const answers = [
+    {},
+    { aim: 'quit', years: 'y1', freq: 'f2', mins: 'm1', faith: 'no', b0: '1', b1: '1', b2: '0', b3: '1', b4: '0', costs: ['sleep', 'rel'], when: ['late', 'lonely'], tried: 't0', so: '22:30',
+      rs: ['Sleeping well and waking up rested'], own: 'Being a good dad', thenT: 'late', then: 'Charge my phone in another room and go to sleep.', person: 'Alex' },
+    { aim: 'less', years: 'y3', freq: 'f4', mins: 'm4', faith: 'big', b0: '2', b1: '2', b2: '2', b3: '1', b4: '2', costs: ['values', 'money'], ownCost: 'Peace', when: ['stress'], tried: 't2',
+      goal: 'nights', so: '21:30', rs: [], thenT: 'stress', then: 'Step outside for five minutes.', person: '  ' },
+    { aim: 'nights', freq: 'f0', mins: 'm0', faith: 'some', b0: '0', b1: '0', b2: '0', b3: '0', b4: '0', when: ['bored', 'scroll'], tried: 't1', goal: 'week', so: '23:00', rs: ['Keeping my word to myself'], thenT: 'late', then: 'x' },
+    { aim: 'learn', freq: 'f3', mins: 'm2', years: 'y0', faith: 'some', b0: '2', b1: '1', b2: '1', when: [], tried: 't1' },
+  ];
+  const out = [];
+  for (const [name, st] of [['new', null], ['before', before], ['counting', counting]]) {
+    Store.settings = st;
+    for (const a0 of answers) {
+      const redo = !!st, a = JSON.parse(JSON.stringify(a0));
+      const sc = { a, redo, hg: null, keep: null, saved: false, changed: 0 };
+      const t = obTop(a), ch = obChanges(sc);
+      const s = JSON.parse(JSON.stringify(st || defaultSettings(tk)));
+      ch.forEach((c) => c.apply(s)); s.onb = obRecord(sc);
+      const saved = normSettings(s); delete saved.u; saved.onb.at = 0;
+      const guesses = obHours(a) ? [null, 25, 200, 800].map((g) => { sc.hg = g; return text(obReveal(sc)); }) : [];
+      sc.hg = null; sc.keep = null;
+      out.push({ name, a: a0, tk,
+        pages: obPages(sc).map((p) => p.id), prefill: obPrefill(st),
+        goals: obGoals().map((g) => [g.id, g.t, g.s, g.goal]), sug: obSug(a), goal: obGoal(sc).id,
+        reasonOpts: obReasonOpts(sc), reasonList: obReasonList(sc), top: t, thenOpts: obThenOpts(sc, t), thenPick: obThenPick(sc, t),
+        changes: ch.map((c) => [c.k, c.l, c.from, c.to, c.sub0 || '', c.sub1 || '']), saved,
+        heard: text(obHeard(a)), tries: text(obTries(a)), goalInfo: text(obGoalInfo(sc)), sos: text(OB_SHOW.sos(sc)),
+        reveal: guesses, review: text(obReview(sc)), done: (Store.settings = saved, sc.changed = ch.length, text(obDone(sc))) });
+      Store.settings = st;
+    }
+  }
+  Store.settings = st0;
+  return out;
+});
+writeFileSync(join(outDir, 'setup-flow.json'), JSON.stringify(setupFlow));
+
 await browser.close();
 if (errors.length) { console.error('page errors:', errors); process.exit(1); }
 console.log(`fixtures: ${S.length} logs, ${n} moments, 30 emblems, ${setup.length} setup answers`);

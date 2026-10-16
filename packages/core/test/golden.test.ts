@@ -12,7 +12,7 @@ const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const J = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logs: any[] = readdirSync(dir)
-  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'rekindle-words.json', 'tools-words.json'].includes(f))
+  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'setup-flow.json', 'rekindle-words.json', 'tools-words.json'].includes(f))
   .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')));
 
 /* the text inside the legacy HTML, with its escaping undone, so a string from the port can be looked for in it */

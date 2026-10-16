@@ -2985,6 +2985,14 @@ const HELP_SUBS={
 };
 function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
 const HELP_SRC=[['https://988lifeline.org/','988 Suicide & Crisis Lifeline'],['https://www.crisistextline.org/text-us/','Crisis Text Line'],['https://www.samhsa.gov/find-help/helplines/national-helpline','SAMHSA National Helpline'],['https://www.stopitnow.org/helpnow','Stop It Now helpline'],['https://www.nami.org/','NAMI'],['https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory','NAMI: warmline directory'],['https://openpathcollective.org/','Open Path Collective: prices and membership'],['https://findahealthcenter.hrsa.gov/','HRSA: find a health center'],['https://findtreatment.gov/','SAMHSA: findtreatment.gov'],['https://www.cms.gov/medical-bill-rights/know-your-rights/no-insurance','CMS: Good Faith Estimate'],['https://meetings.smartrecovery.org/','SMART Recovery meetings'],['https://saa-recovery.org/meetings/','Sex Addicts Anonymous'],['https://slaafws.org/meetings','Sex and Love Addicts Anonymous'],['https://sa.org/meetings/','Sexaholics Anonymous'],['https://www.celebraterecovery.com/','Celebrate Recovery'],['https://support.apple.com/guide/iphone/block-apps-app-downloads-websites-purchases-iph3ff83f3b1/ios','Apple: restrict websites'],['https://support.apple.com/en-us/126533','Apple: Screen Time passcode'],['https://cleanbrowsing.org/','CleanBrowsing'],['https://www.cdc.gov/sleep/about/','CDC: sleep']];
+const OB_KEYS=['aim','freq','mins','years','tried','faith','b0','b1','b2','b3','b4','costs','ownCost','when','goal','so','then','thenT'];
+const obLab=(list,v)=>{const x=list.find(o=>o[0]===v);return x?x[1]:''};
+const obCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):'';
+function obTool(t){
+ const fit=UR_FIT[t]||UR_FIT.other;let best=null;
+ UR_PREF.forEach(id=>{if(['bed','message','breathe'].indexOf(id)>=0)return;if(best==null||(fit[id]||0)>(fit[best]||0))best=id});
+ return TOOLS.find(x=>x.id===best)||TOOLS[1];
+}
 const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
 export {
@@ -3246,5 +3254,9 @@ export {
   HELP_SUBS,
   slipClean,
   HELP_SRC,
+  OB_KEYS,
+  obLab,
+  obCap,
+  obTool,
   CHEERS
 };

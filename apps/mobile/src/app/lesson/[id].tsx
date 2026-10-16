@@ -49,6 +49,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
+import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import { ReasonsBox, SlipEditor, UrgeEditor } from '@/components/plan-editors';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -623,59 +624,6 @@ function Eyebrow({ icon, label, t }: { icon: string; label: string; t: Tone }) {
     </View>
   );
 }
-function Next({ label, onPress, noIcon, off }: { label: string; onPress: () => void; noIcon?: boolean; off?: boolean }) {
-  const c = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!off }}
-      disabled={off}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.next,
-        off
-          ? { backgroundColor: c.lip }
-          : { backgroundColor: c.accent, shadowColor: c.accentDeep, shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] },
-      ]}>
-      <Text style={[s.nextT, { color: off ? c.muted : c.accentInk }]} numberOfLines={2}>
-        {label}
-      </Text>
-      {noIcon ? null : <Icon name="next" size={20} color={off ? c.muted : c.accentInk} />}
-    </Pressable>
-  );
-}
-function Back({ onPress }: { onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onPress} style={[s.back, { backgroundColor: c.scBtn, shadowColor: c.lip, borderColor: c.cardEdge }]}>
-      <Icon name="back" size={22} color={c.ink} />
-    </Pressable>
-  );
-}
-function Ghost({ label, onPress }: { label: string; onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.ghost, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
-      <Text style={[s.nextT, { color: c.ink, fontSize: 17 }]}>{label}</Text>
-    </Pressable>
-  );
-}
-function Route({ label, small, onPress }: { label: string; small?: string; onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.soft, { backgroundColor: c.accentSoft, shadowColor: c.lip }]}>
-      <View style={{ flex: 1 }}>
-        <Text style={[s.softT, { color: c.accentText }]}>{label}</Text>
-        {small ? (
-          <T v="small" tone="muted">
-            {small}
-          </T>
-        ) : null}
-      </View>
-      <Icon name="next" size={20} color={c.accentText} />
-    </Pressable>
-  );
-}
 function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
   const c = useTheme();
   return (
@@ -721,22 +669,6 @@ function Reply({ text, t }: { text: string; t: Tone }) {
     <View style={[s.reply, { backgroundColor: t.soft }]} accessibilityLiveRegion="polite">
       <Text style={{ fontFamily: font.body, fontSize: 16, lineHeight: 23, color: c.ink }}>{text}</Text>
     </View>
-  );
-}
-/** lesson text with **bold** and {loop} */
-function Rich({ text, st, style }: { text: string; st: Settings | null; style?: object }) {
-  return (
-    <T style={style}>
-      {lfmt(text, st).map((x, k) =>
-        x.b ? (
-          <Text key={k} style={{ fontFamily: font.bodyBold }}>
-            {x.t}
-          </Text>
-        ) : (
-          x.t
-        ),
-      )}
-    </T>
   );
 }
 function NoteField({ L, note }: { L: Lesson; note: string }) {

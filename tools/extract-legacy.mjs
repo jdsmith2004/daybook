@@ -63,6 +63,8 @@ const PICK = [
   'STOP_IC', 'STOP_WHEN', 'HX_NEXT', 'CHEERS', 'LX_E', 'LCHECK_N', 'LCHECKS', 'LIST_OF', 'slipClean',
   // get help
   'HELP_PAGES', 'HELP_SUBS', 'HELP_SRC',
+  // setup
+  'OB_KEYS', 'obLab', 'obCap', 'obTool',
 ];
 const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 const full = acorn.parse(script, { ecmaVersion: 'latest', sourceType: 'script' });

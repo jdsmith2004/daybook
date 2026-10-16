@@ -15,6 +15,6 @@ output "TF_STATE_BUCKET" {
   value = aws_s3_bucket.state.bucket
 }
 
-output "TF_BOUNDARY_ARN" {
-  value = aws_iam_policy.boundary.arn
+output "TF_SYNC_ROLE_ARN" {
+  value = aws_iam_role.sync.arn
 }

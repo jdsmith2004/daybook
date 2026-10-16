@@ -6,7 +6,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { AUTH_DOMAIN, CLIENT_ID, REGION } from './config';
+import { AUTH_DOMAIN, CLIENT_ID } from './config';
 import { clearSecret, readSecret, writeSecret } from './secret';
 
 /* on the web, the sign-in page comes back to /auth in a small window; this closes it and hands the answer to the app */
@@ -22,8 +22,8 @@ const web = Platform.OS === 'web';
 const origin = () => (web && typeof window !== 'undefined' ? window.location.origin : '');
 const redirectUri = () => (web ? origin() + '/auth' : 'daybook://auth');
 const logoutUri = () => (web ? origin() + '/' : 'daybook://signed-out');
-/* openid and email say who signed in; the admin scope lets the person delete their own account from the app */
-const SCOPES = ['openid', 'email', 'aws.cognito.signin.user.admin'];
+/* openid and email only: a token says who signed in and cannot change the account (deleting it goes through the sync API) */
+const SCOPES = ['openid', 'email'];
 
 export interface Session {
   refresh: string;
@@ -83,18 +83,36 @@ export async function signIn(): Promise<Session | null> {
 }
 
 /** a fresh access token for the API. `force` renews it even if it looks fresh (after the API said it was not). */
+let renewing: Promise<string> | null = null;
+
+/** a fresh access token for the API. `force` renews it even if it looks fresh (after the API said it was not).
+    Each renewal brings a new refresh token (rotation); it replaces the old one in `s` and in storage. */
 export async function accessToken(s: Session, force = false): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   if (!force && access && access.exp - 60 > now) return access.token;
-  try {
-    const tok = await AuthSession.refreshAsync({ clientId: CLIENT_ID, refreshToken: s.refresh }, discovery);
-    access = { token: tok.accessToken, exp: (tok.issuedAt || now) + (tok.expiresIn || 3600) };
-    return access.token;
-  } catch (e) {
-    /* the refresh token was revoked, expired (90 days unused), or the account is gone */
-    if (e instanceof AuthSession.TokenError) throw new SignInExpired('Sign in again to keep syncing.');
-    throw e;
-  }
+  /* one renewal at a time: a second one with the same refresh token would waste a rotation */
+  if (renewing) return renewing;
+  renewing = (async () => {
+    /* another tab of this browser may have renewed it already: use the newest one kept */
+    const kept = await loadSession();
+    if (kept && kept.sub === s.sub && kept.refresh !== s.refresh) s.refresh = kept.refresh;
+    try {
+      const tok = await AuthSession.refreshAsync({ clientId: CLIENT_ID, refreshToken: s.refresh }, discovery);
+      access = { token: tok.accessToken, exp: (tok.issuedAt || now) + (tok.expiresIn || 3600) };
+      if (tok.refreshToken && tok.refreshToken !== s.refresh) {
+        s.refresh = tok.refreshToken;
+        await writeSecret(JSON.stringify(s)).catch(() => undefined);
+      }
+      return access.token;
+    } catch (e) {
+      /* the refresh token was revoked, ran out (a year after signing in), or the account is gone */
+      if (e instanceof AuthSession.TokenError) throw new SignInExpired('Sign in again to keep syncing.');
+      throw e;
+    }
+  })().finally(() => {
+    renewing = null;
+  });
+  return renewing;
 }
 
 /** signs this device out: takes back the refresh token, forgets it, and ends the sign-in page's own session, so the next
@@ -114,13 +132,8 @@ export async function forgetSession(): Promise<void> {
   await clearSecret();
 }
 
-/** deletes the person's sign-in account itself (Cognito DeleteUser, with their own access token) */
-export async function deleteSignIn(s: Session): Promise<void> {
-  const token = await accessToken(s);
-  const r = await fetch(`https://cognito-idp.${REGION}.amazonaws.com/`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-amz-json-1.1', 'x-amz-target': 'AWSCognitoIdentityProviderService.DeleteUser' },
-    body: JSON.stringify({ AccessToken: token }),
-  });
-  if (!r.ok) throw new Error('Could not delete the account. Try again.');
+/** after "Stay signed in on this browser" changes: the kept sign-in moves to the matching storage */
+export async function keepPerTrust(): Promise<void> {
+  const s = await loadSession();
+  if (s) await writeSecret(JSON.stringify(s));
 }

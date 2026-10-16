@@ -11,7 +11,7 @@ import { accountHasLog, hasLog, pendingRecords, pullAll, pushAll, snapshotOf, ty
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { accessToken, deleteSignIn, forgetSession, loadSession, signIn, SignInExpired, signOut, type Session } from './auth';
+import { accessToken, forgetSession, loadSession, signIn, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { useStore } from './store';
 
@@ -51,8 +51,16 @@ interface SyncValue {
   signOutNow: (remove: boolean) => Promise<void>;
   /** erase the log in the account (every device clears it on its next sync). False when the account could not be reached. */
   eraseAccount: () => Promise<boolean>;
-  /** delete the account and everything in it, for good */
-  deleteAccount: () => Promise<boolean>;
+  /** delete the account and everything in it, for good. Gives back what to tell the person. */
+  deleteAccount: () => Promise<{ ok: boolean; msg: string }>;
+  /** what the account kept from the last "Delete everything", for a week: how many records, and when; null when unknown */
+  erased: { n: number; at: number } | null;
+  /** looks again at what the account kept */
+  checkErased: () => Promise<void>;
+  /** brings the deleted log back */
+  restoreErased: () => Promise<boolean>;
+  /** the kept sign-in has been looked at (so a new person's setup can tell whether someone is signed in) */
+  loaded: boolean;
 }
 
 const Ctx = createContext<SyncValue | null>(null);
@@ -77,6 +85,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   sessionRef.current = session;
   keptRef.current = kept;
   const running = useRef(false);
+  const [loaded, setLoaded] = useState(!syncOffered);
+  const [erased, setErased] = useState<{ n: number; at: number } | null>(null);
   const again = useRef(false);
   const paused = useRef(false);
 
@@ -176,7 +186,13 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         setSession(s);
         sessionRef.current = s;
         setStatus({ k: 'out' });
+      } else if (k) {
+        /* joined before, but the sign-in is gone: in a browser it lasts only while the tab is open. The log is still here. */
+        keptRef.current = k;
+        setKept(k);
+        setStatus({ k: 'expired' });
       }
+      setLoaded(true);
     })();
     return () => {
       live = false;
@@ -303,43 +319,59 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     [round, saveKept, erase, onErased],
   );
 
-  const callApi = useCallback(async (query: string) => {
+  /** a call to the sync API outside a sync round, with the token renewed once if it was turned down */
+  const callApi = useCallback(async (method: string, query: string): Promise<{ status: number; body: Record<string, unknown> } | null> => {
     const s = sessionRef.current;
-    if (!s) return false;
+    if (!s) return null;
     for (let tries = 0; tries < 2; tries++) {
       try {
         const token = await accessToken(s, tries > 0);
-        const r = await fetch(SYNC_URL + query, { method: 'DELETE', headers: { authorization: 'Bearer ' + token } });
+        const r = await fetch(SYNC_URL + query, { method, headers: { authorization: 'Bearer ' + token } });
         if (r.status === 401 && tries === 0) continue;
-        return r.ok;
+        return { status: r.status, body: await r.json().catch(() => ({})) };
       } catch {
-        return false;
+        return null;
       }
     }
-    return false;
+    return null;
   }, []);
 
+  const checkErased = useCallback(async () => {
+    const r = await callApi('GET', '?erased=1');
+    if (r && r.status === 200) {
+      const n = Number(r.body.n) || 0;
+      setErased(n ? { n, at: Number(r.body.at) || Date.now() } : null);
+    }
+  }, [callApi]);
+
   const eraseAccount = useCallback(async () => {
-    const ok = await callApi('');
+    const r = await callApi('DELETE', '');
+    const ok = !!r && r.status === 200;
     if (ok && keptRef.current) await saveKept({ ...keptRef.current, at: Date.now() });
+    if (ok) await checkErased();
     return ok;
-  }, [callApi, saveKept]);
+  }, [callApi, saveKept, checkErased]);
+
+  const restoreErased = useCallback(async () => {
+    const r = await callApi('POST', '?restore=1');
+    if (!r || r.status !== 200) return false;
+    setErased(null);
+    await round();
+    return true;
+  }, [callApi, round]);
 
   const deleteAccount = useCallback(async () => {
-    const s = sessionRef.current;
-    if (!s) return false;
-    if (!(await callApi('?all=1'))) return false;
-    try {
-      await deleteSignIn(s);
-    } catch {
-      return false;
-    }
+    const r = await callApi('DELETE', '?all=1');
+    if (!r) return { ok: false, msg: 'Could not reach your account. Nothing was deleted.' };
+    /* the log is gone, the sign-in is not yet: asking again finishes it */
+    if (r.status !== 200) return { ok: false, msg: String(r.body.error || 'Could not reach your account. Nothing was deleted.') };
     await saveKept(null);
     await forgetSession();
     sessionRef.current = null;
     setSession(null);
+    setErased(null);
     setStatus({ k: 'out' });
-    return true;
+    return { ok: true, msg: 'Your account was deleted.' };
   }, [callApi, saveKept]);
 
   const value = useMemo<SyncValue>(
@@ -357,8 +389,12 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       signOutNow,
       eraseAccount,
       deleteAccount,
+      erased,
+      checkErased,
+      restoreErased,
+      loaded,
     }),
-    [status, session, kept, waiting, signInNow, round, choose, signOutNow, eraseAccount, deleteAccount],
+    [status, session, kept, waiting, signInNow, round, choose, signOutNow, eraseAccount, deleteAccount, erased, checkErased, restoreErased, loaded],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -3,7 +3,9 @@
  *   1. an S3 bucket for the app stack's Terraform state (versioned, encrypted, private)
  *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from a workflow running
  *      on this repo's main branch
- *   3. a permissions boundary: the most any role the deploys make can ever do (read and write the Daybook table, write logs)
+ *   3. the sync function's role, with exactly what it may do (the Daybook table, its own logs, deleting a user who closes their
+ *      account). It is made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
+ *      an outside account, a way into the table
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
  *      this account
  */
@@ -116,28 +118,49 @@ resource "aws_iam_role" "deploy" {
   })
 }
 
-/* ---------- 3. the most any role made by a deploy can do ---------- */
-resource "aws_iam_policy" "boundary" {
-  name        = "daybook-app-boundary"
-  description = "The most any Daybook app role can do: use the Daybook table and write its own logs."
+/* ---------- 3. the sync function's role ---------- */
+resource "aws_iam_role" "sync" {
+  name                 = "daybook-app-sync"
+  description          = "The Daybook sync Lambda. Made by the bootstrap stack; deploys may pass it to the Lambda but never change it."
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = local.account } }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "sync" {
+  name = "daybook-sync"
+  role = aws_iam_role.sync.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:BatchWriteItem"]
-        Resource = ["arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-*"]
+        Action   = ["dynamodb:Query", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:BatchWriteItem"]
+        Resource = ["arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-records", "arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-records/index/*"]
       },
       {
         Effect   = "Allow"
-        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-*"]
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-sync:*"]
+      },
+      {
+        # closing an account from the app; the Lambda takes the user name only from the token API Gateway checked
+        Effect   = "Allow"
+        Action   = ["cognito-idp:AdminDeleteUser"]
+        Resource = ["arn:${local.arn}:cognito-idp:${var.region}:${local.account}:userpool/*"]
       }
     ]
   })
 }
 
-/* what the deploy role may change: only Daybook's own resources, and only roles that carry the boundary above */
+/* what the deploy role may change: only Daybook's own resources. It cannot make, change or act as any role. */
 resource "aws_iam_role_policy" "deploy" {
   name = "daybook-deploy"
   role = aws_iam_role.deploy.id
@@ -189,30 +212,49 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["*"]
       },
       {
-        Sid       = "MakeRolesOnlyWithBoundary"
-        Effect    = "Allow"
-        Action    = ["iam:CreateRole", "iam:PutRolePolicy", "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:DeleteRolePolicy", "iam:PutRolePermissionsBoundary"]
-        Resource  = ["arn:${local.arn}:iam::${local.account}:role/daybook-app-*"]
-        Condition = { StringEquals = { "iam:PermissionsBoundary" = aws_iam_policy.boundary.arn } }
+        # look at the sync role (Terraform reads it), and hand it to the Lambda, but never change it
+        Sid      = "ReadTheSyncRole"
+        Effect   = "Allow"
+        Action   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies"]
+        Resource = [aws_iam_role.sync.arn]
       },
       {
-        Sid    = "ReadAndRemoveRoles"
-        Effect = "Allow"
-        Action = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListInstanceProfilesForRole",
-        "iam:DeleteRole", "iam:TagRole", "iam:UntagRole", "iam:UpdateRole", "iam:UpdateRoleDescription", "iam:UpdateAssumeRolePolicy"]
-        Resource = ["arn:${local.arn}:iam::${local.account}:role/daybook-app-*"]
-      },
-      {
-        Sid       = "PassRolesToLambdaOnly"
+        Sid       = "PassTheSyncRoleToLambdaOnly"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
-        Resource  = ["arn:${local.arn}:iam::${local.account}:role/daybook-app-*"]
+        Resource  = [aws_iam_role.sync.arn]
         Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } }
       },
       {
-        Sid      = "NoEscapingTheBoundary"
+        # the deployer ships the code, but never reads a log itself: it cannot call the sync function (which would let it
+        # make up whose log to read), open it to the internet, let anything but API Gateway call it, or act as its role
+        Sid    = "NeverReadTheLog"
+        Effect = "Deny"
+        Action = ["lambda:InvokeFunction", "lambda:InvokeAsync", "lambda:InvokeWithResponseStream", "lambda:InvokeFunctionUrl",
+        "lambda:CreateFunctionUrlConfig", "lambda:UpdateFunctionUrlConfig"]
+        Resource = ["*"]
+      },
+      {
+        Sid       = "OnlyApiGatewayMayCallIt"
+        Effect    = "Deny"
+        Action    = ["lambda:AddPermission"]
+        Resource  = ["*"]
+        Condition = { StringNotEquals = { "lambda:Principal" = "apigateway.amazonaws.com" } }
+      },
+      {
+        Sid      = "NeverActAsTheAppRoles"
         Effect   = "Deny"
-        Action   = ["iam:DeleteRolePermissionsBoundary", "iam:CreatePolicyVersion", "iam:DeletePolicy", "iam:SetDefaultPolicyVersion"]
+        Action   = ["sts:AssumeRole", "sts:TagSession", "sts:SetSourceIdentity"]
+        Resource = ["arn:${local.arn}:iam::${local.account}:role/daybook-app-*"]
+      },
+      {
+        # belt and braces: whatever is added above later, a deploy never makes or changes a role or a policy
+        # (service-linked roles, which only AWS defines, are left alone in case a service needs to make one)
+        Sid    = "NoIamChanges"
+        Effect = "Deny"
+        Action = ["iam:CreateRole", "iam:CreatePolicy", "iam:CreatePolicyVersion", "iam:CreateUser", "iam:CreateAccessKey", "iam:CreateLoginProfile",
+          "iam:CreateGroup", "iam:CreateInstanceProfile", "iam:CreateOpenIDConnectProvider", "iam:CreateSAMLProvider", "iam:Put*", "iam:Attach*",
+        "iam:Detach*", "iam:DeleteRole*", "iam:DeletePolicy*", "iam:Update*", "iam:Add*", "iam:Remove*", "iam:Set*", "iam:Tag*", "iam:Untag*"]
         Resource = ["*"]
       },
       {

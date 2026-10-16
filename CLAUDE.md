@@ -28,6 +28,6 @@ cd apps/mobile && npx expo start
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. Keep the legacy wording when porting a screen.
 - **Claims match sources.** Anything presented as science cites a source in `SRC` or `OB_SRC` and stays inside what that source says; limits go in the lesson's scope. No invented numbers.
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person turns on sync, and then live only in their own AWS account.
-- **AWS:** deploys use GitHub OpenID Connect (no stored keys). Every role the app stack makes must carry the permissions boundary from `infra/bootstrap`. Keep everything pay-per-use; the budget alert is $5 a month.
+- **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.

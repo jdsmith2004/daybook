@@ -2,7 +2,16 @@
 
 Work worth a Fable run. Fable time is limited, so only what needs it is here.
 
-## 1. Security review before the first AWS deploy (do this once, before step 2 of infra/README.md)
+## 1. Security review before the first AWS deploy: done (October 16, 2026)
+
+Fable found seven issues. Fixed: the deploy role could read logs by invoking the sync function or making a role (it can now
+make no roles; the bootstrap stack makes the sync role); the web sign-in sat in storage for 90 days (now per tab, or a year
+with rotation when the browser is trusted); the account-admin scope allowed an email takeover (removed; closing an account goes
+through the API); one request erased the log for good (now a week's undo); no provider lock files (written at first init, see
+infra/README.md). Accepted for one person: rejected requests are still billed, and the default CloudFront certificate allows
+old TLS versions. A second review is only worth it after a large change to infra/ or sign-in.
+
+The brief it was given:
 
 A fresh, independent look at what protects a person's log, by a model that did not write it. Ask for findings ranked by
 severity, each with the file and line, and nothing changed without asking.

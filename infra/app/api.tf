@@ -1,35 +1,7 @@
 /* ---------- the sync API: API Gateway checks the sign-in token, then one Lambda does the work ---------- */
-resource "aws_iam_role" "sync" {
-  name                 = "daybook-app-sync"
-  permissions_boundary = var.boundary_arn
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy" "sync" {
-  name = "daybook-sync"
-  role = aws_iam_role.sync.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["dynamodb:Query", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:BatchWriteItem"]
-        Resource = [aws_dynamodb_table.records.arn, "${aws_dynamodb_table.records.arn}/index/*"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = ["${aws_cloudwatch_log_group.sync.arn}:*"]
-      }
-    ]
-  })
+/* the function's role is made by the bootstrap stack, with exactly what the function may do; a deploy can only hand it over */
+data "aws_iam_role" "sync" {
+  name = "daybook-app-sync"
 }
 
 resource "aws_cloudwatch_log_group" "sync" {
@@ -39,7 +11,7 @@ resource "aws_cloudwatch_log_group" "sync" {
 
 resource "aws_lambda_function" "sync" {
   function_name    = "daybook-sync"
-  role             = aws_iam_role.sync.arn
+  role             = data.aws_iam_role.sync.arn
   runtime          = "nodejs22.x"
   architectures    = ["arm64"]
   handler          = "index.handler"
@@ -50,6 +22,7 @@ resource "aws_lambda_function" "sync" {
   environment {
     variables = {
       TABLE                               = aws_dynamodb_table.records.name
+      USER_POOL_ID                        = aws_cognito_user_pool.users.id
       NODE_OPTIONS                        = "--enable-source-maps"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
     }
@@ -58,7 +31,6 @@ resource "aws_lambda_function" "sync" {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.sync.name
   }
-  depends_on = [aws_iam_role_policy.sync]
 }
 
 /* the web app reaches the API through its own address (CloudFront sends /sync here), so no cross-origin access is needed;

@@ -3,6 +3,11 @@
 import * as SecureStore from 'expo-secure-store';
 
 const KEY = 'daybook.auth';
+
+/* a phone keeps the sign-in in its keychain or keystore; there is nothing to choose */
+export const trustOffered = false;
+export const getTrust = () => true;
+export function setTrust(_on: boolean) {}
 const opts = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
 export async function readSecret(): Promise<string | null> {

@@ -12,11 +12,6 @@ variable "region" {
   default = "us-east-2"
 }
 
-variable "boundary_arn" {
-  description = "The permissions boundary from the bootstrap stack (its TF_BOUNDARY_ARN output). Every role here carries it."
-  type        = string
-}
-
 variable "lambda_zip" {
   description = "The built sync Lambda (npm run build -w @daybook/api)."
   type        = string

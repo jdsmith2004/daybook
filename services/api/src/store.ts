@@ -31,9 +31,18 @@ export interface Store {
   putIfNewer(user: string, r: StoredRecord): Promise<boolean>;
   /** adds to today's write allowance; false when it would go over `max` bytes */
   useAllowance(user: string, day: string, bytes: number, max: number): Promise<boolean>;
-  /** every record becomes a deletion (so other devices remove it too), or with `all`, everything is removed for good */
+  /** every record becomes a deletion (so other devices remove it too), and a copy of it is kept for KEEP_ERASED, so the
+      person can bring it back; or with `all`, everything is removed for good */
   erase(user: string, now: number, all: boolean): Promise<number>;
+  /** the copies kept from the last erase: how many, and when */
+  erased(user: string, now: number): Promise<{ n: number; at: number | null }>;
+  /** brings the kept copies back as new changes. A record logged again since the erase is left as it is. */
+  restore(user: string, now: number): Promise<number>;
 }
+
+/** how long an erased log can be brought back */
+export const KEEP_ERASED = 7 * 24 * 3600_000;
+const ERASED = '#erased/';
 
 const enc = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
 function dec(s: string): unknown {
@@ -116,19 +125,19 @@ export class DynamoStore implements Store {
     }
   }
 
-  private async all(user: string, fn: (items: { sk: string; u: number }[]) => Promise<void>) {
+  private async all(user: string, fn: (items: { sk: string; u: number; d?: string }[]) => Promise<void>, prefix?: string) {
     let start: Record<string, unknown> | undefined;
     do {
       const q = await this.db.send(
         new QueryCommand({
           TableName: this.table,
-          KeyConditionExpression: 'pk = :p',
-          ExpressionAttributeValues: { ':p': user },
-          ProjectionExpression: 'sk, u',
+          KeyConditionExpression: prefix ? 'pk = :p AND begins_with(sk, :x)' : 'pk = :p',
+          ExpressionAttributeValues: prefix ? { ':p': user, ':x': prefix } : { ':p': user },
+          ProjectionExpression: 'sk, u, d',
           ExclusiveStartKey: start,
         }),
       );
-      await fn((q.Items || []).map((i) => ({ sk: i.sk as string, u: (i.u as number) || 0 })));
+      await fn((q.Items || []).map((i) => ({ sk: i.sk as string, u: (i.u as number) || 0, d: i.d as string | undefined })));
       start = q.LastEvaluatedKey;
     } while (start);
   }
@@ -147,19 +156,86 @@ export class DynamoStore implements Store {
 
   async erase(user: string, now: number, all: boolean): Promise<number> {
     let n = 0;
+    const ttl = Math.floor((now + KEEP_ERASED) / 1000);
     await this.all(user, async (items) => {
-      const reqs = items
-        .filter((i) => all || !isOwn(i.sk))
-        .map((i) =>
-          all
-            ? { DeleteRequest: { Key: { pk: user, sk: i.sk } } }
-            : { PutRequest: { Item: { pk: user, sk: i.sk, u: Math.max(now, i.u + 1), s: now, del: true } } },
-        );
+      const reqs: Record<string, unknown>[] = [];
+      for (const i of items) {
+        if (all) {
+          reqs.push({ DeleteRequest: { Key: { pk: user, sk: i.sk } } });
+          n++;
+          continue;
+        }
+        if (isOwn(i.sk)) continue;
+        reqs.push({ PutRequest: { Item: { pk: user, sk: i.sk, u: Math.max(now, i.u + 1), s: now, del: true } } });
+        /* a copy, for a week, in the server's own bookkeeping (never pulled), so a mistaken or stolen erase can be undone */
+        if (i.d != null) reqs.push({ PutRequest: { Item: { pk: user, sk: ERASED + i.sk, u: i.u, d: i.d, at: now, ttl } } });
+        n++;
+      }
       await this.batch(reqs);
-      n += reqs.length;
     });
     return n;
   }
+
+  async erased(user: string, now: number): Promise<{ n: number; at: number | null }> {
+    let n = 0;
+    let at: number | null = null;
+    let start: Record<string, unknown> | undefined;
+    do {
+      const q = await this.db.send(
+        new QueryCommand({
+          TableName: this.table,
+          KeyConditionExpression: 'pk = :p AND begins_with(sk, :x)',
+          ExpressionAttributeValues: { ':p': user, ':x': ERASED },
+          ProjectionExpression: 'sk, #a, #t',
+          ExpressionAttributeNames: { '#a': 'at', '#t': 'ttl' },
+          ExclusiveStartKey: start,
+        }),
+      );
+      for (const i of q.Items || []) {
+        /* time-to-live removes items within a day or two of their time, not on the second: a copy past its week is not offered */
+        if (typeof i.ttl === 'number' && i.ttl * 1000 < now) continue;
+        n++;
+        if (typeof i.at === 'number') at = Math.max(at || 0, i.at);
+      }
+      start = q.LastEvaluatedKey;
+    } while (start);
+    return { n, at };
+  }
+
+  async restore(user: string, now: number): Promise<number> {
+    let n = 0;
+    const copies: { sk: string; d: string }[] = [];
+    await this.all(
+      user,
+      async (items) => {
+        for (const i of items) if (i.d != null) copies.push({ sk: i.sk, d: i.d });
+      },
+      ERASED,
+    );
+    for (let k = 0; k < copies.length; k += 10) {
+      await Promise.all(
+        copies.slice(k, k + 10).map(async (c) => {
+          const id = c.sk.slice(ERASED.length);
+          try {
+            /* only where the record is still the erase's deletion: a day logged again since stays as it is */
+            await this.db.send(
+              new PutCommand({
+                TableName: this.table,
+                Item: { pk: user, sk: id, u: now, s: now, d: c.d },
+                ConditionExpression: 'attribute_not_exists(pk) OR attribute_exists(del)',
+              }),
+            );
+            n++;
+          } catch (e) {
+            if (!(e instanceof ConditionalCheckFailedException)) throw e;
+          }
+        }),
+      );
+    }
+    await this.batch(copies.map((c) => ({ DeleteRequest: { Key: { pk: user, sk: c.sk } } })));
+    return n;
+  }
+
 }
 
 export class MemoryStore implements Store {
@@ -200,11 +276,44 @@ export class MemoryStore implements Store {
     return true;
   }
 
+  /** kept copies from an erase, by person: id -> the record and when it was erased */
+  erasedCopies = new Map<string, Map<string, { r: StoredRecord; at: number }>>();
+
   async erase(user: string, now: number, all: boolean): Promise<number> {
     const m = this.of(user);
     const n = m.size;
-    if (all) this.rows.delete(user);
-    else for (const [id, r] of m) m.set(id, { id, u: Math.max(now, r.u + 1), s: now, d: null });
+    if (all) {
+      this.rows.delete(user);
+      this.erasedCopies.delete(user);
+      return n;
+    }
+    let kept = this.erasedCopies.get(user);
+    if (!kept) this.erasedCopies.set(user, (kept = new Map()));
+    for (const [id, r] of m) {
+      if (r.d != null) kept.set(id, { r: { ...r }, at: now });
+      m.set(id, { id, u: Math.max(now, r.u + 1), s: now, d: null });
+    }
     return n;
   }
+
+  async erased(user: string, now: number): Promise<{ n: number; at: number | null }> {
+    const kept = [...(this.erasedCopies.get(user)?.values() || [])].filter((x) => x.at + KEEP_ERASED > now);
+    return { n: kept.length, at: kept.length ? kept[0].at : null };
+  }
+
+  async restore(user: string, now: number): Promise<number> {
+    const kept = this.erasedCopies.get(user);
+    if (!kept) return 0;
+    const m = this.of(user);
+    let n = 0;
+    for (const [id, x] of kept) {
+      const cur = m.get(id);
+      if (cur && cur.d != null) continue;
+      m.set(id, { id, u: now, s: now, d: x.r.d });
+      n++;
+    }
+    this.erasedCopies.delete(user);
+    return n;
+  }
+
 }

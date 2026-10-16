@@ -12,7 +12,7 @@ npx tsc --noEmit
 - `src/components`: Today's cards, the flame, the tab bar (`app-tabs.tsx`), the lock (`lock.tsx`), the sync section of Settings (`sync-card.tsx`), and small UI parts.
 - `src/lib/store.tsx`: the log on this device. Each record is its own storage entry and is marked "not synced yet" when it changes.
 - `src/lib/sync.tsx`: sync between devices (off until the person signs in). The merging itself is `@daybook/core` `sync.ts`, tested against the real sync handler in `services/api/test/client.test.ts`.
-- `src/lib/auth.ts`: signing in with Cognito's own sign-in page (authorization code with PKCE). `secret.ts` keeps the sign-in in the keychain or keystore; `secret.web.ts` in the browser's storage for this site.
+- `src/lib/auth.ts`: signing in with Cognito's own sign-in page (authorization code with PKCE). `secret.ts` keeps the sign-in in the keychain or keystore; `secret.web.ts` in the browser's storage for this site when "Stay signed in on this browser" is ticked, or only for the tab when it is not. Refresh tokens rotate, so `accessToken` saves the new one each time it renews.
 - `src/lib/reminders.ts`: the daily reminders, made on the phone (none on the web).
 - `src/lib/prefs.ts`: choices that belong to one device and never sync: the theme, the sound guide, reminders, the lock.
 - `src/lib/backup.ts` and `backup.web.ts`: restore and save the backup file the legacy app makes.

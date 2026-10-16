@@ -53,25 +53,33 @@ resource "aws_cognito_user_pool_domain" "users" {
   managed_login_version = 2
 }
 
-/* scopes: openid and email say who signed in. aws.cognito.signin.user.admin lets a signed-in person manage their own account
-   with their own token, which the app needs for "Delete my account" (Cognito DeleteUser; app stores require in-app deletion).
-   It reaches only that person's own sign-in, never their log or anyone else's. */
+/* scopes: only openid and email, which say who signed in. A token cannot change the account itself (its email or password),
+   so a stolen token cannot take the account over. "Delete my account" goes through the sync API instead (DELETE /sync?all=1),
+   whose Lambda may delete users in this pool and nothing else about them.
+   A sign-in lasts a year from when it was made (Cognito cannot extend it while in use), on phones and on browsers the person
+   trusts; an untrusted browser forgets it when the tab closes. With rotation, every renewal (about hourly while the app is in
+   use) replaces the refresh token and retires the old one a minute later, so a copied token stops working soon after. The
+   older REFRESH_TOKEN_AUTH flow is off, because rotation requires that; the apps renew at the token endpoint. */
 resource "aws_cognito_user_pool_client" "app" {
   name                                 = "daybook-app"
   user_pool_id                         = aws_cognito_user_pool.users.id
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["openid", "email", "aws.cognito.signin.user.admin"]
+  allowed_oauth_scopes                 = ["openid", "email"]
   supported_identity_providers         = ["COGNITO"]
   callback_urls                        = concat(["daybook://auth"], [for o in local.origins : "${o}/auth"])
   logout_urls                          = concat(["daybook://signed-out"], [for o in local.origins : "${o}/"])
-  explicit_auth_flows                  = ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_SRP_AUTH"]
+  explicit_auth_flows                  = ["ALLOW_USER_SRP_AUTH"]
   prevent_user_existence_errors        = "ENABLED"
   enable_token_revocation              = true
   access_token_validity                = 60
   id_token_validity                    = 60
-  refresh_token_validity               = 90
+  refresh_token_validity               = 365
+  refresh_token_rotation {
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 60
+  }
   token_validity_units {
     access_token  = "minutes"
     id_token      = "minutes"

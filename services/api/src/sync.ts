@@ -6,8 +6,10 @@
                                        a record that comes twice is simply not newer the second time.
    POST   /sync   { records: [...] }     save these records; each is kept only if it is newer than the one already there
    DELETE /sync                          erase this person's log: every record becomes a deletion, so their other devices
-                                       remove it too on their next pull
-   DELETE /sync?all=1                    remove everything for good (when closing the account)
+                                       remove it too on their next pull. A copy is kept for a week (never pulled).
+   GET    /sync?erased=1                 { n, at }: how many records that copy holds, and when the erase was
+   POST   /sync?restore=1                brings the copy back as new changes; days logged again since are left alone
+   DELETE /sync?all=1                    close the account: remove everything for good, then delete the sign-in itself
 
    Who is asking comes only from the signed token that API Gateway checked (its `sub`). Every record is checked and cleaned
    with the same rules the apps use (@daybook/core), so nothing malformed is ever stored. Sizes are capped, and each person
@@ -38,12 +40,26 @@ const json = (statusCode: number, body: unknown): Res => ({
 });
 const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
-export function makeHandler(store: Store, clock: () => number = Date.now) {
+/** deletes the person's sign-in (Cognito AdminDeleteUser, by user name). Injected, so the tests need no AWS. */
+export type DeleteUser = (username: string) => Promise<void>;
+
+export function makeHandler(store: Store, clock: () => number = Date.now, deleteUser: DeleteUser = async () => undefined) {
   return async function handler(event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<Res> {
     const user = event.requestContext?.authorizer?.jwt?.claims?.sub;
     if (typeof user !== 'string' || !user) return json(401, { error: 'Sign in first.' });
     const method = event.requestContext.http.method;
     const q = event.queryStringParameters || {};
+
+    if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
+
+    if (method === 'POST' && q.restore === '1') {
+      const left = await store.erased(user, clock());
+      if (!left.n) return json(200, { restored: 0 });
+      /* bringing a log back counts against the day's writes like any other save */
+      if (!(await store.useAllowance(user, utcDay(clock()), left.n * 2000, DAILY_BYTES)))
+        return json(429, { error: 'That is more than a day of syncing allows. It will work again tomorrow.' });
+      return json(200, { restored: await store.restore(user, clock()) });
+    }
 
     if (method === 'GET') {
       const since = q.since == null ? 0 : Number(q.since);
@@ -112,7 +128,18 @@ export function makeHandler(store: Store, clock: () => number = Date.now) {
     }
 
     if (method === 'DELETE') {
-      const n = await store.erase(user, clock(), q.all === '1');
+      const all = q.all === '1';
+      const n = await store.erase(user, clock(), all);
+      if (all) {
+        /* the log first (it can be done again), then the sign-in; if that fails, the app asks again and only it is left */
+        try {
+          /* the access token names the user (username); in a pool that signs in with email it is the same as sub */
+          const name = event.requestContext.authorizer?.jwt?.claims?.username;
+          await deleteUser(typeof name === 'string' && name ? name : user);
+        } catch {
+          return json(502, { error: 'Your log was removed, but the account could not be closed. Try again.', erased: n });
+        }
+      }
       return json(200, { erased: n });
     }
 

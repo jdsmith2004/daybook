@@ -1,13 +1,69 @@
 /* Sync between devices, in Settings: sign in, see when it last synced, sync now, sign out, or delete the account. The first
    time a device joins an account that already has a log, the question of what to keep is asked here. */
-import { useState } from 'react';
+import { fmtDate, keyOfDate } from '@daybook/core';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BigOption } from '@/components/choices';
+import { Check } from '@/components/form';
 import { Button, T } from '@/components/ui';
+import { keepPerTrust } from '@/lib/auth';
+import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
 import { useTheme } from '@/lib/theme';
+
+/** after "Delete everything": the account keeps a copy for a week, and this brings it back */
+export function ErasedNote() {
+  const c = useTheme();
+  const sync = useSync();
+  const { say } = useStore();
+  const [busy, setBusy] = useState(false);
+  const on = sync.status.k === 'on' || sync.status.k === 'error';
+  useEffect(() => {
+    if (on) sync.checkErased();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on]);
+  if (!on || !sync.erased) return null;
+  const day = (ms: number) => fmtDate(keyOfDate(new Date(ms)), { weekday: 'long', month: 'long', day: 'numeric' });
+  return (
+    <View style={[s.confirm, { backgroundColor: c.sunSoft }]}>
+      <T v="label">Your log was deleted on {day(sync.erased.at)}.</T>
+      <T v="small">
+        Your account keeps a copy until {day(sync.erased.at + 7 * 86400_000)}. Bringing it back puts every day back on all your devices. Days you have logged since stay as they
+        are.
+      </T>
+      <Button
+        label={busy ? 'Bringing it back…' : 'Bring my log back'}
+        disabled={busy}
+        onPress={async () => {
+          setBusy(true);
+          const ok = await sync.restoreErased();
+          setBusy(false);
+          say(ok ? 'Your log is back.' : 'Could not reach your account. Try again in a moment.');
+        }}
+      />
+    </View>
+  );
+}
+
+/** "Stay signed in on this browser" (the web only; a phone keeps the sign-in in its keychain) */
+export function TrustChoice() {
+  const [on, setOn] = useState(getTrust);
+  if (!trustOffered) return null;
+  return (
+    <Check
+      label="Stay signed in on this browser"
+      why={on ? 'For a year, until you sign out. Untick this on a shared computer.' : 'Only while this tab is open. Good for a shared computer.'}
+      on={on}
+      onPress={() => {
+        setTrust(!on);
+        setOn(!on);
+        keepPerTrust().catch(() => undefined);
+      }}
+    />
+  );
+}
 
 export function SyncBody() {
   const c = useTheme();
@@ -25,6 +81,7 @@ export function SyncBody() {
           only.
         </T>
         <Button label="Sign in to sync" onPress={sync.signInNow} />
+        <TrustChoice />
       </>
     );
 
@@ -74,10 +131,12 @@ export function SyncBody() {
           Signed in as <T v="small">{sync.email}</T>
         </T>
       ) : null}
+      <ErasedNote />
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
       {st.k === 'expired' ? <Button label="Sign in again" onPress={sync.signInNow} /> : <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />}
+      <TrustChoice />
       {ask === 'out' ? (
         <View style={[s.confirm, { backgroundColor: c.surface2 }]}>
           <T v="label">Sign out of sync on this device?</T>
@@ -99,8 +158,8 @@ export function SyncBody() {
             label="Yes, delete my account"
             onPress={async () => {
               setAsk(null);
-              const ok = await sync.deleteAccount();
-              say(ok ? 'Your account was deleted.' : 'Could not reach your account. Nothing was deleted.');
+              const r = await sync.deleteAccount();
+              say(r.msg);
             }}
           />
           <Button kind="ghost" label="Keep my account" onPress={() => setAsk(null)} />

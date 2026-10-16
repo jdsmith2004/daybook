@@ -213,3 +213,53 @@ describe('sync', () => {
     expect((await call(ev('PUT'))).status).toBe(405);
   });
 });
+
+describe('a week to undo an erase, and closing the account', () => {
+  it('keeps a copy for a week, never pulled, and brings it back on request', async () => {
+    await call(ev('POST', { body: { records: [day('2026-10-14', 500), day('2026-10-13', 500)] } }));
+    now += 1000;
+    await call(ev('DELETE'));
+    const e = await call(ev('GET', { query: { erased: '1' } }));
+    expect(e.body.n).toBe(2);
+    /* the copy is the server's own: a pull shows only the deletions */
+    const g = await call(ev('GET', { query: { since: '0' } }));
+    expect(g.body.records.every((r: { data: unknown }) => r.data === null)).toBe(true);
+    /* another person cannot see or restore it */
+    expect((await call(ev('GET', { user: 'bob', query: { erased: '1' } }))).body.n).toBe(0);
+    expect((await call(ev('POST', { user: 'bob', query: { restore: '1' } }))).body.restored).toBe(0);
+    /* a day logged again since the erase is left as it is */
+    now += 1000;
+    await call(ev('POST', { body: { records: [day('2026-10-14', now)] } }));
+    now += 1000;
+    const r = await call(ev('POST', { query: { restore: '1' } }));
+    expect(r.body.restored).toBe(1);
+    const after = await call(ev('GET', { query: { since: '0' } }));
+    const byId = Object.fromEntries(after.body.records.map((x: { id: string; u: number; data: unknown }) => [x.id, x]));
+    expect(byId['days/2026-10-13'].data).not.toBeNull();
+    expect(byId['days/2026-10-14'].u).toBe(now - 1000);
+    /* the copy is used up */
+    expect((await call(ev('GET', { query: { erased: '1' } }))).body.n).toBe(0);
+  });
+
+  it('closes the account: the log and its copy go for good, then the sign-in', async () => {
+    const gone: string[] = [];
+    handler = makeHandler(store, () => now, async (u) => void gone.push(u));
+    await call(ev('POST', { body: { records: [day('2026-10-14', 500)] } }));
+    await call(ev('DELETE'));
+    const d = await call(ev('DELETE', { query: { all: '1' } }));
+    expect(d.status).toBe(200);
+    expect(gone).toEqual(['alice']);
+    expect((await call(ev('GET', { query: { erased: '1' } }))).body.n).toBe(0);
+    expect((await call(ev('GET', { query: { since: '0' } }))).body.records).toEqual([]);
+  });
+
+  it('says so when the log went but the sign-in could not be deleted', async () => {
+    handler = makeHandler(store, () => now, async () => {
+      throw new Error('cognito down');
+    });
+    await call(ev('POST', { body: { records: [day('2026-10-14', 500)] } }));
+    const d = await call(ev('DELETE', { query: { all: '1' } }));
+    expect(d.status).toBe(502);
+    expect(d.body.error).toMatch(/log was removed/);
+  });
+});

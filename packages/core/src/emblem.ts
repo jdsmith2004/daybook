@@ -3,8 +3,9 @@
    comes from the component instead of an inline style. */
 import { Em } from './legacy/core.js';
 
-export function emblemXml(level: number): string {
-  return Em.emblem(level, { still: true })
+/** locked: a form not reached yet, drawn faded (legacy Em.emblem with locked) */
+export function emblemXml(level: number, locked = false): string {
+  return Em.emblem(level, { still: true, locked })
     .replace(/ style="width:\d+px;height:\d+px"/, '')
     .replace(/ style="[^"]*"/g, '')
     .replace(/ class="[^"]*"/g, '')

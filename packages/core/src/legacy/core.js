@@ -2773,6 +2773,7 @@ const ICO={
 /* ------------------------------------------------------------------------------------------------
    picked: the data and pure helpers behind SOS, the tools, the day and the lessons
    ------------------------------------------------------------------------------------------------ */
+const WIN_WHY={wait:'Waited first',sunrise:'Sunrise check',rekindle:'Rekindled',log:'Logged honestly',ride:'Rode it out',pause:'Paused first',bounce:'Bounced back',checkin:'Check-in done',reach:'Reached out',lights:'Screens off on time',wind:'Wind-down done',morning:'Morning questions done',calm:'Calm move',lesson:'Lesson done',reread:'Read it again',phone:'Phone put away'};
 function rangeLabel(lo,hi){
  const a=fmtDate(lo,{month:'short',day:'numeric'});
  return a+' to '+(lo.slice(0,7)===hi.slice(0,7)?fmtDate(hi,{day:'numeric'}):fmtDate(hi,{month:'short',day:'numeric'}));
@@ -2967,7 +2968,23 @@ const SERIES=[['m','Motivation'],['c','Connection'],['e','Energy'],['s','Stress'
 const REVIEW_QS=[
  ['hard','Hardest moment this week'],['helped','What helped'],['change','One change for next week'],['proud',"Something I'm proud of"]
 ];
+const HELP_PAGES={
+ people:{t:'Talk to a person',s:'Free, day and night',ic:'chat',tone:'coral',tile:'Hotlines and helplines'},
+ therapy:{t:'Therapy on a small budget',s:'Free and low-cost routes, and how to choose',ic:'heart',tone:'violet',tile:'Free and low-cost routes'},
+ groups:{t:'Free groups',s:'Peer support, online and in person',ic:'dots',tone:'mint',tile:'Peer support'},
+ faith:{t:'Faith and recovery',s:'God in your recovery, with things to do',ic:'star',tone:'sun',tile:'Prayer, words, and people'},
+ phone:{t:'Phone and night setup',s:'Make the urge harder to act on',ic:'phone',tone:'sky',tile:'Make the urge harder'},
+ say:{t:'What to say',s:'Scripts you can copy',ic:'copy',tone:'sun',tile:'Scripts to copy'},
+ plan:{t:'My plan',s:'Safety net, urge plan, slip plan',ic:'shield',tone:'accent',tile:'Safety net and steps'},
+ playbook:{t:'My playbook',s:'My reasons, my plan, and what the lessons gave me',ic:'compass',tone:'violet',tile:'All of it on one page'}
+};
+const HELP_SUBS={
+ therapy:[['start','Ways to start'],['choose','Choosing someone']],
+ phone:[['iphone','iPhone'],['android','Android'],['computer','Computer'],['night','Nights']],
+ plan:[['safety','Safety net'],['urge','Urge plan'],['slip','Slip plan'],['steps','Next steps']]
+};
 function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
+const HELP_SRC=[['https://988lifeline.org/','988 Suicide & Crisis Lifeline'],['https://www.crisistextline.org/text-us/','Crisis Text Line'],['https://www.samhsa.gov/find-help/helplines/national-helpline','SAMHSA National Helpline'],['https://www.stopitnow.org/helpnow','Stop It Now helpline'],['https://www.nami.org/','NAMI'],['https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory','NAMI: warmline directory'],['https://openpathcollective.org/','Open Path Collective: prices and membership'],['https://findahealthcenter.hrsa.gov/','HRSA: find a health center'],['https://findtreatment.gov/','SAMHSA: findtreatment.gov'],['https://www.cms.gov/medical-bill-rights/know-your-rights/no-insurance','CMS: Good Faith Estimate'],['https://meetings.smartrecovery.org/','SMART Recovery meetings'],['https://saa-recovery.org/meetings/','Sex Addicts Anonymous'],['https://slaafws.org/meetings','Sex and Love Addicts Anonymous'],['https://sa.org/meetings/','Sexaholics Anonymous'],['https://www.celebraterecovery.com/','Celebrate Recovery'],['https://support.apple.com/guide/iphone/block-apps-app-downloads-websites-purchases-iph3ff83f3b1/ios','Apple: restrict websites'],['https://support.apple.com/en-us/126533','Apple: Screen Time passcode'],['https://cleanbrowsing.org/','CleanBrowsing'],['https://www.cdc.gov/sleep/about/','CDC: sleep']];
 const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
 export {
@@ -3162,6 +3179,7 @@ export {
   obHrs,
   obTop,
   ICO,
+  WIN_WHY,
   rangeLabel,
   pct,
   one,
@@ -3224,6 +3242,9 @@ export {
   sameReason,
   SERIES,
   REVIEW_QS,
+  HELP_PAGES,
+  HELP_SUBS,
   slipClean,
+  HELP_SRC,
   CHEERS
 };

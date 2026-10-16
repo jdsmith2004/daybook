@@ -1,0 +1,34 @@
+/* One badge: what it is for, and how close it is. Ported from the legacy sheetBadge. */
+import { badgeDone, gameCompute } from '@daybook/core';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
+
+import { BadgeArt } from '@/components/celebrate';
+import { closeSheet, SheetFrame } from '@/components/sheet';
+import { Button, T } from '@/components/ui';
+import { useStore } from '@/lib/store';
+
+export default function BadgeSheet() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { snap, tk } = useStore();
+  const st = snap.settings;
+  if (!st) return <Redirect href="/" />;
+  const b = gameCompute(snap.days, st, snap.reviews, tk).badges.find((x) => x.id === id);
+  if (!b)
+    return (
+      <SheetFrame title="Badge">
+        <Button label="Done" onPress={closeSheet} />
+      </SheetFrame>
+    );
+  const done = badgeDone(b, st);
+  return (
+    <SheetFrame title={b.name}>
+      <View style={{ alignItems: 'center', gap: 12 }}>
+        <BadgeArt icon={b.icon} tone={b.tone} size={116} earned={done} />
+        <T style={{ textAlign: 'center', fontSize: 18 }}>{b.desc}</T>
+        <T tone={done ? 'mintText' : 'muted'}>{done ? '✓ Earned. Badges are never taken away.' : `Progress: ${b.now} of ${b.goal}`}</T>
+      </View>
+      <Button label="Done" onPress={closeSheet} />
+    </SheetFrame>
+  );
+}

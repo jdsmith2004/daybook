@@ -11,10 +11,10 @@ export async function pickBackupText(): Promise<string | null> {
   return new File(r.assets[0].uri).text();
 }
 
-export async function saveBackupFile(name: string, text: string): Promise<void> {
+export async function saveBackupFile(name: string, text: string, mime = 'application/json'): Promise<void> {
   const f = new File(Paths.cache, name);
   f.create({ overwrite: true });
   f.writeSync(text);
   if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
-  await Sharing.shareAsync(f.uri, { mimeType: 'application/json', dialogTitle: 'Save your Daybook backup', UTI: 'public.json' });
+  await Sharing.shareAsync(f.uri, { mimeType: mime, dialogTitle: 'Save ' + name, UTI: mime === 'text/csv' ? 'public.comma-separated-values-text' : 'public.json' });
 }

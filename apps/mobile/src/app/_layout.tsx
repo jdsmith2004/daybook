@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { CelebrateHost } from '@/components/celebrate';
 import { Toast } from '@/components/toast';
 import { SosProvider } from '@/lib/sos';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -49,6 +50,7 @@ function Shell() {
           <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         ))}
       </Stack>
+      <CelebrateHost />
       <Toast />
     </ThemeProvider>
   );

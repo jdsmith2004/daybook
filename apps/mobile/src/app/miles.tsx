@@ -1,0 +1,176 @@
+/* Milestones: your flame and its ten forms, how points work, this week's quests, and your badges. Ported from the legacy
+   viewMiles and rewardsBody. */
+import { badgeDone, fmtDate, gameCompute, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, weekRange } from '@daybook/core';
+import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { BadgeArt } from '@/components/celebrate';
+import { Flame } from '@/components/flame';
+import { Collapse } from '@/components/form';
+import { PointsList } from '@/components/points-list';
+import { Screen } from '@/components/screen';
+import { Bar, Card, Icon, T } from '@/components/ui';
+import { useStore } from '@/lib/store';
+import { font, useTheme } from '@/lib/theme';
+
+export default function Miles() {
+  const c = useTheme();
+  const { snap, tk } = useStore();
+  const st = snap.settings;
+  const [how, setHow] = useState(false);
+  if (!st) return <Redirect href="/" />;
+  const g = gameCompute(snap.days, st, snap.reviews, tk);
+  const lvl = g.level;
+  const cw = Math.max(0, g.week);
+  const wr = weekRange(cw, st);
+  const earned = g.badges.filter((b) => badgeDone(b, st));
+  const todo = g.badges.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
+  return (
+    <Screen title="Milestones" sub={<T tone="muted">Your flame, this week's quests, and your badges.</T>} back="More">
+      <Card>
+        <View style={s.lvl}>
+          <Flame level={lvl.n} size={124} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`} onPress={() => router.push('/growth')} style={[s.pill, { backgroundColor: c.accentSoft }]}>
+              <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>
+                Level {lvl.n} of {LEVELS.length}
+              </Text>
+              <Icon name="next" size={14} color={c.accentText} />
+            </Pressable>
+            <T v="h2">{lvl.name}</T>
+            <T v="small" tone="muted">
+              {lvl.step}
+            </T>
+            <T>
+              <Text style={{ fontFamily: font.display, fontSize: 22 }}>{g.pts.toLocaleString('en-US')}</Text> points
+            </T>
+            <Bar frac={lvl.frac} from={c.sun} />
+            <T v="small" tone="muted">
+              {nextLine(lvl)}
+            </T>
+          </View>
+        </View>
+      </Card>
+      <Card>
+        <View style={s.between}>
+          <T v="h2">Growth path</T>
+          <T v="small" tone="muted">
+            Form {lvl.stage + 1} of {STAGES.length}
+          </T>
+        </View>
+        <T v="small" tone="muted">
+          Your flame grows a little with every level and turns into something new every third one. Tap a form to see how it grows.
+        </T>
+        {STAGES.map((sg, i) => {
+          const state = stageState(i, lvl);
+          const a = i * 3 + 1;
+          const b = i * 3 + 3;
+          const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
+          return (
+            <Pressable
+              key={i}
+              accessibilityRole="button"
+              accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
+              onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
+              style={[s.gp, { backgroundColor: state === 'now' ? c.sunSoft : c.surface2, borderColor: state === 'now' ? c.sun : 'transparent' }]}>
+              <Flame level={stageLevel(i, lvl)} size={56} locked={state === 'later'} label="" />
+              <View style={{ flex: 1 }}>
+                <T v="label">{sg.name}</T>
+                <T v="small" tone="muted">
+                  Levels {a} to {b}
+                </T>
+              </View>
+              {state === 'done' ? (
+                <View style={s.row}>
+                  <Icon name="check" size={16} color={c.mintText} />
+                  <T v="small" tone="mintText">
+                    Reached
+                  </T>
+                </View>
+              ) : (
+                <T v="small" tone={state === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+                  {state === 'now' ? 'Level ' + lvl.n : stagePts(i) + ' pts'}
+                </T>
+              )}
+            </Pressable>
+          );
+        })}
+      </Card>
+      <Collapse title="How points work" open={how} onToggle={() => setHow(!how)}>
+        <PointsList />
+      </Collapse>
+      <Card>
+        <View style={s.between}>
+          <T v="h2">This week's quests</T>
+          <T v="small" tone="muted">
+            until {fmtDate(wr[1], { weekday: 'short', month: 'short', day: 'numeric' })}
+          </T>
+        </View>
+        {g.quests.map((q) => (
+          <View key={q.id} style={[s.quest, { backgroundColor: q.done ? c.mintSoft : c.surface2 }]}>
+            <View style={s.row}>
+              <Icon name={q.done ? 'check' : 'star'} size={20} color={q.done ? c.mintText : c.sunText} />
+              <View style={{ flex: 1 }}>
+                <T v="label">{q.name}</T>
+                <T v="small" tone="muted">
+                  {q.hint}
+                </T>
+              </View>
+              <T v="label">
+                {q.now}/{q.goal}
+              </T>
+            </View>
+            <Bar frac={q.now / q.goal} from={q.done ? c.mint : c.sun} track={c.surface} height={8} />
+            <T v="small" tone={q.done ? 'mintText' : 'muted'}>
+              {q.done ? 'Done. +' + q.pts + ' points' : 'Worth +' + q.pts + ' points'}
+            </T>
+          </View>
+        ))}
+      </Card>
+      <Card>
+        <View style={s.between}>
+          <T v="h2">Badges</T>
+          <T v="small" tone="muted">
+            {earned.length} of {g.badges.length}
+          </T>
+        </View>
+        <View style={s.badges}>
+          {earned.concat(todo).map((b) => {
+            const d = badgeDone(b, st);
+            return (
+              <Pressable
+                key={b.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
+                onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
+                style={s.badge}>
+                <BadgeArt icon={b.icon} tone={b.tone} size={64} earned={d} />
+                <T v="small" style={{ fontFamily: font.bodyBold, textAlign: 'center' }} numberOfLines={2}>
+                  {b.name}
+                </T>
+                <T v="small" tone="muted">
+                  {d ? 'Earned' : b.now + ' of ' + b.goal}
+                </T>
+              </Pressable>
+            );
+          })}
+        </View>
+        <T v="small" tone="muted">
+          Badges are never taken away. A slip does not undo any of them.
+        </T>
+      </Card>
+    </Screen>
+  );
+}
+
+const s = StyleSheet.create({
+  lvl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 12, minHeight: 32, borderRadius: 999 },
+  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
+  gp: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, borderRadius: 16, borderWidth: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  quest: { gap: 6, padding: 12, borderRadius: 16 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  badge: { width: '31%', flexGrow: 1, alignItems: 'center', gap: 4, paddingVertical: 8 },
+});

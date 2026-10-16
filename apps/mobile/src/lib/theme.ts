@@ -2,6 +2,8 @@
 import { createContext, useContext } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 
+import { useThemePref } from './prefs';
+
 const light = {
   bg: '#FFF8EB',
   surface: '#FFFFFF',
@@ -145,7 +147,9 @@ const night: Palette = {
 export const NightContext = createContext(false);
 
 export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
-  const sys = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const pref = useThemePref();
+  const os = useColorScheme();
+  const sys = pref !== 'auto' ? pref : os === 'dark' ? 'dark' : 'light';
   const forced = useContext(NightContext);
   return forced ? { ...night, scheme: 'dark' } : { ...palettes[sys], scheme: sys };
 }

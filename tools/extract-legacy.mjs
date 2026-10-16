@@ -59,8 +59,10 @@ const PICK = [
   // my reasons
   'RCATS', 'reasonGuess', 'reasonCat', 'cleanReason', 'sameReason',
   // the day and the lessons
-  'rangeLabel', 'pct', 'one', 'SERIES', 'REVIEW_QS', 'STATUS_TXT',
+  'WIN_WHY', 'rangeLabel', 'pct', 'one', 'SERIES', 'REVIEW_QS', 'STATUS_TXT',
   'STOP_IC', 'STOP_WHEN', 'HX_NEXT', 'CHEERS', 'LX_E', 'LCHECK_N', 'LCHECKS', 'LIST_OF', 'slipClean',
+  // get help
+  'HELP_PAGES', 'HELP_SUBS', 'HELP_SRC',
 ];
 const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 const full = acorn.parse(script, { ecmaVersion: 'latest', sourceType: 'script' });

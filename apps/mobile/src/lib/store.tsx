@@ -2,8 +2,13 @@
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  checkNew,
   isKey,
   isReviewKey,
+  savedRuns,
+  winGain,
+  winWhy,
+  type CelItem,
   logicalKey,
   normDay,
   normReview,
@@ -68,9 +73,19 @@ interface StoreValue {
   replace: (snap: Snapshot, changed: RecordId[]) => Promise<void>;
   /** erase everything on this device */
   erase: () => Promise<void>;
-  toast: string | null;
+  /** what is showing at the bottom: a line of words, or the points an action earned */
+  toast: Toast | null;
   say: (msg: string) => void;
+  /** the celebration host tells the store whether a full-screen moment is open, and takes what was earned */
+  hooks: { current: Hooks };
 }
+export type Toast = { text: string } | { pts: number; why: string; quiet: boolean };
+export interface Hooks {
+  inScene: () => boolean;
+  /** newly earned things to celebrate; gives back true when they were shown (or said) */
+  onCelebrate: (items: CelItem[]) => void;
+}
+type Win = { t: number; pts: number; by: Record<string, number>; ev: boolean; quiet: boolean };
 
 const Ctx = createContext<StoreValue | null>(null);
 
@@ -78,7 +93,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [snap, setSnap] = useState<Snapshot>(empty);
   const [dirty, setDirty] = useState<Record<string, number>>({});
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const hooks = useRef<Hooks>({ inScene: () => false, onCelebrate: () => undefined });
+  const winAcc = useRef<Win[]>([]);
+  const noteRef = useRef<string | null>(null);
+  const flushT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedSeen = useRef<string[] | null>(null);
   const snapRef = useRef(snap);
   const dirtyRef = useRef(dirty);
   useEffect(() => {
@@ -99,11 +119,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  const say = useCallback((msg: string) => {
-    setToast(msg);
+  const show = useCallback((t: Toast) => {
+    setToast(t);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 3200);
+    toastTimer.current = setTimeout(() => setToast(null), 'pts' in t ? 3800 : 3200);
   }, []);
+
+  /* After each action (legacy afterAction): a run that was just saved, anything newly earned (a level, a badge, a quest, a full
+     ring), and then what the action earned: "+15 points · Rode it out", or the action's own words. A celebration is the reward when
+     there is one; inside a full-screen moment only the words are said. */
+  const flushRef = useRef<() => void>(() => undefined);
+  const schedule = useCallback(() => {
+    if (flushT.current) return;
+    flushT.current = setTimeout(() => {
+      flushT.current = null;
+      flushRef.current();
+    }, 0);
+  }, []);
+  const say = useCallback(
+    (msg: string) => {
+      noteRef.current = msg;
+      schedule();
+    },
+    [schedule],
+  );
 
   /* writes the changed records, and marks them not synced yet */
   const persist = useCallback(async (next: Snapshot, ids: RecordId[]) => {
@@ -123,6 +162,73 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (dels.length) await AsyncStorage.multiRemove(dels);
   }, []);
 
+  /* a change the store makes by itself (marking what was seen): saved, but nothing is said */
+  const commitSettings = useCallback(
+    (st: Settings) => {
+      const next = { ...snapRef.current, settings: st };
+      snapRef.current = next;
+      setSnap(next);
+      persist(next, ['settings']).catch(() => undefined);
+    },
+    [persist],
+  );
+  flushRef.current = () => {
+    const note = noteRef.current;
+    noteRef.current = null;
+    const now = Date.now();
+    const acc = winAcc.current.filter((x) => now - x.t <= 3000);
+    winAcc.current = [];
+    const cur = snapRef.current;
+    const st = cur.settings;
+    let fired = false;
+    let quiet = false;
+    let pts = 0;
+    let ev = false;
+    const by: Record<string, number> = {};
+    acc.forEach((x) => {
+      pts += x.pts;
+      ev = ev || x.ev;
+      quiet = quiet || x.quiet;
+      Object.keys(x.by).forEach((k) => (by[k] = (by[k] || 0) + x.by[k]));
+    });
+    if (st) {
+      const tkNow = logicalKey(now, st.rollover);
+      const sv = savedRuns(cur.days, st, tkNow);
+      const was = savedSeen.current;
+      savedSeen.current = sv.saved;
+      const items: CelItem[] = [];
+      if (was && sv.saved.some((k) => was.indexOf(k) < 0)) items.push({ type: 'saved', run: sv.cur });
+      const r = checkNew(cur.days, st, cur.reviews, tkNow, quiet);
+      if (r.st) commitSettings(r.st);
+      if (r.items.length) fired = true;
+      items.push(...r.items);
+      if (items.length) hooks.current.onCelebrate(items);
+    }
+    if (fired) return;
+    if (hooks.current.inScene() || (!pts && !ev)) {
+      if (note) show({ text: note });
+      return;
+    }
+    if (!pts) {
+      show({ text: note || (quiet ? 'Logged. That took honesty.' : 'Logged. That counts.') });
+      return;
+    }
+    if (st && st.celebrate === false) show({ text: '+' + pts + ' point' + (pts === 1 ? '' : 's') + '. ' + (note || winWhy(by, quiet)) });
+    else show({ pts, why: note || winWhy(by, quiet), quiet });
+  };
+  /* the first look after the app opens only takes note of what is already saved and seen */
+  useEffect(() => {
+    if (!ready) return;
+    const st = snapRef.current.settings;
+    if (!st) return;
+    const tkNow = logicalKey(Date.now(), st.rollover);
+    if (savedSeen.current == null) savedSeen.current = savedRuns(snapRef.current.days, st, tkNow).saved;
+    if (!st.seen || (st.seen.lad || 0) < 3) {
+      const r = checkNew(snapRef.current.days, st, snapRef.current.reviews, tkNow, false);
+      if (r.st) commitSettings(r.st);
+    }
+  }, [ready, snap.settings, commitSettings]);
+
   const apply = useCallback(
     (c: Change | ((st: Settings) => Change)) => {
       const cur = snapRef.current;
@@ -133,8 +239,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSnap(next);
       persist(next, ['settings']).catch(() => say('Could not save that change on this device.'));
       if (ch.toast) say(ch.toast);
+      else schedule();
     },
-    [persist, say],
+    [persist, say, schedule],
   );
 
   const update = useCallback(
@@ -151,9 +258,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       snapRef.current = next;
       setSnap(next);
       if (ids.length) persist(next, ids).catch(() => say('Could not save that change on this device.'));
+      /* what this change earned (legacy winNote): the points gained on the changed days; a slip logged is said quietly */
+      const keys = ids.filter((x) => x.startsWith('days/')).map((x) => x.slice(5));
+      if (keys.length && next.settings) {
+        const w = winGain(cur.days, next.days, next.settings, keys);
+        const slips = (d: Snapshot['days']) => keys.reduce((a, k) => a + (d[k]?.events.filter((e) => e.outcome === 'slipped').length || 0), 0);
+        const quiet = slips(next.days) > slips(cur.days);
+        if (w.pts || w.ev) winAcc.current.push({ t: Date.now(), pts: w.pts, by: w.by, ev: w.ev, quiet });
+      }
+      if (ids.length) schedule();
       return next;
     },
-    [persist, say],
+    [persist, say, schedule],
   );
 
   const replace = useCallback(
@@ -174,7 +290,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<StoreValue>(
-    () => ({ ready, snap, settings: snap.settings, tk, now, dirty, apply, update, replace, erase, toast, say }),
+    () => ({ ready, snap, settings: snap.settings, tk, now, dirty, apply, update, replace, erase, toast, say, hooks }),
     [ready, snap, tk, now, dirty, apply, update, replace, erase, toast, say],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

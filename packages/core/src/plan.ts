@@ -76,8 +76,6 @@ export function removeReason(st: Settings, i: number): Change | null {
 }
 
 /* ---------- the slip plan ---------- */
-export const SLIP_MAX = 8;
-export const SLIP_LEN = 200;
 /** the rows being edited can hold a blank step; the saved list never does */
 export const saveSlip = (st: Settings, rows: string[]) => changeSettings(st, (s) => void (s.slipPlan = rows.slice()));
 export const slipIsStarter = (rows: string[]) => slipClean(rows).join('\n') === (SLIP_STEPS as string[]).join('\n');
@@ -88,3 +86,69 @@ export const setPlanRow = (st: Settings, i: number, fld: 'when' | 'then', v: str
   changeSettings(st, (s) => {
     if (s.plan[i]) s.plan[i][fld] = v;
   });
+
+/* ---------- My plan: why, the safety net, next steps, lists ---------- */
+/** a typed field (goal, why, loop, rule, safePerson, ask, note): saved as typed */
+export const setField = (st: Settings, k: 'goal' | 'why' | 'loop' | 'rule' | 'safePerson' | 'ask' | 'note', v: string) =>
+  changeSettings(st, (s) => void ((s as unknown as Record<string, string>)[k] = v));
+/** a list typed one item per line (calm moves, wind-down, words); empty lines are dropped when saved */
+export const setList = (st: Settings, k: 'menu' | 'wind' | 'words', text: string) => changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = text.split('\n')));
+export function toggleSafety(st: Settings, i: number): Change {
+  const next = changeSettings(st, (s) => void (s.safety[i] = !s.safety[i]));
+  return { st: next, toast: next.safety[i] ? 'Done. Your safety net is stronger.' : undefined };
+}
+export function toggleHelpStep(st: Settings, i: number): Change {
+  const next = changeSettings(st, (s) => void (s.help[i] = !s.help[i]));
+  return { st: next, toast: next.help[i] ? 'Done. That is a real step toward help.' : undefined };
+}
+/** the playbook as plain text, to copy (legacy playbookText) */
+export function playbookText(st: Settings, done: Set<string>, lessons: { id: string; title: string; key: string; np: string }[], index: (id: string) => number, checks: { t: string; q: string[] }[]) {
+  const notes = (st.learn && st.learn.notes) || {};
+  const picks = (st.learn && st.learn.picks) || {};
+  const o = ['MY PLAYBOOK', ''];
+  o.push('Why I am doing this');
+  if (st.reasons.length) st.reasons.forEach((r) => o.push('- ' + r));
+  else o.push('(no reasons yet)');
+  o.push('');
+  const rule = (st.rule || '').trim();
+  if (rule) o.push('My rule', rule, '');
+  const plan = (st.plan || []).filter((r) => r.when && r.when.trim() && r.when.indexOf('______') < 0);
+  if (plan.length) {
+    o.push('If this, then that');
+    plan.forEach((r) => o.push('If ' + r.when.trim() + ', then ' + ((r.then || '').trim() || '(not filled in yet)')));
+    o.push('');
+  }
+  const slip = Array.isArray(st.slipPlan) ? st.slipPlan : (SLIP_STEPS as string[]);
+  if (slip.length) {
+    o.push('If I slip');
+    slip.forEach((t, i) => o.push(i + 1 + '. ' + t));
+    o.push('');
+  }
+  const mine = lessons.filter((L) => done.has(L.id));
+  if (mine.length) {
+    o.push('What I have learned');
+    mine.forEach((L) => {
+      o.push(index(L.id) + 1 + '. ' + L.title + ': ' + L.key);
+      if (picks[L.id]) o.push('   I picked: ' + picks[L.id]);
+      if (notes[L.id]) o.push('   My note: ' + String(notes[L.id]).replace(/\r?\n/g, '\n   '));
+    });
+  }
+  const wrote = checks
+    .map((C, k) => ({ n: k + 1, C, a: (st.learn.wr && st.learn.wr['c' + (k + 1)] && st.learn.wr['c' + (k + 1)].a) || ['', '', ''] }))
+    .filter((x) => x.a.some((t) => t.trim()));
+  if (wrote.length) {
+    o.push('');
+    o.push('What I wrote');
+    wrote.forEach((x) => {
+      o.push('Checkpoint ' + x.n + ': ' + x.C.t);
+      x.C.q.forEach((q, i) => {
+        if (x.a[i] && x.a[i].trim()) o.push('- ' + q + '\n  ' + x.a[i].replace(/\r?\n/g, '\n  '));
+      });
+    });
+  }
+  return o.join('\n').trim();
+}
+
+/** the therapist fit check: a name for column c (legacy data-tname), and one check (legacy thr) */
+export const setTherapistName = (st: Settings, c: number, v: string) => changeSettings(st, (s) => void (s.therapist.names[c] = v));
+export const toggleTherapist = (st: Settings, r: number, c: number) => changeSettings(st, (s) => void (s.therapist.checks[r][c] = !s.therapist.checks[r][c]));

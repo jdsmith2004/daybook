@@ -393,10 +393,23 @@ const COMPUTE = ({ settings, days, reviews }) => {
     out.journal = {
       rows: keys.slice(-28).concat(keys.indexOf(tk) < 0 ? [tk] : []).map((k) => [k, words(dayRow(k, L)).text]),
       numbers: words(numbersBlock()).text,
+      book: playbookText(),
       works: words(urWorksHtml()).text,
       weeks: Array.from({ length: Math.max(0, weekOf(tk, st)) + 1 }, (_, w) => { ui.week = w; return words(weekBody()).text; }),
     };
     ui.week = null;
+  }
+  /* what is new: from a seen state with nothing in it, what the legacy checkNew celebrates and marks as seen */
+  {
+    const cel = window.celebrate, sv = window.saveSettings;
+    let got = null;
+    window.celebrate = (items) => { got = items; };
+    try {
+      Store.settings = Object.assign({}, st, { seen: { badges: [], quests: [], level: 1, full: null, lad: 3 } });
+      ui.quietNext = false;
+      checkNew();
+      out.cel = { items: (got || []).map((it) => ({ type: it.type, id: it.b ? it.b.id : it.q ? it.q.id : it.level ? it.level.n : it.n || it.title || null, from: it.from, evolve: it.evolve })), seen: J(Store.settings.seen) };
+    } finally { window.celebrate = cel; window.saveSettings = sv; Store.settings = st; }
   }
   /* Your day: each stop's status, the wind-down line, the lesson stop, saved check-ins, and the word after saving tonight's */
   {

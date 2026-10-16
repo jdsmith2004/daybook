@@ -1,6 +1,6 @@
 /* Changes to settings, as pure functions: each takes the settings and returns new ones, with what to tell the person.
    They follow the legacy action handlers exactly (see legacy/index.html, the 'clean-mode', 'step-on' ... cases). */
-import { addDays, diffDays, fmtDate, isKey, normSettings, phaseOf } from './legacy/core.js';
+import { addDays, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the next change time for a record: now, and always later than the last change (legacy nextU) */
@@ -177,3 +177,27 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   ['step', 'Stepping down', 'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When you are ready, Daybook offers to start counting days.'],
   ['track', 'Just tracking', 'For when you are not ready to quit. Urges, check-ins, lessons and tools all work the same. No Day 1 and no count. Start one whenever you like, or never.'],
 ];
+
+/* ---------- Settings (the legacy rt-set, data-set, data-urpin and celebrate handlers) ---------- */
+/** the usual routine: one part of the day on or off */
+export const setRoutine = (st: Settings, k: string, on: boolean): Settings =>
+  ROUTINE_KEYS.indexOf(k) < 0
+    ? st
+    : changeSettings(st, (s) => {
+        s.routine = normRoutine(s.routine) as Settings['routine'];
+        (s.routine as Record<string, boolean>)[k] = on;
+      });
+/** screens off by, as HH:MM. Anything that is not a time is ignored. */
+export const setScreensOffTime = (st: Settings, v: string): Settings => (isTime(v) ? changeSettings(st, (s) => void (s.screensOff = v)) : st);
+/** the hour a new day starts, 0 (midnight) to 6 */
+export const setRollover = (st: Settings, h: number): Settings => changeSettings(st, (s) => void (s.rollover = h));
+/** the tool SOS suggests first, or null for the best fit */
+export const setUrPin = (st: Settings, id: string | null): Settings =>
+  changeSettings(st, (s) => void (s.urPin = id && (TOOLS as { id: string }[]).some((t) => t.id === id) ? id : null));
+export const setCelebrate = (st: Settings, on: boolean): Settings => changeSettings(st, (s) => void (s.celebrate = on));
+/** a clock time moved by some minutes, around the clock (for the screens-off stepper) */
+export function stepClock(t: string, d: number): string {
+  const [h, m] = t.split(':').map(Number);
+  const x = (((h * 60 + m + d) % 1440) + 1440) % 1440;
+  return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0');
+}

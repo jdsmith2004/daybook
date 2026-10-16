@@ -31,6 +31,8 @@ describe.each(logs)('$name', (fx) => {
         const r = core.dayRow(days, st, k, tk, L);
         expect(bare(r.weekday + r.date + r.phase + r.times + r.rate + r.pill + (r.pts ? '+' + r.pts : ''))).toBe(bare(text));
       }
+      const done = core.lessonsDone(days);
+      expect(core.playbookText(st, done, core.LESSONS, (id) => core.LESSONS.findIndex((L) => L.id === id), core.LCHECKS)).toBe(e.journal.book);
       expect(bare('My numbers' + core.myNumbers(days, st, tk, c.now).map((x) => x.l + x.b + x.s).join(''))).toBe(bare(e.journal.numbers));
       const w = core.urWorks(days, tk);
       if (w.length) {

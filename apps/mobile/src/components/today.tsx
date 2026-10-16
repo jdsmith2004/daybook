@@ -5,82 +5,22 @@ import {
   cleanView,
   daysCardText,
   fmtDate,
-  nextLine,
-  plural,
   runChips,
   stepCard,
   stepGrad,
   stepNo,
   stepOffer,
   stepOn,
-  WINS,
   type CellKind,
   type CleanView,
-  type GameState,
   type Snapshot,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
-import { Flame } from '@/components/flame';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
-
-/* ---------- the flame: level, points, today's wins ---------- */
-export function FlameCard({ g }: { g: GameState }) {
-  const c = useTheme();
-  const lvl = g.level;
-  const wins = WINS.filter((w) => !g.wins.na[w.k]);
-  return (
-    <Card>
-      <View style={s.row}>
-        <Flame level={lvl.n} size={92} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <T v="label" tone="muted">
-            Level {lvl.n} · {lvl.name}
-          </T>
-          <View style={s.baseline}>
-            <T style={s.pts}>{g.pts.toLocaleString('en-US')}</T>
-            <T tone="muted">points</T>
-            {g.todayPts.total > 0 ? (
-              <T v="label" tone="mintText">
-                +{g.todayPts.total} today
-              </T>
-            ) : null}
-          </View>
-          <Bar frac={lvl.frac} from={c.sun} track={c.surface2} height={10} />
-          <T v="small" tone="muted">
-            {nextLine(lvl)}
-          </T>
-        </View>
-      </View>
-      {wins.length ? (
-        <View style={{ gap: 8 }}>
-          <T v="label">
-            Daily wins · {g.tally.n} of {g.tally.t}
-          </T>
-          <View style={s.wrap}>
-            {wins.map((w) => {
-              const done = g.wins[w.k];
-              return (
-                <View
-                  key={w.k}
-                  accessibilityLabel={`${w.name}: ${done ? 'done' : w.tip}`}
-                  style={[s.win, { backgroundColor: done ? c.mintSoft : c.surface2 }]}>
-                  <Icon name={done ? 'check' : w.ic} size={16} color={done ? c.mintText : c.muted} />
-                  <T v="small" tone={done ? 'mintText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-                    {w.name}
-                  </T>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      ) : null}
-    </Card>
-  );
-}
 
 /* ---------- the Days card: the month, the run, the next goal ---------- */
 const cellStyle = (kind: CellKind, c: Palette) => {
@@ -449,43 +389,6 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
     );
   }
   return null;
-}
-
-/* ---------- this week's quests ---------- */
-export function QuestsCard({ g }: { g: GameState }) {
-  const c = useTheme();
-  if (!g.quests.length) return null;
-  return (
-    <Card>
-      <View style={s.between}>
-        <T v="eyebrow" tone="muted">
-          This week’s quests
-        </T>
-        <T v="small" tone="muted">
-          +15 points each
-        </T>
-      </View>
-      {g.quests.map((q) => (
-        <View key={q.id} style={{ gap: 6 }}>
-          <View style={s.between}>
-            <T v="label" style={{ flex: 1 }}>
-              {q.done ? '✓ ' : ''}
-              {q.name}
-            </T>
-            <T v="small" tone={q.done ? 'mintText' : 'muted'}>
-              {q.now} of {plural(q.goal, q.unit.replace(/s$/, ''))}
-            </T>
-          </View>
-          <Bar frac={q.now / q.goal} from={q.done ? c.mint : c.accent} height={8} />
-          {!q.done ? (
-            <T v="small" tone="muted">
-              {q.hint}
-            </T>
-          ) : null}
-        </View>
-      ))}
-    </Card>
-  );
 }
 
 const s = StyleSheet.create({

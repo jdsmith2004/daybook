@@ -9,8 +9,8 @@ export async function pickBackupText(): Promise<string | null> {
   return (await fetch(a.uri)).text();
 }
 
-export async function saveBackupFile(name: string, text: string): Promise<void> {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+export async function saveBackupFile(name: string, text: string, mime = 'application/json'): Promise<void> {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement('a');
   a.href = url;
   a.download = name;

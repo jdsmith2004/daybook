@@ -19,7 +19,8 @@ import {
   type GameState,
   type Snapshot,
 } from '@daybook/core';
-import { StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { Flame } from '@/components/flame';
@@ -129,11 +130,16 @@ function MonthGrid({ v, legend }: { v: CleanView; legend: [CellKind, string][] }
         ))}
         {v.cells.map((x) => (
           <View key={x.k} style={s.cellBox}>
-            <View
-              accessible
-              accessibilityLabel={`${fmtDate(x.k, { weekday: 'short', month: 'short', day: 'numeric' })}: ${KIND_WORD[x.kind]}${x.today ? ' (today, so far)' : ''}`}
-              style={[s.cell, cellStyle(x.kind, c), x.today && { outlineColor: c.accent, outlineWidth: 2, outlineOffset: 2, outlineStyle: 'solid' }]}
-            />
+            {x.kind === 'ahead' ? (
+              <View style={[s.cell, cellStyle(x.kind, c)]} />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${fmtDate(x.k, { weekday: 'short', month: 'short', day: 'numeric' })}: ${KIND_WORD[x.kind]}${x.today ? ' (today, so far)' : ''}. Tap to open it.`}
+                onPress={() => router.push({ pathname: '/day/[date]', params: { date: x.k } })}
+                style={[s.cell, cellStyle(x.kind, c), x.today && { outlineColor: c.accent, outlineWidth: 2, outlineOffset: 2, outlineStyle: 'solid' }]}
+              />
+            )}
           </View>
         ))}
       </View>
@@ -206,7 +212,9 @@ function Chips({ v }: { v: CleanView }) {
   );
 }
 
-export function DaysCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
+/** size 'sm' on Today (a strip of the last 30 days and a link to the month), 'lg' in the Journal (the month, tap a day) */
+export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: string; now: number; size?: 'sm' | 'lg' }) {
+  const c = useTheme();
   const st = snap.settings!;
   const v = cleanView(snap.days, st, tk, now);
   const t = daysCardText(snap.days, st, v, tk);
@@ -237,12 +245,35 @@ export function DaysCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
           {fact(f.slips, 'slip logged', 'slips logged')}
         </View>
         <T v="small" tone="muted">
-          {sub}
+          {sub} <LinkText label="How this works" onPress={() => router.push('/mode')} />
         </T>
       </Card>
     );
   }
-  if (t.step) return <StepCard snap={snap} tk={tk} now={now} />;
+  if (t.step) return <StepCard snap={snap} tk={tk} now={now} size={size} v={v} />;
+  if (size === 'sm')
+    return (
+      <Card>
+        <View style={s.between}>
+          <T v="eyebrow" tone="muted">
+            {t.eyebrow}
+          </T>
+          <LinkText label="See the month ›" onPress={() => router.navigate('/journal')} />
+        </View>
+        <View style={s.baseline} accessibilityLabel={`${t.good} ${t.of}`}>
+          <T v="big">{t.good}</T>
+          <T tone="muted" style={{ fontSize: 16 }}>
+            {t.of}
+          </T>
+        </View>
+        <View style={s.strip} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {v.cells.map((x) => (
+            <View key={x.k} style={[s.sCell, cellStyle(x.kind, c), x.today && { borderWidth: 2, borderColor: c.accent }]} />
+          ))}
+        </View>
+        <Chips v={v} />
+      </Card>
+    );
   const gentle = v.mode === 'gentle';
   const legend: [CellKind, string][] = [['ok', 'No slip']];
   if (gentle) legend.push(['one', 'One slip, still counts'], ['slip', 'Two or more']);
@@ -269,12 +300,23 @@ export function DaysCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
       </T>
       <MonthGrid v={v} legend={legend} />
       <Chips v={v} />
+      <LinkText label="How I count days" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
     </Card>
   );
 }
 
+/** a quiet underlined link inside a card */
+export function LinkText({ label, onPress }: { label: string; onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Text accessibilityRole="link" onPress={onPress} style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>
+      {label}
+    </Text>
+  );
+}
+
 /* ---------- step down ---------- */
-function StepCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
+function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now: number; size: 'sm' | 'lg'; v: CleanView }) {
   const c = useTheme();
   const { apply } = useStore();
   const st = snap.settings!;
@@ -289,9 +331,12 @@ function StepCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }
   );
   return (
     <Card>
-      <T v="eyebrow" tone="muted">
-        Step down
-      </T>
+      <View style={s.between}>
+        <T v="eyebrow" tone="muted">
+          Step down
+        </T>
+        {size === 'sm' ? <LinkText label="See the month ›" onPress={() => router.navigate('/journal')} /> : null}
+      </View>
       <View style={s.baseline} accessibilityLabel={`${k.hero} ${k.heroSub}`}>
         <T v="big">{k.hero}</T>
         <T tone="muted" style={{ fontSize: 16 }}>
@@ -329,8 +374,14 @@ function StepCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }
             </T>{' '}
             That is what therapy and groups are for. Bringing in more help is not failing. It is adding tools.
           </T>
+          <View style={s.wrap}>
+            <LinkText label="Therapy on a small budget" onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'therapy' } })} />
+            <LinkText label="Free groups" onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'groups' } })} />
+          </View>
         </View>
       ) : null}
+      {size === 'lg' && v.cells.length ? <MonthGrid v={v} legend={[['ok', 'No slip'], ['slip', 'Slip']]} /> : null}
+      <LinkText label="How step down works" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
     </Card>
   );
 }
@@ -438,6 +489,8 @@ export function QuestsCard({ g }: { g: GameState }) {
 }
 
 const s = StyleSheet.create({
+  strip: { flexDirection: 'row', gap: 3 },
+  sCell: { flex: 1, height: 22, borderRadius: 5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },

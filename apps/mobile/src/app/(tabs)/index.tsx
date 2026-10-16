@@ -1,30 +1,36 @@
-/* Today: the flame, the Days card (or step down), this week's quests, and any note about how days are counted. */
+/* Today, in the legacy order: a pause in progress, Rekindle after a slip, the flame with Next up and SOS, any note about how days
+   are counted, the days card, today's entries, care after a slip, Your day, and a nudge when last week's review is waiting. */
 import {
   autoStep,
-  defaultSettings,
+  fmtClock,
   fmtDate,
   gameCompute,
+  p2,
   phaseLabel,
-  readBackup,
-  restoreBackup,
   shouldAutoStep,
-  toRecords,
-  type RecordId,
+  weekNudge,
 } from '@daybook/core';
-import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
-import { CountNotes, DaysCard, FlameCard, QuestsCard } from '@/components/today';
-import { CareCard, LogLink, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
-import { Button, Card, T } from '@/components/ui';
-import { pickBackupText } from '@/lib/backup';
+import { CountNotes, DaysCard } from '@/components/today';
+import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
+import { Button, Card, Icon, T } from '@/components/ui';
+import { Welcome } from '@/components/welcome';
+import { YourDay } from '@/components/your-day';
 import { useStore } from '@/lib/store';
+import { font, useTheme } from '@/lib/theme';
 
 export default function Today() {
+  const c = useTheme();
   const { ready, snap, tk, now, apply } = useStore();
   const st = snap.settings;
+  const scroll = useRef<ScrollViewInstance>(null);
+  const [dayY, setDayY] = useState(0);
+  const [stop, setStop] = useState<{ k: string; n: number } | null>(null);
 
   /* a rough stretch switches counting to step down by itself, once, with a note (legacy cleanAutoCheck) */
   useEffect(() => {
@@ -34,68 +40,60 @@ export default function Today() {
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 
   if (!st || !g) return <Welcome />;
+  const early = new Date(now).getHours() < st.rollover;
+  const ph = phaseLabel(tk, st);
+  const nudge = weekNudge(st, snap.reviews, tk);
+  const sub = (
+    <View style={s.sub}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${ph}. What this means, and how to change it.`}
+        onPress={() => router.push('/mode')}
+        style={[s.chip, { backgroundColor: c.accentSoft }]}>
+        <Text style={[s.chipT, { color: c.accentText }]}>{ph}</Text>
+        <Icon name="next" size={14} color={c.accentText} />
+      </Pressable>
+      {early ? (
+        <T v="small" tone="muted">
+          · still {fmtDate(tk, { weekday: 'long' })}'s log until {fmtClock(p2(st.rollover) + ':00')}
+        </T>
+      ) : null}
+    </View>
+  );
   return (
-    <Screen eyebrow={fmtDate(tk, { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + phaseLabel(tk, st)} title="Today">
-      <RekindleCard snap={snap} tk={tk} />
+    <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub} scrollRef={scroll}>
       <PauseBanner />
-      <FlameCard g={g} />
-      <LogLink />
+      <RekindleCard snap={snap} tk={tk} />
+      <Hero
+        g={g}
+        snap={snap}
+        tk={tk}
+        now={now}
+        onStop={(k) => {
+          setStop({ k, n: Date.now() });
+          scroll.current?.scrollTo({ y: Math.max(0, dayY - 12), animated: true });
+        }}
+      />
       <CountNotes snap={snap} tk={tk} />
-      <DaysCard snap={snap} tk={tk} now={now} />
+      <DaysCard snap={snap} tk={tk} now={now} size="sm" />
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
-      <QuestsCard g={g} />
-      <T v="small" tone="muted" style={{ textAlign: 'center', marginTop: 4 }}>
-        This is an early build. Check-ins, Learn and the journal come next.
-      </T>
+      <View onLayout={(e) => setDayY(e.nativeEvent.layout.y)}>
+        <YourDay snap={snap} tk={tk} now={now} openStop={stop} />
+      </View>
+      {nudge != null ? (
+        <Card tone="note">
+          <T v="label">Week {nudge + 1} is done.</T>
+          <T v="small">Ten minutes to look at the patterns and pick one change. Worth 20 points.</T>
+          <Button kind="ghost" label="Open review" onPress={() => router.push({ pathname: '/week/[k]', params: { k: String(nudge) } })} />
+        </Card>
+      ) : null}
     </Screen>
   );
 }
 
-/* the first time: start fresh with a tracking week, or bring in a backup from the Daybook web app */
-function Welcome() {
-  const { tk, replace, say, snap } = useStore();
-  const [busy, setBusy] = useState(false);
-  const fresh = async () => {
-    const settings = defaultSettings(tk);
-    const next = { ...snap, settings };
-    await replace(next, ['settings']);
-    say('Your tracking week starts today.');
-  };
-  const restore = async () => {
-    setBusy(true);
-    try {
-      const text = await pickBackupText();
-      if (text == null) return;
-      const b = readBackup(text);
-      const { snap: next, restored } = restoreBackup(snap, b);
-      if (!next.settings) next.settings = defaultSettings(tk);
-      await replace(next, toRecords(next).map((r) => r.id as RecordId));
-      say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
-    } catch {
-      say('That file is not a Daybook backup.');
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <Screen title="Daybook">
-      <Card>
-        <View style={{ alignItems: 'center', gap: 10, paddingVertical: 8 }}>
-          <Flame level={1} size={120} />
-          <T v="h2" style={{ textAlign: 'center' }}>
-            A private, honest place to change a habit
-          </T>
-          <T tone="muted" style={{ textAlign: 'center' }}>
-            Your log stays on this device. Nothing is counted against you in the first week: you only track, so you can see your pattern.
-          </T>
-        </View>
-        <Button label="Start with a tracking week" onPress={fresh} />
-        <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} />
-        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-          In the Daybook web app, open Settings and choose “Save a full backup (JSON)”. Bring that file in here and everything comes with it.
-        </T>
-      </Card>
-    </Screen>
-  );
-}
+const s = StyleSheet.create({
+  sub: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 4 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 32, paddingLeft: 12, paddingRight: 8, borderRadius: 999 },
+  chipT: { fontFamily: font.bodySemi, fontSize: 14 },
+});

@@ -387,6 +387,34 @@ const COMPUTE = ({ settings, days, reviews }) => {
     lessons: [['late', false], [null, true], ['stress', false], ['u_custom1', false]].map(([t, sl]) => { fresh(); const p = urLessonFor(t, sl, null); return p ? { id: p.l.id, rev: p.rev } : null; }),
   };
   fresh();
+  /* Your day: each stop's status, the wind-down line, the lesson stop, saved check-ins, and the word after saving tonight's */
+  {
+    const rh = rhythm(D, st, tk, Date.now());
+    const p = (D[tk] && D[tk].p) || blankP();
+    out.day = {
+      status: rh.stops.map((s) => stopStatus(s, rh)),
+      wind: windLine(rh, p),
+      lesson: words(lessonStopBody(tk)).text,
+      morning: J(morningInfo(D, st, tk)),
+      next: J(nextUp(tk)),
+      mode: J(modeInfo()),
+      modeActs: [...sheetMode().matchAll(/data-act="day1" data-v="([a-z]+)">([^<]+)</g)].map((m) => [m[2], m[1]]),
+      sums: {},
+    };
+    keys.slice(-12).forEach((k) => { const c = D[k] && D[k].checkin; if (c && c.done) out.day.sums[k] = words(checkinSummary(k, c)).text; });
+    /* saving tonight's check-in: the legacy save, with its word caught instead of shown */
+    const aa = window.afterAction, rr = window.render;
+    let said = null;
+    window.afterAction = (m) => { said = m || ''; };
+    window.render = () => {};
+    try {
+      ui.forms[tk] = { m: 6, c: 5, e: 4, s: 3, ro: 'Y', n: ' a line ' };
+      doSaveCheckin(tk);
+      out.day.save = said;
+      out.day.saved = J(Store.days[tk].checkin);
+      delete out.day.saved.at;
+    } finally { window.afterAction = aa; window.render = rr; }
+  }
   return out;
 };
 

@@ -33,6 +33,7 @@ import {
   urMinText,
 } from './legacy/core.js';
 import { rkWaitOf } from './rekindle';
+import { lessonsDone } from './lessons';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
 export type Strength = 'low' | 'mid' | 'high';
@@ -362,14 +363,6 @@ export function urAnswer(sc: UrState, v: 'rode' | 'slipped' | 'again'): UrState 
 }
 
 /* ---------- after SOS: a lesson that fits, offered when your head is clear ---------- */
-export function lessonsDone(days: Days): Set<string> {
-  const set = new Set<string>();
-  Object.keys(days).forEach((k) => {
-    const p = days[k] && days[k].p;
-    if (p && p.ls) p.ls.forEach((id) => LESSON_IDS.indexOf(id) >= 0 && set.add(id));
-  });
-  return set;
-}
 export function urLessonFor(trigger: string | null | undefined, slipped: boolean, hint: string | null, days: Days, mem: UrMem, now: number) {
   const L = LESSONS as unknown as { id: string; tags?: string[]; title: string; ic?: string; tag?: string }[];
   const done = lessonsDone(days);

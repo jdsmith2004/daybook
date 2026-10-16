@@ -57,7 +57,9 @@ const PICK = [
   'CU_BODY', 'CU_FEEL', 'CU_WHERE', 'CU_CHG', 'CU_SAY', 'CU_MS', 'CU_D',
   'GROUND', 'NEEDS', 'MOVES', 'MOVE_MS', 'FWD_A', 'FWD_B', 'THOUGHTS', 'thoughtIn', 'BED', 'TEXTS', 'FREE_LINES',
   // my reasons
-  'RCATS', 'reasonGuess', 'reasonCat',
+  'RCATS', 'reasonGuess', 'reasonCat', 'cleanReason', 'sameReason',
+  // the day and the lessons
+  'STOP_IC', 'STOP_WHEN', 'HX_NEXT', 'CHEERS', 'LX_E', 'LCHECK_N', 'LCHECKS', 'LIST_OF', 'slipClean',
 ];
 const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 const full = acorn.parse(script, { ecmaVersion: 'latest', sourceType: 'script' });
@@ -70,7 +72,7 @@ const missing = PICK.filter((n) => !found.has(n));
 if (missing.length) throw new Error('not found in legacy/index.html: ' + missing.join(', '));
 /* one statement can declare several names (const a=1,b=2); each statement is copied once, in file order */
 const stmts = [...new Set(PICK.map((n) => found.get(n)))].sort((a, b) => a.start - b.start);
-parts.push(['picked: the data and pure helpers behind SOS and the tools', stmts.map((n) => script.slice(n.start, n.end)).join('\n')]);
+parts.push(['picked: the data and pure helpers behind SOS, the tools, the day and the lessons', stmts.map((n) => script.slice(n.start, n.end)).join('\n')]);
 
 let body = parts.map(([name, src]) => `/* ------------------------------------------------------------------------------------------------\n   ${name}\n   ------------------------------------------------------------------------------------------------ */\n${src}`).join('\n\n');
 

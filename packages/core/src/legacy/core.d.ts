@@ -1,10 +1,12 @@
 /* Types for the generated core.js. Only what the new app uses is declared here; add a line when you need another export.
    The shapes follow the legacy functions exactly. The golden tests check the behavior. */
 import type { Days, Day, DayEvent, DayKey, Settings, Reviews, CountMode, Checkin, Play } from '../types';
+import type { Lesson, Unit } from '../lessons';
 
 export type DayKindName = 'ok' | 'one' | 'slip' | 'before' | 'ahead';
 
 /* ---------- dates ---------- */
+export function p2(n: number): string;
 export function keyOfDate(d: Date): DayKey;
 export function addDays(key: DayKey, n: number): DayKey;
 export function diffDays(a: DayKey, b: DayKey): number;
@@ -195,7 +197,7 @@ export function rhythm(
   st: Settings,
   tk: DayKey,
   nowMs: number,
-): { stops: RhythmStop[]; cur: string | null; windMin: number; offMin: number; leftToOff: number; mi: unknown };
+): { stops: RhythmStop[]; cur: string | null; windMin: number; offMin: number; leftToOff: number; mi: MorningInfo };
 export function dailyNote(key: DayKey): string;
 export const TRIGGERS: [string, string][];
 export const DIDS: [string, string][];
@@ -229,7 +231,7 @@ export const Em: {
 };
 
 /* ---------- lessons and setup ---------- */
-export const LESSONS: { id: string; u: number; title: string; tag: string; ic: string; mins: number; [k: string]: unknown }[];
+export const LESSONS: Lesson[];
 export const OB_THEN: Record<string, [number, string, string, string[]]>;
 export const OB_GOALS: { id: string; t: string; s: string; ic: string; goal: string; d1: number; mode: CountMode }[];
 export function normOnb(o: unknown): Settings['onb'];
@@ -294,3 +296,45 @@ export const RCATS: { id: 'rel' | 'foc' | 'val' | 'oth'; name: string; ic: strin
 export function reasonGuess(text: string): (typeof RCATS)[number];
 export function reasonCat(st: Settings | null, text: string): (typeof RCATS)[number];
 export const MENU_DEFAULT: string[];
+export function cleanReason(s: unknown): string;
+export function sameReason(a: string, b: string): boolean;
+export const REASON_MAX: number;
+export const REASON_LEN: number;
+export const WORDS_MAX: number;
+export const WORDS_LEN: number;
+export const LNOTE_LEN: number;
+export const FAITH_IDS: string[];
+export const FAITH_MODES: string[];
+
+/* ---------- the day and the lessons (picked) ---------- */
+export const STOP_IC: Record<string, string>;
+export const STOP_WHEN: Record<string, string>;
+export const HX_NEXT: Record<string, { ic: string; t?: string; s?: string; pts: number }>;
+export const CHEERS: string[];
+export const LX_E: Record<string, [string, string]>;
+export const LCHECK_N: number;
+export const LWRITE_LEN: number;
+export const LCHECKS: { t: string; q: string[] }[];
+export const LIST_OF: Record<string, [string, number, string]>;
+export function slipClean(a: unknown[] | null | undefined): string[];
+export const LUNITS: Unit[];
+export const SRC: Record<string, [string, string, string?, string?]>;
+export function topTrigger(evs: DayEvent[], opts: Settings['opts']): { t: string; n: number } | null;
+export interface MorningInfo {
+  applies: boolean;
+  prev: DayKey;
+  so: 'Y' | 'N' | null;
+  h: number | null;
+  done: boolean;
+  m: boolean;
+  po: string | null;
+}
+export function morningInfo(days: Days, st: Settings, key: DayKey): MorningInfo;
+export const ROUTINE: { k: string; name: string; sub: string; on: boolean }[];
+export const ROUTINE_KEYS: string[];
+export function normRoutine(r: unknown): Record<string, boolean>;
+export function routineOn(st: Settings | null, p: Play | null | undefined, k: string): boolean;
+export function fmtLeft(mins: number): string;
+export function minToClock(m: number): string;
+export const LESSON_WIN_FROM: DayKey;
+export function statusOf(key: DayKey, d: Day | undefined, st: Settings, tk: DayKey): string;

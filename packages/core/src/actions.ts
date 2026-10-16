@@ -1,6 +1,6 @@
 /* Changes to settings, as pure functions: each takes the settings and returns new ones, with what to tell the person.
    They follow the legacy action handlers exactly (see legacy/index.html, the 'clean-mode', 'step-on' ... cases). */
-import { normSettings } from './legacy/core.js';
+import { addDays, diffDays, fmtDate, isKey, normSettings, phaseOf } from './legacy/core.js';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the next change time for a record: now, and always later than the last change (legacy nextU) */
@@ -106,3 +106,74 @@ export function autoStep(st: Settings, tk: DayKey): Change {
     }),
   };
 }
+
+/* ---------- where I am: tracking week, just tracking, quitting, or stepping down ---------- */
+export interface ModeInfo {
+  k: 'before' | 'step' | 'quit' | 'week' | 'track';
+  title: string;
+  line: string;
+}
+/** the "Where I am" sheet's first line (legacy modeInfo) */
+export function modeInfo(st: Settings, tk: DayKey): ModeInfo {
+  const ph = phaseOf(tk, st);
+  const d1 = st.day1;
+  const long = (d: DayKey) => fmtDate(d, { weekday: 'long', month: 'short', day: 'numeric' });
+  if (ph.p === 'before') return { k: 'before', title: 'Not started yet', line: 'Tracking starts ' + long(st.start) + '.' };
+  if (ph.p === 'quitting')
+    return st.cleanMode === 'step'
+      ? { k: 'step', title: 'Stepping down', line: 'Day ' + ph.n + '. Day 1 was ' + long(d1!) + '.' }
+      : { k: 'quit', title: 'Quitting', line: 'Day ' + ph.n + '. Day 1 was ' + long(d1!) + '.' };
+  if (d1) {
+    const len = diffDays(d1, st.start);
+    return { k: 'week', title: len === 7 ? 'Tracking week' : 'Tracking', line: 'Day ' + ph.n + ' of ' + len + '. Day 1 is ' + long(d1) + '.' };
+  }
+  return { k: 'track', title: 'Just tracking', line: 'Day ' + ph.n + '. No Day 1 is set, so no days are being counted.' };
+}
+/** the buttons the sheet offers, for where you are */
+export function modeActs(st: Settings, tk: DayKey, k: ModeInfo['k']): [string, 'none' | 'later' | 'today' | 'tomorrow' | 'week'][] {
+  const d1 = st.day1;
+  const tom = addDays(tk, 1);
+  if (k === 'before') return [];
+  if (k === 'quit' || k === 'step') return [['Just track for now', 'none']];
+  if (k === 'week') return [...(d1 && d1 > tom ? ([['Start Day 1 tomorrow', 'tomorrow']] as [string, 'tomorrow'][]) : []), ['A week later', 'later'], ['Just track, no Day 1', 'none']];
+  return [...(tk > st.start ? ([['Start Day 1 today', 'today']] as [string, 'today'][]) : []), ['Start Day 1 tomorrow', 'tomorrow'], ['In a week', 'week']];
+}
+/** a Day 1 button (legacy 'day1' action) */
+export function setDay1(st: Settings, v: 'none' | 'later' | 'today' | 'tomorrow' | 'week', tk: DayKey): Change {
+  const next = changeSettings(st, (s) => {
+    if (v === 'none') s.day1 = null;
+    else if (v === 'later') s.day1 = addDays(s.day1 || addDays(s.start, 7), 7);
+    else if (v === 'today') {
+      if (tk > s.start) s.day1 = tk;
+    } else if (v === 'tomorrow') s.day1 = addDays(tk, 1);
+    else if (v === 'week') s.day1 = addDays(tk, 7);
+  });
+  const d1 = next.day1;
+  return {
+    st: next,
+    toast: !d1
+      ? 'Just tracking. Nothing is counted, and you can start a Day 1 any time.'
+      : d1 <= tk
+        ? 'Day 1 is today. Days with no slip logged will count.'
+        : 'Day 1 is ' + fmtDate(d1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.',
+  };
+}
+/** a date picked for Day 1 (it has to come after the tracking start), or for the tracking start */
+export function setDate(st: Settings, k: 'start' | 'day1', v: string | null): Change {
+  if (k === 'start') {
+    if (!v || !isKey(v)) return { st };
+    return { st: changeSettings(st, (s) => {
+      s.start = v;
+      if (s.day1 && s.day1 <= v) s.day1 = addDays(v, 7);
+    }) };
+  }
+  if (!v) return { st: changeSettings(st, (s) => void (s.day1 = null)) };
+  if (isKey(v) && v > st.start) return { st: changeSettings(st, (s) => void (s.day1 = v)) };
+  return { st, toast: 'Day 1 has to come after the tracking start.' };
+}
+export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => [
+  ['week', st.day1 && diffDays(st.day1, st.start) !== 7 ? 'Tracking' : 'Tracking week', 'You only log and look. Nothing is counted, so there is nothing to fail. The first week always works this way.'],
+  ['quit', 'Quitting', 'Starts on Day 1. A day with no slip logged counts, and your run grows. The first slip in any 7 days can be saved: finish the Rekindle quest by the next night and the run keeps going. Your points, badges and longest run always stay.'],
+  ['step', 'Stepping down', 'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When you are ready, Daybook offers to start counting days.'],
+  ['track', 'Just tracking', 'For when you are not ready to quit. Urges, check-ins, lessons and tools all work the same. No Day 1 and no count. Start one whenever you like, or never.'],
+];

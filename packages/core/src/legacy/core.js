@@ -2771,8 +2771,16 @@ const ICO={
 };
 
 /* ------------------------------------------------------------------------------------------------
-   picked: the data and pure helpers behind SOS and the tools
+   picked: the data and pure helpers behind SOS, the tools, the day and the lessons
    ------------------------------------------------------------------------------------------------ */
+const STOP_IC={morning:'sunrise',lesson:'book',evening:'pencil',night:'moon'};
+const STOP_WHEN={morning:'Morning',lesson:'Daytime',evening:'Evening',night:'Night'};
+const HX_NEXT={
+ morning:{ic:'sunrise',t:'Last night’s questions',s:'2 quick taps',pts:5},
+ lesson:{ic:'book',pts:10},
+ evening:{ic:'pencil',t:'Evening check-in',s:'About a minute',pts:10},
+ night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:10}
+};
 const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},
@@ -2913,6 +2921,28 @@ const FWD_B=[['proud','Proud'],['calm','Calm'],['clear','Clear-headed'],['rested
 const THOUGHTS=[['once','Just once will not hurt'],['deserve','I deserve this'],['blown','I already blew it today'],['cant','I cannot handle this feeling'],['nobody','Nobody will know'],['tired','I am too tired to fight it'],['last','This is the last time']];
 const thoughtIn=t=>{const s=String(t||'').trim().replace(/[.!?]+$/,'');return /^I\b/.test(s)?s:s.charAt(0).toLowerCase()+s.slice(1)};
 const BED=[['phone','Phone charging outside the bedroom','Or across the room, out of reach.'],['alarm','Alarm set','A clock, or the phone across the room.'],['lights','Lights off','Screens off too.']];
+const LIST_OF={addmove:['menu',24,'calm moves'],addwind:['wind',10,'wind-down list']};
+const LX_E={hook:['bolt','The thought'],insight:['sparkle','The idea'],proof:['chart','The proof'],turn:['chat','Your turn'],guess:['ask','Take a guess'],recall:['sparkle','Quick recall'],step:['flag','Next step'],
+ predict:['ask','Make a guess'],answer:['sparkle','The answer'],move:['flag','What to do'],check:['check','Check it']};
+const LCHECK_N=16,LWRITE_LEN=1500;
+const LCHECKS=[
+ {t:'Start small, ride the wave',q:['What part of you wants this, and what part is unsure? Write both.','Think of your last urge. Where did you feel it first, and what did it do over the next few minutes?','What is one small thing you will try the next time an urge shows up?']},
+ {t:'Slips and the hard hours',q:['When did “I blew it” last show up for you? What did you do next?','Which pulls harder for you, tired or lonely? Describe a recent time.','Write the sentence you want ready after a slip, and one change you will make for the hard hours.']},
+ {t:'Shame and kindness',q:['Write one harsh sentence you say to yourself. Now write it again as something that happened, not as who you are.','What would you say to a friend in your exact spot?','Say that to yourself, in your own words. Then write one way you will remember it.']},
+ {t:'Not carrying it alone',q:['What is the heaviest part of keeping this to yourself?','Who is one person who could know? What would you ask of them?','What is one small step toward people that you could take this week?']},
+ {t:'Plans and settings',q:['Write your strongest if-then: If ___, then I will ___.','Which place, hour, or device sets off the pull most? Describe it.','What is the first change you will make to that setting, and when?']},
+ {t:'Help and progress',q:['What word do you use for this, if any, and what kind of help fits it?','Describe what better would look like in a month. Include things that are not a number.','What is the first kind of help you will look into, and what would make it easier to start?']},
+ {t:'Naming it and breathing out',q:['What feeling do you most often skip past? Name it in a word or two.','Think of a recent hard moment. What did the feeling do once you named it, or what might it do?','When in your day will you try a long breath out? Be specific.']},
+ {t:'Moving and noticing thoughts',q:['Which one-minute movement could you actually do? Write it.','What thought shows up first when an urge starts? Write it exactly as it sounds.','How will you answer that thought? Write it: notice it, name it, choose.']},
+ {t:'Early links and permission',q:['Walk back from your last slip. What was the earliest small yes?','What permission thought do you hear most? Write it word for word.','Write a short answer to that thought, and what you would do at the earliest link.']},
+ {t:'Your log and fewer fights',q:['What has your log taught you so far? Even one line counts.','Which fight do you keep having with yourself?','What could you change so that fight happens less?']},
+ {t:'Missed days and values',q:['What will you do the day after you miss one? Keep it small.','What bothers you most: losing control, a clash with your values, or both? Explain.','What does that tell you about the kind of help or support you want?']},
+ {t:'The empty hour and therapy',q:['Which hour is hardest? What will you put in it?','What makes it hard to start that, and what would make it easier?','What is one question you would ask a therapist, and what would you want from them?']},
+ {t:'Two programs',q:['Which step or point sounds closest to where you are? Why?','Which tool from either program would you try first?','What would trying it look like this week?']},
+ {t:'Pausing and groups',q:['Where in your day could a one-minute pause fit?','Who or what group could you try first, even just to listen?','Write the first sentence you would say to ask someone to check in.']},
+ {t:'Faith and a plan',q:['How do you want faith to be part of your plan?','Write the words you will say in a hard moment.','What is the next small thing you will do after you say them?']},
+ {t:'Guilt, forgiveness, a fresh start',q:['Write one honest line about what you are carrying.','What would forgiving yourself change about your next step, without excusing what happened?','What is one careful way to make things right, and who could help you do it?']}
+];
 const RCATS=[
  {id:'rel',name:'Relationships',ic:'heart',tone:'coral',words:/relationship|marri|partner|wife|husband|spouse|girlfriend|boyfriend|dating|romanc|love|famil|friend|intima|connect|trust|father|mother|\bdad\b|\bmom\b|kids|child/i},
  {id:'foc',name:'Energy and focus',ic:'bolt',tone:'sky',words:/focus|energy|work|career|sleep|tired|product|concentrat|clear|fog|mind|health|study|school|money|morning|time/i},
@@ -2924,6 +2954,10 @@ function reasonCat(st,text){
  const m=((st&&st.rmeta)||[]).find(x=>x.t===text);
  return (m&&RCATS.find(c=>c.id===m.c))||reasonGuess(text);
 }
+const cleanReason=s=>String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,REASON_LEN);
+const sameReason=(a,b)=>a.toLowerCase()===b.toLowerCase();
+function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
+const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
 export {
   TRIGGERS,
@@ -3117,6 +3151,9 @@ export {
   obHrs,
   obTop,
   ICO,
+  STOP_IC,
+  STOP_WHEN,
+  HX_NEXT,
   TOOL_GROUPS,
   TOOLS,
   TK,
@@ -3160,7 +3197,16 @@ export {
   THOUGHTS,
   thoughtIn,
   BED,
+  LIST_OF,
+  LX_E,
+  LCHECK_N,
+  LWRITE_LEN,
+  LCHECKS,
   RCATS,
   reasonGuess,
-  reasonCat
+  reasonCat,
+  cleanReason,
+  sameReason,
+  slipClean,
+  CHEERS
 };

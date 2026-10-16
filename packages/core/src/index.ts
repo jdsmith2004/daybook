@@ -8,6 +8,8 @@ export * from './actions';
 export * from './mutate';
 export * from './rekindle';
 export * from './sos';
+export * from './lessons';
+export * from './day';
 export * from './data';
 export * from './setup';
 export * from './emblem';

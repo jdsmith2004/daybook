@@ -12,7 +12,7 @@ const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const J = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logs: any[] = readdirSync(dir)
-  .filter((f) => f.endsWith('.json') && f !== 'emblem.json' && f !== 'setup.json')
+  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'rekindle-words.json'].includes(f))
   .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')));
 
 /* the text inside the legacy HTML, with its escaping undone, so a string from the port can be looked for in it */
@@ -35,6 +35,18 @@ describe.each(logs)('$name', (fx) => {
   const reviews: Reviews = {};
   Object.keys(fx.input.reviews).forEach((k) => (reviews[k] = core.normReview(fx.input.reviews[k], k)));
 
+  it('words each entry the same way', () => {
+    const e = fx.cases[0].expected;
+    for (const k of Object.keys(e.rows)) {
+      const rows = core.sortedEvents(days[k], st.rollover).map((x) => core.eventRow(x, st));
+      rows.forEach((r, i) => {
+        const html = textOf(e.rows[k][i]);
+        expect(html).toContain(r.time);
+        expect(html).toContain(r.what + (r.meta ? ' ' + r.meta : ''));
+      });
+    }
+  });
+
   it('cleans up the log the same way', () => {
     const e = fx.cases[0].expected;
     expect(J(st)).toEqual(e.st);
@@ -54,8 +66,10 @@ describe.each(logs)('$name', (fx) => {
         return core.logicalKey(now, st.rollover);
       };
 
-      it('knows what day it is', () => {
-        expect(at()).toBe(e.tk);
+      it('knows what day it is, and where you are', () => {
+        const tk = at();
+        expect(tk).toBe(e.tk);
+        expect(core.phaseLabel(tk, st)).toBe(e.phase);
       });
 
       it('counts runs, saves and clean days', () => {

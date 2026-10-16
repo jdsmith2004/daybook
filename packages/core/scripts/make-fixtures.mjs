@@ -161,6 +161,46 @@ S.push(scenario('save-window', {
     [[20, 'a'], [13, 'b'], [7, 'c'], [2, 'd']].forEach(([a, id]) => day(a).events.push(slip(id, '23:00', { recovered: true, rk: { at: k(a - 1), pl: 'p' } })));
   },
 }));
+/* a slip today: the full Rekindle with a run on the line, a deep run, a second slip in the week, and a sunrise check done */
+S.push(scenario('slip-today-run', {
+  today: T, startAgo: 14, day1Ago: 9, extra: { safePerson: 'Sam' },
+  build: ({ day }) => {
+    for (let i = 9; i >= 1; i--) day(i).checkin = checkin(rng(800 + i), 'Y');
+    day(0).events.push(slip('s1', '21:00', { trigger: 'late' }));
+  },
+}));
+S.push(scenario('slip-today-deep', {
+  today: T, startAgo: 25, day1Ago: 20, extra: { safePerson: 'Alexander Hamilton the Third' },
+  build: ({ day }) => {
+    for (let i = 20; i >= 1; i--) day(i).checkin = checkin(rng(900 + i), 'Y');
+    day(0).events.push(slip('s1', '20:30', { recovered: true, trigger: 'u_work', wt: 5 }));
+    day(0).p = { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: '20:45', ls: [], lv: [], ov: {} };
+  },
+}));
+S.push(scenario('slip-today-second', {
+  today: T, startAgo: 20, day1Ago: 15, mode: 'step', extra: { stepAt: addDays(T, -10) },
+  build: ({ day }) => {
+    day(3).events.push(slip('s1', '23:00', { trigger: 'bored' }));
+    day(0).events.push(slip('s2', '22:10', { wt: 10 }));
+  },
+}));
+/* two slips on the day a run is on the line: the second gets the short Rekindle, and the run can still be saved */
+S.push(scenario('slip-today-twice', {
+  today: T, startAgo: 14, day1Ago: 9,
+  build: ({ day }) => {
+    for (let i = 9; i >= 1; i--) day(i).checkin = checkin(rng(1100 + i), 'Y');
+    day(0).events.push(slip('s1', '14:20'), slip('s2', '20:10', { wt: 10, recovered: true }));
+  },
+}));
+S.push(scenario('sunrise-done', {
+  today: T, startAgo: 20, day1Ago: 12,
+  extra: { plan: [{ when: "I'm in bed late at night", then: '' }, { when: "I'm lonely or low", then: 'Call Mom.' }, { when: "I'm bored or idle", then: 'Walk' }, { when: "I'm stressed or anxious", then: 'Run' }, { when: 'Something else: ______', then: '' }] },
+  build: ({ day, k }) => {
+    for (let i = 12; i >= 1; i--) day(i).checkin = checkin(rng(1000 + i), 'Y');
+    day(1).events.push(slip('s1', '23:30', { recovered: true, trigger: 'late', rk: { at: k(0), pl: 'Charge my phone in another room and go to sleep.' } }));
+    day(5).events.push(slip('s0', '22:00', { trigger: 'lonely' }));
+  },
+}));
 S.push(scenario('gentle', {
   today: T, startAgo: 25, day1Ago: 18, mode: 'gentle',
   build: ({ day }) => {
@@ -297,6 +337,26 @@ const COMPUTE = ({ settings, days, reviews }) => {
   Store.settings = st; Store.days = D; Store.reviews = R;
   out.cleanView = J(cleanView());
   out.html = { days: daysCardHtml('lg'), daysSm: daysCardHtml('sm'), offer: stepOfferHtml(), step: st.day1 && tk >= st.day1 ? stepCardHtml('lg', null) : null };
+  /* Rekindle: the card on Today, which Rekindle each slip gets, its short and full screens, and the sunrise plans */
+  const act = rkActive(tk);
+  const R2 = { active: J(act), card: act ? rkCardHtml(act) : null, steps: {}, light: {}, quest: {}, plan: {}, ev: {} };
+  keys.forEach((k) => {
+    if (!sumDay(D[k]).slipped) return;
+    R2.steps[k] = rkStepFor(k);
+    const sl = sortedEvents(D[k], st.rollover).filter((e) => e.outcome === 'slipped');
+    const ev = sl.find((e) => e.rk) || sl[sl.length - 1];
+    const sc = { id: 'checkin', date: k, evId: ev.id, pts0: G().pts, time: ev.time, outcome: 'slipped', step: 'done', hist: [] };
+    R2.ev[k] = ev.id;
+    R2.light[k] = rkLightHtml(sc);
+    if (sl.length > 1) R2.light2 = Object.assign(R2.light2 || {}, { [k]: rkLightHtml(Object.assign({}, sc, { evId: sl[sl.length - 1].id })) });
+    R2.quest[k] = rkQuestHtml(sc, ev);
+    R2.plan[k] = J(srPlanInfo({ k, evId: ev.id }));
+  });
+  out.rekindle = R2;
+  /* the rows of each day's entries, and where you are */
+  out.rows = {};
+  keys.forEach((k) => { out.rows[k] = sortedEvents(D[k], st.rollover).map((e) => eventRow(k, e)); });
+  out.phase = phaseLabel(tk, st);
   return out;
 };
 
@@ -316,7 +376,7 @@ for (const sc of S) {
     await page.clock.setFixedTime(new Date(now));
     const expected = await page.evaluate(COMPUTE, { settings: sc.settings, days: sc.days, reviews: sc.reviews });
     /* the cleaned-up log is the same at every moment, so it is kept once */
-    if (cases.length) { delete expected.st; delete expected.days; delete expected.reviews; }
+    if (cases.length) { delete expected.st; delete expected.days; delete expected.reviews; delete expected.rows; }
     cases.push({ now, expected });
     n++;
   }
@@ -326,6 +386,20 @@ for (const sc of S) {
 /* the flame: all 30 levels */
 const emblems = await page.evaluate(() => Array.from({ length: 30 }, (_, i) => Em.emblem(i + 1, { still: true, size: 120 })));
 writeFileSync(join(outDir, 'emblem.json'), JSON.stringify(emblems));
+
+/* the Rekindle words, kept in the TypeScript port; the tests check they match */
+const words = await page.evaluate(() => {
+  const st0 = Store.settings;
+  const names = ['', 'Sam', 'Alexander Hamilton the Third'];
+  const tell = names.map((n) => { Store.settings = Object.assign({}, st0 || normSettings({}), { safePerson: n }); return rkTellText(); });
+  Store.settings = normSettings({ start: '2026-10-01', opts: { trig: [{ id: 'u_work', t: 'Work stress' }], did: [] } });
+  const when = ['late', 'lonely', 'bored', 'stress', 'tired', 'scroll', 'other', 'u_work', 'u_gone', null].map((t) => [t, srWhen(t)]);
+  Store.settings = st0;
+  return { RK_CARDS, RK_WAIT, RT_Q, SR_GENERIC, RK_STEPS, tell, when,
+    lower: ['Put my phone away.', 'I will text Sam!', '  ', 'Walk'].map((x) => [x, lowerFirst(x)]),
+  };
+});
+writeFileSync(join(outDir, 'rekindle-words.json'), JSON.stringify(words));
 
 /* setup suggestions and setup answers */
 const setup = await page.evaluate(() => {

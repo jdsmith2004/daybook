@@ -5995,7 +5995,10 @@ function rkLightHtml(sc){
   const v=stepView(Store.days,st,Date.now());
   line='This week: '+plural(v.thisW,'slip')+(v.target==null||!v.target?'':v.thisW<=v.target?', still inside your aim of '+v.target+' or fewer':'')+'. Every week gets a fresh aim, and nothing you earned is gone.';
  }else if(counting){
-  line=dayKind(sc.date,Store.days[sc.date],st,tk)==='one'?'With gentle counting, today still counts. Nothing you earned is gone.':'Your next run starts tomorrow. Your points, level and badges all stay.';
+  /* a second slip on the day a run is on the line: that run can still be saved, so say so */
+  const L=runLedger(Store.days,st,tk),op=L.open&&L.open.k===sc.date?L.open:null;
+  line=op?'Your '+op.run+'-day run is still on the line. Finish the Rekindle quest by tomorrow night and it keeps going.'
+   :dayKind(sc.date,Store.days[sc.date],st,tk)==='one'?'With gentle counting, today still counts. Nothing you earned is gone.':'Your next run starts tomorrow. Your points, level and badges all stay.';
  }else line='Nothing is being counted yet, so nothing was lost. Your points, level and badges all stay.';
  const done=!!(ev&&ev.recovered);
  return `${ciSaved(sc)}

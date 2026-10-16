@@ -61,6 +61,9 @@ interface StoreValue {
   dirty: Record<string, number>;
   /** apply a settings change from @daybook/core (stepOn, setCountMode ...) and show its message */
   apply: (c: Change | ((st: Settings) => Change)) => void;
+  /** change anything: the function gets the whole log and gives back a new one (from the @daybook/core change functions).
+      Only the records that changed are saved. Returns the new log. */
+  update: (fn: (s: Snapshot) => Snapshot) => Snapshot;
   /** replace everything (a restored backup, or a first start) */
   replace: (snap: Snapshot, changed: RecordId[]) => Promise<void>;
   /** erase everything on this device */
@@ -134,6 +137,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [persist, say],
   );
 
+  const update = useCallback(
+    (fn: (s: Snapshot) => Snapshot) => {
+      const cur = snapRef.current;
+      const next = fn(cur);
+      if (next === cur) return cur;
+      const ids: RecordId[] = [];
+      if (next.settings !== cur.settings) ids.push('settings');
+      for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)]))
+        if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
+      for (const k of new Set([...Object.keys(cur.reviews), ...Object.keys(next.reviews)]))
+        if (cur.reviews[k] !== next.reviews[k]) ids.push(`reviews/${k}`);
+      snapRef.current = next;
+      setSnap(next);
+      if (ids.length) persist(next, ids).catch(() => say('Could not save that change on this device.'));
+      return next;
+    },
+    [persist, say],
+  );
+
   const replace = useCallback(
     async (next: Snapshot, changed: RecordId[]) => {
       snapRef.current = next;
@@ -152,8 +174,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<StoreValue>(
-    () => ({ ready, snap, settings: snap.settings, tk, now, dirty, apply, replace, erase, toast, say }),
-    [ready, snap, tk, now, dirty, apply, replace, erase, toast, say],
+    () => ({ ready, snap, settings: snap.settings, tk, now, dirty, apply, update, replace, erase, toast, say }),
+    [ready, snap, tk, now, dirty, apply, update, replace, erase, toast, say],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

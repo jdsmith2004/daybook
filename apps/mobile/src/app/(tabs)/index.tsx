@@ -4,6 +4,7 @@ import {
   defaultSettings,
   fmtDate,
   gameCompute,
+  phaseLabel,
   readBackup,
   restoreBackup,
   shouldAutoStep,
@@ -16,6 +17,7 @@ import { View } from 'react-native';
 import { Flame } from '@/components/flame';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard, FlameCard, QuestsCard } from '@/components/today';
+import { CareCard, LogLink, RekindleCard, TodaySoFar } from '@/components/today-log';
 import { Button, Card, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { useStore } from '@/lib/store';
@@ -33,13 +35,17 @@ export default function Today() {
 
   if (!st || !g) return <Welcome />;
   return (
-    <Screen eyebrow={fmtDate(tk, { weekday: 'long', month: 'long', day: 'numeric' })} title="Today">
-      <CountNotes snap={snap} tk={tk} />
+    <Screen eyebrow={fmtDate(tk, { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' + phaseLabel(tk, st)} title="Today">
+      <RekindleCard snap={snap} tk={tk} />
       <FlameCard g={g} />
+      <LogLink />
+      <CountNotes snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} />
+      <TodaySoFar snap={snap} tk={tk} />
+      <CareCard snap={snap} tk={tk} />
       <QuestsCard g={g} />
       <T v="small" tone="muted" style={{ textAlign: 'center', marginTop: 4 }}>
-        This is an early build. Logging, check-ins, Rekindle and Learn come next.
+        This is an early build. SOS, check-ins, Learn and the journal come next.
       </T>
     </Screen>
   );

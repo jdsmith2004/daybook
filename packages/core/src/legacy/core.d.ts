@@ -199,6 +199,27 @@ export function rhythm(
 export function dailyNote(key: DayKey): string;
 export const TRIGGERS: [string, string][];
 export const DIDS: [string, string][];
+export const OPT_MAX: number;
+export const OPT_KEEP: number;
+export const OPT_LEN: number;
+export function cleanOptLabel(v: unknown): string;
+export function optText(kind: 'trig' | 'did', id: string, opts: Settings['opts'] | null | undefined): string;
+export function trigText(id: string, opts: Settings['opts'] | null | undefined): string;
+export function didText(id: string, opts: Settings['opts'] | null | undefined): string;
+export const TRIG_T: Record<string, string>;
+export const DID_T: Record<string, string>;
+export function didIds(v: unknown): string[];
+export function didToggle(cur: unknown, id: string): string[];
+export function didAdd(cur: unknown, id: string): string[];
+export function trigFits(id: string, time: string | null): boolean;
+export function optList(
+  kind: 'trig' | 'did',
+  opts: Settings['opts'] | null | undefined,
+  o: { time?: string | null; sel?: string | string[] | null; all?: boolean; notSure?: boolean },
+): { list: [string, string][]; hidden: number };
+export const URGE_PLAN: [string, string][];
+export const SLIP_STEPS: string[];
+export const TOOL_IDS: string[];
 
 /* ---------- the flame ---------- */
 export const Em: {
@@ -209,6 +230,7 @@ export const Em: {
 
 /* ---------- lessons and setup ---------- */
 export const LESSONS: { id: string; u: number; title: string; tag: string; ic: string; mins: number; [k: string]: unknown }[];
+export const OB_THEN: Record<string, [number, string, string, string[]]>;
 export const OB_GOALS: { id: string; t: string; s: string; ic: string; goal: string; d1: number; mode: CountMode }[];
 export function normOnb(o: unknown): Settings['onb'];
 

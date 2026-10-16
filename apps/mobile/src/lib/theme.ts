@@ -37,6 +37,8 @@ const light = {
   dangerSoft: '#FFE3DF',
   saved: '#F2BF3A',
   shadow: 'rgba(98,70,234,0.09)',
+  lip: 'rgba(42,35,80,0.14)',
+  scBtn: 'rgba(255,255,255,0.74)',
   heroTop: '#BEE3FF',
   heroBottom: '#FFF1C4',
 };
@@ -79,11 +81,38 @@ const dark: Palette = {
   dangerSoft: '#4A2230',
   saved: '#F2BF3A',
   shadow: 'rgba(0,0,0,0.4)',
+  lip: 'rgba(0,0,0,0.3)',
+  scBtn: 'rgba(255,255,255,0.16)',
   heroTop: '#2A2275',
   heroBottom: '#3B2C6E',
 };
 
 export const palettes = { light, dark };
+
+/* the full-screen moments each have a soft sky; night is the same in both modes */
+export type Sky = 'sky' | 'mint' | 'sun' | 'coral' | 'violet' | 'night' | 'ember';
+export const skies: Record<'light' | 'dark', Record<Sky, [string, string]>> = {
+  light: {
+    sky: ['#CFEBFF', '#FFF0C2'],
+    mint: ['#D3F3FF', '#D9F7E9'],
+    sun: ['#FFF0BF', '#FFE3DE'],
+    coral: ['#FFE3DE', '#FFF0D6'],
+    violet: ['#EBE5FF', '#FFE6F1'],
+    night: ['#2A2275', '#120E38'],
+    ember: ['#2A2275', '#120E38'],
+  },
+  dark: {
+    sky: ['#1C2A78', '#3D2B7C'],
+    mint: ['#12456A', '#135B57'],
+    sun: ['#4C2F6E', '#6B3F5E'],
+    coral: ['#5A2A5E', '#6E2F4F'],
+    violet: ['#37287F', '#5A2F86'],
+    night: ['#2A2275', '#120E38'],
+    ember: ['#2A2275', '#120E38'],
+  },
+};
+/* on a night sky, the words are light */
+export const nightInk = { ink: '#F7F3FF', muted: '#CFC8F2', btn: 'rgba(255,255,255,0.16)' };
 
 export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';

@@ -1,12 +1,15 @@
 /* The small building blocks every screen uses: text, cards, buttons, chips, icons and progress bars. */
 import { ICO } from '@daybook/core';
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 type Tone = 'ink' | 'muted' | keyof Palette;
+
+/** on a night sky the words turn light: a scene sets this, and T uses it for plain and muted words */
+export const InkContext = createContext<{ ink: string; muted: string } | null>(null);
 
 export function T({
   v = 'body',
@@ -15,7 +18,9 @@ export function T({
   ...rest
 }: TextProps & { v?: 'body' | 'small' | 'label' | 'eyebrow' | 'title' | 'big' | 'h2'; tone?: Tone; style?: StyleProp<TextStyle> }) {
   const c = useTheme();
-  return <Text {...rest} style={[styles[v], { color: c[tone as keyof Palette] as string }, style]} />;
+  const ink = useContext(InkContext);
+  const color = ink && (tone === 'ink' || tone === 'muted') ? ink[tone] : (c[tone as keyof Palette] as string);
+  return <Text {...rest} style={[styles[v], { color }, style]} />;
 }
 
 export function Card({ children, style, tone }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'plain' | 'note' }) {

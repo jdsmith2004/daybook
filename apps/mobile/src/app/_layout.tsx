@@ -5,12 +5,11 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import AppTabs from '@/components/app-tabs';
 import { Toast } from '@/components/toast';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -38,7 +37,13 @@ function Shell() {
   return (
     <ThemeProvider value={nav}>
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
-      <AppTabs />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+        <Stack.Screen name="(tabs)" />
+        {/* the full-screen moments: logging, Rekindle, the sunrise check, going deeper, good night */}
+        {['log', 'sunrise', 'deeper', 'night'].map((name) => (
+          <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        ))}
+      </Stack>
       <Toast />
     </ThemeProvider>
   );

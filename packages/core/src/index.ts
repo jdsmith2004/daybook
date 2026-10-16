@@ -5,6 +5,8 @@ export * from './types';
 export * from './legacy/core.js';
 export * from './view';
 export * from './actions';
+export * from './mutate';
+export * from './rekindle';
 export * from './data';
 export * from './setup';
 export * from './emblem';

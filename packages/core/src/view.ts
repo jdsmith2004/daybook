@@ -3,9 +3,15 @@
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
 import {
   addDays,
+  DID_T,
+  didIds,
+  didText,
+  fmtClock,
+  trigText,
   allKeys,
   dayKind,
   diffDays,
+  fmtDate as fmtDateShort,
   fmtStretch,
   fmtStretchShort,
   maxKey,
@@ -19,7 +25,7 @@ import {
   type RunLedger,
   type StepView,
 } from './legacy/core.js';
-import type { DayKey, Days, Settings } from './types';
+import type { DayEvent, DayKey, Days, Settings } from './types';
 
 export const RUN_GOALS = [3, 7, 14, 30, 60, 90, 180, 365];
 export const plural = (n: number, w: string) => n + ' ' + w + (n === 1 ? '' : 's');
@@ -241,4 +247,36 @@ export function shouldAutoStep(days: Days, st: Settings, tk: DayKey): boolean {
   if (st.cleanMode === 'step' || st.cleanAuto === false) return false;
   if (st.cleanHold && tk < addDays(st.cleanHold, 14)) return false;
   return roughPatch(days, st, tk);
+}
+
+/** one entry in a list (legacy eventRow): the time, what happened, and the details in a line */
+export function eventRow(e: DayEvent, st: Settings | null) {
+  const op = st && st.opts;
+  const meta: string[] = [];
+  const tx = e.trigger ? trigText(e.trigger, op) : '';
+  if (tx) meta.push(tx);
+  if (e.outcome === 'rode' && e.paused === true) meta.push('paused 10 min');
+  /* a full pause is already said as "paused 10 min", so it is not said twice. A pause ended early reads as "paused". */
+  if (e.outcome === 'rode')
+    didIds(e.did).forEach((x) => {
+      if (x === 'pause' && e.paused === true) return;
+      const dx = x === 'pause' ? 'paused' : DID_T[x] ? DID_T[x].toLowerCase() : didText(x, op);
+      if (dx) meta.push(dx);
+    });
+  if (e.outcome === 'slipped' && e.recovered) meta.push('small step within the hour');
+  return { time: e.time ? fmtClock(e.time) : 'Time ?', what: e.outcome === 'rode' ? 'Rode it out' : 'Slipped', meta: meta.join(' · ') };
+}
+
+/** "2 times", and "1 rode it out · 1 slipped" (legacy countText and countDetail) */
+export function countText(s: { n: number; rode: number; slipped: number }) {
+  return { n: !s.n ? 'Nothing yet' : `${s.n} ${s.n === 1 ? 'time' : 'times'}`, detail: [s.rode ? `${s.rode} rode it out` : '', s.slipped ? `${s.slipped} slipped` : ''].filter(Boolean).join(' · ') };
+}
+
+/** where you are, under the date on Today (legacy phaseLabel) */
+export function phaseLabel(key: DayKey, st: Settings): string {
+  const ph = phaseOf(key, st);
+  if (ph.p === 'before') return 'Starts ' + fmtDateShort(st.start);
+  if (ph.p === 'quitting') return (st.cleanMode === 'step' ? 'Stepping down' : 'Quitting') + ' · day ' + ph.n;
+  const len = st.day1 ? diffDays(st.day1, st.start) : 0;
+  return len && ph.n <= len ? (len === 7 ? 'Tracking week' : 'Tracking') + ` · day ${ph.n} of ${len}` : 'Just tracking · day ' + ph.n;
 }

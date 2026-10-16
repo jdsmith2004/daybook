@@ -654,7 +654,7 @@ export default function Setup() {
               </View>
               <PlanRow icon="flag" l="Goal" v={g.t} />
               <PlanRow icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
-              {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1].replace(/^I'm/, 'I am')} v={th} /> : null}
+              {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null}
               <PlanRow icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />
               <PlanRow icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
             </View>

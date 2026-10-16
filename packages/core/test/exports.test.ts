@@ -1,4 +1,4 @@
-/* A name exported both by the generated legacy core and by a TypeScript file is silently dropped by "export *" (it becomes
+/* A name exported both by the legacy core and by a TypeScript file is silently dropped by "export *" (it becomes
    ambiguous). This makes sure that never happens. */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';

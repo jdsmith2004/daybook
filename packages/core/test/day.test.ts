@@ -1,5 +1,5 @@
 /* "Your day" against the legacy app: each stop's status, the wind-down line, the lesson stop, saved check-ins, and saving
-   tonight's check-in (the word after it and what is stored). The fixtures come from scripts/make-fixtures.mjs. */
+   tonight's check-in (the word after it and what is stored). The fixtures were recorded from the legacy app. */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

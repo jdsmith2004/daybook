@@ -11,8 +11,7 @@
   },
   "scripts": {
     "test": "TZ=America/Chicago vitest run",
-    "typecheck": "tsc -p .",
-    "fixtures": "node scripts/make-fixtures.mjs"
+    "typecheck": "tsc -p ."
   },
   "devDependencies": {
     "playwright-core": "1.56.0",

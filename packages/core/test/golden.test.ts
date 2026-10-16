@@ -1,6 +1,6 @@
 /* Golden tests: @daybook/core must compute exactly what the legacy app computes, for every log and moment in test/fixtures.
-   The fixtures come from running legacy/index.html itself (scripts/make-fixtures.mjs). If one of these fails, the port
-   changed a rule. Fix the port, or if the rule was meant to change, change legacy/index.html and make the fixtures again. */
+   The fixtures were recorded by running legacy/index.html itself, and are now frozen. If one of these fails, a change
+   touched an old rule. Fix the change, or if the rule was meant to change, update the expected values in the fixtures. */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

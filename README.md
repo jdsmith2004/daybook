@@ -8,12 +8,12 @@ A private, honest companion for changing a habit: log urges and slips without sh
 
 | Folder | What it is |
 | --- | --- |
-| `legacy/index.html` | The original single-file app (now retired). It is the source of truth for every rule until the new app does everything it does. |
-| `packages/core` | Every rule with no UI: counting, run saves, step down, points, levels, badges, quests, the flame, lessons. Most of it is copied verbatim from the legacy app by `tools/extract-legacy.mjs`; golden tests check it against the legacy app itself. |
+| `legacy/index.html` | The original single-file app. It is retired and kept only as history; the new app does everything it did. |
+| `packages/core` | Every rule with no UI: counting, run saves, step down, points, levels, badges, quests, the flame, lessons. It is the source of truth. `src/legacy/core.js` holds the rules first copied from the legacy app; golden tests check them against what the legacy app computed. |
 | `apps/mobile` | The app (Expo and React Native, with Expo Router). The same code runs on iOS, Android and the web. |
 | `services/api` | The sync service: one Lambda behind API Gateway, with DynamoDB. |
 | `infra/` | Terraform for AWS. `bootstrap` is run once by hand; `app` is deployed by GitHub Actions. See [infra/README.md](infra/README.md). |
-| `tools/` | The legacy extractor and the icon maker. |
+| `tools/` | The icon and sound makers. |
 
 ## Run it
 
@@ -21,7 +21,7 @@ You need Node 22 (`nvm use` reads `.nvmrc`).
 
 ```sh
 npm install
-npm test              # every test: the golden tests against the legacy app, and the sync API
+npm test              # every test: the core (with the golden tests), and the sync API
 npm run typecheck
 
 cd apps/mobile
@@ -32,14 +32,9 @@ Expo Go (free, in the App Store and Google Play) runs the app on your phone stra
 
 ## Changing a rule
 
-The rules live in `legacy/index.html` until the port is done. To change one:
+Every rule lives in `packages/core`. New rules go in its TypeScript files, with unit tests. The rules first copied from the legacy app are in `src/legacy/core.js`, which is edited only when one of them has to change.
 
-1. Change it in `legacy/index.html`.
-2. `npm run extract` copies the rules into `packages/core/src/legacy/core.js`.
-3. `npm run fixtures` records what the legacy app now computes (it needs Chromium; see `packages/core/scripts/make-fixtures.mjs`).
-4. `npm test` checks that the core gives exactly the same answers.
-
-CI fails if `core.js` is out of date with `legacy/index.html`.
+The golden tests in `packages/core/test` check those rules against fixtures recorded from the legacy app. If a change is meant to change what an old rule gives, update the expected values in the fixtures in the same commit.
 
 ## Building for the stores
 

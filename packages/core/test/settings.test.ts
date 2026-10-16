@@ -41,3 +41,14 @@ describe('settings changes', () => {
     expect(core.toggleTherapist(st, 2, 1).therapist.checks[2][1]).toBe(false);
   });
 });
+
+it('a plan saved with the old starting words ("I\'m", "what\'s") still reads as the starting plan', () => {
+  const plan = core.normSettings({}).plan.map((r) => ({ ...r }));
+  plan[0].when = "I'm in bed late at night";
+  plan[3] = { when: "I'm stressed or anxious", then: "Move my body (walk, pushups), then write one sentence about what's stressing me." };
+  plan[1] = { when: "I'm lonely and I wrote this", then: 'My own move' };
+  const st = core.normSettings({ ...st0(), plan });
+  expect(st.plan[0].when).toBe('I am in bed late at night');
+  expect(st.plan[3]).toEqual(core.normSettings({}).plan[3]);
+  expect(st.plan[1]).toEqual({ when: "I'm lonely and I wrote this", then: 'My own move' });
+});

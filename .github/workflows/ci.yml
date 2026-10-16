@@ -1,4 +1,4 @@
-# Every push and pull request: the rules still match the legacy app, everything typechecks and passes its tests,
+# Every push and pull request: everything typechecks and passes its tests (the golden tests among them),
 # the web app and the Lambda build, and the Terraform is valid. Nothing here touches AWS.
 name: CI
 
@@ -29,10 +29,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: The core still matches legacy/index.html
-        run: |
-          npm run extract
-          git diff --exit-code packages/core/src/legacy/core.js || (echo "::error::Run npm run extract and commit packages/core/src/legacy/core.js" && exit 1)
       - run: npm run typecheck
       - run: npm test
       - name: Build the Lambda

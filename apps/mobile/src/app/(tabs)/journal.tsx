@@ -345,7 +345,7 @@ function PatternsPane() {
           <T tone="muted">Needs at least one day without a slip and one with a slip, each with a check-in. Small samples are noisy. This is for asking questions, not for judging myself.</T>
         )}
       </Block>
-      <Block title="What I'm noticing">
+      <Block title="What I am noticing">
         {notice.map(([dt, dd]) => (
           <View key={dt} style={{ gap: 2 }}>
             <T v="small" tone="muted">

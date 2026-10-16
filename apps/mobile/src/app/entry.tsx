@@ -67,7 +67,7 @@ export default function Entry() {
       <SheetFrame title="Add an entry">
         <T style={{ fontSize: 18 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
         <View style={{ gap: 10 }}>
-          <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I didn't act on it." onPress={() => pick('rode')} />
+          <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
         </View>
         <Field label="Time (24-hour, like 22:30)" value={timeText} keyboardType="numbers-and-punctuation" maxLength={5} placeholder="22:30" onChangeText={setTimeText} />

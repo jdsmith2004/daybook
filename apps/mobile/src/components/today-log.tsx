@@ -149,7 +149,7 @@ export function LogLink() {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.sosB, { color: c.sosInk }]}>SOS</Text>
-          <Text style={[s.sosS, { color: c.sosInk }]}>I'm having an urge</Text>
+          <Text style={[s.sosS, { color: c.sosInk }]}>I am having an urge</Text>
         </View>
         <Icon name="next" size={22} color={c.sosInk} />
       </Pressable>

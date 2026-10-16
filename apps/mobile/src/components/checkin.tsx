@@ -103,7 +103,7 @@ export function CheckinBlock({ dkey, isToday, onSaved }: { dkey: DayKey; isToday
   return (
     <View style={{ gap: 14 }}>
       <T v="small" tone="muted">
-        Give each one an honest 0 to 10. Don't round up to feel better. Best after dinner or before your wind-down.
+        Give each one an honest 0 to 10. Do not round up to feel better. Best after dinner or before your wind-down.
       </T>
       <Rate label="Motivation" lo="none" hi="lots" value={form.m} onChange={(v) => set('m', v)} />
       <Rate label="Emotional connection" lo="distant" hi="close" value={form.c} onChange={(v) => set('c', v)} />

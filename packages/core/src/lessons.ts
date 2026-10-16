@@ -1,6 +1,6 @@
 /* Lessons: the order they are offered in, which are done, the cards of a Quick or Full read, the recall question, the practice
    step, and the checkpoints. The legacy helpers read the global Store; here the log and the settings are passed in. The lesson
-   content itself (LESSONS, LUNITS, SRC, LCHECKS) is extracted verbatim from the legacy app. Checked by test/lessons.test.ts. */
+   content itself (LESSONS, LUNITS, SRC, LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts. */
 import { diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, FAITH_MODES, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';

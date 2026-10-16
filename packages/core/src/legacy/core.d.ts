@@ -1,4 +1,4 @@
-/* Types for the generated core.js. Only what the new app uses is declared here; add a line when you need another export.
+/* Types for core.js. Only what the new app uses is declared here; add a line when you need another export.
    The shapes follow the legacy functions exactly. The golden tests check the behavior. */
 import type { Days, Day, DayEvent, DayKey, Settings, Reviews, CountMode, Checkin, Play } from '../types';
 import type { Lesson, Unit } from '../lessons';

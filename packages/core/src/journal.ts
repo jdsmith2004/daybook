@@ -132,7 +132,7 @@ export function myNumbers(days: Days, st: Settings, tk: DayKey, nowMs: number) {
   ];
 }
 
-/** What I'm noticing, under the charts */
+/** What I am noticing, under the charts */
 export function noticing(days: Days, st: Settings, tk: DayKey, from: DayKey) {
   const m = computeMetrics(days, st, tk);
   const evs = eventsOf(days, from);

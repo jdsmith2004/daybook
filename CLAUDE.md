@@ -10,8 +10,8 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 
 ## How the code is laid out
 
-- `legacy/index.html` is the original single-file app and **the source of truth for every rule** until the new app does everything it does. The Claude artifact it came from is **retired**: do no more work on the artifact itself. Changes to rules still go into `legacy/index.html` first (see below), and only reach the new app.
-- `packages/core` has every rule with no UI. `src/legacy/core.js` is **generated** from the legacy file by `tools/extract-legacy.mjs` (never edit it by hand). `src/legacy/core.d.ts` types the parts the app uses. The other files in `src` are pure TypeScript ports of the legacy parts that read global state (the Today cards, settings actions, backups, sync records).
+- `legacy/index.html` is the original single-file app. It is **retired**: every screen is in the new app now, so it is kept only as history. Never change it, and never treat it as the source of truth.
+- `packages/core` has every rule with no UI, and it is the source of truth. New rules and new content go here, in TypeScript, in the file for their part (lessons in `lessons.ts`, and so on). `src/legacy/core.js` holds the rules first copied from the legacy app. It is no longer generated: leave it alone, and when one of its rules or words has to change, make the smallest change there, or move that part to TypeScript and remove it from `core.js`. `src/legacy/core.d.ts` types the parts the app uses.
 - `apps/mobile` is the Expo app (Expo Router, SDK 58). It runs on iOS, Android and the web. Read `apps/mobile/AGENTS.md` before touching Expo APIs: they change every SDK, so check the versioned docs, not memory.
 - `services/api` is the sync Lambda. `infra/` is Terraform (see `infra/README.md`). The device side of sync is `packages/core/src/sync.ts`, tested against the Lambda's handler in `services/api/test/client.test.ts`.
 - `docs/for-fable.md` lists the few jobs worth a Fable run (Fable time is limited).
@@ -21,8 +21,6 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 ```sh
 npm test                 # all tests (core golden tests run in America/Chicago time)
 npm run typecheck
-npm run extract          # after changing legacy/index.html
-npm run fixtures         # record what the legacy app computes (needs Chromium)
 npm run icons            # app icons from the flame
 npm run build -w @daybook/api
 cd apps/mobile && npx expo start
@@ -30,8 +28,8 @@ cd apps/mobile && npx expo start
 
 ## Rules for changes
 
-- **The port must be exact.** A rule changes in `legacy/index.html` first, then `npm run extract`, `npm run fixtures`, `npm test`. When porting a legacy function to TypeScript, add it to the fixtures and the golden tests so it is checked against the legacy app.
-- **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. Keep the legacy wording when porting a screen.
+- **The golden tests are a frozen record.** `packages/core/test/fixtures` holds what the legacy app computed. They stay as regression tests: if one fails, a change touched an old rule. Fix the change, or if the rule was meant to change, update the expected values in the fixtures by hand in the same commit and say why in the commit message. New rules get ordinary unit tests.
+- **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Claims match sources.** Anything presented as science cites a source in `SRC` or `OB_SRC` and stays inside what that source says; limits go in the lesson's scope. No invented numbers.
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person turns on sync, and then live only in their own AWS account.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.

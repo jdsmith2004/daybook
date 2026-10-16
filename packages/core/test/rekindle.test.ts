@@ -130,7 +130,7 @@ describe('the sunrise check', () => {
     const { st, days } = setup();
     const r = core.srFinish(days, st, '2026-10-14', 'a', 'Charge my phone in another room and go to sleep.', T, 5000);
     expect(r.toPlan).toBe(true);
-    expect(r.st.plan[0]).toEqual({ when: "I'm in bed late at night", then: 'Charge my phone in another room and go to sleep.' });
+    expect(r.st.plan[0]).toEqual({ when: 'I am in bed late at night', then: 'Charge my phone in another room and go to sleep.' });
     expect(r.days['2026-10-14'].events[0].rk).toEqual({ at: T, pl: 'Charge my phone in another room and go to sleep.' });
   });
 

@@ -37,7 +37,7 @@ export default function HelpHome() {
         <View style={{ gap: 8 }}>
           <Button
             icon="life"
-            label="SOS: I'm having an urge"
+            label="SOS: I am having an urge"
             onPress={() => router.push('/sos')}
           />
           <Button kind="ghost" icon="chat" label="Reach a person" onPress={msg} />

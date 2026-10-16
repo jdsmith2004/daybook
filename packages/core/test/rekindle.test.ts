@@ -9,9 +9,6 @@ import type { Days, Reviews, Settings } from '../src/types';
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const J = <T>(x: T): T => JSON.parse(JSON.stringify(x));
-const unescape = (h: string) =>
-  h.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-const textOf = (h: string) => unescape(h.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
 const norm = (s: string) => s.replace(/\s+/g, ' ');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,7 +68,7 @@ describe.each(logs)('$name', (fx) => {
       const act = core.rkActive(days, st, tk);
       expect(J(act)).toEqual(R.active);
       if (!act) return;
-      const html = textOf(R.card);
+      const html = R.card.text;
       const c = core.rkCard(days, st, tk, act, new Date(now).getHours());
       expect(html).toContain(c.h);
       expect(html).toContain(c.p);
@@ -84,8 +81,8 @@ describe.each(logs)('$name', (fx) => {
       if (c.quote) expect(html).toContain(`If ${c.quote.when}, then ${c.quote.then}`);
       for (const t of c.care) expect(html).toContain(t);
       expect(html.includes('Start my sunrise check')).toBe(c.sunrise);
-      expect(R.card).toContain(`${c.flames.filter(Boolean).length} of ${c.flames.length} flames lit`);
-      expect(R.card.includes('class="rk-card line"')).toBe(c.line);
+      expect(R.card.flames).toBe(`${c.flames.filter(Boolean).length} of ${c.flames.length} flames lit`);
+      expect(R.card.line).toBe(c.line);
     });
 
     it('words the short Rekindle and the quest the same way', () => {
@@ -93,10 +90,10 @@ describe.each(logs)('$name', (fx) => {
       const hour = new Date(now).getHours();
       for (const k of Object.keys(R.light)) {
         const ev = days[k].events.find((x) => x.id === R.ev[k])!;
-        expect(norm(textOf(R.light[k]))).toContain(norm(core.rkLightLine(days, st, k, tk, now)));
-        expect(textOf(R.light[k])).toContain('Saved · ' + core.entryLabel(ev));
+        expect(norm(R.light[k].text)).toContain(norm(core.rkLightLine(days, st, k, tk, now)));
+        expect(R.light[k].text).toContain('Saved · ' + core.entryLabel(ev));
         const q = core.rkQuest(days, st, tk, k, ev, hour);
-        const qh = textOf(R.quest[k]);
+        const qh = R.quest[k].text;
         expect(qh).toContain(q.h);
         expect(qh).toContain(q.p);
         expect(qh).toContain(q.prize.b);
@@ -107,7 +104,7 @@ describe.each(logs)('$name', (fx) => {
           expect(qh).toContain(m.title);
           expect(qh).toContain(m.sub);
         }
-        expect(R.quest[k]).toContain(`${q.flames.filter(Boolean).length} of ${q.flames.length} flames lit`);
+        expect(R.quest[k].flames).toBe(`${q.flames.filter(Boolean).length} of ${q.flames.length} flames lit`);
       }
     });
 

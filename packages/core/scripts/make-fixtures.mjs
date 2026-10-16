@@ -339,17 +339,25 @@ const COMPUTE = ({ settings, days, reviews }) => {
   out.html = { days: daysCardHtml('lg'), daysSm: daysCardHtml('sm'), offer: stepOfferHtml(), step: st.day1 && tk >= st.day1 ? stepCardHtml('lg', null) : null };
   /* Rekindle: the card on Today, which Rekindle each slip gets, its short and full screens, and the sunrise plans */
   const act = rkActive(tk);
-  const R2 = { active: J(act), card: act ? rkCardHtml(act) : null, steps: {}, light: {}, quest: {}, plan: {}, ev: {} };
+  /* screens are kept as their words, plus the two things the tests read from the markup: the flames label and the card's look */
+  const words = (h) => {
+    const d = document.createElement('div');
+    d.innerHTML = h;
+    const f = d.querySelector('.rk-fls');
+    return { text: d.textContent.replace(/\s+/g, ' ').trim(), flames: f ? f.getAttribute('aria-label') : null, line: !!d.querySelector('.rk-card.line') };
+  };
+  const R2 = { active: J(act), card: act ? words(rkCardHtml(act)) : null, steps: {}, light: {}, quest: {}, plan: {}, ev: {} };
   keys.forEach((k) => {
     if (!sumDay(D[k]).slipped) return;
     R2.steps[k] = rkStepFor(k);
+    /* the screens are only recorded for the last two weeks of slips, to keep the fixtures small */
+    if (k < addDays(tk, -14)) return;
     const sl = sortedEvents(D[k], st.rollover).filter((e) => e.outcome === 'slipped');
     const ev = sl.find((e) => e.rk) || sl[sl.length - 1];
     const sc = { id: 'checkin', date: k, evId: ev.id, pts0: G().pts, time: ev.time, outcome: 'slipped', step: 'done', hist: [] };
     R2.ev[k] = ev.id;
-    R2.light[k] = rkLightHtml(sc);
-    if (sl.length > 1) R2.light2 = Object.assign(R2.light2 || {}, { [k]: rkLightHtml(Object.assign({}, sc, { evId: sl[sl.length - 1].id })) });
-    R2.quest[k] = rkQuestHtml(sc, ev);
+    R2.light[k] = words(rkLightHtml(sc));
+    R2.quest[k] = words(rkQuestHtml(sc, ev));
     R2.plan[k] = J(srPlanInfo({ k, evId: ev.id }));
   });
   out.rekindle = R2;

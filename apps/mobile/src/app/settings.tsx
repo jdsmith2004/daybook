@@ -39,7 +39,8 @@ import { B } from '@/components/help-bits';
 import { Button, Chip, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
 import { forgetDrafts } from '@/lib/drafts';
-import { setThemePref, useThemePref, type ThemePref } from '@/lib/prefs';
+import { setSoundPref, setThemePref, useSoundPref, useThemePref, type ThemePref } from '@/lib/prefs';
+import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 
@@ -69,6 +70,7 @@ export default function Settings() {
   const { snap, tk, apply, replace, erase, say, dirty, hooks } = useStore();
   const sos = useSos();
   const theme = useThemePref();
+  const sound = useSoundPref();
   const first = (params.open || '').replace(/^s-/, '') as Sec;
   const [open, setOpen] = useState<Partial<Record<Sec, boolean>>>(first ? { [first]: true } : {});
   const [wipe, setWipe] = useState(false);
@@ -88,7 +90,10 @@ export default function Settings() {
       const text = await pickBackupText();
       if (text == null) return;
       const { snap: next, restored } = restoreBackup(snap, readBackup(text));
-      await replace(next, toRecords(next).map((r) => r.id as RecordId));
+      await replace(
+        next,
+        toRecords(next).map((r) => r.id as RecordId),
+      );
       say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
     } catch {
       say('That file is not a Daybook backup.');
@@ -125,8 +130,8 @@ export default function Settings() {
         'Turn parts of the day on or off',
         <>
           <T v="small" tone="muted">
-            Switch off anything that does not fit your life right now. It leaves Today and stops counting toward your ring. If you do it anyway, it still counts. You can also skip things for a single day
-            from Today.
+            Switch off anything that does not fit your life right now. It leaves Today and stops counting toward your ring. If you do it anyway, it still counts. You can also skip
+            things for a single day from Today.
           </T>
           {ROUTINE.map((x) => (
             <OnOff key={x.k} name={x.name} sub={x.sub} on={!!st.routine[x.k]} onPick={(on) => apply({ st: setRoutine(st, x.k, on) })} />
@@ -135,7 +140,8 @@ export default function Settings() {
             <B>Check-in.</B> Skipping it never costs you a day. A day counts as no-slip whenever no slip is logged, check-in or not.
           </T>
           <T v="small" tone="muted">
-            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right. While it is off, a weekly quest about it is swapped for a different one.
+            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right. While it is off, a weekly quest about it is swapped
+            for a different one.
           </T>
         </>,
       )}
@@ -146,7 +152,18 @@ export default function Settings() {
         'Screens-off time, start date, new day',
         <>
           <Field label="Screens off by (nightly)" hint="The wind-down opens an hour before. The next morning, Daybook asks if it happened.">
-            <Stepper label="Screens off by" text={so} unset={false} less="15 minutes earlier" more="15 minutes later" onStep={(d) => apply({ st: setScreensOffTime(st, stepClock(st.screensOff, d * 15)) })} />
+            <Stepper
+              label="Screens off by"
+              text={so}
+              unset={false}
+              less="15 minutes earlier"
+              more="15 minutes later"
+              onStep={(d) =>
+                apply({
+                  st: setScreensOffTime(st, stepClock(st.screensOff, d * 15)),
+                })
+              }
+            />
           </Field>
           <DateStep label="Tracking starts" value={st.start} from={tk} onPick={(k) => apply(setDate(st, 'start', k))} />
           <DateStep label="Day 1 of quitting" value={st.day1} from={st.day1 || tk} onPick={(k) => apply(setDate(st, 'day1', k))} />
@@ -180,10 +197,10 @@ export default function Settings() {
             label="Counting"
             hint={
               <>
-                <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be saved: finish the Rekindle quest by the next night
-                and your run keeps going.{'\n\n'}
-                <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When your stretch passes
-                a week, or a week has one slip or none, Daybook offers to start counting days.
+                <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be saved: finish the
+                Rekindle quest by the next night and your run keeps going.{'\n\n'}
+                <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week.
+                When your stretch passes a week, or a week has one slip or none, Daybook offers to start counting days.
               </>
             }>
             <Chips label="Counting">
@@ -231,7 +248,16 @@ export default function Settings() {
             kind="ghost"
             icon="sparkle"
             label="Preview a celebration"
-            onPress={() => hooks.current.onCelebrate?.([{ type: 'level', level: gameCompute(snap.days, st, snap.reviews, tk).level, from: 0, evolve: false }])}
+            onPress={() =>
+              hooks.current.onCelebrate?.([
+                {
+                  type: 'level',
+                  level: gameCompute(snap.days, st, snap.reviews, tk).level,
+                  from: 0,
+                  evolve: false,
+                },
+              ])
+            }
           />
         </>,
       )}
@@ -239,17 +265,34 @@ export default function Settings() {
       {sec(
         'sos',
         'SOS',
-        'Go-to tool',
-        <Field
-          label="SOS suggests first"
-          hint={pin ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.' : 'SOS learns which tools help you, and picks the best fit for the moment.'}>
-          <Chips label="SOS suggests first">
-            <Chip label="The best fit for the moment" on={!st.urPin} onPress={() => apply({ st: setUrPin(st, null) })} />
-            {TOOLS.map((x) => (
-              <Chip key={x.id} label={x.name} on={st.urPin === x.id} onPress={() => apply({ st: setUrPin(st, x.id) })} />
-            ))}
-          </Chips>
-        </Field>,
+        'Go-to tool, sound',
+        <>
+          <Field
+            label="SOS suggests first"
+            hint={
+              pin ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.' : 'SOS learns which tools help you, and picks the best fit for the moment.'
+            }>
+            <Chips label="SOS suggests first">
+              <Chip label="The best fit for the moment" on={!st.urPin} onPress={() => apply({ st: setUrPin(st, null) })} />
+              {TOOLS.map((x) => (
+                <Chip key={x.id} label={x.name} on={st.urPin === x.id} onPress={() => apply({ st: setUrPin(st, x.id) })} />
+              ))}
+            </Chips>
+          </Field>
+          <Field label="Sound guide" hint="A soft tone on each breath, and a chime when a timer ends. Saved on this device.">
+            <Chips label="Sound guide">
+              <Chip
+                label="On"
+                on={sound}
+                onPress={() => {
+                  setSoundPref(true);
+                  play('on', true);
+                }}
+              />
+              <Chip label="Off" on={!sound} onPress={() => setSoundPref(false)} />
+            </Chips>
+          </Field>
+        </>,
       )}
 
       {sec(

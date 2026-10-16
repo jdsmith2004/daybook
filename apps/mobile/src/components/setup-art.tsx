@@ -78,8 +78,25 @@ export function PicWeek({ i }: { i: number }) {
         const v = row ? row[j] : 0;
         return (
           <View key={j} style={{ alignItems: 'center', gap: 4 }}>
-            <View style={[s.dot, { backgroundColor: v ? c.accent : c.surface2, borderColor: row ? c.line : c.muted, borderStyle: row ? 'solid' : 'dashed' }]}>
-              {v === 2 ? <Text style={{ fontFamily: font.bodyBold, color: c.accentInk, fontSize: 12 }}>2×</Text> : null}
+            <View
+              style={[
+                s.dot,
+                {
+                  backgroundColor: v ? c.accent : c.surface2,
+                  borderColor: row ? c.line : c.muted,
+                  borderStyle: row ? 'solid' : 'dashed',
+                },
+              ]}>
+              {v === 2 ? (
+                <Text
+                  style={{
+                    fontFamily: font.bodyBold,
+                    color: c.accentInk,
+                    fontSize: 12,
+                  }}>
+                  2×
+                </Text>
+              ) : null}
             </View>
             <T v="small" tone="muted">
               {d}
@@ -106,7 +123,19 @@ export function PicDial({ i }: { i: number }) {
     return (
       <G key={r}>
         <Circle cx={70} cy={70} r={r} stroke={c.surface2} strokeWidth={10} fill="none" />
-        {f > 0 ? <Circle cx={70} cy={70} r={r} stroke={col} strokeWidth={10} fill="none" strokeLinecap="round" strokeDasharray={`${(L * Math.min(1, f)).toFixed(1)} ${L.toFixed(1)}`} transform="rotate(-90 70 70)" /> : null}
+        {f > 0 ? (
+          <Circle
+            cx={70}
+            cy={70}
+            r={r}
+            stroke={col}
+            strokeWidth={10}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${(L * Math.min(1, f)).toFixed(1)} ${L.toFixed(1)}`}
+            transform="rotate(-90 70 70)"
+          />
+        ) : null}
       </G>
     );
   };
@@ -156,7 +185,12 @@ export function PicPeople() {
 
 export function PicTries() {
   const c = useTheme();
-  const cs = { fontSize: 10, fontWeight: '700' as const, fill: c.muted, textAnchor: 'middle' as const };
+  const cs = {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    fill: c.muted,
+    textAnchor: 'middle' as const,
+  };
   return (
     <Svg width={320} height={150} viewBox="0 0 320 150" accessibilityLabel="A line that climbs, drops back, and climbs again a few times, until one try sticks">
       <Path d="M12 132H308" stroke={c.line} strokeWidth={2} />
@@ -169,25 +203,44 @@ export function PicTries() {
         <Circle key={x} cx={x} cy={y} r={6} fill={c.slip} />
       ))}
       <Path d="M304 6l4.6 9.4 10.4 1.5-7.5 7.3 1.8 10.3-9.3-4.9-9.3 4.9 1.8-10.3-7.5-7.3 10.4-1.5z" fill={c.sun} />
-      <SvgText x={62} y={148} {...cs}>TRY 1</SvgText>
-      <SvgText x={132} y={148} {...cs}>TRY 2</SvgText>
-      <SvgText x={214} y={148} {...cs}>TRY 3</SvgText>
-      <SvgText x={282} y={148} {...cs} fill={c.accentText}>IT STICKS</SvgText>
+      <SvgText x={62} y={148} {...cs}>
+        TRY 1
+      </SvgText>
+      <SvgText x={132} y={148} {...cs}>
+        TRY 2
+      </SvgText>
+      <SvgText x={214} y={148} {...cs}>
+        TRY 3
+      </SvgText>
+      <SvgText x={282} y={148} {...cs} fill={c.accentText}>
+        IT STICKS
+      </SvgText>
     </Svg>
   );
 }
 
 export function PicCurve() {
   const c = useTheme();
-  const cs = { fontSize: 10, fontWeight: '700' as const, fill: c.muted, textAnchor: 'middle' as const };
+  const cs = {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    fill: c.muted,
+    textAnchor: 'middle' as const,
+  };
   return (
     <Svg width={320} height={150} viewBox="0 0 330 150" accessibilityLabel="A habit curve: it rises over about 66 days, and one bad day is only a small dip">
       <Path d="M10 132H320" stroke={c.line} strokeWidth={2} />
       <Path d="M10 128C56 124 96 104 116 88L126 102L136 84C186 54 250 34 318 30" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
       <Circle cx={252} cy={38} r={8} fill={c.sun} />
-      <SvgText x={26} y={146} {...cs}>DAY 1</SvgText>
-      <SvgText x={126} y={124} {...cs}>ONE BAD DAY</SvgText>
-      <SvgText x={252} y={62} {...cs}>DAY 66</SvgText>
+      <SvgText x={26} y={146} {...cs}>
+        DAY 1
+      </SvgText>
+      <SvgText x={126} y={124} {...cs}>
+        ONE BAD DAY
+      </SvgText>
+      <SvgText x={252} y={62} {...cs}>
+        DAY 66
+      </SvgText>
     </Svg>
   );
 }
@@ -195,7 +248,10 @@ export function PicCurve() {
 export function PicSlip() {
   const c = useTheme();
   return (
-    <View style={{ alignItems: 'center', gap: 6 }} accessible accessibilityLabel="Two lines. A streak counter climbs, then drops to zero at a slip. Daybook points keep climbing through the slip.">
+    <View
+      style={{ alignItems: 'center', gap: 6 }}
+      accessible
+      accessibilityLabel="Two lines. A streak counter climbs, then drops to zero at a slip. Daybook points keep climbing through the slip.">
       <Svg width={300} height={150} viewBox="0 0 300 150">
         <Path d="M10 126H292" stroke={c.line} strokeWidth={2} />
         <Path d="M160 22V126" stroke={c.line} strokeWidth={2} strokeDasharray="4 4" />
@@ -269,7 +325,19 @@ export function PicSos({ a, when }: { a: SetupAnswers; when: string }) {
 export function PicLesson() {
   const c = useTheme();
   return (
-    <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, alignItems: 'center', width: 220, alignSelf: 'center' }]} accessible accessibilityLabel="A lesson card called Urges are waves, 3 minutes">
+    <View
+      style={[
+        s.card,
+        {
+          backgroundColor: c.surface,
+          borderColor: c.cardEdge,
+          alignItems: 'center',
+          width: 220,
+          alignSelf: 'center',
+        },
+      ]}
+      accessible
+      accessibilityLabel="A lesson card called Urges are waves, 3 minutes">
       <Svg width={170} height={58} viewBox="0 0 170 58">
         <Path d="M6 52C38 52 52 10 85 10S132 52 164 52" stroke={c.sky} strokeWidth={4} fill="none" strokeLinecap="round" />
         <Circle cx={85} cy={10} r={6} fill={c.sun} />
@@ -314,7 +382,17 @@ export function PicPattern({ a }: { a: SetupAnswers }) {
   const top = bins.reduce((m, b, i) => (b.v > bins[m].v ? i : m), 0);
   const lab = fmtHour((2 * top) % 24) + ' to ' + fmtHour((2 * top + 2) % 24);
   return (
-    <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, alignSelf: 'stretch' }]} accessible accessibilityLabel={'A sample chart of when urges happen across the day. The busiest stretch is ' + lab + '.'}>
+    <View
+      style={[
+        s.card,
+        {
+          backgroundColor: c.surface,
+          borderColor: c.cardEdge,
+          alignSelf: 'stretch',
+        },
+      ]}
+      accessible
+      accessibilityLabel={'A sample chart of when urges happen across the day. The busiest stretch is ' + lab + '.'}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <T v="label">When it happens</T>
         <T v="small" tone="muted">
@@ -327,10 +405,23 @@ export function PicPattern({ a }: { a: SetupAnswers }) {
           {(has ? 'Your hard hours' : 'Busiest') + ': ' + lab}
         </T>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 90, gap: 4 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          height: 90,
+          gap: 4,
+        }}>
         {bins.map((b, i) => (
           <View key={i} style={{ flex: 1, justifyContent: 'flex-end', height: '100%' }}>
-            <View style={{ height: `${((b.v - b.s) / 9) * 100}%`, backgroundColor: i === top ? c.mint : c.mintSoft, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
+            <View
+              style={{
+                height: `${((b.v - b.s) / 9) * 100}%`,
+                backgroundColor: i === top ? c.mint : c.mintSoft,
+                borderTopLeftRadius: 4,
+                borderTopRightRadius: 4,
+              }}
+            />
             <View style={{ height: `${(b.s / 9) * 100}%`, backgroundColor: c.slip }} />
           </View>
         ))}
@@ -370,7 +461,13 @@ export function PicFlame() {
           </View>
         ))}
       </View>
-      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 8,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}>
         {[
           ['+5', 'honest log'],
           ['+10', 'urge ridden out'],
@@ -414,11 +511,49 @@ export const whenIcon = (t: string) => (OB_WHEN.find((w) => w[0] === t) || [])[2
 
 const s = StyleSheet.create({
   col: { gap: 8, alignSelf: 'stretch' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, borderWidth: 1.5 },
-  ic: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+  },
+  ic: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   card: { gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
   go: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-  sos: { alignSelf: 'center', width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  sos: {
+    alignSelf: 'center',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
 });

@@ -96,7 +96,15 @@ export default function Setup() {
     const k = setupKeep.flow;
     setupKeep.shut = false;
     if (k && k.redo === redo && !k.saved) return { ...k };
-    return { redo, i: 0, a: obPrefill(st), hg: null, keep: null, saved: false, changed: 0 };
+    return {
+      redo,
+      i: 0,
+      a: obPrefill(st),
+      hg: null,
+      keep: null,
+      saved: false,
+      changed: 0,
+    };
   });
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
@@ -119,7 +127,11 @@ export default function Setup() {
   }, [i]);
 
   const busy = () => Date.now() < until.current;
-  const set = (patch: Partial<Flow> | ((x: Flow) => Partial<Flow>)) => setF((x) => ({ ...x, ...(typeof patch === 'function' ? patch(x) : patch) }));
+  const set = (patch: Partial<Flow> | ((x: Flow) => Partial<Flow>)) =>
+    setF((x) => ({
+      ...x,
+      ...(typeof patch === 'function' ? patch(x) : patch),
+    }));
   const setA = (patch: SetupAnswers) => set((x) => ({ a: { ...x.a, ...patch } }));
   const go = (d: number) =>
     setF((x) => {
@@ -154,7 +166,12 @@ export default function Setup() {
     setupKeep.flow = null;
     buzz('lit');
     until.current = Date.now() + 700;
-    setF((x) => ({ ...x, saved: true, changed: r.changed, i: obPages(x.a).length - 1 }));
+    setF((x) => ({
+      ...x,
+      saved: true,
+      changed: r.changed,
+      i: obPages(x.a).length - 1,
+    }));
     await replace({ ...snap, settings: r.st }, ['settings']);
   };
   const restore = async () => {
@@ -162,7 +179,10 @@ export default function Setup() {
       const text = await pickBackupText();
       if (text == null) return;
       const { snap: next, restored } = restoreBackup(snap, readBackup(text));
-      await replace(next, toRecords(next).map((r) => r.id as RecordId));
+      await replace(
+        next,
+        toRecords(next).map((r) => r.id as RecordId),
+      );
       say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
     } catch {
       say('That file is not a Daybook backup.');
@@ -197,7 +217,13 @@ export default function Setup() {
         <Show st={st} art={<PicToday />} h="Walk through it again." line="Nothing changes until the last page.">
           {prev && prev.at ? (
             <T v="small" tone="muted">
-              Last time: {fmtDate(keyOfDate(new Date(prev.at)), { month: 'long', day: 'numeric', year: 'numeric' })}.
+              Last time:{' '}
+              {fmtDate(keyOfDate(new Date(prev.at)), {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+              .
             </T>
           ) : null}
         </Show>
@@ -253,7 +279,13 @@ export default function Setup() {
             {OB_BPS_C.map(([id, label], j) => (
               <Opt key={id} on={v === id} t={t} onPress={() => pick('b' + pg.n, id, true)}>
                 <View style={[s.lv, { borderColor: t.ic }]}>
-                  <View style={{ width: `${j * 50}%`, height: '100%', backgroundColor: t.ic }} />
+                  <View
+                    style={{
+                      width: `${j * 50}%`,
+                      height: '100%',
+                      backgroundColor: t.ic,
+                    }}
+                  />
                 </View>
                 <Text style={[s.optT, { color: c.ink }]}>{label}</Text>
               </Opt>
@@ -289,11 +321,21 @@ export default function Setup() {
             t={t}
             onPick={(v) => {
               const k = arr.indexOf(v);
-              setA({ [key]: k >= 0 ? arr.filter((x) => x !== v) : arr.concat(v) });
+              setA({
+                [key]: k >= 0 ? arr.filter((x) => x !== v) : arr.concat(v),
+              });
               buzz('tap');
             }}
           />
-          {pg.own ? <Field label="Write my own" maxLength={60} defaultValue={String(a[pg.own] || '')} placeholder="Something else it cost me" onChangeText={(v) => setA({ [pg.own!]: v })} /> : null}
+          {pg.own ? (
+            <Field
+              label="Write my own"
+              maxLength={60}
+              defaultValue={String(a[pg.own] || '')}
+              placeholder="Something else it cost me"
+              onChangeText={(v) => setA({ [pg.own!]: v })}
+            />
+          ) : null}
         </>
       );
       foot = nextBtn(arr.length || own ? 'Next' : 'Skip', !(arr.length || own));
@@ -313,7 +355,11 @@ export default function Setup() {
                 key={n}
                 on={f.hg === n}
                 t={t}
-                style={{ flexBasis: '30%', flexGrow: 1, justifyContent: 'center' }}
+                style={{
+                  flexBasis: '30%',
+                  flexGrow: 1,
+                  justifyContent: 'center',
+                }}
                 onPress={() => {
                   if (busy()) return;
                   set({ hg: n });
@@ -394,7 +440,16 @@ export default function Setup() {
           <Q h="What time should your screens go off at night?" sub="An hour before, a short wind-down starts." />
           <View style={s.grid3}>
             {OB_SO.concat(custom ? [a.so as string] : []).map((x) => (
-              <Opt key={x} on={a.so === x} t={t} style={{ flexBasis: '45%', flexGrow: 1, justifyContent: 'center' }} onPress={() => pick('so', x, true)}>
+              <Opt
+                key={x}
+                on={a.so === x}
+                t={t}
+                style={{
+                  flexBasis: '45%',
+                  flexGrow: 1,
+                  justifyContent: 'center',
+                }}
+                onPress={() => pick('so', x, true)}>
                 {a.so === x ? <Icon name="check" size={18} color={t.text} /> : null}
                 <Text style={[s.optT, { color: c.ink, flex: 0 }]}>{fmtClock(x)}</Text>
               </Opt>
@@ -467,9 +522,23 @@ export default function Setup() {
                     setA({ rs: on ? rs.filter((y) => y !== x) : rs.concat(x) });
                     buzz('tap');
                   }}
-                  style={[s.pill, { backgroundColor: on ? t.soft : c.surface, borderColor: on ? t.ic : c.line }]}>
+                  style={[
+                    s.pill,
+                    {
+                      backgroundColor: on ? t.soft : c.surface,
+                      borderColor: on ? t.ic : c.line,
+                    },
+                  ]}>
                   {on ? <Icon name="check" size={16} color={t.text} /> : null}
-                  <Text style={{ fontFamily: font.bodySemi, fontSize: 15.5, color: on ? t.text : c.ink, flexShrink: 1 }}>{x}</Text>
+                  <Text
+                    style={{
+                      fontFamily: font.bodySemi,
+                      fontSize: 15.5,
+                      color: on ? t.text : c.ink,
+                      flexShrink: 1,
+                    }}>
+                    {x}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -514,10 +583,20 @@ export default function Setup() {
               const prevOwn = String(a.thenOwn || '').trim();
               const x = v.trim();
               if (x) setA({ thenOwn: v, then: x.slice(0, 140), thenT: tp });
-              else setA({ thenOwn: v, ...(a.then === prevOwn ? { then: null } : {}) });
+              else
+                setA({
+                  thenOwn: v,
+                  ...(a.then === prevOwn ? { then: null } : {}),
+                });
             }}
           />
-          <More more={{ label: 'Why plan ahead?', paras: ['A plan made ahead is easier to follow than a decision made in the moment. You can add plans for your other hard moments in My plan.'], keys: ['gollwitzer'] }} />
+          <More
+            more={{
+              label: 'Why plan ahead?',
+              paras: ['A plan made ahead is easier to follow than a decision made in the moment. You can add plans for your other hard moments in My plan.'],
+              keys: ['gollwitzer'],
+            }}
+          />
         </>
       );
       foot = nextBtn(cur ? 'Next' : 'Skip', !cur);
@@ -560,7 +639,14 @@ export default function Setup() {
                   <T v="small" tone="muted">
                     Day 1
                   </T>
-                  <Text style={{ fontFamily: font.display, fontSize: 22, color: c.ink }}>{obDate(obDay1(g, null, tk))}</Text>
+                  <Text
+                    style={{
+                      fontFamily: font.display,
+                      fontSize: 22,
+                      color: c.ink,
+                    }}>
+                    {obDate(obDay1(g, null, tk))}
+                  </Text>
                 </View>
               </View>
               <PlanRow icon="flag" l="Goal" v={g.t} />
@@ -596,9 +682,28 @@ export default function Setup() {
                     key={x.k}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: on }}
-                    onPress={() => set({ keep: on ? keep.filter((k) => k !== x.k) : keep.concat(x.k) })}
-                    style={[s.ch, { backgroundColor: c.surface, borderColor: on ? t.ic : c.line }]}>
-                    <View style={[s.bx, { backgroundColor: on ? t.ic : c.surface, borderColor: on ? t.ic : c.line }]}>{on ? <Icon name="check" size={16} color="#fff" /> : null}</View>
+                    onPress={() =>
+                      set({
+                        keep: on ? keep.filter((k) => k !== x.k) : keep.concat(x.k),
+                      })
+                    }
+                    style={[
+                      s.ch,
+                      {
+                        backgroundColor: c.surface,
+                        borderColor: on ? t.ic : c.line,
+                      },
+                    ]}>
+                    <View
+                      style={[
+                        s.bx,
+                        {
+                          backgroundColor: on ? t.ic : c.surface,
+                          borderColor: on ? t.ic : c.line,
+                        },
+                      ]}>
+                      {on ? <Icon name="check" size={16} color="#fff" /> : null}
+                    </View>
                     <View style={{ flex: 1, gap: 3 }}>
                       <T v="label">{x.l}</T>
                       <T v="small" tone="muted">
@@ -633,7 +738,10 @@ export default function Setup() {
             <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
               {f.changed ? 'Saved. Your plan is up to date.' : 'All set.'}
             </Text>
-            <T style={s.p}>{(f.changed ? 'Your changes are in My plan and Settings.' : 'Nothing in your plan changed.') + ' Your answers are kept, so the next walk-through can show how things moved.'}</T>
+            <T style={s.p}>
+              {(f.changed ? 'Your changes are in My plan and Settings.' : 'Nothing in your plan changed.') +
+                ' Your answers are kept, so the next walk-through can show how things moved.'}
+            </T>
             <Route label="Read my playbook" onPress={() => !busy() && router.replace('/book')} />
             <Route label="Back to Today" onPress={() => !busy() && close()} />
           </>
@@ -658,7 +766,17 @@ export default function Setup() {
                 <Text style={{ fontFamily: font.bodyBold, color: c.sunText }}>Day Zero badge</Text>
               </View>
             </View>
-            <Route label="Start lesson 1" small="1–5 min · You do not need to feel ready" onPress={() => !busy() && router.replace({ pathname: '/lesson/[id]', params: { id: 'l1' } })} />
+            <Route
+              label="Start lesson 1"
+              small="1–5 min · You do not need to feel ready"
+              onPress={() =>
+                !busy() &&
+                router.replace({
+                  pathname: '/lesson/[id]',
+                  params: { id: 'l1' },
+                })
+              }
+            />
           </>
         );
       }
@@ -675,8 +793,22 @@ export default function Setup() {
   const fin = pg.k === 'done';
   const w = fin ? 1 : (k + 1) / ps.length;
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: c.bg,
+        paddingTop: inset.top + 8,
+        paddingBottom: inset.bottom + 12,
+        paddingHorizontal: 16,
+      }}>
+      <View
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: 520,
+          alignSelf: 'center',
+          gap: 12,
+        }}>
         <View style={s.top}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }} accessible accessibilityLabel={(f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1]}>
             <View style={[s.si, { backgroundColor: t.soft }]}>
@@ -710,7 +842,20 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
       return (
         <Show
           st={st}
-          art={<LessonArt art={['loop', { n: ['Feel low', 'Use porn', 'Feel worse', 'Pull away'], c: 'THE LOOP' }]} ic="leaf" t={t} st={st} />}
+          art={
+            <LessonArt
+              art={[
+                'loop',
+                {
+                  n: ['Feel low', 'Use porn', 'Feel worse', 'Pull away'],
+                  c: 'THE LOOP',
+                },
+              ]}
+              ic="leaf"
+              t={t}
+              st={st}
+            />
+          }
           h="Low mood and porn feed each other."
           line="The way out is people. **One text to a friend** breaks the loop."
           more={{
@@ -752,7 +897,11 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
           art={<LessonArt art={['wave', {}]} ic="wave" t={t} st={st} />}
           h="Urges rise, peak, and pass."
           line="You can ride one out without acting on it. SOS walks you through it."
-          more={{ label: 'Behind this', paras: ['In a study with smokers, people who learned to watch a craving rise and fall without acting on it (“urge surfing”) smoked less over the following week.'], keys: ['bowen'] }}
+          more={{
+            label: 'Behind this',
+            paras: ['In a study with smokers, people who learned to watch a craving rise and fall without acting on it (“urge surfing”) smoked less over the following week.'],
+            keys: ['bowen'],
+          }}
         />
       );
     case 'curve':
@@ -781,7 +930,21 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
   }
 }
 
-function Show({ art, h, line, more, children, st }: { art: ReactNode; h: string; line?: string; more?: { label: string; paras: string[]; keys: string[] }; children?: ReactNode; st: Settings | null }) {
+function Show({
+  art,
+  h,
+  line,
+  more,
+  children,
+  st,
+}: {
+  art: ReactNode;
+  h: string;
+  line?: string;
+  more?: { label: string; paras: string[]; keys: string[] };
+  children?: ReactNode;
+  st: Settings | null;
+}) {
   const c = useTheme();
   return (
     <>
@@ -823,12 +986,34 @@ function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPres
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
       onPress={onPress}
-      style={({ pressed }) => [s.opt, { borderColor: on ? t.ic : c.line, backgroundColor: on ? t.soft : c.surface, transform: [{ translateY: pressed ? 2 : 0 }] }, style]}>
+      style={({ pressed }) => [
+        s.opt,
+        {
+          borderColor: on ? t.ic : c.line,
+          backgroundColor: on ? t.soft : c.surface,
+          transform: [{ translateY: pressed ? 2 : 0 }],
+        },
+        style,
+      ]}>
       {children}
     </Pressable>
   );
 }
-function IconTiles({ list, cols, cur, t, onPick, years }: { list: ObOpt[]; cols: number; cur: string | string[] | undefined; t: Tone; onPick: (v: string) => void; years?: boolean }) {
+function IconTiles({
+  list,
+  cols,
+  cur,
+  t,
+  onPick,
+  years,
+}: {
+  list: ObOpt[];
+  cols: number;
+  cur: string | string[] | undefined;
+  t: Tone;
+  onPick: (v: string) => void;
+  years?: boolean;
+}) {
   const c = useTheme();
   const on = (x: string) => (Array.isArray(cur) ? cur.indexOf(x) >= 0 : cur === x);
   return (
@@ -844,12 +1029,24 @@ function IconTiles({ list, cols, cur, t, onPick, years }: { list: ObOpt[]; cols:
             style={({ pressed }) => [
               s.tile,
               cols === 2 ? { flexBasis: '46%', flexGrow: 1 } : { flexBasis: '100%' },
-              { borderColor: sel ? t.ic : c.line, backgroundColor: sel ? t.soft : c.surface, transform: [{ translateY: pressed ? 2 : 0 }] },
+              {
+                borderColor: sel ? t.ic : c.line,
+                backgroundColor: sel ? t.soft : c.surface,
+                transform: [{ translateY: pressed ? 2 : 0 }],
+              },
             ]}>
             {years ? (
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
                 {[0, 1, 2, 3].map((q) => (
-                  <View key={q} style={{ width: 6, height: 8 + q * 5, borderRadius: 2, backgroundColor: q <= j ? t.ic : c.line }} />
+                  <View
+                    key={q}
+                    style={{
+                      width: 6,
+                      height: 8 + q * 5,
+                      borderRadius: 2,
+                      backgroundColor: q <= j ? t.ic : c.line,
+                    }}
+                  />
                 ))}
               </View>
             ) : typeof it[2] === 'string' ? (
@@ -871,16 +1068,42 @@ function Steps({ n, cur, t, labels, lo, hi, onPick }: { n: number; cur: number; 
       <View style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="radiogroup">
         {Array.from({ length: n }, (_, j) => (
           <View key={j} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-            {j > 0 ? <View style={{ flex: 1, height: 6, backgroundColor: cur >= j ? t.ic : c.line }} /> : <View style={{ flex: 1 }} />}
+            {j > 0 ? (
+              <View
+                style={{
+                  flex: 1,
+                  height: 6,
+                  backgroundColor: cur >= j ? t.ic : c.line,
+                }}
+              />
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
             <Pressable
               accessibilityRole="radio"
               accessibilityState={{ checked: cur === j }}
               accessibilityLabel={labels[j]}
               hitSlop={8}
               onPress={() => onPick(j)}
-              style={[s.stop, { borderColor: cur >= j && cur >= 0 ? t.ic : c.line, backgroundColor: cur === j ? t.ic : cur > j ? t.ic : c.surface }]}
+              style={[
+                s.stop,
+                {
+                  borderColor: cur >= j && cur >= 0 ? t.ic : c.line,
+                  backgroundColor: cur === j ? t.ic : cur > j ? t.ic : c.surface,
+                },
+              ]}
             />
-            {j < n - 1 ? <View style={{ flex: 1, height: 6, backgroundColor: cur > j ? t.ic : c.line }} /> : <View style={{ flex: 1 }} />}
+            {j < n - 1 ? (
+              <View
+                style={{
+                  flex: 1,
+                  height: 6,
+                  backgroundColor: cur > j ? t.ic : c.line,
+                }}
+              />
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
           </View>
         ))}
       </View>
@@ -911,7 +1134,16 @@ function More({ more }: { more: { label: string; paras: string[]; keys: string[]
   const xs = more.keys.map(obSrc).filter(Boolean) as [string, string][];
   return (
     <View style={{ gap: 8 }}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen(!open)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          minHeight: 40,
+        }}>
         <Icon name={open ? 'up' : 'down'} size={16} color={c.accentText} />
         <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{more.label}</Text>
       </Pressable>
@@ -921,7 +1153,16 @@ function More({ more }: { more: { label: string; paras: string[]; keys: string[]
             <Rich key={k} text={p} st={null} style={{ fontSize: 15, lineHeight: 22 }} />
           ))}
           {xs.map((x) => (
-            <Text key={x[1]} accessibilityRole="link" onPress={() => Linking.openURL(x[1]).catch(() => undefined)} style={{ fontFamily: font.body, fontSize: 14, color: c.accentText, textDecorationLine: 'underline' }}>
+            <Text
+              key={x[1]}
+              accessibilityRole="link"
+              onPress={() => Linking.openURL(x[1]).catch(() => undefined)}
+              style={{
+                fontFamily: font.body,
+                fontSize: 14,
+                color: c.accentText,
+                textDecorationLine: 'underline',
+              }}>
               {x[0]}
             </Text>
           ))}
@@ -934,7 +1175,15 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'center' }}>
-      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>{label}</Text>
+      <Text
+        style={{
+          fontFamily: font.bodySemi,
+          fontSize: 15,
+          color: c.accentText,
+          textDecorationLine: 'underline',
+        }}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -956,11 +1205,35 @@ function Bar({ w, col, label }: { w: number; col: string; label: string }) {
   const c = useTheme();
   const v = useRef(new Animated.Value(w)).current;
   useEffect(() => {
-    Animated.timing(v, { toValue: w, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    Animated.timing(v, {
+      toValue: w,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
   }, [v, w]);
   return (
-    <View accessible accessibilityRole="progressbar" accessibilityLabel={label} style={{ height: 10, borderRadius: 5, backgroundColor: c.lip, overflow: 'hidden' }}>
-      <Animated.View style={{ height: '100%', borderRadius: 5, backgroundColor: col, width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+      style={{
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: c.lip,
+        overflow: 'hidden',
+      }}>
+      <Animated.View
+        style={{
+          height: '100%',
+          borderRadius: 5,
+          backgroundColor: col,
+          width: v.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['0%', '100%'],
+          }),
+        }}
+      />
     </View>
   );
 }
@@ -989,7 +1262,14 @@ function Compare({ g, yr, t }: { g: number; yr: number; t: Tone }) {
         {l}
       </T>
       <View style={{ flex: 1 }}>
-        <View style={{ width: `${Math.max(6, Math.round((v / top) * 100))}%`, height: 12, borderRadius: 6, backgroundColor: col }} />
+        <View
+          style={{
+            width: `${Math.max(6, Math.round((v / top) * 100))}%`,
+            height: 12,
+            borderRadius: 6,
+            backgroundColor: col,
+          }}
+        />
       </View>
       <T v="label">{txt}</T>
     </View>
@@ -1024,7 +1304,12 @@ function Hold({ onDone }: { onDone: () => void }) {
       onPressIn={() => {
         held.current = false;
         buzz('tap');
-        Animated.timing(v, { toValue: 1, duration: 1100, easing: Easing.linear, useNativeDriver: false }).start(({ finished }) => {
+        Animated.timing(v, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }).start(({ finished }) => {
           if (finished) {
             held.current = true;
             finish();
@@ -1034,7 +1319,11 @@ function Hold({ onDone }: { onDone: () => void }) {
       onPressOut={() => {
         if (!done.current) {
           v.stopAnimation();
-          Animated.timing(v, { toValue: 0, duration: 200, useNativeDriver: false }).start();
+          Animated.timing(v, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: false,
+          }).start();
         }
       }}
       onPress={() => {
@@ -1044,7 +1333,19 @@ function Hold({ onDone }: { onDone: () => void }) {
         setLabel('Keep holding, or tap again');
       }}
       style={[s.hold, { backgroundColor: c.accentSoft, borderColor: c.accent }]}>
-      <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: c.accent, width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          backgroundColor: c.accent,
+          width: v.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['0%', '100%'],
+          }),
+        }}
+      />
       <Text style={[s.holdT, { color: c.ink }]} accessibilityLiveRegion="polite">
         {label}
       </Text>
@@ -1053,11 +1354,36 @@ function Hold({ onDone }: { onDone: () => void }) {
 }
 
 const s = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  si: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+  },
+  si: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   secT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
-  x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  x: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    flex: 1,
+    borderRadius: 28,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
   cardIn: { padding: 22, gap: 14, flexGrow: 1 },
   art: { minHeight: 90, alignItems: 'center', justifyContent: 'center' },
   h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
@@ -1065,27 +1391,113 @@ const s = StyleSheet.create({
   p: { fontSize: 18, lineHeight: 26 },
   quote: { padding: 14, borderRadius: 16, borderLeftWidth: 5 },
   quoteT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
-  opt: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2 },
+  opt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
-  tile: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2 },
-  ti: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  lv: { width: 44, height: 14, borderRadius: 7, borderWidth: 2, overflow: 'hidden' },
+  tile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  ti: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lv: {
+    width: 44,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
   grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   big: { fontFamily: font.display, fontSize: 64, lineHeight: 70 },
   slv: { fontFamily: font.display, fontSize: 22, textAlign: 'center' },
   stop: { width: 26, height: 26, borderRadius: 13, borderWidth: 3 },
   eq: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  soft: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
+  soft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 16,
+  },
   more: { gap: 8, padding: 12, borderRadius: 14 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 22, borderWidth: 2, maxWidth: '100%' },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    borderWidth: 2,
+    maxWidth: '100%',
+  },
   plan: { borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 14 },
-  planRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1 },
-  pledge: { fontFamily: font.display, fontSize: 20, textAlign: 'center', marginTop: 4 },
-  ch: { flexDirection: 'row', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
-  bx: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  gift: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  pledge: {
+    fontFamily: font.display,
+    fontSize: 20,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  ch: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  bx: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gift: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
   foot: { flexDirection: 'row', gap: 10 },
-  hold: { flex: 1, minHeight: 60, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...(Platform.OS === 'web' ? { userSelect: 'none' } : {}) },
+  hold: {
+    flex: 1,
+    minHeight: 60,
+    borderRadius: 18,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    ...(Platform.OS === 'web' ? { userSelect: 'none' } : {}),
+  },
   holdT: { fontFamily: font.bodySemi, fontSize: 19 },
 });

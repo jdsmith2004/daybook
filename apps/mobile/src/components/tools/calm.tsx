@@ -1,5 +1,5 @@
 /* Calm your body: Breathe, and 5-4-3-2-1. Ported from the legacy SCENES.breathe and SCENES.ground. */
-import { GROUND, PATTERNS } from '@daybook/core';
+import { breathPhase, GROUND, PATTERNS } from '@daybook/core';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,6 +7,8 @@ import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { setSoundPref, useSoundPref } from '@/lib/prefs';
+import { play } from '@/lib/sound';
 import { font, useTheme } from '@/lib/theme';
 
 import type { ToolProps } from './types';
@@ -20,11 +22,23 @@ export function Breathe({ finish, sos, level }: ToolProps) {
   const sec = useSeconds(startedAt, !!startedAt && !done);
   const total = mins * 60;
   const over = !!startedAt && !done && sec >= total;
+  const snd = useSoundPref();
   useEffect(() => {
     if (!over) return;
     setDone(true);
     buzz('lit');
+    play('chime');
   }, [over]);
+  /* the sound guide: a soft tone as each breath starts */
+  const ph = startedAt && !done ? breathPhase(pat, sec) : null;
+  const phIdx = ph ? ph.idx : -1;
+  const phK = ph ? ph.k : '';
+  useEffect(() => {
+    if (phIdx < 0) return;
+    if (phK === 'in' || phK === 'in1') play('in');
+    else if (phK === 'in2') play('in2');
+    else if (phK === 'out') play('out');
+  }, [phIdx, phK]);
   if (done)
     return (
       <>
@@ -64,6 +78,14 @@ export function Breathe({ finish, sos, level }: ToolProps) {
         {P.name}: {P.desc}
       </T>
       <View style={s.row}>
+        <Chip
+          label="Sound guide"
+          on={snd}
+          onPress={() => {
+            setSoundPref(!snd);
+            if (!snd) play('on', true);
+          }}
+        />
         <Chip label="Change or stop" on={false} onPress={() => setStartedAt(null)} />
       </View>
     </>
@@ -77,7 +99,14 @@ function Pick({ on, title, sub, onPress }: { on: boolean; title: string; sub?: s
       accessibilityRole="radio"
       accessibilityState={{ checked: on }}
       onPress={onPress}
-      style={[s.pick, { backgroundColor: on ? c.accentSoft : c.surface, borderColor: on ? c.accent : 'transparent', shadowColor: c.lip }]}>
+      style={[
+        s.pick,
+        {
+          backgroundColor: on ? c.accentSoft : c.surface,
+          borderColor: on ? c.accent : 'transparent',
+          shadowColor: c.lip,
+        },
+      ]}>
       <Text style={[s.pickT, { color: on ? c.accentText : c.ink }]}>{title}</Text>
       {sub ? <Text style={[s.pickS, { color: c.muted }]}>{sub}</Text> : null}
     </Pressable>
@@ -123,7 +152,13 @@ export function Ground({ finish, level }: ToolProps) {
               setN(n + 1);
               buzz('tap');
             }}
-            style={[s.dot, { backgroundColor: j < n ? c.mint : c.surface, borderColor: j < n ? c.mint : c.line }]}>
+            style={[
+              s.dot,
+              {
+                backgroundColor: j < n ? c.mint : c.surface,
+                borderColor: j < n ? c.mint : c.line,
+              },
+            ]}>
             {j < n ? <Icon name="check" color="#FFFFFF" size={22} /> : null}
           </Pressable>
         ))}
@@ -145,7 +180,12 @@ export function Ground({ finish, level }: ToolProps) {
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
-  row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
   group: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pick: {
     flexGrow: 1,
@@ -166,6 +206,18 @@ const s = StyleSheet.create({
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'stretch' },
   step: { flex: 1, height: 6, borderRadius: 3 },
   big: { fontFamily: font.displayBold, fontSize: 96, lineHeight: 104 },
-  dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
-  dot: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  dots: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

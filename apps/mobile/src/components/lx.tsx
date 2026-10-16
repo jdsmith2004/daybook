@@ -18,7 +18,12 @@ export function Next({ label, onPress, noIcon, off }: { label: string; onPress: 
         s.next,
         off
           ? { backgroundColor: c.lip }
-          : { backgroundColor: c.accent, shadowColor: c.accentDeep, shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] },
+          : {
+              backgroundColor: c.accent,
+              shadowColor: c.accentDeep,
+              shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+              transform: [{ translateY: pressed ? 3 : 0 }],
+            },
       ]}>
       <Text style={[s.nextT, { color: off ? c.muted : c.accentInk }]} numberOfLines={2}>
         {label}
@@ -31,7 +36,18 @@ export function Next({ label, onPress, noIcon, off }: { label: string; onPress: 
 export function Back({ onPress }: { onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onPress} style={[s.back, { backgroundColor: c.scBtn, shadowColor: c.lip, borderColor: c.cardEdge }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Back"
+      onPress={onPress}
+      style={[
+        s.back,
+        {
+          backgroundColor: c.scBtn,
+          shadowColor: c.lip,
+          borderColor: c.cardEdge,
+        },
+      ]}>
       <Icon name="back" size={22} color={c.ink} />
     </Pressable>
   );
@@ -80,12 +96,47 @@ function Rich({ text, st, style }: { text: string; st: Settings | null; style?: 
   );
 }
 
-
 const s = StyleSheet.create({
-  next: { flex: 1, minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, borderRadius: 18, shadowOpacity: 1, shadowRadius: 0 },
+  next: {
+    flex: 1,
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   nextT: { fontFamily: font.bodySemi, fontSize: 19, textAlign: 'center' },
-  back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  ghost: { minHeight: 60, paddingHorizontal: 20, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  soft: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
+  back: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ghost: {
+    minHeight: 60,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  soft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   softT: { fontFamily: font.bodySemi, fontSize: 17, flexShrink: 1 },
 });

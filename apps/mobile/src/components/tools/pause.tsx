@@ -27,6 +27,7 @@ import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -71,6 +72,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     if (mode === 'done' && t && !t.credited) {
       credit(t);
       buzz('lit');
+      play('chime');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);

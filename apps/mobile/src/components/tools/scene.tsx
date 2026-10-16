@@ -30,6 +30,7 @@ import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -54,6 +55,7 @@ export function Move({ finish, level }: ToolProps) {
     if (!over) return;
     setDone(true);
     buzz('lit');
+    play('chime');
   }, [over]);
   if (done)
     return (

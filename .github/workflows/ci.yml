@@ -1,0 +1,55 @@
+# Every push and pull request: the rules still match the legacy app, everything typechecks and passes its tests,
+# the web app and the Lambda build, and the Terraform is valid. Nothing here touches AWS.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Core, app and API
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: The core still matches legacy/index.html
+        run: |
+          npm run extract
+          git diff --exit-code packages/core/src/legacy/core.js || (echo "::error::Run npm run extract and commit packages/core/src/legacy/core.js" && exit 1)
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build the Lambda
+        run: npm run build -w @daybook/api
+      - name: Build the web app
+        working-directory: apps/mobile
+        run: npx expo export --platform web --output-dir dist
+
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive infra
+      - name: Validate
+        run: |
+          for d in infra/bootstrap infra/app; do
+            terraform -chdir=$d init -backend=false -input=false
+            terraform -chdir=$d validate
+          done

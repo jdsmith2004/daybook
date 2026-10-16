@@ -1,0 +1,75 @@
+# Deploys the sync API and the web app to AWS. It does nothing until the AWS variables are set
+# (see infra/README.md), and it only runs in the "production" environment, the only place the AWS role trusts.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # to sign in to AWS with GitHub's OpenID Connect token, so no AWS keys are stored anywhere
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_VAR_region: ${{ vars.AWS_REGION }}
+      TF_VAR_boundary_arn: ${{ vars.TF_BOUNDARY_ARN }}
+      TF_IN_AUTOMATION: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build -w @daybook/api
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform apply
+        working-directory: infra/app
+        run: |
+          terraform init -input=false -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="region=$AWS_REGION"
+          terraform apply -input=false -auto-approve
+          {
+            echo "EXPO_PUBLIC_API_URL=$(terraform output -raw api_url)"
+            echo "EXPO_PUBLIC_AUTH_DOMAIN=$(terraform output -raw auth_domain)"
+            echo "EXPO_PUBLIC_CLIENT_ID=$(terraform output -raw client_id)"
+            echo "EXPO_PUBLIC_WEB_URL=$(terraform output -raw web_url)"
+            echo "WEB_BUCKET=$(terraform output -raw web_bucket)"
+            echo "DISTRIBUTION_ID=$(terraform output -raw distribution_id)"
+          } >> "$GITHUB_ENV"
+
+      - name: Build the web app
+        working-directory: apps/mobile
+        run: npx expo export --platform web --output-dir dist
+
+      - name: Upload the web app
+        working-directory: apps/mobile/dist
+        run: |
+          # files with a hash in their name never change, so browsers may keep them; the page itself is always checked
+          aws s3 sync . "s3://$WEB_BUCKET" --delete --exclude index.html --exclude metadata.json --exclude favicon.ico \
+            --cache-control "public,max-age=31536000,immutable"
+          for f in index.html metadata.json favicon.ico; do
+            [ -f "$f" ] && aws s3 cp "$f" "s3://$WEB_BUCKET/$f" --cache-control "no-cache"
+          done
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/" "/index.html" > /dev/null
+          echo "### Deployed: $EXPO_PUBLIC_WEB_URL" >> "$GITHUB_STEP_SUMMARY"

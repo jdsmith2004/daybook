@@ -1,0 +1,22 @@
+{
+  "name": "@daybook/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The sync service: one AWS Lambda behind API Gateway. Each person's records, kept under their own account, last change wins.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p .",
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "@daybook/core": "*"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1152.0",
+    "@aws-sdk/lib-dynamodb": "^3.1152.0",
+    "@types/aws-lambda": "^8.10.164",
+    "esbuild": "^0.28.2",
+    "vitest": "^5.0.5"
+  }
+}

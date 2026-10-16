@@ -1,0 +1,25 @@
+{
+  "name": "daybook",
+  "private": true,
+  "description": "Daybook: a private, honest habit-change companion. iOS, Android and web from one codebase.",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "extract": "node tools/extract-legacy.mjs",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "icons": "node tools/make-icons.mjs",
+    "fixtures": "npm run fixtures -w @daybook/core"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "acorn": "^8.12.1",
+    "typescript": "~6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

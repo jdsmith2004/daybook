@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (git ignores it) and fill in.
+alert_email = "you@example.com"
+# monthly_budget_usd = 5
+# create_github_oidc_provider = false   # if this AWS account already has the GitHub OIDC provider

@@ -1,0 +1,53 @@
+import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
+import { Fredoka_700Bold } from '@expo-google-fonts/fredoka/700Bold';
+import { InstrumentSans_400Regular } from '@expo-google-fonts/instrument-sans/400Regular';
+import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500Medium';
+import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
+import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
+import { useFonts } from 'expo-font';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+
+import AppTabs from '@/components/app-tabs';
+import { Toast } from '@/components/toast';
+import { StoreProvider, useStore } from '@/lib/store';
+import { useTheme } from '@/lib/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+function Shell() {
+  const c = useTheme();
+  const { ready } = useStore();
+  const [fonts, fontError] = useFonts({
+    Fredoka_600SemiBold,
+    Fredoka_700Bold,
+    InstrumentSans_400Regular,
+    InstrumentSans_500Medium,
+    InstrumentSans_600SemiBold,
+    InstrumentSans_700Bold,
+  });
+  const go = ready && (fonts || !!fontError);
+  useEffect(() => {
+    if (go) SplashScreen.hideAsync().catch(() => undefined);
+  }, [go]);
+  const base = c.scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const nav = { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.ink, primary: c.accent, border: c.line } };
+  if (!go) return null;
+  return (
+    <ThemeProvider value={nav}>
+      <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
+      <AppTabs />
+      <Toast />
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <StoreProvider>
+      <Shell />
+    </StoreProvider>
+  );
+}

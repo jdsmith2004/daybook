@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+web-build/
+*.tsbuildinfo
+
+# Expo
+.expo/
+expo-env.d.ts
+.metro-health-check*
+apps/mobile/ios/
+apps/mobile/android/
+
+# secrets and signing: never in git (this repository is public)
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.jks
+*.keystore
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Terraform: state and inputs can hold account details, so they stay out of git
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+*.tfplan
+
+# backups of your log
+daybook-backup*.json
+
+# editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+npm-debug.log*

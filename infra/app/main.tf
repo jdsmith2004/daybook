@@ -10,5 +10,6 @@ locals {
   # a short, stable suffix for names that must be unique across AWS, without putting the account number in them
   suffix     = substr(sha1("${local.account}-${var.region}"), 0, 8)
   web_origin = "https://${aws_cloudfront_distribution.web.domain_name}"
+  api_host   = replace(aws_apigatewayv2_api.api.api_endpoint, "https://", "")
   origins    = concat([local.web_origin], var.dev_origins)
 }

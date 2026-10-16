@@ -38,7 +38,7 @@ resource "aws_cloudfront_response_headers_policy" "web" {
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob:",
         "font-src 'self' data:",
-        "connect-src 'self' https://*.execute-api.${var.region}.amazonaws.com https://${aws_cognito_user_pool_domain.users.domain}.auth.${var.region}.amazoncognito.com https://cognito-idp.${var.region}.amazonaws.com",
+        "connect-src 'self' https://${aws_cognito_user_pool_domain.users.domain}.auth.${var.region}.amazoncognito.com https://cognito-idp.${var.region}.amazonaws.com",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "object-src 'none'",
@@ -69,6 +69,14 @@ data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
 }
 
+data "aws_cloudfront_cache_policy" "none" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_origin_request_policy" "api" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
 resource "aws_cloudfront_distribution" "web" {
   enabled             = true
   comment             = "Daybook web app"
@@ -81,6 +89,30 @@ resource "aws_cloudfront_distribution" "web" {
     origin_id                = "web"
     domain_name              = aws_s3_bucket.web.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.web.id
+  }
+
+  # the sync API, at the same address as the app, never cached
+  origin {
+    origin_id   = "api"
+    domain_name = local.api_host
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern               = "/sync"
+    target_origin_id           = "api"
+    viewer_protocol_policy     = "https-only"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    cache_policy_id            = data.aws_cloudfront_cache_policy.none.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.api.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
   }
 
   default_cache_behavior {

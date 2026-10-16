@@ -30,4 +30,10 @@ resource "aws_dynamodb_table" "records" {
   point_in_time_recovery {
     enabled = true
   }
+
+  # only the server's own daily allowance records carry a ttl; a person's records never expire
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
 }

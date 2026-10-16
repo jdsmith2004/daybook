@@ -3,6 +3,12 @@ output "web_url" {
   value = local.web_origin
 }
 
+/* the sync API, through the app's own address (the apps use this one) */
+output "sync_url" {
+  value = "${local.web_origin}/sync"
+}
+
+/* the API Gateway address itself, for testing */
 output "api_url" {
   value = aws_apigatewayv2_api.api.api_endpoint
 }

@@ -2,7 +2,7 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { MemoryStore } from '../src/store';
-import { makeHandler, MAX_PUSH, MAX_SKEW, OVERLAP } from '../src/sync';
+import { DAILY_BYTES, makeHandler, MAX_PUSH, MAX_RECORD, MAX_SKEW, OVERLAP } from '../src/sync';
 
 let now = 1_000_000_000;
 let store: MemoryStore;
@@ -22,7 +22,7 @@ function ev(method: string, opts: { user?: string | null; body?: unknown; query?
 }
 const call = async (e: APIGatewayProxyEventV2WithJWTAuthorizer) => {
   const r = await handler(e);
-  return { status: r.statusCode, body: JSON.parse(r.body as string) };
+  return { status: r.statusCode ?? 0, body: JSON.parse(r.body as string) };
 };
 const day = (k: string, u: number, extra: Record<string, unknown> = {}) => ({
   id: `days/${k}`,
@@ -141,13 +141,72 @@ describe('sync', () => {
     expect(g.body.records).toEqual([{ id: 'days/2026-10-14', u: 600, data: null }]);
   });
 
-  it('erases everything for one person only', async () => {
+  it('erases one person’s log as deletions, so their other devices remove it too, and leaves others alone', async () => {
     await call(ev('POST', { user: 'alice', body: { records: [day('2026-10-14', 500), day('2026-10-13', 500)] } }));
     await call(ev('POST', { user: 'bob', body: { records: [day('2026-10-14', 500)] } }));
+    now += 1000;
     const d = await call(ev('DELETE', { user: 'alice' }));
     expect(d.body.erased).toBe(2);
+    const g = await call(ev('GET', { user: 'alice', query: { since: '0' } }));
+    expect(g.body.records.map((r: { data: unknown }) => r.data)).toEqual([null, null]);
+    /* an older copy pushed from another device does not bring it back */
+    const again = await call(ev('POST', { user: 'alice', body: { records: [day('2026-10-14', 500)] } }));
+    expect(again.body.stale).toEqual(['days/2026-10-14']);
+    expect((await call(ev('GET', { user: 'bob', query: { since: '0' } }))).body.records[0].data).not.toBeNull();
+    /* closing the account removes everything for good */
+    await call(ev('DELETE', { user: 'alice', query: { all: '1' } }));
     expect((await call(ev('GET', { user: 'alice', query: { since: '0' } }))).body.records).toEqual([]);
-    expect((await call(ev('GET', { user: 'bob', query: { since: '0' } }))).body.records).toHaveLength(1);
+  });
+
+  it('caps record size in bytes, not characters', async () => {
+    const big = day('2026-10-14', 500, { events: [{ id: 'e', time: '22:00', outcome: 'rode', note: 'é'.repeat(400) }] });
+    const p = await call(ev('POST', { body: { records: [big] } }));
+    expect(p.body.saved).toEqual(['days/2026-10-14']); // notes are cut to 500 characters by the shared rules
+    const settings = { id: 'settings', u: 600, data: { start: '2026-10-01', huge: 'é'.repeat(MAX_RECORD * 3) } };
+    const s = await call(ev('POST', { body: { records: [settings] } }));
+    expect(s.body.bad.map((b: { why: string }) => b.why)).toEqual(['too large']);
+  });
+
+  it('refuses a body over the size limit', async () => {
+    const r = await call(ev('POST', { raw: JSON.stringify({ records: [], pad: 'x'.repeat(1_100_000) }) }));
+    expect(r.status).toBe(413);
+  });
+
+  it('stops a runaway client at the daily allowance', async () => {
+    const one = day('2026-10-14', 500, { events: Array.from({ length: 60 }, (_, i) => ({ id: 'e' + i, time: '22:00', outcome: 'rode', note: 'x'.repeat(490) })) });
+    let status = 200;
+    let n = 0;
+    while (status === 200 && n < 2000) {
+      const batch = Array.from({ length: 30 }, (_, i) => ({ ...one, id: `days/2026-0${1 + (i % 9)}-1${i % 10}`, u: 1000 + n * 100 + i }));
+      status = (await call(ev('POST', { body: { records: batch } }))).status;
+      n++;
+    }
+    expect(status).toBe(429);
+    const used = [...store.usage.values()][0];
+    expect(used).toBeLessThanOrEqual(DAILY_BYTES);
+    expect(used).toBeGreaterThan(DAILY_BYTES * 0.9);
+    now += 86_400_000;
+    expect((await call(ev('POST', { body: { records: [day('2026-10-14', now)] } }))).status).toBe(200);
+  });
+
+  it('a cursor cannot reach into another person’s log', async () => {
+    const forged = Buffer.from(JSON.stringify({ u: 'bob', i: 0 })).toString('base64url');
+    expect((await call(ev('GET', { user: 'alice', query: { since: '0', cursor: forged } }))).status).toBe(400);
+    expect((await call(ev('GET', { query: { since: '0', cursor: '%%%' } }))).status).toBe(400);
+  });
+
+  it('reports a record that fails to save, and saves the rest', async () => {
+    const failing = new MemoryStore();
+    const put = failing.putIfNewer.bind(failing);
+    failing.putIfNewer = async (u, r) => {
+      if (r.id === 'days/2026-10-13') throw new Error('boom');
+      return put(u, r);
+    };
+    handler = makeHandler(failing, () => now);
+    const p = await call(ev('POST', { body: { records: [day('2026-10-13', 500), day('2026-10-14', 500)] } }));
+    expect(p.status).toBe(200);
+    expect(p.body.saved).toEqual(['days/2026-10-14']);
+    expect(p.body.bad).toEqual([{ id: 'days/2026-10-13', why: 'could not save, try again' }]);
   });
 
   it('answers other methods with 405', async () => {

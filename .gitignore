@@ -46,3 +46,6 @@ daybook-backup*.json
 !.vscode/extensions.json
 *.swp
 npm-debug.log*
+
+# Claude Code: personal, never shared
+.claude/settings.local.json

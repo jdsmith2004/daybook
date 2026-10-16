@@ -40,6 +40,11 @@ resource "aws_cognito_user_pool" "users" {
   email_configuration {
     email_sending_account = "COGNITO_DEFAULT"
   }
+
+  # a new email address (which is also the sign-in name) only takes effect once its code is confirmed
+  user_attribute_update_settings {
+    attributes_require_verification_before_update = ["email"]
+  }
 }
 
 resource "aws_cognito_user_pool_domain" "users" {

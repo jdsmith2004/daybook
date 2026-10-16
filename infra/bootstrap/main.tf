@@ -1,10 +1,11 @@
 /*
  * Run once, by you, with your own AWS sign-in. It makes:
  *   1. an S3 bucket for the app stack's Terraform state (versioned, encrypted, private)
- *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from this repo's
- *      "production" environment
+ *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from a workflow running
+ *      on this repo's main branch
  *   3. a permissions boundary: the most any role the deploys make can ever do (read and write the Daybook table, write logs)
- *   4. a monthly budget alert
+ *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
+ *      this account
  */
 data "aws_caller_identity" "me" {}
 data "aws_partition" "p" {}
@@ -96,7 +97,7 @@ locals {
 
 resource "aws_iam_role" "deploy" {
   name                 = "daybook-deploy"
-  description          = "GitHub Actions deploys Daybook with this role (only from the production environment of ${var.github_repo})."
+  description          = "GitHub Actions deploys Daybook with this role (only from the main branch of ${var.github_repo})."
   max_session_duration = 3600
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -107,7 +108,8 @@ resource "aws_iam_role" "deploy" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:environment:production"
+          # only a workflow running on main: not a pull request, not another branch, not a fork
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:ref:refs/heads/main"
         }
       }
     }]
@@ -161,9 +163,11 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["*"]
       },
       {
-        Sid      = "Table"
-        Effect   = "Allow"
-        Action   = ["dynamodb:*"]
+        # manage the table, but never read or export what is in it
+        Sid    = "Table"
+        Effect = "Allow"
+        Action = ["dynamodb:CreateTable", "dynamodb:UpdateTable", "dynamodb:DeleteTable", "dynamodb:Describe*", "dynamodb:List*",
+        "dynamodb:UpdateContinuousBackups", "dynamodb:UpdateTimeToLive", "dynamodb:TagResource", "dynamodb:UntagResource"]
         Resource = ["arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-*"]
       },
       {
@@ -218,10 +222,22 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["arn:${local.arn}:apigateway:${var.region}::/apis", "arn:${local.arn}:apigateway:${var.region}::/apis/*", "arn:${local.arn}:apigateway:${var.region}::/tags/*"]
       },
       {
-        Sid      = "Auth"
+        Sid      = "AuthCreate"
         Effect   = "Allow"
-        Action   = ["cognito-idp:*"]
+        Action   = ["cognito-idp:CreateUserPool", "cognito-idp:ListUserPools", "cognito-idp:DescribeUserPoolDomain"]
         Resource = ["*"]
+      },
+      {
+        # the user pools in this account and region: their settings, never the users' passwords or sign-ins
+        Sid    = "Auth"
+        Effect = "Allow"
+        Action = ["cognito-idp:Describe*", "cognito-idp:GetUserPoolMfaConfig", "cognito-idp:GetSigningCertificate", "cognito-idp:ListUserPoolClients",
+          "cognito-idp:ListTagsForResource", "cognito-idp:UpdateUserPool", "cognito-idp:DeleteUserPool",
+          "cognito-idp:CreateUserPoolClient", "cognito-idp:UpdateUserPoolClient", "cognito-idp:DeleteUserPoolClient",
+          "cognito-idp:CreateUserPoolDomain", "cognito-idp:UpdateUserPoolDomain", "cognito-idp:DeleteUserPoolDomain",
+          "cognito-idp:CreateManagedLoginBranding", "cognito-idp:UpdateManagedLoginBranding", "cognito-idp:DeleteManagedLoginBranding",
+        "cognito-idp:SetUserPoolMfaConfig", "cognito-idp:TagResource", "cognito-idp:UntagResource"]
+        Resource = ["arn:${local.arn}:cognito-idp:${var.region}:${local.account}:userpool/*"]
       },
       {
         Sid      = "WebBucket"
@@ -262,4 +278,10 @@ resource "aws_budgets_budget" "monthly" {
     notification_type          = "FORECASTED"
     subscriber_email_addresses = [var.alert_email]
   }
+}
+
+/* ---------- 5. a free check for anything that trusts an outside account ---------- */
+resource "aws_accessanalyzer_analyzer" "account" {
+  analyzer_name = "daybook-account"
+  type          = "ACCOUNT"
 }

@@ -30,7 +30,7 @@ variable "invite_only" {
 }
 
 variable "dev_origins" {
-  description = "Extra web origins allowed to call the API and sign in, for local development."
+  description = "Extra web origins allowed to sign in and call the API, for local development (like http://localhost:8081). Empty in production."
   type        = list(string)
-  default     = ["http://localhost:8081"]
+  default     = []
 }

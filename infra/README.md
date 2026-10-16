@@ -3,7 +3,7 @@
 Two Terraform stacks:
 
 - **`bootstrap`**: run once, by you, from your own computer. It makes the bucket for Terraform's state, the role GitHub Actions uses to deploy (signed in with OpenID Connect, so no AWS keys are stored anywhere), a permissions boundary that caps what any app role can ever do, and a $5 monthly budget alert.
-- **`app`**: Cognito sign-in, the sync API (API Gateway and one Lambda), the DynamoDB table, and the web app (S3 and CloudFront). GitHub Actions deploys it on every push to `main` once the variables below are set.
+- **`app`**: Cognito sign-in, the sync API (API Gateway and one Lambda), the DynamoDB table, and the web app (S3 and CloudFront). GitHub Actions deploys it on every push to `main` once the secrets below are set.
 
 Everything is pay-per-use. For one person it should cost well under a dollar a month.
 
@@ -12,6 +12,8 @@ Everything is pay-per-use. For one person it should cost well under a dollar a m
 You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`brew install awscli terraform` on a Mac).
 
 > **Locked to one account.** Both stacks take your personal account number (`aws_account_id`) and Terraform refuses to run in any other account, even if the computer is signed in to a work AWS account. The deploy workflow checks it three times: the role must belong to that account, the sign-in must land in it, and Terraform must agree.
+>
+> **Only from main.** AWS trusts the deploy role only for a workflow running on this repository's `main` branch. A pull request, another branch or a fork cannot get in.
 
 1. **Sign in to AWS from the command line.** Do not use the root account for this. In the AWS console, open IAM Identity Center, create a user for yourself with the `AdministratorAccess` permission set, then:
 
@@ -34,17 +36,20 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
    Its state stays in `infra/bootstrap/terraform.tfstate` on your computer (git ignores it). Keep that file; you need it to change the bootstrap later.
 
-3. **Tell GitHub.** In the repository on GitHub: Settings > Secrets and variables > Actions > Variables. Add the five outputs from step 2 as repository variables:
+3. **Tell GitHub.** In the repository on GitHub, open Settings > Secrets and variables > Actions.
 
-   | Variable | From |
+   Add these four as **secrets** (the Secrets tab). They hold your account number, and secrets are hidden in the public build logs:
+
+   | Secret | Value |
    | --- | --- |
    | `AWS_ACCOUNT_ID` | `terraform output -raw AWS_ACCOUNT_ID` |
-   | `AWS_REGION` | `terraform output -raw AWS_REGION` |
    | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw AWS_DEPLOY_ROLE_ARN` |
    | `TF_STATE_BUCKET` | `terraform output -raw TF_STATE_BUCKET` |
    | `TF_BOUNDARY_ARN` | `terraform output -raw TF_BOUNDARY_ARN` |
 
-   These are not secrets, so they are variables. Until all of them are set, the Deploy workflow skips itself. Then run the **Deploy** workflow (Actions > Deploy > Run workflow). Its summary shows the web address.
+   And this one as a **variable** (the Variables tab): `AWS_REGION`, from `terraform output -raw AWS_REGION`.
+
+   Until all five are set, the Deploy workflow does nothing. Then run it (Actions > Deploy > Run workflow, on `main`). Its summary shows the web address.
 
 4. **Make your account.** Sign-up is invite-only, so nobody else can make an account and run up your bill. After the first deploy:
 
@@ -56,10 +61,21 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
    Cognito emails you a temporary password; you choose your own the first time you sign in.
 
+## Signing in from a local web server
+
+The hosted sign-in page only sends people back to addresses it knows. To sign in from `npx expo start` in a browser, add `dev_origins = ["http://localhost:8081"]` for a deploy you run yourself, or set the variable in the workflow. Leave it empty otherwise.
+
+## If a deploy fails with "AccessDenied"
+
+The deploy role is allowed only what Daybook's resources need. If AWS adds a step Terraform now calls, the error names the action. Add it to `aws_iam_role_policy.deploy` in `infra/bootstrap/main.tf` and run `terraform apply` there again.
+
 ## What protects what
 
 - Each person's records are stored under their own Cognito id, which the Lambda takes only from the signed token API Gateway checked.
 - The deploy role can only change Daybook's own resources, and any role it makes must carry the boundary, which allows nothing but the Daybook table and its logs.
-- The API is throttled (10 requests a second, bursts of 20), and the budget alert emails you at 80% of $5.
-- The web app sends a strict Content-Security-Policy: it only loads its own code and only talks to the API and the sign-in page.
-- The table has deletion protection and point-in-time recovery.
+- The deploy role can manage the table but never read or export what is in it, and it can change user pools but not users' passwords or sign-ins.
+- IAM Access Analyzer (free) flags any role or bucket that trusts someone outside the account.
+- The API is throttled (5 requests a second, bursts of 10), each request is at most 1 MB, each record at most 64 KB (256 KB for settings), and each person can write at most 20 MB a day. The budget alert emails you at 80% of $5.
+- The web app reaches the API at its own address (CloudFront sends `/sync` to API Gateway), so its Content-Security-Policy allows only itself and the sign-in page.
+- The account number is a GitHub secret, so it is masked in the public build logs, and the jobs that install npm packages never get an AWS token.
+- The table has deletion protection and point-in-time recovery. Erasing your log turns every record into a deletion, so your other devices remove it too.

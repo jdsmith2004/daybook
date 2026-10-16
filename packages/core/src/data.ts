@@ -14,7 +14,7 @@ export function normReview(r: unknown, k: string): Review {
   };
 }
 
-export const isReviewKey = (k: string) => /^w\d+$/.test(k);
+export const isReviewKey = (k: string) => /^w\d{1,4}$/.test(k);
 
 /* ---------- backups: the same JSON file the legacy app saves and restores ---------- */
 

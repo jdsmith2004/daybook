@@ -20,7 +20,7 @@ resource "aws_iam_role_policy" "sync" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["dynamodb:Query", "dynamodb:PutItem", "dynamodb:BatchWriteItem"]
+        Action   = ["dynamodb:Query", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:BatchWriteItem"]
         Resource = [aws_dynamodb_table.records.arn, "${aws_dynamodb_table.records.arn}/index/*"]
       },
       {
@@ -61,14 +61,19 @@ resource "aws_lambda_function" "sync" {
   depends_on = [aws_iam_role_policy.sync]
 }
 
+/* the web app reaches the API through its own address (CloudFront sends /sync here), so no cross-origin access is needed;
+   only a local development server, if one is listed, is allowed */
 resource "aws_apigatewayv2_api" "api" {
   name          = "daybook-api"
   protocol_type = "HTTP"
-  cors_configuration {
-    allow_origins = local.origins
-    allow_methods = ["GET", "POST", "DELETE", "OPTIONS"]
-    allow_headers = ["authorization", "content-type"]
-    max_age       = 3600
+  dynamic "cors_configuration" {
+    for_each = length(var.dev_origins) > 0 ? [1] : []
+    content {
+      allow_origins = var.dev_origins
+      allow_methods = ["GET", "POST", "DELETE", "OPTIONS"]
+      allow_headers = ["authorization", "content-type"]
+      max_age       = 3600
+    }
   }
 }
 
@@ -106,8 +111,8 @@ resource "aws_apigatewayv2_stage" "default" {
   auto_deploy = true
   # a ceiling on requests, so a runaway client (or anyone else) cannot run up a bill
   default_route_settings {
-    throttling_burst_limit = 20
-    throttling_rate_limit  = 10
+    throttling_burst_limit = 10
+    throttling_rate_limit  = 5
   }
 }
 

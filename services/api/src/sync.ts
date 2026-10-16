@@ -5,19 +5,27 @@
                                        Pulls overlap by a minute, so a save that lands while a pull runs is never missed;
                                        a record that comes twice is simply not newer the second time.
    POST   /sync   { records: [...] }     save these records; each is kept only if it is newer than the one already there
-   DELETE /sync                          erase everything this person has on the server
+   DELETE /sync                          erase this person's log: every record becomes a deletion, so their other devices
+                                       remove it too on their next pull
+   DELETE /sync?all=1                    remove everything for good (when closing the account)
 
    Who is asking comes only from the signed token that API Gateway checked (its `sub`). Every record is checked and cleaned
-   with the same rules the apps use (@daybook/core), so nothing malformed is ever stored. */
+   with the same rules the apps use (@daybook/core), so nothing malformed is ever stored. Sizes are capped, and each person
+   has a daily write allowance, so a broken client (or a stolen token) cannot run up a bill. */
 import { normRecord } from '@daybook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
-import type { Store } from './store';
+import { BadCursor, type Store } from './store';
 
 export const PAGE = 500;
 export const MAX_PUSH = 200;
-/** a record's JSON can be at most this long (DynamoDB allows 400 KB an item) */
-export const MAX_RECORD = 350_000;
+/** the largest request body, in bytes */
+export const MAX_BODY = 1_000_000;
+/** the largest record, in bytes of JSON: settings hold the lesson notes and writing, so they get more room than a day */
+export const MAX_SETTINGS = 256_000;
+export const MAX_RECORD = 64_000;
+/** what one person may write in a day, in bytes. A year of honest logging is a few megabytes in all. */
+export const DAILY_BYTES = 20_000_000;
 /** a change time this far ahead of the server clock is a broken clock, and would win every future change, so it is refused */
 export const MAX_SKEW = 24 * 3600_000;
 export const OVERLAP = 60_000;
@@ -28,33 +36,35 @@ const json = (statusCode: number, body: unknown): Res => ({
   headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   body: JSON.stringify(body),
 });
+const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 export function makeHandler(store: Store, clock: () => number = Date.now) {
   return async function handler(event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<Res> {
     const user = event.requestContext?.authorizer?.jwt?.claims?.sub;
     if (typeof user !== 'string' || !user) return json(401, { error: 'Sign in first.' });
     const method = event.requestContext.http.method;
+    const q = event.queryStringParameters || {};
 
     if (method === 'GET') {
-      const q = event.queryStringParameters || {};
       const since = q.since == null ? 0 : Number(q.since);
       if (!Number.isFinite(since) || since < 0) return json(400, { error: 'since must be a time in ms.' });
       const now = clock();
-      let page;
       try {
-        page = await store.changedSince(user, Math.max(0, since - OVERLAP), PAGE, q.cursor || null);
+        const page = await store.changedSince(user, Math.max(0, since - OVERLAP), PAGE, q.cursor || null);
+        const records = page.items.map((r) => ({ id: r.id, u: r.u, data: r.d == null ? null : JSON.parse(r.d) }));
+        return json(200, { records, cursor: page.cursor, now });
       } catch (e) {
-        if (q.cursor) return json(400, { error: 'That cursor is not valid.' });
+        if (e instanceof BadCursor) return json(400, { error: 'That cursor is not valid.' });
         throw e;
       }
-      const records = page.items.map((r) => ({ id: r.id, u: r.u, data: r.d == null ? null : JSON.parse(r.d) }));
-      return json(200, { records, cursor: page.cursor, now });
     }
 
     if (method === 'POST') {
+      const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || '';
+      if (Buffer.byteLength(raw) > MAX_BODY) return json(413, { error: `Send at most ${MAX_BODY} bytes at a time.` });
       let body: unknown;
       try {
-        body = JSON.parse(event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || '');
+        body = JSON.parse(raw);
       } catch {
         return json(400, { error: 'The body must be JSON.' });
       }
@@ -65,29 +75,44 @@ export function makeHandler(store: Store, clock: () => number = Date.now) {
       const saved: string[] = [];
       const stale: string[] = [];
       const bad: { id: unknown; why: string }[] = [];
-      const ok = [];
-      for (const raw of list) {
-        const r = normRecord(raw);
-        const id = (raw as { id?: unknown })?.id;
-        if (!r) bad.push({ id, why: 'not a valid record' });
-        else if (r.u > now + MAX_SKEW) bad.push({ id, why: 'its time is in the future' });
-        else {
-          const d = r.data == null ? null : JSON.stringify(r.data);
-          if (d && d.length > MAX_RECORD) bad.push({ id, why: 'too large' });
-          else ok.push({ id: r.id, u: r.u, s: now, d });
+      const ok: { id: string; u: number; s: number; d: string | null }[] = [];
+      let bytes = 0;
+      for (const item of list) {
+        const r = normRecord(item);
+        const id = (item as { id?: unknown })?.id;
+        if (!r) {
+          bad.push({ id, why: 'not a valid record' });
+          continue;
         }
+        if (r.u > now + MAX_SKEW) {
+          bad.push({ id, why: 'its time is in the future' });
+          continue;
+        }
+        const d = r.data == null ? null : JSON.stringify(r.data);
+        const size = d ? Buffer.byteLength(d) : 0;
+        if (size > (r.id === 'settings' ? MAX_SETTINGS : MAX_RECORD)) {
+          bad.push({ id, why: 'too large' });
+          continue;
+        }
+        bytes += size + r.id.length;
+        ok.push({ id: r.id, u: r.u, s: now, d });
       }
-      /* a few at a time, so one big push does not flood the table */
+      if (ok.length && !(await store.useAllowance(user, utcDay(now), bytes, DAILY_BYTES)))
+        return json(429, { error: 'That is more than a day of syncing allows. It will work again tomorrow.' });
+      /* a few at a time, so one big push does not flood the table; a record that fails is reported, and the rest still save */
       for (let i = 0; i < ok.length; i += 10) {
         const part = ok.slice(i, i + 10);
-        const res = await Promise.all(part.map((r) => store.putIfNewer(user, r)));
-        res.forEach((done, j) => (done ? saved : stale).push(part[j].id));
+        const res = await Promise.allSettled(part.map((r) => store.putIfNewer(user, r)));
+        res.forEach((x, j) => {
+          if (x.status === 'rejected') bad.push({ id: part[j].id, why: 'could not save, try again' });
+          else (x.value ? saved : stale).push(part[j].id);
+        });
       }
       return json(200, { saved, stale, bad, now });
     }
 
     if (method === 'DELETE') {
-      const n = await store.eraseAll(user);
+      const n = await store.erase(user, clock(), q.all === '1');
       return json(200, { erased: n });
     }
 

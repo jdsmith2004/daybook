@@ -7,6 +7,7 @@ export * from './view';
 export * from './actions';
 export * from './mutate';
 export * from './rekindle';
+export * from './sos';
 export * from './data';
 export * from './setup';
 export * from './emblem';

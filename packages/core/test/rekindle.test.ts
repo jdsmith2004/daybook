@@ -13,7 +13,7 @@ const norm = (s: string) => s.replace(/\s+/g, ' ');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logs: any[] = readdirSync(dir)
-  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'rekindle-words.json'].includes(f))
+  .filter((f) => f.endsWith('.json') && !['emblem.json', 'setup.json', 'rekindle-words.json', 'tools-words.json'].includes(f))
   .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')));
 
 afterEach(() => vi.useRealTimers());

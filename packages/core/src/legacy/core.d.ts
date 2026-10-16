@@ -236,3 +236,61 @@ export function normOnb(o: unknown): Settings['onb'];
 
 /* ---------- icons ---------- */
 export const ICO: Record<string, string>;
+
+/* ---------- SOS and the tools (picked by name from the legacy app) ---------- */
+export interface Tool {
+  id: string;
+  name: string;
+  desc: string;
+  ic: string;
+  tone: 'sky' | 'mint' | 'accent' | 'sun' | 'violet' | 'coral';
+  g: 'calm' | 'ride' | 'scene' | 'connect';
+}
+export const TOOLS: Tool[];
+export const TOOL_GROUPS: [Tool['g'], string][];
+export const UR_STR: ['low' | 'mid' | 'high', string][];
+export const UR_STR_NAME: Record<string, string>;
+export const UR_STR_ADJ: Record<string, string>;
+export const UR_DID: Record<string, string>;
+export const UR_META: Record<string, { mins: string; does: string }>;
+export const UR_FIT: Record<string, Record<string, number>>;
+export const UR_STRN: Record<string, Record<string, number>>;
+export const UR_PREF: string[];
+export const UR_TRIG_PH: Record<string, string>;
+export const UR_BED_WITH: string[];
+export const UR_DO: Record<'base' | 'night' | 'high' | 'again' | 'sets', string[]>;
+export const UR_KNOW: { t: string; l?: string; f?: string[] }[];
+export const UR_LPREF: Record<string, string[]>;
+export const UR_TR_T: Record<string, string>;
+export function urRate(r: { n: number; w: number } | null | undefined): number;
+export function urLift(r: { n: number; w: number; l: number } | null | undefined): number;
+export function urMinText(m: number): string;
+export const PATTERNS: Record<'calm' | 'box' | 'slow' | 'sigh', { name: string; desc: string; ph: [string, number][] }>;
+export const PH_TXT: Record<string, string>;
+export function breathPhase(pat: string, sec: number): { idx: number; k: string; dur: number; left: number };
+export const DONE_MSG: Record<string, string>;
+export const PAUSE_MS: number;
+export const CU_BODY: [string, string][];
+export const CU_FEEL: [string, string][];
+export const CU_WHERE: Record<string, string>;
+export const CU_CHG: [string, string][];
+export const CU_SAY: Record<string, string>;
+export const CU_MS: number;
+export const CU_D: string;
+export const GROUND: [number, string, string][];
+export const NEEDS: [string, string, string, [string, string] | null][];
+export const MOVES: [string, string, string][];
+export const MOVE_MS: number;
+export const FWD_A: [string, string][];
+export const FWD_B: [string, string][];
+export const THOUGHTS: [string, string][];
+export function thoughtIn(t: string): string;
+export const BED: [string, string, string][];
+export const TEXTS: string[];
+export const FREE_LINES: [string, string, string, string][];
+export function eventsOf(days: Days, fromKey?: DayKey): (DayEvent & { key: DayKey })[];
+export const LESSON_IDS: string[];
+export const RCATS: { id: 'rel' | 'foc' | 'val' | 'oth'; name: string; ic: string; tone: string; words: RegExp | null }[];
+export function reasonGuess(text: string): (typeof RCATS)[number];
+export function reasonCat(st: Settings | null, text: string): (typeof RCATS)[number];
+export const MENU_DEFAULT: string[];

@@ -8,7 +8,7 @@ A private, honest companion for changing a habit: log urges and slips without sh
 
 | Folder | What it is |
 | --- | --- |
-| `legacy/index.html` | The original single-file app. It is the source of truth for every rule until the new app does everything it does. |
+| `legacy/index.html` | The original single-file app (now retired). It is the source of truth for every rule until the new app does everything it does. |
 | `packages/core` | Every rule with no UI: counting, run saves, step down, points, levels, badges, quests, the flame, lessons. Most of it is copied verbatim from the legacy app by `tools/extract-legacy.mjs`; golden tests check it against the legacy app itself. |
 | `apps/mobile` | The app (Expo and React Native, with Expo Router). The same code runs on iOS, Android and the web. |
 | `services/api` | The sync service: one Lambda behind API Gateway, with DynamoDB. |
@@ -60,7 +60,7 @@ Commit and push this repository only as yourself. In this repository:
 
 ```sh
 git config user.name "Your Name"
-git config user.email "the email on your personal GitHub account"
+git config user.email "ID+username@users.noreply.github.com"   # your GitHub noreply address (Settings > Emails)
 ```
 
 To push with your personal account on a computer that is signed in to another one, use an SSH key for the personal account with its own host name in `~/.ssh/config`:

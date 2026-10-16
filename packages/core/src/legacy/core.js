@@ -2770,6 +2770,161 @@ const ICO={
  more:'<circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/>'
 };
 
+/* ------------------------------------------------------------------------------------------------
+   picked: the data and pure helpers behind SOS and the tools
+   ------------------------------------------------------------------------------------------------ */
+const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];
+const TOOLS=[
+ {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},
+ {id:'ground',name:'5-4-3-2-1',desc:'Come back to the room',ic:'dots',tone:'mint',g:'calm'},
+ {id:'curious',name:'Get curious',desc:'Watch the wave',ic:'wave',tone:'accent',g:'ride'},
+ {id:'pause',name:'10-minute pause',desc:'Let the wave pass',ic:'timer',tone:'sun',g:'ride'},
+ {id:'thought',name:'Name the thought',desc:'A thought is not an order',ic:'sparkle',tone:'violet',g:'ride'},
+ {id:'forward',name:'Play it forward',desc:'Picture the next hour',ic:'compass',tone:'mint',g:'ride'},
+ {id:'move',name:'Move',desc:'Two minutes, body first',ic:'bolt',tone:'coral',g:'scene'},
+ {id:'bed',name:'Go to bed',desc:'Phone away, a plan for the thoughts',ic:'moon',tone:'accent',g:'scene'},
+ {id:'surprise',name:'Surprise me',desc:'A random calm move',ic:'dice',tone:'violet',g:'scene'},
+ {id:'halt',name:'What do I need?',desc:'Hungry, lonely, tired?',ic:'heart',tone:'sun',g:'scene'},
+ {id:'message',name:'Reach a person',desc:'Texts ready to send',ic:'chat',tone:'sky',g:'connect'},
+ {id:'reasons',name:'My reasons',desc:'Remember why',ic:'star',tone:'sun',g:'connect'}
+];
+const TK='daybook.timer',PAUSE_MS=600000;
+const PATTERNS={
+ calm:{name:'Calm',desc:'in 4 · out 6',ph:[['in',4],['out',6]]},
+ box:{name:'Box',desc:'4 · 4 · 4 · 4',ph:[['in',4],['hold',4],['out',4],['hold',4]]},
+ slow:{name:'4-7-8',desc:'in 4 · hold 7 · out 8',ph:[['in',4],['hold',7],['out',8]]},
+ /* a double breath in, then a long breath out ("cyclic sighing" in the research; see lesson 14) */
+ sigh:{name:'Sigh',desc:'in · in again · long out',ph:[['in1',2],['in2',1],['out',6]]}
+};
+const PH_TXT={in:'Breathe in',in1:'Breathe in',in2:'A little more',hold:'Hold',out:'Breathe out'};
+function breathPhase(pat,sec){
+ const ph=PATTERNS[pat].ph,total=ph.reduce((a,b)=>a+b[1],0),cyc=Math.floor(sec/total);
+ let x=sec-cyc*total;
+ for(let i=0;i<ph.length;i++){
+  if(x<ph[i][1])return {idx:cyc*ph.length+i,k:ph[i][0],dur:ph[i][1],left:Math.ceil(ph[i][1]-x)};
+  x-=ph[i][1];
+ }
+ return {idx:cyc*ph.length,k:ph[0][0],dur:ph[0][1],left:ph[0][1]};
+}
+const UR_STR=[['low','A little'],['mid','Strong'],['high','Very strong']];
+const UR_STR_NAME={low:'A little',mid:'Strong',high:'Very strong'};
+const UR_STR_ADJ={low:'small',mid:'strong',high:'very strong'};
+const UR_DID={message:'reach'};
+const UR_META={
+ breathe:{mins:'3 min',does:'Starts right away. A long breath out.'},
+ ground:{mins:'About 2 min',does:'Brings you back to the room.'},
+ curious:{mins:'About 2 min',does:'Watch the wave rise and fall.'},
+ halt:{mins:'About 1 min',does:'Finds what you actually need.'},
+ surprise:{mins:'A few min',does:'One small thing, away from the screen.'},
+ message:{mins:'About 2 min',does:'Your safe person, or a free line.'},
+ reasons:{mins:'About 1 min',does:'Why you are doing this.'},
+ pause:{mins:'Up to 10 min',does:'A timer. Phone down, step away.'},
+ move:{mins:'2 min',does:'Body first, decision later.'},
+ bed:{mins:'2 min',does:'Phone away, lights off, and a plan for the thoughts.'},
+ thought:{mins:'About 1 min',does:'A thought is not an order.'},
+ forward:{mins:'About 1 min',does:'Picture the next hour both ways.'}
+};
+const UR_FIT={
+ late:  {breathe:6,ground:4,curious:6,halt:4,surprise:2,message:3,reasons:5,pause:5,move:3,bed:9,thought:5,forward:6},
+ lonely:{breathe:4,ground:3,curious:5,halt:6,surprise:3,message:9,reasons:6,pause:2,move:3,bed:2,thought:5,forward:5},
+ bored: {breathe:3,ground:4,curious:5,halt:4,surprise:8,message:3,reasons:4,pause:3,move:8,bed:1,thought:4,forward:4},
+ stress:{breathe:9,ground:8,curious:6,halt:5,surprise:4,message:5,reasons:4,pause:3,move:8,bed:2,thought:5,forward:4},
+ tired: {breathe:5,ground:3,curious:4,halt:7,surprise:3,message:2,reasons:4,pause:4,move:3,bed:9,thought:4,forward:5},
+ scroll:{breathe:4,ground:6,curious:5,halt:4,surprise:7,message:3,reasons:4,pause:4,move:7,bed:5,thought:6,forward:6},
+ other: {breathe:6,ground:5,curious:7,halt:6,surprise:4,message:3,reasons:5,pause:3,move:5,bed:3,thought:7,forward:6}
+};
+const UR_STRN={low:{pause:-3,halt:1,reasons:1,curious:1,forward:1,thought:1},mid:{pause:-1},high:{breathe:2,ground:2,move:2,pause:2,curious:-2,surprise:-1,reasons:-1,forward:-1,thought:-1}};
+const UR_PREF=['breathe','move','ground','thought','halt','reasons','curious','forward','message','surprise','pause','bed'];
+const UR_TRIG_PH={late:'late at night',lonely:'you felt lonely or low',bored:'you were bored',stress:'you were stressed',tired:'you were tired',scroll:'after scrolling'};
+const urRate=r=>r&&r.n?(r.w+1)/(r.n+2):.5;
+const urLift=r=>!r?0:(urRate(r)-.5)*12*Math.min(1,r.n/3)+Math.min(3,r.l*.5)*Math.max(0,1-r.n/3);
+const UR_BED_WITH=['thought','forward','curious','reasons','ground','breathe'];
+const UR_DO={
+ base:['Phone down for a moment.','Unclench your jaw. Drop your shoulders.','Feet on the floor.'],
+ night:['Sit up, feet on the floor.','Get out of bed if you can.'],
+ high:['Stand up. Change rooms if you can.','Move first: stand up and step away from where you were.'],
+ again:['Still here. That is okay.','Strong is not stuck. Try something different.','Waves can come back. Pick the next thing.'],
+ sets:['Back again. That is okay. Waves often come in sets.']
+};
+const UR_KNOW=[
+ {t:'An urge usually rises, peaks, and passes. Your job is to outlast this one, not to win.',l:'l2',f:['low','mid','stress','other','none']},
+ {t:'You are not trying to feel nothing. You are making a gap between the urge and what you do next.',l:'l2'},
+ {t:'Waiting before you decide is a skill, and it gets easier with practice.',l:'l2',f:['mid']},
+ {t:'Putting a feeling into a few words can take some of the charge out of it.',l:'l13',f:['stress','lonely','other','none']},
+ {t:'Late nights and low moods make urges harder for many people. Plan for those hours, and go easy on yourself in them.',l:'l4',f:['late','tired','lonely']},
+ {t:'Habits live in places. Moving to another room, or moving your phone, changes the pull.',l:'l10',f:['late','scroll','bored']},
+ {t:'A plan made ahead (“if this, then I will”) tends to be easier to follow than deciding in the middle of an urge.',l:'l9'},
+ {t:'Shame tends to make things harder. Treating yourself kindly makes the next try easier.',l:'l5'},
+ {t:'Secrets are heavy to carry. Telling one safe person can lighten the load.',l:'l7',f:['lonely']},
+ {t:'Different tools work on different days. Trying a new one is useful information.'},
+ {t:'A slow breath with a long breath out is a small, free tool. One minute is enough to try.',l:'l14',f:['stress','high','late']},
+ {t:'Moving for a minute or two can ease a craving. Move first, then decide.',l:'l15',f:['bored','tired','stress','high']},
+ {t:'“Just once” is a thought, not an order. You can notice it and still choose.',l:'l16',f:['scroll','other','none','mid']},
+ {t:'Look at what came just before this. An earlier step is much easier to change than the last one.',l:'l17',f:['late','scroll','bored']},
+ {t:'Strong self-control mostly means fewer fights. Set things up so there is less to fight.',l:'l20',f:['scroll','late','tired']}
+];
+const UR_LPREF={
+ slipped:['l3','l6','l5','l21','l17','l12','l18','l22','l31','l32'],
+ late:['l4','l10','l9','l17','l20','l23','l30'],
+ lonely:['l4','l7','l13','l8','l23'],
+ bored:['l23','l15','l10','l20','l9','l13'],
+ stress:['l14','l13','l15','l2','l9','l16','l30'],
+ tired:['l4','l13','l10','l20','l9'],
+ scroll:['l10','l17','l20','l16','l2','l9'],
+ other:['l2','l16','l13','l18','l9','l19','l1'],
+ none:['l2','l19','l16','l9','l13','l1']
+};
+const UR_TR_T={p:'it passed',s:'still strong',x:'slipped'};
+function urMinText(m){return m<1?'under a minute':m===1?'1 minute':m+' minutes'}
+const DONE_MSG={ground:'You came back to the room.',reasons:'Good to remember.',surprise:'Small things add up.',curious:'You watched it. That is the skill.',
+ move:'Body first. Nice work.',forward:'You picked the better hour.',thought:'A thought is not an order.',bed:'Ready for tonight.'};
+const CU_BODY=[['chest','Chest'],['stomach','Stomach'],['throat','Throat or jaw'],['hands','Hands or arms'],['head','Head'],['all','All over'],['unsure','Not sure']];
+const CU_FEEL=[['tight','Tight'],['hot','Hot'],['buzzy','Buzzy'],['heavy','Heavy'],['hollow','Hollow'],['restless','Restless'],['else','Something else']];
+const CU_WHERE={chest:'in your chest',stomach:'in your stomach',throat:'in your throat or jaw',hands:'in your hands or arms',head:'in your head',all:'all over'};
+const CU_CHG=[['bigger','Bigger'],['same','About the same'],['smaller','Smaller']];
+const CU_SAY={bigger:'Waves often build before they fall. Keep watching. You do not have to do anything about it.',same:'Steady is fine. You are watching it, not obeying it.',smaller:'That is the wave going down, and you let it.'};
+const CU_MS=90000;
+const CU_D='M10 96 C 46 96, 62 76, 82 50 S 112 10, 128 10 S 158 38, 178 64 S 220 96, 250 96';
+const GROUND=[
+ [5,'See','Look around you. Name 5 things you can see.'],
+ [4,'Feel','Notice 4 things you can feel: the chair, your clothes, the floor.'],
+ [3,'Hear','Listen for 3 sounds. Near ones and far ones.'],
+ [2,'Smell','Find 2 things you can smell, or 2 smells you like.'],
+ [1,'Taste','Notice 1 thing you can taste. Or take a sip of water.']
+];
+const NEEDS=[
+ ['hungry','Hungry','Eat something real and drink a glass of water. Running on empty makes everything harder.',null],
+ ['angry','Angry or stressed','Move it out of your body first: two minutes of push-ups, squats, or a fast walk. Then write one sentence about what is bugging you.',['move','Move for 2 minutes']],
+ ['lonely','Lonely','Reach out to one person. A short text counts. Or go where other people are.',['message','Reach a person']],
+ ['tired','Tired','If it is late, the best move is bed, with the phone charging in another room. In the daytime, rest for ten minutes or step outside.',null],
+ ['bored','Bored or restless','Give your hands or legs a job for ten minutes: tidy, a hobby, a walk.',['surprise','Surprise me']]
+];
+const TEXTS=[
+ 'Hey, thinking of you. How is your week going?',
+ 'Kind of a rough evening. Can you talk for five minutes?',
+ 'Trying not to be alone with my phone right now. Can you text me back about anything?'
+];
+const FREE_LINES=[['Crisis Text Line','Text HOME to 741741','Free, 24/7. A trained volunteer, for whatever you are going through.','741741'],
+ ['988 Lifeline','Call or text 988','Free, 24/7. Open to anyone who is struggling, not only in a crisis.','988']];
+const MOVES=[['pushups','Push-ups','On the floor, or against a wall'],['squats','Squats','Slow, or down to a chair'],['walk','Walk','Stairs, a hallway, or outside'],['jacks','Jumping jacks','Or march in place'],['shake','Shake it out','Arms, legs, the whole body'],['wallsit','Wall sit or plank','Hold, rest, hold again']];
+const MOVE_MS=120000;
+const FWD_A=[['ashamed','Ashamed'],['tired','Tired'],['empty','Empty'],['annoyed','Annoyed with myself'],['behind','Behind on things'],['alone','More alone'],['okay','Honestly, okay']];
+const FWD_B=[['proud','Proud'],['calm','Calm'],['clear','Clear-headed'],['rested','Rested'],['me','More like myself'],['close','Closer to people'],['unsure','Not sure yet']];
+const THOUGHTS=[['once','Just once will not hurt'],['deserve','I deserve this'],['blown','I already blew it today'],['cant','I cannot handle this feeling'],['nobody','Nobody will know'],['tired','I am too tired to fight it'],['last','This is the last time']];
+const thoughtIn=t=>{const s=String(t||'').trim().replace(/[.!?]+$/,'');return /^I\b/.test(s)?s:s.charAt(0).toLowerCase()+s.slice(1)};
+const BED=[['phone','Phone charging outside the bedroom','Or across the room, out of reach.'],['alarm','Alarm set','A clock, or the phone across the room.'],['lights','Lights off','Screens off too.']];
+const RCATS=[
+ {id:'rel',name:'Relationships',ic:'heart',tone:'coral',words:/relationship|marri|partner|wife|husband|spouse|girlfriend|boyfriend|dating|romanc|love|famil|friend|intima|connect|trust|father|mother|\bdad\b|\bmom\b|kids|child/i},
+ {id:'foc',name:'Energy and focus',ic:'bolt',tone:'sky',words:/focus|energy|work|career|sleep|tired|product|concentrat|clear|fog|mind|health|study|school|money|morning|time/i},
+ {id:'val',name:'Values and faith',ic:'star',tone:'violet',words:/value|faith|\bgod\b|pray|church|spirit|integrity|honest|character|belief|believe|purpose|soul|proud|my word|respect/i},
+ {id:'oth',name:'Something else',ic:'leaf',tone:'mint',words:null}
+];
+function reasonGuess(text){for(let i=0;i<3;i++)if(RCATS[i].words.test(text))return RCATS[i];return RCATS[3]}
+function reasonCat(st,text){
+ const m=((st&&st.rmeta)||[]).find(x=>x.t===text);
+ return (m&&RCATS.find(c=>c.id===m.c))||reasonGuess(text);
+}
+
 export {
   TRIGGERS,
   DIDS,
@@ -2961,5 +3116,51 @@ export {
   obRnd,
   obHrs,
   obTop,
-  ICO
+  ICO,
+  TOOL_GROUPS,
+  TOOLS,
+  TK,
+  PAUSE_MS,
+  PATTERNS,
+  PH_TXT,
+  breathPhase,
+  UR_STR,
+  UR_STR_NAME,
+  UR_STR_ADJ,
+  UR_DID,
+  UR_META,
+  UR_FIT,
+  UR_STRN,
+  UR_PREF,
+  UR_TRIG_PH,
+  urRate,
+  urLift,
+  UR_BED_WITH,
+  UR_DO,
+  UR_KNOW,
+  UR_LPREF,
+  UR_TR_T,
+  urMinText,
+  DONE_MSG,
+  CU_BODY,
+  CU_FEEL,
+  CU_WHERE,
+  CU_CHG,
+  CU_SAY,
+  CU_MS,
+  CU_D,
+  GROUND,
+  NEEDS,
+  TEXTS,
+  FREE_LINES,
+  MOVES,
+  MOVE_MS,
+  FWD_A,
+  FWD_B,
+  THOUGHTS,
+  thoughtIn,
+  BED,
+  RCATS,
+  reasonGuess,
+  reasonCat
 };

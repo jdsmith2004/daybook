@@ -365,6 +365,28 @@ const COMPUTE = ({ settings, days, reviews }) => {
   out.rows = {};
   keys.forEach((k) => { out.rows[k] = sortedEvents(D[k], st.rollover).map((e) => eventRow(k, e)); });
   out.phase = phaseLabel(tk, st);
+  /* SOS: what it suggests for a few kinds of moment, with this device's SOS memory empty */
+  const fresh = () => localStorage.removeItem('daybook.ur.v1');
+  fresh();
+  const variants = [
+    { strength: null, used: [], again: 0 },
+    { strength: 'low', used: [], again: 0 },
+    { strength: 'high', used: ['breathe'], again: 1 },
+    { strength: 'mid', used: ['move', 'ground'], again: 2, skip: ['thought'] },
+    { strength: null, used: [], again: 0, trigger: 'late' },
+    { strength: 'mid', used: [], again: 0, trigger: 'u_custom1' },
+    { strength: null, used: ['curious'], again: 1, trigger: 'lonely' },
+  ];
+  out.sos = {
+    stats: J(urStats()), tried: urTried(), ev: urEvidence(),
+    variants: variants.map((v) => {
+      const sc = Object.assign({ trigger: null, skip: [], explore: false, rounds: [] }, v);
+      const rank = urRank(sc), pk = urPickSug(sc);
+      return { sc: v, rank: rank.map((x) => ({ id: x.id, score: x.score, off: x.off, pin: x.pin, tk: x.tk })), pick: { top: pk.top.id, mode: pk.mode, combo: pk.combo ? pk.combo.id : null }, go: words(urGoHtml(pk)).text, cap: urCapText(pk, sc.strength) };
+    }),
+    lessons: [['late', false], [null, true], ['stress', false], ['u_custom1', false]].map(([t, sl]) => { fresh(); const p = urLessonFor(t, sl, null); return p ? { id: p.l.id, rev: p.rev } : null; }),
+  };
+  fresh();
   return out;
 };
 
@@ -408,6 +430,20 @@ const words = await page.evaluate(() => {
   };
 });
 writeFileSync(join(outDir, 'rekindle-words.json'), JSON.stringify(words));
+
+/* the tools' words that come from functions reading the Store */
+const toolWords = await page.evaluate(() => {
+  const st0 = Store.settings;
+  const at = (o) => { Store.settings = normSettings(Object.assign({ start: '2026-10-01' }, o)); };
+  at({}); const t0 = messageTexts(), b0 = bedPlans();
+  at({ safePerson: 'Sam', note: 'It passes.' }); const t1 = messageTexts(), b1 = bedPlans();
+  Store.settings = st0;
+  const cu = [];
+  for (const b of [null, 'chest', 'all', 'unsure']) for (const f of [null, 'tight', 'else']) cu.push([b, f, cuLine({ body: b, feel: f })]);
+  const reasons = ['Being fully present with my wife', 'Clear mornings and steady energy', 'Becoming someone I am proud of', 'Running a marathon'].map((t) => [t, reasonGuess(t).id]);
+  return { texts: [t0, t1], bed: [b0, b1], cu, reasons };
+});
+writeFileSync(join(outDir, 'tools-words.json'), JSON.stringify(toolWords));
 
 /* setup suggestions and setup answers */
 const setup = await page.evaluate(() => {

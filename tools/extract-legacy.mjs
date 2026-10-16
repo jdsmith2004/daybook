@@ -46,6 +46,32 @@ const parts = [
   ['icons: the line icons, as the inside of a 24 by 24 SVG (stroke, no fill)', slice(icoA, icoB)],
 ];
 
+/* single declarations picked by name from anywhere in the script: the data and pure helpers behind SOS, the tools, and Rekindle.
+   Each must be pure (no Store, no DOM); the extractor checks that the result runs on its own. */
+const PICK = [
+  // SOS
+  'UR_STR', 'UR_STR_NAME', 'UR_STR_ADJ', 'UR_DID', 'UR_META', 'UR_FIT', 'UR_STRN', 'UR_PREF', 'UR_TRIG_PH', 'UR_BED_WITH', 'UR_DO', 'UR_KNOW',
+  'UR_LPREF', 'UR_TR_T', 'urRate', 'urLift', 'urMinText',
+  // the tools
+  'TOOL_GROUPS', 'TOOLS', 'PATTERNS', 'PH_TXT', 'breathPhase', 'DONE_MSG', 'PAUSE_MS',
+  'CU_BODY', 'CU_FEEL', 'CU_WHERE', 'CU_CHG', 'CU_SAY', 'CU_MS', 'CU_D',
+  'GROUND', 'NEEDS', 'MOVES', 'MOVE_MS', 'FWD_A', 'FWD_B', 'THOUGHTS', 'thoughtIn', 'BED', 'TEXTS', 'FREE_LINES',
+  // my reasons
+  'RCATS', 'reasonGuess', 'reasonCat',
+];
+const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+const full = acorn.parse(script, { ecmaVersion: 'latest', sourceType: 'script' });
+const found = new Map();
+for (const node of full.body) {
+  const names = node.type === 'FunctionDeclaration' ? [node.id.name] : node.type === 'VariableDeclaration' ? node.declarations.map((d) => d.id.name) : [];
+  for (const n of names) if (PICK.includes(n)) found.set(n, node);
+}
+const missing = PICK.filter((n) => !found.has(n));
+if (missing.length) throw new Error('not found in legacy/index.html: ' + missing.join(', '));
+/* one statement can declare several names (const a=1,b=2); each statement is copied once, in file order */
+const stmts = [...new Set(PICK.map((n) => found.get(n)))].sort((a, b) => a.start - b.start);
+parts.push(['picked: the data and pure helpers behind SOS and the tools', stmts.map((n) => script.slice(n.start, n.end)).join('\n')]);
+
 let body = parts.map(([name, src]) => `/* ------------------------------------------------------------------------------------------------\n   ${name}\n   ------------------------------------------------------------------------------------------------ */\n${src}`).join('\n\n');
 
 /* every top-level name, exported as is */

@@ -232,7 +232,7 @@ function defaultSettings(startKey){
   why:'Being fully present with the people I love. Clear mornings and steady energy. Becoming someone I am proud of.',
   loop:'Fail → shame → hide → give up.',
   rule:'I log slips instead of hiding them. A slip is data, not a reset.',
-  safePerson:'',ask:'If I tell you I slipped, just say "thanks for telling me." No advice, no fixing.',
+  safePerson:'',becoming:'',ask:'If I tell you I slipped, just say "thanks for telling me." No advice, no fixing.',
   safety:SAFETY.map(()=>false),help:HELP_STEPS.map(()=>false),
   plan:URGE_PLAN.map(r=>({when:r[0],then:r[1]})),
   slipPlan:SLIP_STEPS.slice(),
@@ -283,7 +283,7 @@ function normSettings(s){
  o.slipPlan=Array.isArray(o.slipPlan)?cleanList(o.slipPlan,[],SLIP_MAX,SLIP_LEN):SLIP_STEPS.slice();
  const t=o.therapist||{};
  o.therapist={names:[0,1,2].map(i=>String((t.names&&t.names[i])||'')),checks:THERAPIST_CRIT.map((_,r)=>[0,1,2].map(c=>!!(t.checks&&t.checks[r]&&t.checks[r][c])))};
- ['goal','why','loop','rule','safePerson','ask'].forEach(k=>{if(typeof o[k]!=='string')o[k]=d[k]});
+ ['goal','why','loop','rule','safePerson','becoming','ask'].forEach(k=>{if(typeof o[k]!=='string')o[k]=d[k]});
  /* lists: reasons may be empty on purpose; the other two fall back to the starter lists */
  o.reasons=(s&&Array.isArray(s.reasons))?cleanList(s.reasons,REASON_DEFAULT,REASON_MAX,REASON_LEN):reasonsFromWhy(o.why);
  /* rmeta: the category a reason was filed under, matched by its exact text (so an older copy that reorders or edits the list cannot scramble it) */
@@ -2762,6 +2762,9 @@ const ICO={
  lock:'<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5"/>',
  copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 00-2-2h-7a2 2 0 00-2 2v7a2 2 0 002 2h2"/>',
  play:'<path d="M8 5.5v13l10.5-6.5z"/>',
+ pause:'<path d="M9 5.5v13M15 5.5v13"/>',
+ stop:'<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
+ mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
  back:'<path d="M14.5 5.5L8 12l6.5 6.5"/>',
  next:'<path d="M9.5 5.5L16 12l-6.5 6.5"/>',
  pencil:'<path d="M5 19l1-4.2L16.6 4.2a1.9 1.9 0 012.7 2.7L8.7 17.5z"/><path d="M14.5 6.4l3 3"/>',

@@ -40,7 +40,7 @@ import { changeSettings } from './actions';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
-    then, thenT, thenOwn, rs, own, person). */
+    then, thenT, thenOwn, rs, own, person), and be (who I am becoming). */
 export interface SetupAnswers {
   aim?: string;
   freq?: string;
@@ -59,6 +59,8 @@ export interface SetupAnswers {
   rs?: string[];
   own?: string;
   person?: string;
+  /** who I am becoming: a starter sentence or the person's own */
+  be?: string;
   [k: string]: unknown;
 }
 
@@ -154,7 +156,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
 export type PageKind =
   | 'hello' | 'how' | 'tiles' | 'years' | 'slide' | 'bps' | 'heard' | 'multi' | 'guess' | 'hours' | 'loop' | 'common' | 'sos'
   | 'lessons' | 'day' | 'so' | 'pattern' | 'flame' | 'waves' | 'curve' | 'tries' | 'slip' | 'takes' | 'goal' | 'reasons' | 'then'
-  | 'person' | 'review' | 'done';
+  | 'person' | 'becoming' | 'review' | 'done';
 export interface ObPage {
   id: string;
   s: string;
@@ -210,6 +212,7 @@ export const OB_PAGES: ObPage[] = [
   { id: 'reasons', s: 'plan', k: 'reasons', key: 'rs' },
   { id: 'ifthen', s: 'plan', k: 'then', key: 'then' },
   { id: 'person', s: 'plan', k: 'person', key: 'person' },
+  { id: 'becoming', s: 'plan', k: 'becoming', key: 'be' },
   { id: 'review', s: 'plan', k: 'review' },
   { id: 'done', s: 'plan', k: 'done' },
 ];
@@ -232,13 +235,26 @@ export function obPrefill(st: Settings | null): SetupAnswers {
   }
   a.so = st.screensOff;
   a.person = st.safePerson || '';
+  a.be = st.becoming || '';
   a.rs = (st.reasons || []).slice();
   return a;
 }
 
+/* ---------- who I am becoming ---------- */
+/** the starter sentences on "Who are you becoming?". Each says who the person is, not what they avoid. */
+export const OB_BE = [
+  'I am becoming someone who is free of this.',
+  'I am someone who keeps my word to myself.',
+  'I am becoming someone the people I love can count on.',
+  'I am someone who faces hard moments instead of hiding from them.',
+];
+export const BE_LEN = 160;
+/** the sentence the answers hold: one line, trimmed, or empty */
+export const obBecoming = (a: SetupAnswers) => String(a.be || '').replace(/\s+/g, ' ').trim().slice(0, BE_LEN);
+
 /* ---------- the plan: what the answers would change ---------- */
 export interface ObChange {
-  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'faith';
+  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'be' | 'faith';
   l: string;
   from: string;
   to: string;
@@ -302,6 +318,8 @@ export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObC
     });
   const pn = String(a.person || '').trim().slice(0, 80);
   if (pn && (!st || pn !== cur.safePerson)) out.push({ k: 'person', l: 'Safe person', from: cur.safePerson || 'Not set', to: pn, apply: (s) => void (s.safePerson = pn) });
+  const be = obBecoming(a);
+  if (be && (!st || be !== cur.becoming)) out.push({ k: 'be', l: 'Who I am becoming', from: cur.becoming || 'Not set', to: be, apply: (s) => void (s.becoming = be) });
   const fm = a.faith === 'big' ? 'mix' : a.faith ? 'after' : null;
   if (fm && (!st ? fm !== 'after' : fm !== cur.learn.faith))
     out.push({

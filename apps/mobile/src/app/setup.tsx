@@ -3,16 +3,19 @@
    single-choice pages move on by themselves after a tap. A new person's plan is built from their answers. Opened again, nothing
    changes until the last page, where the person ticks which changes to keep. Ported from the legacy SCENES.onb. */
 import {
+  BE_LEN,
   fmtClock,
   fmtDate,
   isTime,
   keyOfDate,
+  OB_BE,
   OB_BPS,
   OB_BPS_C,
   OB_GUESS,
   OB_SECS,
   OB_SO,
   OB_THEN,
+  obBecoming,
   obCap,
   obChanges,
   obDate,
@@ -622,6 +625,48 @@ export default function Setup() {
       foot = nextBtn(has ? 'Next' : 'Skip', !has);
       break;
     }
+    case 'becoming': {
+      const cur = obBecoming(a);
+      const own = OB_BE.indexOf(cur) < 0 ? cur : '';
+      body = (
+        <>
+          <View style={s.art}>
+            <LxIco name="star" t={t} size={90} />
+          </View>
+          <Q h="Who are you becoming?" sub="One sentence about the person you are growing into. Daybook shows it to you on hard days." />
+          <View style={{ gap: 10 }}>
+            {OB_BE.map((x) => (
+              <Opt
+                key={x}
+                on={cur === x}
+                t={t}
+                onPress={() => {
+                  if (busy()) return;
+                  setA({ be: x });
+                  buzz('tap');
+                  later();
+                }}>
+                {cur === x ? <Icon name="check" size={18} color={t.text} /> : null}
+                <Text style={[s.optT, { color: c.ink }]}>{x}</Text>
+              </Opt>
+            ))}
+          </View>
+          <Field
+            key={'be' + (own ? 1 : 0)}
+            label="Write my own"
+            maxLength={BE_LEN}
+            placeholder="I am someone who…"
+            defaultValue={own}
+            onChangeText={(v) => setA({ be: v })}
+          />
+          <T v="small" tone="muted">
+            Say who you are, not what you avoid. You can change it any time in My plan.
+          </T>
+        </>
+      );
+      foot = nextBtn(cur ? 'Next' : 'Skip', !cur);
+      break;
+    }
     case 'review': {
       const ch = obChanges(a, st, tk);
       if (!f.redo) {
@@ -657,6 +702,7 @@ export default function Setup() {
               {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null}
               <PlanRow icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />
               <PlanRow icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
+              {obBecoming(a) ? <PlanRow icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null}
             </View>
             <Text style={[s.pledge, { color: c.ink }]}>I will log honestly, slips included.</Text>
           </>

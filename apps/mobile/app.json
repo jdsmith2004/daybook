@@ -29,6 +29,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-audio",
+        {
+          "microphonePermission": "Daybook uses the microphone only when you record a voice note to yourself. The note stays on this phone.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF8EB",

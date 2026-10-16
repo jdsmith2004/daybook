@@ -1,5 +1,5 @@
 /* SOS: help on the first tap, when an urge is happening right now. Nothing is asked first.
-   The first screen holds this minute: what to do, your record or your own note, and a sun to breathe with. The sheet below it holds
+   The first screen holds this minute: who you are becoming, what to do, your record, your own words, and a sun to breathe with. The sheet below it holds
    the next move: how strong it is (optional), one suggested tool, Other tools and It passed. A tool started here comes back to
    "How is it now?", and the answer saves the entry and goes on to the check-in. Ported from the legacy SCENES.urge.
    Late at night the screens go dark, and Go to bed only ever comes paired with a tool for the thoughts. */
@@ -13,6 +13,7 @@ import {
   urDoLine,
   urEntry,
   urEvidence,
+  urFromYou,
   urKnow,
   urNight,
   urNote,
@@ -32,11 +33,13 @@ import { HorizonSun } from '@/components/orb';
 import { SceneFrame } from '@/components/scene';
 import { ToolGrid, toolTone } from '@/components/tool-grid';
 import { Icon, T } from '@/components/ui';
+import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { useVoice } from '@/lib/voice';
 
 export default function Sos() {
   const { snap, tk, now, update } = useStore();
@@ -45,6 +48,9 @@ export default function Sos() {
   const st = snap.settings;
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const ur = sos.ur;
+  const voice = useVoice();
+  /* which reason "From you" shows, when there is no note: picked once, so it stays put while you read it */
+  const [pick] = useState(() => Math.random());
 
   /* the breathing sun only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
@@ -171,21 +177,23 @@ export default function Sos() {
   }
 
   /* the first screen */
-  const note = String(st.note || '').trim();
+  const fy = urFromYou(st, pick);
+  const be = String(st.becoming || '').trim();
+  const mine = !!fy || !!voice.uri;
   const rec = urEvidence(snap.days);
   const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now) : null;
   const lines = String(ur.cx?.do || '')
     .replace(/([.!?])\s+/g, '$1\n')
     .split('\n');
-  /* the sun gets smaller when the words, your note and the sheet need the room; your own note comes first (legacy svFit) */
+  /* the sun gets smaller when the words, your own words and the sheet need the room; your own words come first (legacy svFit) */
   const H = win.height;
   const W = win.width;
   const small = H <= 680;
-  const tight = !!note && H <= 900;
+  const tight = (mine || !!be) && H <= 900;
   let d = Math.min(W * 0.74, 300, H * 0.34);
   if (tight) d = Math.min(W * 0.64, 250, H * 0.28);
-  if (H <= 780) d = note ? Math.min(W * 0.42, 160) : Math.min(W * 0.52, 200);
-  if (small) d = note ? Math.min(W * 0.38, 136) : Math.min(W * 0.44, 164);
+  if (H <= 780) d = mine ? Math.min(W * 0.42, 160) : Math.min(W * 0.52, 200);
+  if (small) d = mine ? Math.min(W * 0.38, 136) : Math.min(W * 0.44, 164);
   const quiet = small || tight;
 
   const sheet = (
@@ -227,6 +235,11 @@ export default function Sos() {
     <SceneFrame title="SOS" sky={sky} onClose={close} sheet={sheet}>
       <View style={s.sky}>
         <View style={[s.words, { gap: small ? 10 : 16 }]}>
+          {be ? (
+            <T v="small" style={s.be} accessibilityLabel={`Who I am becoming: ${be}`}>
+              {be}
+            </T>
+          ) : null}
           <T v="title" style={[s.c, s.h, small && { fontSize: 23 }]} accessibilityRole="header">
             {lines.join('\n')}
           </T>
@@ -240,7 +253,7 @@ export default function Sos() {
               <RecChip icon="wave" rest="Urges rise, peak, and pass" />
             </View>
           )}
-          {note ? <CalmNote text={note} /> : null}
+          {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
         </View>
         {ur.again ? <Flame level={level} size={92} /> : <HorizonSun size={d} on={front} />}
       </View>
@@ -332,15 +345,16 @@ function RecChip({ icon, pre, b, rest }: { icon: string; pre?: string; b?: strin
   );
 }
 
-/* your own words, written on a calm day: SOS shows them first */
-function CalmNote({ text }: { text: string }) {
+/* your own words: the note written on a calm day, or one of your reasons, and your voice note if you recorded one */
+function FromYou({ cap, text }: { cap: string; text: string }) {
   const c = useTheme();
   return (
     <View style={[s.note, { backgroundColor: c.scBtn }]}>
       <T v="small" style={s.noteCap}>
-        FROM YOU, ON A CALM DAY
+        {cap.toUpperCase()}
       </T>
-      <T style={s.noteQ}>{text}</T>
+      {text ? <T style={s.noteQ}>{text}</T> : null}
+      <SosVoice />
     </View>
   );
 }
@@ -362,6 +376,7 @@ const s = StyleSheet.create({
   words: { alignItems: 'center', paddingTop: 8 },
   rec: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingLeft: 9, paddingRight: 12, borderRadius: 999 },
+  be: { fontFamily: font.display, fontSize: 15, lineHeight: 20, textAlign: 'center', maxWidth: 360, opacity: 0.82 },
   note: { gap: 3, maxWidth: 340, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 11, borderRadius: 18 },
   noteCap: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1, opacity: 0.78 },
   noteQ: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },

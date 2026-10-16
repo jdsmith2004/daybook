@@ -1,4 +1,4 @@
-/* Today, in the legacy order: a pause in progress, Rekindle after a slip, the flame with Next up and SOS, any note about how days
+/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, the flame with Next up and SOS, any note about how days
    are counted, the days card, today's entries, care after a slip, Your day, and a nudge when last week's review is waiting. */
 import {
   autoStep,
@@ -43,22 +43,30 @@ export default function Today() {
   const early = new Date(now).getHours() < st.rollover;
   const ph = phaseLabel(tk, st);
   const nudge = weekNudge(st, snap.reviews, tk);
+  const be = String(st.becoming || '').trim();
   const sub = (
-    <View style={s.sub}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${ph}. What this means, and how to change it.`}
-        onPress={() => router.push('/mode')}
-        style={[s.chip, { backgroundColor: c.accentSoft }]}>
-        <Text style={[s.chipT, { color: c.accentText }]}>{ph}</Text>
-        <Icon name="next" size={14} color={c.accentText} />
-      </Pressable>
-      {early ? (
-        <T v="small" tone="muted">
-          · still {fmtDate(tk, { weekday: 'long' })}'s log until {fmtClock(p2(st.rollover) + ':00')}
-        </T>
+    <>
+      {be ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Who I am becoming: ${be} Opens My plan.`} onPress={() => router.push('/plan')}>
+          <Text style={[s.be, { color: c.muted }]}>{be}</Text>
+        </Pressable>
       ) : null}
-    </View>
+      <View style={s.sub}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${ph}. What this means, and how to change it.`}
+          onPress={() => router.push('/mode')}
+          style={[s.chip, { backgroundColor: c.accentSoft }]}>
+          <Text style={[s.chipT, { color: c.accentText }]}>{ph}</Text>
+          <Icon name="next" size={14} color={c.accentText} />
+        </Pressable>
+        {early ? (
+          <T v="small" tone="muted">
+            · still {fmtDate(tk, { weekday: 'long' })}'s log until {fmtClock(p2(st.rollover) + ':00')}
+          </T>
+        ) : null}
+      </View>
+    </>
   );
   return (
     <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub} scrollRef={scroll}>
@@ -96,4 +104,5 @@ const s = StyleSheet.create({
   sub: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 4 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 32, paddingLeft: 12, paddingRight: 8, borderRadius: 999 },
   chipT: { fontFamily: font.bodySemi, fontSize: 14 },
+  be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
 });

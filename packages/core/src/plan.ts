@@ -89,7 +89,7 @@ export const setPlanRow = (st: Settings, i: number, fld: 'when' | 'then', v: str
 
 /* ---------- My plan: why, the safety net, next steps, lists ---------- */
 /** a typed field (goal, why, loop, rule, safePerson, ask, note): saved as typed */
-export const setField = (st: Settings, k: 'goal' | 'why' | 'loop' | 'rule' | 'safePerson' | 'ask' | 'note', v: string) =>
+export const setField = (st: Settings, k: 'goal' | 'why' | 'loop' | 'rule' | 'safePerson' | 'becoming' | 'ask' | 'note', v: string) =>
   changeSettings(st, (s) => void ((s as unknown as Record<string, string>)[k] = v));
 /** a list typed one item per line (calm moves, wind-down, words); empty lines are dropped when saved */
 export const setList = (st: Settings, k: 'menu' | 'wind' | 'words', text: string) => changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = text.split('\n')));

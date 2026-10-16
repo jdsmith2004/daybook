@@ -456,3 +456,14 @@ export function pickIdea(st: Settings | null, avoid: string | null, rand: Rand):
   while (x === avoid);
   return x;
 }
+
+/* ---------- from you ---------- */
+/** what SOS shows in your own words: the note written on a calm day, or else one of your reasons. pick (0 to 1) chooses the
+    reason, and is kept for the whole SOS so the line does not change while you read it. */
+export function urFromYou(st: Settings, pick: number): { k: 'note' | 'reason'; cap: string; t: string } | null {
+  const note = String(st.note || '').trim();
+  if (note) return { k: 'note', cap: 'From you, on a calm day', t: note };
+  const rs = (st.reasons || []).map((x) => String(x || '').trim()).filter(Boolean);
+  if (!rs.length) return null;
+  return { k: 'reason', cap: 'Your reason', t: rs[Math.min(rs.length - 1, Math.floor(Math.max(0, pick) * rs.length))] };
+}

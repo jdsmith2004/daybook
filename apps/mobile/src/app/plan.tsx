@@ -1,7 +1,8 @@
-/* My plan: Why (my goal, my safe person, a note for hard moments), Plans (the safety net, the urge plan, the slip plan, next small
+/* My plan: Why (who I am becoming, my goal, my safe person, a note and a voice note for hard moments), Plans (the safety net, the urge plan, the slip plan, next small
    steps), and Lists (calm moves, the wind-down, words that steady me, my own check-in answers). Changes save as you type.
    Ported from the legacy viewPlan, whyBody, plansBody and listsBody. */
 import {
+  BE_LEN,
   computeMetrics,
   HELP_STEPS,
   removeOption,
@@ -25,6 +26,7 @@ import { LinkCard } from '@/components/link-card';
 import { SlipEditor, UrgeEditor } from '@/components/plan-editors';
 import { Screen } from '@/components/screen';
 import { Card, Chip, T } from '@/components/ui';
+import { VoiceRecorder } from '@/components/voice-note';
 import { useStore } from '@/lib/store';
 
 type Pane = 'why' | 'plans' | 'lists';
@@ -65,6 +67,20 @@ function Why() {
   return (
     <>
       <Card>
+        <T v="h2">Who I am becoming</T>
+        <Field
+          label="One sentence, in my own words"
+          multiline
+          maxLength={BE_LEN}
+          defaultValue={st.becoming || ''}
+          placeholder="I am someone who keeps my word to myself."
+          onChangeText={set('becoming')}
+        />
+        <T v="small" tone="muted">
+          Today shows it under the date, and SOS opens with it. Say who you are, not what you avoid.
+        </T>
+      </Card>
+      <Card>
         <T v="h2">My goal and why</T>
         <T v="small" tone="muted">
           Edit anything. Changes save as you type.
@@ -93,8 +109,9 @@ function Why() {
           onChangeText={set('note')}
         />
         <T v="small" tone="muted">
-          SOS and My reasons show it to you first.
+          SOS and My reasons show it to you first. With no note, SOS shows one of your reasons.
         </T>
+        <VoiceRecorder />
       </Card>
       <View style={{ gap: 8 }}>
         <LinkCard icon="star" title="My reasons" sub={`${st.reasons.length} saved · open to add, reorder or reword`} onPress={() => router.push('/reasons')} />

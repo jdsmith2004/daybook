@@ -58,6 +58,7 @@ import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
 import { useStore } from '@/lib/store';
+import { dropVoice, voiceOk } from '@/lib/voice';
 
 type Sec = 'sync' | 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'lock' | 'data';
 
@@ -424,8 +425,8 @@ export default function Settings() {
             <View style={{ gap: 8 }}>
               <T v="label" tone="danger">
                 {signedIn
-                  ? 'Delete every entry, check-in and setting, on this device and in your account? Your other devices clear it too when they next sync. This cannot be undone.'
-                  : 'Delete every entry, check-in and setting? This cannot be undone.'}
+                  ? `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}, on this device and in your account? Your other devices clear it too when they next sync. This cannot be undone.`
+                  : `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}? This cannot be undone.`}
               </T>
               <Chips>
                 <Button
@@ -440,6 +441,7 @@ export default function Settings() {
                     await erase();
                     await sos.forget();
                     await forgetDrafts();
+                    dropVoice();
                     setWipe(false);
                     say('Everything was deleted.');
                     router.replace('/');

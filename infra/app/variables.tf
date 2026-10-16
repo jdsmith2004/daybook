@@ -1,3 +1,12 @@
+variable "aws_account_id" {
+  description = "The personal AWS account Daybook lives in. Terraform refuses to touch any other account. Set by the deploy workflow from the AWS_ACCOUNT_ID repository variable."
+  type        = string
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be the 12-digit AWS account number."
+  }
+}
+
 variable "region" {
   type    = string
   default = "us-east-2"

@@ -1,4 +1,5 @@
 # Copy to terraform.tfvars (git ignores it) and fill in.
-alert_email = "you@example.com"
+aws_account_id = "123456789012"   # your PERSONAL AWS account number; Terraform refuses to run in any other account
+alert_email    = "you@example.com"
 # monthly_budget_usd = 5
 # create_github_oidc_provider = false   # if this AWS account already has the GitHub OIDC provider

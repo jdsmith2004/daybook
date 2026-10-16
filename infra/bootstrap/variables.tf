@@ -1,3 +1,12 @@
+variable "aws_account_id" {
+  description = "Your PERSONAL AWS account number. Terraform refuses to touch any other account, so it can never run against a work account by mistake. Put it in terraform.tfvars (kept out of git)."
+  type        = string
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be the 12-digit AWS account number."
+  }
+}
+
 variable "region" {
   description = "The AWS region for everything Daybook uses."
   type        = string

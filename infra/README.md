@@ -9,7 +9,9 @@ Everything is pay-per-use. For one person it should cost well under a dollar a m
 
 ## One-time setup
 
-You need an AWS account, the AWS CLI, and Terraform 1.10 or newer (`brew install awscli terraform` on a Mac).
+You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`brew install awscli terraform` on a Mac).
+
+> **Locked to one account.** Both stacks take your personal account number (`aws_account_id`) and Terraform refuses to run in any other account, even if the computer is signed in to a work AWS account. The deploy workflow checks it three times: the role must belong to that account, the sign-in must land in it, and Terraform must agree.
 
 1. **Sign in to AWS from the command line.** Do not use the root account for this. In the AWS console, open IAM Identity Center, create a user for yourself with the `AdministratorAccess` permission set, then:
 
@@ -23,7 +25,7 @@ You need an AWS account, the AWS CLI, and Terraform 1.10 or newer (`brew install
 
    ```sh
    cd infra/bootstrap
-   cp terraform.tfvars.example terraform.tfvars   # put your email in it (git ignores this file)
+   cp terraform.tfvars.example terraform.tfvars   # your personal account number and your email (git ignores this file)
    terraform init
    terraform apply
    ```
@@ -32,16 +34,17 @@ You need an AWS account, the AWS CLI, and Terraform 1.10 or newer (`brew install
 
    Its state stays in `infra/bootstrap/terraform.tfstate` on your computer (git ignores it). Keep that file; you need it to change the bootstrap later.
 
-3. **Tell GitHub.** In the repository on GitHub: Settings > Secrets and variables > Actions > Variables. Add the four outputs from step 2 as repository variables:
+3. **Tell GitHub.** In the repository on GitHub: Settings > Secrets and variables > Actions > Variables. Add the five outputs from step 2 as repository variables:
 
    | Variable | From |
    | --- | --- |
+   | `AWS_ACCOUNT_ID` | `terraform output -raw AWS_ACCOUNT_ID` |
    | `AWS_REGION` | `terraform output -raw AWS_REGION` |
    | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw AWS_DEPLOY_ROLE_ARN` |
    | `TF_STATE_BUCKET` | `terraform output -raw TF_STATE_BUCKET` |
    | `TF_BOUNDARY_ARN` | `terraform output -raw TF_BOUNDARY_ARN` |
 
-   These are not secrets, so they are variables. Then run the **Deploy** workflow (Actions > Deploy > Run workflow). Its summary shows the web address.
+   These are not secrets, so they are variables. Until all of them are set, the Deploy workflow skips itself. Then run the **Deploy** workflow (Actions > Deploy > Run workflow). Its summary shows the web address.
 
 4. **Make your account.** Sign-up is invite-only, so nobody else can make an account and run up your bill. After the first deploy:
 

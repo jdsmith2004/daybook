@@ -17,6 +17,8 @@ terraform {
 
 provider "aws" {
   region = var.region
+  # the lock: if the AWS sign-in in use belongs to any other account (a work account, say), Terraform stops before doing anything
+  allowed_account_ids = [var.aws_account_id]
   default_tags {
     tags = { app = "daybook", stack = "app" }
   }

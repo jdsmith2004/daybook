@@ -1,4 +1,8 @@
 /* Copy these into the GitHub repository's settings: Settings > Secrets and variables > Actions > Variables. See infra/README.md. */
+output "AWS_ACCOUNT_ID" {
+  value = var.aws_account_id
+}
+
 output "AWS_REGION" {
   value = var.region
 }

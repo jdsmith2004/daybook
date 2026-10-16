@@ -2,6 +2,12 @@
 
 Daybook helps a person quit porn (or another habit) without shame: log urges and slips honestly, learn the pattern, and keep going after a slip. People lose when they give up hope, not when they slip, so every part of the app protects hope.
 
+## What Daybook is for
+
+The motto: **A private, honest companion for changing a habit: log urges and slips without shame, learn your pattern, and keep going after a hard day. One codebase for iOS, Android and the web.**
+
+The goal is a lasting change of identity: from "I am a porn addict" to "I am someone who is clean", and for good. Nothing in the app is the goal in itself. Streaks, counts, the flame, points, levels, badges, quests, lessons and the log are all tools and guides for that change, worth keeping only while they help it. Judge every screen, word, feature and animation by one question: does this help the person become, and see themselves as, someone who is free of the habit? Something that wins attention but does not serve that change (a streak to protect for its own sake, a number to chase, a reward that feels like a game) is a cost, not a feature.
+
 ## How the code is laid out
 
 - `legacy/index.html` is the original single-file app and **the source of truth for every rule** until the new app does everything it does. The Claude artifact it came from is **retired**: do no more work on the artifact itself. Changes to rules still go into `legacy/index.html` first (see below), and only reach the new app.

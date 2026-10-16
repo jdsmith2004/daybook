@@ -40,7 +40,27 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "enableRemoteNotifications": false,
+          "color": "#6247EA"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Daybook uses Face ID to keep your log private."
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Daybook uses Face ID to keep your log private."
+        }
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

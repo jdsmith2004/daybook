@@ -34,17 +34,32 @@ import { Link } from '@/components/choices';
 import { DateStep } from '@/components/date-step';
 import { Collapse, OnOff, Stepper } from '@/components/form';
 import { LinkCard } from '@/components/link-card';
+import { confirmUnlock, lockOffered } from '@/components/lock';
+import { SyncBody } from '@/components/sync-card';
 import { Screen } from '@/components/screen';
 import { B } from '@/components/help-bits';
 import { Button, Chip, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
 import { forgetDrafts } from '@/lib/drafts';
-import { setSoundPref, setThemePref, useSoundPref, useThemePref, type ThemePref } from '@/lib/prefs';
+import {
+  setLockPref,
+  setReminderPrefs,
+  setSoundPref,
+  setThemePref,
+  useLockPref,
+  useReminderPrefs,
+  useSoundPref,
+  useThemePref,
+  type ReminderPrefs,
+  type ThemePref,
+} from '@/lib/prefs';
+import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
+import { useSync } from '@/lib/sync';
 import { useStore } from '@/lib/store';
 
-type Sec = 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'data';
+type Sec = 'sync' | 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'lock' | 'data';
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -69,8 +84,21 @@ export default function Settings() {
   const params = useLocalSearchParams<{ open?: string }>();
   const { snap, tk, apply, replace, erase, say, dirty, hooks } = useStore();
   const sos = useSos();
+  const sync = useSync();
+  const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
   const theme = useThemePref();
   const sound = useSoundPref();
+  const rem = useReminderPrefs();
+  const lock = useLockPref();
+  /* turning a reminder on asks the phone for permission first */
+  const setRem = async (patch: Partial<ReminderPrefs>) => {
+    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind'));
+    if (turningOn && !(await allowReminders())) {
+      say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
+      return;
+    }
+    setReminderPrefs({ ...rem, ...patch });
+  };
   const first = (params.open || '').replace(/^s-/, '') as Sec;
   const [open, setOpen] = useState<Partial<Record<Sec, boolean>>>(first ? { [first]: true } : {});
   const [wipe, setWipe] = useState(false);
@@ -123,6 +151,15 @@ export default function Settings() {
         <LinkCard icon="shield" title="My plan" sub="My goal, my safe person, and my lists" onPress={() => router.push('/plan')} />
         <LinkCard icon="sparkle" title="How Daybook works" sub="Walk through the setup again and update your goals" onPress={() => router.push('/setup')} />
       </View>
+
+      {sync.status.k === 'off'
+        ? null
+        : sec(
+            'sync',
+            'Sync between devices',
+            signedIn ? (sync.status.k === 'expired' ? 'Sign in again to keep syncing' : 'On' + (sync.email ? ' · ' + sync.email : '')) : 'Off · your log stays on this device',
+            <SyncBody />,
+          )}
 
       {sec(
         'routine',
@@ -298,23 +335,76 @@ export default function Settings() {
       {sec(
         'remind',
         'Reminders',
-        'Phone alarms that keep the rhythm',
-        <>
-          <T>Reminders from Daybook itself are coming in a later update. Until then, phone alarms are the reliable way. Three are enough:</T>
-          <T>
-            • <B>When I wake up:</B> “Last night's questions.” Two taps.
-          </T>
-          <T>
-            • <B>{minToClock(18 * 60)}:</B> “Check in.” Under a minute.
-          </T>
-          <T>
-            • <B>{wind}:</B> “Wind down.” One hour before screens-off at {so}.
-          </T>
-          <T v="small" tone="muted">
-            Use your clock app. Name each alarm the way it is written above.
-          </T>
-        </>,
+        remindersOffered ? (rem.morning || rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times' : 'Phone alarms that keep the rhythm',
+        remindersOffered ? (
+          <>
+            <T v="small" tone="muted">
+              Up to three a day. They are made on this phone, and the words never say what Daybook is for, because a reminder can show on a locked screen.
+            </T>
+            <OnOff name="Last night’s questions" sub={'Each morning at ' + fmtClock(rem.morningAt)} on={rem.morning} onPick={(on) => setRem({ morning: on })} />
+            {rem.morning ? (
+              <Stepper
+                label="Morning reminder"
+                text={fmtClock(rem.morningAt)}
+                unset={false}
+                less="15 minutes earlier"
+                more="15 minutes later"
+                onStep={(d) => setRem({ morningAt: stepClock(rem.morningAt, d * 15) })}
+              />
+            ) : null}
+            <OnOff name="Check in" sub={'Each evening at ' + fmtClock(rem.checkinAt)} on={rem.checkin} onPick={(on) => setRem({ checkin: on })} />
+            {rem.checkin ? (
+              <Stepper
+                label="Check-in reminder"
+                text={fmtClock(rem.checkinAt)}
+                unset={false}
+                less="15 minutes earlier"
+                more="15 minutes later"
+                onStep={(d) => setRem({ checkinAt: stepClock(rem.checkinAt, d * 15) })}
+              />
+            ) : null}
+            <OnOff name="Wind down" sub={'At ' + wind + ', an hour before screens-off at ' + so} on={rem.wind} onPick={(on) => setRem({ wind: on })} />
+          </>
+        ) : (
+          <>
+            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Three are enough:</T>
+            <T>
+              • <B>When I wake up:</B> “Last night's questions.” Two taps.
+            </T>
+            <T>
+              • <B>{minToClock(18 * 60)}:</B> “Check in.” Under a minute.
+            </T>
+            <T>
+              • <B>{wind}:</B> “Wind down.” One hour before screens-off at {so}.
+            </T>
+            <T v="small" tone="muted">
+              Use your clock app. Name each alarm the way it is written above. In the Daybook app on a phone, Daybook can remind you itself.
+            </T>
+          </>
+        ),
       )}
+
+      {lockOffered
+        ? sec(
+            'lock',
+            'Lock',
+            lock ? 'On · Face ID or passcode to open' : 'Off',
+            <>
+              <T v="small" tone="muted">
+                Daybook asks for Face ID, Touch ID or your phone’s passcode when it opens, and again after a minute away. In the app switcher, your log is covered.
+              </T>
+              <OnOff
+                name="Lock Daybook"
+                on={!!lock}
+                onPick={async (on) => {
+                  const r = await confirmUnlock(on ? 'Turn on the lock' : 'Turn off the lock');
+                  if (r.ok) setLockPref(on);
+                  else if (r.why) say(r.why);
+                }}
+              />
+            </>,
+          )
+        : null}
 
       {sec(
         'data',
@@ -322,7 +412,9 @@ export default function Settings() {
         'Spreadsheet and backup files',
         <>
           <T v="small" tone="muted">
-            Your log is saved on this device only. Save a backup now and then so you can restore it.
+            {signedIn
+              ? 'Your log is saved on this device and in your account. A backup file is still a good idea now and then.'
+              : 'Your log is saved on this device only. Save a backup now and then so you can restore it.'}
           </T>
           <Button kind="ghost" label="Save days as a spreadsheet (CSV)" onPress={() => save('days')} />
           <Button kind="ghost" label="Save every entry with its time (CSV)" onPress={() => save('events')} />
@@ -331,13 +423,20 @@ export default function Settings() {
           {wipe ? (
             <View style={{ gap: 8 }}>
               <T v="label" tone="danger">
-                Delete every entry, check-in and setting? This cannot be undone.
+                {signedIn
+                  ? 'Delete every entry, check-in and setting, on this device and in your account? Your other devices clear it too when they next sync. This cannot be undone.'
+                  : 'Delete every entry, check-in and setting? This cannot be undone.'}
               </T>
               <Chips>
                 <Button
                   kind="danger"
                   label="Yes, delete everything"
                   onPress={async () => {
+                    if (signedIn && !(await sync.eraseAccount())) {
+                      setWipe(false);
+                      say('Could not reach your account. Nothing was deleted.');
+                      return;
+                    }
                     await erase();
                     await sos.forget();
                     await forgetDrafts();
@@ -360,7 +459,7 @@ export default function Settings() {
       </T>
       <T v="small" tone="muted" style={{ textAlign: 'center' }}>
         Daybook {Constants.expoConfig?.version ?? ''}
-        {unsynced ? ` · ${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
+        {signedIn && unsynced ? ` · ${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
       </T>
     </Screen>
   );

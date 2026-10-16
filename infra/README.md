@@ -61,6 +61,8 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
    Cognito emails you a temporary password; you choose your own the first time you sign in.
 
+5. **Phone builds.** The Deploy summary also lists three `EXPO_PUBLIC_*` values. Put them in `apps/mobile/.env.local` (git ignores it) or in EAS environment variables, and phone builds can sign in and sync too. They are public, like the web app itself.
+
 ## Signing in from a local web server
 
 The hosted sign-in page only sends people back to addresses it knows. To sign in from `npx expo start` in a browser, add `dev_origins = ["http://localhost:8081"]` for a deploy you run yourself, or set the variable in the workflow. Leave it empty otherwise.
@@ -72,6 +74,8 @@ The deploy role is allowed only what Daybook's resources need. If AWS adds a ste
 ## What protects what
 
 - Each person's records are stored under their own Cognito id, which the Lambda takes only from the signed token API Gateway checked.
+- The app's sign-in client may use `aws.cognito.signin.user.admin`, so a signed-in person can delete their own account from the app (Cognito `DeleteUser` with their own token). It reaches only their own sign-in.
+- On a phone the sign-in is kept in the keychain or keystore, on that device only; in a browser, in that site's storage. Signing out takes the token back (Cognito revokes it) and ends the sign-in page's session.
 - The deploy role can only change Daybook's own resources, and any role it makes must carry the boundary, which allows nothing but the Daybook table and its logs.
 - The deploy role can manage the table but never read or export what is in it, and it can change user pools but not users' passwords or sign-ins.
 - IAM Access Analyzer (free) flags any role or bucket that trusts someone outside the account.

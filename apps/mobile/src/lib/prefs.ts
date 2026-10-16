@@ -59,3 +59,62 @@ export const useSoundPref = () =>
     () => sound,
     () => sound,
   );
+
+/* reminders: which of the three daily reminders are on, and their times (kept on the device: each phone decides) */
+export interface ReminderPrefs {
+  morning: boolean;
+  morningAt: string;
+  checkin: boolean;
+  checkinAt: string;
+  /** the wind-down reminder follows the screens-off time: an hour before it */
+  wind: boolean;
+}
+export const REMINDER_DEFAULTS: ReminderPrefs = { morning: false, morningAt: '08:00', checkin: false, checkinAt: '18:00', wind: false };
+const RKEY = 'daybook.reminders';
+let reminders: ReminderPrefs = REMINDER_DEFAULTS;
+AsyncStorage.getItem(RKEY)
+  .then((v) => {
+    if (!v) return;
+    const o = JSON.parse(v);
+    reminders = { ...REMINDER_DEFAULTS, ...(o && typeof o === 'object' ? o : {}) };
+    emit();
+  })
+  .catch(() => undefined);
+export function setReminderPrefs(p: ReminderPrefs) {
+  reminders = p;
+  emit();
+  AsyncStorage.setItem(RKEY, JSON.stringify(p)).catch(() => undefined);
+}
+export const useReminderPrefs = () =>
+  useSyncExternalStore(
+    sub,
+    () => reminders,
+    () => reminders,
+  );
+
+/* the lock: Face ID, Touch ID or the phone's passcode when Daybook opens (kept on the device) */
+const LKEY = 'daybook.lock';
+let lock = false;
+let lockLoaded = false;
+const lockReady = AsyncStorage.getItem(LKEY)
+  .then((v) => {
+    lock = v === '1';
+  })
+  .catch(() => undefined)
+  .finally(() => {
+    lockLoaded = true;
+    emit();
+  });
+export const whenLockKnown = () => lockReady;
+export const getLockPref = () => lock;
+export function setLockPref(on: boolean) {
+  lock = on;
+  emit();
+  (on ? AsyncStorage.setItem(LKEY, '1') : AsyncStorage.removeItem(LKEY)).catch(() => undefined);
+}
+export const useLockPref = () =>
+  useSyncExternalStore(
+    sub,
+    () => (lockLoaded ? lock : null),
+    () => (lockLoaded ? lock : null),
+  );

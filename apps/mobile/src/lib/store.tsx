@@ -2,7 +2,11 @@
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  allDirty,
   checkNew,
+  clearAcked,
+  mergeRemote,
+  type SyncRecord,
   isKey,
   isReviewKey,
   savedRuns,
@@ -73,6 +77,16 @@ interface StoreValue {
   replace: (snap: Snapshot, changed: RecordId[]) => Promise<void>;
   /** erase everything on this device */
   erase: () => Promise<void>;
+  /** for sync: the log and the dirty list right now */
+  current: () => { snap: Snapshot; dirty: Record<string, number> };
+  /** for sync: records from the account, merged into the log as it is now (last change wins). Gives back how many changed. */
+  mergeFromAccount: (recs: SyncRecord[]) => Promise<number>;
+  /** for sync: the account now has these records; each leaves the dirty list unless it changed again meanwhile */
+  ackPushed: (acked: Record<string, number>) => Promise<void>;
+  /** for sync: every record here is to be sent (a device joining an account and keeping its log) */
+  markAllDirty: () => Promise<void>;
+  /** for sync: this device takes the account's log as it is */
+  replaceFromAccount: (snap: Snapshot) => Promise<void>;
   /** what is showing at the bottom: a line of words, or the points an action earned */
   toast: Toast | null;
   say: (msg: string) => void;
@@ -289,9 +303,77 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDirty({});
   }, []);
 
+  const saveDirty = useCallback(async (d: Record<string, number>) => {
+    dirtyRef.current = d;
+    setDirty(d);
+    await AsyncStorage.setItem(DIRTY, JSON.stringify(d));
+  }, []);
+  const current = useCallback(() => ({ snap: snapRef.current, dirty: dirtyRef.current }), []);
+  /* writes records that came from the account: saved here, but not marked as changed here */
+  const writeQuiet = useCallback(async (next: Snapshot, ids: RecordId[]) => {
+    const sets: [string, string][] = [];
+    const dels: string[] = [];
+    for (const id of ids) {
+      const r = recordOf(next, id);
+      if (r) sets.push([P + id, JSON.stringify(r)]);
+      else dels.push(P + id);
+    }
+    if (sets.length) await AsyncStorage.multiSet(sets);
+    if (dels.length) await AsyncStorage.multiRemove(dels);
+  }, []);
+  const mergeFromAccount = useCallback(
+    async (recs: SyncRecord[]) => {
+      const m = mergeRemote(snapRef.current, dirtyRef.current, recs);
+      if (!m.changed.length) return 0;
+      snapRef.current = m.snap;
+      setSnap(m.snap);
+      await writeQuiet(m.snap, m.changed);
+      await saveDirty(m.dirty);
+      return m.changed.length;
+    },
+    [writeQuiet, saveDirty],
+  );
+  const ackPushed = useCallback(async (acked: Record<string, number>) => saveDirty(clearAcked(dirtyRef.current, acked)), [saveDirty]);
+  const markAllDirty = useCallback(async () => saveDirty(allDirty(snapRef.current, dirtyRef.current)), [saveDirty]);
+  const replaceFromAccount = useCallback(
+    async (next: Snapshot) => {
+      const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P) && k !== DIRTY);
+      if (keys.length) await AsyncStorage.multiRemove(keys);
+      const ids: RecordId[] = [];
+      if (next.settings) ids.push('settings');
+      Object.keys(next.days).forEach((k) => ids.push(`days/${k}`));
+      Object.keys(next.reviews).forEach((k) => ids.push(`reviews/${k}`));
+      snapRef.current = next;
+      setSnap(next);
+      savedSeen.current = null;
+      await writeQuiet(next, ids);
+      await saveDirty({});
+    },
+    [writeQuiet, saveDirty],
+  );
+
   const value = useMemo<StoreValue>(
-    () => ({ ready, snap, settings: snap.settings, tk, now, dirty, apply, update, replace, erase, toast, say, hooks }),
-    [ready, snap, tk, now, dirty, apply, update, replace, erase, toast, say],
+    () => ({
+      ready,
+      snap,
+      settings: snap.settings,
+      tk,
+      now,
+      dirty,
+      apply,
+      update,
+      replace,
+      erase,
+      current,
+      mergeFromAccount,
+      ackPushed,
+      markAllDirty,
+      replaceFromAccount,
+      toast,
+      say,
+      hooks,
+    }),
+    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, replaceFromAccount, toast, say],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

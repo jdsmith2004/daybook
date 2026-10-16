@@ -82,6 +82,7 @@ import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { setupKeep, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
+import { useSync } from '@/lib/sync';
 import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 type Flow = SetupFlow;
@@ -90,6 +91,7 @@ export default function Setup() {
   const c = useTheme();
   const inset = useSafeAreaInsets();
   const { snap, tk, replace, say } = useStore();
+  const sync = useSync();
   const st = snap.settings;
   const [f, setF] = useState<Flow>(() => {
     const redo = !!st;
@@ -229,6 +231,7 @@ export default function Setup() {
         </Show>
       ) : (
         <Show st={st} art={<PicToday />} h="Quit porn, one honest day at a time." line="A plan built from your answers, help when urges hit, and progress you can see.">
+          {sync.status.k !== 'off' ? <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={sync.signInNow} /> : null}
           <TextLink label="I already have a backup file" onPress={restore} />
         </Show>
       );

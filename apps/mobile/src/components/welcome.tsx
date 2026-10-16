@@ -12,10 +12,12 @@ import { Button, Card, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { setupKeep } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
+import { useSync } from '@/lib/sync';
 
 export function Welcome() {
   const { tk, replace, say, snap } = useStore();
   const [busy, setBusy] = useState(false);
+  const sync = useSync();
   const fresh = async () => {
     const settings = defaultSettings(tk);
     const next = { ...snap, settings };
@@ -60,6 +62,18 @@ export function Welcome() {
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
           Your log is saved on this device only. You can save a backup from Settings.
         </T>
+        {sync.status.k === 'off' ? null : sync.status.k === 'busy' ? (
+          <T tone="muted" style={{ textAlign: 'center' }}>
+            {sync.status.what}
+          </T>
+        ) : (
+          <Button label="Sign in to my account" kind="ghost" icon="up" onPress={sync.signInNow} />
+        )}
+        {sync.status.k === 'error' ? (
+          <T v="small" tone="danger" style={{ textAlign: 'center' }}>
+            {sync.status.msg}
+          </T>
+        ) : null}
         <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} />
       </Card>
     </Screen>

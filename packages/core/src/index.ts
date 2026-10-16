@@ -16,3 +16,4 @@ export * from './journal';
 export * from './data';
 export * from './setup';
 export * from './emblem';
+export * from './sync';

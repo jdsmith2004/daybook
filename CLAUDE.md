@@ -7,7 +7,8 @@ Daybook helps a person quit porn (or another habit) without shame: log urges and
 - `legacy/index.html` is the original single-file app and **the source of truth for every rule** until the new app does everything it does. The Claude artifact it came from is **retired**: do no more work on the artifact itself. Changes to rules still go into `legacy/index.html` first (see below), and only reach the new app.
 - `packages/core` has every rule with no UI. `src/legacy/core.js` is **generated** from the legacy file by `tools/extract-legacy.mjs` (never edit it by hand). `src/legacy/core.d.ts` types the parts the app uses. The other files in `src` are pure TypeScript ports of the legacy parts that read global state (the Today cards, settings actions, backups, sync records).
 - `apps/mobile` is the Expo app (Expo Router, SDK 58). It runs on iOS, Android and the web. Read `apps/mobile/AGENTS.md` before touching Expo APIs: they change every SDK, so check the versioned docs, not memory.
-- `services/api` is the sync Lambda. `infra/` is Terraform (see `infra/README.md`).
+- `services/api` is the sync Lambda. `infra/` is Terraform (see `infra/README.md`). The device side of sync is `packages/core/src/sync.ts`, tested against the Lambda's handler in `services/api/test/client.test.ts`.
+- `docs/for-fable.md` lists the few jobs worth a Fable run (Fable time is limited).
 
 ## Commands
 

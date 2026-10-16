@@ -53,13 +53,16 @@ resource "aws_cognito_user_pool_domain" "users" {
   managed_login_version = 2
 }
 
+/* scopes: openid and email say who signed in. aws.cognito.signin.user.admin lets a signed-in person manage their own account
+   with their own token, which the app needs for "Delete my account" (Cognito DeleteUser; app stores require in-app deletion).
+   It reaches only that person's own sign-in, never their log or anyone else's. */
 resource "aws_cognito_user_pool_client" "app" {
   name                                 = "daybook-app"
   user_pool_id                         = aws_cognito_user_pool.users.id
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["openid", "email"]
+  allowed_oauth_scopes                 = ["openid", "email", "aws.cognito.signin.user.admin"]
   supported_identity_providers         = ["COGNITO"]
   callback_urls                        = concat(["daybook://auth"], [for o in local.origins : "${o}/auth"])
   logout_urls                          = concat(["daybook://signed-out"], [for o in local.origins : "${o}/"])

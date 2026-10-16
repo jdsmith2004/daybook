@@ -8,15 +8,31 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 import { CelebrateHost } from '@/components/celebrate';
+import { LockGate } from '@/components/lock';
 import { Toast } from '@/components/toast';
-import { SosProvider } from '@/lib/sos';
+import { forgetDrafts } from '@/lib/drafts';
+import { useReminderPrefs } from '@/lib/prefs';
+import { listenForTaps, scheduleReminders } from '@/lib/reminders';
+import { SosProvider, useSos } from '@/lib/sos';
+import { SyncProvider } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+/* the phone's reminders follow the choices in Settings and the screens-off time; a tap on one opens Today */
+function Reminders() {
+  const prefs = useReminderPrefs();
+  const so = useStore().settings?.screensOff ?? null;
+  useEffect(() => {
+    scheduleReminders(prefs, so).catch(() => undefined);
+  }, [prefs, so]);
+  useEffect(() => listenForTaps(), []);
+  return null;
+}
 
 function Shell() {
   const c = useTheme();
@@ -39,20 +55,37 @@ function Shell() {
   return (
     <ThemeProvider value={nav}>
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
-        <Stack.Screen name="(tabs)" />
-        {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, going deeper, good night, a lesson */}
-        {['sos', 'tool/[id]', 'log', 'sunrise', 'deeper', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup'].map((name) => (
-          <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        ))}
-        {/* the sheets: one thing, over everything */}
-        {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]'].map((name) => (
-          <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        ))}
-      </Stack>
-      <CelebrateHost />
-      <Toast />
+      <Reminders />
+      <LockGate>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+          <Stack.Screen name="(tabs)" />
+          {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, going deeper, good night, a lesson */}
+          {['sos', 'tool/[id]', 'log', 'sunrise', 'deeper', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup'].map((name) => (
+            <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+          ))}
+          {/* the sheets: one thing, over everything */}
+          {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]'].map((name) => (
+            <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          ))}
+        </Stack>
+        <CelebrateHost />
+        <Toast />
+      </LockGate>
     </ThemeProvider>
+  );
+}
+
+/* sync sits inside SOS, so removing the log from a device (when signing out) also forgets that device's SOS memory and drafts */
+function WithSync({ children }: { children: ReactNode }) {
+  const sos = useSos();
+  return (
+    <SyncProvider
+      onErased={async () => {
+        await sos.forget();
+        await forgetDrafts();
+      }}>
+      {children}
+    </SyncProvider>
   );
 }
 
@@ -60,7 +93,9 @@ export default function RootLayout() {
   return (
     <StoreProvider>
       <SosProvider>
-        <Shell />
+        <WithSync>
+          <Shell />
+        </WithSync>
       </SosProvider>
     </StoreProvider>
   );

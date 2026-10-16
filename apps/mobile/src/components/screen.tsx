@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';
-import { isWeb, MAX_WIDTH, useTheme } from '@/lib/theme';
+import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export function Screen({
   eyebrow,
@@ -33,7 +33,7 @@ export function Screen({
       style={{ flex: 1, backgroundColor: c.bg }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: inset.bottom + (isWeb && !back ? 110 : 40) }]}>
+      contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
       <View style={s.col}>
         {back ? (
           <Pressable

@@ -9,7 +9,8 @@ import { close } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 
-export function useFinishTool() {
+/** lr: the tool was opened from a lesson's practice step, so finishing goes back to the lesson */
+export function useFinishTool(lr = false) {
   const { tk, update, say } = useStore();
   const sos = useSos();
   return (id: string, o: { msg?: string; reach?: boolean; noCalm?: boolean } = {}) => {
@@ -43,16 +44,22 @@ export function useFinishTool() {
       router.back();
       return;
     }
+    if (lr) {
+      router.back();
+      say(gain > 0 ? o.msg || 'Nice work.' : o.msg || 'Done.');
+      return;
+    }
     close();
-    say(gain > 0 ? '+' + gain + ' points. ' + (o.msg || 'Nice work.') : o.msg || 'Done.');
+    say(gain > 0 ? o.msg || 'Nice work.' : o.msg || 'Done.');
   };
 }
 
 /** the X on a tool: back to SOS when SOS started it, otherwise close */
-export function useToolExit() {
+export function useToolExit(lr = false) {
   const sos = useSos();
   return () => {
-    if (sos.ur) {
+    if (lr) router.back();
+    else if (sos.ur) {
       sos.setCombo(null);
       sos.set({ ...sos.ur, step: 'now' });
       router.back();

@@ -51,6 +51,16 @@ describe.each(logs)('$name', (fx) => {
     expect(squash(lessonText(days, st, tk))).toBe(squash(e.day.lesson));
     expect(core.morningInfo(days, st, tk)).toEqual(e.day.morning);
     expect(core.nextUp(days, st, tk, c.now)).toEqual(e.day.next);
+    const done = core.lessonsDone(days);
+    const nx = core.firstUndone(done, core.faithOf(st));
+    const stats = core.lessonStats(days);
+    core.LESSONS.forEach((L, i) => {
+      [false, true].forEach((full, j) => {
+        const r = core.lessonRow(L, done, nx && nx.id, st, stats, tk, full);
+        const more = r.more ? 'The one thing to keep' + r.more.key + (r.more.note ? r.more.np + r.more.note : '') : '';
+        expect(squash(`${r.n}${L.title}${r.faith ? 'Faith' : ''}${r.sub}${r.status.text}${more}`)).toBe(e.day.lessons[i][j]);
+      });
+    });
     const mi = core.modeInfo(st, tk);
     expect(mi).toEqual(e.day.mode);
     expect(core.modeActs(st, tk, mi.k)).toEqual(e.day.modeActs);

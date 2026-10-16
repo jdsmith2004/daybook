@@ -2773,6 +2773,12 @@ const ICO={
 /* ------------------------------------------------------------------------------------------------
    picked: the data and pure helpers behind SOS, the tools, the day and the lessons
    ------------------------------------------------------------------------------------------------ */
+function rangeLabel(lo,hi){
+ const a=fmtDate(lo,{month:'short',day:'numeric'});
+ return a+' to '+(lo.slice(0,7)===hi.slice(0,7)?fmtDate(hi,{day:'numeric'}):fmtDate(hi,{month:'short',day:'numeric'}));
+}
+const pct=v=>v==null?'–':Math.round(v*100)+'%';
+const one=v=>v==null?'–':(Math.round(v*10)/10).toFixed(1);
 const STOP_IC={morning:'sunrise',lesson:'book',evening:'pencil',night:'moon'};
 const STOP_WHEN={morning:'Morning',lesson:'Daytime',evening:'Evening',night:'Night'};
 const HX_NEXT={
@@ -2781,6 +2787,7 @@ const HX_NEXT={
  evening:{ic:'pencil',t:'Evening check-in',s:'About a minute',pts:10},
  night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:10}
 };
+const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry'};
 const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},
@@ -2956,6 +2963,10 @@ function reasonCat(st,text){
 }
 const cleanReason=s=>String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,REASON_LEN);
 const sameReason=(a,b)=>a.toLowerCase()===b.toLowerCase();
+const SERIES=[['m','Motivation'],['c','Connection'],['e','Energy'],['s','Stress']];
+const REVIEW_QS=[
+ ['hard','Hardest moment this week'],['helped','What helped'],['change','One change for next week'],['proud',"Something I'm proud of"]
+];
 function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
 const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
@@ -3151,9 +3162,13 @@ export {
   obHrs,
   obTop,
   ICO,
+  rangeLabel,
+  pct,
+  one,
   STOP_IC,
   STOP_WHEN,
   HX_NEXT,
+  STATUS_TXT,
   TOOL_GROUPS,
   TOOLS,
   TK,
@@ -3207,6 +3222,8 @@ export {
   reasonCat,
   cleanReason,
   sameReason,
+  SERIES,
+  REVIEW_QS,
   slipClean,
   CHEERS
 };

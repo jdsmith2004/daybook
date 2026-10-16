@@ -1,7 +1,7 @@
 /* Lessons: the order they are offered in, which are done, the cards of a Quick or Full read, the recall question, the practice
    step, and the checkpoints. The legacy helpers read the global Store; here the log and the settings are passed in. The lesson
    content itself (LESSONS, LUNITS, SRC, LCHECKS) is extracted verbatim from the legacy app. Checked by test/lessons.test.ts. */
-import { diffDays, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, FAITH_MODES, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
+import { diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, FAITH_MODES, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
@@ -383,3 +383,89 @@ export function lessonStop(days: Days, st: Settings, tk: DayKey) {
   const R = reviewPick(tk);
   return { kind: 'review' as const, L: R, note: (st.learn && st.learn.notes && st.learn.notes[R.id]) || '' };
 }
+
+/* ---------- Learn > Lessons ---------- */
+export const LF_FILTERS: ['all' | 'todo' | 'done' | 'notes', string][] = [
+  ['all', 'All'],
+  ['todo', 'To do'],
+  ['done', 'Done'],
+  ['notes', 'Notes'],
+];
+export const LF_ORDER: [FaithMode, string][] = [
+  ['mix', 'Mixed in'],
+  ['first', 'First'],
+  ['after', 'Last'],
+];
+/** a date in a lesson list: the year only when it is not this year */
+export const lfDate = (k: DayKey, tk: DayKey) => fmtDate(k, k.slice(0, 4) === tk.slice(0, 4) ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+export const lfClip = (s: string, n: number) => {
+  const t = String(s || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : t;
+};
+/** one lesson in a list (legacy lessonRow): its status, the line under it, and for a finished one in Done or Notes, what was kept */
+export function lessonRow(L: Lesson, done: Set<string>, nextId: string | null, st: Settings, stats: ReturnType<typeof lessonStats>, tk: DayKey, full: boolean) {
+  const d = done.has(L.id);
+  const n = lessonIndex(L) + 1;
+  const notes = (st.learn && st.learn.notes) || {};
+  const note = notes[L.id] ? String(notes[L.id]).trim() : '';
+  const fin = stats.first[L.id];
+  const again = stats.again[L.id] || 0;
+  const lastK = stats.last[L.id];
+  const prac = !!(st.learn && st.learn.prac && st.learn.prac[L.id]);
+  const status: { kind: 'done' | 'next' | 'len'; text: string } = d ? { kind: 'done', text: 'Done' } : L.id === nextId ? { kind: 'next', text: 'Up next' } : { kind: 'len', text: lmin(L) };
+  const when = d
+    ? 'Finished' +
+      (fin ? ' ' + lfDate(fin, tk) : '') +
+      (again ? ', read again ' + (again === 1 ? 'once' : 'on ' + again + ' days') + (lastK && lastK !== fin ? ' (last ' + lfDate(lastK, tk) + ')' : '') : '') +
+      (prac ? ' · practiced' : '')
+    : '';
+  const isFull = !!(full && d);
+  const sub = isFull ? when : L.tag + (note ? ' · note saved' : '') + (prac ? ' · practiced' : '');
+  const label =
+    `Lesson ${n}: ${L.title}. ${L.f ? 'Faith lesson. ' : ''}${d ? 'Done' + (fin ? ', finished ' + lfDate(fin, tk) : '') + '. ' : ''}` +
+    `${lessonHasQuick(L) ? 'Quick, 1 to 2 minutes, or Full, 3 to 5 minutes.' : L.mins + ' minutes.'}${note ? ' Note saved.' : ''}`;
+  return { n, d, status, sub, faith: !!L.f, label, more: isFull ? { key: L.key, np: L.np, note: note ? lfClip(note, 220) : '' } : null };
+}
+/** the lessons a filter shows, and how it is worded when empty */
+export function lessonFilter(days: Days, st: Settings, f: 'todo' | 'done' | 'notes') {
+  const done = lessonsDone(days);
+  const stats = lessonStats(days);
+  const notes = (st.learn && st.learn.notes) || {};
+  const hasNote = (L: Lesson) => !!(notes[L.id] && String(notes[L.id]).trim());
+  const recent = (a: Lesson, b: Lesson) => (stats.seq[b.id] || 0) - (stats.seq[a.id] || 0);
+  if (f === 'todo')
+    return { list: lessonPath(faithOf(st)).filter((L) => !done.has(L.id)), title: 'To do', sub: 'in your daily order', empty: 'You have finished every lesson. Open Done to read any of them again.' };
+  if (f === 'done')
+    return {
+      list: LESSONS.filter((L) => done.has(L.id)).sort(recent),
+      title: 'Done',
+      sub: 'most recent first',
+      empty: 'No finished lessons yet. When you finish one, it shows up here with the date and your note, so it is easy to find again.',
+    };
+  return {
+    list: LESSONS.filter(hasNote).sort(recent),
+    title: 'My notes',
+    sub: 'most recent first',
+    empty: 'No notes yet. At the end of every lesson there is a spot for one optional line. Only you see it, and it shows up here.',
+  };
+}
+/** the lesson read most recently, for "Read last again" */
+export function lastRead(days: Days) {
+  const stats = lessonStats(days);
+  const id = Object.keys(stats.seq)
+    .filter((x) => lessonById(x))
+    .sort((a, b) => stats.seq[b] - stats.seq[a])[0];
+  return id ? lessonById(id) : null;
+}
+/** the daily order setting (Learn > Daily order) */
+export const setFaithOrder = (st: Settings, v: FaithMode, now = Date.now()) =>
+  changeSettings(
+    st,
+    (s) => {
+      s.learn.faith = v;
+      s.learn.faithSet = true;
+    },
+    now,
+  );

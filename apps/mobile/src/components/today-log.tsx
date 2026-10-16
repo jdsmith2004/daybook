@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { EntryRows } from '@/components/entry-rows';
 import { Flames, Missions } from '@/components/rekindle';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
@@ -208,27 +209,7 @@ export function TodaySoFar({ snap, tk }: { snap: Snapshot; tk: string }) {
       <T v="small" tone="muted">
         {ct.detail}
       </T>
-      <View style={{ gap: 2 }}>
-        {sortedEvents(day, st.rollover).map((e) => {
-          const r = eventRow(e, st);
-          return (
-            <View key={e.id} style={[s.row, { borderTopColor: c.line }]}>
-              <T v="label" style={{ width: 76 }}>
-                {r.time}
-              </T>
-              <View style={[s.mark, { backgroundColor: e.outcome === 'rode' ? c.mint : c.slip }, e.outcome !== 'rode' && { borderRadius: 3 }]} />
-              <View style={{ flex: 1 }}>
-                <T v="label">{r.what}</T>
-                {r.meta ? (
-                  <T v="small" tone="muted">
-                    {r.meta}
-                  </T>
-                ) : null}
-              </View>
-            </View>
-          );
-        })}
-      </View>
+      <EntryRows date={tk} />
     </Card>
   );
 }

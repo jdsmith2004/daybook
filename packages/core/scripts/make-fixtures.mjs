@@ -387,6 +387,17 @@ const COMPUTE = ({ settings, days, reviews }) => {
     lessons: [['late', false], [null, true], ['stress', false], ['u_custom1', false]].map(([t, sl]) => { fresh(); const p = urLessonFor(t, sl, null); return p ? { id: p.l.id, rev: p.rev } : null; }),
   };
   fresh();
+  /* the Journal: the days list, my numbers, what works in SOS, and each week */
+  {
+    const L = runLedger(D, st, tk);
+    out.journal = {
+      rows: keys.slice(-28).concat(keys.indexOf(tk) < 0 ? [tk] : []).map((k) => [k, words(dayRow(k, L)).text]),
+      numbers: words(numbersBlock()).text,
+      works: words(urWorksHtml()).text,
+      weeks: Array.from({ length: Math.max(0, weekOf(tk, st)) + 1 }, (_, w) => { ui.week = w; return words(weekBody()).text; }),
+    };
+    ui.week = null;
+  }
   /* Your day: each stop's status, the wind-down line, the lesson stop, saved check-ins, and the word after saving tonight's */
   {
     const rh = rhythm(D, st, tk, Date.now());
@@ -398,6 +409,10 @@ const COMPUTE = ({ settings, days, reviews }) => {
       morning: J(morningInfo(D, st, tk)),
       next: J(nextUp(tk)),
       mode: J(modeInfo()),
+      lessons: (() => {
+        const done = lessonsDone(), nx = firstUndone(done), stats = lessonStats(), notes = (st.learn && st.learn.notes) || {};
+        return LESSONS.map((L) => [words(lessonRow(L, done, nx && nx.id, { stats, notes, full: false })).text, words(lessonRow(L, done, nx && nx.id, { stats, notes, full: true })).text]);
+      })(),
       modeActs: [...sheetMode().matchAll(/data-act="day1" data-v="([a-z]+)">([^<]+)</g)].map((m) => [m[2], m[1]]),
       sums: {},
     };

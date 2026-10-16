@@ -156,6 +156,7 @@ export interface Quest {
   pts: number;
 }
 export function questsFor(days: Days, st: Settings, k: number): Quest[];
+export function weekGame(days: Days, st: Settings, k: number): { reach: number; lights: number; calm: number; checkin: number; wind: number; tools: number };
 export interface Badge {
   id: string;
   name: string;
@@ -337,4 +338,42 @@ export function routineOn(st: Settings | null, p: Play | null | undefined, k: st
 export function fmtLeft(mins: number): string;
 export function minToClock(m: number): string;
 export const LESSON_WIN_FROM: DayKey;
+/* ---------- the journal ---------- */
+export interface Metrics {
+  days: number;
+  checkins: number;
+  urges: number;
+  rode: number;
+  slips: number;
+  recovered: number;
+  pauses: number;
+  pauseRate: number | null;
+  cleanDays: number;
+  counted: number;
+  slipDays: number;
+  cur: number;
+  longest: number;
+  reached: number;
+  safety: number;
+  help: number;
+}
+export function computeMetrics(days: Days, st: Settings, today: DayKey): Metrics;
+export const STATUS_TXT: Record<string, string>;
+export function rangeLabel(lo: DayKey, hi: DayKey): string;
+export function pct(v: number | null | undefined): string;
+export function one(v: number | null | undefined): string;
+export const SERIES: ['m' | 'c' | 'e' | 's', string][];
+export const REVIEW_QS: ['hard' | 'helped' | 'change' | 'proud', string][];
+export function rangeKeys(range: string, st: Settings, today: DayKey, days: Days): DayKey[];
+export function rangeStart(range: string, st: Settings, today: DayKey, days: Days): DayKey;
+export function perDayCounts(days: Days, keys: DayKey[]): { key: DayKey; rode: number; slipped: number }[];
+export function timesPerDay(days: Days, keys: DayKey[]): { counts: [number, number, number, number]; logged: number };
+export function hourBins(evs: DayEvent[], roll: number): { h: number; rode: number; slipped: number }[];
+export function bucketOf(t: string): string;
+export const BUCKETS: [string, string, string][];
+export const BUCKET_T: Record<string, string>;
+export function triggerCounts(evs: DayEvent[], opts: Settings['opts']): { k: string; t: string; rode: number; slipped: number }[];
+export function patterns(days: Days): { cleanN: number; slipN: number; rows: { label: string; kind: 'avg' | 'pct'; clean: number | null; slip: number | null; gap: number | null }[] };
+export function daysCsv(days: Days, st: Settings, today: DayKey): string;
+export function eventsCsv(days: Days, st: Settings): string;
 export function statusOf(key: DayKey, d: Day | undefined, st: Settings, tk: DayKey): string;

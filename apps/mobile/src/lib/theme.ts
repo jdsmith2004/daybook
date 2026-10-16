@@ -162,3 +162,25 @@ export const font = {
 
 export const MAX_WIDTH = 560;
 export const isWeb = Platform.OS === 'web';
+
+/** a tone's four colors (legacy .tone-x: --t-soft, --t-text, --t-ic, --t-ink) */
+export function toneOf(c: Palette & { scheme: 'light' | 'dark' }, t: string) {
+  const bdg = c.scheme === 'dark' ? '#1A1250' : '#FFFFFF';
+  switch (t) {
+    case 'sun':
+      return { soft: c.sunSoft, text: c.sunText, ic: c.sun, ink: c.onSun };
+    case 'mint':
+      return { soft: c.mintSoft, text: c.mintText, ic: c.mint, ink: bdg };
+    case 'coral':
+      return { soft: c.coralSoft, text: c.coralText, ic: c.coral, ink: bdg };
+    case 'sky':
+      return { soft: c.skySoft, text: c.skyText, ic: c.sky, ink: bdg };
+    case 'violet':
+      return { soft: c.violetSoft, text: c.violetText, ic: c.violet, ink: bdg };
+    case 'slip':
+      return { soft: c.slipSoft, text: c.slipText, ic: c.slip, ink: bdg };
+    default:
+      return { soft: c.accentSoft, text: c.accentText, ic: c.accent, ink: c.accentInk };
+  }
+}
+export type Tone = ReturnType<typeof toneOf>;

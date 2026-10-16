@@ -59,6 +59,7 @@ const PICK = [
   // my reasons
   'RCATS', 'reasonGuess', 'reasonCat', 'cleanReason', 'sameReason',
   // the day and the lessons
+  'rangeLabel', 'pct', 'one', 'SERIES', 'REVIEW_QS', 'STATUS_TXT',
   'STOP_IC', 'STOP_WHEN', 'HX_NEXT', 'CHEERS', 'LX_E', 'LCHECK_N', 'LCHECKS', 'LIST_OF', 'slipClean',
 ];
 const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));

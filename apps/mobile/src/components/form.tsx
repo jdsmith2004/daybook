@@ -223,3 +223,30 @@ const s = StyleSheet.create({
   ic: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   in: { paddingHorizontal: 14, paddingBottom: 14, gap: 12 },
 });
+
+/** a row of two to four panes (Lessons / Tools, Days / Patterns / Weeks) */
+export function Segments<K extends string>({ label, list, cur, onPick }: { label: string; list: [K, string][]; cur: K; onPick: (k: K) => void }) {
+  const c = useTheme();
+  return (
+    <View style={[seg.wrap, { backgroundColor: c.accentSoft }]} accessibilityRole="tablist" accessibilityLabel={label}>
+      {list.map(([k, name]) => {
+        const on = k === cur;
+        return (
+          <Pressable
+            key={k}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => onPick(k)}
+            style={[seg.b, on && { backgroundColor: c.surface, borderColor: c.accent, shadowColor: c.lip, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 }]}>
+            <Text style={[seg.t, { color: on ? c.ink : c.accentText }]}>{name}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+const seg = StyleSheet.create({
+  wrap: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 17 },
+  b: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13, borderWidth: 2, borderColor: 'transparent' },
+  t: { fontFamily: font.bodySemi, fontSize: 15 },
+});

@@ -32,11 +32,11 @@ const SKY: Record<string, Sky> = {
 };
 
 export default function Tool() {
-  const { id, combo } = useLocalSearchParams<{ id: string; combo?: string }>();
+  const { id, combo, lr } = useLocalSearchParams<{ id: string; combo?: string; lr?: string }>();
   const { snap, tk, now } = useStore();
   const sos = useSos();
-  const finish = useFinishTool();
-  const exit = useToolExit();
+  const finish = useFinishTool(lr === '1');
+  const exit = useToolExit(lr === '1');
   const [step, setStep] = useState(0);
   const [text, setText] = useState<string | null>(null);
   const tool = TOOLS.find((t) => t.id === id);

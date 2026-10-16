@@ -49,7 +49,7 @@ export default function Settings() {
   const days = Object.keys(snap.days).length;
 
   return (
-    <Screen title="Settings">
+    <Screen title="Settings" back>
       {st ? (
         <Card>
           <T v="h2">How days are counted</T>

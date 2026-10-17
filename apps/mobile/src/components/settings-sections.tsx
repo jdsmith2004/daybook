@@ -91,7 +91,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const lock = useLockPref();
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
-    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind'));
+    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind' || k === 'risk'));
     if (turningOn && !(await allowReminders())) {
       say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
       return;
@@ -376,6 +376,12 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               />
             ) : null}
             <OnOff name="Wind down" sub={'At ' + wind + ', an hour before screens-off at ' + so} on={rem.wind} onPick={(on) => setRem({ wind: on })} />
+            <OnOff
+              name="Heads-up before hard hours"
+              sub="When your log shows a time of day that is often hard, a nudge 90 minutes before, to talk it through"
+              on={rem.risk}
+              onPick={(on) => setRem({ risk: on })}
+            />
           </>
         ) : (
           <>

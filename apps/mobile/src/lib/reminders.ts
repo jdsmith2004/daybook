@@ -36,11 +36,12 @@ const before = (t: string, min: number) => {
 };
 
 /** the reminders as they should be: everything Daybook scheduled is replaced by these */
-export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null): Promise<void> {
-  /* the daily ones are replaced; a one-off from Talk it through (below) stays */
+export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null, risk: number[] = []): Promise<void> {
+  /* the daily ones and the hard-hours heads-ups are replaced; a one-off from Talk it through (below) stays */
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
     if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
-  const any = p.morning || p.checkin || (p.wind && screensOff);
+  const heads = p.risk ? risk.filter((t) => t > Date.now()).slice(0, 7) : [];
+  const any = p.morning || p.checkin || (p.wind && screensOff) || heads.length;
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
   if (Platform.OS === 'android')
@@ -54,6 +55,18 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
       content: { title: 'Daybook', body: r.body, data: { url: '/' } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, ...hm(r.at), channelId: CHANNEL },
     });
+  /* before the hard hours: one each day they are expected, opening Today, where the card waits */
+  for (const [i, t] of heads.entries())
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'risk-' + i,
+      content: { title: 'Daybook', body: 'Your hard hours start soon. Two quiet minutes now make them easier.', data: { url: '/' } },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
+    });
+}
+
+/** whether this phone lets Daybook send notifications (without asking) */
+export async function remindersAllowed(): Promise<boolean> {
+  return (await Notifications.getPermissionsAsync()).granted;
 }
 
 const TALK = 'talk';

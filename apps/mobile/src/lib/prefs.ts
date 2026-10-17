@@ -68,8 +68,10 @@ export interface ReminderPrefs {
   checkinAt: string;
   /** the wind-down reminder follows the screens-off time: an hour before it */
   wind: boolean;
+  /** a heads-up 90 minutes before the hard hours the log points to (core: risk.ts); on unless turned off */
+  risk: boolean;
 }
-export const REMINDER_DEFAULTS: ReminderPrefs = { morning: false, morningAt: '08:00', checkin: false, checkinAt: '18:00', wind: false };
+export const REMINDER_DEFAULTS: ReminderPrefs = { morning: false, morningAt: '08:00', checkin: false, checkinAt: '18:00', wind: false, risk: true };
 const RKEY = 'daybook.reminders';
 let reminders: ReminderPrefs = REMINDER_DEFAULTS;
 AsyncStorage.getItem(RKEY)

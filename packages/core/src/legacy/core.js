@@ -364,6 +364,7 @@ function normP(p){
  const ov=normOv(p.ov);
  const q={w,wd:p.wd===true,r:p.r===true,c:Math.max(0,Math.min(50,parseInt(p.c,10)||0)),m:p.m===true,tl,po:isTime(p.po)?p.po:null,ls,lv,ov};
  const tt=normTalks(p.tt);if(tt.length)q.tt=tt;
+ if(Number.isInteger(p.hw)&&p.hw>=0&&p.hw<24)q.hw=p.hw;
  return pEmpty(q)&&!Object.keys(ov).length?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}

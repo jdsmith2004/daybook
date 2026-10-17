@@ -5,7 +5,10 @@ export const remindersOffered = false;
 export async function allowReminders(): Promise<boolean> {
   return false;
 }
-export async function scheduleReminders(_p: ReminderPrefs, _screensOff: string | null): Promise<void> {}
+export async function scheduleReminders(_p: ReminderPrefs, _screensOff: string | null, _risk: number[] = []): Promise<void> {}
+export async function remindersAllowed(): Promise<boolean> {
+  return false;
+}
 export async function scheduleTalk(_t: number, _body: string, _url: string): Promise<boolean> {
   return false;
 }

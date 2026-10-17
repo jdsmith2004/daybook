@@ -454,7 +454,8 @@ export function talkDue(days: Days, now: number): { k: DayKey; talk: Talk; due: 
   if (!x) return null;
   const t = x.talk;
   if (t.p === 'wait') return { ...x, due: t.at && now < t.at ? 'waiting' : 'decide' };
-  if (t.p === 'change' && t.at && now < t.at) return { ...x, due: 'plan' };
+  /* a change plan is shown until its moment ("right now": for an hour), then "Did your plan hold?" */
+  if (t.p === 'change' && now < (t.at ?? t.t + 3600000)) return { ...x, due: 'plan' };
   return { ...x, due: 'look' };
 }
 

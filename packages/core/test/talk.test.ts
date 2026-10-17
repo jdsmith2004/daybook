@@ -118,6 +118,9 @@ describe('Today and looking back', () => {
     expect(talkDue(change, T0)!.due).toBe('plan');
     expect(talkDue(change, at('2026-10-17T21:00:00'))!.due).toBe('look');
     expect(talkDue(change, T0 + 37 * 3600000)).toBeNull();
+    const now = saveTalk({}, k, base({ p: 'change', m: ['walk'], mo: 'now', at: null }), T0);
+    expect(talkDue(now, T0 + 30 * 60000)!.due).toBe('plan');
+    expect(talkDue(now, T0 + 61 * 60000)!.due).toBe('look');
     expect(talkDue(saveTalk({}, k, base(), T0), T0)).toBeNull();
   });
   it('choosing something else is a calm move, and nothing is logged', () => {

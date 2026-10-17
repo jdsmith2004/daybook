@@ -4,6 +4,7 @@ import { InstrumentSans_400Regular } from '@expo-google-fonts/instrument-sans/40
 import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500Medium';
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
+import { riskAlerts } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -25,13 +26,17 @@ import { useTheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-/* the phone's reminders follow the choices in Settings and the screens-off time; a tap on one opens Today */
+/* the phone's reminders follow the choices in Settings, the screens-off time, and the hard hours the log points to
+   (a heads-up before each, for the coming week); a tap on one opens Today */
 function Reminders() {
   const prefs = useReminderPrefs();
-  const so = useStore().settings?.screensOff ?? null;
+  const { snap, tk, now } = useStore();
+  const so = snap.settings?.screensOff ?? null;
+  const risk = snap.settings ? riskAlerts(snap.days, snap.settings, tk, now) : [];
+  const key = risk.join(',');
   useEffect(() => {
-    scheduleReminders(prefs, so).catch(() => undefined);
-  }, [prefs, so]);
+    scheduleReminders(prefs, so, key ? key.split(',').map(Number) : []).catch(() => undefined);
+  }, [prefs, so, key]);
   useEffect(() => listenForTaps(), []);
   return null;
 }

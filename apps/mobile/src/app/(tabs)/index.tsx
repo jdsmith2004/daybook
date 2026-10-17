@@ -1,4 +1,4 @@
-/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a talk-through that still matters (Talk it through), the flame with Next up and SOS, any note about how days
+/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a talk-through that still matters (Talk it through), the hard hours (risk.ts: from two hours before, a push to talk it through), the flame with Next up and SOS, any note about how days
    are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
@@ -12,6 +12,8 @@ import {
   fmtDate,
   gameCompute,
   gradInfo,
+  keepHard,
+  riskToKeep,
   graduate,
   p2,
   phaseLabel,
@@ -25,6 +27,7 @@ import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'reac
 
 import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
+import { RiskCard } from '@/components/risk-card';
 import { TalkCard } from '@/components/talk-card';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
@@ -38,7 +41,7 @@ import { font, useTheme } from '@/lib/theme';
 
 export default function Today() {
   const c = useTheme();
-  const { ready, snap, tk, now, apply } = useStore();
+  const { ready, snap, tk, now, apply, update, say } = useStore();
   const st = snap.settings;
   const account = useAccount();
   const scroll = useRef<ScrollViewInstance>(null);
@@ -56,6 +59,15 @@ export default function Today() {
     apply(graduate(st, tk));
     router.push('/graduated');
   }, [ready, st, snap.days, tk, apply]);
+
+  /* hard hours that passed with no slip are kept (a calm move), once, with a word */
+  useEffect(() => {
+    if (!ready || !st) return;
+    const x = riskToKeep(snap.days, st, tk, now);
+    if (!x) return;
+    update((s0) => ({ ...s0, days: keepHard(s0.days, x.k, x.r.win.start) }));
+    say((x.k === tk ? 'You got through ' : 'Last night you got through ') + x.r.win.label + ', your hardest hours.');
+  }, [ready, st, snap.days, tk, now, update, say]);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 
@@ -96,6 +108,7 @@ export default function Today() {
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
       <TalkCard snap={snap} now={now} />
+      <RiskCard snap={snap} tk={tk} now={now} />
       <Hero
         g={g}
         snap={snap}

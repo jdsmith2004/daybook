@@ -67,6 +67,8 @@ export interface Play {
   ov: Record<string, boolean>;
   /** Talk it through: the talk-throughs made this day */
   tt?: Talk[];
+  /** a hard hour held this day (risk.ts): the hour it started */
+  hw?: number;
 }
 
 export interface Day {

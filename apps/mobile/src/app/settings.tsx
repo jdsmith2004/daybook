@@ -168,7 +168,7 @@ export default function Settings() {
         'Turn parts of the day on or off',
         <>
           <T v="small" tone="muted">
-            Switch off anything that does not fit your life right now. It leaves Today and stops counting toward your ring. If you do it anyway, it still counts. You can also skip
+            Switch off anything that does not fit your life right now. It leaves Today. If you do it anyway, it still earns its points. You can also skip
             things for a single day from Today.
           </T>
           {ROUTINE.map((x) => (

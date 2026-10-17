@@ -1,6 +1,6 @@
-/* Milestones: your flame and its twelve forms, how points work, this week's quests, and your badges. Ported from the legacy
+/* Milestones: your flame and its twelve forms, how points work, and your badges. Ported from the legacy
    viewMiles and rewardsBody. */
-import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, STEPS, weekRange } from '@daybook/core';
+import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, shownBadges, STAGES, stageLevel, stagePts, stageState, STEPS } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -23,13 +23,12 @@ export default function Miles() {
   if (!st) return <Redirect href="/" />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const lvl = g.level;
-  const cw = Math.max(0, g.week);
-  const wr = weekRange(cw, st);
-  const earned = g.badges.filter((b) => badgeDone(b, st));
+  const shown = shownBadges(g.badges, st);
+  const earned = shown.filter((b) => badgeDone(b, st));
   const gi = gradInfo(snap.days, st, tk);
-  const todo = g.badges.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
+  const todo = shown.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
   return (
-    <Screen title="Milestones" sub={<T tone="muted">Your flame, this week's quests, and your badges.</T>} back="More">
+    <Screen title="Milestones" sub={<T tone="muted">Your flame, graduation, and your badges.</T>} back="More">
       <Card>
         <View style={s.lvl}>
           <GradFlame level={lvl.n} size={124} />
@@ -137,37 +136,9 @@ export default function Miles() {
       </Collapse>
       <Card>
         <View style={s.between}>
-          <T v="h2">This week's quests</T>
-          <T v="small" tone="muted">
-            until {fmtDate(wr[1], { weekday: 'short', month: 'short', day: 'numeric' })}
-          </T>
-        </View>
-        {g.quests.map((q) => (
-          <View key={q.id} style={[s.quest, { backgroundColor: q.done ? c.mintSoft : c.surface2 }]}>
-            <View style={s.row}>
-              <Icon name={q.done ? 'check' : 'star'} size={20} color={q.done ? c.mintText : c.sunText} />
-              <View style={{ flex: 1 }}>
-                <T v="label">{q.name}</T>
-                <T v="small" tone="muted">
-                  {q.hint}
-                </T>
-              </View>
-              <T v="label">
-                {q.now}/{q.goal}
-              </T>
-            </View>
-            <Bar frac={q.now / q.goal} from={q.done ? c.mint : c.sun} track={c.surface} height={8} />
-            <T v="small" tone={q.done ? 'mintText' : 'muted'}>
-              {q.done ? 'Done. +' + q.pts + ' points' : 'Worth +' + q.pts + ' points'}
-            </T>
-          </View>
-        ))}
-      </Card>
-      <Card>
-        <View style={s.between}>
           <T v="h2">Badges</T>
           <T v="small" tone="muted">
-            {earned.length} of {g.badges.length}
+            {earned.length} of {shown.length}
           </T>
         </View>
         <View style={s.badges}>
@@ -205,7 +176,6 @@ const s = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   gp: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, borderRadius: 16, borderWidth: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  quest: { gap: 6, padding: 12, borderRadius: 16 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: { width: '31%', flexGrow: 1, alignItems: 'center', gap: 4, paddingVertical: 8 },
 });

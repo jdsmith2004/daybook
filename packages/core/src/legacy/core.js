@@ -776,7 +776,11 @@ function weekGame(days,st,k){
 /* a quest about something you switched off in the routine is swapped for the next quest that is still on.
    A quest that is already done stays, so nothing earned ever disappears. */
 const QUEST_ROUTINE={reach:'reach',calm:'calm',checkin:'checkin',wind:'wind',lights:'morning'};
+/* weekly quests were retired on October 19, 2026: a week that starts then or later has none. Every quest finished before
+   stays finished, and keeps its points. */
+const QUEST_END='2026-10-19';
 function questsFor(days,st,k){
+ if(weekRange(k,st)[0]>=QUEST_END)return [];
  const g=weekGame(days,st,k),n=QUEST_POOL.length;
  const off=q=>{const r=QUEST_ROUTINE[q.key];return !!r&&!(st.routine&&st.routine[r])};
  const base=[0,2,4].map(i=>(k+i)%n),used=new Set(base);

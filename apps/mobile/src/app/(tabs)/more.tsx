@@ -1,5 +1,5 @@
 /* More: where I am, my plan, how Daybook works, milestones, help, and settings. Ported from the legacy viewMore. */
-import { badgeDone, gameCompute, phaseLabel } from '@daybook/core';
+import { badgeDone, shownBadges, gameCompute, phaseLabel } from '@daybook/core';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -14,7 +14,8 @@ export default function More() {
   const st = snap.settings;
   if (!st) return <Screen title="More">{null}</Screen>;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
-  const got = g.badges.filter((b) => badgeDone(b, st)).length;
+  const shown = shownBadges(g.badges, st);
+  const got = shown.filter((b) => badgeDone(b, st)).length;
   return (
     <Screen eyebrow="My Daybook" title="More" sub={<T tone="muted">Your plan, your progress, help, and settings.</T>}>
       <View style={{ gap: 6 }}>
@@ -26,7 +27,7 @@ export default function More() {
       <View style={{ gap: 8 }}>
         <LinkCard icon="shield" title="My plan" sub="Why I am doing this, my plans, and my lists" onPress={() => router.push('/plan')} />
         <LinkCard icon="sparkle" title="How Daybook works" sub="What it is for, a quick self-check, and your goals. Walk through it any time." onPress={() => router.push('/setup')} />
-        <LinkCard icon="trophy" title="Milestones" sub={`Level ${g.level.n} · ${g.level.name} · ${got} of ${g.badges.length} badges`} onPress={() => router.push('/miles')} />
+        <LinkCard icon="trophy" title="Milestones" sub={`Level ${g.level.n} · ${g.level.name} · ${got} of ${shown.length} badges`} onPress={() => router.push('/miles')} />
         <LinkCard icon="life" title="Get help" sub="People, therapy, groups, and phone setup" onPress={() => router.push('/help')} />
         <LinkCard icon="sliders" title="Settings" sub="My routine, schedule, counting days, look, and backup" onPress={() => router.push('/settings')} />
       </View>

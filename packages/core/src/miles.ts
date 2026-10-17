@@ -9,6 +9,9 @@ import type { DayKey, Days, Reviews } from './types';
 
 /** a badge stays earned once it was seen earned, even if an old entry is changed later */
 export const badgeDone = (b: Badge, st: Settings | null) => b.done || !!(st && st.seen && st.seen.badges.indexOf(b.id) >= 0);
+/** the badges about weekly quests, which were retired: shown only to someone who earned them */
+export const RETIRED_BADGES = ['quest-1', 'quest-3'];
+export const shownBadges = <B extends Badge>(bs: B[], st: Settings | null) => bs.filter((b) => RETIRED_BADGES.indexOf(b.id) < 0 || badgeDone(b, st));
 
 /* ---------- what is new since last time: levels, badges, quests, a full ring (legacy checkNew, ensureSeen, reseat) ---------- */
 
@@ -55,8 +58,8 @@ export function checkNew(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const newB = g.badges.filter((b) => b.done && sn.badges.indexOf(b.id) < 0);
   const newQ = g.quests.filter((q) => q.done && sn.quests.indexOf(q.id) < 0);
   const lvlUp = g.level.n > sn.level;
-  /* a full ring is celebrated once, and only when at least three wins were really done */
-  const perfect = g.tally.t > 0 && g.tally.n === g.tally.t && g.tally.n >= 3 && sn.full !== tk;
+  /* the full ring is retired (October 2026): Your day and Next up already say when today is done */
+  const perfect = false;
   if (!(newB.length || newQ.length || lvlUp || perfect)) return { st: null, items: [] };
   const next = changeSettings(st, (s) => {
     const seen = s.seen || { badges: [], quests: [], level: 1, full: null, lad: LADDER_V };

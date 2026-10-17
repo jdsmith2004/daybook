@@ -8,7 +8,7 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 | 1 | Graduation: a fun, permanent award (and remove the lighter Today). **Done.** | Opus, high |
 | 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account. **Done.** | Opus, high |
 | 3 | Levels: the new ladder, its pacing, and keeping every earned level. **Done.** | Opus, high |
-| 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock | Opus, high |
+| 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock. **Done.** | Opus, high |
 | 4 | Levels: the look, the art and the animations | Opus, medium |
 | 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
 

@@ -59,7 +59,10 @@ resource "aws_cognito_user_pool_domain" "users" {
    A sign-in lasts a year from when it was made (Cognito cannot extend it while in use), on phones and on browsers the person
    trusts; an untrusted browser forgets it when the tab closes. With rotation, every renewal (about hourly while the app is in
    use) replaces the refresh token and retires the old one a minute later, so a copied token stops working soon after. The
-   older REFRESH_TOKEN_AUTH flow is off, because rotation requires that; the apps renew at the token endpoint. */
+   older REFRESH_TOKEN_AUTH flow is off, because rotation requires that; the apps renew with GetTokensFromRefreshToken.
+   The apps sign people up and in natively, with their own screens (apps/mobile/src/app/account.tsx) calling the Cognito
+   API: SignUp and ConfirmSignUp, and USER_PASSWORD_AUTH (the password goes only to Cognito, over TLS). The OAuth settings
+   and the hosted page below are no longer used by the apps, and are kept so nothing breaks while older builds are around. */
 resource "aws_cognito_user_pool_client" "app" {
   name                                 = "daybook-app"
   user_pool_id                         = aws_cognito_user_pool.users.id
@@ -70,7 +73,7 @@ resource "aws_cognito_user_pool_client" "app" {
   supported_identity_providers         = ["COGNITO"]
   callback_urls                        = concat(["daybook://auth"], [for o in local.origins : "${o}/auth"])
   logout_urls                          = concat(["daybook://signed-out"], [for o in local.origins : "${o}/"])
-  explicit_auth_flows                  = ["ALLOW_USER_SRP_AUTH"]
+  explicit_auth_flows                  = ["ALLOW_USER_SRP_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
   prevent_user_existence_errors        = "ENABLED"
   enable_token_revocation              = true
   access_token_validity                = 60

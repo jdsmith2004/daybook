@@ -234,7 +234,7 @@ export default function Setup() {
         </Show>
       ) : (
         <Show st={st} art={<PicToday />} h="Quit porn, one honest day at a time." line="A plan built from your answers, help when urges hit, and progress you can see.">
-          {sync.status.k !== 'off' && sync.status.k !== 'on' ? <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={sync.signInNow} /> : null}
+          {sync.status.k !== 'off' && sync.status.k !== 'on' ? <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={() => sync.signInNow()} /> : null}
           <TextLink label="I already have a backup file" onPress={restore} />
         </Show>
       );

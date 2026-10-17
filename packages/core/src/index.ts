@@ -20,3 +20,4 @@ export * from './sync';
 export * from './graduate';
 export * from './levels';
 export * from './accounts';
+export * from './cognito';

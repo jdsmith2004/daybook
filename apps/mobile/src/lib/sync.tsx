@@ -11,7 +11,9 @@ import { accountHasLog, hasLog, pendingRecords, pullAll, pushAll, snapshotOf, ty
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { accessToken, forgetSession, loadSession, signIn, SignInExpired, signOut, type Session } from './auth';
+import { router } from 'expo-router';
+
+import { accessToken, forgetSession, loadSession, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { useStore } from './store';
 
@@ -43,7 +45,10 @@ interface SyncValue {
   at: number | null;
   /** changes here not sent yet */
   waiting: number;
-  signInNow: () => Promise<void>;
+  /** opens the account sheet (create an account or sign in), optionally with why and a lesson to open after */
+  signInNow: (o?: { why?: string; then?: string }) => void;
+  /** after the account sheet signed in: carry on syncing with this session */
+  startWith: (s: Session) => Promise<void>;
   syncNow: () => Promise<void>;
   /** the answer to the first-sign-in question */
   choose: (how: 'combine' | 'account') => Promise<void>;
@@ -250,34 +255,32 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     [transport, current, replaceFromAccount, mergeFromAccount, markAllDirty, saveKept, round],
   );
 
-  const signInNow = useCallback(async () => {
-    try {
-      setStatus({ k: 'busy', what: 'Signing in…' });
-      let s = sessionRef.current;
-      const k = keptRef.current;
-      if (!s || status.k === 'expired') {
-        s = await signIn();
-        if (!s) {
-          setStatus(k ? { k: 'expired' } : { k: 'out' });
+  const signInNow = useCallback((o?: { why?: string; then?: string }) => {
+    router.push({ pathname: '/account', params: { why: o?.why || '', then: o?.then || '' } });
+  }, []);
+
+  const startWith = useCallback(
+    async (s: Session) => {
+      try {
+        const k = keptRef.current;
+        sessionRef.current = s;
+        setSession(s);
+        /* signed in again to the same account: carry on where it left off */
+        if (k && k.sub === s.sub) {
+          paused.current = false;
+          setStatus({ k: 'on' });
+          await round();
           return;
         }
+        /* a different account than before: this device joins it fresh */
+        if (k) await saveKept(null);
+        await join(s);
+      } catch (e) {
+        fail(e);
       }
-      sessionRef.current = s;
-      setSession(s);
-      /* signed in again to the same account: carry on where it left off */
-      if (k && k.sub === s.sub) {
-        paused.current = false;
-        setStatus({ k: 'on' });
-        await round();
-        return;
-      }
-      /* a different account than before: this device joins it fresh */
-      if (k) await saveKept(null);
-      await join(s);
-    } catch (e) {
-      fail(e);
-    }
-  }, [status.k, round, join, saveKept, fail]);
+    },
+    [round, join, saveKept, fail],
+  );
 
   const choose = useCallback(
     async (how: 'combine' | 'account') => {
@@ -381,6 +384,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       at: kept?.at || null,
       waiting,
       signInNow,
+      startWith,
       syncNow: async () => {
         paused.current = false;
         await round();
@@ -394,7 +398,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       restoreErased,
       loaded,
     }),
-    [status, session, kept, waiting, signInNow, round, choose, signOutNow, eraseAccount, deleteAccount, erased, checkErased, restoreErased, loaded],
+    [status, session, kept, waiting, signInNow, startWith, round, choose, signOutNow, eraseAccount, deleteAccount, erased, checkErased, restoreErased, loaded],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -420,6 +424,7 @@ export function syncedAgo(at: number | null, now = Date.now()): string {
 /** whether the person has an account here: signed in, or this copy of Daybook has no accounts at all (then nothing waits
     behind one). Care never checks this; it only opens lessons and the account card (see accounts.ts). */
 export function useAccount(): boolean {
-  const k = useSync().status.k;
-  return k !== 'out';
+  const { status, loaded } = useSync();
+  /* until the kept sign-in is read, nothing is locked, so a signed-in person never sees a lock flash by */
+  return !loaded || status.k !== 'out';
 }

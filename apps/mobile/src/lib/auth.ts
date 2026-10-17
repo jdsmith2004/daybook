@@ -1,29 +1,13 @@
-/* Signing in to sync. The app opens Cognito's own sign-in page in the system browser (the authorization code flow with PKCE:
-   no client secret, which an app could not keep anyway), and gets back a refresh token, which is kept in the keychain or
-   keystore (secret.ts), and a short-lived access token, which is kept only in memory and renewed when it runs out.
+/* Signing in, natively: the account sheet (app/account.tsx) collects the email, the password and the emailed code, and this
+   file talks to Cognito directly (packages/core/src/cognito.ts), with no browser page. A sign-in gives a refresh token, kept in
+   the keychain or keystore (secret.ts), and a short-lived access token, kept only in memory and renewed when it runs out.
    The sync API takes the access token; who the person is comes only from that signed token. */
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
-import { Platform } from 'react-native';
+import { cognitoClient, CognitoError, regionOfAuthDomain, type Tokens } from '@daybook/core';
 
 import { AUTH_DOMAIN, CLIENT_ID } from './config';
 import { clearSecret, readSecret, writeSecret } from './secret';
 
-/* on the web, the sign-in page comes back to /auth in a small window; this closes it and hands the answer to the app */
-WebBrowser.maybeCompleteAuthSession();
-
-const discovery = {
-  authorizationEndpoint: AUTH_DOMAIN + '/oauth2/authorize',
-  tokenEndpoint: AUTH_DOMAIN + '/oauth2/token',
-  revocationEndpoint: AUTH_DOMAIN + '/oauth2/revoke',
-};
-/* the addresses the sign-in page may send people back to: exactly the ones Terraform lists (infra/app/auth.tf) */
-const web = Platform.OS === 'web';
-const origin = () => (web && typeof window !== 'undefined' ? window.location.origin : '');
-const redirectUri = () => (web ? origin() + '/auth' : 'daybook://auth');
-const logoutUri = () => (web ? origin() + '/' : 'daybook://signed-out');
-/* openid and email only: a token says who signed in and cannot change the account (deleting it goes through the sync API) */
-const SCOPES = ['openid', 'email'];
+export const cognito = cognitoClient(regionOfAuthDomain(AUTH_DOMAIN) || 'us-east-2', CLIENT_ID);
 
 export interface Session {
   refresh: string;
@@ -35,7 +19,7 @@ export class SignInExpired extends Error {}
 
 let access: { token: string; exp: number } | null = null;
 
-/** the claims inside a token (the token itself was checked by Cognito, and the API checks it again; this only reads it) */
+/** the claims inside a token (Cognito made it, and the API checks it again; this only reads it) */
 function claims(jwt: string): Record<string, unknown> {
   try {
     const part = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -62,27 +46,16 @@ export async function loadSession(): Promise<Session | null> {
   }
 }
 
-/** opens the sign-in page. Gives back the session, or null when the person closed the page. */
-export async function signIn(): Promise<Session | null> {
-  const req = new AuthSession.AuthRequest({ clientId: CLIENT_ID, redirectUri: redirectUri(), scopes: SCOPES, usePKCE: true });
-  const res = await req.promptAsync(discovery);
-  if (res.type !== 'success') {
-    if (res.type === 'error') throw new Error(res.params?.error_description || res.error?.message || 'Sign-in did not finish.');
-    return null;
-  }
-  const code = res.params.code;
-  if (!code || !req.codeVerifier) throw new Error('Sign-in did not finish.');
-  const tok = await AuthSession.exchangeCodeAsync({ clientId: CLIENT_ID, code, redirectUri: redirectUri(), extraParams: { code_verifier: req.codeVerifier } }, discovery);
-  if (!tok.refreshToken || !tok.idToken) throw new Error('Sign-in did not finish.');
-  const c = claims(tok.idToken);
-  const session: Session = { refresh: tok.refreshToken, sub: String(c.sub || ''), email: String(c.email || '') };
-  if (!session.sub) throw new Error('Sign-in did not finish.');
+/** keeps a new sign-in: the session in safe storage, the access token in memory */
+export async function keepTokens(t: Tokens): Promise<Session> {
+  const c = claims(t.id);
+  const session: Session = { refresh: t.refresh || '', sub: String(c.sub || ''), email: String(c.email || '') };
+  if (!session.sub || !session.refresh) throw new CognitoError('Error', 'Signing in did not finish. Try again.');
   await writeSecret(JSON.stringify(session));
-  access = { token: tok.accessToken, exp: (tok.issuedAt || Math.floor(Date.now() / 1000)) + (tok.expiresIn || 3600) };
+  access = { token: t.access, exp: Math.floor(Date.now() / 1000) + t.expiresIn };
   return session;
 }
 
-/** a fresh access token for the API. `force` renews it even if it looks fresh (after the API said it was not). */
 let renewing: Promise<string> | null = null;
 
 /** a fresh access token for the API. `force` renews it even if it looks fresh (after the API said it was not).
@@ -97,16 +70,16 @@ export async function accessToken(s: Session, force = false): Promise<string> {
     const kept = await loadSession();
     if (kept && kept.sub === s.sub && kept.refresh !== s.refresh) s.refresh = kept.refresh;
     try {
-      const tok = await AuthSession.refreshAsync({ clientId: CLIENT_ID, refreshToken: s.refresh }, discovery);
-      access = { token: tok.accessToken, exp: (tok.issuedAt || now) + (tok.expiresIn || 3600) };
-      if (tok.refreshToken && tok.refreshToken !== s.refresh) {
-        s.refresh = tok.refreshToken;
+      const tok = await cognito.refresh(s.refresh);
+      access = { token: tok.access, exp: now + tok.expiresIn };
+      if (tok.refresh && tok.refresh !== s.refresh) {
+        s.refresh = tok.refresh;
         await writeSecret(JSON.stringify(s)).catch(() => undefined);
       }
       return access.token;
     } catch (e) {
       /* the refresh token was revoked, ran out (a year after signing in), or the account is gone */
-      if (e instanceof AuthSession.TokenError) throw new SignInExpired('Sign in again to keep syncing.');
+      if (e instanceof CognitoError && e.code === 'NotAuthorizedException') throw new SignInExpired('Sign in again to keep syncing.');
       throw e;
     }
   })().finally(() => {
@@ -115,15 +88,11 @@ export async function accessToken(s: Session, force = false): Promise<string> {
   return renewing;
 }
 
-/** signs this device out: takes back the refresh token, forgets it, and ends the sign-in page's own session, so the next
-    sign-in asks for the password again (a shared computer must not stay signed in) */
+/** signs this device out: takes back the refresh token and forgets it */
 export async function signOut(s: Session | null): Promise<void> {
   access = null;
   await clearSecret();
-  if (s) await AuthSession.revokeAsync({ clientId: CLIENT_ID, token: s.refresh }, discovery).catch(() => undefined);
-  const url = `${AUTH_DOMAIN}/logout?client_id=${encodeURIComponent(CLIENT_ID)}&logout_uri=${encodeURIComponent(logoutUri())}`;
-  if (web) window.location.assign(url);
-  else await WebBrowser.openAuthSessionAsync(url, logoutUri()).catch(() => undefined);
+  if (s) await cognito.revoke(s.refresh).catch(() => undefined);
 }
 
 /** forgets the sign-in on this device without asking Cognito (after the account itself was deleted) */

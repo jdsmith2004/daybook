@@ -75,7 +75,7 @@ export function Welcome() {
           </T>
         ) : (
           <>
-            <Button label="Sign in to my account" kind="ghost" icon="up" onPress={sync.signInNow} />
+            <Button label="Sign in to my account" kind="ghost" icon="up" onPress={() => sync.signInNow()} />
             <TrustChoice />
           </>
         )}

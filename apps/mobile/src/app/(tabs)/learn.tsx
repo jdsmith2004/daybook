@@ -137,7 +137,7 @@ function LessonsPane() {
           {nxt && !open(nxt) ? (
             <>
               <T v="small">You have read the open lessons. A free account opens the other {waiting}, and keeps your progress safe.</T>
-              <Button label="Create an account or sign in" onPress={sync.signInNow} />
+              <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
             </>
           ) : null}
           {lastL ? <Button kind="ghost" label="Read last again" onPress={() => openLesson(lastL.id)} /> : null}

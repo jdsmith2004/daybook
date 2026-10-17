@@ -64,7 +64,10 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
 ## Signing in from a local web server
 
-The hosted sign-in page only sends people back to addresses it knows. To sign in from `npx expo start` in a browser, add `dev_origins = ["http://localhost:8081"]` for a deploy you run yourself, or set the variable in the workflow. Leave it empty otherwise.
+Sign-up and sign-in are native screens in the app that call the Cognito API directly, so they work from any address. The
+sync API only answers the web app's own address, so to sync from `npx expo start` in a browser, add
+`dev_origins = ["http://localhost:8081"]` for a deploy you run yourself, or set the variable in the workflow. Leave it empty
+otherwise.
 
 ## If a deploy fails with "AccessDenied"
 

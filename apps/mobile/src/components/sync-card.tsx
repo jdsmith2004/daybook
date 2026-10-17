@@ -82,7 +82,7 @@ export function SyncBody() {
           A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your sign-in
           can read it. Until you sign in, your log stays on this device only.
         </T>
-        <Button label="Create an account or sign in" onPress={sync.signInNow} />
+        <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
         <LinkText label="What is kept, and who can see it" onPress={() => router.push('/privacy')} />
         <TrustChoice />
       </>
@@ -138,7 +138,7 @@ export function SyncBody() {
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
-      {st.k === 'expired' ? <Button label="Sign in again" onPress={sync.signInNow} /> : <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />}
+      {st.k === 'expired' ? <Button label="Sign in again" onPress={() => sync.signInNow()} /> : <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />}
       <TrustChoice />
       {ask === 'out' ? (
         <View style={[s.confirm, { backgroundColor: c.surface2 }]}>

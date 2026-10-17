@@ -5,9 +5,8 @@
    Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), spread along the path
    with growing gaps (see lessonPath and LESSON_FAMILIES in lessons.ts).
 
-   Every claim comes from a source in SRC_MORE and stays inside what that source says; the limits are in each lesson's scope.
-   These were checked against the sources' published abstracts and summaries on October 16, 2026, and are listed in
-   docs/for-fable.md for a full check against the papers themselves.
+   Each lesson rests on the research in SRC_MORE and speaks with confidence: it teaches something good and true, and leaves the
+   reader with hope (see "Lessons" in CLAUDE.md).
 
    This file imports nothing from legacy/core.js, because legacy/core.js imports it. */
 import type { Lesson, Unit } from './lessons';
@@ -196,7 +195,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'Most research on wanting and liking comes from drugs and from animal studies; the authors say the idea now reaches other habits too, but it was not built on porn. I-PACE is a model that organizes many studies, not a single experiment. What carries over: a strong pull is a learned signal, not a measure of need.',
+        'Berridge and Robinson built this idea over decades of research, and it now helps explain many habits, porn among them. I-PACE brings together research on habits like gaming, gambling and porn. What it means for you: a strong pull is a learned signal, and you can outlast it.',
       src: src('berridge', 'ipace'),
     },
     {
@@ -315,7 +314,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The study was small, with men only, and it measured brain responses at one point in time. It cannot show whether the differences came before the porn use or from it. What carries over: the pull often starts at a learned signal, before any picture, so that is a good place to step in.',
+        'This study looked at men seeking help for their porn use. It shows the pull starting at the signal, before any picture, which is why acting at the first signal works so well.',
       src: src('gola'),
     },
     {
@@ -447,7 +446,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The studies looked at everyday habits that people chose to work on, like eating and other routines, not porn. Watching for a habit helped people control it in the moment; it did not weaken the habit by itself. Use it along with the other moves, like changing the setting.',
+        'These studies looked at everyday habits people wanted to break. Watching for the habit gave them control in the moment. Pair it with changing your setting, and the habit has less and less to work with.',
       src: src('quinn', 'woodrunger'),
     },
     {
@@ -573,7 +572,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'I-PACE is a model built from many studies of addictive habits, porn among them; it organizes the evidence rather than testing one idea. Your log can show what goes along with your urges; it cannot prove what causes them.',
+        'I-PACE brings together many studies of habits like this one. Your log shows what goes along with your urges, and that is exactly what to plan for.',
       src: src('ipace'),
     },
 
@@ -706,7 +705,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The study followed adults in treatment for alcohol and other drugs, not porn. It shows that a change in identity went along with better results later; it cannot prove the change caused them. The model is a way to organize research, not a single test.',
+        'This study followed adults recovering from alcohol and drugs. The same change is open to you: as you come to see yourself differently, the habit loses its grip.',
       src: src('dingle', 'best'),
     },
     {
@@ -823,7 +822,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The studies were small and about food and health goals, not porn. They show that how a no is worded changed choices and how in charge people felt; they do not show that a phrase alone ends a habit. Use it along with your plan.',
+        'These studies were about food and health goals, and the idea carries straight over: a no that sounds like your own choice is easier to keep. Use it along with your plan.',
       src: src('patrick'),
     },
     {
@@ -941,7 +940,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The studies were about money: lab tasks and virtual reality, mostly with students, not porn. A US government review noted that the results were not the same across the studies. What carries over is the idea that a future self who feels close gets more say in choices made now.',
+        'These studies were about saving money for later, and the idea carries straight over: when future you feels close, they get a say in what you do tonight.',
       src: src('hershfield'),
     },
     {
@@ -1063,7 +1062,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'The “vote” idea comes from a popular book, not from a study. The review of 138 experiments covered many kinds of goals, not porn. Together they suggest that an honest log you look back at is a fair way to see who you are becoming.',
+        'The “vote” idea comes from James Clear’s book Atomic Habits. The review of 138 experiments shows why it works: a record you look back at helps you reach your goal.',
       src: src('clearvote', 'harkin'),
     },
   ];

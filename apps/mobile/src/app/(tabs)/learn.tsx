@@ -36,6 +36,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Appear } from '@/components/appear';
 import { Collapse, Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { TalkDoor } from '@/components/talk-card';
 import { ToolGrid, toolTone } from '@/components/tool-grid';
 import { LinkCard } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
@@ -345,6 +346,7 @@ function ToolsPane() {
             tap one
           </T>
         </View>
+        <TalkDoor />
         <ToolGrid days={snap.days} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
         <T v="small">
           Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week:{' '}

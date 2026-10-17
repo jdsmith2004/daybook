@@ -252,7 +252,7 @@ export function Collapse({
 
 /** what a Collapse holds: it grows open and folds shut smoothly, then keeps its natural height while open (so an answer
     that adds a line still fits). With Reduce Motion on, it is simply shown or hidden. */
-function Reveal({ open, style, children }: { open: boolean; style?: StyleProp<ViewStyle>; children: ReactNode }) {
+export function Reveal({ open, style, children }: { open: boolean; style?: StyleProp<ViewStyle>; children: ReactNode }) {
   const reduce = useReducedMotion();
   const [phase, setPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(open ? 'open' : 'closed');
   const [h, setH] = useState(0);

@@ -31,6 +31,7 @@ import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HorizonSun } from '@/components/orb';
 import { SceneFrame } from '@/components/scene';
+import { TalkDoor } from '@/components/talk-card';
 import { ToolGrid, toolTone } from '@/components/tool-grid';
 import { Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
@@ -42,6 +43,7 @@ import { font, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
 
 export default function Sos() {
+  const c = useTheme();
   const { snap, tk, now, update } = useStore();
   const sos = useSos();
   const win = useWindowDimensions();
@@ -161,6 +163,7 @@ export default function Sos() {
         <T v="title" style={s.c} accessibilityRole="header">
           Pick a tool
         </T>
+        <TalkDoor onOpen={() => router.replace('/talk')} />
         <ToolGrid days={snap.days} onPick={(id) => pickTool(id)} />
       </SceneFrame>
     );
@@ -240,6 +243,18 @@ export default function Sos() {
           />
           <Alt icon="check" label="It passed" onPress={() => save('rode')} />
         </View>
+        {/* on a short screen there is no room: it waits at the top of Other tools instead */}
+        {!small ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              buzz('tap');
+              router.replace('/talk');
+            }}
+            style={s.plan}>
+            <Text style={[s.planT, { color: c.accentText }]}>Not an urge yet, but a plan? Talk it through</Text>
+          </Pressable>
+        ) : null}
       </View>
     </>
   );
@@ -450,6 +465,8 @@ const s = StyleSheet.create({
   gt: { fontFamily: font.display, fontSize: 21, lineHeight: 25 },
   gs: { fontFamily: font.body, fontSize: 14, lineHeight: 18, marginTop: 3, opacity: 0.88 },
   alt: { flexDirection: 'row', gap: 8, marginTop: 2 },
+  plan: { alignSelf: 'center', minHeight: 36, justifyContent: 'center', paddingHorizontal: 8 },
+  planT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline', textAlign: 'center' },
   altB: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10, borderRadius: 14 },
   altT: { fontFamily: font.bodySemi, fontSize: 15 },
   know: { alignSelf: 'center', maxWidth: 400, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16 },

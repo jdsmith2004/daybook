@@ -10,6 +10,7 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Appear } from '@/components/appear';
 import { BigOption, Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
+import { TalkDoor } from '@/components/talk-card';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
@@ -224,6 +225,11 @@ export default function Checkin() {
             </Appear>
           ))}
         </View>
+        {form.m != null && form.m <= 3 ? (
+          <Appear delay={640} style={{ alignSelf: 'stretch' }}>
+            <TalkDoor line="Low on caring today? That is a state, not who you are. Talk it through before tonight." />
+          </Appear>
+        ) : null}
         {wind && r ? (
           <Appear delay={700} style={[s.next, { backgroundColor: c.surface }]}>
             <View style={[s.nextIc, { backgroundColor: c.violetSoft }]}>

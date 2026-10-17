@@ -1,6 +1,6 @@
 /* Reminders on a phone: up to three gentle daily notifications, made on the phone itself (nothing is sent from a server, and
    nothing about the log leaves the phone). The words are plain on purpose, because a notification can show on a locked
-   screen: nothing in them says what Daybook is for. Tapping one opens Today. */
+   screen: nothing in them says what Daybook is for. Tapping one opens Today (or, for Talk it through, the screen it is for). */
 import { fmtClock } from '@daybook/core';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
@@ -37,7 +37,9 @@ const before = (t: string, min: number) => {
 
 /** the reminders as they should be: everything Daybook scheduled is replaced by these */
 export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  /* the daily ones are replaced; a one-off from Talk it through (below) stays */
+  for (const n of await Notifications.getAllScheduledNotificationsAsync())
+    if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   const any = p.morning || p.checkin || (p.wind && screensOff);
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
@@ -54,7 +56,26 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
     });
 }
 
-/** a tap on a reminder opens Today, whether the app was open or not */
+const TALK = 'talk';
+/** one reminder from Talk it through (time to decide, or time to look back), replacing any earlier one. The words are
+    plain, so a locked screen says nothing about what Daybook is for. url opens that screen. False when not allowed. */
+export async function scheduleTalk(t: number, body: string, url: string): Promise<boolean> {
+  await cancelTalk();
+  if (t <= Date.now() || !(await allowReminders())) return false;
+  if (Platform.OS === 'android')
+    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+  await Notifications.scheduleNotificationAsync({
+    identifier: TALK,
+    content: { title: 'Daybook', body, data: { url } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
+  });
+  return true;
+}
+export async function cancelTalk(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(TALK).catch(() => undefined);
+}
+
+/** a tap on a reminder opens its screen (Today unless it says otherwise), whether the app was open or not */
 export function listenForTaps(): () => void {
   const go = (r: Notifications.NotificationResponse | null | undefined) => {
     if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;

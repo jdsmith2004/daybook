@@ -1,4 +1,4 @@
-/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, the flame with Next up and SOS, any note about how days
+/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a talk-through that still matters (Talk it through), the flame with Next up and SOS, any note about how days
    are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
@@ -25,6 +25,7 @@ import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'reac
 
 import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
+import { TalkCard } from '@/components/talk-card';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
 import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
@@ -94,6 +95,7 @@ export default function Today() {
     <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub} scrollRef={scroll}>
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
+      <TalkCard snap={snap} now={now} />
       <Hero
         g={g}
         snap={snap}

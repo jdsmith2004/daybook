@@ -1,0 +1,491 @@
+/* Talk it through: for the slip that is decided before any urge. You have caught yourself planning it (the time, the
+   place, maybe what you would watch), or you feel owed it, or you have stopped caring, or it feels like it is going to
+   happen anyway. SOS is for an urge right now; this is for the plan. It does not pretend the plan is not there. It
+   explains what the mind is doing (with the research), talks it through, and lets the person choose one of three
+   honest paths: change the plan, wait and decide later, or go ahead with eyes open and look back afterwards. A slip
+   that is chosen and noticed teaches more than one that "just happened", and noticing what a habit really gives is
+   what wears it down (see the cards below). Nothing here shames, and nothing resets.
+
+   Each talk-through is kept in the day's play record (p.tt), so it syncs with the log. This file imports nothing from
+   legacy/core.js, because legacy/core.js imports normTalks from it. The changes to the log are in talk-log.ts. */
+import type { DayKey, Days } from './types';
+
+/* ---------- the research ---------- */
+/** the sources the cards cite: [what it is, a link] */
+export const TALK_SRC: Record<string, [string, string]> = {
+  larimer: [
+    'Larimer, Palmer & Marlatt (1999): relapse prevention, an overview of Marlatt’s cognitive-behavioral model, Alcohol Research & Health',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC6760427',
+  ],
+  sayette: [
+    'Sayette, Loewenstein, Griffin & Black (2008): exploring the cold-to-hot empathy gap in smokers, Psychological Science',
+    'https://doi.org/10.1111/j.1467-9280.2008.02178.x',
+  ],
+  caselli: ['Caselli & Spada (2015): desire thinking, what it is and what drives it, Addictive Behaviors', 'https://doi.org/10.1016/j.addbeh.2014.07.021'],
+  brandtner: [
+    'Brandtner, Müller, Behrens, Oelker & Brand (2024): the Permissive Beliefs Questionnaire, Comprehensive Psychiatry',
+    'https://doaj.org/article/389ec4183b6c4c44b4249d0660ed8f74',
+  ],
+  kirchner: ['Kirchner, Shiffman & Wileyto (2012): relapse dynamics in people quitting smoking', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3296289'],
+  tip35: ['SAMHSA (2019): TIP 35, Enhancing Motivation for Change, on ambivalence as a normal part of change', 'https://www.ncbi.nlm.nih.gov/books/NBK571071/'],
+  tracy: [
+    'Tracy & Randles (2013): displays of shame predict relapse in recovering alcoholics, Clinical Psychological Science',
+    'https://doi.org/10.1177/2167702612470645',
+  ],
+  brewer: [
+    'Brewer et al. (2011): mindfulness training for smoking cessation, a randomized trial, Drug and Alcohol Dependence',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC3191261',
+  ],
+  taylor: [
+    'Taylor et al. (2021): awareness drives changes in reward value, which predict eating behavior change, Journal of Behavioral Addictions',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC8997232',
+  ],
+  berridge: [
+    'Berridge & Robinson (2016): liking, wanting, and the incentive-sensitization theory of addiction, American Psychologist',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC5171207/',
+  ],
+};
+
+/* ---------- who it is for ---------- */
+/** the opening: "This is for when..." */
+export const TALK_FOR = [
+  'You have caught yourself planning it: the time, the place, maybe what you would watch.',
+  'A voice says you are owed it, after a hard day or a long run.',
+  'You have stopped caring whether you slip.',
+  'It feels like it is going to happen anyway.',
+];
+
+export type TalkSign = 'plan' | 'owed' | 'care' | 'anyway' | 'replay';
+/** "Which ones sound like you?": [id, the words, an icon] */
+export const TALK_SIGNS: [TalkSign, string, string][] = [
+  ['plan', 'I already have a time and a place', 'calendar'],
+  ['owed', 'I feel owed it', 'trophy'],
+  ['care', 'I have stopped caring', 'leaf'],
+  ['anyway', 'It is going to happen anyway', 'wave'],
+  ['replay', 'I keep going over it in my head', 'dots'],
+];
+
+/* ---------- what the mind is doing ---------- */
+export type TalkArt = 'chain' | 'gap' | 'loop' | 'permit' | 'cliff' | 'scale' | 'lens' | 'liking';
+export interface TalkCard {
+  k: TalkArt;
+  /** shown when one of these was picked (empty: always) */
+  for: TalkSign[];
+  title: string;
+  body: string;
+  /** one line, for someone who has read the card before */
+  short: string;
+  src: string[];
+}
+/** in the order they are shown. The last one is shown every time; "liking" opens the eyes-open path. */
+export const TALK_CARDS: TalkCard[] = [
+  {
+    k: 'chain',
+    for: ['plan', 'anyway'],
+    title: 'A slip starts long before the urge.',
+    body: 'Relapse research finds it usually begins with small choices that look harmless: going home early, skipping the gym, keeping the phone close. Each one makes the next one easier. The first links are the easiest to change, and you are at one of them right now.',
+    short: 'A slip starts with small choices, and the first ones are the easiest to change.',
+    src: ['larimer'],
+  },
+  {
+    k: 'gap',
+    for: ['plan', 'anyway', 'owed'],
+    title: 'Calm you guesses low.',
+    body: 'In a study of smokers, people who felt calm predicted that the pull later would be weak. When the craving came, it was stronger than they had guessed. Right now you are the calm one, so this is the best moment to decide.',
+    short: 'Calm, you guess the pull will be weak. It will be stronger, so decide now.',
+    src: ['sayette'],
+  },
+  {
+    k: 'loop',
+    for: ['replay'],
+    title: 'Going over it turns the volume up.',
+    body: 'Picturing the details again and again (who, when, how) has a name: desire thinking. Across many habits, it goes with stronger craving, and the picture never has to be finished. When it starts, name it: “That is the replay.” Then give your mind something else.',
+    short: 'Replaying the details feeds the pull. Name it, and move on.',
+    src: ['caselli'],
+  },
+  {
+    k: 'permit',
+    for: ['owed', 'anyway'],
+    title: '“I earned it” is a permission thought.',
+    body: 'Researchers measure two kinds: deserving a reward (“after today, I have earned it”) and quiet optimism (“once will not matter”). Both are stronger in people who are trying to cut back. So hearing one does not mean you want to give up. It means you are in the middle of changing. A permission thought is a thought, not an order.',
+    short: '“I earned it” and “once will not matter” are permission thoughts, not orders.',
+    src: ['brandtner'],
+  },
+  {
+    k: 'cliff',
+    for: ['anyway', 'care'],
+    title: 'All or nothing is the trap.',
+    body: 'After a slip, many people think: “I blew it, so why bother.” In a study of people quitting smoking, a slip often dropped their confidence, and that drop made the next slip more likely. The slip was not the real danger. The spiral after it was. Here, nothing you have built is lost.',
+    short: 'The spiral after a slip does more harm than the slip. Nothing here resets.',
+    src: ['kirchner'],
+  },
+  {
+    k: 'scale',
+    for: ['care'],
+    title: 'Wanting two things at once is normal.',
+    body: 'Part of you wants to change, and part of you wants it. Counselors call this ambivalence, and they treat it as a normal step on the way to change, not a failure. Motivation is not a fixed trait. It rises and falls, and a low day is a state, not who you are.',
+    short: 'Wanting both is a normal step in change. A low day is a state, not who you are.',
+    src: ['tip35'],
+  },
+  {
+    k: 'lens',
+    for: [],
+    title: 'Curiosity works better than shame.',
+    body: 'In a study of people in recovery, those who showed more shame about their past were more likely to relapse. Curiosity does the opposite. In a trial for quitting smoking, training people to notice their cravings closely helped far more of them quit (31% against 6% four months later). So whatever you choose next, choose it with your eyes open.',
+    short: 'Shame makes it harder. Curiosity makes it easier.',
+    src: ['tracy', 'brewer'],
+  },
+  {
+    k: 'liking',
+    for: [],
+    title: 'Wanting is not liking.',
+    body: 'The brain’s wanting can grow louder over time while the real enjoyment stays the same or fades. When people pay close attention to a habit, they often notice it gives less than it promised. In one study, that noticing lowered how rewarding the habit felt, and that change predicted the habit fading.',
+    short: 'Wanting grows louder than liking. Noticing what it really gives wears the habit down.',
+    src: ['berridge', 'taylor'],
+  },
+];
+
+/** the cards for what was picked, in order, ending with the one shown every time (the eyes-open card is not here) */
+export function talkCards(signs: TalkSign[]): TalkCard[] {
+  return TALK_CARDS.filter((c) => c.k !== 'liking' && (!c.for.length || c.for.some((s) => signs.indexOf(s) >= 0)));
+}
+export const talkCard = (k: TalkArt) => TALK_CARDS.find((c) => c.k === k)!;
+
+/* ---------- talking it through ---------- */
+export type TalkNeed = 'relief' | 'reward' | 'escape' | 'rest' | 'close' | 'bored';
+/** "What is the part of you that wants it really after?": [id, the words, a short line, an icon, as it reads in "when I want ..."] */
+export const TALK_NEEDS: [TalkNeed, string, string, string, string][] = [
+  ['relief', 'Relief', 'From stress or pressure', 'wind', 'relief'],
+  ['reward', 'A reward', 'After a hard day or a long run', 'trophy', 'a reward'],
+  ['escape', 'A break from a feeling', 'Sad, lonely, ashamed or empty', 'heart', 'a break from how I feel'],
+  ['rest', 'Rest', 'I am worn out', 'moon', 'rest'],
+  ['close', 'Closeness', 'To feel wanted, or less alone', 'chat', 'closeness'],
+  ['bored', 'Something to do', 'Bored, restless, nothing planned', 'dice', 'something to do'],
+];
+export const talkNeedWord = (n: TalkNeed | null) => TALK_NEEDS.find((x) => x[0] === n)?.[4] || 'it';
+
+/** what to say back after "How much do you want tonight to go differently?" (0 to 10) */
+export function talkReflect(n: number): string {
+  if (n <= 0) return 'You said 0. Thank you for being honest. You are still here, talking it through, and that counts.';
+  if (n <= 3) return 'You said ' + n + ', not 0. A small part of you wants a different night. That part is worth hearing.';
+  if (n <= 6) return 'You said ' + n + '. Part of you wants this, and part of you wants something else. Both are real.';
+  return 'You said ' + n + '. Most of you wants a different night. A plan can make that easier.';
+}
+/** "What is in that number?": the person's own reasons first, then a few common ones */
+export function talkWhys(reasons: string[]): string[] {
+  const own = reasons.map((r) => String(r || '').trim()).filter(Boolean);
+  const base = ['Sleeping well tonight', 'Waking up proud', 'The people I love', 'My focus tomorrow', 'Keeping my word to myself'];
+  const seen = new Set<string>();
+  return own
+    .concat(base)
+    .filter((r) => (seen.has(r.toLowerCase()) ? false : (seen.add(r.toLowerCase()), true)))
+    .slice(0, 7);
+}
+
+/* ---------- the three paths ---------- */
+export type TalkPath = 'change' | 'wait' | 'open';
+export const TALK_PATHS: [TalkPath, string, string, string][] = [
+  ['change', 'Change the plan', 'Meet what you need another way.', 'compass'],
+  ['wait', 'Wait, and decide later', 'Pick a time to decide. Many plans fade by then.', 'timer'],
+  ['open', 'Go ahead, with your eyes open', 'Chosen and noticed, not a blur. Then look back.', 'sun'],
+];
+
+export type TalkMove =
+  | 'walk'
+  | 'shower'
+  | 'breathe'
+  | 'write'
+  | 'treat'
+  | 'laugh'
+  | 'name'
+  | 'text'
+  | 'people'
+  | 'show'
+  | 'bed'
+  | 'nap'
+  | 'call'
+  | 'fill'
+  | 'out'
+  | 'hands'
+  | 'away'
+  | 'block';
+/** another way to meet the need: [id, the words, how it reads after "I will"] */
+export const TALK_MOVES: Record<TalkMove, [string, string]> = {
+  walk: ['Walk it off', 'walk it off'],
+  shower: ['A long hot shower', 'take a long hot shower'],
+  breathe: ['Three minutes of slow breathing', 'breathe slowly for three minutes'],
+  write: ['Write down what is pressing', 'write down what is pressing'],
+  treat: ['A real treat: food I love, a game, a show', 'have a real treat'],
+  laugh: ['Call someone who makes me laugh', 'call someone who makes me laugh'],
+  name: ['Name the feeling in one line', 'name the feeling'],
+  text: ['Text someone', 'text someone'],
+  people: ['Go where people are', 'go where people are'],
+  show: ['Watch something I love', 'watch something I love'],
+  bed: ['Bed early, phone outside the room', 'go to bed early with the phone outside the room'],
+  nap: ['A twenty-minute nap', 'take a short nap'],
+  call: ['Call someone', 'call someone'],
+  fill: ['Fill the hour: a game, a project, a walk', 'fill the hour'],
+  out: ['Get out of the house', 'get out of the house'],
+  hands: ['Start something with my hands', 'start something with my hands'],
+  away: ['Put the device out of reach', 'put the device out of reach'],
+  block: ['Block what I have in mind, now', 'keep it blocked'],
+};
+const NEED_MOVES: Record<TalkNeed, TalkMove[]> = {
+  relief: ['walk', 'shower', 'breathe', 'write'],
+  reward: ['treat', 'laugh', 'show'],
+  escape: ['name', 'text', 'people', 'show'],
+  rest: ['bed', 'nap', 'shower'],
+  close: ['text', 'call', 'people'],
+  bored: ['fill', 'out', 'hands'],
+};
+/** the moves offered for a need: the ones that meet it, then the two that break the plan's earliest links */
+export function talkMoves(need: TalkNeed | null): TalkMove[] {
+  const list = need ? NEED_MOVES[need] : ['walk', 'text', 'fill'];
+  return (list as TalkMove[]).concat(['away', 'block']);
+}
+
+/** when the plan is for: [id, the words, minutes after midnight (null for now, or a number of minutes from now when negative)] */
+export const TALK_MOMENTS: [string, string, number | null][] = [
+  ['now', 'Right now', null],
+  ['soon', 'In an hour', -60],
+  ['after', 'After work', 17 * 60 + 30],
+  ['evening', 'This evening', 20 * 60],
+  ['late', 'Late tonight', 23 * 60],
+];
+/** the decide-later times: [id, the words, minutes from now (or the next morning at 8)] */
+export const TALK_WAITS: [string, string, number | null][] = [
+  ['30', 'In 30 minutes', 30],
+  ['60', 'In an hour', 60],
+  ['120', 'In two hours', 120],
+  ['morning', 'Tomorrow morning', null],
+];
+
+const midnight = (now: number) => {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+/** the time of a moment, or null for right now. Moments already past today are left out (talkMomentsNow). */
+export function talkMomentTime(id: string, now: number): number | null {
+  const m = TALK_MOMENTS.find((x) => x[0] === id);
+  if (!m || m[2] == null) return null;
+  return m[2] < 0 ? now - m[2] * 60000 : midnight(now) + m[2] * 60000;
+}
+export const talkMomentsNow = (now: number) => TALK_MOMENTS.filter((m) => m[2] == null || m[2] < 0 || midnight(now) + m[2] * 60000 > now + 15 * 60000);
+export function talkWaitTime(id: string, now: number): number {
+  const w = TALK_WAITS.find((x) => x[0] === id);
+  if (w && w[2] != null) return now + w[2] * 60000;
+  return midnight(now) + (24 + 8) * 3600000;
+}
+export function talkClock(t: number): string {
+  const d = new Date(t);
+  const h = d.getHours();
+  return (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+
+/** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach." */
+export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'>): string {
+  const mo = TALK_MOMENTS.find((x) => x[0] === t.mo);
+  const lead = !mo || mo[0] === 'now' ? 'Right now' : mo[1];
+  const thens = t.m.map((id) => TALK_MOVES[id as TalkMove]?.[1]).filter(Boolean);
+  const then = thens.length > 1 ? thens.slice(0, -1).join(', ') + ' and ' + thens[thens.length - 1] : thens[0] || 'do what I planned';
+  return lead + ', when I want ' + talkNeedWord(t.n) + ', I will ' + then + '.';
+}
+
+/* ---------- eyes open ---------- */
+/** what is noticed in the body: where, and what it is like (the same words as Get curious) */
+export const TALK_WHERE: [string, string][] = [
+  ['chest', 'Chest'],
+  ['stomach', 'Stomach'],
+  ['throat', 'Throat or jaw'],
+  ['hands', 'Hands or arms'],
+  ['head', 'Head'],
+  ['all', 'All over'],
+];
+export const TALK_FEEL: [string, string][] = [
+  ['tight', 'Tight'],
+  ['hot', 'Hot'],
+  ['buzzy', 'Buzzy'],
+  ['heavy', 'Heavy'],
+  ['hollow', 'Hollow'],
+  ['restless', 'Restless'],
+];
+/** how it feels afterwards */
+export const TALK_AFTER_FEEL: [string, string][] = [
+  ['relieved', 'Relieved'],
+  ['calm', 'Calm'],
+  ['flat', 'Flat'],
+  ['tired', 'Tired'],
+  ['empty', 'Empty'],
+  ['restless', 'Restless'],
+  ['low', 'Low'],
+];
+/** what it cost */
+export const TALK_COST: [string, string][] = [
+  ['time', 'Time'],
+  ['sleep', 'Sleep'],
+  ['energy', 'Energy'],
+  ['mood', 'Mood'],
+  ['focus', 'Focus'],
+  ['none', 'Nothing much'],
+];
+
+/* ---------- the record ---------- */
+export interface TalkAfter {
+  /** went ahead (true) or chose something else (false) */
+  went: boolean;
+  t: number;
+  /** after going ahead: how it feels now, what it gave (0 to 10), what it cost */
+  f: string[];
+  g: number | null;
+  c: string[];
+}
+export interface Talk {
+  id: string;
+  /** when it was talked through (ms) */
+  t: number;
+  s: TalkSign[];
+  n: TalkNeed | null;
+  /** how much a different night is wanted, 0 to 10 */
+  w: number | null;
+  /** what is in that number (the person's words) */
+  why: string[];
+  p: TalkPath | null;
+  /** change: the moves; wait: the one thing until then */
+  m: TalkMove[];
+  /** change: the moment; wait: the decide-later choice */
+  mo: string | null;
+  /** change: the moment's time; wait: when to decide (ms) */
+  at: number | null;
+  /** eyes open: where it is felt, what it feels like, and what it is expected to give (0 to 10) */
+  b: string[];
+  f: string[];
+  e: number | null;
+  a: TalkAfter | null;
+}
+
+const SIGNS = TALK_SIGNS.map((x) => x[0]);
+const NEEDS = TALK_NEEDS.map((x) => x[0]);
+const PATHS = TALK_PATHS.map((x) => x[0]);
+const MOVES = Object.keys(TALK_MOVES);
+const ids = (l: [string, string][]) => l.map((x) => x[0]);
+const pick = <T extends string>(a: unknown, ok: readonly string[], max = 8): T[] =>
+  Array.isArray(a) ? ([...new Set(a.filter((x) => typeof x === 'string' && ok.indexOf(x) >= 0))].slice(0, max) as T[]) : [];
+const score = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 10 ? v : null);
+const time = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
+
+/** one saved talk-through, cleaned, or null when it is not one */
+export function normTalk(x: unknown): Talk | null {
+  if (!x || typeof x !== 'object') return null;
+  const v = x as Record<string, unknown>;
+  const t = time(v.t);
+  if (typeof v.id !== 'string' || !v.id || v.id.length > 24 || t == null) return null;
+  const a = v.a && typeof v.a === 'object' ? (v.a as Record<string, unknown>) : null;
+  return {
+    id: v.id,
+    t,
+    s: pick<TalkSign>(v.s, SIGNS),
+    n: NEEDS.indexOf(v.n as TalkNeed) >= 0 ? (v.n as TalkNeed) : null,
+    w: score(v.w),
+    why: Array.isArray(v.why)
+      ? v.why
+          .filter((r): r is string => typeof r === 'string' && !!r.trim())
+          .map((r) => r.trim().slice(0, 80))
+          .slice(0, 7)
+      : [],
+    p: PATHS.indexOf(v.p as TalkPath) >= 0 ? (v.p as TalkPath) : null,
+    m: pick<TalkMove>(v.m, MOVES),
+    mo: typeof v.mo === 'string' && v.mo.length <= 12 ? v.mo : null,
+    at: time(v.at),
+    b: pick(v.b, ids(TALK_WHERE)),
+    f: pick(v.f, ids(TALK_FEEL)),
+    e: score(v.e),
+    a:
+      a && typeof a.went === 'boolean' && time(a.t) != null
+        ? { went: a.went, t: a.t as number, f: pick(a.f, ids(TALK_AFTER_FEEL)), g: score(a.g), c: pick(a.c, ids(TALK_COST)) }
+        : null,
+  };
+}
+/** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */
+export function normTalks(x: unknown): Talk[] {
+  if (!Array.isArray(x)) return [];
+  const out: Talk[] = [];
+  for (const v of x) {
+    const t = normTalk(v);
+    if (t && !out.some((o) => o.id === t.id)) out.push(t);
+  }
+  return out.slice(-12);
+}
+
+/** a new, empty talk-through */
+export const newTalk = (now: number): Talk => ({
+  id: 't' + now.toString(36),
+  t: now,
+  s: [],
+  n: null,
+  w: null,
+  why: [],
+  p: null,
+  m: [],
+  mo: null,
+  at: null,
+  b: [],
+  f: [],
+  e: null,
+  a: null,
+});
+
+/** every talk-through in the log, oldest first, with its day */
+export function talksOf(days: Days): { k: DayKey; talk: Talk }[] {
+  const out: { k: DayKey; talk: Talk }[] = [];
+  for (const k of Object.keys(days).sort()) for (const talk of normTalks(days[k]?.p?.tt)) out.push({ k, talk });
+  return out.sort((x, y) => x.talk.t - y.talk.t);
+}
+export function talkById(days: Days, id: string): { k: DayKey; talk: Talk } | null {
+  return talksOf(days).find((x) => x.talk.id === id) || null;
+}
+
+export type TalkDue = 'decide' | 'waiting' | 'plan' | 'look';
+/** the talk-through Today should show, if one still matters (the latest within a day and a half):
+    waiting to decide, time to decide, a change plan before its time, or "How did it go?" */
+export function talkDue(days: Days, now: number): { k: DayKey; talk: Talk; due: TalkDue } | null {
+  const all = talksOf(days).filter((x) => x.talk.p && !x.talk.a && now - x.talk.t < 36 * 3600000);
+  const x = all[all.length - 1];
+  if (!x) return null;
+  const t = x.talk;
+  if (t.p === 'wait') return { ...x, due: t.at && now < t.at ? 'waiting' : 'decide' };
+  if (t.p === 'change' && t.at && now < t.at) return { ...x, due: 'plan' };
+  return { ...x, due: 'look' };
+}
+
+/** what looking back has shown: going ahead with eyes open (what was expected against what it gave), and the times
+    something else was chosen */
+export function talkEvidence(days: Days) {
+  const rows: { e: number; g: number }[] = [];
+  let chose = 0;
+  let went = 0;
+  for (const { talk } of talksOf(days)) {
+    if (!talk.a) continue;
+    if (!talk.a.went) chose++;
+    else {
+      went++;
+      if (talk.e != null && talk.a.g != null) rows.push({ e: talk.e, g: talk.a.g });
+    }
+  }
+  const avg = (l: number[]) => (l.length ? Math.round((l.reduce((a, b) => a + b, 0) / l.length) * 10) / 10 : null);
+  return { rows: rows.slice(-8), expected: avg(rows.map((r) => r.e)), gave: avg(rows.map((r) => r.g)), chose, went };
+}
+
+/** the line under the numbers, once looked back on */
+export function talkEvidenceLine(ev: ReturnType<typeof talkEvidence>): string {
+  if (!ev.rows.length) return '';
+  const last = ev.rows[ev.rows.length - 1];
+  if (ev.rows.length === 1)
+    return last.g < last.e
+      ? 'You expected ' + last.e + '. It gave ' + last.g + '. That gap is wanting and liking coming apart.'
+      : 'You expected ' + last.e + ', and it gave ' + last.g + '. Honest numbers are what make this useful.';
+  const n = ev.rows.length;
+  return ev.gave! < ev.expected!
+    ? 'Across ' + n + ' times, you expected ' + ev.expected + ' on average, and it gave ' + ev.gave + '. Your own numbers are showing the gap.'
+    : 'Across ' + n + ' times, you expected ' + ev.expected + ' on average, and it gave ' + ev.gave + '. Keep looking honestly. It adds up.';
+}

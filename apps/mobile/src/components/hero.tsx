@@ -1,6 +1,6 @@
-/* The Today card: your flame and how far it has grown, the one thing to do next, and the urge button.
-   Tap the flame to say hi; tap the level for how points work. Ported from the legacy hxHtml and nextUpHtml. */
-import { CHEERS, nextUp, type GameState, type Snapshot } from '@daybook/core';
+/* The Today card: your flame and how far it has grown, the one day number (graduate.ts todayMeasure), the one thing to do
+   next, and the urge button. Tap the flame to say hi; tap the level for how points work; tap the day number for the month. Ported from the legacy hxHtml and nextUpHtml. */
+import { CHEERS, nextUp, todayMeasure, type GameState, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -50,6 +50,7 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
           </T>
         </Pressable>
       </View>
+      {snap.settings!.cleanMode !== 'step' ? <DayNumber snap={snap} tk={tk} /> : null}
       {o.n ? (
         !o.k ? (
           <View style={[s.act, { backgroundColor: c.mintSoft }]} accessibilityRole="text">
@@ -104,7 +105,61 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
   );
 }
 
+/** the one day number: the last 7 days at first, then the way to graduation. It holds what was earned. */
+function DayNumber({ snap, tk }: { snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const m = todayMeasure(snap.days, snap.settings!, tk);
+  if (!m) return null;
+  const grad = m.k !== 'week';
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${m.k === 'week' && !m.cells!.some((x) => x === 'ok' || x === 'slip') ? '' : m.n + ' '}${m.of}. ${m.sub} Opens your days.`}
+      onPress={() => router.navigate('/journal')}
+      style={({ pressed }) => [s.day, { backgroundColor: grad ? c.accentSoft : c.mintSoft, opacity: pressed ? 0.85 : 1 }]}>
+      <View style={s.dayTop}>
+        {m.of === 'Day 1 is today' ? (
+          <Text style={[s.dayOf, { color: c.mintText, fontFamily: font.display, fontSize: 19 }]}>Day 1 is today</Text>
+        ) : (
+          <>
+            <Text style={[s.dayN, { color: grad ? c.accentText : c.mintText }]}>{m.n}</Text>
+            <Text style={[s.dayOf, { color: grad ? c.accentText : c.mintText }]}>{m.of}</Text>
+          </>
+        )}
+        <Icon name="next" size={16} color={grad ? c.accentText : c.mintText} />
+      </View>
+      {m.cells ? (
+        <View style={s.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {m.cells.map((x, i) => (
+            <View
+              key={i}
+              style={[
+                s.dot,
+                x === 'ok' && { backgroundColor: c.mint },
+                x === 'slip' && { backgroundColor: c.slip },
+                x === 'none' && { backgroundColor: c.surface, opacity: 0.6 },
+                x === 'today' && { borderWidth: 2.5, borderColor: c.mint, backgroundColor: c.surface },
+              ]}
+            />
+          ))}
+        </View>
+      ) : (
+        <Bar frac={m.frac ?? 1} from={c.accent} track={c.surface} height={10} />
+      )}
+      <T v="small" style={{ color: grad ? c.accentText : c.mintText }}>
+        {m.sub}
+      </T>
+    </Pressable>
+  );
+}
+
 const s = StyleSheet.create({
+  day: { borderRadius: 20, padding: 14, gap: 10 },
+  dayTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  dayN: { fontFamily: font.display, fontSize: 34, lineHeight: 38 },
+  dayOf: { flex: 1, fontFamily: font.bodySemi, fontSize: 15 },
+  dots: { flexDirection: 'row', gap: 6 },
+  dot: { flex: 1, height: 14, borderRadius: 7 },
   scene: { alignItems: 'center', gap: 6 },
   lv: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8 },
   lvN: { fontFamily: font.display, fontSize: 22 },

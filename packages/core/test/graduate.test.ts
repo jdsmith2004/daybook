@@ -1,5 +1,5 @@
 /* Graduation: 90 no-slip days within the last 100, quiet before the first week, and an award that is kept for good. */
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Days, Settings } from '../src/types';
 
@@ -71,4 +71,30 @@ it('after a slip that ends a long run, Rekindle honors the run and the way to gr
   expect(h).not.toMatch(/lost|lose|reset|start over|\b\w+n[’']t\b/i);
   const short = core.addEvent({}, tk, 'slipped', '22:00').days;
   expect(core.rkHonor(short, st0(core.addDays(tk, -3)), tk, tk)).toBeNull();
+});
+
+describe('the one day number on Today', () => {
+  const st0 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
+  const slip = (d: string) => ({ d, events: [{ id: 'x' + d, time: '22:00', outcome: 'slipped', trigger: null, paused: null, did: null, recovered: false, note: '' }], checkin: null, p: null, u: 1 });
+  it('before the first week with no slip, it is the last 7 days, and a slip takes one day off', () => {
+    const days = { '2026-10-05': slip('2026-10-05') } as unknown as Days;
+    const m = core.todayMeasure(days, st0, '2026-10-10')!;
+    expect(m.k).toBe('week');
+    expect(m.n).toBe(6);
+    expect(m.of).toBe('of the last 7 days with no slip');
+    expect(m.cells).toEqual(['ok', 'ok', 'slip', 'ok', 'ok', 'ok', 'ok', 'today']);
+  });
+  it('counts only the days since Day 1, and Day 1 itself says so', () => {
+    expect(core.todayMeasure({}, st0, '2026-10-01')!.of).toBe('Day 1 is today');
+    const m = core.todayMeasure({}, st0, '2026-10-03')!;
+    expect([m.n, m.of]).toEqual([2, 'of the last 2 days with no slip']);
+    expect(m.cells!.slice(0, 5)).toEqual(['none', 'none', 'none', 'none', 'none']);
+  });
+  it('after a week with no slip it is the way to graduation, and nothing before Day 1', () => {
+    const m = core.todayMeasure({}, st0, '2026-10-20')!;
+    expect(m.k).toBe('way');
+    expect(m.n).toBe(19);
+    expect(m.of).toBe('of 90 toward graduation');
+    expect(core.todayMeasure({}, { ...st0, day1: '2026-11-01' }, '2026-10-20')).toBeNull();
+  });
 });

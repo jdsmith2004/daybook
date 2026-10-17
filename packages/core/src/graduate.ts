@@ -66,3 +66,54 @@ export function gradLine(g: GradInfo): string | null {
 
 /** what Milestones says before the first week, quietly */
 export const GRAD_ABOUT = `Graduation is a big one for later: ${GRAD_DAYS} days with no slip within ${GRAD_WINDOW}. A hard day does not erase the others. For now, one day at a time is plenty.`;
+
+/** the one day number Today shows (in the flame card). Before the first week with no slip, only the last 7 days, small and
+    close; after that, the way to graduation; once graduated, the count that keeps going. It never drops to zero after a
+    slip: a slip takes one day off, and the rest stay. Null before Day 1 (the tracking week has its own card). */
+export interface TodayMeasure {
+  k: 'week' | 'way' | 'grad';
+  /** the big number */
+  n: number;
+  /** "of 7 days with no slip", "of 90 toward graduation" */
+  of: string;
+  /** a short warm line under it */
+  sub: string;
+  /** the week: the last 7 finished days, oldest first, then today (open) */
+  cells?: ('ok' | 'slip' | 'none' | 'today')[];
+  /** the way to graduation, 0 to 1 */
+  frac?: number;
+}
+export const WEEK = 7;
+export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure | null {
+  const first = isKey(st.day1) ? (st.day1 as DayKey) : null;
+  if (!first || first > tk) return null;
+  const g = gradInfo(days, st, tk);
+  if (g.at) return { k: 'grad', n: g.count, of: `of the last ${GRAD_WINDOW} days with no slip`, sub: 'Graduated, for good. Still going.' };
+  if (g.show)
+    return {
+      k: 'way',
+      n: g.count,
+      of: `of ${GRAD_DAYS} toward graduation`,
+      sub: g.near ? 'Almost there, and every day already counts.' : `Every day with no slip in your last ${GRAD_WINDOW} counts.`,
+      frac: Math.min(1, g.count / GRAD_DAYS),
+    };
+  const slips = new Set(eventsOf(days).filter((e) => e.outcome === 'slipped').map((e) => e.key));
+  const cells: ('ok' | 'slip' | 'none' | 'today')[] = [];
+  let n = 0;
+  let m = 0;
+  for (let i = WEEK; i >= 1; i--) {
+    const k = addDays(tk, -i);
+    if (k < first) cells.push('none');
+    else {
+      m++;
+      if (slips.has(k)) cells.push('slip');
+      else {
+        n++;
+        cells.push('ok');
+      }
+    }
+  }
+  cells.push('today');
+  if (!m) return { k: 'week', n: 0, of: 'Day 1 is today', sub: 'One day at a time is plenty.', cells };
+  return { k: 'week', n, of: `of the last ${m} ${m === 1 ? 'day' : 'days'} with no slip`, sub: 'Small and close: one day at a time.', cells };
+}

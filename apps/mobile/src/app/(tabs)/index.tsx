@@ -1,5 +1,5 @@
 /* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, the flame with Next up and SOS, any note about how days
-   are counted, the days card, today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
+   are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
   accountAsk,
@@ -16,6 +16,7 @@ import {
   p2,
   phaseLabel,
   shouldAutoStep,
+  todayMeasure,
   weekNudge,
 } from '@daybook/core';
 import { router } from 'expo-router';
@@ -62,6 +63,8 @@ export default function Today() {
   const ph = phaseLabel(tk, st);
   const nudge = weekNudge(st, snap.reviews, tk);
   const be = String(st.becoming || '').trim();
+  /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
+  const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
   const sub = (
     <>
@@ -102,7 +105,7 @@ export default function Today() {
         }}
       />
       <CountNotes snap={snap} tk={tk} />
-      <DaysCard snap={snap} tk={tk} now={now} size="sm" />
+      {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />

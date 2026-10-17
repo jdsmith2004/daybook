@@ -1,5 +1,7 @@
 /* The cards on Today. Every number and sentence comes from @daybook/core, which is checked against the legacy app. */
 import {
+  gradInfo,
+  gradLine,
   cleanKeep,
   cleanOk,
   cleanView,
@@ -212,6 +214,7 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
           ))}
         </View>
         <Chips v={v} />
+        <GradRow snap={snap} tk={tk} />
       </Card>
     );
   const gentle = v.mode === 'gentle';
@@ -240,8 +243,26 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
       </T>
       <MonthGrid v={v} legend={legend} />
       <Chips v={v} />
+      <GradRow snap={snap} tk={tk} />
       <LinkText label="How I count days" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
     </Card>
+  );
+}
+
+/** the way to graduation, once the first week is behind the person (graduate.ts); quiet before that */
+function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const g = gradInfo(snap.days, snap.settings!, tk);
+  const line = gradLine(g);
+  if (!line) return null;
+  return (
+    <Pressable accessibilityRole="button" accessibilityHint="Opens Milestones" onPress={() => router.push('/miles')} style={[s.grad, { backgroundColor: g.at ? c.sunSoft : c.accentSoft }]}>
+      <Icon name={g.at ? 'crown' : 'trophy'} size={18} color={g.at ? c.ink : c.accentText} />
+      <T v="small" style={{ flex: 1, fontFamily: font.bodySemi, color: g.at ? c.ink : c.accentText }}>
+        {g.at ? 'Graduated. ' : ''}
+        {line}
+      </T>
+    </Pressable>
   );
 }
 
@@ -392,6 +413,7 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 const s = StyleSheet.create({
+  grad: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 },
   strip: { flexDirection: 'row', gap: 3 },
   sCell: { flex: 1, height: 22, borderRadius: 5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

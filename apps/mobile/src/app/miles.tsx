@@ -1,16 +1,17 @@
 /* Milestones: your flame and its ten forms, how points work, this week's quests, and your badges. Ported from the legacy
    viewMiles and rewardsBody. */
-import { badgeDone, fmtDate, gameCompute, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, weekRange } from '@daybook/core';
+import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, weekRange } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BadgeArt } from '@/components/celebrate';
 import { Flame } from '@/components/flame';
+import { GradCap, GradFlame } from '@/components/grad';
 import { Collapse } from '@/components/form';
 import { PointsList } from '@/components/points-list';
 import { Screen } from '@/components/screen';
-import { Bar, Card, Icon, T } from '@/components/ui';
+import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -25,12 +26,13 @@ export default function Miles() {
   const cw = Math.max(0, g.week);
   const wr = weekRange(cw, st);
   const earned = g.badges.filter((b) => badgeDone(b, st));
+  const gi = gradInfo(snap.days, st, tk);
   const todo = g.badges.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
   return (
     <Screen title="Milestones" sub={<T tone="muted">Your flame, this week's quests, and your badges.</T>} back="More">
       <Card>
         <View style={s.lvl}>
-          <Flame level={lvl.n} size={124} />
+          <GradFlame level={lvl.n} size={124} />
           <View style={{ flex: 1, gap: 4 }}>
             <Pressable accessibilityRole="button" accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`} onPress={() => router.push('/growth')} style={[s.pill, { backgroundColor: c.accentSoft }]}>
               <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>
@@ -52,6 +54,39 @@ export default function Miles() {
           </View>
         </View>
       </Card>
+      {gi.at ? (
+        <Card style={{ backgroundColor: c.sunSoft }}>
+          <View style={s.row}>
+            <GradCap size={52} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="h2">Graduated</T>
+              <T v="small" tone="muted">
+                {fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })} · yours for good
+              </T>
+            </View>
+          </View>
+          <T v="small">{gradLine(gi)}</T>
+          <Button kind="ghost" label="See your graduation" onPress={() => router.push('/graduated')} />
+        </Card>
+      ) : gi.show ? (
+        <Card>
+          <View style={s.between}>
+            <T v="h2">Toward graduation</T>
+            <T v="small" tone="muted">
+              {gi.count} of {GRAD_DAYS}
+            </T>
+          </View>
+          <Bar frac={gi.count / GRAD_DAYS} from={c.accent} />
+          <T v="small">{gradLine(gi)}</T>
+          <T v="small" tone="muted">
+            A hard day takes one day off the count, never the rest. Graduation is a party and an award that stays yours, and Today stays just as it is.
+          </T>
+        </Card>
+      ) : (
+        <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
+          {GRAD_ABOUT}
+        </T>
+      )}
       <Card>
         <View style={s.between}>
           <T v="h2">Growth path</T>

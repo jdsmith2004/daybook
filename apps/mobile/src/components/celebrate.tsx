@@ -167,7 +167,7 @@ function Evolve({ from, to }: { from: number; to: number }) {
 }
 
 /* confetti: a burst from the middle, falling under gravity. Skipped when the phone asks for less motion. */
-function Confetti({ big }: { big: boolean }) {
+export function Confetti({ big }: { big: boolean }) {
   const c = useTheme();
   const { width: W, height: H } = useWindowDimensions();
   const t = useRef(new Animated.Value(0)).current;

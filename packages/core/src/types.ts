@@ -134,10 +134,8 @@ export interface Settings {
   note: string;
   urPin: string | null;
   onb: { n: number; at: number; a: Record<string, unknown>; hist: { d: DayKey; s: number }[] } | null;
-  /** the lighter Today: the day it began (see lighter.ts), or null. Optional, so older records need no change. */
-  lean?: DayKey | null;
-  /** the last time the lighter Today was offered and the answer was "Not now" */
-  leanNo?: DayKey | null;
+  /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
+  gradAt?: DayKey | null;
   u: number;
 }
 

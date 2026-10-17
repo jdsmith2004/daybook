@@ -6,7 +6,6 @@ import {
   fmtClock,
   fmtHour,
   gameCompute,
-  leanOf,
   makeBackup,
   minToClock,
   readBackup,
@@ -152,12 +151,6 @@ export default function Settings() {
       <View style={{ gap: 8 }}>
         <LinkCard icon="shield" title="My plan" sub="My goal, my safe person, and my lists" onPress={() => router.push('/plan')} />
         <LinkCard icon="sparkle" title="How Daybook works" sub="Walk through the setup again and update your goals" onPress={() => router.push('/setup')} />
-        <LinkCard
-          icon="sunrise"
-          title="A lighter Today"
-          sub={leanOf(st) ? 'On · SOS, your plan and your points stay' : 'Off · offered after a long, quiet stretch'}
-          onPress={() => router.push('/lighter')}
-        />
       </View>
 
       {sync.status.k === 'off'

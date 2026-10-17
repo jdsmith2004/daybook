@@ -1,17 +1,17 @@
-/* The Today card: your flame and how far it has grown, the one thing to do next (not in the lighter Today), and the urge button.
+/* The Today card: your flame and how far it has grown, the one thing to do next, and the urge button.
    Tap the flame to say hi; tap the level for how points work. Ported from the legacy hxHtml and nextUpHtml. */
 import { CHEERS, nextUp, type GameState, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { GradFlame } from '@/components/grad';
 import { LogLink } from '@/components/today-log';
 import { Bar, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-export function Hero({ g, snap, tk, now, onStop, quiet }: { g: GameState; snap: Snapshot; tk: string; now: number; onStop: (k: string) => void; quiet?: boolean }) {
+export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapshot; tk: string; now: number; onStop: (k: string) => void }) {
   const c = useTheme();
   const { say } = useStore();
   const lvl = g.level;
@@ -27,7 +27,7 @@ export function Hero({ g, snap, tk, now, onStop, quiet }: { g: GameState; snap: 
             say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
             buzz('tap');
           }}>
-          <Flame level={lvl.n} size={132} />
+          <GradFlame level={lvl.n} size={132} />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => router.push('/points')} style={{ alignSelf: 'stretch', gap: 6 }}>
           <View style={s.lv}>
@@ -50,7 +50,7 @@ export function Hero({ g, snap, tk, now, onStop, quiet }: { g: GameState; snap: 
           </T>
         </Pressable>
       </View>
-      {o.n && !quiet ? (
+      {o.n ? (
         !o.k ? (
           <View style={[s.act, { backgroundColor: c.mintSoft }]} accessibilityRole="text">
             <View style={[s.ic, { backgroundColor: c.surface }]}>

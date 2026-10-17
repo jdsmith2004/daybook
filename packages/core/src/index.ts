@@ -17,4 +17,4 @@ export * from './data';
 export * from './setup';
 export * from './emblem';
 export * from './sync';
-export * from './lighter';
+export * from './graduate';

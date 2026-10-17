@@ -5,7 +5,7 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 
 | Tier | What | Model |
 | --- | --- | --- |
-| 1 | Graduation: a fun, permanent award (and remove the lighter Today) | Opus, high |
+| 1 | Graduation: a fun, permanent award (and remove the lighter Today). **Done.** | Opus, high |
 | 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account | Opus, high |
 | 3 | Levels: the new ladder, its pacing, and keeping every earned level | Opus, high |
 | 4 | Levels: the look, the art and the animations | Opus, medium |

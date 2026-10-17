@@ -1,4 +1,4 @@
-/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a plan made ahead (A plan for later), the flame with Next up and SOS, any note about how days
+/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, the flame with Next up and SOS, the day's sky (Map your day), any note about how days
    are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
@@ -25,9 +25,10 @@ import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'reac
 
 import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
+import { MapCard } from '@/components/map-card';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
-import { AheadCard, CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
+import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
@@ -94,7 +95,6 @@ export default function Today() {
     <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub} scrollRef={scroll}>
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
-      <AheadCard />
       <Hero
         g={g}
         snap={snap}
@@ -105,6 +105,7 @@ export default function Today() {
           scroll.current?.scrollTo({ y: Math.max(0, dayY - 12), animated: true });
         }}
       />
+      <MapCard snap={snap} tk={tk} now={now} />
       <CountNotes snap={snap} tk={tk} />
       {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
       <TodaySoFar snap={snap} tk={tk} />

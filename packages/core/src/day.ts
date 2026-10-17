@@ -19,6 +19,7 @@ import {
 import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
+import { mapOf, normMap, type DayMap, type MapHeld } from './daymap';
 import type { Checkin, DayKey, Days, Play, Reviews, Settings } from './types';
 
 /** the short status on the right of a stop */
@@ -301,4 +302,40 @@ export function weekNudge(st: Settings, reviews: Reviews, tk: DayKey): number | 
   const r = reviews['w' + last];
   if (r && Object.keys(r.a).some((k) => r.a[k as keyof typeof r.a] && r.a[k as keyof typeof r.a].trim())) return null;
   return last;
+}
+
+/* ---------- map your day (daymap.ts) ---------- */
+/** save the day's map. The first map of a day counts as a calm move. */
+export function saveMap(days: Days, k: DayKey, mp: DayMap, now = Date.now()): Days {
+  const clean = normMap(mp);
+  if (!clean) return days;
+  const day = changeDay(
+    days[k],
+    k,
+    (d) => {
+      const p = d.p || blankP();
+      if (!p.mp) p.c = Math.min(50, p.c + 1);
+      p.mp = clean;
+      d.p = p;
+    },
+    now,
+  );
+  return withDay(days, k, day);
+}
+/** the answer to "Did it hold?". Holding (or mostly) counts as a calm move, once. */
+export function holdMap(days: Days, k: DayKey, r: MapHeld, now = Date.now()): Days {
+  const mp = mapOf(days, k);
+  if (!mp || mp.h == null) return days;
+  const day = changeDay(
+    days[k],
+    k,
+    (d) => {
+      const p = d.p || blankP();
+      if (r !== 'n' && mp.r !== 'y' && mp.r !== 'm') p.c = Math.min(50, p.c + 1);
+      p.mp = { ...mp, r };
+      d.p = p;
+    },
+    now,
+  );
+  return withDay(days, k, day);
 }

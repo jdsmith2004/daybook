@@ -8,7 +8,7 @@ export * from './actions';
 export * from './mutate';
 export * from './rekindle';
 export * from './sos';
-export * from './ahead';
+export * from './daymap';
 export * from './lessons';
 export * from './day';
 export * from './plan';

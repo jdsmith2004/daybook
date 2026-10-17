@@ -37,9 +37,9 @@ const before = (t: string, min: number) => {
 
 /** the reminders as they should be: everything Daybook scheduled is replaced by these */
 export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null): Promise<void> {
-  /* the daily ones are replaced; a one-off reminder for a plan made ahead (below) stays */
+  /* the daily ones are replaced; the one-off reminder for the day's map (below) stays */
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
-    if (n.identifier !== AHEAD) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    if (n.identifier !== MAP) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   const any = p.morning || p.checkin || (p.wind && screensOff);
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
@@ -56,23 +56,23 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
     });
 }
 
-const AHEAD = 'ahead';
-/** one reminder at the hard hour of a plan made ahead (A plan for later), replacing any earlier one. The words are the
-    person's own move, which says nothing about what Daybook is for. False when reminders are not allowed. */
-export async function scheduleAhead(t: number, body: string): Promise<boolean> {
-  await cancelAhead();
+const MAP = 'daymap';
+/** one reminder at the hard hour of the day's map (Map your day), replacing any earlier one. The words are the person's
+    own move, which says nothing about what Daybook is for. False when reminders are not allowed. */
+export async function scheduleMap(t: number, body: string): Promise<boolean> {
+  await cancelMap();
   if (t <= Date.now() || !(await allowReminders())) return false;
   if (Platform.OS === 'android')
     await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
   await Notifications.scheduleNotificationAsync({
-    identifier: AHEAD,
+    identifier: MAP,
     content: { title: 'Daybook', body, data: { url: '/' } },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
   });
   return true;
 }
-export async function cancelAhead(): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(AHEAD).catch(() => undefined);
+export async function cancelMap(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(MAP).catch(() => undefined);
 }
 
 /** a tap on a reminder opens Today, whether the app was open or not */

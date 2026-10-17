@@ -180,34 +180,37 @@ function LessonsPane() {
               ? 'Mixed in: one faith lesson after every two others.'
               : mode === 'first'
                 ? 'First: the faith lessons come before the others.'
-                : 'Last: the faith lessons come after the others. This is the usual order, so Up next always follows the lesson numbers.'}
+                : 'Last: the faith lessons come after the others. This is the usual order.'}
           </T>
         </Collapse>
       ) : null}
       {f === 'all' ? (
-        LUNITS.map((u, k) => {
-          const ls = LESSONS.filter((L) => L.u === k);
-          const dn = ls.filter((L) => done.has(L.id)).length;
-          return (
-            <Card key={k}>
-              <T v="eyebrow" tone="muted">
-                Unit {k + 1} · {dn} of {ls.length} done
-              </T>
-              <T v="h2" accessibilityRole="header">
-                {u.name}
-              </T>
-              <T v="small" tone="muted">
-                {u.sub}
-              </T>
-              {u.faith ? (
-                <T v="small" tone="muted">
-                  {mode === 'mix' ? 'In your daily order, one comes after every two other lessons.' : mode === 'first' ? 'In your daily order, these come first.' : 'In your daily order, these come last.'}
+        /* the faith unit is listed last, after the units added later */
+        LUNITS.map((u, k) => ({ u, k }))
+          .sort((a, b) => Number(!!a.u.faith) - Number(!!b.u.faith))
+          .map(({ u, k }, j) => {
+            const ls = LESSONS.filter((L) => L.u === k);
+            const dn = ls.filter((L) => done.has(L.id)).length;
+            return (
+              <Card key={k}>
+                <T v="eyebrow" tone="muted">
+                  Unit {j + 1} · {dn} of {ls.length} done
                 </T>
-              ) : null}
-              {rows(ls, false)}
-            </Card>
-          );
-        })
+                <T v="h2" accessibilityRole="header">
+                  {u.name}
+                </T>
+                <T v="small" tone="muted">
+                  {u.sub}
+                </T>
+                {u.faith ? (
+                  <T v="small" tone="muted">
+                    {mode === 'mix' ? 'In your daily order, one comes after every two other lessons.' : mode === 'first' ? 'In your daily order, these come first.' : 'In your daily order, these come last.'}
+                  </T>
+                ) : null}
+                {rows(ls, false)}
+              </Card>
+            );
+          })
       ) : (
         <FilterList f={f} rows={rows} />
       )}

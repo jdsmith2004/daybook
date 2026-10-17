@@ -2,6 +2,7 @@
    packages/core/src. Change this file only when one of its rules or words has to change, and keep the golden tests passing. */
 /* eslint-disable */
 // @ts-nocheck
+import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -92,7 +93,8 @@ function optList(kind,opts,o){
 }
 const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
-const LESSON_IDS=Array.from({length:32},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
+/* l1 to l32 are here; l33 to l40 are in lessons-more.ts */
+const LESSON_IDS=Array.from({length:40},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -250,7 +252,7 @@ function normSeen(s){
 function normLearn(l){
  const src=(l&&typeof l==='object'&&l.notes&&typeof l.notes==='object')?l.notes:{},notes={};
  LESSON_IDS.forEach(id=>{const v=src[id];if(typeof v==='string'&&v.trim())notes[id]=v.slice(0,LNOTE_LEN)});
- /* faith: where the faith lessons sit in the daily order. They come last, so Up next follows the lesson numbers. "Mixed in" counts only when the person
+ /* faith: where the faith lessons sit in the daily order. They come last by default. "Mixed in" counts only when the person
     chose it (faithSet); an older save that says "mixed in" without that was just the old default and is read as "last". First and last are always kept. */
  const fm=(l&&FAITH_MODES.indexOf(l.faith)>=0)?l.faith:'after',fs=!!(l&&l.faithSet);
  /* len: the length last chosen (q = Quick, f = Full). prac: lessons whose practice was done (a marker, no points). picks: the answer chosen on a
@@ -855,7 +857,8 @@ const BADGES=[
  {id:'learn-12',name:'Twelve lessons',desc:'Finish 12 lessons.',icon:'compass',tone:'sky',goal:12,now:S=>S.lessons},
  {id:'learn-18',name:'Eighteen lessons',desc:'Finish 18 lessons.',icon:'book',tone:'sky',goal:18,now:S=>S.lessons},
  {id:'learn-24',name:'Two dozen lessons',desc:'Finish 24 lessons.',icon:'crown',tone:'sky',goal:24,now:S=>S.lessons},
- {id:'learn-32',name:'Every lesson',desc:'Finish all '+LESSON_IDS.length+' lessons.',icon:'crown',tone:'sky',goal:LESSON_IDS.length,now:S=>S.lessons},
+ /* this one was "Every lesson" while there were 32; it stays at 32 so nobody loses it when lessons are added */
+ {id:'learn-32',name:'Thirty-two lessons',desc:'Finish 32 lessons.',icon:'crown',tone:'sky',goal:32,now:S=>S.lessons},
  {id:'learn-faith',name:'Faith and work',desc:'Finish the '+FAITH_IDS.length+' faith lessons.',icon:'star',tone:'sun',goal:FAITH_IDS.length,now:S=>S.faithLessons},
  {id:'learn-days-3',name:'Three lesson days',desc:'Read a lesson on 3 different days. They do not have to be in a row.',icon:'book',tone:'sky',goal:3,now:S=>S.lessonDays},
  {id:'learn-days-10',name:'Learning habit',desc:'Read a lesson on 10 different days.',icon:'sparkle',tone:'sky',goal:10,now:S=>S.lessonDays},
@@ -1222,6 +1225,7 @@ const LUNITS=[
  {name:'Well-known programs',sub:'The 12 steps, SMART Recovery, mindfulness-based relapse prevention, and why groups help.',tone:'violet',cls:'lu6'},
  {name:'Faith and recovery',sub:'God in recovery: what the 12-step tradition and research say, a practice for hard moments, guilt, and forgiveness.',tone:'sun',cls:'lu7',faith:true}
 ];
+LUNITS.push(...LUNITS_MORE);
 /* small builders so the lessons below read like the lessons */
 const ltext=(h,...b)=>({k:'text',h,b});
 const lchoose=(h,q,...c)=>({k:'choose',h,q,c});
@@ -1277,7 +1281,8 @@ const SRC={
  mbrpslides:['Penn State (prevention.psu.edu): slides on relapse prevention and mindfulness-based relapse prevention, including the SOBER breathing space','https://prevention.psu.edu/wp-content/uploads/2009/11/marlatt_RP_MBRP_full.pdf'],
  smarthome:['SMART Recovery: home page (free meetings led by trained facilitators, and how it describes itself)','https://www.smartrecovery.org/'],
  serenity:['Wikipedia: Serenity Prayer (its wording, history, and who wrote it)','https://en.wikipedia.org/wiki/Serenity_Prayer'],
- wohl:['British Psychological Society Research Digest: forgive yourself and procrastinate less (on Wohl, Pychyl & Bennett, 2010)','https://bps.org.uk/research-digest/cure-procrastination-forgive-yourself']
+ wohl:['British Psychological Society Research Digest: forgive yourself and procrastinate less (on Wohl, Pychyl & Bennett, 2010)','https://bps.org.uk/research-digest/cure-procrastination-forgive-yourself'],
+ ...SRC_MORE
 };
 
 /* ===== LESSON STANDARD v2 (Oct 14, 2026). Every new or rewritten lesson follows this; v2 lessons carry v:2. =====
@@ -2624,6 +2629,8 @@ const LESSONS=[
   scope:'The students’ study was about studying, not porn, and they reported on themselves, so it cannot show that the same holds here. It tests the common fear that forgiving yourself lets you off the hook, and in this study it went with doing better next time. Faith traditions have their own teaching on forgiveness; this lesson adds the practical side.',
   src:[SRC.wohl,SRC.aa12]}
 ];
+/* lessons 33 to 40 live in lessons-more.ts */
+LESSONS.push(...lessonsMore(SRC));
 
 
 /* ------------------------------------------------------------------------------------------------

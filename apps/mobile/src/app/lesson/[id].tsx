@@ -8,6 +8,7 @@ import {
   LESSONS,
   lessonById,
   lessonHasQuick,
+  lessonFamily,
   lessonIndex,
   lessonLog,
   lessonPairOf,
@@ -174,6 +175,7 @@ export default function LessonScreen() {
     else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });
     else if (g.a === 'tab') {
       if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
+      else if (g.v === 'plan') router.push('/plan');
       else {
         close();
         router.navigate('/journal');
@@ -214,11 +216,12 @@ export default function LessonScreen() {
   if (stage === 'cover') {
     const pref = st.learn.len;
     const u = LUNITS[L.u];
+    const fam = lessonFamily(L);
     const start = (l: 'q' | 'f') => {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      const P = lessonRecallOf(L, done);
+      const P = lessonRecallOf(L, done, faithOf(st));
       setRcOf(P ? P.id : null);
       setRc(null);
       setRcTried([]);
@@ -235,6 +238,11 @@ export default function LessonScreen() {
         <T style={s.h} accessibilityRole="header">
           {L.title}
         </T>
+        {fam ? (
+          <T v="small" tone="muted">
+            Part {fam.n} of {fam.of} on {fam.f.name === u.name ? 'this idea' : 'one idea: ' + fam.f.name}
+          </T>
+        ) : null}
         {L.ask ? (
           <View style={[s.ask, { backgroundColor: t.soft }]}>
             <Text style={[s.eye2, { color: t.text }]}>THIS LESSON ANSWERS</Text>

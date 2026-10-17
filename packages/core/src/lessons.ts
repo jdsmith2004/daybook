@@ -118,9 +118,36 @@ export const faithOf = (st: Settings | null): FaithMode => {
   const m = st && st.learn && st.learn.faith;
   return (FAITH_MODES as string[]).indexOf(m as string) >= 0 ? (m as FaithMode) : 'after';
 };
-/** the order lessons are offered in: number order, with the faith lessons last, first, or after every two others */
+/* ---------- families: one hard idea, taught four ways ---------- */
+/** each hard idea is taught by a few lessons from different directions (the science, a scene, a practice, your own log), spread
+    along the path with growing gaps, so the idea comes back just as it starts to fade */
+export interface LessonFamily {
+  id: string;
+  name: string;
+  ids: string[];
+}
+export const LESSON_FAMILIES: LessonFamily[] = [
+  { id: 'urges', name: 'Urges pass', ids: ['l2', 'l14', 'l27'] },
+  { id: 'slip', name: 'A slip is not who you are', ids: ['l3', 'l5', 'l6', 'l32'] },
+  { id: 'hard', name: 'Why it is hard to stop', ids: ['l33', 'l34', 'l35', 'l36'] },
+  { id: 'become', name: 'Becoming someone new', ids: ['l37', 'l38', 'l39', 'l40'] },
+];
+/** the family a lesson belongs to, and where it sits in it */
+export function lessonFamily(L: Lesson): { f: LessonFamily; n: number; of: number } | null {
+  const f = LESSON_FAMILIES.find((x) => x.ids.indexOf(L.id) >= 0);
+  return f ? { f, n: f.ids.indexOf(L.id) + 1, of: f.ids.length } : null;
+}
+
+/** the daily order of the lessons that are not faith lessons: number order, with lessons 33 to 40 placed so each of their
+    families comes back after a longer gap each time (after 7, 8 and 11 lessons; and after 7, 10 and 11) */
+export const LESSON_ORDER = [
+  'l1', 'l2', 'l33', 'l3', 'l4', 'l37', 'l5', 'l6', 'l7', 'l34', 'l8', 'l9', 'l38', 'l10', 'l11', 'l12', 'l13', 'l35', 'l14',
+  'l15', 'l16', 'l17', 'l39', 'l18', 'l19', 'l20', 'l21', 'l22', 'l36', 'l23', 'l24', 'l25', 'l26', 'l40', 'l27', 'l28',
+];
+/** the order lessons are offered in: LESSON_ORDER, with the faith lessons last, first, or after every two others */
 export function lessonPath(mode: FaithMode): Lesson[] {
-  const base = LESSONS.filter((L) => !L.f);
+  const listed = LESSON_ORDER.map((id) => lessonById(id)).filter((L): L is Lesson => !!L && !L.f);
+  const base = listed.concat(LESSONS.filter((L) => !L.f && listed.indexOf(L) < 0));
   const faith = LESSONS.filter((L) => L.f);
   if (!faith.length) return LESSONS.slice();
   if (mode === 'first') return faith.concat(base);
@@ -184,10 +211,11 @@ export function lessonPractice(L: Lesson): Practice | null {
   const t = L.cards.find((c) => c.k === 'try');
   return t ? { h: t.h, b: t.b, go: t.go || [] } : null;
 }
-/** the lesson before this one, when it was finished and has a recall question, and this one is new */
-export function lessonRecallOf(L: Lesson, done: Set<string>): Lesson | null {
-  const i = lessonIndex(L);
-  const P = i > 0 ? LESSONS[i - 1] : null;
+/** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new */
+export function lessonRecallOf(L: Lesson, done: Set<string>, mode: FaithMode = 'after'): Lesson | null {
+  const path = lessonPath(mode);
+  const i = path.indexOf(L);
+  const P = i > 0 ? path[i - 1] : null;
   return P && P.rc && done.has(P.id) && !done.has(L.id) ? P : null;
 }
 export type SeqItem = { t: 'rc' } | { t: 'card'; c: Card; ci: number } | { t: 'done' };
@@ -214,7 +242,7 @@ export const lxPct = (g: Guess, x: number) => Math.max(0, Math.min(100, ((x - g.
 /* ---------- checkpoints: a longer piece of writing after every second lesson ---------- */
 export function lessonPairOf(L: Lesson) {
   const i = lessonIndex(L);
-  return i % 2 === 1 ? { n: (i + 1) / 2, a: LESSONS[i - 1], b: L } : null;
+  return i % 2 === 1 && (i + 1) / 2 <= LCHECK_N ? { n: (i + 1) / 2, a: LESSONS[i - 1], b: L } : null;
 }
 export const lcheckWritten = (st: Settings, n: number) => !!(st.learn && st.learn.wr && st.learn.wr['c' + n]);
 export function lcheckDue(days: Days, st: Settings): number {
@@ -314,7 +342,7 @@ export function srcNote(L: Lesson): string {
     '. ' +
     (L.f
       ? 'These summarize studies and well-known recovery programs, kept to what each source says. They are not religious teaching, and Daybook does not speak for any church or group.'
-      : L.u >= 6
+      : L.u === 6
         ? 'These summarize published studies and program materials, kept to what each source says.'
         : 'These are summaries of studies, kept to what each one found.') +
     ' Daybook is a self-tracking tool, not medical care.'

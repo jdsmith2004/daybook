@@ -4,7 +4,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
@@ -39,10 +39,17 @@ export function SceneFrame({
   const ink = dark ? nightInk.ink : c.ink;
   const btn = dark ? nightInk.btn : c.scBtn;
   const [a, b] = skies[c.scheme][sky];
+  /* each new step starts at the top, even when the last one was scrolled down to its answers */
+  const scroll = useRef<ScrollViewInstance>(null);
+  const at = dots ? dots.i + '/' + dots.n : '';
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [at, title]);
   const body = (
     <View style={{ flex: 1 }}>
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
+        ref={scroll}
         contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? 0 : inset.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
         <View style={s.col}>

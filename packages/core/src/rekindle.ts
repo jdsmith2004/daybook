@@ -25,29 +25,6 @@ import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
 
 /* ---------- the words ---------- */
-export const RK_STEPS = ['rk0', 'rk1', 'rk2', 'rk3'] as const;
-export const RK_CARDS = [
-  {
-    h: 'Your brain hit the gas.',
-    art: 'rush',
-    al: 'A line that shoots up into a sharp spike, then drops right back down',
-    p: 'Porn sets off the brain’s reward system fast and hard, especially when it is new. That is why the pull felt so urgent, and why it was over so quickly. A strong habit does not make you a weak person. Habits can be retrained.',
-  },
-  {
-    h: 'The crash is a wave too.',
-    art: 'crash',
-    al: 'A line that dips low, then climbs back up toward a rising sun',
-    p: 'The flat, heavy feeling afterward is very common. It feels like the truth about you. It is not. It is a mood, and it usually eases with sleep and time.',
-  },
-  {
-    h: 'Watch for “I already blew it.”',
-    art: 'trap',
-    al: 'From one slip, two paths. “I blew it” leads on to more. “Just one slip” leads back on track.',
-    p: 'That thought is the real danger. Researchers call it the abstinence violation effect: one slip turns into “might as well keep going.” Now you know its name. One slip is just one slip.',
-    fact: 'Being kind to yourself works. In studies, people who met a mistake with kindness tried harder to do better next time, not less.',
-    src: 'Breines & Chen, 2012',
-  },
-] as { h: string; art: 'rush' | 'crash' | 'trap'; al: string; p: string; fact?: string; src?: string }[];
 export const RK_WAIT: [0 | 5 | 10 | 20, string][] = [
   [0, 'No'],
   [5, '5+ min'],
@@ -106,7 +83,7 @@ export function entryLabel(ev: Pick<DayEvent, 'outcome' | 'time' | 'sp'>): strin
   return w + (ev.time ? ' at ' + fmtClock(ev.time) : '');
 }
 
-/* ---------- the run on the line ---------- */
+/* ---------- the run that can keep going ---------- */
 export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
   const L = runLedger(days, st, tk);
   return { L, op: L.open && L.open.k === k ? L.open : null, saved: L.kind[k] === 'saved' };
@@ -124,7 +101,7 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     h,
     p,
     kept: lit ? kept : [],
-    line: op ? { b: 'Your ' + op.run + '-day run is on the line, not over.', rest: 'Finish the Rekindle quest by tomorrow night and it keeps going.' } : null,
+    line: op ? { b: 'Your ' + op.run + '-day run can keep going.', rest: 'Finish the Rekindle quest by tomorrow night.' } : null,
   };
 }
 
@@ -151,9 +128,9 @@ export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, 
     );
   }
   if (counting) {
-    /* a second slip on the day a run is on the line: that run can still be saved, so say so */
+    /* a second slip on the day a run can still be saved: say so */
     const { op } = rkOpen(days, st, tk, date);
-    if (op) return 'Your ' + op.run + '-day run is still on the line. Finish the Rekindle quest by tomorrow night and it keeps going.';
+    if (op) return 'Your ' + op.run + '-day run can still keep going. Finish the Rekindle quest by tomorrow night.';
     return dayKind(date, days[date], st, tk) === 'one'
       ? 'With gentle counting, today still counts. Nothing you earned is gone.'
       : 'Your next run starts tomorrow. Your points, level and badges all stay.';
@@ -250,14 +227,14 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
   return {
     r,
     flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []),
-    h: op ? 'Save your ' + op.run + '-day run' : 'Your Rekindle quest',
+    h: op ? 'Keep your ' + op.run + '-day run going' : 'Your Rekindle quest',
     p: op
       ? 'Finish all ' + (deep ? 'four' : 'three') + ' missions by tomorrow night and your run keeps going. Each one lights a flame.'
       : 'Three small missions before tomorrow night. Each one lights a flame.',
     askWait: st.cleanMode === 'step',
     missions: rkMissions(r, st, { where: 'scene', deep, hour }),
     prize: op
-      ? { b: 'Finish them all: your run is saved', s: 'Plus the Rekindled badge and 20 bonus points.' }
+      ? { b: 'Finish them all: your run keeps going', s: 'Plus the Rekindled badge and 20 bonus points.' }
       : { b: 'Light all three: Rekindled', s: 'A new badge and 20 bonus points.' },
     done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
   };
@@ -302,7 +279,7 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       ...base,
       kind: 'day',
       icon: 'flame',
-      h: op ? 'Your ' + op.run + '-day run is on the line' : 'Rekindle quest',
+      h: op ? 'Keep your ' + op.run + '-day run going' : 'Rekindle quest',
       p: lit + ' of ' + flames.length + ' lit · ends tomorrow night',
       why: op
         ? 'Finish ' + (flames.length === 4 ? 'all four' : 'all three') + ' missions and your run keeps going. The slip stays in your log either way.'

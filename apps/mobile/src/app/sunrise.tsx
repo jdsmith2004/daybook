@@ -11,6 +11,8 @@ import {
   OPT_MAX,
   patchEvent,
   rkActive,
+  rkComebackLine,
+  rkComebacks,
   rkMissions,
   rkOf,
   rkOpen,
@@ -28,6 +30,7 @@ import { StyleSheet, View } from 'react-native';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { LineNote } from '@/components/line-note';
 import { Flames, Missions } from '@/components/rekindle';
+import { Comebacks } from '@/components/rk-art';
 import { Dock, SceneFrame } from '@/components/scene';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
@@ -111,6 +114,7 @@ export default function Sunrise() {
   let footer: React.ReactNode = null;
 
   if (step === 'hi') {
+    const cb = rkComebacks(snap.days, st, k);
     body = (
       <>
         <SunArt />
@@ -121,8 +125,14 @@ export default function Sunrise() {
           Day 1 of your comeback.
         </T>
         <T style={s.c}>Yesterday is logged and done, and nothing reset. Two minutes to finish your quest.</T>
-        {run0 ? <LineNote b={`Your ${run0}-day run is on the line.`} rest="Finish this and it keeps going." /> : null}
+        {run0 ? <LineNote b={`Your ${run0}-day run can keep going.`} rest="This check is what keeps it." /> : null}
         <Flames on={[r.m1, r.m2, r.m3]} big />
+        {cb.before ? (
+          <>
+            <Comebacks cb={cb} />
+            <T style={s.c}>{rkComebackLine(cb)}</T>
+          </>
+        ) : null}
         <Dock>
           <Button label="Start" onPress={next} />
         </Dock>

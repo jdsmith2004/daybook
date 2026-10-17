@@ -1,4 +1,4 @@
-/* Go deeper: the fourth mission when a run of 14 days or more is on the line. Trace the slip back to where it started, or
+/* Go deeper: the fourth mission when a run of 14 days or more can keep going. Trace the slip back to where it started, or
    tell one person. Ported from the legacy SCENES.rktrace and SCENES.rktell. */
 import { blankP, changeDay, rkDeep, rkOf, RT_Q, rkTellText, safeName, withDay } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';

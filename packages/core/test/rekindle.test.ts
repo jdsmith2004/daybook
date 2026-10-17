@@ -20,12 +20,10 @@ afterEach(() => vi.useRealTimers());
 
 describe('the Rekindle words match the legacy app', () => {
   const w = JSON.parse(readFileSync(join(dir, 'rekindle-words.json'), 'utf8'));
-  it('cards, choices and prompts', () => {
-    expect(J(core.RK_CARDS)).toEqual(w.RK_CARDS);
+  it('choices and prompts', () => {
     expect(core.RK_WAIT).toEqual(w.RK_WAIT);
     expect(core.RT_Q).toEqual(w.RT_Q);
     expect(core.SR_GENERIC).toEqual(w.SR_GENERIC);
-    expect([...core.RK_STEPS]).toEqual(w.RK_STEPS);
   });
   it('the message to a safe person', () => {
     ['', 'Sam', 'Alexander Hamilton the Third'].forEach((n, i) => {

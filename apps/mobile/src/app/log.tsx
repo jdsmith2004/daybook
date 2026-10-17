@@ -1,6 +1,9 @@
 /* Quick check-in: one question at a time, one tap each. The first tap saves the entry; every question after it is optional,
-   and Back or Undo is always one tap away. After a slip comes Rekindle: the full one (the embers, three short cards, the
-   quest) for the first slip in any 7 days, the short one for any other. Ported from the legacy SCENES.checkin. */
+   and Back or Undo is always one tap away. After a slip comes Rekindle: the full one for the first slip in any 7 days,
+   the short one for any other. The full one: breathe the embers back up and see everything kept, say how it feels
+   right now, a few short cards on what just happened that fit that feeling (each with a moving picture and its
+   source; cards read before are one line), your own record of comebacks, then the quest. Ported from the legacy
+   SCENES.checkin. */
 import {
   addEvent,
   addOption,
@@ -19,10 +22,14 @@ import {
   rkEmbers,
   rkHonor,
   rkLightLine,
+  rkComebackLine,
+  rkComebacks,
+  RK_FEELS,
+  rkLearn,
   rkQuest,
+  RK_SRC,
   rkStepFor,
-  RK_CARDS,
-  RK_STEPS,
+  type RkFeel,
   UR_STR_NAME,
   urMinText,
   type DayEvent,
@@ -32,9 +39,13 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Answer } from '@/components/answer';
+import { Appear } from '@/components/appear';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { BrainArt, Embers, Flames, Missions, WaitPicker } from '@/components/rekindle';
+import { KnownLine, Sources } from '@/components/research';
+import { Embers, Flames, Missions, WaitPicker } from '@/components/rekindle';
+import { Comebacks, RkArtView } from '@/components/rk-art';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -44,8 +55,8 @@ import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rk1' | 'rk2' | 'rk3' | 'rkl';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rk1', 'rk2', 'rk3', 'rkl'];
+type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkl';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkl'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
@@ -83,6 +94,12 @@ export default function Log() {
   const [askNote, setAskNote] = useState<boolean | null>(null);
   const [lit, setLit] = useState(false);
   const [rkSeen, setRkSeen] = useState(false);
+  /* how it feels right now (never stored), and which card of "What just happened" is showing */
+  const [feels, setFeels] = useState<RkFeel[]>([]);
+  const [ci, setCi] = useState(0);
+  const [dir, setDir] = useState(1);
+  const read = Array.isArray(sos.mem.rkSeen) ? (sos.mem.rkSeen as string[]) : [];
+  const [read0] = useState(read);
   const [adding, setAdding] = useState(false);
   const [allOpts, setAllOpts] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -90,6 +107,16 @@ export default function Log() {
   const [timeText, setTimeText] = useState('');
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
+  const cards = rkLearn(feels);
+  const fresh = cards.filter((x) => read0.indexOf(x.k) < 0);
+  const known = cards.filter((x) => read0.indexOf(x.k) >= 0);
+  const card = fresh[ci];
+  /* a card is "read" once it has been shown */
+  useEffect(() => {
+    if (step !== 'rkM' || !card || read.indexOf(card.k) >= 0) return;
+    sos.setMem((m) => ({ ...m, rkSeen: (Array.isArray(m.rkSeen) ? (m.rkSeen as string[]) : []).concat(card.k) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, ci]);
   /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing */
   const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim());
   useEffect(() => {
@@ -102,16 +129,25 @@ export default function Log() {
   const hour = new Date(now).getHours();
 
   const go = (next: Step, back = false) => {
+    setDir(1);
+    if (next === 'rkM') setCi(0);
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
     setAdding(false);
   };
   const goBack = () => {
+    if (step === 'rkM' && ci > 0) {
+      setDir(-1);
+      setCi(ci - 1);
+      return;
+    }
+    setDir(-1);
     const h = hist.slice();
     const prev = h.pop();
     if (!prev) return;
     setHist(h);
     setStep(prev);
+    if (prev === 'rkM') setCi(Math.max(0, fresh.length - 1));
     setAdding(false);
   };
 
@@ -219,6 +255,10 @@ export default function Log() {
       ) : null}
     </View>
   ) : null;
+
+  /* the progress dots of the full Rekindle: the embers, the feeling, the cards, the record, the quest */
+  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + 2;
+  const rkDots = (i: number) => ({ n: rkN, i, label: i >= rkN - 1 ? 'All done' : 'Step ' + (i + 1) + ' of ' + rkN });
 
   /* ---------- the steps ---------- */
   let body: React.ReactNode;
@@ -340,7 +380,7 @@ export default function Log() {
     const honor = rkHonor(snap.days, st, tk, date);
     sky = 'ember';
     title = 'Rekindle';
-    dots = { n: 4, i: 0, label: 'Step 1 of 4' };
+    dots = rkDots(0);
     body = (
       <>
         <Embers level={Math.max(1, e.level)} lit={lit} onLit={() => setLit(true)} />
@@ -349,55 +389,154 @@ export default function Log() {
         </T>
         <T style={s.center}>{e.p}</T>
         {e.kept.length ? (
-          <View style={{ gap: 6, alignSelf: 'stretch' }} accessibilityLabel="What you kept">
-            {e.kept.map((k) => (
-              <View key={k} style={s.kept}>
-                <Icon name="check" size={18} color="#8CF0CE" />
+          <View style={[s.keptBox, { borderColor: 'rgba(140,240,206,0.35)' }]} accessibilityLabel="What you kept">
+            <T v="eyebrow" style={{ color: '#8CF0CE' }}>
+              Still yours
+            </T>
+            {e.kept.map((k, i) => (
+              <Appear key={k} delay={350 + i * 260} by={6} style={s.kept}>
+                <View style={s.keptCk}>
+                  <Icon name="check" size={15} color="#0B3B2E" />
+                </View>
                 <T>{k}</T>
-              </View>
+              </Appear>
             ))}
           </View>
         ) : null}
-        {lit && honor ? <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T> : null}
+        {lit && honor ? (
+          <Appear delay={350 + e.kept.length * 260} by={6}>
+            <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T>
+          </Appear>
+        ) : null}
         {e.line ? <LineNote b={e.line.b} rest={e.line.rest} night /> : null}
         {lit ? (
           <Dock>
-            <Button label="What just happened?" onPress={() => go('rk1')} />
+            <Appear delay={500 + e.kept.length * 260} by={10}>
+              <Button label="What just happened?" onPress={() => go('rkF')} />
+            </Appear>
           </Dock>
         ) : null}
       </>
     );
     footer = <Link label={hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now'} onPress={close} tone="muted" />;
-  } else if (step === 'rk1' || step === 'rk2' || step === 'rk3') {
-    const i = RK_STEPS.indexOf(step) - 1;
-    const card = RK_CARDS[i];
-    const last = i === RK_CARDS.length - 1;
+  } else if (step === 'rkF') {
     sky = 'sun';
     title = 'Rekindle';
-    dots = { n: 4, i: i + 1, label: 'Step ' + (i + 2) + ' of 4' };
+    dots = rkDots(1);
     body = (
       <>
-        <BrainArt art={card.art} label={card.al} />
         <T v="eyebrow" tone="muted">
-          What just happened · {i + 1} of {RK_CARDS.length}
+          What just happened
         </T>
         <T v="title" style={s.h} accessibilityRole="header">
-          {card.h}
+          Right now, how do you feel?
         </T>
-        <T style={s.center}>{card.p}</T>
-        {card.fact ? <Fact text={card.fact} src={card.src!} /> : null}
+        <T tone="muted" style={s.center}>
+          Pick any. What comes next fits it.
+        </T>
+        <Dock>
+          <View style={s.list}>
+            {RK_FEELS.map(([k, words, sub, ic, tone]) => (
+              <Answer
+                key={k}
+                multi
+                icon={ic}
+                tone={tone}
+                title={words}
+                sub={sub}
+                on={feels.indexOf(k) >= 0}
+                onPress={() => setFeels(feels.indexOf(k) >= 0 ? feels.filter((x) => x !== k) : feels.concat(k))}
+              />
+            ))}
+          </View>
+          <Button label="Next" onPress={() => go(known.length ? 'rkK' : fresh.length ? 'rkM' : 'rkC')} />
+        </Dock>
+      </>
+    );
+  } else if (step === 'rkK') {
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = rkDots(2);
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          What just happened
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          You know these already
+        </T>
+        <View style={s.middle}>
+          {known.map((x, i) => (
+            <Appear key={x.k} delay={100 + i * 80} by={8} style={{ alignSelf: 'stretch' }}>
+              <KnownLine short={x.short} body={x.body} src={x.src} map={RK_SRC} art={<RkArtView k={x.k} />} />
+            </Appear>
+          ))}
+        </View>
+        <Dock>
+          <Button label="Next" onPress={() => go(fresh.length ? 'rkM' : 'rkC')} />
+        </Dock>
+      </>
+    );
+  } else if (step === 'rkM' && card) {
+    const last = ci >= fresh.length - 1;
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = rkDots(2 + (known.length ? 1 : 0) + ci);
+    body = (
+      <Appear key={card.k} x={36 * dir} by={0} duration={260} style={s.stage}>
+        <T v="eyebrow" tone="muted">
+          What just happened{fresh.length > 1 ? ' · ' + (ci + 1) + ' of ' + fresh.length : ''}
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {card.title}
+        </T>
+        <RkArtView k={card.k} />
+        <T style={s.body}>{card.body}</T>
+        <Sources keys={card.src} map={RK_SRC} />
         <Dock>
           <Button
-            label={last ? 'See my quest' : 'Next'}
+            label="Next"
             onPress={() => {
-              if (last) setRkSeen(true);
-              go(last ? 'done' : (RK_STEPS[i + 2] as Step));
+              if (last) go('rkC');
+              else {
+                setDir(1);
+                setCi(ci + 1);
+              }
+            }}
+          />
+        </Dock>
+      </Appear>
+    );
+  } else if (step === 'rkC') {
+    const cb = rkComebacks(snap.days, st, date);
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = rkDots(rkN - 2);
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          Your record
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {cb.before ? 'You have done this before.' : 'Your first comeback starts now.'}
+        </T>
+        <View style={s.middle}>
+          <Comebacks cb={cb} />
+          <Appear delay={300 + cb.runs.length * 90} by={8}>
+            <T style={[s.center, { fontFamily: font.bodySemi }]}>{rkComebackLine(cb)}</T>
+          </Appear>
+        </View>
+        <Dock>
+          <Button
+            label="See my quest"
+            onPress={() => {
+              setRkSeen(true);
+              go('done');
             }}
           />
         </Dock>
       </>
     );
-    footer = <Link label={hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now'} onPress={close} />;
   } else if (step === 'rkl') {
     sky = 'sun';
     title = 'Rekindle';
@@ -432,7 +571,7 @@ export default function Log() {
     const q = rkQuest(snap.days, st, tk, date, ev, hour);
     sky = 'sun';
     title = 'Rekindle';
-    dots = { n: 4, i: 4, label: 'All done' };
+    dots = rkSeen ? rkDots(rkN - 1) : null;
     body = (
       <>
         {saved}
@@ -534,21 +673,6 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo:
   );
 }
 
-function Fact({ text, src }: { text: string; src: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.fact, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-      <Icon name="heart" color={c.coral} />
-      <View style={{ flex: 1, gap: 4 }}>
-        <T>{text}</T>
-        <T v="small" tone="muted">
-          {src}
-        </T>
-      </View>
-    </View>
-  );
-}
-
 function Prize({ b, s: sub }: { b: string; s: string }) {
   const c = useTheme();
   return (
@@ -569,21 +693,17 @@ function Prize({ b, s: sub }: { b: string; s: string }) {
 const s = StyleSheet.create({
   h: { textAlign: 'center' },
   center: { textAlign: 'center' },
+  body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
+  stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
+  list: { alignSelf: 'stretch', gap: 9 },
+  keptBox: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
+  keptCk: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8CF0CE', alignItems: 'center', justifyContent: 'center' },
   opts: { width: '100%', gap: 10 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   kept: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  fact: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 14,
-    borderRadius: 18,
-    alignSelf: 'stretch',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
   prize: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, alignSelf: 'stretch' },
   badge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

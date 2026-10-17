@@ -1,34 +1,112 @@
-/* Rekindle's pieces: the flames (one per mission), the embers you hold to breathe on, the three "what just happened" pictures,
-   the missions list, and "Did you wait first?". */
+/* Rekindle's pieces: the flames (one per mission, each catching with a pop when it is lit), the embers you hold to
+   breathe on (sparks fly when they catch), the missions list, and "Did you wait first?". The "What just happened"
+   pictures are in rk-art.tsx. */
 import { RK_WAIT, type Mission } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Flame } from '@/components/flame';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 /* ---------- one flame per mission: lit or still waiting ---------- */
 export function Flames({ on, big }: { on: boolean[]; big?: boolean }) {
-  const c = useTheme();
   const n = on.filter(Boolean).length;
-  const w = big ? 46 : 34;
   return (
     <View style={s.flames} accessible accessibilityRole="image" accessibilityLabel={`${n} of ${on.length} flames lit`}>
       {on.map((x, i) => (
-        <Svg key={i} width={w} height={w * 1.25} viewBox="0 0 32 40">
+        <OneFlame key={i} lit={x} w={big ? 46 : 34} />
+      ))}
+    </View>
+  );
+}
+/** one flame: when it is lit while on screen, it catches with a pop and a glow */
+function OneFlame({ lit, w }: { lit: boolean; w: number }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(lit ? 1 : 0)).current;
+  const was = useRef(lit);
+  useEffect(() => {
+    if (lit === was.current) return;
+    was.current = lit;
+    if (reduce || !lit) v.setValue(lit ? 1 : 0);
+    else Animated.spring(v, { toValue: 1, friction: 4, tension: 120, useNativeDriver: NATIVE }).start();
+  }, [lit, reduce, v]);
+  return (
+    <View style={{ width: w, height: w * 1.25, alignItems: 'center', justifyContent: 'center' }}>
+      {lit ? (
+        <Animated.View
+          style={[
+            s.flameGlow,
+            { width: w * 1.3, height: w * 1.3, borderRadius: w, opacity: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0.55, 0.22] }) },
+          ]}
+        />
+      ) : null}
+      <Animated.View style={lit ? { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] } : null}>
+        <Svg width={w} height={w * 1.25} viewBox="0 0 32 40">
           <Path
             d="M16 2C17 8 26 12 26 24A10 10 0 0 1 6 24C6 19 8.5 16 11 14C11.5 17.5 13 19.5 15 20.5C13.5 14 13.5 8 16 2Z"
-            fill={x ? '#FF9A3C' : 'none'}
-            stroke={x ? '#E8692A' : c.muted}
+            fill={lit ? '#FF9A3C' : 'none'}
+            stroke={lit ? '#E8692A' : c.muted}
             strokeWidth={2}
-            strokeDasharray={x ? undefined : '3 4'}
-            opacity={x ? 1 : 0.45}
+            strokeDasharray={lit ? undefined : '3 4'}
+            opacity={lit ? 1 : 0.45}
           />
-          {x ? <Path d="M16 34A5 5 0 0 1 11 29C11 25.5 13.5 24 16 20C18.5 24 21 25.5 21 29A5 5 0 0 1 16 34Z" fill="#FFE27A" /> : null}
+          {lit ? <Path d="M16 34A5 5 0 0 1 11 29C11 25.5 13.5 24 16 20C18.5 24 21 25.5 21 29A5 5 0 0 1 16 34Z" fill="#FFE27A" /> : null}
         </Svg>
+      </Animated.View>
+    </View>
+  );
+}
+
+/* ---------- sparks: a burst that rises and fades when the embers catch ---------- */
+const SPARKS = [
+  [-70, -150, 0],
+  [-38, -190, 80],
+  [-12, -170, 30],
+  [14, -200, 120],
+  [40, -160, 50],
+  [66, -185, 140],
+  [-56, -120, 180],
+  [58, -125, 200],
+  [-24, -140, 240],
+  [28, -132, 260],
+];
+function Sparks() {
+  const reduce = useReducedMotion();
+  const vals = useRef(SPARKS.map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    if (reduce) return;
+    const a = Animated.parallel(
+      vals.map((v, i) =>
+        Animated.timing(v, { toValue: 1, duration: 1300 + (i % 3) * 250, delay: SPARKS[i][2], easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+      ),
+    );
+    a.start();
+    return () => a.stop();
+  }, [reduce, vals]);
+  if (reduce) return null;
+  return (
+    <View pointerEvents="none" style={s.sparks}>
+      {vals.map((v, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            s.spark,
+            i % 2 ? s.sparkSmall : null,
+            {
+              opacity: v.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0, 1, 0.8, 0] }),
+              transform: [
+                { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, SPARKS[i][0]] }) },
+                { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, SPARKS[i][1]] }) },
+                { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1.2, 0.4] }) },
+              ],
+            },
+          ]}
+        />
       ))}
     </View>
   );
@@ -91,6 +169,7 @@ export function Embers({ level, lit, onLit }: { level: number; lit: boolean; onL
     <View style={{ width: '100%', alignItems: 'center', gap: 18 }}>
       <View style={s.ember} accessible accessibilityRole="image" accessibilityLabel={lit ? 'Your flame, burning again' : 'Your flame, down to embers'}>
         <Animated.View style={[s.glow, { opacity: glow }]} />
+        {lit ? <Sparks /> : null}
         <Animated.View style={{ transform: [{ scale }] }}>
           <Flame level={level} size={150} />
           <Animated.View style={[StyleSheet.absoluteFill, s.dim, { opacity: dim }]} />
@@ -119,68 +198,6 @@ export function Embers({ level, lit, onLit }: { level: number; lit: boolean; onL
   );
 }
 
-/* ---------- what just happened: one picture per card ---------- */
-export function BrainArt({ art, label }: { art: 'rush' | 'crash' | 'trap'; label: string }) {
-  const c = useTheme();
-  const base = { fill: 'none', stroke: c.ink, strokeWidth: 2, strokeDasharray: '3 7', strokeLinecap: 'round' as const, opacity: 0.35 };
-  const ln = { fill: 'none', stroke: c.slip, strokeWidth: 6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  const lb = { fontSize: 11, fontFamily: font.bodyBold, letterSpacing: 1, textAnchor: 'middle' as const, fill: c.ink, opacity: 0.8 };
-  return (
-    <Svg width="100%" height={150} viewBox="0 0 320 150" accessibilityLabel={label} accessibilityRole="image">
-      {art === 'rush' ? (
-        <G>
-          <Path d="M10 118H310" {...base} />
-          <Path d="M12 118H92C110 118 116 24 134 24S152 118 172 118H308" {...ln} />
-          <Circle cx={134} cy={24} r={7} fill={c.slip} />
-          <SvgText x={134} y={10} {...lb}>
-            THE RUSH
-          </SvgText>
-          <SvgText x={240} y={104} {...lb}>
-            OVER FAST
-          </SvgText>
-        </G>
-      ) : art === 'crash' ? (
-        <G>
-          <Path d="M10 56H310" {...base} />
-          <Path d="M12 56H58C92 56 98 126 136 126S214 70 266 52" {...ln} />
-          <SvgText x={136} y={146} {...lb}>
-            THE LOW
-          </SvgText>
-          <Circle cx={288} cy={46} r={11} fill="#FFC832" />
-          <Path d="M288 26v-6M304 32l4-4M272 32l-4-4M310 46h6M266 46h-6" stroke="#FFB43A" strokeWidth={3} strokeLinecap="round" />
-          <SvgText x={232} y={30} {...lb}>
-            IT LIFTS
-          </SvgText>
-        </G>
-      ) : (
-        <G>
-          <Path d="M70 64C118 40 170 30 232 30" {...ln} stroke={c.coral} strokeDasharray="12 10" />
-          <Path d="M70 86C118 110 170 120 236 120" {...ln} stroke={c.mint} />
-          <Circle cx={42} cy={75} r={28} fill={c.surface} stroke={c.ink} strokeWidth={2} />
-          <SvgText x={42} y={72} {...lb}>
-            ONE
-          </SvgText>
-          <SvgText x={42} y={86} {...lb}>
-            SLIP
-          </SvgText>
-          <Circle cx={258} cy={30} r={23} fill={c.coralSoft} stroke={c.coral} strokeWidth={2} />
-          <SvgText x={258} y={34} {...lb} fill={c.coralText} opacity={1}>
-            MORE
-          </SvgText>
-          <Circle cx={258} cy={120} r={21} fill={c.mint} />
-          <Path d="M249 120l6 6 12-13" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
-          <SvgText x={150} y={20} {...lb} fill={c.coralText} opacity={1}>
-            “I BLEW IT”
-          </SvgText>
-          <SvgText x={150} y={146} {...lb} fill={c.mintText} opacity={1}>
-            “JUST ONE SLIP”
-          </SvgText>
-        </G>
-      )}
-    </Svg>
-  );
-}
-
 /* ---------- the missions ---------- */
 export function Missions({ list, onAction }: { list: Mission[]; onAction: (m: Mission, act: string) => void }) {
   const c = useTheme();
@@ -189,9 +206,7 @@ export function Missions({ list, onAction }: { list: Mission[]; onAction: (m: Mi
       {list.map((m) => (
         <View key={m.key} style={[s.mission, { backgroundColor: c.surface, shadowColor: c.lip }]}>
           <View style={s.mRow}>
-            <View style={[s.mIc, { backgroundColor: m.done ? c.mint : c.surface2 }]}>
-              <Icon name={m.icon} size={20} color={m.done ? '#FFFFFF' : c.ink} />
-            </View>
+            <DoneMark done={m.done} icon={m.icon} />
             <View style={{ flex: 1, gap: 2 }}>
               <T v="label">{m.title}</T>
               <T v="small" tone="muted">
@@ -220,6 +235,30 @@ export function Missions({ list, onAction }: { list: Mission[]; onAction: (m: Mi
         </View>
       ))}
     </View>
+  );
+}
+
+/** a mission's mark: its icon, or a green check that pops in when it is done */
+function DoneMark({ done, icon }: { done: boolean; icon: string }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(done ? 1 : 0)).current;
+  const was = useRef(done);
+  useEffect(() => {
+    if (done === was.current) return;
+    was.current = done;
+    if (reduce || !done) v.setValue(done ? 1 : 0);
+    else Animated.spring(v, { toValue: 1, friction: 4, tension: 140, useNativeDriver: NATIVE }).start();
+  }, [done, reduce, v]);
+  return (
+    <Animated.View
+      style={[
+        s.mIc,
+        { backgroundColor: done ? c.mint : c.surface2 },
+        done ? { transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }] } : null,
+      ]}>
+      <Icon name={icon} size={20} color={done ? '#FFFFFF' : c.ink} />
+    </Animated.View>
   );
 }
 
@@ -254,6 +293,10 @@ export function WaitPicker({ cur, onPick }: { cur: number | null | undefined; on
 const s = StyleSheet.create({
   flames: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 14 },
   ember: { width: 200, height: 200, alignItems: 'center', justifyContent: 'center' },
+  flameGlow: { position: 'absolute', backgroundColor: '#FFB43A' },
+  sparks: { position: 'absolute', left: 96, top: 110, width: 8, height: 8 },
+  spark: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFD36A' },
+  sparkSmall: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FF9A3C' },
   glow: { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: '#FFB43A' },
   dim: { backgroundColor: '#120E38', borderRadius: 75 },
   hold: { width: '100%', minHeight: 62, borderRadius: 20, overflow: 'hidden', justifyContent: 'center' },

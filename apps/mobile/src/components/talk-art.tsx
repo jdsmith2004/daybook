@@ -12,10 +12,11 @@ import { Icon } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
-const H = 184;
+export const H = 184;
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export function TalkArtView({ k }: { k: TalkArt }) {
+/** the box every research picture sits in; it measures its width and draws once it knows it */
+export function ArtFrame({ children }: { children: (w: number) => React.ReactNode }) {
   const c = useTheme();
   const [w, setW] = useState(0);
   return (
@@ -24,7 +25,15 @@ export function TalkArtView({ k }: { k: TalkArt }) {
       onLayout={(e) => setW(e.nativeEvent.layout.width)}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants">
-      {w ? (
+      {w ? children(w) : null}
+    </View>
+  );
+}
+
+export function TalkArtView({ k }: { k: TalkArt }) {
+  return (
+    <ArtFrame>
+      {(w) =>
         k === 'chain' ? (
           <Chain w={w} />
         ) : k === 'gap' ? (
@@ -42,14 +51,14 @@ export function TalkArtView({ k }: { k: TalkArt }) {
         ) : (
           <Liking w={w} />
         )
-      ) : null}
-    </View>
+      }
+    </ArtFrame>
   );
 }
 
 /* ---------- motion helpers ---------- */
 /** 0 to 1 once, after a delay */
-function useOnce(delay: number, duration: number, native = NATIVE, easing = Easing.out(Easing.cubic)) {
+export function useOnce(delay: number, duration: number, native = NATIVE, easing = Easing.out(Easing.cubic)) {
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -64,7 +73,7 @@ function useOnce(delay: number, duration: number, native = NATIVE, easing = Easi
   return v;
 }
 /** 0 to 1 and back, forever, after a delay (stays at rest with Reduce Motion on) */
-function useSway(duration: number, delay = 0) {
+export function useSway(duration: number, delay = 0) {
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -83,12 +92,12 @@ function useSway(duration: number, delay = 0) {
   }, [reduce, v, duration, delay]);
   return v;
 }
-const pop = (v: Animated.Value) => ({
+export const pop = (v: Animated.Value) => ({
   opacity: v.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
   transform: [{ scale: v.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.4, 1.12, 1] }) }],
 });
 
-function Label({
+export function Label({
   x,
   y,
   text,

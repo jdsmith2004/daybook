@@ -47,7 +47,7 @@ const KIND_WORD: Record<string, string> = {
   one: 'one slip, still counts',
   slip: 'slip',
   saved: 'slip, run saved',
-  open: 'slip, run on the line',
+  open: 'slip, run can keep going',
   before: 'before Day 1',
   ahead: 'ahead',
 };
@@ -221,7 +221,7 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
   const legend: [CellKind, string][] = [['ok', 'No slip']];
   if (gentle) legend.push(['one', 'One slip, still counts'], ['slip', 'Two or more']);
   else legend.push(['slip', 'Slip']);
-  legend.push(['saved', 'Slip, run saved'], ['open', 'Slip, run on the line']);
+  legend.push(['saved', 'Slip, run saved'], ['open', 'Slip, run can keep going']);
   return (
     <Card>
       <View style={s.between}>

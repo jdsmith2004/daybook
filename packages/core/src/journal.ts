@@ -48,7 +48,7 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   const c = d && d.checkin && d.checkin.done ? d.checkin : null;
   const pill =
     status === 'slip'
-      ? (s.slipped > 1 ? `Slipped ×${s.slipped}` : 'Slipped') + (rk === 'saved' ? ' · run saved' : rk === 'open' ? ' · run on the line' : '')
+      ? (s.slipped > 1 ? `Slipped ×${s.slipped}` : 'Slipped') + (rk === 'saved' ? ' · run saved' : rk === 'open' ? ' · run can keep going' : '')
       : status === 'clean' && key === tk
         ? 'No slip so far'
         : (STATUS_TXT as Record<string, string>)[status] || '';

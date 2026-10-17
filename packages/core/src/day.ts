@@ -94,7 +94,8 @@ export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKe
   const runs = !!st.day1 && key === tk && st.cleanMode !== 'step';
   if (s.slipped)
     return (
-      'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' Your run is on the line. Finish the Rekindle quest to keep it.' : '')
+      'Saved. A slip is data, not a reset.' +
+      (runs && sk.open && sk.open.k === tk ? ' Your run can keep going. Finish the Rekindle quest by tomorrow night.' : '')
     );
   /* what holds, not a run that can drop to zero: the same measure Today shows */
   const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;

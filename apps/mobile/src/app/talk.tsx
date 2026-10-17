@@ -51,13 +51,13 @@ import {
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';
-import { Reveal } from '@/components/form';
 import { CountUp } from '@/components/count-up';
+import { KnownLine, Sources } from '@/components/research';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { TalkArtView } from '@/components/talk-art';
@@ -116,8 +116,6 @@ const MOVE_IC: Record<TalkMove, string> = {
   away: 'phone',
   block: 'shield',
 };
-/** the short name of a source, for its chip: "Sayette, Loewenstein, Griffin & Black (2008)" */
-const srcName = (k: string) => (TALK_SRC[k]?.[0] || '').split(':')[0];
 
 export default function TalkIt() {
   const c = useTheme();
@@ -317,7 +315,7 @@ export default function TalkIt() {
         <View style={[s.middle, { gap: 8 }]}>
           {known.map((x, i) => (
             <Appear key={x.k} delay={100 + i * 80} by={8} style={{ alignSelf: 'stretch' }}>
-              <KnownLine card={x} />
+              <KnownLine short={x.short} body={x.body} src={x.src} map={TALK_SRC} art={<TalkArtView k={x.k} />} />
             </Appear>
           ))}
         </View>
@@ -336,7 +334,7 @@ export default function TalkIt() {
         </T>
         <TalkArtView k={card.k} />
         <T style={s.body}>{card.body}</T>
-        <Sources keys={card.src} />
+        <Sources keys={card.src} map={TALK_SRC} />
         <Dock>
           <Button
             label="Next"
@@ -642,7 +640,7 @@ export default function TalkIt() {
         </T>
         <TalkArtView k="liking" />
         <T style={s.body}>{read ? lk.short : lk.body}</T>
-        <Sources keys={lk.src} />
+        <Sources keys={lk.src} map={TALK_SRC} />
         <T style={[s.c, s.warm]}>So if you go ahead, the goal is to notice. Here is how.</T>
         <Dock>{next('oBody')}</Dock>
       </>
@@ -1041,51 +1039,6 @@ function OwnChip({ onPress }: { onPress: () => void }) {
   );
 }
 
-/* the sources of a card, as small chips that open the paper */
-function Sources({ keys }: { keys: string[] }) {
-  const c = useTheme();
-  return (
-    <View style={s.srcs}>
-      {keys.map((k) => (
-        <Pressable
-          key={k}
-          accessibilityRole="link"
-          accessibilityLabel={'Source: ' + TALK_SRC[k][0]}
-          onPress={() => Linking.openURL(TALK_SRC[k][1]).catch(() => undefined)}
-          style={({ pressed }) => [s.src, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.7 : 1 }]}>
-          <Icon name="book" size={13} color={c.accentText} />
-          <Text style={[s.srcT, { color: c.accentText }]} numberOfLines={1}>
-            {srcName(k)}
-          </Text>
-          <Icon name="ext" size={12} color={c.accentText} />
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-/* a card read before: its one line, which opens to the full card and its picture */
-function KnownLine({ card }: { card: TalkCard }) {
-  const c = useTheme();
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={[s.known, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.knownHead}>
-        <Icon name="check" size={18} color={c.mintText} />
-        <T style={{ flex: 1 }}>{card.short}</T>
-        <Icon name={open ? 'up' : 'down'} size={18} color={c.muted} />
-      </Pressable>
-      <Reveal open={open}>
-        <View style={{ gap: 10, paddingTop: 8 }}>
-          <TalkArtView k={card.k} />
-          <T style={s.body}>{card.body}</T>
-          <Sources keys={card.src} />
-        </View>
-      </Reveal>
-    </View>
-  );
-}
-
 /* expected against what it really gave, each time looked back on, with the numbers on the bars */
 function Evidence({ rows }: { rows: { e: number; g: number }[] }) {
   const c = useTheme();
@@ -1181,11 +1134,6 @@ const s = StyleSheet.create({
     borderStyle: 'dashed',
   },
   ownChipT: { fontFamily: font.bodySemi, fontSize: 15.5 },
-  srcs: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  src: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%', minHeight: 32, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1.5 },
-  srcT: { fontFamily: font.bodySemi, fontSize: 12.5, flexShrink: 1 },
-  known: { borderRadius: 18, padding: 12, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
-  knownHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
   ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
   evBars: { height: 122, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 18 },
   evCol: { alignItems: 'center', gap: 4 },

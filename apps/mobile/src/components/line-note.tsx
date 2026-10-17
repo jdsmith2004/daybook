@@ -1,4 +1,4 @@
-/* "Your 9-day run is on the line, not over." with a little flame */
+/* "Your 9-day run can keep going." with a little flame */
 import { StyleSheet, View } from 'react-native';
 
 import { Icon, T } from '@/components/ui';

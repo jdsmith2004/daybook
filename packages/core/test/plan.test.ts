@@ -45,3 +45,41 @@ describe('the slip plan', () => {
     expect(core.slipIsStarter(core.resetSlip(st).st.slipPlan)).toBe(true);
   });
 });
+
+describe('the lists as rows', () => {
+  it('adds a line at the end, tidied, and finds one already there instead of adding it twice', () => {
+    const r = core.listAdd(base, 'words', '  Pray in my   own words ');
+    expect(r.ok && r.st.words).toEqual(['Pray in my own words']);
+    expect(r.ok && r.at).toBe(0);
+    expect(r.toast).toBe('Added to your words that steady me.');
+    const again = core.listAdd(r.ok ? r.st : base, 'words', 'pray in my own WORDS');
+    expect(again).toEqual({ ok: false, toast: 'Already on your words that steady me.', at: 0 });
+    expect(core.listAdd(base, 'menu', '   ').ok).toBe(false);
+  });
+  it('holds only as many as the list allows', () => {
+    let st = base;
+    for (let i = 0; i < core.LISTS.wind.max + 2; i++) {
+      const r = core.listAdd(st, 'wind', 'Step ' + i);
+      if (r.ok) st = r.st;
+    }
+    expect(st.wind.length).toBe(core.LISTS.wind.max);
+    expect(core.listAdd(st, 'wind', 'One more').toast).toMatch(/is full/);
+  });
+  it('rewords, moves and removes, and calm moves never end up empty', () => {
+    const st = core.listEdit(base, 'menu', 0, 'A brisk walk');
+    expect(st.menu[0]).toBe('A brisk walk');
+    expect(core.listEdit(st, 'menu', 0, '  ')).toBe(st);
+    const moved = core.listMove(st, 'menu', 0, 1);
+    expect(moved.menu[1]).toBe('A brisk walk');
+    expect(core.listMove(st, 'menu', 0, -1)).toBe(st);
+    let one = st;
+    while (one.menu.length > 1) {
+      const r = core.listRemove(one, 'menu', 0);
+      if (r.ok) one = r.st;
+    }
+    expect(core.listRemove(one, 'menu', 0).ok).toBe(false);
+    const w = core.listAdd(base, 'words', 'Be still');
+    const gone = core.listRemove(w.ok ? w.st : base, 'words', 0);
+    expect(gone.ok && gone.st.words).toEqual([]);
+  });
+});

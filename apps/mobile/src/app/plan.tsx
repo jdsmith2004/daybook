@@ -8,21 +8,20 @@ import {
   removeOption,
   SAFETY,
   setField,
-  setList,
+  type ListKey,
   toggleHelpStep,
   toggleSafety,
-  WORDS_LEN,
-  WORDS_MAX,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Field } from '@/components/choices';
 import { Check, Segments } from '@/components/form';
 import { RelLesson } from '@/components/help-bits';
 import { HelpFoot } from '@/components/help-foot';
 import { LinkCard } from '@/components/link-card';
+import { ListCard } from '@/components/list-card';
 import { SlipEditor, UrgeEditor } from '@/components/plan-editors';
 import { Screen } from '@/components/screen';
 import { Card, Chip, T } from '@/components/ui';
@@ -33,7 +32,8 @@ type Pane = 'why' | 'plans' | 'lists';
 type Sub = 'safety' | 'urge' | 'slip' | 'steps';
 
 export default function Plan() {
-  const params = useLocalSearchParams<{ pane?: string; sub?: string }>();
+  const params = useLocalSearchParams<{ pane?: string; sub?: string; fresh?: string; add?: string }>();
+  const scroll = useRef<ScrollViewInstance>(null);
   const { snap } = useStore();
   const [pane, setPane] = useState<Pane>(params.pane === 'plans' || params.pane === 'lists' ? params.pane : params.sub ? 'plans' : 'why');
   const [sub, setSub] = useState<Sub>(['safety', 'urge', 'slip', 'steps'].indexOf(params.sub || '') >= 0 ? (params.sub as Sub) : 'safety');
@@ -44,7 +44,7 @@ export default function Plan() {
     lists: 'Your calm moves, your wind-down, and the words that steady you.',
   }[pane];
   return (
-    <Screen title="My plan" sub={<T tone="muted">{words}</T>} back="More">
+    <Screen title="My plan" sub={<T tone="muted">{words}</T>} back={params.fresh || params.add ? 'Back' : 'More'} scrollRef={scroll}>
       <Segments
         label="My plan sections"
         list={[
@@ -55,7 +55,7 @@ export default function Plan() {
         cur={pane}
         onPick={setPane}
       />
-      {pane === 'plans' ? <Plans sub={sub} setSub={setSub} onLists={() => setPane('lists')} /> : pane === 'lists' ? <Lists /> : <Why />}
+      {pane === 'plans' ? <Plans sub={sub} setSub={setSub} onLists={() => setPane('lists')} /> : pane === 'lists' ? <Lists fresh={params.fresh} add={params.add} scrollTo={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true })} /> : <Why />}
     </Screen>
   );
 }
@@ -197,9 +197,20 @@ function Plans({ sub, setSub, onLists }: { sub: Sub; setSub: (s: Sub) => void; o
   );
 }
 
-function Lists() {
+/** fresh: the row a lesson just added ("words:0"), to scroll to and light up. add: a list to open with Add ready. */
+function Lists({ fresh, add, scrollTo }: { fresh?: string; add?: string; scrollTo: (y: number) => void }) {
   const { snap, apply, say } = useStore();
   const st = snap.settings!;
+  const [fk, fi] = (fresh || '').split(':');
+  const at = (k: ListKey) => (fk === k && fi !== '' && !isNaN(+fi) ? +fi : undefined);
+  const aim = fk || add || '';
+  const done = useRef(false);
+  const place = (k: ListKey) => (e: LayoutChangeEvent) => {
+    if (k !== aim || done.current) return;
+    done.current = true;
+    const y = e.nativeEvent.layout.y;
+    setTimeout(() => scrollTo(y), 250);
+  };
   const mine = (kind: 'trig' | 'did') => st.opts[kind].filter((o) => !o.off);
   const one = (kind: 'trig' | 'did', title: string) => (
     <View style={{ gap: 6 }}>
@@ -227,31 +238,43 @@ function Lists() {
   );
   return (
     <>
-      <Card>
-        <T v="h2">Calm moves and wind-down</T>
-        <T v="small" tone="muted">
-          One item per line. The pause and Surprise me pick from your calm moves. Changes save as you type.
-        </T>
-        <Field label="Calm moves" multiline maxLength={2400} defaultValue={st.menu.join('\n')} onChangeText={(v) => apply({ st: setList(snap.settings!, 'menu', v) })} />
-        <Field label="Wind-down checklist" multiline maxLength={1000} defaultValue={st.wind.join('\n')} onChangeText={(v) => apply({ st: setList(snap.settings!, 'wind', v) })} />
-        <T v="small" tone="muted">
-          Up to 10 items. Leave it empty to get the starter list back.
-        </T>
-      </Card>
-      <Card>
-        <T v="h2">Words that steady me</T>
-        <Field
-          label="One per line"
-          multiline
-          maxLength={WORDS_MAX * (WORDS_LEN + 1)}
-          defaultValue={(st.words || []).join('\n')}
-          placeholder="A verse, a prayer, or a line that steadies you"
-          onChangeText={(v) => apply({ st: setList(snap.settings!, 'words', v) })}
-        />
-        <T v="small" tone="muted">
-          Up to {WORDS_MAX}. Optional. They show up in Get help under Faith and recovery, and inside the faith lessons.
-        </T>
-      </Card>
+      <ListCard
+        k="menu"
+        title="Calm moves"
+        sub="The pause and Surprise me pick from these."
+        icon="leaf"
+        tone="mint"
+        addLabel="Add a calm move"
+        placeholder="Like: A brisk two-minute walk"
+        fresh={at('menu')}
+        openAdd={add === 'menu'}
+        onLayout={place('menu')}
+      />
+      <ListCard
+        k="wind"
+        title="Wind-down"
+        sub="The steps for the hour before screens go off."
+        icon="moon"
+        tone="sky"
+        numbered
+        addLabel="Add a step"
+        placeholder="Like: Phone charges in another room"
+        fresh={at('wind')}
+        openAdd={add === 'wind'}
+        onLayout={place('wind')}
+      />
+      <ListCard
+        k="words"
+        title="Words that steady me"
+        sub="A verse, a prayer, or a line. They show in Get help and in the faith lessons."
+        icon="star"
+        tone="violet"
+        addLabel="Add words"
+        placeholder="A verse, a prayer, or a line that steadies you"
+        fresh={at('words')}
+        openAdd={add === 'words'}
+        onLayout={place('words')}
+      />
       <Card>
         <View style={s.between}>
           <T v="h2">My own answers</T>

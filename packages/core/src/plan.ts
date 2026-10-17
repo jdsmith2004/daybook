@@ -1,7 +1,7 @@
 /* My plan: my reasons, my slip plan and my urge plan. Each change is a pure function on the settings, with the word to show,
    following the legacy reasonSave, reasonAdd, reasonMove, reasonRemove, lessonReasonSave, slipSave and the data-plan input.
    Checked by test/plan.test.ts. */
-import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean } from './legacy/core.js';
+import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
 import { changeSettings, type Change } from './actions';
 import type { Settings } from './types';
 
@@ -93,6 +93,61 @@ export const setField = (st: Settings, k: 'goal' | 'why' | 'loop' | 'rule' | 'sa
   changeSettings(st, (s) => void ((s as unknown as Record<string, string>)[k] = v));
 /** a list typed one item per line (calm moves, wind-down, words); empty lines are dropped when saved */
 export const setList = (st: Settings, k: 'menu' | 'wind' | 'words', text: string) => changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = text.split('\n')));
+
+/* ---------- the lists as rows: add one, reword one, remove one, move one ---------- */
+export type ListKey = 'menu' | 'wind' | 'words';
+/** each list: how many it holds, how long a line can be, and its name in a sentence */
+export const LISTS: Record<ListKey, { max: number; len: number; name: string }> = {
+  menu: { max: 24, len: 100, name: 'calm moves' },
+  wind: { max: 10, len: 100, name: 'wind-down' },
+  words: { max: WORDS_MAX, len: WORDS_LEN, name: 'words that steady me' },
+};
+const rowsOf = (st: Settings, k: ListKey) => (((st as unknown as Record<string, string[]>)[k] || []) as string[]).slice();
+const putRows = (st: Settings, k: ListKey, rows: string[]) => changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = rows));
+
+export type ListResult = { ok: true; st: Settings; toast: string; at: number } | { ok: false; toast: string; at?: number };
+
+/** a new line at the end of the list; a line that is already there is found, not added twice */
+export function listAdd(st: Settings, k: ListKey, text: string): ListResult {
+  const L = LISTS[k];
+  const t = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, L.len);
+  if (!t) return { ok: false, toast: 'Type a few words first.' };
+  const rows = rowsOf(st, k);
+  const at = rows.findIndex((x) => x.toLowerCase() === t.toLowerCase());
+  if (at >= 0) return { ok: false, toast: 'Already on your ' + L.name + '.', at };
+  if (rows.length >= L.max) return { ok: false, toast: `Your ${L.name} is full (${L.max}). Remove one to make room.` };
+  return { ok: true, st: putRows(st, k, rows.concat([t])), toast: 'Added to your ' + L.name + '.', at: rows.length };
+}
+/** a line reworded; an empty one leaves the old words */
+export function listEdit(st: Settings, k: ListKey, i: number, text: string): Settings {
+  const rows = rowsOf(st, k);
+  const t = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, LISTS[k].len);
+  if (i < 0 || i >= rows.length || !t || rows[i] === t) return st;
+  rows[i] = t;
+  return putRows(st, k, rows);
+}
+/** a line taken off the list. Calm moves and the wind-down never end up empty: the last one stays */
+export function listRemove(st: Settings, k: ListKey, i: number): ListResult {
+  const rows = rowsOf(st, k);
+  if (i < 0 || i >= rows.length) return { ok: false, toast: '' };
+  if (k !== 'words' && rows.length <= 1) return { ok: false, toast: 'Keep at least one. Add a new one first, then remove this.' };
+  rows.splice(i, 1);
+  return { ok: true, st: putRows(st, k, rows), toast: 'Removed.', at: i };
+}
+/** a line moved up (d = -1) or down (d = 1) */
+export function listMove(st: Settings, k: ListKey, i: number, d: -1 | 1): Settings {
+  const rows = rowsOf(st, k);
+  const j = i + d;
+  if (i < 0 || i >= rows.length || j < 0 || j >= rows.length) return st;
+  [rows[i], rows[j]] = [rows[j], rows[i]];
+  return putRows(st, k, rows);
+}
 export function toggleSafety(st: Settings, i: number): Change {
   const next = changeSettings(st, (s) => void (s.safety[i] = !s.safety[i]));
   return { st: next, toast: next.safety[i] ? 'Done. Your safety net is stronger.' : undefined };

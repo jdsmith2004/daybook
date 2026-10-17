@@ -1,5 +1,5 @@
 /* Celebrations: a new level (or a new form of the flame), a new badge, a quest done, a full ring, a run saved. They wait their turn:
-   never on top of a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
+   they show only on the main tabs, never on top of a page, a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
    quiet line instead. Anything that arrives right after a slip comes in quietly: no confetti, no buzz. Ported from the legacy
    celebrate, celNext and confetti. */
 import { celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
@@ -16,7 +16,8 @@ import { font, toneOf, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
 const SCENES = /^\/(sos|tool|log|sunrise|deeper|night|lesson|lwrite|setup)(\/|$)/;
-const SHEETS = /^\/(points|mode|growth|day|entry|badge)(\/|$)/;
+/** the main tabs: a celebration shows only there, never over a page the person is busy on */
+const TABS = /^\/(journal|learn|more)?$/;
 
 /** a badge: a round medal in its color, or a dashed lock while it is not earned yet */
 export function BadgeArt({ icon, tone, size, earned }: { icon: string; tone: string; size: number; earned: boolean }) {
@@ -62,7 +63,7 @@ export function CelebrateHost() {
     };
   }, [hooks]);
 
-  const blocked = SCENES.test(path) || SHEETS.test(path);
+  const blocked = !TABS.test(path);
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;

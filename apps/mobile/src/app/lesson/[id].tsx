@@ -21,6 +21,8 @@ import {
   lcheckWritten,
   lfmt,
   LIST_OF,
+  listAdd,
+  type ListKey,
   LNOTE_LEN,
   LUNITS,
   LX_E,
@@ -142,7 +144,7 @@ export default function LessonScreen() {
   };
   const practiced = () => {
     setPrac(true);
-    apply({ st: lessonPracticed(snap.settings!, L.id) });
+    apply((cur) => ({ st: lessonPracticed(cur, L.id) }));
   };
   const toStage = (s: Stage) => {
     setStage(s);
@@ -160,9 +162,9 @@ export default function LessonScreen() {
       return;
     }
     if (LIST_OF[g.a]) {
-      addItem(g);
+      if (!addItem(g)) return;
       practiced();
-      if (primary) toStage('practiced');
+      if (primary) setStage('practiced');
       return;
     }
     const kind = lxSheetOf(g);
@@ -179,7 +181,7 @@ export default function LessonScreen() {
     else if (g.a === 'growth') router.push('/growth');
     else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });
     else if (g.a === 'tab') {
-      if (g.v === 'settings' && g.open === 's-lists') router.push({ pathname: '/plan', params: { pane: 'lists' } });
+      if ((g.v === 'settings' && g.open === 's-lists') || (g.v === 'plan' && g.open === 'lists')) router.push({ pathname: '/plan', params: { pane: 'lists', add: ownList() } });
       else if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
       else if (g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
       else {
@@ -196,23 +198,27 @@ export default function LessonScreen() {
       .toLowerCase();
     return list.some((x) => String(x).toLowerCase() === tx);
   };
+  /* "Add" puts the line on the list, then opens the list with that line lit up; Back comes here again */
   const addItem = (g: Go) => {
-    const [key, max, name] = LIST_OF[g.a];
-    const txt = String(g.text || '')
-      .trim()
-      .slice(0, 100);
-    if (!txt) return;
-    if (listHas(g)) {
-      say('Already on your ' + name + '.');
-      return;
+    const key = LIST_OF[g.a][0] as ListKey;
+    const r = listAdd(snap.settings!, key, g.text || '');
+    if (r.ok) {
+      apply((cur) => {
+        const again = listAdd(cur, key, g.text || '');
+        return { st: again.ok ? again.st : cur };
+      });
+      buzz('save');
+    } else if (r.at == null) {
+      say(r.toast);
+      return false;
     }
-    const cur = ((snap.settings as unknown as Record<string, string[]>)[key] || []) as string[];
-    if (cur.length >= max) {
-      say('Your ' + name + ' is full. You can edit it in My plan, under Lists.');
-      return;
-    }
-    apply({ st: changeSettings(snap.settings!, (s0) => void ((s0 as unknown as Record<string, string[]>)[key] = cur.concat([txt]))) });
-    say('Added to your ' + name + '.');
+    router.push({ pathname: '/plan', params: { pane: 'lists', fresh: key + ':' + r.at } });
+    return true;
+  };
+  /** the list a "Write my own" link should open, from the add buttons beside it */
+  const ownList = () => {
+    const sib = (lessonPractice(L)?.go || []).find((x) => LIST_OF[x.a]);
+    return sib ? LIST_OF[sib.a][0] : '';
   };
 
   /* ---------- the card ---------- */
@@ -493,12 +499,10 @@ export default function LessonScreen() {
                 <Pressable
                   key={k}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: has }}
-                  disabled={has}
                   onPress={() => doGo(g, false)}
                   style={[s.soft, { backgroundColor: c.accentSoft, shadowColor: c.lip, opacity: has ? 0.7 : 1 }]}>
                   {has ? <Icon name="check" size={20} color={c.accentText} /> : g.ic ? <Icon name={g.ic} size={20} color={c.accentText} /> : null}
-                  <Text style={[s.softT, { color: c.accentText }]}>{has ? 'On my ' + LIST_OF[g.a][2] : g.t}</Text>
+                  <Text style={[s.softT, { color: c.accentText }]}>{has ? 'On my ' + LIST_OF[g.a][2] + ' · See it' : g.t}</Text>
                 </Pressable>
               );
             })}

@@ -48,6 +48,8 @@ export interface UrMem {
   rev?: number;
   fwd?: { a: string[]; b: string[] };
   bedPlan?: string;
+  /** Move: whether the moves shown are the ones for a seat (in a meeting, at work, in a car) or for getting up */
+  moveSit?: boolean;
   [bucket: string]: unknown;
 }
 
@@ -87,6 +89,17 @@ export function newUrge(now: number, pts: number): UrState {
     cx: null,
   };
 }
+
+/** Move, for when you cannot get up (at work, in a meeting, in a car, at the movies): small moves no one has to notice.
+    Like MOVES, each is [id, name, how]. Tensing and letting go of a muscle on purpose is the core of muscle relaxation. */
+export const MOVES_SIT: [string, string, string][] = [
+  ['squeeze', 'Squeeze and let go', 'Fists, arms or legs: hold for five, then let go'],
+  ['feet', 'Press your feet down', 'Push into the floor, hold, then rest'],
+  ['palms', 'Palm press', 'Push your hands together, hold, then let go'],
+  ['shoulders', 'Shoulder rolls', 'Slow circles, up, back and down'],
+  ['jaw', 'Jaw and neck', 'Unclench, then slow turns side to side'],
+  ['toes', 'Curl your toes', 'Curl, hold, then spread them wide'],
+];
 
 export const urTool = (id: string) => TOOLS.find((t) => t.id === id) || null;
 /** answers you added yourself act like "Other" when picking a tool */

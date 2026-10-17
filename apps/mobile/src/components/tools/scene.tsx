@@ -11,6 +11,7 @@ import {
   messageTexts,
   MOVE_MS,
   MOVES,
+  MOVES_SIT,
   NEEDS,
   reasonCat,
   safeName,
@@ -30,6 +31,7 @@ import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Appear } from '@/components/appear';
+import { PickRow } from '@/components/picks';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
@@ -47,6 +49,11 @@ const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in 
 /* ---------- move ---------- */
 export function Move({ finish, level }: ToolProps) {
   const c = useTheme();
+  const sos = useSos();
+  /* in a seat (at work, in a meeting, in a car) or free to get up. Remembered on this device, and a seat is the start,
+     because it works anywhere. */
+  const sit = sos.mem.moveSit !== false;
+  const list = sit ? MOVES_SIT : MOVES;
   const [pick, setPick] = useState<string | null>(null);
   const [m0, setM0] = useState<number | null>(null);
   const [done, setDone] = useState(false);
@@ -65,7 +72,11 @@ export function Move({ finish, level }: ToolProps) {
         <Finish
           level={level}
           title="Nice. Notice your breath."
-          text="Your heart is going a little faster, and your head had something else to do. That is the point."
+          text={
+            sit
+              ? 'Your body let go a little, and your head had something else to do. That is the point.'
+              : 'Your heart is going a little faster, and your head had something else to do. That is the point.'
+          }
         />
         <Dock>
           <Button label="Done" onPress={() => finish('move', { msg: 'Body first. Nice work.' })} />
@@ -78,31 +89,45 @@ export function Move({ finish, level }: ToolProps) {
         <T v="title" style={s.c} accessibilityRole="header">
           Move for 2 minutes.
         </T>
-        <T style={s.c}>Body first, decision later. Pick one. Any pace counts.</T>
+        <T style={s.c}>Body first, decision later. Moving in your seat counts, and no one has to notice.</T>
         <Dock>
-          <View style={s.grid}>
-            {MOVES.map(([id, name, sub]) => (
-              <Pressable
-                key={id}
-                accessibilityRole="button"
-                onPress={() => {
-                  setPick(id);
-                  setM0(Date.now());
-                  buzz('tap');
-                }}
-                style={({ pressed }) => [s.tile, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-                <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
-                <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
-              </Pressable>
-            ))}
-          </View>
           <T v="small" tone="muted" style={s.c}>
-            Stop if anything hurts. A slow walk counts too.
+            Can you get up right now?
+          </T>
+          <PickRow
+            label="Can you get up right now?"
+            list={[
+              { k: 'sit', label: 'Not right now' },
+              { k: 'up', label: 'Yes' },
+            ]}
+            cur={sit ? 'sit' : 'up'}
+            onPick={(k) => sos.setMem((m) => ({ ...m, moveSit: k === 'sit' }))}
+          />
+          <Appear key={sit ? 'sit' : 'up'} by={6} duration={240}>
+            <View style={s.grid}>
+              {list.map(([id, name, sub]) => (
+                <Pressable
+                  key={id}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setPick(id);
+                    setM0(Date.now());
+                    buzz('tap');
+                  }}
+                  style={({ pressed }) => [s.tile, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                  <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
+                  <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Appear>
+          <T v="small" tone="muted" style={s.c}>
+            {sit ? 'Slow and small still counts. Stop if anything hurts.' : 'Stop if anything hurts. A slow walk counts too.'}
           </T>
         </Dock>
       </Stage>
     );
-  const m = MOVES.find((x) => x[0] === pick) || MOVES[0];
+  const m = list.find((x) => x[0] === pick) || list[0];
   const R = 112;
   const C = 2 * Math.PI * R;
   return (

@@ -132,73 +132,127 @@ export function Orb({
   );
 }
 
-/* the scale for each step of a breath (legacy orbTo) */
-const scaleOf = (k: string) => (k === 'in' || k === 'in2' ? 1 : k === 'in1' ? 0.84 : 0.58);
+/* how far up the SOS sun is for each step of a breath: 1 is fully risen, 0 is low on the horizon */
+const riseOf = (k: string) => (k === 'in' || k === 'in2' ? 1 : k === 'in1' ? 0.7 : 0);
+/* how much of the sun shows when it is fully risen and when it is low, and how far it reaches down behind the sheet */
+const HI = 0.64;
+const LO = 0.3;
+const UNDER = 56;
+const ROW = 40;
+const GAP = 18;
+/* the gap between this screen's content and the sheet (the sheet's top margin): the horizon is the sheet's edge */
+const EDGE = 18;
+/* the screen's side margin: the light reaches past it to the edges of the screen */
+const SIDE = 16;
 
-/** the first SOS minute: a sun on the horizon that rises while you breathe in and sets while you breathe out, with the words for
-    each step and the time left. After the minute it keeps going. It ticks only while on (when the screen is in front). */
-export function HorizonSun({ size, on }: { size: number; on: boolean }) {
+/** the first SOS minute: a sun on the horizon (the top edge of the sheet below) that rises while you breathe in and sinks
+    while you breathe out, with the words for each step and the time left just above it. It measures the room it has and
+    fills it, so the words above and the sheet below never crowd it. After the minute it keeps going. It ticks only while
+    on (when the screen is in front). */
+export function HorizonSun({ on }: { on: boolean }) {
   const c = useTheme();
   const [r0] = useState(() => Date.now());
   const sec = useSeconds(r0, on);
   const left = Math.max(0, 60 - sec);
   const ph = breathPhase('calm', sec);
-  const scale = useRef(new Animated.Value(0.58)).current;
+  const rise = useRef(new Animated.Value(0)).current;
   const reduced = useRef(false);
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled()
-      .then((r) => (reduced.current = r))
+      .then((r) => {
+        reduced.current = r;
+        if (r) rise.setValue(0.5);
+      })
       .catch(() => undefined);
-  }, []);
+  }, [rise]);
   useEffect(() => {
     if (reduced.current || ph.k === 'hold') return;
-    Animated.timing(scale, { toValue: scaleOf(ph.k), duration: ph.dur * 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }).start();
+    Animated.timing(rise, { toValue: riseOf(ph.k), duration: ph.dur * 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ph.idx]);
-  const pad = 44;
-  const w = size + pad * 2;
-  const h = size / 2 + pad;
+  /* the biggest sun that fits under the words, leaving room for the line above it */
+  const d = box ? Math.max(0, Math.min(box.w * 0.8, 330, (box.h + EDGE - ROW - GAP) / HI)) : 0;
+  const sun = d >= 72;
+  const H = box ? box.h + UNDER : 0;
+  const W = box ? box.w + SIDE * 2 : 0;
+  /* the glow around the sun, as wide as it can be without being cut off at the top of its room */
+  const glow = box ? Math.min(d * 1.9, 2 * (box.h + EDGE - HI * d + d / 2) + 24) : 0;
   return (
-    <View style={{ alignItems: 'center', gap: 10 }}>
-      <View style={s.ph} accessibilityLiveRegion="polite">
+    <View style={s.hz} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      {box && sun ? (
+        <View
+          style={[s.hzSky, { height: H, bottom: -UNDER, left: -SIDE, right: -SIDE }]}
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants">
+          {/* the warm light low along the horizon */}
+          <Svg width={W} height={H} style={StyleSheet.absoluteFill}>
+            <Defs>
+              <RadialGradient id="hz" cx="50%" cy="100%" rx="62%" ry="60%">
+                <Stop offset="0" stopColor="#FFC43C" stopOpacity={0.34} />
+                <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Rect x={0} y={0} width={W} height={H} fill="url(#hz)" />
+          </Svg>
+          {/* the sun with its glow, moving up and down together */}
+          <Animated.View
+            style={{
+              position: 'absolute',
+              left: (W - glow) / 2,
+              top: box.h + EDGE - HI * d - (glow - d) / 2,
+              width: glow,
+              height: glow,
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [(HI - LO) * d, 0] }) }],
+            }}>
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) }]}>
+              <Svg width={glow} height={glow}>
+                <Defs>
+                  <RadialGradient id="hzGlow" cx="50%" cy="50%" r="50%">
+                    <Stop offset="0.5" stopColor="#FFC43C" stopOpacity={0.42} />
+                    <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
+                  </RadialGradient>
+                </Defs>
+                <Circle cx={glow / 2} cy={glow / 2} r={glow / 2} fill="url(#hzGlow)" />
+              </Svg>
+            </Animated.View>
+            <View style={[s.orb, { width: d, height: d, borderRadius: d / 2, shadowColor: '#FFB43A' }]}>
+              <Svg width={d} height={d}>
+                <Defs>
+                  <RadialGradient id="hzCore" cx="44%" cy="34%" r="66%">
+                    <Stop offset="0" stopColor="#FFF6CF" />
+                    <Stop offset="0.42" stopColor="#FFDA6B" />
+                    <Stop offset="1" stopColor="#FFB23E" />
+                  </RadialGradient>
+                </Defs>
+                <Circle cx={d / 2} cy={d / 2} r={d / 2} fill="url(#hzCore)" />
+              </Svg>
+            </View>
+          </Animated.View>
+        </View>
+      ) : null}
+      {/* the words for this breath, just above the sun at its highest */}
+      <View
+        style={[s.ph, box && sun ? { position: 'absolute', left: 0, right: 0, top: Math.max(0, box.h + EDGE - HI * d - GAP - ROW) } : null]}
+        accessibilityLiveRegion="polite">
         <Text style={[s.phase, { color: c.ink }]}>{PH_TXT[ph.k]}</Text>
         <Text style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]} accessibilityElementsHidden importantForAccessibility="no">
           {left > 0 ? fmtMS(left * 1000) : 'Keep going'}
         </Text>
-      </View>
-      <View style={{ width: w, height: h, overflow: 'hidden' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
-          <Defs>
-            <RadialGradient id="hz" cx="50%" cy="100%" rx="50%" ry="70%">
-              <Stop offset="0" stopColor="#FFC43C" stopOpacity={0.32} />
-              <Stop offset="0.72" stopColor="#FFC43C" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Rect x={0} y={0} width={w} height={h} fill="url(#hz)" />
-        </Svg>
-        <Animated.View
-          style={[
-            s.orb,
-            {
-              position: 'absolute',
-              left: pad,
-              bottom: -size / 2,
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: '#FFD25A',
-              shadowColor: '#FFB43A',
-              transform: [{ scale }],
-            },
-          ]}
-        />
       </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  ph: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
+  ph: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: ROW },
+  /* the sun's room: whatever is left between the words and the sheet. What is inside is placed by hand, so it never
+     pushes the screen taller. */
+  hz: { flexGrow: 1, alignSelf: 'stretch', minHeight: ROW, justifyContent: 'flex-end' },
+  hzSky: { position: 'absolute', overflow: 'hidden' },
   pill: {
     minWidth: 52,
     paddingHorizontal: 10,

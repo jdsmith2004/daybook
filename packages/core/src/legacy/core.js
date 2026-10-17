@@ -2906,8 +2906,8 @@ const urLift=r=>!r?0:(urRate(r)-.5)*12*Math.min(1,r.n/3)+Math.min(3,r.l*.5)*Math
 const UR_BED_WITH=['thought','forward','curious','reasons','ground','breathe'];
 const UR_DO={
  base:['Phone down for a moment.','Unclench your jaw. Drop your shoulders.','Feet on the floor.'],
- night:['Sit up, feet on the floor.','Get out of bed if you can.'],
- high:['Stand up. Change rooms if you can.','Move first: stand up and step away from where you were.'],
+ night:['Sit up, feet on the floor.','Turn a light on. Sit up.'],
+ high:['Eyes off the screen. Breathe out slowly.','Squeeze your fists hard. Now let go.'],
  again:['Still here. That is okay.','Strong is not stuck. Try something different.','Waves can come back. Pick the next thing.'],
  sets:['Back again. That is okay. Waves often come in sets.']
 };
@@ -2959,7 +2959,7 @@ const GROUND=[
 ];
 const NEEDS=[
  ['hungry','Hungry','Eat something real and drink a glass of water. Running on empty makes everything harder.',null],
- ['angry','Angry or stressed','Move it out of your body first: two minutes of push-ups, squats, or a fast walk. Then write one sentence about what is bugging you.',['move','Move for 2 minutes']],
+ ['angry','Angry or stressed','Move it out of your body first: two minutes of push-ups or a fast walk, or squeeze and let go in your seat. Then write one sentence about what is bugging you.',['move','Move for 2 minutes']],
  ['lonely','Lonely','Reach out to one person. A short text counts. Or go where other people are.',['message','Reach a person']],
  ['tired','Tired','If it is late, the best move is bed, with the phone charging in another room. In the daytime, rest for ten minutes or step outside.',null],
  ['bored','Bored or restless','Give your hands or legs a job for ten minutes: tidy, a hobby, a walk.',['surprise','Surprise me']]

@@ -201,15 +201,10 @@ export default function Sos() {
   const lines = String(ur.cx?.do || '')
     .replace(/([.!?])\s+/g, '$1\n')
     .split('\n');
-  /* the sun gets smaller when the words, your own words and the sheet need the room; your own words come first (legacy svFit) */
+  /* on a short screen, or when your own words need the room, the extra lines step aside so the sun keeps its place */
   const H = win.height;
-  const W = win.width;
   const small = H <= 680;
   const tight = (mine || !!be) && H <= 900;
-  let d = Math.min(W * 0.74, 300, H * 0.34);
-  if (tight) d = Math.min(W * 0.64, 250, H * 0.28);
-  if (H <= 780) d = mine ? Math.min(W * 0.42, 160) : Math.min(W * 0.52, 200);
-  if (small) d = mine ? Math.min(W * 0.38, 136) : Math.min(W * 0.44, 164);
   const quiet = small || tight;
 
   const sheet = (
@@ -276,7 +271,13 @@ export default function Sos() {
           )}
           {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
         </View>
-        {ur.again ? <Flame level={level} size={92} /> : <HorizonSun size={d} on={front} />}
+        {ur.again ? (
+          <View style={s.again}>
+            <Flame level={level} size={92} />
+          </View>
+        ) : (
+          <HorizonSun on={front} />
+        )}
       </View>
     </SceneFrame>
   );
@@ -408,7 +409,8 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   h: { fontSize: 28, lineHeight: 33, maxWidth: 420 },
   opts: { alignSelf: 'stretch', gap: 10 },
-  sky: { flex: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'flex-end', gap: 18 },
+  sky: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 8 },
+  again: { flexGrow: 1, justifyContent: 'center', paddingBottom: 8 },
   words: { alignItems: 'center', paddingTop: 8 },
   rec: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingLeft: 9, paddingRight: 12, borderRadius: 999 },

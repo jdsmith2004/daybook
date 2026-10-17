@@ -2,7 +2,7 @@
    parts of one day on or off. Ported from the legacy pathHtml, stopStatus, windLine, doSaveCheckin and the Today actions
    (night-so, night-sleep, morning-done, wind, rt-day, save-checkin). Checked by test/day.test.ts. */
 import { blankP, fmtClock, fmtLeft, HX_NEXT, weekOf, minToClock, morningInfo, reachedOn, rhythm, ROUTINE_KEYS, streaks, sumDay, type RhythmStop } from './legacy/core.js';
-import { faithOf, firstUndone, lessonIndex, lessonsDone, lmin, reviewPick } from './lessons';
+import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
 import { changeDay, withDay } from './mutate';
 import type { Checkin, DayKey, Days, Play, Reviews, Settings } from './types';
 
@@ -248,7 +248,7 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number): Nex
   if (s.k === 'lesson') {
     const nl = firstUndone(lessonsDone(days), faithOf(st));
     if (nl) {
-      o.t = 'Lesson ' + (lessonIndex(nl) + 1) + ': ' + nl.title;
+      o.t = 'Lesson ' + lessonNo(nl, faithOf(st)) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;

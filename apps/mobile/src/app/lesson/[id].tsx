@@ -2,23 +2,29 @@
    Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Nothing on a card, and nothing
    on the practice step, can finish it or send the person away without a way back. Ported from the legacy SCENES.lesson. */
 import {
+  type Block,
+  type Card,
   changeSettings,
+  faithOf,
   gameCompute,
+  type Go,
+  type Guess,
   guessFeedback,
-  LESSONS,
+  lcheckWritten,
+  type Lesson,
   lessonById,
-  lessonHasQuick,
   lessonFamily,
-  lessonOpen,
-  lessonIndex,
+  lessonHasQuick,
   lessonLog,
+  lessonNo,
+  lessonOpen,
   lessonPairOf,
   lessonPractice,
   lessonPracticed,
   lessonRecallOf,
+  LESSONS,
   lessonsDone,
   lessonSeq,
-  lcheckWritten,
   lfmt,
   LIST_OF,
   listAdd,
@@ -32,17 +38,11 @@ import {
   lxRcReply,
   lxSheetOf,
   nextAfter,
-  faithOf,
   planRows,
   recordLesson,
+  type Settings,
   srcNote,
   weekOf,
-  type Block,
-  type Card,
-  type Go,
-  type Guess,
-  type Lesson,
-  type Settings,
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -107,7 +107,7 @@ export default function LessonScreen() {
       </Frame>
     );
   const t = toneOf(c, LUNITS[L.u].tone);
-  const n = lessonIndex(L) + 1;
+  const n = lessonNo(L, faithOf(st));
   const done = lessonsDone(snap.days);
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!lessonOpen(L, done, faithOf(st), account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
@@ -293,7 +293,7 @@ export default function LessonScreen() {
       const r = P.rc!;
       body = (
         <>
-          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + (lessonIndex(P) + 1)} t={t} />
+          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P, faithOf(st))} t={t} />
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
@@ -555,7 +555,7 @@ export default function LessonScreen() {
           {due && pair ? (
             <Route
               label="Write it out"
-              small={'3–5 min · a short checkpoint for lessons ' + (lessonIndex(pair.a) + 1) + ' and ' + (lessonIndex(pair.b) + 1)}
+              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, faithOf(st)) + ' and ' + lessonNo(pair.b, faithOf(st))}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
           ) : null}

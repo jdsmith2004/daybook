@@ -161,6 +161,9 @@ export function lessonPath(mode: FaithMode): Lesson[] {
   while (j < faith.length) out.push(faith[j++]);
   return out;
 }
+/** the number a person sees for a lesson: its place on their path (so Up next after lesson 2 is lesson 3). lessonIndex
+    stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
+export const lessonNo = (L: Lesson, mode: FaithMode) => lessonPath(mode).indexOf(L) + 1;
 export const firstUndone = (done: Set<string>, mode: FaithMode) => lessonPath(mode).find((l) => !done.has(l.id)) || null;
 /** the next unfinished lesson after this one, wrapping around */
 export function nextAfter(L: Lesson, done: Set<string>, mode: FaithMode): Lesson | null {
@@ -407,7 +410,7 @@ export function lessonStop(days: Days, st: Settings, tk: DayKey) {
       .filter((x): x is Lesson => !!x)
       .pop() || null;
   if (readL) return { kind: 'read' as const, L: readL, next: nl && nl.id !== readL.id ? nl : null };
-  if (nl) return { kind: 'next' as const, L: nl, n: lessonIndex(nl) + 1, total: LESSONS.length };
+  if (nl) return { kind: 'next' as const, L: nl, n: lessonNo(nl, faithOf(st)), total: LESSONS.length };
   const R = reviewPick(tk);
   return { kind: 'review' as const, L: R, note: (st.learn && st.learn.notes && st.learn.notes[R.id]) || '' };
 }
@@ -435,7 +438,7 @@ export const lfClip = (s: string, n: number) => {
 /** one lesson in a list (legacy lessonRow): its status, the line under it, and for a finished one in Done or Notes, what was kept */
 export function lessonRow(L: Lesson, done: Set<string>, nextId: string | null, st: Settings, stats: ReturnType<typeof lessonStats>, tk: DayKey, full: boolean) {
   const d = done.has(L.id);
-  const n = lessonIndex(L) + 1;
+  const n = lessonNo(L, faithOf(st));
   const notes = (st.learn && st.learn.notes) || {};
   const note = notes[L.id] ? String(notes[L.id]).trim() : '';
   const fin = stats.first[L.id];

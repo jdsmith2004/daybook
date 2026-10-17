@@ -7,11 +7,13 @@
 import {
   BE_LEN,
   computeMetrics,
+  faithOf,
   HELP_STEPS,
   LCHECKS,
-  lessonIndex,
+  lessonNo,
   LESSONS,
   lessonsDone,
+  type ListKey,
   lwriteOf,
   playbookText,
   removeOption,
@@ -21,7 +23,6 @@ import {
   slipSteps,
   toggleHelpStep,
   toggleSafety,
-  type ListKey,
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -453,7 +454,7 @@ function Learned() {
           mine.map((L) => (
             <View key={L.id} style={[s.takeaway, { borderColor: c.line }]}>
               <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-                Lesson {lessonIndex(L) + 1} · {L.title}
+                Lesson {lessonNo(L, faithOf(st))} · {L.title}
               </T>
               <T>{L.key}</T>
               {picks[L.id] ? <Note label="What I picked" text={picks[L.id]} /> : null}

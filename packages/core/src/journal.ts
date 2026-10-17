@@ -54,15 +54,15 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   const rate = c
     ? (
         [
-          ['M', c.m],
-          ['C', c.c],
-          ['E', c.e],
-          ['S', c.s],
+          ['Motivation', c.m],
+          ['Connection', c.c],
+          ['Energy', c.e],
+          ['Stress', c.s],
         ] as [string, number | null][]
       )
         .filter((x) => x[1] != null)
         .map((x) => `${x[0]} ${x[1]}`)
-        .join('  ')
+        .join(' · ')
     : '';
   const pts = d ? dayPoints(days, key, st).total : 0;
   return {

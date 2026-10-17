@@ -1,31 +1,33 @@
 /* Learn: the short lessons, and the tools to try when it is calm. Ported from the legacy viewLearn, lessonsBody and toolsBody. */
 import {
   blankP,
+  changeSettings,
   faithOf,
   firstUndone,
   gameCompute,
   lastRead,
   lcheckDue,
   LCHECKS,
-  LESSONS,
+  type Lesson,
   lessonFilter,
-  lessonIndex,
+  lessonNo,
   lessonOpen,
-  lessonsLocked,
   lessonRow,
+  LESSONS,
   lessonsDone,
+  lessonsLocked,
   lessonStats,
-  lfDate,
   LF_FILTERS,
   LF_ORDER,
+  lfDate,
+  LEARN_FREE,
+  lessonPath,
   LUNITS,
   setFaithOrder,
   TOOL_IDS,
   TOOLS,
   urTried,
   weekGame,
-  changeSettings,
-  type Lesson,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -131,12 +133,12 @@ function LessonsPane() {
               {n ? 'Up next' : 'Start here'}
             </T>
             <T v="label">
-              Lesson {lessonIndex(nxt) + 1}: {nxt.title}
+              Lesson {lessonNo(nxt, mode)}: {nxt.title}
             </T>
           </View>
         ) : null}
         <View style={{ gap: 8 }}>
-          {nxt && open(nxt) ? <Button label={n ? 'Continue' : 'Start lesson ' + (lessonIndex(nxt) + 1)} onPress={() => openLesson(nxt.id)} /> : null}
+          {nxt && open(nxt) ? <Button label={n ? 'Continue' : 'Start lesson ' + lessonNo(nxt, mode)} onPress={() => openLesson(nxt.id)} /> : null}
           {nxt && !open(nxt) ? (
             <>
               <T v="small">You have read the open lessons. A free account opens the other {waiting}, and keeps your progress safe.</T>
@@ -147,7 +149,7 @@ function LessonsPane() {
         </View>
         {lastL ? (
           <T v="small" tone="muted">
-            Last read: lesson {lessonIndex(lastL) + 1}, {lastL.title}
+            Last read: lesson {lessonNo(lastL, mode)}, {lastL.title}
             {stats.last[lastL.id] ? ' (' + lfDate(stats.last[lastL.id], tk) + ')' : ''}.
           </T>
         ) : null}
@@ -176,7 +178,7 @@ function LessonsPane() {
       {nf ? (
         <Collapse title="Daily order" sub={'Faith lessons: ' + LF_ORDER.find((o) => o[0] === mode)![1].toLowerCase()} open={orderOpen} onToggle={() => setOrderOpen(!orderOpen)}>
           <T v="small" tone="muted">
-            This only changes which lesson Daybook offers next. The {nf} faith lessons are in the last unit, and you can open any lesson at any time.
+            This sets where the {nf} faith lessons sit on your path. You can open any lesson at any time.
           </T>
           <View style={s.chips}>
             {LF_ORDER.map(([k, name]) => (
@@ -186,7 +188,7 @@ function LessonsPane() {
                 on={mode === k}
                 onPress={() => {
                   apply({ st: setFaithOrder(st, k) });
-                  say('Saved. Up next follows this order.');
+                  say('Saved. Your path follows this order.');
                 }}
               />
             ))}
@@ -200,33 +202,31 @@ function LessonsPane() {
           </T>
         </Collapse>
       ) : null}
+      {!account && waiting ? (
+        <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
+          <Icon name="lock" size={18} color={c.accentText} />
+          <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
+            {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
+          </T>
+          <Icon name="next" size={16} color={c.accentText} />
+        </Pressable>
+      ) : null}
       {f === 'all' ? (
-        /* the faith unit is listed last, after the units added later */
-        LUNITS.map((u, k) => ({ u, k }))
-          .sort((a, b) => Number(!!a.u.faith) - Number(!!b.u.faith))
-          .map(({ u, k }, j) => {
-            const ls = LESSONS.filter((L) => L.u === k);
-            const dn = ls.filter((L) => done.has(L.id)).length;
-            return (
-              <Card key={k}>
-                <T v="eyebrow" tone="muted">
-                  Unit {j + 1} · {dn} of {ls.length} done
-                </T>
-                <T v="h2" accessibilityRole="header">
-                  {u.name}
-                </T>
-                <T v="small" tone="muted">
-                  {u.sub}
-                </T>
-                {u.faith ? (
-                  <T v="small" tone="muted">
-                    {mode === 'mix' ? 'In your daily order, one comes after every two other lessons.' : mode === 'first' ? 'In your daily order, these come first.' : 'In your daily order, these come last.'}
-                  </T>
-                ) : null}
-                {rows(ls, false)}
-              </Card>
-            );
-          })
+        /* one path, in the order Daybook offers it, numbered by place on the path */
+        <Card>
+          <View style={s.between}>
+            <T v="h2" accessibilityRole="header">
+              Your path
+            </T>
+            <T v="small" tone="muted">
+              {n} of {total} done
+            </T>
+          </View>
+          <T v="small" tone="muted">
+            In the order Daybook offers them. Open any lesson at any time.
+          </T>
+          {rows(lessonPath(mode), false)}
+        </Card>
       ) : (
         <FilterList f={f} rows={rows} />
       )}
@@ -278,7 +278,7 @@ function LessonRow({ L, r, locked }: { L: Lesson; r: ReturnType<typeof lessonRow
           </T>
         </View>
         <T v="small" tone={locked ? 'muted' : r.status.kind === 'done' ? 'mintText' : r.status.kind === 'next' ? 'accentText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-          {locked ? 'With an account' : r.status.text}
+          {locked ? '' : r.status.text}
         </T>
       </View>
       {r.more ? (
@@ -373,6 +373,7 @@ const s = StyleSheet.create({
   hhTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   hhIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   segs: { flexDirection: 'row', gap: 2 },
+  lockLine: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
   segI: { flex: 1, height: 8, borderRadius: 3 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { padding: 12, borderRadius: 16, borderWidth: 1.5, gap: 4 },

@@ -11,11 +11,11 @@ the merges; **no** to shortening setup (see step 5).
 | Step | What | Effort |
 | --- | --- | --- |
 | 1 | Smoothness: pages, panes, opened cards and lesson cards ease in; Back names the page underneath; closing a tool or lesson returns to the page it was opened from; setup wording. **Done.** | Medium |
-| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal. Today must stay extremely useful and motivating. Ask the owner to switch to medium first. | Medium |
-| 3 | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work | Medium |
+| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal. Today must stay extremely useful and motivating. **Done.** | Medium |
+| 3 | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work. **Done** (quests stop for weeks that start on or after October 19, 2026). | Medium |
 | 4 | My plan and My playbook as one page (Why, Plans, Lists, Learned) that reads like a page and changes in place. **Done.** | High |
 | 5 | Setup keeps every screen; they are there for a reason. **Later, once the remapping is finished:** rework the setup screens' look, and bring back the old app's pictures of the app itself (`legacy/index.html` `obPicToday`: a small phone showing Today with notes pointing at the flame, the lesson and SOS; `obPicSos` with the tab bar). The owner found the old setup visuals much better. | High |
-| 6 | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows | Medium |
+| 6 | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows. **Done.** | Medium |
 
 Earlier tiers, all done:
 

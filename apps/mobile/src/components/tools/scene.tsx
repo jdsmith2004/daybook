@@ -29,7 +29,8 @@ import { Field, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
-import { Dock } from '@/components/scene';
+import { Appear } from '@/components/appear';
+import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -60,77 +61,81 @@ export function Move({ finish, level }: ToolProps) {
   }, [over]);
   if (done)
     return (
-      <>
-        <Flame level={level} size={110} />
-        <T v="title" style={s.c} accessibilityRole="header">
-          Nice. Notice your breath.
-        </T>
-        <T style={s.c}>Your heart is going a little faster, and your head had something else to do. That is the point.</T>
+      <Stage key="done" dir={0}>
+        <Finish
+          level={level}
+          title="Nice. Notice your breath."
+          text="Your heart is going a little faster, and your head had something else to do. That is the point."
+        />
         <Dock>
           <Button label="Done" onPress={() => finish('move', { msg: 'Body first. Nice work.' })} />
         </Dock>
-      </>
+      </Stage>
     );
   if (!pick)
     return (
-      <>
+      <Stage key="pick" dir={0}>
         <T v="title" style={s.c} accessibilityRole="header">
           Move for 2 minutes.
         </T>
         <T style={s.c}>Body first, decision later. Pick one. Any pace counts.</T>
-        <View style={s.grid}>
-          {MOVES.map(([id, name, sub]) => (
-            <Pressable
-              key={id}
-              accessibilityRole="button"
-              onPress={() => {
-                setPick(id);
-                setM0(Date.now());
-                buzz('tap');
-              }}
-              style={({ pressed }) => [s.tile, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-              <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
-              <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <T v="small" tone="muted" style={s.c}>
-          Stop if anything hurts. A slow walk counts too.
-        </T>
-      </>
+        <Dock>
+          <View style={s.grid}>
+            {MOVES.map(([id, name, sub]) => (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                onPress={() => {
+                  setPick(id);
+                  setM0(Date.now());
+                  buzz('tap');
+                }}
+                style={({ pressed }) => [s.tile, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
+                <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <T v="small" tone="muted" style={s.c}>
+            Stop if anything hurts. A slow walk counts too.
+          </T>
+        </Dock>
+      </Stage>
     );
   const m = MOVES.find((x) => x[0] === pick) || MOVES[0];
   const R = 112;
   const C = 2 * Math.PI * R;
   return (
-    <>
-      <View style={s.ring}>
-        <Svg width={240} height={240} style={StyleSheet.absoluteFill}>
-          <Circle cx={120} cy={120} r={R} stroke={c.line} strokeWidth={8} fill="none" />
-          <Circle
-            cx={120}
-            cy={120}
-            r={R}
-            stroke={c.coral}
-            strokeWidth={8}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={`${C}`}
-            strokeDashoffset={C * (1 - left / MOVE_MS)}
-            transform="rotate(-90 120 120)"
-          />
-        </Svg>
-        <T v="label">{m[1]}</T>
-        <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
-      </View>
-      <T v="title" style={s.c} accessibilityRole="header">
-        Go.
-      </T>
-      <T style={s.c}>{m[2]}. Keep going until the ring closes, or stop when you feel the shift.</T>
+    <Stage key="run" dir={1}>
+      <Middle>
+        <View style={s.ring}>
+          <Svg width={240} height={240} style={StyleSheet.absoluteFill}>
+            <Circle cx={120} cy={120} r={R} stroke={c.ink} strokeOpacity={0.12} strokeWidth={10} fill="none" />
+            <Circle
+              cx={120}
+              cy={120}
+              r={R}
+              stroke={c.coral}
+              strokeWidth={10}
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${C}`}
+              strokeDashoffset={C * (1 - left / MOVE_MS)}
+              transform="rotate(-90 120 120)"
+            />
+          </Svg>
+          <T v="label">{m[1]}</T>
+          <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
+        </View>
+        <T v="title" style={s.c} accessibilityRole="header">
+          Go.
+        </T>
+        <T style={s.c}>{m[2]}. Keep going until the ring closes, or stop when you feel the shift.</T>
+      </Middle>
       <Dock>
         <Button label="I am done" kind="ghost" onPress={() => setDone(true)} />
       </Dock>
-    </>
+    </Stage>
   );
 }
 
@@ -299,44 +304,59 @@ export function Surprise({ finish }: ToolProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const card = (small: string, text: string) => (
-    <View style={[s.sur, { backgroundColor: c.violetSoft }]} accessibilityLiveRegion="polite">
-      <T v="small" tone="violetText">
-        {small}
-      </T>
-      <T v="h2" style={s.c}>
-        {text}
-      </T>
+    <View style={[s.sur, { backgroundColor: c.violetSoft, shadowColor: c.lip }]} accessibilityLiveRegion="polite">
+      {small ? (
+        <T v="small" tone="violetText">
+          {small}
+        </T>
+      ) : null}
+      <Text style={[s.surT, { color: c.ink }]}>{text}</Text>
     </View>
   );
   if (doing)
     return (
-      <>
-        {card('Go do', pick || '')}
+      <Stage key="doing" dir={1}>
         <T v="title" style={s.c} accessibilityRole="header">
           Leave the phone here.
         </T>
         <T style={s.c}>Go do it, then come back and tap Done. It does not have to be perfect.</T>
+        <Middle>{card('Go do', pick || '')}</Middle>
         <Dock>
           <Button label="Done" onPress={() => finish('surprise', { msg: 'Small things add up.' })} />
         </Dock>
-      </>
+      </Stage>
     );
   return (
-    <>
-      <T style={s.c}>{spinning ? 'Picking something…' : 'Your calm-move menu picked this one.'}</T>
-      {card(spinning ? '' : 'Try this', spinning ? pick || '…' : pick || '')}
-      {spinning ? null : (
-        <>
-          <Dock>
+    <Stage key="pick" dir={0}>
+      <T v="title" style={s.c} accessibilityRole="header">
+        {spinning ? 'Picking something…' : 'Try this one.'}
+      </T>
+      <T style={s.c} tone="muted">
+        From your calm-move menu.
+      </T>
+      <Middle>
+        {spinning ? (
+          card('', pick || '…')
+        ) : (
+          <Appear key={'got:' + pick} by={0} duration={320} style={s.got}>
+            {card('Try this', pick || '')}
+          </Appear>
+        )}
+      </Middle>
+      <Dock>
+        {spinning ? (
+          <View style={s.btnSpace} />
+        ) : (
+          <>
             <Button label="I will do it" onPress={() => setDoing(true)} />
             <Button label="Another one" kind="ghost" icon="dice" onPress={spin} />
-          </Dock>
-          <T v="small" tone="muted" style={s.c}>
-            {menu.length} ideas in your menu. Edit them in My plan, under Lists.
-          </T>
-        </>
-      )}
-    </>
+            <T v="small" tone="muted" style={s.c}>
+              {menu.length} ideas in your menu. Edit them in My plan, under Lists.
+            </T>
+          </>
+        )}
+      </Dock>
+    </Stage>
   );
 }
 
@@ -454,6 +474,13 @@ export function Reasons({ finish }: ToolProps) {
   const r = st?.reasons || [];
   const note = String(st?.note || '').trim();
   const [i0, setI] = useState(0);
+  /* the next reason slides in from the side it was asked for */
+  const [dir, setDir] = useState<1 | -1>(1);
+  const turn = (d: 1 | -1) => {
+    setDir(d);
+    setI(i0 + d);
+    buzz('tap');
+  };
   const noteCard = note ? (
     <Card tone="note" style={{ alignSelf: 'stretch' }}>
       <T v="small" tone="muted">
@@ -466,11 +493,13 @@ export function Reasons({ finish }: ToolProps) {
     return (
       <>
         {noteCard}
-        <Icon name="star" size={48} color={c.sun} />
-        <T v="title" style={s.c}>
-          Add your reasons
-        </T>
-        <T style={s.c}>Write a few lines about why this matters to you. They show up here when you need them.</T>
+        <Middle>
+          <Icon name="star" size={48} color={c.sun} />
+          <T v="title" style={s.c}>
+            Add your reasons
+          </T>
+          <T style={s.c}>Write a few lines about why this matters to you. They show up here when you need them.</T>
+        </Middle>
         <Dock>{note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}</Dock>
       </>
     );
@@ -485,29 +514,36 @@ export function Reasons({ finish }: ToolProps) {
       <T v="eyebrow" tone="muted">
         Why I am doing this
       </T>
-      <View style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge }]} accessibilityLiveRegion="polite">
-        <View style={s.row}>
-          <Icon name={cat.ic} size={18} color={c.muted} />
-          <T v="small" tone="muted">
-            {cat.name}
-          </T>
-        </View>
-        <Text style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.25, color: c.ink, textAlign: 'center' }}>{text}</Text>
-      </View>
-      {n > 1 ? (
-        <View style={[s.row, { alignItems: 'center' }]}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Previous reason" onPress={() => setI(i - 1)} style={[s.sq, { backgroundColor: c.surface }]}>
-            <Icon name="back" />
-          </Pressable>
-          <T v="small" tone="muted" accessibilityLabel={`Reason ${i + 1} of ${n}`}>
-            {i + 1} of {n}
-          </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Next reason" onPress={() => setI(i + 1)} style={[s.sq, { backgroundColor: c.surface }]}>
-            <Icon name="next" />
-          </Pressable>
-        </View>
-      ) : null}
+      <Middle>
+        <Appear
+          key={'r' + i}
+          by={0}
+          x={dir * 28}
+          duration={260}
+          style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
+          <View style={s.row}>
+            <Icon name={cat.ic} size={18} color={c.muted} />
+            <T v="small" tone="muted">
+              {cat.name}
+            </T>
+          </View>
+          <Text style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.25, color: c.ink, textAlign: 'center' }}>{text}</Text>
+        </Appear>
+      </Middle>
       <Dock>
+        {n > 1 ? (
+          <View style={[s.row, { alignItems: 'center' }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Previous reason" onPress={() => turn(-1)} style={[s.sq, { backgroundColor: c.surface }]}>
+              <Icon name="back" />
+            </Pressable>
+            <T v="small" tone="muted" accessibilityLabel={`Reason ${i + 1} of ${n}`}>
+              {i + 1} of {n}
+            </T>
+            <Pressable accessibilityRole="button" accessibilityLabel="Next reason" onPress={() => turn(1)} style={[s.sq, { backgroundColor: c.surface }]}>
+              <Icon name="next" />
+            </Pressable>
+          </View>
+        ) : null}
         <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} />
       </Dock>
     </>
@@ -534,11 +570,37 @@ const s = StyleSheet.create({
   tileT: { fontFamily: font.bodyBold, fontSize: 16 },
   tileS: { fontFamily: font.body, fontSize: 13 },
   ring: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
-  time: { fontFamily: font.display, fontSize: 44, fontVariant: ['tabular-nums'] },
+  time: { fontFamily: font.displayBold, fontSize: 56, lineHeight: 64, fontVariant: ['tabular-nums'] },
   moon: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
   check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
   box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  sur: { alignSelf: 'stretch', minHeight: 120, borderRadius: 22, padding: 18, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  reason: { alignSelf: 'stretch', minHeight: 200, borderRadius: 24, borderWidth: 2, padding: 20, gap: 14, alignItems: 'center', justifyContent: 'center' },
+  sur: {
+    alignSelf: 'stretch',
+    minHeight: 170,
+    borderRadius: 26,
+    padding: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  surT: { fontFamily: font.display, fontSize: 30, lineHeight: 36, textAlign: 'center' },
+  got: { alignSelf: 'stretch' },
+  btnSpace: { height: 104 },
+  reason: {
+    alignSelf: 'stretch',
+    minHeight: 220,
+    borderRadius: 26,
+    borderWidth: 2,
+    padding: 22,
+    gap: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 4 },
+  },
   sq: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

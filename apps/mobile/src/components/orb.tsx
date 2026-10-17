@@ -63,12 +63,37 @@ export function Orb({
   const R = size / 2 - 8;
   const C = 2 * Math.PI * R;
   const words = ph ? PH_TXT[ph.k] : label || '';
+  const core = size * 0.78;
   return (
-    <View style={{ alignItems: 'center', gap: 10 }}>
-      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ alignItems: 'center', gap: 14 }}>
+      <View
+        style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
+        {/* a warm glow that breathes with the sun, reaching past it */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: scale.interpolate({ inputRange: [0.58, 1], outputRange: [0.45, 0.9] }),
+              transform: [{ scale: scale.interpolate({ inputRange: [0.58, 1], outputRange: [0.8, 1.18] }) }],
+            },
+          ]}>
+          <Svg width={size} height={size}>
+            <Defs>
+              <RadialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+                <Stop offset="0.45" stopColor="#FFC43C" stopOpacity={0.38} />
+                <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#orbGlow)" />
+          </Svg>
+        </Animated.View>
+        {/* how full a breath in goes: a faint ring at the sun's largest size */}
+        <View style={[s.guide, { width: core, height: core, borderRadius: core / 2, borderColor: ink || c.ink }]} />
         {ring != null ? (
           <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-            <Circle cx={size / 2} cy={size / 2} r={R} stroke={c.line} strokeWidth={6} fill="none" />
+            <Circle cx={size / 2} cy={size / 2} r={R} stroke={ink || c.ink} strokeOpacity={0.14} strokeWidth={6} fill="none" />
             <Circle
               cx={size / 2}
               cy={size / 2}
@@ -83,16 +108,23 @@ export function Orb({
             />
           </Svg>
         ) : null}
-        <Animated.View
-          style={[
-            s.orb,
-            { width: size * 0.78, height: size * 0.78, borderRadius: size * 0.39, transform: [{ scale }], backgroundColor: '#FFD25A', shadowColor: '#FFB43A' },
-          ]}
-        />
+        {/* the sun itself: light at its heart, deeper gold at its edge */}
+        <Animated.View style={[s.orb, { width: core, height: core, borderRadius: core / 2, transform: [{ scale }], shadowColor: '#FFB43A' }]}>
+          <Svg width={core} height={core}>
+            <Defs>
+              <RadialGradient id="orbCore" cx="42%" cy="38%" r="65%">
+                <Stop offset="0" stopColor="#FFF6CF" />
+                <Stop offset="0.45" stopColor="#FFDA6B" />
+                <Stop offset="1" stopColor="#FFB23E" />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={core / 2} cy={core / 2} r={core / 2} fill="url(#orbCore)" />
+          </Svg>
+        </Animated.View>
       </View>
-      <View style={{ alignItems: 'center' }} accessibilityLiveRegion="polite">
+      <View style={{ alignItems: 'center', gap: 6 }} accessibilityLiveRegion="polite">
         <Text style={[s.phase, { color: ink || c.ink }]}>{words}</Text>
-        <Text style={[s.time, { color: ink || c.ink }]} accessibilityElementsHidden importantForAccessibility="no">
+        <Text style={[s.pill, { color: ink || c.ink, backgroundColor: c.scBtn }]} accessibilityElementsHidden importantForAccessibility="no">
           {time}
         </Text>
       </View>
@@ -179,6 +211,7 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   orb: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 30, elevation: 6 },
-  phase: { fontFamily: font.display, fontSize: 24 },
+  phase: { fontFamily: font.display, fontSize: 30 },
+  guide: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', opacity: 0.18 },
   time: { fontFamily: font.bodySemi, fontSize: 16, opacity: 0.8, fontVariant: ['tabular-nums'] },
 });

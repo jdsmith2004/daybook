@@ -1,16 +1,18 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
 import { CU_BODY, CU_CHG, CU_D, CU_FEEL, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
-import { Button, Card, Chip, T } from '@/components/ui';
-import { Dock } from '@/components/scene';
+import { Appear } from '@/components/appear';
+import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
-import { useTheme } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 import type { ToolProps } from './types';
 
@@ -25,30 +27,40 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
     if (step === 4 && w0 == null) setW0(Date.now());
   }, [step, w0]);
   const sec = useSeconds(w0, step === 4);
-  const next = <Button label="Next" onPress={() => setStep(step + 1)} />;
+  const next = (
+    <Dock>
+      <Button label="Next" onPress={() => setStep(step + 1)} />
+    </Dock>
+  );
   if (step === 0)
     return (
       <>
-        <T v="eyebrow" tone="muted">
-          Notice it
-        </T>
-        <T v="title" style={s.c} accessibilityRole="header">
-          An urge is here.
-        </T>
-        <T style={s.c}>That is all you have to see right now. Drop your shoulders and unclench your jaw. Take one slow breath.</T>
+        <Middle>
+          <Breath />
+          <T v="eyebrow" tone="muted">
+            Notice it
+          </T>
+          <T v="title" style={s.c} accessibilityRole="header">
+            An urge is here.
+          </T>
+          <T style={s.c}>That is all you have to see right now. Drop your shoulders and unclench your jaw. Take one slow breath.</T>
+        </Middle>
         {next}
       </>
     );
   if (step === 1)
     return (
       <>
-        <T v="eyebrow" tone="muted">
-          Let it be
-        </T>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Let it be here.
-        </T>
-        <T style={s.c}>You do not have to fight it or obey it. Give it a minute without doing anything about it.</T>
+        <Middle>
+          <Breath />
+          <T v="eyebrow" tone="muted">
+            Let it be
+          </T>
+          <T v="title" style={s.c} accessibilityRole="header">
+            Let it be here.
+          </T>
+          <T style={s.c}>You do not have to fight it or obey it. Give it a minute without doing anything about it.</T>
+        </Middle>
         {next}
       </>
     );
@@ -181,7 +193,7 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
   const [own, setOwn] = useState('');
   if (!text)
     return (
-      <>
+      <Stage key="pick" dir={0}>
         <T v="eyebrow" tone="muted">
           Name the thought
         </T>
@@ -189,20 +201,6 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
           What is the urge telling you?
         </T>
         <T style={s.c}>Pick the closest one, or write your own.</T>
-        <Dock>
-          <Tiles
-            list={THOUGHTS}
-            cur={null}
-            onPick={(v) => {
-              const x = THOUGHTS.find((y) => y[0] === v);
-              if (x) {
-                setText(x[1]);
-                buzz('tap');
-              }
-            }}
-            extra={writing ? null : <AddTile label="Write my own" onPress={() => setWriting(true)} />}
-          />
-        </Dock>
         {writing ? (
           <View style={{ width: '100%', gap: 8 }}>
             <Field
@@ -230,24 +228,40 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
             </View>
           </View>
         ) : null}
-      </>
+        <Dock>
+          <Tiles
+            list={THOUGHTS}
+            cur={null}
+            onPick={(v) => {
+              const x = THOUGHTS.find((y) => y[0] === v);
+              if (x) {
+                setText(x[1]);
+                buzz('tap');
+              }
+            }}
+            extra={writing ? null : <AddTile label="Write my own" onPress={() => setWriting(true)} />}
+          />
+        </Dock>
+      </Stage>
     );
   return (
-    <>
-      <Card style={{ alignSelf: 'stretch', backgroundColor: c.violetSoft, borderColor: c.violetSoft }}>
-        <T v="small" tone="violetText">
-          I notice I am having the thought that
-        </T>
-        <T v="h2">“{thoughtIn(text)}.”</T>
-      </Card>
+    <Stage key="card" dir={1}>
       <T v="title" style={s.c} accessibilityRole="header">
         A thought is not an order.
       </T>
       <T style={s.c}>It can be loud and still be wrong. Read the card once more, slowly. You can notice the thought and still choose what you do.</T>
+      <Middle>
+        <Appear by={14} delay={120} style={[s.thought, { backgroundColor: c.violetSoft, shadowColor: c.lip }]}>
+          <T v="small" tone="violetText" style={s.c}>
+            I notice I am having the thought that
+          </T>
+          <Text style={[s.thoughtT, { color: c.ink }]}>“{thoughtIn(text)}.”</Text>
+        </Appear>
+      </Middle>
       <Dock>
         <Button label="Done" onPress={() => finish('thought', { msg: 'A thought is not an order.' })} />
       </Dock>
-    </>
+    </Stage>
   );
 }
 
@@ -308,21 +322,23 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
       <T v="title" style={s.c} accessibilityRole="header">
         Which hour do you want?
       </T>
-      <View style={s.two}>
-        <Card style={{ flex: 1, backgroundColor: c.slipSoft, borderColor: c.slipSoft }}>
-          <T v="small" tone="slipText">
-            Giving in
-          </T>
-          <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
-        </Card>
-        <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
-          <T v="small" tone="mintText">
-            Riding it out
-          </T>
-          <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
-        </Card>
-      </View>
-      <T style={s.c}>The urge only shows you the next few minutes. You get to pick the next hour.</T>
+      <Middle>
+        <View style={s.two}>
+          <Card style={{ flex: 1, backgroundColor: c.slipSoft, borderColor: c.slipSoft }}>
+            <T v="small" tone="slipText">
+              Giving in
+            </T>
+            <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
+          </Card>
+          <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
+            <T v="small" tone="mintText">
+              Riding it out
+            </T>
+            <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
+          </Card>
+        </View>
+        <T style={s.c}>The urge only shows you the next few minutes. You get to pick the next hour.</T>
+      </Middle>
       <Dock>
         <Button label="Ride it out" onPress={() => finish('forward', { msg: 'You picked the better hour.' })} />
       </Dock>
@@ -330,8 +346,46 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
   );
 }
 
+/* a small sun that breathes slowly, for the steps that only ask you to notice */
+function Breath() {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    a.start();
+    return () => a.stop();
+  }, [reduce, v]);
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[s.breath, { backgroundColor: c.sunSoft, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.15] }) }] }]}>
+      <Icon name="sun" size={30} color={c.sunText} />
+    </Animated.View>
+  );
+}
+
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   two: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
+  thought: {
+    alignSelf: 'stretch',
+    gap: 10,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    borderRadius: 26,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
+  breath: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
 });

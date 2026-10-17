@@ -3,7 +3,7 @@ import { gameCompute, TOOLS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
-import { SceneFrame } from '@/components/scene';
+import { SceneFrame, Stage } from '@/components/scene';
 import { Breathe, Ground } from '@/components/tools/calm';
 import { Pause } from '@/components/tools/pause';
 import { Curious, Forward, Thought } from '@/components/tools/ride';
@@ -37,7 +37,13 @@ export default function Tool() {
   const sos = useSos();
   const finish = useFinishTool(lr === '1');
   const exit = useToolExit(lr === '1');
-  const [step, setStep] = useState(0);
+  const [step, setStep0] = useState(0);
+  /* which way a step slides: on with Next, back with Back */
+  const [dir, setDir] = useState<-1 | 0 | 1>(0);
+  const setStep = (i: number) => {
+    setDir(i > step ? 1 : -1);
+    setStep0(i);
+  };
   const [text, setText] = useState<string | null>(null);
   const tool = TOOLS.find((t) => t.id === id);
   const st = snap.settings;
@@ -101,7 +107,9 @@ export default function Tool() {
       dots={stepped ? { n: nSteps, i: step, label: `Step ${step + 1} of ${nSteps}` } : null}
       onBack={stepped && step > 0 ? () => setStep(step - 1) : tool.id === 'thought' && text ? () => setText(null) : null}
       onClose={p.exit}>
-      {body}
+      <Stage key={stepped ? 'step' + step : tool.id} dir={dir}>
+        {body}
+      </Stage>
     </SceneFrame>
   );
 }

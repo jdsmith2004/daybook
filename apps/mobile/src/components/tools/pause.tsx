@@ -26,7 +26,7 @@ import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
-import { Dock } from '@/components/scene';
+import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
@@ -146,59 +146,63 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
 
   if (mode === 'ready')
     return (
-      <>
-        <Flame level={level} size={132} />
-        <T v="title" style={s.c} accessibilityRole="header">
-          Ten minutes. That is all.
-        </T>
-        <T style={s.c}>An urge is a wave: it builds, peaks, and passes. You do not have to fight it or obey it. Just outlast this one.</T>
+      <Stage key="ready" dir={0}>
+        <Middle>
+          <Flame level={level} size={140} />
+          <T v="title" style={s.c} accessibilityRole="header">
+            Ten minutes. That is all.
+          </T>
+          <T style={s.c}>An urge is a wave: it builds, peaks, and passes. You do not have to fight it or obey it. Just outlast this one.</T>
+        </Middle>
         <Dock>
           <Button label="Start the 10 minutes" onPress={start} />
+          <T v="small" tone="muted" style={s.c}>
+            {(trigFits('late', clockOf(Date.now())) ? 'If you are in bed, get up and leave the room.' : 'If you can, step into another room.') +
+              ' The timer keeps counting if you close the app. Open Daybook again to see how it went.'}
+          </T>
         </Dock>
-        <T v="small" tone="muted" style={s.c}>
-          {(trigFits('late', clockOf(Date.now())) ? 'If you are in bed, get up and leave the room.' : 'If you can, step into another room.') +
-            ' The timer keeps counting if you close the app. Open Daybook again to see how it went.'}
-        </T>
-      </>
+      </Stage>
     );
   if (mode === 'run' && t) {
     const left = t.start + t.dur - nowMs;
     return (
-      <>
-        <Orb pattern={guide ? 'calm' : null} sec={(nowMs - t.start) / 1000} label="Waiting it out" time={fmtMS(left)} ring={left / t.dur} />
-        <Card style={{ alignSelf: 'stretch', alignItems: 'center' }}>
-          <T v="small" tone="muted">
-            While you wait, try
-          </T>
-          <T v="label" style={s.c}>
-            {idea}
-          </T>
-          <Link label="Another idea" onPress={() => setIdea(pickIdea(st, idea, Math.random))} />
-        </Card>
+      <Stage key="run" dir={1}>
+        <Middle>
+          <Orb pattern={guide ? 'calm' : null} sec={(nowMs - t.start) / 1000} label="Waiting it out" time={fmtMS(left)} ring={left / t.dur} size={250} />
+        </Middle>
         <Dock>
+          <Card style={{ alignSelf: 'stretch', alignItems: 'center' }}>
+            <T v="small" tone="muted">
+              While you wait, try
+            </T>
+            <T v="label" style={s.c}>
+              {idea}
+            </T>
+            <Link label="Another idea" onPress={() => setIdea(pickIdea(st, idea, Math.random))} />
+          </Card>
           <View style={s.row}>
             <Chip label="Breathing guide" on={guide} onPress={() => setGuide(!guide)} />
             <Chip label="End the pause" on={false} onPress={endEarly} />
           </View>
+          <T v="small" tone="muted" style={s.c}>
+            Ten minutes is a guide. End the pause whenever the urge eases.
+          </T>
+          <Link
+            label="Want a person right now?"
+            onPress={() => {
+              endEarly();
+              sos.setTimer(null);
+              if (sos.ur) sos.set({ ...sos.ur, used: sos.ur.used.concat('pause') });
+              router.replace({ pathname: '/tool/[id]', params: { id: 'message' } });
+            }}
+          />
         </Dock>
-        <T v="small" tone="muted" style={s.c}>
-          Ten minutes is a guide. End the pause whenever the urge eases.
-        </T>
-        <Link
-          label="Want a person right now?"
-          onPress={() => {
-            endEarly();
-            sos.setTimer(null);
-            if (sos.ur) sos.set({ ...sos.ur, used: sos.ur.used.concat('pause') });
-            router.replace({ pathname: '/tool/[id]', params: { id: 'message' } });
-          }}
-        />
-      </>
+      </Stage>
     );
   }
   if (again)
     return (
-      <>
+      <Stage key="again" dir={1}>
         <Flame level={level} size={96} />
         <T v="title" style={s.c} accessibilityRole="header">
           That is okay. Waves can come back.
@@ -231,11 +235,11 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
             say('Okay. The pause counted.');
           }}
         />
-      </>
+      </Stage>
     );
   return (
-    <>
-      <Flame level={level} size={96} />
+    <Stage key="after" dir={1}>
+      <Flame level={level} size={110} />
       <T v="title" style={s.c} accessibilityRole="header">
         {t?.early ? 'You paused. That counts.' : 'You made it through ten minutes.'}
       </T>
@@ -263,7 +267,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
       <T v="small" tone="muted" style={s.c}>
         The pause already counted. Skipping is fine.
       </T>
-    </>
+    </Stage>
   );
 }
 

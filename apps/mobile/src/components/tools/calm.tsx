@@ -3,10 +3,9 @@ import { breathPhase, GROUND, PATTERNS } from '@daybook/core';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
-import { Dock } from '@/components/scene';
+import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { setSoundPref, useSoundPref } from '@/lib/prefs';
 import { play } from '@/lib/sound';
@@ -42,20 +41,16 @@ export function Breathe({ finish, sos, level }: ToolProps) {
   }, [phIdx, phK]);
   if (done)
     return (
-      <>
-        <Flame level={level} size={120} />
-        <T v="title" style={s.c} accessibilityRole="header">
-          Nice. Notice how you feel.
-        </T>
-        <T style={s.c}>Shoulders, jaw, hands. Even a little softer is a win.</T>
+      <Stage key="done" dir={0}>
+        <Finish level={level} title="Nice. Notice how you feel." text="Shoulders, jaw, hands. Even a little softer is a win." />
         <Dock>
           <Button label="Done" onPress={() => finish('breathe')} />
         </Dock>
-      </>
+      </Stage>
     );
   if (!startedAt)
     return (
-      <>
+      <Stage key="setup" dir={0}>
         <T v="title" style={s.c} accessibilityRole="header">
           Slow it down
         </T>
@@ -73,27 +68,31 @@ export function Breathe({ finish, sos, level }: ToolProps) {
           </View>
           <Button label="Start" onPress={() => setStartedAt(Date.now())} />
         </Dock>
-      </>
+      </Stage>
     );
   const P = PATTERNS[pat] || PATTERNS.calm;
   return (
-    <>
-      <Orb pattern={pat} sec={sec} time={fmtMS((total - sec) * 1000)} />
-      <T v="small" tone="muted" style={s.c}>
-        {P.name}: {P.desc}
-      </T>
-      <View style={s.row}>
-        <Chip
-          label="Sound guide"
-          on={snd}
-          onPress={() => {
-            setSoundPref(!snd);
-            if (!snd) play('on', true);
-          }}
-        />
-        <Chip label="Change or stop" on={false} onPress={() => setStartedAt(null)} />
-      </View>
-    </>
+    <Stage key="run" dir={1}>
+      <Middle>
+        <Orb pattern={pat} sec={sec} size={270} time={fmtMS((total - sec) * 1000)} />
+        <T v="small" tone="muted" style={s.c}>
+          {P.name}: {P.desc}
+        </T>
+      </Middle>
+      <Dock>
+        <View style={s.row}>
+          <Chip
+            label="Sound guide"
+            on={snd}
+            onPress={() => {
+              setSoundPref(!snd);
+              if (!snd) play('on', true);
+            }}
+          />
+          <Chip label="Change or stop" on={false} onPress={() => setStartedAt(null)} />
+        </View>
+      </Dock>
+    </Stage>
   );
 }
 
@@ -124,20 +123,16 @@ export function Ground({ finish, level }: ToolProps) {
   const [n, setN] = useState(0);
   if (i >= GROUND.length)
     return (
-      <>
-        <Flame level={level} size={120} />
-        <T v="title" style={s.c} accessibilityRole="header">
-          You are here.
-        </T>
-        <T style={s.c}>Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now.</T>
+      <Stage key="done" dir={0}>
+        <Finish level={level} title="You are here." text="Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now." />
         <Dock>
           <Button label="Done" onPress={() => finish('ground', { msg: 'You came back to the room.' })} />
         </Dock>
-      </>
+      </Stage>
     );
   const g = GROUND[i];
   return (
-    <>
+    <Stage key={'g' + i} dir={i ? 1 : 0}>
       <View style={s.steps} accessibilityElementsHidden>
         {GROUND.map((_, j) => (
           <View key={j} style={[s.step, { backgroundColor: j < i ? c.accent : j === i ? c.sun : c.line }]} />
@@ -185,7 +180,7 @@ export function Ground({ finish, level }: ToolProps) {
           }}
         />
       </Dock>
-    </>
+    </Stage>
   );
 }
 

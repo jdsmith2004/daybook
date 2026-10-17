@@ -7,8 +7,10 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Appear } from '@/components/appear';
+import { Flame } from '@/components/flame';
 import { Icon, InkContext, T } from '@/components/ui';
-import { useReducedMotion } from '@/lib/motion';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
 
 export function SceneFrame({
@@ -102,6 +104,75 @@ export function Dock({ children }: { children: ReactNode }) {
   return <View style={s.dock}>{children}</View>;
 }
 
+/** one step of a full-screen moment. Give it a new `key` for each step: it slides in from the right (dir 1), from the left
+    when going back (dir -1), or just fades (dir 0). It fills the screen, so a Dock inside it still sits at the bottom. */
+export function Stage({ dir = 1, children }: { dir?: -1 | 0 | 1; children: ReactNode }) {
+  return (
+    <Appear x={36 * dir} by={dir ? 0 : 8} duration={280} style={s.stage}>
+      {children}
+    </Appear>
+  );
+}
+
+/** the open middle of a full-screen moment: whatever is being looked at or decided, centered between the words above and
+    the Dock below */
+export function Middle({ children }: { children: ReactNode }) {
+  return <View style={s.middle}>{children}</View>;
+}
+
+/** the finish of a tool or a moment: the flame pops in on a soft ring that widens once, in the middle of the screen, with
+    the words under it. The Dock with Done goes after it. */
+export function Finish({ level, title, text }: { level: number; title: string; text?: string }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const pop = useRef(new Animated.Value(0)).current;
+  const ring = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) {
+      pop.setValue(1);
+      ring.setValue(1);
+      return;
+    }
+    Animated.parallel([
+      Animated.spring(pop, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }),
+      Animated.timing(ring, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+    ]).start();
+  }, [reduce, pop, ring]);
+  return (
+    <View style={s.middle}>
+      <View style={s.finArt}>
+        <Animated.View
+          style={[
+            s.finRing,
+            {
+              borderColor: c.sun,
+              opacity: ring.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
+              transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
+            },
+          ]}
+        />
+        <Animated.View
+          style={{
+            opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
+            transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
+          }}>
+          <Flame level={level} size={150} />
+        </Animated.View>
+      </View>
+      <Appear delay={220}>
+        <T v="title" style={s.center} accessibilityRole="header">
+          {title}
+        </T>
+      </Appear>
+      {text ? (
+        <Appear delay={320}>
+          <T style={s.center}>{text}</T>
+        </Appear>
+      ) : null}
+    </View>
+  );
+}
+
 /* the sheet below the horizon: edge to edge on a phone, a floating card on a wide screen */
 function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
   const c = useTheme();
@@ -133,6 +204,11 @@ const s = StyleSheet.create({
   card: { flexGrow: 1, alignItems: 'center', gap: 14, paddingTop: 8 },
   foot: { alignItems: 'center', paddingTop: 4 },
   dock: { marginTop: 'auto', alignSelf: 'stretch', gap: 10, paddingTop: 10 },
+  stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
+  center: { textAlign: 'center' },
+  finArt: { width: 190, height: 190, alignItems: 'center', justifyContent: 'center' },
+  finRing: { position: 'absolute', width: 170, height: 170, borderRadius: 85, borderWidth: 3 },
   sheet: {
     alignSelf: 'stretch',
     gap: 14,

@@ -53,6 +53,12 @@ cd apps/mobile && npx expo start
 ## Rules for changes
 
 - **The golden tests are a frozen record.** `packages/core/test/fixtures` holds what the legacy app computed. They stay as regression tests: if one fails, a change touched an old rule. Fix the change, or if the rule was meant to change, update the expected values in the fixtures by hand in the same commit and say why in the commit message. New rules get ordinary unit tests.
+- **Buttons where the thumb is.** The owner wants the main action of a screen (Next, Save, Done, Start, Continue) at the
+  bottom of the screen, where a thumb rests when holding a phone in one hand, not in the middle or at the top. This applies
+  everywhere: lessons, setup, full-screen moments (sunrise, check-in, Good night, SOS tools) and sheets. In a `SceneFrame`,
+  put the main button in `footer` (it sits at the bottom of the screen), with any quiet link (Skip, Cancel) just under it.
+  Answers to tap (big options, number buttons) can sit higher, but the button that moves on or finishes goes low.
+  Close and Back can stay at the top, as they are by platform habit.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons rest on good research and speak with confidence.** Science in a lesson cites a source in `SRC` or `OB_SRC` and does not invent numbers. The scope ("Behind this") says where the research comes from and what it means for the reader, in a sure, hopeful voice, without piling up doubts.
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add analytics or anything that reads people's logs on the server.

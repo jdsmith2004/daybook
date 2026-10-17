@@ -173,9 +173,7 @@ export default function Checkin() {
             placeholder="Rough day at work. Texted a friend."
             onChangeText={(t) => set({ ...form, n: t })}
           />
-          {any ? (
-            <Button label={k === tk ? 'Save today' : 'Save this day'} onPress={save} />
-          ) : (
+          {any ? null : (
             <T v="small" tone="muted" style={s.c}>
               Go back and answer at least one, then save.
             </T>
@@ -186,6 +184,11 @@ export default function Checkin() {
         </View>
       </>
     );
+    footer = any ? (
+      <View style={s.foot}>
+        <Button label={k === tk ? 'Save today' : 'Save this day'} onPress={save} />
+      </View>
+    ) : null;
   } else {
     const g = gameCompute(snap.days, st, snap.reviews, tk);
     const gain = Math.max(0, g.pts - pts0);
@@ -220,8 +223,12 @@ export default function Checkin() {
             </T>
           </View>
         ) : null}
-        <Button label="Done" onPress={close} />
       </>
+    );
+    footer = (
+      <View style={s.foot}>
+        <Button label="Done" onPress={close} />
+      </View>
     );
   }
 
@@ -240,6 +247,7 @@ export default function Checkin() {
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
+  foot: { alignSelf: 'stretch' },
   grid: { alignSelf: 'stretch', gap: 8 },
   ends: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
   opts: { width: '100%', gap: 10 },

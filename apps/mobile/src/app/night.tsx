@@ -18,7 +18,15 @@ export default function Night() {
   const plans = bedPlans(st);
   const ci = st ? rhythm(snap.days, st, tk, now).stops.find((x) => x.k === 'evening' && !x.done) : null;
   return (
-    <SceneFrame title="Good night" sky="night" onClose={close}>
+    <SceneFrame
+      title="Good night"
+      sky="night"
+      onClose={close}
+      footer={
+        <View style={{ alignSelf: 'stretch' }}>
+          <Button label="Good night" icon="moon" onPress={close} />
+        </View>
+      }>
       <View style={s.moon}>
         <Icon name="moon" size={56} color="#FFE27A" />
       </View>
@@ -58,7 +66,6 @@ export default function Night() {
             </View>
           ))}
       </View>
-      <Button label="Good night" icon="moon" onPress={close} />
     </SceneFrame>
   );
 }

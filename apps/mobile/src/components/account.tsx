@@ -1,5 +1,5 @@
 /* The account card on Today, at a good moment (accounts.ts decides when). It opens the account sheet (app/account.tsx). */
-import { accountLater, accountWords, type AcctWhy } from '@daybook/core';
+import { accountLater, accountWords, diffDays, type AcctWhy } from '@daybook/core';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -13,7 +13,7 @@ export function AccountCard({ why, locked }: { why: AcctWhy; locked: number }) {
   const c = useTheme();
   const sync = useSync();
   const { snap, tk, apply } = useStore();
-  const w = accountWords(why, locked);
+  const w = accountWords(why, locked, diffDays(tk, snap.settings!.start));
   return (
     <Card style={{ backgroundColor: c.skySoft, borderColor: c.skySoft }}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>

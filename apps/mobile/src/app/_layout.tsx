@@ -9,6 +9,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRe
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
@@ -42,6 +43,23 @@ function NavKeeper() {
   return null;
 }
 
+/* on the web, the page behind the app and the browser's bars take the app's background, so Safari does not frame a dark app in white */
+function WebChrome({ bg }: { bg: string }) {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', bg);
+  }, [bg]);
+  return null;
+}
+
 function Shell() {
   const c = useTheme();
   const { ready } = useStore();
@@ -63,6 +81,7 @@ function Shell() {
   return (
     <ThemeProvider value={nav}>
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
+      <WebChrome bg={c.bg} />
       <Reminders />
       <NavKeeper />
       <LockGate>

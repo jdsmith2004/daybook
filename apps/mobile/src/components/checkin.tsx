@@ -81,6 +81,10 @@ export function CheckinBlock({ dkey, isToday, onSaved }: { dkey: DayKey; isToday
 
   const set = (k: keyof CheckinForm, v: unknown) => touch({ ...form, [k]: v } as CheckinForm);
   const save = () => {
+    if ([form.m, form.c, form.e, form.s, form.ro].every((v) => v == null) && !form.n.trim()) {
+      say('Answer at least one first.');
+      return;
+    }
     let msg = '';
     update((s0) => {
       const days = saveCheckin(s0.days, dkey, form);

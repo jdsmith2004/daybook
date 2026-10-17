@@ -45,10 +45,10 @@ export const accountLater = (st: Settings, tk: DayKey, now = Date.now()): Change
   st: changeSettings(st, (s) => void (s.acctNo = tk), now),
 });
 
-/** the words on the account card */
-export function accountWords(why: AcctWhy, locked: number): { h: string; p: string } {
+/** the words on the account card. days: days since the start, so someone two months in is not told "a week in" */
+export function accountWords(why: AcctWhy, locked: number, days = 7): { h: string; p: string } {
   const more = locked > 0 ? ` It also opens the other ${locked} lessons.` : '';
   return why === 'level'
     ? { h: 'You are on your way. Keep it safe.', p: 'A free account keeps a copy of your progress, so a lost phone never costs you a day, and it syncs to the web.' + more }
-    : { h: 'A week in. Keep your progress safe.', p: 'A free account keeps a copy of your log and your points, and keeps your phone and the web in step.' + more };
+    : { h: days < 14 ? 'A week in. Keep your progress safe.' : 'Keep what you have built safe.', p: 'A free account keeps a copy of your log and your points, and keeps your phone and the web in step.' + more };
 }

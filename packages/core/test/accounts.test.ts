@@ -37,6 +37,11 @@ it('"Not now" waits a week', () => {
   expect(core.accountAsk({}, st, core.addDays(tk, core.ACCT_WAIT), 3, false)).toBe('week');
 });
 
+it('someone well past a week is not told "a week in"', () => {
+  expect(core.accountWords('week', 0, 8).h).toMatch(/^A week in/);
+  expect(core.accountWords('week', 0, 61).h).not.toMatch(/week/i);
+});
+
 it('the words are warm, with no contractions', () => {
   const w = [core.accountWords('level', 37), core.accountWords('week', 0)].map((x) => x.h + ' ' + x.p).join(' ');
   expect(w).toContain('other 37 lessons');

@@ -238,7 +238,7 @@ export default function Log() {
         <T tone="muted" style={s.center}>
           One tap. You can stop after that.
         </T>
-        <View style={s.opts}>
+        <Dock>
           {pause ? (
             <BigOption
               tone="mint"
@@ -266,7 +266,7 @@ export default function Log() {
             selected={outcome ? outcome === 'slipped' : null}
             onPress={() => pick('slipped')}
           />
-        </View>
+        </Dock>
       </>
     );
     footer = <Link label="Not now" onPress={close} />;
@@ -285,16 +285,18 @@ export default function Log() {
         {adding ? (
           <AddOwn kind="trig" onSave={(t) => saveOwn('trig', t)} onCancel={() => setAdding(false)} />
         ) : (
-          <Tiles
-            list={L.list}
-            cur={ev?.trigger || null}
-            onPick={(v) => {
-              patch({ trigger: v === 'none' ? null : v });
-              buzz('tap');
-              nextAfterTrigger();
-            }}
-            extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
-          />
+          <Dock>
+            <Tiles
+              list={L.list}
+              cur={ev?.trigger || null}
+              onPick={(v) => {
+                patch({ trigger: v === 'none' ? null : v });
+                buzz('tap');
+                nextAfterTrigger();
+              }}
+              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
+            />
+          </Dock>
         )}
         {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
       </>
@@ -316,16 +318,18 @@ export default function Log() {
         {adding ? (
           <AddOwn kind="did" onSave={(t) => saveOwn('did', t)} onCancel={() => setAdding(false)} />
         ) : (
-          <Tiles
-            list={L.list}
-            cur={cur}
-            onPick={(v) => {
-              const next = didToggle(ev?.did, v);
-              patch({ did: next.length ? next : null });
-              buzz('tap');
-            }}
-            extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
-          />
+          <Dock>
+            <Tiles
+              list={L.list}
+              cur={cur}
+              onPick={(v) => {
+                const next = didToggle(ev?.did, v);
+                patch({ did: next.length ? next : null });
+                buzz('tap');
+              }}
+              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
+            />
+          </Dock>
         )}
         {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
       </>
@@ -406,18 +410,18 @@ export default function Log() {
           Logged. Honest takes guts.
         </T>
         <T style={s.center}>{rkLightLine(snap.days, st, date, tk, now)}</T>
-        <WaitPicker cur={ev?.wt} onPick={(w) => patch({ wt: ev?.wt === w ? null : w })} />
-        <View style={{ width: '100%', gap: 6 }}>
-          <Chip
-            label={ev?.recovered ? '✓ One small thing done' : 'I did one small thing'}
-            on={!!ev?.recovered}
-            onPress={() => patch({ recovered: !ev?.recovered })}
-          />
-          <T v="small" tone="muted">
-            Water, step outside, or text someone. One small step keeps one slip from turning into two.
-          </T>
-        </View>
         <Dock>
+          <WaitPicker cur={ev?.wt} onPick={(w) => patch({ wt: ev?.wt === w ? null : w })} />
+          <View style={{ width: '100%', gap: 6 }}>
+            <Chip
+              label={ev?.recovered ? '✓ One small thing done' : 'I did one small thing'}
+              on={!!ev?.recovered}
+              onPress={() => patch({ recovered: !ev?.recovered })}
+            />
+            <T v="small" tone="muted">
+              Water, step outside, or text someone. One small step keeps one slip from turning into two.
+            </T>
+          </View>
           <Button label="Done" onPress={close} />
           <Link label="Show me the full Rekindle" onPress={() => go('rk0')} />
         </Dock>

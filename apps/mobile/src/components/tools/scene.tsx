@@ -221,36 +221,36 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
           );
         })}
       </View>
-      <T v="h2" style={{ alignSelf: 'flex-start' }}>
-        If the thoughts get loud in bed
-      </T>
-      <View style={{ alignSelf: 'stretch', gap: 8 }} accessibilityRole="radiogroup">
-        {plans.map(([id, t, sub]) => {
-          const on = plan === id;
-          return (
-            <Pressable
-              key={id}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              onPress={() => {
-                setPlan(id);
-                sos.setMem((m) => ({ ...m, bedPlan: id }));
-                buzz('tap');
-              }}
-              style={[s.check, { backgroundColor: on ? c.accentSoft : c.surface, borderColor: on ? c.accent : 'transparent' }]}>
-              <View style={{ flex: 1 }}>
-                <T v="label" tone={on ? 'accentText' : 'ink'}>
-                  {t}
-                </T>
-                <T v="small" tone="muted">
-                  {sub}
-                </T>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
       <Dock>
+        <T v="h2" style={{ alignSelf: 'flex-start' }}>
+          If the thoughts get loud in bed
+        </T>
+        <View style={{ alignSelf: 'stretch', gap: 8 }} accessibilityRole="radiogroup">
+          {plans.map(([id, t, sub]) => {
+            const on = plan === id;
+            return (
+              <Pressable
+                key={id}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on }}
+                onPress={() => {
+                  setPlan(id);
+                  sos.setMem((m) => ({ ...m, bedPlan: id }));
+                  buzz('tap');
+                }}
+                style={[s.check, { backgroundColor: on ? c.accentSoft : c.surface, borderColor: on ? c.accent : 'transparent' }]}>
+                <View style={{ flex: 1 }}>
+                  <T v="label" tone={on ? 'accentText' : 'ink'}>
+                    {t}
+                  </T>
+                  <T v="small" tone="muted">
+                    {sub}
+                  </T>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
         <Button label={night ? 'Good night' : 'Done'} onPress={go} />
       </Dock>
       {night ? (
@@ -352,38 +352,38 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
         What is true right now?
       </T>
       <T style={s.c}>Urges often show up when a plain need is going unmet. Tap anything that fits. You can pick more than one.</T>
-      <View style={s.wrap}>
-        {NEEDS.map((n) => (
-          <Chip
-            key={n[0]}
-            label={n[1]}
-            on={sel.indexOf(n[0]) >= 0}
-            onPress={() => setSel(sel.indexOf(n[0]) >= 0 ? sel.filter((x) => x !== n[0]) : sel.concat(n[0]))}
-          />
-        ))}
-      </View>
-      {picked.length ? (
-        <>
-          {picked.map((n) => {
-            /* at night, "Tired" goes straight to bed */
-            const go = n[0] === 'tired' && night ? (['bed', 'Go to bed'] as [string, string]) : n[3];
-            return (
-              <Card key={n[0]} style={{ alignSelf: 'stretch', backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
-                <T v="label">{n[1]}</T>
-                <T>{n[2]}</T>
-                {go ? <Button label={go[1]} kind="ghost" onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: go[0] } })} /> : null}
-              </Card>
-            );
-          })}
-          <Dock>
+      <Dock>
+        <View style={s.wrap}>
+          {NEEDS.map((n) => (
+            <Chip
+              key={n[0]}
+              label={n[1]}
+              on={sel.indexOf(n[0]) >= 0}
+              onPress={() => setSel(sel.indexOf(n[0]) >= 0 ? sel.filter((x) => x !== n[0]) : sel.concat(n[0]))}
+            />
+          ))}
+        </View>
+        {picked.length ? (
+          <>
+            {picked.map((n) => {
+              /* at night, "Tired" goes straight to bed */
+              const go = n[0] === 'tired' && night ? (['bed', 'Go to bed'] as [string, string]) : n[3];
+              return (
+                <Card key={n[0]} style={{ alignSelf: 'stretch', backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
+                  <T v="label">{n[1]}</T>
+                  <T>{n[2]}</T>
+                  {go ? <Button label={go[1]} kind="ghost" onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: go[0] } })} /> : null}
+                </Card>
+              );
+            })}
             <Button label="Done" onPress={() => finish('halt')} />
-          </Dock>
-        </>
-      ) : (
-        <T v="small" tone="muted" style={s.c}>
-          Nothing is wrong with a need. Naming it is the first move.
-        </T>
-      )}
+          </>
+        ) : (
+          <T v="small" tone="muted" style={s.c}>
+            Nothing is wrong with a need. Naming it is the first move.
+          </T>
+        )}
+      </Dock>
     </>
   );
 }

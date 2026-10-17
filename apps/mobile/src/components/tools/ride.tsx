@@ -62,15 +62,17 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           Where do you feel it?
         </T>
         <T style={s.c}>Look inside, like a curious scientist. There is no wrong answer.</T>
-        <Tiles
-          list={CU_BODY}
-          cur={body}
-          onPick={(v) => {
-            setBody(v);
-            buzz('tap');
-            setStep(3);
-          }}
-        />
+        <Dock>
+          <Tiles
+            list={CU_BODY}
+            cur={body}
+            onPick={(v) => {
+              setBody(v);
+              buzz('tap');
+              setStep(3);
+            }}
+          />
+        </Dock>
         <Link label="Skip" onPress={() => setStep(3)} />
       </>
     );
@@ -84,15 +86,17 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           What does it feel like?
         </T>
         <T style={s.c}>One word is enough.</T>
-        <Tiles
-          list={CU_FEEL}
-          cur={feel}
-          onPick={(v) => {
-            setFeel(v);
-            buzz('tap');
-            setStep(4);
-          }}
-        />
+        <Dock>
+          <Tiles
+            list={CU_FEEL}
+            cur={feel}
+            onPick={(v) => {
+              setFeel(v);
+              buzz('tap');
+              setStep(4);
+            }}
+          />
+        </Dock>
         <Link label="Skip" onPress={() => setStep(4)} />
       </>
     );
@@ -109,18 +113,18 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
       <Wave p={p} color={c.accent} track={c.line} />
       <T v="label">{p < 1 ? fmtMS(CU_MS - sec * 1000) : 'Watched'}</T>
       <T style={s.c}>{(line ? line + ' ' : '') + 'Breathe slowly and follow the dot. You are not trying to make the urge go away.'}</T>
-      <T v="label">Right now it is</T>
-      <View style={s.row}>
-        {CU_CHG.map(([k, label]) => (
-          <Chip key={k} label={label} on={chg === k} onPress={() => setChg(chg === k ? null : k)} />
-        ))}
-      </View>
-      {chg ? (
-        <T style={s.c} accessibilityLiveRegion="polite">
-          {CU_SAY[chg]}
-        </T>
-      ) : null}
       <Dock>
+        <T v="label">Right now it is</T>
+        <View style={s.row}>
+          {CU_CHG.map(([k, label]) => (
+            <Chip key={k} label={label} on={chg === k} onPress={() => setChg(chg === k ? null : k)} />
+          ))}
+        </View>
+        {chg ? (
+          <T style={s.c} accessibilityLiveRegion="polite">
+            {CU_SAY[chg]}
+          </T>
+        ) : null}
         <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
       </Dock>
     </>
@@ -185,18 +189,20 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
           What is the urge telling you?
         </T>
         <T style={s.c}>Pick the closest one, or write your own.</T>
-        <Tiles
-          list={THOUGHTS}
-          cur={null}
-          onPick={(v) => {
-            const x = THOUGHTS.find((y) => y[0] === v);
-            if (x) {
-              setText(x[1]);
-              buzz('tap');
-            }
-          }}
-          extra={writing ? null : <AddTile label="Write my own" onPress={() => setWriting(true)} />}
-        />
+        <Dock>
+          <Tiles
+            list={THOUGHTS}
+            cur={null}
+            onPick={(v) => {
+              const x = THOUGHTS.find((y) => y[0] === v);
+              if (x) {
+                setText(x[1]);
+                buzz('tap');
+              }
+            }}
+            extra={writing ? null : <AddTile label="Write my own" onPress={() => setWriting(true)} />}
+          />
+        </Dock>
         {writing ? (
           <View style={{ width: '100%', gap: 8 }}>
             <Field
@@ -266,8 +272,8 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
           An hour after giving in, I usually feel…
         </T>
         <T style={s.c}>Tap all that fit. Be honest. Nobody else sees this.</T>
-        <Tiles list={FWD_A} cur={a} onPick={(v) => toggle(a, setA, v)} />
         <Dock>
+          <Tiles list={FWD_A} cur={a} onPick={(v) => toggle(a, setA, v)} />
           <Button label="Next" onPress={() => setStep(1)} />
         </Dock>
       </>
@@ -282,8 +288,8 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
           An hour after riding it out, I usually feel…
         </T>
         <T style={s.c}>Think of a time you let one pass.</T>
-        <Tiles list={FWD_B} cur={b} onPick={(v) => toggle(b, setB, v)} />
         <Dock>
+          <Tiles list={FWD_B} cur={b} onPick={(v) => toggle(b, setB, v)} />
           <Button
             label="Next"
             onPress={() => {

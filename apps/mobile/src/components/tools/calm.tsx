@@ -60,17 +60,17 @@ export function Breathe({ finish, sos, level }: ToolProps) {
           Slow it down
         </T>
         <T style={s.c}>A longer breath out helps many people settle. If it makes you dizzy, go back to normal breathing.</T>
-        <View style={s.group} accessibilityRole="radiogroup" accessibilityLabel="Pattern">
-          {(Object.keys(PATTERNS) as (keyof typeof PATTERNS)[]).map((k) => (
-            <Pick key={k} on={pat === k} title={PATTERNS[k].name} sub={PATTERNS[k].desc} onPress={() => setPat(k)} />
-          ))}
-        </View>
-        <View style={s.group} accessibilityRole="radiogroup" accessibilityLabel="Length">
-          {[1, 3, 5].map((m) => (
-            <Pick key={m} on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
-          ))}
-        </View>
         <Dock>
+          <View style={s.group} accessibilityRole="radiogroup" accessibilityLabel="Pattern">
+            {(Object.keys(PATTERNS) as (keyof typeof PATTERNS)[]).map((k) => (
+              <Pick key={k} on={pat === k} title={PATTERNS[k].name} sub={PATTERNS[k].desc} onPress={() => setPat(k)} />
+            ))}
+          </View>
+          <View style={s.group} accessibilityRole="radiogroup" accessibilityLabel="Length">
+            {[1, 3, 5].map((m) => (
+              <Pick key={m} on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
+            ))}
+          </View>
           <Button label="Start" onPress={() => setStartedAt(Date.now())} />
         </Dock>
       </>
@@ -143,37 +143,39 @@ export function Ground({ finish, level }: ToolProps) {
           <View key={j} style={[s.step, { backgroundColor: j < i ? c.accent : j === i ? c.sun : c.line }]} />
         ))}
       </View>
-      <Text style={[s.big, { color: c.ink }]} accessibilityLiveRegion="polite">
-        {g[0]}
-      </Text>
-      <T style={s.c}>{g[2]}</T>
-      <View style={s.dots} accessibilityLabel="Tap once for each one you find">
-        {Array.from({ length: g[0] }, (_, j) => (
-          <Pressable
-            key={j}
-            accessibilityRole="button"
-            accessibilityLabel="Found one"
-            accessibilityState={{ checked: j < n }}
-            onPress={() => {
-              if (n >= g[0]) return;
-              setN(n + 1);
-              buzz('tap');
-            }}
-            style={[
-              s.dot,
-              {
-                backgroundColor: j < n ? c.mint : c.surface,
-                borderColor: j < n ? c.mint : c.line,
-              },
-            ]}>
-            {j < n ? <Icon name="check" color="#FFFFFF" size={22} /> : null}
-          </Pressable>
-        ))}
+      <View style={s.mid}>
+        <Text style={[s.big, { color: c.ink }]} accessibilityLiveRegion="polite">
+          {g[0]}
+        </Text>
+        <T style={s.c}>{g[2]}</T>
       </View>
-      <T v="small" tone="muted" style={s.c}>
-        {n >= g[0] ? 'All ' + g[0] + ' found.' : n + ' of ' + g[0] + '. Tap a circle each time you find one.'}
-      </T>
       <Dock>
+        <View style={s.dots} accessibilityLabel="Tap once for each one you find">
+          {Array.from({ length: g[0] }, (_, j) => (
+            <Pressable
+              key={j}
+              accessibilityRole="button"
+              accessibilityLabel="Found one"
+              accessibilityState={{ checked: j < n }}
+              onPress={() => {
+                if (n >= g[0]) return;
+                setN(n + 1);
+                buzz('tap');
+              }}
+              style={[
+                s.dot,
+                {
+                  backgroundColor: j < n ? c.mint : c.surface,
+                  borderColor: j < n ? c.mint : c.line,
+                },
+              ]}>
+              {j < n ? <Icon name="check" color="#FFFFFF" size={22} /> : null}
+            </Pressable>
+          ))}
+        </View>
+        <T v="small" tone="muted" style={s.c}>
+          {n >= g[0] ? 'All ' + g[0] + ' found.' : n + ' of ' + g[0] + '. Tap a circle each time you find one.'}
+        </T>
         <Button
           label={i === GROUND.length - 1 ? 'Finish' : 'Next'}
           disabled={n < g[0]}
@@ -188,6 +190,8 @@ export function Ground({ finish, level }: ToolProps) {
 }
 
 const s = StyleSheet.create({
+  /* the count and what to look for, in the open middle of the screen */
+  mid: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 10 },
   c: { textAlign: 'center' },
   row: {
     flexDirection: 'row',
@@ -214,7 +218,7 @@ const s = StyleSheet.create({
   pickS: { fontFamily: font.body, fontSize: 13 },
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'stretch' },
   step: { flex: 1, height: 6, borderRadius: 3 },
-  big: { fontFamily: font.displayBold, fontSize: 96, lineHeight: 104 },
+  big: { fontFamily: font.displayBold, fontSize: 128, lineHeight: 140 },
   dots: {
     flexDirection: 'row',
     flexWrap: 'wrap',

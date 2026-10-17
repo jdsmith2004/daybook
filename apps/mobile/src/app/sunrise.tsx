@@ -147,10 +147,10 @@ export default function Sunrise() {
           Last night, were screens off by {fmtClock(st.screensOff)}?
         </T>
         <T style={s.c}>Honest beats perfect. It counts either way.</T>
-        <View style={s.opts}>
+        <Dock>
           <BigOption tone="mint" icon="moon" title="Yes" sub="Screens were off on time." onPress={() => pickSo('Y')} />
           <BigOption tone="slip" icon="leaf" title="Not this time" sub="That is okay. Tonight is another try." onPress={() => pickSo('N')} />
-        </View>
+        </Dock>
       </>
     );
   } else if (step === 'before') {
@@ -177,7 +177,9 @@ export default function Sunrise() {
             }}
           />
         ) : (
-          <Tiles list={L.list} cur={ev.trigger} onPick={setTrig} extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />} />
+          <Dock>
+            <Tiles list={L.list} cur={ev.trigger} onPick={setTrig} extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />} />
+          </Dock>
         )}
       </>
     );
@@ -217,7 +219,7 @@ export default function Sunrise() {
             </View>
           </View>
         ) : (
-          <View style={s.opts}>
+          <Dock>
             {P.opts.map((o, j) => {
               const mine = j === 0 && !!P.mine;
               return (
@@ -232,7 +234,7 @@ export default function Sunrise() {
               );
             })}
             <AddTile label="Write my own" icon="pencil" block onPress={() => setOwn('')} />
-          </View>
+          </Dock>
         )}
       </>
     );

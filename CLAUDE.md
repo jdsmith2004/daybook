@@ -60,6 +60,8 @@ cd apps/mobile && npx expo start
   - The question, the title and any explaining sit at the top, to be read.
   - What the person touches to answer (choices, Yes/No, sliders, option cards) sits in the lower half, just above the
     main button. A screen whose answers float near the top is wrong, even when the main button is low.
+  - The open middle is for the one thing being decided, shown big: the number a slider sets (`SliderValue big`), a
+    count, a guess. Not empty space, and not the controls.
   - The main button (Next, Save, Done, Start, Continue) is at the very bottom, full width, with any quiet link (Skip,
     Cancel) just under it.
   - Close and Back stay at the top, as they are by platform habit.

@@ -175,10 +175,12 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
           </T>
           <Link label="Another idea" onPress={() => setIdea(pickIdea(st, idea, Math.random))} />
         </Card>
-        <View style={s.row}>
-          <Chip label="Breathing guide" on={guide} onPress={() => setGuide(!guide)} />
-          <Chip label="End the pause" on={false} onPress={endEarly} />
-        </View>
+        <Dock>
+          <View style={s.row}>
+            <Chip label="Breathing guide" on={guide} onPress={() => setGuide(!guide)} />
+            <Chip label="End the pause" on={false} onPress={endEarly} />
+          </View>
+        </Dock>
         <T v="small" tone="muted" style={s.c}>
           Ten minutes is a guide. End the pause whenever the urge eases.
         </T>
@@ -202,23 +204,25 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
           That is okay. Waves can come back.
         </T>
         <T style={s.c}>You do not have to fight it or obey it. Pick what feels doable.</T>
-        <View style={s.opts}>
-          <BigOption tone="sun" icon="timer" title="Another 10 minutes" sub="Same wave, more time." onPress={start} />
-          <BigOption
-            tone="accent"
-            icon="wind"
-            title="Breathe"
-            sub="One slow minute."
-            onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'breathe' } })}
-          />
-          <BigOption
-            tone="accent"
-            icon="chat"
-            title="Reach a person"
-            sub="A short text is enough."
-            onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'message' } })}
-          />
-        </View>
+        <Dock>
+          <View style={s.opts}>
+            <BigOption tone="sun" icon="timer" title="Another 10 minutes" sub="Same wave, more time." onPress={start} />
+            <BigOption
+              tone="accent"
+              icon="wind"
+              title="Breathe"
+              sub="One slow minute."
+              onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'breathe' } })}
+            />
+            <BigOption
+              tone="accent"
+              icon="chat"
+              title="Reach a person"
+              sub="A short text is enough."
+              onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'message' } })}
+            />
+          </View>
+        </Dock>
         <Link
           label="I am okay for now"
           onPress={() => {
@@ -241,11 +245,13 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         </T>
       ) : null}
       <T v="h2">How is the urge now?</T>
-      <View style={s.opts}>
-        <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => answer('rode')} />
-        <BigOption tone="sun" icon="timer" title="Still strong" sub="I need a bit longer." onPress={() => answer('again')} />
-        <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => answer('slipped')} />
-      </View>
+      <Dock>
+        <View style={s.opts}>
+          <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => answer('rode')} />
+          <BigOption tone="sun" icon="timer" title="Still strong" sub="I need a bit longer." onPress={() => answer('again')} />
+          <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => answer('slipped')} />
+        </View>
+      </Dock>
       <Link
         label="Not now"
         onPress={() => {

@@ -47,10 +47,12 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type GestureResponderEvent, type ScrollViewInstance } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
+import { Dock } from '@/components/scene';
+import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
@@ -272,27 +274,29 @@ export default function LessonScreen() {
           </View>
         ) : null}
         {lessonHasQuick(L) ? (
-          <View style={{ gap: 10 }} accessibilityLabel="Pick a length">
-            <LenBtn
-              t={t}
-              on={pref === 'q'}
-              title="Quick"
-              sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
-              mins="1–2 min"
-              onPress={() => start('q')}
-            />
-            <LenBtn
-              t={t}
-              on={pref === 'f'}
-              title="Full"
-              sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
-              mins="3–5 min"
-              onPress={() => start('f')}
-            />
-            <T v="small" tone="muted">
-              You can read it again in the other length any time.
-            </T>
-          </View>
+          <Dock>
+            <View style={{ gap: 10 }} accessibilityLabel="Pick a length">
+              <LenBtn
+                t={t}
+                on={pref === 'q'}
+                title="Quick"
+                sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+                mins="1–2 min"
+                onPress={() => start('q')}
+              />
+              <LenBtn
+                t={t}
+                on={pref === 'f'}
+                title="Full"
+                sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
+                mins="3–5 min"
+                onPress={() => start('f')}
+              />
+              <T v="small" tone="muted">
+                You can read it again in the other length any time.
+              </T>
+            </View>
+          </Dock>
         ) : null}
       </>
     );
@@ -311,27 +315,29 @@ export default function LessonScreen() {
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
-          <Opts
-            list={r.c}
-            best={r.a}
-            pk={rc}
-            tried={rcTried}
-            t={t}
-            onPick={(j) => {
-              setRc(j);
-              setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-              buzz('tap');
-            }}
-          />
-          {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
-          {r.cr && rc != null ? (
+          <Dock>
+            <Opts
+              list={r.c}
+              best={r.a}
+              pk={rc}
+              tried={rcTried}
+              t={t}
+              onPick={(j) => {
+                setRc(j);
+                setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+                buzz('tap');
+              }}
+            />
+            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
+            {r.cr && rc != null ? (
+              <T v="small" tone="muted">
+                Tap any other answer to read its comment.
+              </T>
+            ) : null}
             <T v="small" tone="muted">
-              Tap any other answer to read its comment.
+              No points for this one. It just helps the last lesson stick.
             </T>
-          ) : null}
-          <T v="small" tone="muted">
-            No points for this one. It just helps the last lesson stick.
-          </T>
+          </Dock>
         </>
       );
       foot = <Next label={rc == null ? 'Skip' : 'Next'} onPress={() => step(1)} />;
@@ -407,27 +413,29 @@ export default function LessonScreen() {
               {card.h}
             </T>
             {card.ask || typeof card.q === 'string' ? <T style={[s.p, { fontFamily: font.bodySemi }]}>{card.ask || (card.q as unknown as string)}</T> : null}
-            <Opts
-              list={card.c!.map((x) => x[0])}
-              best={gr ? card.a! : null}
-              pk={pk}
-              tried={tried[ci] || []}
-              t={t}
-              onPick={(j) => {
-                setPick((p) => ({ ...p, [ci]: j }));
-                setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-                if (card.sv)
-                  apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
-                buzz('tap');
-              }}
-            />
-            {pk != null ? <Reply text={card.c![pk][1]} t={t} /> : null}
-            {gr && pk != null ? (
-              <T v="small" tone="muted">
-                Tap any other answer to read its comment.
-              </T>
-            ) : null}
-            {card.sv && pk != null ? <T tone="mintText">✓ Saved to My plan</T> : null}
+            <Dock>
+              <Opts
+                list={card.c!.map((x) => x[0])}
+                best={gr ? card.a! : null}
+                pk={pk}
+                tried={tried[ci] || []}
+                t={t}
+                onPick={(j) => {
+                  setPick((p) => ({ ...p, [ci]: j }));
+                  setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
+                  if (card.sv)
+                    apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
+                  buzz('tap');
+                }}
+              />
+              {pk != null ? <Reply text={card.c![pk][1]} t={t} /> : null}
+              {gr && pk != null ? (
+                <T v="small" tone="muted">
+                  Tap any other answer to read its comment.
+                </T>
+              ) : null}
+              {card.sv && pk != null ? <T tone="mintText">✓ Saved to My plan</T> : null}
+            </Dock>
           </>
         );
         foot = (
@@ -525,7 +533,7 @@ export default function LessonScreen() {
           </View>
         ) : null}
         {rest.length ? (
-          <View style={{ gap: 10 }}>
+          <Dock>
             {rest.map((g, k) => {
               const has = !!LIST_OF[g.a] && listHas(g);
               return (
@@ -539,7 +547,7 @@ export default function LessonScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </Dock>
         ) : null}
       </>
     );
@@ -965,7 +973,6 @@ function GuessCard({
   onSrc: () => void;
 }) {
   const c = useTheme();
-  const [w, setW] = useState(0);
   const stepV = g.step || 1;
   const ticks = g.ticks || [g.min, g.max];
   const Ticks = (
@@ -979,65 +986,19 @@ function GuessCard({
     </View>
   );
   if (!gs.lock) {
-    const has = gs.v != null;
-    const v = has ? gs.v! : Math.round((g.min + g.max) / 2);
-    const at = (e: GestureResponderEvent) => {
-      if (!w) return;
-      const raw = g.min + (e.nativeEvent.locationX / w) * (g.max - g.min);
-      const nv = Math.max(g.min, Math.min(g.max, Math.round(raw / stepV) * stepV));
-      if (nv !== gs.v) onSet(nv);
-    };
-    const pct = lxPct(g, v);
     return (
       <>
-        <View style={{ alignItems: 'center', gap: 18 }}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontFamily: font.display, fontSize: 96, lineHeight: 100, color: has ? c.accent : c.lip }}>{has ? gs.v : '?'}</Text>
-            <Text style={{ fontFamily: font.bodySemi, fontSize: 17, color: c.ink }}>{has ? g.unit + ' · your guess' : 'Drag to guess'}</Text>
-          </View>
-          <View style={{ alignSelf: 'stretch', gap: 4 }}>
-            <View
-              accessible
-              accessibilityRole="adjustable"
-              accessibilityLabel={card.h}
-              accessibilityValue={has ? { min: g.min, max: g.max, now: gs.v!, text: gs.v + ' ' + g.unit } : { text: 'No guess yet' }}
-              accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-              onAccessibilityAction={(e) => onSet(Math.max(g.min, Math.min(g.max, v + (e.nativeEvent.actionName === 'increment' ? stepV : -stepV))))}
-              onLayout={(e) => setW(e.nativeEvent.layout.width)}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderTerminationRequest={() => false}
-              onResponderGrant={at}
-              onResponderMove={at}
-              style={{ height: 44, justifyContent: 'center' }}>
-              <View pointerEvents="none" style={{ height: 12, borderRadius: 6, backgroundColor: c.accentSoft, overflow: 'hidden' }}>
-                {has ? <View style={{ width: `${pct}%`, height: '100%', backgroundColor: c.accent }} /> : null}
-              </View>
-              {has ? (
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    left: `${pct}%`,
-                    marginLeft: -17,
-                    width: 34,
-                    height: 34,
-                    borderRadius: 17,
-                    backgroundColor: c.accent,
-                    borderWidth: 5,
-                    borderColor: c.surface,
-                  }}
-                />
-              ) : null}
-            </View>
-            {Ticks}
-          </View>
-        </View>
         <Eyebrow icon={LX_E.guess[0]} label={card.el || LX_E.guess[1]} t={t} />
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {card.h}
         </T>
         <T style={s.p}>{card.p || 'Guess first. Guessing helps the answer stick.'}</T>
+        <View style={s.guessMid}>
+          <SliderValue big value={gs.v} caption={g.unit + ' · your guess'} hint="Slide below to guess" />
+        </View>
+        <Dock>
+          <Slider label={card.h} value={gs.v} min={g.min} max={g.max} step={stepV} unit={g.unit} readout={false} onChange={onSet} />
+        </Dock>
       </>
     );
   }
@@ -1210,6 +1171,7 @@ const s = StyleSheet.create({
   card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
   cardIn: { padding: 22, flexGrow: 1 },
   cardBody: { gap: 14, flexGrow: 1 },
+  guessMid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', minHeight: 170 },
   art: { minHeight: 110, alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },

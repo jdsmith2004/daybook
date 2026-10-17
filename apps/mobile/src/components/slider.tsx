@@ -163,8 +163,8 @@ export function Slider({
         <View pointerEvents="none" style={[s.track, { backgroundColor: c.accentSoft }]}>
           {v != null ? <Animated.View style={[s.fill, { width: fillW, backgroundColor: c.accent }]} /> : null}
         </View>
-        {/* a mark at every step (whole numbers only, when the step is a half) */}
-        <View pointerEvents="none" style={s.marks}>
+        {/* a mark at every step (whole numbers only, when the step is a half); a long range, like 0 to 100, has none */}
+        <View pointerEvents="none" style={[s.marks, n > 24 && { display: 'none' }]}>
           {Array.from({ length: n + 1 }, (_, i) => {
             const at = min + i * step;
             if (step < 1 && at % 1 !== 0) return <View key={i} style={s.markGap} />;

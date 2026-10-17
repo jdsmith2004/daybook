@@ -95,10 +95,10 @@ export default function Lwrite() {
                     CHECKPOINT SAVED
                   </T>
                   <T style={s.h} accessibilityRole="header">
-                    That is in your playbook.
+                    That is in your plan.
                   </T>
-                  <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My playbook to read whenever you want.</T>
-                  <Route label="Read my playbook" onPress={() => router.replace('/book')} />
+                  <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                  <Route label="Read it in My plan" onPress={() => router.replace({ pathname: '/plan', params: { pane: 'learned' } })} />
                   <Route
                     label="Back to Learn"
                     onPress={() => {

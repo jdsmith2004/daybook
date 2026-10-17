@@ -792,7 +792,7 @@ export default function Setup() {
               {(f.changed ? 'Your changes are in My plan and Settings.' : 'Nothing in your plan changed.') +
                 ' Your answers are kept, so the next walk-through can show how things moved.'}
             </T>
-            <Route label="Read my playbook" onPress={() => !busy() && router.replace('/book')} />
+            <Route label="Read my plan" onPress={() => !busy() && router.replace('/plan')} />
             <Route label="Back to Today" onPress={() => !busy() && close()} />
           </>
         );

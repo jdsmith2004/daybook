@@ -97,7 +97,7 @@ export default function Reasons() {
     setAddCat(null);
     setAddKey((k) => k + 1);
   };
-  const back = params.from === 'lesson' ? 'Back to the lesson' : params.from === 'book' ? 'My playbook' : 'My plan';
+  const back = params.from === 'lesson' ? 'Back to the lesson' : 'My plan';
 
   return (
     <Screen title="My reasons" sub={<T tone="muted">Why this matters to you. Read them when it gets hard.</T>} back={back}>

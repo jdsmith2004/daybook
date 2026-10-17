@@ -230,7 +230,7 @@ function LessonsPane() {
       ) : (
         <FilterList f={f} rows={rows} />
       )}
-      <LinkCard icon="compass" title="My playbook" sub={n ? 'Your takeaways and notes, with your reasons and plan' : 'Fills in as you finish lessons'} onPress={() => router.push('/book')} />
+      <LinkCard icon="compass" title="What I have learned" sub={n ? 'Your takeaways and notes, in My plan' : 'Fills in as you finish lessons'} onPress={() => router.push({ pathname: '/plan', params: { pane: 'learned' } })} />
       <T v="small" tone="muted">
         The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources. The faith lessons rest on the 12 steps and on research, not on any one church’s teaching.
       </T>

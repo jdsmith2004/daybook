@@ -3,17 +3,19 @@
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate
-systems: 35 setup screens, about 13 counters on Today with five different day counts, six reward systems, and a plan that
-reads like a form. The fix is fewer, bigger things, with nothing earned taken away. Steps 2 to 6 wait on the owner's answers.
+systems: about 13 counters on Today with five different day counts, six reward systems, and a plan that read like a form.
+The fix is fewer, bigger things, with nothing earned taken away. The owner's answers (October 17): yes to moving the day
+numbers off Today, as long as Today stays extremely useful and motivating; yes to retiring quests and the wins ring; yes to
+the merges; **no** to shortening setup (see step 5).
 
 | Step | What | Effort |
 | --- | --- | --- |
 | 1 | Smoothness: pages, panes, opened cards and lesson cards ease in; Back names the page underneath; closing a tool or lesson returns to the page it was opened from; setup wording. **Done.** | Medium |
-| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal | High |
+| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal. Today must stay extremely useful and motivating. Ask the owner to switch to medium first. | Medium |
 | 3 | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work | Medium |
-| 4 | My plan and My playbook as one page you read and tap to edit, like the lists | High |
-| 5 | Setup down to about ten screens; the self-check and teaching screens move to "How Daybook works" and the first lessons | High |
-| 6 | Learn: one path, numbered in order, one lock line; Journal day rows; More and Settings as one tab | Medium |
+| 4 | My plan and My playbook as one page (Why, Plans, Lists, Learned) that reads like a page and changes in place. **Done.** | High |
+| 5 | Setup keeps every screen; they are there for a reason. **Later, once the remapping is finished:** rework the setup screens' look, and bring back the old app's pictures of the app itself (`legacy/index.html` `obPicToday`: a small phone showing Today with notes pointing at the flame, the lesson and SOS; `obPicSos` with the tab bar). The owner found the old setup visuals much better. | High |
+| 6 | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows | Medium |
 
 Earlier tiers, all done:
 

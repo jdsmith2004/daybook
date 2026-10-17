@@ -43,7 +43,6 @@ const NAMES: Record<string, string> = {
   plan: 'My plan',
   settings: 'Settings',
   miles: 'Milestones',
-  book: 'My playbook',
   reasons: 'My reasons',
   'help/index': 'Get help',
   'help/[id]': 'Back',

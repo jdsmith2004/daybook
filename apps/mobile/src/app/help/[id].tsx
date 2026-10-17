@@ -23,7 +23,7 @@ const urgePlan = () => router.push({ pathname: '/plan', params: { pane: 'plans',
 export default function HelpPageRoute() {
   const { id, sub } = useLocalSearchParams<{ id: string; sub?: string }>();
   if (id === 'plan') return <Redirect href={{ pathname: '/plan', params: { pane: 'plans', ...(sub ? { sub } : {}) } }} />;
-  if (id === 'playbook') return <Redirect href="/book" />;
+  if (id === 'playbook') return <Redirect href={{ pathname: '/plan', params: { pane: 'learned' } }} />;
   if (id === 'sources') return <Sources />;
   if (!(id in HELP_PAGES)) return <Redirect href="/help" />;
   const pg = HELP_PAGES[id as HelpPage];
@@ -53,7 +53,7 @@ function People() {
         ) : (
           <>
             <P>One person you can text when it is hard. Add their name in My plan, and Reach a person will start with them.</P>
-            <LinkCard icon="shield" title="Pick a safe person" sub="In My plan" onPress={() => router.push('/plan')} />
+            <LinkCard icon="shield" title="Pick a safe person" sub="In My plan" onPress={() => router.push({ pathname: '/plan', params: { to: 'safe' } })} />
           </>
         )}
       </Sec>

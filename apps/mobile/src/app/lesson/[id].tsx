@@ -406,7 +406,7 @@ export default function LessonScreen() {
                 Tap any other answer to read its comment.
               </T>
             ) : null}
-            {card.sv && pk != null ? <T tone="mintText">✓ Saved to your playbook</T> : null}
+            {card.sv && pk != null ? <T tone="mintText">✓ Saved to My plan</T> : null}
           </>
         );
         foot = (

@@ -35,7 +35,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { BrainArt, Embers, Flames, Missions, WaitPicker } from '@/components/rekindle';
-import { SceneFrame } from '@/components/scene';
+import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -339,7 +339,11 @@ export default function Log() {
         ) : null}
         {lit && honor ? <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T> : null}
         {e.line ? <LineNote b={e.line.b} rest={e.line.rest} night /> : null}
-        {lit ? <Button label="What just happened?" onPress={() => go('rk1')} /> : null}
+        {lit ? (
+          <Dock>
+            <Button label="What just happened?" onPress={() => go('rk1')} />
+          </Dock>
+        ) : null}
       </>
     );
     footer = <Link label={hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now'} onPress={close} tone="muted" />;
@@ -361,13 +365,15 @@ export default function Log() {
         </T>
         <T style={s.center}>{card.p}</T>
         {card.fact ? <Fact text={card.fact} src={card.src!} /> : null}
-        <Button
-          label={last ? 'See my quest' : 'Next'}
-          onPress={() => {
-            if (last) setRkSeen(true);
-            go(last ? 'done' : (RK_STEPS[i + 2] as Step));
-          }}
-        />
+        <Dock>
+          <Button
+            label={last ? 'See my quest' : 'Next'}
+            onPress={() => {
+              if (last) setRkSeen(true);
+              go(last ? 'done' : (RK_STEPS[i + 2] as Step));
+            }}
+          />
+        </Dock>
       </>
     );
     footer = <Link label={hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now'} onPress={close} />;
@@ -390,8 +396,10 @@ export default function Log() {
             Water, step outside, or text someone. One small step keeps one slip from turning into two.
           </T>
         </View>
-        <Button label="Done" onPress={close} />
-        <Link label="Show me the full Rekindle" onPress={() => go('rk0')} />
+        <Dock>
+          <Button label="Done" onPress={close} />
+          <Link label="Show me the full Rekindle" onPress={() => go('rk0')} />
+        </Dock>
       </>
     );
   } else if (outcome === 'slipped') {
@@ -418,7 +426,9 @@ export default function Log() {
         />
         <Prize b={q.prize.b} s={q.prize.s} />
         {noteAndTime}
-        <Button label={q.done} onPress={close} />
+        <Dock>
+          <Button label={q.done} onPress={close} />
+        </Dock>
       </>
     );
   } else {
@@ -462,8 +472,10 @@ export default function Log() {
           </View>
         ) : null}
         {noteAndTime}
-        <Button label="Done" onPress={close} />
-        <Link label="Undo this entry" onPress={undo} />
+        <Dock>
+          <Button label="Done" onPress={close} />
+          <Link label="Undo this entry" onPress={undo} />
+        </Dock>
       </>
     );
   }

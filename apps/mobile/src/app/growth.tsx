@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Flame } from '@/components/flame';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Bar, Button, Icon, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -80,7 +81,9 @@ export default function Growth() {
         {nav(-1, si ? 'Previous form: ' + STAGES[si - 1].name : 'No earlier form', si ? STAGES[si - 1].name : 'Start', si === 0)}
         {nav(1, si < last ? 'Next form: ' + STAGES[si + 1].name : 'No later form', si < last ? STAGES[si + 1].name : 'Top', si === last)}
       </View>
-      <Button label="Done" onPress={closeSheet} />
+      <Dock>
+        <Button label="Done" onPress={closeSheet} />
+      </Dock>
     </SheetFrame>
   );
 }

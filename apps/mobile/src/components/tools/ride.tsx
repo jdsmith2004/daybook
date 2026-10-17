@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { useTheme } from '@/lib/theme';
@@ -119,7 +120,9 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           {CU_SAY[chg]}
         </T>
       ) : null}
-      <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
+      <Dock>
+        <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
+      </Dock>
     </>
   );
 }
@@ -230,7 +233,9 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
         A thought is not an order.
       </T>
       <T style={s.c}>It can be loud and still be wrong. Read the card once more, slowly. You can notice the thought and still choose what you do.</T>
-      <Button label="Done" onPress={() => finish('thought', { msg: 'A thought is not an order.' })} />
+      <Dock>
+        <Button label="Done" onPress={() => finish('thought', { msg: 'A thought is not an order.' })} />
+      </Dock>
     </>
   );
 }
@@ -257,7 +262,9 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
         </T>
         <T style={s.c}>Tap all that fit. Be honest. Nobody else sees this.</T>
         <Tiles list={FWD_A} cur={a} onPick={(v) => toggle(a, setA, v)} />
-        <Button label="Next" onPress={() => setStep(1)} />
+        <Dock>
+          <Button label="Next" onPress={() => setStep(1)} />
+        </Dock>
       </>
     );
   if (step === 1)
@@ -271,13 +278,15 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
         </T>
         <T style={s.c}>Think of a time you let one pass.</T>
         <Tiles list={FWD_B} cur={b} onPick={(v) => toggle(b, setB, v)} />
-        <Button
-          label="Next"
-          onPress={() => {
-            setMem((m) => ({ ...m, fwd: { a: a.slice(0, 7), b: b.slice(0, 7) } }));
-            setStep(2);
-          }}
-        />
+        <Dock>
+          <Button
+            label="Next"
+            onPress={() => {
+              setMem((m) => ({ ...m, fwd: { a: a.slice(0, 7), b: b.slice(0, 7) } }));
+              setStep(2);
+            }}
+          />
+        </Dock>
       </>
     );
   const words = (list: [string, string][], ids: string[]) => list.filter((x) => ids.indexOf(x[0]) >= 0).map((x) => x[1].toLowerCase());
@@ -303,7 +312,9 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
         </Card>
       </View>
       <T style={s.c}>The urge only shows you the next few minutes. You get to pick the next hour.</T>
-      <Button label="Ride it out" onPress={() => finish('forward', { msg: 'You picked the better hour.' })} />
+      <Dock>
+        <Button label="Ride it out" onPress={() => finish('forward', { msg: 'You picked the better hour.' })} />
+      </Dock>
     </>
   );
 }

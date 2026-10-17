@@ -26,6 +26,7 @@ import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
@@ -144,7 +145,9 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
           Ten minutes. That is all.
         </T>
         <T style={s.c}>An urge is a wave: it builds, peaks, and passes. You do not have to fight it or obey it. Just outlast this one.</T>
-        <Button label="Start the 10 minutes" onPress={start} />
+        <Dock>
+          <Button label="Start the 10 minutes" onPress={start} />
+        </Dock>
         <T v="small" tone="muted" style={s.c}>
           {(trigFits('late', clockOf(Date.now())) ? 'If you are in bed, get up and leave the room.' : 'If you can, step into another room.') +
             ' The timer keeps counting if you close the app. Open Daybook again to see how it went.'}

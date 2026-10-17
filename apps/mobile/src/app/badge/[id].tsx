@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { BadgeArt } from '@/components/celebrate';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { useStore } from '@/lib/store';
 
 export default function BadgeSheet() {
@@ -17,7 +18,9 @@ export default function BadgeSheet() {
   if (!b)
     return (
       <SheetFrame title="Badge">
-        <Button label="Done" onPress={closeSheet} />
+        <Dock>
+          <Button label="Done" onPress={closeSheet} />
+        </Dock>
       </SheetFrame>
     );
   const done = badgeDone(b, st);
@@ -28,7 +31,9 @@ export default function BadgeSheet() {
         <T style={{ textAlign: 'center', fontSize: 18 }}>{b.desc}</T>
         <T tone={done ? 'mintText' : 'muted'}>{done ? '✓ Earned. Badges are never taken away.' : `Progress: ${b.now} of ${b.goal}`}</T>
       </View>
-      <Button label="Done" onPress={closeSheet} />
+      <Dock>
+        <Button label="Done" onPress={closeSheet} />
+      </Dock>
     </SheetFrame>
   );
 }

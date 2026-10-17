@@ -278,11 +278,10 @@ export default function LessonScreen() {
               You can read it again in the other length any time.
             </T>
           </View>
-        ) : (
-          <Next label={'Start · about ' + (L.mins || 3) + ' min'} onPress={() => start('f')} />
-        )}
+        ) : null}
       </>
     );
+    if (!lessonHasQuick(L)) foot = <Next label={'Start · about ' + (L.mins || 3) + ' min'} onPress={() => start('f')} />;
   } else if (stage === 'run') {
     const ix = Math.max(0, Math.min(seq.length - 1, i));
     const it = seq[ix];

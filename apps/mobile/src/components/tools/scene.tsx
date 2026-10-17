@@ -29,6 +29,7 @@ import { Field, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -65,7 +66,9 @@ export function Move({ finish, level }: ToolProps) {
           Nice. Notice your breath.
         </T>
         <T style={s.c}>Your heart is going a little faster, and your head had something else to do. That is the point.</T>
-        <Button label="Done" onPress={() => finish('move', { msg: 'Body first. Nice work.' })} />
+        <Dock>
+          <Button label="Done" onPress={() => finish('move', { msg: 'Body first. Nice work.' })} />
+        </Dock>
       </>
     );
   if (!pick)
@@ -124,7 +127,9 @@ export function Move({ finish, level }: ToolProps) {
         Go.
       </T>
       <T style={s.c}>{m[2]}. Keep going until the ring closes, or stop when you feel the shift.</T>
-      <Button label="I am done" kind="ghost" onPress={() => setDone(true)} />
+      <Dock>
+        <Button label="I am done" kind="ghost" onPress={() => setDone(true)} />
+      </Dock>
     </>
   );
 }
@@ -245,7 +250,9 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
           );
         })}
       </View>
-      <Button label={night ? 'Good night' : 'Done'} onPress={go} />
+      <Dock>
+        <Button label={night ? 'Good night' : 'Done'} onPress={go} />
+      </Dock>
       {night ? (
         <T v="small" tone="muted" style={s.c}>
           Tomorrow morning Daybook asks one thing: did the phone stay away?
@@ -309,7 +316,9 @@ export function Surprise({ finish }: ToolProps) {
           Leave the phone here.
         </T>
         <T style={s.c}>Go do it, then come back and tap Done. It does not have to be perfect.</T>
-        <Button label="Done" onPress={() => finish('surprise', { msg: 'Small things add up.' })} />
+        <Dock>
+          <Button label="Done" onPress={() => finish('surprise', { msg: 'Small things add up.' })} />
+        </Dock>
       </>
     );
   return (
@@ -318,10 +327,10 @@ export function Surprise({ finish }: ToolProps) {
       {card(spinning ? '' : 'Try this', spinning ? pick || '…' : pick || '')}
       {spinning ? null : (
         <>
-          <View style={{ alignSelf: 'stretch', gap: 10 }}>
+          <Dock>
             <Button label="I will do it" onPress={() => setDoing(true)} />
             <Button label="Another one" kind="ghost" icon="dice" onPress={spin} />
-          </View>
+          </Dock>
           <T v="small" tone="muted" style={s.c}>
             {menu.length} ideas in your menu. Edit them in My plan, under Lists.
           </T>
@@ -361,7 +370,9 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
               </Card>
             );
           })}
-          <Button label="Done" onPress={() => finish('halt')} />
+          <Dock>
+            <Button label="Done" onPress={() => finish('halt')} />
+          </Dock>
         </>
       ) : (
         <T v="small" tone="muted" style={s.c}>
@@ -419,10 +430,10 @@ export function Message({ finish, exit, sos }: ToolProps) {
           </Card>
         ))}
       </View>
-      <View style={{ alignSelf: 'stretch', gap: 10 }}>
+      <Dock>
         <Button label="I sent it" onPress={() => finish('message', { noCalm: true, reach: true, msg: 'Reaching out takes guts.' })} />
         <Button label={sos ? 'Not now, back to SOS' : 'Not now'} kind="ghost" onPress={exit} />
-      </View>
+      </Dock>
       <T v="small" tone="muted" style={s.c}>
         Only if and when you want to. Calling counts too, and so does sitting with someone.
       </T>
@@ -455,7 +466,9 @@ export function Reasons({ finish }: ToolProps) {
           Add your reasons
         </T>
         <T style={s.c}>Write a few lines about why this matters to you. They show up here when you need them.</T>
-        {note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}
+        <Dock>
+          {note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}
+        </Dock>
       </>
     );
   const n = r.length;
@@ -491,7 +504,9 @@ export function Reasons({ finish }: ToolProps) {
           </Pressable>
         </View>
       ) : null}
-      <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} />
+      <Dock>
+        <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} />
+      </Dock>
     </>
   );
 }

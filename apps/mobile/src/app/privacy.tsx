@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 
 export default function Privacy() {
   return (
@@ -25,7 +26,9 @@ export default function Privacy() {
         removes your account, that copy and your sign-in for good.
       </T>
       <Button kind="ghost" label="Open Settings" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />
-      <Button label="Done" onPress={closeSheet} />
+      <Dock>
+        <Button label="Done" onPress={closeSheet} />
+      </Dock>
     </SheetFrame>
   );
 }

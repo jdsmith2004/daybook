@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { setSoundPref, useSoundPref } from '@/lib/prefs';
 import { play } from '@/lib/sound';
@@ -47,7 +48,9 @@ export function Breathe({ finish, sos, level }: ToolProps) {
           Nice. Notice how you feel.
         </T>
         <T style={s.c}>Shoulders, jaw, hands. Even a little softer is a win.</T>
-        <Button label="Done" onPress={() => finish('breathe')} />
+        <Dock>
+          <Button label="Done" onPress={() => finish('breathe')} />
+        </Dock>
       </>
     );
   if (!startedAt)
@@ -67,7 +70,9 @@ export function Breathe({ finish, sos, level }: ToolProps) {
             <Pick key={m} on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
           ))}
         </View>
-        <Button label="Start" onPress={() => setStartedAt(Date.now())} />
+        <Dock>
+          <Button label="Start" onPress={() => setStartedAt(Date.now())} />
+        </Dock>
       </>
     );
   const P = PATTERNS[pat] || PATTERNS.calm;
@@ -125,7 +130,9 @@ export function Ground({ finish, level }: ToolProps) {
           You are here.
         </T>
         <T style={s.c}>Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now.</T>
-        <Button label="Done" onPress={() => finish('ground', { msg: 'You came back to the room.' })} />
+        <Dock>
+          <Button label="Done" onPress={() => finish('ground', { msg: 'You came back to the room.' })} />
+        </Dock>
       </>
     );
   const g = GROUND[i];
@@ -166,14 +173,16 @@ export function Ground({ finish, level }: ToolProps) {
       <T v="small" tone="muted" style={s.c}>
         {n >= g[0] ? 'All ' + g[0] + ' found.' : n + ' of ' + g[0] + '. Tap a circle each time you find one.'}
       </T>
-      <Button
-        label={i === GROUND.length - 1 ? 'Finish' : 'Next'}
-        disabled={n < g[0]}
-        onPress={() => {
-          setI(i + 1);
-          setN(0);
-        }}
-      />
+      <Dock>
+        <Button
+          label={i === GROUND.length - 1 ? 'Finish' : 'Next'}
+          disabled={n < g[0]}
+          onPress={() => {
+            setI(i + 1);
+            setN(0);
+          }}
+        />
+      </Dock>
     </>
   );
 }

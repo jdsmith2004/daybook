@@ -89,6 +89,12 @@ export function SceneFrame({
   );
 }
 
+/** the main button of a full-screen moment, at the bottom of the screen where the thumb is (see CLAUDE.md). Put it as a
+    direct child of the frame's content; everything above stays where it is. */
+export function Dock({ children }: { children: ReactNode }) {
+  return <View style={s.dock}>{children}</View>;
+}
+
 /* the sheet below the horizon: edge to edge on a phone, a floating card on a wide screen */
 function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
   const c = useTheme();
@@ -117,6 +123,7 @@ const s = StyleSheet.create({
   dot: { flex: 1, height: 6, borderRadius: 3 },
   card: { flexGrow: 1, alignItems: 'center', gap: 14, paddingTop: 8 },
   foot: { alignItems: 'center', paddingTop: 4 },
+  dock: { marginTop: 'auto', alignSelf: 'stretch', gap: 10, paddingTop: 10 },
   sheet: {
     alignSelf: 'stretch',
     gap: 14,

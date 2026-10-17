@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { DateStep } from '@/components/date-step';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Card, Chip, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -57,7 +58,9 @@ export default function Mode() {
       <T v="small" tone="muted">
         Your log is never touched. You can change this whenever you like.
       </T>
-      <Button label="Done" onPress={closeSheet} />
+      <Dock>
+        <Button label="Done" onPress={closeSheet} />
+      </Dock>
     </SheetFrame>
   );
 }

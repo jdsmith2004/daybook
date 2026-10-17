@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Field, Link } from '@/components/choices';
-import { SceneFrame } from '@/components/scene';
+import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -28,7 +28,9 @@ export default function Deeper() {
           That slip is not here anymore.
         </T>
         <T style={s.c}>It may have been removed. Nothing else changed.</T>
-        <Button label="Close" onPress={close} />
+        <Dock>
+          <Button label="Close" onPress={close} />
+        </Dock>
       </SceneFrame>
     );
 
@@ -58,7 +60,7 @@ export default function Deeper() {
             />
           </View>
         </Card>
-        <View style={{ alignSelf: 'stretch', gap: 10 }}>
+        <Dock>
           <Button
             label="I told them"
             onPress={() => {
@@ -79,10 +81,10 @@ export default function Deeper() {
             }}
           />
           <Button label="Not now" kind="ghost" onPress={close} />
-        </View>
-        <T v="small" tone="muted" style={s.c}>
-          Calling counts too, and so does telling them in person.
-        </T>
+          <T v="small" tone="muted" style={s.c}>
+            Calling counts too, and so does telling them in person.
+          </T>
+        </Dock>
       </SceneFrame>
     );
   }

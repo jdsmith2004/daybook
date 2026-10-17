@@ -8,6 +8,7 @@ import { EntryRows } from '@/components/entry-rows';
 import { Stepper, YesNo } from '@/components/form';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Card, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 
@@ -49,7 +50,9 @@ export default function DaySheet() {
           />
         </View>
       </Card>
-      <Button label="Done" onPress={closeSheet} />
+      <Dock>
+        <Button label="Done" onPress={closeSheet} />
+      </Dock>
     </SheetFrame>
   );
 }

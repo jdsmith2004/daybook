@@ -8,6 +8,7 @@ import { Flame } from '@/components/flame';
 import { PointsList } from '@/components/points-list';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Bar, Button, T } from '@/components/ui';
+import { Dock } from '@/components/scene';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -35,10 +36,10 @@ export default function Points() {
       <T>Points are how your flame grows. You earn them for honest, small steps. They only go up, and a slip never takes any away.</T>
       <SheetH title="What earns points" />
       <PointsList />
-      <View style={s.actions}>
+      <Dock>
         <Button kind="ghost" label="See all twelve forms" onPress={() => router.push('/growth')} />
         <Button label="Done" onPress={closeSheet} />
-      </View>
+      </Dock>
     </SheetFrame>
   );
 }
@@ -46,5 +47,4 @@ export default function Points() {
 const s = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   big: { fontFamily: font.display, fontSize: 30 },
-  actions: { gap: 8 },
 });

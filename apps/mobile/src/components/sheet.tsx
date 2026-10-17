@@ -55,8 +55,9 @@ export function SheetH({ title, aside }: { title: string; aside?: string }) {
 }
 
 const s = StyleSheet.create({
-  scroll: { paddingHorizontal: 16, alignItems: 'center' },
-  col: { width: '100%', maxWidth: MAX_WIDTH, gap: 14 },
+  scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center' },
+  /* it fills the screen, so a Done in a Dock sits at the bottom */
+  col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   h: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginTop: 4 },

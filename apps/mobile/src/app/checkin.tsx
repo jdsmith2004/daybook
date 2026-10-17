@@ -173,7 +173,9 @@ export default function Checkin() {
             placeholder="Rough day at work. Texted a friend."
             onChangeText={(t) => set({ ...form, n: t })}
           />
-          {any ? null : (
+          {any ? (
+            <Button label={k === tk ? 'Save today' : 'Save this day'} onPress={save} />
+          ) : (
             <T v="small" tone="muted" style={s.c}>
               Go back and answer at least one, then save.
             </T>
@@ -184,11 +186,6 @@ export default function Checkin() {
         </View>
       </>
     );
-    footer = any ? (
-      <View style={s.foot}>
-        <Button label={k === tk ? 'Save today' : 'Save this day'} onPress={save} />
-      </View>
-    ) : null;
   } else {
     const g = gameCompute(snap.days, st, snap.reviews, tk);
     const gain = Math.max(0, g.pts - pts0);

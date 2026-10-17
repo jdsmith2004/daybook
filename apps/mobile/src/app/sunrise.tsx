@@ -28,7 +28,7 @@ import { StyleSheet, View } from 'react-native';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { LineNote } from '@/components/line-note';
 import { Flames, Missions } from '@/components/rekindle';
-import { SceneFrame } from '@/components/scene';
+import { Dock, SceneFrame } from '@/components/scene';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -65,7 +65,9 @@ export default function Sunrise() {
           This entry is not here anymore.
         </T>
         <T style={s.c}>It may have been removed. Nothing else changed.</T>
-        <Button label="Close" onPress={close} />
+        <Dock>
+          <Button label="Close" onPress={close} />
+        </Dock>
       </SceneFrame>
     );
 
@@ -121,7 +123,9 @@ export default function Sunrise() {
         <T style={s.c}>Yesterday is logged and done, and nothing reset. Two minutes to finish your quest.</T>
         {run0 ? <LineNote b={`Your ${run0}-day run is on the line.`} rest="Finish this and it keeps going." /> : null}
         <Flames on={[r.m1, r.m2, r.m3]} big />
-        <Button label="Start" onPress={next} />
+        <Dock>
+          <Button label="Start" onPress={next} />
+        </Dock>
       </>
     );
   } else if (step === 'so') {
@@ -261,7 +265,9 @@ export default function Sunrise() {
             ) : null}
           </Card>
         ) : null}
-        <Button label="Start my day" onPress={close} />
+        <Dock>
+          <Button label="Start my day" onPress={close} />
+        </Dock>
       </>
     );
   }

@@ -2,7 +2,7 @@
    - TalkCard on Today, while a talk-through still matters: waiting to decide, time to decide, a changed plan before its
      moment, or "look back" (core: talkDue)
    - TalkDoor, the way in from the tools (in Learn and in SOS) and from a check-in that says caring is low */
-import { talkClock, talkDue, TALK_MOVES, talkPlanLine, type Snapshot } from '@daybook/core';
+import { talkClock, talkDue, talkMoveWords, talkPlanLine, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -28,7 +28,7 @@ export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
             : 'When it has passed, look back.';
   const sub =
     d.due === 'waiting'
-      ? 'Until then: ' + (TALK_MOVES[t.m[0]]?.[0] || 'something kind for yourself').toLowerCase() + '.'
+      ? 'Until then: ' + (talkMoveWords(t)[0] || 'something kind for yourself').toLowerCase() + '.'
       : d.due === 'decide'
         ? 'You chose to decide now. Choose with your eyes open.'
         : d.due === 'plan'

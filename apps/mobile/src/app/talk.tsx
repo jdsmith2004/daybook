@@ -19,6 +19,7 @@ import {
   TALK_FOR,
   TALK_MOVES,
   TALK_NEEDS,
+  TALK_OWN_LEN,
   TALK_PATHS,
   TALK_SIGNS,
   TALK_SRC,
@@ -32,10 +33,12 @@ import {
   talkEvidenceLine,
   talkMomentsNow,
   talkMomentTime,
+  talkMoveWords,
   talkMoves,
   talkNeedWord,
   talkPlanLine,
   talkReflect,
+  talkTypedWhys,
   talkWaitTime,
   talkWhys,
   type Talk,
@@ -52,6 +55,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
+import { Field, Link } from '@/components/choices';
 import { Reveal } from '@/components/form';
 import { CountUp } from '@/components/count-up';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
@@ -138,7 +142,16 @@ export default function TalkIt() {
   const [ci, setCi] = useState(0);
   const [remind, setRemind] = useState(remindersOffered);
   const [reminded, setReminded] = useState(false);
-  const [after, setAfter] = useState<{ went: boolean; f: string[]; g: number | null; c: string[] }>({ went: false, f: [], g: null, c: [] });
+  const [after, setAfter] = useState<{ went: boolean; f: string[]; g: number | null; c: string[]; fx: string[]; cx: string[] }>({
+    went: false,
+    f: [],
+    g: null,
+    c: [],
+    fx: [],
+    cx: [],
+  });
+  /* the step where an answer in the person's own words is being typed */
+  const [own, setOwn] = useState<Step | null>(null);
   const [pts0] = useState(() => (st ? gameCompute(snap.days, st, snap.reviews, tk).pts : 0));
   const seen = Array.isArray(sos.mem.talkSeen) ? (sos.mem.talkSeen as string[]) : [];
   const [seen0] = useState(seen);
@@ -159,11 +172,13 @@ export default function TalkIt() {
   if (!st) return null;
   const set = (p: Partial<Talk>) => setTalk((t) => ({ ...t, ...p }));
   const go = (next: Step) => {
+    setOwn(null);
     setHist((h) => h.concat(step));
     setDir(1);
     setStep(next);
   };
   const back = () => {
+    setOwn(null);
     if (step === 'mind' && ci > 0) {
       setDir(-1);
       setCi(ci - 1);
@@ -179,7 +194,19 @@ export default function TalkIt() {
   };
   const toggle = <K extends string>(list: K[], k: K) => (list.indexOf(k) >= 0 ? list.filter((x) => x !== k) : list.concat(k));
   const persist = (t: Talk) => update((s0) => ({ ...s0, days: saveTalk(s0.days, day, t) }));
-  const needWord = talkNeedWord(talk.n);
+  const needWord = talkNeedWord(talk.n, talk.nx);
+  const mx = talk.mx || [];
+  const ownField = (placeholder: string, onSave: (t: string) => void) => (
+    <OwnField
+      placeholder={placeholder}
+      onSave={(t) => {
+        onSave(t);
+        setOwn(null);
+      }}
+      onCancel={() => setOwn(null)}
+    />
+  );
+  const addOwn = (list: string[], t: string) => (list.some((x) => x.toLowerCase() === t.toLowerCase()) ? list : list.concat(t));
   const gain = () => Math.max(0, gameCompute(snap.days, st, snap.reviews, tk).pts - pts0);
 
   /* finishing a path: saved, a reminder if asked for, then the closing screen */
@@ -189,11 +216,7 @@ export default function TalkIt() {
     const at = t.p === 'open' ? now + 3600000 : t.at;
     if (remind && remindersOffered && at) {
       const body =
-        t.p === 'wait'
-          ? 'Time to decide. One minute.'
-          : t.p === 'open'
-            ? 'One minute to look back.'
-            : 'Your plan: ' + t.m.map((m) => TALK_MOVES[m][0]).join('. ') + '.';
+        t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan: ' + talkMoveWords(t).join('. ') + '.';
       scheduleTalk(at, body, '/talk?' + (t.p === 'wait' ? 'decide=' : 'look=') + t.id).then(setReminded);
     }
     if (t.p === 'open') {
@@ -337,14 +360,26 @@ export default function TalkIt() {
         <T v="title" style={s.c} accessibilityRole="header">
           What is the part of you that wants it really after?
         </T>
-        <Dock>
-          <View style={s.list}>
-            {TALK_NEEDS.map(([k, name, sub, ic]) => (
-              <Answer key={k} icon={ic} tone={NEED_TONE[k]} title={name} sub={sub} on={talk.n === k} onPress={() => set({ n: k })} />
-            ))}
-          </View>
-          {next('want', !!talk.n)}
-        </Dock>
+        {own === 'need' ? (
+          ownField('Like: comfort, or control', (t) => set({ n: null, nx: t }))
+        ) : (
+          <Dock>
+            <View style={s.list}>
+              {TALK_NEEDS.map(([k, name, sub, ic]) => (
+                <Answer key={k} icon={ic} tone={NEED_TONE[k]} title={name} sub={sub} on={talk.n === k} onPress={() => set({ n: k, nx: undefined })} />
+              ))}
+              <Answer
+                icon="pencil"
+                tone="accent"
+                title={talk.nx && !talk.n ? talk.nx : 'Something else'}
+                sub={talk.nx && !talk.n ? 'In your own words. Tap to change it.' : 'Say it in your own words'}
+                on={!!talk.nx && !talk.n}
+                onPress={() => setOwn('need')}
+              />
+            </View>
+            {next('want', !!talk.n || !!talk.nx)}
+          </Dock>
+        )}
       </>
     );
   } else if (step === 'want') {
@@ -374,6 +409,8 @@ export default function TalkIt() {
     );
   } else if (step === 'why') {
     const n = talk.w ?? 0;
+    const base = talkWhys(st.reasons || [], talkTypedWhys(snap.days));
+    const whys = base.concat(talk.why.filter((r) => base.indexOf(r) < 0));
     body = (
       <>
         <View style={[s.middle, { justifyContent: 'flex-start', paddingTop: 8 }]}>
@@ -388,15 +425,20 @@ export default function TalkIt() {
               <T v="label" style={s.c}>
                 What is in that {n}?
               </T>
-              <ChipWrap>
-                {talkWhys(st.reasons || []).map((r) => (
-                  <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
-                ))}
-              </ChipWrap>
+              {own === 'why' ? (
+                ownField('Like: being there for my kids', (t) => set({ why: addOwn(talk.why, t) }))
+              ) : (
+                <ChipWrap>
+                  {whys.map((r) => (
+                    <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
+                  ))}
+                  <OwnChip onPress={() => setOwn('why')} />
+                </ChipWrap>
+              )}
             </Appear>
           ) : null}
         </View>
-        <Dock>{next('path')}</Dock>
+        {own === 'why' ? null : <Dock>{next('path')}</Dock>}
       </>
     );
   } else if (step === 'path') {
@@ -430,27 +472,35 @@ export default function TalkIt() {
           Change the plan
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          Meet {needWord} another way.
+          {talk.n ? 'Meet ' + needWord + ' another way.' : 'Meet that need another way.'}
         </T>
         <T style={s.c} tone="muted">
           What you need is real. Pick how you will give it to yourself.
         </T>
-        <Dock>
-          <View style={s.list}>
-            {talkMoves(talk.n).map((k) => (
-              <Answer
-                key={k}
-                multi
-                icon={MOVE_IC[k]}
-                tone={k === 'away' || k === 'block' ? 'accent' : 'mint'}
-                title={TALK_MOVES[k][0]}
-                on={talk.m.indexOf(k) >= 0}
-                onPress={() => set({ m: toggle(talk.m, k) })}
-              />
-            ))}
-          </View>
-          {next('cWhen', talk.m.length > 0)}
-        </Dock>
+        {own === 'cMoves' ? (
+          ownField('Like: play guitar for 20 minutes', (t) => set({ mx: addOwn(mx, t) }))
+        ) : (
+          <Dock>
+            <View style={s.list}>
+              {talkMoves(talk.n).map((k) => (
+                <Answer
+                  key={k}
+                  multi
+                  icon={MOVE_IC[k]}
+                  tone={k === 'away' || k === 'block' ? 'accent' : 'mint'}
+                  title={TALK_MOVES[k][0]}
+                  on={talk.m.indexOf(k) >= 0}
+                  onPress={() => set({ m: toggle(talk.m, k) })}
+                />
+              ))}
+              {mx.map((t) => (
+                <Answer key={'own' + t} multi icon="pencil" tone="mint" title={t} on onPress={() => set({ mx: mx.filter((x) => x !== t) })} />
+              ))}
+              {mx.length < 3 ? <Answer multi icon="plus" tone="accent" title="My own idea" sub="In your own words" onPress={() => setOwn('cMoves')} /> : null}
+            </View>
+            {next('cWhen', talk.m.length + mx.length > 0)}
+          </Dock>
+        )}
       </>
     );
   } else if (step === 'cWhen') {
@@ -544,27 +594,39 @@ export default function TalkIt() {
           One thing to do in the meantime
         </T>
         <T style={s.c} tone="muted">
-          Something that gives you a little {needWord}.
+          {talk.n ? 'Something that gives you a little ' + needWord + '.' : 'Something that meets that need a little.'}
         </T>
-        <Dock>
-          <View style={s.list}>
-            {talkMoves(talk.n).map((k) => (
-              <Answer key={k} icon={MOVE_IC[k]} tone="mint" title={TALK_MOVES[k][0]} on={talk.m[0] === k} onPress={() => set({ m: [k] })} />
-            ))}
-          </View>
-          {remindersOffered && talk.at ? (
-            <View style={s.row}>
-              <Chip label={'Remind me at ' + talkClock(talk.at)} on={remind} onPress={() => setRemind(!remind)} />
+        {own === 'wUntil' ? (
+          ownField('Like: play guitar for 20 minutes', (t) => set({ m: [], mx: [t] }))
+        ) : (
+          <Dock>
+            <View style={s.list}>
+              {talkMoves(talk.n).map((k) => (
+                <Answer key={k} icon={MOVE_IC[k]} tone="mint" title={TALK_MOVES[k][0]} on={talk.m[0] === k} onPress={() => set({ m: [k], mx: undefined })} />
+              ))}
+              <Answer
+                icon="pencil"
+                tone="accent"
+                title={mx[0] && !talk.m.length ? mx[0] : 'My own idea'}
+                sub={mx[0] && !talk.m.length ? 'In your own words. Tap to change it.' : 'In your own words'}
+                on={!!mx[0] && !talk.m.length}
+                onPress={() => setOwn('wUntil')}
+              />
             </View>
-          ) : null}
-          {talk.m.length ? (
-            <Appear by={10} duration={220}>
-              <Button label="Decide later" onPress={() => finishPath(talk)} />
-            </Appear>
-          ) : (
-            <View style={s.btnSpace} />
-          )}
-        </Dock>
+            {remindersOffered && talk.at ? (
+              <View style={s.row}>
+                <Chip label={'Remind me at ' + talkClock(talk.at)} on={remind} onPress={() => setRemind(!remind)} />
+              </View>
+            ) : null}
+            {talk.m.length || mx.length ? (
+              <Appear by={10} duration={220}>
+                <Button label="Decide later" onPress={() => finishPath(talk)} />
+              </Appear>
+            ) : (
+              <View style={s.btnSpace} />
+            )}
+          </Dock>
+        )}
       </>
     );
   } else if (step === 'oLiking') {
@@ -626,7 +688,7 @@ export default function TalkIt() {
           Before
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          How much {needWord} do you expect it to give you?
+          {talk.n ? 'How much ' + needWord + ' do you expect it to give you?' : 'How much of what you need do you expect it to give you?'}
         </T>
         <T style={s.c} tone="muted">
           Remember this number. You will check it afterwards.
@@ -693,7 +755,7 @@ export default function TalkIt() {
           <T v="eyebrow" tone="muted">
             {wait ? 'Until then' : 'Your plan'}
           </T>
-          <Text style={[s.planT, { color: c.ink }]}>{wait ? TALK_MOVES[talk.m[0]]?.[0] : talkPlanLine(talk)}</Text>
+          <Text style={[s.planT, { color: c.ink }]}>{wait ? talkMoveWords(talk)[0] : talkPlanLine(talk)}</Text>
           <T v="small" tone="muted">
             {reminded ? 'Daybook will remind you. ' : ''}It waits on Today.
           </T>
@@ -723,7 +785,7 @@ export default function TalkIt() {
             tone={change ? 'mint' : 'violet'}
             title={change ? 'Yes, it held' : 'Yes, I went ahead'}
             onPress={() => {
-              if (change) finishLook({ went: false, f: [], g: null, c: [] });
+              if (change) finishLook({ ...after, went: false });
               else {
                 setAfter({ ...after, went: true });
                 go('lFeel');
@@ -738,7 +800,7 @@ export default function TalkIt() {
               if (change) {
                 setAfter({ ...after, went: true });
                 go('lFeel');
-              } else finishLook({ went: false, f: [], g: null, c: [] });
+              } else finishLook({ ...after, went: false });
             }}
           />
         </Dock>
@@ -756,14 +818,22 @@ export default function TalkIt() {
         <T style={s.c} tone="muted">
           Just notice. Pick any that fit.
         </T>
-        <Dock>
-          <ChipWrap>
-            {TALK_AFTER_FEEL.map(([k, w]) => (
-              <AnswerChip key={k} label={w} tone="violet" on={after.f.indexOf(k) >= 0} onPress={() => setAfter({ ...after, f: toggle(after.f, k) })} />
-            ))}
-          </ChipWrap>
-          {next('lGave', after.f.length > 0)}
-        </Dock>
+        {own === 'lFeel' ? (
+          ownField('Like: numb', (t) => setAfter({ ...after, fx: addOwn(after.fx, t) }))
+        ) : (
+          <Dock>
+            <ChipWrap>
+              {TALK_AFTER_FEEL.map(([k, w]) => (
+                <AnswerChip key={k} label={w} tone="violet" on={after.f.indexOf(k) >= 0} onPress={() => setAfter({ ...after, f: toggle(after.f, k) })} />
+              ))}
+              {after.fx.map((t) => (
+                <AnswerChip key={'own' + t} label={t} tone="violet" on onPress={() => setAfter({ ...after, fx: after.fx.filter((x) => x !== t) })} />
+              ))}
+              {after.fx.length < 3 ? <OwnChip onPress={() => setOwn('lFeel')} /> : null}
+            </ChipWrap>
+            {next('lGave', after.f.length + after.fx.length > 0)}
+          </Dock>
+        )}
       </>
     );
   } else if (step === 'lGave') {
@@ -773,7 +843,7 @@ export default function TalkIt() {
           Looking back
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          How much {needWord} did it actually give you?
+          {talk.n ? 'How much ' + needWord + ' did it actually give you?' : 'How much of what you needed did it actually give you?'}
         </T>
         {talk.e != null ? (
           <T style={s.c} tone="muted">
@@ -801,37 +871,46 @@ export default function TalkIt() {
         <T style={s.c} tone="muted">
           Not to judge it. Just to see it.
         </T>
-        <Dock>
-          <ChipWrap>
-            {TALK_COST.map(([k, w]) => (
-              <AnswerChip
-                key={k}
-                label={w}
-                tone="sun"
-                on={after.c.indexOf(k) >= 0}
-                onPress={() =>
-                  setAfter({
-                    ...after,
-                    c:
-                      k === 'none'
-                        ? ['none']
-                        : toggle(
-                            after.c.filter((x) => x !== 'none'),
-                            k,
-                          ),
-                  })
-                }
-              />
-            ))}
-          </ChipWrap>
-          {after.c.length ? (
-            <Appear by={10} duration={220}>
-              <Button label="Next" onPress={() => finishLook(after)} />
-            </Appear>
-          ) : (
-            <View style={s.btnSpace} />
-          )}
-        </Dock>
+        {own === 'lCost' ? (
+          ownField('Like: a good morning', (t) => setAfter({ ...after, c: after.c.filter((x) => x !== 'none'), cx: addOwn(after.cx, t) }))
+        ) : (
+          <Dock>
+            <ChipWrap>
+              {TALK_COST.map(([k, w]) => (
+                <AnswerChip
+                  key={k}
+                  label={w}
+                  tone="sun"
+                  on={after.c.indexOf(k) >= 0}
+                  onPress={() =>
+                    setAfter({
+                      ...after,
+                      c:
+                        k === 'none'
+                          ? ['none']
+                          : toggle(
+                              after.c.filter((x) => x !== 'none'),
+                              k,
+                            ),
+                      cx: k === 'none' ? [] : after.cx,
+                    })
+                  }
+                />
+              ))}
+              {after.cx.map((t) => (
+                <AnswerChip key={'own' + t} label={t} tone="sun" on onPress={() => setAfter({ ...after, cx: after.cx.filter((x) => x !== t) })} />
+              ))}
+              {after.cx.length < 3 ? <OwnChip onPress={() => setOwn('lCost')} /> : null}
+            </ChipWrap>
+            {after.c.length + after.cx.length ? (
+              <Appear by={10} duration={220}>
+                <Button label="Next" onPress={() => finishLook(after)} />
+              </Appear>
+            ) : (
+              <View style={s.btnSpace} />
+            )}
+          </Dock>
+        )}
       </>
     );
   } else {
@@ -911,6 +990,54 @@ export default function TalkIt() {
         </Appear>
       )}
     </SceneFrame>
+  );
+}
+
+/* an answer in the person's own words. The box and its button sit together near the top, so the keyboard never covers them. */
+function OwnField({ placeholder, onSave, onCancel }: { placeholder: string; onSave: (t: string) => void; onCancel: () => void }) {
+  const [text, setText] = useState('');
+  const save = () => {
+    const t = text.replace(/\s+/g, ' ').trim().slice(0, TALK_OWN_LEN);
+    if (t) onSave(t);
+  };
+  return (
+    <Appear by={8} duration={220} style={s.own}>
+      <Field
+        label="In your own words"
+        hideLabel
+        value={text}
+        onChangeText={setText}
+        maxLength={TALK_OWN_LEN}
+        autoFocus
+        placeholder={placeholder}
+        returnKeyType="done"
+        onSubmitEditing={save}
+      />
+      <View style={s.ownRow}>
+        <View style={{ flex: 1 }}>
+          <Button label="Add" onPress={save} />
+        </View>
+        <Link label="Cancel" onPress={onCancel} />
+      </View>
+    </Appear>
+  );
+}
+
+/* the small "+ Your own" chip at the end of a list of chips */
+function OwnChip({ onPress }: { onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Add your own"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.ownChip, { borderColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name="plus" size={16} color={c.accentText} />
+      <Text style={[s.ownChipT, { color: c.accentText }]}>Your own</Text>
+    </Pressable>
   );
 }
 
@@ -1041,6 +1168,19 @@ const s = StyleSheet.create({
   },
   planT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
   pts: { fontFamily: font.display, fontSize: 18, textAlign: 'center' },
+  own: { alignSelf: 'stretch', gap: 10, marginTop: 4 },
+  ownRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  ownChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
+  ownChipT: { fontFamily: font.bodySemi, fontSize: 15.5 },
   srcs: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   src: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%', minHeight: 32, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1.5 },
   srcT: { fontFamily: font.bodySemi, fontSize: 12.5, flexShrink: 1 },

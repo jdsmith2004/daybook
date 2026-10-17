@@ -15,8 +15,12 @@ import {
   talkMomentsNow,
   talkMomentTime,
   talkMoves,
+  talkMoveWords,
+  talkNeedWord,
+  TALK_OWN_LEN,
   talkPlanLine,
   talkReflect,
+  talkTypedWhys,
   talkWaitTime,
   talkWhys,
   type Talk,
@@ -57,9 +61,21 @@ describe('talking it through', () => {
       'The people I love',
       'Sleeping well tonight',
       'Waking up proud',
+      'My time',
       'My focus tomorrow',
       'Keeping my word to myself',
     ]);
+  });
+  it('brings back reasons typed in earlier talk-throughs, and not the common ones', () => {
+    let days: Days = {};
+    days = saveTalk(days, k, base({ id: 'a', why: ['Waking up proud', 'Being there for my kids'] }), T0);
+    expect(talkTypedWhys(days)).toEqual(['Being there for my kids']);
+    expect(talkWhys([], talkTypedWhys(days))[0]).toBe('Being there for my kids');
+  });
+  it('takes a need in your own words when none of the list fits', () => {
+    expect(talkNeedWord(null, 'control')).toBe('control');
+    expect(talkNeedWord('rest', 'control')).toBe('rest');
+    expect(talkNeedWord(null)).toBe('it');
   });
   it('offers moves for the need, then the two that break the earliest links', () => {
     expect(talkMoves('close')).toEqual(['text', 'call', 'people', 'away', 'block']);
@@ -98,6 +114,27 @@ describe('the record', () => {
     const d = normDay({ d: k, events: [], p: { c: 1, tt: [base()] } }, k);
     expect(d.p!.tt).toEqual([base()]);
     expect('tt' in normDay({ d: k, events: [], p: { c: 1 } }, k).p!).toBe(false);
+  });
+  it('keeps answers in your own words, short and once each, and only when there are some', () => {
+    const long = 'x'.repeat(90);
+    const x = normTalk({
+      ...base({ n: null }),
+      nx: '  feeling   in control ',
+      mx: ['Play guitar', 'play guitar', long, 'Read', 'Call Sam', 4],
+      a: { went: true, t: T0, f: [], g: 3, c: ['time'], fx: ['Numb'], cx: [] },
+    })!;
+    expect(x.nx).toBe('feeling in control');
+    expect(x.mx).toEqual(['Play guitar', 'x'.repeat(TALK_OWN_LEN), 'Read']);
+    expect(x.a!.fx).toEqual(['Numb']);
+    expect('cx' in x.a!).toBe(false);
+    expect('nx' in normTalk({ ...base(), nx: 'control' })!).toBe(false);
+    expect('mx' in normTalk(base())!).toBe(false);
+  });
+  it('reads your own moves in the plan line', () => {
+    expect(talkPlanLine({ n: null, nx: 'control', m: ['away'], mx: ['Play guitar.'], mo: 'evening' })).toBe(
+      'This evening, when I want control, I will put the device out of reach and play guitar.',
+    );
+    expect(talkMoveWords({ m: ['walk'], mx: ['Play guitar'] })).toEqual(['Walk it off', 'Play guitar']);
   });
   it('a new talk-through is a calm move; changing it is not', () => {
     let days: Days = saveTalk({}, k, base(), T0);

@@ -2946,9 +2946,9 @@ const UR_TR_T={p:'it passed',s:'still strong',x:'slipped'};
 function urMinText(m){return m<1?'under a minute':m===1?'1 minute':m+' minutes'}
 const DONE_MSG={ground:'You came back to the room.',reasons:'Good to remember.',surprise:'Small things add up.',curious:'You watched it. That is the skill.',
  move:'Body first. Nice work.',forward:'You picked the better hour.',thought:'A thought is not an order.',bed:'Ready for tonight.'};
-const CU_BODY=[['chest','Chest'],['stomach','Stomach'],['throat','Throat or jaw'],['hands','Hands or arms'],['head','Head'],['all','All over'],['unsure','Not sure']];
+const CU_BODY=[['chest','Chest'],['stomach','Stomach'],['groin','Groin'],['throat','Throat or jaw'],['hands','Hands or arms'],['head','Head'],['all','All over'],['unsure','Not sure']];
 const CU_FEEL=[['tight','Tight'],['hot','Hot'],['buzzy','Buzzy'],['heavy','Heavy'],['hollow','Hollow'],['restless','Restless'],['else','Something else']];
-const CU_WHERE={chest:'in your chest',stomach:'in your stomach',throat:'in your throat or jaw',hands:'in your hands or arms',head:'in your head',all:'all over'};
+const CU_WHERE={chest:'in your chest',stomach:'in your stomach',groin:'in your groin',throat:'in your throat or jaw',hands:'in your hands or arms',head:'in your head',all:'all over'};
 const CU_CHG=[['bigger','Bigger'],['same','About the same'],['smaller','Smaller']];
 const CU_SAY={bigger:'Waves often build before they fall. Keep watching. You do not have to do anything about it.',same:'Steady is fine. You are watching it, not obeying it.',smaller:'That is the wave going down, and you let it.'};
 const CU_MS=90000;

@@ -162,7 +162,8 @@ export const TALK_NEEDS: [TalkNeed, string, string, string, string][] = [
   ['close', 'Closeness', 'To feel wanted, or less alone', 'chat', 'closeness'],
   ['bored', 'Something to do', 'Bored, restless, nothing planned', 'dice', 'something to do'],
 ];
-export const talkNeedWord = (n: TalkNeed | null) => TALK_NEEDS.find((x) => x[0] === n)?.[4] || 'it';
+/** the need as it reads in "when I want ...": one of the list, or the person's own words */
+export const talkNeedWord = (n: TalkNeed | null, own?: string | null) => TALK_NEEDS.find((x) => x[0] === n)?.[4] || (own && own.trim()) || 'it';
 
 /** what to say back after "How much do you want tonight to go differently?" (0 to 10) */
 export function talkReflect(n: number): string {
@@ -171,15 +172,25 @@ export function talkReflect(n: number): string {
   if (n <= 6) return 'You said ' + n + '. Part of you wants this, and part of you wants something else. Both are real.';
   return 'You said ' + n + '. Most of you wants a different night. A plan can make that easier.';
 }
-/** "What is in that number?": the person's own reasons first, then a few common ones */
-export function talkWhys(reasons: string[]): string[] {
-  const own = reasons.map((r) => String(r || '').trim()).filter(Boolean);
-  const base = ['Sleeping well tonight', 'Waking up proud', 'The people I love', 'My focus tomorrow', 'Keeping my word to myself'];
+const TALK_WHY_BASE = ['Sleeping well tonight', 'Waking up proud', 'The people I love', 'My time', 'My focus tomorrow', 'Keeping my word to myself'];
+/** "What is in that number?": the person's own reasons first (from setup, then ones typed in earlier talk-throughs),
+    then a few common ones */
+export function talkWhys(reasons: string[], typed: string[] = []): string[] {
+  const own = reasons
+    .concat(typed.slice(-3).reverse())
+    .map((r) => String(r || '').trim())
+    .filter(Boolean);
   const seen = new Set<string>();
   return own
-    .concat(base)
+    .concat(TALK_WHY_BASE)
     .filter((r) => (seen.has(r.toLowerCase()) ? false : (seen.add(r.toLowerCase()), true)))
-    .slice(0, 7);
+    .slice(0, 9);
+}
+/** the reasons typed in earlier talk-throughs that are not on the common list (the latest last) */
+export function talkTypedWhys(days: Days): string[] {
+  const out: string[] = [];
+  for (const { talk } of talksOf(days)) for (const r of talk.why) if (out.indexOf(r) < 0 && TALK_WHY_BASE.indexOf(r) < 0) out.push(r);
+  return out;
 }
 
 /* ---------- the three paths ---------- */
@@ -283,13 +294,29 @@ export function talkClock(t: number): string {
   return (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
 }
 
+/** a move in the person's own words, as it reads after "I will" */
+const ownThen = (x: string) => {
+  const t = x.trim().replace(/[.!]+$/, '');
+  return /^I\b/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+};
+/** the moves of a talk-through, as they read on a card: the picked ones, then the person's own */
+export function talkMoveWords(t: Pick<Talk, 'm' | 'mx'>): string[] {
+  return t.m
+    .map((id) => TALK_MOVES[id as TalkMove]?.[0])
+    .filter(Boolean)
+    .concat(t.mx || []);
+}
+
 /** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach." */
-export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'>): string {
+export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx'>>): string {
   const mo = TALK_MOMENTS.find((x) => x[0] === t.mo);
   const lead = !mo || mo[0] === 'now' ? 'Right now' : mo[1];
-  const thens = t.m.map((id) => TALK_MOVES[id as TalkMove]?.[1]).filter(Boolean);
+  const thens = t.m
+    .map((id) => TALK_MOVES[id as TalkMove]?.[1])
+    .filter(Boolean)
+    .concat((t.mx || []).map(ownThen));
   const then = thens.length > 1 ? thens.slice(0, -1).join(', ') + ' and ' + thens[thens.length - 1] : thens[0] || 'do what I planned';
-  return lead + ', when I want ' + talkNeedWord(t.n) + ', I will ' + then + '.';
+  return lead + ', when I want ' + talkNeedWord(t.n, t.nx) + ', I will ' + then + '.';
 }
 
 /* ---------- eyes open ---------- */
@@ -297,6 +324,7 @@ export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'>): string {
 export const TALK_WHERE: [string, string][] = [
   ['chest', 'Chest'],
   ['stomach', 'Stomach'],
+  ['groin', 'Groin'],
   ['throat', 'Throat or jaw'],
   ['hands', 'Hands or arms'],
   ['head', 'Head'],
@@ -339,6 +367,9 @@ export interface TalkAfter {
   f: string[];
   g: number | null;
   c: string[];
+  /** feelings and costs in the person's own words (only when there are some) */
+  fx?: string[];
+  cx?: string[];
 }
 export interface Talk {
   id: string;
@@ -346,6 +377,8 @@ export interface Talk {
   t: number;
   s: TalkSign[];
   n: TalkNeed | null;
+  /** the need in the person's own words, when none of the list fits (only when there is one) */
+  nx?: string;
   /** how much a different night is wanted, 0 to 10 */
   w: number | null;
   /** what is in that number (the person's words) */
@@ -353,6 +386,8 @@ export interface Talk {
   p: TalkPath | null;
   /** change: the moves; wait: the one thing until then */
   m: TalkMove[];
+  /** moves in the person's own words (only when there are some) */
+  mx?: string[];
   /** change: the moment; wait: the decide-later choice */
   mo: string | null;
   /** change: the moment's time; wait: when to decide (ms) */
@@ -373,6 +408,18 @@ const pick = <T extends string>(a: unknown, ok: readonly string[], max = 8): T[]
   Array.isArray(a) ? ([...new Set(a.filter((x) => typeof x === 'string' && ok.indexOf(x) >= 0))].slice(0, max) as T[]) : [];
 const score = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 10 ? v : null);
 const time = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
+/** answers in the person's own words: trimmed, short, no repeats */
+export const TALK_OWN_LEN = 60;
+export function talkOwn(a: unknown, max = 3): string[] {
+  if (!Array.isArray(a)) return [];
+  const out: string[] = [];
+  for (const x of a) {
+    const t = typeof x === 'string' ? x.replace(/\s+/g, ' ').trim().slice(0, TALK_OWN_LEN) : '';
+    if (t && !out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t);
+  }
+  return out.slice(0, max);
+}
+const withOwn = <T extends object>(o: T, k: string, v: string[] | string) => (v.length ? Object.assign(o, { [k]: v }) : o);
 
 /** one saved talk-through, cleaned, or null when it is not one */
 export function normTalk(x: unknown): Talk | null {
@@ -381,7 +428,7 @@ export function normTalk(x: unknown): Talk | null {
   const t = time(v.t);
   if (typeof v.id !== 'string' || !v.id || v.id.length > 24 || t == null) return null;
   const a = v.a && typeof v.a === 'object' ? (v.a as Record<string, unknown>) : null;
-  return {
+  const out: Talk = {
     id: v.id,
     t,
     s: pick<TalkSign>(v.s, SIGNS),
@@ -402,9 +449,16 @@ export function normTalk(x: unknown): Talk | null {
     e: score(v.e),
     a:
       a && typeof a.went === 'boolean' && time(a.t) != null
-        ? { went: a.went, t: a.t as number, f: pick(a.f, ids(TALK_AFTER_FEEL)), g: score(a.g), c: pick(a.c, ids(TALK_COST)) }
+        ? withOwn(
+            withOwn({ went: a.went, t: a.t as number, f: pick(a.f, ids(TALK_AFTER_FEEL)), g: score(a.g), c: pick(a.c, ids(TALK_COST)) }, 'fx', talkOwn(a.fx)),
+            'cx',
+            talkOwn(a.cx),
+          )
         : null,
   };
+  withOwn(out, 'nx', out.n ? '' : talkOwn([v.nx], 1)[0] || '');
+  withOwn(out, 'mx', talkOwn(v.mx));
+  return out;
 }
 /** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */
 export function normTalks(x: unknown): Talk[] {

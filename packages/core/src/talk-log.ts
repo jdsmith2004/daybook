@@ -41,7 +41,7 @@ export function lookBack(days: Days, id: string, after: Omit<TalkAfter, 't'>, tk
       x.k,
       (d) => {
         const p = d.p || blankP();
-        p.tt = normTalks(p.tt).map((t) => (t.id === id ? talk : t));
+        p.tt = normTalks(p.tt).map((t) => (t.id === id ? normTalk(talk) || t : t));
         if (!after.went) p.c = Math.min(50, p.c + 1);
         d.p = p;
       },

@@ -191,12 +191,3 @@ export function moveSeenLevel(level: number, lad: number): number {
   const i = LEVELS.findIndex((l) => l[0] >= old);
   return i < 0 ? LEVELS.length : i + 1;
 }
-
-/* ---------- the flame art ---------- */
-/** the drawing for a level, on the art's own 30 steps (3 per form, ten forms), until each new step has its own drawing:
-    steps 1 to 5 of a form use art steps 1, 1, 2, 2, 3, and the two newest forms use the brightest drawing */
-export function artLevel(n: number): number {
-  const L = LEVELS[Math.max(1, Math.min(LEVELS.length, Math.round(n) || 1)) - 1];
-  if (L[2] > 9) return 30;
-  return L[2] * 3 + 1 + [0, 0, 1, 1, 2][L[3]];
-}

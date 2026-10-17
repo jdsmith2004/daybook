@@ -23,7 +23,7 @@ export default function Points() {
   return (
     <SheetFrame title="How your flame grows" sub={`Level ${lvl.n} · ${lvl.name}`}>
       <View style={s.hero}>
-        <Flame level={lvl.n} size={112} />
+        <Flame level={lvl.n} size={112} alive />
         <View style={{ flex: 1, gap: 6 }}>
           <T>
             <Text style={[s.big, { color: c.ink }]}>{g.pts.toLocaleString('en-US')}</Text> points

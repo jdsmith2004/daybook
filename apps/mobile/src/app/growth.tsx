@@ -39,7 +39,7 @@ export default function Growth() {
   return (
     <SheetFrame title={sg.name} sub={`Form ${si + 1} of ${STAGES.length}`}>
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Flame level={stageLevel(si, lvl)} size={156} locked={state === 'later'} />
+        <Flame level={stageLevel(si, lvl)} size={156} locked={state === 'later'} alive />
         <T style={{ textAlign: 'center', fontSize: 17 }}>{sg.meaning}</T>
       </View>
       {sg.steps.map((_, t) => {

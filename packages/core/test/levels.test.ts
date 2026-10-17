@@ -55,12 +55,13 @@ it('says what comes next in plain words', () => {
   expect(core.nextLine(core.levelOf(99999))).toBe('Your flame is as bright as it gets.');
 });
 
-it('every level has a drawing from the 30 the art has today', () => {
+it('every level has its own drawing, and each step looks different from the one before', () => {
+  let prev = '';
   for (let n = 1; n <= 60; n++) {
-    const a = core.artLevel(n);
-    expect(a).toBeGreaterThanOrEqual(1);
-    expect(a).toBeLessThanOrEqual(30);
-    if (n > 1) expect(a).toBeGreaterThanOrEqual(core.artLevel(n - 1));
+    const x = core.sameIds(core.emblemXml(n));
+    expect(x.startsWith('<svg viewBox="0 0 120 120">')).toBe(true);
+    expect(x).not.toMatch(/NaN|undefined/);
+    expect(x).not.toBe(prev);
+    prev = x;
   }
-  expect(core.emblemXml(60).startsWith('<svg')).toBe(true);
 });

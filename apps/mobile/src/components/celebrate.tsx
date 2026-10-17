@@ -148,7 +148,7 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
   );
 }
 
-/* a new form: the old one flares up and gives way to the new one */
+/* a new form: the old one flares up, bursts into light, and gives way to the new one */
 function Evolve({ from, to }: { from: number; to: number }) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -159,8 +159,20 @@ function Evolve({ from, to }: { from: number; to: number }) {
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.4, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }] }]}>
         <Flame level={from} size={150} />
       </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            borderRadius: 75,
+            backgroundColor: '#FFF3B0',
+            opacity: v.interpolate({ inputRange: [0, 0.45, 0.6, 1], outputRange: [0, 0, 0.85, 0] }),
+            transform: [{ scale: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.1, 1.7] }) }],
+          },
+        ]}
+      />
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }]}>
-        <Flame level={to} size={150} />
+        <Flame level={to} size={150} alive />
       </Animated.View>
     </View>
   );

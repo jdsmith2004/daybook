@@ -964,9 +964,15 @@ const Em=(()=>{
  let seq=0;
  const f=v=>String(Math.round(v*10)/10);
  const INK='#2A2350';
- const clampL=n=>Math.max(1,Math.min(30,Math.round(n)||1));
- const stage=n=>Math.floor((clampL(n)-1)/3);
- const tier=n=>(clampL(n)-1)%3;
+ /* a level on the 60-level ladder (levels.ts): 12 forms of 5 steps. Each scene was drawn for 3 steps (t = 0, 1, 2); the 5 steps
+    sit at t = 0, 0.5, 1, 1.5, 2, so sizes grow a little at every step, and steps 2 and 4 (st 1 and 3) add a small touch of
+    their own. Steps 1, 3 and 5 are exactly the drawings the 30-level ladder had. */
+ const clampL=n=>Math.max(1,Math.min(60,Math.round(n)||1));
+ const stage=n=>Math.floor((clampL(n)-1)/5);
+ const step=n=>(clampL(n)-1)%5;
+ const tier=n=>step(n)/2;
+ /* a value from a list of three (one per old step) or five, at a step that may fall between two */
+ const P=(a,t)=>{if(a.length===5)return a[Math.round(t*2)];const i=Math.floor(t),k=t-i;return k?a[i]+(a[Math.min(i+1,a.length-1)]-a[i])*k:a[i]};
  const STARS=[[20,24,1.3,0],[38,14,1,1.1],[80,18,1.4,.5],[96,32,1,1.7],[28,42,.9,2.2],[106,56,1.1,.8],[14,60,1,1.4],[64,10,.9,2.6],[50,30,.8,.3],[90,46,.8,1.9],[22,76,.9,.6],[102,78,.9,2.4]];
  const stars=(n,op)=>STARS.slice(0,n).map(s=>`<circle class="em-tw" cx="${s[0]}" cy="${s[1]}" r="${s[2]}" fill="#fff" opacity="${op||1}" style="animation-delay:${s[3]}s"/>`).join('');
 
@@ -1015,81 +1021,91 @@ const Em=(()=>{
   return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}c)" stroke="#F2A02A" stroke-width="1" stroke-opacity=".55"/>`+face(cx,cy-r*.04,s);
  }
 
- /* ---------- the ten forms ---------- */
+ /* ---------- the twelve forms (the last two came with the 60-level ladder) ---------- */
  const SCENES=[
   /* 1 Spark: one small light in a night sky */
-  (id,t)=>{
-   const cy=[58,56,54][t],r=[7,9.5,12][t],s=[.3,.38,.46][t];
+  (id,t,st)=>{
+   const cy=P([58,56,54],t),r=P([7,9.5,12],t),s=P([.3,.38,.46],t);
    let h=stars(12)+hill(106,'#0C0828',8);
-   h+=glow(id,60,cy,[24,32,40][t]);
-   if(t>=1){const L=[0,17,24][t];h+=`<path class="em-twk" d="M60 ${cy-L}V${cy-r-3}M60 ${cy+r+3}V${cy+L}M${60-L} ${cy}H${60-r-3}M${60+r+3} ${cy}H${60+L}" stroke="#FFF3B0" stroke-width="1.5" stroke-linecap="round" fill="none"/>`}
+   h+=glow(id,60,cy,P([24,32,40],t));
+   if(t>=1){const L=P([0,17,24],t);h+=`<path class="em-twk" d="M60 ${cy-L}V${cy-r-3}M60 ${cy+r+3}V${cy+L}M${60-L} ${cy}H${60-r-3}M${60+r+3} ${cy}H${60+L}" stroke="#FFF3B0" stroke-width="1.5" stroke-linecap="round" fill="none"/>`}
    if(t>=2)h+=sparks([[49,cy+9,1.4,0,2.8],[72,cy+5,1.2,.9,3.2],[58,cy+15,1.1,1.6,2.6]]);
    h+=`<g class="em-fig em-bob"><circle cx="60" cy="${cy}" r="${r}" fill="url(#${id}c)"/>${face(60,cy-.4,s)}</g>`;
+   if(st===1)h+=`<circle cx="60" cy="${f(cy)}" r="${f(r+7)}" fill="none" stroke="#FFE27A" stroke-opacity=".55" stroke-width="1.6"/>`;
+   if(st===3)h+=`<g class="em-bob"><circle cx="80" cy="${f(cy-13)}" r="4.2" fill="url(#${id}c)"/></g>`;
    return {sky:['#15103C','#281F66','#3A2C86'],layers:h};
   },
   /* 2 Kindling: a few twigs and the first small flame */
-  (id,t)=>{
-   const by=92,fw=[18,24,30][t],fh=[26,35,45][t],s=[.34,.44,.56][t];
+  (id,t,st)=>{
+   const by=92,fw=P([18,24,30],t),fh=P([26,35,45],t),s=P([.34,.44,.56],t);
    let h=stars(11)+hill(101,'#0C0828',6);
-   h+=glow(id,60,by-4,[28,36,44][t],[18,24,30][t]);
+   h+=glow(id,60,by-4,P([28,36,44],t),P([18,24,30],t));
    h+=twig(44,98,75,89)+twig(47,89,79,98);
    if(t>=2)h+=twig(51,96,58,75)+twig(69,96,62,75);
    h+=`<g class="em-fig">${flame(id,60,by,fw,fh,{delay:.2})}${face(60,by-fh*.4,s)}</g>`;
    if(t>=1)h+=twig(41,95,81,95);
    if(t>=1)h+=sparks([[55,by-fh,1.2,0,2.8]]);
    if(t>=2)h+=sparks([[66,by-fh-4,1.3,1,3.2],[60,by-fh-10,1,1.8,3.6]]);
+   if(st===1)h+=`<circle cx="47" cy="96" r="1.6" fill="#FF8A3A"/><circle cx="74" cy="91.5" r="1.5" fill="#FF8A3A"/><circle cx="52" cy="90.6" r="1.3" fill="#FFB347"/>`;
+   if(st===3)h+=`<ellipse cx="60" cy="100" rx="36" ry="6" fill="#FF8A3A" opacity=".28"/>`;
    return {sky:['#17113F','#2B2169','#3E2D88'],layers:h};
   },
   /* 3 Campfire: logs, stones, a steady flame, sparks */
-  (id,t)=>{
-   const by=94,fw=[32,38,44][t],fh=[44,52,60][t],s=[.58,.7,.82][t];
+  (id,t,st)=>{
+   const by=94,fw=P([32,38,44],t),fh=P([44,52,60],t),s=P([.58,.7,.82],t);
    let h=stars(10)+hill(103,'#0F0A30',6);
-   h+=glow(id,60,by-6,[38,46,54][t],[24,30,36][t]);
+   h+=glow(id,60,by-6,P([38,46,54],t),P([24,30,36],t));
    if(t>=2)h+=`<g class="em-flame" style="animation-delay:.5s"><path d="${dropD(44,96,13,22,-.1)}" fill="url(#${id}fo)"/><path d="${dropD(76,96,13,22,.1)}" fill="url(#${id}fo)"/></g>`;
    h+=log(35,101,82,92)+log(85,101,38,92);
+   if(st===1)h+=`<g class="em-flame" style="animation-delay:.7s"><path d="${dropD(78,95,10,15,.25)}" fill="url(#${id}fo)"/></g>`;
+   if(st===3)h+=`<ellipse cx="60" cy="105" rx="48" ry="7" fill="#FFB347" opacity=".24"/>`;
    h+=`<g class="em-fig">${flame(id,60,by,fw,fh,{delay:.1})}${face(60,by-fh*.38,s)}</g>`;
    if(t>=1)h+=stone(30,103,6,4)+stone(41,106,5,3.4,'#7C74AE')+stone(79,106,5,3.4,'#7C74AE')+stone(90,103,6,4);
-   h+=sparks(t===0?[[52,by-fh,1.2,0,2.8],[68,by-fh+4,1.1,1.2,3.2]]:t===1?[[50,by-fh+2,1.3,0,2.8],[69,by-fh,1.2,.8,3.2],[58,by-fh-6,1.1,1.5,3.6],[74,by-fh+10,1,2.2,3]]:[[48,by-fh+4,1.4,0,2.8],[70,by-fh,1.3,.6,3.2],[58,by-fh-8,1.2,1.3,3.6],[76,by-fh+10,1.1,1.9,3],[42,by-fh+14,1,2.4,3.4],[62,by-fh-14,1,.9,3.8]]);
+   h+=sparks(t<1?[[52,by-fh,1.2,0,2.8],[68,by-fh+4,1.1,1.2,3.2]]:t<2?[[50,by-fh+2,1.3,0,2.8],[69,by-fh,1.2,.8,3.2],[58,by-fh-6,1.1,1.5,3.6],[74,by-fh+10,1,2.2,3]]:[[48,by-fh+4,1.4,0,2.8],[70,by-fh,1.3,.6,3.2],[58,by-fh-8,1.2,1.3,3.6],[76,by-fh+10,1.1,1.9,3],[42,by-fh+14,1,2.4,3.4],[62,by-fh-14,1,.9,3.8]]);
    return {sky:['#1A1348','#34267A','#53358C'],layers:h};
   },
   /* 4 Torch: a flame you can carry */
-  (id,t)=>{
-   const by=64,fw=[26,31,36][t],fh=[36,45,52][t],s=[.48,.58,.68][t];
-   let h=stars(9)+glow(id,60,by-fh*.4,[44,54,64][t]);
+  (id,t,st)=>{
+   const by=64,fw=P([26,31,36],t),fh=P([36,45,52],t),s=P([.48,.58,.68],t);
+   let h=stars(9)+glow(id,60,by-fh*.4,P([44,54,64],t));
    h+=`<rect x="56.5" y="73" width="7" height="42" rx="3" fill="#8A5A3C"/><rect x="58.3" y="73" width="2" height="42" rx="1" fill="#B8814F"/>`;
    h+=`<path d="M51 63L69 63L65.5 78.5L54.5 78.5Z" fill="#5B3A2A"/><path d="M52.4 69.6H67.6M53.6 74.6H66.4" stroke="#C48A5C" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="60" cy="63.4" rx="9" ry="2.6" fill="#3A2418"/>`;
    h+=`<g class="em-fig">${flame(id,60,by,fw,fh,{delay:.2})}${face(60,by-fh*.42,s)}</g>`;
    h+=hill(106,'#1B1252',5,6);
-   h+=`<ellipse cx="60" cy="108" rx="${[22,30,38][t]}" ry="${[5,7,9][t]}" fill="#FFB347" opacity=".22"/>`;
+   h+=`<ellipse cx="60" cy="108" rx="${P([22,30,38],t)}" ry="${P([5,7,9],t)}" fill="#FFB347" opacity=".22"/>`;
    if(t>=2)h+=sparks([[48,by-fh*.5,1.3,0,3],[72,by-fh*.6,1.2,.8,3.4],[56,by-fh,1.2,1.5,3.8],[68,by-fh-4,1,2.1,3.2]]);
    else if(t>=1)h+=sparks([[50,by-fh*.5,1.2,0,3],[71,by-fh*.6,1.1,1.1,3.4]]);
+   if(st===1)h+=`<path d="M56.5 88H63.5M56.5 94H63.5M56.5 100H63.5" stroke="#C48A5C" stroke-width="2"/>`;
+   if(st===3)h+=`<path d="M36 122L55 106H65L84 122Z" fill="#FFD27A" opacity=".2"/>`;
    return {sky:['#211860','#4A3190','#7A4399'],layers:h};
   },
   /* 5 Beacon: a fire on a tower, so others can see it too */
-  (id,t)=>{
-   const H=[84,80,76][t],by=H-11,fw=[28,33,37][t],fh=[34,40,44][t],s=[.52,.6,.66][t];
+  (id,t,st)=>{
+   const H=P([84,80,76],t),by=H-11,fw=P([28,33,37],t),fh=P([34,40,44],t),s=P([.52,.6,.66],t);
    let h=stars(7)+hill(100,'#241A62',7,-6);
    if(t>=2){ /* faraway beacons answer back */
     [[17,92],[103,90]].forEach((p,i)=>{h+=`<circle class="sn-glow" cx="${p[0]}" cy="${p[1]-5}" r="11" fill="url(#${id}go)" style="animation-delay:${i*.7}s"/><g class="em-flame" style="animation-delay:${i*.5}s"><path d="${dropD(p[0],p[1],6,10,.05)}" fill="url(#${id}fo)"/></g>`});
     h+=hill(104,'#1A1250',6,10);
    }
-   h+=glow(id,60,by-fh*.45,[42,52,60][t]);
-   if(t>=1)h+=rays(60,by-fh*.45,fh*.5+4,[0,8,10][t],[0,9,13][t],2.2,'#FFE27A',{arc:1,a0:-Math.PI*0.96,a1:-Math.PI*0.04,cls:'em-beam'});
+   h+=glow(id,60,by-fh*.45,P([42,52,60],t));
+   if(t>=1)h+=rays(60,by-fh*.45,fh*.5+4,P([0,8,10],t),P([0,9,13],t),2.2,'#FFE27A',{arc:1,a0:-Math.PI*0.96,a1:-Math.PI*0.04,cls:'em-beam'});
    h+=`<path d="M${60-13} 108L${60+13} 108L${60+9} ${H}L${60-9} ${H}Z" fill="#7A72AE"/><path d="M${60-11.6} 99H${60+11.6}M${60-10.3} 91H${60+10.3}M${60-9.6} ${H+5}H${60+9.6}" stroke="#5B5490" stroke-width="1.2" fill="none"/><path d="M55 108V101a5 5 0 0110 0V108Z" fill="#2B2466"/>`;
    h+=`<rect x="${60-12.5}" y="${H-4}" width="25" height="4.4" rx="1.6" fill="#5B5490"/><path d="M${60-12} ${H-4}L${60+12} ${H-4}L${60+7} ${H-12}L${60-7} ${H-12}Z" fill="#3A3470"/><path d="M${60-7} ${H-12}H${60+7}" stroke="#8A82C4" stroke-width="1.6" stroke-linecap="round"/>`;
    h+=`<g class="em-fig">${flame(id,60,by,fw,fh,{delay:.3})}${face(60,by-fh*.4,s)}</g>`;
    h+=hill(112,'#150E43',5,-4);
+   if(st===1)h+=`<path d="M${60-11} ${f(H+12)}H${60+11}" stroke="#9A93C8" stroke-width="1.4"/>`;
+   if(st===3)h+=cloud(30,30,.8,'#FFD9A0',.7,0)+cloud(92,24,.7,'#FFD9A0',.6,2);
    return {sky:['#241A66','#5A3792','#A5509A'],layers:h};
   },
   /* 6 Lighthouse: a steady light for the dark water */
-  (id,t)=>{
-   const T=[64,56,48][t],bw=[10.5,11.5,12.5][t],tw=[7.2,7.8,8.4][t];
+  (id,t,st)=>{
+   const T=P([64,56,48],t),bw=P([10.5,11.5,12.5],t),tw=P([7.2,7.8,8.4],t);
    const wAt=y=>tw+(bw-tw)*(y-T)/(96-T);
-   let h=stars([6,4,2][t],.9);
+   let h=stars(P([6,4,2],t),.9);
    const ly=T-8.8;
-   h+=glow(id,60,ly,[26,32,38][t]);
+   h+=glow(id,60,ly,P([26,32,38],t));
    /* beams */
-   const bl=[44,56,70][t],spread=[7,9,11][t];
+   const bl=P([44,56,70],t),spread=P([7,9,11],t);
    h+=`<g class="em-beam"><path d="M60 ${ly}L${60-bl} ${ly-spread}L${60-bl} ${ly+spread*.5}Z" fill="url(#${id}bl)"/></g>`;
    h+=`<g class="em-beam" style="animation-delay:2.1s"><path d="M60 ${ly}L${60+bl} ${ly-spread*.5}L${60+bl} ${ly+spread}Z" fill="url(#${id}br)"/></g>`;
    /* sea and rock */
@@ -1107,61 +1123,102 @@ const Em=(()=>{
    h+=`<g class="em-fig"><rect x="${60-7.2}" y="${T-14.5}" width="14.4" height="12.4" rx="3.4" fill="url(#${id}lamp)"/>${face(60,ly-.5,.3,{nocheek:1})}</g>`;
    h+=`<path d="M${60-8.6} ${T-14}L60 ${T-23.5}L${60+8.6} ${T-14}Z" fill="#E5503F"/><circle cx="60" cy="${T-24}" r="1.6" fill="#E5503F"/>`;
    if(t>=2)h+=`<g stroke="#FFF6C8" stroke-width="1.2" stroke-linecap="round" class="em-twk"><path d="M20 104h6M92 108h7M48 112h5"/></g>`;
+   if(st===1)h+=`<circle cx="60" cy="${f(ly)}" r="12" fill="#FFF3B0" opacity=".35"/>`;
+   if(st===3)h+=`<g stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity=".75" fill="none"><path d="M30 106q3 -3 6 0"/><path d="M84 106q3 -3 6 0"/><path d="M38 110q3 -3 6 0"/></g>`;
    return {sky:['#2C2175','#6A3C94','#E0808C'],layers:h,sea:true};
   },
   /* 7 Sunrise: the sun comes up over the hills, and its face comes up with it */
-  (id,t)=>{
-   const cy=[88,80,72][t],r=22,s=.62;
-   let h=stars([3,1,0][t],.7);
-   h+=glow(id,60,cy,[40,48,56][t]);
-   if(t>=1)h+=rays(60,cy,r+4,[0,9,11][t],[0,9,13][t],3.6,'#FFD25A',{arc:1,a0:-Math.PI*0.97,a1:-Math.PI*0.03,cls:'em-beam'});
+  (id,t,st)=>{
+   const cy=P([88,80,72],t),r=22,s=.62;
+   let h=stars(P([3,1,0],t),.7);
+   h+=glow(id,60,cy,P([40,48,56],t));
+   if(t>=1)h+=rays(60,cy,r+4,P([0,9,11],t),P([0,9,13],t),3.6,'#FFD25A',{arc:1,a0:-Math.PI*0.97,a1:-Math.PI*0.03,cls:'em-beam'});
    if(t>=2)h+=cloud(26,44,.9,'#FFC4B0',.85,0)+cloud(94,34,.75,'#FFD6C2',.8,3);
+   if(st===1)h+=`<rect x="-2" y="30" width="124" height="70" fill="#FF8FA8" opacity=".2"/>`;
    h+=`<g class="em-fig">${sunCore(id,60,cy,r,s)}</g>`;
    h+=hill(92,'#8A4A94',7,-10)+hill(98,'#4A2A7C',6,8)+`<rect x="-2" y="104" width="124" height="20" fill="#2F1C62"/>`;
+   if(st===3)h+=sparkle(28,93,3.4,'#FFE7A0',0)+sparkle(94,95,3,'#FFE7A0',1)+sparkle(48,99,2.6,'#FFE7A0',2);
    return {sky:['#3F2F8E','#B4559A','#FFAE6B'],layers:h};
   },
   /* 8 Daybreak: morning, and getting brighter */
-  (id,t)=>{
-   const cy=[64,58,52][t],r=23,s=.66;
-   let h=glow(id,60,cy,[48,54,60][t]);
+  (id,t,st)=>{
+   const cy=P([64,58,52],t),r=23,s=.66;
+   let h=glow(id,60,cy,P([48,54,60],t));
    h+=rays(60,cy,r+5,11,12,3.8,'#FFC832',{alt:1});
    if(t>=1)h+=cloud(24,70,.9,'#FFFFFF',.9,0)+cloud(98,56,.8,'#FFF1E6',.9,4);
    else h+=cloud(98,64,.8,'#FFF1E6',.85,2);
    if(t>=2)h+=bird(30,34,1)+bird(40,28,.8)+bird(88,36,.9);
+   if(st===1)h+=stars(5,.45);
    h+=`<g class="em-fig">${sunCore(id,60,cy,r,s)}</g>`;
    h+=hill(96,'#77D2B0',7,-8)+hill(103,'#3DAA84',6,6)+`<rect x="-2" y="108" width="124" height="16" fill="#2E8E6E"/>`;
+   if(st===3)h+=`<rect x="-2" y="106" width="124" height="4" fill="#FFD25A" opacity=".55"/><rect x="-2" y="113" width="124" height="3" fill="#FFD25A" opacity=".35"/>`;
    return {sky:['#6B9BF0','#B6D0FF','#FFD6A4'],layers:h};
   },
   /* 9 Bright day: a clear sky, green hills, flowers, a rainbow */
-  (id,t)=>{
+  (id,t,st)=>{
    const cy=47,r=24,s=.68;
    let h=glow(id,60,cy,60);
    if(t>=2){[[54,'#FF7A66'],[49.2,'#FFC832'],[44.4,'#5FD6A0'],[39.6,'#5AA8FF']].forEach(a=>{h+=`<path d="M${96-a[0]} 112A${a[0]} ${a[0]} 0 0 1 ${96+a[0]} 112" stroke="${a[1]}" stroke-width="4.8" fill="none" opacity=".8"/>`})}
    h+=rays(60,cy,r+5,13,14,4,'#FFC832',{alt:1});
    h+=cloud(24,66,.95,'#FFFFFF',.95,0);
    if(t>=1)h+=cloud(96,60,.85,'#FFFFFF',.95,3);
+   if(st===3)h+=`<g stroke="#9ED0FF" stroke-width="1.3" stroke-linecap="round" opacity=".75"><path d="M20 76l-3 8M28 80l-3 8M96 72l-3 8M104 76l-3 8M88 78l-3 8"/></g>`;
    h+=`<g class="em-fig">${sunCore(id,60,cy,r,s)}</g>`;
    h+=hill(94,'#69DDB0',7,-8)+hill(102,'#2DB380',6,6)+`<rect x="-2" y="108" width="124" height="16" fill="#23996C"/>`;
    if(t>=1)h+=`<g><circle cx="24" cy="106" r="2.3" fill="#FF7A66"/><circle cx="36" cy="111" r="2.1" fill="#FFD25A"/><circle cx="84" cy="106" r="2.3" fill="#fff"/><circle cx="97" cy="111" r="2.1" fill="#FF7A66"/></g>`;
    if(t>=2)h+=`<g><circle cx="52" cy="112" r="2" fill="#FFD25A"/><circle cx="68" cy="108" r="2.2" fill="#fff"/><circle cx="12" cy="111" r="2" fill="#FFD25A"/><circle cx="110" cy="107" r="2" fill="#FFD25A"/></g>`;
+   if(st===1)h+=`<g stroke="#1E8A5E" stroke-width="1.6" stroke-linecap="round"><path d="M18 109l-2 -5M20 109l1 -6M44 112l-2 -5M46 112l1 -6M90 107l-2 -5M92 107l1 -6"/></g>`;
    return {sky:['#3FA2FF','#86CCFF','#CFEBFF'],layers:h};
   },
   /* 10 Full sun: it steps out of the frame */
-  (id,t)=>{
-   const n=[12,16,20][t],r=28,s=1.02;
-   let h=glow(id,60,60,[50,55,60][t]);
+  (id,t,st)=>{
+   const n=P([12,16,20],t),r=28,s=1.02;
+   let h=glow(id,60,60,P([50,55,60],t));
    h+=rays(60,60,r+6,15,n,4.8,'#FFC832',{alt:1});
    if(t>=1){let d='';for(let i=0;i<12;i++){const a=i/12*Math.PI*2;d+=`<circle cx="${f(60+Math.cos(a)*53)}" cy="${f(60+Math.sin(a)*53)}" r="1.7"/>`}h+=`<g fill="#FFD25A" opacity=".85" class="em-orbit">${d}</g>`}
    if(t>=2){h+=`<circle cx="60" cy="60" r="47" fill="none" stroke="#FFD25A" stroke-width="1.4" stroke-dasharray="1.5 5" stroke-linecap="round" opacity=".8" class="em-orbit"/>`;
     h+=sparkle(12,26,7,'#FFC832',0)+sparkle(108,32,6,'#FFC832',1)+sparkle(102,98,7,'#FFC832',2)+sparkle(16,92,6,'#FFC832',3)}
+   if(st===1)h+=`<g opacity=".5">${rays(60,60,r+6,24,12,2,'#FFE7A0',{cls:'em-rays2'})}</g>`;
    h+=`<g class="em-fig">${sunCore(id,60,60,r,s)}<ellipse cx="51" cy="46" rx="9" ry="4.4" fill="#fff" opacity=".28" transform="rotate(-24 51 46)"/></g>`;
+   if(st===3){let d='';for(let i=0;i<7;i++){const a=-Math.PI*(0.82-0.64*i/6);d+=`<circle cx="${f(60+Math.cos(a)*40)}" cy="${f(60+Math.sin(a)*40)}" r="2.6"/>`}h+=`<g fill="#FFE27A" class="em-orbit">${d}</g>`}
    return {free:true,layers:h};
+  },
+  /* 11 Constellation: the first stars, then lines between them, then a shape that fills the sky */
+  (id,t,st)=>{
+   const C=[[30,40],[46,30],[60,46],[78,34],[92,48],[70,70],[44,72]];
+   let h=stars(12,.8);
+   if(st>=4)h+=glow(id,60,52,58);
+   const link=(a,b,op)=>`<path d="M${C[a][0]} ${C[a][1]}L${C[b][0]} ${C[b][1]}" stroke="#BFD0FF" stroke-width="1.3" stroke-linecap="round" opacity="${op}"/>`;
+   if(st>=1)h+=link(1,2,.75)+link(2,3,.75)+link(2,5,.75);
+   if(st>=2)h+=link(0,1,.85)+link(3,4,.85)+link(5,6,.85)+link(6,2,.85);
+   if(st>=3)h+=link(4,5,.9)+link(0,6,.9);
+   const pts=st>=3?C:st>=2?C.slice(0,5):[C[1],C[3],C[5]];
+   pts.forEach((p,i)=>{if(p!==C[2])h+=sparkle(p[0],p[1],st>=3?4.2:3.4,'#FFF6C8',i*.4)});
+   if(st>=3)h+=sparkle(18,86,3,'#FFF6C8',1.2)+sparkle(102,86,3,'#FFF6C8',2.1)+sparkle(60,16,3,'#FFF6C8',.6);
+   if(st>=4)h+=sparkle(14,24,3.6,'#FFE27A',0)+sparkle(106,22,3.6,'#FFE27A',1)+sparkle(100,104,3.4,'#FFE27A',2)+sparkle(20,104,3.4,'#FFE27A',3);
+   h+=glow(id,60,46,22);
+   h+=`<g class="em-fig em-bob">${sunCore(id,60,46,11,.4)}</g>`;
+   h+=hill(110,'#0C0828',6);
+   return {sky:['#0B0A2E','#1A1550','#2C2072'],layers:h};
+  },
+  /* 12 North Star: one star that stays put, the sky turning around it, and its light pointing the way */
+  (id,t,st)=>{
+   let h=stars(12,.55);
+   if(st>=2){for(let i=0;i<3;i++){const r=26+i*12;h+=`<path class="em-orbit" d="M${f(60-r)} 44A${r} ${r} 0 0 1 ${f(60+r)} 44" stroke="#AFC2FF" stroke-width="1" stroke-dasharray="2 4" stroke-linecap="round" fill="none" opacity="${.5-i*.12}"/>`}}
+   if(st>=1)h+=`<path d="M60 56L52 112H68Z" fill="#FFF3B0" opacity=".18"/>`;
+   if(st>=3)h+=`<circle cx="60" cy="44" r="30" fill="url(#${id}go)"/>`;
+   h+=glow(id,60,44,P([30,34,38,42,48],t));
+   h+=`<g class="em-fig em-bob">${sparkle(60,44,P([22,24,26,27,28],t),`url(#${id}c)`,0)}${face(60,45,.34,{nocheek:1})}</g>`;
+   if(st>=4){h+=`<circle cx="60" cy="44" r="40" fill="none" stroke="#FFD25A" stroke-width="1.4" stroke-dasharray="1.5 5" stroke-linecap="round" opacity=".85" class="em-orbit"/>`;
+    h+=sparkle(16,24,4,'#FFE27A',0)+sparkle(104,26,4,'#FFE27A',1)+sparkle(100,78,3.4,'#FFE27A',2)+sparkle(20,80,3.4,'#FFE27A',3)}
+   h+=hill(104,'#0E0B34',7,-6)+hill(110,'#08061F',5,8);
+   return {sky:['#0A0A28','#191A52','#33307E'],layers:h};
   }
  ];
 
  function emblem(n,o){
   o=o||{};
-  const L=clampL(n),si=stage(L),t=tier(L),id='em'+(++seq),sc=SCENES[si](id,t),size=o.size||120;
+  const L=clampL(n),si=stage(L),t=tier(L),id='em'+(++seq),sc=SCENES[si](id,t,step(L)),size=o.size||120;
   const cls='sun emb s'+si+' t'+t+(o.still?' still':'')+(o.locked?' locked':'');
   let defs=`<defs>
   <linearGradient id="${id}fo" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFE27A"/><stop offset=".45" stop-color="#FFB43A"/><stop offset="1" stop-color="#FF6F4A"/></linearGradient>
@@ -1178,7 +1235,7 @@ const Em=(()=>{
    :`<g clip-path="url(#${id}cp)"><rect x="0" y="0" width="120" height="120" fill="url(#${id}sk)"/>${sc.layers}</g><circle cx="60" cy="60" r="57.2" fill="none" stroke="#fff" stroke-opacity=".34" stroke-width="1.8"/><circle cx="60" cy="60" r="58.6" fill="none" stroke="#2A2350" stroke-opacity=".28" stroke-width="1"/>`;
   return `<svg class="${cls}" viewBox="0 0 120 120" style="width:${size}px;height:${size}px" aria-hidden="true" focusable="false">${defs}${body}</svg>`;
  }
- return {emblem,stage,tier};
+ return {emblem,stage,tier,step};
 })();
 function sunSvg(level,o){return Em.emblem(level,o)}
 

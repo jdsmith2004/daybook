@@ -164,9 +164,11 @@ describe.each(logs)('$name', (fx) => {
 
 describe('the flame', () => {
   const legacy: string[] = JSON.parse(readFileSync(join(dir, 'emblem.json'), 'utf8'));
-  it.each(legacy.map((svg, i) => ({ svg, level: i + 1 })))('level $level is drawn the same', ({ svg, level }) => {
-    expect(core.sameIds(core.Em.emblem(level, { still: true, size: 120 }))).toBe(core.sameIds(svg));
-    const x = core.emblemXml(level);
+  /* the 30 drawings of the old ladder are steps 1, 3 and 5 of each form on the new one */
+  const now = (old: number) => Math.floor((old - 1) / 3) * 5 + [1, 3, 5][(old - 1) % 3];
+  it.each(legacy.map((svg, i) => ({ svg, level: i + 1 })))('old level $level is drawn the same', ({ svg, level }) => {
+    expect(core.sameIds(core.Em.emblem(now(level), { still: true, size: 120 }))).toBe(core.sameIds(svg));
+    const x = core.emblemXml(now(level));
     expect(x.startsWith('<svg viewBox="0 0 120 120">')).toBe(true);
     expect(x).not.toMatch(/ class=| style=/);
   });

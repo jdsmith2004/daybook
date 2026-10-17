@@ -17,6 +17,7 @@ import {
   patchEvent,
   removeEvent,
   rkEmbers,
+  rkHonor,
   rkLightLine,
   rkQuest,
   rkStepFor,
@@ -315,6 +316,7 @@ export default function Log() {
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
   } else if (step === 'rk0') {
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
+    const honor = rkHonor(snap.days, st, tk, date);
     sky = 'ember';
     title = 'Rekindle';
     dots = { n: 4, i: 0, label: 'Step 1 of 4' };
@@ -335,6 +337,7 @@ export default function Log() {
             ))}
           </View>
         ) : null}
+        {lit && honor ? <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T> : null}
         {e.line ? <LineNote b={e.line.b} rest={e.line.rest} night /> : null}
         {lit ? <Button label="What just happened?" onPress={() => go('rk1')} /> : null}
       </>

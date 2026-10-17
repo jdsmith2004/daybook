@@ -179,7 +179,8 @@ export default function LessonScreen() {
     else if (g.a === 'growth') router.push('/growth');
     else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });
     else if (g.a === 'tab') {
-      if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
+      if (g.v === 'settings' && g.open === 's-lists') router.push({ pathname: '/plan', params: { pane: 'lists' } });
+      else if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
       else if (g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
       else {
         close();

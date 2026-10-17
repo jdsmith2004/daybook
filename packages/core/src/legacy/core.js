@@ -944,7 +944,7 @@ function minToClock(m){return fmtClock(p2(Math.floor(m/60)%24)+':'+p2(m%60))}
 const NOTES=[
  'A slip is data, not a verdict.','You do not need to feel motivated. Take one small step.','Urges are waves. They rise, peak, and fall.',
  'Honesty beats perfection. Every time.',"Today's job: notice. That is it.",'Small and boring wins. That is how this works.',
- 'Be kind to the version of you at 11 PM.','Starting over is the skill. You can do it as many times as it takes.','Rest counts. Sleep is part of the plan.',
+ 'Be kind to the version of you at 11 PM.','Coming back is the skill. You can do it as many times as it takes.','Rest counts. Sleep is part of the plan.',
  'Reaching out is strength, not weakness.','You already did the hard part: you showed up.','Progress is a bunch of small returns, not a straight line.',
  'One calm minute is a real win.','The goal is not to never feel the urge. It is to know what to do with it.','Shame loves secrets. Honesty takes its power away.',
  'Your future self is rooting for you.','Make the next hour a good one. That is all.','Tired and lonely are not emergencies. They are signals.',
@@ -1948,7 +1948,7 @@ const LESSONS=[
        ['Get up and do ten squats or walk a lap','Yes. A short burst of movement eases the craving and gets you off the couch. Then decide.']]}
   ],
   act:{h:'Choose your move.',p:'Add one movement to your calm-move list, or let Daybook pick one for you right now.',mins:1,
-   go:[{t:'Open my calm moves',a:'tab',v:'settings',open:'s-lists',ic:'sliders'},{t:'Surprise me',a:'scene',v:'surprise',ic:'dice'}],ok:'You have a move ready.'},
+   go:[{t:'Add “A brisk two-minute walk”',a:'addmove',text:'A brisk two-minute walk, or 20 squats',ic:'plus'},{t:'Surprise me',a:'scene',v:'surprise',ic:'dice'},{t:'Write my own move',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'You have a move ready.'},
   rc:{q:'You are home alone and an urge is building. You do not feel like doing anything. What helps most?',
    c:['Wait until you feel like moving','A few minutes of brisk walking or stretching','Lie on the bed and scroll','Tell yourself moving is pointless'],a:1,
    r:'Move first, then decide.',
@@ -2264,7 +2264,7 @@ const LESSONS=[
        ['Use willpower to sit through the empty hours','More willpower in the same empty room is not the fix. Fill the hour.']]}
   ],
   act:{h:'Fill one hour.',p:'Pick the hour from your log. Put one activity in it. Add it to your calm-move list, and set a phone alarm if that helps.',mins:2,
-   go:[{t:'Open my calm moves',a:'tab',v:'settings',open:'s-lists',ic:'sliders'},{t:'See my days',a:'tab',v:'days',ic:'calendar'}],ok:'Your hard hour has a plan.'},
+   go:[{t:'Add “One planned thing in my hardest hour”',a:'addmove',text:'In my hardest hour: one planned thing (a walk, a call, or a project)',ic:'plus'},{t:'See my days',a:'tab',v:'days',ic:'calendar'},{t:'Write my own',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'Your hard hour has a plan.'},
   rc:{q:'You get home tired, and evenings are when urges hit. You do not feel like doing anything. What helps most?',
    c:['Rest on the couch until you feel better','Plan one small activity for 7 PM, and do it','Wait to see if the urge shows up','Promise yourself a busy weekend instead'],a:1,
    r:'Act first, then feel better.',
@@ -2525,7 +2525,7 @@ const LESSONS=[
        ['Keep it to yourself so no one knows','Faith in the steps comes with people. Telling one safe person can help carry it.']]}
   ],
   act:{h:'Add God to your plan.',p:'Open your urge plan. Pick your hardest line and add a short prayer to the “then,” followed by one move.',mins:2,
-   go:[{t:'Open my urge plan',a:'sheet',v:'urge',ic:'shield'},{t:'Add my own steadying words',a:'tab',v:'settings',open:'s-lists',ic:'star'}],ok:'God has a place in your plan.'},
+   go:[{t:'Add “Pray, then move” to my words',a:'addword',text:'When it is hard: pray in my own words, then do the next thing in my plan.',ic:'plus'},{t:'Open my urge plan',a:'sheet',v:'urge',ic:'shield'},{t:'Write my own words',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'God has a place in your plan.'},
   rc:{q:'It is late, you have said a prayer, and you are still holding your phone in bed. What is the next step?',
    c:['Wait for the urge to be taken away','Get up and put the phone in another room','Pray harder, louder, and longer','Scroll until you feel sleepy'],a:1,
    r:'Pray, then do the next small thing.',

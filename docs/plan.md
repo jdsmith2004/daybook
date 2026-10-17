@@ -1,5 +1,7 @@
 # What is planned next
 
+Everything below is done (October 17, 2026). New work goes at the top as it comes up.
+
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;
 each tier ends with typecheck, tests, a look at the web build, and a merge to `main` (which publishes it).
 
@@ -11,7 +13,7 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 | 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock. **Done.** | Opus, high |
 | 3c | Lessons: any "add this to your plan" is a one-tap button (first: the prayer lesson). **Done.** | Opus, medium |
 | 4 | Levels: the look, the art and the animations. **Done.** | Opus, medium |
-| 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
+| 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes. **Done.** | Opus, medium |
 
 ## Tier 1: Graduation
 

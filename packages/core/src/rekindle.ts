@@ -19,6 +19,7 @@ import {
   type RekindleState,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { GRAD_DAYS, gradInfo } from './graduate';
 import { changeDay, withDay } from './mutate';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
@@ -127,6 +128,16 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     kept: lit ? kept : [],
     line: op ? { b: 'Your ' + op.run + '-day run is on the line, not over.', rest: 'Finish the Rekindle quest by tomorrow night and it keeps going.' } : null,
   };
+}
+
+/** after a slip that ends a long stretch: words that honor what was built (null for a short one). A long run is a huge win
+    next to where the person started, and this slip takes one day off the way to graduation, never the rest. */
+export function rkHonor(days: Days, st: Settings, tk: DayKey, date: DayKey): string | null {
+  const op = rkOpen(days, st, tk, date).op;
+  if (!op || op.run < 7) return null;
+  const g = gradInfo(days, st, tk);
+  const grad = g.show && !g.at ? ` You are at ${g.count} of ${GRAD_DAYS} toward graduation. A slip takes one day off, never the rest.` : '';
+  return `${op.run} days. That is huge, and it still counts.` + grad;
 }
 
 /* ---------- the short Rekindle ---------- */

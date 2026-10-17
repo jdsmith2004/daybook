@@ -805,7 +805,7 @@ function TextCard({ L, card, t, st, onSrc, onDraft }: { L: Lesson; card: Card; t
     <>
       {card.art ? (
         <View style={s.art}>
-          <LessonArt art={card.art} ic={L.ic} t={t} st={st} />
+          <LessonArt key={L.id + card.h} art={card.art} ic={L.ic} t={t} st={st} />
         </View>
       ) : null}
       <Eyebrow icon={e[0]} label={card.el || e[1]} t={t} />

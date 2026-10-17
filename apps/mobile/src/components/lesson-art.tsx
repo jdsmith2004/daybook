@@ -1,39 +1,50 @@
 /* The picture on a lesson card: an icon in a circle, a chain of steps, a wave, a snowball, your loop, a big number, a shield
-   or a check mark. Ported from the legacy lxArt and friends, in the lesson's unit color. */
+   or a check mark. Ported from the legacy lxArt and friends, in the lesson's unit color. Each one settles in once when it
+   appears: the icons pop in, a chain shows one step at a time, a dot rides the wave up and over, and a big number counts up.
+   With Reduce Motion on, they show as they end. */
 import { lxLoopNodes, type Art, type Settings } from '@daybook/core';
-import { Text, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Animated, Easing, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, Marker, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Icon } from '@/components/ui';
+import { pop, rise, useAppear, useReducedMotion } from '@/lib/motion';
 import { font, useTheme, type Tone } from '@/lib/theme';
 
 export function LxIco({ name, t, size = 120 }: { name: string; t: Tone; size?: number }) {
+  const v = useAppear(0, 380);
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }}>
+    <Animated.View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }, pop(v)]}>
       <Icon name={name || 'sparkle'} size={size * 0.47} color={t.ic} />
-    </View>
+    </Animated.View>
   );
 }
 
 export function LxShield({ t }: { t: Tone }) {
   const c = useTheme();
+  const v = useAppear(0, 420);
   return (
-    <Svg width={120} height={120} viewBox="0 0 120 120" accessibilityLabel="A shield">
-      <Circle cx={60} cy={60} r={56} fill={t.soft} />
-      <Path d="M60 26l26 11v20c0 18-11 30-26 37-15-7-26-19-26-37V37z" fill={c.surface} stroke={t.ic} strokeWidth={4} strokeLinejoin="round" />
-      <Path d="M48 58l8 8 16-17" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <Animated.View style={pop(v)}>
+      <Svg width={120} height={120} viewBox="0 0 120 120" accessibilityLabel="A shield">
+        <Circle cx={60} cy={60} r={56} fill={t.soft} />
+        <Path d="M60 26l26 11v20c0 18-11 30-26 37-15-7-26-19-26-37V37z" fill={c.surface} stroke={t.ic} strokeWidth={4} strokeLinejoin="round" />
+        <Path d="M48 58l8 8 16-17" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </Animated.View>
   );
 }
 
 export function LxCheck() {
   const c = useTheme();
+  const v = useAppear(0, 460, Easing.out(Easing.back(1.6)));
   return (
-    <Svg width={120} height={120} viewBox="0 0 120 120" accessibilityLabel="A check mark">
-      <Circle cx={60} cy={60} r={56} fill={c.mintSoft} />
-      <Circle cx={60} cy={60} r={38} fill={c.mint} />
-      <Path d="M44 61l12 12 21-24" fill="none" stroke="#FFFFFF" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <Animated.View style={pop(v, 0.7)}>
+      <Svg width={120} height={120} viewBox="0 0 120 120" accessibilityLabel="A check mark">
+        <Circle cx={60} cy={60} r={56} fill={c.mintSoft} />
+        <Circle cx={60} cy={60} r={38} fill={c.mint} />
+        <Path d="M44 61l12 12 21-24" fill="none" stroke="#FFFFFF" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -45,7 +56,7 @@ function Chain({ nodes, icons, t }: { nodes: string[]; icons?: string[]; t: Tone
       {nodes.map((n, i) => {
         const hot = i === nodes.length - 1;
         return (
-          <View key={i} style={{ alignSelf: 'stretch', alignItems: 'center' }}>
+          <Step key={i} i={i}>
             {i ? <View style={{ width: 3, height: dense ? 10 : 16, backgroundColor: t.ic, opacity: 0.5 }} /> : null}
             <View
               style={{
@@ -65,29 +76,70 @@ function Chain({ nodes, icons, t }: { nodes: string[]; icons?: string[]; t: Tone
               ) : null}
               <Text style={{ fontFamily: font.display, fontSize: dense ? 16 : 19, color: hot ? t.ink : t.text }}>{n}</Text>
             </View>
-          </View>
+          </Step>
         );
       })}
     </View>
   );
 }
 
+/* one link of a chain, shown a beat after the one before */
+function Step({ i, children }: { i: number; children: ReactNode }) {
+  const v = useAppear(120 + i * 260, 380);
+  return <Animated.View style={[{ alignSelf: 'stretch', alignItems: 'center' }, rise(v)]}>{children}</Animated.View>;
+}
+
+/* points along the wave (the two curves in its path), for the dot that rides it */
+const bez = (a: number, b: number, c: number, d: number, k: number) => (1 - k) ** 3 * a + 3 * (1 - k) ** 2 * k * b + 3 * (1 - k) * k * k * c + k ** 3 * d;
+const WAVE_PTS = Array.from({ length: 25 }, (_, j) => {
+  const u = j / 24;
+  const k = u < 0.5 ? u * 2 : (u - 0.5) * 2;
+  return u < 0.5 ? [bez(8, 70, 96, 165, k), bez(128, 128, 26, 26, k)] : [bez(165, 234, 262, 322, k), bez(26, 26, 128, 128, k)];
+});
+
 function Wave({ t, al }: { t: Tone; al?: string }) {
   const c = useTheme();
+  const still = useReducedMotion();
+  const [w, setW] = useState(0);
+  const go = useAppear(500, 3200, Easing.inOut(Easing.sin));
+  /* the art is drawn in a 330 by 150 box and scaled to fit, centered */
+  const k = Math.min(1, w / 330);
+  const ox = (w - 330 * k) / 2;
+  const oy = (150 - 150 * k) / 2;
+  const R = 8 * k;
+  const along = (i: 0 | 1, o: number) =>
+    go.interpolate({ inputRange: WAVE_PTS.map((_, j) => j / 24), outputRange: WAVE_PTS.map((p) => o + p[i] * k - R) });
   return (
-    <Svg width="100%" height={150} viewBox="0 0 330 150" style={{ maxWidth: 330 }} accessibilityLabel={al || 'An urge rises, peaks, and falls like a wave'}>
-      <Path d="M8 128 C70 128 96 26 165 26 S262 128 322 128" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" />
-      <Circle cx={165} cy={26} r={8} fill={t.ic} />
-      <SvgText x={52} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-        RISES
-      </SvgText>
-      <SvgText x={165} y={14} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-        PEAKS
-      </SvgText>
-      <SvgText x={278} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-        PASSES
-      </SvgText>
-    </Svg>
+    <View style={{ width: '100%', maxWidth: 330, height: 150 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      <Svg width="100%" height={150} viewBox="0 0 330 150" accessibilityLabel={al || 'An urge rises, peaks, and falls like a wave'}>
+        <Path d="M8 128 C70 128 96 26 165 26 S262 128 322 128" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" />
+        {still || !w ? <Circle cx={165} cy={26} r={8} fill={t.ic} /> : null}
+        <SvgText x={52} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          RISES
+        </SvgText>
+        <SvgText x={165} y={14} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          PEAKS
+        </SvgText>
+        <SvgText x={278} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          PASSES
+        </SvgText>
+      </Svg>
+      {w && !still ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: R * 2,
+            height: R * 2,
+            borderRadius: R,
+            backgroundColor: t.ic,
+            transform: [{ translateX: along(0, ox) }, { translateY: along(1, oy) }],
+          }}
+        />
+      ) : null}
+    </View>
   );
 }
 
@@ -154,12 +206,33 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
 
 export function BigNumber({ n, s }: { n: string | number; s?: string }) {
   const c = useTheme();
+  const shown = useCount(n);
   return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
-      <Text style={{ fontFamily: font.display, fontSize: 96, lineHeight: 100, color: c.accent, fontVariant: ['tabular-nums'] }}>{n}</Text>
+    <View style={{ alignItems: 'center', gap: 2 }} accessible accessibilityLabel={[String(n), s].filter(Boolean).join(' ')}>
+      <Text style={{ fontFamily: font.display, fontSize: 96, lineHeight: 100, color: c.accent, fontVariant: ['tabular-nums'] }}>{shown}</Text>
       {s ? <Text style={{ fontFamily: font.bodySemi, fontSize: 17, maxWidth: 260, textAlign: 'center', color: c.ink, lineHeight: 22 }}>{s}</Text> : null}
     </View>
   );
+}
+
+/* a whole number counts up from zero; anything else (a word, "1 in 4") shows as it is */
+function useCount(n: string | number) {
+  const to = /^\d{1,6}$/.test(String(n)) ? Number(n) : null;
+  const still = useReducedMotion();
+  const [x, setX] = useState(0);
+  useEffect(() => {
+    if (to == null || still) return;
+    const t0 = Date.now();
+    let raf = 0;
+    const tick = () => {
+      const k = Math.min(1, (Date.now() - t0) / 900);
+      setX(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, still]);
+  return to == null || still ? n : x;
 }
 
 export function LessonArt({ art, ic, t, st }: { art: Art; ic: string; t: Tone; st: Settings | null }) {

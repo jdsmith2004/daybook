@@ -18,3 +18,4 @@ export * from './setup';
 export * from './emblem';
 export * from './sync';
 export * from './graduate';
+export * from './accounts';

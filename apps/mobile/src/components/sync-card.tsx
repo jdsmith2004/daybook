@@ -1,11 +1,13 @@
 /* Sync between devices, in Settings: sign in, see when it last synced, sync now, sign out, or delete the account. The first
    time a device joins an account that already has a log, the question of what to keep is asked here. */
 import { fmtDate, keyOfDate } from '@daybook/core';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BigOption } from '@/components/choices';
 import { Check } from '@/components/form';
+import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
@@ -77,10 +79,11 @@ export function SyncBody() {
     return (
       <>
         <T v="small" tone="muted">
-          Sync keeps your log the same on your phone and on the web. It is kept in your own account, and nobody else can read it. Until you sign in, your log stays on this device
-          only.
+          A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your sign-in
+          can read it. Until you sign in, your log stays on this device only.
         </T>
-        <Button label="Sign in to sync" onPress={sync.signInNow} />
+        <Button label="Create an account or sign in" onPress={sync.signInNow} />
+        <LinkText label="What is kept, and who can see it" onPress={() => router.push('/privacy')} />
         <TrustChoice />
       </>
     );

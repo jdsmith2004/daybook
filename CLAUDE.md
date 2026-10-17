@@ -18,6 +18,8 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   measures that hold what was earned (for example, no-slip days in a recent window) over a single streak that resets.
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
+- **Never lock care.** SOS, logging, Rekindle, the plan, the tools and Today work with no account. An account opens sync,
+  a safe copy, and the lessons after the first three (see accounts.ts). Ask for one only at good moments, never after a slip.
 - **Lessons teach with confidence.** Do the research well, then write plainly and surely. A lesson must be wholesome, true
   to its spirit, motivating and hopeful; it should never read as unsure. Not every line has to be proven in a paper.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
@@ -53,7 +55,7 @@ cd apps/mobile && npx expo start
 - **The golden tests are a frozen record.** `packages/core/test/fixtures` holds what the legacy app computed. They stay as regression tests: if one fails, a change touched an old rule. Fix the change, or if the rule was meant to change, update the expected values in the fixtures by hand in the same commit and say why in the commit message. New rules get ordinary unit tests.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons rest on good research and speak with confidence.** Science in a lesson cites a source in `SRC` or `OB_SRC` and does not invent numbers. The scope ("Behind this") says where the research comes from and what it means for the reader, in a sure, hopeful voice, without piling up doubts.
-- **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person turns on sync, and then live only in their own AWS account.
+- **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add analytics or anything that reads people's logs on the server.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.

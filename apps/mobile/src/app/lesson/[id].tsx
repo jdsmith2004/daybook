@@ -9,6 +9,8 @@ import {
   lessonById,
   lessonHasQuick,
   lessonFamily,
+  lessonOpen,
+  lessonsLocked,
   lessonIndex,
   lessonLog,
   lessonPairOf,
@@ -52,10 +54,12 @@ import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
 import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import { ReasonsBox, SlipEditor, UrgeEditor } from '@/components/plan-editors';
-import { Icon, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
+import { Unlock } from '@/components/account';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
+import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
@@ -68,6 +72,7 @@ interface Sheet {
 export default function LessonScreen() {
   const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
   const { snap, tk, update, apply, say } = useStore();
+  const account = useAccount();
   const c = useTheme();
   const inset = useSafeAreaInsets();
   const st = snap.settings;
@@ -257,7 +262,11 @@ export default function LessonScreen() {
             <Text style={{ fontFamily: font.bodyBold, color: c.mintText, fontSize: 13.5 }}>You finished this one</Text>
           </View>
         ) : null}
-        {lessonHasQuick(L) ? (
+        {!lessonOpen(L, done, faithOf(st), account) ? (
+          <Unlock locked={lessonsLocked(LESSONS, done, faithOf(st), account)}>
+            <Button kind="ghost" label="Back to Learn" onPress={close} />
+          </Unlock>
+        ) : lessonHasQuick(L) ? (
           <View style={{ gap: 10 }} accessibilityLabel="Pick a length">
             <LenBtn t={t} on={pref === 'q'} title="Quick" sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'} mins="1–2 min" onPress={() => start('q')} />
             <LenBtn t={t} on={pref === 'f'} title="Full" sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'} mins="3–5 min" onPress={() => start('f')} />

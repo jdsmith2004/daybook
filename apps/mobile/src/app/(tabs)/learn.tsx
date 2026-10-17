@@ -10,6 +10,8 @@ import {
   LESSONS,
   lessonFilter,
   lessonIndex,
+  lessonOpen,
+  lessonsLocked,
   lessonRow,
   lessonsDone,
   lessonStats,
@@ -36,6 +38,7 @@ import { LinkCard } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
+import { useAccount, useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
 
 type Pane = 'lessons' | 'tools';
@@ -87,11 +90,15 @@ function LessonsPane() {
   const notes = st.learn.notes || {};
   const nf = LESSONS.filter((L) => L.f).length;
   const due = lcheckDue(snap.days, st);
+  const account = useAccount();
+  const sync = useSync();
+  const open = (L: Lesson) => lessonOpen(L, done, mode, account);
+  const waiting = lessonsLocked(LESSONS, done, mode, account);
   const counts = { all: total, todo: total - n, done: n, notes: LESSONS.filter((L) => notes[L.id] && String(notes[L.id]).trim()).length };
   const rows = (arr: Lesson[], full: boolean) => (
     <View style={{ gap: 8 }}>
       {arr.map((L) => (
-        <LessonRow key={L.id} L={L} r={lessonRow(L, done, nxt && nxt.id, st, stats, tk, full)} />
+        <LessonRow key={L.id} L={L} r={lessonRow(L, done, nxt && nxt.id, st, stats, tk, full)} locked={!open(L)} />
       ))}
     </View>
   );
@@ -126,7 +133,13 @@ function LessonsPane() {
           </View>
         ) : null}
         <View style={{ gap: 8 }}>
-          {nxt ? <Button label={n ? 'Continue' : 'Start lesson ' + (lessonIndex(nxt) + 1)} onPress={() => openLesson(nxt.id)} /> : null}
+          {nxt && open(nxt) ? <Button label={n ? 'Continue' : 'Start lesson ' + (lessonIndex(nxt) + 1)} onPress={() => openLesson(nxt.id)} /> : null}
+          {nxt && !open(nxt) ? (
+            <>
+              <T v="small">You have read the open lessons. A free account opens the other {waiting}, and keeps your progress safe.</T>
+              <Button label="Create an account or sign in" onPress={sync.signInNow} />
+            </>
+          ) : null}
           {lastL ? <Button kind="ghost" label="Read last again" onPress={() => openLesson(lastL.id)} /> : null}
         </View>
         {lastL ? (
@@ -238,7 +251,7 @@ function FilterList({ f, rows }: { f: 'todo' | 'done' | 'notes'; rows: (arr: Les
   );
 }
 
-function LessonRow({ L, r }: { L: Lesson; r: ReturnType<typeof lessonRow> }) {
+function LessonRow({ L, r, locked }: { L: Lesson; r: ReturnType<typeof lessonRow>; locked?: boolean }) {
   const c = useTheme();
   const [soft, ink] = toolTone(c, LUNITS[L.u].tone);
   return (
@@ -249,7 +262,7 @@ function LessonRow({ L, r }: { L: Lesson; r: ReturnType<typeof lessonRow> }) {
       style={({ pressed }) => [s.row, { backgroundColor: r.d ? c.surface2 : c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
       <View style={s.rowTop}>
         <View style={[s.lrIc, { backgroundColor: r.d ? c.mintSoft : soft }]}>
-          <Icon name={r.d ? 'check' : L.ic} size={20} color={r.d ? c.mintText : ink} />
+          <Icon name={r.d ? 'check' : locked ? 'lock' : L.ic} size={20} color={r.d ? c.mintText : ink} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[s.lrT, { color: c.ink }]}>
@@ -261,8 +274,8 @@ function LessonRow({ L, r }: { L: Lesson; r: ReturnType<typeof lessonRow> }) {
             {r.sub}
           </T>
         </View>
-        <T v="small" tone={r.status.kind === 'done' ? 'mintText' : r.status.kind === 'next' ? 'accentText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-          {r.status.text}
+        <T v="small" tone={locked ? 'muted' : r.status.kind === 'done' ? 'mintText' : r.status.kind === 'next' ? 'accentText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+          {locked ? 'With an account' : r.status.text}
         </T>
       </View>
       {r.more ? (

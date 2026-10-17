@@ -55,15 +55,10 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
    Until all four are set, the Deploy workflow does nothing. Then run it (Actions > Deploy > Run workflow, on `main`). Its summary shows the web address.
 
-4. **Make your account.** Sign-up is invite-only, so nobody else can make an account and run up your bill. After the first deploy:
-
-   ```sh
-   POOL=$(aws cognito-idp list-user-pools --max-results 10 --query "UserPools[?Name=='daybook-users'].Id" --output text)
-   aws cognito-idp admin-create-user --user-pool-id "$POOL" --username you@example.com \
-     --user-attributes Name=email,Value=you@example.com Name=email_verified,Value=true
-   ```
-
-   Cognito emails you a temporary password; you choose your own the first time you sign in.
+4. **Accounts.** Anyone can sign up in the app (More > Settings > Sync, or the "Keep your progress safe" card), with a
+   checked email. Cognito's built-in email sends about 50 messages a day, which also caps new sign-ups a day; moving to
+   Amazon SES (about $0.10 per 1,000 emails) is the step for more, and costs a little, so it waits for the owner. To make
+   the app invite-only again, set `invite_only = true` (a `TF_VAR_invite_only` in the Deploy workflow).
 
 5. **Phone builds.** The Deploy summary also lists three `EXPO_PUBLIC_*` values. Put them in `apps/mobile/.env.local` (git ignores it) or in EAS environment variables, and phone builds can sign in and sync too. They are public, like the web app itself.
 

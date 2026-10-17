@@ -19,9 +19,9 @@ variable "lambda_zip" {
 }
 
 variable "invite_only" {
-  description = "Only you can make accounts (with the AWS CLI). Set to false to let people sign up themselves."
+  description = "true: only the owner can make accounts (with the AWS CLI). false (the default): anyone can sign up in the app, with a checked email. Cognito's built-in email sends about 50 a day, which also caps new sign-ups a day."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "dev_origins" {

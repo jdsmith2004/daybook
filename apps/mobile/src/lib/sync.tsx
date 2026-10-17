@@ -416,3 +416,10 @@ export function syncedAgo(at: number | null, now = Date.now()): string {
   const d = Math.floor(h / 24);
   return 'Synced ' + d + ' day' + (d === 1 ? '' : 's') + ' ago';
 }
+
+/** whether the person has an account here: signed in, or this copy of Daybook has no accounts at all (then nothing waits
+    behind one). Care never checks this; it only opens lessons and the account card (see accounts.ts). */
+export function useAccount(): boolean {
+  const k = useSync().status.k;
+  return k !== 'out';
+}

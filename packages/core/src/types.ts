@@ -136,6 +136,8 @@ export interface Settings {
   onb: { n: number; at: number; a: Record<string, unknown>; hist: { d: DayKey; s: number }[] } | null;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
   gradAt?: DayKey | null;
+  /** the last "Not now" on the account card (see accounts.ts) */
+  acctNo?: DayKey | null;
   u: number;
 }
 

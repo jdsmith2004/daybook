@@ -2,7 +2,12 @@
    are counted, the days card, today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
+  accountAsk,
   autoStep,
+  faithOf,
+  LESSONS,
+  lessonsDone,
+  lessonsLocked,
   fmtClock,
   fmtDate,
   gameCompute,
@@ -17,6 +22,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 
+import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
@@ -25,12 +31,14 @@ import { Button, Card, Icon, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { useStore } from '@/lib/store';
+import { useAccount } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Today() {
   const c = useTheme();
   const { ready, snap, tk, now, apply } = useStore();
   const st = snap.settings;
+  const account = useAccount();
   const scroll = useRef<ScrollViewInstance>(null);
   const [dayY, setDayY] = useState(0);
   const [stop, setStop] = useState<{ k: string; n: number } | null>(null);
@@ -54,6 +62,7 @@ export default function Today() {
   const ph = phaseLabel(tk, st);
   const nudge = weekNudge(st, snap.reviews, tk);
   const be = String(st.becoming || '').trim();
+  const ask = accountAsk(snap.days, st, tk, g.level.n, account);
   const sub = (
     <>
       {be ? (
@@ -94,6 +103,7 @@ export default function Today() {
       />
       <CountNotes snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} size="sm" />
+      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <View onLayout={(e) => setDayY(e.nativeEvent.layout.y)}>

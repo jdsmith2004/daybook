@@ -19,8 +19,6 @@ import {
   routineOn,
   setScreensOff,
   setSleep,
-  SLEEP_CHIPS,
-  stepSleep,
   stopStatus,
   STOP_IC,
   STOP_WHEN,
@@ -34,8 +32,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CheckinBlock } from '@/components/checkin';
 import { useHoldCelebrations } from '@/components/celebrate';
-import { Check, Collapse, OnOff, Stepper } from '@/components/form';
-import { PickRow, type PickOpt } from '@/components/picks';
+import { Check, Collapse, OnOff } from '@/components/form';
+import { PickRow } from '@/components/picks';
+import { Slider } from '@/components/slider';
 import { Button, Card, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
@@ -111,26 +110,25 @@ export function YourDay({ snap, tk, now, openStop }: { snap: Snapshot; tk: strin
 }
 
 /* ---------- last night ---------- */
-/* two taps: screens off, then hours of sleep. It finishes itself after both; until then celebrations wait. */
-const SLEEP_LIST: PickOpt<number>[] = SLEEP_CHIPS.map((h, i) => ({
-  k: h,
-  label: i === 0 ? '≤' + h : i === SLEEP_CHIPS.length - 1 ? h + '+' : String(h),
-  a11y: i === 0 ? h + ' hours or less' : i === SLEEP_CHIPS.length - 1 ? h + ' hours or more' : h + ' hours',
-}));
+/* two answers: screens off, then hours of sleep on a slider. It finishes itself once both are in (for the slider, when the
+   finger comes up); until then celebrations wait. */
+const sleepText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
 function Morning({ snap, tk, onDone }: { snap: Snapshot; tk: string; onDone: () => void }) {
   const { update, say } = useStore();
   const st = snap.settings!;
   const mi = morningInfo(snap.days, st, tk);
-  const [fine, setFine] = useState(false);
-  useHoldCelebrations(!mi.done && (mi.so != null || mi.h != null));
+  /* finished when this opened, or finished here */
+  const [fin, setFin] = useState(mi.done);
+  useHoldCelebrations(!fin && (mi.so != null || mi.h != null));
   const finish = () => {
+    if (fin) return;
+    setFin(true);
     buzz('save');
     say('Thanks for being honest.');
     onDone();
   };
-  const chip = mi.h == null ? null : mi.h <= SLEEP_CHIPS[0] ? SLEEP_CHIPS[0] : mi.h >= SLEEP_CHIPS[SLEEP_CHIPS.length - 1] ? SLEEP_CHIPS[SLEEP_CHIPS.length - 1] : mi.h;
   return (
-    <View style={{ gap: 12 }}>
+    <View style={{ gap: 14 }}>
       <T v="small" tone="muted">
         About {fmtDate(mi.prev, { weekday: 'long' })} night. Honest beats perfect.
       </T>
@@ -146,37 +144,27 @@ function Morning({ snap, tk, onDone }: { snap: Snapshot; tk: string; onDone: () 
           cur={mi.so}
           onPick={(v) => {
             update((s0) => ({ ...s0, days: setScreensOff(s0.days, mi.prev, v) }));
-            if (!mi.done && mi.so !== v && mi.h != null) finish();
+            if (mi.so !== v && mi.h != null) finish();
           }}
         />
       </View>
-      <View style={{ gap: 8 }}>
-        <T v="label">How many hours did you sleep?</T>
-        <PickRow
+      <View style={{ gap: 2 }}>
+        <T v="label">How long did you sleep?</T>
+        <Slider
           label="Hours of sleep"
-          list={SLEEP_LIST}
-          cur={chip}
-          onPick={(h) => {
-            update((s0) => ({ ...s0, days: setSleep(s0.days, tk, h) }));
-            if (!mi.done && mi.h !== h && mi.so != null) finish();
+          value={mi.h}
+          min={3}
+          max={12}
+          step={0.5}
+          show={sleepText}
+          unit="hours"
+          onChange={(h) => update((s0) => ({ ...s0, days: setSleep(s0.days, tk, h) }))}
+          onRelease={() => {
+            if (mi.so != null) finish();
           }}
         />
-        {fine || (mi.h != null && mi.h % 1 !== 0) ? (
-          <Stepper
-            label="Closer to"
-            text={mi.h == null ? '–' : mi.h.toFixed(1) + ' h'}
-            unset={mi.h == null}
-            less="Half an hour less"
-            more="Half an hour more"
-            onStep={(d) => update((s0) => ({ ...s0, days: stepSleep(s0.days, tk, d * 0.5) }))}
-          />
-        ) : mi.h != null ? (
-          <Pressable accessibilityRole="button" onPress={() => setFine(true)} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
-            <LinkWords>Add a half hour</LinkWords>
-          </Pressable>
-        ) : null}
       </View>
-      {!mi.done && (mi.so != null || mi.h != null) ? (
+      {!fin && (mi.so != null || mi.h != null) ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => {

@@ -120,21 +120,19 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   );
   return withDay(days, tk, day);
 }
-/** a sleep chip: set last night's hours outright (the same chip again clears it) */
+/** the sleep slider: set last night's hours outright, in half hours from 0 to 14 */
 export function setSleep(days: Days, tk: DayKey, h: number, now = Date.now()): Days {
   const day = changeDay(
     days[tk],
     tk,
     (d) => {
       const c = d.checkin || (d.checkin = blankCheckin());
-      c.h = c.h === h ? null : Math.min(14, Math.max(0, Math.round(h * 2) / 2));
+      c.h = Math.min(14, Math.max(0, Math.round(h * 2) / 2));
     },
     now,
   );
   return withDay(days, tk, day);
 }
-/** the sleep chips on Last night: most people land in one of these */
-export const SLEEP_CHIPS = [5, 6, 7, 8, 9];
 /** the morning questions answered (at least one must be) */
 export function morningDone(days: Days, tk: DayKey, now = Date.now()): Days {
   return withDay(

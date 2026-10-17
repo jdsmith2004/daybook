@@ -1,5 +1,5 @@
 /* The evening check-in: a one-minute full-screen moment, one question at a time, like the sunrise check. Four honest 0 to 10
-   numbers (a tap moves on), whether you reached out, one optional line, then the day as it is saved and what comes next.
+   numbers on a slider, low on the screen where the thumb is, whether you reached out, one optional line, then the day as it is saved and what comes next.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
 import {
@@ -17,8 +17,8 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BigOption, Field, Link } from '@/components/choices';
-import { PickRow, type PickOpt } from '@/components/picks';
-import { SceneFrame } from '@/components/scene';
+import { Dock, SceneFrame } from '@/components/scene';
+import { Slider } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
@@ -35,8 +35,6 @@ const RATE: Record<Rated, { name: string; q: string; lo: string; hi: string }> =
 };
 const STEPS = ['m', 'c', 'e', 's', 'ro', 'n'] as const;
 type Step = (typeof STEPS)[number] | 'end';
-const LOW: PickOpt<number>[] = [0, 1, 2, 3, 4, 5].map((n) => ({ k: n, label: String(n) }));
-const HIGH: PickOpt<number>[] = [6, 7, 8, 9, 10].map((n) => ({ k: n, label: String(n) }));
 
 export default function Checkin() {
   const c = useTheme();
@@ -98,10 +96,7 @@ export default function Checkin() {
 
   if (step === 'm' || step === 'c' || step === 'e' || step === 's') {
     const R = RATE[step];
-    const pick = (v: number) => {
-      set({ ...form, [step]: v });
-      setTimeout(next, 220);
-    };
+    const v = form[step];
     body = (
       <>
         <T v="eyebrow" tone="muted">
@@ -115,21 +110,13 @@ export default function Checkin() {
             An honest 0 to 10. Do not round up to feel better.
           </T>
         ) : null}
-        <View style={s.grid}>
-          <PickRow big label={R.name + ', 0 to 5'} list={LOW} cur={form[step]} onPick={pick} />
-          <PickRow big label={R.name + ', 6 to 10'} list={HIGH} cur={form[step]} onPick={pick} />
-          <View style={s.ends}>
-            <T v="small" tone="muted">
-              0 · {R.lo}
-            </T>
-            <T v="small" tone="muted">
-              {R.hi} · 10
-            </T>
-          </View>
-        </View>
+        <Dock>
+          <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} onChange={(n) => set({ ...form, [step]: n })} />
+          {v != null ? <Button label="Next" onPress={next} /> : <View style={s.btnSpace} />}
+        </Dock>
       </>
     );
-    footer = <Link label={form[step] == null ? 'Skip this one' : 'Next'} onPress={next} />;
+    footer = v == null ? <Link label="Skip this one" onPress={next} /> : null;
   } else if (step === 'ro') {
     const pick = (v: 'Y' | 'N') => {
       set({ ...form, ro: v });
@@ -146,10 +133,10 @@ export default function Checkin() {
         <T style={s.c} tone="muted">
           A text, a call, a real talk. Small counts.
         </T>
-        <View style={s.opts}>
+        <Dock>
           <BigOption tone="mint" icon="chat" title="Yes" selected={form.ro === 'Y'} onPress={() => pick('Y')} />
           <BigOption tone="sun" icon="leaf" title="Not today" sub="Tomorrow is another chance." selected={form.ro === 'N'} onPress={() => pick('N')} />
-        </View>
+        </Dock>
       </>
     );
     footer = <Link label="Skip this one" onPress={next} />;
@@ -245,9 +232,8 @@ export default function Checkin() {
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   foot: { alignSelf: 'stretch' },
-  grid: { alignSelf: 'stretch', gap: 8 },
-  ends: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
-  opts: { width: '100%', gap: 10 },
+  /* keeps the slider in the same place before and after Next shows */
+  btnSpace: { height: 52 },
   badge: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   tiles: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
   tile: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 14, gap: 2 },

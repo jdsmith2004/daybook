@@ -53,14 +53,19 @@ cd apps/mobile && npx expo start
 ## Rules for changes
 
 - **The golden tests are a frozen record.** `packages/core/test/fixtures` holds what the legacy app computed. They stay as regression tests: if one fails, a change touched an old rule. Fix the change, or if the rule was meant to change, update the expected values in the fixtures by hand in the same commit and say why in the commit message. New rules get ordinary unit tests.
-- **Buttons where the thumb is.** The owner wants the main action of a screen (Next, Save, Done, Start, Continue) at the
-  bottom of the screen, where a thumb rests when holding a phone in one hand, not in the middle or at the top. This applies
-  everywhere: lessons, setup, full-screen moments (sunrise, check-in, Good night, SOS tools) and sheets. In a `SceneFrame`,
-  put the main button in `footer` (it sits at the bottom of the screen), with any quiet link (Skip, Cancel) just under it.
-  Answers to tap (big options, number buttons) can sit higher, but the button that moves on or finishes goes low.
-  Close and Back can stay at the top, as they are by platform habit. The one exception is a button that saves what was just typed: it stays
-  right under the text box, because the keyboard covers the bottom of the screen while typing. Use `Dock` (in
-  components/scene.tsx) for a main button inside a full-screen moment's content.
+- **Everything you touch sits low, where the thumb is.** People hold the phone in one hand, on the app and on the
+  website alike (the website is used on phones too), and the thumb only reaches the lower half of the screen comfortably.
+  So on every screen (lessons, setup, the check-in, full-screen moments, SOS tools, sheets):
+  - The question, the title and any explaining sit at the top, to be read.
+  - What the person touches to answer (choices, Yes/No, sliders, option cards) sits in the lower half, just above the
+    main button. A screen whose answers float near the top is wrong, even when the main button is low.
+  - The main button (Next, Save, Done, Start, Continue) is at the very bottom, full width, with any quiet link (Skip,
+    Cancel) just under it.
+  - Close and Back stay at the top, as they are by platform habit.
+  - The one exception is a text box and the button that saves it: they stay together near the top, because the keyboard
+    covers the bottom of the screen while typing.
+  In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`
+  (components/scene.tsx), which pushes them to the bottom. For a number from a range, use `Slider` (components/slider.tsx).
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons rest on good research and speak with confidence.** Science in a lesson cites a source in `SRC` or `OB_SRC` and does not invent numbers. The scope ("Behind this") says where the research comes from and what it means for the reader, in a sure, hopeful voice, without piling up doubts.
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add analytics or anything that reads people's logs on the server.

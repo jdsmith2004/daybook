@@ -3,6 +3,7 @@
    (night-so, night-sleep, morning-done, wind, rt-day, save-checkin). Checked by test/day.test.ts. */
 import { blankP, fmtClock, fmtLeft, HX_NEXT, weekOf, minToClock, morningInfo, reachedOn, rhythm, ROUTINE_KEYS, streaks, sumDay, type RhythmStop } from './legacy/core.js';
 import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
+import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import type { Checkin, DayKey, Days, Play, Reviews, Settings } from './types';
 
@@ -27,14 +28,12 @@ export function windLine(st: Settings, leftToOff: number, p: Play | null | undef
 }
 
 /** the note under "Your day" */
-export function pathNote(days: Days, st: Settings, tk: DayKey, stops: RhythmStop[]): string {
+export function pathNote(days: Days, st: Settings, tk: DayKey, _stops?: RhythmStop[]): string {
   const mi = morningInfo(days, st, tk);
   const day = days[tk];
   const mOn = routineIsOn(st, day && day.p, 'morning');
-  const hasM = stops.some((s) => s.k === 'morning');
-  const note = hasM || (!mi.applies && mOn) ? 'Sleep and screens-off get answered the next morning, because that is when you know.' : '';
-  const later = !mi.applies && mOn ? ' Tomorrow morning a stop called Last night shows up here.' : '';
-  return note + later;
+  /* said once, on the first day; after that the Last night stop explains itself */
+  return !mi.applies && mOn ? 'Sleep and screens-off are asked the next morning, because that is when you know. Tomorrow a stop called Last night shows up here.' : '';
 }
 const routineIsOn = (st: Settings, p: Play | null | undefined, k: string) => {
   const o = p && p.ov && p.ov[k];
@@ -77,12 +76,10 @@ export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKe
   const sk = streaks(days, st, tk);
   const s = sumDay(days[key]);
   const runs = !!st.day1 && key === tk && st.cleanMode !== 'step';
-  if (s.slipped)
-    return (
-      'Saved. A slip is data, not a reset.' +
-      (runs && sk.open && sk.open.k === tk ? ' Your run is on the line. Finish the Rekindle quest to keep it.' : runs && sk.cur === 0 ? ' Your next run starts tomorrow.' : '')
-    );
-  return runs && key >= (st.day1 as string) ? `Saved. Current run: ${sk.cur} day${sk.cur === 1 ? '' : 's'}.` : 'Saved.';
+  if (s.slipped) return 'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' Your run is on the line. Finish the Rekindle quest to keep it.' : '');
+  /* what holds, not a run that can drop to zero: the same measure Today shows */
+  const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;
+  return m && m.n > 0 ? `Saved. ${m.n} ${m.of}.` : 'Saved.';
 }
 /** the summary line under a saved check-in */
 export function checkinLine(days: Days, key: DayKey, c: Checkin): string {
@@ -123,6 +120,21 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   );
   return withDay(days, tk, day);
 }
+/** a sleep chip: set last night's hours outright (the same chip again clears it) */
+export function setSleep(days: Days, tk: DayKey, h: number, now = Date.now()): Days {
+  const day = changeDay(
+    days[tk],
+    tk,
+    (d) => {
+      const c = d.checkin || (d.checkin = blankCheckin());
+      c.h = c.h === h ? null : Math.min(14, Math.max(0, Math.round(h * 2) / 2));
+    },
+    now,
+  );
+  return withDay(days, tk, day);
+}
+/** the sleep chips on Last night: most people land in one of these */
+export const SLEEP_CHIPS = [5, 6, 7, 8, 9];
 /** the morning questions answered (at least one must be) */
 export function morningDone(days: Days, tk: DayKey, now = Date.now()): Days {
   return withDay(

@@ -930,7 +930,7 @@ function rhythm(days,st,tk,nowMs){
  const lessonDone=!!(dp&&((dp.ls&&dp.ls.length)||(dp.lv&&dp.lv.length)));
  if(mi.applies&&show('morning',mi.done))stops.push({k:'morning',start:roll%1440,done:mi.done,title:'Last night',when:'Morning'});
  if(tk>=LESSON_WIN_FROM&&show('lesson',lessonDone))stops.push({k:'lesson',start:9*60,done:lessonDone,title:'Lesson',when:'Daytime'});
- const ciDone=!!(day&&day.checkin&&day.checkin.done),windDone=!!(dp&&dp.wd);
+ const ciDone=!!(day&&day.checkin&&day.checkin.done),windDone=!!(dp&&(dp.wd||dp.po));
  if(show('checkin',ciDone))stops.push({k:'evening',start:18*60,done:ciDone,title:'Check-in',when:'Evening'});
  if(show('wind',windDone))stops.push({k:'night',start:windMin,done:windDone,title:'Wind-down',when:'Night'});
  const nr=rel(nowMin);
@@ -2832,10 +2832,10 @@ const one=v=>v==null?'–':(Math.round(v*10)/10).toFixed(1);
 const STOP_IC={morning:'sunrise',lesson:'book',evening:'pencil',night:'moon'};
 const STOP_WHEN={morning:'Morning',lesson:'Daytime',evening:'Evening',night:'Night'};
 const HX_NEXT={
- morning:{ic:'sunrise',t:'Last night’s questions',s:'2 quick taps',pts:5},
+ morning:{ic:'sunrise',t:'Last night',s:'2 quick taps',pts:5},
  lesson:{ic:'book',pts:10},
- evening:{ic:'pencil',t:'Evening check-in',s:'About a minute',pts:10},
- night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:10}
+ evening:{ic:'pencil',t:'Check-in',s:'About a minute',pts:10},
+ night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:15}
 };
 const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry'};
 const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];

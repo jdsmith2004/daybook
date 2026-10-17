@@ -106,12 +106,12 @@ export default function Today() {
       />
       <CountNotes snap={snap} tk={tk} />
       {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
-      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <View onLayout={(e) => setDayY(e.nativeEvent.layout.y)}>
         <YourDay snap={snap} tk={tk} now={now} openStop={stop} />
       </View>
+      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
       {nudge != null ? (
         <Card tone="note">
           <T v="label">Week {nudge + 1} is done.</T>

@@ -16,6 +16,7 @@ the merges; **no** to shortening setup (see step 5).
 | 4 | My plan and My playbook as one page (Why, Plans, Lists, Learned) that reads like a page and changes in place. **Done.** | High |
 | 5 | Setup keeps every screen; they are there for a reason. **Later, once the remapping is finished:** rework the setup screens' look, and bring back the old app's pictures of the app itself (`legacy/index.html` `obPicToday`: a small phone showing Today with notes pointing at the flame, the lesson and SOS; `obPicSos` with the tab bar). The owner found the old setup visuals much better. | High |
 | 6 | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows. **Done.** | Medium |
+| 7 | The day's stops: Last night is two big taps that finish themselves (celebrations wait until then); the check-in is a one-minute full-screen moment, one question at a time; "Phone away" finishes the wind-down, and Good night carries the plan for a loud night and a missed check-in; Next up says "2 of 4 done"; the check-in's save words use the no-slip measure, not a run. **Done.** | Medium |
 
 Earlier tiers, all done:
 

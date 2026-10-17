@@ -79,14 +79,7 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
             <View style={{ flex: 1, gap: 2 }}>
               <View style={s.eye}>
                 <Text style={[s.eyeT, { color: c.nextInk }]}>NEXT UP</Text>
-                <View style={s.pips} accessibilityLabel={`${o.done} of ${o.n} parts of today done`}>
-                  {o.pips!.map((p, i) => (
-                    <View
-                      key={i}
-                      style={[s.pip, { backgroundColor: p === 'now' ? 'transparent' : c.nextInk, opacity: p ? 1 : 0.35, borderColor: c.nextInk, borderWidth: p === 'now' ? 2.5 : 0 }]}
-                    />
-                  ))}
-                </View>
+                {o.n > 1 ? <Text style={[s.ofT, { color: c.nextInk }]}>{`${o.done} of ${o.n} done`}</Text> : null}
               </View>
               <Text style={[s.actB, { color: c.nextInk }]}>{o.t}</Text>
               <T v="small" style={{ color: c.nextInk }}>
@@ -171,8 +164,7 @@ const s = StyleSheet.create({
   actB: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
   eye: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   eyeT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },
-  pips: { flexDirection: 'row', gap: 5 },
-  pip: { width: 12, height: 12, borderRadius: 6 },
+  ofT: { fontFamily: font.bodySemi, fontSize: 12, opacity: 0.85 },
   pt: { alignItems: 'center', justifyContent: 'center', minWidth: 56, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 16 },
   ptB: { fontFamily: font.display, fontSize: 22, lineHeight: 24 },
   ptS: { fontFamily: font.bodyBold, fontSize: 11 },

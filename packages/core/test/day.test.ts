@@ -88,6 +88,14 @@ describe.each(logs)('$name', (fx) => {
 
 describe('the morning and the wind-down', () => {
   const st = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-08', rollover: 4, screensOff: '23:00', u: 1 });
+  it('a sleep chip sets the hours, and the same chip again clears them', () => {
+    let d = core.setSleep({}, '2026-10-15', 7, 1);
+    expect(d['2026-10-15'].checkin?.h).toBe(7);
+    d = core.setSleep(d, '2026-10-15', 8, 2);
+    expect(d['2026-10-15'].checkin?.h).toBe(8);
+    d = core.setSleep(d, '2026-10-15', 8, 3);
+    expect(d['2026-10-15']).toBeUndefined();
+  });
   it('screens off: the same answer again clears it', () => {
     let d = core.setScreensOff({}, '2026-10-14', 'Y', 1);
     expect(d['2026-10-14'].checkin?.so).toBe('Y');

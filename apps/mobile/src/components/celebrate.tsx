@@ -4,7 +4,7 @@
    celebrate, celNext and confetti. */
 import { celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { Flame } from '@/components/flame';
@@ -15,7 +15,7 @@ import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
-const SCENES = /^\/(sos|tool|log|sunrise|deeper|night|lesson|lwrite|setup)(\/|$)/;
+const SCENES = /^\/(sos|tool|log|sunrise|checkin|deeper|night|lesson|lwrite|setup)(\/|$)/;
 /** the main tabs: a celebration shows only there, never over a page the person is busy on */
 const TABS = /^\/(journal|learn|more)?$/;
 
@@ -34,6 +34,23 @@ export function BadgeArt({ icon, tone, size, earned }: { icon: string; tone: str
       <Icon name={earned ? icon : 'lock'} size={size * (earned ? 0.5 : 0.4)} color={earned ? t.ink : c.muted} />
     </View>
   );
+}
+
+/* a stop that is half answered (Last night between its two taps) holds celebrations, so a level-up never covers the next
+   question; they show once it is finished */
+let holds = 0;
+const holdSubs = new Set<() => void>();
+const holdSub = (f: () => void) => (holdSubs.add(f), () => void holdSubs.delete(f));
+export function useHoldCelebrations(on: boolean) {
+  useEffect(() => {
+    if (!on) return;
+    holds++;
+    holdSubs.forEach((f) => f());
+    return () => {
+      holds--;
+      holdSubs.forEach((f) => f());
+    };
+  }, [on]);
 }
 
 export function CelebrateHost() {
@@ -63,7 +80,8 @@ export function CelebrateHost() {
     };
   }, [hooks]);
 
-  const blocked = !TABS.test(path);
+  const held = useSyncExternalStore(holdSub, () => holds > 0, () => false);
+  const blocked = !TABS.test(path) || held;
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;

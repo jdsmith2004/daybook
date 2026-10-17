@@ -1,6 +1,8 @@
 /* The evening check-in for one day: four honest 0 to 10 ratings, whether you reached out, and one line. Once saved it shows as a
-   summary with Edit. Used in "Your day" on Today and on a day in the Journal. Ported from the legacy checkinBlock. */
+   summary with Edit. Used on a day in the Journal. On Today (`scene`), the form is the full-screen check-in (app/checkin.tsx)
+   instead, and this shows only its start button or the saved summary. Ported from the legacy checkinBlock. */
 import { checkinFormOf, checkinLine, checkinSaveText, saveCheckin, type CheckinForm, type DayKey } from '@daybook/core';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -12,7 +14,7 @@ import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-export function CheckinBlock({ dkey, isToday, onSaved }: { dkey: DayKey; isToday: boolean; onSaved?: () => void }) {
+export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; isToday: boolean; onSaved?: () => void; scene?: boolean }) {
   const c = useTheme();
   const { snap, tk, update, say } = useStore();
   const st = snap.settings!;
@@ -62,6 +64,7 @@ export function CheckinBlock({ dkey, isToday, onSaved }: { dkey: DayKey; isToday
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => {
+              if (scene) return router.push({ pathname: '/checkin', params: { k: dkey } });
               setForm(checkinFormOf(snap.days, dkey));
               setEditing(true);
             }}>
@@ -78,6 +81,16 @@ export function CheckinBlock({ dkey, isToday, onSaved }: { dkey: DayKey; isToday
       </View>
     );
   }
+
+  if (scene)
+    return (
+      <View style={{ gap: 10 }}>
+        <T v="small" tone="muted">
+          Four quick numbers about today, and one line if you want. About a minute.
+        </T>
+        <Button label={drafted ? 'Finish my check-in' : 'Check in'} icon="pencil" onPress={() => router.push({ pathname: '/checkin', params: { k: dkey } })} />
+      </View>
+    );
 
   const set = (k: keyof CheckinForm, v: unknown) => touch({ ...form, [k]: v } as CheckinForm);
   const save = () => {

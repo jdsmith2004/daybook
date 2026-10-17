@@ -17,7 +17,7 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 - **Progress is never all or nothing.** Avoid any count that drops to zero and makes day 89 feel like a disaster. Prefer
   measures that hold what was earned (for example, no-slip days in a recent window) over a single streak that resets.
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
-  change. Graduation (planned, see docs/plan.md) is a permanent award, even if the person later goes back to recovery mode.
+  change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Lessons teach with confidence.** Do the research well, then write plainly and surely. A lesson must be wholesome, true
   to its spirit, motivating and hopeful; it should never read as unsure. Not every line has to be proven in a paper.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and

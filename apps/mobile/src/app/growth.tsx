@@ -1,5 +1,5 @@
-/* One form of the flame in detail, with its three steps. The arrows move between forms. Ported from the legacy sheetGrowth. */
-import { gameCompute, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState } from '@daybook/core';
+/* One form of the flame in detail, with its five steps. The arrows move between forms. Ported from the legacy sheetGrowth. */
+import { gameCompute, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, STEPS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -42,8 +42,8 @@ export default function Growth() {
         <Flame level={stageLevel(si, lvl)} size={156} locked={state === 'later'} />
         <T style={{ textAlign: 'center', fontSize: 17 }}>{sg.meaning}</T>
       </View>
-      {[0, 1, 2].map((t) => {
-        const n = si * 3 + t + 1;
+      {sg.steps.map((_, t) => {
+        const n = si * STEPS + t + 1;
         const ss = n < lvl.n ? 'done' : n === lvl.n ? 'now' : 'later';
         return (
           <View key={t} style={[s.step, { backgroundColor: ss === 'now' ? c.sunSoft : c.surface2 }]}>

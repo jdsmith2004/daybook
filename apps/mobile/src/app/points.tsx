@@ -62,7 +62,7 @@ export default function Points() {
       <SheetH title="What earns points" />
       <PointsList />
       <View style={s.actions}>
-        <Button kind="ghost" label="See all ten forms" onPress={() => router.push('/growth')} />
+        <Button kind="ghost" label="See all twelve forms" onPress={() => router.push('/growth')} />
         <Button label="Done" onPress={closeSheet} />
       </View>
     </SheetFrame>

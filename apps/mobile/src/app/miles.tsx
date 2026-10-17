@@ -1,6 +1,6 @@
-/* Milestones: your flame and its ten forms, how points work, this week's quests, and your badges. Ported from the legacy
+/* Milestones: your flame and its twelve forms, how points work, this week's quests, and your badges. Ported from the legacy
    viewMiles and rewardsBody. */
-import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, weekRange } from '@daybook/core';
+import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, STEPS, weekRange } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -95,12 +95,12 @@ export default function Miles() {
           </T>
         </View>
         <T v="small" tone="muted">
-          Your flame grows a little with every level and turns into something new every third one. Tap a form to see how it grows.
+          Your flame grows a little with every level and turns into something new every fifth one. Tap a form to see how it grows.
         </T>
         {STAGES.map((sg, i) => {
           const state = stageState(i, lvl);
-          const a = i * 3 + 1;
-          const b = i * 3 + 3;
+          const a = i * STEPS + 1;
+          const b = i * STEPS + STEPS;
           const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
           return (
             <Pressable

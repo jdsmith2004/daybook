@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -246,8 +247,10 @@ function defaultSettings(startKey){
 function normSeen(s){
  if(!s||typeof s!=='object')return null;
  const arr=a=>Array.isArray(a)?a.filter(x=>typeof x==='string').slice(0,200):[];
- /* lad = which ladder the saved level counts on (3 = the 30-level ladder); an older one is moved over quietly */
- return {badges:arr(s.badges),quests:arr(s.quests),level:Math.max(1,Math.min(30,parseInt(s.level,10)||1)),full:isKey(s.full)?s.full:null,lad:Math.max(0,Math.min(99,parseInt(s.lad,10)||0))};
+ /* lad = which ladder the saved level counts on (3 = the 30-level ladder, 4 = the 60-level one in levels.ts). A level saved on
+    an older ladder is moved over here, to the level that keeps at least its points, so nothing shown ever goes down. */
+ const lad=Math.max(0,Math.min(99,parseInt(s.lad,10)||0));
+ return {badges:arr(s.badges),quests:arr(s.quests),level:moveSeenLevel(parseInt(s.level,10)||1,lad),full:isKey(s.full)?s.full:null,lad:Math.max(lad,LADDER_V)};
 }
 function normLearn(l){
  const src=(l&&typeof l==='object'&&l.notes&&typeof l.notes==='object')?l.notes:{},notes={};
@@ -667,38 +670,8 @@ function daysCsv(days,st,today){
 }
 /* ===== GAME: points, levels, wins, badges, quests, the day's rhythm. Everything is worked out from the log, nothing extra is stored. =====
    Rules I keep: honesty and coping moves earn points, a slip never subtracts anything, and no level or badge is ever taken away. */
-/* The ladder: 30 levels = 10 forms of the flame spirit x 3 steps of growth in each (the pictures are in 37b_emblem.js).
-   Level n starts at 5(n-1)(n+2) points. The first forms come within days, the last ones take weeks. */
-const LADDER_V=3;
-const STAGES=[
- {name:'Spark',meaning:'You showed up. Every fire starts with something this small.',steps:['A tiny spark appears.','The spark starts to twinkle.','A little trail of light follows it.']},
- {name:'Kindling',meaning:'Small, ordinary things that catch. This is how it gets built.',steps:['A few twigs and a first flicker.','More twigs, and the flicker steadies.','A small flame stands up on its own.']},
- {name:'Campfire',meaning:'Steady warmth you can sit beside.',steps:['Logs and a steady flame.','Stones around it, and the flame grows taller.','Sparks fly, and small flames join in.']},
- {name:'Torch',meaning:'Light you can carry with you into the hard hours.',steps:['You pick up a torch.','The flame grows and lights your way.','Embers drift up around it.']},
- {name:'Beacon',meaning:'A light on a tower, so other people can find you too.',steps:['A beacon on a stone tower.','Light now reaches in every direction.','Faraway beacons light up to answer.']},
- {name:'Lighthouse',meaning:'A steady light that keeps its place when the water is rough.',steps:['A small lighthouse on the rocks.','A taller tower, with longer beams.','The beams sweep across the whole sea.']},
- {name:'Sunrise',meaning:'The first light of a new day.',steps:['The sun peeks over the hills.','Half the sun is up, with its first rays.','The sun climbs, and the clouds catch the pink light.']},
- {name:'Daybreak',meaning:'Morning is here, and it keeps getting brighter.',steps:['The sun clears the hills.','Clouds drift in and the sky brightens.','Birds join the morning.']},
- {name:'Bright Day',meaning:'Clear sky and room to breathe.',steps:['Blue sky and a bright sun.','Green hills, and flowers start to bloom.','A rainbow after the rain.']},
- {name:'Full Sun',meaning:'Warm, steady, and yours.',steps:['The sun steps out of its frame.','A ring of tiny lights circles it.','A glowing halo and sparkles. This is as bright as it gets.']}
-];
+/* The ladder (60 levels in 12 forms of the flame spirit), levelOf and nextLine are in levels.ts. */
 const SETUP_PTS=20; /* finishing the setup, once: a head start, so the first level is already close */
-const LEVELS=Array.from({length:30},(_,i)=>[5*i*(i+3),STAGES[Math.floor(i/3)].name,Math.floor(i/3),i%3]);
-function levelOf(pts){
- let n=0;for(let i=0;i<LEVELS.length;i++)if(pts>=LEVELS[i][0])n=i;
- const cur=LEVELS[n],nxt=LEVELS[n+1]||null,sg=STAGES[cur[2]];
- return {n:n+1,name:cur[1],floor:cur[0],stage:cur[2],tier:cur[3],step:sg.steps[cur[3]],meaning:sg.meaning,
-  next:nxt?nxt[0]:null,nextName:nxt?nxt[1]:null,evolves:!!(nxt&&nxt[2]!==cur[2]),
-  frac:nxt?(pts-cur[0])/(nxt[0]-cur[0]):1,toNext:nxt?nxt[0]-pts:0};
-}
-/* said in plain words: "23 more points to reach level 8", or "50 more points and your flame turns into a Campfire" when the next level is a new form */
-const FORM_NOART={Kindling:1,Daybreak:1,'Bright Day':1,'Full Sun':1};
-const formWord=n=>(FORM_NOART[n]?'':'a ')+n;
-function nextLine(l){
- if(l.next==null)return 'Your flame is as bright as it gets.';
- const n=l.toNext;
- return n+' more point'+(n===1?'':'s')+(l.evolves?' and your flame turns into '+formWord(l.nextName)+'.':' to reach level '+(l.n+1)+'.');
-}
 
 /* the daily wins, in the order of a typical day. Each one can be switched off in Settings or for a single day (see ROUTINE). */
 const WINS=[
@@ -3135,14 +3108,7 @@ export {
   csvRow,
   eventsCsv,
   daysCsv,
-  LADDER_V,
-  STAGES,
   SETUP_PTS,
-  LEVELS,
-  levelOf,
-  FORM_NOART,
-  formWord,
-  nextLine,
   WINS,
   morningInfo,
   winsOf,

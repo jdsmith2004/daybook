@@ -26,7 +26,7 @@ describe.each(logs)('$name', (fx) => {
     it(`moment ${i}: what is new`, () => {
       vi.useFakeTimers();
       vi.setSystemTime(c.now);
-      const st = { ...st0, seen: { badges: [], quests: [], level: 1, full: null, lad: 3 } };
+      const st = { ...st0, seen: { badges: [], quests: [], level: 1, full: null, lad: core.LADDER_V } };
       const r = core.checkNew(days, st, reviews, c.expected.tk, false);
       const items = r.items.map((it) => ({
         type: it.type,

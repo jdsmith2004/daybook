@@ -2,6 +2,7 @@
    The shapes follow the legacy functions exactly. The golden tests check the behavior. */
 import type { Days, Day, DayEvent, DayKey, Settings, Reviews, CountMode, Checkin, Play } from '../types';
 import type { Lesson, Unit } from '../lessons';
+import type { Level } from '../levels';
 
 export type DayKindName = 'ok' | 'one' | 'slip' | 'before' | 'ahead';
 
@@ -105,24 +106,6 @@ export function busiestWindow(
 
 /* ---------- points, levels, wins, quests, badges ---------- */
 export const SETUP_PTS: number;
-export const STAGES: { name: string; meaning: string; steps: [string, string, string] }[];
-export const LEVELS: [number, string, number, number][];
-export interface Level {
-  n: number;
-  name: string;
-  floor: number;
-  stage: number;
-  tier: number;
-  step: string;
-  meaning: string;
-  next: number | null;
-  nextName: string | null;
-  evolves: boolean;
-  frac: number;
-  toNext: number;
-}
-export function levelOf(pts: number): Level;
-export function nextLine(l: Level): string;
 export const WINS: { k: WinKey; name: string; tip: string; ic: string }[];
 export type WinKey = 'morning' | 'lesson' | 'calm' | 'reach' | 'checkin' | 'wind';
 export type Wins = Record<WinKey, boolean> & { na: Record<WinKey, boolean> };
@@ -347,7 +330,6 @@ export const STOP_WHEN: Record<string, string>;
 export const HX_NEXT: Record<string, { ic: string; t?: string; s?: string; pts: number }>;
 export const CHEERS: string[];
 export const WIN_WHY: Record<string, string>;
-export const LADDER_V: number;
 export const LX_E: Record<string, [string, string]>;
 export const LCHECK_N: number;
 export const LWRITE_LEN: number;

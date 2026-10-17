@@ -7,7 +7,8 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 | --- | --- | --- |
 | 1 | Graduation: a fun, permanent award (and remove the lighter Today). **Done.** | Opus, high |
 | 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account. **Done.** | Opus, high |
-| 3 | Levels: the new ladder, its pacing, and keeping every earned level | Opus, high |
+| 3 | Levels: the new ladder, its pacing, and keeping every earned level. **Done.** | Opus, high |
+| 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock | Opus, high |
 | 4 | Levels: the look, the art and the animations | Opus, medium |
 | 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
 
@@ -65,6 +66,24 @@ things wait for an account: sync, cloud backup, and Learn after the first lesson
    the owner first. The $5 budget alert stays.
 7. **Tests**: the lock rules (which lessons are open, finished ones stay open), the prompt timing, and that nothing about care
    ever checks for an account.
+
+## Tier 3b: Accounts, redone (the owner: "native in the app, no popup, extremely smooth")
+
+The browser sign-in page (Cognito's hosted page, opened as a popup) and the lesson lock box are replaced.
+
+1. **Native screens, no browser.** One account sheet inside the app: email, then password (with show/hide), then the
+   6-digit code from the email, which fills itself from the clipboard or the keyboard's suggestion and moves on by itself.
+   Sign in, "Forgot password" (code, new password) and "Send the code again" in the same sheet. Clear, kind errors.
+2. **Talk to Cognito directly** from `apps/mobile/src/lib/auth.ts`, with plain `fetch` to the Cognito endpoint (no SDK, no
+   secret): SignUp, ConfirmSignUp, ResendConfirmationCode, InitiateAuth (USER_PASSWORD_AUTH, then REFRESH_TOKEN_AUTH),
+   ForgotPassword, ConfirmForgotPassword, RevokeToken. In `infra/app`: allow USER_PASSWORD_AUTH on the app client, and add the
+   Cognito endpoint to the web app's Content-Security-Policy. Tokens are kept as today (keychain, or the browser per trust).
+3. **Right after confirming the code, the person is signed in** (no second login), and sync joins the device's log.
+4. **The lock, rebuilt.** Locked lessons stay in the list with their titles; tapping one opens the account sheet straight
+   away, with one line on why, and after signing up the lesson opens by itself. No wall screen in between. The account card on
+   Today opens the same sheet.
+5. Remove the hosted-page flow (expo-auth-session, the redirect handling) once nothing uses it.
+6. Tests: the request shapes against a fake Cognito, the code step, errors, and that a confirmed sign-up signs in.
 
 ## Tier 3: Levels, the ladder
 

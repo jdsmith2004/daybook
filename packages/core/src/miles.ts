@@ -2,7 +2,8 @@
    sheetGrowth and badgeDone. */
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
-import { addDays, dayPoints, Em, gameCompute, LADDER_V, LEVELS, runLedger, WIN_WHY, type Level, type Quest } from './legacy/core.js';
+import { addDays, dayPoints, gameCompute, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { formOfLevel, LADDER_V, LEVELS, STEPS, type Level } from './levels';
 import { changeSettings } from './actions';
 import type { DayKey, Days, Reviews } from './types';
 
@@ -68,7 +69,7 @@ export function checkNew(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     s.seen = seen;
   });
   let items: CelItem[] = [];
-  if (lvlUp) items.push({ type: 'level', level: g.level, from: fromLvl, evolve: Em.stage(g.level.n) > Em.stage(fromLvl) });
+  if (lvlUp) items.push({ type: 'level', level: g.level, from: fromLvl, evolve: formOfLevel(g.level.n) > formOfLevel(fromLvl) });
   newB.forEach((b) => items.push({ type: 'badge', b }));
   newQ.forEach((q) => items.push({ type: 'quest', q }));
   if (perfect) items.push({ type: 'perfect', n: g.tally.t });
@@ -138,11 +139,11 @@ export function winWhy(by: Record<string, number>, quiet: boolean): string {
   );
 }
 
-/* ---------- the ten forms of the flame (legacy growthPath and sheetGrowth) ---------- */
+/* ---------- the twelve forms of the flame (legacy growthPath and sheetGrowth) ---------- */
 export const stageState = (i: number, lvl: Level) => (i < lvl.stage ? 'done' : i === lvl.stage ? 'now' : 'later');
-export const stagePts = (i: number) => LEVELS[i * 3][0];
+export const stagePts = (i: number) => LEVELS[i * STEPS][0];
 /** the picture for a form: the grown one if you are past it, today's if you are in it, the first one if it is ahead */
 export const stageLevel = (i: number, lvl: Level) => {
   const s = stageState(i, lvl);
-  return s === 'done' ? i * 3 + 3 : s === 'now' ? lvl.n : i * 3 + 1;
+  return s === 'done' ? i * STEPS + STEPS : s === 'now' ? lvl.n : i * STEPS + 1;
 };

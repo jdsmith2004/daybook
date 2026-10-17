@@ -2,10 +2,11 @@
    react-native-svg draws the same shapes from the string; it ignores classes, so the native flame is still, and the size
    comes from the component instead of an inline style. */
 import { Em } from './legacy/core.js';
+import { artLevel } from './levels';
 
-/** locked: a form not reached yet, drawn faded (legacy Em.emblem with locked) */
+/** the flame for a level on the 60-level ladder (levels.ts picks the drawing). locked: a form not reached yet, drawn faded */
 export function emblemXml(level: number, locked = false): string {
-  return Em.emblem(level, { still: true, locked })
+  return Em.emblem(artLevel(level), { still: true, locked })
     .replace(/ style="width:\d+px;height:\d+px"/, '')
     .replace(/ style="[^"]*"/g, '')
     .replace(/ class="[^"]*"/g, '')

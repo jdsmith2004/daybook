@@ -6,9 +6,10 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 | Tier | What | Model |
 | --- | --- | --- |
 | 1 | Graduation: a fun, permanent award (and remove the lighter Today) | Opus, high |
-| 2 | Levels: the new ladder, its pacing, and keeping every earned level | Opus, high |
-| 3 | Levels: the look, the art and the animations | Opus, medium |
-| 4 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
+| 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account | Opus, high |
+| 3 | Levels: the new ladder, its pacing, and keeping every earned level | Opus, high |
+| 4 | Levels: the look, the art and the animations | Opus, medium |
+| 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
 
 ## Tier 1: Graduation
 
@@ -42,7 +43,30 @@ slip; and a slip near the goal must never feel like losing everything.
 7. **Tests**: the window count (a slip at 89 gives 88, then 89 the next day), the 7-day gate, the award set once and kept
    through later slips, setting changes and sync, and the words never saying lost, failed or reset.
 
-## Tier 2: Levels, the ladder
+## Tier 2: Accounts
+
+What the owner asked for: a public app. Anyone can install it, go through setup and start using it with no account. A few
+things wait for an account: sync, cloud backup, and Learn after the first lessons.
+
+1. **Never lock care.** SOS, logging, Rekindle, the plan, the tools and Today always work with no account. Learn: the first 3
+   lessons in the daily order are open; the rest show "Sign up to keep going" (the lesson list stays visible, so people see
+   what is waiting). Lessons already finished stay readable.
+2. **Sign up in the app.** Turn on self sign-up in Cognito (`infra/app`), with email verification and the same sign-in page
+   (PKCE, no secret). "Create an account" and "Sign in" sit side by side wherever an account is asked for.
+3. **Ask at good moments, never in a hard one.** A friendly card after the first level-up, after the first week, and when a
+   locked lesson is tapped: "Keep your progress safe, and unlock every lesson." Never on SOS, Rekindle or after a slip.
+   "Not now" waits a week.
+4. **After signing up**, the log already on the device uploads (sync's first run does this), so nothing starts over.
+5. **Strangers' data in the owner's account**: a short, plain privacy page in the app (what is stored, that it is private to
+   them, how to delete it), "Delete my account" easy to find, and CLAUDE.md's privacy rule updated (logs are kept per person,
+   only readable with that person's sign-in).
+6. **Abuse and cost**: keep the per-person write cap and throttling; a daily cap on new sign-ups; Cognito's built-in email
+   (about 50 a day) is enough at first; move to SES (about $0.10 per 1,000 emails) only when sign-ups pass that, and tell
+   the owner first. The $5 budget alert stays.
+7. **Tests**: the lock rules (which lessons are open, finished ones stay open), the prompt timing, and that nothing about care
+   ever checks for an account.
+
+## Tier 3: Levels, the ladder
 
 Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i × (i + 3)` (level 30 at 4,640 points).
 
@@ -63,7 +87,7 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
    `packages/core/src/levels.ts` (and are removed from `core.js`), with unit tests for the curve, the mapping and the floor.
    The golden fixtures change on purpose where levels show; say so in the commit.
 
-## Tier 3: Levels, the look
+## Tier 4: Levels, the look
 
 1. **Art for 60 steps.** Redraw the flame emblem (`packages/core/src/emblem.ts` and the legacy EMBLEM it wraps) as a set of
    layered SVG parts per form, so steps add parts. Same style as today: round, warm, friendly.
@@ -76,7 +100,7 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
    next one as a silhouette with how far away it is, in warm words.
 5. Check in light and dark, on a small phone and a large one.
 
-## Tier 4: Words and polish
+## Tier 5: Words and polish
 
 1. Rekindle, the Days card, Journal and Milestones: words that honor a long run after a slip ("89 days. That is huge, and it
    still counts."), using the run that just ended. No "lost", "failed" or "reset" anywhere.

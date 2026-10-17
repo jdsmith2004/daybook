@@ -229,6 +229,7 @@ export function SliderValue({
   caption,
   hint = 'Slide or tap the line',
   big,
+  long,
 }: {
   value: number | null;
   show?: (v: number) => string;
@@ -237,6 +238,8 @@ export function SliderValue({
   caption?: string;
   hint?: string;
   big?: boolean;
+  /** a big value with more characters (like a time, "12:30"): a little smaller, so it still fits across a phone */
+  long?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -259,7 +262,7 @@ export function SliderValue({
     <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {value != null ? (
         <Animated.View style={[s.readRow, lift]}>
-          <Animated.Text style={[big ? s.huge : s.big, { color: c.ink }]}>{show(value)}</Animated.Text>
+          <Animated.Text style={[big ? (long ? s.hugeLong : s.huge) : s.big, { color: c.ink }]}>{show(value)}</Animated.Text>
           {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
         </Animated.View>
       ) : big ? (
@@ -290,6 +293,7 @@ const s = StyleSheet.create({
   /* before the first touch: a quiet ring pointing down at the slider */
   wait: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   huge: { fontFamily: font.displayBold, fontSize: 128, lineHeight: 140, fontVariant: ['tabular-nums'] },
+  hugeLong: { fontFamily: font.displayBold, fontSize: 92, lineHeight: 104, fontVariant: ['tabular-nums'] },
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },

@@ -2,6 +2,7 @@
    memory kept on the device ("daybook.ur.v1": lines seen lately, suggestions passed over, the last SOS). Here each rule is a pure
    function: the log, the settings, the time and that memory are passed in, and randomness comes from the caller (rand), so the
    tests can pin it. The data (UR_FIT, TOOLS, ...) is extracted verbatim from the legacy app. Checked by test/sos.test.ts. */
+import type { AheadPlan } from './ahead';
 import {
   addDays,
   CU_FEEL,
@@ -50,6 +51,8 @@ export interface UrMem {
   bedPlan?: string;
   /** Move: whether the moves shown are the ones for a seat (in a meeting, at work, in a car) or for getting up */
   moveSit?: boolean;
+  /** A plan for later: the hard hour and the moves picked for it (read it with aheadLive) */
+  ahead?: AheadPlan;
   [bucket: string]: unknown;
 }
 

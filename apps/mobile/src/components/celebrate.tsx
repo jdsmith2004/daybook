@@ -15,7 +15,7 @@ import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
-const SCENES = /^\/(sos|tool|log|sunrise|checkin|deeper|night|lesson|lwrite|setup)(\/|$)/;
+const SCENES = /^\/(sos|tool|log|sunrise|checkin|ahead|deeper|night|lesson|lwrite|setup)(\/|$)/;
 /** the main tabs: a celebration shows only there, never over a page the person is busy on */
 const TABS = /^\/(journal|learn|more)?$/;
 

@@ -15,6 +15,9 @@ import {
   sumDay,
   withDay,
   type Snapshot,
+  aheadLive,
+  aheadMoveName,
+  aheadWhen,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -27,6 +30,7 @@ import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useNow } from '@/lib/now';
 import { useSos } from '@/lib/sos';
+import { cancelAhead } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -129,8 +133,8 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   );
 }
 
-/* the link under the flame: for when it already happened */
-/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Then the quiet "already happened" link. */
+/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Under it, two
+   quiet ones for the other times: it already happened (log it), or a slip is being planned for later (A plan for later). */
 export function LogLink() {
   const c = useTheme();
   return (
@@ -152,12 +156,67 @@ export function LogLink() {
         </View>
         <Icon name="next" size={22} color={c.sosInk} />
       </Pressable>
+      {/* the other two times: it already happened, or it is being planned for later */}
+      <View style={s.pair}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Already happened? Log what happened."
+          onPress={() => router.push('/log')}
+          style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
+          <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1}>
+            Already happened
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="A slip planned for later? Get ahead of it now, while it is quiet."
+          onPress={() => router.push('/ahead')}
+          style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
+          <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1}>
+            A plan for later
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+/* a plan made ahead (A plan for later) waits here until two hours after its hour: when it is, and the moves picked */
+export function AheadCard() {
+  const c = useTheme();
+  const sos = useSos();
+  const now = useNow(30000);
+  const p = aheadLive(sos.mem.ahead, now);
+  if (!p) return null;
+  const here = now >= p.t;
+  return (
+    <View style={[s.ahead, { backgroundColor: here ? c.violetSoft : c.surface, borderColor: c.cardEdge }]}>
+      <View style={s.aheadTop}>
+        <Icon name="compass" size={18} color={c.violetText} />
+        <T v="label" style={{ flex: 1, color: c.violetText }}>
+          {here ? 'This is the hour. You planned for it.' : 'Your plan for ' + aheadWhen(p.t, now)}
+        </T>
+      </View>
+      {p.moves.map((m) => (
+        <View key={m} style={s.aheadRow}>
+          <Icon name="check" size={16} color={c.mintText} />
+          <T style={{ flex: 1 }}>{aheadMoveName(m)}</T>
+        </View>
+      ))}
+      {here ? (
+        <T v="small" tone="muted">
+          If an urge shows up, SOS is just below.
+        </T>
+      ) : null}
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.push('/log')}
-        style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
-        <Text style={[s.logT, { color: c.accentText }]}>Already happened? Log what happened</Text>
-        <Icon name="next" size={18} color={c.accentText} />
+        onPress={() => {
+          buzz('tap');
+          cancelAhead();
+          sos.setMem((m) => ({ ...m, ahead: undefined }));
+        }}
+        style={s.aheadDone}>
+        <Text style={[s.logT, { color: c.accentText, textDecorationLine: 'underline' }]}>{here ? 'It passed. Clear the plan' : 'Clear the plan'}</Text>
       </Pressable>
     </View>
   );
@@ -244,7 +303,22 @@ const s = StyleSheet.create({
   top: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   ico: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   quote: { padding: 12, borderRadius: 14, borderWidth: 1.5 },
-  log: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2 },
+  ahead: { gap: 8, padding: 16, borderRadius: 22, borderWidth: 2 },
+  aheadTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  aheadRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 2 },
+  aheadDone: { alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' },
+  pair: { flexDirection: 'row', gap: 8 },
+  log: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    minHeight: 52,
+    paddingHorizontal: 10,
+    borderRadius: 18,
+    borderWidth: 2,
+  },
   logT: { fontFamily: font.bodySemi, fontSize: 15 },
   sos: {
     flexDirection: 'row',

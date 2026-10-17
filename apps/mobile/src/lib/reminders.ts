@@ -37,7 +37,9 @@ const before = (t: string, min: number) => {
 
 /** the reminders as they should be: everything Daybook scheduled is replaced by these */
 export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  /* the daily ones are replaced; a one-off reminder for a plan made ahead (below) stays */
+  for (const n of await Notifications.getAllScheduledNotificationsAsync())
+    if (n.identifier !== AHEAD) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   const any = p.morning || p.checkin || (p.wind && screensOff);
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
@@ -52,6 +54,25 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
       content: { title: 'Daybook', body: r.body, data: { url: '/' } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, ...hm(r.at), channelId: CHANNEL },
     });
+}
+
+const AHEAD = 'ahead';
+/** one reminder at the hard hour of a plan made ahead (A plan for later), replacing any earlier one. The words are the
+    person's own move, which says nothing about what Daybook is for. False when reminders are not allowed. */
+export async function scheduleAhead(t: number, body: string): Promise<boolean> {
+  await cancelAhead();
+  if (t <= Date.now() || !(await allowReminders())) return false;
+  if (Platform.OS === 'android')
+    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+  await Notifications.scheduleNotificationAsync({
+    identifier: AHEAD,
+    content: { title: 'Daybook', body, data: { url: '/' } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
+  });
+  return true;
+}
+export async function cancelAhead(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(AHEAD).catch(() => undefined);
 }
 
 /** a tap on a reminder opens Today, whether the app was open or not */

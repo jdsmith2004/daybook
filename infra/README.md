@@ -15,12 +15,15 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 >
 > **Only from main.** AWS trusts the deploy role only for a workflow running on this repository's `main` branch. A pull request, another branch or a fork cannot get in.
 
-1. **Sign in to AWS from the command line.** Do not use the root account for this. In the AWS console, open IAM Identity Center, create a user for yourself with the `AdministratorAccess` permission set, then:
+1. **Sign in to AWS from the command line, as an IAM user (not root).** IAM Identity Center needs an AWS Organization, which
+   ends the free tier, so use a plain IAM user instead: in the console, open IAM > Users, create one (for example
+   `jeff-admin`) with the `AdministratorAccess` policy and MFA. Then, in a **private browser window** (so an old root
+   sign-in is not reused), sign in to the console as that user, and run:
 
    ```sh
-   aws configure sso          # name the profile "daybook"
+   aws login --profile daybook --region us-east-2
    export AWS_PROFILE=daybook
-   aws sts get-caller-identity
+   aws sts get-caller-identity     # must show ...:user/jeff-admin, not ...:root
    ```
 
 2. **Run the bootstrap stack.**

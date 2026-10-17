@@ -26,6 +26,9 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 - **Publish live every time.** Every change should reach the live site so the owner can see it. Free publishing is always
   fine (the GitHub Pages preview at https://jdsmith2004.github.io/daybook/, and the AWS site, which costs about nothing per
   deploy). If something would cost money, tell the owner what and how much before relying on it.
+  CloudFront gives 1,000 free cache refreshes (invalidation paths) a month, and each AWS deploy uses 2. Before publishing,
+  count this month's AWS deploys (`gh run list --workflow Deploy`); once the month has used 900 paths (450 deploys), ask the
+  owner before publishing again.
 
 ## How the code is laid out
 

@@ -1,5 +1,5 @@
 /* The slider for an honest number: the check-in's 0 to 10 and last night's hours of sleep.
-   - The value shows large above it and gives a small bump each time it changes.
+   - The value shows large above it (or huge, elsewhere on the screen, with SliderValue) and bumps each time it changes.
    - A thick track with a mark at every step; the marks light up as the fill passes them.
    - While held, the knob follows the finger exactly and a soft glow sits under it; let go, and it springs onto the
      nearest step. A tap anywhere on the track glides the knob there.
@@ -10,9 +10,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 
-import { T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 const KNOB = 40;
@@ -32,6 +32,7 @@ export function Slider({
   show = (v) => String(v),
   unit,
   hint = 'Slide or tap the line',
+  readout = true,
 }: {
   label: string;
   value: number | null;
@@ -48,6 +49,8 @@ export function Slider({
   /** a small word after the big number, like "hours" */
   unit?: string;
   hint?: string;
+  /** false when the screen shows the number itself, larger, somewhere else (with SliderValue) */
+  readout?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -56,11 +59,10 @@ export function Slider({
   const n = Math.round((max - min) / step);
   const fracOf = (v: number) => (v - min) / (max - min);
 
-  /* where the knob is (0 to 1), how held it is (0 to 1), whether it is shown, and the number's bump */
+  /* where the knob is (0 to 1), how held it is (0 to 1), and whether it is shown */
   const pos = useRef(new Animated.Value(has ? fracOf(value!) : 0)).current;
   const hold = useRef(new Animated.Value(0)).current;
   const seen = useRef(new Animated.Value(has ? 1 : 0)).current;
-  const bump = useRef(new Animated.Value(0)).current;
   const dragging = useRef(false);
   const last = useRef<number | null>(value);
   const left = useRef(0);
@@ -79,11 +81,6 @@ export function Slider({
     else if (how === 'spring') Animated.spring(pos, { toValue: f, useNativeDriver: false, friction: 7, tension: 140 }).start();
     else Animated.timing(pos, { toValue: f, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   };
-  const pulse = () => {
-    if (reduce) return;
-    bump.setValue(1);
-    Animated.spring(bump, { toValue: 0, useNativeDriver: true, friction: 5, tension: 220 }).start();
-  };
   const appear = () => {
     if (reduce) return seen.setValue(1);
     Animated.spring(seen, { toValue: 1, useNativeDriver: false, friction: 6, tension: 160 }).start();
@@ -101,7 +98,6 @@ export function Slider({
     const first = last.current == null;
     last.current = v;
     onChange(v);
-    pulse();
     buzz(first ? 'tap' : 'tick');
   };
 
@@ -146,27 +142,7 @@ export function Slider({
 
   return (
     <View style={s.wrap}>
-      <View style={s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {v != null ? (
-          <Animated.View
-            style={[
-              s.readRow,
-              {
-                transform: [
-                  { scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) },
-                  { translateY: bump.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) },
-                ],
-              },
-            ]}>
-            <Animated.Text style={[s.big, { color: c.ink }]}>{show(v)}</Animated.Text>
-            {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
-          </Animated.View>
-        ) : (
-          <T v="label" tone="muted" style={s.hint}>
-            {hint}
-          </T>
-        )}
-      </View>
+      {readout ? <SliderValue value={v} show={show} unit={unit} hint={hint} /> : null}
       <View
         accessible
         accessibilityRole="adjustable"
@@ -243,12 +219,77 @@ export function Slider({
   );
 }
 
+/** the slider's number, large, with a small bump each time it changes. Under the slider by default; a screen with room
+    (the check-in) shows it huge in its middle instead (`big`), with the caption under it. Hidden from screen readers,
+    which hear the slider's own value. */
+export function SliderValue({
+  value,
+  show = (v) => String(v),
+  unit,
+  caption,
+  hint = 'Slide or tap the line',
+  big,
+}: {
+  value: number | null;
+  show?: (v: number) => string;
+  unit?: string;
+  /** a line under a big number, like "out of 10" */
+  caption?: string;
+  hint?: string;
+  big?: boolean;
+}) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const bump = useRef(new Animated.Value(0)).current;
+  const was = useRef(value);
+  useEffect(() => {
+    if (value === was.current) return;
+    was.current = value;
+    if (reduce || value == null) return;
+    bump.setValue(1);
+    Animated.spring(bump, { toValue: 0, useNativeDriver: NATIVE, friction: 5, tension: 220 }).start();
+  }, [value, reduce, bump]);
+  const lift = {
+    transform: [
+      { scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, big ? 1.08 : 1.12] }) },
+      { translateY: bump.interpolate({ inputRange: [0, 1], outputRange: [0, big ? -6 : -3] }) },
+    ],
+  };
+  return (
+    <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {value != null ? (
+        <Animated.View style={[s.readRow, lift]}>
+          <Animated.Text style={[big ? s.huge : s.big, { color: c.ink }]}>{show(value)}</Animated.Text>
+          {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
+        </Animated.View>
+      ) : big ? (
+        <View style={[s.wait, { borderColor: c.accent, opacity: 0.55 }]}>
+          <Icon name="down" size={30} color={c.muted} />
+        </View>
+      ) : (
+        <T v="label" tone="muted" style={s.hint}>
+          {hint}
+        </T>
+      )}
+      {big ? (
+        <T v="label" tone="muted">
+          {value == null ? hint : caption || ''}
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
 /* on the web: a drag across the slider moves it instead of scrolling the page sideways, and never selects the number */
 const WEB_DRAG = Platform.OS === 'web' ? ({ touchAction: 'pan-y', cursor: 'pointer' } as object) : null;
 
 const s = StyleSheet.create({
   wrap: { alignSelf: 'stretch', gap: 4, userSelect: 'none' },
   read: { minHeight: 64, alignItems: 'center', justifyContent: 'flex-end' },
+  readBig: { alignItems: 'center', justifyContent: 'center', gap: 2 },
+  /* before the first touch: a quiet ring pointing down at the slider */
+  wait: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  huge: { fontFamily: font.displayBold, fontSize: 128, lineHeight: 140, fontVariant: ['tabular-nums'] },
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },

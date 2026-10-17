@@ -11,7 +11,7 @@ import { Appear } from '@/components/appear';
 import { BigOption, Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { Dock, SceneFrame } from '@/components/scene';
-import { Slider } from '@/components/slider';
+import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
@@ -109,8 +109,12 @@ export default function Checkin() {
             An honest 0 to 10. Do not round up to feel better.
           </T>
         ) : null}
+        {/* the answer, huge, in the open middle of the screen; the slider that sets it sits under the thumb */}
+        <View style={s.middle}>
+          <SliderValue big value={v} caption="out of 10" hint="Slide below to answer" />
+        </View>
         <Dock>
-          <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} onChange={(n) => set({ ...form, [step]: n })} />
+          <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} readout={false} onChange={(n) => set({ ...form, [step]: n })} />
           {v != null ? (
             <Appear by={10} duration={240}>
               <Button label="Next" onPress={next} />
@@ -301,6 +305,7 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   /* each step fills the card, so its Dock still sits at the bottom */
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
   pts: { fontFamily: font.display, fontSize: 18 },
   doneBox: { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
   ring: { position: 'absolute', width: 96, height: 96, borderRadius: 48, borderWidth: 3 },

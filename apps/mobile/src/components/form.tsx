@@ -1,11 +1,11 @@
 /* Small form parts shared by Today, the Journal and My plan: a 0 to 10 rating you can tap or drag, a Yes/No pair, a stepper,
    a checkbox row, an On/Off pair, and a section that opens and closes (like the legacy <details>). */
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Appear } from '@/components/appear';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 /** an honest 0 to 10. Nothing is picked until the person picks; tap or drag along the track, or use the screen reader's adjust */
@@ -173,6 +173,12 @@ export function Collapse({
   tone?: 'now' | 'done' | 'plain';
 }) {
   const c = useTheme();
+  const reduce = useReducedMotion();
+  const turn = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) turn.setValue(open ? 1 : 0);
+    else Animated.timing(turn, { toValue: open ? 1 : 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
+  }, [open, reduce, turn]);
   return (
     <View style={[s.det, { borderColor: tone === 'now' ? c.accent : c.cardEdge, backgroundColor: c.surface }]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.sum}>
@@ -194,16 +200,44 @@ export function Collapse({
             {right}
           </T>
         ) : null}
-        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+        <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) }] }}>
           <Icon name="next" size={18} color={c.muted} />
-        </View>
+        </Animated.View>
       </Pressable>
-      {open ? (
-        <Appear by={6} duration={220} style={s.in}>
-          {children}
-        </Appear>
-      ) : null}
+      <Reveal open={open} style={s.in}>
+        {children}
+      </Reveal>
     </View>
+  );
+}
+
+/** what a Collapse holds: it grows open and folds shut smoothly, then keeps its natural height while open (so an answer
+    that adds a line still fits). With Reduce Motion on, it is simply shown or hidden. */
+function Reveal({ open, style, children }: { open: boolean; style?: StyleProp<ViewStyle>; children: ReactNode }) {
+  const reduce = useReducedMotion();
+  const [phase, setPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(open ? 'open' : 'closed');
+  const [h, setH] = useState(0);
+  const v = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (open) setPhase((p) => (p === 'closed' || p === 'closing' ? (reduce ? 'open' : 'opening') : p));
+    else setPhase((p) => (p === 'open' || p === 'opening' ? (reduce ? 'closed' : 'closing') : p));
+  }, [open, reduce]);
+  useEffect(() => {
+    const ease = (to: number, ms: number, done: 'open' | 'closed') =>
+      Animated.timing(v, { toValue: to, duration: ms, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(({ finished }) => finished && setPhase(done));
+    if (phase === 'opening' && h > 0) ease(1, 280, 'open');
+    else if (phase === 'closing') ease(0, 220, 'closed');
+    else if (phase === 'open') v.setValue(1);
+    else if (phase === 'closed') v.setValue(0);
+  }, [phase, h, v]);
+  if (phase === 'closed') return null;
+  const moving = phase !== 'open';
+  return (
+    <Animated.View style={moving ? { height: v.interpolate({ inputRange: [0, 1], outputRange: [0, h] }), opacity: v, overflow: 'hidden' } : null}>
+      <View style={style} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
+        {children}
+      </View>
+    </Animated.View>
   );
 }
 

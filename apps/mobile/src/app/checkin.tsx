@@ -2,26 +2,20 @@
    numbers on a slider, low on the screen where the thumb is, whether you reached out, one optional line, then the day as it is saved and what comes next.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
-import {
-  checkinFormOf,
-  checkinSaveText,
-  gameCompute,
-  rhythm,
-  saveCheckin,
-  stopStatus,
-  type CheckinForm,
-  type DayKey,
-} from '@daybook/core';
+import { checkinFormOf, checkinSaveText, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { BigOption, Field, Link } from '@/components/choices';
+import { CountUp } from '@/components/count-up';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -45,6 +39,8 @@ export default function Checkin() {
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, k));
   const [step, setStep] = useState<Step>('m');
   const [hist, setHist] = useState<Step[]>([]);
+  /* which way the steps slide: forward from the right, Back from the left */
+  const [dir, setDir] = useState(1);
   const [msg, setMsg] = useState('');
   const [pts0] = useState(() => (st ? gameCompute(snap.days, st, snap.reviews, tk).pts : 0));
 
@@ -62,6 +58,7 @@ export default function Checkin() {
   if (!st) return null;
   const go = (next: Step) => {
     setHist((h) => h.concat(step));
+    setDir(1);
     setStep(next);
   };
   const next = () => go(STEPS[STEPS.indexOf(step as (typeof STEPS)[number]) + 1] || 'n');
@@ -70,6 +67,7 @@ export default function Checkin() {
     const p = h.pop();
     if (!p) return;
     setHist(h);
+    setDir(-1);
     setStep(p);
   };
   const set = (f: CheckinForm) => {
@@ -87,6 +85,7 @@ export default function Checkin() {
     buzz('lit');
     setMsg(text);
     setHist([]);
+    setDir(1);
     setStep('end');
   };
 
@@ -112,7 +111,13 @@ export default function Checkin() {
         ) : null}
         <Dock>
           <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} onChange={(n) => set({ ...form, [step]: n })} />
-          {v != null ? <Button label="Next" onPress={next} /> : <View style={s.btnSpace} />}
+          {v != null ? (
+            <Appear by={10} duration={240}>
+              <Button label="Next" onPress={next} />
+            </Appear>
+          ) : (
+            <View style={s.btnSpace} />
+          )}
         </Dock>
       </>
     );
@@ -188,24 +193,42 @@ export default function Checkin() {
     );
     body = (
       <>
-        <View style={[s.badge, { backgroundColor: c.mintSoft }]}>
-          <Icon name="check" size={36} color={c.mintText} />
+        <Done />
+        <Appear delay={180}>
+          <T v="title" style={s.c} accessibilityRole="header">
+            Day logged.
+          </T>
+        </Appear>
+        <Appear delay={260} style={{ alignItems: 'center', gap: 4 }}>
+          <T style={s.c}>{msg}</T>
+          {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
+        </Appear>
+        <View style={s.tiles}>
+          {(
+            [
+              [form.m, 'Motivation'],
+              [form.c, 'Connection'],
+              [form.e, 'Energy'],
+              [form.s, 'Stress'],
+            ] as [number | null, string][]
+          ).map(([v, l], j) => (
+            <Appear key={l} delay={360 + j * 70} by={14} style={[s.tile, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+              <Text style={[s.tileV, { color: c.ink }]}>{v == null ? '–' : v}</Text>
+              <T v="small" tone="muted">
+                {l}
+              </T>
+            </Appear>
+          ))}
         </View>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Day logged.
-        </T>
-        <T style={s.c}>
-          {msg}
-          {gain ? <T v="label" tone="mintText">{`  +${gain} points`}</T> : null}
-        </T>
-        <View style={s.tiles}>{[tile(form.m, 'Motivation'), tile(form.c, 'Connection'), tile(form.e, 'Energy'), tile(form.s, 'Stress')]}</View>
         {wind && r ? (
-          <View style={[s.next, { backgroundColor: c.surface }]}>
-            <Icon name="moon" size={20} color={c.violetText} />
+          <Appear delay={700} style={[s.next, { backgroundColor: c.surface }]}>
+            <View style={[s.nextIc, { backgroundColor: c.violetSoft }]}>
+              <Icon name="moon" size={18} color={c.violetText} />
+            </View>
             <T style={{ flex: 1 }}>
               <T v="label">Next: the wind-down.</T> {stopStatus(wind, r.windMin)}.
             </T>
-          </View>
+          </Appear>
         ) : null}
       </>
     );
@@ -224,19 +247,67 @@ export default function Checkin() {
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}
       footer={footer}>
-      {body}
+      <Appear key={step} x={step === 'm' && !hist.length ? 0 : 36 * dir} by={0} duration={280} style={s.stage}>
+        {body}
+      </Appear>
     </SceneFrame>
+  );
+}
+
+/* the check mark of the closing screen: it pops in on a soft ring that widens and fades once */
+function Done() {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const ring = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    Animated.parallel([
+      Animated.spring(v, { toValue: 1, friction: 5, tension: 120, useNativeDriver: NATIVE }),
+      Animated.timing(ring, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+    ]).start();
+  }, [reduce, v, ring]);
+  return (
+    <View style={s.doneBox}>
+      <Animated.View
+        style={[
+          s.ring,
+          {
+            borderColor: c.mint,
+            opacity: ring.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.6, 0] }),
+            transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.6] }) }],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          s.badge,
+          {
+            backgroundColor: c.mintSoft,
+            opacity: v.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 1] }),
+            transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }, { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-20deg', '0deg'] }) }],
+          },
+        ]}>
+        <Icon name="check" size={40} color={c.mintText} />
+      </Animated.View>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
+  /* each step fills the card, so its Dock still sits at the bottom */
+  stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  pts: { fontFamily: font.display, fontSize: 18 },
+  doneBox: { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
+  ring: { position: 'absolute', width: 96, height: 96, borderRadius: 48, borderWidth: 3 },
   foot: { alignSelf: 'stretch' },
   /* keeps the slider in the same place before and after Next shows */
   btnSpace: { height: 52 },
-  badge: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
   tiles: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
-  tile: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 14, gap: 2 },
-  tileV: { fontFamily: font.display, fontSize: 22 },
-  next: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', padding: 14, borderRadius: 16 },
+  tile: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 16, gap: 2, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 3 } },
+  tileV: { fontFamily: font.display, fontSize: 26 },
+  next: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', padding: 14, borderRadius: 18 },
+  nextIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });

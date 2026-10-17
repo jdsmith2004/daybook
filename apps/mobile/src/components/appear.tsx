@@ -9,6 +9,8 @@ import { NATIVE, rise, useAppear } from '@/lib/motion';
 export function Appear({
   children,
   by = 8,
+  x = 0,
+  delay = 0,
   duration = 260,
   webOnly,
   style,
@@ -16,6 +18,10 @@ export function Appear({
 }: {
   children: ReactNode;
   by?: number;
+  /** slide in sideways from this far (a step in a sequence: positive from the right, negative from the left) */
+  x?: number;
+  /** wait this long first (to let several things rise one after another) */
+  delay?: number;
   duration?: number;
   webOnly?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -28,16 +34,18 @@ export function Appear({
       </Animated.View>
     );
   return (
-    <Moving by={by} duration={duration} style={style} onLayout={onLayout}>
+    <Moving by={by} x={x} delay={delay} duration={duration} style={style} onLayout={onLayout}>
       {children}
     </Moving>
   );
 }
 
-function Moving({ children, by, duration, style, onLayout }: { children: ReactNode; by: number; duration: number; style?: StyleProp<ViewStyle>; onLayout?: (e: LayoutChangeEvent) => void }) {
-  const v = useAppear(0, duration);
+function Moving({ children, by, x, delay, duration, style, onLayout }: { children: ReactNode; by: number; x: number; delay: number; duration: number; style?: StyleProp<ViewStyle>; onLayout?: (e: LayoutChangeEvent) => void }) {
+  const v = useAppear(delay, duration);
+  const r = rise(v, by);
+  const slide = x ? { ...r, transform: [...r.transform, { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [x, 0] }) }] } : r;
   return (
-    <Animated.View style={[style, rise(v, by)]} onLayout={onLayout}>
+    <Animated.View style={[style, slide]} onLayout={onLayout}>
       {children}
     </Animated.View>
   );

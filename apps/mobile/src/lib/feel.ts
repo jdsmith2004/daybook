@@ -2,10 +2,13 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
-export function buzz(kind: 'tap' | 'save' | 'lit' = 'tap', on = true) {
+export function buzz(kind: 'tap' | 'tick' | 'save' | 'lit' = 'tap', on = true) {
   if (!on || Platform.OS === 'web') return;
+  /* tick: the faint click of a slider passing each step */
   const run =
-    kind === 'lit'
+    kind === 'tick'
+      ? Haptics.selectionAsync()
+      : kind === 'lit'
       ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       : Haptics.impactAsync(kind === 'save' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
   run.catch(() => undefined);

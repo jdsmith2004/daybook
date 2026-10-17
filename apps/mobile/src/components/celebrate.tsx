@@ -81,7 +81,19 @@ export function CelebrateHost() {
   }, [hooks]);
 
   const held = useSyncExternalStore(holdSub, () => holds > 0, () => false);
-  const blocked = !TABS.test(path) || held;
+  /* after a hold ends, a short pause so the finished stop folds shut before a celebration comes up */
+  const [settling, setSettling] = useState(false);
+  const wasHeld = useRef(held);
+  useEffect(() => {
+    if (wasHeld.current && !held) {
+      setSettling(true);
+      const t = setTimeout(() => setSettling(false), 550);
+      wasHeld.current = held;
+      return () => clearTimeout(t);
+    }
+    wasHeld.current = held;
+  }, [held]);
+  const blocked = !TABS.test(path) || held || settling;
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;

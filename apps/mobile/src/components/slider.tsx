@@ -1,15 +1,23 @@
-/* The slider for an honest number: the check-in's 0 to 10 and last night's hours of sleep. The value shows large above it; a
-   thick track with a mark at every step; a round knob that grows while held. Tap anywhere on the track or drag; it snaps to
-   each step with a small buzz. Nothing is set until the person touches it: until then there is no knob, only the marks and
-   a hint. Screen readers can step it up or down. */
-import { useRef, useState } from 'react';
-import { StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+/* The slider for an honest number: the check-in's 0 to 10 and last night's hours of sleep.
+   - The value shows large above it and gives a small bump each time it changes.
+   - A thick track with a mark at every step; the marks light up as the fill passes them.
+   - While held, the knob follows the finger exactly and a soft glow sits under it; let go, and it springs onto the
+     nearest step. A tap anywhere on the track glides the knob there.
+   - Nothing is set until it is touched: until then there is no knob, only the marks and a hint. The first touch pops the
+     knob in.
+   - A faint tick under the finger at each step (on phones). Screen readers step it up and down. With Reduce Motion on,
+     everything moves straight to where it ends. */
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Platform, StyleSheet, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 
 import { T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
-const KNOB = 38;
+const KNOB = 40;
+/* how far the track's rounded ends reach past the first and last marks */
+const CAP = 8;
 
 export function Slider({
   label,
@@ -42,92 +50,173 @@ export function Slider({
   hint?: string;
 }) {
   const c = useTheme();
+  const reduce = useReducedMotion();
   const [w, setW] = useState(0);
-  const [held, setHeld] = useState(false);
-  const last = useRef<number | null>(value);
-  last.current = value;
   const has = value != null;
   const n = Math.round((max - min) / step);
-  const frac = has ? (value! - min) / (max - min) : 0;
+  const fracOf = (v: number) => (v - min) / (max - min);
 
-  const at = (e: GestureResponderEvent) => {
-    if (!w) return;
-    const x = Math.max(0, Math.min(w, e.nativeEvent.locationX - KNOB / 2));
-    const v = Math.round(min + Math.round((x / (w - KNOB)) * n) * step * 1e6) / 1e6;
-    const cl = Math.max(min, Math.min(max, v));
-    if (cl !== last.current) {
-      last.current = cl;
-      onChange(cl);
-      buzz('tap');
-    }
+  /* where the knob is (0 to 1), how held it is (0 to 1), whether it is shown, and the number's bump */
+  const pos = useRef(new Animated.Value(has ? fracOf(value!) : 0)).current;
+  const hold = useRef(new Animated.Value(0)).current;
+  const seen = useRef(new Animated.Value(has ? 1 : 0)).current;
+  const bump = useRef(new Animated.Value(0)).current;
+  const dragging = useRef(false);
+  const last = useRef<number | null>(value);
+  const left = useRef(0);
+
+  /* a value set from outside (a draft coming back, a screen reader) moves the knob too */
+  useEffect(() => {
+    last.current = value;
+    if (value == null || dragging.current) return;
+    to(fracOf(value), 'glide');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const to = (f: number, how: 'glide' | 'spring' | 'set') => {
+    pos.stopAnimation();
+    if (reduce || how === 'set') pos.setValue(f);
+    else if (how === 'spring') Animated.spring(pos, { toValue: f, useNativeDriver: false, friction: 7, tension: 140 }).start();
+    else Animated.timing(pos, { toValue: f, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  };
+  const pulse = () => {
+    if (reduce) return;
+    bump.setValue(1);
+    Animated.spring(bump, { toValue: 0, useNativeDriver: true, friction: 5, tension: 220 }).start();
+  };
+  const appear = () => {
+    if (reduce) return seen.setValue(1);
+    Animated.spring(seen, { toValue: 1, useNativeDriver: false, friction: 6, tension: 160 }).start();
+  };
+  const holdTo = (v: 0 | 1) => {
+    if (reduce) return hold.setValue(v);
+    Animated.spring(hold, { toValue: v, useNativeDriver: false, friction: 7, tension: 180 }).start();
+  };
+
+  /* the finger's place along the track (0 to 1), and the step nearest it */
+  const fracAt = (pageX: number) => Math.max(0, Math.min(1, (pageX - left.current - KNOB / 2) / Math.max(1, w - KNOB)));
+  const snap = (f: number) => Math.max(min, Math.min(max, Math.round((min + Math.round(f * n) * step) * 1e6) / 1e6));
+  const pick = (v: number) => {
+    if (v === last.current) return;
+    const first = last.current == null;
+    last.current = v;
+    onChange(v);
+    pulse();
+    buzz(first ? 'tap' : 'tick');
+  };
+
+  const grant = (e: GestureResponderEvent) => {
+    const { pageX, locationX } = e.nativeEvent;
+    left.current = pageX - locationX;
+    dragging.current = true;
+    holdTo(1);
+    const f = fracAt(pageX);
+    const v = snap(f);
+    if (last.current == null) {
+      to(fracOf(v), 'set');
+      appear();
+    } else to(fracOf(v), 'glide');
+    pick(v);
+  };
+  const move = (e: GestureResponderEvent) => {
+    const f = fracAt(e.nativeEvent.pageX);
+    pos.stopAnimation();
+    pos.setValue(f);
+    pick(snap(f));
+  };
+  const release = () => {
+    dragging.current = false;
+    holdTo(0);
+    if (last.current == null) return;
+    to(fracOf(last.current), 'spring');
+    onRelease?.(last.current);
   };
   const nudge = (d: number) => {
-    const v = Math.max(min, Math.min(max, (has ? value! : Math.round((min + max) / 2 / step) * step) + d * step));
+    const v = Math.max(min, Math.min(max, (has ? value! : snap(0.5)) + d * step));
+    if (!has) appear();
     onChange(v);
     onRelease?.(v);
   };
 
+  const span = Math.max(1, w - KNOB);
+  const knobX = pos.interpolate({ inputRange: [0, 1], outputRange: [0, span] });
+  /* the track starts CAP before the first mark, so the fill reaches the knob's center at CAP + the knob's travel */
+  const fillW = pos.interpolate({ inputRange: [0, 1], outputRange: [CAP, CAP + span] });
+  const v = has ? value! : null;
+
   return (
     <View style={s.wrap}>
       <View style={s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {has ? (
-          <>
-            <Text style={[s.big, { color: c.ink }]}>{show(value!)}</Text>
-            {unit ? <Text style={[s.unit, { color: c.muted }]}>{unit}</Text> : null}
-          </>
+        {v != null ? (
+          <Animated.View
+            style={[
+              s.readRow,
+              { transform: [{ scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }, { translateY: bump.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }] },
+            ]}>
+            <Animated.Text style={[s.big, { color: c.ink }]}>{show(v)}</Animated.Text>
+            {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
+          </Animated.View>
         ) : (
-          <Text style={[s.hint, { color: c.muted }]}>{hint}</Text>
+          <T v="label" tone="muted" style={s.hint}>
+            {hint}
+          </T>
         )}
       </View>
       <View
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={label}
-        accessibilityValue={has ? { min, max, now: value!, text: show(value!) + (unit ? ' ' + unit : '') } : { text: 'Not set' }}
+        accessibilityValue={v != null ? { min, max, now: v, text: show(v) + (unit ? ' ' + unit : '') } : { text: 'Not set' }}
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(e) => nudge(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
         onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderTerminationRequest={() => false}
-        onResponderGrant={(e) => {
-          setHeld(true);
-          at(e);
-        }}
-        onResponderMove={at}
-        onResponderRelease={() => {
-          setHeld(false);
-          if (last.current != null) onRelease?.(last.current);
-        }}
-        onResponderTerminate={() => setHeld(false)}
-        style={s.hit}>
-        <View pointerEvents="none" style={[s.track, { backgroundColor: c.surface2 }]}>
-          {has ? <View style={[s.fill, { width: `${frac * 100}%`, backgroundColor: c.accent }]} /> : null}
+        onResponderGrant={grant}
+        onResponderMove={move}
+        onResponderRelease={release}
+        onResponderTerminate={release}
+        style={[s.hit, WEB_DRAG]}>
+        {/* the track, and the fill up to the knob's center */}
+        <View pointerEvents="none" style={[s.track, { backgroundColor: c.accentSoft }]}>
+          {v != null ? <Animated.View style={[s.fill, { width: fillW, backgroundColor: c.accent }]} /> : null}
         </View>
         {/* a mark at every step (whole numbers only, when the step is a half) */}
         <View pointerEvents="none" style={s.marks}>
           {Array.from({ length: n + 1 }, (_, i) => {
-            const v = min + i * step;
-            if (step < 1 && v % 1 !== 0) return <View key={i} style={s.markGap} />;
-            const lit = has && v <= value!;
-            return <View key={i} style={[s.mark, { backgroundColor: lit ? c.accentInk : c.muted, opacity: lit ? 0.7 : 0.45 }]} />;
+            const at = min + i * step;
+            if (step < 1 && at % 1 !== 0) return <View key={i} style={s.markGap} />;
+            const lit = v != null && at <= v;
+            return <View key={i} style={[s.mark, { backgroundColor: lit ? c.accentInk : c.muted, opacity: lit ? 0.75 : 0.4 }]} />;
           })}
         </View>
-        {has ? (
-          <View
-            pointerEvents="none"
-            style={[
-              s.knob,
-              {
-                left: `${frac * 100}%`,
-                marginLeft: -KNOB * frac,
-                backgroundColor: c.accent,
-                borderColor: c.surface,
-                shadowColor: c.lip,
-                transform: [{ scale: held ? 1.14 : 1 }],
-              },
-            ]}
-          />
+        {v != null ? (
+          <Animated.View pointerEvents="none" style={[s.knobBox, { transform: [{ translateX: knobX }] }]}>
+            {/* a soft glow under the finger while held */}
+            <Animated.View
+              style={[
+                s.glow,
+                {
+                  backgroundColor: c.accent,
+                  opacity: hold.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] }),
+                  transform: [{ scale: hold.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                s.knob,
+                {
+                  backgroundColor: c.accent,
+                  borderColor: c.surface,
+                  shadowColor: c.lip,
+                  opacity: seen,
+                  transform: [{ scale: Animated.multiply(seen.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }), hold.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] })) }],
+                },
+              ]}
+            />
+          </Animated.View>
         ) : null}
       </View>
       <View style={s.ends}>
@@ -142,29 +231,24 @@ export function Slider({
   );
 }
 
+/* on the web: a drag across the slider moves it instead of scrolling the page sideways, and never selects the number */
+const WEB_DRAG = Platform.OS === 'web' ? ({ touchAction: 'pan-y', cursor: 'pointer' } as object) : null;
+
 const s = StyleSheet.create({
-  /* a drag on the web must not select the number as text */
-  wrap: { alignSelf: 'stretch', gap: 6, userSelect: 'none' },
-  read: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, minHeight: 58 },
-  big: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 56 },
+  wrap: { alignSelf: 'stretch', gap: 4, userSelect: 'none' },
+  read: { minHeight: 64, alignItems: 'center', justifyContent: 'flex-end' },
+  readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },
-  hint: { fontFamily: font.bodySemi, fontSize: 15, alignSelf: 'center' },
-  hit: { height: 56, justifyContent: 'center' },
-  track: { position: 'absolute', left: KNOB / 2 - 7, right: KNOB / 2 - 7, height: 14, borderRadius: 7, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 7 },
+  hint: { paddingBottom: 12 },
+  hit: { height: 60, justifyContent: 'center' },
+  track: { position: 'absolute', left: KNOB / 2 - CAP, right: KNOB / 2 - CAP, height: 16, borderRadius: 8, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 8 },
   marks: { position: 'absolute', left: KNOB / 2, right: KNOB / 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   mark: { width: 4, height: 4, borderRadius: 2 },
   markGap: { width: 4, height: 4 },
-  knob: {
-    position: 'absolute',
-    width: KNOB,
-    height: KNOB,
-    borderRadius: KNOB / 2,
-    borderWidth: 4,
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  ends: { flexDirection: 'row', justifyContent: 'space-between' },
+  knobBox: { position: 'absolute', left: 0, width: KNOB, height: KNOB, alignItems: 'center', justifyContent: 'center' },
+  glow: { position: 'absolute', width: KNOB * 1.9, height: KNOB * 1.9, borderRadius: KNOB },
+  knob: { width: KNOB, height: KNOB, borderRadius: KNOB / 2, borderWidth: 5, shadowOpacity: 1, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  ends: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
 });

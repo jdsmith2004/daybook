@@ -3,11 +3,12 @@
    A dark sky (night, ember) gives everything inside it the night colors, in either theme. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, InkContext, T } from '@/components/ui';
+import { useReducedMotion } from '@/lib/motion';
 import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
 
 export function SceneFrame({
@@ -61,14 +62,7 @@ export function SceneFrame({
           {dots ? (
             <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
               {Array.from({ length: dots.n }, (_, j) => (
-                <View
-                  key={j}
-                  style={[
-                    s.dot,
-                    { backgroundColor: j < dots.i ? (dark ? nightInk.ink : c.accent) : j === dots.i ? (dark ? '#FFC832' : c.sun) : btn },
-                    j === dots.i && { flex: 2 },
-                  ]}
-                />
+                <Dot key={j} state={j < dots.i ? 2 : j === dots.i ? 1 : 0} colors={[btn, dark ? '#FFC832' : c.sun, dark ? nightInk.ink : c.accent]} />
               ))}
             </View>
           ) : null}
@@ -87,6 +81,19 @@ export function SceneFrame({
   ) : (
     body
   );
+}
+
+/** one segment of the progress bar: to come (0), now (1, longer and bright) or done (2). It grows and changes color
+    smoothly as the steps move on. */
+function Dot({ state, colors }: { state: 0 | 1 | 2; colors: [string, string, string] }) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(state)).current;
+  useEffect(() => {
+    if (reduce) v.setValue(state);
+    else Animated.timing(v, { toValue: state, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [state, reduce, v]);
+  const grow = v.interpolate({ inputRange: [0, 1, 2], outputRange: [1, 2, 1] });
+  return <Animated.View style={[s.dot, { flexGrow: grow, backgroundColor: v.interpolate({ inputRange: [0, 1, 2], outputRange: colors }) }]} />;
 }
 
 /** the main button of a full-screen moment, at the bottom of the screen where the thumb is (see CLAUDE.md). Put it as a

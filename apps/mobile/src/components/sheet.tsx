@@ -3,6 +3,8 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Appear } from '@/components/appear';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';
@@ -16,7 +18,7 @@ export function SheetFrame({ title, sub, children, onClose = closeSheet, footer 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[s.scroll, { paddingTop: inset.top + 12, paddingBottom: inset.bottom + 28 }]}>
-        <View style={s.col}>
+        <Appear webOnly by={24} style={s.col}>
           <View style={s.head}>
             <View style={{ flex: 1, gap: 2 }}>
               <T v="title" accessibilityRole="header">
@@ -30,7 +32,7 @@ export function SheetFrame({ title, sub, children, onClose = closeSheet, footer 
           </View>
           {children}
           {footer}
-        </View>
+        </Appear>
       </ScrollView>
     </View>
   );

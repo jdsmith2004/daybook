@@ -1,6 +1,21 @@
 # What is planned next
 
-Everything below is done (October 17, 2026). New work goes at the top as it comes up.
+## The remap (October 17, 2026)
+
+A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate
+systems: 35 setup screens, about 13 counters on Today with five different day counts, six reward systems, and a plan that
+reads like a form. The fix is fewer, bigger things, with nothing earned taken away. Steps 2 to 6 wait on the owner's answers.
+
+| Step | What | Effort |
+| --- | --- | --- |
+| 1 | Smoothness: pages, panes, opened cards and lesson cards ease in; Back names the page underneath; closing a tool or lesson returns to the page it was opened from; setup wording. **Done.** | Medium |
+| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal | High |
+| 3 | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work | Medium |
+| 4 | My plan and My playbook as one page you read and tap to edit, like the lists | High |
+| 5 | Setup down to about ten screens; the self-check and teaching screens move to "How Daybook works" and the first lessons | High |
+| 6 | Learn: one path, numbered in order, one lock line; Journal day rows; More and Settings as one tab | Medium |
+
+Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;
 each tier ends with typecheck, tests, a look at the web build, and a merge to `main` (which publishes it).

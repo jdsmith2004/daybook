@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
@@ -197,7 +198,11 @@ export function Collapse({
           <Icon name="next" size={18} color={c.muted} />
         </View>
       </Pressable>
-      {open ? <View style={s.in}>{children}</View> : null}
+      {open ? (
+        <Appear by={6} duration={220} style={s.in}>
+          {children}
+        </Appear>
+      ) : null}
     </View>
   );
 }

@@ -51,6 +51,7 @@ import {
   type RecordId,
   type Settings,
   type SetupAnswers,
+  LESSONS,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -93,7 +94,7 @@ type Flow = SetupFlow;
 export default function Setup() {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const { snap, tk, replace, say } = useStore();
+  const { snap, tk, replace, say, current } = useStore();
   const sync = useSync();
   const st = snap.settings;
   const [f, setF] = useState<Flow>(() => {
@@ -183,7 +184,7 @@ export default function Setup() {
     try {
       const text = await pickBackupText();
       if (text == null) return;
-      const { snap: next, restored } = restoreBackup(snap, readBackup(text));
+      const { snap: next, restored } = restoreBackup(current().snap, readBackup(text));
       await replace(
         next,
         toRecords(next).map((r) => r.id as RecordId),
@@ -681,7 +682,7 @@ export default function Setup() {
               Here is your plan.
             </Text>
             <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-              <View style={[s.planRow, { borderBottomWidth: 0 }]}>
+              <View style={[s.planRow, { borderTopWidth: 0 }]}>
                 <Flame level={1} size={48} />
                 <View>
                   <T v="small" tone="muted">
@@ -936,7 +937,7 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
         />
       );
     case 'lessons':
-      return <Show st={st} art={<PicLesson />} h="32 short lessons. One a day is plenty." line="Each takes 1 to 5 minutes, with the research linked." />;
+      return <Show st={st} art={<PicLesson />} h={`${LESSONS.length} short lessons. One a day is plenty.`} line="Each takes 1 to 5 minutes, with the research linked." />;
     case 'flame':
       return <Show st={st} art={<PicFlame />} h="Your flame grows as you show up." line="Honest logs, lessons, and urges you ride out earn points. **Points never go down.**" />;
     case 'waves':

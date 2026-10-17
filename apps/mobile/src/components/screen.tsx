@@ -1,11 +1,13 @@
 /* A scrolling screen with the page color, a title, and room for the tab bar. A page opened on top of the tabs (from More, or
-   from a lesson) gets a Back button. */
+   from a lesson) gets a Back button that names the page underneath it. On the web the page eases in. */
 import { router } from 'expo-router';
 import type { ReactNode, Ref } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Appear } from '@/components/appear';
 import { Icon, T } from '@/components/ui';
+import { useBackLabel } from '@/lib/nav';
 import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export function Screen({
@@ -27,6 +29,7 @@ export function Screen({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
+  const label = useBackLabel(typeof back === 'string' ? back : 'Back');
   return (
     <ScrollView
       ref={scrollRef}
@@ -34,17 +37,17 @@ export function Screen({
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
-      <View style={s.col}>
+      <Appear webOnly style={s.col}>
         {back ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={typeof back === 'string' ? back : 'Back'}
+            accessibilityLabel={label}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             style={[s.back, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
             <Icon name="back" size={20} color={c.ink} />
             {typeof back === 'string' ? (
               <T v="label" style={{ paddingRight: 6 }}>
-                {back}
+                {label}
               </T>
             ) : null}
           </Pressable>
@@ -61,7 +64,7 @@ export function Screen({
           {sub}
         </View>
         {children}
-      </View>
+      </Appear>
     </ScrollView>
   );
 }

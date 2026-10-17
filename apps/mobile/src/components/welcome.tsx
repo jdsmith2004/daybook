@@ -16,7 +16,7 @@ import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 
 export function Welcome() {
-  const { tk, replace, say, snap } = useStore();
+  const { tk, replace, say, snap, current } = useStore();
   const [busy, setBusy] = useState(false);
   const sync = useSync();
   const fresh = async () => {
@@ -31,7 +31,7 @@ export function Welcome() {
       const text = await pickBackupText();
       if (text == null) return;
       const b = readBackup(text);
-      const { snap: next, restored } = restoreBackup(snap, b);
+      const { snap: next, restored } = restoreBackup(current().snap, b);
       if (!next.settings) next.settings = defaultSettings(tk);
       await replace(
         next,

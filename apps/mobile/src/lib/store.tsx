@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   allDirty,
   checkNew,
+  LADDER_V,
   clearAcked,
   mergeRemote,
   type SyncRecord,
@@ -237,7 +238,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!st) return;
     const tkNow = logicalKey(Date.now(), st.rollover);
     if (savedSeen.current == null) savedSeen.current = savedRuns(snapRef.current.days, st, tkNow).saved;
-    if (!st.seen || (st.seen.lad || 0) < 3) {
+    if (!st.seen || (st.seen.lad || 0) < LADDER_V) {
       const r = checkNew(snapRef.current.days, st, snapRef.current.reviews, tkNow, false);
       if (r.st) commitSettings(r.st);
     }
@@ -327,8 +328,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!m.changed.length) return 0;
       snapRef.current = m.snap;
       setSnap(m.snap);
+      /* the marks change before any wait, so a change made during the write keeps its "not synced yet" mark */
+      const marks = saveDirty(m.dirty);
       await writeQuiet(m.snap, m.changed);
-      await saveDirty(m.dirty);
+      await marks;
+      if (dirtyRef.current !== m.dirty) await AsyncStorage.setItem(DIRTY, JSON.stringify(dirtyRef.current));
       return m.changed.length;
     },
     [writeQuiet, saveDirty],

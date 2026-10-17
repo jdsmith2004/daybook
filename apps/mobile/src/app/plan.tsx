@@ -16,6 +16,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { Field } from '@/components/choices';
 import { Check, Segments } from '@/components/form';
 import { RelLesson } from '@/components/help-bits';
@@ -34,6 +35,8 @@ type Sub = 'safety' | 'urge' | 'slip' | 'steps';
 export default function Plan() {
   const params = useLocalSearchParams<{ pane?: string; sub?: string; fresh?: string; add?: string }>();
   const scroll = useRef<ScrollViewInstance>(null);
+  /* where the pane starts on the page, so a list inside it can be scrolled to */
+  const paneY = useRef(0);
   const { snap } = useStore();
   const [pane, setPane] = useState<Pane>(params.pane === 'plans' || params.pane === 'lists' ? params.pane : params.sub ? 'plans' : 'why');
   const [sub, setSub] = useState<Sub>(['safety', 'urge', 'slip', 'steps'].indexOf(params.sub || '') >= 0 ? (params.sub as Sub) : 'safety');
@@ -44,7 +47,7 @@ export default function Plan() {
     lists: 'Your calm moves, your wind-down, and the words that steady you.',
   }[pane];
   return (
-    <Screen title="My plan" sub={<T tone="muted">{words}</T>} back={params.fresh || params.add ? 'Back' : 'More'} scrollRef={scroll}>
+    <Screen title="My plan" sub={<T tone="muted">{words}</T>} back="More" scrollRef={scroll}>
       <Segments
         label="My plan sections"
         list={[
@@ -55,7 +58,9 @@ export default function Plan() {
         cur={pane}
         onPick={setPane}
       />
-      {pane === 'plans' ? <Plans sub={sub} setSub={setSub} onLists={() => setPane('lists')} /> : pane === 'lists' ? <Lists fresh={params.fresh} add={params.add} scrollTo={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true })} /> : <Why />}
+      <Appear key={pane} style={{ gap: 14 }} onLayout={(e) => (paneY.current = e.nativeEvent.layout.y)}>
+      {pane === 'plans' ? <Plans sub={sub} setSub={setSub} onLists={() => setPane('lists')} /> : pane === 'lists' ? <Lists fresh={params.fresh} add={params.add} scrollTo={(y) => scroll.current?.scrollTo({ y: Math.max(0, y + paneY.current - 8), animated: true })} /> : <Why />}
+      </Appear>
     </Screen>
   );
 }

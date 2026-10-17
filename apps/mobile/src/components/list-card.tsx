@@ -100,9 +100,9 @@ export function ListCard({
             lit={lit === i}
             onLitDone={() => setLit(null)}
             onToggle={() => setOpen(open === i ? null : i)}
-            onSave={(t) => apply({ st: listEdit(snap.settings!, k, i, t) })}
+            onSave={(t) => apply((cur) => ({ st: listEdit(cur, k, i, t) }))}
             onMove={(d) => {
-              apply({ st: listMove(snap.settings!, k, i, d) });
+              apply((cur) => ({ st: listMove(cur, k, i, d) }));
               setOpen(i + d);
             }}
             canUp={i > 0}
@@ -209,6 +209,15 @@ function Row({
   const glow = useRef(new Animated.Value(lit ? 1 : 0)).current;
   const [val, setVal] = useState(text);
   useEffect(() => setVal(text), [text]);
+  /* a row that closes (another row opened) keeps what was typed in it */
+  const typed = useRef(val);
+  typed.current = val;
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open && typed.current !== text) onSave(typed.current);
+    wasOpen.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   /* the glow: on at once, then it fades over a few seconds */
   useEffect(() => {
     if (!lit) return;

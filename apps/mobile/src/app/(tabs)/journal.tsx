@@ -29,6 +29,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { DayColumns, EmptyChart, FeelTiles, HBars, HourChart, Legend, NumbersTable } from '@/components/charts';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -62,7 +63,9 @@ export default function Journal() {
         cur={pane}
         onPick={setPane}
       />
-      {pane === 'days' ? <DaysPane /> : pane === 'patterns' ? <PatternsPane /> : <WeekView k={week == null ? cw : week} onNav={setWeek} />}
+      <Appear key={pane} style={{ gap: 14 }}>
+        {pane === 'days' ? <DaysPane /> : pane === 'patterns' ? <PatternsPane /> : <WeekView k={week == null ? cw : week} onNav={setWeek} />}
+      </Appear>
     </Screen>
   );
 }

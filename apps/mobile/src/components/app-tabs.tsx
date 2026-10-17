@@ -1,15 +1,19 @@
 /* The tab bar, the same on iOS, Android and the web: Today, Journal, a raised SOS button in the middle (it opens SOS, it is not a
-   page), Learn, and More. Like the legacy tab bar. The pages inside More light up More. */
-import { router } from 'expo-router';
+   page), Learn, and More. Like the legacy tab bar. It also notes which tab is showing, so a page's Back can name it. */
+import { router, usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { keepTab } from '@/lib/nav';
 import { font, MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export default function AppTabs() {
+  const path = usePathname();
+  useEffect(() => keepTab(path), [path]);
   return (
     <Tabs>
       <TabSlot style={{ flex: 1 }} />

@@ -31,6 +31,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { Collapse, Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { ToolGrid, toolTone } from '@/components/tool-grid';
@@ -66,7 +67,9 @@ export default function Learn() {
         cur={pane}
         onPick={setPane}
       />
-      {pane === 'tools' ? <ToolsPane /> : <LessonsPane />}
+      <Appear key={pane} style={{ gap: 14 }}>
+        {pane === 'tools' ? <ToolsPane /> : <LessonsPane />}
+      </Appear>
     </Screen>
   );
 }

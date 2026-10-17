@@ -50,6 +50,7 @@ import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type GestureResponderEvent, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Appear } from '@/components/appear';
 import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
@@ -582,7 +583,9 @@ export default function LessonScreen() {
     <Frame title={'Lesson ' + n + ' of ' + LESSONS.length + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')} onClose={close} c={c} inset={inset}>
       {prog}
       <ScrollView ref={scroll} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]} contentContainerStyle={s.cardIn} keyboardShouldPersistTaps="handled">
-        {body}
+        <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
+          {body}
+        </Appear>
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}
       {sheet ? (
@@ -1037,7 +1040,8 @@ const s = StyleSheet.create({
   prog: { flexDirection: 'row', gap: 4 },
   progI: { flex: 1, height: 8, borderRadius: 4 },
   card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
-  cardIn: { padding: 22, gap: 14, flexGrow: 1 },
+  cardIn: { padding: 22, flexGrow: 1 },
+  cardBody: { gap: 14, flexGrow: 1 },
   art: { minHeight: 110, alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },

@@ -83,7 +83,7 @@ const Chips = ({ children, label }: { children: ReactNode; label?: string }) => 
 
 export default function Settings() {
   const params = useLocalSearchParams<{ open?: string }>();
-  const { snap, tk, apply, replace, erase, say, dirty, hooks } = useStore();
+  const { snap, tk, apply, replace, erase, say, dirty, hooks, current } = useStore();
   const sos = useSos();
   const sync = useSync();
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
@@ -118,7 +118,7 @@ export default function Settings() {
     try {
       const text = await pickBackupText();
       if (text == null) return;
-      const { snap: next, restored } = restoreBackup(snap, readBackup(text));
+      const { snap: next, restored } = restoreBackup(current().snap, readBackup(text));
       await replace(
         next,
         toRecords(next).map((r) => r.id as RecordId),

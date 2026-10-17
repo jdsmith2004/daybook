@@ -5,7 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
@@ -14,6 +14,7 @@ import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
 import { Toast } from '@/components/toast';
 import { forgetDrafts } from '@/lib/drafts';
+import { keepRootState, type NavState } from '@/lib/nav';
 import { useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, scheduleReminders } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
@@ -31,6 +32,13 @@ function Reminders() {
     scheduleReminders(prefs, so).catch(() => undefined);
   }, [prefs, so]);
   useEffect(() => listenForTaps(), []);
+  return null;
+}
+
+/* lets close() see which screens are open, so closing a full-screen moment returns to the page it was opened from */
+function NavKeeper() {
+  const ref = useNavigationContainerRef();
+  useEffect(() => keepRootState(() => (ref.isReady() ? (ref.getRootState() as unknown as NavState) : undefined)), [ref]);
   return null;
 }
 
@@ -56,6 +64,7 @@ function Shell() {
     <ThemeProvider value={nav}>
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <Reminders />
+      <NavKeeper />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />

@@ -9,6 +9,7 @@ each tier ends with typecheck, tests, a look at the web build, and a merge to `m
 | 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account. **Done.** | Opus, high |
 | 3 | Levels: the new ladder, its pacing, and keeping every earned level. **Done.** | Opus, high |
 | 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock. **Done.** | Opus, high |
+| 3c | Lessons: any "add this to your plan" is a one-tap button (first: the prayer lesson). **Done.** | Opus, medium |
 | 4 | Levels: the look, the art and the animations | Opus, medium |
 | 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes | Opus, medium |
 
@@ -120,6 +121,9 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
 5. Check in light and dark, on a small phone and a large one.
 
 ## Tier 5: Words and polish
+
+0. Look through every lesson's practice step for anything that asks the person to go and type something in elsewhere, and
+   make it a one-tap add (as in the prayer lesson), keeping "write my own" as a second button.
 
 1. Rekindle, the Days card, Journal and Milestones: words that honor a long run after a slip ("89 days. That is huge, and it
    still counts."), using the run that just ended. No "lost", "failed" or "reset" anywhere.

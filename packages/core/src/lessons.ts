@@ -50,7 +50,7 @@ export interface Card {
 }
 export interface Go {
   t: string;
-  a: 'sheet' | 'scene' | 'tab' | 'copy' | 'help' | 'growth' | 'week' | 'addmove' | 'addwind' | 'reasons';
+  a: 'sheet' | 'scene' | 'tab' | 'copy' | 'help' | 'growth' | 'week' | 'addmove' | 'addwind' | 'addword' | 'reasons';
   v?: string;
   sub?: string;
   open?: string;

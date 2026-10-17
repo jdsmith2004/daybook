@@ -2508,8 +2508,8 @@ const LESSONS=[
        ['Decide the pause does not work for you','One hard moment is not a verdict. The pause is practice, and it gets easier.'],
        ['Say the prayer again and again until it lifts','Your words matter, but they work best followed by a move.']]}
   ],
-  act:{h:'Make it yours.',p:'Add your words in My plan, under Lists. Then put the pause on your calm moves, so it shows up when you need it.',b:[['words']],mins:2,
-   go:[{t:'Add the pause to my calm moves',a:'addmove',text:'Stop. Breathe out slowly. Say my words. Then stand up and move.',ic:'plus'},{t:'Add a quiet minute to my wind-down',a:'addwind',text:'A few quiet minutes or a prayer, phone in another room',ic:'moon'},{t:'Add my words in My plan',a:'tab',v:'settings',open:'s-lists',ic:'pencil'}],ok:'Your pause is ready.'},
+  act:{h:'Make it yours.',p:'Add a prayer to your words with one tap, or write your own. Then put the pause on your calm moves, so it shows up when you need it.',b:[['words']],mins:2,
+   go:[{t:'Add the Serenity Prayer to my words',a:'addword',text:'God, grant me the serenity to accept the things I cannot change, the courage to change the things I can, and the wisdom to know the difference.',ic:'plus'},{t:'Add the pause to my calm moves',a:'addmove',text:'Stop. Breathe out slowly. Say my words. Then stand up and move.',ic:'plus'},{t:'Add a quiet minute to my wind-down',a:'addwind',text:'A few quiet minutes or a prayer, phone in another room',ic:'moon'},{t:'Write my own words',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'Your pause is ready.'},
   rc:{q:'The pull hits hard while you are at your desk. What does the four-move pause look like?',
    c:['Stop, breathe out, say your words, then move','Pray, then stay where you are','Scroll first, then pray later','Wait for the feeling to pass on its own'],a:0,
    r:'Stop, breathe out, say your words, then move.',
@@ -2917,7 +2917,7 @@ const FWD_B=[['proud','Proud'],['calm','Calm'],['clear','Clear-headed'],['rested
 const THOUGHTS=[['once','Just once will not hurt'],['deserve','I deserve this'],['blown','I already blew it today'],['cant','I cannot handle this feeling'],['nobody','Nobody will know'],['tired','I am too tired to fight it'],['last','This is the last time']];
 const thoughtIn=t=>{const s=String(t||'').trim().replace(/[.!?]+$/,'');return /^I\b/.test(s)?s:s.charAt(0).toLowerCase()+s.slice(1)};
 const BED=[['phone','Phone charging outside the bedroom','Or across the room, out of reach.'],['alarm','Alarm set','A clock, or the phone across the room.'],['lights','Lights off','Screens off too.']];
-const LIST_OF={addmove:['menu',24,'calm moves'],addwind:['wind',10,'wind-down list']};
+const LIST_OF={addmove:['menu',24,'calm moves'],addwind:['wind',10,'wind-down list'],addword:['words',WORDS_MAX,'words that steady me']};
 const LX_E={hook:['bolt','The thought'],insight:['sparkle','The idea'],proof:['chart','The proof'],turn:['chat','Your turn'],guess:['ask','Take a guess'],recall:['sparkle','Quick recall'],step:['flag','Next step'],
  predict:['ask','Make a guess'],answer:['sparkle','The answer'],move:['flag','What to do'],check:['check','Check it']};
 const LCHECK_N=16,LWRITE_LEN=1500;

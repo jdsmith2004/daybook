@@ -1,4 +1,4 @@
-/* The Today card: your flame and how far it has grown, the one thing to do next, and the urge button.
+/* The Today card: your flame and how far it has grown, the one thing to do next (not in the lighter Today), and the urge button.
    Tap the flame to say hi; tap the level for how points work. Ported from the legacy hxHtml and nextUpHtml. */
 import { CHEERS, nextUp, type GameState, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
@@ -11,7 +11,7 @@ import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapshot; tk: string; now: number; onStop: (k: string) => void }) {
+export function Hero({ g, snap, tk, now, onStop, quiet }: { g: GameState; snap: Snapshot; tk: string; now: number; onStop: (k: string) => void; quiet?: boolean }) {
   const c = useTheme();
   const { say } = useStore();
   const lvl = g.level;
@@ -50,7 +50,7 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
           </T>
         </Pressable>
       </View>
-      {o.n ? (
+      {o.n && !quiet ? (
         !o.k ? (
           <View style={[s.act, { backgroundColor: c.mintSoft }]} accessibilityRole="text">
             <View style={[s.ic, { backgroundColor: c.surface }]}>

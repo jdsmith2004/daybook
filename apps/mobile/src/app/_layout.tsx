@@ -64,7 +64,7 @@ function Shell() {
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}
           {/* the sheets: one thing, over everything */}
-          {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]'].map((name) => (
+          {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'lighter'].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           ))}
         </Stack>

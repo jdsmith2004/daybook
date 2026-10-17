@@ -285,7 +285,10 @@ function Done() {
           {
             backgroundColor: c.mintSoft,
             opacity: v.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 1] }),
-            transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }, { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-20deg', '0deg'] }) }],
+            transform: [
+              { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+              { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-20deg', '0deg'] }) },
+            ],
           },
         ]}>
         <Icon name="check" size={40} color={c.mintText} />
@@ -306,7 +309,16 @@ const s = StyleSheet.create({
   btnSpace: { height: 52 },
   badge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
   tiles: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
-  tile: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 16, gap: 2, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 3 } },
+  tile: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 2,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 3 },
+  },
   tileV: { fontFamily: font.display, fontSize: 26 },
   next: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', padding: 14, borderRadius: 18 },
   nextIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

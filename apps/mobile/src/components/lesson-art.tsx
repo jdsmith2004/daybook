@@ -14,7 +14,8 @@ import { font, useTheme, type Tone } from '@/lib/theme';
 export function LxIco({ name, t, size = 120 }: { name: string; t: Tone; size?: number }) {
   const v = useAppear(0, 380);
   return (
-    <Animated.View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }, pop(v)]}>
+    <Animated.View
+      style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }, pop(v)]}>
       <Icon name={name || 'sparkle'} size={size * 0.47} color={t.ic} />
     </Animated.View>
   );
@@ -107,8 +108,7 @@ function Wave({ t, al }: { t: Tone; al?: string }) {
   const ox = (w - 330 * k) / 2;
   const oy = (150 - 150 * k) / 2;
   const R = 8 * k;
-  const along = (i: 0 | 1, o: number) =>
-    go.interpolate({ inputRange: WAVE_PTS.map((_, j) => j / 24), outputRange: WAVE_PTS.map((p) => o + p[i] * k - R) });
+  const along = (i: 0 | 1, o: number) => go.interpolate({ inputRange: WAVE_PTS.map((_, j) => j / 24), outputRange: WAVE_PTS.map((p) => o + p[i] * k - R) });
   return (
     <View style={{ width: '100%', maxWidth: 330, height: 150 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
       <Svg width="100%" height={150} viewBox="0 0 330 150" accessibilityLabel={al || 'An urge rises, peaks, and falls like a wave'}>
@@ -146,7 +146,12 @@ function Wave({ t, al }: { t: Tone; al?: string }) {
 function Snow({ t, o }: { t: Tone; o: { a?: string; b?: string; al?: string } }) {
   const c = useTheme();
   return (
-    <Svg width="100%" height={170} viewBox="0 0 330 170" style={{ maxWidth: 330 }} accessibilityLabel={o.al || 'A snowball rolling down a slope, growing as it goes'}>
+    <Svg
+      width="100%"
+      height={170}
+      viewBox="0 0 330 170"
+      style={{ maxWidth: 330 }}
+      accessibilityLabel={o.al || 'A snowball rolling down a slope, growing as it goes'}>
       <Path d="M10 30 L320 150" stroke={c.line} strokeWidth={4} strokeLinecap="round" fill="none" />
       <Circle cx={43} cy={34} r={8} fill={t.soft} stroke={t.ic} strokeWidth={2} />
       <Circle cx={110} cy={54} r={14} fill={t.soft} stroke={t.ic} strokeWidth={2} />
@@ -183,7 +188,12 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
   );
   const arrow = (d: string) => <Path key={d} d={d} stroke={t.text} strokeWidth={3} strokeLinecap="round" markerEnd="url(#lxah)" />;
   return (
-    <Svg width="100%" height={190} viewBox="0 0 330 190" style={{ maxWidth: 330 }} accessibilityLabel={`Your loop: ${n.join(', then ')}, and back to the start`}>
+    <Svg
+      width="100%"
+      height={190}
+      viewBox="0 0 330 190"
+      style={{ maxWidth: 330 }}
+      accessibilityLabel={`Your loop: ${n.join(', then ')}, and back to the start`}>
       <Defs>
         <Marker id="lxah" viewBox="0 0 10 10" refX={8} refY={5} markerWidth={7} markerHeight={7} orient="auto-start-reverse">
           <Path d="M1 1L9 5L1 9z" fill={t.text} />

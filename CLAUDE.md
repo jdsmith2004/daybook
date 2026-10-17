@@ -45,6 +45,7 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 ```sh
 npm test                 # all tests (core golden tests run in America/Chicago time)
 npm run typecheck
+npm run format           # Prettier over the whole repo (format:check is what CI runs)
 npm run icons            # app icons from the flame
 npm run build -w @daybook/api
 cd apps/mobile && npx expo start
@@ -64,11 +65,15 @@ cd apps/mobile && npx expo start
   - Close and Back stay at the top, as they are by platform habit.
   - The one exception is a text box and the button that saves it: they stay together near the top, because the keyboard
     covers the bottom of the screen while typing.
-  In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`
-  (components/scene.tsx), which pushes them to the bottom. For a number from a range, use `Slider` (components/slider.tsx).
+  - In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`
+    (components/scene.tsx), which pushes them to the bottom. For a number from a range, use `Slider` (components/slider.tsx).
+- **Formatting is Prettier, from one place.** `.prettierrc.json` at the root sets it for everything (single quotes, lines up
+  to 160, `>` on the last line of a tag), `.editorconfig` covers editors, and `.prettierignore` leaves the frozen files
+  alone (the legacy app, `core.js`, the golden fixtures). Run `npm run format` before committing; CI fails on unformatted
+  files. Do not hand-format against it or add a second config.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons rest on good research and speak with confidence.** Science in a lesson cites a source in `SRC` or `OB_SRC` and does not invent numbers. The scope ("Behind this") says where the research comes from and what it means for the reader, in a sure, hopeful voice, without piling up doubts.
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add analytics or anything that reads people's logs on the server.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
-- Before calling a change done: `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.
+- Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.

@@ -96,9 +96,31 @@ function SosTab() {
 }
 
 const s = StyleSheet.create({
-  bar: { borderTopWidth: 2, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 6, paddingHorizontal: 8, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10 },
+  bar: {
+    borderTopWidth: 2,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingTop: 6,
+    paddingHorizontal: 8,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   inner: { flexDirection: 'row', gap: 4, alignSelf: 'center', width: '100%', maxWidth: MAX_WIDTH },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 56, paddingVertical: 6, borderRadius: 16 },
   label: { fontFamily: font.bodySemi, fontSize: 11.5 },
-  sos: { position: 'absolute', top: -26, width: 62, height: 62, borderRadius: 31, borderWidth: 5, alignItems: 'center', justifyContent: 'center', shadowOpacity: 1, shadowRadius: 0, elevation: 6 },
+  sos: {
+    position: 'absolute',
+    top: -26,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    borderWidth: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
+  },
 });

@@ -16,7 +16,10 @@ const SOUNDS = {
   in2: [[494, 0.7, 0.07, 0]],
   out: [[262, 1.3, 0.07, 0]],
   on: [[392, 0.35, 0.05, 0]],
-  chime: [[523, 1.4, 0.08, 0], [659, 1.6, 0.07, 0.18]],
+  chime: [
+    [523, 1.4, 0.08, 0],
+    [659, 1.6, 0.07, 0.18],
+  ],
 };
 /* the legacy gain was for a browser at full volume; a file plays at the phone's media volume, so it is raised to a gentle level */
 const LIFT = 4;
@@ -30,9 +33,19 @@ for (const [name, tones] of Object.entries(SOUNDS)) {
   const len = Math.max(...tones.map(([, d, , s]) => s + d)) + 0.05;
   const n = Math.round(len * RATE);
   const buf = Buffer.alloc(44 + n * 2);
-  buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVE', 8); buf.write('fmt ', 12);
-  buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22); buf.writeUInt32LE(RATE, 24);
-  buf.writeUInt32LE(RATE * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write('data', 36); buf.writeUInt32LE(n * 2, 40);
+  buf.write('RIFF', 0);
+  buf.writeUInt32LE(36 + n * 2, 4);
+  buf.write('WAVE', 8);
+  buf.write('fmt ', 12);
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20);
+  buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(RATE, 24);
+  buf.writeUInt32LE(RATE * 2, 28);
+  buf.writeUInt16LE(2, 32);
+  buf.writeUInt16LE(16, 34);
+  buf.write('data', 36);
+  buf.writeUInt32LE(n * 2, 40);
   for (let i = 0; i < n; i++) {
     const t = i / RATE;
     let v = 0;

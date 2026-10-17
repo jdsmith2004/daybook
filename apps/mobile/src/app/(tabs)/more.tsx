@@ -25,10 +25,20 @@ export default function More() {
     <Screen eyebrow="My Daybook" title="More" sub={<T tone="muted">Your plan, your progress, help, and settings.</T>} scrollRef={scroll}>
       <View style={{ gap: 8 }}>
         <LinkCard icon="shield" title="My plan" sub="Why I am doing this, my plans, my lists, and what I have learned" onPress={() => router.push('/plan')} />
-        <LinkCard icon="trophy" title="Milestones" sub={`Level ${g.level.n} · ${g.level.name} · ${got} of ${shown.length} badges`} onPress={() => router.push('/miles')} />
+        <LinkCard
+          icon="trophy"
+          title="Milestones"
+          sub={`Level ${g.level.n} · ${g.level.name} · ${got} of ${shown.length} badges`}
+          onPress={() => router.push('/miles')}
+        />
         <LinkCard icon="life" title="Get help" sub="People, therapy, groups, and phone setup" onPress={() => router.push('/help')} />
         <LinkCard icon="flag" title={phaseLabel(tk, st)} sub="Where I am: what this means, and how to change it" onPress={() => router.push('/mode')} />
-        <LinkCard icon="sparkle" title="How Daybook works" sub="What it is for, a quick self-check, and your goals. Walk through it any time." onPress={() => router.push('/setup')} />
+        <LinkCard
+          icon="sparkle"
+          title="How Daybook works"
+          sub="What it is for, a quick self-check, and your goals. Walk through it any time."
+          onPress={() => router.push('/setup')}
+        />
       </View>
       <HelpFoot />
       <View style={{ gap: 2, marginTop: 6 }}>

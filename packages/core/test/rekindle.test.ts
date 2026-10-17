@@ -122,7 +122,9 @@ describe('the sunrise check', () => {
   const T = '2026-10-15';
   const setup = (plan?: Settings['plan']) => {
     const st = core.normSettings({ start: '2026-09-20', day1: '2026-09-27', ...(plan ? { plan } : {}) });
-    const days: Days = { '2026-10-14': core.normDay({ events: [{ id: 'a', time: '23:10', outcome: 'slipped', trigger: 'late', recovered: true }] }, '2026-10-14') };
+    const days: Days = {
+      '2026-10-14': core.normDay({ events: [{ id: 'a', time: '23:10', outcome: 'slipped', trigger: 'late', recovered: true }] }, '2026-10-14'),
+    };
     return { st, days };
   };
 

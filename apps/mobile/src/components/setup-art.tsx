@@ -194,7 +194,14 @@ export function PicTries() {
   return (
     <Svg width={320} height={150} viewBox="0 0 320 150" accessibilityLabel="A line that climbs, drops back, and climbs again a few times, until one try sticks">
       <Path d="M12 132H308" stroke={c.line} strokeWidth={2} />
-      <Path d="M14 124L62 82L76 120L132 66L146 112L214 46L226 66L304 22" stroke={c.accent} strokeWidth={4} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      <Path
+        d="M14 124L62 82L76 120L132 66L146 112L214 46L226 66L304 22"
+        stroke={c.accent}
+        strokeWidth={4}
+        fill="none"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
       {[
         [76, 120],
         [146, 112],
@@ -450,7 +457,10 @@ export function PicFlame() {
     [28, 'Full Sun', 78],
   ];
   return (
-    <View style={{ gap: 10, alignItems: 'center' }} accessible accessibilityLabel="The flame grows in stages, from a spark to a campfire, a lighthouse, and a full sun">
+    <View
+      style={{ gap: 10, alignItems: 'center' }}
+      accessible
+      accessibilityLabel="The flame grows in stages, from a spark to a campfire, a lighthouse, and a full sun">
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
         {st.map((x) => (
           <View key={x[0]} style={{ alignItems: 'center', gap: 2 }}>

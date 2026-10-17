@@ -4,8 +4,7 @@ import * as core from '../src/index';
 import type { Days, Settings } from '../src/types';
 
 const tk = '2026-10-15';
-const st0 = (day1: string, o: Partial<Settings> = {}): Settings =>
-  core.normSettings({ ...core.defaultSettings(core.addDays(day1, -7)), day1, ...o });
+const st0 = (day1: string, o: Partial<Settings> = {}): Settings => core.normSettings({ ...core.defaultSettings(core.addDays(day1, -7)), day1, ...o });
 const slip = (days: Days, key: string) => core.addEvent(days, key, 'slipped', '22:00').days;
 
 it('counts finished days with no slip, from Day 1, within the last 100', () => {
@@ -75,7 +74,13 @@ it('after a slip that ends a long run, Rekindle honors the run and the way to gr
 
 describe('the one day number on Today', () => {
   const st0 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
-  const slip = (d: string) => ({ d, events: [{ id: 'x' + d, time: '22:00', outcome: 'slipped', trigger: null, paused: null, did: null, recovered: false, note: '' }], checkin: null, p: null, u: 1 });
+  const slip = (d: string) => ({
+    d,
+    events: [{ id: 'x' + d, time: '22:00', outcome: 'slipped', trigger: null, paused: null, did: null, recovered: false, note: '' }],
+    checkin: null,
+    p: null,
+    u: 1,
+  });
   it('before the first week with no slip, it is the last 7 days, and a slip takes one day off', () => {
     const days = { '2026-10-05': slip('2026-10-05') } as unknown as Days;
     const m = core.todayMeasure(days, st0, '2026-10-10')!;

@@ -57,7 +57,11 @@ export function BigOption({
           {title}
           {tag ? <Text style={[s.tag, { color: c.mintText }]}>{'  ' + tag}</Text> : null}
         </Text>
-        {sub ? <T v="small" tone="muted">{sub}</T> : null}
+        {sub ? (
+          <T v="small" tone="muted">
+            {sub}
+          </T>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -164,7 +168,12 @@ export function Field({ label, hideLabel, style, ...rest }: TextInputProps & { l
         accessibilityLabel={label}
         placeholderTextColor={c.muted}
         {...rest}
-        style={[s.input, { backgroundColor: c.surface, borderColor: c.line, color: c.ink }, rest.multiline && { minHeight: 76, textAlignVertical: 'top' }, style]}
+        style={[
+          s.input,
+          { backgroundColor: c.surface, borderColor: c.line, color: c.ink },
+          rest.multiline && { minHeight: 76, textAlignVertical: 'top' },
+          style,
+        ]}
       />
     </View>
   );

@@ -30,4 +30,3 @@ export function SunArt({ height = 150 }: { height?: number }) {
     </View>
   );
 }
-

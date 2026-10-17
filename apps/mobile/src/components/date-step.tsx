@@ -6,7 +6,19 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';
 
-export function DateStep({ label, value, min, from, onPick }: { label: string; value: DayKey | null; min?: DayKey; from: DayKey; onPick: (k: DayKey) => void }) {
+export function DateStep({
+  label,
+  value,
+  min,
+  from,
+  onPick,
+}: {
+  label: string;
+  value: DayKey | null;
+  min?: DayKey;
+  from: DayKey;
+  onPick: (k: DayKey) => void;
+}) {
   const c = useTheme();
   const cur = value || from;
   const step = (n: number) => {

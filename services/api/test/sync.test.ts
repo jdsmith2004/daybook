@@ -42,7 +42,9 @@ describe('sync', () => {
   });
 
   it('saves records and gives them back, cleaned up', async () => {
-    const p = await call(ev('POST', { body: { records: [day('2026-10-14', 500), { id: 'settings', u: 600, data: { start: '2026-10-01', cleanMode: 'weird' } }] } }));
+    const p = await call(
+      ev('POST', { body: { records: [day('2026-10-14', 500), { id: 'settings', u: 600, data: { start: '2026-10-01', cleanMode: 'weird' } }] } }),
+    );
     expect(p.status).toBe(200);
     expect(p.body.saved).toEqual(['days/2026-10-14', 'settings']);
     const g = await call(ev('GET', { query: { since: '0' } }));
@@ -173,7 +175,9 @@ describe('sync', () => {
   });
 
   it('stops a runaway client at the daily allowance', async () => {
-    const one = day('2026-10-14', 500, { events: Array.from({ length: 60 }, (_, i) => ({ id: 'e' + i, time: '22:00', outcome: 'rode', note: 'x'.repeat(490) })) });
+    const one = day('2026-10-14', 500, {
+      events: Array.from({ length: 60 }, (_, i) => ({ id: 'e' + i, time: '22:00', outcome: 'rode', note: 'x'.repeat(490) })),
+    });
     let status = 200;
     let n = 0;
     while (status === 200 && n < 2000) {
@@ -243,7 +247,11 @@ describe('a week to undo an erase, and closing the account', () => {
 
   it('closes the account: the log and its copy go for good, then the sign-in', async () => {
     const gone: string[] = [];
-    handler = makeHandler(store, () => now, async (u) => void gone.push(u));
+    handler = makeHandler(
+      store,
+      () => now,
+      async (u) => void gone.push(u),
+    );
     await call(ev('POST', { body: { records: [day('2026-10-14', 500)] } }));
     await call(ev('DELETE'));
     const d = await call(ev('DELETE', { query: { all: '1' } }));
@@ -254,9 +262,13 @@ describe('a week to undo an erase, and closing the account', () => {
   });
 
   it('says so when the log went but the sign-in could not be deleted', async () => {
-    handler = makeHandler(store, () => now, async () => {
-      throw new Error('cognito down');
-    });
+    handler = makeHandler(
+      store,
+      () => now,
+      async () => {
+        throw new Error('cognito down');
+      },
+    );
     await call(ev('POST', { body: { records: [day('2026-10-14', 500)] } }));
     const d = await call(ev('DELETE', { query: { all: '1' } }));
     expect(d.status).toBe(502);

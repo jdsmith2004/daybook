@@ -6,14 +6,14 @@ A private, honest companion for changing a habit: log urges and slips without sh
 
 ## What is here
 
-| Folder | What it is |
-| --- | --- |
-| `legacy/index.html` | The original single-file app. It is retired and kept only as history; the new app does everything it did. |
-| `packages/core` | Every rule with no UI: counting, run saves, step down, points, levels, badges, quests, the flame, lessons. It is the source of truth. `src/legacy/core.js` holds the rules first copied from the legacy app; golden tests check them against what the legacy app computed. |
-| `apps/mobile` | The app (Expo and React Native, with Expo Router). The same code runs on iOS, Android and the web. |
-| `services/api` | The sync service: one Lambda behind API Gateway, with DynamoDB. |
-| `infra/` | Terraform for AWS. `bootstrap` is run once by hand; `app` is deployed by GitHub Actions. See [infra/README.md](infra/README.md). |
-| `tools/` | The icon and sound makers. |
+| Folder              | What it is                                                                                                                                                                                                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `legacy/index.html` | The original single-file app. It is retired and kept only as history; the new app does everything it did.                                                                                                                                                                  |
+| `packages/core`     | Every rule with no UI: counting, run saves, step down, points, levels, badges, quests, the flame, lessons. It is the source of truth. `src/legacy/core.js` holds the rules first copied from the legacy app; golden tests check them against what the legacy app computed. |
+| `apps/mobile`       | The app (Expo and React Native, with Expo Router). The same code runs on iOS, Android and the web.                                                                                                                                                                         |
+| `services/api`      | The sync service: one Lambda behind API Gateway, with DynamoDB.                                                                                                                                                                                                            |
+| `infra/`            | Terraform for AWS. `bootstrap` is run once by hand; `app` is deployed by GitHub Actions. See [infra/README.md](infra/README.md).                                                                                                                                           |
+| `tools/`            | The icon and sound makers.                                                                                                                                                                                                                                                 |
 
 ## Run it
 

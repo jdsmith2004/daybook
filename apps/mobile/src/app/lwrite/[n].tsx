@@ -54,7 +54,10 @@ export default function Lwrite() {
                 <View key={j} style={[s.progI, { backgroundColor: fin || j < i ? c.mint : j === i ? c.accent : c.lip }]} />
               ))}
             </View>
-            <ScrollView style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]} contentContainerStyle={s.cardIn} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
+              contentContainerStyle={s.cardIn}
+              keyboardShouldPersistTaps="handled">
               {!fin ? (
                 <>
                   <View style={s.eye}>
@@ -111,7 +114,11 @@ export default function Lwrite() {
             </ScrollView>
             <View style={s.foot}>
               {!fin && i > 0 ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => setI(i - 1)} style={[s.back, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
+                  onPress={() => setI(i - 1)}
+                  style={[s.back, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
                   <Icon name="back" size={22} color={c.ink} />
                 </Pressable>
               ) : null}
@@ -147,7 +154,18 @@ const s = StyleSheet.create({
   h: { fontFamily: font.display, fontSize: 26, lineHeight: 31 },
   wr: { minHeight: 170, padding: 14, borderRadius: 16, borderWidth: 2, fontFamily: font.body, fontSize: 17, lineHeight: 24, textAlignVertical: 'top' },
   foot: { flexDirection: 'row', gap: 10 },
-  next: { flex: 1, minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 18, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0 },
+  next: {
+    flex: 1,
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   nextT: { fontFamily: font.bodySemi, fontSize: 19 },
   back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   soft: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 16 },

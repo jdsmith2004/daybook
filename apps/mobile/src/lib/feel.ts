@@ -9,7 +9,7 @@ export function buzz(kind: 'tap' | 'tick' | 'save' | 'lit' = 'tap', on = true) {
     kind === 'tick'
       ? Haptics.selectionAsync()
       : kind === 'lit'
-      ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      : Haptics.impactAsync(kind === 'save' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
+        ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        : Haptics.impactAsync(kind === 'save' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
   run.catch(() => undefined);
 }

@@ -31,7 +31,7 @@ it('a finished new lesson is kept in the day record and counts', () => {
 });
 
 it('the "Thirty-two lessons" badge still asks for 32, so nobody loses it when lessons are added', () => {
-  const b = ((core as unknown as { BADGES: { id: string; name: string; goal: number }[] }).BADGES).find((x) => x.id === 'learn-32')!;
+  const b = (core as unknown as { BADGES: { id: string; name: string; goal: number }[] }).BADGES.find((x) => x.id === 'learn-32')!;
   expect([b.name, b.goal]).toEqual(['Thirty-two lessons', 32]);
 });
 
@@ -42,11 +42,13 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
     expect(L.cards.map((c) => c.e)).toEqual(expect.arrayContaining(['hook', 'predict', 'answer', 'proof', 'move', 'check']));
     expect(L.cards[0].e).toBe('hook');
     expect(L.cards[L.cards.length - 1].e).toBe('check');
-    L.cards.filter((c) => c.k === 'choose').forEach((c) => {
-      expect(c.c).toHaveLength(4);
-      expect(c.a).toBeGreaterThanOrEqual(0);
-      expect(c.a).toBeLessThan(4);
-    });
+    L.cards
+      .filter((c) => c.k === 'choose')
+      .forEach((c) => {
+        expect(c.c).toHaveLength(4);
+        expect(c.a).toBeGreaterThanOrEqual(0);
+        expect(c.a).toBeLessThan(4);
+      });
     expect(L.rc && L.rc.c.length === 4 && L.rc.cr && L.rc.cr.length === 4).toBe(true);
     expect(L.rc!.a).toBeLessThan(4);
     expect((L.act?.go || []).length).toBeGreaterThan(0);

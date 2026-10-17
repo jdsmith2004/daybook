@@ -23,23 +23,25 @@ export default function HelpHome() {
       <Card style={{ backgroundColor: c.sosSoft, borderColor: c.sosSoft }}>
         <T v="h2">If it is hard right now</T>
         <T>
-          Tap SOS for one thing to try. Or reach a person, {nm ? 'starting with your safe person, ' : ''}free, at any hour. The two lines below are open to anyone who is struggling, not only to people
-          thinking about suicide.
+          Tap SOS for one thing to try. Or reach a person, {nm ? 'starting with your safe person, ' : ''}free, at any hour. The two lines below are open to
+          anyone who is struggling, not only to people thinking about suicide.
         </T>
         {nm ? <LinkCard icon="chat" title={'Text ' + nm} sub="Your safe person · texts ready to copy" onPress={msg} /> : null}
         <View>
-          <NumRow name="988 Suicide & Crisis Lifeline" num="988" note="Call or text, 24/7. Suicide and crisis support, and open to anyone who is struggling or needs to talk." copy="988" />
+          <NumRow
+            name="988 Suicide & Crisis Lifeline"
+            num="988"
+            note="Call or text, 24/7. Suicide and crisis support, and open to anyone who is struggling or needs to talk."
+            copy="988"
+          />
           <NumRow name="Crisis Text Line" num="741741" note="Text HOME, free, 24/7. For whatever you are going through." copy="741741" />
         </View>
         <T v="small">
-          A 988 counselor starts by asking if you are safe. Answer honestly, then say what is going on. For example: “I am having a strong urge and I want to talk.”
+          A 988 counselor starts by asking if you are safe. Answer honestly, then say what is going on. For example: “I am having a strong urge and I want to
+          talk.”
         </T>
         <View style={{ gap: 8 }}>
-          <Button
-            icon="life"
-            label="SOS: I am having an urge"
-            onPress={() => router.push('/sos')}
-          />
+          <Button icon="life" label="SOS: I am having an urge" onPress={() => router.push('/sos')} />
           <Button kind="ghost" icon="chat" label="Reach a person" onPress={msg} />
         </View>
       </Card>
@@ -74,7 +76,11 @@ export default function HelpHome() {
       </View>
       <Fine>
         Daybook is a self-tracking tool, not medical care or a replacement for it.{' '}
-        <T v="small" tone="accentText" style={{ textDecorationLine: 'underline' }} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'sources' } })}>
+        <T
+          v="small"
+          tone="accentText"
+          style={{ textDecorationLine: 'underline' }}
+          onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'sources' } })}>
           Sources and when I checked
         </T>
       </Fine>

@@ -37,7 +37,21 @@ function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: Cat
   );
 }
 
-function SmallBtn({ icon, label, onPress, disabled, danger, text }: { icon: string; label: string; onPress: () => void; disabled?: boolean; danger?: boolean; text?: string }) {
+function SmallBtn({
+  icon,
+  label,
+  onPress,
+  disabled,
+  danger,
+  text,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  text?: string;
+}) {
   const c = useTheme();
   const col = disabled ? c.line : danger ? c.danger : c.ink;
   return (
@@ -268,7 +282,13 @@ export default function Reasons() {
         <T v="small" tone="muted">
           Not required. A few sentences about what you want your life to look like.
         </T>
-        <Field label="Why I am doing this" multiline maxLength={1200} defaultValue={st.why} onChangeText={(v) => apply({ st: setField(snap.settings!, 'why', v) })} />
+        <Field
+          label="Why I am doing this"
+          multiline
+          maxLength={1200}
+          defaultValue={st.why}
+          onChangeText={(v) => apply({ st: setField(snap.settings!, 'why', v) })}
+        />
       </Collapse>
     </Screen>
   );

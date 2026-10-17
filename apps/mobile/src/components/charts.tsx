@@ -62,7 +62,14 @@ function xLabels(keys: DayKey[], X: (i: number) => number, y: number, iw: number
       const first = i === 0;
       const last = i === n - 1;
       return (
-        <SvgText key={i} x={first ? L : last ? L + iw : X(i)} y={y} fontSize={11} fill={color} textAnchor={first ? 'start' : last ? 'end' : 'middle'} fontFamily={font.body}>
+        <SvgText
+          key={i}
+          x={first ? L : last ? L + iw : X(i)}
+          y={y}
+          fontSize={11}
+          fill={color}
+          textAnchor={first ? 'start' : last ? 'end' : 'middle'}
+          fontFamily={font.body}>
           {last && keys[i] === tk ? 'Today' : fmtDate(keys[i], { month: 'short', day: 'numeric' })}
         </SvgText>
       );
@@ -84,7 +91,19 @@ function grid(L: number, x2: number, T0: number, ih: number, sc: { top: number; 
 }
 
 /** columns over days: one color, or rode and slipped stacked */
-export function DayColumns({ keys, rows, tk, label, height = 150 }: { keys: DayKey[]; rows: { a: number; b?: number }[]; tk: DayKey; label: string; height?: number }) {
+export function DayColumns({
+  keys,
+  rows,
+  tk,
+  label,
+  height = 150,
+}: {
+  keys: DayKey[];
+  rows: { a: number; b?: number }[];
+  tk: DayKey;
+  label: string;
+  height?: number;
+}) {
   const k = useChartColors();
   const [w, onLayout] = useWidth();
   const L = 30;
@@ -109,7 +128,13 @@ export function DayColumns({ keys, rows, tk, label, height = 150 }: { keys: DayK
             const x = X(i) - bw / 2;
             const base = T0 + ih;
             const out: ReactNode[] = [];
-            const segs = r.b == null ? [[r.a, k.acc]] : [[r.a, k.rode], [r.b, k.slip]];
+            const segs =
+              r.b == null
+                ? [[r.a, k.acc]]
+                : [
+                    [r.a, k.rode],
+                    [r.b, k.slip],
+                  ];
             let cum = 0;
             const parts = segs.filter((q) => (q[0] as number) > 0);
             parts.forEach((q, j) => {
@@ -147,7 +172,11 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
   const pad = 8;
   const n = keys.length;
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }} accessible accessibilityLabel="Daily ratings from 0 to 10. The numbers are in the table below.">
+    <View
+      onLayout={onLayout}
+      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}
+      accessible
+      accessibilityLabel="Daily ratings from 0 to 10. The numbers are in the table below.">
       {w
         ? series.map((sr) => {
             const X = (i: number) => (n <= 1 ? tw / 2 : pad + (i / (n - 1)) * (tw - pad * 2));
@@ -164,7 +193,10 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
             });
             runs.forEach((r) => {
               if (r.length > 1) {
-                area += `M${X(r[0]).toFixed(1)} ${h - 12}` + r.map((i) => `L${X(i).toFixed(1)} ${Y(sr.vals[i]!).toFixed(1)}`).join('') + `L${X(r[r.length - 1]).toFixed(1)} ${h - 12}Z`;
+                area +=
+                  `M${X(r[0]).toFixed(1)} ${h - 12}` +
+                  r.map((i) => `L${X(i).toFixed(1)} ${Y(sr.vals[i]!).toFixed(1)}`).join('') +
+                  `L${X(r[r.length - 1]).toFixed(1)} ${h - 12}Z`;
                 for (let q = 1; q < r.length; q++) {
                   const seg = `M${X(r[q - 1]).toFixed(1)} ${Y(sr.vals[r[q - 1]]!).toFixed(1)}L${X(r[q]).toFixed(1)} ${Y(sr.vals[r[q]]!).toFixed(1)}`;
                   if (r[q] - r[q - 1] === 1) solid += seg;
@@ -210,7 +242,15 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
 }
 
 /** entries by hour of the day, with the busiest two hours marked */
-export function HourChart({ bins, bw, height = 176 }: { bins: { h: number; rode: number; slipped: number }[]; bw: { start: number; end: number } | null; height?: number }) {
+export function HourChart({
+  bins,
+  bw,
+  height = 176,
+}: {
+  bins: { h: number; rode: number; slipped: number }[];
+  bw: { start: number; end: number } | null;
+  height?: number;
+}) {
   const k = useChartColors();
   const [w, onLayout] = useWidth();
   const L = 26;
@@ -248,7 +288,11 @@ export function HourChart({ bins, bw, height = 176 }: { bins: { h: number; rode:
                   const hh = q[0] * px - (j ? 2 : 0);
                   cum += q[0];
                   if (hh <= 0.5) return null;
-                  return j === parts.length - 1 ? <Path key={j} d={topPath(x, top, bwid, hh, 3)} fill={q[1]} /> : <Rect key={j} x={x} y={top} width={bwid} height={hh} fill={q[1]} />;
+                  return j === parts.length - 1 ? (
+                    <Path key={j} d={topPath(x, top, bwid, hh, 3)} fill={q[1]} />
+                  ) : (
+                    <Rect key={j} x={x} y={top} width={bwid} height={hh} fill={q[1]} />
+                  );
                 })}
               </G>
             );
@@ -287,7 +331,16 @@ export function HBars({ items, unit }: { items: { label: string; dim?: boolean; 
             </View>
             <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', backgroundColor: k.c.surface2 }}>
               {it.segs.map((q, j) =>
-                q[0] > 0 ? <View key={j} style={{ width: `${(q[0] / max) * 100}%`, backgroundColor: q[1] === 'rode' ? k.rode : q[1] === 'slip' ? k.slip : k.acc, marginLeft: j ? 2 : 0 }} /> : null,
+                q[0] > 0 ? (
+                  <View
+                    key={j}
+                    style={{
+                      width: `${(q[0] / max) * 100}%`,
+                      backgroundColor: q[1] === 'rode' ? k.rode : q[1] === 'slip' ? k.slip : k.acc,
+                      marginLeft: j ? 2 : 0,
+                    }}
+                  />
+                ) : null,
               )}
             </View>
           </View>
@@ -310,7 +363,10 @@ export function Spark({ vals, label }: { vals: (number | null)[]; label: string 
     if (v == null) return;
     d += (d && vals[i - 1] != null ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1);
   });
-  const last = vals.map((v, i) => [v, i] as [number | null, number]).filter((x) => x[0] != null).pop();
+  const last = vals
+    .map((v, i) => [v, i] as [number | null, number])
+    .filter((x) => x[0] != null)
+    .pop();
   return (
     <Svg width={w} height={h} accessibilityLabel={label}>
       {d ? <Path d={d} stroke={k.acc} strokeWidth={2} fill="none" strokeLinecap="round" /> : null}

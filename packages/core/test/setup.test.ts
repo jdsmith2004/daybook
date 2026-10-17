@@ -22,9 +22,23 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
     f.name === 'new'
       ? null
       : f.name === 'before'
-        ? core.normSettings({ start: '2026-10-12', day1: '2026-10-19', rollover: 4, screensOff: '23:00', u: 1, reasons: ['Clear mornings and steady energy'], safePerson: 'Sam' })
+        ? core.normSettings({
+            start: '2026-10-12',
+            day1: '2026-10-19',
+            rollover: 4,
+            screensOff: '23:00',
+            u: 1,
+            reasons: ['Clear mornings and steady energy'],
+            safePerson: 'Sam',
+          })
         : core.normSettings({
-            start: '2026-09-01', day1: '2026-09-08', rollover: 4, screensOff: '22:30', u: 1, cleanMode: 'gentle', reasons: ['Keeping my word to myself', 'Not carrying a secret'],
+            start: '2026-09-01',
+            day1: '2026-09-08',
+            rollover: 4,
+            screensOff: '22:30',
+            u: 1,
+            cleanMode: 'gentle',
+            reasons: ['Keeping my word to myself', 'Not carrying a secret'],
             plan: [{ when: "I'm in bed late at night", then: 'Read a book.' }],
             onb: { n: 1, at: 1, a: { aim: 'quit', freq: 'f2', faith: 'some', b0: '1' }, hist: [{ d: '2026-09-01', s: 4 }] },
           });

@@ -102,7 +102,11 @@ export function YourDay({ snap, tk, now, openStop }: { snap: Snapshot; tk: strin
       ) : (
         <T tone="muted">Nothing is switched on for today. You can turn parts of the day back on below.</T>
       )}
-      <Collapse title="Change today’s routine" sub={changed ? changed + ' changed for today' : 'Turn parts of today on or off'} open={rtOpen} onToggle={() => setRtOpen(!rtOpen)}>
+      <Collapse
+        title="Change today’s routine"
+        sub={changed ? changed + ' changed for today' : 'Turn parts of today on or off'}
+        open={rtOpen}
+        onToggle={() => setRtOpen(!rtOpen)}>
         <RoutineToday snap={snap} tk={tk} />
       </Collapse>
     </Card>
@@ -219,7 +223,10 @@ function LessonStop({ snap, tk }: { snap: Snapshot; tk: string }) {
           </T>
         </View>
         <Button label={'Start · ' + lmin(r.L)} icon="play" onPress={() => go(r.L.id)} />
-        <Pressable accessibilityRole="button" onPress={() => router.navigate('/learn')} style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.navigate('/learn')}
+          style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
           <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Pick a different lesson</Text>
         </Pressable>
       </View>

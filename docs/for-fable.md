@@ -27,4 +27,3 @@ severity, each with the file and line, and nothing changed without asking.
   sign-out, and that nothing about the log reaches anyone but its owner.
 
 Suggested: Fable at high effort, one run, the files above attached.
-

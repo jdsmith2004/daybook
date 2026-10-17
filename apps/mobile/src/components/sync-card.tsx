@@ -32,8 +32,8 @@ export function ErasedNote() {
     <View style={[s.confirm, { backgroundColor: c.sunSoft }]}>
       <T v="label">Your log was deleted on {day(sync.erased.at)}.</T>
       <T v="small">
-        Your account keeps a copy until {day(sync.erased.at + 7 * 86400_000)}. Bringing it back puts every day back on all your devices. Days you have logged since stay as they
-        are.
+        Your account keeps a copy until {day(sync.erased.at + 7 * 86400_000)}. Bringing it back puts every day back on all your devices. Days you have logged
+        since stay as they are.
       </T>
       <Button
         label={busy ? 'Bringing it back…' : 'Bring my log back'}
@@ -79,8 +79,8 @@ export function SyncBody() {
     return (
       <>
         <T v="small" tone="muted">
-          A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your sign-in
-          can read it. Until you sign in, your log stays on this device only.
+          A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your
+          sign-in can read it. Until you sign in, your log stays on this device only.
         </T>
         <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
         <LinkText label="What is kept, and who can see it" onPress={() => router.push('/privacy')} />
@@ -138,7 +138,11 @@ export function SyncBody() {
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
-      {st.k === 'expired' ? <Button label="Sign in again" onPress={() => sync.signInNow()} /> : <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />}
+      {st.k === 'expired' ? (
+        <Button label="Sign in again" onPress={() => sync.signInNow()} />
+      ) : (
+        <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />
+      )}
       <TrustChoice />
       {ask === 'out' ? (
         <View style={[s.confirm, { backgroundColor: c.surface2 }]}>
@@ -154,7 +158,8 @@ export function SyncBody() {
         <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
           <T v="label">Delete your account and everything in it?</T>
           <T v="small" tone="muted">
-            Your log is removed from your account for good, and you cannot sign in with it again. The log on this device stays, unless you delete it in Save, back up, delete.
+            Your log is removed from your account for good, and you cannot sign in with it again. The log on this device stays, unless you delete it in Save,
+            back up, delete.
           </T>
           <Button
             kind="danger"

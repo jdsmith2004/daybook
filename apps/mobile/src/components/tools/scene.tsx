@@ -354,7 +354,12 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
       <T style={s.c}>Urges often show up when a plain need is going unmet. Tap anything that fits. You can pick more than one.</T>
       <View style={s.wrap}>
         {NEEDS.map((n) => (
-          <Chip key={n[0]} label={n[1]} on={sel.indexOf(n[0]) >= 0} onPress={() => setSel(sel.indexOf(n[0]) >= 0 ? sel.filter((x) => x !== n[0]) : sel.concat(n[0]))} />
+          <Chip
+            key={n[0]}
+            label={n[1]}
+            on={sel.indexOf(n[0]) >= 0}
+            onPress={() => setSel(sel.indexOf(n[0]) >= 0 ? sel.filter((x) => x !== n[0]) : sel.concat(n[0]))}
+          />
         ))}
       </View>
       {picked.length ? (
@@ -466,9 +471,7 @@ export function Reasons({ finish }: ToolProps) {
           Add your reasons
         </T>
         <T style={s.c}>Write a few lines about why this matters to you. They show up here when you need them.</T>
-        <Dock>
-          {note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}
-        </Dock>
+        <Dock>{note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}</Dock>
       </>
     );
   const n = r.length;
@@ -516,7 +519,18 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   grid: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile: { flexGrow: 1, flexBasis: '45%', minHeight: 64, borderRadius: 18, padding: 10, justifyContent: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  tile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    minHeight: 64,
+    borderRadius: 18,
+    padding: 10,
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
   tileT: { fontFamily: font.bodyBold, fontSize: 16 },
   tileS: { fontFamily: font.body, fontSize: 13 },
   ring: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },

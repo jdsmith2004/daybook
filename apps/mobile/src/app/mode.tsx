@@ -30,7 +30,11 @@ export default function Mode() {
           <View key={k} style={[s.li, { backgroundColor: k === mi.k ? c.accentSoft : c.surface, borderColor: k === mi.k ? c.accent : c.cardEdge }]}>
             <T v="label">
               {name}
-              {k === mi.k ? <T v="small" tone="accentText">{'  you are here'}</T> : null}
+              {k === mi.k ? (
+                <T v="small" tone="accentText">
+                  {'  you are here'}
+                </T>
+              ) : null}
             </T>
             <T v="small" tone="muted">
               {text}

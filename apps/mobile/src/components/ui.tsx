@@ -63,10 +63,7 @@ export function Button({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.btn,
-        { backgroundColor: bg, borderColor: kind === 'ghost' ? c.line : bg, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 },
-      ]}>
+      style={({ pressed }) => [styles.btn, { backgroundColor: bg, borderColor: kind === 'ghost' ? c.line : bg, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }]}>
       {icon ? <Icon name={icon} size={18} color={fg} /> : null}
       <Text style={[styles.btnText, { color: fg }]}>{label}</Text>
     </Pressable>
@@ -80,10 +77,7 @@ export function Chip({ label, on, onPress }: { label: string; on: boolean; onPre
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.chip,
-        { backgroundColor: on ? c.accent : c.surface, borderColor: on ? c.accent : c.line, opacity: pressed ? 0.85 : 1 },
-      ]}>
+      style={({ pressed }) => [styles.chip, { backgroundColor: on ? c.accent : c.surface, borderColor: on ? c.accent : c.line, opacity: pressed ? 0.85 : 1 }]}>
       <Text style={[styles.chipText, { color: on ? c.accentInk : c.ink }]}>{label}</Text>
     </Pressable>
   );

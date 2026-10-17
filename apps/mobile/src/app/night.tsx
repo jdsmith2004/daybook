@@ -105,7 +105,13 @@ function NightSky() {
         <Star key={i} x={x} y={y} r={r} ms={ms} delay={i * 370} still={reduce} />
       ))}
       <Animated.View
-        style={[s.halo, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.6] }), transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }]}
+        style={[
+          s.halo,
+          {
+            opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.6] }),
+            transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }],
+          },
+        ]}
       />
       <View style={s.moon}>
         <Icon name="moon" size={60} color="#FFE27A" />

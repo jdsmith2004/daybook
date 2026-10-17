@@ -59,7 +59,10 @@ it('renews with GetTokensFromRefreshToken, keeping the old refresh token when no
 
 it('errors come back with a kind sentence, and a dropped connection says so', async () => {
   const { c } = fake({ SignUp: { ok: false, body: { __type: 'com.amazonaws#UsernameExistsException' } } });
-  await expect(c.signUp('me@example.com', 'a long password')).rejects.toMatchObject({ code: 'UsernameExistsException', message: core.cognitoWords('UsernameExistsException') });
+  await expect(c.signUp('me@example.com', 'a long password')).rejects.toMatchObject({
+    code: 'UsernameExistsException',
+    message: core.cognitoWords('UsernameExistsException'),
+  });
   const down = core.cognitoClient('us-east-2', 'x', async () => {
     throw new Error('offline');
   });
@@ -67,7 +70,18 @@ it('errors come back with a kind sentence, and a dropped connection says so', as
 });
 
 it('the words have no contractions and never blame', () => {
-  const codes = ['UsernameExistsException', 'InvalidPasswordException', 'CodeMismatchException', 'ExpiredCodeException', 'NotAuthorizedException', 'UserNotConfirmedException', 'LimitExceededException', 'InvalidParameterException', 'Network', 'x'];
+  const codes = [
+    'UsernameExistsException',
+    'InvalidPasswordException',
+    'CodeMismatchException',
+    'ExpiredCodeException',
+    'NotAuthorizedException',
+    'UserNotConfirmedException',
+    'LimitExceededException',
+    'InvalidParameterException',
+    'Network',
+    'x',
+  ];
   codes.forEach((k) => expect(core.cognitoWords(k)).not.toMatch(/\b\w+n[’']t\b|wrong password|invalid|failed/i));
 });
 

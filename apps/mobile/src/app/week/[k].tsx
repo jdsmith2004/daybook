@@ -10,7 +10,12 @@ export default function Week() {
   const { k } = useLocalSearchParams<{ k: string }>();
   const { snap } = useStore();
   const [wk, setWk] = useState(() => Math.max(0, Number(k) || 0));
-  if (!snap.settings) return <Screen title="Week" back>{null}</Screen>;
+  if (!snap.settings)
+    return (
+      <Screen title="Week" back>
+        {null}
+      </Screen>
+    );
   return (
     <Screen title="Weekly review" back>
       <WeekView k={wk} onNav={setWk} />

@@ -133,7 +133,12 @@ function Wave({ p, color, track }: { p: number; color: string; track: string }) 
   const pts = WAVE;
   const i = Math.min(pts.length - 1, Math.floor(p * (pts.length - 1)));
   const [x, y] = pts[i];
-  const drawn = 'M' + pts.slice(0, i + 1).map((q) => q.join(' ')).join(' L');
+  const drawn =
+    'M' +
+    pts
+      .slice(0, i + 1)
+      .map((q) => q.join(' '))
+      .join(' L');
   return (
     <Svg width="100%" height={120} viewBox="0 0 260 110" accessibilityElementsHidden>
       <Path d={CU_D} stroke={track} strokeWidth={6} fill="none" strokeLinecap="round" />

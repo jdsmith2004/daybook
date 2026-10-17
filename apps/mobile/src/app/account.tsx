@@ -78,7 +78,8 @@ export default function Account() {
     run(async () => {
       if (!emailOk(email)) throw new CognitoError('InvalidParameterException', 'Check the email address and try again.');
       if (mode === 'new') {
-        if (!passwordOk(pw)) throw new CognitoError('InvalidPasswordException', `Pick a password with at least ${PASSWORD_MIN} characters. A short sentence works well.`);
+        if (!passwordOk(pw))
+          throw new CognitoError('InvalidPasswordException', `Pick a password with at least ${PASSWORD_MIN} characters. A short sentence works well.`);
         let r;
         try {
           r = await cognito.signUp(email, pw);
@@ -168,14 +169,27 @@ export default function Account() {
       <>
         <T>Choose your own password to finish signing in.</T>
         <Pw value={pw} onChange={setPw} show={show} setShow={setShow} label="New password" isNew />
-        <Button label="Save and sign in" onPress={() => run(async () => finish(await cognito.newPassword(email, chal.current, pw)))} disabled={busy || !passwordOk(pw)} />
+        <Button
+          label="Save and sign in"
+          onPress={() => run(async () => finish(await cognito.newPassword(email, chal.current, pw)))}
+          disabled={busy || !passwordOk(pw)}
+        />
       </>
     );
   else if (step === 'forgot')
     body = (
       <>
         <T>Enter your email, and we will send a code to set a new password.</T>
-        <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />
+        <Field
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+        />
         <Button
           label="Send the code"
           disabled={busy || !emailOk(email)}
@@ -197,7 +211,14 @@ export default function Account() {
         <T>
           Enter the code we sent to <T style={{ fontFamily: font.bodyBold }}>{email.trim()}</T>, and a new password.
         </T>
-        <Field label="Code" value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} />
+        <Field
+          label="Code"
+          value={code}
+          onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+          keyboardType="number-pad"
+          textContentType="oneTimeCode"
+          maxLength={6}
+        />
         <Pw value={pw} onChange={setPw} show={show} setShow={setShow} label="New password" isNew />
         <Button
           label="Save and sign in"
@@ -247,7 +268,9 @@ export default function Account() {
     );
 
   return (
-    <SheetFrame title={step === 'done' ? 'Welcome' : mode === 'new' && step === 'start' ? 'Create your free account' : 'Your account'} sub={step === 'start' ? why : undefined}>
+    <SheetFrame
+      title={step === 'done' ? 'Welcome' : mode === 'new' && step === 'start' ? 'Create your free account' : 'Your account'}
+      sub={step === 'start' ? why : undefined}>
       {body}
       {busy && step === 'start' ? <ActivityIndicator color={c.accent} /> : null}
       {err ? (
@@ -270,7 +293,23 @@ export default function Account() {
 }
 
 /** a password field with a Show button */
-function Pw({ value, onChange, show, setShow, label, isNew, onSubmit }: { value: string; onChange: (v: string) => void; show: boolean; setShow: (b: boolean) => void; label: string; isNew?: boolean; onSubmit?: () => void }) {
+function Pw({
+  value,
+  onChange,
+  show,
+  setShow,
+  label,
+  isNew,
+  onSubmit,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  setShow: (b: boolean) => void;
+  label: string;
+  isNew?: boolean;
+  onSubmit?: () => void;
+}) {
   const c = useTheme();
   return (
     <View style={{ gap: 6 }}>

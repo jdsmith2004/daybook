@@ -1,0 +1,14 @@
+# Kept exactly as they were: the retired legacy app, the rules copied from it, and the frozen golden fixtures.
+legacy/
+packages/core/src/legacy/
+packages/core/test/fixtures/
+
+# Made by tools, not by hand.
+package-lock.json
+**/dist/
+**/.expo/
+**/.terraform/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/expo-env.d.ts
+coverage/

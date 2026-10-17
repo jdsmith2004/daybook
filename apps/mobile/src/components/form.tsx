@@ -1,7 +1,18 @@
 /* Small form parts shared by Today, the Journal and My plan: a 0 to 10 rating you can tap or drag, a Yes/No pair, a stepper,
    a checkbox row, an On/Off pair, and a section that opens and closes (like the legacy <details>). */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -108,7 +119,21 @@ export function Pill({ label, on, onPress }: { label: string; on: boolean; onPre
 }
 
 /** − 7.0 h + */
-export function Stepper({ label, text, unset, onStep, less, more }: { label: string; text: string; unset: boolean; onStep: (d: number) => void; less: string; more: string }) {
+export function Stepper({
+  label,
+  text,
+  unset,
+  onStep,
+  less,
+  more,
+}: {
+  label: string;
+  text: string;
+  unset: boolean;
+  onStep: (d: number) => void;
+  less: string;
+  more: string;
+}) {
   const c = useTheme();
   return (
     <View style={s.yn}>
@@ -116,13 +141,21 @@ export function Stepper({ label, text, unset, onStep, less, more }: { label: str
         {label}
       </T>
       <View style={s.seg}>
-        <Pressable accessibilityRole="button" accessibilityLabel={less} onPress={() => onStep(-1)} style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={less}
+          onPress={() => onStep(-1)}
+          style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
           <Text style={[s.sqT, { color: c.ink }]}>−</Text>
         </Pressable>
         <Text style={[s.stepV, { color: unset ? c.muted : c.ink }]} accessibilityLiveRegion="polite">
           {text}
         </Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={more} onPress={() => onStep(1)} style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={more}
+          onPress={() => onStep(1)}
+          style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
           <Text style={[s.sqT, { color: c.ink }]}>+</Text>
         </Pressable>
       </View>
@@ -134,8 +167,14 @@ export function Stepper({ label, text, unset, onStep, less, more }: { label: str
 export function Check({ label, why, on, onPress }: { label: string; why?: string; on: boolean; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={onPress} style={({ pressed }) => [s.chk, { opacity: pressed ? 0.85 : 1 }]}>
-      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>{on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}</View>
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on }}
+      onPress={onPress}
+      style={({ pressed }) => [s.chk, { opacity: pressed ? 0.85 : 1 }]}>
+      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
+        {on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
+      </View>
       <View style={{ flex: 1, gap: 2 }}>
         <T v="label">{label}</T>
         {why ? (
@@ -224,7 +263,9 @@ function Reveal({ open, style, children }: { open: boolean; style?: StyleProp<Vi
   }, [open, reduce]);
   useEffect(() => {
     const ease = (to: number, ms: number, done: 'open' | 'closed') =>
-      Animated.timing(v, { toValue: to, duration: ms, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(({ finished }) => finished && setPhase(done));
+      Animated.timing(v, { toValue: to, duration: ms, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(
+        ({ finished }) => finished && setPhase(done),
+      );
     if (phase === 'opening' && h > 0) ease(1, 280, 'open');
     else if (phase === 'closing') ease(0, 220, 'closed');
     else if (phase === 'open') v.setValue(1);
@@ -276,7 +317,17 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onPick(k)}
-            style={[seg.b, on && { backgroundColor: c.surface, borderColor: c.accent, shadowColor: c.lip, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 }]}>
+            style={[
+              seg.b,
+              on && {
+                backgroundColor: c.surface,
+                borderColor: c.accent,
+                shadowColor: c.lip,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+              },
+            ]}>
             <Text style={[seg.t, { color: on ? c.ink : c.accentText }]}>{name}</Text>
           </Pressable>
         );

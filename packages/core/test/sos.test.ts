@@ -114,7 +114,16 @@ describe('SOS memory and rounds', () => {
   });
 
   it('says what SOS kept, in words', () => {
-    const e = core.normEvent({ id: 'x', outcome: 'rode', st: 'mid', m: 4, tr: [['breathe', 's'], ['move', 'p']] })!;
+    const e = core.normEvent({
+      id: 'x',
+      outcome: 'rode',
+      st: 'mid',
+      m: 4,
+      tr: [
+        ['breathe', 's'],
+        ['move', 'p'],
+      ],
+    })!;
     expect(core.urSosLines(e)).toEqual(['Started strong. Passed in 4 minutes.', 'Tried: Breathe (still strong), then Move (it passed).']);
   });
 });

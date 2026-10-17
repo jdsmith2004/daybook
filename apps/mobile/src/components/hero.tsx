@@ -71,7 +71,12 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
             onPress={() => (o.act === 'lesson' ? router.push({ pathname: '/lesson/[id]', params: { id: o.v! } }) : onStop(o.v!))}
             style={({ pressed }) => [
               s.act,
-              { backgroundColor: c.next, shadowColor: c.nextDeep, shadowOffset: { width: 0, height: pressed ? 1 : 5 }, transform: [{ translateY: pressed ? 4 : 0 }] },
+              {
+                backgroundColor: c.next,
+                shadowColor: c.nextDeep,
+                shadowOffset: { width: 0, height: pressed ? 1 : 5 },
+                transform: [{ translateY: pressed ? 4 : 0 }],
+              },
             ]}>
             <View style={[s.ic, { backgroundColor: c.nextSoft }]}>
               <Icon name={o.ic!} size={26} color={c.nextInk} />
@@ -159,7 +164,18 @@ const s = StyleSheet.create({
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   end: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   endT: { fontFamily: font.bodyBold, fontSize: 12 },
-  act: { flexDirection: 'row', alignItems: 'center', gap: 11, minHeight: 74, paddingVertical: 11, paddingLeft: 12, paddingRight: 12, borderRadius: 22, shadowOpacity: 1, shadowRadius: 0 },
+  act: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    minHeight: 74,
+    paddingVertical: 11,
+    paddingLeft: 12,
+    paddingRight: 12,
+    borderRadius: 22,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   ic: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   actB: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
   eye: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

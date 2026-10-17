@@ -8,30 +8,30 @@ The fix is fewer, bigger things, with nothing earned taken away. The owner's ans
 numbers off Today, as long as Today stays extremely useful and motivating; yes to retiring quests and the wins ring; yes to
 the merges; **no** to shortening setup (see step 5).
 
-| Step | What | Effort |
-| --- | --- | --- |
-| 1 | Smoothness: pages, panes, opened cards and lesson cards ease in; Back names the page underneath; closing a tool or lesson returns to the page it was opened from; setup wording. **Done.** | Medium |
-| 2 | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal. Today must stay extremely useful and motivating. **Done.** | Medium |
-| 3 | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work. **Done** (quests stop for weeks that start on or after October 19, 2026). | Medium |
-| 4 | My plan and My playbook as one page (Why, Plans, Lists, Learned) that reads like a page and changes in place. **Done.** | High |
-| 5 | Setup keeps every screen; they are there for a reason. **Later, once the remapping is finished:** rework the setup screens' look, and bring back the old app's pictures of the app itself (`legacy/index.html` `obPicToday`: a small phone showing Today with notes pointing at the flame, the lesson and SOS; `obPicSos` with the tab bar). The owner found the old setup visuals much better. | High |
-| 6 | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows. **Done.** | Medium |
-| 7 | The day's stops: Last night is two big taps that finish themselves (celebrations wait until then); the check-in is a one-minute full-screen moment, one question at a time; "Phone away" finishes the wind-down, and Good night carries the plan for a loud night and a missed check-in; Next up says "2 of 4 done"; the check-in's save words use the no-slip measure, not a run. **Done.** | Medium |
+| Step | What                                                                                                                                                                                                                                                                                                                                                                                            | Effort |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1    | Smoothness: pages, panes, opened cards and lesson cards ease in; Back names the page underneath; closing a tool or lesson returns to the page it was opened from; setup wording. **Done.**                                                                                                                                                                                                      | Medium |
+| 2    | Today: one flame card with one day measure (the last 7 days, then the graduation count), one "Your day" list; runs and the month move to Journal. Today must stay extremely useful and motivating. **Done.**                                                                                                                                                                                    | Medium |
+| 3    | Progress: the flame and badges only; retire weekly quests and the wins ring (points already earned stay); five plain lines for how points work. **Done** (quests stop for weeks that start on or after October 19, 2026).                                                                                                                                                                       | Medium |
+| 4    | My plan and My playbook as one page (Why, Plans, Lists, Learned) that reads like a page and changes in place. **Done.**                                                                                                                                                                                                                                                                         | High   |
+| 5    | Setup keeps every screen; they are there for a reason. **Later, once the remapping is finished:** rework the setup screens' look, and bring back the old app's pictures of the app itself (`legacy/index.html` `obPicToday`: a small phone showing Today with notes pointing at the flame, the lesson and SOS; `obPicSos` with the tab bar). The owner found the old setup visuals much better. | High   |
+| 6    | More and Settings as one tab; Learn: one path numbered in order, one lock line; Journal day rows. **Done.**                                                                                                                                                                                                                                                                                     | Medium |
+| 7    | The day's stops: Last night is two big taps that finish themselves (celebrations wait until then); the check-in is a one-minute full-screen moment, one question at a time; "Phone away" finishes the wind-down, and Good night carries the plan for a loud night and a missed check-in; Next up says "2 of 4 done"; the check-in's save words use the no-slip measure, not a run. **Done.**    | Medium |
 
 Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;
 each tier ends with typecheck, tests, a look at the web build, and a merge to `main` (which publishes it).
 
-| Tier | What | Model |
-| --- | --- | --- |
-| 1 | Graduation: a fun, permanent award (and remove the lighter Today). **Done.** | Opus, high |
-| 2 | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account. **Done.** | Opus, high |
-| 3 | Levels: the new ladder, its pacing, and keeping every earned level. **Done.** | Opus, high |
-| 3b | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock. **Done.** | Opus, high |
-| 3c | Lessons: any "add this to your plan" is a one-tap button (first: the prayer lesson). **Done.** | Opus, medium |
-| 4 | Levels: the look, the art and the animations. **Done.** | Opus, medium |
-| 5 | Words and polish pass (long runs, slips, Milestones), and the owner's notes. **Done.** | Opus, medium |
+| Tier | What                                                                                                | Model        |
+| ---- | --------------------------------------------------------------------------------------------------- | ------------ |
+| 1    | Graduation: a fun, permanent award (and remove the lighter Today). **Done.**                        | Opus, high   |
+| 2    | Accounts: anyone can sign up in the app; sync, backup and most of Learn need an account. **Done.**  | Opus, high   |
+| 3    | Levels: the new ladder, its pacing, and keeping every earned level. **Done.**                       | Opus, high   |
+| 3b   | Accounts, redone: native sign-up and sign-in inside the app, no popup, and a better lock. **Done.** | Opus, high   |
+| 3c   | Lessons: any "add this to your plan" is a one-tap button (first: the prayer lesson). **Done.**      | Opus, medium |
+| 4    | Levels: the look, the art and the animations. **Done.**                                             | Opus, medium |
+| 5    | Words and polish pass (long runs, slips, Milestones), and the owner's notes. **Done.**              | Opus, medium |
 
 ## Tier 1: Graduation
 

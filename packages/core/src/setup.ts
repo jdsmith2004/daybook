@@ -78,7 +78,11 @@ export function obSuggest(a: SetupAnswers): string {
 export type Goal = (typeof OB_GOALS)[number];
 export const obDate = (k: DayKey | null | undefined) => (k ? fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' }) : 'not set');
 export const obCount = (m: CountMode | string) =>
-  m === 'gentle' ? 'A day counts with one slip or fewer' : m === 'step' ? 'Longer stretches between slips, fewer slips each week' : 'A day counts when no slip is logged';
+  m === 'gentle'
+    ? 'A day counts with one slip or fewer'
+    : m === 'step'
+      ? 'Longer stretches between slips, fewer slips each week'
+      : 'A day counts when no slip is logged';
 
 /** counting has started: Day 1 is today or earlier */
 export const obStarted = (st: Settings | null, tk: DayKey) => !!(st && st.day1 && st.day1 <= tk);
@@ -154,9 +158,36 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
 
 /* ---------- the pages ---------- */
 export type PageKind =
-  | 'hello' | 'how' | 'tiles' | 'years' | 'slide' | 'bps' | 'heard' | 'multi' | 'guess' | 'hours' | 'loop' | 'common' | 'sos'
-  | 'lessons' | 'day' | 'so' | 'pattern' | 'flame' | 'waves' | 'curve' | 'tries' | 'slip' | 'takes' | 'goal' | 'reasons' | 'then'
-  | 'person' | 'becoming' | 'review' | 'done';
+  | 'hello'
+  | 'how'
+  | 'tiles'
+  | 'years'
+  | 'slide'
+  | 'bps'
+  | 'heard'
+  | 'multi'
+  | 'guess'
+  | 'hours'
+  | 'loop'
+  | 'common'
+  | 'sos'
+  | 'lessons'
+  | 'day'
+  | 'so'
+  | 'pattern'
+  | 'flame'
+  | 'waves'
+  | 'curve'
+  | 'tries'
+  | 'slip'
+  | 'takes'
+  | 'goal'
+  | 'reasons'
+  | 'then'
+  | 'person'
+  | 'becoming'
+  | 'review'
+  | 'done';
 export interface ObPage {
   id: string;
   s: string;
@@ -179,23 +210,101 @@ export interface ObPage {
 export const OB_PAGES: ObPage[] = [
   { id: 'hello', s: 'welcome', k: 'hello' },
   { id: 'how', s: 'welcome', k: 'how' },
-  { id: 'aim', s: 'welcome', k: 'tiles', key: 'aim', list: OB_AIM, h: 'What do you want most from Daybook?', sub: 'Pick the closest one.', cols: 2, auto: 1, keep: 1, art: 'flame' },
-  { id: 'years', s: 'you', k: 'years', key: 'years', list: OB_YEARS, h: 'How long have you been struggling with porn?', sub: 'Your best guess is fine.', auto: 1, keep: 1, art: 'calendar' },
-  { id: 'freq', s: 'you', k: 'slide', key: 'freq', list: OB_FREQ, h: 'In a typical week, how often do you watch porn?', sub: 'Rough is fine. Only you see this.', lo: 'Rarely', hi: 'Several a day', keep: 1 },
-  { id: 'mins', s: 'you', k: 'slide', key: 'mins', list: OB_MINS, h: 'When you do, how long does it usually last?', sub: 'Count from when you start until you stop.', lo: 'Minutes', hi: 'Hours', keep: 1 },
-  { id: 'faith', s: 'you', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', sub: 'It only changes which lessons come up.', cols: 1, auto: 1, keep: 1, art: 'star' },
+  {
+    id: 'aim',
+    s: 'welcome',
+    k: 'tiles',
+    key: 'aim',
+    list: OB_AIM,
+    h: 'What do you want most from Daybook?',
+    sub: 'Pick the closest one.',
+    cols: 2,
+    auto: 1,
+    keep: 1,
+    art: 'flame',
+  },
+  {
+    id: 'years',
+    s: 'you',
+    k: 'years',
+    key: 'years',
+    list: OB_YEARS,
+    h: 'How long have you been struggling with porn?',
+    sub: 'Your best guess is fine.',
+    auto: 1,
+    keep: 1,
+    art: 'calendar',
+  },
+  {
+    id: 'freq',
+    s: 'you',
+    k: 'slide',
+    key: 'freq',
+    list: OB_FREQ,
+    h: 'In a typical week, how often do you watch porn?',
+    sub: 'Rough is fine. Only you see this.',
+    lo: 'Rarely',
+    hi: 'Several a day',
+    keep: 1,
+  },
+  {
+    id: 'mins',
+    s: 'you',
+    k: 'slide',
+    key: 'mins',
+    list: OB_MINS,
+    h: 'When you do, how long does it usually last?',
+    sub: 'Count from when you start until you stop.',
+    lo: 'Minutes',
+    hi: 'Hours',
+    keep: 1,
+  },
+  {
+    id: 'faith',
+    s: 'you',
+    k: 'tiles',
+    key: 'faith',
+    list: OB_FAITH,
+    h: 'Does faith play a part in this for you?',
+    sub: 'It only changes which lessons come up.',
+    cols: 1,
+    auto: 1,
+    keep: 1,
+    art: 'star',
+  },
   { id: 'b0', s: 'check', k: 'bps', n: 0 },
   { id: 'b1', s: 'check', k: 'bps', n: 1 },
   { id: 'b2', s: 'check', k: 'bps', n: 2 },
   { id: 'b3', s: 'check', k: 'bps', n: 3 },
   { id: 'b4', s: 'check', k: 'bps', n: 4 },
   { id: 'heard', s: 'check', k: 'heard' },
-  { id: 'costs', s: 'facts', k: 'multi', key: 'costs', list: OB_COST, h: 'What has porn cost you so far?', sub: 'Tap all that apply.', cols: 2, keep: 1, own: 'ownCost' },
+  {
+    id: 'costs',
+    s: 'facts',
+    k: 'multi',
+    key: 'costs',
+    list: OB_COST,
+    h: 'What has porn cost you so far?',
+    sub: 'Tap all that apply.',
+    cols: 2,
+    keep: 1,
+    own: 'ownCost',
+  },
   { id: 'guess', s: 'facts', k: 'guess', need: (a) => !!obHours(a) },
   { id: 'hours', s: 'facts', k: 'hours', need: (a) => !!obHours(a) },
   { id: 'loop', s: 'facts', k: 'loop' },
   { id: 'common', s: 'facts', k: 'common' },
-  { id: 'when', s: 'helps', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does the urge pull hardest?', sub: 'Tap all that apply. Daybook gets ready for these.', cols: 2, keep: 1 },
+  {
+    id: 'when',
+    s: 'helps',
+    k: 'multi',
+    key: 'when',
+    list: OB_WHEN,
+    h: 'When does the urge pull hardest?',
+    sub: 'Tap all that apply. Daybook gets ready for these.',
+    cols: 2,
+    keep: 1,
+  },
   { id: 'sos', s: 'helps', k: 'sos' },
   { id: 'lessons', s: 'helps', k: 'lessons' },
   { id: 'day', s: 'helps', k: 'day' },
@@ -204,7 +313,19 @@ export const OB_PAGES: ObPage[] = [
   { id: 'flame', s: 'helps', k: 'flame' },
   { id: 'waves', s: 'expect', k: 'waves' },
   { id: 'curve', s: 'expect', k: 'curve' },
-  { id: 'tried', s: 'expect', k: 'tiles', key: 'tried', list: OB_TRIED, h: 'Have you tried to quit before?', sub: 'There is no wrong answer here.', cols: 1, auto: 1, keep: 1, art: 'flag' },
+  {
+    id: 'tried',
+    s: 'expect',
+    k: 'tiles',
+    key: 'tried',
+    list: OB_TRIED,
+    h: 'Have you tried to quit before?',
+    sub: 'There is no wrong answer here.',
+    cols: 1,
+    auto: 1,
+    keep: 1,
+    art: 'flag',
+  },
   { id: 'tries', s: 'expect', k: 'tries' },
   { id: 'slip', s: 'expect', k: 'slip' },
   { id: 'takes', s: 'expect', k: 'takes' },
@@ -250,7 +371,11 @@ export const OB_BE = [
 ];
 export const BE_LEN = 160;
 /** the sentence the answers hold: one line, trimmed, or empty */
-export const obBecoming = (a: SetupAnswers) => String(a.be || '').replace(/\s+/g, ' ').trim().slice(0, BE_LEN);
+export const obBecoming = (a: SetupAnswers) =>
+  String(a.be || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, BE_LEN);
 
 /* ---------- the plan: what the answers would change ---------- */
 export interface ObChange {
@@ -316,10 +441,14 @@ export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObC
       to: 'If ' + T[1] + ', then ' + th,
       apply: (s) => void (s.plan[T[0]] = { when: T[1], then: th }),
     });
-  const pn = String(a.person || '').trim().slice(0, 80);
-  if (pn && (!st || pn !== cur.safePerson)) out.push({ k: 'person', l: 'Safe person', from: cur.safePerson || 'Not set', to: pn, apply: (s) => void (s.safePerson = pn) });
+  const pn = String(a.person || '')
+    .trim()
+    .slice(0, 80);
+  if (pn && (!st || pn !== cur.safePerson))
+    out.push({ k: 'person', l: 'Safe person', from: cur.safePerson || 'Not set', to: pn, apply: (s) => void (s.safePerson = pn) });
   const be = obBecoming(a);
-  if (be && (!st || be !== cur.becoming)) out.push({ k: 'be', l: 'Who I am becoming', from: cur.becoming || 'Not set', to: be, apply: (s) => void (s.becoming = be) });
+  if (be && (!st || be !== cur.becoming))
+    out.push({ k: 'be', l: 'Who I am becoming', from: cur.becoming || 'Not set', to: be, apply: (s) => void (s.becoming = be) });
   const fm = a.faith === 'big' ? 'mix' : a.faith ? 'after' : null;
   if (fm && (!st ? fm !== 'after' : fm !== cur.learn.faith))
     out.push({
@@ -371,9 +500,15 @@ export interface ObShow {
   /** "Behind this": the detail, and the sources by key */
   more?: { label: string; paras: string[]; keys: string[] };
 }
-export const obSrc = (k: string): [string, string] | null => (OB_SRC[k] as [string, string]) || ((SRC[k] as unknown as [string, string]) || null);
+export const obSrc = (k: string): [string, string] | null => (OB_SRC[k] as [string, string]) || (SRC[k] as unknown as [string, string]) || null;
 
-const BPS_MORE = { label: 'Behind this', paras: ['These five statements are the Brief Pornography Screen, a short tested check. Your answers are kept so the next walk-through can show how things moved.'], keys: ['bps'] };
+const BPS_MORE = {
+  label: 'Behind this',
+  paras: [
+    'These five statements are the Brief Pornography Screen, a short tested check. Your answers are kept so the next walk-through can show how things moved.',
+  ],
+  keys: ['bps'],
+};
 /** after the five statements: a kind word that fits what was said. The score is never shown. */
 export function obHeard(a: SetupAnswers): ObShow {
   const r = obScore(a);
@@ -446,7 +581,11 @@ export function obTries(a: SetupAnswers): ObShow {
   return {
     h: x[0],
     line: x[1],
-    more: { label: 'Behind this', paras: ['A study followed 1,277 people trying to quit smoking. The researchers estimated that for many, it takes 30 or more tries before one sticks.'], keys: ['chaiton'] },
+    more: {
+      label: 'Behind this',
+      paras: ['A study followed 1,277 people trying to quit smoking. The researchers estimated that for many, it takes 30 or more tries before one sticks.'],
+      keys: ['chaiton'],
+    },
   };
 }
 
@@ -467,7 +606,9 @@ export function obSosLine(a: SetupAnswers) {
   return {
     tool: T,
     when: has ? (OB_WHEN.find((x) => x[0] === obTop(a)) || [])[1] || '' : 'Right now',
-    line: has ? `Slow breathing starts on its own, then one thing to try. When ${w[2]}, that might be **${T.name}**.` : 'Slow breathing starts on its own, then one thing to try, picked for that moment.',
+    line: has
+      ? `Slow breathing starts on its own, then one thing to try. When ${w[2]}, that might be **${T.name}**.`
+      : 'Slow breathing starts on its own, then one thing to try, picked for that moment.',
   };
 }
 

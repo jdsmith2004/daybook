@@ -58,7 +58,14 @@ function PickBtn({ label, a11y, on, big, onPress }: { label: string; a11y: strin
     Animated.spring(press, { toValue: v, friction: 6, tension: 260, useNativeDriver: false }).start();
   };
   return (
-    <Pressable accessibilityRole="radio" accessibilityLabel={a11y} accessibilityState={{ checked: on }} onPress={onPress} onPressIn={() => pressTo(1)} onPressOut={() => pressTo(0)} style={s.cell}>
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={a11y}
+      accessibilityState={{ checked: on }}
+      onPress={onPress}
+      onPressIn={() => pressTo(1)}
+      onPressOut={() => pressTo(0)}
+      style={s.cell}>
       <Animated.View
         style={[
           s.btn,
@@ -68,7 +75,10 @@ function PickBtn({ label, a11y, on, big, onPress }: { label: string; a11y: strin
             borderColor: fill.interpolate({ inputRange: [0, 1], outputRange: [c.line, c.accent] }),
             shadowColor: c.lip,
             shadowOffset: { width: 0, height: 3 },
-            transform: [{ translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, 2] }) }, { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) }],
+            transform: [
+              { translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, 2] }) },
+              { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) },
+            ],
           },
         ]}>
         <Animated.Text style={[s.t, big && s.tBig, { color: fill.interpolate({ inputRange: [0, 1], outputRange: [c.ink, c.accentInk] }) }]} numberOfLines={1}>
@@ -82,7 +92,16 @@ function PickBtn({ label, a11y, on, big, onPress }: { label: string; a11y: strin
 const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   cell: { flex: 1 },
-  btn: { minHeight: 52, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, shadowOpacity: 1, shadowRadius: 0 },
+  btn: {
+    minHeight: 52,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   big: { minHeight: 58, borderRadius: 18 },
   t: { fontFamily: font.bodySemi, fontSize: 16 },
   tBig: { fontFamily: font.display, fontSize: 22 },

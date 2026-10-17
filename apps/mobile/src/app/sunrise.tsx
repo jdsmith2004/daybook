@@ -220,7 +220,16 @@ export default function Sunrise() {
           <View style={s.opts}>
             {P.opts.map((o, j) => {
               const mine = j === 0 && !!P.mine;
-              return <BigOption key={o} tone={mine ? 'mint' : 'sun'} icon={mine ? 'star' : 'flag'} title={o} tag={mine ? 'Your plan' : undefined} onPress={() => finish(o)} />;
+              return (
+                <BigOption
+                  key={o}
+                  tone={mine ? 'mint' : 'sun'}
+                  icon={mine ? 'star' : 'flag'}
+                  title={o}
+                  tag={mine ? 'Your plan' : undefined}
+                  onPress={() => finish(o)}
+                />
+              );
             })}
             <AddTile label="Write my own" icon="pencil" block onPress={() => setOwn('')} />
           </View>

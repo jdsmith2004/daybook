@@ -72,5 +72,15 @@ export function Screen({
 const s = StyleSheet.create({
   content: { paddingHorizontal: 16, alignItems: 'center' },
   col: { width: '100%', maxWidth: MAX_WIDTH, gap: 14 },
-  back: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', minHeight: 44, minWidth: 44, paddingHorizontal: 10, borderRadius: 22, borderWidth: 1.5 },
+  back: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 10,
+    borderRadius: 22,
+    borderWidth: 1.5,
+  },
 });

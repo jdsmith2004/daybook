@@ -97,10 +97,13 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
         <Card tone="note">
           <T v="h2">What comes next</T>
           <T>
-            This first week is for noticing. Nothing is counted yet, so there is nothing to fail. When it ends, you choose: start counting days (Day 1), or keep tracking without counting. Both are fine.
+            This first week is for noticing. Nothing is counted yet, so there is nothing to fail. When it ends, you choose: start counting days (Day 1), or keep
+            tracking without counting. Both are fine.
           </T>
           <T v="label">
-            {st.day1 ? 'Day 1 of quitting is set for ' + fmtDate(st.day1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.' : 'No Day 1 is set. You are just tracking for now.'}
+            {st.day1
+              ? 'Day 1 of quitting is set for ' + fmtDate(st.day1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.'
+              : 'No Day 1 is set. You are just tracking for now.'}
           </T>
           <View style={s.chips}>
             {st.day1 ? (
@@ -115,7 +118,10 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
               </>
             )}
           </View>
-          <Text accessibilityRole="link" onPress={() => router.push('/mode')} style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>
+          <Text
+            accessibilityRole="link"
+            onPress={() => router.push('/mode')}
+            style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>
             What is the difference?
           </Text>
         </Card>
@@ -124,8 +130,8 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
         <T v="h2">Questions for day 7</T>
         {[
           'Are my ratings changing? (Journal › Patterns › Feelings over time)',
-          "Are urges strongest when I am bored, lonely, stressed, or in bed? (Journal › Patterns › What sets it off)",
-          "Do not assume this habit caused every low rating. Use the numbers to learn.",
+          'Are urges strongest when I am bored, lonely, stressed, or in bed? (Journal › Patterns › What sets it off)',
+          'Do not assume this habit caused every low rating. Use the numbers to learn.',
           'Seven data points are noisy. Look again at 14 and 30 days.',
         ].map((q, i) => (
           <T key={i}>

@@ -49,7 +49,12 @@ export default function Journal() {
   const st = snap.settings;
   const [week, setWeek] = useState<number | null>(null);
   if (!st) return <Screen title="Journal">{null}</Screen>;
-  const sub = pane === 'days' ? 'Everything you log shows up here by itself. Tap a day to add or fix something.' : pane === 'patterns' ? 'What your log shows, in numbers and charts.' : 'One short look back each week.';
+  const sub =
+    pane === 'days'
+      ? 'Everything you log shows up here by itself. Tap a day to add or fix something.'
+      : pane === 'patterns'
+        ? 'What your log shows, in numbers and charts.'
+        : 'One short look back each week.';
   const cw = Math.max(0, weekOf(tk, st));
   return (
     <Screen eyebrow="My Daybook" title="Journal" sub={<T tone="muted">{sub}</T>}>
@@ -78,7 +83,13 @@ function DaysPane() {
   const [all, setAll] = useState(false);
   const list = daysList(snap.days, st, tk, all);
   const tone = (status: string) =>
-    status === 'slip' ? { bg: c.slipSoft, fg: c.slipText } : status === 'clean' ? { bg: c.mintSoft, fg: c.mintText } : status === 'tracked' ? { bg: c.skySoft, fg: c.skyText } : { bg: c.surface2, fg: c.muted };
+    status === 'slip'
+      ? { bg: c.slipSoft, fg: c.slipText }
+      : status === 'clean'
+        ? { bg: c.mintSoft, fg: c.mintText }
+        : status === 'tracked'
+          ? { bg: c.skySoft, fg: c.skyText }
+          : { bg: c.surface2, fg: c.muted };
   return (
     <>
       <DaysCard snap={snap} tk={tk} now={now} size="lg" />
@@ -180,7 +191,14 @@ function PatternsPane() {
   const trItems = tr
     .filter((r) => r.k !== 'none')
     .concat(tr.filter((r) => r.k === 'none'))
-    .map((r) => ({ label: r.t, dim: r.k === 'none', segs: [[r.rode, 'rode'], [r.slipped, 'slip']] as [number, 'rode' | 'slip'][] }));
+    .map((r) => ({
+      label: r.t,
+      dim: r.k === 'none',
+      segs: [
+        [r.rode, 'rode'],
+        [r.slipped, 'slip'],
+      ] as [number, 'rode' | 'slip'][],
+    }));
   const works = urWorks(snap.days, tk);
   const p = patterns(snap.days);
   const notice = noticing(snap.days, st, tk, from);
@@ -245,22 +263,38 @@ function PatternsPane() {
       <Block title="Entries per day" count={evTotal ? evTotal + ' in this range' : ''}>
         {rows.some((r) => r.rode + r.slipped > 0) ? (
           <>
-            <Legend items={[['rode', 'Rode it out'], ['slip', 'Slipped']]} />
+            <Legend
+              items={[
+                ['rode', 'Rode it out'],
+                ['slip', 'Slipped'],
+              ]}
+            />
             <DayColumns keys={keys} rows={rows.map((r) => ({ a: r.rode, b: r.slipped }))} tk={tk} label="Entries per day, rode it out and slipped" />
-            <NumbersTable cap="Entries per day" head={['Day', 'Rode it out', 'Slipped']} rows={rows.map((r) => [fmtD(r.key), String(r.rode), String(r.slipped)]).reverse()} />
+            <NumbersTable
+              cap="Entries per day"
+              head={['Day', 'Rode it out', 'Slipped']}
+              rows={rows.map((r) => [fmtD(r.key), String(r.rode), String(r.slipped)]).reverse()}
+            />
           </>
         ) : (
           <EmptyChart text="Entries show up here after you log one." />
         )}
       </Block>
-      <Block title="How many times in a day" count={tpd.logged ? tpd.logged + ' day' + (tpd.logged === 1 ? '' : 's') : ''} sub={tpd.logged ? 'Counted over days with an entry or a check-in.' : ''}>
+      <Block
+        title="How many times in a day"
+        count={tpd.logged ? tpd.logged + ' day' + (tpd.logged === 1 ? '' : 's') : ''}
+        sub={tpd.logged ? 'Counted over days with an entry or a check-in.' : ''}>
         {tpd.logged ? (
           <>
             <HBars
               items={['No entries', '1 entry', '2 entries', '3 or more'].map((label, i) => ({ label, segs: [[tpd.counts[i], 'acc']] as [number, 'acc'][] }))}
               unit={(n) => (n === 1 ? 'day' : 'days')}
             />
-            <NumbersTable cap="Days by number of entries" head={['Entries in a day', 'Days']} rows={['No entries', '1 entry', '2 entries', '3 or more'].map((l, i) => [l, String(tpd.counts[i])])} />
+            <NumbersTable
+              cap="Days by number of entries"
+              head={['Entries in a day', 'Days']}
+              rows={['No entries', '1 entry', '2 entries', '3 or more'].map((l, i) => [l, String(tpd.counts[i])])}
+            />
           </>
         ) : (
           <T tone="muted">Needs a day with an entry or a check-in.</T>
@@ -269,7 +303,14 @@ function PatternsPane() {
       <Block title="When it happens" count={timed.length + ' with a time'}>
         {timed.length ? (
           <>
-            <Legend items={([['rode', 'Rode it out'], ['slip', 'Slipped']] as ['rode' | 'slip' | 'win', string][]).concat(bw ? [['win', 'Busiest two hours']] : [])} />
+            <Legend
+              items={(
+                [
+                  ['rode', 'Rode it out'],
+                  ['slip', 'Slipped'],
+                ] as ['rode' | 'slip' | 'win', string][]
+              ).concat(bw ? [['win', 'Busiest two hours']] : [])}
+            />
             <HourChart bins={bins} bw={bw} />
             {bw ? (
               <T>
@@ -281,7 +322,11 @@ function PatternsPane() {
                 Most entries are in the <Text style={{ fontFamily: font.bodyBold }}>{BUCKET_T[topB].toLowerCase()}</Text> ({bc[topB]} of {timed.length}).
               </T>
             ) : null}
-            <NumbersTable cap="Entries by hour" head={['Hour', 'Rode it out', 'Slipped']} rows={bins.map((b) => [hr(b.h) + ' to ' + hr((b.h + 1) % 24), String(b.rode), String(b.slipped)])} />
+            <NumbersTable
+              cap="Entries by hour"
+              head={['Hour', 'Rode it out', 'Slipped']}
+              rows={bins.map((b) => [hr(b.h) + ' to ' + hr((b.h + 1) % 24), String(b.rode), String(b.slipped)])}
+            />
           </>
         ) : (
           <EmptyChart text="Times show up here after you log an entry." />
@@ -290,9 +335,18 @@ function PatternsPane() {
       <Block title="What sets it off">
         {tr.length ? (
           <>
-            <Legend items={[['rode', 'Rode it out'], ['slip', 'Slipped']]} />
+            <Legend
+              items={[
+                ['rode', 'Rode it out'],
+                ['slip', 'Slipped'],
+              ]}
+            />
             <HBars items={trItems} />
-            <NumbersTable cap="Entries by what set them off" head={['Reason', 'Rode it out', 'Slipped']} rows={trItems.map((it) => [it.label, String(it.segs[0][0]), String(it.segs[1][0])])} />
+            <NumbersTable
+              cap="Entries by what set them off"
+              head={['Reason', 'Rode it out', 'Slipped']}
+              rows={trItems.map((it) => [it.label, String(it.segs[0][0]), String(it.segs[1][0])])}
+            />
           </>
         ) : (
           <EmptyChart text="Pick a reason when you log an entry to see this." />
@@ -301,12 +355,27 @@ function PatternsPane() {
       <Block title="What works for me" count="From SOS">
         {works.length ? (
           <>
-            <Legend items={[['rode', 'It passed after'], ['slip', 'Still strong or slipped after']]} />
+            <Legend
+              items={[
+                ['rode', 'It passed after'],
+                ['slip', 'Still strong or slipped after'],
+              ]}
+            />
             <HBars
-              items={works.map((x) => ({ label: x.name, segs: [[x.passed, 'rode'], [x.not, 'slip']] as [number, 'rode' | 'slip'][] }))}
+              items={works.map((x) => ({
+                label: x.name,
+                segs: [
+                  [x.passed, 'rode'],
+                  [x.not, 'slip'],
+                ] as [number, 'rode' | 'slip'][],
+              }))}
               unit={(n) => (n === 1 ? 'try' : 'tries')}
             />
-            <NumbersTable cap="SOS tools, and how the urge was after each one" head={['Tool', 'It passed', 'Did not pass']} rows={works.map((x) => [x.name, String(x.passed), String(x.not)])} />
+            <NumbersTable
+              cap="SOS tools, and how the urge was after each one"
+              head={['Tool', 'It passed', 'Did not pass']}
+              rows={works.map((x) => [x.name, String(x.passed), String(x.not)])}
+            />
             <T v="small" tone="muted">
               From SOS, over the last four months: after each tool, did the urge pass? SOS uses this to choose what to suggest.
             </T>
@@ -328,7 +397,10 @@ function PatternsPane() {
               </View>
               {p.rows.map((r) => {
                 const f = (v: number | null) => (v == null ? '–' : r.kind === 'pct' ? pct(v) : one(v));
-                const gp = r.gap == null ? '–' : (r.gap > 0 ? '+' : r.gap < 0 ? '−' : '') + (r.kind === 'pct' ? Math.round(Math.abs(r.gap) * 100) + '%' : one(Math.abs(r.gap)));
+                const gp =
+                  r.gap == null
+                    ? '–'
+                    : (r.gap > 0 ? '+' : r.gap < 0 ? '−' : '') + (r.kind === 'pct' ? Math.round(Math.abs(r.gap) * 100) + '%' : one(Math.abs(r.gap)));
                 return (
                   <View key={r.label} style={[s.tr, { borderBottomColor: c.line }]}>
                     <Text style={[s.td, { color: c.ink, flex: 1.4, fontFamily: font.bodySemi }]}>{r.label}</Text>
@@ -345,7 +417,10 @@ function PatternsPane() {
             </T>
           </>
         ) : (
-          <T tone="muted">Needs at least one day without a slip and one with a slip, each with a check-in. Small samples are noisy. This is for asking questions, not for judging myself.</T>
+          <T tone="muted">
+            Needs at least one day without a slip and one with a slip, each with a check-in. Small samples are noisy. This is for asking questions, not for
+            judging myself.
+          </T>
         )}
       </Block>
       <Block title="What I am noticing">

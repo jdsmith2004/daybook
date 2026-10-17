@@ -132,7 +132,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   };
   const save = async (kind: 'days' | 'events' | 'json') => {
     const name = kind === 'days' ? 'daybook-days.csv' : kind === 'events' ? 'daybook-entries.csv' : 'daybook-backup.json';
-    const data = kind === 'days' ? '﻿' + daysCsv(snap.days, st, tk) : kind === 'events' ? '﻿' + eventsCsv(snap.days, st) : JSON.stringify(makeBackup(snap), null, 1);
+    const data =
+      kind === 'days' ? '﻿' + daysCsv(snap.days, st, tk) : kind === 'events' ? '﻿' + eventsCsv(snap.days, st) : JSON.stringify(makeBackup(snap), null, 1);
     try {
       await saveBackupFile(name, data, kind === 'json' ? 'application/json' : 'text/csv');
       say('Saved ' + name);
@@ -148,13 +149,16 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
 
   return (
     <>
-
       {sync.status.k === 'off'
         ? null
         : sec(
             'sync',
             'Sync between devices',
-            signedIn ? (sync.status.k === 'expired' ? 'Sign in again to keep syncing' : 'On' + (sync.email ? ' · ' + sync.email : '')) : 'Off · your log stays on this device',
+            signedIn
+              ? sync.status.k === 'expired'
+                ? 'Sign in again to keep syncing'
+                : 'On' + (sync.email ? ' · ' + sync.email : '')
+              : 'Off · your log stays on this device',
             <SyncBody />,
           )}
 
@@ -164,8 +168,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         'Turn parts of the day on or off',
         <>
           <T v="small" tone="muted">
-            Switch off anything that does not fit your life right now. It leaves Today. If you do it anyway, it still earns its points. You can also skip
-            things for a single day from Today.
+            Switch off anything that does not fit your life right now. It leaves Today. If you do it anyway, it still earns its points. You can also skip things
+            for a single day from Today.
           </T>
           {ROUTINE.map((x) => (
             <OnOff key={x.k} name={x.name} sub={x.sub} on={!!st.routine[x.k]} onPick={(on) => apply({ st: setRoutine(st, x.k, on) })} />
@@ -174,8 +178,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             <B>Check-in.</B> Skipping it never costs you a day. A day counts as no-slip whenever no slip is logged, check-in or not.
           </T>
           <T v="small" tone="muted">
-            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right. While it is off, a weekly quest about it is swapped
-            for a different one.
+            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right. While it is off, a weekly quest
+            about it is swapped for a different one.
           </T>
         </>,
       )}
@@ -222,19 +226,24 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'count',
         'How I count days',
-        st.cleanMode === 'gentle' ? 'Gentle: one slip or fewer' : st.cleanMode === 'step' ? 'Step down: longer stretches, fewer slips' : 'Strict: no slip logged',
+        st.cleanMode === 'gentle'
+          ? 'Gentle: one slip or fewer'
+          : st.cleanMode === 'step'
+            ? 'Step down: longer stretches, fewer slips'
+            : 'Strict: no slip logged',
         <>
           <T v="small" tone="muted">
-            A day counts when no slip is logged on it. A day with nothing logged counts too. This only changes how days are counted. It never changes what you log.
+            A day counts when no slip is logged on it. A day with nothing logged counts too. This only changes how days are counted. It never changes what you
+            log.
           </T>
           <Field
             label="Counting"
             hint={
               <>
-                <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be saved: finish the
-                Rekindle quest by the next night and your run keeps going.{'\n\n'}
-                <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week.
-                When your stretch passes a week, or a week has one slip or none, Daybook offers to start counting days.
+                <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be
+                saved: finish the Rekindle quest by the next night and your run keeps going.{'\n\n'}
+                <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and
+                fewer slips each week. When your stretch passes a week, or a week has one slip or none, Daybook offers to start counting days.
               </>
             }>
             <Chips label="Counting">
@@ -243,7 +252,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               <Chip label="Step down" on={st.cleanMode === 'step'} onPress={() => apply(setCountMode(st, 'step', tk))} />
             </Chips>
           </Field>
-          <Field label="Rough stretches" hint="If slips land on most days of a week, Daybook switches to step down by itself and tells you. It never switches back unless you do.">
+          <Field
+            label="Rough stretches"
+            hint="If slips land on most days of a week, Daybook switches to step down by itself and tells you. It never switches back unless you do.">
             <Chips label="Rough stretches">
               <Chip label="Switch for me" on={st.cleanAuto !== false} onPress={() => apply(setCleanAuto(st, true))} />
               <Chip label="Leave it" on={st.cleanAuto === false} onPress={() => apply(setCleanAuto(st, false))} />
@@ -304,7 +315,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
           <Field
             label="SOS suggests first"
             hint={
-              pin ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.' : 'SOS learns which tools help you, and picks the best fit for the moment.'
+              pin
+                ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.'
+                : 'SOS learns which tools help you, and picks the best fit for the moment.'
             }>
             <Chips label="SOS suggests first">
               <Chip label="The best fit for the moment" on={!st.urPin} onPress={() => apply({ st: setUrPin(st, null) })} />
@@ -332,7 +345,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'remind',
         'Reminders',
-        remindersOffered ? (rem.morning || rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times' : 'Phone alarms that keep the rhythm',
+        remindersOffered
+          ? (rem.morning || rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times'
+          : 'Phone alarms that keep the rhythm',
         remindersOffered ? (
           <>
             <T v="small" tone="muted">
@@ -388,7 +403,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             lock ? 'On · Face ID or passcode to open' : 'Off',
             <>
               <T v="small" tone="muted">
-                Daybook asks for Face ID, Touch ID or your phone’s passcode when it opens, and again after a minute away. In the app switcher, your log is covered.
+                Daybook asks for Face ID, Touch ID or your phone’s passcode when it opens, and again after a minute away. In the app switcher, your log is
+                covered.
               </T>
               <OnOff
                 name="Lock Daybook"

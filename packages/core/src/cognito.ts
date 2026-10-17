@@ -76,7 +76,9 @@ export function cognitoClient(region: string, clientId: string, fetchFn: Fetch =
       j = {};
     }
     if (!res.ok) {
-      const code = String(j.__type || j.code || 'Error').split('#').pop()!;
+      const code = String(j.__type || j.code || 'Error')
+        .split('#')
+        .pop()!;
       throw new CognitoError(code, cognitoWords(code));
     }
     return j;
@@ -114,7 +116,11 @@ export function cognitoClient(region: string, clientId: string, fetchFn: Fetch =
     },
     /** an account made for the person (with a temporary password) picks its own on the first sign-in */
     async newPassword(e: string, session: string, password: string): Promise<Tokens> {
-      const r = await call('RespondToAuthChallenge', { ChallengeName: 'NEW_PASSWORD_REQUIRED', Session: session, ChallengeResponses: { USERNAME: email(e), NEW_PASSWORD: password } });
+      const r = await call('RespondToAuthChallenge', {
+        ChallengeName: 'NEW_PASSWORD_REQUIRED',
+        Session: session,
+        ChallengeResponses: { USERNAME: email(e), NEW_PASSWORD: password },
+      });
       if (!r.AuthenticationResult) throw new CognitoError('Error', cognitoWords('Error'));
       return tokensOf(r.AuthenticationResult);
     },

@@ -132,31 +132,49 @@ export function BrainArt({ art, label }: { art: 'rush' | 'crash' | 'trap'; label
           <Path d="M10 118H310" {...base} />
           <Path d="M12 118H92C110 118 116 24 134 24S152 118 172 118H308" {...ln} />
           <Circle cx={134} cy={24} r={7} fill={c.slip} />
-          <SvgText x={134} y={10} {...lb}>THE RUSH</SvgText>
-          <SvgText x={240} y={104} {...lb}>OVER FAST</SvgText>
+          <SvgText x={134} y={10} {...lb}>
+            THE RUSH
+          </SvgText>
+          <SvgText x={240} y={104} {...lb}>
+            OVER FAST
+          </SvgText>
         </G>
       ) : art === 'crash' ? (
         <G>
           <Path d="M10 56H310" {...base} />
           <Path d="M12 56H58C92 56 98 126 136 126S214 70 266 52" {...ln} />
-          <SvgText x={136} y={146} {...lb}>THE LOW</SvgText>
+          <SvgText x={136} y={146} {...lb}>
+            THE LOW
+          </SvgText>
           <Circle cx={288} cy={46} r={11} fill="#FFC832" />
           <Path d="M288 26v-6M304 32l4-4M272 32l-4-4M310 46h6M266 46h-6" stroke="#FFB43A" strokeWidth={3} strokeLinecap="round" />
-          <SvgText x={232} y={30} {...lb}>IT LIFTS</SvgText>
+          <SvgText x={232} y={30} {...lb}>
+            IT LIFTS
+          </SvgText>
         </G>
       ) : (
         <G>
           <Path d="M70 64C118 40 170 30 232 30" {...ln} stroke={c.coral} strokeDasharray="12 10" />
           <Path d="M70 86C118 110 170 120 236 120" {...ln} stroke={c.mint} />
           <Circle cx={42} cy={75} r={28} fill={c.surface} stroke={c.ink} strokeWidth={2} />
-          <SvgText x={42} y={72} {...lb}>ONE</SvgText>
-          <SvgText x={42} y={86} {...lb}>SLIP</SvgText>
+          <SvgText x={42} y={72} {...lb}>
+            ONE
+          </SvgText>
+          <SvgText x={42} y={86} {...lb}>
+            SLIP
+          </SvgText>
           <Circle cx={258} cy={30} r={23} fill={c.coralSoft} stroke={c.coral} strokeWidth={2} />
-          <SvgText x={258} y={34} {...lb} fill={c.coralText} opacity={1}>MORE</SvgText>
+          <SvgText x={258} y={34} {...lb} fill={c.coralText} opacity={1}>
+            MORE
+          </SvgText>
           <Circle cx={258} cy={120} r={21} fill={c.mint} />
           <Path d="M249 120l6 6 12-13" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
-          <SvgText x={150} y={20} {...lb} fill={c.coralText} opacity={1}>“I BLEW IT”</SvgText>
-          <SvgText x={150} y={146} {...lb} fill={c.mintText} opacity={1}>“JUST ONE SLIP”</SvgText>
+          <SvgText x={150} y={20} {...lb} fill={c.coralText} opacity={1}>
+            “I BLEW IT”
+          </SvgText>
+          <SvgText x={150} y={146} {...lb} fill={c.mintText} opacity={1}>
+            “JUST ONE SLIP”
+          </SvgText>
         </G>
       )}
     </Svg>

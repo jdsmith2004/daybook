@@ -234,8 +234,14 @@ export default function Setup() {
           ) : null}
         </Show>
       ) : (
-        <Show st={st} art={<PicToday />} h="Quit porn, one honest day at a time." line="A plan built from your answers, help when urges hit, and progress you can see.">
-          {sync.status.k !== 'off' && sync.status.k !== 'on' ? <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={() => sync.signInNow()} /> : null}
+        <Show
+          st={st}
+          art={<PicToday />}
+          h="Quit porn, one honest day at a time."
+          line="A plan built from your answers, help when urges hit, and progress you can see.">
+          {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
+            <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={() => sync.signInNow()} />
+          ) : null}
           <TextLink label="I already have a backup file" onPress={restore} />
         </Show>
       );
@@ -249,7 +255,14 @@ export default function Setup() {
         <>
           <QArt pg={pg} t={t} />
           <Q h={pg.h!} sub={pg.sub} />
-          <IconTiles list={pg.list!} cols={pg.k === 'years' ? 1 : pg.cols || 1} cur={a[key] as string} t={t} years={pg.k === 'years'} onPick={(v) => pick(key, v, !!pg.auto)} />
+          <IconTiles
+            list={pg.list!}
+            cols={pg.k === 'years' ? 1 : pg.cols || 1}
+            cur={a[key] as string}
+            t={t}
+            years={pg.k === 'years'}
+            onPick={(v) => pick(key, v, !!pg.auto)}
+          />
           {lastLine(key, pg.list!)}
         </>
       );
@@ -860,7 +873,10 @@ export default function Setup() {
           gap: 12,
         }}>
         <View style={s.top}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }} accessible accessibilityLabel={(f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1]}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            accessible
+            accessibilityLabel={(f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1]}>
             <View style={[s.si, { backgroundColor: t.soft }]}>
               <Icon name={sec[3]} size={16} color={t.text} />
             </View>
@@ -937,9 +953,23 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
         />
       );
     case 'lessons':
-      return <Show st={st} art={<PicLesson />} h={`${LESSONS.length} short lessons. One a day is plenty.`} line="Each takes 1 to 5 minutes, with the research linked." />;
+      return (
+        <Show
+          st={st}
+          art={<PicLesson />}
+          h={`${LESSONS.length} short lessons. One a day is plenty.`}
+          line="Each takes 1 to 5 minutes, with the research linked."
+        />
+      );
     case 'flame':
-      return <Show st={st} art={<PicFlame />} h="Your flame grows as you show up." line="Honest logs, lessons, and urges you ride out earn points. **Points never go down.**" />;
+      return (
+        <Show
+          st={st}
+          art={<PicFlame />}
+          h="Your flame grows as you show up."
+          line="Honest logs, lessons, and urges you ride out earn points. **Points never go down.**"
+        />
+      );
     case 'waves':
       return (
         <Show
@@ -949,7 +979,9 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
           line="You can ride one out without acting on it. SOS walks you through it."
           more={{
             label: 'Behind this',
-            paras: ['In a study with smokers, people who learned to watch a craving rise and fall without acting on it (“urge surfing”) smoked less over the following week.'],
+            paras: [
+              'In a study with smokers, people who learned to watch a craving rise and fall without acting on it (“urge surfing”) smoked less over the following week.',
+            ],
             keys: ['bowen'],
           }}
         />
@@ -1111,7 +1143,23 @@ function IconTiles({
   );
 }
 /** the answers on a scale, as stops along a track */
-function Steps({ n, cur, t, labels, lo, hi, onPick }: { n: number; cur: number; t: Tone; labels: string[]; lo: string; hi: string; onPick: (j: number) => void }) {
+function Steps({
+  n,
+  cur,
+  t,
+  labels,
+  lo,
+  hi,
+  onPick,
+}: {
+  n: number;
+  cur: number;
+  t: Tone;
+  labels: string[];
+  lo: string;
+  hi: string;
+  onPick: (j: number) => void;
+}) {
   const c = useTheme();
   return (
     <View style={{ gap: 8 }}>

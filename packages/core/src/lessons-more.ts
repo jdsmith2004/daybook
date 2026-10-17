@@ -31,7 +31,10 @@ export const SRC_MORE: Record<string, [string, string]> = {
     'Quinn, Pascoe, Wood & Neal (2010): “Can’t control yourself? Monitor those bad habits,” Personality and Social Psychology Bulletin',
     'https://dornsife.usc.edu/wendy-wood/wp-content/uploads/sites/183/2023/10/quinn.pascoe.wood_.neal_.2010_Cant_control_yourself.pdf',
   ],
-  woodrunger: ['Wood & Rünger (2016): psychology of habit, Annual Review of Psychology', 'https://dornsife.usc.edu/wendy-wood/wp-content/uploads/sites/183/2023/10/wood.runger.2016.pdf'],
+  woodrunger: [
+    'Wood & Rünger (2016): psychology of habit, Annual Review of Psychology',
+    'https://dornsife.usc.edu/wendy-wood/wp-content/uploads/sites/183/2023/10/wood.runger.2016.pdf',
+  ],
   dingle: [
     'Dingle, Stark, Cruwys & Best (2015): “Breaking good,” identity change in a drug and alcohol treatment community, British Journal of Social Psychology',
     'https://researchportalplus.anu.edu.au/en/publications/breaking-good-breaking-ties-with-social-groups-may-be-good-for-re/',
@@ -54,7 +57,12 @@ type Src = [string, string];
 const S = (k: string, shared?: Record<string, Src>): Src => SRC_MORE[k] || (shared && shared[k]) || ['', ''];
 
 export const LUNITS_MORE: Unit[] = [
-  { name: 'Why it is hard to stop', sub: 'Wanting and liking, the cue that comes first, autopilot, and what the habit does for you.', tone: 'coral', cls: 'lu8' },
+  {
+    name: 'Why it is hard to stop',
+    sub: 'Wanting and liking, the cue that comes first, autopilot, and what the habit does for you.',
+    tone: 'coral',
+    cls: 'lu8',
+  },
   { name: 'Becoming someone new', sub: 'Who you are becoming, saying “I do not,” your future self, and the evidence in your log.', tone: 'mint', cls: 'lu9' },
 ];
 
@@ -93,8 +101,14 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Make your best guess.',
           a: 1,
           c: [
-            ['Deep down, I must enjoy it more than I admit', 'A common fear. But wanting and enjoying are two different things in the brain. One can grow while the other stays the same.'],
-            ['Wanting and liking run on different systems', 'Good guess. The brain wants and likes through different systems, and repetition can turn up the wanting on its own.'],
+            [
+              'Deep down, I must enjoy it more than I admit',
+              'A common fear. But wanting and enjoying are two different things in the brain. One can grow while the other stays the same.',
+            ],
+            [
+              'Wanting and liking run on different systems',
+              'Good guess. The brain wants and likes through different systems, and repetition can turn up the wanting on its own.',
+            ],
             ['My willpower is weak', 'Willpower is not the missing piece. The pull comes from a learned wanting signal, and you can learn to outlast it.'],
             ['It is just how I am made', 'The pull was learned through repetition. It is a signal, not who you are.'],
           ],
@@ -165,7 +179,10 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Pick the best move.',
           a: 2,
           c: [
-            ['Agree. If I want it this much, I must need it', 'How strong a pull feels is not a measure of need. Wanting can grow far louder than the pleasure ever was.'],
+            [
+              'Agree. If I want it this much, I must need it',
+              'How strong a pull feels is not a measure of need. Wanting can grow far louder than the pleasure ever was.',
+            ],
             ['Argue with the thought until it stops', 'Arguing keeps your attention on it. A name is quicker: this is wanting.'],
             ['Name it: this is wanting, and wanting passes', 'Yes. You see the signal for what it is, and you outlast it.'],
             ['Give in once, to prove I am in control', 'Each time the pull is followed, the wanting signal gets more practice. Outlasting it gives it less.'],
@@ -228,8 +245,14 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Make your best guess.',
           a: 1,
           c: [
-            ['When the explicit picture came on the screen', 'That is the common guess. But the difference came earlier, at the signal that a picture was coming.'],
-            ['At the signal that porn was about to come', 'Good guess. Their reward areas reacted more to the signal. The pictures themselves got about the same response as in other men.'],
+            [
+              'When the explicit picture came on the screen',
+              'That is the common guess. But the difference came earlier, at the signal that a picture was coming.',
+            ],
+            [
+              'At the signal that porn was about to come',
+              'Good guess. Their reward areas reacted more to the signal. The pictures themselves got about the same response as in other men.',
+            ],
             ['Only after a long time looking', 'The difference came before anything was shown, at the signal.'],
             ['There was no difference at all', 'There was a difference, and it came at the signal, before any picture.'],
           ],
@@ -347,9 +370,15 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Make your best guess.',
           a: 2,
           c: [
-            ['Keeping the temptation out of sight', 'In these studies, that helped with passing temptations, but did little for strong habits. Something else worked better for those.'],
+            [
+              'Keeping the temptation out of sight',
+              'In these studies, that helped with passing temptations, but did little for strong habits. Something else worked better for those.',
+            ],
             ['Distracting myself with something else', 'Distraction did little for strong habits in these studies.'],
-            ['Watching for the habit and telling myself “do not”', 'Good guess. Watching for slips and telling themselves not to do it worked best for strong habits.'],
+            [
+              'Watching for the habit and telling myself “do not”',
+              'Good guess. Watching for slips and telling themselves not to do it worked best for strong habits.',
+            ],
             ['Nothing works on a strong habit', 'Something did work: watching for it, and telling yourself not to.'],
           ],
         },
@@ -435,7 +464,12 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       },
       rc: {
         q: 'You find yourself on the same spot on the couch, phone in hand, the way it usually starts. What is the move?',
-        c: ['Hope no urge comes tonight', 'Notice it, and tell yourself “not this time”', 'Throw the phone across the room', 'Feel ashamed it is happening again'],
+        c: [
+          'Hope no urge comes tonight',
+          'Notice it, and tell yourself “not this time”',
+          'Throw the phone across the room',
+          'Feel ashamed it is happening again',
+        ],
         a: 1,
         r: 'Watch for the autopilot, and tell yourself “not this time.”',
         cr: [
@@ -483,7 +517,10 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Make your best guess.',
           a: 0,
           c: [
-            ['Getting away from bad feelings, like stress or a low mood', 'Good guess. The model describes a shift: early on it is about pleasure, later more about relief.'],
+            [
+              'Getting away from bad feelings, like stress or a low mood',
+              'Good guess. The model describes a shift: early on it is about pleasure, later more about relief.',
+            ],
             ['Wanting more and more pleasure', 'Early on, pleasure plays a big part. The model says that later, relief from bad feelings matters more.'],
             ['Boredom, and nothing else', 'Boredom can be part of it. The wider pattern is getting away from any bad feeling: stress, a low mood, loneliness.'],
             ['It stays the same from start to finish', 'The model describes a change over time: from pleasure toward relief.'],
@@ -561,7 +598,12 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       },
       rc: {
         q: 'Right after an argument, an urge shows up fast. What does this lesson suggest?',
-        c: ['Ignore the argument and fight the urge', 'Notice the upset, and do something for that feeling', 'Decide arguments are not a real trigger', 'Give in, since it was a hard day'],
+        c: [
+          'Ignore the argument and fight the urge',
+          'Notice the upset, and do something for that feeling',
+          'Decide arguments are not a real trigger',
+          'Give in, since it was a hard day',
+        ],
         a: 1,
         r: 'The habit is often an exit from a feeling. Meet the feeling.',
         cr: [
@@ -597,7 +639,9 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           el: 'Sound familiar?',
           art: ['icon', { ic: 'star' }],
           h: 'Do you think of yourself as “someone with a porn problem”?',
-          b: [bP('Many people do. That label can stick long after things start to change. This lesson is about how people come to see themselves differently.')],
+          b: [
+            bP('Many people do. That label can stick long after things start to change. This lesson is about how people come to see themselves differently.'),
+          ],
         },
         {
           k: 'choose',
@@ -607,7 +651,10 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ask: 'Make your best guess.',
           a: 3,
           c: [
-            ['Remembering every mistake so as not to repeat it', 'Learning from mistakes helps. But what went with doing better was a change in how people saw themselves.'],
+            [
+              'Remembering every mistake so as not to repeat it',
+              'Learning from mistakes helps. But what went with doing better was a change in how people saw themselves.',
+            ],
             ['Keeping their old identity, with fewer slips', 'The people who did better tended to let the old identity fade.'],
             ['Not thinking about who they are at all', 'How people saw themselves turned out to matter.'],
             ['Seeing themselves less as users, and more as people in recovery', 'Good guess. The bigger that shift, the better people did later.'],
@@ -694,7 +741,12 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       },
       rc: {
         q: 'After a hard week, a thought says, “People like me never change.” What does this lesson say?',
-        c: ['That thought is probably right', 'People change who they are, a little at a time', 'Only people with perfect records change', 'Identity does not matter, only behavior'],
+        c: [
+          'That thought is probably right',
+          'People change who they are, a little at a time',
+          'Only people with perfect records change',
+          'Identity does not matter, only behavior',
+        ],
         a: 1,
         r: 'Recovery is often a change in who you are, built a little at a time.',
         cr: [
@@ -929,7 +981,12 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       },
       rc: {
         q: 'You are tired, and an urge says, “Tonight does not matter.” What helps most?',
-        c: ['Picture yourself a year from now, and ask what they need', 'Go over every past slip', 'Promise to start fresh next month', 'Tell yourself the future is too far away to matter'],
+        c: [
+          'Picture yourself a year from now, and ask what they need',
+          'Go over every past slip',
+          'Promise to start fresh next month',
+          'Tell yourself the future is too far away to matter',
+        ],
         a: 0,
         r: 'Give future you a say. They are the one who lives with tonight.',
         cr: [
@@ -963,7 +1020,11 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           el: 'Sound familiar?',
           art: ['icon', { ic: 'check' }],
           h: 'Does “I am someone who is free of this” feel true yet?',
-          b: [bP('For many people, it does not feel true at first. This lesson is about where that belief comes from: not from forcing the feeling, but from evidence.')],
+          b: [
+            bP(
+              'For many people, it does not feel true at first. This lesson is about where that belief comes from: not from forcing the feeling, but from evidence.',
+            ),
+          ],
         },
         {
           k: 'choose',
@@ -1051,7 +1112,12 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       },
       rc: {
         q: 'This month you rode out ten urges and slipped once. How do you see yourself?',
-        c: ['As someone who failed this month', 'As someone who rides out urges, with one hard night', 'As someone who has to start over', 'As someone who got lucky ten times'],
+        c: [
+          'As someone who failed this month',
+          'As someone who rides out urges, with one hard night',
+          'As someone who has to start over',
+          'As someone who got lucky ten times',
+        ],
         a: 1,
         r: 'Count every vote. The whole record says who you are becoming.',
         cr: [

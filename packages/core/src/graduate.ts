@@ -32,7 +32,11 @@ export interface GradInfo {
 }
 
 export function gradInfo(days: Days, st: Settings, tk: DayKey): GradInfo {
-  const slips = new Set(eventsOf(days).filter((e) => e.outcome === 'slipped').map((e) => e.key));
+  const slips = new Set(
+    eventsOf(days)
+      .filter((e) => e.outcome === 'slipped')
+      .map((e) => e.key),
+  );
   const first = isKey(st.day1) ? (st.day1 as DayKey) : null;
   let count = 0;
   if (first)
@@ -97,7 +101,11 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
       sub: g.near ? 'Almost there, and every day already counts.' : `Every day with no slip in your last ${GRAD_WINDOW} counts.`,
       frac: Math.min(1, g.count / GRAD_DAYS),
     };
-  const slips = new Set(eventsOf(days).filter((e) => e.outcome === 'slipped').map((e) => e.key));
+  const slips = new Set(
+    eventsOf(days)
+      .filter((e) => e.outcome === 'slipped')
+      .map((e) => e.key),
+  );
   const cells: ('ok' | 'slip' | 'none' | 'today')[] = [];
   let n = 0;
   let m = 0;

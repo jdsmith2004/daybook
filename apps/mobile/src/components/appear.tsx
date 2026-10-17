@@ -40,7 +40,23 @@ export function Appear({
   );
 }
 
-function Moving({ children, by, x, delay, duration, style, onLayout }: { children: ReactNode; by: number; x: number; delay: number; duration: number; style?: StyleProp<ViewStyle>; onLayout?: (e: LayoutChangeEvent) => void }) {
+function Moving({
+  children,
+  by,
+  x,
+  delay,
+  duration,
+  style,
+  onLayout,
+}: {
+  children: ReactNode;
+  by: number;
+  x: number;
+  delay: number;
+  duration: number;
+  style?: StyleProp<ViewStyle>;
+  onLayout?: (e: LayoutChangeEvent) => void;
+}) {
   const v = useAppear(delay, duration);
   const r = rise(v, by);
   const slide = x ? { ...r, transform: [...r.transform, { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [x, 0] }) }] } : r;

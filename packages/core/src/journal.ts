@@ -40,10 +40,11 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   const rk = L && L.kind[key];
   const status = statusOf(key, d, st, tk);
   const evs = sortedEvents(d, st.rollover);
-  const times = evs
-    .slice(0, 4)
-    .map((e) => (e.time ? fmtClock(e.time) : '?'))
-    .join(' · ') + (evs.length > 4 ? ` +${evs.length - 4}` : '');
+  const times =
+    evs
+      .slice(0, 4)
+      .map((e) => (e.time ? fmtClock(e.time) : '?'))
+      .join(' · ') + (evs.length > 4 ? ` +${evs.length - 4}` : '');
   const c = d && d.checkin && d.checkin.done ? d.checkin : null;
   const pill =
     status === 'slip'
@@ -125,10 +126,18 @@ export function myNumbers(days: Days, st: Settings, tk: DayKey, nowMs: number) {
       ? { l: 'Longest run', b: String(n('longest')), s: streakSub }
       : { l: 'Days logged', b: String(dl), s: `of ${n('days')} day${n('days') === 1 ? '' : 's'} so far` };
   return [
-    { l: 'Urges ridden out', b: String(n('rode')), s: n('urges') ? `${n('rode')} of ${n('urges')} urges. Paused 10 min ${pct(m.pauseRate)} of the time.` : 'Shows up after your first check-in' },
+    {
+      l: 'Urges ridden out',
+      b: String(n('rode')),
+      s: n('urges') ? `${n('rode')} of ${n('urges')} urges. Paused 10 min ${pct(m.pauseRate)} of the time.` : 'Shows up after your first check-in',
+    },
     { l: 'Check-ins done', b: String(n('checkins')), s: `of ${n('days')} day${n('days') === 1 ? '' : 's'} so far` },
     third,
-    { l: 'Slips recovered fast', b: String(n('recovered')), s: n('slips') ? `${n('recovered')} of ${n('slips')} slips: a small step within the hour` : 'No slips logged yet' },
+    {
+      l: 'Slips recovered fast',
+      b: String(n('recovered')),
+      s: n('slips') ? `${n('recovered')} of ${n('slips')} slips: a small step within the hour` : 'No slips logged yet',
+    },
   ];
 }
 
@@ -141,7 +150,10 @@ export function noticing(days: Days, st: Settings, tk: DayKey, from: DayKey) {
   return [
     ['Most common trigger', tt ? tt.t + ' (' + tt.n + ')' : '–'],
     ['Busiest stretch', bw ? bw.label : 'Needs 3 or more entries with a time'],
-    ['First weekly review', m.checkins >= 7 ? 'Ready. Open Weeks in Journal.' : 7 - m.checkins + ' more check-in' + (7 - m.checkins === 1 ? '' : 's') + ' until my first review.'],
+    [
+      'First weekly review',
+      m.checkins >= 7 ? 'Ready. Open Weeks in Journal.' : 7 - m.checkins + ' more check-in' + (7 - m.checkins === 1 ? '' : 's') + ' until my first review.',
+    ],
   ] as [string, string][];
 }
 

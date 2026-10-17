@@ -31,7 +31,15 @@ export function saveReason(st: Settings, was: string | null, draft: string, cat:
   const txt = cleanReason(draft);
   const at = was != null ? st.reasons.indexOf(was) : -1;
   if (!txt)
-    return { ok: false, toast: from === 'lesson' ? 'Write a few words first.' : was != null ? 'A reason needs some words. To remove it, use the trash button.' : 'Write a few words first.' };
+    return {
+      ok: false,
+      toast:
+        from === 'lesson'
+          ? 'Write a few words first.'
+          : was != null
+            ? 'A reason needs some words. To remove it, use the trash button.'
+            : 'Write a few words first.',
+    };
   /* adding on the reasons page checks for room first, like the legacy reasonAdd */
   if (from === 'page' && was == null && st.reasons.length >= REASON_MAX) return { ok: false, toast: 'The list is full. Remove one first.' };
   if (st.reasons.some((x, k) => k !== at && sameReason(x, txt))) return { ok: false, toast: 'You already have that one.' };
@@ -79,7 +87,10 @@ export function removeReason(st: Settings, i: number): Change | null {
 /** the rows being edited can hold a blank step; the saved list never does */
 export const saveSlip = (st: Settings, rows: string[]) => changeSettings(st, (s) => void (s.slipPlan = rows.slice()));
 export const slipIsStarter = (rows: string[]) => slipClean(rows).join('\n') === (SLIP_STEPS as string[]).join('\n');
-export const resetSlip = (st: Settings): Change => ({ st: changeSettings(st, (s) => void (s.slipPlan = (SLIP_STEPS as string[]).slice())), toast: 'Back to the starter plan.' });
+export const resetSlip = (st: Settings): Change => ({
+  st: changeSettings(st, (s) => void (s.slipPlan = (SLIP_STEPS as string[]).slice())),
+  toast: 'Back to the starter plan.',
+});
 
 /* ---------- the urge plan (if this, then I will) ---------- */
 export const setPlanRow = (st: Settings, i: number, fld: 'when' | 'then', v: string) =>
@@ -92,7 +103,8 @@ export const setPlanRow = (st: Settings, i: number, fld: 'when' | 'then', v: str
 export const setField = (st: Settings, k: 'goal' | 'why' | 'loop' | 'rule' | 'safePerson' | 'becoming' | 'ask' | 'note', v: string) =>
   changeSettings(st, (s) => void ((s as unknown as Record<string, string>)[k] = v));
 /** a list typed one item per line (calm moves, wind-down, words); empty lines are dropped when saved */
-export const setList = (st: Settings, k: 'menu' | 'wind' | 'words', text: string) => changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = text.split('\n')));
+export const setList = (st: Settings, k: 'menu' | 'wind' | 'words', text: string) =>
+  changeSettings(st, (s) => void ((s as unknown as Record<string, string[]>)[k] = text.split('\n')));
 
 /* ---------- the lists as rows: add one, reword one, remove one, move one ---------- */
 export type ListKey = 'menu' | 'wind' | 'words';
@@ -157,7 +169,13 @@ export function toggleHelpStep(st: Settings, i: number): Change {
   return { st: next, toast: next.help[i] ? 'Done. That is a real step toward help.' : undefined };
 }
 /** the playbook as plain text, to copy (legacy playbookText) */
-export function playbookText(st: Settings, done: Set<string>, lessons: { id: string; title: string; key: string; np: string }[], index: (id: string) => number, checks: { t: string; q: string[] }[]) {
+export function playbookText(
+  st: Settings,
+  done: Set<string>,
+  lessons: { id: string; title: string; key: string; np: string }[],
+  index: (id: string) => number,
+  checks: { t: string; q: string[] }[],
+) {
   const notes = (st.learn && st.learn.notes) || {};
   const picks = (st.learn && st.learn.picks) || {};
   const o = ['MY PLAYBOOK', ''];

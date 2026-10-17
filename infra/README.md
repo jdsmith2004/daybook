@@ -45,11 +45,11 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
    Add these three as **secrets** (the Secrets tab). They hold your account number, and secrets are hidden in the public build logs:
 
-   | Secret | Value |
-   | --- | --- |
-   | `AWS_ACCOUNT_ID` | `terraform output -raw AWS_ACCOUNT_ID` |
+   | Secret                | Value                                       |
+   | --------------------- | ------------------------------------------- |
+   | `AWS_ACCOUNT_ID`      | `terraform output -raw AWS_ACCOUNT_ID`      |
    | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw AWS_DEPLOY_ROLE_ARN` |
-   | `TF_STATE_BUCKET` | `terraform output -raw TF_STATE_BUCKET` |
+   | `TF_STATE_BUCKET`     | `terraform output -raw TF_STATE_BUCKET`     |
 
    And this one as a **variable** (the Variables tab): `AWS_REGION`, from `terraform output -raw AWS_REGION`.
 

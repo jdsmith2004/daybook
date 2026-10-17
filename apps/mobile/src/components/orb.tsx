@@ -167,7 +167,17 @@ export function HorizonSun({ size, on }: { size: number; on: boolean }) {
 
 const s = StyleSheet.create({
   ph: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
-  pill: { minWidth: 52, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden', fontFamily: font.bodyBold, fontSize: 14, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  pill: {
+    minWidth: 52,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: 'hidden',
+    fontFamily: font.bodyBold,
+    fontSize: 14,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
   orb: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 30, elevation: 6 },
   phase: { fontFamily: font.display, fontSize: 24 },
   time: { fontFamily: font.bodySemi, fontSize: 16, opacity: 0.8, fontVariant: ['tabular-nums'] },

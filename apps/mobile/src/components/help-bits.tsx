@@ -43,7 +43,12 @@ export function CopyChip({ text, label = 'Copy' }: { text: string; label?: strin
 export function Ext({ url, label }: { url: string; label: string }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="link" accessibilityHint="Opens outside the app" onPress={() => Linking.openURL(url).catch(() => undefined)} hitSlop={6} style={s.ext}>
+    <Pressable
+      accessibilityRole="link"
+      accessibilityHint="Opens outside the app"
+      onPress={() => Linking.openURL(url).catch(() => undefined)}
+      hitSlop={6}
+      style={s.ext}>
       <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>{label}</Text>
       <Icon name="ext" size={14} color={c.accentText} />
     </Pressable>
@@ -141,7 +146,14 @@ export function RelLesson({ id }: { id: string }) {
   const L = lessonById(id);
   if (!L) return null;
   const d = lessonsDone(snap.days).has(id);
-  return <LinkCard icon="book" title={`Lesson ${lessonNo(L, faithOf(snap.settings))}: ${L.title}`} sub={d ? 'Done · read it again' : lmin(L)} onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })} />;
+  return (
+    <LinkCard
+      icon="book"
+      title={`Lesson ${lessonNo(L, faithOf(snap.settings))}: ${L.title}`}
+      sub={d ? 'Done · read it again' : lmin(L)}
+      onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })}
+    />
+  );
 }
 
 export function Fine({ children }: { children: ReactNode }) {

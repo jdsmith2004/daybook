@@ -106,7 +106,21 @@ export default function Plan() {
 }
 
 /** a part of the page: an icon, a title, an optional count, then its lines */
-function Sec({ icon, tone = 'accent', title, aside, children, onLayout }: { icon: string; tone?: 'accent' | 'mint' | 'sky' | 'sun' | 'coral' | 'violet'; title: string; aside?: string; children: ReactNode; onLayout?: (e: LayoutChangeEvent) => void }) {
+function Sec({
+  icon,
+  tone = 'accent',
+  title,
+  aside,
+  children,
+  onLayout,
+}: {
+  icon: string;
+  tone?: 'accent' | 'mint' | 'sky' | 'sun' | 'coral' | 'violet';
+  title: string;
+  aside?: string;
+  children: ReactNode;
+  onLayout?: (e: LayoutChangeEvent) => void;
+}) {
   const c = useTheme();
   const soft = { accent: c.accentSoft, mint: c.mintSoft, sky: c.skySoft, sun: c.sunSoft, coral: c.coralSoft, violet: c.violetSoft }[tone];
   const ink = { accent: c.accentText, mint: c.mintText, sky: c.skyText, sun: c.sunText, coral: c.coralText, violet: c.violetText }[tone];
@@ -143,7 +157,14 @@ function Why({ place }: { place: Place }) {
         <T v="eyebrow" style={{ color: c.sunText }}>
           Who I am becoming
         </T>
-        <Editable big value={st.becoming || ''} prompt="Write one sentence about who you are becoming" placeholder="I am someone who keeps my word to myself." maxLength={BE_LEN} onSave={set('becoming')} />
+        <Editable
+          big
+          value={st.becoming || ''}
+          prompt="Write one sentence about who you are becoming"
+          placeholder="I am someone who keeps my word to myself."
+          maxLength={BE_LEN}
+          onSave={set('becoming')}
+        />
         <T v="small" tone="muted">
           Today shows it under the date, and SOS opens with it.
         </T>
@@ -205,7 +226,15 @@ function UrgeRow({ i, when, then }: { i: number; when: string; then: string }) {
     return (
       <Appear by={4} duration={180} style={[s.urge, { backgroundColor: c.surface2, borderColor: c.accent }]}>
         <T v="label">If</T>
-        <TextInput value={when} onChangeText={set('when')} maxLength={120} placeholder="Like: I am in bed late at night" placeholderTextColor={c.muted} accessibilityLabel="If" style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line }]} />
+        <TextInput
+          value={when}
+          onChangeText={set('when')}
+          maxLength={120}
+          placeholder="Like: I am in bed late at night"
+          placeholderTextColor={c.muted}
+          accessibilityLabel="If"
+          style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line }]}
+        />
         <T v="label">Then I will</T>
         <TextInput
           value={then}
@@ -218,7 +247,10 @@ function UrgeRow({ i, when, then }: { i: number; when: string; then: string }) {
           accessibilityLabel="Then I will"
           style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line, minHeight: 64 }]}
         />
-        <Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setOpen(false)}
+          style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
           <Icon name="check" size={16} color={c.accentInk} />
           <T v="label" style={{ color: c.accentInk }}>
             Done
@@ -227,7 +259,11 @@ function UrgeRow({ i, when, then }: { i: number; when: string; then: string }) {
       </Appear>
     );
   return (
-    <Pressable accessibilityRole="button" accessibilityHint="Opens it to change" onPress={() => setOpen(true)} style={({ pressed }) => [s.urge, { backgroundColor: c.surface2, borderColor: 'transparent', opacity: pressed ? 0.85 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Opens it to change"
+      onPress={() => setOpen(true)}
+      style={({ pressed }) => [s.urge, { backgroundColor: c.surface2, borderColor: 'transparent', opacity: pressed ? 0.85 : 1 }]}>
       {blank && !then.trim() ? (
         <View style={s.line}>
           <Icon name="plus" size={16} color={c.accentText} />

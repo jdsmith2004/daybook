@@ -1,7 +1,21 @@
 /* "Your day" on Today: last night (asked the next morning), the lesson, the evening check-in and the wind-down, and switching
    parts of one day on or off. Ported from the legacy pathHtml, stopStatus, windLine, doSaveCheckin and the Today actions
    (night-so, night-sleep, morning-done, wind, rt-day, save-checkin). Checked by test/day.test.ts. */
-import { blankP, fmtClock, fmtLeft, HX_NEXT, weekOf, minToClock, morningInfo, reachedOn, rhythm, ROUTINE_KEYS, streaks, sumDay, type RhythmStop } from './legacy/core.js';
+import {
+  blankP,
+  fmtClock,
+  fmtLeft,
+  HX_NEXT,
+  weekOf,
+  minToClock,
+  morningInfo,
+  reachedOn,
+  rhythm,
+  ROUTINE_KEYS,
+  streaks,
+  sumDay,
+  type RhythmStop,
+} from './legacy/core.js';
 import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
@@ -33,7 +47,9 @@ export function pathNote(days: Days, st: Settings, tk: DayKey, _stops?: RhythmSt
   const day = days[tk];
   const mOn = routineIsOn(st, day && day.p, 'morning');
   /* said once, on the first day; after that the Last night stop explains itself */
-  return !mi.applies && mOn ? 'Sleep and screens-off are asked the next morning, because that is when you know. Tomorrow a stop called Last night shows up here.' : '';
+  return !mi.applies && mOn
+    ? 'Sleep and screens-off are asked the next morning, because that is when you know. Tomorrow a stop called Last night shows up here.'
+    : '';
 }
 const routineIsOn = (st: Settings, p: Play | null | undefined, k: string) => {
   const o = p && p.ov && p.ov[k];
@@ -76,7 +92,10 @@ export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKe
   const sk = streaks(days, st, tk);
   const s = sumDay(days[key]);
   const runs = !!st.day1 && key === tk && st.cleanMode !== 'step';
-  if (s.slipped) return 'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' Your run is on the line. Finish the Rekindle quest to keep it.' : '');
+  if (s.slipped)
+    return (
+      'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' Your run is on the line. Finish the Rekindle quest to keep it.' : '')
+    );
   /* what holds, not a run that can drop to zero: the same measure Today shows */
   const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;
   return m && m.n > 0 ? `Saved. ${m.n} ${m.of}.` : 'Saved.';

@@ -115,9 +115,7 @@ export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
 /* ---------- the embers (the first Rekindle screen) ---------- */
 export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey, lit: boolean, sp: boolean) {
   const g = gameCompute(days, st, reviews, tk);
-  const kept = ['Level ' + g.level.n + ' · ' + g.level.name, g.pts + ' points'].concat(
-    g.S.rode ? [plural(g.S.rode as number, 'urge') + ' ridden out'] : [],
-  );
+  const kept = ['Level ' + g.level.n + ' · ' + g.level.name, g.pts + ' points'].concat(g.S.rode ? [plural(g.S.rode as number, 'urge') + ' ridden out'] : []);
   const h = lit ? 'Still burning. Still yours.' : sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.';
   const p = lit ? 'A slip can burn it low. It cannot put it out. Nothing was taken away.' : 'It is down to embers. Embers hold the heat.';
   const op = lit ? rkOpen(days, st, tk, date).op : null;
@@ -177,11 +175,7 @@ export interface Mission {
 }
 
 /** the missions list (legacy rkMissions). where: in the scene right after the slip, or on Today. left: only what is left. */
-export function rkMissions(
-  r: RekindleState,
-  st: Settings,
-  o: { where: 'scene' | 'today'; deep: boolean; left?: boolean; hour: number },
-): Mission[] {
+export function rkMissions(r: RekindleState, st: Settings, o: { where: 'scene' | 'today'; deep: boolean; left?: boolean; hour: number }): Mission[] {
   const off = fmtClock(st.screensOff);
   const eve = o.hour >= 18 || o.hour < (st.rollover || 4);
   const nm = safeName(st);
@@ -197,7 +191,12 @@ export function rkMissions(
             : 'Done. You traced it back to where it started.'
           : 'Your run is ' + RUN_DEEP + ' days or more, so one more: trace the slip back, or tell ' + (nm ? nm : 'someone you trust') + '.',
         pts: null,
-        actions: r.m4 ? [] : [{ act: 'trace', label: 'Trace it back' }, { act: 'tell', label: nm ? 'Tell ' + nm : 'Tell someone' }],
+        actions: r.m4
+          ? []
+          : [
+              { act: 'trace', label: 'Trace it back' },
+              { act: 'tell', label: nm ? 'Tell ' + nm : 'Tell someone' },
+            ],
       }
     : null;
   const m1: Mission = {
@@ -245,8 +244,7 @@ export function rkMissions(
 /* ---------- the quest, right after the slip ---------- */
 export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: DayEvent | null, hour: number) {
   const r: RekindleState =
-    rkOf(days, date, st) ||
-    ({ k: date, ev: ev as DayEvent, m1: !!(ev && ev.recovered), m2: false, m3: false, m4: false, n: 0 } as RekindleState);
+    rkOf(days, date, st) || ({ k: date, ev: ev as DayEvent, m1: !!(ev && ev.recovered), m2: false, m3: false, m4: false, n: 0 } as RekindleState);
   const { op } = rkOpen(days, st, tk, date);
   const deep = !!(op && op.deep);
   return {
@@ -321,9 +319,7 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       line: false,
       icon: 'sunrise',
       h: 'Day 1 of your comeback',
-      p: op
-        ? 'Finish your sunrise check' + more + ' to keep your ' + op.run + '-day run going.'
-        : 'Your sunrise check is ready. About two minutes.',
+      p: op ? 'Finish your sunrise check' + more + ' to keep your ' + op.run + '-day run going.' : 'Your sunrise check is ready. About two minutes.',
       sunrise: true,
       missions: op && (!r.m1 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour }) : [],
     };

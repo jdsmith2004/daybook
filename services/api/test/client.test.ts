@@ -146,7 +146,9 @@ describe('two devices of one person', () => {
     await a.sync();
     await b.sync();
     serverNow += 1000;
-    await handler({ requestContext: { http: { method: 'DELETE' }, authorizer: { jwt: { claims: { sub: 'alice' }, scopes: [] } } } } as unknown as APIGatewayProxyEventV2WithJWTAuthorizer);
+    await handler({
+      requestContext: { http: { method: 'DELETE' }, authorizer: { jwt: { claims: { sub: 'alice' }, scopes: [] } } },
+    } as unknown as APIGatewayProxyEventV2WithJWTAuthorizer);
     serverNow += 1000;
     await b.sync();
     expect(b.snap.settings).toBeNull();

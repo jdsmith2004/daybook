@@ -182,7 +182,8 @@ export default function LessonScreen() {
     else if (g.a === 'growth') router.push('/growth');
     else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });
     else if (g.a === 'tab') {
-      if ((g.v === 'settings' && g.open === 's-lists') || (g.v === 'plan' && g.open === 'lists')) router.push({ pathname: '/plan', params: { pane: 'lists', add: ownList() } });
+      if ((g.v === 'settings' && g.open === 's-lists') || (g.v === 'plan' && g.open === 'lists'))
+        router.push({ pathname: '/plan', params: { pane: 'lists', add: ownList() } });
       else if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
       else if (g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
       else {
@@ -272,8 +273,22 @@ export default function LessonScreen() {
         ) : null}
         {lessonHasQuick(L) ? (
           <View style={{ gap: 10 }} accessibilityLabel="Pick a length">
-            <LenBtn t={t} on={pref === 'q'} title="Quick" sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'} mins="1–2 min" onPress={() => start('q')} />
-            <LenBtn t={t} on={pref === 'f'} title="Full" sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'} mins="3–5 min" onPress={() => start('f')} />
+            <LenBtn
+              t={t}
+              on={pref === 'q'}
+              title="Quick"
+              sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+              mins="1–2 min"
+              onPress={() => start('q')}
+            />
+            <LenBtn
+              t={t}
+              on={pref === 'f'}
+              title="Full"
+              sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
+              mins="3–5 min"
+              onPress={() => start('f')}
+            />
             <T v="small" tone="muted">
               You can read it again in the other length any time.
             </T>
@@ -349,14 +364,16 @@ export default function LessonScreen() {
             <Text style={[s.keyP, { color: c.ink }]}>{L.key}</Text>
           </View>
           {pr && pr.note ? null : <NoteField L={L} note={note} />}
-          {done.size >= LESSONS.length ? <T tone="mintText">That is all {LESSONS.length} lessons. They stay in Learn whenever you want to read one again.</T> : null}
+          {done.size >= LESSONS.length ? (
+            <T tone="mintText">That is all {LESSONS.length} lessons. They stay in Learn whenever you want to read one again.</T>
+          ) : null}
           <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src', from: 'card' })} style={s.link}>
             <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
           </Pressable>
           {L.u === 1 || L.id === 'l22' || L.care ? (
             <T v="small" tone="muted">
-              If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline, any time, day or night (US). It is open to
-              anyone who is struggling.
+              If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline,
+              any time, day or night (US). It is open to anyone who is struggling.
             </T>
           ) : null}
         </View>
@@ -381,7 +398,11 @@ export default function LessonScreen() {
         const pk = pick[ci] ?? null;
         body = (
           <>
-            <Eyebrow icon={(LX_E[gr && LX_E[card.e || ''] ? card.e! : 'turn'] || LX_E.turn)[0]} label={card.el || (LX_E[card.e || 'turn'] || LX_E.turn)[1]} t={t} />
+            <Eyebrow
+              icon={(LX_E[gr && LX_E[card.e || ''] ? card.e! : 'turn'] || LX_E.turn)[0]}
+              label={card.el || (LX_E[card.e || 'turn'] || LX_E.turn)[1]}
+              t={t}
+            />
             <T style={[s.h, s.hsm]} accessibilityRole="header">
               {card.h}
             </T>
@@ -395,7 +416,8 @@ export default function LessonScreen() {
               onPick={(j) => {
                 setPick((p) => ({ ...p, [ci]: j }));
                 setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-                if (card.sv) apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
+                if (card.sv)
+                  apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
                 buzz('tap');
               }}
             />
@@ -417,7 +439,16 @@ export default function LessonScreen() {
       } else if (card.k === 'guess') {
         const g = card.g!;
         const gs = gu[ci] || { v: null, lock: false };
-        body = <GuessCard card={card} g={g} gs={gs} t={t} onSet={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))} onSrc={() => setSheet({ t: 'src', i: ci, from: 'card' })} />;
+        body = (
+          <GuessCard
+            card={card}
+            g={g}
+            gs={gs}
+            t={t}
+            onSet={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
+            onSrc={() => setSheet({ t: 'src', i: ci, from: 'card' })}
+          />
+        );
         foot = gs.lock ? (
           <>
             {back}
@@ -465,7 +496,9 @@ export default function LessonScreen() {
     prog = <Prog total={1} i={0} all />;
     body = (
       <>
-        <View style={s.art}>{kind || a.shield ? <LxShield t={t} /> : <LxIco name={a.ic || (go[0] && go[0].ic) || L.ic} t={t} size={a.note || go.length > 1 ? 96 : 120} />}</View>
+        <View style={s.art}>
+          {kind || a.shield ? <LxShield t={t} /> : <LxIco name={a.ic || (go[0] && go[0].ic) || L.ic} t={t} size={a.note || go.length > 1 ? 96 : 120} />}
+        </View>
         <Eyebrow icon="bolt" label={'Put it to work · ' + (a.mins || 2) + ' min'} t={t} />
         <T style={s.h} accessibilityRole="header">
           {a.h || 'Try it'}
@@ -541,11 +574,7 @@ export default function LessonScreen() {
     body = (
       <>
         <View style={s.art}>{prac ? <LxCheck /> : <LxIco name={L.ic} t={t} />}</View>
-        {prac ? (
-          <Eyebrow icon="check" label="Practiced" t={{ ...t, soft: c.mintSoft, text: c.mintText }} />
-        ) : (
-          <Eyebrow icon="flag" label="Lesson done" t={t} />
-        )}
+        {prac ? <Eyebrow icon="check" label="Practiced" t={{ ...t, soft: c.mintSoft, text: c.mintText }} /> : <Eyebrow icon="flag" label="Lesson done" t={t} />}
         <T style={s.h} accessibilityRole="header">
           {prac ? a.ok || 'Nicely done.' : 'That is the lesson.'}
         </T>
@@ -575,13 +604,25 @@ export default function LessonScreen() {
         </View>
       </>
     );
-    foot = next ? <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} /> : <Next label="Done" noIcon onPress={close} />;
+    foot = next ? (
+      <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
+    ) : (
+      <Next label="Done" noIcon onPress={close} />
+    );
   }
 
   return (
-    <Frame title={'Lesson ' + n + ' of ' + LESSONS.length + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')} onClose={close} c={c} inset={inset}>
+    <Frame
+      title={'Lesson ' + n + ' of ' + LESSONS.length + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')}
+      onClose={close}
+      c={c}
+      inset={inset}>
       {prog}
-      <ScrollView ref={scroll} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]} contentContainerStyle={s.cardIn} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scroll}
+        style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
+        contentContainerStyle={s.cardIn}
+        keyboardShouldPersistTaps="handled">
         <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
           {body}
         </Appear>
@@ -605,7 +646,19 @@ export default function LessonScreen() {
 }
 
 /* ---------- the frame ---------- */
-function Frame({ title, onClose, children, c, inset }: { title: string; onClose: () => void; children: ReactNode; c: ReturnType<typeof useTheme>; inset: { top: number; bottom: number } }) {
+function Frame({
+  title,
+  onClose,
+  children,
+  c,
+  inset,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  c: ReturnType<typeof useTheme>;
+  inset: { top: number; bottom: number };
+}) {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
@@ -613,7 +666,11 @@ function Frame({ title, onClose, children, c, inset }: { title: string; onClose:
           <T v="eyebrow" tone="muted" accessibilityRole="header">
             {title}
           </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={onClose}
+            style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
@@ -647,7 +704,10 @@ function Eyebrow({ icon, label, t }: { icon: string; label: string; t: Tone }) {
 function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.len, { borderColor: on ? t.ic : c.line, backgroundColor: c.surface, shadowColor: c.lip }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[s.len, { borderColor: on ? t.ic : c.line, backgroundColor: c.surface, shadowColor: c.lip }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontFamily: font.display, fontSize: 22, color: c.ink }}>{title}</Text>
         <T v="small" tone="muted">
@@ -662,7 +722,21 @@ function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; ti
   );
 }
 /** the choices: the first pick shows the best answer in green; every choice stays tappable so its comment can be read */
-function Opts({ list, best, pk, tried, t, onPick }: { list: string[]; best: number | null; pk: number | null; tried: number[]; t: Tone; onPick: (j: number) => void }) {
+function Opts({
+  list,
+  best,
+  pk,
+  tried,
+  t,
+  onPick,
+}: {
+  list: string[];
+  best: number | null;
+  pk: number | null;
+  tried: number[];
+  t: Tone;
+  onPick: (j: number) => void;
+}) {
   const c = useTheme();
   return (
     <View style={{ gap: 8 }}>
@@ -674,7 +748,12 @@ function Opts({ list, best, pk, tried, t, onPick }: { list: string[]; best: numb
         const bg = ok ? c.mintSoft : sel && best == null ? t.soft : c.surface;
         const fg = ok ? c.mintText : no ? c.muted : sel && best == null ? t.text : c.ink;
         return (
-          <Pressable key={j} accessibilityRole="button" accessibilityState={{ selected: sel }} onPress={() => onPick(j)} style={[s.opt, { borderColor: bc, backgroundColor: bg }]}>
+          <Pressable
+            key={j}
+            accessibilityRole="button"
+            accessibilityState={{ selected: sel }}
+            onPress={() => onPick(j)}
+            style={[s.opt, { borderColor: bc, backgroundColor: bg }]}>
             {ok || (best == null && sel) ? <Icon name="check" size={18} color={fg} /> : null}
             <Text style={[s.optT, { color: fg }]}>{o}</Text>
           </Pressable>
@@ -757,7 +836,8 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
                 <T key={j}>
                   <Text style={{ fontFamily: font.bodyBold }}>If</Text> {r.when}
                   {'\n'}
-                  <Text style={{ fontFamily: font.bodyBold }}>Then</Text> {r.then && r.then.trim() ? r.then : <Text style={{ fontStyle: 'italic' }}>not filled in yet</Text>}
+                  <Text style={{ fontFamily: font.bodyBold }}>Then</Text>{' '}
+                  {r.then && r.then.trim() ? r.then : <Text style={{ fontStyle: 'italic' }}>not filled in yet</Text>}
                 </T>
               ))}
             </View>
@@ -771,13 +851,17 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
               {lg.few ? (
                 <>
                   <Text style={[s.eye2, { color: c.muted }]}>YOUR LOG SO FAR</Text>
-                  <T>{(lg.n ? lg.n + (lg.n === 1 ? ' entry' : ' entries') : 'No entries yet') + '. A week of honest entries is enough to start seeing a pattern.'}</T>
+                  <T>
+                    {(lg.n ? lg.n + (lg.n === 1 ? ' entry' : ' entries') : 'No entries yet') +
+                      '. A week of honest entries is enough to start seeing a pattern.'}
+                  </T>
                 </>
               ) : (
                 <>
                   <Text style={[s.eye2, { color: c.muted }]}>WHAT YOUR LOG SHOWS RIGHT NOW</Text>
                   <T>
-                    <Text style={{ fontFamily: font.bodyBold }}>{lg.n}</Text> entries, <Text style={{ fontFamily: font.bodyBold }}>{lg.rode}</Text> of them rode out.
+                    <Text style={{ fontFamily: font.bodyBold }}>{lg.n}</Text> entries, <Text style={{ fontFamily: font.bodyBold }}>{lg.rode}</Text> of them rode
+                    out.
                   </T>
                   {lg.tt ? (
                     <T>
@@ -801,7 +885,11 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
           return (
             <View key={k} style={[s.plan, { backgroundColor: c.surface2 }]}>
               <Text style={[s.eye2, { color: c.muted }]}>WORDS THAT STEADY ME</Text>
-              {w.length ? w.map((x, j) => <T key={j}>{x}</T>) : <T>Nothing here yet. A verse, a prayer, or a line that steadies you works well. Add them in My plan, under Lists.</T>}
+              {w.length ? (
+                w.map((x, j) => <T key={j}>{x}</T>)
+              ) : (
+                <T>Nothing here yet. A verse, a prayer, or a line that steadies you works well. Add them in My plan, under Lists.</T>
+              )}
             </View>
           );
         }
@@ -811,7 +899,21 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
   );
 }
 
-function TextCard({ L, card, t, st, onSrc, onDraft }: { L: Lesson; card: Card; t: Tone; st: Settings; onSrc: () => void; onDraft: (f: () => boolean) => void }) {
+function TextCard({
+  L,
+  card,
+  t,
+  st,
+  onSrc,
+  onDraft,
+}: {
+  L: Lesson;
+  card: Card;
+  t: Tone;
+  st: Settings;
+  onSrc: () => void;
+  onDraft: (f: () => boolean) => void;
+}) {
   const e = LX_E[card.e || 'insight'] || LX_E.insight;
   return (
     <>
@@ -847,7 +949,21 @@ function Fact({ text, t, onPress }: { text: string; t: Tone; onPress: () => void
 }
 
 /* a number the person guesses before it is shown */
-function GuessCard({ card, g, gs, t, onSet, onSrc }: { card: Card; g: Guess; gs: { v: number | null; lock: boolean }; t: Tone; onSet: (v: number) => void; onSrc: () => void }) {
+function GuessCard({
+  card,
+  g,
+  gs,
+  t,
+  onSet,
+  onSrc,
+}: {
+  card: Card;
+  g: Guess;
+  gs: { v: number | null; lock: boolean };
+  t: Tone;
+  onSet: (v: number) => void;
+  onSrc: () => void;
+}) {
   const c = useTheme();
   const [w, setW] = useState(0);
   const stepV = g.step || 1;
@@ -900,7 +1016,17 @@ function GuessCard({ card, g, gs, t, onSet, onSrc }: { card: Card; g: Guess; gs:
               {has ? (
                 <View
                   pointerEvents="none"
-                  style={{ position: 'absolute', left: `${pct}%`, marginLeft: -17, width: 34, height: 34, borderRadius: 17, backgroundColor: c.accent, borderWidth: 5, borderColor: c.surface }}
+                  style={{
+                    position: 'absolute',
+                    left: `${pct}%`,
+                    marginLeft: -17,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    backgroundColor: c.accent,
+                    borderWidth: 5,
+                    borderColor: c.surface,
+                  }}
                 />
               ) : null}
             </View>
@@ -926,17 +1052,53 @@ function GuessCard({ card, g, gs, t, onSet, onSrc }: { card: Card; g: Guess; gs:
     <>
       <View style={{ alignItems: 'center', gap: 16 }}>
         <BigNumber n={a} s={g.big || g.unit} />
-        <View style={{ alignSelf: 'stretch', gap: 6, paddingTop: 30 }} accessible accessibilityLabel={`You guessed ${v} ${g.unit}. The answer is ${a} ${g.unit}. People ranged from ${g.lo} to ${g.hi}.`}>
-          <View style={{ position: 'absolute', top: 0, left: `${Math.min(85, Math.max(15, pv))}%`, transform: [{ translateX: -40 }], width: 80, alignItems: 'center' }}>
-            <Text style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, overflow: 'hidden', backgroundColor: c.sun, color: c.onSun, fontFamily: font.bodyBold, fontSize: 13 }}>You · {v}</Text>
+        <View
+          style={{ alignSelf: 'stretch', gap: 6, paddingTop: 30 }}
+          accessible
+          accessibilityLabel={`You guessed ${v} ${g.unit}. The answer is ${a} ${g.unit}. People ranged from ${g.lo} to ${g.hi}.`}>
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: `${Math.min(85, Math.max(15, pv))}%`,
+              transform: [{ translateX: -40 }],
+              width: 80,
+              alignItems: 'center',
+            }}>
+            <Text
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 3,
+                borderRadius: 999,
+                overflow: 'hidden',
+                backgroundColor: c.sun,
+                color: c.onSun,
+                fontFamily: font.bodyBold,
+                fontSize: 13,
+              }}>
+              You · {v}
+            </Text>
           </View>
           <View style={{ height: 12, borderRadius: 6, backgroundColor: c.accentSoft }}>
-            <View style={{ position: 'absolute', top: 0, height: 12, borderRadius: 6, left: `${lo}%`, width: `${hi - lo}%`, backgroundColor: c.accent, opacity: 0.28 }} />
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                height: 12,
+                borderRadius: 6,
+                left: `${lo}%`,
+                width: `${hi - lo}%`,
+                backgroundColor: c.accent,
+                opacity: 0.28,
+              }}
+            />
             <View style={[s.mk, { left: `${pv}%`, backgroundColor: c.sun, borderColor: c.surface }]} />
             <View style={[s.mk, { left: `${pa}%`, backgroundColor: c.accent, borderColor: c.surface }]} />
           </View>
           {Ticks}
-          <Text style={{ fontFamily: font.body, fontSize: 13.5, color: c.muted, textAlign: 'center' }}>{g.cap || 'People ranged from ' + g.lo + ' to ' + g.hi + ' ' + g.unit}</Text>
+          <Text style={{ fontFamily: font.body, fontSize: 13.5, color: c.muted, textAlign: 'center' }}>
+            {g.cap || 'People ranged from ' + g.lo + ' to ' + g.hi + ' ' + g.unit}
+          </Text>
         </View>
       </View>
       <Eyebrow icon={LX_E.proof[0]} label={LX_E.proof[1]} t={t} />
@@ -995,7 +1157,10 @@ function SheetOver({ sheet, L, onClose, onDraft }: { sheet: Sheet; L: Lesson; on
               ) : null}
               {e[2] ? <T v="small">Who: {e[2]}</T> : null}
               {e[3] ? <T v="small">Topic: {e[3]}</T> : null}
-              <Pressable accessibilityRole="link" onPress={() => Linking.openURL(e[1])} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36 }}>
+              <Pressable
+                accessibilityRole="link"
+                onPress={() => Linking.openURL(e[1])}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36 }}>
                 <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Open the source</Text>
                 <Icon name="ext" size={14} color={c.accentText} />
               </Pressable>
@@ -1020,7 +1185,11 @@ function SheetOver({ sheet, L, onClose, onDraft }: { sheet: Sheet; L: Lesson; on
           <T v="h2" accessibilityRole="header">
             {title}
           </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={onClose}
+            style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
@@ -1058,13 +1227,46 @@ const s = StyleSheet.create({
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   foot: { flexDirection: 'row', gap: 10 },
-  next: { flex: 1, minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, borderRadius: 18, shadowOpacity: 1, shadowRadius: 0 },
+  next: {
+    flex: 1,
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   nextT: { fontFamily: font.bodySemi, fontSize: 19, textAlign: 'center' },
   back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   ghost: { minHeight: 60, paddingHorizontal: 20, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  soft: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
+  soft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   softT: { fontFamily: font.bodySemi, fontSize: 17, flexShrink: 1 },
-  len: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76, padding: 14, borderRadius: 18, borderWidth: 2, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
+  len: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 76,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   lm: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
   opt: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 54, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2 },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
@@ -1078,7 +1280,19 @@ const s = StyleSheet.create({
   stepN: { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   ticks: { flexDirection: 'row', justifyContent: 'space-between' },
   mk: { position: 'absolute', top: -6, width: 24, height: 24, marginLeft: -12, borderRadius: 12, borderWidth: 4 },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, alignSelf: 'center', maxHeight: '88%', gap: 12, paddingHorizontal: 16, paddingTop: 8, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignSelf: 'center',
+    maxHeight: '88%',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
   grab: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3 },
   src: { gap: 4, padding: 12, borderRadius: 14 },
 });

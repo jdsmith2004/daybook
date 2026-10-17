@@ -235,7 +235,6 @@ export class DynamoStore implements Store {
     await this.batch(copies.map((c) => ({ DeleteRequest: { Key: { pk: user, sk: c.sk } } })));
     return n;
   }
-
 }
 
 export class MemoryStore implements Store {
@@ -315,5 +314,4 @@ export class MemoryStore implements Store {
     this.erasedCopies.delete(user);
     return n;
   }
-
 }

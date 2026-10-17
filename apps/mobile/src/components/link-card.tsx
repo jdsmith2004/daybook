@@ -4,7 +4,19 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, T } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 
-export function LinkCard({ icon, title, sub, onPress, tone }: { icon: string; title: string; sub?: string; onPress: () => void; tone?: 'accent' | 'coral' | 'mint' | 'sun' | 'sky' | 'violet' }) {
+export function LinkCard({
+  icon,
+  title,
+  sub,
+  onPress,
+  tone,
+}: {
+  icon: string;
+  title: string;
+  sub?: string;
+  onPress: () => void;
+  tone?: 'accent' | 'coral' | 'mint' | 'sun' | 'sky' | 'violet';
+}) {
   const c = useTheme();
   const soft = { accent: c.accentSoft, coral: c.coralSoft, mint: c.mintSoft, sun: c.sunSoft, sky: c.skySoft, violet: c.violetSoft }[tone || 'accent'];
   const ink = { accent: c.accentText, coral: c.coralText, mint: c.mintText, sun: c.sunText, sky: c.skyText, violet: c.violetText }[tone || 'accent'];

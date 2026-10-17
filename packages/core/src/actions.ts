@@ -135,7 +135,12 @@ export function modeActs(st: Settings, tk: DayKey, k: ModeInfo['k']): [string, '
   const tom = addDays(tk, 1);
   if (k === 'before') return [];
   if (k === 'quit' || k === 'step') return [['Just track for now', 'none']];
-  if (k === 'week') return [...(d1 && d1 > tom ? ([['Start Day 1 tomorrow', 'tomorrow']] as [string, 'tomorrow'][]) : []), ['A week later', 'later'], ['Just track, no Day 1', 'none']];
+  if (k === 'week')
+    return [
+      ...(d1 && d1 > tom ? ([['Start Day 1 tomorrow', 'tomorrow']] as [string, 'tomorrow'][]) : []),
+      ['A week later', 'later'],
+      ['Just track, no Day 1', 'none'],
+    ];
   return [...(tk > st.start ? ([['Start Day 1 today', 'today']] as [string, 'today'][]) : []), ['Start Day 1 tomorrow', 'tomorrow'], ['In a week', 'week']];
 }
 /** a Day 1 button (legacy 'day1' action) */
@@ -162,20 +167,38 @@ export function setDay1(st: Settings, v: 'none' | 'later' | 'today' | 'tomorrow'
 export function setDate(st: Settings, k: 'start' | 'day1', v: string | null): Change {
   if (k === 'start') {
     if (!v || !isKey(v)) return { st };
-    return { st: changeSettings(st, (s) => {
-      s.start = v;
-      if (s.day1 && s.day1 <= v) s.day1 = addDays(v, 7);
-    }) };
+    return {
+      st: changeSettings(st, (s) => {
+        s.start = v;
+        if (s.day1 && s.day1 <= v) s.day1 = addDays(v, 7);
+      }),
+    };
   }
   if (!v) return { st: changeSettings(st, (s) => void (s.day1 = null)) };
   if (isKey(v) && v > st.start) return { st: changeSettings(st, (s) => void (s.day1 = v)) };
   return { st, toast: 'Day 1 has to come after the tracking start.' };
 }
 export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => [
-  ['week', st.day1 && diffDays(st.day1, st.start) !== 7 ? 'Tracking' : 'Tracking week', 'You only log and look. Nothing is counted, so there is nothing to fail. The first week always works this way.'],
-  ['quit', 'Quitting', 'Starts on Day 1. A day with no slip logged counts, and your run grows. The first slip in any 7 days can be saved: finish the Rekindle quest by the next night and the run keeps going. Your points, badges and longest run always stay.'],
-  ['step', 'Stepping down', 'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When you are ready, Daybook offers to start counting days.'],
-  ['track', 'Just tracking', 'For when you are not ready to quit. Urges, check-ins, lessons and tools all work the same. No Day 1 and no count. Start one whenever you like, or never.'],
+  [
+    'week',
+    st.day1 && diffDays(st.day1, st.start) !== 7 ? 'Tracking' : 'Tracking week',
+    'You only log and look. Nothing is counted, so there is nothing to fail. The first week always works this way.',
+  ],
+  [
+    'quit',
+    'Quitting',
+    'Starts on Day 1. A day with no slip logged counts, and your run grows. The first slip in any 7 days can be saved: finish the Rekindle quest by the next night and the run keeps going. Your points, badges and longest run always stay.',
+  ],
+  [
+    'step',
+    'Stepping down',
+    'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When you are ready, Daybook offers to start counting days.',
+  ],
+  [
+    'track',
+    'Just tracking',
+    'For when you are not ready to quit. Urges, check-ins, lessons and tools all work the same. No Day 1 and no count. Start one whenever you like, or never.',
+  ],
 ];
 
 /* ---------- Settings (the legacy rt-set, data-set, data-urpin and celebrate handlers) ---------- */

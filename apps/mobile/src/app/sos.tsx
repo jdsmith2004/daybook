@@ -132,12 +132,28 @@ export default function Sos() {
     buzz('save');
     router.replace({
       pathname: '/log',
-      params: { date: e.key, evId: id, outcome: v, step, from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins), night: night ? '1' : '', kl },
+      params: {
+        date: e.key,
+        evId: id,
+        outcome: v,
+        step,
+        from: 'urge',
+        pts0: String(a.p0),
+        st: a.strength || '',
+        m: String(e.mins),
+        night: night ? '1' : '',
+        kl,
+      },
     });
   };
 
   const sky = night ? 'night' : 'violet';
-  if (!ur) return <SceneFrame title="SOS" sky={sky} onClose={close}>{null}</SceneFrame>;
+  if (!ur)
+    return (
+      <SceneFrame title="SOS" sky={sky} onClose={close}>
+        {null}
+      </SceneFrame>
+    );
 
   if (ur.step === 'tools')
     return (
@@ -210,7 +226,9 @@ export default function Sos() {
       </View>
       <View style={{ gap: 8 }}>
         <Lab text="Try this next" />
-        {sug ? <Go tool={sug.tool} title={sug.title} sub={sug.sub} label={sug.combo ? sug.label : undefined} onPress={() => pickTool(sug.tool.id, !!sug.combo)} /> : null}
+        {sug ? (
+          <Go tool={sug.tool} title={sug.title} sub={sug.sub} label={sug.combo ? sug.label : undefined} onPress={() => pickTool(sug.tool.id, !!sug.combo)} />
+        ) : null}
         {sug?.cap && !quiet ? (
           <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
             {sug.cap}
@@ -244,7 +262,10 @@ export default function Sos() {
             {lines.join('\n')}
           </T>
           {rec.n ? (
-            <View style={s.rec} accessible accessibilityLabel={`Your record: ${rec.n} ${rec.n === 1 ? 'urge' : 'urges'} ridden out${rec.med ? `. Most pass in ${rec.med} minutes` : ''}.`}>
+            <View
+              style={s.rec}
+              accessible
+              accessibilityLabel={`Your record: ${rec.n} ${rec.n === 1 ? 'urge' : 'urges'} ridden out${rec.med ? `. Most pass in ${rec.med} minutes` : ''}.`}>
               <RecChip icon="wave" b={String(rec.n)} rest={' ' + (rec.n === 1 ? 'urge' : 'urges') + ' ridden out'} />
               {rec.med ? <RecChip icon="timer" pre="Most pass in " b={rec.med + ' min'} /> : null}
             </View>
@@ -285,7 +306,17 @@ function Seg({ value, onPick }: { value: Strength | null; onPick: (v: Strength) 
             accessibilityRole="radio"
             accessibilityState={{ checked: on }}
             onPress={() => onPick(v)}
-            style={[s.segB, on && { backgroundColor: c.surface, borderColor: c.accent, shadowColor: c.lip, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 0 }]}>
+            style={[
+              s.segB,
+              on && {
+                backgroundColor: c.surface,
+                borderColor: c.accent,
+                shadowColor: c.lip,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+              },
+            ]}>
             <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1}>
               {label}
             </Text>
@@ -307,7 +338,12 @@ function Go({ tool, title, sub, label, onPress }: { tool: Tool; title: string; s
       onPress={onPress}
       style={({ pressed }) => [
         s.go,
-        { backgroundColor: c.accent, shadowColor: c.accentDeep, shadowOffset: { width: 0, height: pressed ? 1 : 5 }, transform: [{ translateY: pressed ? 4 : 0 }] },
+        {
+          backgroundColor: c.accent,
+          shadowColor: c.accentDeep,
+          shadowOffset: { width: 0, height: pressed ? 1 : 5 },
+          transform: [{ translateY: pressed ? 4 : 0 }],
+        },
       ]}>
       <View style={[s.gi, { backgroundColor: c.surface }]}>
         <Icon name={tool.ic} size={26} color={ink} />
@@ -384,9 +420,30 @@ const s = StyleSheet.create({
   labT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
   labA: { fontFamily: font.bodyMedium, fontSize: 13 },
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 17 },
-  segB: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, borderRadius: 13, borderWidth: 2, borderColor: 'transparent' },
+  segB: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
-  go: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 74, paddingVertical: 12, paddingLeft: 12, paddingRight: 14, borderRadius: 22, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  go: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 74,
+    paddingVertical: 12,
+    paddingLeft: 12,
+    paddingRight: 14,
+    borderRadius: 22,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
   gi: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   gt: { fontFamily: font.display, fontSize: 21, lineHeight: 25 },
   gs: { fontFamily: font.body, fontSize: 14, lineHeight: 18, marginTop: 3, opacity: 0.88 },

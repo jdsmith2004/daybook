@@ -40,12 +40,24 @@ export const STAGES: Stage[] = [
   {
     name: 'Spark',
     meaning: 'You showed up. Every fire starts with something this small.',
-    steps: ['A tiny spark appears.', 'It glows a little warmer.', 'The spark starts to twinkle.', 'A second spark joins it.', 'A little trail of light follows it.'],
+    steps: [
+      'A tiny spark appears.',
+      'It glows a little warmer.',
+      'The spark starts to twinkle.',
+      'A second spark joins it.',
+      'A little trail of light follows it.',
+    ],
   },
   {
     name: 'Kindling',
     meaning: 'Small, ordinary things that catch. This is how it gets built.',
-    steps: ['A few twigs and a first flicker.', 'The twigs catch, one by one.', 'More twigs, and the flicker steadies.', 'The glow turns orange and warm.', 'A small flame stands up on its own.'],
+    steps: [
+      'A few twigs and a first flicker.',
+      'The twigs catch, one by one.',
+      'More twigs, and the flicker steadies.',
+      'The glow turns orange and warm.',
+      'A small flame stands up on its own.',
+    ],
   },
   {
     name: 'Campfire',
@@ -61,12 +73,24 @@ export const STAGES: Stage[] = [
   {
     name: 'Torch',
     meaning: 'Light you can carry with you into the hard hours.',
-    steps: ['You pick up a torch.', 'Its handle sits steady in your hand.', 'The flame grows and lights your way.', 'The path ahead lights up.', 'Embers drift up around it.'],
+    steps: [
+      'You pick up a torch.',
+      'Its handle sits steady in your hand.',
+      'The flame grows and lights your way.',
+      'The path ahead lights up.',
+      'Embers drift up around it.',
+    ],
   },
   {
     name: 'Beacon',
     meaning: 'A light on a tower, so other people can find you too.',
-    steps: ['A beacon on a stone tower.', 'The tower grows taller.', 'Light now reaches in every direction.', 'Its glow reaches the clouds.', 'Faraway beacons light up to answer.'],
+    steps: [
+      'A beacon on a stone tower.',
+      'The tower grows taller.',
+      'Light now reaches in every direction.',
+      'Its glow reaches the clouds.',
+      'Faraway beacons light up to answer.',
+    ],
   },
   {
     name: 'Lighthouse',
@@ -109,7 +133,13 @@ export const STAGES: Stage[] = [
   {
     name: 'Full Sun',
     meaning: 'Warm, steady, and yours.',
-    steps: ['The sun steps out of its frame.', 'Its rays stretch wide.', 'A ring of tiny lights circles it.', 'The ring turns slowly, like a crown.', 'A glowing halo and sparkles.'],
+    steps: [
+      'The sun steps out of its frame.',
+      'Its rays stretch wide.',
+      'A ring of tiny lights circles it.',
+      'The ring turns slowly, like a crown.',
+      'A glowing halo and sparkles.',
+    ],
   },
   {
     name: 'Constellation',
@@ -141,7 +171,10 @@ export const FORM_PTS = [0, 90, 270, 540, 900, 1350, 1890, 2520, 3240, 4050, 600
 const round5 = (v: number) => Math.round(v / 5) * 5;
 /** [points where it starts, form name, form, step] for each level */
 export const LEVELS: [number, string, number, number][] = STAGES.flatMap((sg, f) =>
-  Array.from({ length: STEPS }, (_, k) => [round5(FORM_PTS[f] + ((FORM_PTS[f + 1] - FORM_PTS[f]) * k) / STEPS), sg.name, f, k] as [number, string, number, number]),
+  Array.from(
+    { length: STEPS },
+    (_, k) => [round5(FORM_PTS[f] + ((FORM_PTS[f + 1] - FORM_PTS[f]) * k) / STEPS), sg.name, f, k] as [number, string, number, number],
+  ),
 );
 
 export function levelOf(pts: number): Level {
@@ -176,7 +209,9 @@ export const formWord = (n: string) => (FORM_THE[n] ? 'the ' : FORM_NOART[n] ? '
 export function nextLine(l: Level): string {
   if (l.next == null) return 'Your flame is as bright as it gets.';
   const n = l.toNext;
-  return n + ' more point' + (n === 1 ? '' : 's') + (l.evolves ? ' and your flame turns into ' + formWord(l.nextName!) + '.' : ' to reach level ' + (l.n + 1) + '.');
+  return (
+    n + ' more point' + (n === 1 ? '' : 's') + (l.evolves ? ' and your flame turns into ' + formWord(l.nextName!) + '.' : ' to reach level ' + (l.n + 1) + '.')
+  );
 }
 
 /* ---------- the ladder before this one ---------- */

@@ -12,7 +12,11 @@ export function HelpFoot() {
   return (
     <View style={[s.foot, { backgroundColor: c.surface2 }]}>
       <T v="small" style={{ flex: 1 }}>
-        Want to talk to someone right now? <Text style={{ fontFamily: font.bodyBold }} onPress={() => Linking.openURL('tel:988')}>988</Text> is the Suicide &amp; Crisis Lifeline. It takes calls and texts from anyone who is struggling, any hour (US).
+        Want to talk to someone right now?{' '}
+        <Text style={{ fontFamily: font.bodyBold }} onPress={() => Linking.openURL('tel:988')}>
+          988
+        </Text>{' '}
+        is the Suicide &amp; Crisis Lifeline. It takes calls and texts from anyone who is struggling, any hour (US).
       </T>
       <Pressable
         accessibilityRole="button"

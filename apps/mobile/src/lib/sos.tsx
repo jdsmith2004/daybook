@@ -103,4 +103,3 @@ export function useSos(): SosValue {
   if (!v) throw new Error('useSos needs a SosProvider');
   return v;
 }
-

@@ -67,108 +67,108 @@ export function ListCard({
 
   return (
     <View onLayout={onLayout}>
-    <Card>
-      <View style={s.head}>
-        <View style={[s.headIc, { backgroundColor: soft }]}>
-          <Icon name={icon} size={22} color={ink} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <T v="h2">{title}</T>
-          <T v="small" tone="muted">
-            {sub}
-          </T>
-        </View>
-        <T v="small" tone="muted">
-          {rows.length} of {L.max}
-        </T>
-      </View>
-      <View style={{ gap: 8 }}>
-        {rows.length ? null : (
-          <T tone="muted" style={{ paddingVertical: 4 }}>
-            Nothing here yet. Add the first one.
-          </T>
-        )}
-        {rows.map((r, i) => (
-          <Row
-            key={i + ':' + r}
-            text={r}
-            n={numbered ? i + 1 : null}
-            icon={icon}
-            soft={soft}
-            ink={ink}
-            open={open === i}
-            lit={lit === i}
-            onLitDone={() => setLit(null)}
-            onToggle={() => setOpen(open === i ? null : i)}
-            onSave={(t) => apply((cur) => ({ st: listEdit(cur, k, i, t) }))}
-            onMove={(d) => {
-              apply((cur) => ({ st: listMove(cur, k, i, d) }));
-              setOpen(i + d);
-            }}
-            canUp={i > 0}
-            canDown={i < rows.length - 1}
-            onRemove={() => {
-              const res = listRemove(snap.settings!, k, i);
-              say(res.toast);
-              if (res.ok) {
-                apply({ st: res.st });
-                setOpen(null);
-              }
-            }}
-          />
-        ))}
-        {adding ? (
-          <View style={[s.addBox, { borderColor: c.accent, backgroundColor: c.surface }]}>
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              autoFocus
-              placeholder={placeholder}
-              placeholderTextColor={c.muted}
-              maxLength={L.len}
-              multiline={k === 'words'}
-              submitBehavior={k === 'words' ? 'newline' : 'submit'}
-              returnKeyType="done"
-              onSubmitEditing={add}
-              accessibilityLabel={addLabel}
-              style={[s.addIn, { color: c.ink }]}
-            />
-            <View style={s.addBtns}>
-              <Pressable accessibilityRole="button" onPress={() => (setAdding(false), setDraft(''))} hitSlop={8} style={s.ghost}>
-                <T v="label" tone="muted">
-                  Close
-                </T>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !draft.trim() }}
-                disabled={!draft.trim()}
-                onPress={add}
-                style={({ pressed }) => [s.addGo, { backgroundColor: c.accent, opacity: !draft.trim() ? 0.5 : pressed ? 0.85 : 1 }]}>
-                <Icon name="plus" size={18} color={c.accentInk} />
-                <T v="label" style={{ color: c.accentInk }}>
-                  Add
-                </T>
-              </Pressable>
-            </View>
+      <Card>
+        <View style={s.head}>
+          <View style={[s.headIc, { backgroundColor: soft }]}>
+            <Icon name={icon} size={22} color={ink} />
           </View>
-        ) : rows.length < L.max ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setAdding(true)}
-            style={({ pressed }) => [s.addRow, { borderColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
-            <Icon name="plus" size={20} color={c.accentText} />
-            <T v="label" style={{ color: c.accentText }}>
-              {addLabel}
+          <View style={{ flex: 1 }}>
+            <T v="h2">{title}</T>
+            <T v="small" tone="muted">
+              {sub}
             </T>
-          </Pressable>
-        ) : (
+          </View>
           <T v="small" tone="muted">
-            The list is full. Remove one to make room.
+            {rows.length} of {L.max}
           </T>
-        )}
-      </View>
-    </Card>
+        </View>
+        <View style={{ gap: 8 }}>
+          {rows.length ? null : (
+            <T tone="muted" style={{ paddingVertical: 4 }}>
+              Nothing here yet. Add the first one.
+            </T>
+          )}
+          {rows.map((r, i) => (
+            <Row
+              key={i + ':' + r}
+              text={r}
+              n={numbered ? i + 1 : null}
+              icon={icon}
+              soft={soft}
+              ink={ink}
+              open={open === i}
+              lit={lit === i}
+              onLitDone={() => setLit(null)}
+              onToggle={() => setOpen(open === i ? null : i)}
+              onSave={(t) => apply((cur) => ({ st: listEdit(cur, k, i, t) }))}
+              onMove={(d) => {
+                apply((cur) => ({ st: listMove(cur, k, i, d) }));
+                setOpen(i + d);
+              }}
+              canUp={i > 0}
+              canDown={i < rows.length - 1}
+              onRemove={() => {
+                const res = listRemove(snap.settings!, k, i);
+                say(res.toast);
+                if (res.ok) {
+                  apply({ st: res.st });
+                  setOpen(null);
+                }
+              }}
+            />
+          ))}
+          {adding ? (
+            <View style={[s.addBox, { borderColor: c.accent, backgroundColor: c.surface }]}>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                autoFocus
+                placeholder={placeholder}
+                placeholderTextColor={c.muted}
+                maxLength={L.len}
+                multiline={k === 'words'}
+                submitBehavior={k === 'words' ? 'newline' : 'submit'}
+                returnKeyType="done"
+                onSubmitEditing={add}
+                accessibilityLabel={addLabel}
+                style={[s.addIn, { color: c.ink }]}
+              />
+              <View style={s.addBtns}>
+                <Pressable accessibilityRole="button" onPress={() => (setAdding(false), setDraft(''))} hitSlop={8} style={s.ghost}>
+                  <T v="label" tone="muted">
+                    Close
+                  </T>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !draft.trim() }}
+                  disabled={!draft.trim()}
+                  onPress={add}
+                  style={({ pressed }) => [s.addGo, { backgroundColor: c.accent, opacity: !draft.trim() ? 0.5 : pressed ? 0.85 : 1 }]}>
+                  <Icon name="plus" size={18} color={c.accentInk} />
+                  <T v="label" style={{ color: c.accentInk }}>
+                    Add
+                  </T>
+                </Pressable>
+              </View>
+            </View>
+          ) : rows.length < L.max ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setAdding(true)}
+              style={({ pressed }) => [s.addRow, { borderColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
+              <Icon name="plus" size={20} color={c.accentText} />
+              <T v="label" style={{ color: c.accentText }}>
+                {addLabel}
+              </T>
+            </Pressable>
+          ) : (
+            <T v="small" tone="muted">
+              The list is full. Remove one to make room.
+            </T>
+          )}
+        </View>
+      </Card>
     </View>
   );
 }
@@ -236,7 +236,13 @@ function Row({
 
   return (
     <Animated.View style={[s.row, { backgroundColor: lit ? bg : c.surface2, borderColor: lit ? edge : open ? c.accent : 'transparent' }]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={text} accessibilityHint="Opens it to reword, move or remove" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.rowTop}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={text}
+        accessibilityHint="Opens it to reword, move or remove"
+        accessibilityState={{ expanded: open }}
+        onPress={onToggle}
+        style={s.rowTop}>
         <View style={[s.rowIc, { backgroundColor: soft }]}>
           {n != null ? <T style={{ fontFamily: font.bodyBold, fontSize: 13, color: ink }}>{n}</T> : <Icon name={icon} size={16} color={ink} />}
         </View>
@@ -301,10 +307,28 @@ const s = StyleSheet.create({
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 },
   rowIc: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   newTag: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 },
-  editIn: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
+  editIn: {
+    fontFamily: font.body,
+    fontSize: 15,
+    lineHeight: 21,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 48,
+  },
   tools: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   tool: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
-  addRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 50, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed' },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 50,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
   addBox: { borderWidth: 2, borderRadius: 16, padding: 10, gap: 8 },
   addIn: { fontFamily: font.body, fontSize: 15, lineHeight: 21, minHeight: 40, paddingHorizontal: 4 },
   addBtns: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12 },

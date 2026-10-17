@@ -24,7 +24,10 @@ function findChromium() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
   const base = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   if (!existsSync(base)) return undefined;
-  const dir = readdirSync(base).filter((d) => /^chromium-\d+$/.test(d)).sort().pop();
+  const dir = readdirSync(base)
+    .filter((d) => /^chromium-\d+$/.test(d))
+    .sort()
+    .pop();
   for (const p of ['chrome-linux/chrome', 'chrome-linux64/chrome', 'chrome-mac/Chromium.app/Contents/MacOS/Chromium']) {
     if (dir && existsSync(join(base, dir, p))) return join(base, dir, p);
   }
@@ -41,7 +44,12 @@ const bleed = (size) =>
 
 const jobs = [
   { file: 'icon.png', size: 1024, html: (s) => bleed(s), bg: NIGHT },
-  { file: 'android-icon-foreground.png', size: 1024, html: () => `<div style="width:1024px;height:1024px;display:grid;place-items:center">${badge(600)}</div>`, bg: 'transparent' },
+  {
+    file: 'android-icon-foreground.png',
+    size: 1024,
+    html: () => `<div style="width:1024px;height:1024px;display:grid;place-items:center">${badge(600)}</div>`,
+    bg: 'transparent',
+  },
   { file: 'android-icon-background.png', size: 1024, html: () => '', bg: NIGHT },
   { file: 'splash-icon.png', size: 1024, html: (s) => badge(s), bg: 'transparent' },
   { file: 'favicon.png', size: 48, html: (s) => badge(s), bg: 'transparent' },

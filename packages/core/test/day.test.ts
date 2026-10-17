@@ -17,12 +17,7 @@ const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
 function lessonText(days: Days, st: Settings, tk: string) {
   const r = core.lessonStop(days, st, tk);
   if (r.kind === 'read')
-    return (
-      '✓ Done today: ' +
-      r.L.title +
-      r.L.key +
-      (r.next ? 'Another one: ' + r.next.title + 'One a day is plenty. This is here if you want more.' : '')
-    );
+    return '✓ Done today: ' + r.L.title + r.L.key + (r.next ? 'Another one: ' + r.next.title + 'One a day is plenty. This is here if you want more.' : '');
   if (r.kind === 'next') return `Lesson ${r.n} of ${r.total}: ${r.L.title}${r.L.tag}Start · ${core.lmin(r.L)}Pick a different lesson`;
   return (
     'Read again: ' +
@@ -42,48 +37,50 @@ describe.each(logs)('$name', (fx) => {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fx.cases.forEach((c: any, i: number) => it(`moment ${i}: Your day`, () => {
-    const e = c.expected;
-    const tk = e.tk;
-    const rh = core.rhythm(days, st, tk, c.now);
-    expect(rh.stops.map((s) => core.stopStatus(s, rh.windMin))).toEqual(e.day.status);
-    expect(core.windLine(st, rh.leftToOff, days[tk]?.p || core.blankP())).toBe(e.day.wind);
-    expect(squash(lessonText(days, st, tk))).toBe(squash(e.day.lesson));
-    expect(core.morningInfo(days, st, tk)).toEqual(e.day.morning);
-    expect(core.nextUp(days, st, tk, c.now)).toEqual(e.day.next);
-    const done = core.lessonsDone(days);
-    const nx = core.firstUndone(done, core.faithOf(st));
-    const stats = core.lessonStats(days);
-    core.LESSONS.forEach((L, i) => {
-      [false, true].forEach((full, j) => {
-        const r = core.lessonRow(L, done, nx && nx.id, st, stats, tk, full);
-        const more = r.more ? 'The one thing to keep' + r.more.key + (r.more.note ? r.more.np + r.more.note : '') : '';
-        expect(squash(`${r.n}${L.title}${r.faith ? 'Faith' : ''}${r.sub}${r.status.text}${more}`)).toBe(e.day.lessons[i][j]);
+  fx.cases.forEach((c: any, i: number) =>
+    it(`moment ${i}: Your day`, () => {
+      const e = c.expected;
+      const tk = e.tk;
+      const rh = core.rhythm(days, st, tk, c.now);
+      expect(rh.stops.map((s) => core.stopStatus(s, rh.windMin))).toEqual(e.day.status);
+      expect(core.windLine(st, rh.leftToOff, days[tk]?.p || core.blankP())).toBe(e.day.wind);
+      expect(squash(lessonText(days, st, tk))).toBe(squash(e.day.lesson));
+      expect(core.morningInfo(days, st, tk)).toEqual(e.day.morning);
+      expect(core.nextUp(days, st, tk, c.now)).toEqual(e.day.next);
+      const done = core.lessonsDone(days);
+      const nx = core.firstUndone(done, core.faithOf(st));
+      const stats = core.lessonStats(days);
+      core.LESSONS.forEach((L, i) => {
+        [false, true].forEach((full, j) => {
+          const r = core.lessonRow(L, done, nx && nx.id, st, stats, tk, full);
+          const more = r.more ? 'The one thing to keep' + r.more.key + (r.more.note ? r.more.np + r.more.note : '') : '';
+          expect(squash(`${r.n}${L.title}${r.faith ? 'Faith' : ''}${r.sub}${r.status.text}${more}`)).toBe(e.day.lessons[i][j]);
+        });
       });
-    });
-    const mi = core.modeInfo(st, tk);
-    expect(mi).toEqual(e.day.mode);
-    expect(core.modeActs(st, tk, mi.k)).toEqual(e.day.modeActs);
-    for (const k of Object.keys(e.day.sums)) {
-      const ch = days[k].checkin!;
-      const tiles = [
-        [ch.m, 'Motivation'],
-        [ch.c, 'Connection'],
-        [ch.e, 'Energy'],
-        [ch.s, 'Stress'],
-      ]
-        .map(([v, l]) => (v == null ? '–' : v) + String(l))
-        .join('');
-      const line = core.checkinLine(days, k, ch);
-      expect(squash('✓ Day loggedEdit ' + tiles + ' ' + line + (ch.n ? '“' + ch.n + '”' : ''))).toBe(e.day.sums[k]);
-    }
-    /* saving tonight's check-in */
-    const saved = core.saveCheckin(days, tk, { m: 6, c: 5, e: 4, s: 3, ro: 'Y', n: ' a line ' }, c.now);
-    const got = { ...saved[tk].checkin! } as Partial<core.Checkin>;
-    delete got.at;
-    expect(got).toEqual(e.day.saved);
-    expect(core.checkinSaveText(saved, st, tk, tk)).toBe(e.day.save);
-  }));
+      const mi = core.modeInfo(st, tk);
+      expect(mi).toEqual(e.day.mode);
+      expect(core.modeActs(st, tk, mi.k)).toEqual(e.day.modeActs);
+      for (const k of Object.keys(e.day.sums)) {
+        const ch = days[k].checkin!;
+        const tiles = [
+          [ch.m, 'Motivation'],
+          [ch.c, 'Connection'],
+          [ch.e, 'Energy'],
+          [ch.s, 'Stress'],
+        ]
+          .map(([v, l]) => (v == null ? '–' : v) + String(l))
+          .join('');
+        const line = core.checkinLine(days, k, ch);
+        expect(squash('✓ Day loggedEdit ' + tiles + ' ' + line + (ch.n ? '“' + ch.n + '”' : ''))).toBe(e.day.sums[k]);
+      }
+      /* saving tonight's check-in */
+      const saved = core.saveCheckin(days, tk, { m: 6, c: 5, e: 4, s: 3, ro: 'Y', n: ' a line ' }, c.now);
+      const got = { ...saved[tk].checkin! } as Partial<core.Checkin>;
+      delete got.at;
+      expect(got).toEqual(e.day.saved);
+      expect(core.checkinSaveText(saved, st, tk, tk)).toBe(e.day.save);
+    }),
+  );
 });
 
 describe('the morning and the wind-down', () => {

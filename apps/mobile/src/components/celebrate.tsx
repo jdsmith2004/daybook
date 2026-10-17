@@ -80,7 +80,11 @@ export function CelebrateHost() {
     };
   }, [hooks]);
 
-  const held = useSyncExternalStore(holdSub, () => holds > 0, () => false);
+  const held = useSyncExternalStore(
+    holdSub,
+    () => holds > 0,
+    () => false,
+  );
   /* after a hold ends, a short pause so the finished stop folds shut before a celebration comes up */
   const [settling, setSettling] = useState(false);
   const wasHeld = useRef(held);
@@ -162,16 +166,17 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
     Animated.spring(scale, { toValue: 1, friction: 6, tension: 120, useNativeDriver: NATIVE }).start();
   }, [scale]);
   return (
-    <Animated.View
-      accessibilityViewIsModal
-      accessibilityLiveRegion="assertive"
-      style={[s.card, { backgroundColor: c.surface, transform: [{ scale }] }]}>
+    <Animated.View accessibilityViewIsModal accessibilityLiveRegion="assertive" style={[s.card, { backgroundColor: c.surface, transform: [{ scale }] }]}>
       {art}
       {eyebrow ? <Text style={[s.eye, { color: c.accentText }]}>{eyebrow.toUpperCase()}</Text> : null}
       <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
         {title}
       </Text>
-      {sub ? <T tone="muted" style={{ textAlign: 'center', fontSize: 16, lineHeight: 22 }}>{sub}</T> : null}
+      {sub ? (
+        <T tone="muted" style={{ textAlign: 'center', fontSize: 16, lineHeight: 22 }}>
+          {sub}
+        </T>
+      ) : null}
       <View style={{ alignSelf: 'stretch', marginTop: 4 }}>
         <Button label={more ? 'Next' : 'Nice'} onPress={onClose} />
       </View>
@@ -187,7 +192,14 @@ function Evolve({ from, to }: { from: number; to: number }) {
   }, [v]);
   return (
     <View style={{ width: 150, height: 150 }}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.4, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }] }]}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            opacity: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.4, 0] }),
+            transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }],
+          },
+        ]}>
         <Flame level={from} size={150} />
       </Animated.View>
       <Animated.View
@@ -227,7 +239,15 @@ export function Confetti({ big }: { big: boolean }) {
         const k = f * frames;
         return { x: vx * k * 0.96, y: vy * k + 0.5 * g * k * k };
       });
-      return { x0: W / 2 + (Math.random() - 0.5) * W * 0.45, y0: H * 0.36, s: 5 + Math.random() * 6, c: cols[i % cols.length], pts, r: (Math.random() - 0.5) * 10, round: i % 3 === 1 };
+      return {
+        x0: W / 2 + (Math.random() - 0.5) * W * 0.45,
+        y0: H * 0.36,
+        s: 5 + Math.random() * 6,
+        c: cols[i % cols.length],
+        pts,
+        r: (Math.random() - 0.5) * 10,
+        round: i % 3 === 1,
+      };
     });
   }, [big, W, H, c]);
   useEffect(() => {
@@ -275,7 +295,21 @@ export function Confetti({ big }: { big: boolean }) {
 
 const s = StyleSheet.create({
   center: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  card: { width: '100%', maxWidth: 360, alignItems: 'center', gap: 8, paddingTop: 26, paddingHorizontal: 22, paddingBottom: 22, borderRadius: 32, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 25, shadowOffset: { width: 0, height: 18 }, elevation: 12 },
+  card: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 26,
+    paddingHorizontal: 22,
+    paddingBottom: 22,
+    borderRadius: 32,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
+    shadowOffset: { width: 0, height: 18 },
+    elevation: 12,
+  },
   eye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2, marginTop: 6 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 32, textAlign: 'center' },
 });

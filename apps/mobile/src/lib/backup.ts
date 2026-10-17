@@ -16,5 +16,9 @@ export async function saveBackupFile(name: string, text: string, mime = 'applica
   f.create({ overwrite: true });
   f.writeSync(text);
   if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
-  await Sharing.shareAsync(f.uri, { mimeType: mime, dialogTitle: 'Save ' + name, UTI: mime === 'text/csv' ? 'public.comma-separated-values-text' : 'public.json' });
+  await Sharing.shareAsync(f.uri, {
+    mimeType: mime,
+    dialogTitle: 'Save ' + name,
+    UTI: mime === 'text/csv' ? 'public.comma-separated-values-text' : 'public.json',
+  });
 }

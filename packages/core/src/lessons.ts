@@ -141,8 +141,42 @@ export function lessonFamily(L: Lesson): { f: LessonFamily; n: number; of: numbe
 /** the daily order of the lessons that are not faith lessons: number order, with lessons 33 to 40 placed so each of their
     families comes back after a longer gap each time (after 7, 8 and 11 lessons; and after 7, 10 and 11) */
 export const LESSON_ORDER = [
-  'l1', 'l2', 'l33', 'l3', 'l4', 'l37', 'l5', 'l6', 'l7', 'l34', 'l8', 'l9', 'l38', 'l10', 'l11', 'l12', 'l13', 'l35', 'l14',
-  'l15', 'l16', 'l17', 'l39', 'l18', 'l19', 'l20', 'l21', 'l22', 'l36', 'l23', 'l24', 'l25', 'l26', 'l40', 'l27', 'l28',
+  'l1',
+  'l2',
+  'l33',
+  'l3',
+  'l4',
+  'l37',
+  'l5',
+  'l6',
+  'l7',
+  'l34',
+  'l8',
+  'l9',
+  'l38',
+  'l10',
+  'l11',
+  'l12',
+  'l13',
+  'l35',
+  'l14',
+  'l15',
+  'l16',
+  'l17',
+  'l39',
+  'l18',
+  'l19',
+  'l20',
+  'l21',
+  'l22',
+  'l36',
+  'l23',
+  'l24',
+  'l25',
+  'l26',
+  'l40',
+  'l27',
+  'l28',
 ];
 /** the order lessons are offered in: LESSON_ORDER, with the faith lessons last, first, or after every two others */
 export function lessonPath(mode: FaithMode): Lesson[] {
@@ -238,7 +272,13 @@ export function guessFeedback(g: Guess, v: number): string {
   const d = Math.abs(v - a);
   const u = g.unit;
   const close = d <= Math.max(g.step || 1, Math.round((g.max - g.min) * 0.04));
-  return v === a ? 'Right on it.' : close ? `Close: you were within ${d} ${u}.` : v < a ? `You were ${d} ${u} under, and that is fine.` : `You were ${d} ${u} over, and that is fine.`;
+  return v === a
+    ? 'Right on it.'
+    : close
+      ? `Close: you were within ${d} ${u}.`
+      : v < a
+        ? `You were ${d} ${u} under, and that is fine.`
+        : `You were ${d} ${u} over, and that is fine.`;
 }
 export const lxPct = (g: Guess, x: number) => Math.max(0, Math.min(100, ((x - g.min) / (g.max - g.min)) * 100));
 
@@ -335,7 +375,13 @@ export function lxPeek(kind: string, st: Settings | null): { title: string; rows
 }
 /** which editor a practice action opens over the lesson */
 export const lxSheetOf = (g: Go): 'reasons' | 'slip' | 'urge' | null =>
-  g.a === 'sheet' ? (g.v as 'reasons' | 'slip' | 'urge') : g.a === 'help' && g.v === 'plan' && (g.sub === 'slip' || g.sub === 'urge') ? g.sub : g.a === 'reasons' ? 'reasons' : null;
+  g.a === 'sheet'
+    ? (g.v as 'reasons' | 'slip' | 'urge')
+    : g.a === 'help' && g.v === 'plan' && (g.sub === 'slip' || g.sub === 'urge')
+      ? g.sub
+      : g.a === 'reasons'
+        ? 'reasons'
+        : null;
 
 /** the note on the Behind this sheet */
 export function srcNote(L: Lesson): string {
@@ -428,7 +474,8 @@ export const LF_ORDER: [FaithMode, string][] = [
   ['after', 'Last'],
 ];
 /** a date in a lesson list: the year only when it is not this year */
-export const lfDate = (k: DayKey, tk: DayKey) => fmtDate(k, k.slice(0, 4) === tk.slice(0, 4) ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+export const lfDate = (k: DayKey, tk: DayKey) =>
+  fmtDate(k, k.slice(0, 4) === tk.slice(0, 4) ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
 export const lfClip = (s: string, n: number) => {
   const t = String(s || '')
     .replace(/\s+/g, ' ')
@@ -445,7 +492,11 @@ export function lessonRow(L: Lesson, done: Set<string>, nextId: string | null, s
   const again = stats.again[L.id] || 0;
   const lastK = stats.last[L.id];
   const prac = !!(st.learn && st.learn.prac && st.learn.prac[L.id]);
-  const status: { kind: 'done' | 'next' | 'len'; text: string } = d ? { kind: 'done', text: 'Done' } : L.id === nextId ? { kind: 'next', text: 'Up next' } : { kind: 'len', text: lmin(L) };
+  const status: { kind: 'done' | 'next' | 'len'; text: string } = d
+    ? { kind: 'done', text: 'Done' }
+    : L.id === nextId
+      ? { kind: 'next', text: 'Up next' }
+      : { kind: 'len', text: lmin(L) };
   const when = d
     ? 'Finished' +
       (fin ? ' ' + lfDate(fin, tk) : '') +
@@ -467,7 +518,12 @@ export function lessonFilter(days: Days, st: Settings, f: 'todo' | 'done' | 'not
   const hasNote = (L: Lesson) => !!(notes[L.id] && String(notes[L.id]).trim());
   const recent = (a: Lesson, b: Lesson) => (stats.seq[b.id] || 0) - (stats.seq[a.id] || 0);
   if (f === 'todo')
-    return { list: lessonPath(faithOf(st)).filter((L) => !done.has(L.id)), title: 'To do', sub: 'in your daily order', empty: 'You have finished every lesson. Open Done to read any of them again.' };
+    return {
+      list: lessonPath(faithOf(st)).filter((L) => !done.has(L.id)),
+      title: 'To do',
+      sub: 'in your daily order',
+      empty: 'You have finished every lesson. Open Done to read any of them again.',
+    };
   if (f === 'done')
     return {
       list: LESSONS.filter((L) => done.has(L.id)).sort(recent),

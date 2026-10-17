@@ -112,7 +112,9 @@ function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
         style={[
           s.sheet,
           { backgroundColor: c.surface, shadowColor: c.lip },
-          wide ? { alignSelf: 'center', width: '100%', marginTop: 8, marginBottom: bottom + 20, borderRadius: 30, maxWidth: MAX_WIDTH } : { marginHorizontal: -16, paddingBottom: Math.max(20, bottom + 12) },
+          wide
+            ? { alignSelf: 'center', width: '100%', marginTop: 8, marginBottom: bottom + 20, borderRadius: 30, maxWidth: MAX_WIDTH }
+            : { marginHorizontal: -16, paddingBottom: Math.max(20, bottom + 12) },
         ]}>
         {children}
       </View>

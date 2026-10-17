@@ -73,8 +73,7 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const r = rkActive(snap.days, st, tk);
   if (!r) return null;
   const k = rkCard(snap.days, st, tk, r, new Date(now).getHours());
-  const colors: [string, string] =
-    k.kind === 'sun' ? ['#FFD9B4', '#FFF3DE'] : k.line ? [c.slipSoft, c.surface] : [c.sunSoft, c.surface];
+  const colors: [string, string] = k.kind === 'sun' ? ['#FFD9B4', '#FFF3DE'] : k.line ? [c.slipSoft, c.surface] : [c.sunSoft, c.surface];
   const sun = k.kind === 'sun';
   const ink = sun ? '#2A2350' : undefined;
   return (
@@ -229,7 +228,13 @@ export function CareCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       {care.map((t, i) => (
         <T key={i} v="small">{`${i + 1}. ${t}`}</T>
       ))}
-      {open ? <Button label="I did one small thing" kind="ghost" onPress={() => didSmall(tk)} /> : <T v="label" tone="mintText">✓ One small thing done.</T>}
+      {open ? (
+        <Button label="I did one small thing" kind="ghost" onPress={() => didSmall(tk)} />
+      ) : (
+        <T v="label" tone="mintText">
+          ✓ One small thing done.
+        </T>
+      )}
     </Card>
   );
 }
@@ -241,7 +246,19 @@ const s = StyleSheet.create({
   quote: { padding: 12, borderRadius: 14, borderWidth: 1.5 },
   log: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2 },
   logT: { fontFamily: font.bodySemi, fontSize: 15 },
-  sos: { flexDirection: 'row', alignItems: 'center', gap: 11, minHeight: 72, paddingVertical: 11, paddingLeft: 12, paddingRight: 14, borderRadius: 22, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  sos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    minHeight: 72,
+    paddingVertical: 11,
+    paddingLeft: 12,
+    paddingRight: 14,
+    borderRadius: 22,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
   sosIc: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   sosB: { fontFamily: font.display, fontSize: 28, letterSpacing: 1.5, lineHeight: 30 },
   sosS: { fontFamily: font.bodyMedium, fontSize: 13.5, marginTop: 2, opacity: 0.95 },

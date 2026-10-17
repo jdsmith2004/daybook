@@ -67,7 +67,9 @@ export function Welcome() {
         <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
         <Link label="Skip setup and start a tracking week" onPress={fresh} />
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-          {signedIn ? 'You are signed in, so what you log now syncs to your account.' : 'Your log is saved on this device only. You can save a backup from Settings.'}
+          {signedIn
+            ? 'You are signed in, so what you log now syncs to your account.'
+            : 'Your log is saved on this device only. You can save a backup from Settings.'}
         </T>
         {sync.status.k === 'off' || sync.status.k === 'on' ? null : sync.status.k === 'busy' ? (
           <T tone="muted" style={{ textAlign: 'center' }}>

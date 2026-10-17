@@ -86,12 +86,7 @@ export function moveEvent(days: Days, from: DayKey, to: DayKey, id: string, patc
 
 /** an answer of your own for "what set it off" or "what did you do". Gives back its id (the same words reuse an answer, a removed
     one comes back), or null when the list is full. */
-export function addOption(
-  st: Settings,
-  kind: 'trig' | 'did',
-  label: string,
-  now = Date.now(),
-): { st: Settings; id: string | null } {
+export function addOption(st: Settings, kind: 'trig' | 'did', label: string, now = Date.now()): { st: Settings; id: string | null } {
   label = cleanOptLabel(label);
   if (!label) return { st, id: null };
   const low = label.toLowerCase();
@@ -127,9 +122,7 @@ export function addOption(
 
 /** removes one of your own answers. If an entry used it, it is only hidden, so that entry keeps its words. */
 export function removeOption(st: Settings, days: Days, kind: 'trig' | 'did', id: string, now = Date.now()): Settings {
-  const used = Object.keys(days).some((k) =>
-    (days[k]?.events || []).some((e) => e.trigger === id || (Array.isArray(e.did) && e.did.indexOf(id) >= 0)),
-  );
+  const used = Object.keys(days).some((k) => (days[k]?.events || []).some((e) => e.trigger === id || (Array.isArray(e.did) && e.did.indexOf(id) >= 0)));
   return changeSettings(
     st,
     (s) => {

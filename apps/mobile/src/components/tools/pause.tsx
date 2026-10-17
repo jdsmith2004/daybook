@@ -114,7 +114,10 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
       const step = v === 'slipped' ? rkStepFor(days, e.key) : !e.trig ? 'trigger' : v === 'rode' && !e.did.length ? 'did' : 'done';
       sos.end();
       router.dismissAll();
-      router.push({ pathname: '/log', params: { date: e.key, evId: id, outcome: v, step, from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) } });
+      router.push({
+        pathname: '/log',
+        params: { date: e.key, evId: id, outcome: v, step, from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) },
+      });
       return;
     }
     if (v === 'again') {
@@ -128,7 +131,11 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     const waited = Math.round((Date.now() - t.start) / 60000);
     let id = '';
     const days = update((s) => {
-      const r = addEvent(s.days, key, v, time, { paused: v === 'rode' && full ? true : null, did: did.length ? did : null, ...(v === 'slipped' ? { wt: rkWaitOf(waited) } : {}) });
+      const r = addEvent(s.days, key, v, time, {
+        paused: v === 'rode' && full ? true : null,
+        did: did.length ? did : null,
+        ...(v === 'slipped' ? { wt: rkWaitOf(waited) } : {}),
+      });
       id = r.id;
       return { ...s, days: r.days };
     }).days;
@@ -197,8 +204,20 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         <T style={s.c}>You do not have to fight it or obey it. Pick what feels doable.</T>
         <View style={s.opts}>
           <BigOption tone="sun" icon="timer" title="Another 10 minutes" sub="Same wave, more time." onPress={start} />
-          <BigOption tone="accent" icon="wind" title="Breathe" sub="One slow minute." onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'breathe' } })} />
-          <BigOption tone="accent" icon="chat" title="Reach a person" sub="A short text is enough." onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'message' } })} />
+          <BigOption
+            tone="accent"
+            icon="wind"
+            title="Breathe"
+            sub="One slow minute."
+            onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'breathe' } })}
+          />
+          <BigOption
+            tone="accent"
+            icon="chat"
+            title="Reach a person"
+            sub="A short text is enough."
+            onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'message' } })}
+          />
         </View>
         <Link
           label="I am okay for now"
@@ -247,4 +266,3 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   opts: { alignSelf: 'stretch', gap: 10 },
 });
-

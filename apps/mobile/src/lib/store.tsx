@@ -266,10 +266,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (next === cur) return cur;
       const ids: RecordId[] = [];
       if (next.settings !== cur.settings) ids.push('settings');
-      for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)]))
-        if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
-      for (const k of new Set([...Object.keys(cur.reviews), ...Object.keys(next.reviews)]))
-        if (cur.reviews[k] !== next.reviews[k]) ids.push(`reviews/${k}`);
+      for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)])) if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
+      for (const k of new Set([...Object.keys(cur.reviews), ...Object.keys(next.reviews)])) if (cur.reviews[k] !== next.reviews[k]) ids.push(`reviews/${k}`);
       snapRef.current = next;
       setSnap(next);
       if (ids.length) persist(next, ids).catch(() => say('Could not save that change on this device.'));

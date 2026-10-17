@@ -124,9 +124,7 @@ export function runChips(v: CleanView) {
     main,
     longest: v.longest > 0 ? plural(v.longest, 'day') : null,
     next: v.next && !v.open ? plural(v.next, 'day') : null,
-    line: v.open
-      ? 'A slip put your run on the line. Finish the Rekindle quest by tomorrow night and it keeps going.'
-      : null,
+    line: v.open ? 'A slip put your run on the line. Finish the Rekindle quest by tomorrow night and it keeps going.' : null,
   };
 }
 
@@ -178,11 +176,7 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
   let goalLine: string;
   if (!v.slips) goalLine = 'No slip logged yet. Next goal: ' + fmtStretch(v.goal) + '.';
   else if (v.bestPast > v.curH)
-    goalLine =
-      fmtStretch(v.bestPast - v.curH).replace(/^under an hour$/, 'Under an hour') +
-      ' more to beat your best (' +
-      fmtStretch(v.bestPast) +
-      ').';
+    goalLine = fmtStretch(v.bestPast - v.curH).replace(/^under an hour$/, 'Under an hour') + ' more to beat your best (' + fmtStretch(v.bestPast) + ').';
   else if (v.bestPast > 0) goalLine = 'New best. Next goal: ' + fmtStretch(v.goal) + '.';
   else goalLine = 'Next goal: ' + fmtStretch(v.goal) + '.';
   const week =
@@ -192,9 +186,7 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
           big: String(v.thisW),
           text: (v.thisW === 1 ? 'slip' : 'slips') + ' this week · aim: ' + (v.target ? v.target + ' or fewer' : 'none'),
         };
-  const wait = v.wSl
-    ? { big: v.wWait + ' of ' + v.wSl, text: 'waited first this week' }
-    : { big: '0', text: 'slips to wait out this week' };
+  const wait = v.wSl ? { big: v.wWait + ' of ' + v.wSl, text: 'waited first this week' } : { big: '0', text: 'slips to wait out this week' };
   const best = {
     big: fmtStretchShort(v.best),
     text: 'your best stretch' + (v.usual != null ? ' · usual about ' + fmtStretch(v.usual) : ''),
@@ -219,11 +211,7 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
     wait,
     best,
     hh,
-    ready: v.ready
-      ? v.bestSince >= 168
-        ? 'Your stretch passed a week.'
-        : 'You got through a week with one slip or none.'
-      : null,
+    ready: v.ready ? (v.bestSince >= 168 ? 'Your stretch passed a week.' : 'You got through a week with one slip or none.') : null,
     help: v.help,
   };
 }
@@ -269,7 +257,10 @@ export function eventRow(e: DayEvent, st: Settings | null) {
 
 /** "2 times", and "1 rode it out · 1 slipped" (legacy countText and countDetail) */
 export function countText(s: { n: number; rode: number; slipped: number }) {
-  return { n: !s.n ? 'Nothing yet' : `${s.n} ${s.n === 1 ? 'time' : 'times'}`, detail: [s.rode ? `${s.rode} rode it out` : '', s.slipped ? `${s.slipped} slipped` : ''].filter(Boolean).join(' · ') };
+  return {
+    n: !s.n ? 'Nothing yet' : `${s.n} ${s.n === 1 ? 'time' : 'times'}`,
+    detail: [s.rode ? `${s.rode} rode it out` : '', s.slipped ? `${s.slipped} slipped` : ''].filter(Boolean).join(' · '),
+  };
 }
 
 /** where you are, under the date on Today (legacy phaseLabel) */

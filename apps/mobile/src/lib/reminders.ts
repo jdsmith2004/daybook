@@ -41,7 +41,8 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
   const any = p.morning || p.checkin || (p.wind && screensOff);
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
-  if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+  if (Platform.OS === 'android')
+    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
   const list: { body: string; at: string }[] = [];
   if (p.morning) list.push({ body: 'Last night’s questions. Two taps.', at: p.morningAt });
   if (p.checkin) list.push({ body: 'Check in. Under a minute.', at: p.checkinAt });

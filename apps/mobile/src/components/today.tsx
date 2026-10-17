@@ -256,7 +256,11 @@ function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
   const line = gradLine(g);
   if (!line) return null;
   return (
-    <Pressable accessibilityRole="button" accessibilityHint="Opens Milestones" onPress={() => router.push('/miles')} style={[s.grad, { backgroundColor: g.at ? c.sunSoft : c.accentSoft }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Opens Milestones"
+      onPress={() => router.push('/miles')}
+      style={[s.grad, { backgroundColor: g.at ? c.sunSoft : c.accentSoft }]}>
       <Icon name={g.at ? 'crown' : 'trophy'} size={18} color={g.at ? c.ink : c.accentText} />
       <T v="small" style={{ flex: 1, fontFamily: font.bodySemi, color: g.at ? c.ink : c.accentText }}>
         {g.at ? 'Graduated. ' : ''}
@@ -321,8 +325,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       {k.ready ? (
         <View style={[s.box, { backgroundColor: c.sunSoft }]}>
           <T>
-            <T v="label">You are ready to count days.</T> {k.ready} Counting days is the next step, and your points and badges come
-            with you.
+            <T v="label">You are ready to count days.</T> {k.ready} Counting days is the next step, and your points and badges come with you.
           </T>
           <Button label="Start counting days" onPress={() => apply(stepGrad(st, tk))} />
         </View>
@@ -341,7 +344,15 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
           </View>
         </View>
       ) : null}
-      {size === 'lg' && v.cells.length ? <MonthGrid v={v} legend={[['ok', 'No slip'], ['slip', 'Slip']]} /> : null}
+      {size === 'lg' && v.cells.length ? (
+        <MonthGrid
+          v={v}
+          legend={[
+            ['ok', 'No slip'],
+            ['slip', 'Slip'],
+          ]}
+        />
+      ) : null}
       <LinkText label="How step down works" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
     </Card>
   );
@@ -358,14 +369,14 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
         <T v="h2">A plan for where you are</T>
         <T>Slips have landed on most days this week. That is a hard loop, and it is common, especially after years of trying.</T>
         <T>
-          So Daybook switched to the step-down plan: longer stretches between slips, and fewer slips each week. The goal is still to
-          quit. This is how you get there.
+          So Daybook switched to the step-down plan: longer stretches between slips, and fewer slips each week. The goal is still to quit. This is how you get
+          there.
         </T>
         <View style={[s.box, { backgroundColor: c.surface }]}>
           <T v="label">Years of trying is not proof you cannot. It is practice.</T>
           <T v="small" tone="muted">
-            Many people who quit smoking needed 30 or more tries. And in a small trial, a skills-based therapy cut porn viewing by
-            about 93%. This habit can change.
+            Many people who quit smoking needed 30 or more tries. And in a small trial, a skills-based therapy cut porn viewing by about 93%. This habit can
+            change.
           </T>
         </View>
         <View style={s.actions}>
@@ -383,8 +394,8 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
       <Card tone="note">
         <T v="h2">A gentler way to count, for now</T>
         <T>
-          The last few days have been hard. That is common when you are changing a habit, and you are still here and still logging
-          honestly. That matters more than any count.
+          The last few days have been hard. That is common when you are changing a habit, and you are still here and still logging honestly. That matters more
+          than any count.
         </T>
         <T>Until things settle, a day counts as a good day with one slip or fewer. Every slip is still logged and nothing is taken away.</T>
         <View style={s.actions}>
@@ -399,8 +410,8 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
       <Card tone="note">
         <T v="h2">Slips on most days lately?</T>
         <T>
-          That is a hard loop to break, and it is common. The step-down plan aims for longer stretches between slips and fewer slips
-          each week, instead of a run you lose every day or two. The goal is still to quit. This is a way to get there.
+          That is a hard loop to break, and it is common. The step-down plan aims for longer stretches between slips and fewer slips each week, instead of a run
+          you lose every day or two. The goal is still to quit. This is a way to get there.
         </T>
         <View style={s.actions}>
           <Button label="Try step down" onPress={() => apply(stepOn(st, tk))} />

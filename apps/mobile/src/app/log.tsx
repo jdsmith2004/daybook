@@ -159,9 +159,7 @@ export default function Log() {
     }
     const id = r.id;
     update((s) => {
-      const days = evId
-        ? patchEvent(s.days, date, evId, kind === 'did' ? { did: didIds((ev?.did || []).concat(id)) } : { trigger: id })
-        : s.days;
+      const days = evId ? patchEvent(s.days, date, evId, kind === 'did' ? { did: didIds((ev?.did || []).concat(id)) } : { trigger: id }) : s.days;
       return { ...s, settings: r.st, days };
     });
     setAdding(false);
@@ -180,9 +178,7 @@ export default function Log() {
   };
 
   /* ---------- the parts every closing screen shares ---------- */
-  const saved = ev ? (
-    <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} />
-  ) : null;
+  const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} /> : null;
   const noteAndTime = ev ? (
     <View style={{ width: '100%', gap: 10 }}>
       <View style={s.row}>
@@ -244,11 +240,32 @@ export default function Log() {
         </T>
         <View style={s.opts}>
           {pause ? (
-            <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." selected={outcome ? outcome === 'rode' : null} onPress={() => pick('rode')} />
+            <BigOption
+              tone="mint"
+              icon="wave"
+              title="It passed"
+              sub="I rode it out."
+              selected={outcome ? outcome === 'rode' : null}
+              onPress={() => pick('rode')}
+            />
           ) : (
-            <BigOption tone="mint" icon="wave" title="I rode it out" sub="The urge came and I did not act on it." selected={outcome ? outcome === 'rode' : null} onPress={() => pick('rode')} />
+            <BigOption
+              tone="mint"
+              icon="wave"
+              title="I rode it out"
+              sub="The urge came and I did not act on it."
+              selected={outcome ? outcome === 'rode' : null}
+              onPress={() => pick('rode')}
+            />
           )}
-          <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." selected={outcome ? outcome === 'slipped' : null} onPress={() => pick('slipped')} />
+          <BigOption
+            tone="slip"
+            icon="leaf"
+            title="I slipped"
+            sub="A slip is data, not a reset."
+            selected={outcome ? outcome === 'slipped' : null}
+            onPress={() => pick('slipped')}
+          />
         </View>
       </>
     );
@@ -391,7 +408,11 @@ export default function Log() {
         <T style={s.center}>{rkLightLine(snap.days, st, date, tk, now)}</T>
         <WaitPicker cur={ev?.wt} onPick={(w) => patch({ wt: ev?.wt === w ? null : w })} />
         <View style={{ width: '100%', gap: 6 }}>
-          <Chip label={ev?.recovered ? '✓ One small thing done' : 'I did one small thing'} on={!!ev?.recovered} onPress={() => patch({ recovered: !ev?.recovered })} />
+          <Chip
+            label={ev?.recovered ? '✓ One small thing done' : 'I did one small thing'}
+            on={!!ev?.recovered}
+            onPress={() => patch({ recovered: !ev?.recovered })}
+          />
           <T v="small" tone="muted">
             Water, step outside, or text someone. One small step keeps one slip from turning into two.
           </T>
@@ -450,9 +471,7 @@ export default function Log() {
         </T>
         {sosInfo ? (
           <>
-            <T style={s.center}>
-              {(sosInfo.st && UR_STR_NAME[sosInfo.st] ? UR_STR_NAME[sosInfo.st] + ' at the start. ' : '') + 'Passed in ' + mt + '.'}
-            </T>
+            <T style={s.center}>{(sosInfo.st && UR_STR_NAME[sosInfo.st] ? UR_STR_NAME[sosInfo.st] + ' at the start. ' : '') + 'Passed in ' + mt + '.'}</T>
             <T style={s.center}>{'That makes ' + rodeN + ' urge' + (rodeN === 1 ? '' : 's') + ' ridden out.'}</T>
           </>
         ) : null}
@@ -482,13 +501,7 @@ export default function Log() {
 
   if (night && sky !== 'ember') sky = 'night';
   return (
-    <SceneFrame
-      title={title}
-      sky={sky}
-      dots={dots}
-      onBack={step !== 'q1' && hist.length ? goBack : null}
-      onClose={close}
-      footer={footer}>
+    <SceneFrame title={title} sky={sky} dots={dots} onBack={step !== 'q1' && hist.length ? goBack : null} onClose={close} footer={footer}>
       {body}
     </SceneFrame>
   );
@@ -557,7 +570,16 @@ const s = StyleSheet.create({
   kept: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  fact: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: 18, alignSelf: 'stretch', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
+  fact: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 14,
+    borderRadius: 18,
+    alignSelf: 'stretch',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
   prize: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, alignSelf: 'stretch' },
   badge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

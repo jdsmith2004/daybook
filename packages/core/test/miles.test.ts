@@ -30,7 +30,18 @@ describe.each(logs)('$name', (fx) => {
       const r = core.checkNew(days, st, reviews, c.expected.tk, false);
       const items = r.items.map((it) => ({
         type: it.type,
-        id: it.type === 'badge' ? it.b.id : it.type === 'quest' ? it.q.id : it.type === 'level' ? it.level.n : it.type === 'perfect' ? it.n : it.type === 'more' ? it.title : null,
+        id:
+          it.type === 'badge'
+            ? it.b.id
+            : it.type === 'quest'
+              ? it.q.id
+              : it.type === 'level'
+                ? it.level.n
+                : it.type === 'perfect'
+                  ? it.n
+                  : it.type === 'more'
+                    ? it.title
+                    : null,
         ...(it.type === 'level' ? { from: it.from, evolve: it.evolve } : {}),
       }));
       expect(items).toEqual(c.expected.cel.items);

@@ -70,7 +70,14 @@ export default function Entry() {
           <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
         </View>
-        <Field label="Time (24-hour, like 22:30)" value={timeText} keyboardType="numbers-and-punctuation" maxLength={5} placeholder="22:30" onChangeText={setTimeText} />
+        <Field
+          label="Time (24-hour, like 22:30)"
+          value={timeText}
+          keyboardType="numbers-and-punctuation"
+          maxLength={5}
+          placeholder="22:30"
+          onChangeText={setTimeText}
+        />
         <T v="small" tone="muted">
           {isToday ? 'Filled in for you. Change it if this happened earlier.' : 'Leave it empty if you are not sure.'}
           {ph.p === 'tracking' ? ' Tracking week: no pass or fail, just learning.' : ''} Either choice earns points for being honest.
@@ -105,7 +112,11 @@ export default function Entry() {
                 return;
               }
               const nid = r.id;
-              update((s0) => ({ ...s0, settings: r.st, days: patchEvent(s0.days, date, e.id, kind === 'did' ? { did: didAdd(e.did, nid) } : { trigger: nid }) }));
+              update((s0) => ({
+                ...s0,
+                settings: r.st,
+                days: patchEvent(s0.days, date, e.id, kind === 'did' ? { did: didAdd(e.did, nid) } : { trigger: nid }),
+              }));
               setAdding(null);
             }}
           />
@@ -175,13 +186,24 @@ export default function Entry() {
       ) : (
         <View style={[s.care, { backgroundColor: c.sunSoft }]}>
           <T>Nothing resets. One small step within the hour keeps the snowball from starting.</T>
-          <Chip label={e.recovered ? '✓ I did one small thing' : 'I did one small thing'} on={!!e.recovered} onPress={() => patch({ recovered: !e.recovered })} />
+          <Chip
+            label={e.recovered ? '✓ I did one small thing' : 'I did one small thing'}
+            on={!!e.recovered}
+            onPress={() => patch({ recovered: !e.recovered })}
+          />
           <T v="small" tone="muted">
             Water, step outside, or text someone.
           </T>
         </View>
       )}
-      <Field label="Note (optional)" multiline maxLength={500} defaultValue={e.note} placeholder="What would make this easier next time?" onChangeText={(t) => patch({ note: t })} />
+      <Field
+        label="Note (optional)"
+        multiline
+        maxLength={500}
+        defaultValue={e.note}
+        placeholder="What would make this easier next time?"
+        onChangeText={(t) => patch({ note: t })}
+      />
       <Button label="Done" onPress={closeSheet} />
       {del ? (
         <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>

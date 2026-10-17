@@ -44,7 +44,13 @@ export default function Tool() {
   if (!tool || !st) return <Redirect href="/" />;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
   /* a pause that is running (or done) closes everything on X, like the legacy sceneExit: the timer keeps going, and Today shows it */
-  const exitHere = tool.id === 'pause' && sos.timer ? () => { sos.end(); close(); } : exit;
+  const exitHere =
+    tool.id === 'pause' && sos.timer
+      ? () => {
+          sos.end();
+          close();
+        }
+      : exit;
   const p: ToolProps = { finish, exit: exitHere, sos: !!sos.ur, combo: combo === '1', level };
   /* late at night, a tool from SOS goes dark too */
   const sky: Sky = sos.ur && urNight(new Date(now).getHours()) ? 'night' : SKY[tool.id] || 'sky';

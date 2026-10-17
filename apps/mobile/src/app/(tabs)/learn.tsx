@@ -163,7 +163,8 @@ function LessonsPane() {
             <View style={{ flex: 1, gap: 2 }}>
               <T v="h2">Write it out</T>
               <T v="small">
-                Checkpoint {due}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {2 * due - 1} and {2 * due}. 3 to 5 minutes, no points, only you see it.
+                Checkpoint {due}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {2 * due - 1} and {2 * due}. 3 to 5 minutes, no points, only you
+                see it.
               </T>
             </View>
           </View>
@@ -176,7 +177,11 @@ function LessonsPane() {
         ))}
       </View>
       {nf ? (
-        <Collapse title="Daily order" sub={'Faith lessons: ' + LF_ORDER.find((o) => o[0] === mode)![1].toLowerCase()} open={orderOpen} onToggle={() => setOrderOpen(!orderOpen)}>
+        <Collapse
+          title="Daily order"
+          sub={'Faith lessons: ' + LF_ORDER.find((o) => o[0] === mode)![1].toLowerCase()}
+          open={orderOpen}
+          onToggle={() => setOrderOpen(!orderOpen)}>
           <T v="small" tone="muted">
             This sets where the {nf} faith lessons sit on your path. You can open any lesson at any time.
           </T>
@@ -230,9 +235,15 @@ function LessonsPane() {
       ) : (
         <FilterList f={f} rows={rows} />
       )}
-      <LinkCard icon="compass" title="What I have learned" sub={n ? 'Your takeaways and notes, in My plan' : 'Fills in as you finish lessons'} onPress={() => router.push({ pathname: '/plan', params: { pane: 'learned' } })} />
+      <LinkCard
+        icon="compass"
+        title="What I have learned"
+        sub={n ? 'Your takeaways and notes, in My plan' : 'Fills in as you finish lessons'}
+        onPress={() => router.push({ pathname: '/plan', params: { pane: 'learned' } })}
+      />
       <T v="small" tone="muted">
-        The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources. The faith lessons rest on the 12 steps and on research, not on any one church’s teaching.
+        The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources. The faith
+        lessons rest on the 12 steps and on research, not on any one church’s teaching.
       </T>
     </>
   );
@@ -273,11 +284,18 @@ function LessonRow({ L, r, locked }: { L: Lesson; r: ReturnType<typeof lessonRow
             {L.title}
           </Text>
           <T v="small" tone="muted">
-            {r.faith ? <T v="small" tone="sunText">{'Faith · '}</T> : null}
+            {r.faith ? (
+              <T v="small" tone="sunText">
+                {'Faith · '}
+              </T>
+            ) : null}
             {r.sub}
           </T>
         </View>
-        <T v="small" tone={locked ? 'muted' : r.status.kind === 'done' ? 'mintText' : r.status.kind === 'next' ? 'accentText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+        <T
+          v="small"
+          tone={locked ? 'muted' : r.status.kind === 'done' ? 'mintText' : r.status.kind === 'next' ? 'accentText' : 'muted'}
+          style={{ fontFamily: font.bodySemi }}>
           {locked ? '' : r.status.text}
         </T>
       </View>
@@ -329,7 +347,8 @@ function ToolsPane() {
         </View>
         <ToolGrid days={snap.days} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
         <T v="small">
-          Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week: <Text style={{ fontFamily: font.bodyBold }}>{wg.tools}</Text> of {TOOL_IDS.length} tools tried
+          Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week:{' '}
+          <Text style={{ fontFamily: font.bodyBold }}>{wg.tools}</Text> of {TOOL_IDS.length} tools tried
         </T>
         {fresh ? (
           <T v="small" tone="muted">
@@ -355,11 +374,18 @@ function ToolsPane() {
           </View>
         </Collapse>
         <T v="small" tone="muted">
-          {pinT ? 'SOS puts ' + pinT.name + ' first every time. It still keeps track of what helps.' : 'SOS learns which tools help you, and picks the best fit for the moment.'}
+          {pinT
+            ? 'SOS puts ' + pinT.name + ' first every time. It still keeps track of what helps.'
+            : 'SOS learns which tools help you, and picks the best fit for the moment.'}
         </T>
       </Card>
       <View style={{ gap: 8 }}>
-        <LinkCard icon="pencil" title="Write or edit my reasons" sub={`${st.reasons.length} saved · add, reorder, reword`} onPress={() => router.push('/reasons')} />
+        <LinkCard
+          icon="pencil"
+          title="Write or edit my reasons"
+          sub={`${st.reasons.length} saved · add, reorder, reword`}
+          onPress={() => router.push('/reasons')}
+        />
         <LinkCard icon="moon" title="Tonight's wind-down" sub="A short checklist for the last hour" onPress={() => router.navigate('/')} />
         <LinkCard icon="life" title="Need a person or a plan?" sub="Free help, scripts, phone setup" onPress={() => router.push('/help')} />
       </View>

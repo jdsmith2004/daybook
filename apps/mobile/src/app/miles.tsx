@@ -1,6 +1,22 @@
 /* Milestones: your flame and its twelve forms, how points work, and your badges. Ported from the legacy
    viewMiles and rewardsBody. */
-import { badgeDone, fmtDate, gameCompute, GRAD_ABOUT, GRAD_DAYS, gradInfo, gradLine, LEVELS, nextLine, shownBadges, STAGES, stageLevel, stagePts, stageState, STEPS } from '@daybook/core';
+import {
+  badgeDone,
+  fmtDate,
+  gameCompute,
+  GRAD_ABOUT,
+  GRAD_DAYS,
+  gradInfo,
+  gradLine,
+  LEVELS,
+  nextLine,
+  shownBadges,
+  STAGES,
+  stageLevel,
+  stagePts,
+  stageState,
+  STEPS,
+} from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -33,7 +49,11 @@ export default function Miles() {
         <View style={s.lvl}>
           <GradFlame level={lvl.n} size={124} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`} onPress={() => router.push('/growth')} style={[s.pill, { backgroundColor: c.accentSoft }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`}
+              onPress={() => router.push('/growth')}
+              style={[s.pill, { backgroundColor: c.accentSoft }]}>
               <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>
                 Level {lvl.n} of {LEVELS.length}
               </Text>

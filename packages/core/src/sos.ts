@@ -71,7 +71,21 @@ export interface UrState {
 }
 
 export function newUrge(now: number, pts: number): UrState {
-  return { t0: now, p0: pts, step: 'now', strength: null, trigger: null, used: [], rounds: [], skip: [], again: 0, explore: null, roundDone: false, sug: null, cx: null };
+  return {
+    t0: now,
+    p0: pts,
+    step: 'now',
+    strength: null,
+    trigger: null,
+    used: [],
+    rounds: [],
+    skip: [],
+    again: 0,
+    explore: null,
+    roundDone: false,
+    sug: null,
+    cx: null,
+  };
 }
 
 export const urTool = (id: string) => TOOLS.find((t) => t.id === id) || null;
@@ -154,7 +168,14 @@ export interface Ranked {
   pin: boolean;
   off: boolean;
 }
-export function urRank(sc: Pick<UrState, 'trigger' | 'strength' | 'used' | 'skip' | 'again'>, days: Days, st: Settings | null, tk: DayKey, now: number, mem: UrMem): Ranked[] {
+export function urRank(
+  sc: Pick<UrState, 'trigger' | 'strength' | 'used' | 'skip' | 'again'>,
+  days: Days,
+  st: Settings | null,
+  tk: DayKey,
+  now: number,
+  mem: UrMem,
+): Ranked[] {
   const ctx = urCtxTrig(sc, days, tk, now);
   const fit = (UR_FIT as Record<string, Record<string, number>>)[ctx] || UR_FIT.other;
   const sn = ((sc.strength && (UR_STRN as Record<string, Record<string, number>>)[sc.strength]) || {}) as Record<string, number>;
@@ -223,7 +244,8 @@ export function urPickSug(sc: UrState, days: Days, st: Settings | null, tk: DayK
 }
 
 export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], days: Days, now: number): string {
-  if (mode === 'fresh') return x.tk === 'late' && x.id === 'bed' ? 'New for you. Late at night, sleep is often the strongest move.' : 'New for you. Worth a try.';
+  if (mode === 'fresh')
+    return x.tk === 'late' && x.id === 'bed' ? 'New for you. Late at night, sleep is often the strongest move.' : 'New for you. Worth a try.';
   if (mode === 'last' && last) {
     const mn = Math.max(1, Math.round((now - last.t) / 60000));
     return 'It helped ' + (mn < 60 ? mn + (mn === 1 ? ' minute' : ' minutes') + ' ago' : 'about an hour ago') + '.';
@@ -260,7 +282,9 @@ export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, n
   const w = urWhyTool(pk.top, pk.mode, pk.last, days, now);
   const own = w === m.does ? '' : w;
   const cap =
-    strength && pk.mode !== 'pin' && pk.mode !== 'fresh' ? 'Picked for a ' + (UR_STR_ADJ as Record<string, string>)[strength] + ' urge.' + (/\d/.test(own) ? ' ' + own : '') : own;
+    strength && pk.mode !== 'pin' && pk.mode !== 'fresh'
+      ? 'Picked for a ' + (UR_STR_ADJ as Record<string, string>)[strength] + ' urge.' + (/\d/.test(own) ? ' ' + own : '')
+      : own;
   return { tool: t, combo: null, title: t.name, sub, label: t.name, cap };
 }
 
@@ -371,7 +395,12 @@ export function urLessonFor(trigger: string | null | undefined, slipped: boolean
   const score = (l: (typeof L)[number]) => {
     const tags = Array.isArray(l.tags) ? l.tags : [];
     const i = pref.indexOf(l.id);
-    return (tags.indexOf(key) >= 0 ? 6 : 0) + (!slipped && tags.indexOf('urge') >= 0 ? 2 : 0) + (i >= 0 ? pref.length - i : 0) + (!slipped && hint && l.id === hint ? 9 : 0);
+    return (
+      (tags.indexOf(key) >= 0 ? 6 : 0) +
+      (!slipped && tags.indexOf('urge') >= 0 ? 2 : 0) +
+      (i >= 0 ? pref.length - i : 0) +
+      (!slipped && hint && l.id === hint ? 9 : 0)
+    );
   };
   const off = { ...(mem.off && typeof mem.off === 'object' ? mem.off : {}) };
   const H = 3600000;

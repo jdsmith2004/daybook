@@ -58,7 +58,11 @@ export function Editable({
           accessibilityLabel={label || prompt}
           style={[big ? s.inBig : s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.accent }]}
         />
-        <Pressable accessibilityRole="button" onPress={done} hitSlop={8} style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={done}
+          hitSlop={8}
+          style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
           <Icon name="check" size={16} color={c.accentInk} />
           <T v="label" style={{ color: c.accentInk }}>
             Done
@@ -103,6 +107,15 @@ const s = StyleSheet.create({
   ic: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   big: { fontFamily: font.display, fontSize: 23, lineHeight: 29 },
   in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 2, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
-  inBig: { fontFamily: font.display, fontSize: 21, lineHeight: 27, borderWidth: 2, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 60 },
+  inBig: {
+    fontFamily: font.display,
+    fontSize: 21,
+    lineHeight: 27,
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 60,
+  },
   done: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 16, borderRadius: 999 },
 });

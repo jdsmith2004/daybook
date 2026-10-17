@@ -33,11 +33,20 @@ describe.each(logs)('$name', (fx) => {
       }
       const done = core.lessonsDone(days);
       expect(core.playbookText(st, done, core.LESSONS, (id) => core.LESSONS.findIndex((L) => L.id === id), core.LCHECKS)).toBe(e.journal.book);
-      expect(bare('My numbers' + core.myNumbers(days, st, tk, c.now).map((x) => x.l + x.b + x.s).join(''))).toBe(bare(e.journal.numbers));
+      expect(
+        bare(
+          'My numbers' +
+            core
+              .myNumbers(days, st, tk, c.now)
+              .map((x) => x.l + x.b + x.s)
+              .join(''),
+        ),
+      ).toBe(bare(e.journal.numbers));
       const w = core.urWorks(days, tk);
       if (w.length) {
         const words = bare(e.journal.works);
-        for (const x of w) expect(words).toContain(bare(`${x.name}${x.n} ${x.n === 1 ? 'try' : 'tries'}${x.passed} it passed after, ${x.not} still strong or slipped after`));
+        for (const x of w)
+          expect(words).toContain(bare(`${x.name}${x.n} ${x.n === 1 ? 'try' : 'tries'}${x.passed} it passed after, ${x.not} still strong or slipped after`));
       } else expect(bare(e.journal.works)).toBe(bare('After a few SOS uses, this shows which tools help you most.'));
       e.journal.weeks.forEach((text: string, k: number) => {
         const v = core.weekView(days, st, tk, k);
@@ -50,7 +59,8 @@ describe.each(logs)('$name', (fx) => {
           .map((x) => x.join(''))
           .join('');
         const avgs = v.avgs.map((a) => a.l + a.v + a.move).join('');
-        const head = 'Week ' + (v.wk + 1) + v.range + '‹›' + tiles + 'Average ratings0 to 10' + avgs + 'What the week shows' + v.shows.map((x) => x.join('')).join('');
+        const head =
+          'Week ' + (v.wk + 1) + v.range + '‹›' + tiles + 'Average ratings0 to 10' + avgs + 'What the week shows' + v.shows.map((x) => x.join('')).join('');
         expect(bare(text).startsWith(bare(head))).toBe(true);
       });
     }),

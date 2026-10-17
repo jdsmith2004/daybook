@@ -12,7 +12,19 @@ import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export const closeSheet = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-export function SheetFrame({ title, sub, children, onClose = closeSheet, footer }: { title: string; sub?: string; children: ReactNode; onClose?: () => void; footer?: ReactNode }) {
+export function SheetFrame({
+  title,
+  sub,
+  children,
+  onClose = closeSheet,
+  footer,
+}: {
+  title: string;
+  sub?: string;
+  children: ReactNode;
+  onClose?: () => void;
+  footer?: ReactNode;
+}) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
   return (
@@ -26,7 +38,11 @@ export function SheetFrame({ title, sub, children, onClose = closeSheet, footer 
               </T>
               {sub ? <T tone="muted">{sub}</T> : null}
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={onClose}
+              style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
               <Icon name="x" color={c.ink} />
             </Pressable>
           </View>

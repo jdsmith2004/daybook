@@ -151,7 +151,12 @@ export function Slider({
           <Animated.View
             style={[
               s.readRow,
-              { transform: [{ scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }, { translateY: bump.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }] },
+              {
+                transform: [
+                  { scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) },
+                  { translateY: bump.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) },
+                ],
+              },
             ]}>
             <Animated.Text style={[s.big, { color: c.ink }]}>{show(v)}</Animated.Text>
             {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
@@ -212,7 +217,14 @@ export function Slider({
                   borderColor: c.surface,
                   shadowColor: c.lip,
                   opacity: seen,
-                  transform: [{ scale: Animated.multiply(seen.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }), hold.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] })) }],
+                  transform: [
+                    {
+                      scale: Animated.multiply(
+                        seen.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+                        hold.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }),
+                      ),
+                    },
+                  ],
                 },
               ]}
             />
@@ -249,6 +261,15 @@ const s = StyleSheet.create({
   markGap: { width: 4, height: 4 },
   knobBox: { position: 'absolute', left: 0, width: KNOB, height: KNOB, alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: KNOB * 1.9, height: KNOB * 1.9, borderRadius: KNOB },
-  knob: { width: KNOB, height: KNOB, borderRadius: KNOB / 2, borderWidth: 5, shadowOpacity: 1, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+  knob: {
+    width: KNOB,
+    height: KNOB,
+    borderRadius: KNOB / 2,
+    borderWidth: 5,
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
   ends: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
 });

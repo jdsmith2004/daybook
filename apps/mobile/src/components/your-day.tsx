@@ -8,7 +8,6 @@ import {
   gameCompute,
   lessonStop,
   lmin,
-  mapOf,
   morningDone,
   morningInfo,
   pathNote,
@@ -131,8 +130,6 @@ function Morning({ snap, tk, onDone }: { snap: Snapshot; tk: string; onDone: () 
     buzz('save');
     say('Thanks for being honest.');
     onDone();
-    /* then straight on to mapping the day, unless it is already mapped */
-    if (!mapOf(snap.days, tk)) setTimeout(() => router.push('/map'), 650);
   };
   return (
     <View style={{ gap: 14 }}>

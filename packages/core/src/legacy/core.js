@@ -4,7 +4,6 @@
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
-import { normMap } from '../daymap';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -363,7 +362,6 @@ function normP(p){
  const lv=Array.isArray(p.lv)?[...new Set(p.lv.filter(t=>LESSON_IDS.includes(t)))].slice(0,8):[];
  const ov=normOv(p.ov);
  const q={w,wd:p.wd===true,r:p.r===true,c:Math.max(0,Math.min(50,parseInt(p.c,10)||0)),m:p.m===true,tl,po:isTime(p.po)?p.po:null,ls,lv,ov};
- const mp=normMap(p.mp);if(mp)q.mp=mp;
  return pEmpty(q)&&!Object.keys(ov).length?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}

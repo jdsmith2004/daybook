@@ -6,10 +6,6 @@ export async function allowReminders(): Promise<boolean> {
   return false;
 }
 export async function scheduleReminders(_p: ReminderPrefs, _screensOff: string | null): Promise<void> {}
-export async function scheduleMap(_t: number, _body: string): Promise<boolean> {
-  return false;
-}
-export async function cancelMap(): Promise<void> {}
 export function listenForTaps(): () => void {
   return () => undefined;
 }

@@ -1,6 +1,5 @@
 /* The data model. One settings record, one record per day, one per weekly review. Every rule in Daybook is worked out from
    these at the time it is shown (points, levels, badges, runs, saves, step down), so nothing derived is ever stored. */
-import type { DayMap } from './daymap';
 
 export type DayKey = string; // 'YYYY-MM-DD', the logical day (it rolls over at settings.rollover o'clock)
 export type Clock = string; // 'HH:MM', 24-hour
@@ -65,8 +64,6 @@ export interface Play {
   ls: string[];
   lv: string[];
   ov: Record<string, boolean>;
-  /** the day's map (Map your day), when one was made */
-  mp?: DayMap;
 }
 
 export interface Day {

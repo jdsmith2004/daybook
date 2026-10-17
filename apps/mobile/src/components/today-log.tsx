@@ -130,7 +130,8 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 /* the link under the flame: for when it already happened */
-/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Then the quiet "already happened" link. */
+/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Under it,
+   two quieter ones for the other times: it already happened (log it), or a slip is being planned (Talk it through). */
 export function LogLink() {
   const c = useTheme();
   return (
@@ -152,13 +153,27 @@ export function LogLink() {
         </View>
         <Icon name="next" size={22} color={c.sosInk} />
       </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/log')}
-        style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
-        <Text style={[s.logT, { color: c.accentText }]}>Already happened? Log what happened</Text>
-        <Icon name="next" size={18} color={c.accentText} />
-      </Pressable>
+      {/* the other two times: it already happened, or it is being planned (Talk it through) */}
+      <View style={s.pair}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Already happened? Log what happened."
+          onPress={() => router.push('/log')}
+          style={({ pressed }) => [s.log, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
+          <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            Already happened
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Planning a slip? Talk it through first."
+          onPress={() => router.push('/talk')}
+          style={({ pressed }) => [s.log, { backgroundColor: c.violetSoft, borderColor: c.violetSoft, opacity: pressed ? 0.85 : 1 }]}>
+          <Text style={[s.logT, { color: c.violetText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            Planning a slip?
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -244,8 +259,19 @@ const s = StyleSheet.create({
   top: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   ico: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   quote: { padding: 12, borderRadius: 14, borderWidth: 1.5 },
-  log: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 16, borderRadius: 18, borderWidth: 2 },
-  logT: { fontFamily: font.bodySemi, fontSize: 15 },
+  pair: { flexDirection: 'row', gap: 8 },
+  log: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 52,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    borderWidth: 2,
+  },
+  logT: { fontFamily: font.bodySemi, fontSize: 14, flexShrink: 1, textAlign: 'center' },
   sos: {
     flexDirection: 'row',
     alignItems: 'center',

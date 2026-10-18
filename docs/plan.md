@@ -25,6 +25,28 @@ the merges; **no** to shortening setup (see step 5).
 
 | 13 | Learn as a map (October 18, the owner picked "stepping stones" from eleven mockups, and asked that it not look like Duolingo): the lessons are stones on one path through a land for each section, top to bottom, each land with a picture of its topic (core `section-art.ts`), its own sky and hills, trees and flowers, and a warm evening with stars and fireflies in dark mode. Done stones carry a check, the next one has a pin over it and its name beside it, the road walked glows gold; a tap opens a card with Start (or Read it again, or the account a locked lesson needs). A signpost starts each land, a trophy ends the path, and a floating card says which section is on screen. The order finished moves under the map. Lessons are often done out of order (from Today, a check-in, a help page or a review): each shows as done in its own place, the road glows gold between any two finished lessons, a lesson finished today wears a Today tag, and Up next is always the first lesson not done, the same on Today, the map and a lesson's Next button. Layout and its tests in core `lesson-map.ts`. **Done.** | High |
 
+## The walk of October 18: three people, five fixes
+
+After the remap, Daybook was walked at phone size (390 by 844) as three people: someone opening it for the first time at
+11 PM, someone on day 3 the morning after a slip, and someone on day 60 who has just slipped after 49 clean days. Mockups of
+each fix (the real screen with the change painted on) went to the owner in the chat. **Nothing is built until the owner picks.**
+
+Ranked by how much each one protects hope, and how likely it is to make someone quit:
+
+| #   | Fix                                                                                                                                                                                                                                                                                                             | Who it hurts now                                                                                                                                    | Size   |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1   | **Help comes first, even before setup.** SOS works with nothing set up (`sos.tsx` redirects home when there are no settings); an "urge right now?" row on the first setup page and an SOS pill on every setup page; Learn, Journal and More say what setup opens instead of being blank.                        | The 11 PM first-timer: SOS first appears on page 20 of 40, and a tap on SOS before setup does nothing. This breaks "never lock care".               | Small  |
+| 2   | **After a slip, nothing is on the line.** The run is kept after the first slip in 7 days; the Rekindle missions stay as ways to come back stronger, with no deadline, and still earn the Rekindled badge and 20 points. A rule change in core (`rekindle.ts`, the words in `actions.ts`), so the owner decides. | The day-60 person: "Keep your 49-day run going · 0 of 4 lit · ends tomorrow night", at the top of Today a minute after the slip.                    | Medium |
+| 3   | **One day number, and never "Day 1" after a long run.** "Day 1 of your comeback" becomes "49 days, still yours."; the tracking-week chip "Day 1 Sun" says "Counting starts Sun, Oct 25".                                                                                                                        | Everyone: Today shows two or three day numbers at once ("day 61", "Day 1 of your comeback", "58 of 90"; "Day 1 of 7" and "Day 1 Sun").              | Small  |
+| 4   | **The morning after: one thing at a time.** The sunrise check holds last night's questions; Today shows it, SOS, and "the rest of today can wait"; the Sunday review waits until later in the day.                                                                                                              | The day-3 person: six asks at 7:40 AM (sunrise check, one small thing, Last night, the Sunday review, Good morning, the lesson), two of them alike. | Medium |
+| 5   | **Never cover the answer.** Messages (like "+5 points, you got through 9 to 11 PM") never sit over answers, wrap instead of cutting off, and wait while a slip is being logged.                                                                                                                                 | The day-60 person: the message covers the "I slipped" button at 10:45 PM.                                                                           | Small  |
+
+Also seen, smaller: the Sunday review's seven-day strip draws its circles under Monday and Tuesday for someone who started on
+Friday (and none under Friday to Sunday); a level-up celebration opens a few minutes after a slip is logged; setup suggests
+"Quit, after a tracking week" even after "Quit for good" and "my first real try", so day 1 is a week away. What worked well: Rekindle itself (the embers,
+"Still burning. Still yours.", the cards and the record of clean days), the Sunday review's kind words about the slip, and
+the graduation count holding at 58 of 90 through the slip.
+
 Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;

@@ -112,6 +112,13 @@ export default function Setup() {
       changed: 0,
     };
   });
+  /* opened straight onto this page, not from inside the app: on the web, a Home Screen icon saved while the setup was
+     showing opens it every time. Someone whose setup is done goes to Today instead. */
+  const [cold] = useState(() => !router.canGoBack());
+  useEffect(() => {
+    if (cold && st) router.replace('/');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const P = obPages(f.a);

@@ -60,6 +60,10 @@ export const SRC_MORE: Record<string, [string, string]> = {
   taylor21: TALK_SRC.taylor,
   sayette: TALK_SRC.sayette,
   tracy13: TALK_SRC.tracy,
+  allen17: [
+    'Allen, Kannis-Dymand & Katsikitis (2017): problematic internet pornography use, the role of craving, desire thinking, and metacognition, Addictive Behaviors',
+    'https://doi.org/10.1016/j.addbeh.2017.02.001',
+  ],
 };
 /* two sources the first 32 lessons already use */
 type Src = [string, string];
@@ -1214,11 +1218,11 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           h: 'Replaying the details turns the pull up.',
           b: [
             bP(
-              'Researchers call it desire thinking: picturing the thing you want, and going over it again and again in words. Across drinking, smoking, gambling, eating and more, it goes with stronger craving, and it keeps craving going.',
+              'Researchers call it desire thinking: picturing the thing you want, and going over it again and again in words. In studies of drinking, smoking, gambling and time online, more of it went with stronger craving. Studies of porn use find the same: in one with 191 adults, desire thinking turned up the craving for porn.',
             ),
           ],
           so: 'When you catch yourself planning the details, that is the replay. Naming it, “that is the picture,” is the first step out of it.',
-          fact: { s: 'Review · Caselli & Spada, 2015', i: [0] },
+          fact: { s: 'Study · Caselli & Spada, 2015 · Study · 191 adults · Allen et al., 2017', i: [0, 5] },
         },
         {
           k: 'text',
@@ -1228,11 +1232,11 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           h: 'Noticing with curiosity wears a habit down.',
           b: [
             bP(
-              'In a trial with adult smokers, people trained to notice their cravings with curiosity, instead of acting on them, did far better than people in a standard quit program: four months later, 31% had quit, against 6%. In a later study of overeating, as people paid close attention while they ate, the reward they felt from overeating went down, and that drop predicted their eating changing.',
+              'In a trial with 88 adult smokers, people trained to notice and explore their cravings with curiosity, instead of acting on them, did far better than people in a standard quit program: four months later, 31% were not smoking, against 6%. In a study of people who overeat, paying close attention to how eating on a craving really felt made it feel less rewarding, and that drop predicted eating less.',
             ),
           ],
           so: 'Each honest look, before a slip or after one, teaches your brain what the habit really gives. That is how the pull shrinks.',
-          fact: { s: 'Trial · Brewer et al., 2011 · Study · Taylor et al., 2021', i: [1, 2] },
+          fact: { s: 'Trial · 88 smokers · Brewer et al., 2011 · Study · Taylor et al., 2021', i: [1, 2] },
         },
         {
           k: 'text',
@@ -1267,7 +1271,7 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
             ['Call yourself hopeless for planning it', 'Shame does not loosen the plan. An honest, curious look does.'],
             [
               'Wait until tonight, and decide then',
-              'Tonight is the hardest time to decide. Calm you guesses the pull will be weaker than it turns out to be, so decide now.',
+              'Tonight is the hardest time to decide. When you are not craving, you guess the pull will be weaker than it turns out to be, so decide now.',
             ],
           ],
         },
@@ -1297,8 +1301,8 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
         ],
       },
       scope:
-        'Desire thinking has been studied across many habits. The curiosity trial was with adults quitting smoking, and the noticing study with people who overeat: the same learning runs through every habit like this one, porn included. What it means for you: the picture pulls harder than the real thing, and every honest look narrows that gap.',
-      src: src('caselli', 'brewer11', 'taylor21', 'sayette', 'tracy13'),
+        'Desire thinking has been studied across many habits, porn among them. The curiosity trial was with adults quitting smoking, and the noticing study with people who overeat: the same learning runs through every habit like this one. What it means for you: the picture pulls harder than the real thing, and every honest look narrows that gap.',
+      src: src('caselli', 'brewer11', 'taylor21', 'sayette', 'tracy13', 'allen17'),
     },
   ];
 }

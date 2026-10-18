@@ -3,8 +3,9 @@
    pattern". They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
    legacy/core.js adds them to LESSONS, LUNITS and SRC, so every rule that counts lessons sees all of them.
 
-   Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), spread along the path
-   with growing gaps (see lessonPath and LESSON_FAMILIES in lessons.ts).
+   Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), read together as
+   one section of the path (see lessonPath and LESSON_FAMILIES in lessons.ts). The practice step at the end of each lesson
+   is in practice.ts.
 
    Each lesson rests on the research in SRC_MORE and speaks with confidence: it teaches something good and true, and leaves the
    reader with hope (see "Lessons" in CLAUDE.md).
@@ -73,7 +74,7 @@ export const LUNITS_MORE: Unit[] = [
   {
     name: 'Why it is hard to stop',
     sub: 'Wanting and liking, the cue that comes first, autopilot, and what the habit does for you.',
-    tone: 'coral',
+    tone: 'violet',
     cls: 'lu8',
   },
   { name: 'Becoming someone new', sub: 'Who you are becoming, saying “I do not,” your future self, and the evidence in your log.', tone: 'mint', cls: 'lu9' },
@@ -202,16 +203,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Notice wanting and liking.',
-        p: 'Next time an urge comes, ask: is this wanting, or liking? If you slip, notice honestly how it felt ten minutes after, and log it. Both answers are useful.',
-        mins: 2,
-        go: [
-          { t: 'Practice breathing', a: 'scene', v: 'breathe', ic: 'wind' },
-          { t: 'See my days', a: 'tab', v: 'days', ic: 'calendar' },
-        ],
-        ok: 'You named the signal.',
-      },
       rc: {
         q: 'Late at night the pull feels stronger than ever, even though last time felt empty after. What explains it best?',
         c: ['I must enjoy it more than I think', 'The wanting is louder than the pleasure', 'Something is wrong with me', 'I am just more tired of quitting'],
@@ -330,13 +321,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Write down one signal.',
-        p: 'Think of your last hard moment. What came first: a time, a place, a mood, or an app? Add it to your urge plan with one move.',
-        mins: 2,
-        go: [{ t: 'Open my urge plan', a: 'sheet', v: 'urge', ic: 'plug' }],
-        ok: 'You know one of your signals.',
-      },
       rc: {
         q: 'Every night your phone charges next to your bed, and most slips start there. What is the move that starts at the signal?',
         c: ['Try harder to resist once in bed', 'Charge the phone outside the bedroom', 'Use only safe apps in bed', 'Wait for an urge, then act'],
@@ -468,13 +452,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Set one watch.',
-        p: 'Pick the time your autopilot usually starts. Add it to your urge plan: if it is that time, then I will watch, say “not this time,” and do one thing.',
-        mins: 2,
-        go: [{ t: 'Open my urge plan', a: 'sheet', v: 'urge', ic: 'plug' }],
-        ok: 'You set a watch.',
-      },
       rc: {
         q: 'You find yourself on the same spot on the couch, phone in hand, the way it usually starts. What is the move?',
         c: [
@@ -599,16 +576,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Plan for the feeling.',
-        p: 'Pick your most common hard feeling, and add an if-then plan for it: if I feel this, then I will do that.',
-        mins: 2,
-        go: [
-          { t: 'Open my urge plan', a: 'sheet', v: 'urge', ic: 'plug' },
-          { t: 'See my days', a: 'tab', v: 'days', ic: 'calendar' },
-        ],
-        ok: 'You planned for the feeling.',
-      },
       rc: {
         q: 'Right after an argument, an urge shows up fast. What does this lesson suggest?',
         c: [
@@ -745,13 +712,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Write who you are becoming.',
-        p: 'Write one sentence about the person you are becoming. Daybook shows it under the date on Today, and when SOS opens.',
-        mins: 2,
-        go: [{ t: 'Write my sentence', a: 'tab', v: 'plan', ic: 'pencil' }],
-        ok: 'You wrote who you are becoming.',
-      },
       rc: {
         q: 'After a hard week, a thought says, “People like me never change.” What does this lesson say?',
         c: [
@@ -867,13 +827,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Keep your sentence close.',
-        p: 'Add your “I do not” sentence to your reasons, so it is there in a hard moment.',
-        mins: 1,
-        go: [{ t: 'Add it to my reasons', a: 'sheet', v: 'reasons', ic: 'star' }],
-        ok: 'Your sentence is ready.',
-      },
       rc: {
         q: 'A friend offers to send you a link you know would be a slip for you. What is the strongest thing to tell yourself?',
         c: ['“I cannot, I am not allowed”', '“I do not do that”', '“Not right now”', '“I will just look once”'],
@@ -985,13 +938,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Write your note from the future.',
-        p: 'Write a few lines from you, a year from now. Save them as your note for hard moments in My plan, and SOS will show them to you.',
-        mins: 3,
-        go: [{ t: 'Write my note', a: 'tab', v: 'plan', ic: 'pencil' }],
-        ok: 'Future you has a say now.',
-      },
       rc: {
         q: 'You are tired, and an urge says, “Tonight does not matter.” What helps most?',
         c: [
@@ -1113,16 +1059,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Read your evidence.',
-        p: 'Open your days and count the urges you rode out. Then write one sentence that starts “I am someone who…”',
-        mins: 2,
-        go: [
-          { t: 'See my days', a: 'tab', v: 'days', ic: 'calendar' },
-          { t: 'Write who I am becoming', a: 'tab', v: 'plan', ic: 'pencil' },
-        ],
-        ok: 'You read your evidence.',
-      },
       rc: {
         q: 'This month you rode out ten urges and slipped once. How do you see yourself?',
         c: [
@@ -1276,13 +1212,6 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
           ],
         },
       ],
-      act: {
-        h: 'Catch the picture once.',
-        p: 'Next time you notice yourself picturing a slip, say “that is the picture,” and open Talk it through while you are calm. If a slip happens, look back afterward: what did you expect, and what did it give?',
-        mins: 2,
-        go: [{ t: 'Open Talk it through', a: 'talk', ic: 'chat' }],
-        ok: 'You looked at the real thing.',
-      },
       rc: {
         q: 'You slipped last night. This morning the memory keeps playing, and you feel low. What does this lesson suggest?',
         c: [

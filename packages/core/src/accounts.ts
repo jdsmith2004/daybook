@@ -6,7 +6,7 @@
    with a slip, or the day after). "Not now" waits ACCT_WAIT days. Checked by test/accounts.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, diffDays, eventsOf, isKey } from './legacy/core.js';
-import { lessonPath, type FaithMode, type Lesson } from './lessons';
+import { lessonPath, type Lesson } from './lessons';
 import type { DayKey, Days, Settings } from './types';
 
 /** lessons open without an account, at the start of the daily order */
@@ -15,16 +15,15 @@ export const LEARN_FREE = 3;
 export const ACCT_WAIT = 7;
 
 /** the lessons open without an account */
-export const freeLessons = (mode: FaithMode): Lesson[] => lessonPath(mode).slice(0, LEARN_FREE);
+export const freeLessons = (): Lesson[] => lessonPath().slice(0, LEARN_FREE);
 
 /** whether a lesson can be read. `account` is true when signed in, or when this copy of Daybook has no accounts at all. */
-export function lessonOpen(L: Lesson, done: Set<string>, mode: FaithMode, account: boolean): boolean {
-  return account || done.has(L.id) || freeLessons(mode).indexOf(L) >= 0;
+export function lessonOpen(L: Lesson, done: Set<string>, account: boolean): boolean {
+  return account || done.has(L.id) || freeLessons().indexOf(L) >= 0;
 }
 
 /** how many lessons are waiting behind an account */
-export const lessonsLocked = (all: Lesson[], done: Set<string>, mode: FaithMode, account: boolean) =>
-  all.filter((L) => !lessonOpen(L, done, mode, account)).length;
+export const lessonsLocked = (all: Lesson[], done: Set<string>, account: boolean) => all.filter((L) => !lessonOpen(L, done, account)).length;
 
 export type AcctWhy = 'level' | 'week';
 

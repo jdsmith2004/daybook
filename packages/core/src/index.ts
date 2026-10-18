@@ -12,6 +12,7 @@ export * from './talk';
 export * from './talk-log';
 export * from './risk';
 export * from './lessons';
+export * from './practice';
 export * from './day';
 export * from './plan';
 export * from './miles';

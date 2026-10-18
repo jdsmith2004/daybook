@@ -48,7 +48,7 @@ describe.each(logs)('$name', (fx) => {
       expect(core.morningInfo(days, st, tk)).toEqual(e.day.morning);
       expect(core.nextUp(days, st, tk, c.now)).toEqual(e.day.next);
       const done = core.lessonsDone(days);
-      const nx = core.firstUndone(done, core.faithOf(st));
+      const nx = core.firstUndone(done);
       const stats = core.lessonStats(days);
       core.LESSONS.forEach((L, i) => {
         [false, true].forEach((full, j) => {

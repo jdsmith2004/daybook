@@ -16,7 +16,7 @@ import {
   sumDay,
   type RhythmStop,
 } from './legacy/core.js';
-import { faithOf, firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
+import { firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
@@ -444,9 +444,9 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number): Nex
     pips: r.stops.map((x) => (x.done ? 'on' : x.k === s.k ? 'now' : '')),
   };
   if (s.k === 'lesson') {
-    const nl = firstUndone(lessonsDone(days), faithOf(st));
+    const nl = firstUndone(lessonsDone(days));
     if (nl) {
-      o.t = 'Lesson ' + lessonNo(nl, faithOf(st)) + ': ' + nl.title;
+      o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;

@@ -1,11 +1,12 @@
 /* A lesson. One flow for every lesson: the cover (pick Quick or Full) > one recall question on the lesson before > the cards >
-   Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Nothing on a card, and nothing
-   on the practice step, can finish it or send the person away without a way back. Ported from the legacy SCENES.lesson. */
+   Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Put it to work (core
+   practice.ts) offers ready-made lines that go on the plan with one tap, right here, with Undo; a tool or page it opens comes
+   back to the same step, as it was. Nothing on a card, and nothing on the practice step, can finish the lesson or send the
+   person away without a way back. Ported from the legacy SCENES.lesson. */
 import {
   type Block,
   type Card,
   changeSettings,
-  faithOf,
   gameCompute,
   type Go,
   type Guess,
@@ -17,6 +18,9 @@ import {
   lessonHasQuick,
   lessonLog,
   lessonNo,
+  itemAdd,
+  itemHas,
+  itemUndo,
   lessonOpen,
   lessonPairOf,
   lessonPractice,
@@ -26,18 +30,14 @@ import {
   lessonsDone,
   lessonSeq,
   lfmt,
-  LIST_OF,
-  listAdd,
-  type ListKey,
   LNOTE_LEN,
   LUNITS,
   LX_E,
   lxGraded,
   lxPct,
-  lxPeek,
   lxRcReply,
-  lxSheetOf,
   nextAfter,
+  type PItem,
   planRows,
   recordLesson,
   type Settings,
@@ -45,7 +45,7 @@ import {
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -57,7 +57,7 @@ import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
 import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
-import { ReasonsBox, SlipEditor, UrgeEditor } from '@/components/plan-editors';
+import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -67,9 +67,13 @@ import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
 interface Sheet {
-  t: 'src' | 'reasons' | 'slip' | 'urge';
+  t: 'src';
   i?: number | null;
-  from: 'card' | 'practice';
+}
+/** a line added on the practice step: the words that went on the plan (changed or not), and what a sentence replaced */
+interface Got {
+  it: PItem;
+  was?: string;
 }
 
 export default function LessonScreen() {
@@ -95,10 +99,12 @@ export default function LessonScreen() {
   const [rec, setRec] = useState(at === 'practiced');
   const [prac, setPrac] = useState(at === 'practiced');
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  const draftSave = useRef<() => boolean>(() => true);
-  const onDraft = useCallback((f: () => boolean) => {
-    draftSave.current = f;
-  }, []);
+  /* the practice step: what was added, opened and copied here, and the line whose words are being changed */
+  const [got, setGot] = useState<Record<number, Got>>({});
+  const [went, setWent] = useState<Record<number, boolean>>({});
+  const [copied, setCopied] = useState<Record<number, boolean>>({});
+  const [editing, setEditing] = useState<number | null>(null);
+  const [wrote, setWrote] = useState<string | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -111,16 +117,13 @@ export default function LessonScreen() {
       </Frame>
     );
   const t = toneOf(c, LUNITS[L.u].tone);
-  const n = lessonNo(L, faithOf(st));
+  const n = lessonNo(L);
   const done = lessonsDone(snap.days);
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
-  if (!lessonOpen(L, done, faithOf(st), account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
-  const next = nextAfter(L, done, faithOf(st));
+  if (!lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
+  const next = nextAfter(L, done);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
-
-  /* a line typed into the reasons box is kept when the person moves on; if it cannot be saved, stay */
-  const keepDraft = () => draftSave.current();
 
   const record = () => {
     if (rec) return;
@@ -156,76 +159,59 @@ export default function LessonScreen() {
     top();
   };
 
-  /* one action from the practice step. It never finishes the lesson and never leaves without a way back. */
-  const doGo = (g: Go, primary: boolean) => {
-    if (g.a === 'copy') {
-      Clipboard.setStringAsync(g.text || '')
-        .then(() => say('Copied.'))
-        .catch(() => say('Could not copy. Press and hold the text to copy it.'));
-      practiced();
-      if (primary) toStage('practiced');
+  /* the practice step. Nothing here finishes the lesson, and a tool or page it opens comes back to this same step. */
+  const add = (k: number, it: PItem) => {
+    const r = itemAdd(snap.settings!, it);
+    if (!r.ok) {
+      if (r.toast) say(r.toast);
       return;
     }
-    if (LIST_OF[g.a]) {
-      if (!addItem(g)) return;
-      practiced();
-      if (primary) setStage('practiced');
-      return;
-    }
-    const kind = lxSheetOf(g);
-    if (kind) {
-      practiced();
-      setSheet({ t: kind, from: 'practice' });
-      return;
-    }
-    if (!keepDraft()) return;
+    apply({ st: r.st });
+    setGot((x) => ({ ...x, [k]: { it, was: r.was } }));
+    setEditing(null);
+    buzz('save');
+    say(r.toast);
     practiced();
-    setStage('practiced');
+  };
+  const undo = (k: number) => {
+    const g = got[k];
+    if (!g) return;
+    apply((cur) => ({ st: itemUndo(cur, g.it, g.was) }));
+    setGot((x) => {
+      const y = { ...x };
+      delete y[k];
+      return y;
+    });
+    buzz('tap');
+  };
+  const copyLine = (k: number, text: string) => {
+    Clipboard.setStringAsync(text)
+      .then(() => {
+        setCopied((x) => ({ ...x, [k]: true }));
+        say('Copied. Paste it into a message.');
+        practiced();
+      })
+      .catch(() => say('Could not copy. Press and hold the words to copy them.'));
+  };
+  const write = (v: string) => {
+    setWrote(v);
+    apply((cur) => ({
+      st: changeSettings(cur, (s0) => {
+        if (v.trim()) s0.learn.notes[L.id] = v;
+        else delete s0.learn.notes[L.id];
+      }),
+    }));
+  };
+  const open = (k: number, g: Go) => {
+    setWent((x) => ({ ...x, [k]: true }));
+    practiced();
     if (g.a === 'scene') router.push({ pathname: '/tool/[id]', params: { id: g.v!, lr: '1' } });
     else if (g.a === 'talk') router.push('/talk');
     else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
     else if (g.a === 'growth') router.push('/growth');
     else if (g.a === 'week') router.push('/review');
-    else if (g.a === 'tab') {
-      if ((g.v === 'settings' && g.open === 's-lists') || (g.v === 'plan' && g.open === 'lists'))
-        router.push({ pathname: '/plan', params: { pane: 'lists', add: ownList() } });
-      else if (g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
-      else if (g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
-      else {
-        close();
-        router.navigate('/journal');
-      }
-    }
-  };
-  const listHas = (g: Go) => {
-    const Lx = LIST_OF[g.a];
-    const list = ((snap.settings as unknown as Record<string, string[]>)[Lx[0]] || []) as string[];
-    const tx = String(g.text || '')
-      .trim()
-      .toLowerCase();
-    return list.some((x) => String(x).toLowerCase() === tx);
-  };
-  /* "Add" puts the line on the list, then opens the list with that line lit up; Back comes here again */
-  const addItem = (g: Go) => {
-    const key = LIST_OF[g.a][0] as ListKey;
-    const r = listAdd(snap.settings!, key, g.text || '');
-    if (r.ok) {
-      apply((cur) => {
-        const again = listAdd(cur, key, g.text || '');
-        return { st: again.ok ? again.st : cur };
-      });
-      buzz('save');
-    } else if (r.at == null) {
-      say(r.toast);
-      return false;
-    }
-    router.push({ pathname: '/plan', params: { pane: 'lists', fresh: key + ':' + r.at } });
-    return true;
-  };
-  /** the list a "Write my own" link should open, from the add buttons beside it */
-  const ownList = () => {
-    const sib = (lessonPractice(L)?.go || []).find((x) => LIST_OF[x.a]);
-    return sib ? LIST_OF[sib.a][0] : '';
+    else if (g.a === 'tab' && g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
+    else if (g.a === 'tab' && g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
   };
 
   /* ---------- the card ---------- */
@@ -240,7 +226,7 @@ export default function LessonScreen() {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      const P = lessonRecallOf(L, done, faithOf(st));
+      const P = lessonRecallOf(L, done);
       setRcOf(P ? P.id : null);
       setRc(null);
       setRcTried([]);
@@ -314,7 +300,7 @@ export default function LessonScreen() {
       const r = P.rc!;
       body = (
         <>
-          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P, faithOf(st))} t={t} />
+          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P)} t={t} />
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
@@ -374,11 +360,11 @@ export default function LessonScreen() {
             )}
             <Text style={[s.keyP, { color: c.ink }]}>{L.key}</Text>
           </View>
-          {pr && pr.note ? null : <NoteField L={L} note={note} />}
+          {pr && pr.write ? null : <NoteField L={L} note={note} />}
           {done.size >= LESSONS.length ? (
             <T tone="mintText">That is all {LESSONS.length} lessons. They stay in Learn whenever you want to read one again.</T>
           ) : null}
-          <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src', from: 'card' })} style={s.link}>
+          <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
             <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
           </Pressable>
           {L.u === 1 || L.id === 'l22' || L.care ? (
@@ -459,7 +445,7 @@ export default function LessonScreen() {
             gs={gs}
             t={t}
             onSet={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
-            onSrc={() => setSheet({ t: 'src', i: ci, from: 'card' })}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
           />
         );
         foot = gs.lock ? (
@@ -484,103 +470,77 @@ export default function LessonScreen() {
           </>
         );
       } else {
-        body = <TextCard L={L} card={card} t={t} st={st} onSrc={() => setSheet({ t: 'src', i: ci, from: 'card' })} onDraft={onDraft} />;
+        body = <TextCard L={L} card={card} t={t} st={st} onSrc={() => setSheet({ t: 'src', i: ci })} />;
         foot = (
           <>
             {back}
-            <Next
-              label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'}
-              onPress={() => {
-                if (!keepDraft()) return;
-                step(1);
-              }}
-            />
+            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} onPress={() => step(1)} />
           </>
         );
       }
     }
   } else if (stage === 'practice') {
-    const a = lessonPractice(L) || {};
-    const go = a.go || [];
-    const first = a.note ? null : go[0];
-    const kind = first ? lxSheetOf(first) : null;
-    const rest = go.slice(a.note ? 0 : 1);
-    const peek = kind ? lxPeek(kind, st) : null;
+    const a = lessonPractice(L)!;
+    const items = a.items || [];
+    const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
+    const ed = editing != null ? items[editing] : null;
     prog = <Prog total={1} i={0} all />;
-    body = (
+    body = ed ? (
+      /* changing a line's words: the box and its button at the top, above the keyboard */
+      <LineEditor key={editing} it={ed} t={t} onAdd={(x) => add(editing!, x)} onCancel={() => setEditing(null)} />
+    ) : (
       <>
-        <FitArt style={s.art}>
-          {kind || a.shield ? <LxShield t={t} /> : <LxIco name={a.ic || (go[0] && go[0].ic) || L.ic} t={t} size={a.note || go.length > 1 ? 96 : 120} />}
-        </FitArt>
-        <Eyebrow icon="bolt" label={'Put it to work · ' + (a.mins || 2) + ' min'} t={t} />
-        <T style={s.h} accessibilityRole="header">
-          {a.h || 'Try it'}
+        <Eyebrow icon="bolt" label={'Put it to work · ' + a.mins + ' min'} t={t} />
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {a.h}
         </T>
-        {a.p ? <Rich text={a.p} st={st} style={s.p} /> : null}
-        <Blocks bs={a.b} L={L} t={t} st={st} onDraft={onDraft} />
-        {a.note ? <NoteField L={L} note={(st.learn.notes && st.learn.notes[L.id]) || ''} /> : null}
-        {peek ? (
-          <View style={[s.act, { backgroundColor: t.soft }]}>
-            <Text style={[s.eye2, { color: t.text }]}>{peek.title.toUpperCase()}</Text>
-            {peek.rows.map((r, k) => (
-              <View key={k} style={[s.stepLi, { backgroundColor: c.surface }]}>
-                <View style={[s.stepN, { backgroundColor: t.soft }]}>
-                  <Text style={{ fontFamily: font.bodyBold, fontSize: 12.5, color: t.text }}>{k + 1}</Text>
-                </View>
-                <T style={{ flex: 1 }}>{r}</T>
-              </View>
-            ))}
-            {peek.more ? (
-              <T tone="muted" style={{ fontFamily: font.bodySemi }}>
-                +{peek.more} more
-              </T>
-            ) : null}
-          </View>
-        ) : null}
-        {rest.length ? (
-          <Dock>
-            {rest.map((g, k) => {
-              const has = !!LIST_OF[g.a] && listHas(g);
-              return (
-                <Pressable
-                  key={k}
-                  accessibilityRole="button"
-                  onPress={() => doGo(g, false)}
-                  style={[s.soft, { backgroundColor: c.accentSoft, shadowColor: c.lip, opacity: has ? 0.7 : 1 }]}>
-                  {has ? <Icon name="check" size={20} color={c.accentText} /> : g.ic ? <Icon name={g.ic} size={20} color={c.accentText} /> : null}
-                  <Text style={[s.softT, { color: c.accentText }]}>{has ? 'On my ' + LIST_OF[g.a][2] + ' · See it' : g.t}</Text>
-                </Pressable>
-              );
-            })}
-          </Dock>
-        ) : null}
+        <Rich text={a.p} st={st} style={s.p} />
+        {a.write ? <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} /> : null}
+        <Blocks bs={a.b} L={L} t={t} st={st} />
+        <Dock>
+          {items.map((it, k) => {
+            const g = got[k];
+            const on = it.k === 'copy' ? (copied[k] ? 'added' : null) : g && itemHas(st, g.it) ? 'added' : itemHas(st, it) ? 'had' : null;
+            const old = it.k === 'be' ? st.becoming : it.k === 'note' ? st.note : '';
+            return (
+              <PLine
+                key={k}
+                it={g && on === 'added' ? g.it : it}
+                t={t}
+                state={on}
+                replaces={old && old.trim() && !itemHas(st, it) ? old.trim() : undefined}
+                onAdd={() => add(k, it)}
+                onUndo={() => undo(k)}
+                onEdit={() => {
+                  setEditing(k);
+                  top();
+                }}
+                onCopy={() => copyLine(k, it.text)}
+              />
+            );
+          })}
+          {(a.go || []).map((g, k) => (
+            <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
+          ))}
+        </Dock>
       </>
     );
-    foot = (
+    const acted = Object.keys(got).length > 0 || Object.keys(went).length > 0 || Object.keys(copied).length > 0 || !!(wrote && wrote.trim());
+    foot = ed ? null : (
       <>
-        <Ghost
-          label="Not now"
+        <Ghost label="Not now" onPress={() => toStage('practiced')} />
+        <Next
+          label="Done"
+          noIcon
           onPress={() => {
-            if (keepDraft()) toStage('practiced');
+            if (acted) practiced();
+            toStage('practiced');
           }}
         />
-        {first ? (
-          <Next label={first.t} noIcon onPress={() => doGo(first, true)} />
-        ) : (
-          <Next
-            label={a.btn || 'I tried it'}
-            noIcon
-            onPress={() => {
-              if (!keepDraft()) return;
-              practiced();
-              toStage('practiced');
-            }}
-          />
-        )}
       </>
     );
   } else {
-    const a = lessonPractice(L) || {};
+    const a = lessonPractice(L);
     const pair = lessonPairOf(L);
     const due = pair && done.has(pair.a.id) && !lcheckWritten(st, pair.n);
     prog = <Prog total={1} i={0} all />;
@@ -589,14 +549,14 @@ export default function LessonScreen() {
         <FitArt style={s.art}>{prac ? <LxCheck /> : <LxIco name={L.ic} t={t} />}</FitArt>
         {prac ? <Eyebrow icon="check" label="Practiced" t={{ ...t, soft: c.mintSoft, text: c.mintText }} /> : <Eyebrow icon="flag" label="Lesson done" t={t} />}
         <T style={s.h} accessibilityRole="header">
-          {prac ? a.ok || 'Nicely done.' : 'That is the lesson.'}
+          {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
         <T style={s.p}>{prac ? 'That is the lesson and the practice. Pick what comes next.' : 'The practice stays in Learn whenever you want it.'}</T>
         <View style={{ gap: 10 }}>
           {due && pair ? (
             <Route
               label="Write it out"
-              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, faithOf(st)) + ' and ' + lessonNo(pair.b, faithOf(st))}
+              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a) + ' and ' + lessonNo(pair.b)}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
           ) : null}
@@ -645,19 +605,7 @@ export default function LessonScreen() {
         </FitProvider>
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}
-      {sheet ? (
-        <SheetOver
-          sheet={sheet}
-          L={L}
-          onDraft={onDraft}
-          onClose={() => {
-            if (sheet.t === 'reasons' && !keepDraft()) return;
-            const from = sheet.from;
-            setSheet(null);
-            if (from === 'practice') toStage('practiced');
-          }}
-        />
-      ) : null}
+      {sheet ? <SheetOver sheet={sheet} L={L} onClose={() => setSheet(null)} /> : null}
     </Frame>
   );
 }
@@ -814,7 +762,7 @@ function NoteField({ L, note }: { L: Lesson; note: string }) {
 }
 
 /* ---------- the blocks inside a card ---------- */
-function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings; onDraft: (f: () => boolean) => void }) {
+function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings }) {
   const c = useTheme();
   const { snap } = useStore();
   if (!bs || !bs.length) return null;
@@ -860,7 +808,6 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
             </View>
           );
         }
-        if (b[0] === 'rbox') return <ReasonsBox key={k} onDraft={onDraft} />;
         if (b[0] === 'mylog') {
           const lg = lessonLog(snap.days, st);
           return (
@@ -916,21 +863,7 @@ function Blocks({ bs, t, st, onDraft }: { bs?: Block[]; L: Lesson; t: Tone; st: 
   );
 }
 
-function TextCard({
-  L,
-  card,
-  t,
-  st,
-  onSrc,
-  onDraft,
-}: {
-  L: Lesson;
-  card: Card;
-  t: Tone;
-  st: Settings;
-  onSrc: () => void;
-  onDraft: (f: () => boolean) => void;
-}) {
+function TextCard({ L, card, t, st, onSrc }: { L: Lesson; card: Card; t: Tone; st: Settings; onSrc: () => void }) {
   const e = LX_E[card.e || 'insight'] || LX_E.insight;
   return (
     <>
@@ -943,7 +876,7 @@ function TextCard({
       <T style={[s.h, card.h.length > 46 && s.hsm]} accessibilityRole="header">
         {card.h}
       </T>
-      <Blocks bs={card.b} L={L} t={t} st={st} onDraft={onDraft} />
+      <Blocks bs={card.b} L={L} t={t} st={st} />
       {card.so ? (
         <View style={[s.so, { borderColor: t.ic }]}>
           <Text style={[s.eye2, { color: t.text }]}>WHAT THIS MEANS FOR YOU</Text>
@@ -1093,24 +1026,14 @@ function GuessCard({
 }
 
 /* ---------- the sheet that opens over the lesson ---------- */
-function SheetOver({ sheet, L, onClose, onDraft }: { sheet: Sheet; L: Lesson; onClose: () => void; onDraft: (f: () => boolean) => void }) {
+/* where the science comes from, over the lesson */
+function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: () => void }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  let title = '';
-  let btn = 'Back to the lesson';
+  const title = 'Behind this lesson';
+  const btn = 'Close';
   let body: ReactNode;
-  if (sheet.t === 'slip') {
-    title = 'My slip plan';
-    body = <SlipEditor />;
-  } else if (sheet.t === 'urge') {
-    title = 'My urge plan';
-    body = <UrgeEditor />;
-  } else if (sheet.t === 'reasons') {
-    title = 'My reasons';
-    body = <ReasonsBox onDraft={onDraft} />;
-  } else {
-    title = 'Behind this lesson';
-    btn = 'Close';
+  {
     const card = sheet.i != null ? L.cards[sheet.i] : null;
     const idx = card && card.fact && card.fact.i ? card.fact.i : L.src.map((_, k) => k);
     body = (

@@ -5,7 +5,6 @@ import {
   accountAsk,
   autoStep,
   startFromLog,
-  faithOf,
   LESSONS,
   lessonsDone,
   lessonsLocked,
@@ -127,7 +126,7 @@ export default function Today() {
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
-      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
+      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
     </Screen>
   );
 }

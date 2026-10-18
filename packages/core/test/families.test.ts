@@ -1,5 +1,5 @@
-/* Lessons 33 to 41 and the lesson families: every lesson is whole, every claim names a source, each family is spread along
-   the path with growing gaps, and recall follows the daily order. */
+/* Lessons 33 to 41 and the lesson families: every lesson is whole, every claim names a source, the path goes a section at a
+   time, and recall follows the path. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Lesson } from '../src/lessons';
@@ -14,7 +14,6 @@ const words = (L: Lesson): string[] => {
     (c.b || []).forEach((b) => (b[0] === 'p' || b[0] === 'q' ? out.push(b[1] as string) : b[0] === 'l' ? out.push(...(b[1] as string[])) : null));
     (c.c || []).forEach(([a, r]) => out.push(a, r));
   });
-  if (L.act) out.push(L.act.h || '', L.act.p || '', L.act.ok || '', ...(L.act.go || []).map((g) => g.t));
   if (L.rc) out.push(L.rc.q, L.rc.r, ...L.rc.c, ...(L.rc.cr || []));
   return out;
 };
@@ -51,7 +50,7 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
       });
     expect(L.rc && L.rc.c.length === 4 && L.rc.cr && L.rc.cr.length === 4).toBe(true);
     expect(L.rc!.a).toBeLessThan(4);
-    expect((L.act?.go || []).length).toBeGreaterThan(0);
+    expect(core.lessonPractice(L)).toBeTruthy();
     expect(L.scope).toBeTruthy();
   });
 
@@ -76,7 +75,6 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
       if (c.art && c.art[0] === 'icon' && c.art[1].ic) ok(c.art[1].ic);
       if (c.art && c.art[0] === 'chain') (c.art[1].i || []).forEach(ok);
     });
-    (L.act?.go || []).forEach((g) => g.ic && ok(g.ic));
   });
 
   it('has no contractions', () => {
@@ -96,31 +94,49 @@ describe('families', () => {
     expect(core.lessonFamily(core.lessonById('l1')!)).toBeNull();
   });
 
-  it('the newer families come back after a longer gap each time', () => {
-    const path = core.lessonPath('after').map((L) => L.id);
-    ['hard', 'become'].forEach((id) => {
-      const at = core.LESSON_FAMILIES.find((f) => f.id === id)!.ids.map((x) => path.indexOf(x));
-      const gaps = at.slice(1).map((p, i) => p - at[i]);
-      gaps.forEach((g) => expect(g).toBeGreaterThan(4));
-      gaps.slice(1).forEach((g, i) => expect(g).toBeGreaterThanOrEqual(gaps[i]));
-    });
+  it('the path goes one section at a time, each section once, with faith after Making a plan', () => {
+    const ids = core.lessonPath().map((L) => L.id);
+    expect(ids.slice().sort()).toEqual(core.LESSON_IDS.slice().sort());
+    const units = core.lessonSections().map((x) => x.u);
+    expect(new Set(units).size).toBe(units.length);
+    expect(units).toEqual(core.UNIT_ORDER);
+    expect(ids.slice(0, 8)).toEqual(['l1', 'l2', 'l3', 'l4', 'l33', 'l34', 'l35', 'l36']);
+    expect(units.indexOf(7)).toBe(units.indexOf(2) + 1);
+    expect(ids.slice(16, 20)).toEqual(['l29', 'l30', 'l31', 'l32']);
+    expect(core.lessonNo(core.lessonById('l29')!)).toBe(17);
   });
 
-  it('the daily order has every lesson once, with the faith lessons where the person put them', () => {
-    (['after', 'first', 'mix'] as const).forEach((m) => {
-      const ids = core.lessonPath(m).map((L) => L.id);
-      expect(ids.slice().sort()).toEqual(core.LESSON_IDS.slice().sort());
-    });
-    const after = core.lessonPath('after').map((L) => L.id);
-    expect(after.slice(-4)).toEqual(['l29', 'l30', 'l31', 'l32']);
-    expect(after.slice(0, 3)).toEqual(['l1', 'l2', 'l33']);
+  it('sections next to each other on the path have different colors', () => {
+    /* the accent and violet tints look alike, so they count as one color here */
+    const tones = core.lessonSections().map((x) => core.LUNITS[x.u].tone.replace('accent', 'violet'));
+    tones.slice(1).forEach((t, i) => expect(t).not.toBe(tones[i]));
   });
 
-  it('recall asks about the lesson before this one in the daily order', () => {
+  it('the timeline shows lessons in the order they were finished, then Up next, then the rest by section', () => {
+    const days = {
+      '2026-10-02': core.normDay({ p: { ls: ['l33', 'l1'] } }, '2026-10-02'),
+      '2026-10-01': core.normDay({ p: { ls: ['l2'] } }, '2026-10-01'),
+      '2026-10-03': core.normDay({ p: { ls: ['l1'], lv: ['l2'] } }, '2026-10-03'),
+    };
+    const tl = core.lessonTimeline(days);
+    expect(tl.past.map((x) => [x.L.id, x.k])).toEqual([
+      ['l2', '2026-10-01'],
+      ['l33', '2026-10-02'],
+      ['l1', '2026-10-02'],
+    ]);
+    expect(tl.next?.id).toBe('l3');
+    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 2 });
+    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l4']);
+    expect(tl.coming[1]).toMatchObject({ u: 8, done: 1 });
+    expect(tl.coming.flatMap((x) => x.left).length + tl.past.length + 1).toBe(core.LESSONS.length);
+  });
+
+  it('recall asks about the lesson before this one on the path', () => {
     const l2 = core.lessonById('l2')!;
+    const l4 = core.lessonById('l4')!;
     const l33 = core.lessonById('l33')!;
-    expect(core.lessonRecallOf(l33, new Set(['l1', 'l2']))).toBe(l2);
-    expect(core.lessonRecallOf(core.lessonById('l3')!, new Set(['l1', 'l2', 'l33']))).toBe(l33);
+    expect(core.lessonRecallOf(core.lessonById('l3')!, new Set(['l1', 'l2']))).toBe(l2);
+    expect(core.lessonRecallOf(l33, new Set(['l1', 'l2', 'l3', 'l4']))).toBe(l4);
   });
 
   it('checkpoints stop at the last written one, so the new lessons never offer one that is not there', () => {

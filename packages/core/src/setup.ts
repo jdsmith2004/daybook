@@ -379,7 +379,7 @@ export const obBecoming = (a: SetupAnswers) =>
 
 /* ---------- the plan: what the answers would change ---------- */
 export interface ObChange {
-  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'be' | 'faith';
+  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'be';
   l: string;
   from: string;
   to: string;
@@ -387,7 +387,6 @@ export interface ObChange {
   sub1?: string;
   apply: (s: Settings) => void;
 }
-const FN: Record<string, string> = { mix: 'Mixed in with the others', after: 'After the others', first: 'First' };
 export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObChange[] {
   const cur = st || defaultSettings(tk);
   const out: ObChange[] = [];
@@ -449,15 +448,6 @@ export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObC
   const be = obBecoming(a);
   if (be && (!st || be !== cur.becoming))
     out.push({ k: 'be', l: 'Who I am becoming', from: cur.becoming || 'Not set', to: be, apply: (s) => void (s.becoming = be) });
-  const fm = a.faith === 'big' ? 'mix' : a.faith ? 'after' : null;
-  if (fm && (!st ? fm !== 'after' : fm !== cur.learn.faith))
-    out.push({
-      k: 'faith',
-      l: 'Faith lessons',
-      from: FN[cur.learn.faith] || 'After the others',
-      to: FN[fm],
-      apply: (s) => void (s.learn = { ...s.learn, faith: fm as 'mix' | 'after', faithSet: true }),
-    });
   return out;
 }
 

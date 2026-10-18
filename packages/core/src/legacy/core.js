@@ -282,7 +282,8 @@ function normSettings(s){
  if(!isTime(o.screensOff))o.screensOff='23:00';
  if(!Array.isArray(o.safety)||o.safety.length!==SAFETY.length)o.safety=SAFETY.map((_,i)=>!!(o.safety&&o.safety[i]));
  if(!Array.isArray(o.help)||o.help.length!==HELP_STEPS.length)o.help=HELP_STEPS.map((_,i)=>!!(o.help&&o.help[i]));
- if(!Array.isArray(o.plan)||o.plan.length!==URGE_PLAN.length)o.plan=d.plan;
+ /* the starting lines stay in their places (setup and Rekindle write to them by place); lines a person adds come after them, up to 12 */
+ if(!Array.isArray(o.plan)||o.plan.length<URGE_PLAN.length||o.plan.length>12)o.plan=d.plan;
  /* the starting plan once said "I'm" and "what's". A plan saved with those words gets the new ones, so it still reads as the starting plan. */
  else o.plan=o.plan.map(r=>r&&typeof r==='object'?Object.assign({},r,{when:PLAN_WAS[r.when]||r.when,then:PLAN_WAS[r.then]||r.then}):r);
  /* the slip plan: the person's own steps. Empty is allowed on purpose; a save with no list at all gets the starter plan. */
@@ -1252,13 +1253,14 @@ function sunSvg(level,o){return Em.emblem(level,o)}
 /* ===== LESSONS: thirty-two short lessons in eight units. Each one is a handful of cards: read a little, tap a small question, try one thing.
    Every claim comes from a source listed at the end of its lesson (checked October 12, 2026), and the wording stays inside what that source says:
    who was studied, what was measured, and what it cannot show. Finishing a lesson earns 10 points once, saved by lesson id in that day's record (p.ls). ===== */
+/* each section has a color; next to each other on the path (lessons.ts UNIT_ORDER), no two look alike (accent and violet do) */
 const LUNITS=[
  {name:'How it works',sub:'Mixed feelings, urges, the snowball, and why nights are hard.',tone:'sky',cls:'lu0'},
  {name:'Shame and kindness',sub:'Why shame backfires, what kindness does, and being known.',tone:'coral',cls:'lu1'},
  {name:'Making a plan',sub:'If-then plans, changing the setting, getting help, and what progress is.',tone:'mint',cls:'lu2'},
  {name:'Skills for the moment',sub:'Naming a feeling, a longer breath out, moving, and not obeying every thought.',tone:'violet',cls:'lu3'},
- {name:'Seeing your pattern',sub:'The early links in the chain, permission thoughts, your own log, and fewer fights.',tone:'sun',cls:'lu4'},
- {name:'A life that holds',sub:'Missed days, values, filling the empty hour, and what therapy is like.',tone:'accent',cls:'lu5'},
+ {name:'Seeing your pattern',sub:'The early links in the chain, permission thoughts, your own log, and fewer fights.',tone:'sky',cls:'lu4'},
+ {name:'A life that holds',sub:'Missed days, values, filling the empty hour, and what therapy is like.',tone:'coral',cls:'lu5'},
  {name:'Well-known programs',sub:'The 12 steps, SMART Recovery, mindfulness-based relapse prevention, and why groups help.',tone:'violet',cls:'lu6'},
  {name:'Faith and recovery',sub:'God in recovery: what the 12-step tradition and research say, a practice for hard moments, guilt, and forgiveness.',tone:'sun',cls:'lu7',faith:true}
 ];
@@ -1332,7 +1334,7 @@ const SRC={
      proof x1-2 (Full)   the science as a short plain story + so: "What this means for you" (bridge to porn/quitting)
      move (Quick+Full)   what to do, concrete, doable tonight
      check (Quick+Full)  last card: a realistic moment, 4 real moves, ONE best answer (a)
-   Then Done (question + "The answer" + private note np), Put it to work (act), Practiced.
+   Then Done (question + "The answer" + private note np), Put it to work (practice.ts), Practiced.
    Questions must check or apply this lesson's idea. NO polls ("Tap one", "which is you"), NO study-detail or
    definition questions, NO "not sure / not ready / none" options, NO joke distractors, NO pointers to other lessons.
    Replies open with a verdict, teach in under 40 words, never shame. Answers stay switchable (tap any choice to read its
@@ -1376,8 +1378,6 @@ const LESSONS=[
        ['Promise yourself you will never watch porn again','Big promises feel strong, but they are hard to keep while part of you is unsure. One small step is easier to start and to repeat.'],
        ['Argue with the doubt until it goes quiet','You do not have to win that argument first. Let the doubt be there, and take the small step anyway.']]}
   ],
-  act:{h:'Look at your reasons.',p:'If the list is empty, write one true line. If one no longer sounds like you, change it. One is enough for today.',mins:1,
-   go:[{t:'Open my reasons',a:'sheet',v:'reasons',ic:'star'}],ok:'Your reasons are ready.'},
   rc:{q:'It is day three. You think, “Part of me still wants porn. Maybe I am not serious about quitting.” What is true?',
    c:['The doubt means you will probably fail','Mixed feelings are normal, and you can keep going','You should pause until you feel sure','You should push the doubt out of your mind'],a:1,
    r:'Mixed feelings are a normal part of change. Keep taking small steps.',
@@ -1415,8 +1415,6 @@ const LESSONS=[
        ['Give in now so it stops bugging you','That ends this one, but it keeps the habit strong. Each urge you outlast is practice at the gap.'],
        ['Stay busy online until the feeling goes away','Staying online keeps the trigger in your hand. Step away from the screen and let the wave pass.']]}
   ],
-  act:{h:'Ride one wave.',p:'Next time an urge shows up, tap SOS or start the 10-minute pause. Want a warm-up first? One minute of slow breathing is a good start.',mins:2,
-   go:[{t:'Practice breathing',a:'scene',v:'breathe',ic:'wind'},{t:'See the 10-minute pause',a:'scene',v:'pause',ic:'timer'}],ok:'You have tried the first move.'},
   rc:{q:'You are at your desk and an urge shows up out of nowhere. It feels strong. What is the move?',
    c:['Fight the thought until it goes away','Notice it, breathe, and let it pass','Give in once so you can focus','Promise yourself this is the last time'],a:1,
    r:'An urge is a wave. Notice it, breathe, and outlast it.',
@@ -1455,8 +1453,6 @@ const LESSONS=[
        ['Say “That happened,” then check in today as usual','Yes. You name it without making it a verdict, and you keep your normal day going. That protects your confidence.'],
        ['Be extra hard on yourself so it never happens again','Harsh self-talk feels like taking it seriously, but a drop in confidence is what made the next slip come sooner.']]}
   ],
-  act:{h:'Read your slip plan.',p:'Five short steps, in your own words. It is easier to change them now than in the middle of a hard night.',mins:2,
-   go:[{t:'Open my slip plan',a:'sheet',v:'slip',ic:'shield'}],ok:'Your slip plan is ready.'},
   rc:{q:'You slipped last night. This morning you think, “I already blew it, so this week is ruined.” What is that thought?',
    c:['An honest read of where you are','The snowball thought, the real risk after a slip','Proof that you have no willpower','A sign to start fresh on Monday'],a:1,
    r:'The slip is not the biggest risk. “I blew it, so why bother” is. Spot it, and do the next small thing today.',
@@ -1499,8 +1495,6 @@ const LESSONS=[
        ['Grit your teeth and hold out as long as you can','You might make it, but you are fighting with your most tired brain. Ending the night ends the fight.'],
        ['Tell yourself one look will not hurt, then stop','That is the tired brain overrating the reward. The need under the urge is sleep, not one look.']]}
   ],
-  act:{h:'Fix one thing tonight.',p:'Which sounds more like you right now: worn out, or lonely? Tap the one that fits. If it is both, start with sleep.',mins:2,
-   go:[{t:'Tired: set my screens-off time',a:'tab',v:'settings',open:'s-sched',ic:'moon'},{t:'Lonely: message someone',a:'scene',v:'message',ic:'chat'}],ok:'You met the need, not just the urge.'},
   rc:{q:'It is Saturday night. You are home alone, feeling low, and an urge starts. What helps most?',c:['Scroll your phone until the feeling passes','Tell yourself you should be stronger than this','Reach out to someone, even by text','Keep to yourself until the mood lifts'],a:2,r:'Loneliness makes porn look like comfort. A real person meets the actual need, so the urge has less to offer.',
    cr:['Not quite. Scrolling alone keeps you near the trigger and does nothing for the loneliness under it.','Not quite. Lonely is a need, not a weakness. Being hard on yourself does not meet it.','Right. Loneliness makes porn look like comfort. A real person meets the actual need.','Not quite. Pulling away is the loop: lonely, porn, more cut off. A person breaks it.']},
   scope:'The sleep study was small (27 adults) and kept people awake about 32 hours, longer than one late night. The survey shows loneliness and porn use go together; it cannot show which causes which. Together they point at two needs you can do something about.',
@@ -1538,7 +1532,6 @@ const LESSONS=[
        ['Promise yourself a perfect week to make up for it','A big promise after a slip is often shame in disguise. One good next move counts for more.'],
        ['Swap it: “I slipped,” then do your check-in','Yes. You name the act, not yourself, and you protect your next good move. That is how one slip stays one slip.']]}
   ],
-  act:{h:'Rewrite one harsh sentence.',p:'Think of the harshest thing you have said to yourself this week. Write it again as something that happened, not something you are. Then add one thing you did this week that you are glad about.',note:true,btn:'Save it',mins:2,ok:'That is a kinder, truer sentence.'},
   rc:{q:'After a slip you catch yourself thinking, “I always ruin everything.” What is a better sentence?',
    c:['“I should be ashamed of myself.”','“I slipped last night, and I can do something about it.”','“It does not matter anyway.”','“Next time I will be perfect.”'],a:1,
    r:'Name what you did, not who you are. Then you have something you can fix.',
@@ -1576,8 +1569,6 @@ const LESSONS=[
        ['“It is no big deal. Forget about it.”','Kind, but it skips the part where they look at what happened. Kindness looks at it, without attacking.'],
        ['“Maybe you should just give up on quitting.”','That is the snowball thought. You would not say it to a friend, so do not say it to yourself.']]}
   ],
-  act:{h:'Say it once.',p:'Copy the sentence and keep it where you will see it. Or say it out loud the next time you need it.',mins:1,
-   go:[{t:'Copy the sentence',a:'copy',text:'That was hard. It happened. What do I need now?',ic:'copy'}],ok:'That sentence is yours now.'},
   rc:{q:'You slipped tonight. Your first thought is, “I am pathetic. I deserve to feel awful.” What would help most?',
    c:['Let yourself feel awful so you learn','Say, “That was hard. What do I need now?”','Pretend it did not happen','Plan to be harder on yourself tomorrow'],a:1,
    r:'Kindness after a slip helps you get back on track.',
@@ -1615,8 +1606,6 @@ const LESSONS=[
        ['Write it out first, then share just one line','Good pick. Getting the words out on paper makes them easier to say. Example: write three sentences for yourself, then send only the first one.'],
        ['Talk to a counselor or join a support group','Good pick if nobody in your life feels safe yet. These are people trained to listen without judging. Example: “I have been struggling with porn and I want help. Can I book a time?”']]}
   ],
-  act:{h:'A sentence you can send.',p:'If you decide to tell your safe person, this is one way to say it. Change anything.',b:[bQ(SCRIPTS[4][1])],mins:1,
-   go:[{t:'Copy it',a:'copy',text:SCRIPTS[4][1],ic:'copy'},{t:'See all the scripts',a:'help',v:'say',ic:'chat'}],ok:'You have the words ready.'},
   rc:{q:'You have kept this to yourself for years. A friend you trust asks how you are really doing. What is a good move?',
    c:['Say “fine” and change the subject','Share one honest sentence, and say what you need','Tell them every detail right away','Wait until you have it all fixed'],a:1,
    r:'One safe person can share the weight.',
@@ -1659,8 +1648,6 @@ const LESSONS=[
        ['Stay in it, go slow, and practice being honest','Yes. A habit is something you do, not who you are. Honesty and patience are skills you can practice now.'],
        ['Count on the relationship to stop the habit','A partner cannot carry this for you. The relationship can grow alongside your own work on the habit.']]}
   ],
-  act:{h:'One small step toward people.',p:'Pick the smallest one.',mins:2,
-   go:[{t:'Reach a person',a:'scene',v:'message',ic:'chat'},{t:'Look at free groups',a:'help',v:'groups',ic:'dots'},{t:'Read my reasons',a:'sheet',v:'reasons',ic:'star'}],ok:'That is a real step toward people.'},
   rc:{q:'You catch yourself thinking, “Someone with this habit does not deserve love.” What is closer to the truth?',
    c:['A habit is something you do, not a verdict on you','You need to earn love by quitting first','People with this habit cannot be close to anyone','Love should wait until life is in order'],a:0,
    r:'A habit is something you do, not a verdict on whether you can love.',
@@ -1699,8 +1686,6 @@ const LESSONS=[
        ['“If I slip, then I will quit for good next month.”','That plans for after the slip, not the moment before it. Aim the plan at the hard moment itself.'],
        ['“I will just stay away from porn from now on.”','That is a goal, not a plan. It does not say what to do when the urge hits.']]}
   ],
-  act:{h:'Fill in one “if.”',p:'Open your urge plan and change one line so it sounds like you.',mins:2,
-   go:[{t:'Open my urge plan',a:'sheet',v:'urge',ic:'shield'}],ok:'Your if-then is ready.'},
   rc:{q:'You keep slipping on Sunday evenings when you are bored. What is the best plan?',
    c:['Promise yourself next Sunday will be different','Decide: “If it is Sunday at 7, I go for a walk”','Wait and see how you feel on Sunday','Stay off your phone all weekend, no matter what'],a:1,
    r:'Decide ahead of time with an if-then plan.',
@@ -1743,8 +1728,6 @@ const LESSONS=[
        ['Delete one app, but keep the phone by the bed','Some friction helps, but the phone in bed is the main cue. Move the phone, not just one app.'],
        ['Stay up later so you are too tired to bother','Being more tired makes urges look bigger, not smaller. Change where the phone sleeps instead.']]}
   ],
-  act:{h:'Set up the night.',p:'Open the phone and night setup, or set your screens-off time.',mins:2,
-   go:[{t:'Phone and night setup',a:'help',v:'phone',sub:'night',ic:'phone'},{t:'Set my screens-off time',a:'tab',v:'settings',open:'s-sched',ic:'moon'}],ok:'Your night has a better setting.'},
   rc:{q:'You notice you only slip when you are alone at your desk after midnight. What is the smartest move?',
    c:['Try harder to resist at your desk','Log off and leave the desk by 11 each night','Only use the computer when you feel strong','Keep a tally of every slip at the desk'],a:1,
    r:'Change the setting, and the cue gets weaker.',
@@ -1787,8 +1770,6 @@ const LESSONS=[
        ['Decide it is not that bad, so skip help','Not needing a label does not mean it does not matter. What counts is what it does to your life.'],
        ['Look into one kind of help, in your own words','Yes. Your words are fine. What counts is what it does to your life, and help is there whatever you call it.']]}
   ],
-  act:{h:'Look at one option.',p:'Pick one page. Reading is enough for today.',mins:2,
-   go:[{t:'Therapy on a small budget',a:'help',v:'therapy',sub:'start',ic:'heart'},{t:'Free groups',a:'help',v:'groups',ic:'dots'},{t:'What to say',a:'help',v:'say',ic:'chat'}],ok:'You looked at a real option.'},
   rc:{q:'A friend says, “I do not think I am an addict, so groups and therapy are not for me.” What is true?',
    c:['Help is only for people with an addiction','Help fits if it is costing them, whatever they call it','They need a diagnosis before doing anything','They should wait until it gets worse'],a:1,
    r:'Help does not depend on a label.',
@@ -1831,8 +1812,6 @@ const LESSONS=[
        ['A setback inside real growth. Keep going','Yes. Getting better is non-linear. Setbacks can be part of it, and the growth you built still counts.'],
        ['A sign to wait until you can be perfect','Perfect is not the bar. Growth with setbacks is what recovery looks like.']]}
   ],
-  act:{h:'Look back, then forward.',p:'See how far your flame has come. Then pick one thing to do this week.',mins:2,
-   go:[{t:'See how my flame grows',a:'growth',ic:'sparkle'},{t:'Open this week’s review',a:'week',ic:'calendar'}],ok:'You looked back, and you know your next step.'},
   rc:{q:'After a great month, you have a hard week with two slips. How should you read it?',
    c:['The month did not count','A setback inside real progress','Proof that nothing works for you','A reason to start everything from scratch'],a:1,
    r:'Getting better is non-linear: growth that may include setbacks.',
@@ -1876,8 +1855,6 @@ const LESSONS=[
        ['Name it: “I notice I feel wound up.”','Yes. Naming the feeling makes a little space. Then meet it another way: a walk, a shower, a call.'],
        ['Scroll until the feeling goes away','Scrolling keeps the trigger in your hand. Name the feeling first, then pick something away from the screen.']]}
   ],
-  act:{h:'Try it on a real feeling.',p:'The Curious tool asks where a feeling sits in your body and what to call it. It takes about two minutes. The HALT check asks whether you are hungry, angry, lonely, or tired.',mins:2,
-   go:[{t:'Try the Curious tool',a:'scene',v:'curious',ic:'sparkle'},{t:'Do a HALT check',a:'scene',v:'halt',ic:'dots'}],ok:'You named a real feeling.'},
   rc:{q:'You notice an urge right after an argument with someone. What is the best first move?',
    c:['Ask yourself why you are so weak','Name it: “I notice I feel angry and stung.”','Distract yourself on your phone','Decide the argument was all your fault'],a:1,
    r:'Name the feeling, and it loses some of its grip.',
@@ -1915,8 +1892,6 @@ const LESSONS=[
        ['Breathe fast to burn off the energy','The part that settles you is the slow, long breath out, not speed.'],
        ['Skip it, since breathing cannot stop an urge','It does not have to stop the urge. It helps you ride it out, and that is the goal.']]}
   ],
-  act:{h:'Try one minute now.',p:'One minute. The circle shows the timing: in, in again a little, then a long way out.',mins:1,
-   go:[{t:'Start the Sigh breath',a:'scene',v:'breathe',o:{pat:'sigh',mins:1},ic:'wind'}],ok:'You have felt it work.'},
   rc:{q:'You feel the first pull of an urge at your desk. You have one minute. What is the best use of it?',
    c:['Breathe in twice, then breathe out slowly','Hold your breath until it passes','Tell yourself to calm down','Check your phone to take your mind off it'],a:0,
    r:'A long breath out is a quick tool for the wave.',
@@ -1954,8 +1929,6 @@ const LESSONS=[
        ['Watch something to keep your mind busy','Screen time keeps you close to the trigger. Moving your body works on the craving itself.'],
        ['Get up and do ten squats or walk a lap','Yes. A short burst of movement eases the craving and gets you off the couch. Then decide.']]}
   ],
-  act:{h:'Choose your move.',p:'Add one movement to your calm-move list, or let Daybook pick one for you right now.',mins:1,
-   go:[{t:'Add “A brisk two-minute walk”',a:'addmove',text:'A brisk two-minute walk, or 20 squats',ic:'plus'},{t:'Surprise me',a:'scene',v:'surprise',ic:'dice'},{t:'Write my own move',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'You have a move ready.'},
   rc:{q:'You are home alone and an urge is building. You do not feel like doing anything. What helps most?',
    c:['Wait until you feel like moving','A few minutes of brisk walking or stretching','Lie on the bed and scroll','Tell yourself moving is pointless'],a:1,
    r:'Move first, then decide.',
@@ -1993,8 +1966,6 @@ const LESSONS=[
        ['Push it out of your mind and think of something else','Pushing thoughts away tends to bring them back. Let it be there, and choose anyway.'],
        ['Accept that it is true, just this once','The thought sounds reasonable, which is why it works. It is a thought, not an order.']]}
   ],
-  act:{h:'Practice on one thought.',p:'Next time a thought like that shows up, put “I am having the thought that” in front of it. Then do something small and kind for yourself.',mins:1,
-   go:[{t:'Read my reasons',a:'sheet',v:'reasons',ic:'star'}],ok:'You have a way to answer it.'},
   rc:{q:'You hear the thought, “You have had a hard week. You deserve it.” What do you do with it?',
    c:['Agree, since the week really was hard','Notice it as a thought, and choose your next move','Feel ashamed for thinking it','Argue with it until it stops'],a:1,
    r:'A thought is not an order.',
@@ -2034,8 +2005,6 @@ const LESSONS=[
        ['Taking the laptop to bed “to finish something”','Yes. It looks harmless, which is what makes it an early link. Swap it, and the last link may never form.'],
        ['The urge reaching its peak','By the peak, the chain is almost complete. The easier move is hours earlier.']]}
   ],
-  act:{h:'Trace one chain.',p:'Think of your last hard night or slip. Go backward: what happened right before? An hour before? That morning? Write the earliest small yes, and one swap for it.',note:true,btn:'Save it',mins:3,
-   go:[{t:'Open my urge plan',a:'sheet',v:'urge',ic:'shield'},{t:'Do a HALT check',a:'scene',v:'halt',ic:'dots'}],ok:'You found an earlier link.'},
   rc:{q:'Your last two slips started with staying up “just a bit longer” on your phone. What is the best change?',
    c:['Try harder not to give in late at night','A fixed lights-out time, with the phone in another room','Stay away from porn sites more carefully','Feel bad enough that you remember next time'],a:1,
    r:'Catch the early link.',
@@ -2074,8 +2043,6 @@ const LESSONS=[
        ['Tell yourself you deserve nothing','Harsh is not the answer either. You do deserve rest and fun. Pick a kind that does not cost you tomorrow.'],
        ['Wait to see if the thought gets stronger','Waiting lets it keep working. Name it now, while it is still quiet.']]}
   ],
-  act:{h:'Write your reply.',p:'Pick the permission thought you hear most. Write the one-line reply you want ready for it. Your reasons are good material.',note:true,btn:'Save it',mins:2,
-   go:[{t:'Read my reasons',a:'sheet',v:'reasons',ic:'star'}],ok:'Your reply is ready.'},
   rc:{q:'You think, “It is not really hurting anyone, so tonight is fine.” What is going on?',
    c:['That is a fair point to weigh','A permission thought, making the next step feel okay','A sign you have lost control','Proof that your reasons are wrong'],a:1,
    r:'Permission thoughts sound reasonable on purpose.',
@@ -2113,8 +2080,6 @@ const LESSONS=[
        ['Promise to be stronger next Sunday','A promise does not change the setup. Use the pattern to plan for that hour.'],
        ['Plan something for Sunday nights before 11','Yes. The log showed you where to aim. Now your plan goes exactly there.']]}
   ],
-  act:{h:'Look back once.',p:'Open this week’s review, or scroll through your days. Look for one pattern.',mins:2,
-   go:[{t:'Open this week’s review',a:'week',ic:'calendar'},{t:'See my days',a:'tab',v:'days',ic:'calendar'}],ok:'You found a pattern.'},
   rc:{q:'You have logged for a month but never looked back. What would help most?',
    c:['Keep logging, and skip looking back','Five minutes a week asking what it shows','Delete the log and start fresh','Log only your good days from now on'],a:1,
    r:'Write it down, then look back.',
@@ -2152,8 +2117,6 @@ const LESSONS=[
        ['Change the setup so the fight never starts','Yes. Phone out of the bedroom, a plan for late hours. Each fight you skip needs no willpower.'],
        ['Fight it, but give in every other night','That keeps the fight in your nights. Remove the fight instead.']]}
   ],
-  act:{h:'Remove one fight tonight.',p:'Pick one fight from the list and change one thing before bed.',mins:2,
-   go:[{t:'Phone and night setup',a:'help',v:'phone',sub:'night',ic:'phone'},{t:'Set my screens-off time',a:'tab',v:'settings',open:'s-sched',ic:'moon'}],ok:'One fight is gone.'},
   rc:{q:'Every night you have to talk yourself out of opening certain apps. What is the smarter move?',
    c:['Keep resisting. It builds willpower','Log out of the apps or add a filter','Allow yourself one app a night','Count how many nights you resist'],a:1,
    r:'Fewer fights, not more willpower.',
@@ -2191,8 +2154,6 @@ const LESSONS=[
        ['Make a big new plan to make up for it','A big plan after a miss is often guilt in disguise. Go small and ordinary.'],
        ['Wait for Monday to restart properly','Waiting for a clean start is how one miss becomes a week. Today works fine.']]}
   ],
-  act:{h:'Plan your return.',p:'A phone alarm is a simple way to prompt yourself. Settings lists the three that fit the day.',mins:2,
-   go:[{t:'See the reminders',a:'tab',v:'settings',open:'s-remind',ic:'calendar'}],ok:'Your return is planned.'},
   rc:{q:'You have missed your morning check-in two days in a row. What is the best next step?',
    c:['Give up on check-ins. They are not for you','Do a one-tap check-in today','Wait until things calm down','Do three check-ins at once to catch up'],a:1,
    r:'Come back the next day, in the smallest way.',
@@ -2230,8 +2191,6 @@ const LESSONS=[
        ['Push the guilt down and ignore it','The guilt is pointing at something you care about. Look at it instead of burying it.'],
        ['Look at the values clash, with someone calm','Yes. When the clash is the heaviest part, it deserves care: a calm talk with a faith leader or a therapist.']]}
   ],
-  act:{h:'Put it in words.',p:'Write what bothers you most, in one sentence. If it helps, bring it to a therapist or a person you trust.',note:true,btn:'Save it',mins:2,
-   go:[{t:'Read my reasons',a:'sheet',v:'reasons',ic:'star'},{t:'Therapy on a small budget',a:'help',v:'therapy',sub:'start',ic:'heart'}],ok:'You put it in words.'},
   rc:{q:'A friend says, “I cannot stop, and it also goes against everything I believe.” What would you tell them?',
    c:['Only the control part is real','Only the values part is real','Both are real, and each needs its own help','It all goes away if they just stop'],a:2,
    r:'Control and values are different problems, and both are real.',
@@ -2270,8 +2229,6 @@ const LESSONS=[
        ['Put a walk on Sunday at 2, and do it','Yes. A real activity, at a set time, small enough to start. Act first, feel better after.'],
        ['Use willpower to sit through the empty hours','More willpower in the same empty room is not the fix. Fill the hour.']]}
   ],
-  act:{h:'Fill one hour.',p:'Pick the hour from your log. Put one activity in it. Add it to your calm-move list, and set a phone alarm if that helps.',mins:2,
-   go:[{t:'Add “One planned thing in my hardest hour”',a:'addmove',text:'In my hardest hour: one planned thing (a walk, a call, or a project)',ic:'plus'},{t:'See my days',a:'tab',v:'days',ic:'calendar'},{t:'Write my own',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'Your hard hour has a plan.'},
   rc:{q:'You get home tired, and evenings are when urges hit. You do not feel like doing anything. What helps most?',
    c:['Rest on the couch until you feel better','Plan one small activity for 7 PM, and do it','Wait to see if the urge shows up','Promise yourself a busy weekend instead'],a:1,
    r:'Act first, then feel better.',
@@ -2316,8 +2273,6 @@ const LESSONS=[
        ['Keep going for years without saying anything','Saying something is part of it. How you will know you are making progress is a fair question.'],
        ['Only try again once it gets really bad','You do not need a crisis. If it costs you time, sleep, or peace of mind, it counts now.']]}
   ],
-  act:{h:'Take one step.',p:'Look at the page on starting with a small budget, or find the words for a first message.',mins:2,
-   go:[{t:'Therapy on a small budget',a:'help',v:'therapy',sub:'start',ic:'heart'},{t:'What to say',a:'help',v:'say',ic:'chat'}],ok:'You took a step toward help.'},
   rc:{q:'A friend says, “Therapy is just talking. It cannot help with porn.” What is closer to the truth?',
    c:['They are right. Only willpower works','Therapy teaches skills, and it appears to help','It only helps if you have a diagnosis','It helps, but only after years of sessions'],a:1,
    r:'Treatment appears to help, and skills-based therapy had the strongest support.',
@@ -2362,8 +2317,6 @@ const LESSONS=[
        ['Join and work all 12 steps this month','Rushing is not the point, and some steps, like making amends, need care. Start with one idea.'],
        ['Wait until you believe every part of it','You do not need to agree with all of it first. Many people start by listening.']]}
   ],
-  act:{h:'Take what helps.',p:'You do not have to join anything to use the ideas. Honesty, telling a safe person, a daily check-in, and making things right with care are already part of Daybook. If you want to try a meeting, the first time you can just listen.',mins:2,
-   go:[{t:'Look at free groups',a:'help',v:'groups',ic:'dots'},{t:'Read my reasons',a:'sheet',v:'reasons',ic:'star'}],ok:'You took what helps.'},
   rc:{q:'A friend says, “The 12 steps are just for alcoholics, so they cannot help me.” What is closer to the truth?',
    c:['That is right. They only fit alcohol','Their core, honesty, people, and action, fits other habits too','They only work if you are religious','They only work if you do all 12 at once'],a:1,
    r:'Honesty, help from other people, and action.',
@@ -2403,8 +2356,6 @@ const LESSONS=[
        ['Try a SMART meeting, or borrow its tools','Yes. SMART is skills-based, with no religious content, and its tools work without a meeting.'],
        ['Wait until you find the perfect program','No program is best for everyone. Try two or three and see what fits.']]}
   ],
-  act:{h:'Borrow one tool.',p:'You do not need a meeting to use these. Add a DENTS-style move to your calm moves, or read your reasons as a cost-benefit list.',mins:2,
-   go:[{t:'Add “Escape: step outside”',a:'addmove',text:'Escape: step outside for five minutes',ic:'plus'},{t:'Add “Swap: one small task”',a:'addmove',text:'Swap: do one small task I have been putting off',ic:'plus'},{t:'Look at free groups',a:'help',v:'groups',ic:'dots'}],ok:'You borrowed a tool.'},
   rc:{q:'An urge hits on a break at work. Using SMART’s DENTS tool, what could you do?',
    c:['Escape: step outside for five minutes','Promise to deal with it tonight','Scroll until it fades','Tell yourself you are powerless'],a:0,
    r:'DENTS: deny or delay, escape, neutralize, tasks, swap.',
@@ -2444,8 +2395,6 @@ const LESSONS=[
        ['Promise to try the pause tomorrow','Now is the moment. One minute is enough.'],
        ['Stop, notice, breathe, then choose','Yes. You caught autopilot and gave yourself a choice. That is the whole skill.']]}
   ],
-  act:{h:'Try it once.',p:'Do the five steps once, right now: Stop. Observe. Breathe. Expand. Respond. Then decide where in your day it could go.',mins:2,
-   go:[{t:'Practice breathing',a:'scene',v:'breathe',ic:'wind'},{t:'See the 10-minute pause',a:'scene',v:'pause',ic:'timer'}],ok:'You have run the pause once.'},
   rc:{q:'Right after a stressful call, you feel the pull. You have one minute. What is the best use of it?',
    c:['Stop, observe, breathe, expand, respond','Distract yourself for an hour','Fight the urge until it dies','Act fast before you think about it'],a:0,
    r:'A short pause: stop, observe, breathe, expand, respond.',
@@ -2484,8 +2433,6 @@ const LESSONS=[
        ['Skip groups, since they are not for people like you','Groups differ a lot. Try two or three before deciding.'],
        ['Commit to a meeting every day right away','That is a big jump. Start with one meeting and see how it feels.']]}
   ],
-  act:{h:'One small step toward people.',p:'Pick the smallest one. Reading a page counts.',mins:2,
-   go:[{t:'Look at free groups',a:'help',v:'groups',ic:'dots'},{t:'Copy: ask someone to check in',a:'copy',text:SCRIPTS[9][1],ic:'copy'},{t:'Reach a person',a:'scene',v:'message',ic:'chat'}],ok:'That is a real step toward people.'},
   rc:{q:'You have been doing this alone for months. A friend in recovery offers to check in weekly. What is a good move?',
    c:['Say no. You should handle it yourself','Say yes, and tell them the truth when they ask','Say yes, but tell them everything is fine','Wait until you have quit to accept'],a:1,
    r:'Who you spend time with helps you change.',
@@ -2531,8 +2478,6 @@ const LESSONS=[
        ['Keep praying until the urge is gone','Prayer matters, but the steps pair it with action. Say your words, then move.'],
        ['Keep it to yourself so no one knows','Faith in the steps comes with people. Telling one safe person can help carry it.']]}
   ],
-  act:{h:'Add God to your plan.',p:'Open your urge plan. Pick your hardest line and add a short prayer to the “then,” followed by one move.',mins:2,
-   go:[{t:'Add “Pray, then move” to my words',a:'addword',text:'When it is hard: pray in my own words, then do the next thing in my plan.',ic:'plus'},{t:'Open my urge plan',a:'sheet',v:'urge',ic:'shield'},{t:'Write my own words',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'God has a place in your plan.'},
   rc:{q:'It is late, you have said a prayer, and you are still holding your phone in bed. What is the next step?',
    c:['Wait for the urge to be taken away','Get up and put the phone in another room','Pray harder, louder, and longer','Scroll until you feel sleepy'],a:1,
    r:'Pray, then do the next small thing.',
@@ -2572,8 +2517,6 @@ const LESSONS=[
        ['Decide the pause does not work for you','One hard moment is not a verdict. The pause is practice, and it gets easier.'],
        ['Say the prayer again and again until it lifts','Your words matter, but they work best followed by a move.']]}
   ],
-  act:{h:'Make it yours.',p:'Add a prayer in your own words to the words that steady you with one tap, or write your own. Then put the pause on your calm moves, so it shows up when you need it.',b:[['words']],mins:2,
-   go:[{t:'Add a prayer in my own words',a:'addword',text:'Stop and pray in my own words. Ask for strength for this moment.',ic:'plus'},{t:'Add the pause to my calm moves',a:'addmove',text:'Stop. Breathe out slowly. Say my words. Then stand up and move.',ic:'plus'},{t:'Add a quiet minute to my wind-down',a:'addwind',text:'A few quiet minutes or a prayer, phone in another room',ic:'moon'},{t:'Write my own words',a:'tab',v:'plan',open:'lists',ic:'pencil'}],ok:'Your pause is ready.'},
   rc:{q:'The pull hits hard while you are at your desk. What does the four-move pause look like?',
    c:['Stop, breathe out, say your words, then move','Pray, then stay where you are','Scroll first, then pray later','Wait for the feeling to pass on its own'],a:0,
    r:'Stop, breathe out, say your words, then move.',
@@ -2617,8 +2560,6 @@ const LESSONS=[
        ['Keep it secret and try harder alone','Carrying it alone weighs on you every time it comes to mind. One safe person can help.'],
        ['Tell God what you did, then tell one safe person','Yes. That is guilt doing its job: honest, out in the open, and pointed toward change.']]}
   ],
-  act:{h:'Write one honest line.',p:'Write one honest line about what you are carrying. If it stirs up something heavy, stop and talk to a person.',note:true,btn:'Save it',mins:2,
-   go:[{t:'Copy: ask a faith leader or mentor to meet',a:'copy',text:SCRIPTS[7][1],ic:'copy'},{t:'Copy: the first sentence to say',a:'copy',text:SCRIPTS[8][1],ic:'copy'},{t:'Therapy on a small budget',a:'help',v:'therapy',sub:'start',ic:'heart'}],ok:'You wrote it honestly.'},
   rc:{q:'A friend from church confides, “I feel like God is done with me.” What would help them most?',
    c:['Agree it is serious and they should feel ashamed','Help them name what they did, and find one safe person','Tell them to keep it quiet','Tell them to stop thinking about it'],a:1,
    r:'Guilt can point toward change. Shame says to hide.',
@@ -2657,8 +2598,6 @@ const LESSONS=[
        ['Log it, do one small thing, and move on','Yes. Forgiveness frees your energy for the next right step.'],
        ['Confess to everyone you know right away','Honesty matters, but amends need care. Plan it with a counselor, sponsor, or faith leader.']]}
   ],
-  act:{h:'Start again in one small way.',p:'Write what you want to say to God, and to yourself. Or take one small step below.',note:true,btn:'Save it',mins:2,
-   go:[{t:'Open my slip plan',a:'sheet',v:'slip',ic:'shield'},{t:'Reach a person',a:'scene',v:'message',ic:'chat'}],ok:'You started again.'},
   rc:{q:'After a slip, a friend says, “If I forgive myself, I am just excusing it.” What is closer to the truth?',
    c:['They are right. Forgiving is excusing','Forgiving frees energy for the next right step','Forgiving means forgetting it happened','They should wait to forgive until they are perfect'],a:1,
    r:'Forgiving is not excusing. It frees your energy for the next right step.',

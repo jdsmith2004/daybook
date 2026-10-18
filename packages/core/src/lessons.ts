@@ -1,7 +1,8 @@
-/* Lessons: the order they are offered in, which are done, the cards of a Quick or Full read, the recall question, the practice
-   step, and the checkpoints. The legacy helpers read the global Store; here the log and the settings are passed in. The lesson
-   content itself (LESSONS, LUNITS, SRC, LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts. */
-import { diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, FAITH_MODES, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
+/* Lessons: the one order they are offered in (a section at a time), which are done, the cards of a Quick or Full read, the
+   recall question, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
+   read the global Store; here the log and the settings are passed in. The lesson content itself (LESSONS, LUNITS, SRC,
+   LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
+import { diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
@@ -52,25 +53,13 @@ export interface Card {
 }
 export interface Go {
   t: string;
-  a: 'sheet' | 'scene' | 'tab' | 'copy' | 'help' | 'growth' | 'week' | 'addmove' | 'addwind' | 'addword' | 'reasons' | 'talk';
+  a: 'scene' | 'tab' | 'help' | 'growth' | 'week' | 'talk';
   v?: string;
   sub?: string;
   open?: string;
   ic?: string;
   text?: string;
   o?: Record<string, unknown>;
-}
-export interface Practice {
-  h?: string;
-  p?: string;
-  b?: Block[];
-  mins?: number;
-  go?: Go[];
-  ok?: string;
-  note?: boolean;
-  btn?: string;
-  ic?: string;
-  shield?: boolean;
 }
 export interface Lesson {
   id: string;
@@ -84,7 +73,6 @@ export interface Lesson {
   key: string;
   np: string;
   cards: Card[];
-  act?: Practice;
   rc?: { q: string; c: string[]; a: number; r: string; cr?: string[] };
   scope?: string;
   /** [name: topic, url, who?, topic?] */
@@ -115,14 +103,10 @@ export function lessonsDone(days: Days): Set<string> {
   return set;
 }
 
-export type FaithMode = 'mix' | 'first' | 'after';
-export const faithOf = (st: Settings | null): FaithMode => {
-  const m = st && st.learn && st.learn.faith;
-  return (FAITH_MODES as string[]).indexOf(m as string) >= 0 ? (m as FaithMode) : 'after';
-};
 /* ---------- families: one hard idea, taught four ways ---------- */
-/** each hard idea is taught by a few lessons from different directions (the science, a scene, a practice, your own log), spread
-    along the path with growing gaps, so the idea comes back just as it starts to fade */
+/** each hard idea is taught by a few lessons from different directions (the science, a scene, a practice, your own log). The
+    newer two are each a section of the path; the first two come back across sections, and each lesson's recall question
+    brings the one before it back */
 export interface LessonFamily {
   id: string;
   name: string;
@@ -140,71 +124,40 @@ export function lessonFamily(L: Lesson): { f: LessonFamily; n: number; of: numbe
   return f ? { f, n: f.ids.indexOf(L.id) + 1, of: f.ids.length } : null;
 }
 
-/** the daily order of the lessons that are not faith lessons: number order, with lessons 33 to 40 placed so each of their
-    families comes back after a longer gap each time (after 7, 8 and 11 lessons; and after 7, 10 and 11) */
-export const LESSON_ORDER = [
-  'l1',
-  'l2',
-  'l33',
-  'l3',
-  'l4',
-  'l37',
-  'l5',
-  'l6',
-  'l41',
-  'l7',
-  'l34',
-  'l8',
-  'l9',
-  'l38',
-  'l10',
-  'l11',
-  'l12',
-  'l13',
-  'l35',
-  'l14',
-  'l15',
-  'l16',
-  'l17',
-  'l39',
-  'l18',
-  'l19',
-  'l20',
-  'l21',
-  'l22',
-  'l36',
-  'l23',
-  'l24',
-  'l25',
-  'l26',
-  'l40',
-  'l27',
-  'l28',
-];
-/** the order lessons are offered in: LESSON_ORDER, with the faith lessons last, first, or after every two others */
-export function lessonPath(mode: FaithMode): Lesson[] {
-  const listed = LESSON_ORDER.map((id) => lessonById(id)).filter((L): L is Lesson => !!L && !L.f);
-  const base = listed.concat(LESSONS.filter((L) => !L.f && listed.indexOf(L) < 0));
-  const faith = LESSONS.filter((L) => L.f);
-  if (!faith.length) return LESSONS.slice();
-  if (mode === 'first') return faith.concat(base);
-  if (mode === 'after') return base.concat(faith);
-  const out: Lesson[] = [];
-  let j = 0;
-  base.forEach((L, i) => {
-    out.push(L);
-    if ((i + 1) % 2 === 0 && j < faith.length) out.push(faith[j++]);
+/** the one order the lessons are offered in, the same for everyone: a section at a time (each has its own color), so the
+    numbers never jump. Why it is hard to stop comes right after How it works; faith is its own section, after Making a
+    plan, since its first lesson adds a prayer to the urge plan. Inside a section, lessons keep their order in LESSONS. */
+export const UNIT_ORDER = [0, 8, 1, 2, 7, 3, 4, 9, 5, 6];
+let PATH: Lesson[] | null = null;
+export function lessonPath(): Lesson[] {
+  if (!PATH || PATH.length !== LESSONS.length) {
+    const at = (L: Lesson) => {
+      const k = UNIT_ORDER.indexOf(L.u);
+      return k < 0 ? UNIT_ORDER.length : k;
+    };
+    PATH = LESSONS.map((L, i) => ({ L, i }))
+      .sort((a, b) => at(a.L) - at(b.L) || a.i - b.i)
+      .map((x) => x.L);
+  }
+  return PATH;
+}
+/** the path in its sections: each unit, with its lessons in order */
+export function lessonSections(): { u: number; lessons: Lesson[] }[] {
+  const out: { u: number; lessons: Lesson[] }[] = [];
+  lessonPath().forEach((L) => {
+    const last = out[out.length - 1];
+    if (last && last.u === L.u) last.lessons.push(L);
+    else out.push({ u: L.u, lessons: [L] });
   });
-  while (j < faith.length) out.push(faith[j++]);
   return out;
 }
-/** the number a person sees for a lesson: its place on their path (so Up next after lesson 2 is lesson 3). lessonIndex
+/** the number a person sees for a lesson: its place on the path (so Up next after lesson 2 is lesson 3). lessonIndex
     stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
-export const lessonNo = (L: Lesson, mode: FaithMode) => lessonPath(mode).indexOf(L) + 1;
-export const firstUndone = (done: Set<string>, mode: FaithMode) => lessonPath(mode).find((l) => !done.has(l.id)) || null;
+export const lessonNo = (L: Lesson) => lessonPath().indexOf(L) + 1;
+export const firstUndone = (done: Set<string>) => lessonPath().find((l) => !done.has(l.id)) || null;
 /** the next unfinished lesson after this one, wrapping around */
-export function nextAfter(L: Lesson, done: Set<string>, mode: FaithMode): Lesson | null {
-  const path = lessonPath(mode);
+export function nextAfter(L: Lesson, done: Set<string>): Lesson | null {
+  const path = lessonPath();
   const i = path.indexOf(L);
   const rest = path.slice(i + 1).concat(path.slice(0, Math.max(0, i)));
   return rest.find((x) => x !== L && !done.has(x.id)) || null;
@@ -234,6 +187,38 @@ export function lessonStats(days: Days) {
     });
   return { first, last, again, seq };
 }
+/** the lessons in the order they were first finished (by day, then in order within the day), each with its day */
+export function lessonsInOrder(days: Days): { L: Lesson; k: DayKey }[] {
+  const out: { L: Lesson; k: DayKey }[] = [];
+  const seen = new Set<string>();
+  Object.keys(days)
+    .sort()
+    .forEach((k) => {
+      const p = days[k] && days[k].p;
+      ((p && p.ls) || []).forEach((id) => {
+        const L = lessonById(id);
+        if (!L || seen.has(id)) return;
+        seen.add(id);
+        out.push({ L, k });
+      });
+    });
+  return out;
+}
+/** Learn as one timeline: what is finished, in the order it was finished; the lesson up next; and what is still to come,
+    a section at a time, each with how many of its lessons are done */
+export function lessonTimeline(days: Days) {
+  const done = lessonsDone(days);
+  const next = firstUndone(done);
+  const coming = lessonSections()
+    .map((x) => ({
+      u: x.u,
+      n: x.lessons.length,
+      done: x.lessons.filter((L) => done.has(L.id)).length,
+      left: x.lessons.filter((L) => !done.has(L.id) && L !== next),
+    }))
+    .filter((x) => x.left.length);
+  return { past: lessonsInOrder(days), next, coming };
+}
 /** once every lesson is finished, the day's lesson is a quick re-read, one a day in turn */
 export const reviewPick = (tk: DayKey) => LESSONS[Math.abs(diffDays(tk, '2026-01-01')) % LESSONS.length];
 
@@ -246,14 +231,9 @@ export const lessonCards = (L: Lesson, len: 'q' | 'f' | null) => {
   const all = lessonCore(L);
   return len === 'q' && lessonHasQuick(L) ? all.filter((c) => c.q === 1) : all;
 };
-export function lessonPractice(L: Lesson): Practice | null {
-  if (L.act) return L.act;
-  const t = L.cards.find((c) => c.k === 'try');
-  return t ? { h: t.h, b: t.b, go: t.go || [] } : null;
-}
 /** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new */
-export function lessonRecallOf(L: Lesson, done: Set<string>, mode: FaithMode = 'after'): Lesson | null {
-  const path = lessonPath(mode);
+export function lessonRecallOf(L: Lesson, done: Set<string>): Lesson | null {
+  const path = lessonPath();
   const i = path.indexOf(L);
   const P = i > 0 ? path[i - 1] : null;
   return P && P.rc && done.has(P.id) && !done.has(L.id) ? P : null;
@@ -357,35 +337,6 @@ export function lessonLog(days: Days, st: Settings) {
   const bw = busiestWindow(evs, st.rollover);
   return { few: false as const, n: evs.length, rode, tt, bw };
 }
-/** the "Your plan right now" peek on the practice step */
-export function lxPeek(kind: string, st: Settings | null): { title: string; rows: string[]; more: number } | null {
-  let title = '';
-  let s: string[] = [];
-  if (kind === 'slip') {
-    s = slipSteps(st)
-      .map((x) => String(x).trim())
-      .filter(Boolean);
-    title = 'Your plan right now';
-  } else if (kind === 'urge') {
-    s = planRows(st).map((r) => 'If ' + r.when.trim());
-    title = 'Your urge plan right now';
-  } else if (kind === 'reasons') {
-    s = (st && st.reasons) || [];
-    title = 'Your reasons right now';
-  }
-  if (!s.length) return null;
-  return { title, rows: s.slice(0, 2), more: Math.max(0, s.length - 2) };
-}
-/** which editor a practice action opens over the lesson */
-export const lxSheetOf = (g: Go): 'reasons' | 'slip' | 'urge' | null =>
-  g.a === 'sheet'
-    ? (g.v as 'reasons' | 'slip' | 'urge')
-    : g.a === 'help' && g.v === 'plan' && (g.sub === 'slip' || g.sub === 'urge')
-      ? g.sub
-      : g.a === 'reasons'
-        ? 'reasons'
-        : null;
-
 /** the note on the Behind this sheet */
 export function srcNote(L: Lesson): string {
   return (
@@ -451,7 +402,7 @@ export const setLearn = (st: Settings, fn: (l: Settings['learn']) => void, now =
 export function lessonStop(days: Days, st: Settings, tk: DayKey) {
   const done = lessonsDone(days);
   const p = days[tk]?.p;
-  const nl = firstUndone(done, faithOf(st));
+  const nl = firstUndone(done);
   const readIds = [...((p && p.ls) || []), ...((p && p.lv) || [])];
   const readL =
     readIds
@@ -459,7 +410,7 @@ export function lessonStop(days: Days, st: Settings, tk: DayKey) {
       .filter((x): x is Lesson => !!x)
       .pop() || null;
   if (readL) return { kind: 'read' as const, L: readL, next: nl && nl.id !== readL.id ? nl : null };
-  if (nl) return { kind: 'next' as const, L: nl, n: lessonNo(nl, faithOf(st)), total: LESSONS.length };
+  if (nl) return { kind: 'next' as const, L: nl, n: lessonNo(nl), total: LESSONS.length };
   const R = reviewPick(tk);
   return { kind: 'review' as const, L: R, note: (st.learn && st.learn.notes && st.learn.notes[R.id]) || '' };
 }
@@ -470,11 +421,6 @@ export const LF_FILTERS: ['all' | 'todo' | 'done' | 'notes', string][] = [
   ['todo', 'To do'],
   ['done', 'Done'],
   ['notes', 'Notes'],
-];
-export const LF_ORDER: [FaithMode, string][] = [
-  ['mix', 'Mixed in'],
-  ['first', 'First'],
-  ['after', 'Last'],
 ];
 /** a date in a lesson list: the year only when it is not this year */
 export const lfDate = (k: DayKey, tk: DayKey) =>
@@ -488,7 +434,7 @@ export const lfClip = (s: string, n: number) => {
 /** one lesson in a list (legacy lessonRow): its status, the line under it, and for a finished one in Done or Notes, what was kept */
 export function lessonRow(L: Lesson, done: Set<string>, nextId: string | null, st: Settings, stats: ReturnType<typeof lessonStats>, tk: DayKey, full: boolean) {
   const d = done.has(L.id);
-  const n = lessonNo(L, faithOf(st));
+  const n = lessonNo(L);
   const notes = (st.learn && st.learn.notes) || {};
   const note = notes[L.id] ? String(notes[L.id]).trim() : '';
   const fin = stats.first[L.id];
@@ -522,7 +468,7 @@ export function lessonFilter(days: Days, st: Settings, f: 'todo' | 'done' | 'not
   const recent = (a: Lesson, b: Lesson) => (stats.seq[b.id] || 0) - (stats.seq[a.id] || 0);
   if (f === 'todo')
     return {
-      list: lessonPath(faithOf(st)).filter((L) => !done.has(L.id)),
+      list: lessonPath().filter((L) => !done.has(L.id)),
       title: 'To do',
       sub: 'in your daily order',
       empty: 'You have finished every lesson. Open Done to read any of them again.',
@@ -549,13 +495,3 @@ export function lastRead(days: Days) {
     .sort((a, b) => stats.seq[b] - stats.seq[a])[0];
   return id ? lessonById(id) : null;
 }
-/** the daily order setting (Learn > Daily order) */
-export const setFaithOrder = (st: Settings, v: FaithMode, now = Date.now()) =>
-  changeSettings(
-    st,
-    (s) => {
-      s.learn.faith = v;
-      s.learn.faithSet = true;
-    },
-    now,
-  );

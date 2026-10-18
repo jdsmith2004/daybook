@@ -5,16 +5,16 @@ import * as core from '../src/index';
 const tk = '2026-10-15';
 const st0 = (start: string) => core.normSettings({ ...core.defaultSettings(start), day1: core.addDays(start, 7) });
 
-it('without an account, the first lessons in the daily order are open, and finished ones stay open', () => {
-  const free = core.freeLessons('after');
-  expect(free.map((L) => L.id)).toEqual(['l1', 'l2', 'l33']);
-  const l3 = core.lessonById('l3')!;
-  expect(core.lessonOpen(free[0], new Set(), 'after', false)).toBe(true);
-  expect(core.lessonOpen(l3, new Set(), 'after', false)).toBe(false);
-  expect(core.lessonOpen(l3, new Set(['l3']), 'after', false)).toBe(true);
-  expect(core.lessonOpen(l3, new Set(), 'after', true)).toBe(true);
-  expect(core.lessonsLocked(core.LESSONS, new Set(), 'after', false)).toBe(core.LESSONS.length - core.LEARN_FREE);
-  expect(core.lessonsLocked(core.LESSONS, new Set(), 'after', true)).toBe(0);
+it('without an account, the first lessons on the path are open, and finished ones stay open', () => {
+  const free = core.freeLessons();
+  expect(free.map((L) => L.id)).toEqual(['l1', 'l2', 'l3']);
+  const l4 = core.lessonById('l4')!;
+  expect(core.lessonOpen(free[0], new Set(), false)).toBe(true);
+  expect(core.lessonOpen(l4, new Set(), false)).toBe(false);
+  expect(core.lessonOpen(l4, new Set(['l4']), false)).toBe(true);
+  expect(core.lessonOpen(l4, new Set(), true)).toBe(true);
+  expect(core.lessonsLocked(core.LESSONS, new Set(), false)).toBe(core.LESSONS.length - core.LEARN_FREE);
+  expect(core.lessonsLocked(core.LESSONS, new Set(), true)).toBe(0);
 });
 
 it('asks after the first level-up or the first week, and never with an account', () => {

@@ -1,7 +1,7 @@
 /* My plan: my reasons, my slip plan and my urge plan. Each change is a pure function on the settings, with the word to show,
    following the legacy reasonSave, reasonAdd, reasonMove, reasonRemove, lessonReasonSave, slipSave and the data-plan input.
    Checked by test/plan.test.ts. */
-import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
+import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, URGE_PLAN, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
 import { changeSettings, type Change } from './actions';
 import type { Settings } from './types';
 
@@ -93,10 +93,61 @@ export const resetSlip = (st: Settings): Change => ({
 });
 
 /* ---------- the urge plan (if this, then I will) ---------- */
+/** the urge plan holds its five starting lines in their places (setup and Rekindle write to them by place), then the
+    lines a person adds, up to PLAN_MAX in all */
+export const PLAN_MAX = 12;
+export const PLAN_WHEN_LEN = 120;
+export const PLAN_THEN_LEN = 400;
+/** a line with no situation yet (the starting "Something else: ______", or one taken off the plan): not shown, not counted */
+export const planBlank = (r: { when: string; then: string } | null | undefined) => !r || !r.when || !r.when.trim() || r.when.indexOf('______') >= 0;
 export const setPlanRow = (st: Settings, i: number, fld: 'when' | 'then', v: string) =>
   changeSettings(st, (s) => {
     if (s.plan[i]) s.plan[i][fld] = v;
   });
+const planClean = (v: string, n: number) =>
+  String(v || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^(if|then( I will)?)\s+/i, '')
+    .slice(0, n);
+const samePlan = (a: { when: string; then: string }, when: string, then: string) =>
+  a.when.trim().toLowerCase() === when.toLowerCase() && (a.then || '').trim().toLowerCase() === then.toLowerCase();
+/** the place of a line already on the plan with these words, or -1 */
+export const planFind = (st: Settings, when: string, then: string) =>
+  (st.plan || []).findIndex((r) => !planBlank(r) && samePlan(r, planClean(when, PLAN_WHEN_LEN), planClean(then, PLAN_THEN_LEN)));
+/** a new if-then line at the end of the plan; one with the same words is found, not added twice */
+export function planAdd(st: Settings, when: string, then: string): ListResult {
+  const w = planClean(when, PLAN_WHEN_LEN);
+  const t = planClean(then, PLAN_THEN_LEN);
+  if (!w || !t) return { ok: false, toast: w ? 'Write what you will do.' : 'Write when it happens.' };
+  const at = planFind(st, w, t);
+  if (at >= 0) return { ok: false, toast: 'Already on your urge plan.', at };
+  if (st.plan.length >= PLAN_MAX) return { ok: false, toast: `Your urge plan is full (${PLAN_MAX} lines). Remove one to make room.` };
+  return { ok: true, st: changeSettings(st, (s) => void s.plan.push({ when: w, then: t })), toast: 'Added to your urge plan.', at: st.plan.length };
+}
+/** a line taken off the plan. A starting line keeps its place, blank, so the lines after it keep theirs. */
+export function planRemove(st: Settings, i: number): ListResult {
+  if (i < 0 || i >= st.plan.length || planBlank(st.plan[i])) return { ok: false, toast: '' };
+  const keep = i < (URGE_PLAN as unknown[]).length;
+  return {
+    ok: true,
+    st: changeSettings(st, (s) => {
+      if (keep) s.plan[i] = { when: '', then: '' };
+      else s.plan.splice(i, 1);
+    }),
+    toast: 'Removed from your urge plan.',
+    at: i,
+  };
+}
+/** a line changed: both halves at once. An empty half leaves the old words. */
+export function planEdit(st: Settings, i: number, when: string, then: string): Settings {
+  const r = st.plan[i];
+  if (!r) return st;
+  const w = planClean(when, PLAN_WHEN_LEN) || r.when;
+  const t = planClean(then, PLAN_THEN_LEN) || r.then;
+  if (w === r.when && t === r.then) return st;
+  return changeSettings(st, (s) => void (s.plan[i] = { when: w, then: t }));
+}
 
 /* ---------- My plan: why, the safety net, next steps, lists ---------- */
 /** a typed field (goal, why, loop, rule, safePerson, ask, note): saved as typed */
@@ -185,7 +236,7 @@ export function playbookText(
   o.push('');
   const rule = (st.rule || '').trim();
   if (rule) o.push('My rule', rule, '');
-  const plan = (st.plan || []).filter((r) => r.when && r.when.trim() && r.when.indexOf('______') < 0);
+  const plan = (st.plan || []).filter((r) => !planBlank(r));
   if (plan.length) {
     o.push('If this, then that');
     plan.forEach((r) => o.push('If ' + r.when.trim() + ', then ' + ((r.then || '').trim() || '(not filled in yet)')));

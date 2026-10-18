@@ -8,7 +8,6 @@ import {
   BE_LEN,
   cleanPhone,
   computeMetrics,
-  faithOf,
   HELP_STEPS,
   LCHECKS,
   lessonNo,
@@ -16,12 +15,18 @@ import {
   lessonsDone,
   type ListKey,
   lwriteOf,
+  planAdd,
+  planBlank,
+  PLAN_MAX,
+  planRemove,
+  PLAN_THEN_LEN,
+  PLAN_WHEN_LEN,
   playbookText,
   removeOption,
   safeName,
   SAFETY,
   setField,
-  setPlanRow,
+  planEdit,
   slipSteps,
   toggleHelpStep,
   toggleSafety,
@@ -230,86 +235,220 @@ function Why({ place }: { place: Place }) {
   );
 }
 
-/** one line of the urge plan, read as "If … then …"; tap it to change both halves */
-function UrgeRow({ i, when, then }: { i: number; when: string; then: string }) {
+/* starting words for a new if-then line: tap one to fill the box, then change it */
+const WHEN_IDEAS = [
+  'an urge hits',
+  'I am struggling',
+  'I am in bed with my phone',
+  'I feel lonely or low',
+  'I am stressed after a long day',
+  'I am bored at home',
+];
+const THEN_IDEAS = [
+  'Leave the room for ten minutes and get a glass of water.',
+  'Text one person. A short message counts.',
+  'Go for a ten-minute walk.',
+  'Say a short prayer in my own words, then do one thing on my plan.',
+  'Put the phone on its charger in another room.',
+];
+
+/** the words of one line: If … on one line, Then … under it */
+function IfThen({ when, then }: { when: string; then: string }) {
   const c = useTheme();
-  const { apply } = useStore();
-  const [open, setOpen] = useState(false);
-  const blank = !when.trim() || when.indexOf('______') >= 0;
-  const set = (fld: 'when' | 'then') => (v: string) => apply((cur) => ({ st: setPlanRow(cur, i, fld, v) }));
-  if (open)
-    return (
-      <Appear by={4} duration={180} style={[s.urge, { backgroundColor: c.surface2, borderColor: c.accent }]}>
-        <T v="label">If</T>
-        <TextInput
-          value={when}
-          onChangeText={set('when')}
-          maxLength={120}
-          placeholder="Like: I am in bed late at night"
-          placeholderTextColor={c.muted}
-          accessibilityLabel="If"
-          style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line }]}
-        />
-        <T v="label">Then I will</T>
-        <TextInput
-          value={then}
-          onChangeText={set('then')}
-          multiline
-          maxLength={400}
-          autoFocus={!blank}
-          placeholder="One clear thing I will do"
-          placeholderTextColor={c.muted}
-          accessibilityLabel="Then I will"
-          style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line, minHeight: 64 }]}
-        />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setOpen(false)}
-          style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
-          <Icon name="check" size={16} color={c.accentInk} />
-          <T v="label" style={{ color: c.accentInk }}>
-            Done
+  return (
+    <View style={{ flex: 1, gap: 4 }}>
+      <T>
+        <T style={{ fontFamily: font.bodyBold, color: c.accentText }}>If </T>
+        {when}
+      </T>
+      <T>
+        <T style={{ fontFamily: font.bodyBold, color: c.mintText }}>Then </T>
+        {then.trim() ? (
+          then.trim()
+        ) : (
+          <T tone="muted" style={{ fontStyle: 'italic' }}>
+            not filled in yet
           </T>
-        </Pressable>
-      </Appear>
+        )}
+      </T>
+    </View>
+  );
+}
+
+/** the two halves of a line, with ideas to tap; used to change a line and to add one */
+function IfThenForm({
+  when0,
+  then0,
+  save,
+  onSave,
+  onCancel,
+  onRemove,
+}: {
+  when0: string;
+  then0: string;
+  save: string;
+  onSave: (when: string, then: string) => void;
+  onCancel: () => void;
+  onRemove?: () => void;
+}) {
+  const c = useTheme();
+  const [when, setWhen] = useState(when0);
+  const [then, setThen] = useState(then0);
+  const [ask, setAsk] = useState(false);
+  const ok = !!when.trim() && !!then.trim();
+  const input = [s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.line }];
+  /* short ideas as chips, longer ones as rows that wrap */
+  const ideas = (list: string[], cur: string, set: (v: string) => void, rows?: boolean) =>
+    rows ? (
+      <View style={{ gap: 6 }}>
+        {list.map((x) => {
+          const on = cur.trim() === x;
+          return (
+            <Pressable
+              key={x}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              onPress={() => set(x)}
+              style={[s.idea, { backgroundColor: c.surface, borderColor: on ? c.accent : c.line }]}>
+              <Icon name={on ? 'check' : 'plus'} size={15} color={c.accentText} />
+              <T v="small" style={{ flex: 1, color: c.ink }}>
+                {x}
+              </T>
+            </Pressable>
+          );
+        })}
+      </View>
+    ) : (
+      <View style={s.ideas}>
+        {list.map((x) => (
+          <Chip key={x} label={x} on={cur.trim() === x} onPress={() => set(x)} />
+        ))}
+      </View>
     );
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityHint="Opens it to change"
-      onPress={() => setOpen(true)}
-      style={({ pressed }) => [s.urge, { backgroundColor: c.surface2, borderColor: 'transparent', opacity: pressed ? 0.85 : 1 }]}>
-      {blank && !then.trim() ? (
-        <View style={s.line}>
-          <Icon name="plus" size={16} color={c.accentText} />
-          <T tone="accentText" style={{ fontFamily: font.bodySemi, flex: 1 }}>
-            Add my own if-then line
-          </T>
-        </View>
-      ) : (
-        <>
-          <View style={s.line}>
-            <T v="eyebrow" tone="accentText" style={s.tag}>
-              If
+    <Appear by={4} duration={180} style={[s.urge, { backgroundColor: c.surface2, borderColor: c.accent }]}>
+      <T v="label">If</T>
+      <TextInput
+        value={when}
+        onChangeText={setWhen}
+        maxLength={PLAN_WHEN_LEN}
+        autoFocus={!when0}
+        placeholder="When it happens, like: I am in bed late at night"
+        placeholderTextColor={c.muted}
+        accessibilityLabel="If"
+        style={input}
+      />
+      {when0 ? null : ideas(WHEN_IDEAS, when, setWhen)}
+      <T v="label">Then I will</T>
+      <TextInput
+        value={then}
+        onChangeText={setThen}
+        multiline
+        maxLength={PLAN_THEN_LEN}
+        autoFocus={!!when0}
+        placeholder="One clear thing I will do"
+        placeholderTextColor={c.muted}
+        accessibilityLabel="Then I will"
+        style={[input, { minHeight: 64 }]}
+      />
+      {then0 ? null : ideas(THEN_IDEAS, then, setThen, true)}
+      <Button label={save} disabled={!ok} onPress={() => onSave(when, then)} />
+      <Pressable accessibilityRole="button" onPress={onCancel} style={s.remove}>
+        <T v="small" style={{ color: c.accentText, fontFamily: font.bodySemi, textDecorationLine: 'underline' }}>
+          Cancel
+        </T>
+      </Pressable>
+      {onRemove ? (
+        ask ? (
+          <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+            <T v="label">Take this line off your plan?</T>
+            <View style={s.formRow}>
+              <View style={{ flex: 1 }}>
+                <Button kind="danger" label="Yes, remove it" onPress={onRemove} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button kind="ghost" label="Keep it" onPress={() => setAsk(false)} />
+              </View>
+            </View>
+          </View>
+        ) : (
+          <Pressable accessibilityRole="button" onPress={() => setAsk(true)} style={s.remove}>
+            <Icon name="trash" size={16} color={c.danger} />
+            <T v="small" style={{ color: c.danger, fontFamily: font.bodySemi }}>
+              Remove this line
             </T>
-            <T style={{ flex: 1, fontFamily: font.bodySemi }}>{blank ? 'Something else' : when}</T>
+          </Pressable>
+        )
+      ) : null}
+    </Appear>
+  );
+}
+
+/** my urge plan: each line reads as one sentence; tap a line to change it, or add a new one */
+function UrgePlan() {
+  const c = useTheme();
+  const { snap, apply, say } = useStore();
+  const st = snap.settings!;
+  const [open, setOpen] = useState<number | 'new' | null>(null);
+  const rows = st.plan.map((r, i) => ({ ...r, i })).filter((r) => !planBlank(r));
+  const full = st.plan.length >= PLAN_MAX;
+  return (
+    <>
+      {rows.length ? null : <T tone="muted">No lines yet. Add one for your hardest moment.</T>}
+      {rows.map((r) =>
+        open === r.i ? (
+          <IfThenForm
+            key={r.i}
+            when0={r.when}
+            then0={r.then}
+            save="Save"
+            onCancel={() => setOpen(null)}
+            onSave={(w, t) => {
+              apply((cur) => ({ st: planEdit(cur, r.i, w, t) }));
+              setOpen(null);
+              say('Saved.');
+            }}
+            onRemove={() => {
+              const x = planRemove(st, r.i);
+              if (x.ok) apply({ st: x.st });
+              setOpen(null);
+              say('Removed from your urge plan.');
+            }}
+          />
+        ) : (
+          <Pressable
+            key={r.i}
+            accessibilityRole="button"
+            accessibilityHint="Opens it to change"
+            onPress={() => setOpen(r.i)}
+            style={({ pressed }) => [s.urge, s.line, { backgroundColor: c.surface2, borderColor: 'transparent', opacity: pressed ? 0.85 : 1 }]}>
+            <IfThen when={r.when} then={r.then} />
             <Icon name="pencil" size={16} color={c.muted} />
-          </View>
-          <View style={s.line}>
-            <T v="eyebrow" tone="mintText" style={s.tag}>
-              Then
-            </T>
-            {then.trim() ? (
-              <T style={{ flex: 1 }}>{then}</T>
-            ) : (
-              <T tone="muted" style={{ flex: 1 }}>
-                Not filled in yet
-              </T>
-            )}
-          </View>
-        </>
+          </Pressable>
+        ),
       )}
-    </Pressable>
+      {open === 'new' ? (
+        <IfThenForm
+          when0=""
+          then0=""
+          save="Add to my plan"
+          onCancel={() => setOpen(null)}
+          onSave={(w, t) => {
+            const r = planAdd(st, w, t);
+            say(r.toast);
+            if (!r.ok) return;
+            apply({ st: r.st });
+            setOpen(null);
+          }}
+        />
+      ) : full ? (
+        <T v="small" tone="muted">
+          That is the most lines ({PLAN_MAX}). Fewer, clearer lines are easier to follow on a hard night.
+        </T>
+      ) : (
+        <Button kind="ghost" icon="plus" label="Add an if-then line" onPress={() => setOpen('new')} />
+      )}
+    </>
   );
 }
 
@@ -325,11 +464,9 @@ function Plans({ place }: { place: Place }) {
     <>
       <Sec icon="shield" title="When an urge hits" onLayout={place('urge')}>
         <T v="small" tone="muted">
-          Tap SOS when an urge hits. This plan is one of the tools it offers. Tap a line to change it.
+          Decided now, while it is calm, so a hard moment only has to follow it. Tap a line to change it. Lessons add lines here too.
         </T>
-        {st.plan.map((r, i) => (
-          <UrgeRow key={i} i={i} when={r.when} then={r.then} />
-        ))}
+        <UrgePlan />
       </Sec>
       <RelLesson id="l9" />
       <Sec icon="heart" tone="coral" title="If I slip" aside={`${slip.length} steps`} onLayout={place('slip')}>
@@ -505,7 +642,7 @@ function Learned() {
           mine.map((L) => (
             <View key={L.id} style={[s.takeaway, { borderColor: c.line }]}>
               <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-                Lesson {lessonNo(L, faithOf(st))} · {L.title}
+                Lesson {lessonNo(L)} · {L.title}
               </T>
               <T>{L.key}</T>
               {picks[L.id] ? <Note label="What I picked" text={picks[L.id]} /> : null}
@@ -544,9 +681,12 @@ const s = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   rule: { height: 1, marginVertical: 2 },
   urge: { borderRadius: 16, borderWidth: 2, padding: 12, gap: 8 },
-  tag: { width: 40, paddingTop: 3 },
   in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
-  done: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 16, borderRadius: 999 },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  idea: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 12, borderWidth: 1.5 },
+  formRow: { flexDirection: 'row', gap: 8 },
+  confirm: { gap: 8, padding: 12, borderRadius: 14 },
+  remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 40 },
   num: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   why: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
   opt: { flexDirection: 'row', alignItems: 'center', gap: 8 },

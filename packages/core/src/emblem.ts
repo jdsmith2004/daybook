@@ -3,14 +3,15 @@
    comes from the component instead of an inline style. */
 import { Em } from './legacy/core.js';
 
-/** the flame for a level on the 60-level ladder. locked: a form not reached yet, drawn faded */
-export function emblemXml(level: number, locked = false): string {
-  return Em.emblem(level, { still: true, locked })
+/** the flame for a level on the 60-level ladder. locked: a form not reached yet, drawn faded. classes: keep the legacy
+    classes that name each part (em-fig is the figure, sn-glow its glow), for emblemLayers. */
+export function emblemXml(level: number, locked = false, classes = false): string {
+  const x = Em.emblem(level, { still: true, locked })
     .replace(/ style="width:\d+px;height:\d+px"/, '')
     .replace(/ style="[^"]*"/g, '')
-    .replace(/ class="[^"]*"/g, '')
     .replace(/ aria-hidden="true"/g, '')
     .replace(/ focusable="false"/g, '');
+  return classes ? x : x.replace(/ class="[^"]*"/g, '');
 }
 
 /** the ids in an emblem change on every call (em1, em2, ...). Tests compare emblems with the ids made the same. */
@@ -41,8 +42,8 @@ export function luminance(hex: string): number {
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
-export function emblemScene(level: number): EmblemScene {
-  let xml = emblemXml(level);
+export function emblemScene(level: number, classes = false): EmblemScene {
+  let xml = emblemXml(level, false, classes);
   const sk = /id="em\d+sk"[^>]*>((?:<stop[^>]*\/>)+)/.exec(xml);
   const stops = sk ? [...sk[1].matchAll(/stop-color="(#[0-9A-Fa-f]{6})"/g)].map((m) => m[1]) : [];
   const offs = sk ? [...sk[1].matchAll(/offset="([\d.]+)"/g)].map((m) => Number(m[1])) : [];
@@ -64,4 +65,64 @@ export function emblemScene(level: number): EmblemScene {
   }
   const ground = g ? g[1] : null;
   return { xml, sky, at, ground, ink: luminance(ground || sky[2]) > 0.28 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
+}
+
+/* ---------- the flame in layers, so only the figure moves ---------- */
+/** the flame in four drawings laid over each other (in its own sky when soft, or in its round frame): the sky and what is behind the figure, the glow, the
+    figure (the spark, the torch, the lighthouse lamp, the sun), and what is in front of it (hills that a rising sun sits
+    behind). Each is a whole 120 by 120 drawing with its own ids, so they line up exactly. at: the figure's middle, as a
+    share of the width and height, for growing it in place. */
+export interface EmblemLayers {
+  back: string;
+  glow: string;
+  fig: string;
+  front: string;
+  at: { x: number; y: number };
+}
+const drop = (x: string) => x.replace(/ class="[^"]*"/g, '');
+/** the element that starts at i (a <g> with all it holds, or one self-closing tag), as [start, end] */
+function elementAt(x: string, i: number): [number, number] {
+  const self = /^<\w+[^>]*\/>/.exec(x.slice(i));
+  if (self) return [i, i + self[0].length];
+  const re = /<g\b[^>]*?(\/?)>|<\/g>/g;
+  re.lastIndex = i;
+  let depth = 0;
+  for (let m = re.exec(x); m; m = re.exec(x)) {
+    if (m[0] === '</g>') depth--;
+    else if (!m[1]) depth++;
+    if (depth === 0) return [i, m.index + m[0].length];
+  }
+  return [i, x.length];
+}
+export function emblemLayers(level: number, soft = true): EmblemLayers | null {
+  const sc = soft ? emblemScene(level, true).xml : emblemXml(level, false, true);
+  const fi = sc.search(/<g class="em-fig\b/);
+  if (fi < 0) return null;
+  const [, fe] = elementAt(sc, fi);
+  const head = sc.slice(0, sc.indexOf('</defs>') + 7);
+  /* the groups still open where the figure starts (the softened round frame), to open again around each layer */
+  const open: string[] = [];
+  const re = /<g\b[^>]*?(\/?)>|<\/g>/g;
+  re.lastIndex = head.length;
+  for (let m = re.exec(sc); m && m.index < fi; m = re.exec(sc)) {
+    if (m[0] === '</g>') open.pop();
+    else if (!m[1]) open.push(m[0]);
+  }
+  const start = head + open.join('');
+  const end = '</g>'.repeat(open.length) + '</svg>';
+  /* the figure's own glow is the last one before it (a few forms have small side glows too, which stay in the sky) */
+  const gs = [...sc.slice(0, fi).matchAll(/<\w+ class="sn-glow"/g)];
+  const glow = gs.length ? elementAt(sc, gs[gs.length - 1].index!) : null;
+  const before = glow ? sc.slice(0, glow[0]) + sc.slice(glow[1], fi) : sc.slice(0, fi);
+  const g = glow ? sc.slice(glow[0], glow[1]) : '';
+  const c = /c[xy]="[\d.]+"/.test(g) ? { x: Number(/cx="([\d.]+)"/.exec(g)![1]), y: Number(/cy="([\d.]+)"/.exec(g)![1]) } : { x: 60, y: 60 };
+  /* each layer gets its own ids (em7 becomes em7a, em7b, ...), so no drawing borrows another's */
+  const own = (x: string, k: string) => drop(x).replace(/\b(em\d+)/g, '$1' + k);
+  return {
+    back: own(before + end, 'a'),
+    glow: g ? own(start + g + end, 'b') : '',
+    fig: own(start + sc.slice(fi, fe) + end, 'c'),
+    front: own(start + sc.slice(fe), 'd'),
+    at: { x: c.x / 120, y: c.y / 120 },
+  };
 }

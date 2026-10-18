@@ -3,12 +3,12 @@
    bar along its edge. Under the picture, your one next step (core: nextUp), in the color of its moment, with a Start
    button. The second card is help: SOS on its own row, then Already happened and Planning a slip? (LogLink). The flame
    moves in a way that fits its form and the stars twinkle (both still under Reduce Motion). Tap
-   the flame and it wiggles and says hi; tap the sky for Milestones; the level for how points work; the number for your
-   days. */
+   the flame and a slow bloom of light goes through it (only the figure moves) and it says hi; tap the sky for Milestones;
+   the level for how points work; the number for your days. */
 import { CHEERS, emblemScene, heroNumber, nextUp, type GameState, type NextUp, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -92,7 +92,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   const glass = light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.62)';
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
-  const wig = useRef(new Animated.Value(0)).current;
+  const [pulse, setPulse] = useState(0);
   useEffect(() => {
     if (reduce) return;
     const loops = [2600, 3400, 4300].map((ms, i) =>
@@ -107,15 +107,11 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
     loops.forEach((l) => l.start());
     return () => loops.forEach((l) => l.stop());
   }, [reduce, tw]);
-  /* a tap on the flame: it wiggles, and says hi */
-  const wiggle = () => {
+  /* a tap on the flame: one slow bloom of light through the figure (the sky stays still), and it says hi */
+  const hello = () => {
     buzz('tap');
     say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
-    if (reduce) return;
-    wig.setValue(0);
-    Animated.sequence(
-      [1, -1, 0.7, -0.7, 0.35, 0].map((to) => Animated.timing(wig, { toValue: to, duration: 85, easing: Easing.inOut(Easing.quad), useNativeDriver: NATIVE })),
-    ).start();
+    setPulse((p) => p + 1);
   };
   return (
     <View style={s.sky}>
@@ -160,16 +156,8 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
         ) : null}
       </Pressable>
       <View style={s.flame} pointerEvents="box-none">
-        <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={wiggle}>
-          <Animated.View
-            style={{
-              transform: [
-                { rotate: wig.interpolate({ inputRange: [-1, 1], outputRange: ['-9deg', '9deg'] }) },
-                { scale: wig.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.05, 1, 1.05] }) },
-              ],
-            }}>
-            <GradFlame level={lvl.n} size={FLAME} soft />
-          </Animated.View>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
+          <GradFlame level={lvl.n} size={FLAME} soft pulse={pulse} />
         </Pressable>
       </View>
       {h ? (

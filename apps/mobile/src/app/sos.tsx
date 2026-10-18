@@ -1,7 +1,7 @@
 /* SOS: help on the first tap, when an urge is happening right now. Nothing is asked first.
    The first screen is only for breathing and coming back to yourself: who you are becoming, one line to do now, your record and
    your own words, kept small, and a sun to take three slow breaths with. Below it: how strong it is (optional) and Next, which
-   works at any time and lights up once the breaths are done.
+   is big and solid, and works at any time.
    The second screen is the tools: every one of them, with how each went for you, and the one suggested for this moment as the
    main button, with Not for me (stop suggesting it), It passed and Talk it through under it. The suggestion learns from what
    you pick (core: urRank).
@@ -68,8 +68,7 @@ export default function Sos() {
 
   /* the breathing sun only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
-  /* breaths done on the first screen, and the tool just set to Not for me (for Undo) */
-  const [held, setHeld] = useState(0);
+  /* the tool just set to Not for me (for Undo) */
   const [offed, setOffed] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -362,15 +361,27 @@ export default function Sos() {
           }}
         />
       </View>
-      {/* Next works at any time; it lights up once the three breaths are done */}
-      <Button
-        label="Next"
-        kind={held >= 3 ? 'primary' : 'ghost'}
+      {/* Next: big, solid and easy to hit at any time, even before the three breaths are done */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Next. Pick what will help."
         onPress={() => {
           sos.set({ ...ur, step: 'tools', sug: null });
           buzz('tap');
         }}
-      />
+        hitSlop={8}
+        style={({ pressed }) => [
+          s.next,
+          {
+            backgroundColor: c.accent,
+            shadowColor: c.accentDeep,
+            shadowOffset: { width: 0, height: pressed ? 1 : 5 },
+            transform: [{ translateY: pressed ? 4 : 0 }],
+          },
+        ]}>
+        <Text style={[s.nextT, { color: c.accentInk }]}>Next</Text>
+        <Icon name="next" size={24} color={c.accentInk} />
+      </Pressable>
     </>
   );
 
@@ -401,7 +412,7 @@ export default function Sos() {
           )}
           {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
         </View>
-        <HorizonSun on={front} breaths={3} onBreaths={setHeld} />
+        <HorizonSun on={front} breaths={3} />
       </View>
     </SceneFrame>
   );
@@ -530,6 +541,18 @@ function Know({ text }: { text: string }) {
 }
 
 const s = StyleSheet.create({
+  next: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    minHeight: 66,
+    borderRadius: 20,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  nextT: { fontFamily: font.bodyBold, fontSize: 21 },
   c: { textAlign: 'center' },
   h: { fontSize: 28, lineHeight: 33, maxWidth: 420 },
   opts: { alignSelf: 'stretch', gap: 10 },

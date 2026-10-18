@@ -1,101 +1,12 @@
-/* The small editors that open over a lesson and live in My plan: my reasons (the short box), my slip plan, and my urge plan.
-   Every change saves right away. Ported from the legacy lessonRbox, slipEditor and urgeEditor. */
-import { REASON_LEN, saveReason, saveSlip, setPlanRow, SLIP_LEN, SLIP_MAX, slipClean, slipIsStarter, slipSteps, resetSlip } from '@daybook/core';
-import { useEffect, useRef, useState } from 'react';
+/* The slip plan editor in My plan: my own steps, in order. Every change saves right away. Ported from the legacy slipEditor. */
+import { saveSlip, SLIP_LEN, SLIP_MAX, slipClean, slipIsStarter, slipSteps, resetSlip } from '@daybook/core';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Field } from '@/components/choices';
 import { Button, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
-
-/** the reasons box inside a lesson: the list with Edit, and one box to write a new line or change one */
-export function ReasonsBox({ onDraft }: { onDraft?: (save: () => boolean) => void }) {
-  const c = useTheme();
-  const { snap, apply } = useStore();
-  const st = snap.settings!;
-  const rs = st.reasons || [];
-  const [edit, setEdit] = useState<number | null>(null);
-  const [editText, setEditText] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
-  const [msg, setMsg] = useState<{ t: string; ok: boolean }>({ t: '', ok: true });
-  const save = () => {
-    const r = saveReason(st, editText, draft, null, 'lesson');
-    if (!r.ok) {
-      setMsg({ t: r.toast, ok: false });
-      return false;
-    }
-    apply({ st: r.st });
-    setEdit(null);
-    setEditText(null);
-    setDraft('');
-    setMsg({ t: r.toast, ok: true });
-    return true;
-  };
-  /* a line typed here is kept when the person moves on (the lesson asks this box to save it first) */
-  const ref = useRef(save);
-  ref.current = save;
-  useEffect(() => {
-    onDraft?.(() => (draft.trim() ? ref.current() : true));
-  }, [draft, onDraft]);
-  const label = edit != null ? 'Change reason ' + (edit + 1) : rs.length ? 'Add another' : 'Write one true line';
-  return (
-    <View style={[s.box, { backgroundColor: c.surface2 }]}>
-      <T v="small" tone="muted" style={{ fontFamily: font.bodyBold, letterSpacing: 0.6 }}>
-        MY REASONS
-      </T>
-      {rs.length ? (
-        rs.map((t, i) => (
-          <View key={i} style={[s.rs, { borderColor: edit === i ? c.accent : 'transparent', backgroundColor: c.surface }]}>
-            <T style={{ flex: 1 }}>{t}</T>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={'Edit reason ' + (i + 1)}
-              onPress={() => {
-                setEdit(i);
-                setEditText(t);
-                setDraft(t);
-                setMsg({ t: '', ok: true });
-              }}
-              style={s.edit}>
-              <Icon name="pencil" size={16} color={c.accentText} />
-              <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>Edit</Text>
-            </Pressable>
-          </View>
-        ))
-      ) : (
-        <T v="small" tone="muted">
-          Nothing here yet.
-        </T>
-      )}
-      <Field label={label} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} placeholder="I want to…" />
-      <View style={s.row}>
-        <View style={{ flex: 1 }}>
-          <Button label="Save" onPress={save} />
-        </View>
-        {edit != null ? (
-          <View style={{ flex: 1 }}>
-            <Button
-              kind="ghost"
-              label="Cancel"
-              onPress={() => {
-                setEdit(null);
-                setEditText(null);
-                setDraft('');
-                setMsg({ t: '', ok: true });
-              }}
-            />
-          </View>
-        ) : null}
-      </View>
-      {msg.t ? (
-        <T v="small" tone={msg.ok ? 'mintText' : 'danger'} accessibilityLiveRegion="polite">
-          {msg.t}
-        </T>
-      ) : null}
-    </View>
-  );
-}
 
 /** if I slip: my own steps, in order. Blank steps stay on screen until filled in, and are never saved. */
 export function SlipEditor() {
@@ -228,25 +139,6 @@ export function SlipEditor() {
   );
 }
 
-/** my urge plan: if this, then I will */
-export function UrgeEditor() {
-  const { snap, apply } = useStore();
-  const st = snap.settings!;
-  return (
-    <View style={{ gap: 12 }}>
-      <T v="small" tone="muted">
-        When an urge hits, Daybook offers this plan as one of the tools. Make each line sound like you. Changes save as you type.
-      </T>
-      {st.plan.map((r, i) => (
-        <View key={i} style={{ gap: 6 }}>
-          <Field label="If" maxLength={120} value={r.when} onChangeText={(v) => apply({ st: setPlanRow(snap.settings!, i, 'when', v) })} />
-          <Field label="Then I will" multiline maxLength={400} value={r.then} onChangeText={(v) => apply({ st: setPlanRow(snap.settings!, i, 'then', v) })} />
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function Sq({ icon, label, off, danger, onPress }: { icon: string; label: string; off?: boolean; danger?: boolean; onPress: () => void }) {
   const c = useTheme();
   return (
@@ -263,9 +155,6 @@ function Sq({ icon, label, off, danger, onPress }: { icon: string; label: string
 }
 
 const s = StyleSheet.create({
-  box: { gap: 8, padding: 12, borderRadius: 16 },
-  rs: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 12, borderWidth: 2 },
-  edit: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 6 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   confirm: { gap: 8, padding: 12, borderRadius: 14 },

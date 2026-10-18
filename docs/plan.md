@@ -147,8 +147,9 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
 
 ## Tier 5: Words and polish
 
-0. Look through every lesson's practice step for anything that asks the person to go and type something in elsewhere, and
-   make it a one-tap add (as in the prayer lesson), keeping "write my own" as a second button.
+0. SOS and the urge plan: lessons now add if-then lines to the urge plan with one tap (practice.ts), but SOS does not show the
+   plan. SOS could show the line that fits the moment (the late-night line late at night). Ask the owner first: it changes
+   the SOS tools screen.
 
 1. Rekindle, the Days card, Journal and Milestones: words that honor a long run after a slip ("89 days. That is huge, and it
    still counts."), using the run that just ended. No "lost", "failed" or "reset" anywhere.

@@ -10,6 +10,8 @@ import {
   runChips,
   stepCard,
   stepGrad,
+  stepRuler,
+  stepWeek,
   stepNo,
   stepOffer,
   stepOn,
@@ -20,6 +22,7 @@ import {
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { StretchRuler, WeekDots } from '@/components/step-art';
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
@@ -280,68 +283,114 @@ export function LinkText({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
-/* ---------- step down ---------- */
+/* ---------- step down ----------
+   Built to be read at a glance: the stretch so far, big; a ruler with your usual and your best on it; the plan's week as
+   dots, with the aim and how often you waited first as two short chips; and one line for the hard hours. Anything else
+   (ready to count days, more help) is one slim row, only when it applies. */
 function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now: number; size: 'sm' | 'lg'; v: CleanView }) {
   const c = useTheme();
   const { apply } = useStore();
   const st = snap.settings!;
   const k = stepCard(snap.days, st, now);
-  const fact = (f: { big: string; text: string }, key: string) => (
-    <View style={s.fact} key={key}>
-      <T style={s.factBig}>{f.big}</T>
-      <T v="small" tone="muted">
-        {f.text}
-      </T>
-    </View>
-  );
+  const r = stepRuler(k.v);
+  const week = stepWeek(snap.days, st, k.v);
+  const kv = k.v;
+  const onAim = kv.target != null && kv.thisW <= kv.target;
+  const how = () => router.push({ pathname: '/settings', params: { open: 's-count' } });
+  const hh = k.hh;
+  const hhLook = !hh
+    ? null
+    : hh.state === 'won'
+      ? { bg: c.mintSoft, ink: c.mintText, ic: 'check' }
+      : hh.state === 'during'
+        ? { bg: c.coralSoft, ink: c.coralText, ic: 'life' }
+        : hh.state === 'lost'
+          ? { bg: c.surface2, ink: c.muted, ic: 'leaf' }
+          : { bg: c.violetSoft, ink: c.violetText, ic: hh.day ? 'sun' : 'moon' };
   return (
     <Card>
       <View style={s.between}>
-        <T v="eyebrow" tone="muted">
-          Step down
-        </T>
-        {size === 'sm' ? <LinkText label="See the month ›" onPress={() => router.navigate('/journal')} /> : null}
+        <Pressable accessibilityRole="button" accessibilityLabel="Step down. How it works" onPress={how} hitSlop={8} style={s.stepHead}>
+          <T v="eyebrow" tone="muted">
+            Step down
+          </T>
+          <View style={[s.info, { borderColor: c.line }]}>
+            <Text style={[s.infoT, { color: c.muted }]}>?</Text>
+          </View>
+        </Pressable>
+        {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate('/journal')} /> : null}
       </View>
-      <View style={s.baseline} accessibilityLabel={`${k.hero} ${k.heroSub}`}>
-        <T v="big">{k.hero}</T>
-        <T tone="muted" style={{ fontSize: 16 }}>
-          {k.heroSub}
-        </T>
-      </View>
-      <Bar frac={k.pct / 100} from={c.sun} />
-      <T v="label" tone="sunText">
-        {k.goalLine}
-      </T>
-      <View style={s.facts}>{[fact(k.week, 'w'), fact(k.wait, 'x'), fact(k.best, 'b')]}</View>
-      {k.hh ? (
-        <View style={[s.note, { backgroundColor: k.hh.state === 'won' ? c.mintSoft : c.violetSoft }]}>
-          <Icon name={k.hh.state === 'won' ? 'check' : k.hh.day ? 'sun' : 'moon'} color={k.hh.state === 'won' ? c.mintText : c.violetText} />
-          <T v="small" tone={k.hh.state === 'won' ? 'mintText' : 'violetText'} style={{ flex: 1 }}>
-            {k.hh.text}
-            {k.hh.won ? ` ${k.hh.won}` : ''}
+
+      {/* the stretch so far */}
+      <View style={s.stepHero} accessibilityLabel={k.hero + ' ' + (kv.slips ? 'this stretch' : 'and counting')}>
+        <Text style={[s.stepBig, { color: c.ink }]}>{k.hero}</Text>
+        <View style={{ gap: 4, flexShrink: 1 }}>
+          {r.newBest ? (
+            <View style={[s.newBest, { backgroundColor: c.sun }]}>
+              <Icon name="star" size={13} color={c.onSun} />
+              <Text style={[s.newBestT, { color: c.onSun }]}>New best</Text>
+            </View>
+          ) : null}
+          <T tone="muted" style={{ fontSize: 15 }}>
+            {kv.slips ? 'this stretch' : 'and counting'}
           </T>
         </View>
+      </View>
+      <StretchRuler r={r} />
+
+      {/* the plan's week */}
+      <WeekDots week={week} />
+      <View style={s.wrap}>
+        <View style={[s.stepChip, { backgroundColor: onAim ? c.mintSoft : c.surface2 }]}>
+          <Icon name="flag" size={14} color={onAim ? c.mintText : c.muted} />
+          <Text style={[s.stepChipT, { color: onAim ? c.mintText : c.ink }]}>
+            {kv.target == null ? 'First week: no aim yet' : kv.target === 0 ? 'Aim: no slips' : 'Aim: ' + kv.target + ' or fewer'}
+          </Text>
+        </View>
+        {kv.wSl ? (
+          <View style={[s.stepChip, { backgroundColor: kv.wWait ? c.skySoft : c.surface2 }]}>
+            <Icon name="timer" size={14} color={kv.wWait ? c.skyText : c.muted} />
+            <Text style={[s.stepChipT, { color: kv.wWait ? c.skyText : c.ink }]}>
+              Waited first {kv.wWait} of {kv.wSl}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {hh && hhLook ? (
+        <View style={[s.slim, { backgroundColor: hhLook.bg }]}>
+          <Icon name={hhLook.ic} size={17} color={hhLook.ink} />
+          <View style={{ flex: 1 }}>
+            <Text style={[s.slimT, { color: hhLook.ink }]}>{hh.short}</Text>
+            <Text style={[s.slimSub, { color: hhLook.ink }]}>{hh.sub}</Text>
+          </View>
+        </View>
       ) : null}
+
       {k.ready ? (
         <View style={[s.box, { backgroundColor: c.sunSoft }]}>
-          <T>
-            <T v="label">You are ready to count days.</T> {k.ready} Counting days is the next step, and your points and badges come with you.
+          <View style={s.slimRow}>
+            <Icon name="trophy" size={18} color={c.sunText} />
+            <T v="label" style={{ flex: 1 }}>
+              Ready to count days
+            </T>
+          </View>
+          <T v="small" tone="muted">
+            {k.ready} Points and badges come with you.
           </T>
           <Button label="Start counting days" onPress={() => apply(stepGrad(st, tk))} />
         </View>
       ) : null}
       {k.help ? (
-        <View style={[s.box, { backgroundColor: c.coralSoft }]}>
-          <T tone="coralText">
-            <T v="label" tone="coralText">
-              This is a strong pull.
-            </T>{' '}
-            That is what therapy and groups are for. Bringing in more help is not failing. It is adding tools.
-          </T>
-          <View style={s.wrap}>
-            <LinkText label="Therapy on a small budget" onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'therapy' } })} />
-            <LinkText label="Free groups" onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'groups' } })} />
-          </View>
+        <View style={[s.slim, { backgroundColor: c.coralSoft }]}>
+          <Icon name="heart" size={17} color={c.coralText} />
+          <Text style={[s.slimT, { color: c.coralText }]}>Extra support helps</Text>
+          <Pressable accessibilityRole="link" hitSlop={6} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'therapy' } })}>
+            <Text style={[s.slimLink, { color: c.coralText }]}>Therapy</Text>
+          </Pressable>
+          <Pressable accessibilityRole="link" hitSlop={6} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'groups' } })}>
+            <Text style={[s.slimLink, { color: c.coralText }]}>Groups</Text>
+          </Pressable>
         </View>
       ) : null}
       {size === 'lg' && v.cells.length ? (
@@ -353,7 +402,6 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
           ]}
         />
       ) : null}
-      <LinkText label="How step down works" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
     </Card>
   );
 }
@@ -444,5 +492,19 @@ const s = StyleSheet.create({
   factBig: { fontFamily: font.display, fontSize: 24, lineHeight: 28 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
   box: { gap: 10, padding: 14, borderRadius: 18 },
+  stepHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  info: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  infoT: { fontFamily: font.bodyBold, fontSize: 11, lineHeight: 13 },
+  stepHero: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  stepBig: { fontFamily: font.displayBold, fontSize: 46, lineHeight: 50 },
+  newBest: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
+  newBestT: { fontFamily: font.bodyBold, fontSize: 12.5 },
+  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
+  stepChipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  slim: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14 },
+  slimRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  slimT: { flex: 1, fontFamily: font.bodySemi, fontSize: 14.5, lineHeight: 19 },
+  slimSub: { fontFamily: font.body, fontSize: 13, lineHeight: 17, opacity: 0.9 },
+  slimLink: { fontFamily: font.bodyBold, fontSize: 14, textDecorationLine: 'underline' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 });

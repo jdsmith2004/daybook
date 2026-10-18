@@ -20,6 +20,7 @@ import {
   slipMoments,
   stepView,
   streaks,
+  weekRange,
   sumDay,
   type DayKindName,
   type RunLedger,
@@ -164,7 +165,7 @@ export interface StepCard {
   week: { big: string; text: string };
   wait: { big: string; text: string };
   best: { big: string; text: string };
-  hh: { state: 'before' | 'during' | 'lost' | 'won'; day: boolean; text: string; won: string | null } | null;
+  hh: { state: 'before' | 'during' | 'lost' | 'won'; day: boolean; text: string; short: string; sub: string; won: string | null } | null;
   ready: string | null;
   help: boolean;
 }
@@ -210,7 +211,19 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
       won: 'You got through your hard hours ' + (day ? 'today' : 'tonight') + ' (' + v.hh.label + ').',
       lost: when + ' hard hours were hard. Tomorrow is another try.',
     }[v.hh.state];
-    hh = { state: v.hh.state, day, text: msg, won: v.hh.won ? plural(v.hh.won, day ? 'day' : 'night') + ' won' : null };
+    /* the same, in a few words, for Today's card: a short title, and the hours (and the nights won) under it */
+    const when2 = day ? 'today' : 'tonight';
+    const short = {
+      before: 'Hard hours ' + when2,
+      during: 'In your hard hours now',
+      won: 'Hard hours held ' + when2,
+      lost: 'Hard hours were hard ' + when2,
+    }[v.hh.state];
+    const won = v.hh.won ? plural(v.hh.won, day ? 'day' : 'night') + ' won' : null;
+    const sub = [v.hh.label.replace(' to ', '–'), v.hh.state === 'during' ? 'SOS is one tap' : v.hh.state === 'lost' ? 'tomorrow is new' : won]
+      .filter(Boolean)
+      .join(' · ');
+    hh = { state: v.hh.state, day, text: msg, short, sub, won };
   }
   return {
     v,
@@ -225,6 +238,28 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
     ready: v.ready ? (v.bestSince >= 168 ? 'Your stretch passed a week.' : 'You got through a week with one slip or none.') : null,
     help: v.help,
   };
+}
+
+/** the stretch as a ruler, for Today's card: where this stretch is, against your usual and your best (and the next goal
+    once the best is passed, or before there is one). Marks are in hours; max is the end of the ruler. */
+export function stepRuler(v: StepView): { max: number; cur: number; newBest: boolean; marks: { k: 'usual' | 'best' | 'next'; h: number; label: string }[] } {
+  const best = v.bestPast > 0 ? v.bestPast : null;
+  const newBest = best != null && v.curH > best;
+  const marks: { k: 'usual' | 'best' | 'next'; h: number; label: string }[] = [];
+  if (v.usual != null && (best == null || v.usual < best * 0.92)) marks.push({ k: 'usual', h: v.usual, label: 'usual ' + fmtStretchShort(v.usual) });
+  if (best != null) marks.push({ k: 'best', h: best, label: 'best ' + fmtStretchShort(best) });
+  if (best == null || newBest) marks.push({ k: 'next', h: v.goal, label: 'next ' + fmtStretchShort(v.goal) });
+  const max = Math.max(v.goal, best || 0, v.curH) * 1.08;
+  return { max, cur: v.curH, newBest, marks };
+}
+/** this week of the plan, day by day: the slips each day, and the days still to come */
+export function stepWeek(days: Days, st: Settings, v: StepView): { k: DayKey; l: string; slips: number; ahead: boolean; today: boolean }[] {
+  const [a] = weekRange(v.cw, st);
+  return Array.from({ length: 7 }, (_, i) => {
+    const k = addDays(a, i);
+    const [y, m, d] = k.split('-').map(Number);
+    return { k, l: 'SMTWTFS'[new Date(y, m - 1, d).getDay()], slips: sumDay(days[k]).slipped, ahead: k > v.tk, today: k === v.tk };
+  });
 }
 
 /** whether Today offers the step-down plan (legacy stepOfferHtml's test) */

@@ -164,9 +164,17 @@ export interface StepCard {
   week: { big: string; text: string };
   wait: { big: string; text: string };
   best: { big: string; text: string };
-  hh: { state: 'before' | 'during' | 'lost' | 'won'; text: string; won: string | null } | null;
+  hh: { state: 'before' | 'during' | 'lost' | 'won'; day: boolean; text: string; won: string | null } | null;
   ready: string | null;
   help: boolean;
+}
+
+/** whether hard hours like "10 AM to 12 PM" start in the daytime (5 AM to 4 PM), so the words say today, not tonight */
+export function isDayHours(label: string): boolean {
+  const m = /^(\d{1,2}) (AM|PM)/.exec(label);
+  if (!m) return false;
+  const h = (+m[1] % 12) + (m[2] === 'PM' ? 12 : 0);
+  return h >= 5 && h < 17;
 }
 
 /** the step-down card (legacy stepCardHtml), as data */
@@ -193,13 +201,16 @@ export function stepCard(days: Days, st: Settings, nowMs: number): StepCard {
   };
   let hh: StepCard['hh'] = null;
   if (v.hh) {
+    /* hard hours that start in the daytime (5 AM to 4 PM) are today's, not tonight's */
+    const day = isDayHours(v.hh.label);
+    const when = day ? 'Today’s' : 'Tonight’s';
     const msg = {
-      before: 'Tonight’s hard hours: ' + v.hh.label + '. Phone away before then.',
+      before: when + ' hard hours: ' + v.hh.label + '. Phone away before then.',
       during: 'You are in your hard hours now (' + v.hh.label + '). Phone away, and SOS is one tap.',
-      won: 'You got through your hard hours tonight (' + v.hh.label + ').',
-      lost: 'Tonight’s hard hours were hard. Tomorrow is another try.',
+      won: 'You got through your hard hours ' + (day ? 'today' : 'tonight') + ' (' + v.hh.label + ').',
+      lost: when + ' hard hours were hard. Tomorrow is another try.',
     }[v.hh.state];
-    hh = { state: v.hh.state, text: msg, won: v.hh.won ? plural(v.hh.won, 'night') + ' won' : null };
+    hh = { state: v.hh.state, day, text: msg, won: v.hh.won ? plural(v.hh.won, day ? 'day' : 'night') + ' won' : null };
   }
   return {
     v,

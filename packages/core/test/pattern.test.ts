@@ -1,5 +1,6 @@
 /* Your pattern: the stretches between slips and their trend, riding out week by week, when it happens (with the same hard
    hours as Today), what sets it off, what is different on hard days, and the sentences at the top. */
+import { isDayHours } from '../src/view';
 import { describe, expect, it } from 'vitest';
 import { normSettings } from '../src/legacy/core.js';
 import { addEvent } from '../src/mutate';
@@ -107,5 +108,16 @@ describe('hard days', () => {
     expect(r.list.map((x) => x.k)).toEqual(['h', 'so']);
     expect(r.list[0].line).toBe('You slept less before slip days: 5.5 hours, against 7.5.');
     expect(r.list[1].line).toBe('Screens off on time: 100% of days with no slip, 0% of slip days.');
+  });
+});
+
+describe('hard hours in the daytime', () => {
+  it('are today’s, not tonight’s', () => {
+    expect(isDayHours('10 AM to 12 PM')).toBe(true);
+    expect(isDayHours('3 PM to 5 PM')).toBe(true);
+    expect(isDayHours('5 PM to 7 PM')).toBe(false);
+    expect(isDayHours('10 PM to 12 AM')).toBe(false);
+    expect(isDayHours('12 AM to 2 AM')).toBe(false);
+    expect(isDayHours('4 AM to 6 AM')).toBe(false);
   });
 });

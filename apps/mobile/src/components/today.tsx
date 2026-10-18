@@ -315,7 +315,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       <View style={s.facts}>{[fact(k.week, 'w'), fact(k.wait, 'x'), fact(k.best, 'b')]}</View>
       {k.hh ? (
         <View style={[s.note, { backgroundColor: k.hh.state === 'won' ? c.mintSoft : c.violetSoft }]}>
-          <Icon name={k.hh.state === 'won' ? 'check' : 'moon'} color={k.hh.state === 'won' ? c.mintText : c.violetText} />
+          <Icon name={k.hh.state === 'won' ? 'check' : k.hh.day ? 'sun' : 'moon'} color={k.hh.state === 'won' ? c.mintText : c.violetText} />
           <T v="small" tone={k.hh.state === 'won' ? 'mintText' : 'violetText'} style={{ flex: 1 }}>
             {k.hh.text}
             {k.hh.won ? ` ${k.hh.won}` : ''}

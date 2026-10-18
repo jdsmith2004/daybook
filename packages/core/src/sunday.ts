@@ -229,7 +229,7 @@ export function sunWorked(w: SunWeek, st: Settings): SunPick[] {
       const t = didText(id, st.opts);
       if (t && !out.some((o) => o.t.toLowerCase() === t.toLowerCase())) out.push({ id: 'did:' + id, t, ev: plural(w.did[id], 'time') });
     });
-  if (w.held) out.push({ id: 'hard', t: 'Getting through my hard hours', ev: plural(w.held, 'night') });
+  if (w.held) out.push({ id: 'hard', t: 'Getting through my hard hours', ev: plural(w.held, 'day') });
   if (w.phone >= 2) out.push({ id: 'phone', t: 'Phone away at night', ev: plural(w.phone, 'night') });
   if (w.talks) out.push({ id: 'talk', t: 'Talking it through first', ev: plural(w.talks, 'time') });
   if (w.reach) out.push({ id: 'reach', t: 'Reaching out', ev: plural(w.reach, 'day') });

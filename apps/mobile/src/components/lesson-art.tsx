@@ -1,12 +1,14 @@
-/* The picture on a lesson card: an icon in a circle, a chain of steps, a wave, a snowball, your loop, a big number, a shield
-   or a check mark. Ported from the legacy lxArt and friends, in the lesson's unit color. Each one settles in once when it
+/* The picture on a lesson card: an icon in a circle, a chain of steps, a wave, a snowball, your loop, a big number, a shield,
+   a check mark, or one of the moving research pictures from Talk it through and Rekindle. Ported from the legacy lxArt and friends, in the lesson's unit color. Each one settles in once when it
    appears: the icons pop in, a chain shows one step at a time, a dot rides the wave up and over, and a big number counts up.
    With Reduce Motion on, they show as they end. */
-import { lxLoopNodes, type Art, type Settings } from '@daybook/core';
+import { lxLoopNodes, TALK_CARDS, type Art, type RkArt, type Settings, type TalkArt } from '@daybook/core';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, Marker, Path, Rect, Text as SvgText } from 'react-native-svg';
 
+import { RkArtView } from '@/components/rk-art';
+import { TalkArtView } from '@/components/talk-art';
 import { Icon } from '@/components/ui';
 import { pop, rise, useAppear, useReducedMotion } from '@/lib/motion';
 import { font, useTheme, type Tone } from '@/lib/theme';
@@ -255,5 +257,9 @@ export function LessonArt({ art, ic, t, st }: { art: Art; ic: string; t: Tone; s
   if (k === 'wave') return <Wave t={t} al={(opts as { al?: string }).al} />;
   if (k === 'big') return <BigNumber n={(opts as { n: string }).n} s={(opts as { s?: string }).s} />;
   if (k === 'shield') return <LxShield t={t} />;
+  if (k === 'research') {
+    const key = (opts as { k: string }).k;
+    return TALK_CARDS.some((x) => x.k === key) ? <TalkArtView k={key as TalkArt} /> : <RkArtView k={key as RkArt} />;
+  }
   return <LxIco name={(opts as { ic?: string }).ic || ic} t={t} />;
 }

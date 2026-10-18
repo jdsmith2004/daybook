@@ -180,6 +180,7 @@ export default function LessonScreen() {
     practiced();
     setStage('practiced');
     if (g.a === 'scene') router.push({ pathname: '/tool/[id]', params: { id: g.v!, lr: '1' } });
+    else if (g.a === 'talk') router.push('/talk');
     else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
     else if (g.a === 'growth') router.push('/growth');
     else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });

@@ -1,4 +1,4 @@
-/* Lessons 33 to 40 and the lesson families: every lesson is whole, every claim names a source, each family is spread along
+/* Lessons 33 to 41 and the lesson families: every lesson is whole, every claim names a source, each family is spread along
    the path with growing gaps, and recall follows the daily order. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
@@ -19,10 +19,10 @@ const words = (L: Lesson): string[] => {
   return out;
 };
 
-it('there are 40 lessons, and the ids match the lesson list', () => {
+it('there are 41 lessons, and the ids match the lesson list', () => {
   expect(core.LESSONS.map((L) => L.id)).toEqual(core.LESSON_IDS);
-  expect(core.LESSON_IDS).toHaveLength(40);
-  expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40']);
+  expect(core.LESSON_IDS).toHaveLength(41);
+  expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41']);
 });
 
 it('a finished new lesson is kept in the day record and counts', () => {

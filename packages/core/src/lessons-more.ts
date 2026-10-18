@@ -1,6 +1,7 @@
-/* Lessons 33 to 40, the two newer units: "Why it is hard to stop" and "Becoming someone new". They follow the same lesson
-   standard as the first 32 (see the LESSONS note in legacy/core.js), and legacy/core.js adds them to LESSONS, LUNITS and SRC,
-   so every rule that counts lessons sees all of them.
+/* Lessons 33 to 41. Lessons 33 to 40 are the two newer units: "Why it is hard to stop" and "Becoming someone new".
+   Lesson 41, "The picture and the real thing", is the science behind Talk it through and Rekindle, in "Seeing your
+   pattern". They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
+   legacy/core.js adds them to LESSONS, LUNITS and SRC, so every rule that counts lessons sees all of them.
 
    Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), spread along the path
    with growing gaps (see lessonPath and LESSON_FAMILIES in lessons.ts).
@@ -8,8 +9,10 @@
    Each lesson rests on the research in SRC_MORE and speaks with confidence: it teaches something good and true, and leaves the
    reader with hope (see "Lessons" in CLAUDE.md).
 
-   This file imports nothing from legacy/core.js, because legacy/core.js imports it. */
+   This file imports nothing from legacy/core.js, because legacy/core.js imports it. The sources lesson 41 shares with
+   Talk it through come from talk.ts, so both always point at the same papers. */
 import type { Lesson, Unit } from './lessons';
+import { TALK_SRC } from './talk';
 
 const bP = (s: string): ['p', string] => ['p', s];
 const bL = (a: string[]): ['l', string[]] => ['l', a];
@@ -51,6 +54,12 @@ export const SRC_MORE: Record<string, [string, string]> = {
     'Hershfield et al. (2011): increasing saving behavior through age-progressed renderings of the future self, Journal of Marketing Research',
     'https://pmc.ncbi.nlm.nih.gov/articles/PMC3949005/',
   ],
+  /* lesson 41, shared with Talk it through */
+  caselli: TALK_SRC.caselli,
+  brewer11: TALK_SRC.brewer,
+  taylor21: TALK_SRC.taylor,
+  sayette: TALK_SRC.sayette,
+  tracy13: TALK_SRC.tracy,
 };
 /* two sources the first 32 lessons already use */
 type Src = [string, string];
@@ -1130,6 +1139,166 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       scope:
         'The “vote” idea comes from James Clear’s book Atomic Habits. The review of 138 experiments shows why it works: a record you look back at helps you reach your goal.',
       src: src('clearvote', 'harkin'),
+    },
+    /* ---------- unit 5, seeing your pattern: the science behind Talk it through and Rekindle ---------- */
+    {
+      id: 'l41',
+      u: 4,
+      v: 2,
+      chk: 'October 18, 2026',
+      title: 'The picture and the real thing',
+      tag: 'Replaying it turns the pull up. Noticing what it really gives turns it down.',
+      ic: 'sun',
+      mins: 3,
+      ask: 'When I keep thinking about a slip, before it or after it, am I making it worse?',
+      key: 'It depends on how you look. Replaying the picture (the time, the place, the details) turns the pull up. Noticing the real thing (what it does in your body, and what it gives you after) turns it down. Look at the real thing, with curiosity, not shame.',
+      np: 'What I picture before, and what it really gives me after',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['chain', { n: ['Picturing it all day', 'The real thing', 'Flat, ten minutes after'], i: ['dots', 'bolt', 'leaf'] }],
+          h: 'Have you ever pictured it all afternoon, and then felt flat ten minutes after it happened?',
+          b: [
+            bP(
+              'Many people know this. The picture before is bright and loud. The real thing is smaller than it promised. This lesson is about that gap, and how to use it.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'Which kind of thinking makes the pull weaker over time?',
+          ask: 'Make your best guess.',
+          a: 2,
+          c: [
+            [
+              'Not thinking about it at all',
+              'A common hope. But looking away leaves the picture in charge, and you never see what the habit really gives. A short, honest look does more.',
+            ],
+            [
+              'Going over the plan in detail, to feel in control',
+              'That is replaying, and replaying turns the pull up. Each run through the details makes it louder.',
+            ],
+            [
+              'Noticing what it really does, in my body and after',
+              'Good guess. Honest noticing shows the habit gives less than it promised, and that wears the pull down.',
+            ],
+            [
+              'Thinking hard about how bad I am',
+              'Shame is not the same as seeing clearly. In a study of people in recovery, those who showed more shame were more likely to relapse.',
+            ],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['chain', { n: ['The picture: louder', 'The real thing: smaller', 'Seen clearly: weaker'], i: ['dots', 'leaf', 'sun'] }],
+          h: 'Picturing it feeds the pull. Noticing the real thing wears it down.',
+          b: [
+            bP(
+              'Going over the plan (the time, the place, what you would watch) is like a highlight reel. It turns the wanting up, and the reel always looks better than the real thing. When you notice what really happens, in your body and in the hour after, your brain gets honest information. Over time, the habit loses its shine.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['research', { k: 'loop' }],
+          h: 'Replaying the details turns the pull up.',
+          b: [
+            bP(
+              'Researchers call it desire thinking: picturing the thing you want, and going over it again and again in words. Across drinking, smoking, gambling, eating and more, it goes with stronger craving, and it keeps craving going.',
+            ),
+          ],
+          so: 'When you catch yourself planning the details, that is the replay. Naming it, “that is the picture,” is the first step out of it.',
+          fact: { s: 'Review · Caselli & Spada, 2015', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['research', { k: 'lens' }],
+          h: 'Noticing with curiosity wears a habit down.',
+          b: [
+            bP(
+              'In a trial with adult smokers, people trained to notice their cravings with curiosity, instead of acting on them, did far better than people in a standard quit program: four months later, 31% had quit, against 6%. In a later study of overeating, as people paid close attention while they ate, the reward they felt from overeating went down, and that drop predicted their eating changing.',
+            ),
+          ],
+          so: 'Each honest look, before a slip or after one, teaches your brain what the habit really gives. That is how the pull shrinks.',
+          fact: { s: 'Trial · Brewer et al., 2011 · Study · Taylor et al., 2021', i: [1, 2] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'compass' }],
+          h: 'Look at the real thing, before and after.',
+          b: [
+            bL([
+              '**When you catch the picture:** name it, “that is the replay.” Then decide while you are calm, before the night comes.',
+              '**If a slip happens anyway:** do not rush through it in a blur. Notice your body, and how you feel ten minutes after.',
+              '**After:** look back honestly. What did you expect it to give, and what did it really give?',
+            ]),
+            bP('Talk it through and Rekindle walk you through each step, and keep your own numbers, so you can see the gap for yourself.'),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'It is 4 PM. You keep picturing tonight: the time, the room, what you would watch. What is the best move?',
+          ask: 'Pick the best move.',
+          a: 1,
+          c: [
+            ['Keep going over the plan, so it feels under control', 'That is the replay. Each run through the details makes tonight’s pull louder.'],
+            [
+              'Name it as the picture, and talk it through now, while calm',
+              'Yes. You caught the replay, and you are deciding while calm, when you can see most clearly.',
+            ],
+            ['Call yourself hopeless for planning it', 'Shame does not loosen the plan. An honest, curious look does.'],
+            [
+              'Wait until tonight, and decide then',
+              'Tonight is the hardest time to decide. Calm you guesses the pull will be weaker than it turns out to be, so decide now.',
+            ],
+          ],
+        },
+      ],
+      act: {
+        h: 'Catch the picture once.',
+        p: 'Next time you notice yourself picturing a slip, say “that is the picture,” and open Talk it through while you are calm. If a slip happens, look back afterward: what did you expect, and what did it give?',
+        mins: 2,
+        go: [{ t: 'Open Talk it through', a: 'talk', ic: 'chat' }],
+        ok: 'You looked at the real thing.',
+      },
+      rc: {
+        q: 'You slipped last night. This morning the memory keeps playing, and you feel low. What does this lesson suggest?',
+        c: [
+          'Replay it until I understand every detail',
+          'Push it away and never think about it',
+          'Take one honest look: what it gave, and how I felt after',
+          'Decide I will never change',
+        ],
+        a: 2,
+        r: 'Look at the real thing, briefly and honestly. That is what wears a habit down.',
+        cr: [
+          'Not quite. Replaying the details keeps the picture loud. One honest look at what it gave helps more.',
+          'Not quite. Looking away leaves the picture in charge. A short, honest look is what teaches your brain.',
+          'Right. What it gave, and how you felt after, is the real information. That is what wears the habit down.',
+          'Not quite. A slip is information, not a verdict. Seeing it clearly is how change happens.',
+        ],
+      },
+      scope:
+        'Desire thinking has been studied across many habits. The curiosity trial was with adults quitting smoking, and the noticing study with people who overeat: the same learning runs through every habit like this one, porn included. What it means for you: the picture pulls harder than the real thing, and every honest look narrows that gap.',
+      src: src('caselli', 'brewer11', 'taylor21', 'sayette', 'tracy13'),
     },
   ];
 }

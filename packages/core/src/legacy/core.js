@@ -96,7 +96,7 @@ function optList(kind,opts,o){
 const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
 /* l1 to l32 are here; l33 to l40 are in lessons-more.ts */
-const LESSON_IDS=Array.from({length:40},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
+const LESSON_IDS=Array.from({length:41},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */

@@ -16,7 +16,9 @@ export type Art =
   | ['big', { n: string; s?: string }]
   | ['snow', { a?: string; b?: string; al?: string }]
   | ['loop', { n?: string[]; c?: string }]
-  | ['shield', Record<string, never>];
+  | ['shield', Record<string, never>]
+  /** one of the moving research pictures from Talk it through (talk.ts) or Rekindle (rekindle-learn.ts), by its key */
+  | ['research', { k: string }];
 export interface Guess {
   min: number;
   max: number;
@@ -50,7 +52,7 @@ export interface Card {
 }
 export interface Go {
   t: string;
-  a: 'sheet' | 'scene' | 'tab' | 'copy' | 'help' | 'growth' | 'week' | 'addmove' | 'addwind' | 'addword' | 'reasons';
+  a: 'sheet' | 'scene' | 'tab' | 'copy' | 'help' | 'growth' | 'week' | 'addmove' | 'addwind' | 'addword' | 'reasons' | 'talk';
   v?: string;
   sub?: string;
   open?: string;
@@ -149,6 +151,7 @@ export const LESSON_ORDER = [
   'l37',
   'l5',
   'l6',
+  'l41',
   'l7',
   'l34',
   'l8',

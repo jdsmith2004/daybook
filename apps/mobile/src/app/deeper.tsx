@@ -11,12 +11,12 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 
 export default function Deeper() {
   const { snap, tk, update, say } = useStore();
   const { k, kind } = useLocalSearchParams<{ k: string; kind: 'trace' | 'tell' }>();
-  const st = snap.settings;
+  const st = useCareSettings();
   const r = st && k ? rkOf(snap.days, k, st) : null;
   const [vals, setVals] = useState<string[]>(() => (r?.ev.rk?.tr ? [...r.ev.rk.tr] : ['', '', '']));
   const [msg, setMsg] = useState('');

@@ -37,7 +37,7 @@ import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSendText } from '@/components/safe-text';
 import { useSos } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 import type { ToolProps } from './types';
@@ -170,7 +170,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
   const c = useTheme();
   const { snap, tk, update } = useStore();
   const sos = useSos();
-  const st = snap.settings;
+  const st = useCareSettings();
   const night = urNight(new Date(now).getHours());
   const plans = bedPlans(st);
   const [tick, setTick] = useState<string[]>([]);
@@ -437,8 +437,8 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
 /* ---------- reach a person ---------- */
 export function Message({ finish, exit, sos }: ToolProps) {
   const c = useTheme();
-  const { snap, say } = useStore();
-  const st = snap.settings;
+  const { say } = useStore();
+  const st = useCareSettings();
   const nm = safeName(st);
   const list = messageTexts(st);
   const [own, setOwn] = useState('');
@@ -500,8 +500,7 @@ export function Message({ finish, exit, sos }: ToolProps) {
 /* ---------- my reasons ---------- */
 export function Reasons({ finish }: ToolProps) {
   const c = useTheme();
-  const { snap } = useStore();
-  const st = snap.settings;
+  const st = useCareSettings();
   const r = st?.reasons || [];
   const note = String(st?.note || '').trim();
   const [i0, setI] = useState(0);

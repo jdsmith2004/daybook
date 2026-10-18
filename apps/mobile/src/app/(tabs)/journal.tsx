@@ -41,6 +41,7 @@ import { DaysCard } from '@/components/today';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
+import { SetupFirst } from '@/components/welcome';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -60,7 +61,7 @@ export default function Journal() {
   const scroll = useRef<ScrollViewInstance>(null);
   const inset = useSafeAreaInsets();
   const [paneY, setPaneY] = useState(0);
-  if (!st) return <Screen title="Journal">{null}</Screen>;
+  if (!st) return <SetupFirst title="Journal" line="Everything you log shows up here by itself: urges ridden out, slips, and how each day went." />;
   const sub =
     pane === 'days'
       ? 'Everything you log shows up here by itself. Tap a day to add or fix something.'

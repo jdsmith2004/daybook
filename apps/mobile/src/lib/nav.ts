@@ -13,14 +13,15 @@ export function keepRootState(get: () => State | undefined) {
 const SCENE = /^(sos|tool\/\[id\]|log|sunrise|morning|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated)$/;
 
 /** leave a full-screen moment (legacy closeScene): every full-screen moment on top closes, and the person is back where they
-    started it (a tab, or a page like My plan). Opened directly (a web link), it goes to Today. */
+    started it (a tab, or a page like My plan). Opened directly (a web link), it goes to Today. SOS opened from inside the
+    setup closes back to the setup, on the page where it was left. */
 export function close() {
   let st = rootState();
   /* Expo Router keeps the app's stack inside one "__root" route */
   while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
   const routes = st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
   let n = 0;
-  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name)) n++;
+  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name) && !(n > 0 && routes[routes.length - 1 - n].name === 'setup')) n++;
   if (n > 0) router.dismiss(n);
   else if (router.canDismiss()) router.dismissAll();
   else if (router.canGoBack()) router.back();

@@ -122,7 +122,7 @@ export default function Sunrise() {
           Rekindle · the morning after
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          Day 1 of your comeback.
+          Welcome back.
         </T>
         <T style={s.c}>Yesterday is logged and done, and nothing reset. Two minutes to finish your quest.</T>
         {run0 ? <LineNote b={`Your ${run0}-day run can keep going.`} rest="This check is what keeps it." /> : null}

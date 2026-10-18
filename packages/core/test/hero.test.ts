@@ -33,7 +33,7 @@ describe('the number on the flame', () => {
   });
   it('tracking: which day it is, and when Day 1 comes', () => {
     const h = heroNumber({}, normSettings({ start: '2026-10-16', day1: '2026-10-23' }), tk, now)!;
-    expect([h.eb, h.n, h.unit, h.chip]).toEqual(['Tracking week', 'Day 3', 'of 7', 'Day 1 Fri']);
+    expect([h.eb, h.n, h.unit, h.chip]).toEqual(['Tracking week', 'Day 3', 'of 7', 'Counting starts Oct 23']);
     const j = heroNumber({}, normSettings({ start: '2026-10-16', day1: null }), tk, now)!;
     expect([j.eb, j.n, j.unit, j.chip]).toEqual(['Just tracking', 'Day 3', '', null]);
   });

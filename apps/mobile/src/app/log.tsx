@@ -58,7 +58,7 @@ import { close } from '@/lib/nav';
 import { LineNote } from '@/components/line-note';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
 type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkl';
@@ -82,7 +82,7 @@ export default function Log() {
     kl?: string;
   }>();
   const sos = useSos();
-  const st = snap.settings;
+  const st = useCareSettings();
   /* the log day the entry is on: the one asked for, or today. A new entry can be moved to another day or time before
      it is saved (the pill on the first question), and a saved one after (Change time). */
   const [date, setDate] = useState(() => (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : tk));

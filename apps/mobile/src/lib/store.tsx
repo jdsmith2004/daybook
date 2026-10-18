@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   allDirty,
   checkNew,
+  defaultSettings,
   LADDER_V,
   clearAcked,
   mergeRemote,
@@ -384,4 +385,12 @@ export function useStore(): StoreValue {
   const v = useContext(Ctx);
   if (!v) throw new Error('useStore needs a StoreProvider');
   return v;
+}
+
+/** the settings that care uses (SOS, the tools, Talk it through, logging): the saved ones, or the starting ones while setup
+    is not done yet, so help never waits for the setup. Before setup, setting changes are not kept (apply skips them); what is
+    logged is kept, and counts once setup is done. */
+export function useCareSettings(): Settings {
+  const { snap, tk } = useStore();
+  return useMemo(() => snap.settings ?? defaultSettings(tk), [snap.settings, tk]);
 }

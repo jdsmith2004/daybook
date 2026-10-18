@@ -256,10 +256,17 @@ export default function Setup() {
           art={<PicToday />}
           h="Quit porn, one honest day at a time."
           line="A plan built from your answers, help when urges hit, and progress you can see.">
-          {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
-            <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in to my account'} onPress={() => sync.signInNow()} />
-          ) : null}
-          <TextLink label="I already have a backup file" onPress={restore} />
+          {/* someone opening Daybook in the middle of an urge gets help before any question */}
+          <SosRow />
+          <View style={s.links}>
+            {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
+              <>
+                <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in'} onPress={() => sync.signInNow()} />
+                <Text style={{ color: c.muted }}>·</Text>
+              </>
+            ) : null}
+            <TextLink label="I have a backup file" onPress={restore} />
+          </View>
         </Show>
       );
       foot = nextBtn(f.redo ? 'Start' : 'Get started');
@@ -922,9 +929,24 @@ export default function Setup() {
             </View>
             <Text style={[s.secT, { color: t.text }]}>{sec[1].toUpperCase()}</Text>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={exit} style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
-            <Icon name="x" color={c.ink} />
-          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {/* help is one tap away on every page; the setup waits underneath, where it was left */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="SOS. Help with an urge right now. The setup waits for you."
+              onPress={() => router.push('/sos')}
+              style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
+              <Icon name="life" size={17} color={c.sosInk} />
+              <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={exit}
+              style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
+              <Icon name="x" color={c.ink} />
+            </Pressable>
+          </View>
         </View>
         <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (k + 1) + ' of ' + ps.length} />
         <View style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
@@ -1338,6 +1360,29 @@ function More({ more }: { more: { label: string; paras: string[]; keys: string[]
     </View>
   );
 }
+/* the first page: for someone who opened Daybook in the middle of an urge */
+function SosRow() {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Having an urge right now? Open SOS first. No setup needed."
+      onPress={() => router.push('/sos')}
+      style={({ pressed }) => [
+        s.sosRow,
+        { backgroundColor: c.sos, shadowColor: c.sosDeep, shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] },
+      ]}>
+      <View style={[s.sosIc, { backgroundColor: c.sosSoft }]}>
+        <Icon name="life" size={22} color={c.sosInk} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.sosRowB, { color: c.sosInk }]}>Having an urge right now?</Text>
+        <Text style={[s.sosRowS, { color: c.sosInk }]}>Open SOS first. No setup needed.</Text>
+      </View>
+      <Icon name="next" size={20} color={c.sosInk} />
+    </Pressable>
+  );
+}
 function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
@@ -1543,6 +1588,31 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sosPill: {
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sosPillT: { fontFamily: font.bodyBold, fontSize: 15 },
+  sosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 6,
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  sosIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  sosRowB: { fontFamily: font.bodyBold, fontSize: 15 },
+  sosRowS: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: 8 },
   card: {
     flex: 1,
     borderRadius: 28,

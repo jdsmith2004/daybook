@@ -278,7 +278,7 @@ const s = StyleSheet.create({
   eb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },
   n: { fontFamily: font.display, fontSize: 34, lineHeight: 38 },
   unit: { fontFamily: font.display, fontSize: 17 },
-  lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '46%' },
+  lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '50%' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
   chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
   lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },

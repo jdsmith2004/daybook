@@ -69,7 +69,7 @@ import { close } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { play } from '@/lib/sound';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 type Step =
@@ -123,7 +123,7 @@ export default function TalkIt() {
   const c = useTheme();
   const { snap, tk, update, say } = useStore();
   const sos = useSos();
-  const st = snap.settings;
+  const st = useCareSettings();
   const params = useLocalSearchParams<{ decide?: string; look?: string }>();
   const [now] = useState(() => Date.now());
   /* a talk-through already saved, when this opened to decide or to look back */

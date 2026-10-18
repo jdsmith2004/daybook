@@ -15,6 +15,21 @@ import { setupKeep } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 
+/* Learn, Journal and More before setup: what setup opens here, the way into it, and that SOS works now */
+export function SetupFirst({ title, line }: { title: string; line: string }) {
+  return (
+    <Screen eyebrow="My Daybook" title={title}>
+      <Card>
+        <T style={{ fontSize: 17, lineHeight: 24 }}>{line}</T>
+        <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
+        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          SOS works now, with no setup.
+        </T>
+      </Card>
+    </Screen>
+  );
+}
+
 export function Welcome() {
   const { tk, replace, say, snap, current } = useStore();
   const [busy, setBusy] = useState(false);

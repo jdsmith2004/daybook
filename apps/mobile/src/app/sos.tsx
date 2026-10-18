@@ -48,7 +48,7 @@ import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
 
@@ -57,7 +57,7 @@ export default function Sos() {
   const { snap, tk, now, update, apply } = useStore();
   const sos = useSos();
   const win = useWindowDimensions();
-  const st = snap.settings;
+  const st = useCareSettings();
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const ur = sos.ur;
   /* the small tag on each tool: how it went for you */
@@ -336,8 +336,10 @@ export default function Sos() {
   }
 
   /* the first screen */
-  const fy = urFromYou(st, pick);
-  const be = String(st.becoming || '').trim();
+  /* before setup the person has no words of their own yet: none are shown, not the starting ones */
+  const fy = snap.settings ? urFromYou(st, pick) : null;
+  /* before setup there is no "who I am becoming" yet: one line says the setup can wait */
+  const be = snap.settings ? String(st.becoming || '').trim() : 'You can set up Daybook later.';
   const mine = !!fy || !!voice.uri;
   const rec = urEvidence(snap.days);
   const lines = String(ur.cx?.do || '')
@@ -390,7 +392,7 @@ export default function Sos() {
       <View style={s.sky}>
         <View style={[s.words, { gap: small ? 10 : 16 }]}>
           {be ? (
-            <T v="small" style={s.be} accessibilityLabel={`Who I am becoming: ${be}`}>
+            <T v="small" style={s.be} accessibilityLabel={snap.settings ? `Who I am becoming: ${be}` : be}>
               {be}
             </T>
           ) : null}

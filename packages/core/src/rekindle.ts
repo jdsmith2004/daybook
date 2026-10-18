@@ -295,7 +295,7 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       kind: 'sun',
       line: false,
       icon: 'sunrise',
-      h: 'Day 1 of your comeback',
+      h: 'The morning after',
       p: op ? 'Finish your sunrise check' + more + ' to keep your ' + op.run + '-day run going.' : 'Your sunrise check is ready. About two minutes.',
       sunrise: true,
       missions: op && (!r.m1 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour }) : [],

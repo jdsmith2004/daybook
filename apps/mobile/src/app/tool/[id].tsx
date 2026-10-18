@@ -10,7 +10,7 @@ import { Curious, Forward, Thought } from '@/components/tools/ride';
 import { Bed, Halt, Message, Move, Reasons, Surprise } from '@/components/tools/scene';
 import type { ToolProps } from '@/components/tools/types';
 import { useSos } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 import { urNight } from '@daybook/core';
 import { close } from '@/lib/nav';
 import { useFinishTool, useToolExit } from '@/lib/tools';
@@ -46,7 +46,7 @@ export default function Tool() {
   };
   const [text, setText] = useState<string | null>(null);
   const tool = TOOLS.find((t) => t.id === id);
-  const st = snap.settings;
+  const st = useCareSettings();
   if (!tool || !st) return <Redirect href="/" />;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
   /* a pause that is running (or done) closes everything on X, like the legacy sceneExit: the timer keeps going, and Today shows it */

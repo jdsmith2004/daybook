@@ -11,7 +11,7 @@ export interface HeroNumber {
   eb: string;
   n: string;
   unit: string;
-  /** a small chip beside it: "best 65 h", "New best", "Day 1 Tue" */
+  /** a small chip beside it: "best 65 h", "New best", "Counting starts Oct 20" */
   chip: string | null;
   /** the chip is a best, shown with a star */
   star: boolean;
@@ -44,6 +44,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   const p = phaseOf(tk, st);
   if (p.p !== 'tracking') return null;
   const week = !!st.day1 && diffDays(st.day1, st.start) === 7;
-  const d1 = st.day1 ? 'Day 1 ' + fmtDate(st.day1, { weekday: 'short' }) : null;
+  /* the chip says when counting starts, so it never reads as a second Day 1 beside the day of the tracking week */
+  const d1 = st.day1 ? 'Counting starts ' + fmtDate(st.day1, { month: 'short', day: 'numeric' }) : null;
   return out(week ? 'Tracking week' : st.day1 ? 'Tracking' : 'Just tracking', 'Day ' + p.n, week ? 'of 7' : '', d1);
 }

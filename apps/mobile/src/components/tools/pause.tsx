@@ -31,14 +31,14 @@ import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { useCareSettings, useStore } from '@/lib/store';
 
 import type { ToolProps } from './types';
 
 export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   const { snap, update, say } = useStore();
   const sos = useSos();
-  const st = snap.settings;
+  const st = useCareSettings();
   const t = sos.timer;
   const [idea, setIdea] = useState(() => pickIdea(st, null, Math.random));
   const [guide, setGuide] = useState(false);

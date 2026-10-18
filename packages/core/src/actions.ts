@@ -1,7 +1,7 @@
 /* Changes to settings, as pure functions: each takes the settings and returns new ones, with what to tell the person.
    They follow the legacy action handlers exactly (see legacy/index.html, the 'clean-mode', 'step-on' ... cases). */
-import { addDays, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
-import type { CountMode, DayKey, Settings } from './types';
+import { addDays, allKeys, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
+import type { CountMode, Day, DayKey, Days, Settings } from './types';
 import { urLikeOf, urOffOf } from './sos';
 
 /** the next change time for a record: now, and always later than the last change (legacy nextU) */
@@ -176,9 +176,53 @@ export function setDate(st: Settings, k: 'start' | 'day1', v: string | null): Ch
     };
   }
   if (!v) return { st: changeSettings(st, (s) => void (s.day1 = null)) };
-  if (isKey(v) && v > st.start) return { st: changeSettings(st, (s) => void (s.day1 = v)) };
+  if (isKey(v) && v > st.start)
+    return {
+      st: changeSettings(st, (s) => {
+        s.day1 = v;
+        s.d1Hand = v;
+      }),
+    };
   return { st, toast: 'Day 1 has to come after the tracking start.' };
 }
+/* ---------- counting starts with the first real entry ---------- */
+/** something the person logged or did that day. Not what the app fills in by itself (a hard hour held, and the calm move it adds), a change to the
+    day's routine, or last night's screens answered the next morning (that answer is kept on the night before). */
+export function realDay(d: Day | null | undefined): boolean {
+  if (!d) return false;
+  if (d.events && d.events.length) return true;
+  const c = d.checkin;
+  if (c && (c.done || c.m != null || c.c != null || c.e != null || c.s != null || c.h != null || c.ro != null || (c.n || '').trim())) return true;
+  const p = d.p;
+  return !!(
+    p &&
+    (p.w.length || p.wd || p.r || p.c - (p.hw != null ? 1 : 0) > 0 || p.m || p.tl.length || p.po || p.ls.length || p.lv.length || (p.tt && p.tt.length))
+  );
+}
+/** the first day with a real entry */
+export function firstEntry(days: Days): DayKey | null {
+  return allKeys(days).find((k) => realDay(days[k])) || null;
+}
+/** Days with nothing logged count from Day 1 on (a slip that is not logged is not a slip), but only once the person is
+    using the app: when Day 1 has passed and the log only starts later, the blank days before it were never really
+    tracked. Day 1 moves to the first entry, the tracking start to the day before it, and a note says so. A Day 1 picked
+    by hand stays where it was put. Null when there is nothing to move. */
+export function day1FromLog(days: Days, st: Settings, tk: DayKey): Change | null {
+  if (!st.day1 || st.day1 >= tk || st.d1Hand === st.day1) return null;
+  const k0 = firstEntry(days);
+  if (!k0 || k0 <= st.day1 || k0 > tk) return null;
+  return {
+    st: changeSettings(st, (s) => {
+      s.day1 = k0;
+      s.start = addDays(k0, -1);
+    }),
+    toast:
+      'Counting now starts ' +
+      fmtDate(k0, { weekday: 'long', month: 'short', day: 'numeric' }) +
+      ', your first entry. Days before it had nothing logged, so they do not count.',
+  };
+}
+
 export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => [
   [
     'week',

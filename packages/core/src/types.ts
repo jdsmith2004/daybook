@@ -99,6 +99,8 @@ export interface Settings {
   v: 1;
   start: DayKey;
   day1: DayKey | null;
+  /** a Day 1 the person picked by hand, which counting from the first entry never moves (actions.ts day1FromLog) */
+  d1Hand?: DayKey | null;
   rollover: number;
   screensOff: Clock;
   goal: string;

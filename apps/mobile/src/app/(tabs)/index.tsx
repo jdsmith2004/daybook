@@ -4,6 +4,7 @@
 import {
   accountAsk,
   autoStep,
+  day1FromLog,
   faithOf,
   LESSONS,
   lessonsDone,
@@ -36,7 +37,7 @@ import { Icon, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { useStore } from '@/lib/store';
-import { useAccount } from '@/lib/sync';
+import { useAccount, useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Today() {
@@ -44,11 +45,21 @@ export default function Today() {
   const { ready, snap, tk, now, apply, update, say } = useStore();
   const st = snap.settings;
   const account = useAccount();
+  const sync = useSync();
 
   /* a rough stretch switches counting to step down by itself, once, with a note (legacy cleanAutoCheck) */
   useEffect(() => {
     if (ready && st && shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
   }, [ready, st, snap.days, tk, apply]);
+
+  /* blank days before the first real entry are not counted: Day 1 moves to that entry, once, with a note. Not while an
+     account is still bringing the log in, when the first entry may not be here yet. */
+  const syncing = sync.status.k === 'busy' || sync.status.k === 'ask' || !sync.loaded;
+  useEffect(() => {
+    if (!ready || !st || syncing) return;
+    const c = day1FromLog(snap.days, st, tk);
+    if (c) apply(c);
+  }, [ready, st, snap.days, tk, apply, syncing]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {

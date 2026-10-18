@@ -45,64 +45,6 @@ const cellStyle = (kind: CellKind, c: Palette) => {
       return { backgroundColor: c.surface2 };
   }
 };
-const KIND_WORD: Record<string, string> = {
-  ok: 'no slip',
-  one: 'one slip, still counts',
-  slip: 'slip',
-  saved: 'slip, run saved',
-  open: 'slip, run can keep going',
-  before: 'before Day 1',
-  ahead: 'ahead',
-};
-const dowOf = (k: string) => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10), 12).getDay();
-
-function MonthGrid({ v, legend }: { v: CleanView; legend: [CellKind, string][] }) {
-  const c = useTheme();
-  const blanks = dowOf(v.first);
-  const kinds = new Set(v.cells.map((x) => x.kind));
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={s.grid}>
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <View key={'h' + i} style={s.cellBox}>
-            <T v="small" tone="muted" style={{ textAlign: 'center', fontFamily: font.bodySemi }}>
-              {d}
-            </T>
-          </View>
-        ))}
-        {Array.from({ length: blanks }, (_, i) => (
-          <View key={'b' + i} style={s.cellBox} />
-        ))}
-        {v.cells.map((x) => (
-          <View key={x.k} style={s.cellBox}>
-            {x.kind === 'ahead' ? (
-              <View style={[s.cell, cellStyle(x.kind, c)]} />
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${fmtDate(x.k, { weekday: 'short', month: 'short', day: 'numeric' })}: ${KIND_WORD[x.kind]}${x.today ? ' (today, so far)' : ''}. Tap to open it.`}
-                onPress={() => router.push({ pathname: '/day/[date]', params: { date: x.k } })}
-                style={[s.cell, cellStyle(x.kind, c), x.today && { outlineColor: c.accent, outlineWidth: 2, outlineOffset: 2, outlineStyle: 'solid' }]}
-              />
-            )}
-          </View>
-        ))}
-      </View>
-      <View style={s.wrap}>
-        {legend
-          .filter(([k]) => k === 'ok' || kinds.has(k))
-          .map(([k, label]) => (
-            <View key={k} style={s.legend}>
-              <View style={[s.cellSm, cellStyle(k, c)]} />
-              <T v="small" tone="muted">
-                {label}
-              </T>
-            </View>
-          ))}
-      </View>
-    </View>
-  );
-}
 
 function Chips({ v }: { v: CleanView }) {
   const c = useTheme();
@@ -157,7 +99,7 @@ function Chips({ v }: { v: CleanView }) {
   );
 }
 
-/** size 'sm' on Today (a strip of the last 30 days and a link to the month), 'lg' in the Journal (the month, tap a day) */
+/** size 'sm' on Today (a strip of the last 30 days and a link to the month), 'lg' in the Journal (under the month calendar) */
 export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: string; now: number; size?: 'sm' | 'lg' }) {
   const c = useTheme();
   const st = snap.settings!;
@@ -203,7 +145,7 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
           <T v="eyebrow" tone="muted">
             {t.eyebrow}
           </T>
-          <LinkText label="See the month ›" onPress={() => router.navigate('/journal')} />
+          <LinkText label="See the month ›" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })} />
         </View>
         <View style={s.baseline} accessibilityLabel={`${t.good} ${t.of}`}>
           <T v="big">{t.good}</T>
@@ -220,11 +162,6 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
         <GradRow snap={snap} tk={tk} />
       </Card>
     );
-  const gentle = v.mode === 'gentle';
-  const legend: [CellKind, string][] = [['ok', 'No slip']];
-  if (gentle) legend.push(['one', 'One slip, still counts'], ['slip', 'Two or more']);
-  else legend.push(['slip', 'Slip']);
-  legend.push(['saved', 'Slip, run saved'], ['open', 'Slip, run can keep going']);
   return (
     <Card>
       <View style={s.between}>
@@ -244,7 +181,6 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
       <T v="small" tone="muted">
         {t.sub}
       </T>
-      <MonthGrid v={v} legend={legend} />
       <Chips v={v} />
       <GradRow snap={snap} tk={tk} />
       <LinkText label="How I count days" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
@@ -318,7 +254,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
             <Text style={[s.infoT, { color: c.muted }]}>?</Text>
           </View>
         </Pressable>
-        {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate('/journal')} /> : null}
+        {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })} /> : null}
       </View>
 
       {/* the stretch so far */}
@@ -392,15 +328,6 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
             <Text style={[s.slimLink, { color: c.coralText }]}>Groups</Text>
           </Pressable>
         </View>
-      ) : null}
-      {size === 'lg' && v.cells.length ? (
-        <MonthGrid
-          v={v}
-          legend={[
-            ['ok', 'No slip'],
-            ['slip', 'Slip'],
-          ]}
-        />
       ) : null}
     </Card>
   );

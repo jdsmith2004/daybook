@@ -3,7 +3,8 @@
    against your usual and your best, and which days this week had slips. */
 import { type stepRuler, type stepWeek } from '@daybook/core';
 import { useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useOnce } from '@/components/talk-art';
 import { Icon } from '@/components/ui';
@@ -100,7 +101,15 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
               ? { bg: c.mintSoft, bd: c.mint, dash: false }
               : { bg: c.mint, bd: c.mint, dash: false };
         return (
-          <View key={d.k} style={s.day}>
+          <Pressable
+            key={d.k}
+            disabled={d.ahead}
+            accessibilityRole="button"
+            accessibilityLabel={
+              d.k + ': ' + (d.ahead ? 'still to come' : d.slips ? d.slips + (d.slips === 1 ? ' slip' : ' slips') : 'no slip') + '. Open the day.'
+            }
+            onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+            style={({ pressed }) => [s.day, pressed && { opacity: 0.7 }]}>
             <Text style={[s.dayL, { color: d.today ? c.accentText : c.muted, fontFamily: d.today ? font.bodyBold : font.bodySemi }]}>{d.l}</Text>
             <View
               style={[
@@ -114,7 +123,7 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
                 <Icon name="check" size={14} color="#FFFFFF" />
               ) : null}
             </View>
-          </View>
+          </Pressable>
         );
       })}
     </View>

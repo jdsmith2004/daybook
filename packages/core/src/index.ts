@@ -29,3 +29,4 @@ export * from './pattern';
 export * from './sunday';
 export * from './when';
 export * from './sunday-story';
+export * from './calendar';

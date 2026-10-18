@@ -27,7 +27,7 @@ import {
   type PatRange,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,6 +36,7 @@ import { EmptyChart, FeelTiles, HBars, Legend, NumbersTable } from '@/components
 import { Clock, DiffDots, Gaps, RideWeeks, WeekRow } from '@/components/pattern-charts';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
@@ -49,6 +50,10 @@ const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 
 export default function Journal() {
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'patterns' || params.pane === 'weeks' ? params.pane : 'days');
+  /* a link to a section (Today's "Month ›" opens Days) moves to it, even when Journal is already open on another one */
+  useEffect(() => {
+    if (params.pane === 'days' || params.pane === 'patterns' || params.pane === 'weeks') setPane(params.pane);
+  }, [params.pane]);
   const { snap, tk } = useStore();
   const st = snap.settings;
   const [week, setWeek] = useState<number | null>(null);
@@ -113,6 +118,7 @@ function DaysPane() {
           : { bg: c.surface2, fg: c.muted };
   return (
     <>
+      <CalendarCard snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} size="lg" />
       {list.weeks.map((w) => (
         <Card key={w.wk + w.title}>

@@ -1,7 +1,7 @@
 /* The flame spirit: one drawing for each of the 60 levels (packages/core, the emblem). With `alive`, it moves gently in a way
    that fits its form: a fire flickers, the lighthouse and the suns breathe slowly, the stars twinkle. It is still under
    Reduce Motion, when locked, and in long lists (which leave `alive` off). */
-import { emblemXml, formOfLevel } from '@daybook/core';
+import { emblemScene, emblemXml, formOfLevel } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -23,14 +23,17 @@ export const Flame = memo(function Flame({
   locked = false,
   label,
   alive = false,
+  soft = false,
 }: {
   level: number;
   size?: number;
   locked?: boolean;
   label?: string;
   alive?: boolean;
+  /** the round frame softened away, to sit in a card painted in its own sky (the top of Today) */
+  soft?: boolean;
 }) {
-  const xml = useMemo(() => emblemXml(level, locked), [level, locked]);
+  const xml = useMemo(() => (soft && !locked ? emblemScene(level).xml : emblemXml(level, locked)), [level, locked, soft]);
   const still = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   const [grow, ms, dim] = MOTION[kindOf(formOfLevel(level))];

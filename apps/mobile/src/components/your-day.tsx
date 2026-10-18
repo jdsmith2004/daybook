@@ -30,7 +30,7 @@ export function openStopKey(k: string) {
 }
 
 /** the colors of a stop, from the sky of its moment */
-function lookOf(sky: StopTile['sky'], c: Palette & { scheme: 'light' | 'dark' }) {
+export function lookOf(sky: StopTile['sky'], c: Palette & { scheme: 'light' | 'dark' }) {
   const dark = c.scheme === 'dark';
   switch (sky) {
     case 'sun':

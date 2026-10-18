@@ -257,21 +257,23 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
         {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })} /> : null}
       </View>
 
-      {/* the stretch so far */}
-      <View style={s.stepHero} accessibilityLabel={k.hero + ' ' + (kv.slips ? 'this stretch' : 'and counting')}>
-        <Text style={[s.stepBig, { color: c.ink }]}>{k.hero}</Text>
-        <View style={{ gap: 4, flexShrink: 1 }}>
-          {r.newBest ? (
-            <View style={[s.newBest, { backgroundColor: c.sun }]}>
-              <Icon name="star" size={13} color={c.onSun} />
-              <Text style={[s.newBestT, { color: c.onSun }]}>New best</Text>
-            </View>
-          ) : null}
-          <T tone="muted" style={{ fontSize: 15 }}>
-            {kv.slips ? 'this stretch' : 'and counting'}
-          </T>
+      {/* the stretch so far (on Today it is already on the flame's picture, at the top) */}
+      {size === 'lg' ? (
+        <View style={s.stepHero} accessibilityLabel={k.hero + ' ' + (kv.slips ? 'this stretch' : 'and counting')}>
+          <Text style={[s.stepBig, { color: c.ink }]}>{k.hero}</Text>
+          <View style={{ gap: 4, flexShrink: 1 }}>
+            {r.newBest ? (
+              <View style={[s.newBest, { backgroundColor: c.sun }]}>
+                <Icon name="star" size={13} color={c.onSun} />
+                <Text style={[s.newBestT, { color: c.onSun }]}>New best</Text>
+              </View>
+            ) : null}
+            <T tone="muted" style={{ fontSize: 15 }}>
+              {kv.slips ? 'this stretch' : 'and counting'}
+            </T>
+          </View>
         </View>
-      </View>
+      ) : null}
       <StretchRuler r={r} />
 
       {/* the plan's week */}

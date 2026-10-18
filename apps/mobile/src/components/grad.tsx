@@ -24,12 +24,12 @@ export function GradCap({ size = 40 }: { size?: number }) {
 }
 
 /** the flame, with the graduate mark once graduation was earned (kept for good, at every level) */
-export function GradFlame({ level, size, label, alive = true }: { level: number; size: number; label?: string; alive?: boolean }) {
+export function GradFlame({ level, size, label, alive = true, soft }: { level: number; size: number; label?: string; alive?: boolean; soft?: boolean }) {
   const { snap } = useStore();
   const on = !!gradOf(snap.settings);
   return (
     <View style={{ width: size, height: size }}>
-      <Flame level={level} size={size} alive={alive} label={on ? (label ?? `Your flame, level ${level}`) + ', wearing a graduation cap' : label} />
+      <Flame level={level} size={size} alive={alive} soft={soft} label={on ? (label ?? `Your flame, level ${level}`) + ', wearing a graduation cap' : label} />
       {on ? (
         <View pointerEvents="none" style={{ position: 'absolute', right: -size * 0.04, top: -size * 0.06, transform: [{ rotate: '14deg' }] }}>
           <GradCap size={size * 0.42} />

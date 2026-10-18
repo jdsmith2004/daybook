@@ -23,8 +23,8 @@ export default function HelpHome() {
       <Card style={{ backgroundColor: c.sosSoft, borderColor: c.sosSoft }}>
         <T v="h2">If it is hard right now</T>
         <T>
-          Tap SOS for one thing to try. Or reach a person, {nm ? 'starting with your safe person, ' : ''}free, at any hour. The two lines below are open to
-          anyone who is struggling, not only to people thinking about suicide.
+          Tap SOS to breathe, then pick one thing to try. Or reach a person, {nm ? 'starting with your safe person, ' : ''}free, at any hour. The two lines
+          below are open to anyone who is struggling, not only to people thinking about suicide.
         </T>
         {nm ? <LinkCard icon="chat" title={'Text ' + nm} sub="Your safe person · texts ready to copy" onPress={msg} /> : null}
         <View>

@@ -18,10 +18,12 @@ import {
   setRollover,
   setRoutine,
   setScreensOffTime,
+  setUrOff,
   setUrPin,
   stepClock,
   toRecords,
   TOOLS,
+  urOffOf,
   urTool,
   type RecordId,
 } from '@daybook/core';
@@ -313,7 +315,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'sos',
         'SOS',
-        'Go-to tool, sound',
+        'Go-to tool, suggestions, sound',
         <>
           <Field
             label="SOS suggests first"
@@ -329,6 +331,15 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               ))}
             </Chips>
           </Field>
+          {urOffOf(st).length ? (
+            <Field label="Not suggested" hint="You said Not for me to these. They stay in the SOS list. Tap one to have it suggested again.">
+              <Chips label="Not suggested">
+                {urOffOf(st).map((id) => (
+                  <Chip key={id} label={urTool(id)!.name + ' ×'} on onPress={() => apply({ st: setUrOff(st, id, false) })} />
+                ))}
+              </Chips>
+            </Field>
+          ) : null}
           <Field label="Sound guide" hint="A soft tone on each breath, and a chime when a timer ends. Saved on this device.">
             <Chips label="Sound guide">
               <Chip

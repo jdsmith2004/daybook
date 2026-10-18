@@ -90,6 +90,60 @@ describe('SOS memory and rounds', () => {
     expect(mem.pass).toEqual({ move: 0 });
   });
 
+  it('learns what you pick: a tool you keep passing over gives way to the one you choose', () => {
+    const st = core.normSettings({ start: '2026-10-01' });
+    /* a stressful afternoon, nothing in the log yet: Move leads */
+    const now = new Date(2026, 9, 15, 15, 0).getTime();
+    const sc = { ...core.newUrge(now, 0), trigger: 'stress', explore: false };
+    const top = (mem: core.UrMem, s: Settings = st) => core.urPickSug({ ...sc }, {}, s, '2026-10-15', now, mem, () => 0.99).top.id;
+    expect(top({})).toBe('move');
+    let mem: core.UrMem = {};
+    mem = core.urNote(mem, 'move', 'thought');
+    expect(top(mem)).toBe('ground');
+    mem = core.urNote(mem, 'ground', 'thought');
+    expect(mem.pick).toEqual({ thought: 2 });
+    expect(mem.pass).toEqual({ move: 1, ground: 1 });
+    expect(top(mem)).toBe('thought');
+    expect(
+      core.urSuggestion(
+        core.urPickSug({ ...sc }, {}, st, '2026-10-15', now, mem, () => 0.99),
+        null,
+        {},
+        now,
+        st,
+        mem,
+      ).cap,
+    ).toBe('You often pick this one.');
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({ thought: 'You like this' });
+  });
+
+  it('never suggests a tool marked Not for me, and weighs Would you use this again', () => {
+    const now = new Date(2026, 9, 15, 15, 0).getTime();
+    const sc = { ...core.newUrge(now, 0), trigger: 'bored', explore: false };
+    let st = core.normSettings({ start: '2026-10-01' });
+    const top = () => core.urPickSug({ ...sc }, {}, st, '2026-10-15', now, {}, () => 0.99).top.id;
+    expect(top()).toBe('move');
+    st = core.setUrOff(st, 'move', true);
+    expect(core.urOffOf(st)).toEqual(['move']);
+    expect(top()).toBe('surprise');
+    expect(core.urRank(sc, {}, st, '2026-10-15', now, {}).find((x) => x.id === 'move')!.off).toBe(true);
+    /* it can still be your go-to, and it can come back */
+    expect(core.urPickSug({ ...sc }, {}, { ...st, urPin: 'move' }, '2026-10-15', now, {}, () => 0.99).top.id).toBe('move');
+    st = core.setUrOff(st, 'move', false);
+    expect(top()).toBe('move');
+    st = core.rateUrTool(core.rateUrTool(st, 'move', -1), 'move', -1);
+    expect(core.urLikeOf(st, 'move')).toBe(-2);
+    expect(top()).toBe('surprise');
+    for (let i = 0; i < 5; i++) st = core.rateUrTool(st, 'curious', 1);
+    expect(core.urLikeOf(st, 'curious')).toBe(3);
+    expect(top()).toBe('curious');
+    /* what comes from elsewhere is cleaned when read */
+    const odd = { ...st, urOff: ['move', 'nope', 'move', 4], urLike: { move: 'x', curious: 99 } } as unknown as Settings;
+    expect(core.urOffOf(odd)).toEqual(['move']);
+    expect(core.urLikeOf(odd, 'move')).toBe(0);
+    expect(core.urLikeOf(odd, 'curious')).toBe(3);
+  });
+
   it('keeps each round: the tool and what happened next', () => {
     let sc = { ...core.newUrge(1000, 0), used: ['breathe'] };
     sc = core.urAnswer(sc, 'again');

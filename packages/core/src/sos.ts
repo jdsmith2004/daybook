@@ -48,6 +48,8 @@ export interface UrMem {
   rev?: number;
   fwd?: { a: string[]; b: string[] };
   bedPlan?: string;
+  /** the tools you chose yourself over the one suggested, counted up to 4: SOS leans toward what you pick */
+  pick?: Record<string, number>;
   /** Move: whether the moves shown are the ones for a seat (in a meeting, at work, in a car) or for getting up */
   moveSit?: boolean;
   [bucket: string]: unknown;
@@ -68,6 +70,8 @@ export interface UrState {
   roundDone: boolean;
   sug: string | null;
   comboFrom?: string | null;
+  /** "Would you use this again?" answered in this SOS (1 yes, -1 not really), so a change of mind counts once */
+  rate?: Record<string, 1 | -1>;
   /** the line to do now and the thing worth knowing, picked once per screen */
   cx: { k?: string; do?: string; seen?: boolean; kk?: string; kn?: (typeof UR_KNOW)[number] } | null;
 }
@@ -102,6 +106,15 @@ export const MOVES_SIT: [string, string, string][] = [
 ];
 
 export const urTool = (id: string) => TOOLS.find((t) => t.id === id) || null;
+/** the tools you asked SOS not to suggest ("Not for me"). They stay in the list, to pick yourself. */
+export const urOffOf = (st: Settings | null): string[] =>
+  st && Array.isArray(st.urOff) ? st.urOff.filter((id, i, a) => typeof id === 'string' && !!urTool(id) && a.indexOf(id) === i) : [];
+/** what you said after using a tool ("Would you use this again?"): one up for each Yes, one down for each Not really, from -3 to 3 */
+export function urLikeOf(st: Settings | null, id: string): number {
+  const v = st && st.urLike && typeof st.urLike === 'object' ? (st.urLike as Record<string, unknown>)[id] : 0;
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(-3, Math.min(3, Math.round(v))) : 0;
+}
+const pickOf = (mem: UrMem, id: string) => (mem.pick && typeof mem.pick === 'object' ? mem.pick[id] | 0 : 0);
 /** answers you added yourself act like "Other" when picking a tool */
 export const urTrigKey = (t: string | null | undefined) => (!t || t === 'none' ? 'none' : TRIG_T[t] ? t : 'other');
 /** late at night: the SOS screens go dark, and "Go to bed" can be suggested */
@@ -198,6 +211,7 @@ export function urRank(
   const pass = mem.pass && typeof mem.pass === 'object' ? mem.pass : {};
   const pin = st && st.urPin;
   const skip = sc.skip || [];
+  const hide = urOffOf(st);
   return TOOLS.map((t) => {
     const id = t.id;
     const rt = hb[id] && hb[id].n >= 2 ? hb[id] : null;
@@ -209,8 +223,13 @@ export function urRank(
     if (id === pin) s += 40;
     if (sc.used.indexOf(id) >= 0) s -= 30;
     if (skip.indexOf(id) >= 0) s -= 20;
-    s -= Math.min(4, (pass[id] | 0) * 0.8);
-    const off = id !== pin && (id === 'message' || (id === 'breathe' && !sc.again));
+    /* what you do with the suggestions counts: passing one over lowers it, choosing a tool yourself raises it, and so does
+       saying you would use it again (Not really lowers it more than Yes raises it) */
+    s -= Math.min(7, (pass[id] | 0) * 1.5);
+    s += Math.min(5, pickOf(mem, id) * 1.25);
+    const lk = urLikeOf(st, id);
+    s += lk > 0 ? lk * 2 : lk * 3;
+    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message' || (id === 'breathe' && !sc.again));
     return { id, score: s, r, rt, tk: ctx, pin: id === pin, off };
   }).sort((a, b) => b.score - a.score || UR_PREF.indexOf(a.id) - UR_PREF.indexOf(b.id));
 }
@@ -256,7 +275,7 @@ export function urPickSug(sc: UrState, days: Days, st: Settings | null, tk: DayK
   return pair({ top: best, mode: '' });
 }
 
-export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], days: Days, now: number): string {
+export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], days: Days, now: number, st?: Settings | null, mem?: UrMem): string {
   if (mode === 'fresh')
     return x.tk === 'late' && x.id === 'bed' ? 'New for you. Late at night, sleep is often the strongest move.' : 'New for you. Worth a try.';
   if (mode === 'last' && last) {
@@ -270,12 +289,14 @@ export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], d
   if (a.n >= 2 && a.w) return 'Worked ' + a.w + ' of the ' + a.n + ' times you tried it.';
   if (a.l >= 2) return 'Used in ' + a.l + ' urges you rode out.';
   if (x.tk === 'late' && x.id === 'bed') return 'Late at night, sleep is often the strongest move.';
+  if (st && urLikeOf(st, x.id) > 0) return 'You said you would use it again.';
+  if (mem && pickOf(mem, x.id) >= 2) return 'You often pick this one.';
   if (!urTried(days)[x.id]) return 'New for you.';
   return (UR_META as Record<string, { does: string }>)[x.id]?.does || '';
 }
 
 /** the suggestion's button and the line under it (legacy urGoHtml and urCapText) */
-export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, now: number) {
+export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, now: number, st?: Settings | null, mem?: UrMem) {
   const META = UR_META as Record<string, { mins: string; does: string }>;
   if (pk.combo) {
     const c = urTool(pk.combo.id)!;
@@ -292,7 +313,7 @@ export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, n
   const t = urTool(pk.top.id)!;
   const m = META[pk.top.id] || ({} as { mins?: string; does?: string });
   const sub = [String(m.mins || '').replace(/^About /, ''), m.does].filter(Boolean).join(' · ');
-  const w = urWhyTool(pk.top, pk.mode, pk.last, days, now);
+  const w = urWhyTool(pk.top, pk.mode, pk.last, days, now, st, mem);
   const own = w === m.does ? '' : w;
   const cap =
     strength && pk.mode !== 'pin' && pk.mode !== 'fresh'
@@ -301,16 +322,33 @@ export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, n
   return { tool: t, combo: null, title: t.name, sub, label: t.name, cap };
 }
 
-/** what you chose against what was suggested: passing a suggestion over lowers it a little; using it eases that back */
+/** what you chose against what was suggested: passing a suggestion over lowers it, and the tool you chose instead rises;
+    using the suggestion eases that back */
 export function urNote(mem: UrMem, sug: string | null, picked: string | null): UrMem {
   if (!sug) return mem;
   const pass = { ...(mem.pass && typeof mem.pass === 'object' ? mem.pass : {}) };
+  const pick = { ...(mem.pick && typeof mem.pick === 'object' ? mem.pick : {}) };
   if (picked === sug) pass[sug] = Math.max(0, (pass[sug] | 0) - 2);
   else {
     pass[sug] = Math.min(6, (pass[sug] | 0) + 1);
     if (picked && pass[picked]) pass[picked] = Math.max(0, pass[picked] - 1);
+    if (picked && urTool(picked)) pick[picked] = Math.min(4, (pick[picked] | 0) + 1);
   }
-  return { ...mem, pass };
+  return Object.keys(pick).length ? { ...mem, pass, pick } : { ...mem, pass };
+}
+
+/** the small tag on each tool in SOS: how it went for you, or that you often choose it */
+export function urTags(days: Days, st: Settings | null, tk: DayKey, mem: UrMem): Record<string, string> {
+  const S = urStats(days, tk);
+  const out: Record<string, string> = {};
+  TOOLS.forEach((t) => {
+    const r = S.all[t.id];
+    if (st && st.urPin === t.id) out[t.id] = 'Your go-to';
+    else if (r && r.n >= 2 && r.w) out[t.id] = 'Worked ' + r.w + ' of ' + r.n;
+    else if (r && r.l >= 2) out[t.id] = 'Helped ' + r.l + ' times';
+    else if (urLikeOf(st, t.id) > 0 || pickOf(mem, t.id) >= 2) out[t.id] = 'You like this';
+  });
+  return out;
 }
 
 /* ---------- the words ---------- */

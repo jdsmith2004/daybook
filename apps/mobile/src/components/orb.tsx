@@ -1,10 +1,11 @@
 /* The breathing sun: it grows while you breathe in and shrinks while you breathe out, with the words for each step and the time
-   left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS minute. */
+   left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS screen. */
 import { breathPhase, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
@@ -148,13 +149,23 @@ const SIDE = 16;
 /** the first SOS minute: a sun on the horizon (the top edge of the sheet below) that rises while you breathe in and sinks
     while you breathe out, with the words for each step and the time left just above it. It measures the room it has and
     fills it, so the words above and the sheet below never crowd it. After the minute it keeps going. It ticks only while
-    on (when the screen is in front). */
-export function HorizonSun({ on }: { on: boolean }) {
+    on (when the screen is in front). With `breaths`, it counts breaths instead of time ("Breath 2 of 3"), with a soft
+    buzz as each one starts, and tells onBreaths how many are done. */
+export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: number; onBreaths?: (n: number) => void }) {
   const c = useTheme();
   const [r0] = useState(() => Date.now());
   const sec = useSeconds(r0, on);
   const left = Math.max(0, 60 - sec);
   const ph = breathPhase('calm', sec);
+  /* calm is two steps a breath: in, then out */
+  const done = Math.floor(ph.idx / 2);
+  useEffect(() => {
+    if (!breaths) return;
+    onBreaths?.(done);
+    if (done < breaths) buzz('tap');
+    else if (done === breaths) buzz('lit');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
   const rise = useRef(new Animated.Value(0)).current;
   const reduced = useRef(false);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
@@ -240,7 +251,7 @@ export function HorizonSun({ on }: { on: boolean }) {
         accessibilityLiveRegion="polite">
         <Text style={[s.phase, { color: c.ink }]}>{PH_TXT[ph.k]}</Text>
         <Text style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]} accessibilityElementsHidden importantForAccessibility="no">
-          {left > 0 ? fmtMS(left * 1000) : 'Keep going'}
+          {breaths ? (done < breaths ? 'Breath ' + (done + 1) + ' of ' + breaths : 'Well done') : left > 0 ? fmtMS(left * 1000) : 'Keep going'}
         </Text>
       </View>
     </View>

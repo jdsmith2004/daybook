@@ -21,6 +21,7 @@ export function SceneFrame({
   dots,
   footer,
   sheet,
+  pinSheet,
   children,
 }: {
   title: string;
@@ -29,8 +30,10 @@ export function SceneFrame({
   onClose: () => void;
   dots?: { n: number; i: number; label: string } | null;
   footer?: ReactNode;
-  /** a sheet along the bottom edge, below the card (the first SOS screen) */
+  /** a sheet along the bottom edge, below the card (the SOS screens) */
   sheet?: ReactNode;
+  /** the sheet stays put at the bottom while the card above it scrolls (a long list over the main button) */
+  pinSheet?: boolean;
   children: ReactNode;
 }) {
   const c = useTheme();
@@ -50,7 +53,7 @@ export function SceneFrame({
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
         ref={scroll}
-        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? 0 : inset.bottom + 24 }]}
+        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
         <View style={s.col}>
           <View style={s.top}>
@@ -78,8 +81,13 @@ export function SceneFrame({
           <View style={s.card}>{children}</View>
           {footer ? <View style={s.foot}>{footer}</View> : null}
         </View>
-        {sheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
+        {sheet && !pinSheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
+      {sheet && pinSheet ? (
+        <View style={s.pinned}>
+          <Sheet bottom={inset.bottom}>{sheet}</Sheet>
+        </View>
+      ) : null}
     </View>
   );
   return dark ? (
@@ -202,6 +210,7 @@ function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
 
 const s = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center' },
+  pinned: { paddingHorizontal: 16, alignItems: 'center' },
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   topL: { flexDirection: 'row', alignItems: 'center', gap: 10 },

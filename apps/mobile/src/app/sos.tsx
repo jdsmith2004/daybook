@@ -1,12 +1,19 @@
 /* SOS: help on the first tap, when an urge is happening right now. Nothing is asked first.
-   The first screen holds this minute: who you are becoming, what to do, your record, your own words, and a sun to breathe with. The sheet below it holds
-   the next move: how strong it is (optional), one suggested tool, Other tools and It passed. A tool started here comes back to
-   "How is it now?", and the answer saves the entry and goes on to the check-in. Ported from the legacy SCENES.urge.
-   Late at night the screens go dark, and Go to bed only ever comes paired with a tool for the thoughts. */
+   The first screen is only for breathing and coming back to yourself: who you are becoming, one line to do now, your record and
+   your own words, kept small, and a sun to take three slow breaths with. Below it: how strong it is (optional) and Next, which
+   works at any time and lights up once the breaths are done.
+   The second screen is the tools: every one of them, with how each went for you, and the one suggested for this moment as the
+   main button, with Not for me (stop suggesting it), It passed and Talk it through under it. The suggestion learns from what
+   you pick (core: urRank).
+   A tool started here comes back to "How is it now?", which also asks whether you would use that tool again; the answer saves
+   the entry and goes on to the check-in, and Still strong goes back to the tools. Late at night the screens go dark, and Go to
+   bed only ever comes paired with a tool for the thoughts. */
 import {
   addEvent,
   gameCompute,
+  rateUrTool,
   rkStepFor,
+  setUrOff,
   UR_STR,
   UR_STR_ADJ,
   urAnswer,
@@ -17,8 +24,10 @@ import {
   urKnow,
   urNight,
   urNote,
+  urOffOf,
   urPickSug,
   urSuggestion,
+  urTags,
   urTool,
   type Strength,
   type Tool,
@@ -31,9 +40,8 @@ import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HorizonSun } from '@/components/orb';
 import { SceneFrame } from '@/components/scene';
-import { TalkDoor } from '@/components/talk-card';
 import { ToolGrid, toolTone } from '@/components/tool-grid';
-import { Icon, T } from '@/components/ui';
+import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -44,18 +52,23 @@ import { useVoice } from '@/lib/voice';
 
 export default function Sos() {
   const c = useTheme();
-  const { snap, tk, now, update } = useStore();
+  const { snap, tk, now, update, apply } = useStore();
   const sos = useSos();
   const win = useWindowDimensions();
   const st = snap.settings;
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const ur = sos.ur;
+  /* the small tag on each tool: how it went for you */
+  const tags = useMemo(() => (st ? urTags(snap.days, st, tk, sos.mem) : {}), [snap.days, st, tk, sos.mem]);
   const voice = useVoice();
   /* which reason "From you" shows, when there is no note: picked once, so it stays put while you read it */
   const [pick] = useState(() => Math.random());
 
   /* the breathing sun only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
+  /* breaths done on the first screen, and the tool just set to Not for me (for Undo) */
+  const [held, setHeld] = useState(0);
+  const [offed, setOffed] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
       setFront(true);
@@ -76,7 +89,7 @@ export default function Sos() {
   const key = ur ? (ur.again ? 'a' + ur.again : 'first') + '|' + (ur.strength || '') : '';
   useLayoutEffect(() => {
     if (!ur || !st) return;
-    if (ur.step === 'now' && (ur.cx?.k !== key || ur.explore == null)) {
+    if ((ur.step === 'now' || ur.step === 'tools') && (ur.cx?.k !== key || ur.explore == null)) {
       let mem = sos.mem;
       let cx = ur.cx;
       if (cx?.k !== key) {
@@ -99,11 +112,11 @@ export default function Sos() {
   const night = urNight(new Date(now).getHours());
   const level = Math.max(1, g.level.n);
   /* the one suggestion. explore is settled above, so rand is not used here */
-  const pk = ur && ur.step === 'now' ? urPickSug({ ...ur }, snap.days, st, tk, now, sos.mem, () => 1) : null;
+  const pk = ur && ur.step === 'tools' ? urPickSug({ ...ur }, snap.days, st, tk, now, sos.mem, () => 1) : null;
 
   const pickTool = (id: string, combo = false) => {
     if (!ur || !urTool(id)) return;
-    const sug = ur.step === 'now' && pk ? pk.top.id : ur.sug;
+    const sug = ur.step === 'tools' && pk ? pk.top.id : ur.sug;
     sos.setMem((m) => urNote(m, sug, id));
     sos.set({ ...ur, sug });
     sos.setCombo(combo && id !== 'bed' ? 'bed' : null);
@@ -116,7 +129,8 @@ export default function Sos() {
     if (!ur) return;
     const a = urAnswer(ur, v);
     if (v === 'again') {
-      sos.set(a);
+      sos.set({ ...a, step: 'tools' });
+      setOffed(null);
       buzz('tap');
       return;
     }
@@ -157,19 +171,108 @@ export default function Sos() {
       </SceneFrame>
     );
 
-  if (ur.step === 'tools')
+  /* "Would you use this again?": tapping the answer that is on takes it back */
+  const rate = (id: string, v: 1 | -1) => {
+    if (!ur) return;
+    const prev = ur.rate?.[id] || 0;
+    const next = prev === v ? 0 : v;
+    const r = { ...(ur.rate || {}) };
+    if (next) r[id] = next;
+    else delete r[id];
+    apply({ st: rateUrTool(st, id, next - prev) });
+    sos.set({ ...ur, rate: r });
+    buzz('tap');
+  };
+  const notForMe = (id: string, on: boolean) => {
+    apply({ st: setUrOff(st, id, on) });
+    setOffed(on ? id : null);
+    buzz('tap');
+  };
+
+  /* the second screen: every tool, and the one suggested for this moment */
+  if (ur.step === 'tools') {
+    const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now, st, sos.mem) : null;
+    const was = offed ? urTool(offed) : null;
+    const lead = ur.again ? String(ur.cx?.do || '') : 'Pick what will help you most in this moment, or start the one below.';
     return (
-      <SceneFrame title="SOS" sky={sky} onBack={() => sos.set({ ...ur, step: 'now' })} onClose={close}>
+      <SceneFrame
+        title="SOS"
+        sky={sky}
+        onBack={() => {
+          sos.set({ ...ur, step: 'now' });
+          setOffed(null);
+        }}
+        onClose={close}
+        pinSheet
+        sheet={
+          <>
+            {sug ? (
+              <View style={{ gap: 8 }}>
+                <View style={s.lab}>
+                  <Text style={[s.labT, { color: c.muted }]}>SUGGESTED FOR YOU</Text>
+                  {pk && pk.mode !== 'pin' ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={'Not for me. Stop suggesting ' + sug.tool.name}
+                      hitSlop={10}
+                      onPress={() => notForMe(sug.tool.id, true)}>
+                      <Text style={[s.labL, { color: c.accentText }]}>Not for me</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                <Go
+                  tool={sug.tool}
+                  title={sug.title}
+                  sub={sug.sub}
+                  label={sug.combo ? sug.label : undefined}
+                  onPress={() => pickTool(sug.tool.id, !!sug.combo)}
+                />
+                {was ? (
+                  <View style={s.undo} accessibilityLiveRegion="polite">
+                    <T v="small" tone="muted" style={{ flex: 1 }}>
+                      {was.name} will not be suggested again. It stays in the list.
+                    </T>
+                    <Pressable accessibilityRole="button" hitSlop={10} onPress={() => notForMe(was.id, false)}>
+                      <Text style={[s.labL, { color: c.accentText }]}>Undo</Text>
+                    </Pressable>
+                  </View>
+                ) : sug.cap && win.height > 680 ? (
+                  <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
+                    {sug.cap}
+                  </T>
+                ) : null}
+              </View>
+            ) : null}
+            <View style={s.alt}>
+              <Alt icon="check" label="It passed" onPress={() => save('rode')} />
+              <Alt
+                icon="chat"
+                label="Talk it through"
+                onPress={() => {
+                  buzz('tap');
+                  router.replace('/talk');
+                }}
+              />
+            </View>
+          </>
+        }>
         <T v="title" style={s.c} accessibilityRole="header">
-          Pick a tool
+          {ur.again ? 'Try something different' : 'What will help right now?'}
         </T>
-        <TalkDoor onOpen={() => router.replace('/talk')} />
-        <ToolGrid days={snap.days} onPick={(id) => pickTool(id)} />
+        {lead ? (
+          <T tone="muted" style={[s.c, { maxWidth: 360 }]}>
+            {lead}
+          </T>
+        ) : null}
+        <ToolGrid days={snap.days} tags={tags} onPick={(id) => pickTool(id)} />
       </SceneFrame>
     );
+  }
 
   if (ur.step === 'after') {
     const t = urTool(ur.used[ur.used.length - 1] || '');
+    const r = t ? ur.rate?.[t.id] || 0 : 0;
+    const off = !!t && urOffOf(st).indexOf(t.id) >= 0;
     return (
       <SceneFrame title="SOS" sky={sky} onClose={close} footer={<Link label="Not now" onPress={close} />}>
         <Flame level={level} size={80} />
@@ -187,9 +290,39 @@ export default function Sos() {
         </T>
         <View style={s.opts}>
           <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => save('rode')} />
-          <BigOption tone="sun" icon="timer" title="Still strong" sub="I need a bit longer." onPress={() => save('again')} />
+          <BigOption tone="sun" icon="timer" title="Still strong" sub="Try something different." onPress={() => save('again')} />
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => save('slipped')} />
         </View>
+        {t ? (
+          <View style={[s.rate, { backgroundColor: c.scBtn }]} accessibilityRole="radiogroup" accessibilityLabel={'Would you use ' + t.name + ' again?'}>
+            <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
+              Would you use {t.name} again?
+            </T>
+            <View style={s.rateRow}>
+              <Chip label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
+              <Chip label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
+            </View>
+            {r === 1 ? (
+              <T v="small" tone="muted" style={s.c}>
+                Good to know. SOS will offer it more.
+              </T>
+            ) : r === -1 ? (
+              off ? (
+                <T v="small" tone="muted" style={s.c}>
+                  It will not be suggested again. It stays in the list.
+                </T>
+              ) : st.urPin === t.id ? (
+                <T v="small" tone="muted" style={s.c}>
+                  Good to know. It is still your go-to in Settings.
+                </T>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={() => notForMe(t.id, true)} style={s.plan}>
+                  <Text style={[s.planT, { color: c.accentText }]}>Stop suggesting {t.name}</Text>
+                </Pressable>
+              )
+            ) : null}
+          </View>
+        ) : null}
         {ur.cx?.kn ? <Know text={ur.cx.kn.t} /> : null}
       </SceneFrame>
     );
@@ -200,7 +333,6 @@ export default function Sos() {
   const be = String(st.becoming || '').trim();
   const mine = !!fy || !!voice.uri;
   const rec = urEvidence(snap.days);
-  const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now) : null;
   const lines = String(ur.cx?.do || '')
     .replace(/([.!?])\s+/g, '$1\n')
     .split('\n');
@@ -222,40 +354,15 @@ export default function Sos() {
           }}
         />
       </View>
-      <View style={{ gap: 8 }}>
-        <Lab text="Try this next" />
-        {sug ? (
-          <Go tool={sug.tool} title={sug.title} sub={sug.sub} label={sug.combo ? sug.label : undefined} onPress={() => pickTool(sug.tool.id, !!sug.combo)} />
-        ) : null}
-        {sug?.cap && !quiet ? (
-          <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
-            {sug.cap}
-          </T>
-        ) : null}
-        <View style={s.alt}>
-          <Alt
-            icon="dots"
-            label="Other tools"
-            onPress={() => {
-              sos.set({ ...ur, step: 'tools', sug: pk ? pk.top.id : ur.sug });
-              buzz('tap');
-            }}
-          />
-          <Alt icon="check" label="It passed" onPress={() => save('rode')} />
-        </View>
-        {/* on a short screen there is no room: it waits at the top of Other tools instead */}
-        {!small ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              buzz('tap');
-              router.replace('/talk');
-            }}
-            style={s.plan}>
-            <Text style={[s.planT, { color: c.accentText }]}>Not an urge yet, but a plan? Talk it through</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      {/* Next works at any time; it lights up once the three breaths are done */}
+      <Button
+        label="Next"
+        kind={held >= 3 ? 'primary' : 'ghost'}
+        onPress={() => {
+          sos.set({ ...ur, step: 'tools', sug: null });
+          buzz('tap');
+        }}
+      />
     </>
   );
 
@@ -286,13 +393,7 @@ export default function Sos() {
           )}
           {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
         </View>
-        {ur.again ? (
-          <View style={s.again}>
-            <Flame level={level} size={92} />
-          </View>
-        ) : (
-          <HorizonSun on={front} />
-        )}
+        <HorizonSun on={front} breaths={3} onBreaths={setHeld} />
       </View>
     </SceneFrame>
   );
@@ -425,7 +526,6 @@ const s = StyleSheet.create({
   h: { fontSize: 28, lineHeight: 33, maxWidth: 420 },
   opts: { alignSelf: 'stretch', gap: 10 },
   sky: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 8 },
-  again: { flexGrow: 1, justifyContent: 'center', paddingBottom: 8 },
   words: { alignItems: 'center', paddingTop: 8 },
   rec: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingLeft: 9, paddingRight: 12, borderRadius: 999 },
@@ -436,6 +536,10 @@ const s = StyleSheet.create({
   lab: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
   labT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
   labA: { fontFamily: font.bodyMedium, fontSize: 13 },
+  labL: { fontFamily: font.bodySemi, fontSize: 14, textDecorationLine: 'underline' },
+  undo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
+  rate: { alignSelf: 'stretch', gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18 },
+  rateRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 17 },
   segB: {
     flex: 1,

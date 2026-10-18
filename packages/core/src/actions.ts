@@ -2,6 +2,7 @@
    They follow the legacy action handlers exactly (see legacy/index.html, the 'clean-mode', 'step-on' ... cases). */
 import { addDays, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
 import type { CountMode, DayKey, Settings } from './types';
+import { urLikeOf, urOffOf } from './sos';
 
 /** the next change time for a record: now, and always later than the last change (legacy nextU) */
 export function nextU(prev: { u?: number } | null | undefined, now = Date.now()): number {
@@ -217,6 +218,18 @@ export const setRollover = (st: Settings, h: number): Settings => changeSettings
 /** the tool SOS suggests first, or null for the best fit */
 export const setUrPin = (st: Settings, id: string | null): Settings =>
   changeSettings(st, (s) => void (s.urPin = id && (TOOLS as { id: string }[]).some((t) => t.id === id) ? id : null));
+/** "Not for me": SOS stops suggesting a tool (on), or suggests it again (off). It stays in the list either way. */
+export const setUrOff = (st: Settings, id: string, on: boolean): Settings =>
+  changeSettings(st, (s) => {
+    const cur = urOffOf(s).filter((x) => x !== id);
+    s.urOff = on && (TOOLS as { id: string }[]).some((t) => t.id === id) ? cur.concat([id]) : cur;
+  });
+/** "Would you use this again?": d is +1 for Yes and -1 for Not really (or the change, when the answer is changed) */
+export const rateUrTool = (st: Settings, id: string, d: number): Settings =>
+  changeSettings(st, (s) => {
+    if (!(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
+    s.urLike = { ...(s.urLike && typeof s.urLike === 'object' ? s.urLike : {}), [id]: Math.max(-3, Math.min(3, urLikeOf(s, id) + d)) };
+  });
 export const setCelebrate = (st: Settings, on: boolean): Settings => changeSettings(st, (s) => void (s.celebrate = on));
 /** a clock time moved by some minutes, around the clock (for the screens-off stepper) */
 export function stepClock(t: string, d: number): string {

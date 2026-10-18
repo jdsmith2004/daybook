@@ -141,6 +141,10 @@ export interface Settings {
   routine: Record<string, boolean>;
   note: string;
   urPin: string | null;
+  /** SOS: the tools not to suggest ("Not for me"), and what was said after using each ("Would you use this again?", -3 to 3).
+      Optional, so older records need no change; read them with urOffOf and urLikeOf. */
+  urOff?: string[];
+  urLike?: Record<string, number>;
   onb: { n: number; at: number; a: Record<string, unknown>; hist: { d: DayKey; s: number }[] } | null;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
   gradAt?: DayKey | null;

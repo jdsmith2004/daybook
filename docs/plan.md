@@ -49,6 +49,50 @@ seven-day strip looked wrong in the first screenshots, but that was its pop-in a
 "Still burning. Still yours.", the cards and the record of clean days), the Sunday review's kind words about the slip, and
 the graduation count holding at 58 of 90 through the slip.
 
+### Fix 2, thought through: the Rekindle quest (October 18)
+
+**Why it exists.** A run is a record of keeping your word, day after day. Without a save, one slip drops it to zero, and a
+cliff like that is exactly when "I already blew it" wins. The quest is the bridge: the first slip in any 7 days can be saved,
+but only by doing what stops one slip from becoming a slide (one small thing within the hour, the phone away that night, the
+sunrise check the next morning, and for a run of 14 days or more, tracing it back or telling someone). If saving were free,
+the run would only count days since install, a slip would cost nothing, the recovery work (which is the actual treatment)
+would have no pull, the person who handled a slip well and the one who spiraled would look the same, and saves would become
+routine. The owner: keeping a run after a slip should take work, and it must stay possible.
+
+**How it works today** (legacy `runLedger` and `rkOf`): first slip in 7 days only, a run of 1 day or more; three missions,
+four from 14 days; all done by the end of the next day; a saved slip day counts in the run; 3 of 4 counts for nothing;
+"screens stayed on" for that night makes it impossible at once; a second slip within 7 days cannot be saved.
+
+**The walk** (four people and one more, screenshots sent in the chat):
+
+- Feels right: the embers ("Still burning. Still yours.", "49 days. That is huge, and it still counts."), the missions
+  themselves, and the save (celebrations, the badge, "Run saved: 51 days", the gold mark on the calendar).
+- Threatened: the quest's headline "Keep your 49-day run going ... by tomorrow night" a minute after the embers; "0 of 4 lit ·
+  ends tomorrow night" at the top of Today; "Finish the rest by tonight", shown right above "You are in your hard hours".
+- Hopeless: 3 of 4 done, the deadline passes, and Today says nothing (Journal: "Longest run 49 days · Next goal 3 days");
+  a second slip 3 days after a save ends the run in one line ("Your next run starts tomorrow"); and an honest "Not this
+  time" to "did screens go off?" ends the run on the spot, under "Honest beats perfect. It counts either way."
+- Confusing: Rekindle's record says 16 clean days before the slip while the quest says a 9-day run (the record counts the
+  tracking week).
+
+**Versions** (all keep the first-slip-in-7-days limit, every mission required, and the 4th mission for 14 days or more):
+
+1. **Same quest, fair rules.** The clock stays (through tomorrow night). Phone away counts on either night, so an honest
+   answer never ends a run; the words lead with saving ("Save your 49-day run. Four steps, through Monday night.");
+   when a run ends (the clock, or a second slip), one card says so the next morning: "Your 49 days are kept", the longest
+   run and the graduation count, and that a new run already started. Core: `runLedger`/`rkOf` (the missed rule, phone away
+   on either night), the words in `rekindle.ts`, `view.ts`, `day.ts`, `actions.ts`, and a new `rkEnded` for the card.
+2. **The run waits for you** (recommended). Everything in 1, and the save window is three days after the slip night
+   instead of one: phone away on any one night, the sunrise check on any one morning, before the third night ends. A
+   second slip in that time still ends it. Core: the same, with the deadline in `runLedger` moved from the next day to
+   three days on, and the missions read across the window.
+3. **Most of it is enough** (not recommended): 3 of 4 saves a run of 14 days or more. It ends the all-or-nothing, but it
+   lowers the work for the longest runs, which is the opposite of the reason for the quest.
+
+Either 1 or 2 changes golden fixtures on purpose (the save rules), updated by hand and explained in the commit, as before.
+Separately, whichever is picked: the record's clean days should count from Day 1, like the run. **Waiting for the owner's
+pick. Nothing is built.**
+
 Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;

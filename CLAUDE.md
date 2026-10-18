@@ -27,6 +27,11 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   Say when a piece of work needs a different model or effort, and otherwise just keep going on the one in use.
   Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
   The old review artifacts are retired: never edit or republish them.
+- **Be a coworker, not an assistant.** Your opinion matters, so say it. When a request is too vague to do well, say what is
+  unclear and what you would do, instead of guessing quietly. When you think a request is wrong, or see a better way, push
+  back plainly and say why, before the work, not after it. Do not agree just to please. Once we have talked it through and
+  the owner decides, do it that way and stay focused on the task. End each report with what you would push back on, if
+  anything (say so when there is nothing, rather than inventing something).
 - **Publish live every time.** Every change should reach the live site so the owner can see it. Free publishing is always
   fine (the GitHub Pages preview at https://jdsmith2004.github.io/daybook/, and the AWS site, which costs about nothing per
   deploy). If something would cost money, tell the owner what and how much before relying on it.

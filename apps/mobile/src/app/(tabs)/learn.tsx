@@ -1,6 +1,7 @@
-/* Learn: the short lessons, and the tools to try when it is calm. Lessons read as one timeline: what you finished, in the
-   order you finished it; the lesson up next; and what is still to come, a section at a time, each in its own color. The
-   page opens with Up next in view. Ported from the legacy viewLearn, lessonsBody and toolsBody. */
+/* Learn: the short lessons, and the tools to try when it is calm. The lessons are a map (components/lesson-map): stepping
+   stones through a land for each section, in the order of the path. The page opens with the next lesson in view, and a
+   card floats at the top to say which section is on screen (a tap brings the next lesson back). Under the map: the lessons
+   in the order they were finished, and what was learned. Ported from the legacy viewLearn, lessonsBody and toolsBody. */
 import {
   blankP,
   changeSettings,
@@ -9,55 +10,116 @@ import {
   LCHECKS,
   type Lesson,
   LESSONS,
+  lessonMap,
   lessonNo,
   lessonOpen,
   lessonsDone,
   lessonsLocked,
   lessonTimeline,
   LEARN_FREE,
-  lessonPath,
   lfDate,
-  lmin,
   LUNITS,
+  type LessonMap,
   TOOL_IDS,
   TOOLS,
   urTried,
   weekGame,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
 import { Collapse, Segments } from '@/components/form';
+import { LessonMapView, MapChip } from '@/components/lesson-map';
 import { Screen } from '@/components/screen';
 import { TalkDoor } from '@/components/talk-card';
 import { ToolGrid } from '@/components/tool-grid';
 import { LinkCard } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 type Pane = 'lessons' | 'tools';
+/** where the next lesson sits on the screen when the page opens: a little above the middle, so its card opens low */
+const AIM = 0.45;
 
 export default function Learn() {
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'tools' ? 'tools' : 'lessons');
   const { snap } = useStore();
+  const inset = useSafeAreaInsets();
   const scroll = useRef<ScrollViewInstance>(null);
+  const done = useMemo(() => lessonsDone(snap.days), [snap.days]);
+  const doneKey = [...done].sort().join(' ');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const m = useMemo(() => lessonMap(done), [doneKey]);
+  /* where the map is on the page (its top, and its scale), how far the page has scrolled, and how tall the screen is */
+  const geo = useRef({ pane: -1, map: -1, k: 1, y: 0, h: 700 });
+  const [view, setView] = useState<{ focus: number; win: [number, number] }>({ focus: -1, win: [0, 2] });
+  const top = () => inset.top + 16 + geo.current.pane + geo.current.map;
+  const look = () => {
+    const g = geo.current;
+    if (g.map < 0 || g.pane < 0) return;
+    const t = top();
+    const at = (g.y - t) / g.k;
+    const h = g.h / g.k;
+    const fy = at + h * AIM;
+    const focus = pane === 'lessons' && g.y > t - 20 ? m.lands.findIndex((l) => fy >= l.top - 70 && fy < l.bottom - 70) : -1;
+    const near = m.lands.map((l, i) => (l.bottom + 60 > at - h && l.top - 70 < at + 2 * h ? i : -1)).filter((i) => i >= 0);
+    const win: [number, number] = near.length ? [near[0], near[near.length - 1]] : [0, 1];
+    setView((v) => (v.focus === focus && v.win[0] === win[0] && v.win[1] === win[1] ? v : { focus, win }));
+  };
+  const aim = (animated: boolean) => {
+    const g = geo.current;
+    if (g.map < 0 || g.pane < 0) return;
+    const at = (m.next ? m.next.y : m.end.y) * g.k;
+    const y = Math.max(0, top() + at - g.h * AIM);
+    scroll.current?.scrollTo({ y, animated });
+    g.y = y;
+    look();
+  };
+  /* the page opens with the next lesson in view, and moves to the new one after a lesson is finished */
+  const aimed = useRef(false);
+  const ready = () => {
+    if (aimed.current || geo.current.map < 0 || geo.current.pane < 0) return;
+    aimed.current = true;
+    setTimeout(() => aim(false), 60);
+  };
+  const walked = useRef(m.walked);
+  useEffect(() => {
+    if (walked.current === m.walked) return;
+    walked.current = m.walked;
+    if (aimed.current) setTimeout(() => aim(true), 300);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.walked]);
+  const due = snap.settings ? lcheckDue(snap.days, snap.settings) : 0;
   if (!snap.settings) return <Screen title="Learn">{null}</Screen>;
+  const land = view.focus >= 0 ? m.lands[view.focus] : null;
   return (
     <Screen
       eyebrow="My Daybook"
       scrollRef={scroll}
       title="Learn"
+      onScroll={(y, h) => {
+        geo.current.y = y;
+        geo.current.h = h;
+        look();
+      }}
+      overlay={
+        <Floating show={!!land} due={due}>
+          {land ? <MapChip l={land} of={m.lands.length} here={!!m.next && land.stones.includes(m.next)} onPress={() => aim(true)} /> : null}
+        </Floating>
+      }
       sub={
         <T tone="muted">
           {pane === 'tools'
             ? 'Try the tools when it is calm, so you know what works when it is not.'
-            : 'One short lesson a day is plenty, a section at a time.'}
+            : `${done.size} of ${LESSONS.length} done. One short lesson a day is plenty.`}
         </T>
       }>
       <Segments
@@ -67,95 +129,93 @@ export default function Learn() {
           ['tools', 'Tools'],
         ]}
         cur={pane}
-        onPick={setPane}
+        onPick={(p) => {
+          setPane(p);
+          aimed.current = false;
+          geo.current.map = -1;
+          geo.current.pane = -1;
+          if (p === 'tools') setView({ focus: -1, win: [0, 2] });
+        }}
       />
-      <Appear key={pane} style={{ gap: 14 }}>
-        {pane === 'tools' ? <ToolsPane /> : <LessonsPane scroll={scroll} />}
+      <Appear
+        key={pane}
+        style={{ gap: 14 }}
+        onLayout={(e) => {
+          geo.current.pane = e.nativeEvent.layout.y;
+          look();
+          ready();
+        }}>
+        {pane === 'tools' ? (
+          <ToolsPane />
+        ) : (
+          <LessonsPane
+            m={m}
+            win={view.win}
+            onGeom={(g) => {
+              geo.current.map = g.y;
+              geo.current.k = g.k;
+              look();
+              ready();
+            }}
+          />
+        )}
       </Appear>
     </Screen>
+  );
+}
+
+/** what floats over the top of the map: the section on screen, and a checkpoint to write when one is ready. It fades in
+    once the map reaches the top of the screen. */
+function Floating({ show, due, children }: { show: boolean; due: number; children: React.ReactNode }) {
+  const c = useTheme();
+  const still = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (still) v.setValue(show ? 1 : 0);
+    else Animated.timing(v, { toValue: show ? 1 : 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
+  }, [show, still, v]);
+  return (
+    <Animated.View
+      pointerEvents={show ? 'box-none' : 'none'}
+      style={{ width: '100%', gap: 8, opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] }}>
+      {children}
+      {show && due ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })}
+          style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
+          <Icon name="pencil" size={16} color={c.violetText} />
+          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {due} is ready: write it out</Text>
+          <Icon name="next" size={16} color={c.violetText} />
+        </Pressable>
+      ) : null}
+    </Animated.View>
   );
 }
 
 const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
 
 /* ---------- lessons ---------- */
-/** how many finished lessons show before "Show all" */
-const PAST_SHOWN = 4;
-function LessonsPane({ scroll }: { scroll: React.RefObject<ScrollViewInstance | null> }) {
+function LessonsPane({ m, win, onGeom }: { m: LessonMap; win: [number, number]; onGeom: (g: { y: number; k: number }) => void }) {
   const c = useTheme();
   const { snap, tk } = useStore();
   const st = snap.settings!;
-  const [all, setAll] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  const [past, setPast] = useState(false);
   const done = lessonsDone(snap.days);
   const n = done.size;
-  const total = LESSONS.length;
   const tl = lessonTimeline(snap.days);
-  const nxt = tl.next;
+  const dates = useMemo(() => Object.fromEntries(tl.past.map((x) => [x.L.id, lfDate(x.k, tk)])), [tl.past, tk]);
   const due = lcheckDue(snap.days, st);
   const account = useAccount();
   const sync = useSync();
   const open = (L: Lesson) => lessonOpen(L, done, account);
   const waiting = lessonsLocked(LESSONS, done, account);
-  const past = all ? tl.past : tl.past.slice(-PAST_SHOWN);
-  const hidden = tl.past.length - past.length;
-  /* the page opens with Up next in view, once there is a list of finished lessons above it */
-  const aimed = useRef(false);
-  const aim = (y: number) => {
-    if (aimed.current || tl.past.length < 2) return;
-    aimed.current = true;
-    setTimeout(() => scroll.current?.scrollTo({ y: Math.max(0, y - 12), animated: false }), 60);
-  };
-  const paneY = useRef(0);
-  const nt = nxt ? toneOf(c, LUNITS[nxt.u].tone) : null;
+  /* the map's place in the pane and its scale arrive in either order; pass them on once both are known */
+  const at = useRef({ y: -1, k: 0 });
+  const tell = () => at.current.y >= 0 && at.current.k > 0 && onGeom({ y: at.current.y, k: at.current.k });
   return (
-    <View style={{ gap: 14 }} onLayout={(e) => (paneY.current = e.nativeEvent.layout.y)}>
-      <Card style={{ gap: 10 }}>
-        <View style={s.between}>
-          <T v="h2">{n === total ? 'All done' : n ? 'Your path' : 'Start here'}</T>
-          <T v="label" tone="muted">
-            {n} of {total} done
-          </T>
-        </View>
-        <View style={s.segs} accessible accessibilityLabel={`${n} of ${total} lessons done`}>
-          {lessonPath().map((L) => (
-            <View key={L.id} style={[s.segI, { backgroundColor: done.has(L.id) ? toneOf(c, LUNITS[L.u].tone).ic : c.surface2 }]} />
-          ))}
-        </View>
-        <T v="small" tone="muted">
-          One section at a time, each in its own color. Finishing a lesson earns 10 points, once.
-        </T>
-      </Card>
-
-      {tl.past.length ? (
-        <Card>
-          <View style={s.between}>
-            <T v="h2" accessibilityRole="header">
-              Finished
-            </T>
-            <T v="small" tone="muted">
-              in the order you did them
-            </T>
-          </View>
-          {hidden ? (
-            <Pressable accessibilityRole="button" onPress={() => setAll(true)} style={s.more}>
-              <Icon name="up" size={16} color={c.accentText} />
-              <Text style={[s.moreT, { color: c.accentText }]}>Show the {hidden} before these</Text>
-            </Pressable>
-          ) : null}
-          <View style={{ gap: 8 }}>
-            {past.map((x, i) => (
-              <LessonRow
-                key={x.L.id}
-                L={x.L}
-                done
-                side={i === past.length - 1 ? 'Last · ' + lfDate(x.k, tk) : lfDate(x.k, tk)}
-                sub={(st.learn.prac && st.learn.prac[x.L.id] ? 'Practiced · ' : '') + LUNITS[x.L.u].name}
-              />
-            ))}
-          </View>
-        </Card>
-      ) : null}
-
+    <View style={{ gap: 14 }}>
       {due ? (
         <Card style={{ backgroundColor: c.violetSoft, borderColor: c.violetSoft }}>
           <View style={s.hhTop}>
@@ -174,40 +234,7 @@ function LessonsPane({ scroll }: { scroll: React.RefObject<ScrollViewInstance | 
         </Card>
       ) : null}
 
-      {nxt && nt ? (
-        <View onLayout={(e) => aim(paneY.current + e.nativeEvent.layout.y)} style={[s.next, { backgroundColor: nt.soft }]}>
-          <View style={s.eye}>
-            <View style={[s.dot, { backgroundColor: nt.ic }]} />
-            <Text style={[s.eyeT, { color: nt.text }]}>{(n ? 'Up next · ' : 'Start here · ') + LUNITS[nxt.u].name.toUpperCase()}</Text>
-          </View>
-          <View style={s.hhTop}>
-            <View style={[s.hhIc, { backgroundColor: c.surface }]}>
-              <Icon name={open(nxt) ? nxt.ic : 'lock'} size={24} color={nt.text} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[s.nextT, { color: c.ink }]}>
-                {lessonNo(nxt)}. {nxt.title}
-              </Text>
-              <T v="small">{nxt.tag}</T>
-            </View>
-          </View>
-          {open(nxt) ? (
-            <Button label={'Start lesson ' + lessonNo(nxt) + ' · ' + lmin(nxt)} onPress={() => openLesson(nxt.id)} />
-          ) : (
-            <>
-              <T v="small">You have read the open lessons. A free account opens the other {waiting}, and keeps your progress safe.</T>
-              <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
-            </>
-          )}
-        </View>
-      ) : n === total ? (
-        <Card style={{ backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
-          <T v="h2">You have finished every lesson</T>
-          <T v="small">They stay here whenever you want to read one again. Tap any lesson above to open it.</T>
-        </Card>
-      ) : null}
-
-      {!account && waiting && nxt && open(nxt) ? (
+      {!account && waiting ? (
         <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
           <Icon name="lock" size={18} color={c.accentText} />
           <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
@@ -217,39 +244,51 @@ function LessonsPane({ scroll }: { scroll: React.RefObject<ScrollViewInstance | 
         </Pressable>
       ) : null}
 
-      {tl.coming.length ? (
-        <View style={{ gap: 4, marginTop: 4 }}>
-          <T v="h2" accessibilityRole="header">
-            Still to come
-          </T>
-          <T v="small" tone="muted">
-            In order, a section at a time. You can open any lesson whenever you like.
-          </T>
-        </View>
-      ) : null}
-      {tl.coming.map((x) => {
-        const u = LUNITS[x.u];
-        const t = toneOf(c, u.tone);
-        return (
-          <View key={x.u} style={[s.sec, { backgroundColor: t.soft }]}>
-            <View style={s.secTop}>
-              <View style={[s.dot, { backgroundColor: t.ic }]} />
-              <Text style={[s.secT, { color: t.text }]}>{u.name}</Text>
-              <T v="small" style={{ color: t.text, fontFamily: font.bodySemi }}>
-                {x.done ? x.done + ' of ' + x.n + ' done' : x.n + ' lessons'}
-              </T>
-            </View>
-            <T v="small" tone="muted">
-              {u.sub}
-            </T>
-            <View style={{ gap: 8 }}>
-              {x.left.map((L) => (
-                <LessonRow key={L.id} L={L} locked={!open(L)} side={open(L) ? lmin(L) : ''} sub={L.tag} />
-              ))}
-            </View>
+      <View
+        onLayout={(e) => {
+          at.current.y = e.nativeEvent.layout.y;
+          tell();
+        }}>
+        <LessonMapView
+          m={m}
+          open={open}
+          dates={dates}
+          waiting={waiting}
+          win={win}
+          sel={sel}
+          onSel={setSel}
+          onGeom={(g) => {
+            at.current.k = g.k;
+            tell();
+          }}
+          onStart={(id) => {
+            setSel(null);
+            openLesson(id);
+          }}
+          onSignIn={() => sync.signInNow()}
+        />
+      </View>
+
+      {tl.past.length ? (
+        <Collapse
+          title="In the order you finished them"
+          sub={`${n} lesson${n === 1 ? '' : 's'} · last: ${tl.past[tl.past.length - 1].L.title}`}
+          icon="calendar"
+          open={past}
+          onToggle={() => setPast(!past)}>
+          <View style={{ gap: 8 }}>
+            {tl.past.map((x, i) => (
+              <LessonRow
+                key={x.L.id}
+                L={x.L}
+                done
+                side={i === tl.past.length - 1 ? 'Last · ' + lfDate(x.k, tk) : lfDate(x.k, tk)}
+                sub={(st.learn.prac && st.learn.prac[x.L.id] ? 'Practiced · ' : '') + LUNITS[x.L.u].name}
+              />
+            ))}
           </View>
-        );
-      })}
+        </Collapse>
+      ) : null}
 
       <LinkCard
         icon="compass"
@@ -378,6 +417,8 @@ function ToolsPane() {
 }
 
 const s = StyleSheet.create({
+  due: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
+  dueT: { fontFamily: font.bodyBold, fontSize: 14.5 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   hhTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   hhIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

@@ -13,6 +13,8 @@ export * from './talk-log';
 export * from './risk';
 export * from './lessons';
 export * from './practice';
+export * from './lesson-map';
+export * from './section-art';
 export * from './day';
 export * from './plan';
 export * from './miles';

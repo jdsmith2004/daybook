@@ -56,12 +56,14 @@ import {
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco } from '@/components/lesson-art';
-import { Back, Next, Rich, Route } from '@/components/lx';
+import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import {
   PicCurve,
   PicDay,
@@ -204,7 +206,15 @@ export default function Setup() {
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
   const back = i === 0 || pg.k === 'done' ? null : <Back onPress={() => !f.saved && go(-1)} />;
-  const nextBtn = (label: string, skip?: boolean) => <Next label={label} onPress={() => !busy() && go(1)} off={false} key={skip ? 's' : 'n'} />;
+  /* Skip is quiet, so an answer is the easy way on; Next is the main button */
+  const nextBtn = (label: string, skip?: boolean) =>
+    skip ? (
+      <View key="s" style={{ flex: 1 }}>
+        <Ghost label={label} onPress={() => !busy() && go(1)} />
+      </View>
+    ) : (
+      <Next key="n" label={label} onPress={() => !busy() && go(1)} off={false} />
+    );
   const pick = (key: string, v: string, auto: boolean) => {
     if (busy()) return;
     setA({ [key]: v });
@@ -260,8 +270,8 @@ export default function Setup() {
       const key = pg.key!;
       body = (
         <>
-          <QArt pg={pg} t={t} />
           <Q h={pg.h!} sub={pg.sub} />
+          <QArt pg={pg} t={t} />
           <IconTiles
             list={pg.list!}
             cols={pg.k === 'years' ? 1 : pg.cols || 1}
@@ -283,7 +293,7 @@ export default function Setup() {
       body = (
         <>
           <Q h={pg.h!} sub={pg.sub} />
-          <View style={s.art}>{key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}</View>
+          <Mid>{key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}</Mid>
           <Text style={[s.slv, { color: idx >= 0 ? t.text : c.muted }]}>{idx >= 0 ? obCap(String(list[idx][3])) : 'Tap to answer'}</Text>
           <Steps n={list.length} cur={idx} t={t} labels={list.map((x) => String(x[3]))} lo={pg.lo!} hi={pg.hi!} onPick={(j) => pick(key, list[j][0], false)} />
           {lastLine(key, list)}
@@ -296,27 +306,44 @@ export default function Setup() {
       const v = a['b' + pg.n] as string | undefined;
       body = (
         <>
-          <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
+          <Text style={[s.hq, { color: c.ink }]} accessibilityRole="header">
             In the last 6 months, how often is this true for you?
           </Text>
-          <View style={[s.quote, { backgroundColor: t.soft, borderLeftColor: t.ic }]}>
-            <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            {OB_BPS_C.map(([id, label], j) => (
-              <Opt key={id} on={v === id} t={t} onPress={() => pick('b' + pg.n, id, true)}>
-                <View style={[s.lv, { borderColor: t.ic }]}>
-                  <View
-                    style={{
-                      width: `${j * 50}%`,
-                      height: '100%',
-                      backgroundColor: t.ic,
-                    }}
-                  />
-                </View>
-                <Text style={[s.optT, { color: c.ink }]}>{label}</Text>
-              </Opt>
-            ))}
+          {/* the statement, big, in the middle; the three answers low, as one row */}
+          <Mid>
+            <View style={[s.quote, { backgroundColor: t.soft }]}>
+              <Text style={[s.quoteM, { color: t.ic }]} accessibilityElementsHidden importantForAccessibility="no">
+                “
+              </Text>
+              <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
+            </View>
+          </Mid>
+          <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
+            {OB_BPS_C.map(([id, label], j) => {
+              const on = v === id;
+              return (
+                <Pressable
+                  key={id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  accessibilityLabel={label}
+                  onPress={() => pick('b' + pg.n, id, true)}
+                  style={({ pressed }) => [
+                    s.freq,
+                    {
+                      backgroundColor: on ? t.soft : c.surface,
+                      borderColor: on ? t.ic : c.line,
+                      shadowColor: c.lip,
+                      transform: [{ translateY: pressed ? 2 : 0 }],
+                    },
+                  ]}>
+                  <FreqDot n={j} col={t.ic} />
+                  <Text style={[s.freqT, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
           {pg.n === 0 ? (
             <T v="small" tone="muted">
@@ -341,6 +368,7 @@ export default function Setup() {
       body = (
         <>
           <Q h={pg.h!} sub={pg.sub} />
+          <Grow />
           <IconTiles
             list={pg.list!}
             cols={pg.cols || 2}
@@ -371,11 +399,11 @@ export default function Setup() {
     case 'guess': {
       body = (
         <>
-          <View style={s.art}>
-            <Text style={[s.big, { color: t.text }]}>?</Text>
-            <T tone="muted">hours a year</T>
-          </View>
           <Q h="How many hours a year do you think you spend on porn?" sub="Guess first. Then see your number." />
+          <Mid>
+            <Text style={[s.big, { color: t.text }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
+            <T tone="muted">hours a year</T>
+          </Mid>
           <View style={s.grid3}>
             {OB_GUESS.map((n) => (
               <Opt
@@ -416,7 +444,7 @@ export default function Setup() {
       const R = obReveal(a, f.hg);
       body = (
         <>
-          <View style={s.art}>
+          <View style={[s.art, { paddingVertical: 10 }]}>
             <CountUp to={R.yr} color={t.text} />
             <T tone="muted">hours a year at your pace</T>
           </View>
@@ -461,10 +489,10 @@ export default function Setup() {
       const custom = isTime(a.so) && OB_SO.indexOf(a.so as string) < 0;
       body = (
         <>
-          <View style={s.art}>
-            <LxIco name="moon" t={t} size={90} />
-          </View>
           <Q h="What time should your screens go off at night?" sub="An hour before, a short wind-down starts." />
+          <Mid>
+            <LxIco name="moon" t={t} size={110} />
+          </Mid>
           <View style={s.grid3}>
             {OB_SO.concat(custom ? [a.so as string] : []).map((x) => (
               <Opt
@@ -503,6 +531,7 @@ export default function Setup() {
       body = (
         <>
           <Q h="Which starting point fits you best?" />
+          <Grow />
           <View style={{ gap: 10 }}>
             {goals.map((g) => (
               <Opt key={g.id} on={v === g.id} t={t} onPress={() => pick('goal', g.id, false)}>
@@ -536,6 +565,7 @@ export default function Setup() {
       body = (
         <>
           <Q h="What do you want your life to look like instead?" sub="Pick what matters most. It shows up on hard nights." />
+          <Grow />
           <View style={s.pills}>
             {obReasonOpts(a, st, f.redo).map((x) => {
               const on = rs.indexOf(x) >= 0;
@@ -583,6 +613,7 @@ export default function Setup() {
       body = (
         <>
           <Q h={`When ${T0[2]}, what will you do instead?`} sub="A plan made ahead is easier to follow." />
+          <Grow />
           <View style={{ gap: 10 }}>
             {obThenOpts(a, st, f.redo, tp).map((x) => (
               <Opt
@@ -633,14 +664,14 @@ export default function Setup() {
       const has = !!String(a.person || '').trim();
       body = (
         <>
-          <View style={s.art}>
-            <LxIco name="chat" t={t} size={90} />
-          </View>
           <Q h="Who could be your safe person?" sub="Someone calm you could tell when you slip. A first name is enough." />
           <Field label="Their name" maxLength={80} placeholder="A first name" defaultValue={a.person || ''} onChangeText={(v) => setA({ person: v })} />
           <T v="small" tone="muted">
             Only you see the name. Daybook never contacts anyone. You can skip this.
           </T>
+          <Mid>
+            <LxIco name="chat" t={t} size={110} />
+          </Mid>
         </>
       );
       foot = nextBtn(has ? 'Next' : 'Skip', !has);
@@ -651,10 +682,10 @@ export default function Setup() {
       const own = OB_BE.indexOf(cur) < 0 ? cur : '';
       body = (
         <>
-          <View style={s.art}>
-            <LxIco name="star" t={t} size={90} />
-          </View>
           <Q h="Who are you becoming?" sub="One sentence about the person you are growing into. Daybook shows it to you on hard days." />
+          <Mid>
+            <LxIco name="star" t={t} size={90} />
+          </Mid>
           <View style={{ gap: 10 }}>
             {OB_BE.map((x) => (
               <Opt
@@ -802,9 +833,9 @@ export default function Setup() {
       if (f.redo) {
         body = (
           <>
-            <View style={s.art}>
+            <Mid>
               <LxCheck />
-            </View>
+            </Mid>
             <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
               {f.changed ? 'Saved. Your plan is up to date.' : 'All set.'}
             </Text>
@@ -820,9 +851,9 @@ export default function Setup() {
         const g = obGoal(a, null, tk);
         body = (
           <>
-            <View style={s.art}>
-              <Flame level={2} size={124} />
-            </View>
+            <Mid>
+              <Flame level={2} size={140} />
+            </Mid>
             <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
               Welcome in.
             </Text>
@@ -871,6 +902,8 @@ export default function Setup() {
         paddingBottom: inset.bottom + 12,
         paddingHorizontal: 16,
       }}>
+      {/* each part of the setup has its own color, washed over the whole screen, with the page as a white card on it */}
+      <LinearGradient colors={[t.soft, t.soft, c.bg]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
       <View
         style={{
           flex: 1,
@@ -1037,13 +1070,15 @@ function Show({
   const c = useTheme();
   return (
     <>
-      <View style={s.art}>{art}</View>
-      <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-        {h}
-      </Text>
-      {line ? <Rich text={line} st={st} style={s.p} /> : null}
-      {more ? <More more={more} /> : null}
-      {children}
+      <Mid>{art}</Mid>
+      <View style={{ gap: 10 }}>
+        <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
+          {h}
+        </Text>
+        {line ? <Rich text={line} st={st} style={s.p} /> : null}
+        {more ? <More more={more} /> : null}
+        {children}
+      </View>
     </>
   );
 }
@@ -1065,9 +1100,25 @@ function Q({ h, sub }: { h: string; sub?: string }) {
   );
 }
 function QArt({ pg, t }: { pg: ObPage; t: Tone }) {
-  if (!pg.art) return null;
-  return <View style={s.art}>{pg.art === 'flame' ? <Flame level={1} size={96} /> : <LxIco name={pg.art} t={t} size={90} />}</View>;
+  if (!pg.art) return <Grow />;
+  return <Mid>{pg.art === 'flame' ? <Flame level={1} size={110} /> : <LxIco name={pg.art} t={t} size={110} />}</Mid>;
 }
+/* the open middle of a page: the picture, as big as it fits, between the question above and the answers below (or the
+   words below, on a page that shows something). On a short screen it shrinks to its picture and the card scrolls. */
+function Mid({ children }: { children: ReactNode }) {
+  return <View style={s.mid}>{children}</View>;
+}
+/* how often, as a circle: empty for Never, half for Occasionally, full for Very often */
+function FreqDot({ n, col }: { n: number; col: string }) {
+  return (
+    <Svg width={38} height={38} viewBox="0 0 38 38">
+      <Circle cx={19} cy={19} r={16} fill="none" stroke={col} strokeWidth={3} />
+      {n === 1 ? <Path d="M19 3a16 16 0 0 1 0 32z" fill={col} /> : n === 2 ? <Circle cx={19} cy={19} r={16} fill={col} /> : null}
+    </Svg>
+  );
+}
+/* a page with no picture: the answers still sit low, near the thumb */
+const Grow = () => <View style={{ flexGrow: 1 }} />;
 function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPress: () => void; children: ReactNode; style?: object }) {
   const c = useTheme();
   return (
@@ -1080,6 +1131,7 @@ function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPres
         {
           borderColor: on ? t.ic : c.line,
           backgroundColor: on ? t.soft : c.surface,
+          shadowColor: c.lip,
           transform: [{ translateY: pressed ? 2 : 0 }],
         },
         style,
@@ -1105,6 +1157,8 @@ function IconTiles({
 }) {
   const c = useTheme();
   const on = (x: string) => (Array.isArray(cur) ? cur.indexOf(x) >= 0 : cur === x);
+  /* two across: tall tiles, the icon over the words, as in the legacy setup */
+  const tall = cols === 2 && !years;
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
       {list.map((it, j) => {
@@ -1117,10 +1171,12 @@ function IconTiles({
             onPress={() => onPick(it[0])}
             style={({ pressed }) => [
               s.tile,
+              tall ? s.tall : null,
               cols === 2 ? { flexBasis: '46%', flexGrow: 1 } : { flexBasis: '100%' },
               {
                 borderColor: sel ? t.ic : c.line,
                 backgroundColor: sel ? t.soft : c.surface,
+                shadowColor: c.lip,
                 transform: [{ translateY: pressed ? 2 : 0 }],
               },
             ]}>
@@ -1139,10 +1195,16 @@ function IconTiles({
                 ))}
               </View>
             ) : typeof it[2] === 'string' ? (
-              <Icon name={it[2]} size={22} color={sel ? t.text : c.muted} />
+              <View style={[s.tIc, { backgroundColor: sel ? c.surface : t.soft }]}>
+                <Icon name={it[2]} size={20} color={t.text} />
+              </View>
             ) : null}
-            <Text style={[s.optT, { color: sel ? t.text : c.ink }]}>{it[1]}</Text>
-            {sel ? <Icon name="check" size={18} color={t.text} /> : null}
+            <Text style={[s.optT, tall && s.tallT, { color: sel ? t.text : c.ink }]}>{it[1]}</Text>
+            {sel ? (
+              <View style={tall ? [s.tick, { backgroundColor: t.ic }] : null}>
+                <Icon name="check" size={tall ? 13 : 18} color={tall ? t.ink : t.text} />
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
@@ -1491,11 +1553,27 @@ const s = StyleSheet.create({
   },
   cardIn: { padding: 22, gap: 14, flexGrow: 1 },
   art: { minHeight: 90, alignItems: 'center', justifyContent: 'center' },
+  mid: { flexGrow: 1, minHeight: 90, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
   hsm: { fontSize: 26, lineHeight: 31 },
   p: { fontSize: 18, lineHeight: 26 },
-  quote: { padding: 14, borderRadius: 16, borderLeftWidth: 5 },
-  quoteT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
+  hq: { fontFamily: font.display, fontSize: 21, lineHeight: 26 },
+  quote: { alignSelf: 'stretch', minHeight: 170, justifyContent: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 24, borderRadius: 22 },
+  quoteM: { position: 'absolute', top: 6, left: 18, fontFamily: font.display, fontSize: 48, lineHeight: 52 },
+  quoteT: { fontFamily: font.display, fontSize: 23, lineHeight: 30 },
+  freq: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 18,
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  freqT: { fontFamily: font.bodySemi, fontSize: 14 },
   opt: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1505,6 +1583,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
   tile: {
@@ -1516,7 +1597,14 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
+  tall: { flexDirection: 'column', justifyContent: 'center', gap: 8, minHeight: 92, paddingHorizontal: 8 },
+  tallT: { flex: 0, textAlign: 'center', fontSize: 15.5 },
+  tIc: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  tick: { position: 'absolute', top: 7, right: 7, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   ti: {
     width: 40,
     height: 40,

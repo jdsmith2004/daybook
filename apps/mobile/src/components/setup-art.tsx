@@ -1,5 +1,6 @@
-/* The pictures in the setup: small copies of the real screens and simple charts, drawn with the app's own colors. The shapes
-   (the curves, the heart, the people) are the legacy SVG paths. Ported from the legacy obPic* functions. */
+/* The pictures in the setup: small copies of the real screens and simple charts, drawn with the app's own colors. They follow
+   the legacy obPic* pictures: the Today screen in a phone with notes pointing at it, the numbered steps, the lesson cards
+   in a stack, SOS on the tab bar, and the shapes (the curves, the heart, the people) are the legacy SVG paths. */
 import { fmtClock, fmtHour, isTime, OB_MINS, OB_PEAK, OB_WHEN, obTop, obTool, type SetupAnswers } from '@daybook/core';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -25,37 +26,135 @@ function Row({ icon, tone, title, sub, right }: { icon: string; tone: string; ti
         ) : null}
       </View>
       {right ? (
-        <T v="small" tone="muted">
-          {right}
-        </T>
+        <View style={[s.chip, { backgroundColor: c.sunSoft }]}>
+          <Text style={[s.chipT, { color: c.sunText }]}>{right}</Text>
+        </View>
       ) : null}
     </View>
   );
 }
 
-/** Welcome: the flame, and what Daybook does */
-export function PicToday() {
+/** the tab bar in small: Today, Journal, SOS, Learn, More. hot: SOS lit up, the way it is when an urge hits. */
+function MiniNav({ hot, k = 1 }: { hot?: boolean; k?: number }) {
+  const c = useTheme();
+  const tab = (icon: string, label: string, on: boolean) => (
+    <View key={label} style={{ flex: 1, alignItems: 'center', gap: 1 * k }}>
+      <Icon name={icon} size={13 * k} color={on ? c.accentText : c.muted} />
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 6.5 * k, color: on ? c.accentText : c.muted }}>{label}</Text>
+    </View>
+  );
   return (
-    <View style={s.col} accessible accessibilityLabel="Your flame and level, a short lesson a day, and SOS for urges">
-      <View style={{ alignItems: 'center' }}>
-        <Flame level={8} size={110} />
+    <View style={[s.nav, { backgroundColor: c.surface, borderTopColor: c.line, paddingVertical: 4 * k }]}>
+      {tab('sun', 'Today', !hot)}
+      {tab('calendar', 'Journal', false)}
+      <View style={{ flex: 1, alignItems: 'center', gap: 1 * k }}>
+        <View
+          style={[
+            s.navSos,
+            {
+              width: 24 * k,
+              height: 24 * k,
+              borderRadius: 12 * k,
+              marginTop: -12 * k,
+              backgroundColor: c.sos,
+              borderColor: hot ? c.coralSoft : c.surface,
+              borderWidth: hot ? 4 * k : 2 * k,
+            },
+          ]}>
+          <Icon name="life" size={13 * k} color={c.sosInk} />
+        </View>
+        <Text style={{ fontFamily: font.bodyBold, fontSize: 6.5 * k, color: hot ? c.sos : c.muted }}>SOS</Text>
       </View>
-      <Row icon="sun" tone="sun" title="A flame that grows" />
-      <Row icon="book" tone="sky" title="A short lesson a day" />
-      <Row icon="life" tone="coral" title="SOS for urges" />
+      {tab('book', 'Learn', false)}
+      {tab('more', 'More', false)}
     </View>
   );
 }
+
+/** Welcome: the Today screen in a phone, with three notes pointing at what it does */
+export function PicToday() {
+  const c = useTheme();
+  const note = (icon: string, tone: string, label: string) => {
+    const t = toneOf(c, tone);
+    return (
+      <View style={[s.note, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
+        <View style={[s.noteIc, { backgroundColor: t.soft }]}>
+          <Icon name={icon} size={15} color={t.text} />
+        </View>
+        <Text style={[s.noteT, { color: c.ink }]}>{label}</Text>
+      </View>
+    );
+  };
+  return (
+    <View
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center' }}
+      accessible
+      accessibilityLabel="The Today screen: your flame and level at the top, the next short lesson, and the SOS button at the bottom">
+      <View style={[s.phone, { borderColor: c.scheme === 'dark' ? '#3A3170' : '#2A2350', backgroundColor: c.bg }]}>
+        <View style={{ alignItems: 'center', paddingTop: 12, gap: 3 }}>
+          <Flame level={8} size={58} />
+          <Text style={{ fontFamily: font.display, fontSize: 13, color: c.ink }}>Level 8</Text>
+          <View style={[s.miniBar, { backgroundColor: c.surface2 }]}>
+            <View style={{ width: '42%', height: '100%', borderRadius: 3, backgroundColor: c.sun }} />
+          </View>
+        </View>
+        <View style={[s.miniNext, { backgroundColor: c.mint }]}>
+          <Icon name="book" size={12} color="#fff" />
+          <View>
+            <Text style={{ fontFamily: font.bodyBold, fontSize: 6.5, letterSpacing: 0.6, color: '#fff', opacity: 0.85 }}>NEXT UP</Text>
+            <Text style={{ fontFamily: font.bodyBold, fontSize: 9.5, color: '#fff' }}>Urges are waves</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 8 }}>
+          {[
+            ['9', 'days logged'],
+            ['12', 'urges ridden out'],
+          ].map(([n, l]) => (
+            <View key={l} style={[s.miniStat, { backgroundColor: c.surface }]}>
+              <Text style={{ fontFamily: font.display, fontSize: 12, color: c.ink }}>{n}</Text>
+              <Text style={{ fontFamily: font.body, fontSize: 6.5, color: c.muted }}>{l}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={{ flex: 1 }} />
+        <MiniNav />
+      </View>
+      <View style={{ gap: 26, flexShrink: 1 }}>
+        {note('sun', 'sun', 'A flame that grows')}
+        {note('book', 'mint', 'A short lesson a day')}
+        {note('life', 'coral', 'SOS for urges')}
+      </View>
+    </View>
+  );
+}
+/** how this setup works: three numbered steps, joined by a line */
 export function PicSteps() {
+  const c = useTheme();
   const rows: [string, string, string][] = [
     ['ask', 'Answer some questions', 'About 3 minutes'],
     ['chart', 'See what they show', 'Your time, your triggers'],
     ['shield', 'Get your plan', 'Built from your answers'],
   ];
   return (
-    <View style={s.col}>
+    <View style={[s.col, { gap: 14 }]}>
+      <View style={[s.rail, { backgroundColor: c.line }]} />
       {rows.map((r, i) => (
-        <Row key={i} icon={r[0]} tone={['sky', 'violet', 'mint'][i]} title={i + 1 + '. ' + r[1]} sub={r[2]} />
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={[s.num, { backgroundColor: c.accent, borderColor: c.surface }]}>
+            <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: c.accentInk }}>{i + 1}</Text>
+          </View>
+          <View style={[s.step, { backgroundColor: c.skySoft }]}>
+            <View style={[s.ic, { backgroundColor: c.surface }]}>
+              <Icon name={r[0]} size={20} color={c.skyText} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T v="label">{r[1]}</T>
+              <T v="small" tone="muted">
+                {r[2]}
+              </T>
+            </View>
+          </View>
+        </View>
       ))}
     </View>
   );
@@ -160,9 +259,9 @@ export function PicDial({ i }: { i: number }) {
 export function PicHeart() {
   const c = useTheme();
   return (
-    <Svg width={150} height={130} viewBox="0 0 150 130">
-      <Circle cx={75} cy={65} r={60} fill={c.coralSoft} />
-      <Path d="M75 102C41 80 30 62 30 48C30 34 40 25 52 25C62 25 70 31 75 40C80 31 88 25 98 25C110 25 120 34 120 48C120 62 109 80 75 102Z" fill={c.coral} />
+    <Svg width={190} height={165} viewBox="0 0 150 130">
+      <Circle cx={75} cy={65} r={60} fill={c.accentSoft} />
+      <Path d="M75 102C41 80 30 62 30 48C30 34 40 25 52 25C62 25 70 31 75 40C80 31 88 25 98 25C110 25 120 34 120 48C120 62 109 80 75 102Z" fill={c.accent} />
       <Path d="M126 22l2.6 6.4 6.4 2.6-6.4 2.6-2.6 6.4-2.6-6.4-6.4-2.6 6.4-2.6z" fill={c.sun} />
       <Path d="M22 84l2 4.8 4.8 2-4.8 2-2 4.8-2-4.8-4.8-2 4.8-2z" fill={c.sun} />
     </Svg>
@@ -261,11 +360,11 @@ export function PicSlip() {
       accessibilityLabel="Two lines. A streak counter climbs, then drops to zero at a slip. Daybook points keep climbing through the slip.">
       <Svg width={300} height={150} viewBox="0 0 300 150">
         <Path d="M10 126H292" stroke={c.line} strokeWidth={2} />
-        <Path d="M160 22V126" stroke={c.line} strokeWidth={2} strokeDasharray="4 4" />
+        <Path d="M160 22V126" stroke={c.slip} strokeWidth={2} strokeDasharray="4 4" />
         <Path d="M12 122L60 112L110 100L160 88V124L210 116L260 106L290 100" stroke={c.muted} strokeWidth={3} fill="none" />
-        <Path d="M12 116L60 96L110 76L160 56L176 53L210 42L260 26L290 16" stroke={c.accent} strokeWidth={4} fill="none" strokeLinecap="round" />
+        <Path d="M12 116L60 96L110 76L160 56L176 53L210 42L260 26L290 16" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
         <Circle cx={160} cy={124} r={5} fill={c.muted} />
-        <Circle cx={160} cy={56} r={5} fill={c.accent} />
+        <Circle cx={160} cy={56} r={5} fill={c.mint} />
         <Rect x={138} y={2} width={44} height={18} rx={9} fill={c.slip} />
         <SvgText x={160} y={15} fontSize={10} fontWeight="700" fill="#fff" textAnchor="middle">
           SLIP
@@ -275,7 +374,7 @@ export function PicSlip() {
         </SvgText>
       </Svg>
       <View style={{ flexDirection: 'row', gap: 14 }}>
-        <Legend col={c.accent} label="Daybook points" />
+        <Legend col={c.mint} label="Daybook points" />
         <Legend col={c.muted} label="A streak counter" />
       </View>
     </View>
@@ -299,11 +398,9 @@ export function PicSos({ a, when }: { a: SetupAnswers; when: string }) {
   const T0 = obTool(has ? obTop(a) : 'other');
   const t = toneOf(c, T0.tone);
   return (
-    <View style={s.col} accessible accessibilityLabel={'Tap SOS and Daybook offers one tool to try: ' + T0.name}>
-      <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-        <T v="small" tone="muted">
-          {when}
-        </T>
+    <View style={[s.col, { gap: 0 }]} accessible accessibilityLabel={'Tap SOS and Daybook offers one tool to try: ' + T0.name}>
+      <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }, s.lift]}>
+        <Text style={[s.eyebrow, { color: c.muted }]}>{when.toUpperCase()}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={[s.ic, { backgroundColor: t.soft }]}>
             <Icon name={T0.ic} size={20} color={t.text} />
@@ -319,40 +416,47 @@ export function PicSos({ a, when }: { a: SetupAnswers; when: string }) {
           </View>
         </View>
       </View>
-      <View style={[s.sos, { backgroundColor: c.sos, shadowColor: c.sosDeep }]}>
-        <Icon name="life" size={30} color={c.sosInk} />
+      <View style={[s.dash, { borderColor: c.sos }]} />
+      <View style={[s.navBox, { borderColor: c.cardEdge }]}>
+        <MiniNav hot k={1.6} />
       </View>
-      <T v="label" tone="sos" style={{ alignSelf: 'center' }}>
-        SOS
-      </T>
     </View>
   );
 }
 
 export function PicLesson() {
   const c = useTheme();
+  const back = (deg: number, dy: number, col: string) => (
+    <View style={[s.lesson, { position: 'absolute', top: dy, backgroundColor: col, borderColor: c.cardEdge, transform: [{ rotate: deg + 'deg' }] }]} />
+  );
   return (
     <View
-      style={[
-        s.card,
-        {
-          backgroundColor: c.surface,
-          borderColor: c.cardEdge,
-          alignItems: 'center',
-          width: 220,
-          alignSelf: 'center',
-        },
-      ]}
+      style={{ width: 230, height: 214, alignSelf: 'center', alignItems: 'center' }}
       accessible
       accessibilityLabel="A lesson card called Urges are waves, 3 minutes">
-      <Svg width={170} height={58} viewBox="0 0 170 58">
-        <Path d="M6 52C38 52 52 10 85 10S132 52 164 52" stroke={c.sky} strokeWidth={4} fill="none" strokeLinecap="round" />
-        <Circle cx={85} cy={10} r={6} fill={c.sun} />
-      </Svg>
-      <T v="label">Urges are waves</T>
-      <T v="small" tone="muted">
-        Lesson 2 · 3 min
-      </T>
+      {back(-7, 14, c.violetSoft)}
+      {back(5, 8, c.skySoft)}
+      <View style={[s.lesson, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }, s.lift]}>
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {[2, 2, 1, 0, 0].map((d, i) => (
+            <View
+              key={i}
+              style={{ height: 6, width: d === 1 ? 22 : 12, borderRadius: 3, backgroundColor: d === 2 ? c.mint : d === 1 ? c.accent : c.surface2 }}
+            />
+          ))}
+        </View>
+        <Svg width={170} height={58} viewBox="0 0 170 58">
+          <Path d="M6 52C38 52 52 10 85 10S132 52 164 52" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
+          <Circle cx={85} cy={10} r={6} fill={c.mintText} />
+        </Svg>
+        <Text style={{ fontFamily: font.display, fontSize: 18, color: c.ink }}>Urges are waves</Text>
+        <T v="small" tone="muted">
+          Lesson 2 · 3 min
+        </T>
+        <View style={[s.go, { backgroundColor: c.accent, alignSelf: 'stretch', alignItems: 'center' }]}>
+          <Text style={{ fontFamily: font.bodySemi, fontSize: 13, color: c.accentInk }}>Next</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -504,12 +608,16 @@ export function PicTakes() {
   return (
     <View style={s.col}>
       {rows.map((r) => (
-        <View key={r[0]} style={[s.row, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-          <View style={[s.ic, { backgroundColor: c.accentSoft }]}>
-            <Icon name={r[0]} size={20} color={c.accentText} />
+        <View key={r[0]} style={[s.row, { backgroundColor: c.skySoft, borderColor: c.skySoft }]}>
+          <View style={[s.ic, { backgroundColor: c.surface }]}>
+            <Icon name={r[0]} size={20} color={c.skyText} />
           </View>
-          <T style={{ flex: 1 }}>{r[1]}</T>
-          <Icon name="check" size={18} color={c.mintText} />
+          <T v="label" style={{ flex: 1 }}>
+            {r[1]}
+          </T>
+          <View style={[s.tick, { backgroundColor: c.mint }]}>
+            <Icon name="check" size={15} color="#fff" />
+          </View>
         </View>
       ))}
     </View>
@@ -557,6 +665,37 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
+  chip: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
+  chipT: { fontFamily: font.bodyBold, fontSize: 12 },
+  eyebrow: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1 },
+  lift: { shadowOffset: { width: 0, height: 5 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  phone: { width: 148, height: 268, borderRadius: 26, borderWidth: 5, overflow: 'hidden', gap: 8 },
+  miniBar: { width: 84, height: 6, borderRadius: 3, overflow: 'hidden' },
+  miniNext: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 8, padding: 7, borderRadius: 10 },
+  miniStat: { flex: 1, padding: 5, borderRadius: 8 },
+  nav: { flexDirection: 'row', alignItems: 'flex-end', borderTopWidth: 1 },
+  navSos: { alignItems: 'center', justifyContent: 'center' },
+  navBox: { alignSelf: 'stretch', marginTop: 4, borderRadius: 16, borderWidth: 1.5, overflow: 'visible', paddingTop: 14 },
+  dash: { alignSelf: 'center', height: 30, borderLeftWidth: 2, borderStyle: 'dashed' },
+  note: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  noteIc: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  noteT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 13, lineHeight: 16 },
+  rail: { position: 'absolute', left: 15, top: 24, bottom: 24, width: 2 },
+  num: { width: 32, height: 32, borderRadius: 16, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  step: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16 },
+  lesson: { position: 'absolute', top: 0, width: 210, height: 196, alignItems: 'center', gap: 6, padding: 14, borderRadius: 20, borderWidth: 1.5 },
+  tick: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

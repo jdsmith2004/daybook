@@ -425,10 +425,11 @@ function dayKind(key,day,st,today,mode){
 }
 /* ===== SAVING A RUN =====
    The first slip in any 7 days gets the full Rekindle. When a run was going, that slip can also save the run: finish the Rekindle missions
-   (one small thing, phone away that night, the sunrise check the next morning, and for a run of 14 days or more one deeper mission)
-   by the end of the next day, and the run keeps going. The slip stays in the log, and the day is marked as saved, so the count of days
+   (one small thing, the phone away one night, a sunrise check one morning, and for a run of 14 days or more one deeper mission)
+   within RK_DAYS days after the slip (the owner, October 18: the run waits for you), and the run keeps going. An honest "screens stayed
+   on" never ends it: the phone can go away another night. The slip stays in the log, and the day is marked as saved, so the count of days
    with no slip stays honest. Later slips that week get a short Rekindle and cannot save a run. Worked out from the log, like everything else. */
-const RUN_DEEP=14;
+const RUN_DEEP=14,RK_DAYS=3;
 function rkFullDays(days){
  const out={};let last=null;
  allKeys(days).forEach(k=>{if(sumDay(days[k]).slipped>0&&(!last||diffDays(k,last)>=7)){out[k]=1;last=k}});
@@ -446,11 +447,9 @@ function runLedger(days,st,today,mode,noSave){
   else{
    let s=null;const run=L.cur;
    if(full[k]&&run>=1){
-    const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,1),d=days[k];
+    const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,RK_DAYS);
     const done=!!(r&&r.m1&&r.m2&&r.m3&&r.ev.rk.at<=dl&&(!deep||r.m4));
-    /* the phone-away mission can no longer happen once that night was answered "no" and the phone was not put away */
-    const missed=!!(r&&!r.m2&&d&&d.checkin&&d.checkin.so==='N');
-    s=done?'saved':(today<=dl&&!missed)?'open':null;
+    s=done?'saved':today<=dl?'open':null;
     if(s)L.kind[k]=s;
     if(s==='open')L.open={k,run,deep};
    }
@@ -743,13 +742,15 @@ function dayPoints(days,key,st){
 }
 /* ===== REKINDLE: the quest after a slip, worked out from the log like everything else.
    It hangs on the last slip of a day (or the one that already has a sunrise check). Three missions:
-   m1 one small thing (the slip's "recovered"), m2 phone away that night or screens off on time, m3 the sunrise check the next morning. ===== */
+   m1 one small thing (the slip's "recovered"), m2 phone away or screens off on time, that night or any night until the save window
+   closes (RK_DAYS), m3 the sunrise check, one morning. ===== */
 function rkOf(days,k,st){
  const d=days[k];if(!d||!d.events||!d.events.length)return null;
  const sl=sortedEvents(d,st&&st.rollover!=null?st.rollover:4).filter(e=>e.outcome==='slipped');
  if(!sl.length)return null;
  const ev=sl.find(e=>e.rk)||sl[sl.length-1];
- const m1=sl.some(e=>e.recovered),m2=!!((d.p&&d.p.po)||(d.checkin&&d.checkin.so==='Y')),m3=!!(ev.rk&&ev.rk.at),m4=!!(ev.rk&&ev.rk.dp);
+ let m2=false;for(let i=0;i<=RK_DAYS&&!m2;i++){const x=days[addDays(k,i)];m2=!!(x&&((x.p&&x.p.po)||(x.checkin&&x.checkin.so==='Y')))}
+ const m1=sl.some(e=>e.recovered),m3=!!(ev.rk&&ev.rk.at),m4=!!(ev.rk&&ev.rk.dp);
  return {k,ev,m1,m2,m3,m4,n:(m1?1:0)+(m2?1:0)+(m3?1:0)};
 }
 
@@ -3081,6 +3082,7 @@ export {
   cleanLimit,
   dayKind,
   RUN_DEEP,
+  RK_DAYS,
   rkFullDays,
   runLedger,
   streaks,

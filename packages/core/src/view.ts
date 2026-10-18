@@ -16,6 +16,7 @@ import {
   fmtStretchShort,
   maxKey,
   phaseOf,
+  RK_DAYS,
   roughPatch,
   slipMoments,
   stepView,
@@ -117,7 +118,7 @@ export function trackFacts(days: Days, tk: DayKey) {
 /** the chips under the Days card (legacy runChips), as data */
 export function runChips(v: CleanView) {
   let main: { kind: 'line' | 'soft' | 'run'; small?: string; text: string; saved?: number };
-  if (v.open) main = { kind: 'line', small: 'Can keep going', text: plural(v.open.run, 'day') };
+  if (v.open) main = { kind: 'line', small: 'Run waiting', text: plural(v.open.run, 'day') };
   else if (v.backH != null) main = { kind: 'soft', small: 'Comeback', text: fmtStretch(v.backH) };
   else if (v.cur > 0) main = { kind: 'run', small: 'Current run', text: plural(v.cur, 'day'), saved: v.saves || 0 };
   else main = { kind: 'soft', text: 'Next run starts tomorrow' };
@@ -125,7 +126,9 @@ export function runChips(v: CleanView) {
     main,
     longest: v.longest > 0 ? plural(v.longest, 'day') : null,
     next: v.next && !v.open ? plural(v.next, 'day') : null,
-    line: v.open ? 'Your run can keep going after this slip. Finish the Rekindle quest by tomorrow night.' : null,
+    line: v.open
+      ? 'Your run waits for you. The Rekindle quest saves it, any time until ' + fmtDateShort(addDays(v.open.k, RK_DAYS), { weekday: 'long' }) + ' night.'
+      : null,
   };
 }
 

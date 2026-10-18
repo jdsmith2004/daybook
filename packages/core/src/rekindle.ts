@@ -5,11 +5,13 @@ import {
   addDays,
   dayKind,
   fmtClock,
+  fmtDate,
   gameCompute,
   OB_THEN,
   optText,
   rkFullDays,
   rkOf,
+  RK_DAYS,
   RUN_DEEP,
   runLedger,
   SLIP_STEPS,
@@ -83,7 +85,11 @@ export function entryLabel(ev: Pick<DayEvent, 'outcome' | 'time' | 'sp'>): strin
   return w + (ev.time ? ' at ' + fmtClock(ev.time) : '');
 }
 
-/* ---------- the run that can keep going ---------- */
+/* ---------- the run that waits for you ---------- */
+/** the last day a slip's quest can still save the run, as a weekday: "until Wednesday night" (RK_DAYS after the slip) */
+export const rkUntil = (k: DayKey) => fmtDate(addDays(k, RK_DAYS), { weekday: 'long' });
+/** "a, b and c" */
+const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);
 export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
   const L = runLedger(days, st, tk);
   return { L, op: L.open && L.open.k === k ? L.open : null, saved: L.kind[k] === 'saved' };
@@ -101,7 +107,7 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     h,
     p,
     kept: lit ? kept : [],
-    line: op ? { b: 'Your ' + op.run + '-day run can keep going.', rest: 'Finish the Rekindle quest by tomorrow night.' } : null,
+    line: op ? { b: 'Your ' + op.run + '-day run waits for you.', rest: 'The Rekindle quest saves it, any time until ' + rkUntil(date) + ' night.' } : null,
   };
 }
 
@@ -130,9 +136,14 @@ export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, 
   if (counting) {
     /* a second slip on the day a run can still be saved: say so */
     const { op } = rkOpen(days, st, tk, date);
-    if (op) return 'Your ' + op.run + '-day run can still keep going. Finish the Rekindle quest by tomorrow night.';
-    return dayKind(date, days[date], st, tk) === 'one'
-      ? 'With gentle counting, today still counts. Nothing you earned is gone.'
+    if (op) return 'Your ' + op.run + '-day run can still be saved. Finish the Rekindle quest by ' + rkUntil(op.k) + ' night.';
+    if (dayKind(date, days[date], st, tk) === 'one') return 'With gentle counting, today still counts. Nothing you earned is gone.';
+    /* a run that ends here (a second slip within a week cannot be saved): what was built is kept, and said so */
+    const before = runLedger(days, st, addDays(date, -1)).cur;
+    return before > 0
+      ? 'A second slip within a week cannot be saved, so a new run starts tomorrow. ' +
+          (before === 1 ? 'Your 1 day is kept' : 'Your ' + before + ' days are kept') +
+          ', and so are your points, level and badges.'
       : 'Your next run starts tomorrow. Your points, level and badges all stay.';
   }
   return 'Nothing is being counted yet, so nothing was lost. Your points, level and badges all stay.';
@@ -151,8 +162,13 @@ export interface Mission {
   actions: { act: MissionAction; label: string }[];
 }
 
-/** the missions list (legacy rkMissions). where: in the scene right after the slip, or on Today. left: only what is left. */
-export function rkMissions(r: RekindleState, st: Settings, o: { where: 'scene' | 'today'; deep: boolean; left?: boolean; hour: number }): Mission[] {
+/** the missions list (legacy rkMissions). where: in the scene right after the slip, or on Today. left: only what is left.
+    until: the weekday the quest closes, for the sunrise check's words. */
+export function rkMissions(
+  r: RekindleState,
+  st: Settings,
+  o: { where: 'scene' | 'today'; deep: boolean; left?: boolean; hour: number; until?: string },
+): Mission[] {
   const off = fmtClock(st.screensOff);
   const eve = o.hour >= 18 || o.hour < (st.rollover || 4);
   const nm = safeName(st);
@@ -185,17 +201,11 @@ export function rkMissions(r: RekindleState, st: Settings, o: { where: 'scene' |
     pts: 10,
     actions: r.m1 ? [] : [{ act: 'small', label: 'I did it' }],
   };
-  if (o.left) {
-    const out: Mission[] = [];
-    if (!r.m1) out.push({ ...m1, sub: 'Water, step outside, or text someone.' });
-    if (o.deep && !r.m4 && deep) out.push(deep);
-    return out;
-  }
   const m2: Mission = {
     key: 'm2',
     done: r.m2,
     icon: r.m2 ? 'check' : 'moon',
-    title: 'Phone away tonight',
+    title: 'Phone away, one night',
     sub: r.m2
       ? 'Done. Sleep is part of the plan.'
       : o.where === 'today'
@@ -206,12 +216,20 @@ export function rkMissions(r: RekindleState, st: Settings, o: { where: 'scene' |
     pts: 5,
     actions: !r.m2 && o.where === 'today' && eve ? [{ act: 'phone', label: 'Phone away' }] : [],
   };
+  /* what is left: the phone can go away any night until the quest closes */
+  if (o.left) {
+    const out: Mission[] = [];
+    if (!r.m1) out.push({ ...m1, sub: 'Water, step outside, or text someone.' });
+    if (!r.m2) out.push(m2);
+    if (o.deep && !r.m4 && deep) out.push(deep);
+    return out;
+  }
   const m3: Mission = {
     key: 'm3',
     done: r.m3,
     icon: r.m3 ? 'check' : 'sunrise',
     title: 'Sunrise check',
-    sub: r.m3 ? 'Done.' : 'Tomorrow morning, about two minutes. It waits for you on Today.',
+    sub: r.m3 ? 'Done.' : (o.until ? 'One morning until ' + o.until : 'Tomorrow morning') + ', about two minutes. It waits for you on Today.',
     pts: 15,
     actions: [],
   };
@@ -224,32 +242,37 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
     rkOf(days, date, st) || ({ k: date, ev: ev as DayEvent, m1: !!(ev && ev.recovered), m2: false, m3: false, m4: false, n: 0 } as RekindleState);
   const { op } = rkOpen(days, st, tk, date);
   const deep = !!(op && op.deep);
+  const u = rkUntil(date);
   return {
     r,
     flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []),
-    h: op ? 'Keep your ' + op.run + '-day run going' : 'Your Rekindle quest',
+    h: op ? 'Save your ' + op.run + '-day run' : 'Your Rekindle quest',
     p: op
-      ? 'Finish all ' + (deep ? 'four' : 'three') + ' missions by tomorrow night and your run keeps going. Each one lights a flame.'
-      : 'Three small missions before tomorrow night. Each one lights a flame.',
+      ? (deep ? 'Four' : 'Three') + ' steps, any time until ' + u + ' night. Your run waits for you.'
+      : 'Three small missions, any time until ' + u + ' night. Each one lights a flame.',
     askWait: st.cleanMode === 'step',
-    missions: rkMissions(r, st, { where: 'scene', deep, hour }),
+    missions: rkMissions(r, st, { where: 'scene', deep, hour, until: u }),
     prize: op
-      ? { b: 'Finish them all: your run keeps going', s: 'Plus the Rekindled badge and 20 bonus points.' }
+      ? { b: 'Finish them all: your run is saved', s: 'Plus the Rekindled badge and 20 bonus points.' }
       : { b: 'Light all three: Rekindled', s: 'A new badge and 20 bonus points.' },
     done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
   };
 }
 
 /* ---------- on Today ---------- */
-/** the quest the day of the slip, the sunrise the next day */
+/** the quest the day of the slip; the sunrise the next day; and after that, while the run still waits to be saved (RK_DAYS) */
 export function rkActive(days: Days, st: Settings | null, tk: DayKey): (RekindleState & { phase: 'day' | 'sun' }) | null {
   if (!st) return null;
   const full = rkFullDays(days);
-  const yk = addDays(tk, -1);
   const t = full[tk] ? rkOf(days, tk, st) : null;
   if (t) return { phase: 'day', ...t };
-  const y = full[yk] ? rkOf(days, yk, st) : null;
-  if (y) return { phase: 'sun', ...y };
+  for (let i = 1; i <= RK_DAYS; i++) {
+    const k = addDays(tk, -i);
+    const r = full[k] ? rkOf(days, k, st) : null;
+    if (!r) continue;
+    if (i === 1 || runLedger(days, st, tk).kind[k] === 'open') return { phase: 'sun', ...r };
+    return null;
+  }
   return null;
 }
 
@@ -273,32 +296,32 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
   const deep = !!(op && op.deep) || (saved && r.m4);
   const flames = [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []);
   const lit = flames.filter(Boolean).length;
+  const u = rkUntil(r.k);
   const base = { flames, why: null, missions: [] as Mission[], care: [] as string[], sunrise: false, quote: null, line: !!op };
   if (r.phase === 'day') {
     return {
       ...base,
       kind: 'day',
       icon: 'flame',
-      h: op ? 'Keep your ' + op.run + '-day run going' : 'Rekindle quest',
-      p: lit + ' of ' + flames.length + ' lit · ends tomorrow night',
-      why: op
-        ? 'Finish ' + (flames.length === 4 ? 'all four' : 'all three') + ' missions and your run keeps going. The slip stays in your log either way.'
-        : null,
-      missions: rkMissions(r, st, { where: 'today', deep: !!(op && op.deep), hour }),
+      h: op ? 'Save your ' + op.run + '-day run' : 'Rekindle quest',
+      p: lit + ' of ' + flames.length + ' lit · until ' + u + ' night',
+      why: op ? 'Your run waits for you. The slip stays in your log either way.' : null,
+      missions: rkMissions(r, st, { where: 'today', deep: !!(op && op.deep), hour, until: u }),
       care: slipCare(st),
     };
   }
   if (!r.m3) {
-    const more = op && op.deep && !r.m4 ? ' and one deeper mission' : '';
     return {
       ...base,
       kind: 'sun',
       line: false,
       icon: 'sunrise',
-      h: 'The morning after',
-      p: op ? 'Finish your sunrise check' + more + ' to keep your ' + op.run + '-day run going.' : 'Your sunrise check is ready. About two minutes.',
+      h: tk === addDays(r.k, 1) ? 'The morning after' : op ? 'Your ' + op.run + '-day run is waiting' : 'Your sunrise check',
+      p: op
+        ? 'Your ' + op.run + '-day run waits until ' + u + ' night. The sunrise check is the next step.'
+        : 'Your sunrise check is ready. About two minutes.',
       sunrise: true,
-      missions: op && (!r.m1 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour }) : [],
+      missions: op && (!r.m1 || !r.m2 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }) : [],
     };
   }
   if (op) {
@@ -306,9 +329,9 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       ...base,
       kind: 'almost',
       icon: 'flame',
-      h: 'Almost there',
-      p: lit + ' of ' + flames.length + ' lit. Finish the rest by tonight to keep your ' + op.run + '-day run going.',
-      missions: rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour }),
+      h: 'Your ' + op.run + '-day run is waiting',
+      p: lit + ' of ' + flames.length + ' lit · it waits until ' + u + ' night.',
+      missions: rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }),
     };
   }
   const pl = r.ev.rk && r.ev.rk.pl;
@@ -327,10 +350,58 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
   };
 }
 
+/* ---------- when a run ends ---------- */
+export interface RkEnded {
+  /** the run that ended, in days */
+  run: number;
+  /** clock: the quest closed with steps left. again: a second slip within a week, which cannot be saved */
+  why: 'clock' | 'again';
+  lit: number;
+  of: number;
+  longest: number;
+  /** the count toward graduation, when it is shown */
+  grad: number | null;
+  text: string;
+}
+/** the morning after a run ends: what was built, said once, on that one day (never a silent drop). null on any other day. */
+export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
+  if (!st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return null;
+  const full = rkFullDays(days);
+  const L = runLedger(days, st, tk);
+  const slip = (k: DayKey) => k >= st.day1! && dayKind(k, days[k], st, tk) === 'slip';
+  for (let i = 1; i <= RK_DAYS + 1; i++) {
+    const k = addDays(tk, -i);
+    if (!slip(k) || L.kind[k] === 'saved' || L.kind[k] === 'open') continue;
+    if (addDays(k, full[k] ? RK_DAYS + 1 : 1) !== tk) continue;
+    /* a quest that closed after a later slip had already ended the run: that slip's morning said it */
+    if (full[k] && Array.from({ length: RK_DAYS }, (_, j) => addDays(k, j + 1)).some(slip)) continue;
+    const run = runLedger(days, st, addDays(k, -1)).cur;
+    if (run < 1) return null;
+    const r = rkOf(days, k, st);
+    const deep = run >= RUN_DEEP;
+    const lit = r ? [r.m1, r.m2, r.m3, deep && r.m4].filter(Boolean).length : 0;
+    const of = deep ? 4 : 3;
+    const g = gradInfo(days, st, tk);
+    const text = full[k]
+      ? 'The quest closed last night with ' +
+        lit +
+        ' of ' +
+        of +
+        ' lit. Your new run counts from ' +
+        fmtDate(addDays(k, 1), { weekday: 'long' }) +
+        (L.cur > 0 ? ', and it is already ' + L.cur + (L.cur === 1 ? ' day' : ' days') : '') +
+        '. What you built stays yours.'
+      : 'A second slip within a week cannot be saved, so a new run started today. What you built stays yours.';
+    return { run, why: full[k] ? 'clock' : 'again', lit, of, longest: L.longest, grad: g.show && !g.at ? g.count : null, text };
+  }
+  return null;
+}
+
 /* ---------- the sunrise check ---------- */
-/** the steps: hello, last night's screens (when not answered and the phone was not put away), what came before, the plan */
-export function srSteps(days: Days, r: RekindleState): string[] {
-  const d = days[r.k];
+/** the steps: hello, last night's screens (when not answered and the phone was not put away), what came before, the plan.
+    Last night is the night before today (tk), which is the slip's night the morning after. */
+export function srSteps(days: Days, r: RekindleState, tk: DayKey = addDays(r.k, 1)): string[] {
+  const d = days[addDays(tk, -1)];
   const so = d && d.checkin ? d.checkin.so : null;
   return ['hi'].concat(!r.m2 && so == null ? ['so'] : [], ['before', 'plan']);
 }
@@ -406,12 +477,19 @@ export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: Rekind
         : n === 2
           ? 'Two of three lit. That is a real comeback.'
           : 'You came back. That is the skill.';
+  /* what is left, and an honest "screens stayed on" thanked: the phone can go away another night */
+  const left = [!r.m1 ? 'one small thing' : '', !r.m2 ? 'the phone away one night' : '', deep && !r.m4 ? 'going deeper' : ''].filter(Boolean);
+  const honest = !r.m2 && days[addDays(tk, -1)]?.checkin?.so === 'N';
   const sub = saved
     ? 'Your run is ' + plural(L.cur, 'day') + ' and still going.' + (n === 3 ? ' The Rekindled badge is yours too.' : '')
     : op
-      ? 'Finish the rest by tonight and your ' + op.run + '-day run keeps going.'
+      ? (honest ? 'Thank you for being honest. ' : '') +
+        (left.length ? 'Left to do: ' + andList(left) + ', any time until ' + rkUntil(k) + ' night. ' : '') +
+        'Your ' +
+        op.run +
+        '-day run waits for you.'
       : run0
-        ? 'Phone away was missed that night, so the run starts again. Every flame you lit still counts, and your longest run stays.'
+        ? 'Every flame you lit still counts, and your longest run stays.'
         : n === 3
           ? 'All three missions done. Your fire is back to full, and the Rekindled badge is yours.'
           : 'Every flame you lit counts. Light all three next time for the badge.';

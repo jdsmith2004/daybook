@@ -8,8 +8,10 @@ import {
   countText,
   eventRow,
   gameCompute,
+  GRAD_DAYS,
   rkActive,
   rkCard,
+  rkEnded,
   slipCare,
   sortedEvents,
   sumDay,
@@ -71,7 +73,7 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const { act, now } = useLogActions();
   const st = snap.settings!;
   const r = rkActive(snap.days, st, tk);
-  if (!r) return null;
+  if (!r) return <RunKeptCard snap={snap} tk={tk} />;
   const k = rkCard(snap.days, st, tk, r, new Date(now).getHours());
   const colors: [string, string] = k.kind === 'sun' ? ['#FFD9B4', '#FFF3DE'] : k.line ? [c.slipSoft, c.surface] : [c.sunSoft, c.surface];
   const sun = k.kind === 'sun';
@@ -125,6 +127,37 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           ))}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/* the morning a run ends (the quest closed with steps left, or a second slip within a week): what was built, said once, so a
+   run never just disappears (core rkEnded) */
+function RunKeptCard({ snap, tk }: { snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const e = rkEnded(snap.days, snap.settings!, tk);
+  if (!e) return null;
+  return (
+    <View style={[s.card, { borderColor: c.cardEdge, backgroundColor: c.surface }]} accessibilityRole="summary">
+      <View style={[s.top, { alignItems: 'center' }]}>
+        <View style={[s.ico, { backgroundColor: c.sunSoft }]}>
+          <Icon name="flame" size={22} color={c.sunText} />
+        </View>
+        <T v="h2" style={{ flex: 1 }} accessibilityRole="header">
+          {'Your ' + e.run + (e.run === 1 ? ' day is kept' : ' days are kept')}
+        </T>
+      </View>
+      <T tone="muted">{e.text}</T>
+      <View style={s.chips}>
+        <View style={[s.chip, { backgroundColor: c.sunSoft }]}>
+          <Text style={[s.chipT, { color: c.sunText }]}>{'Longest run: ' + e.longest + (e.longest === 1 ? ' day' : ' days')}</Text>
+        </View>
+        {e.grad != null ? (
+          <View style={[s.chip, { backgroundColor: c.accentSoft }]}>
+            <Text style={[s.chipT, { color: c.accentText }]}>{'Graduation: ' + e.grad + ' of ' + GRAD_DAYS}</Text>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -259,6 +292,9 @@ const s = StyleSheet.create({
   top: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   ico: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   quote: { padding: 12, borderRadius: 14, borderWidth: 1.5 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
+  chipT: { fontFamily: font.bodyBold, fontSize: 13 },
   pair: { flexDirection: 'row', gap: 8 },
   log: {
     flex: 1,

@@ -163,9 +163,10 @@ export interface RkComebacks {
   /** the recent stretches are longer than the early ones */
   apart: boolean;
 }
-/** the person's own record, up to the slip on day k: how many clean days came before each slip day */
+/** the person's own record, up to the slip on day k: how many clean days came before each slip day. Counted from Day 1, like
+    the run, so the record and "your 9-day run" never disagree (from the start of the log for a slip before Day 1). */
 export function rkComebacks(days: Days, st: Settings, k: DayKey): RkComebacks {
-  const from = st.day1 && st.day1 < st.start ? st.day1 : st.start;
+  const from = st.day1 && st.day1 <= k ? st.day1 : st.start;
   const runs: number[] = [];
   let run = 0;
   for (let d = from; d && d <= k; d = addDays(d, 1)) {

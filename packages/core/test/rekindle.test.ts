@@ -167,3 +167,78 @@ describe('the sunrise check', () => {
     expect(core.rkOf(next, '2026-10-14', st)?.m4).toBe(true);
   });
 });
+
+describe('the run waits for you (three days after the slip)', () => {
+  const st = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
+  /* nine clean days, then a slip on Saturday, October 10 */
+  const K = '2026-10-10';
+  const base = () => {
+    let days: Days = {};
+    for (let i = 0; i < 9; i++) days = core.addEvent(days, core.addDays('2026-10-01', i), 'rode', '21:00').days;
+    const r = core.addEvent(days, K, 'slipped', '22:40');
+    return { days: r.days, id: r.id };
+  };
+  const phone = (days: Days, k: string) =>
+    core.withDay(
+      days,
+      k,
+      core.changeDay(days[k], k, (d) => void (d.p = { ...core.blankP(), po: '22:50' })),
+    );
+  it('waits through the third day after the slip, then the run ends', () => {
+    const { days } = base();
+    expect(core.runLedger(days, st, core.addDays(K, 3)).open).toMatchObject({ k: K, run: 9 });
+    /* the days after the slip keep counting while it waits */
+    expect(core.runLedger(days, st, core.addDays(K, 3)).cur).toBe(12);
+    const after = core.runLedger(days, st, core.addDays(K, 4));
+    expect(after.open).toBeNull();
+    expect(after.longest).toBe(9);
+  });
+  it('the phone can go away on a later night, and an honest "screens stayed on" does not end it', () => {
+    let { days, id } = base();
+    days = core.withDay(
+      days,
+      K,
+      core.changeDay(days[K], K, (d) => void (d.checkin = { ...core.normCheckin({})!, so: 'N' })),
+    );
+    expect(core.runLedger(days, st, core.addDays(K, 1)).open).toMatchObject({ k: K });
+    days = core.patchEvent(days, K, id, { recovered: true });
+    days = phone(days, core.addDays(K, 2));
+    days = core.srFinish(days, st, K, id, '', core.addDays(K, 2)).days;
+    const L = core.runLedger(days, st, core.addDays(K, 2));
+    expect(L.kind[K]).toBe('saved');
+    expect(L.cur).toBe(12);
+  });
+  it('Today keeps the quest while the run waits, and says the run was kept the morning after it ends', () => {
+    const { days } = base();
+    expect(core.rkActive(days, st, core.addDays(K, 2))).toMatchObject({ phase: 'sun', k: K });
+    expect(core.rkActive(days, st, core.addDays(K, 4))).toBeNull();
+    expect(core.rkEnded(days, st, core.addDays(K, 3))).toBeNull();
+    const e = core.rkEnded(days, st, core.addDays(K, 4))!;
+    expect(e).toMatchObject({ run: 9, why: 'clock', lit: 0, of: 3 });
+    expect(e.text).toBe('The quest closed last night with 0 of 3 lit. Your new run counts from Sunday, and it is already 4 days. What you built stays yours.');
+    expect(core.rkEnded(days, st, core.addDays(K, 5))).toBeNull();
+  });
+  it('a second slip within a week cannot be saved: the next morning says what was kept', () => {
+    let { days, id } = base();
+    days = core.patchEvent(days, K, id, { recovered: true });
+    days = phone(days, K);
+    days = core.srFinish(days, st, K, id, '', core.addDays(K, 1)).days;
+    const K2 = core.addDays(K, 3);
+    days = core.addEvent(days, K2, 'slipped', '23:00').days;
+    expect(core.rkLightLine(days, st, K2, K2, Date.now())).toBe(
+      'A second slip within a week cannot be saved, so a new run starts tomorrow. Your 12 days are kept, and so are your points, level and badges.',
+    );
+    expect(core.rkEnded(days, st, core.addDays(K2, 1))).toMatchObject({ run: 12, why: 'again' });
+  });
+  it('the words lead with saving, and give the day the quest closes', () => {
+    const { days, id } = base();
+    const ev = days[K].events.find((e) => e.id === id)!;
+    const q = core.rkQuest(days, st, K, K, ev, 22);
+    expect(q.h).toBe('Save your 9-day run');
+    expect(q.p).toBe('Three steps, any time until Tuesday night. Your run waits for you.');
+  });
+  it('the record of clean days counts from Day 1, like the run', () => {
+    const st2 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, u: 1 });
+    expect(core.rkComebacks(base().days, st2, K).runs).toEqual([9]);
+  });
+});

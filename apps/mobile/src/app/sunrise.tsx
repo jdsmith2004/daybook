@@ -1,6 +1,8 @@
-/* The sunrise check: the morning after a slip. Day 1 of the comeback: last night's screens (if not answered yet), what came
-   just before, and one if-then plan. Finishing it is the third mission. Ported from the legacy SCENES.sunrise. */
+/* The sunrise check: the morning after a slip (or a later morning, while the run still waits to be saved): last night's
+   screens (if not answered yet), what came just before, and one if-then plan. Finishing it is the third mission. Ported from
+   the legacy SCENES.sunrise. */
 import {
+  addDays,
   addOption,
   changeDay,
   fmtClock,
@@ -16,6 +18,7 @@ import {
   rkMissions,
   rkOf,
   rkOpen,
+  rkUntil,
   srEnd,
   srFinish,
   srPlanInfo,
@@ -48,7 +51,7 @@ export default function Sunrise() {
     const r = rkActive(snap.days, st, tk);
     if (!r || r.phase !== 'sun') return null;
     const { op } = rkOpen(snap.days, st, tk, r.k);
-    return { k: r.k, evId: r.ev.id, seq: srSteps(snap.days, r), first: r.m3 ? 'end' : 'hi', run0: op ? op.run : 0 };
+    return { k: r.k, evId: r.ev.id, seq: srSteps(snap.days, r, tk), first: r.m3 ? 'end' : 'hi', run0: op ? op.run : 0 };
   });
   const [step, setStep] = useState(start?.first || 'hi');
   const [hist, setHist] = useState<string[]>([]);
@@ -115,17 +118,20 @@ export default function Sunrise() {
 
   if (step === 'hi') {
     const cb = rkComebacks(snap.days, st, k);
+    const after = tk === addDays(k, 1);
     body = (
       <>
         <SunArt />
         <T v="eyebrow" tone="muted">
-          Rekindle · the morning after
+          {after ? 'Rekindle · the morning after' : 'Rekindle · the sunrise check'}
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
           Welcome back.
         </T>
-        <T style={s.c}>Yesterday is logged and done, and nothing reset. Two minutes to finish your quest.</T>
-        {run0 ? <LineNote b={`Your ${run0}-day run can keep going.`} rest="This check is what keeps it." /> : null}
+        <T style={s.c}>
+          {after ? 'Yesterday is logged and done, and nothing reset.' : 'The slip is logged and done, and nothing reset.'} Two minutes to finish your quest.
+        </T>
+        {run0 ? <LineNote b={`Your ${run0}-day run waits for you.`} rest={`This check is one of the steps, any time until ${rkUntil(k)} night.`} /> : null}
         <Flames on={[r.m1, r.m2, r.m3]} big />
         {cb.before ? (
           <>
@@ -139,13 +145,15 @@ export default function Sunrise() {
       </>
     );
   } else if (step === 'so') {
+    /* last night: the slip's night the morning after, a later night after that */
+    const ln = addDays(tk, -1);
     const pickSo = (v: 'Y' | 'N') => {
       update((s) => {
-        const day = changeDay(s.days[k], k, (d) => {
+        const day = changeDay(s.days[ln], ln, (d) => {
           const c = d.checkin || (d.checkin = normCheckin({})!);
           c.so = v;
         });
-        return { ...s, days: withDay(s.days, k, day) };
+        return { ...s, days: withDay(s.days, ln, day) };
       });
       buzz('tap');
       next();
@@ -264,7 +272,7 @@ export default function Sunrise() {
         </T>
         {e.op ? (
           <Missions
-            list={rkMissions(r, st, { where: 'today', deep: e.op.deep, left: true, hour })}
+            list={rkMissions(r, st, { where: 'scene', deep: e.op.deep, left: true, hour, until: rkUntil(k) })}
             onAction={(_m, act) => {
               if (act === 'small') update((s) => ({ ...s, days: patchEvent(s.days, k, evId, { recovered: true }) }));
               else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k, kind: act } });

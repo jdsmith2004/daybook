@@ -221,7 +221,7 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   [
     'quit',
     'Quitting',
-    'Starts on Day 1. A day with no slip logged counts, and your run grows. The first slip in any 7 days can be saved: finish the Rekindle quest by the next night and the run keeps going. Your points, badges and longest run always stay.',
+    'Starts on Day 1. A day with no slip logged counts, and your run grows. The first slip in any 7 days can be saved: finish the Rekindle quest within three days and the run keeps going. Your points, badges and longest run always stay.',
   ],
   [
     'step',

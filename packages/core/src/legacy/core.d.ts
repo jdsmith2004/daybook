@@ -40,6 +40,8 @@ export function phaseOf(key: DayKey, st: Settings): { p: 'before' | 'tracking' |
 
 /* ---------- counting and run saves ---------- */
 export const RUN_DEEP: number;
+/** days after a slip in which its Rekindle quest can still save the run */
+export const RK_DAYS: number;
 export function dayKind(key: DayKey, day: Day | undefined, st: Settings, today: DayKey, mode?: CountMode): DayKindName;
 export function rkFullDays(days: Days): Record<DayKey, 1>;
 export interface RunLedger {

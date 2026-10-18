@@ -2,6 +2,7 @@
    parts of one day on or off. Ported from the legacy pathHtml, stopStatus, windLine, doSaveCheckin and the Today actions
    (night-so, night-sleep, morning-done, wind, rt-day, save-checkin). Checked by test/day.test.ts. */
 import {
+  addDays,
   blankP,
   fmtClock,
   fmtDate,
@@ -11,6 +12,7 @@ import {
   morningInfo,
   reachedOn,
   rhythm,
+  RK_DAYS,
   ROUTINE_KEYS,
   streaks,
   sumDay,
@@ -95,7 +97,9 @@ export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKe
   if (s.slipped)
     return (
       'Saved. A slip is data, not a reset.' +
-      (runs && sk.open && sk.open.k === tk ? ' Your run can keep going. Finish the Rekindle quest by tomorrow night.' : '')
+      (runs && sk.open && sk.open.k === tk
+        ? ' Your run waits for you. The Rekindle quest saves it, any time until ' + fmtDate(addDays(tk, RK_DAYS), { weekday: 'long' }) + ' night.'
+        : '')
     );
   /* what holds, not a run that can drop to zero: the same measure Today shows */
   const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;

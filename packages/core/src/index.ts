@@ -25,3 +25,4 @@ export * from './levels';
 export * from './accounts';
 export * from './cognito';
 export * from './rekindle-learn';
+export * from './pattern';

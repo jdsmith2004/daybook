@@ -1,9 +1,10 @@
-/* How your flame grows: what points are for, what is left to the next level, and what earns points.
+/* How your flame grows: what points are for, what is left to the next level, points each day, and what earns points.
    Ported from the legacy sheetPoints and pointsListHtml. */
-import { gameCompute, nextLine } from '@daybook/core';
+import { addDays, gameCompute, nextLine } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DayColumns } from '@/components/charts';
 import { Flame } from '@/components/flame';
 import { PointsList } from '@/components/points-list';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
@@ -19,6 +20,8 @@ export default function Points() {
   if (!st) return <Redirect href="/" />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const lvl = g.level;
+  const keys = Array.from({ length: 30 }, (_, i) => addDays(tk, i - 29)).filter((k) => k >= st.start);
+  const month = keys.reduce((a, k) => a + (g.perDay[k] || 0), 0);
   return (
     <SheetFrame title="How your flame grows" sub={`Level ${lvl.n} · ${lvl.name}`}>
       <View style={s.hero}>
@@ -34,6 +37,15 @@ export default function Points() {
         </View>
       </View>
       <T>Points are how your flame grows. You earn them for honest, small steps. They only go up, and a slip never takes any away.</T>
+      {month ? (
+        <>
+          <SheetH title="Points each day" />
+          <DayColumns keys={keys} rows={keys.map((k) => ({ a: g.perDay[k] || 0 }))} tk={tk} label="Points earned each day, the last 30 days" />
+          <T v="small" tone="muted">
+            {month.toLocaleString('en-US')} points in the last 30 days.
+          </T>
+        </>
+      ) : null}
       <SheetH title="What earns points" />
       <PointsList />
       <Dock>

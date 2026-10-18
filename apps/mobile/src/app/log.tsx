@@ -14,7 +14,7 @@ import {
   entryLabel,
   eventsOf,
   gameCompute,
-  isTime,
+  moveEvent,
   optList,
   OPT_MAX,
   patchEvent,
@@ -32,8 +32,13 @@ import {
   type RkFeel,
   UR_STR_NAME,
   urMinText,
+  whenEntry,
+  whenFromEntry,
+  whenLabel,
+  whenStart,
   type DayEvent,
   type Outcome,
+  type When,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -51,6 +56,7 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { LineNote } from '@/components/line-note';
+import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
@@ -77,7 +83,12 @@ export default function Log() {
   }>();
   const sos = useSos();
   const st = snap.settings;
-  const [date] = useState(() => (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : tk));
+  /* the log day the entry is on: the one asked for, or today. A new entry can be moved to another day or time before
+     it is saved (the pill on the first question), and a saved one after (Change time). */
+  const [date, setDate] = useState(() => (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : tk));
+  const roll = snap.settings?.rollover ?? 4;
+  const [when, setWhen] = useState<When>(() => whenStart(date, Date.now(), roll));
+  const [whenOpen, setWhenOpen] = useState(false);
   const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
   const [from] = useState<'urge' | 'pause' | 'hero'>(() => (params.from === 'urge' || params.from === 'pause' ? params.from : 'hero'));
   const [step, setStep] = useState<Step>(() => (handed && STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1'));
@@ -103,8 +114,6 @@ export default function Log() {
   const [adding, setAdding] = useState(false);
   const [allOpts, setAllOpts] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
-  const [timeOpen, setTimeOpen] = useState(false);
-  const [timeText, setTimeText] = useState('');
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const cards = rkLearn(feels);
@@ -155,6 +164,7 @@ export default function Log() {
   const pick = (v: Outcome) => {
     let id = evId;
     let days = snap.days;
+    let key = date;
     if (ev && id) {
       if (outcome !== v)
         days = update((s) => ({
@@ -170,17 +180,19 @@ export default function Log() {
         })).days;
     } else {
       setPts0(g.pts);
-      const time = clockOf(Date.now());
+      const at = whenEntry(when, roll);
+      key = at.key;
       days = update((s) => {
-        const r = addEvent(s.days, date, v, time);
+        const r = addEvent(s.days, at.key, v, at.time);
         id = r.id;
         return { ...s, days: r.days };
       }).days;
       setEvId(id);
+      setDate(at.key);
     }
     setOutcome(v);
     buzz('save');
-    go(v === 'slipped' ? (rkSeen ? 'done' : rkStepFor(days, date)) : 'trigger');
+    go(v === 'slipped' ? (rkSeen ? 'done' : rkStepFor(days, key)) : 'trigger');
   };
   const patch = (p: Partial<DayEvent>) => {
     if (!evId) return;
@@ -213,20 +225,34 @@ export default function Log() {
     say('Removed. Nothing was saved.');
   };
 
+  /* ---------- when it happened: before saving it moves the new entry; after, the saved one ---------- */
+  const whenNow = ev ? whenFromEntry(date, ev.time, roll, clockOf(now)) : when;
+  const whenSheet = (
+    <WhenSheet
+      open={whenOpen}
+      value={whenNow}
+      now={Date.now()}
+      roll={roll}
+      onClose={() => setWhenOpen(false)}
+      onSave={(w) => {
+        setWhenOpen(false);
+        if (!w) return;
+        if (!ev) return setWhen(w);
+        const at = whenEntry(w, roll);
+        update((s0) => ({ ...s0, days: moveEvent(s0.days, date, at.key, ev.id, { time: at.time }) }));
+        setDate(at.key);
+        say('Moved to ' + whenLabel(w, Date.now()) + '.');
+      }}
+    />
+  );
+
   /* ---------- the parts every closing screen shares ---------- */
   const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} /> : null;
   const noteAndTime = ev ? (
     <View style={{ width: '100%', gap: 10 }}>
       <View style={s.row}>
         <Chip label={ev.note ? 'Edit note' : ask && step === 'done' ? 'Entry note' : 'Add a note'} on={noteOpen} onPress={() => setNoteOpen(!noteOpen)} />
-        <Chip
-          label="Change time"
-          on={timeOpen}
-          onPress={() => {
-            setTimeText(ev.time || '');
-            setTimeOpen(!timeOpen);
-          }}
-        />
+        <Chip label="Change time" on={false} onPress={() => setWhenOpen(true)} />
       </View>
       {noteOpen ? (
         <Field
@@ -237,20 +263,6 @@ export default function Log() {
           defaultValue={ev.note}
           placeholder="What would make this easier next time?"
           onChangeText={(t) => patch({ note: t })}
-        />
-      ) : null}
-      {timeOpen ? (
-        <Field
-          label="Time (24-hour, like 22:30)"
-          value={timeText}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-          placeholder="22:30"
-          onChangeText={(t) => {
-            setTimeText(t);
-            if (isTime(t)) patch({ time: t });
-            else if (!t) patch({ time: null });
-          }}
         />
       ) : null}
     </View>
@@ -279,6 +291,8 @@ export default function Log() {
           One tap. You can stop after that.
         </T>
         <Dock>
+          {/* the day and time it is logged for: tap to change it, when it happened earlier */}
+          {!ev && !pause ? <WhenPill w={when} now={now} onPress={() => setWhenOpen(true)} /> : null}
           {pause ? (
             <BigOption
               tone="mint"
@@ -646,6 +660,7 @@ export default function Log() {
   return (
     <SceneFrame title={title} sky={sky} dots={dots} onBack={step !== 'q1' && hist.length ? goBack : null} onClose={close} footer={footer}>
       {body}
+      {whenSheet}
     </SceneFrame>
   );
 }

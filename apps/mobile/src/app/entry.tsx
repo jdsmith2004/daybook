@@ -3,21 +3,25 @@
 import {
   addEvent,
   addOption,
-  clockOf,
   didAdd,
   didIds,
   didToggle,
   fmtClock,
   fmtDate,
   isKey,
-  isTime,
+  moveEvent,
   optList,
   OPT_MAX,
   patchEvent,
   phaseOf,
   removeEvent,
   urSosLines,
+  whenEntry,
+  whenFromEntry,
+  whenLabel,
+  whenStart,
   type Outcome,
+  type When,
 } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -27,6 +31,7 @@ import { AddOwn, BigOption, Field } from '@/components/choices';
 import { Pill } from '@/components/form';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Chip, Icon, T } from '@/components/ui';
+import { WhenPill, WhenSheet } from '@/components/when';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -34,16 +39,17 @@ import { font, useTheme } from '@/lib/theme';
 export default function Entry() {
   const params = useLocalSearchParams<{ date: string; id?: string }>();
   const c = useTheme();
-  const { snap, tk, update, say } = useStore();
+  const { snap, tk, now, update, say } = useStore();
   const st = snap.settings;
-  const date = params.date;
+  /* the log day the entry is on; changing when it happened can move it to another day */
+  const [date, setDate] = useState(params.date);
   const [id, setId] = useState<string | null>(params.id || null);
   const [fresh, setFresh] = useState(false);
   const isToday = date === tk;
-  const [timeText, setTimeText] = useState<string>(() => {
-    const e = params.id ? snap.days[date]?.events.find((x) => x.id === params.id) : null;
-    return e ? e.time || '' : isToday ? clockOf(Date.now()) : '';
-  });
+  const roll = st?.rollover ?? 4;
+  /* a new entry: when it happened, now (or on an earlier day, this time of day) until changed; null is "not sure" */
+  const [when, setWhen] = useState<When | null>(() => whenStart(params.date, Date.now(), roll));
+  const [whenOpen, setWhenOpen] = useState(false);
   const [all, setAll] = useState(false);
   const [adding, setAdding] = useState<'trig' | 'did' | null>(null);
   const [del, setDel] = useState(false);
@@ -54,11 +60,13 @@ export default function Entry() {
     const ph = phaseOf(date, st);
     const pick = (v: Outcome) => {
       let nid = '';
+      const at = when ? whenEntry(when, roll) : { key: date, time: null };
       update((s0) => {
-        const r = addEvent(s0.days, date, v, isTime(timeText) ? timeText : null);
+        const r = addEvent(s0.days, at.key, v, at.time);
         nid = r.id;
         return { ...s0, days: r.days };
       });
+      setDate(at.key);
       setId(nid);
       setFresh(true);
       buzz('save');
@@ -70,16 +78,21 @@ export default function Entry() {
           <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
         </View>
-        <Field
-          label="Time (24-hour, like 22:30)"
-          value={timeText}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-          placeholder="22:30"
-          onChangeText={setTimeText}
+        <WhenPill w={when || whenStart(date, now, roll)} none={!when} now={now} onPress={() => setWhenOpen(true)} />
+        <WhenSheet
+          open={whenOpen}
+          value={when || whenFromEntry(date, null, roll, '12:00')}
+          now={Date.now()}
+          roll={roll}
+          allowNone
+          onClose={() => setWhenOpen(false)}
+          onSave={(w) => {
+            setWhenOpen(false);
+            setWhen(w);
+          }}
         />
         <T v="small" tone="muted">
-          {isToday ? 'Filled in for you. Change it if this happened earlier.' : 'Leave it empty if you are not sure.'}
+          {isToday ? 'Filled in for you. Tap it if this happened earlier.' : 'Tap it to set the time, or say you are not sure.'}
           {ph.p === 'tracking' ? ' Tracking week: no pass or fail, just learning.' : ''} Either choice earns points for being honest.
         </T>
       </SheetFrame>
@@ -146,16 +159,21 @@ export default function Entry() {
         <Pill label="Rode it out" on={rode} onPress={() => !rode && patch({ outcome: 'rode', recovered: false })} />
         <Pill label="Slipped" on={!rode} onPress={() => rode && patch({ outcome: 'slipped', paused: null, did: null })} />
       </View>
-      <Field
-        label="Time (24-hour, like 22:30)"
-        value={timeText}
-        keyboardType="numbers-and-punctuation"
-        maxLength={5}
-        placeholder="22:30"
-        onChangeText={(t) => {
-          setTimeText(t);
-          if (isTime(t)) patch({ time: t });
-          else if (!t) patch({ time: null });
+      <WhenPill w={whenFromEntry(date, e.time, roll, '12:00')} none={!e.time} now={now} onPress={() => setWhenOpen(true)} />
+      <WhenSheet
+        open={whenOpen}
+        value={whenFromEntry(date, e.time, roll, '12:00')}
+        now={Date.now()}
+        roll={roll}
+        allowNone
+        onClose={() => setWhenOpen(false)}
+        onSave={(w) => {
+          setWhenOpen(false);
+          if (!w) return patch({ time: null });
+          const at = whenEntry(w, roll);
+          update((s0) => ({ ...s0, days: moveEvent(s0.days, date, at.key, e.id, { time: at.time }) }));
+          if (at.key !== date) say('Moved to ' + whenLabel(w, Date.now()) + '.');
+          setDate(at.key);
         }}
       />
       {sos.length ? (

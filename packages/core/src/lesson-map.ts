@@ -48,6 +48,11 @@ export interface LessonMap {
   road: [number, number][];
   /** how far along the road has been walked: the index of the next stone (the trophy once every lesson is done) */
   walked: number;
+  /** the stretches of road walked, as [from, to] places on the road: between two finished lessons, and from a finished
+      lesson to the next one. Lessons done out of order make their own stretches further along. */
+  gold: [number, number][];
+  /** the stretches still ahead */
+  plain: [number, number][];
 }
 
 export function lessonMap(done: Set<string>): LessonMap {
@@ -86,7 +91,17 @@ export function lessonMap(done: Set<string>): LessonMap {
   const road: [number, number][] = lands.flatMap((l) => l.stones.map((s): [number, number] => [s.x, s.y])).concat([[end.x, end.y]]);
   const all = lands.flatMap((l) => l.stones);
   const found = next as MapStone | null;
-  return { lands, height, end, next: found, road, walked: found ? all.indexOf(found) : road.length - 1 };
+  const fin = (i: number) => (i < all.length ? all[i].state === 'done' : all.every((s) => s.state === 'done'));
+  const gold: [number, number][] = [];
+  const plain: [number, number][] = [];
+  for (let i = 0; i < road.length - 1; i++) {
+    const on = fin(i) && (fin(i + 1) || (i + 1 < all.length && all[i + 1].state === 'next'));
+    const runs = on ? gold : plain;
+    const last = runs[runs.length - 1];
+    if (last && last[1] === i) last[1] = i + 1;
+    else runs.push([i, i + 1]);
+  }
+  return { lands, height, end, next: found, road, walked: found ? all.indexOf(found) : road.length - 1, gold, plain };
 }
 
 /** a smooth line through the points (Catmull-Rom, drawn as cubic Beziers), from point a to point b. A part drawn on its own

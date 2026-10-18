@@ -1,8 +1,9 @@
 /* The lessons as a map (core lesson-map): stepping stones on one path through a land for each section, top to bottom. Each
    land has its own sky and hills, its picture on a little hill (core section-art), trees, and flowers by day; in dark mode
-   it is a warm evening, with stars and fireflies. The road already walked glows gold. A finished lesson is a stone in its
-   land's color with a check; the next one is bigger, with a pin over it and its name beside it; the rest wait in white
-   with their number. Tap any stone for its card, with Start (or Read it again, or the account a locked lesson needs). A
+   it is a warm evening, with stars and fireflies. Lessons are often done out of order (from Today, a check-in, a help page or
+   a review), so a finished lesson is a stone in its land's color with a check wherever it is, the road glows gold between
+   any two finished lessons, and a lesson finished today wears a small Today tag. The next one (the first not done, the
+   same as on Today) is bigger, with a pin over it and its name beside it; the rest wait in white with their number. Tap any stone for its card, with Start (or Read it again, or the account a locked lesson needs). A
    signpost starts each land, and a trophy ends the path. Only the lands near the screen are drawn, to keep it light. The
    pin's bob and the next stone's ring are still under Reduce Motion. */
 import {
@@ -111,8 +112,6 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
   const id = o.id;
   const right = l.right;
   const n = m.next && l.stones.includes(m.next) ? m.next : null;
-  const walked = roadPath(m.road, 0, m.walked);
-  const ahead = m.walked < m.road.length - 1 ? roadPath(m.road, m.walked) : '';
   const crown = o.dark ? mix(land.hill, '#ffffff', 0.12) : mix(land.hill, o.ic, 0.28);
   const stem = mix(land.hill, o.ic, 0.45);
   let x = `<svg viewBox="${o.x0} ${y0} ${w} ${y1 - y0}"><defs>
@@ -139,14 +138,17 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
   x += o.dark ? fireflies(fx, l.pic.y + 56, id) + fireflies(ex - 4, ey, id) : flowers(fx, l.pic.y + 48, stem) + flowers(ex, ey, stem);
   if (last)
     x += `<path transform="translate(${o.x0} ${l.bottom - 30}) scale(${w / MAP_W} 1)" d="M0 40C80 10 160 14 230 30S350 36 390 22L390 400L0 400Z" fill="${o.bg}"/>`;
+  /* the road ahead in white dots, the road walked in gold: between finished lessons, also ones done out of order. Each
+     stretch starts its dots at a stone, so the two kinds never sit on top of each other. */
   x += `<g clip-path="url(#${id}c)">`;
-  if (ahead)
-    x += `<path d="${ahead}" fill="none" stroke="${o.dark ? '#ffffff' : '#ffffff'}" stroke-opacity="${o.dark ? 0.4 : 0.95}" stroke-width="9" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
-  if (m.walked > 0) {
-    if (o.dark)
-      x += `<path d="${walked}" fill="none" stroke="#FFC832" stroke-opacity=".28" stroke-width="18" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
-    x += `<path d="${walked}" fill="none" stroke="#FFC832" stroke-width="9" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
-  }
+  m.plain.forEach(([a, b]) => {
+    x += `<path d="${roadPath(m.road, a, b)}" fill="none" stroke="#ffffff" stroke-opacity="${o.dark ? 0.4 : 0.95}" stroke-width="9" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
+  });
+  m.gold.forEach(([a, b]) => {
+    const d = roadPath(m.road, a, b);
+    if (o.dark) x += `<path d="${d}" fill="none" stroke="#FFC832" stroke-opacity=".28" stroke-width="18" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
+    x += `<path d="${d}" fill="none" stroke="#FFC832" stroke-width="9" stroke-linecap="round" stroke-dasharray="0.1 17"/>`;
+  });
   x += `</g>`;
   if (n) x += `<circle cx="${n.x}" cy="${n.y}" r="72" fill="url(#${id}n)"/>`;
   return x + '</svg>';
@@ -558,6 +560,17 @@ const s_ = StyleSheet.create({
   chipT: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
   ringT: { fontFamily: font.display, fontSize: 13 },
   nextEye: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1.1 },
+  today: { position: 'absolute', zIndex: 4, width: 60, alignItems: 'center' },
+  todayT: {
+    fontFamily: font.bodyBold,
+    fontSize: 11.5,
+    color: '#5A3A00',
+    backgroundColor: '#FFC832',
+    borderRadius: 9,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
   nextT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 21, marginTop: 2 },
 });
 
@@ -578,6 +591,7 @@ export function LessonMapView({
   m,
   open,
   dates,
+  today,
   waiting,
   win,
   hide,
@@ -592,6 +606,8 @@ export function LessonMapView({
   open: (L: Lesson) => boolean;
   /** the day each finished lesson was finished, by lesson id */
   dates: Record<string, string>;
+  /** the lessons finished today, wherever they were opened (Today, a check-in, a help page, a review) */
+  today: Set<string>;
   waiting: number;
   /** the lands near the screen, to draw in full */
   win: [number, number];
@@ -625,7 +641,9 @@ export function LessonMapView({
     const no = lessonNo(s.L);
     const st =
       s.state === 'done'
-        ? 'Done' + (dates[s.L.id] ? ', ' + dates[s.L.id] : '')
+        ? today.has(s.L.id)
+          ? 'Done today'
+          : 'Done' + (dates[s.L.id] ? ', ' + dates[s.L.id] : '')
         : s.state === 'next'
           ? 'Up next'
           : open(s.L)
@@ -684,6 +702,15 @@ export function LessonMapView({
             ));
           })
         : null}
+      {w
+        ? all
+            .filter((s) => s.state === 'done' && today.has(s.L.id) && s.L.id !== sel)
+            .map((s) => (
+              <View key={'t' + s.L.id} pointerEvents="none" style={[s_.today, { left: X(s.x) - 30, top: Y(s.y) + 34 * k }]}>
+                <Text style={s_.todayT}>Today</Text>
+              </View>
+            ))
+        : null}
       {w && nx && sel !== nx.L.id ? (
         <NextLabel s={nx} land={m.lands.find((l) => l.stones.includes(nx))!} x={X(nx.x)} y={Y(nx.y)} k={k} w={w} onPress={() => onSel(nx.L.id)} />
       ) : null}
@@ -697,7 +724,7 @@ export function LessonMapView({
           x={X(pick.x)}
           top={Y(pick.y) + (pick.state === 'next' ? 37 : 29) * k + 14}
           t={toneOf(c, toneName(pick.L.u))}
-          when={pick.state === 'done' ? dates[pick.L.id] || '' : null}
+          when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}
           waiting={waiting}
           onStart={() => onStart(pick.L.id)}

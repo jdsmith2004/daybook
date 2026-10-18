@@ -155,12 +155,10 @@ export function lessonSections(): { u: number; lessons: Lesson[] }[] {
     stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
 export const lessonNo = (L: Lesson) => lessonPath().indexOf(L) + 1;
 export const firstUndone = (done: Set<string>) => lessonPath().find((l) => !done.has(l.id)) || null;
-/** the next unfinished lesson after this one, wrapping around */
+/** what comes after this lesson: the first unfinished lesson on the path, counting this one as finished. It is the same
+    Up next as Today and the map, also after a lesson done out of order (from a check-in, a help page or a review). */
 export function nextAfter(L: Lesson, done: Set<string>): Lesson | null {
-  const path = lessonPath();
-  const i = path.indexOf(L);
-  const rest = path.slice(i + 1).concat(path.slice(0, Math.max(0, i)));
-  return rest.find((x) => x !== L && !done.has(x.id)) || null;
+  return lessonPath().find((x) => x !== L && !done.has(x.id)) || null;
 }
 /** when each lesson was first finished, last opened, how many days it was read again, and which was touched most recently */
 export function lessonStats(days: Days) {

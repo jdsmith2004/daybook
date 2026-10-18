@@ -41,10 +41,39 @@ describe('the lesson map', () => {
     expect(all.filter((s) => s.state === 'done').map((s) => s.L.id)).toEqual([path[0].id, path[1].id, path[5].id]);
     expect(m.walked).toBe(2);
   });
+  it('the road walked lights up between finished lessons, also ones done out of order', () => {
+    const N = path.length;
+    expect(core.lessonMap(doneUpTo(5)).gold).toEqual([[0, 5]]);
+    expect(core.lessonMap(doneUpTo(5)).plain).toEqual([[5, N]]);
+    /* lessons 1 and 2 in order, then 6 and 7 from a check-in or a help page, and 30 on its own */
+    const m = core.lessonMap(new Set([path[0].id, path[1].id, path[5].id, path[6].id, path[29].id]));
+    expect(m.next?.L.id).toBe(path[2].id);
+    expect(m.gold).toEqual([
+      [0, 2],
+      [5, 6],
+    ]);
+    expect(m.plain).toEqual([
+      [2, 5],
+      [6, N],
+    ]);
+    expect(core.lessonMap(new Set()).gold).toEqual([]);
+  });
+  it('after any lesson, Next is the same Up next as the map and Today', () => {
+    const done = new Set([path[0].id, path[1].id]);
+    expect(core.nextAfter(path[2], done)?.id).toBe(path[3].id);
+    /* a lesson done out of order points back to the first one not done */
+    expect(core.nextAfter(path[25], done)?.id).toBe(path[2].id);
+    expect(core.nextAfter(path[25], done)?.id).toBe(core.lessonMap(new Set([...done, path[25].id])).next?.L.id);
+    /* reading a finished lesson again */
+    expect(core.nextAfter(path[0], done)?.id).toBe(path[2].id);
+    expect(core.nextAfter(path[path.length - 1], doneUpTo(path.length - 1))).toBeNull();
+  });
   it('with every lesson done, nothing is next and the whole road is walked', () => {
     const m = core.lessonMap(doneUpTo(path.length));
     expect(m.next).toBeNull();
     expect(m.walked).toBe(m.road.length - 1);
+    expect(m.gold).toEqual([[0, m.road.length - 1]]);
+    expect(m.plain).toEqual([]);
   });
   it.each(path.map((L, i) => [i + 1, L.title, i] as const))('lesson %s next (%s): the picture and trees stay out of the way', (_n, _t, i) => {
     const m = core.lessonMap(doneUpTo(i));

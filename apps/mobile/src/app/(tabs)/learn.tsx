@@ -216,6 +216,8 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
   const n = done.size;
   const tl = lessonTimeline(snap.days);
   const dates = useMemo(() => Object.fromEntries(tl.past.map((x) => [x.L.id, lfDate(x.k, tk)])), [tl.past, tk]);
+  const todays = snap.days[tk]?.p?.ls;
+  const today = useMemo(() => new Set(todays || []), [todays]);
   const due = lcheckDue(snap.days, st);
   const account = useAccount();
   const sync = useSync();
@@ -263,6 +265,7 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
           m={m}
           open={open}
           dates={dates}
+          today={today}
           waiting={waiting}
           win={win}
           hide={hide}

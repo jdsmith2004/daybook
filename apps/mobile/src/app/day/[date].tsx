@@ -123,7 +123,12 @@ export default function DaySheet() {
           <Bars ci={x.ci} />
           <View style={s.facts}>
             {x.ci.h != null ? <Fact ic="moon" t={'Slept ' + x.ci.h + ' h'} /> : null}
-            {x.ci.so ? <Fact ic="phone" t={x.ci.so === 'Y' ? 'Screens off on time' : 'Screens on late'} /> : null}
+            {x.ci.so ? (
+              <Fact
+                ic="phone"
+                t={x.po ? (x.ci.so === 'Y' ? 'Phone stayed away' : 'Picked the phone back up') : x.ci.so === 'Y' ? 'Screens off on time' : 'Screens on late'}
+              />
+            ) : null}
             {x.ci.ro === 'Y' ? <Fact ic="heart" t="Reached out" /> : null}
           </View>
           {x.ci.n ? <T style={s.note}>“{x.ci.n}”</T> : null}
@@ -137,7 +142,7 @@ export default function DaySheet() {
           <Card>
             <View style={{ gap: 6 }}>
               <YesNo
-                label={'Screens off by ' + fmtClock(st.screensOff) + ' that night?'}
+                label={x.po ? 'Phone away at ' + fmtClock(x.po) + '. Did it stay away?' : 'Screens off around ' + fmtClock(st.screensOff) + ' that night?'}
                 value={ci ? ci.so : null}
                 onPick={(v) => {
                   update((s0) => ({ ...s0, days: setScreensOff(s0.days, date, v) }));

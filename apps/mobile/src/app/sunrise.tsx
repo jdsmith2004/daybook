@@ -154,11 +154,11 @@ export default function Sunrise() {
       <>
         <MoonArt />
         <T v="title" style={s.c} accessibilityRole="header">
-          Last night, were screens off by {fmtClock(st.screensOff)}?
+          Last night, did screens go off around {fmtClock(st.screensOff)}?
         </T>
         <T style={s.c}>Honest beats perfect. It counts either way.</T>
         <Dock>
-          <BigOption tone="mint" icon="moon" title="Yes" sub="Screens were off on time." onPress={() => pickSo('Y')} />
+          <BigOption tone="mint" icon="moon" title="Yes" sub="And they stayed off for the night." onPress={() => pickSo('Y')} />
           <BigOption tone="slip" icon="leaf" title="Not this time" sub="That is okay. Tonight is another try." onPress={() => pickSo('N')} />
         </Dock>
       </>

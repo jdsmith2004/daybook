@@ -7,11 +7,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GradFlame } from '@/components/grad';
 import { LogLink } from '@/components/today-log';
 import { Bar, Card, Icon, T } from '@/components/ui';
+import { openStopKey } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapshot; tk: string; now: number; onStop: (k: string) => void }) {
+export function Hero({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const { say } = useStore();
   const lvl = g.level;
@@ -68,7 +69,7 @@ export function Hero({ g, snap, tk, now, onStop }: { g: GameState; snap: Snapsho
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Next up: ${o.t}. ${[o.s, o.when].filter(Boolean).join(' · ')}. Worth ${o.pts} points.`}
-            onPress={() => (o.act === 'lesson' ? router.push({ pathname: '/lesson/[id]', params: { id: o.v! } }) : onStop(o.v!))}
+            onPress={() => (o.act === 'lesson' ? router.push({ pathname: '/lesson/[id]', params: { id: o.v! } }) : openStopKey(o.v!))}
             style={({ pressed }) => [
               s.act,
               {

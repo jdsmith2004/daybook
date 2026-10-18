@@ -25,6 +25,8 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` and let it deploy; GitHub keeps everything, so a change can always be rolled back.
   Say when a piece of work needs a different model or effort, and otherwise just keep going on the one in use.
+  Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
+  The old review artifacts are retired: never edit or republish them.
 - **Publish live every time.** Every change should reach the live site so the owner can see it. Free publishing is always
   fine (the GitHub Pages preview at https://jdsmith2004.github.io/daybook/, and the AWS site, which costs about nothing per
   deploy). If something would cost money, tell the owner what and how much before relying on it.

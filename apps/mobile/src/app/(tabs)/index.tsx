@@ -21,8 +21,8 @@ import {
   todayMeasure,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
@@ -44,9 +44,6 @@ export default function Today() {
   const { ready, snap, tk, now, apply, update, say } = useStore();
   const st = snap.settings;
   const account = useAccount();
-  const scroll = useRef<ScrollViewInstance>(null);
-  const [dayY, setDayY] = useState(0);
-  const [stop, setStop] = useState<{ k: string; n: number } | null>(null);
 
   /* a rough stretch switches counting to step down by itself, once, with a note (legacy cleanAutoCheck) */
   useEffect(() => {
@@ -103,29 +100,18 @@ export default function Today() {
     </>
   );
   return (
-    <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub} scrollRef={scroll}>
+    <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub}>
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
       <TalkCard snap={snap} now={now} />
       <RiskCard snap={snap} tk={tk} now={now} />
-      <Hero
-        g={g}
-        snap={snap}
-        tk={tk}
-        now={now}
-        onStop={(k) => {
-          setStop({ k, n: Date.now() });
-          scroll.current?.scrollTo({ y: Math.max(0, dayY - 12), animated: true });
-        }}
-      />
+      <Hero g={g} snap={snap} tk={tk} now={now} />
       <SundayCard snap={snap} tk={tk} />
       <CountNotes snap={snap} tk={tk} />
       {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
-      <View onLayout={(e) => setDayY(e.nativeEvent.layout.y)}>
-        <YourDay snap={snap} tk={tk} now={now} openStop={stop} />
-      </View>
+      <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
     </Screen>
   );

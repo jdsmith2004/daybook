@@ -4,6 +4,7 @@
 import {
   blankP,
   fmtClock,
+  fmtDate,
   fmtLeft,
   HX_NEXT,
   minToClock,
@@ -15,7 +16,7 @@ import {
   sumDay,
   type RhythmStop,
 } from './legacy/core.js';
-import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
+import { faithOf, firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
@@ -168,6 +169,174 @@ export function morningDone(days: Days, tk: DayKey, now = Date.now()): Days {
       now,
     ),
   );
+}
+
+/* ---------- the morning, as a full-screen moment (app/morning.tsx) ---------- */
+/* It asks what the app does not know. When the phone was put away last night, the app knows when screens went off, so it
+   asks whether the phone stayed away (the promise made at "Putting my phone away"). When it was not, it asks about
+   screens. Either answer is kept as last night's screens-off (checkin.so), as before. */
+export interface MorningAsk {
+  /** away: the phone was put away last night. screens: it was not. */
+  kind: 'away' | 'screens';
+  /** "Last night · Saturday" */
+  eyebrow: string;
+  q: string;
+  sub: string;
+  yes: { t: string; s: string };
+  no: { t: string; s: string };
+  /** when the phone went away (HH:MM), or the screens-off time */
+  from: string;
+}
+export function morningAsk(days: Days, st: Settings, tk: DayKey): MorningAsk {
+  const mi = morningInfo(days, st, tk);
+  const eyebrow = 'Last night · ' + fmtDate(mi.prev, { weekday: 'long' });
+  const no = { t: '', s: 'Good to know. Tonight is a new try.' };
+  if (mi.po)
+    return {
+      kind: 'away',
+      eyebrow,
+      q: 'Did your phone stay away?',
+      sub: 'You put it away at ' + fmtClock(mi.po) + '.',
+      yes: { t: 'Yes, it stayed away', s: 'All night' },
+      no: { ...no, t: 'I picked it back up' },
+      from: mi.po,
+    };
+  return {
+    kind: 'screens',
+    eyebrow,
+    q: 'Did screens go off around ' + fmtClock(st.screensOff) + '?',
+    sub: 'And stay off for the night. Honest beats perfect.',
+    yes: { t: 'Yes', s: 'Screens off for the night' },
+    no: { ...no, t: 'Not this time' },
+    from: st.screensOff,
+  };
+}
+const hoursText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
+/** last night in a few words, as answered: ["Phone stayed away", "Slept 9 h"] */
+export function morningSaid(days: Days, st: Settings, tk: DayKey): string[] {
+  const mi = morningInfo(days, st, tk);
+  const out: string[] = [];
+  if (mi.so) out.push(mi.po ? (mi.so === 'Y' ? 'Phone stayed away' : 'Picked the phone back up') : mi.so === 'Y' ? 'Screens off on time' : 'Screens on late');
+  if (mi.h != null) out.push('Slept ' + hoursText(mi.h) + ' h');
+  return out;
+}
+
+/* ---------- the stops of Your day, as tiles ---------- */
+/* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
+   button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
+export type StopGo = 'morning' | 'lesson' | 'checkin' | 'wind';
+export interface StopTile {
+  k: string;
+  state: RhythmStop['state'];
+  done: boolean;
+  /** the open one, shown as a tile */
+  cur: boolean;
+  sky: 'sun' | 'sky' | 'violet' | 'night';
+  ic: string;
+  title: string;
+  /** the one line of a row: what is waiting, or what was done */
+  line: string;
+  /** the status on the right of a row ("Around 6 PM"); empty when done */
+  right: string;
+  /* the tile */
+  eyebrow: string;
+  head: string;
+  body: string;
+  chips: string[];
+  btn: string;
+  go: StopGo;
+  /** the lesson to open */
+  id?: string;
+}
+const NAME: Record<string, string> = { morning: 'Morning', lesson: 'Lesson', evening: 'Evening', night: 'Night' };
+const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): { tiles: StopTile[]; cur: string | null; done: number } {
+  const r = rhythm(days, st, tk, nowMs);
+  const p = days[tk]?.p;
+  const ls = lessonStop(days, st, tk);
+  const lessonOpen = r.stops.some((s) => s.k === 'lesson' && !s.done);
+  const tiles = r.stops.map((s): StopTile => {
+    const status = stopStatus(s, r.windMin);
+    const eyebrow =
+      s.state === 'now'
+        ? NAME[s.k] + ' · open now'
+        : s.state === 'due'
+          ? NAME[s.k] + ' · still open'
+          : s.state === 'done'
+            ? NAME[s.k] + ' · done'
+            : 'Up next · ' + low(status);
+    const base = { k: s.k, state: s.state, done: !!s.done, cur: s.k === r.cur, right: s.done ? '' : status, eyebrow };
+    const pts = (k: string) => '+' + HX_NEXT[k].pts + ' points';
+    if (s.k === 'morning') {
+      const said = morningSaid(days, st, tk);
+      return {
+        ...base,
+        sky: 'sun',
+        ic: 'sunrise',
+        title: 'Last night',
+        line: s.done ? said.join(' · ') || 'Answered' : 'Two quick questions',
+        head: new Date(nowMs).getHours() < 12 ? 'Good morning' : 'About last night',
+        body: 'Two quick questions about last night' + (lessonOpen ? ', then today’s lesson.' : '.'),
+        chips: [HX_NEXT.morning.s || '', pts('morning')],
+        btn: 'Start',
+        go: 'morning',
+      };
+    }
+    if (s.k === 'lesson') {
+      const L = ls.L;
+      const tile = { ...base, sky: 'sky' as const, ic: 'book', title: 'Lesson', go: 'lesson' as const, id: L.id };
+      if (ls.kind === 'read')
+        return { ...tile, line: 'Read: ' + L.title, head: L.title, body: L.key, chips: [lmin(L)], btn: 'Open it again', eyebrow: 'Lesson · done' };
+      if (ls.kind === 'next')
+        return {
+          ...tile,
+          line: L.title + ' · ' + lmin(L),
+          eyebrow: 'Lesson ' + ls.n + ' of ' + ls.total + (s.state === 'now' ? ' · open now' : s.state === 'due' ? ' · still open' : ' · ' + low(status)),
+          head: L.title,
+          body: L.tag,
+          chips: [lmin(L), pts('lesson')],
+          btn: 'Start',
+        };
+      return {
+        ...tile,
+        line: 'Read again: ' + L.title,
+        eyebrow: 'Read again' + (s.state === 'next' || s.state === 'later' ? ' · ' + low(status) : ''),
+        head: L.title,
+        body: 'You have finished every lesson. A quick re-read keeps one fresh.',
+        chips: [lmin(L), '+5 points'],
+        btn: 'Read it again',
+      };
+    }
+    if (s.k === 'evening') {
+      const c = days[tk]?.checkin;
+      const said = c && c.done ? [c.m != null ? 'Motivation ' + c.m : '', c.s != null ? 'Stress ' + c.s : ''].filter(Boolean).join(' · ') : '';
+      return {
+        ...base,
+        sky: 'violet',
+        ic: 'pencil',
+        title: 'Check-in',
+        line: s.done ? said || 'Saved' : 'Four numbers about today',
+        head: 'How was today?',
+        body: 'Four honest numbers and one line. Then the day is logged.',
+        chips: [HX_NEXT.evening.s || '', pts('evening')],
+        btn: 'Check in',
+        go: 'checkin',
+      };
+    }
+    return {
+      ...base,
+      sky: 'night',
+      ic: 'moon',
+      title: 'Wind-down',
+      line: s.done ? (p && p.po ? 'Phone away at ' + fmtClock(p.po) : 'Wound down') : 'Screens off at ' + fmtClock(st.screensOff),
+      head: 'Time to wind down',
+      body: windLine(st, r.leftToOff, p),
+      chips: [HX_NEXT.night.s || '', pts('night')],
+      btn: 'Start the wind-down',
+      go: 'wind',
+    };
+  });
+  return { tiles, cur: r.cur, done: tiles.filter((t) => t.done).length };
 }
 
 /* ---------- the wind-down ---------- */

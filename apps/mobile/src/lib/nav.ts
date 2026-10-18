@@ -10,7 +10,7 @@ export function keepRootState(get: () => State | undefined) {
 }
 
 /** the full-screen moments: closing one goes back past all of them at once */
-const SCENE = /^(sos|tool\/\[id\]|log|sunrise|checkin|talk|review|deeper|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated)$/;
+const SCENE = /^(sos|tool\/\[id\]|log|sunrise|morning|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated)$/;
 
 /** leave a full-screen moment (legacy closeScene): every full-screen moment on top closes, and the person is back where they
     started it (a tab, or a page like My plan). Opened directly (a web link), it goes to Today. */

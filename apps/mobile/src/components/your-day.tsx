@@ -1,341 +1,322 @@
-/* "Your day" on Today: a few short stops, each opening where it is answered. Last night (asked the next morning, because that
-   is when you know), the lesson, the evening check-in, and the wind-down. Below them, switching parts of today on or off.
-   Ported from the legacy pathHtml. Every word and rule comes from @daybook/core. */
-import {
-  clockOf,
-  fmtClock,
-  fmtDate,
-  gameCompute,
-  lessonStop,
-  lmin,
-  morningDone,
-  morningInfo,
-  pathNote,
-  phoneAway,
-  rhythm,
-  ROUTINE,
-  routineChanged,
-  routineDay,
-  routineOn,
-  setScreensOff,
-  setSleep,
-  stopStatus,
-  STOP_IC,
-  STOP_WHEN,
-  windLine,
-  windToggle,
-  type Snapshot,
-} from '@daybook/core';
+/* "Your day" on Today: the day as a path from morning to night (core: stopTiles in day.ts). Each stop has the color of its
+   full-screen moment. The open one is a tile with a few words and its button; the others are one line each, and a done one
+   says what was done. Every stop opens its moment with one tap, at any time: Last night (app/morning.tsx), the lesson, the
+   check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change" turns parts of today on or off, in a sheet. */
+import { pathNote, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Fragment, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CheckinBlock } from '@/components/checkin';
-import { useHoldCelebrations } from '@/components/celebrate';
-import { Check, Collapse, OnOff } from '@/components/form';
-import { PickRow } from '@/components/picks';
-import { Slider } from '@/components/slider';
-import { Button, Card, T } from '@/components/ui';
+import { OnOff } from '@/components/form';
+import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font, nightInk, skies, useTheme, type Palette } from '@/lib/theme';
 
-/** openStop: Next up asked for this stop to be open (n changes on each ask) */
-export function YourDay({ snap, tk, now, openStop }: { snap: Snapshot; tk: string; now: number; openStop?: { k: string; n: number } | null }) {
+/** open a stop's moment */
+export function openStop(go: StopGo, id?: string) {
+  buzz('tap');
+  if (go === 'lesson') {
+    if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
+    return;
+  }
+  router.push(go === 'morning' ? '/morning' : go === 'checkin' ? '/checkin' : '/wind');
+}
+/** Next up names a stop by its key (morning, evening, night; the lesson opens itself) */
+export function openStopKey(k: string) {
+  openStop(k === 'morning' ? 'morning' : k === 'evening' ? 'checkin' : 'wind');
+}
+
+/** the colors of a stop, from the sky of its moment */
+function lookOf(sky: StopTile['sky'], c: Palette & { scheme: 'light' | 'dark' }) {
+  const dark = c.scheme === 'dark';
+  switch (sky) {
+    case 'sun':
+      return { soft: c.sunSoft, ink: c.sunText, btn: c.sun, onBtn: c.onSun };
+    case 'sky':
+      return { soft: c.skySoft, ink: c.skyText, btn: c.sky, onBtn: dark ? '#0E2350' : '#FFFFFF' };
+    case 'violet':
+      return { soft: c.violetSoft, ink: c.violetText, btn: c.violet, onBtn: dark ? '#1A1250' : '#FFFFFF' };
+    default:
+      return { soft: '#2A2275', ink: '#FFE27A', btn: '#FFE27A', onBtn: '#2A2275' };
+  }
+}
+
+export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const st = snap.settings!;
-  const r = rhythm(snap.days, st, tk, now);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [rtOpen, setRtOpen] = useState(false);
-  useEffect(() => {
-    if (openStop) setOpen((o) => ({ ...o, ['path-' + openStop.k]: true }));
-  }, [openStop]);
-  const day = snap.days[tk];
-  const n = r.stops.length;
-  const note = pathNote(snap.days, st, tk, r.stops);
-  const toggle = (k: string, def: boolean) => setOpen((o) => ({ ...o, [k]: !(o[k] ?? def) }));
-  const shut = (k: string) => setOpen((o) => ({ ...o, [k]: false }));
-  const changed = routineChanged(st, day?.p);
+  const r = stopTiles(snap.days, st, tk, now);
+  const note = pathNote(snap.days, st, tk);
+  const changed = routineChanged(st, snap.days[tk]?.p);
+  const [sheet, setSheet] = useState(false);
+  const n = r.tiles.length;
   return (
     <Card>
-      <View style={s.between}>
-        <T v="h2" accessibilityRole="header">
+      <View style={s.head}>
+        <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
           Your day
         </T>
-        <T v="small" tone="muted">
-          {n} short stop{n === 1 ? '' : 's'}
-        </T>
+        {n ? (
+          <View style={s.pips} accessible accessibilityLabel={r.done + ' of ' + n + ' done'}>
+            {r.tiles.map((t) => (
+              <View key={t.k} style={[s.pip, { backgroundColor: t.done ? c.mint : t.cur ? c.accent : c.line }]} />
+            ))}
+          </View>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change today’s routine"
+          hitSlop={8}
+          onPress={() => {
+            buzz('tap');
+            setSheet(true);
+          }}
+          style={({ pressed }) => [s.change, { backgroundColor: c.surface2, opacity: pressed ? 0.75 : 1 }]}>
+          <Icon name="sliders" size={15} color={c.accentText} />
+          <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
+        </Pressable>
       </View>
-      {note ? (
+      {changed || note ? (
         <T v="small" tone="muted">
-          {note}
+          {changed ? changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.' : note}
         </T>
       ) : null}
-      {r.stops.length ? (
-        r.stops.map((sp) => {
-          const isOpen = open['path-' + sp.k] ?? sp.k === r.cur;
-          const done = sp.state === 'done';
-          return (
-            <Collapse
-              key={sp.k}
-              title={sp.title}
-              sub={STOP_WHEN[sp.k]}
-              right={stopStatus(sp, r.windMin)}
-              icon={done ? 'check' : STOP_IC[sp.k]}
-              iconBg={done ? c.mintSoft : sp.state === 'now' ? c.accentSoft : c.surface2}
-              iconInk={done ? c.mintText : sp.state === 'now' ? c.accentText : c.muted}
-              tone={sp.state === 'now' ? 'now' : done ? 'done' : 'plain'}
-              open={isOpen}
-              onToggle={() => toggle('path-' + sp.k, sp.k === r.cur)}>
-              {sp.k === 'morning' ? (
-                <Morning snap={snap} tk={tk} onDone={() => shut('path-morning')} />
-              ) : sp.k === 'lesson' ? (
-                <LessonStop snap={snap} tk={tk} />
-              ) : sp.k === 'evening' ? (
-                <CheckinBlock dkey={tk} isToday scene />
-              ) : (
-                <Wind snap={snap} tk={tk} leftToOff={r.leftToOff} />
-              )}
-            </Collapse>
-          );
-        })
+      {n ? (
+        <View>
+          {r.tiles.map((t, i) => (
+            <Fragment key={t.k}>
+              {i ? <View style={[s.link, { backgroundColor: r.tiles[i - 1].done ? c.mint : c.line }]} /> : null}
+              {t.cur ? <OpenTile t={t} /> : <StopRow t={t} />}
+            </Fragment>
+          ))}
+        </View>
       ) : (
-        <T tone="muted">Nothing is switched on for today. You can turn parts of the day back on below.</T>
+        <T tone="muted">Nothing is switched on for today. Tap Change to turn parts of the day back on.</T>
       )}
-      <Collapse
-        title="Change today’s routine"
-        sub={changed ? changed + ' changed for today' : 'Turn parts of today on or off'}
-        open={rtOpen}
-        onToggle={() => setRtOpen(!rtOpen)}>
-        <RoutineToday snap={snap} tk={tk} />
-      </Collapse>
+      <RoutineSheet open={sheet} onClose={() => setSheet(false)} snap={snap} tk={tk} />
     </Card>
   );
 }
 
-/* ---------- last night ---------- */
-/* two answers: screens off, then hours of sleep on a slider. It finishes itself once both are in (for the slider, when the
-   finger comes up); until then celebrations wait. */
-const sleepText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
-function Morning({ snap, tk, onDone }: { snap: Snapshot; tk: string; onDone: () => void }) {
-  const { update, say } = useStore();
-  const st = snap.settings!;
-  const mi = morningInfo(snap.days, st, tk);
-  /* finished when this opened, or finished here */
-  const [fin, setFin] = useState(mi.done);
-  useHoldCelebrations(!fin && (mi.so != null || mi.h != null));
-  const finish = () => {
-    if (fin) return;
-    setFin(true);
-    buzz('save');
-    say('Thanks for being honest.');
-    onDone();
-  };
+/* ---------- a stop that is not open: one line ---------- */
+function StopRow({ t }: { t: StopTile }) {
+  const c = useTheme();
+  const L = lookOf(t.sky, c);
   return (
-    <View style={{ gap: 14 }}>
-      <T v="small" tone="muted">
-        About {fmtDate(mi.prev, { weekday: 'long' })} night. Honest beats perfect.
-      </T>
-      <View style={{ gap: 8 }}>
-        {mi.po ? <T>You put your phone away at {fmtClock(mi.po)}.</T> : null}
-        <T v="label">Were screens off by {fmtClock(st.screensOff)}?</T>
-        <PickRow
-          label={'Screens off by ' + fmtClock(st.screensOff)}
-          list={[
-            { k: 'Y', label: 'Yes' },
-            { k: 'N', label: 'Not this time' },
-          ]}
-          cur={mi.so}
-          onPick={(v) => {
-            update((s0) => ({ ...s0, days: setScreensOff(s0.days, mi.prev, v) }));
-            if (mi.so !== v && mi.h != null) finish();
-          }}
-        />
-      </View>
-      <View style={{ gap: 2 }}>
-        <T v="label">How long did you sleep?</T>
-        <Slider
-          label="Hours of sleep"
-          value={mi.h}
-          min={3}
-          max={12}
-          step={0.5}
-          show={sleepText}
-          unit="hours"
-          onChange={(h) => update((s0) => ({ ...s0, days: setSleep(s0.days, tk, h) }))}
-          onRelease={() => {
-            if (mi.so != null) finish();
-          }}
-        />
-      </View>
-      {!fin && (mi.so != null || mi.h != null) ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            update((s0) => ({ ...s0, days: morningDone(s0.days, tk) }));
-            finish();
-          }}
-          style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
-          <LinkWords>That is all for today</LinkWords>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-function LinkWords({ children }: { children: string }) {
-  const c = useTheme();
-  return <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>{children}</Text>;
-}
-
-/* ---------- the lesson for the day ---------- */
-function LessonStop({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const c = useTheme();
-  const r = lessonStop(snap.days, snap.settings!, tk);
-  const go = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
-  if (r.kind === 'read')
-    return (
-      <View style={{ gap: 8 }}>
-        <T>
-          ✓ Done today: <Text style={{ fontFamily: font.bodyBold }}>{r.L.title}</Text>
-        </T>
-        <T v="small" tone="muted">
-          {r.L.key}
-        </T>
-        {r.next ? (
-          <>
-            <Button kind="ghost" label={'Another one: ' + r.next.title} onPress={() => go(r.next!.id)} />
-            <T v="small" tone="muted">
-              One a day is plenty. This is here if you want more.
-            </T>
-          </>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
+      onPress={() => openStop(t.go, t.id)}
+      style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}>
+      <View style={[s.ic, { backgroundColor: L.soft }]}>
+        <Icon name={t.ic} size={22} color={L.ink} />
+        {t.done ? (
+          <View style={[s.badge, { backgroundColor: c.mint, borderColor: c.surface }]}>
+            <Icon name="check" size={11} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} />
+          </View>
         ) : null}
       </View>
-    );
-  if (r.kind === 'next')
-    return (
-      <View style={{ gap: 10 }}>
-        <View style={{ gap: 2 }}>
-          <T v="label">
-            Lesson {r.n} of {r.total}: {r.L.title}
-          </T>
-          <T v="small" tone="muted">
-            {r.L.tag}
-          </T>
-        </View>
-        <Button label={'Start · ' + lmin(r.L)} icon="play" onPress={() => go(r.L.id)} />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.navigate('/learn')}
-          style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Pick a different lesson</Text>
-        </Pressable>
-      </View>
-    );
-  return (
-    <View style={{ gap: 10 }}>
-      <View style={{ gap: 2 }}>
-        <T v="label">Read again: {r.L.title}</T>
+      <View style={{ flex: 1, gap: 1 }}>
+        <T v="label">{t.title}</T>
         <T v="small" tone="muted">
-          You have finished every lesson. A quick re-read keeps one fresh each day.
+          {t.line}
         </T>
       </View>
-      <T v="small" tone="muted">
-        {r.L.key}
-      </T>
-      {r.note ? (
-        <View style={[s.note, { backgroundColor: c.surface2 }]}>
-          <T v="small" tone="muted">
-            Your note
-          </T>
-          <T>{r.note}</T>
-        </View>
-      ) : null}
-      <Button kind="ghost" label="Read it again" onPress={() => go(r.L.id)} />
-    </View>
+      {t.right ? <Text style={[s.right, { color: t.state === 'due' ? c.accentText : c.muted }]}>{t.right}</Text> : null}
+      <Icon name="next" size={16} color={c.muted} />
+    </Pressable>
   );
 }
 
-/* ---------- the wind-down ---------- */
-function Wind({ snap, tk, leftToOff }: { snap: Snapshot; tk: string; leftToOff: number }) {
-  const { update } = useStore();
-  const st = snap.settings!;
-  const p = snap.days[tk]?.p;
-  return (
-    <View style={{ gap: 6 }}>
-      <T v="small" tone="muted">
-        {windLine(st, leftToOff, p)}
-      </T>
-      {st.wind.map((t, i) => (
-        <Check
-          key={i}
-          label={t}
-          on={!!p && p.w.indexOf(i) >= 0}
-          onPress={() => {
-            update((s0) => ({ ...s0, days: windToggle(s0.days, s0.settings!, tk, i) }));
-            buzz('tap');
-          }}
-        />
-      ))}
-      {p && p.po ? (
-        <T>✓ Phone away at {fmtClock(p.po)}. See you in the morning.</T>
-      ) : (
-        <>
-          <Button
-            label="Putting my phone away"
-            icon="moon"
-            onPress={() => {
-              const at = clockOf(Date.now());
-              let gain = 0;
-              update((s0) => {
-                const b0 = gameCompute(s0.days, s0.settings!, s0.reviews, tk).pts;
-                const days = phoneAway(s0.days, tk, at);
-                gain = Math.max(0, gameCompute(days, s0.settings!, s0.reviews, tk).pts - b0);
-                return { ...s0, days };
-              });
-              buzz('save');
-              router.push({ pathname: '/night', params: { at, gain: String(gain) } });
-            }}
-          />
-          <T v="small" tone="muted">
-            Tap this just before you do. Tomorrow morning the app asks whether it stayed away.
-          </T>
-        </>
-      )}
-    </View>
-  );
-}
-
-/* ---------- today's routine ---------- */
-function RoutineToday({ snap, tk }: { snap: Snapshot; tk: string }) {
+/* ---------- the open stop: a window into its moment, with its button on it ---------- */
+function OpenTile({ t }: { t: StopTile }) {
   const c = useTheme();
-  const { update } = useStore();
-  const st = snap.settings!;
-  const p = snap.days[tk]?.p;
+  const L = lookOf(t.sky, c);
+  const deep = c.scheme === 'dark' || t.sky === 'night';
+  const ink = deep ? nightInk.ink : c.ink;
+  const soft = deep ? '#E6DEFF' : c.muted;
+  const eb = t.sky === 'night' ? '#FFE27A' : L.ink;
+  const [a, b] = skies[c.scheme][t.sky];
   return (
-    <View style={{ gap: 4 }}>
-      <T v="small" tone="muted">
-        Skip what does not fit today. This is for today only, and anything you already did stays counted.
-      </T>
-      {ROUTINE.map((x) => (
-        <OnOff
-          key={x.k}
-          name={x.name}
-          sub={x.sub}
-          on={routineOn(st, p, x.k)}
-          onPick={(on) => update((s0) => ({ ...s0, days: routineDay(s0.days, s0.settings!, tk, x.k, on) }))}
-        />
-      ))}
+    <View style={[s.tile, { shadowColor: c.lip }]}>
+      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <Deco sky={t.sky} />
+      <Text style={[s.eb, { color: eb }, (t.sky === 'sun' || t.sky === 'night') && s.ebRoom]}>{t.eyebrow.toUpperCase()}</Text>
+      <Text style={[s.tHead, { color: ink }]} accessibilityRole="header">
+        {t.head}
+      </Text>
+      {t.body ? <Text style={[s.tBody, { color: soft }]}>{t.body}</Text> : null}
+      <View style={s.chips}>
+        {t.chips.filter(Boolean).map((x) => (
+          <View key={x} style={[s.chip, { backgroundColor: deep ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.7)' }]}>
+            <Text style={[s.chipT, { color: ink }]}>{x}</Text>
+          </View>
+        ))}
+      </View>
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.push({ pathname: '/settings', params: { open: 's-routine' } })}
-        style={{ minHeight: 40, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Change my usual routine in Settings</Text>
+        accessibilityLabel={t.btn + ': ' + t.title}
+        onPress={() => openStop(t.go, t.id)}
+        style={({ pressed }) => [
+          s.btn,
+          {
+            backgroundColor: L.btn,
+            shadowColor: 'rgba(0,0,0,0.28)',
+            transform: [{ translateY: pressed ? 3 : 0 }],
+            shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+          },
+        ]}>
+        <Text style={[s.btnT, { color: L.onBtn }]}>{t.btn}</Text>
       </Pressable>
     </View>
   );
 }
 
+/* a little of each moment's sky in the corner: the sun coming up, a moon and stars, or a soft glow */
+function Deco({ sky }: { sky: StopTile['sky'] }) {
+  const c = useTheme();
+  if (sky === 'sun')
+    return (
+      <View style={s.deco} pointerEvents="none">
+        <View style={[s.glow, { backgroundColor: 'rgba(255,200,50,0.28)' }]} />
+        <View style={[s.ball, { backgroundColor: c.sun }]} />
+      </View>
+    );
+  if (sky === 'night')
+    return (
+      <View style={s.deco} pointerEvents="none">
+        {[
+          [18, 26, 3],
+          [64, 12, 2],
+          [40, 58, 2],
+          [84, 50, 3],
+        ].map(([x, y, r], i) => (
+          <View key={i} style={{ position: 'absolute', left: x, top: y, width: r, height: r, borderRadius: r, backgroundColor: '#FFF6D8', opacity: 0.85 }} />
+        ))}
+        <View style={{ position: 'absolute', right: 22, top: 18 }}>
+          <Icon name="moon" size={34} color="#FFE27A" />
+        </View>
+      </View>
+    );
+  return (
+    <View style={s.deco} pointerEvents="none">
+      <View style={[s.glow, { backgroundColor: 'rgba(255,255,255,0.12)' }]} />
+    </View>
+  );
+}
+
+/* ---------- today's routine, in a sheet ---------- */
+function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () => void; snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const inset = useSafeAreaInsets();
+  const { update } = useStore();
+  const st = snap.settings!;
+  const p = snap.days[tk]?.p;
+  return (
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={s.wrap}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,10,40,0.42)' }]}
+          onPress={onClose}
+        />
+        <View style={[s.sheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 16, shadowColor: '#000' }]}>
+          <View style={[s.handle, { backgroundColor: c.line }]} />
+          <T v="h2" accessibilityRole="header">
+            Today’s routine
+          </T>
+          <T v="small" tone="muted">
+            Skip what does not fit today. This is for today only, and anything you already did stays counted.
+          </T>
+          <View style={{ gap: 2 }}>
+            {ROUTINE.map((x) => (
+              <OnOff
+                key={x.k}
+                name={x.name}
+                sub={x.sub}
+                on={routineOn(st, p, x.k)}
+                onPick={(on) => update((s0) => ({ ...s0, days: routineDay(s0.days, s0.settings!, tk, x.k, on) }))}
+              />
+            ))}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              onClose();
+              router.push({ pathname: '/settings', params: { open: 's-routine' } });
+            }}
+            style={{ minHeight: 40, justifyContent: 'center', alignSelf: 'center' }}>
+            <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Change my usual routine in Settings</Text>
+          </Pressable>
+          <Button label="Done" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const s = StyleSheet.create({
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  note: { gap: 2, padding: 10, borderRadius: 12 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pips: { flexDirection: 'row', gap: 4 },
+  pip: { width: 16, height: 6, borderRadius: 3 },
+  change: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 34, paddingHorizontal: 11, borderRadius: 999 },
+  changeT: { fontFamily: font.bodySemi, fontSize: 14 },
+  link: { width: 3, height: 12, borderRadius: 2, marginLeft: 22.5 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 2 },
+  ic: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    right: -3,
+    bottom: -3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  right: { fontFamily: font.bodySemi, fontSize: 13.5, textAlign: 'right', maxWidth: 110 },
+  tile: {
+    borderRadius: 22,
+    padding: 16,
+    gap: 10,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  deco: { position: 'absolute', right: 0, top: 0, width: 130, height: 110 },
+  glow: { position: 'absolute', right: -34, top: -38, width: 132, height: 132, borderRadius: 66 },
+  ball: { position: 'absolute', right: -6, top: -10, width: 72, height: 72, borderRadius: 36 },
+  eb: { fontFamily: font.bodyBold, fontSize: 12.5, letterSpacing: 1.1 },
+  /* room for the sun or the moon in the corner */
+  ebRoom: { paddingRight: 70 },
+  tHead: { fontFamily: font.display, fontSize: 25, lineHeight: 30, paddingRight: 56 },
+  tBody: { fontFamily: font.bodyMedium, fontSize: 15.5, lineHeight: 21 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999 },
+  chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  btn: { minHeight: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 2, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  btnT: { fontFamily: font.bodyBold, fontSize: 17 },
+  wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  sheet: {
+    alignSelf: 'stretch',
+    maxWidth: 560,
+    width: '100%',
+    marginHorizontal: 'auto',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    gap: 12,
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 12,
+  },
+  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 2 },
 });

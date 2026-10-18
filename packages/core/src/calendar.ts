@@ -120,6 +120,8 @@ export interface DaySummary {
   } | null;
   /** the rest of the day, in a few words each, with an icon */
   more: { ic: string; t: string }[];
+  /** when the phone was put away that night (HH:MM) */
+  po: string | null;
 }
 export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): DaySummary {
   const d = days[key];
@@ -166,6 +168,7 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     events,
     ci: c ? { m: c.m, c: c.c, e: c.e, s: c.s, h: c.h, so: c.so, ro: c.ro, n: (c.n || '').trim() } : null,
     more,
+    po: (p && p.po) || null,
   };
 }
 

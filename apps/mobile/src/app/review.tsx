@@ -48,12 +48,13 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 
 import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
+import { FitArt, SHORT } from '@/components/fit';
 import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { Flame } from '@/components/flame';
 import { OwnChip, OwnField } from '@/components/own';
 import { Clock } from '@/components/pattern-charts';
-import { Sources } from '@/components/research';
+import { SourceLine } from '@/components/research';
 import { Big, DaysRow, GoalDots, HelpList, RideWave, Rings, StoryBars, Teach, TrigBars, WeekBars } from '@/components/review-art';
 import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
 import { Button, Chip, Icon, T } from '@/components/ui';
@@ -187,9 +188,11 @@ export default function Review() {
           <Text style={[s.h1, { color: c.ink }]} accessibilityRole="header">
             Your week,{'\n'}looked back on
           </Text>
-          <Appear delay={200} by={10}>
-            <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={150} />
-          </Appear>
+          <FitArt>
+            <Appear delay={200} by={10}>
+              <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={150} />
+            </Appear>
+          </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>
             A few minutes, one thing at a time. Tap the right side to go on, the left side to go back.
           </T>
@@ -221,7 +224,9 @@ export default function Review() {
           {eyebrow('URGES')}
           <Big color={c.mintText}>{S.w.rode}</Big>
           <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.w.rode === 1 ? 'urge ridden out' : 'urges ridden out'}</T>
-          <RideWave mins={S.rideMins} />
+          <FitArt>
+            <RideWave mins={S.rideMins} />
+          </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>
             {S.w.rode === 1 ? 'That one is proof you can.' : 'Every one of them is proof you can.'}
           </T>
@@ -236,11 +241,13 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             Most often around {(top.h % 12 || 12) + (top.h < 12 ? ' AM' : ' PM')}
           </Text>
-          <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, alignItems: 'center', paddingVertical: 8 }]}>
-            <View style={{ width: Math.min(250, win.width - 72) }}>
-              <Clock hours={S.when.hours} hard={S.when.hard} />
+          <FitArt stretch>
+            <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, alignItems: 'center', paddingVertical: 8 }]}>
+              <View style={{ width: Math.min(250, win.width - 72) }}>
+                <Clock hours={S.when.hours} hard={S.when.hard} />
+              </View>
             </View>
-          </View>
+          </FitArt>
           {hard ? (
             <T tone="muted" style={[s.c, s.lead]}>
               {hard.line} Those are your hard hours.
@@ -255,7 +262,9 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.trig[0].t} came up most
           </Text>
-          <TrigBars rows={S.trig} />
+          <FitArt stretch>
+            <TrigBars rows={S.trig} />
+          </FitArt>
         </>
       );
     } else if (scr === 'help') {
@@ -265,7 +274,9 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.help[0].t} worked best
           </Text>
-          <HelpList rows={S.help} />
+          <FitArt stretch>
+            <HelpList rows={S.help} />
+          </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>
             Keep these close. They are proven, by you.
           </T>
@@ -300,7 +311,9 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             What holds the rest up
           </Text>
-          <Rings base={b} />
+          <FitArt>
+            <Rings base={b} />
+          </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>
             {line}
           </T>
@@ -341,7 +354,9 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.weeks.length} weeks, side by side
           </Text>
-          <WeekBars weeks={S.weeks} />
+          <FitArt stretch>
+            <WeekBars weeks={S.weeks} />
+          </FitArt>
           <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.trend.line}</T>
           {S.pts ? <CountUp to={S.pts} prefix="+" suffix=" points this week" delay={900} style={[s.pts, { color: c.mintText }]} /> : null}
           {String(st.becoming || '').trim() ? (
@@ -357,26 +372,35 @@ export default function Review() {
       main = (
         <>
           {eyebrow('ONE THING TO KNOW')}
-          <View style={[s.deepIc, { backgroundColor: c.violetSoft }]}>
-            <Icon name={d.ic} size={30} color={c.violetText} />
-          </View>
+          <FitArt min={0}>
+            <View style={[s.deepIc, { backgroundColor: c.violetSoft }]}>
+              <Icon name={d.ic} size={30} color={c.violetText} />
+            </View>
+          </FitArt>
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {d.title}
           </Text>
           <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
             {d.paras.map((p, j) => (
               <Appear key={j} delay={150 + j * 260}>
-                <T style={{ fontSize: 16, lineHeight: 23 }}>{p}</T>
+                <T style={{ fontSize: SHORT ? 15 : 16, lineHeight: SHORT ? 21 : 23 }}>{p}</T>
               </Appear>
             ))}
-            <Sources keys={d.src} map={SRCS} />
-            {l ? (
-              <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })} style={s.lesson} hitSlop={6}>
-                <Icon name="book" size={15} color={c.accentText} />
-                <Text style={[s.lessonT, { color: c.accentText }]}>Lesson: {l.title}</Text>
-                <Icon name="next" size={14} color={c.accentText} />
-              </Pressable>
-            ) : null}
+            <View style={s.foot2}>
+              {l ? (
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })}
+                  style={s.lesson}
+                  hitSlop={6}>
+                  <Icon name="book" size={14} color={c.accentText} />
+                  <Text style={[s.lessonT, { color: c.accentText }]} numberOfLines={1}>
+                    {l.title}
+                  </Text>
+                </Pressable>
+              ) : null}
+              <SourceLine keys={d.src} map={SRCS} />
+            </View>
           </View>
         </>
       );
@@ -626,13 +650,15 @@ export default function Review() {
               {itW && itT ? storyIfLine({ w: itW, t: itT }) : 'When ' + (itW || '…') + ', I will ' + (itT || '…')}
             </Text>
           </Appear>
-          {/* the science, short here, so the choices fit */}
-          <View style={{ alignSelf: 'stretch', gap: 6 }}>
-            <T v="small" tone="muted" style={s.c}>
-              {IF_TEACH.t}
-            </T>
-            <Sources keys={IF_TEACH.src} map={SRCS} />
-          </View>
+          {/* the science, short here, so the choices fit (left out on a short phone, where the choices need the room) */}
+          {SHORT ? null : (
+            <View style={{ alignSelf: 'stretch', gap: 6 }}>
+              <T v="small" tone="muted" style={s.c}>
+                {IF_TEACH.t}
+              </T>
+              <SourceLine keys={IF_TEACH.src} map={SRCS} />
+            </View>
+          )}
           <Dock>
             <Part icon="timer" tone="violet" title="When…">
               {whens.map((x) => (
@@ -849,11 +875,12 @@ const s = StyleSheet.create({
   h1: { fontFamily: font.displayBold, fontSize: 38, lineHeight: 44, textAlign: 'center' },
   h2: { fontFamily: font.display, fontSize: 27, lineHeight: 33, textAlign: 'center', maxWidth: 400 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
-  card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20, borderWidth: 1.5 },
+  card: { alignSelf: 'stretch', gap: SHORT ? 9 : 12, padding: SHORT ? 13 : 16, borderRadius: 20, borderWidth: 1.5 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
   deepIc: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  lesson: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 },
-  lessonT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline', flexShrink: 1 },
+  lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
+  lessonT: { fontFamily: font.bodySemi, fontSize: 13.5, textDecorationLine: 'underline', flexShrink: 1 },
+  foot2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
   be: { fontFamily: font.display, fontSize: 17, lineHeight: 23, opacity: 0.85 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   part: { alignSelf: 'stretch', gap: 8 },
@@ -893,7 +920,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
+    padding: SHORT ? 9 : 12,
     borderRadius: 18,
     borderWidth: 1.5,
     shadowOffset: { width: 0, height: 3 },

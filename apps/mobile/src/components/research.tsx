@@ -34,6 +34,30 @@ export function Sources({ keys, map }: { keys: string[]; map: Record<string, [st
   );
 }
 
+/** the sources as one small line of names, each opening its paper: a bonus that takes almost no room */
+export function SourceLine({ keys, map }: { keys: string[]; map: Record<string, [string, string]> }) {
+  const c = useTheme();
+  const ks = keys.filter((k) => map[k]);
+  if (!ks.length) return null;
+  return (
+    <View style={s.line}>
+      {ks.map((k, i) => (
+        <Pressable
+          key={k}
+          accessibilityRole="link"
+          accessibilityLabel={'Source: ' + map[k][0]}
+          hitSlop={6}
+          onPress={() => Linking.openURL(map[k][1]).catch(() => undefined)}
+          style={({ pressed }) => [s.lineI, pressed && { opacity: 0.6 }]}>
+          <Text style={[s.lineT, { color: c.muted }]} numberOfLines={1}>
+            {srcName(map, k) + (i < ks.length - 1 ? ' ·' : '')}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export function KnownLine({
   short,
   body,
@@ -70,6 +94,9 @@ export function KnownLine({
 const s = StyleSheet.create({
   body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
   srcs: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  line: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 4, flexShrink: 1 },
+  lineI: { minHeight: 24, justifyContent: 'center', maxWidth: '100%' },
+  lineT: { fontFamily: font.bodyMedium, fontSize: 12, textDecorationLine: 'underline' },
   src: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%', minHeight: 32, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1.5 },
   srcT: { fontFamily: font.bodySemi, fontSize: 12.5, flexShrink: 1 },
   known: { borderRadius: 18, padding: 12, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },

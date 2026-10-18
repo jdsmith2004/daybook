@@ -1,13 +1,15 @@
 /* The top of Today, in two cards. The first is your flame in its own sky (core: emblemScene), with stars at night and its
    hills along the bottom; your one number sits on the picture (core: heroNumber), your level beside it, and the level's
    bar along its edge. Under the picture, your one next step (core: nextUp), in the color of its moment, with a Start
-   button. The second card is help: SOS on its own row, then Already happened and Planning a slip? (LogLink). Tap the flame
-   to say hi; tap the level for how points work; tap the number for your days. */
+   button. The second card is help: SOS on its own row, then Already happened and Planning a slip? (LogLink). The flame
+   moves in a way that fits its form and the stars twinkle (both still under Reduce Motion). Tap
+   the flame and it wiggles and says hi; tap the sky for Milestones; the level for how points work; the number for your
+   days. */
 import { CHEERS, emblemScene, heroNumber, nextUp, type GameState, type NextUp, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { GradFlame } from '@/components/grad';
@@ -15,11 +17,13 @@ import { LogLink } from '@/components/today-log';
 import { Card, Icon } from '@/components/ui';
 import { lookOf, openStopKey } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
-const SCENE_H = 236;
-const FLAME = 168;
+const SCENE_H = 262;
+const FLAME = 206;
+const FLAME_TOP = 2;
 
 export function Hero({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
   const o = nextUp(snap.days, snap.settings!, tk, now);
@@ -78,6 +82,7 @@ function mix(a: string, b: string, t: number) {
 function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const { say } = useStore();
+  const reduce = useReducedMotion();
   const lvl = g.level;
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
   const h = heroNumber(snap.days, snap.settings!, tk, now);
@@ -85,29 +90,86 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   const ink = light ? '#FFFFFF' : '#1F1A4A';
   const soft = light ? '#DCD3FF' : '#3D3670';
   const glass = light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.62)';
+  /* the sky is alive: three slow twinkles shared by the stars */
+  const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
+  const wig = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    const loops = [2600, 3400, 4300].map((ms, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 500),
+          Animated.timing(tw[i], { toValue: 1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+          Animated.timing(tw[i], { toValue: 0, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        ]),
+      ),
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [reduce, tw]);
+  /* a tap on the flame: it wiggles, and says hi */
+  const wiggle = () => {
+    buzz('tap');
+    say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
+    if (reduce) return;
+    wig.setValue(0);
+    Animated.sequence(
+      [1, -1, 0.7, -0.7, 0.35, 0].map((to) => Animated.timing(wig, { toValue: to, duration: 85, easing: Easing.inOut(Easing.quad), useNativeDriver: NATIVE })),
+    ).start();
+  };
   return (
     <View style={s.sky}>
-      <LinearGradient colors={sc.sky} style={StyleSheet.absoluteFill} />
-      {sc.stars
-        ? STARS.map(([x, y, r], i) => (
-            <View key={i} style={[s.star, { left: `${x}%`, top: y, width: r, height: r, borderRadius: r / 2, opacity: i % 3 ? 0.7 : 0.95 }]} />
-          ))
-        : null}
-      {sc.ground ? (
-        <Svg style={s.hills} width="100%" height={66} viewBox="0 0 390 66" preserveAspectRatio="none" pointerEvents="none">
-          <Path d="M0 36 Q90 8 190 33 T390 25 V66 H0z" fill={mix(sc.ground, sc.sky[2], 0.45)} />
-          <Path d="M0 53 Q120 33 240 50 T390 46 V66 H0z" fill={sc.ground} />
-        </Svg>
-      ) : null}
-      <View style={s.flame}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`}
-          onPress={() => {
-            say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
-            buzz('tap');
-          }}>
-          <GradFlame level={lvl.n} size={FLAME} soft />
+      {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
+      <LinearGradient
+        colors={sc.sky}
+        locations={sc.at.map((o) => (FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
+        style={StyleSheet.absoluteFill}
+      />
+      {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Milestones: every form your flame grows into"
+        onPress={() => {
+          buzz('tap');
+          router.push('/miles');
+        }}
+        style={StyleSheet.absoluteFill}>
+        {sc.stars
+          ? STARS.map(([x, y, r], i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  s.star,
+                  {
+                    left: `${x}%`,
+                    top: y,
+                    width: r,
+                    height: r,
+                    borderRadius: r / 2,
+                    opacity: reduce ? 0.8 : tw[i % 3].interpolate({ inputRange: [0, 1], outputRange: i % 2 ? [0.95, 0.3] : [0.3, 0.95] }),
+                  },
+                ]}
+              />
+            ))
+          : null}
+        {sc.ground ? (
+          <Svg style={s.hills} width="100%" height={70} viewBox="0 0 390 70" preserveAspectRatio="none" pointerEvents="none">
+            <Path d="M0 38 Q90 8 190 35 T390 27 V70 H0z" fill={mix(sc.ground, sc.sky[2], 0.45)} />
+            <Path d="M0 56 Q120 35 240 53 T390 49 V70 H0z" fill={sc.ground} />
+          </Svg>
+        ) : null}
+      </Pressable>
+      <View style={s.flame} pointerEvents="box-none">
+        <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={wiggle}>
+          <Animated.View
+            style={{
+              transform: [
+                { rotate: wig.interpolate({ inputRange: [-1, 1], outputRange: ['-9deg', '9deg'] }) },
+                { scale: wig.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.05, 1, 1.05] }) },
+              ],
+            }}>
+            <GradFlame level={lvl.n} size={FLAME} soft />
+          </Animated.View>
         </Pressable>
       </View>
       {h ? (
@@ -138,7 +200,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
           Level {lvl.n} · {lvl.name} ›
         </Text>
       </Pressable>
-      <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]}>
+      <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
         <View style={{ width: `${Math.max(0, Math.min(1, lvl.frac)) * 100}%`, height: '100%', backgroundColor: c.sun }} />
       </View>
     </View>
@@ -223,7 +285,7 @@ const s = StyleSheet.create({
   sky: { height: SCENE_H, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   hills: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  flame: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
+  flame: { position: 'absolute', top: FLAME_TOP, left: 0, right: 0, alignItems: 'center' },
   num: { position: 'absolute', left: 14, bottom: 16, maxWidth: '52%' },
   eb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },
   n: { fontFamily: font.display, fontSize: 34, lineHeight: 38 },

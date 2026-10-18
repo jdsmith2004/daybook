@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { Sources } from '@/components/research';
+import { SourceLine } from '@/components/research';
 import { pop, useOnce } from '@/components/talk-art';
 import { Icon, T } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
@@ -54,19 +54,23 @@ export function Teach({ teach }: { teach: StoryTeach }) {
         <Text style={[s.eyebrow, { color: c.violetText }]}>WHY IT MATTERS</Text>
       </View>
       <T style={{ fontSize: 15.5, lineHeight: 22 }}>{teach.t}</T>
-      {teach.src.length ? <Sources keys={teach.src} map={SRCS} /> : null}
-      {l ? (
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel={'Read the lesson: ' + l.title}
-          hitSlop={6}
-          onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })}
-          style={s.lesson}>
-          <Icon name="book" size={15} color={c.accentText} />
-          <Text style={[s.lessonT, { color: c.accentText }]}>Lesson: {l.title}</Text>
-          <Icon name="next" size={14} color={c.accentText} />
-        </Pressable>
-      ) : null}
+      {/* the lesson, and where the science comes from: one small line, a bonus that never pushes the page past the screen */}
+      <View style={s.teachFoot}>
+        {l ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={'Read the lesson: ' + l.title}
+            hitSlop={6}
+            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })}
+            style={s.lesson}>
+            <Icon name="book" size={14} color={c.accentText} />
+            <Text style={[s.lessonT, { color: c.accentText }]} numberOfLines={1}>
+              {l.title}
+            </Text>
+          </Pressable>
+        ) : null}
+        <SourceLine keys={teach.src} map={SRCS} />
+      </View>
     </View>
   );
 }
@@ -354,8 +358,9 @@ const s = StyleSheet.create({
   eyebrow: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1 },
   teach: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
   teachHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lesson: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 },
-  lessonT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline', flexShrink: 1 },
+  lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
+  lessonT: { fontFamily: font.bodySemi, fontSize: 13.5, textDecorationLine: 'underline', flexShrink: 1 },
+  teachFoot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
   days: { flexDirection: 'row', justifyContent: 'center', gap: 6, alignSelf: 'stretch' },
   day: { alignItems: 'center', gap: 6, flex: 1, maxWidth: 48 },
   dayDot: { width: 40, height: 40, borderRadius: 20, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },

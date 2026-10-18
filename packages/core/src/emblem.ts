@@ -24,6 +24,8 @@ export const sameIds = (svg: string) => svg.replace(/\bem\d+/g, 'emX');
 export interface EmblemScene {
   xml: string;
   sky: [string, string, string];
+  /** where each sky color sits, top (0) to bottom (1) of the drawing, so the card's sky can line up with it */
+  at: [number, number, number];
   ground: string | null;
   ink: 'light' | 'dark';
   stars: boolean;
@@ -43,7 +45,10 @@ export function emblemScene(level: number): EmblemScene {
   let xml = emblemXml(level);
   const sk = /id="em\d+sk"[^>]*>((?:<stop[^>]*\/>)+)/.exec(xml);
   const stops = sk ? [...sk[1].matchAll(/stop-color="(#[0-9A-Fa-f]{6})"/g)].map((m) => m[1]) : [];
-  const sky: [string, string, string] = stops.length === 3 ? [stops[0], stops[1], stops[2]] : DAY_SKY;
+  const offs = sk ? [...sk[1].matchAll(/offset="([\d.]+)"/g)].map((m) => Number(m[1])) : [];
+  const own = stops.length === 3 && offs.length === 3;
+  const sky: [string, string, string] = own ? [stops[0], stops[1], stops[2]] : DAY_SKY;
+  const at: [number, number, number] = own ? [offs[0], offs[1], offs[2]] : [0, 0.6, 1];
   const g = /<path d="M-2 1\d\d[^"]*" fill="(#[0-9A-Fa-f]{6})"/.exec(xml);
   const cp = /clip-path="url\(#(em\d+)cp\)"/.exec(xml);
   if (cp) {
@@ -58,5 +63,5 @@ export function emblemScene(level: number): EmblemScene {
       .replace(/<circle cx="60" cy="60" r="5\d(?:\.\d+)?" fill="none"[^>]*\/>/g, '');
   }
   const ground = g ? g[1] : null;
-  return { xml, sky, ground, ink: luminance(ground || sky[2]) > 0.28 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
+  return { xml, sky, at, ground, ink: luminance(ground || sky[2]) > 0.28 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
 }

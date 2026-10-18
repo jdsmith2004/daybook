@@ -50,6 +50,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type ScrollView
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
+import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { Dock } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
@@ -99,6 +100,8 @@ export default function LessonScreen() {
     draftSave.current = f;
   }, []);
   const scroll = useRef<ScrollViewInstance>(null);
+  /* the picture on a card gives up height so the card fits a short phone (components/fit) */
+  const fit = useFitRoom();
 
   if (!st) return <Redirect href="/" />;
   if (!L)
@@ -247,9 +250,9 @@ export default function LessonScreen() {
     };
     body = (
       <>
-        <View style={s.art}>
+        <FitArt style={s.art}>
           <LxIco name={L.ic} t={t} />
-        </View>
+        </FitArt>
         <Eyebrow icon="flag" label={u.name} t={t} />
         <T style={s.h} accessibilityRole="header">
           {L.title}
@@ -346,7 +349,9 @@ export default function LessonScreen() {
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       body = (
         <View style={{ alignItems: 'center', gap: 12 }}>
-          <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={92} />
+          <FitArt drop={0.45}>
+            <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={92} />
+          </FitArt>
           <T style={[s.h, { textAlign: 'center' }]} accessibilityRole="header">
             {again ? 'Lesson ' + n + ', again' : 'Lesson ' + n + ' done'}
           </T>
@@ -354,7 +359,7 @@ export default function LessonScreen() {
             <View style={[s.pill, { backgroundColor: c.sun }]}>
               <Text style={{ fontFamily: font.bodyBold, color: c.onSun, fontSize: 15 }}>+{gain} points</Text>
             </View>
-          ) : again ? (
+          ) : again && !SHORT ? (
             <T tone="muted">Already counted. Read it as often as you like.</T>
           ) : null}
           <View style={[s.key, { backgroundColor: t.soft }]}>
@@ -504,9 +509,9 @@ export default function LessonScreen() {
     prog = <Prog total={1} i={0} all />;
     body = (
       <>
-        <View style={s.art}>
+        <FitArt style={s.art}>
           {kind || a.shield ? <LxShield t={t} /> : <LxIco name={a.ic || (go[0] && go[0].ic) || L.ic} t={t} size={a.note || go.length > 1 ? 96 : 120} />}
-        </View>
+        </FitArt>
         <Eyebrow icon="bolt" label={'Put it to work · ' + (a.mins || 2) + ' min'} t={t} />
         <T style={s.h} accessibilityRole="header">
           {a.h || 'Try it'}
@@ -581,7 +586,7 @@ export default function LessonScreen() {
     prog = <Prog total={1} i={0} all />;
     body = (
       <>
-        <View style={s.art}>{prac ? <LxCheck /> : <LxIco name={L.ic} t={t} />}</View>
+        <FitArt style={s.art}>{prac ? <LxCheck /> : <LxIco name={L.ic} t={t} />}</FitArt>
         {prac ? <Eyebrow icon="check" label="Practiced" t={{ ...t, soft: c.mintSoft, text: c.mintText }} /> : <Eyebrow icon="flag" label="Lesson done" t={t} />}
         <T style={s.h} accessibilityRole="header">
           {prac ? a.ok || 'Nicely done.' : 'That is the lesson.'}
@@ -628,12 +633,16 @@ export default function LessonScreen() {
       {prog}
       <ScrollView
         ref={scroll}
+        onLayout={fit.onLayout}
+        onContentSizeChange={fit.onContentSizeChange}
         style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
         contentContainerStyle={s.cardIn}
         keyboardShouldPersistTaps="handled">
-        <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
-          {body}
-        </Appear>
+        <FitProvider value={fit.ctx}>
+          <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
+            {body}
+          </Appear>
+        </FitProvider>
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}
       {sheet ? (
@@ -926,9 +935,9 @@ function TextCard({
   return (
     <>
       {card.art ? (
-        <View style={s.art}>
+        <FitArt style={s.art} drop={0.5}>
           <LessonArt key={L.id + card.h} art={card.art} ic={L.ic} t={t} st={st} />
-        </View>
+        </FitArt>
       ) : null}
       <Eyebrow icon={e[0]} label={card.el || e[1]} t={t} />
       <T style={[s.h, card.h.length > 46 && s.hsm]} accessibilityRole="header">
@@ -945,14 +954,21 @@ function TextCard({
     </>
   );
 }
+/** where the science comes from: one small line at the bottom, a bonus, never in the way. A tap opens the detail. */
 function Fact({ text, t, onPress }: { text: string; t: Tone; onPress: () => void }) {
   return (
-    <View style={[s.fact, { backgroundColor: t.soft }]}>
-      <Text style={{ flex: 1, fontFamily: font.bodySemi, fontSize: 13.5, color: t.text, lineHeight: 18 }}>{text}</Text>
-      <Pressable accessibilityRole="button" onPress={onPress} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 }}>
-        <Text style={{ fontFamily: font.bodyBold, fontSize: 13.5, color: t.text, textDecorationLine: 'underline' }}>Behind this</Text>
-      </Pressable>
-    </View>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={'Source: ' + text + '. Behind this.'}
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [s.fact, pressed && { opacity: 0.7 }]}>
+      <Icon name="book" size={13} color={t.text} />
+      <Text style={[s.factT, { color: t.text }]} numberOfLines={1}>
+        {text}
+      </Text>
+      <Icon name="next" size={13} color={t.text} />
+    </Pressable>
   );
 }
 
@@ -1163,29 +1179,30 @@ function SheetOver({ sheet, L, onClose, onDraft }: { sheet: Sheet; L: Lesson; on
   );
 }
 
+/* a short phone gets slightly smaller type and room, so a card fits (components/fit) */
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   prog: { flexDirection: 'row', gap: 4 },
   progI: { flex: 1, height: 8, borderRadius: 4 },
   card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
-  cardIn: { padding: 22, flexGrow: 1 },
-  cardBody: { gap: 14, flexGrow: 1 },
+  cardIn: { padding: SHORT ? 18 : 22, flexGrow: 1 },
+  cardBody: { gap: SHORT ? 11 : 14, flexGrow: 1 },
   guessMid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', minHeight: 170 },
-  art: { minHeight: 110, alignItems: 'center', justifyContent: 'center' },
+  art: { alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   eyeT: { fontFamily: font.bodyBold, fontSize: 12.5, letterSpacing: 1.2 },
   eye2: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1.1 },
-  h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
-  hsm: { fontSize: 26, lineHeight: 31 },
-  p: { fontSize: 18, lineHeight: 26 },
+  h: { fontFamily: font.display, fontSize: SHORT ? 25 : 30, lineHeight: SHORT ? 29 : 34 },
+  hsm: { fontSize: SHORT ? 22 : 26, lineHeight: SHORT ? 27 : 31 },
+  p: { fontSize: SHORT ? 16.5 : 18, lineHeight: SHORT ? 23 : 26 },
   ask: { gap: 4, padding: 14, borderRadius: 18 },
   askP: { fontFamily: font.display, fontSize: 19, lineHeight: 26 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
   pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
   key: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 18 },
-  keyP: { fontFamily: font.display, fontSize: 19, lineHeight: 26, marginTop: 4 },
+  keyP: { fontFamily: font.display, fontSize: SHORT ? 17 : 19, lineHeight: SHORT ? 23 : 26, marginTop: 4 },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   foot: { flexDirection: 'row', gap: 10 },
@@ -1236,7 +1253,8 @@ const s = StyleSheet.create({
   quote: { padding: 14, borderRadius: 16, borderLeftWidth: 5 },
   plan: { gap: 6, padding: 14, borderRadius: 16 },
   so: { gap: 4, paddingLeft: 12, borderLeftWidth: 3 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, paddingHorizontal: 12, borderRadius: 14 },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28, marginTop: 'auto', opacity: 0.85 },
+  factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 12.5 },
   act: { gap: 10, padding: 14, borderRadius: 20 },
   stepLi: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 10, borderRadius: 14 },
   stepN: { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },

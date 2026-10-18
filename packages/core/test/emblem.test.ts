@@ -7,6 +7,8 @@ describe('the flame in its own sky', () => {
     for (let l = 1; l <= 60; l++) {
       const sc = emblemScene(l);
       expect(sc.sky.every((x) => /^#[0-9A-Fa-f]{6}$/.test(x))).toBe(true);
+      expect(sc.at[0]).toBeLessThan(sc.at[1]);
+      expect(sc.at[1]).toBeLessThan(sc.at[2]);
       expect(sc.xml).not.toMatch(/clip-path="url\(#em\d+cp\)"/);
       expect(sc.xml).not.toMatch(/r="57\.2" fill="none"/);
     }

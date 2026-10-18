@@ -8,6 +8,7 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimension
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
+import { FitArt, FitProvider, useFitRoom } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
@@ -44,6 +45,8 @@ export function SceneFrame({
   const [a, b] = skies[c.scheme][sky];
   /* each new step starts at the top, even when the last one was scrolled down to its answers */
   const scroll = useRef<ScrollViewInstance>(null);
+  /* a picture inside (FitArt) shrinks so the page fits a short phone */
+  const fit = useFitRoom();
   const at = dots ? dots.i + '/' + dots.n : '';
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });
@@ -53,34 +56,38 @@ export function SceneFrame({
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
         ref={scroll}
+        onLayout={fit.onLayout}
+        onContentSizeChange={fit.onContentSizeChange}
         contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
-        <View style={s.col}>
-          <View style={s.top}>
-            <View style={s.topL}>
-              {onBack ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.round, { backgroundColor: btn }]}>
-                  <Icon name="back" color={ink} />
-                </Pressable>
-              ) : null}
-              <T v="eyebrow" style={{ color: dark ? nightInk.muted : c.muted }} accessibilityRole="header">
-                {title}
-              </T>
+        <FitProvider value={fit.ctx}>
+          <View style={s.col}>
+            <View style={s.top}>
+              <View style={s.topL}>
+                {onBack ? (
+                  <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.round, { backgroundColor: btn }]}>
+                    <Icon name="back" color={ink} />
+                  </Pressable>
+                ) : null}
+                <T v="eyebrow" style={{ color: dark ? nightInk.muted : c.muted }} accessibilityRole="header">
+                  {title}
+                </T>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
+                <Icon name="x" color={ink} />
+              </Pressable>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
-              <Icon name="x" color={ink} />
-            </Pressable>
+            {dots ? (
+              <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
+                {Array.from({ length: dots.n }, (_, j) => (
+                  <Dot key={j} state={j < dots.i ? 2 : j === dots.i ? 1 : 0} colors={[btn, dark ? '#FFC832' : c.sun, dark ? nightInk.ink : c.accent]} />
+                ))}
+              </View>
+            ) : null}
+            <View style={s.card}>{children}</View>
+            {footer ? <View style={s.foot}>{footer}</View> : null}
           </View>
-          {dots ? (
-            <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
-              {Array.from({ length: dots.n }, (_, j) => (
-                <Dot key={j} state={j < dots.i ? 2 : j === dots.i ? 1 : 0} colors={[btn, dark ? '#FFC832' : c.sun, dark ? nightInk.ink : c.accent]} />
-              ))}
-            </View>
-          ) : null}
-          <View style={s.card}>{children}</View>
-          {footer ? <View style={s.foot}>{footer}</View> : null}
-        </View>
+        </FitProvider>
         {sheet && !pinSheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
       {sheet && pinSheet ? (
@@ -155,25 +162,27 @@ export function Finish({ level, title, text }: { level: number; title: string; t
   }, [reduce, pop, ring]);
   return (
     <View style={s.middle}>
-      <View style={s.finArt}>
-        <Animated.View
-          style={[
-            s.finRing,
-            {
-              borderColor: c.sun,
-              opacity: ring.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
-              transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
-            },
-          ]}
-        />
-        <Animated.View
-          style={{
-            opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
-            transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
-          }}>
-          <Flame level={level} size={150} />
-        </Animated.View>
-      </View>
+      <FitArt drop={0.4}>
+        <View style={s.finArt}>
+          <Animated.View
+            style={[
+              s.finRing,
+              {
+                borderColor: c.sun,
+                opacity: ring.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
+                transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
+              },
+            ]}
+          />
+          <Animated.View
+            style={{
+              opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
+              transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
+            }}>
+            <Flame level={level} size={150} />
+          </Animated.View>
+        </View>
+      </FitArt>
       <Appear delay={220}>
         <T v="title" style={s.center} accessibilityRole="header">
           {title}

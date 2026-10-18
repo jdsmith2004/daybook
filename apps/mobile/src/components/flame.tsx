@@ -8,12 +8,14 @@ import { SvgXml } from 'react-native-svg';
 
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 
-/* [how far it grows, how long one breath takes, how much it dims] for each kind of form */
-const MOTION: [number, number, number][] = [
-  [0.035, 900, 0], // fire: spark to beacon
-  [0.02, 2600, 0], // lighthouse
-  [0.03, 3200, 0], // the suns
-  [0.025, 2000, 0.15], // the stars
+/* [how far it grows, how long one breath takes, how much it dims, how far it sways (degrees), how far it floats (a share of
+   its size)] for each kind of form: a fire flickers and sways, the lighthouse and the suns breathe and drift, the stars
+   twinkle and drift */
+const MOTION: [number, number, number, number, number][] = [
+  [0.045, 850, 0, 2.5, 0], // fire: spark to beacon
+  [0.025, 2600, 0, 0, 0.012], // lighthouse
+  [0.035, 3200, 0, 1, 0.02], // the suns
+  [0.03, 2000, 0.18, 0, 0.018], // the stars
 ];
 const kindOf = (form: number) => (form <= 4 ? 0 : form === 5 ? 1 : form <= 9 ? 2 : 3);
 
@@ -36,7 +38,7 @@ export const Flame = memo(function Flame({
   const xml = useMemo(() => (soft && !locked ? emblemScene(level).xml : emblemXml(level, locked)), [level, locked, soft]);
   const still = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
-  const [grow, ms, dim] = MOTION[kindOf(formOfLevel(level))];
+  const [grow, ms, dim, sway, float] = MOTION[kindOf(formOfLevel(level))];
   const on = alive && !locked && !still;
   useEffect(() => {
     if (!on) {
@@ -60,7 +62,11 @@ export const Flame = memo(function Flame({
         width: size,
         height: size,
         opacity: dim ? v.interpolate({ inputRange: [0, 1], outputRange: [1, 1 - dim] }) : 1,
-        transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }) }],
+        transform: [
+          { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -float * size] }) },
+          { rotate: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', sway + 'deg', -sway * 0.6 + 'deg'] }) },
+          { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }) },
+        ],
       }}>
       {svg}
     </Animated.View>

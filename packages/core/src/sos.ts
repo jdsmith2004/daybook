@@ -506,6 +506,20 @@ export function messageTexts(st: Settings | null): string[] {
   ];
 }
 
+/** a phone number as typed, kept for a text link: the digits, with a + in front when it had one. Empty when it is not a
+    number (fewer than 3 digits or more than 15, as in the international standard). */
+export function cleanPhone(s: unknown): string {
+  const t = String(s ?? '').trim();
+  const d = t.replace(/\D/g, '');
+  if (d.length < 3 || d.length > 15 || /[^\d\s()+.\-]/.test(t)) return '';
+  return (t.startsWith('+') ? '+' : '') + d;
+}
+/** the link that opens the messages app with a text ready to send: to that number, or with no number for the person to pick
+    who. iPhones read the text after "&", other phones after "?". */
+export function smsLink(phone: string, body: string, ios: boolean): string {
+  return 'sms:' + cleanPhone(phone) + (ios ? '&' : '?') + 'body=' + encodeURIComponent(body);
+}
+
 /** "Get curious": the line about where and how it feels */
 export function cuLine(body: string | null, feel: string | null): string {
   const w = body ? (CU_WHERE as Record<string, string>)[body] : undefined;

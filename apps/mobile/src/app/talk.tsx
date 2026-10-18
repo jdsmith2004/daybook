@@ -11,6 +11,7 @@
 import {
   gameCompute,
   lookBack,
+  messageTexts,
   newTalk,
   saveTalk,
   TALK_AFTER_FEEL,
@@ -57,6 +58,7 @@ import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { CountUp } from '@/components/count-up';
 import { OwnChip, OwnField } from '@/components/own';
+import { SafeTextButton } from '@/components/safe-text';
 import { KnownLine, Sources } from '@/components/research';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
@@ -739,6 +741,7 @@ export default function TalkIt() {
   } else if (step === 'done') {
     const g = gain();
     const wait = talk.p === 'wait';
+    const texting = talk.m.indexOf('text') >= 0;
     body = (
       <>
         <Finish
@@ -760,8 +763,10 @@ export default function TalkIt() {
           </T>
         </Appear>
         {g ? <CountUp to={g} prefix="+" suffix={g === 1 ? ' point' : ' points'} delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
+        {/* a plan to text someone starts with a text already written */}
         <Dock>
-          <Button label="Done" onPress={close} />
+          {texting ? <SafeTextButton body={messageTexts(st)[1]} /> : null}
+          <Button label="Done" kind={texting ? 'ghost' : 'primary'} onPress={close} />
         </Dock>
       </>
     );

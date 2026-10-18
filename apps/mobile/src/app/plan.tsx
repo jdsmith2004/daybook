@@ -6,6 +6,7 @@
    Everything reads like a page; tapping a line opens it to change it in place. Ported from the legacy viewPlan and viewBook. */
 import {
   BE_LEN,
+  cleanPhone,
   computeMetrics,
   faithOf,
   HELP_STEPS,
@@ -17,6 +18,7 @@ import {
   lwriteOf,
   playbookText,
   removeOption,
+  safeName,
   SAFETY,
   setField,
   setPlanRow,
@@ -40,6 +42,7 @@ import { SlipEditor } from '@/components/plan-editors';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { VoiceRecorder } from '@/components/voice-note';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -148,7 +151,8 @@ function Sec({
 
 function Why({ place }: { place: Place }) {
   const c = useTheme();
-  const { snap, apply } = useStore();
+  const { snap, apply, say } = useStore();
+  const sos = useSos();
   const st = snap.settings!;
   const set = (k: Parameters<typeof setField>[1]) => (v: string) => apply((cur) => ({ st: setField(cur, k, v) }));
   return (
@@ -191,8 +195,19 @@ function Why({ place }: { place: Place }) {
       </Sec>
       <Sec icon="chat" tone="mint" title="My safe person" onLayout={place('safe')}>
         <Editable label="Name" value={st.safePerson} prompt="Add someone I trust" maxLength={80} onSave={set('safePerson')} />
-        <Editable label="What I will ask them" value={st.ask} prompt="What I will ask them" onSave={set('ask')} />
+        <Editable
+          label="Their number"
+          value={sos.phone}
+          prompt="Add their number"
+          placeholder="Like: 555 123 4567"
+          maxLength={24}
+          onSave={(v) => {
+            sos.setPhone(v);
+            if (v.trim() && !cleanPhone(v)) say('That does not look like a phone number. Try only the digits.');
+          }}
+        />
         <T v="small" tone="muted">
+          With their number, Text {safeName(st) || 'them'} opens your messages app with the words ready to send. It stays on this device and is never synced.
           Scripts you can copy are in Get help › What to say.
         </T>
       </Sec>

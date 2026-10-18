@@ -199,3 +199,17 @@ describe('the tools, against the legacy words', () => {
     for (const [t, id] of w.reasons) expect(core.reasonGuess(t).id).toBe(id);
   });
 });
+
+describe('a text to your safe person', () => {
+  it('keeps a number as typed, and opens the messages app with the words ready', () => {
+    expect(core.cleanPhone('(555) 123-4567')).toBe('5551234567');
+    expect(core.cleanPhone(' +44 20 7946 0958 ')).toBe('+442079460958');
+    expect(core.cleanPhone('call me')).toBe('');
+    expect(core.cleanPhone('12')).toBe('');
+    const body = core.messageTexts(core.normSettings({ start: '2026-10-01', safePerson: 'Sam' }))[1];
+    expect(body).toBe('Hey Sam, rough moment. Can you text me back about anything for a few minutes?');
+    expect(core.smsLink('555-123-4567', 'Hi & bye', true)).toBe('sms:5551234567&body=Hi%20%26%20bye');
+    expect(core.smsLink('555-123-4567', 'Hi', false)).toBe('sms:5551234567?body=Hi');
+    expect(core.smsLink('', 'Hi', true)).toBe('sms:&body=Hi');
+  });
+});

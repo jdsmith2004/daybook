@@ -2,10 +2,11 @@
    - TalkCard on Today, while a talk-through still matters: waiting to decide, time to decide, a changed plan before its
      moment, or "look back" (core: talkDue)
    - TalkDoor, the way in from the tools (in Learn and in SOS) and from a check-in that says caring is low */
-import { talkClock, talkDue, talkMoveWords, talkPlanLine, type Snapshot } from '@daybook/core';
+import { messageTexts, talkClock, talkDue, talkMoveWords, talkPlanLine, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SafeTextButton } from '@/components/safe-text';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
@@ -54,6 +55,7 @@ export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
       ) : d.due === 'look' ? (
         <Button label="Look back" onPress={() => open('look')} />
       ) : null}
+      {(d.due === 'waiting' || d.due === 'plan') && t.m.indexOf('text') >= 0 ? <SafeTextButton kind="ghost" body={messageTexts(snap.settings)[1]} /> : null}
     </Card>
   );
 }

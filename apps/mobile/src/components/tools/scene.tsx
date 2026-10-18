@@ -35,6 +35,7 @@ import { PickRow } from '@/components/picks';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
+import { useSendText } from '@/components/safe-text';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -441,16 +442,20 @@ export function Message({ finish, exit, sos }: ToolProps) {
   const nm = safeName(st);
   const list = messageTexts(st);
   const [own, setOwn] = useState('');
+  const send = useSendText();
   return (
     <>
       <T v="title" style={s.c} accessibilityRole="header">
         {nm ? 'Text ' + nm : 'A short text is enough'}
       </T>
-      <T style={s.c}>{(nm ? 'Your safe person. ' : '') + 'Pick one, copy it, and send it in your messages app. Reaching out is strength, not weakness.'}</T>
+      <T style={s.c}>
+        {(nm ? 'Your safe person. ' : '') + 'Pick one and it opens in your messages app, ready to send. Reaching out is strength, not weakness.'}
+      </T>
       {list.map((m) => (
         <Card key={m} style={{ alignSelf: 'stretch' }}>
           <T selectable>{m}</T>
           <View style={s.row}>
+            <Chip label={nm ? 'Text ' + nm : 'Send'} on={false} onPress={() => send(m)} />
             <Chip label="Copy" on={false} onPress={() => copy(m, say)} />
           </View>
         </Card>
@@ -458,6 +463,7 @@ export function Message({ finish, exit, sos }: ToolProps) {
       <View style={{ alignSelf: 'stretch', gap: 8 }}>
         <Field label="Or write your own" multiline maxLength={300} value={own} onChangeText={setOwn} placeholder="In your own words" />
         <View style={s.row}>
+          <Chip label="Send mine" on={false} onPress={() => (own.trim() ? send(own.trim()) : say('Write a few words first.'))} />
           <Chip label="Copy mine" on={false} onPress={() => (own.trim() ? copy(own.trim(), say) : say('Write a few words first.'))} />
         </View>
       </View>

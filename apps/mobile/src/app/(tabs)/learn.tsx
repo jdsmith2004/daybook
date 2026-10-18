@@ -60,7 +60,8 @@ export default function Learn() {
   const m = useMemo(() => lessonMap(done), [doneKey]);
   /* where the map is on the page (its top, and its scale), how far the page has scrolled, and how tall the screen is */
   const geo = useRef({ pane: -1, map: -1, k: 1, y: 0, h: 700 });
-  const [view, setView] = useState<{ focus: number; win: [number, number] }>({ focus: -1, win: [0, 2] });
+  const [view, setView] = useState<{ focus: number; win: [number, number]; hide: number }>({ focus: -1, win: [0, 2], hide: -1 });
+  const due = snap.settings ? lcheckDue(snap.days, snap.settings) : 0;
   const top = () => inset.top + 16 + geo.current.pane + geo.current.map;
   const look = () => {
     const g = geo.current;
@@ -72,7 +73,16 @@ export default function Learn() {
     const focus = pane === 'lessons' && g.y > t - 20 ? m.lands.findIndex((l) => fy >= l.top - 70 && fy < l.bottom - 70) : -1;
     const near = m.lands.map((l, i) => (l.bottom + 60 > at - h && l.top - 70 < at + 2 * h ? i : -1)).filter((i) => i >= 0);
     const win: [number, number] = near.length ? [near[0], near[near.length - 1]] : [0, 1];
-    setView((v) => (v.focus === focus && v.win[0] === win[0] && v.win[1] === win[1] ? v : { focus, win }));
+    /* a signpost under the floating card fades out: the card already names the section */
+    const under = inset.top + 8 + 66 + (due ? 52 : 0) + 6;
+    const hide =
+      focus < 0
+        ? -1
+        : m.lands.findIndex((l) => {
+            const y = t + (l.top + 22) * g.k - g.y;
+            return y < under && y + 80 * g.k > 0;
+          });
+    setView((v) => (v.focus === focus && v.win[0] === win[0] && v.win[1] === win[1] && v.hide === hide ? v : { focus, win, hide }));
   };
   const aim = (animated: boolean) => {
     const g = geo.current;
@@ -97,7 +107,6 @@ export default function Learn() {
     if (aimed.current) setTimeout(() => aim(true), 300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.walked]);
-  const due = snap.settings ? lcheckDue(snap.days, snap.settings) : 0;
   if (!snap.settings) return <Screen title="Learn">{null}</Screen>;
   const land = view.focus >= 0 ? m.lands[view.focus] : null;
   return (
@@ -134,7 +143,7 @@ export default function Learn() {
           aimed.current = false;
           geo.current.map = -1;
           geo.current.pane = -1;
-          if (p === 'tools') setView({ focus: -1, win: [0, 2] });
+          if (p === 'tools') setView({ focus: -1, win: [0, 2], hide: -1 });
         }}
       />
       <Appear
@@ -151,6 +160,7 @@ export default function Learn() {
           <LessonsPane
             m={m}
             win={view.win}
+            hide={view.hide}
             onGeom={(g) => {
               geo.current.map = g.y;
               geo.current.k = g.k;
@@ -196,7 +206,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
 const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
 
 /* ---------- lessons ---------- */
-function LessonsPane({ m, win, onGeom }: { m: LessonMap; win: [number, number]; onGeom: (g: { y: number; k: number }) => void }) {
+function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, number]; hide: number; onGeom: (g: { y: number; k: number }) => void }) {
   const c = useTheme();
   const { snap, tk } = useStore();
   const st = snap.settings!;
@@ -255,6 +265,7 @@ function LessonsPane({ m, win, onGeom }: { m: LessonMap; win: [number, number]; 
           dates={dates}
           waiting={waiting}
           win={win}
+          hide={hide}
           sel={sel}
           onSel={setSel}
           onGeom={(g) => {

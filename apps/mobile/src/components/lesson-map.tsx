@@ -299,17 +299,24 @@ export function Ring({ x, y, k, color }: { x: number; y: number; k: number; colo
 }
 
 /* ---------- a signpost where a land begins ---------- */
-export function Signpost({ l, at, y, k }: { l: MapLand; at: { left: number } | { right: number }; y: number; k: number }) {
+export function Signpost({ l, at, y, k, gone }: { l: MapLand; at: { left: number } | { right: number }; y: number; k: number; gone?: boolean }) {
   const c = useTheme();
+  const still = useReducedMotion();
+  const v = useRef(new Animated.Value(gone ? 0 : 1)).current;
+  useEffect(() => {
+    if (still) v.setValue(gone ? 0 : 1);
+    else Animated.timing(v, { toValue: gone ? 0 : 1, duration: 180, useNativeDriver: NATIVE }).start();
+  }, [gone, still, v]);
   const t = useLandTone(l.u);
   const all = l.done === l.stones.length;
   const u = LUNITS[l.u];
   return (
-    <View
+    <Animated.View
       accessible
       accessibilityRole="header"
       accessibilityLabel={`Section ${l.k + 1}: ${u.name}. ${all ? 'All done.' : `${l.done} of ${l.stones.length} done.`}`}
-      style={{ position: 'absolute', ...at, top: y, zIndex: 4, maxWidth: 176 * k }}>
+      pointerEvents="none"
+      style={{ position: 'absolute', ...at, top: y, zIndex: 4, maxWidth: 176 * k, opacity: v }}>
       <View
         style={{
           position: 'absolute',
@@ -333,7 +340,7 @@ export function Signpost({ l, at, y, k }: { l: MapLand; at: { left: number } | {
         </View>
         <View style={[s_.tip, { backgroundColor: c.surface, borderColor: t.ic, width: 18 * k, height: 18 * k, right: -9 * k, marginTop: -9 * k }]} />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -573,6 +580,7 @@ export function LessonMapView({
   dates,
   waiting,
   win,
+  hide,
   sel,
   onSel,
   onGeom,
@@ -587,6 +595,8 @@ export function LessonMapView({
   waiting: number;
   /** the lands near the screen, to draw in full */
   win: [number, number];
+  /** the land whose signpost is under the floating card at the top, to leave out */
+  hide?: number;
   sel: string | null;
   onSel: (id: string | null) => void;
   /** where the map sits in the pane, and how much it is scaled */
@@ -648,7 +658,11 @@ export function LessonMapView({
           })
         : null}
       {w && sel ? <Pressable accessible={false} onPress={() => onSel(null)} style={[StyleSheet.absoluteFill, { zIndex: 1 }]} /> : null}
-      {w ? m.lands.map((l) => <Signpost key={'s' + l.k} l={l} at={l.right ? { right: w - X(MAP_W - 16) } : { left: X(16) }} y={Y(l.top + 22)} k={k} />) : null}
+      {w
+        ? m.lands.map((l) => (
+            <Signpost key={'s' + l.k} l={l} gone={l.k === hide} at={l.right ? { right: w - X(MAP_W - 16) } : { left: X(16) }} y={Y(l.top + 22)} k={k} />
+          ))
+        : null}
       {w && nx ? <Ring x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(m.lands.find((l) => l.stones.includes(nx))!.u)).ic} /> : null}
       {w
         ? m.lands.map((l) => {

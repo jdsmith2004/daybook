@@ -42,8 +42,9 @@ Ranked by how much each one protects hope, and how likely it is to make someone 
 | 4   | **The morning after: one thing at a time.** The sunrise check holds last night's questions; Today shows it, SOS, and "the rest of today can wait"; the Sunday review waits until later in the day. **Thinking it through.**                                                                                                                                                                                                                | The day-3 person: six asks at 7:40 AM (sunrise check, one small thing, Last night, the Sunday review, Good morning, the lesson), two of them alike. | Medium |
 | 5   | **Never cover the answer.** Messages (like "+5 points, you got through 9 to 11 PM") never sit over answers, wrap instead of cutting off, and wait while a slip is being logged. **Done:** at the top in full-screen moments, low on the tabs, and one from before stays behind when SOS or the log opens.                                                                                                                                  | The day-60 person: the message covers the "I slipped" button at 10:45 PM.                                                                           | Small  |
 
-Also seen, smaller, and asked of the owner: a level-up celebration opens a few minutes after a slip is logged; setup suggests
-"Quit, after a tracking week" even after "Quit for good" and "my first real try", so day 1 is a week away. (The Sunday review's
+Also seen, smaller, and decided by the owner (October 18, **done**): a level reached on a day with a slip is earned and
+shown at once, but its celebration waits for the next day's first tap (core `checkNew`); "Quit for good" suggests "Quit,
+starting tomorrow", on a first try too, and the tracking week stays for "understand my pattern" or no answer (core `obSuggest`). (The Sunday review's
 seven-day strip looked wrong in the first screenshots, but that was its pop-in animation caught halfway; it is right.) What worked well: Rekindle itself (the embers,
 "Still burning. Still yours.", the cards and the record of clean days), the Sunday review's kind words about the slip, and
 the graduation count holding at 58 of 90 through the slip.
@@ -172,9 +173,10 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
 
 ## Tier 5: Words and polish
 
-0. SOS and the urge plan: lessons now add if-then lines to the urge plan with one tap (practice.ts), but SOS does not show the
-   plan. SOS could show the line that fits the moment (the late-night line late at night). Ask the owner first: it changes
-   the SOS tools screen.
+0. SOS and the urge plan (the owner: yes, cleanly, without changing the flow). **Done:** late at night, the tools screen's
+   line says "Your plan: When I am in bed late at night, I will …" (core `urPlanNow`, the first sentence of the line for bed or
+   late at night), where it already said the Sunday plan; the Sunday plan still comes first. In the day SOS cannot know the
+   feeling, so it shows no line. No new step.
 
 1. Rekindle, the Days card, Journal and Milestones: words that honor a long run after a slip ("89 days. That is huge, and it
    still counts."), using the run that just ended. No "lost", "failed" or "reset" anywhere.

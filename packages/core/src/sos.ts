@@ -32,7 +32,7 @@ import {
   urLift,
   urMinText,
 } from './legacy/core.js';
-import { rkWaitOf } from './rekindle';
+import { lowerFirst, rkWaitOf } from './rekindle';
 import { lessonsDone } from './lessons';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
@@ -560,4 +560,23 @@ export function urFromYou(st: Settings, pick: number): { k: 'note' | 'reason'; c
   const rs = (st.reasons || []).map((x) => String(x || '').trim()).filter(Boolean);
   if (!rs.length) return null;
   return { k: 'reason', cap: 'Your reason', t: rs[Math.min(rs.length - 1, Math.floor(Math.max(0, pick) * rs.length))] };
+}
+
+/* ---------- your urge plan ---------- */
+/** the line of the urge plan that fits this moment, as one sentence: "When I am in bed late at night, I will get up and leave
+    the room for 10 minutes." SOS knows the hour but not the feeling, so only late at night is a fit sure enough: the line for
+    bed or late at night, its first sentence. It stands on the tools screen in place of the starting words. */
+export function urPlanNow(st: Settings, hour: number): string | null {
+  if (!urNight(hour)) return null;
+  /* a line with a situation and something to do (the blank starting line, "Something else: ______", is not one: planBlank) */
+  const r = (st.plan || []).find(
+    (x) => x && x.when && x.when.trim() && x.when.indexOf('______') < 0 && String(x.then || '').trim() && /\b(bed|night|late)\b/i.test(x.when),
+  );
+  if (!r) return null;
+  const first = String(r.then)
+    .trim()
+    .replace(/^I will\s+/i, '')
+    .split(/(?<=[.!?])\s+/)[0];
+  const when = 'When ' + lowerFirst(r.when).replace(/\.$/, '') + ', ';
+  return /^I\b/.test(first) ? when + lowerFirst(first) : when + 'I will ' + lowerFirst(first);
 }

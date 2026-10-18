@@ -23,6 +23,7 @@ import {
   urEntry,
   urEvidence,
   urFromYou,
+  urPlanNow,
   urKnow,
   urNight,
   urNote,
@@ -194,13 +195,17 @@ export default function Sos() {
   if (ur.step === 'tools') {
     const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now, st, sos.mem) : null;
     const was = offed ? urTool(offed) : null;
-    /* the if-then plan made on Sunday, when there is one, comes first: it was decided while calm */
+    /* the if-then plan made on Sunday, when there is one, comes first: it was decided while calm. Else, late at night, the
+       line of the urge plan for bed or late at night (core urPlanNow). Before setup there is no plan of the person's own. */
     const plan = sunPlanNow(snap.reviews, tk);
+    const own = !plan?.it && snap.settings ? urPlanNow(st, new Date(now).getHours()) : null;
     const lead = ur.again
       ? String(ur.cx?.do || '')
       : plan?.it
         ? 'Your plan: ' + storyIfLine(plan.it)
-        : 'Pick what will help you most in this moment, or start the one below.';
+        : own
+          ? 'Your plan: ' + own
+          : 'Pick what will help you most in this moment, or start the one below.';
     return (
       <SceneFrame
         title="SOS"

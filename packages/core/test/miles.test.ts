@@ -62,3 +62,24 @@ describe('the points an action earns', () => {
     expect(core.winWhy(w.by, true)).toBe('Logged. That took honesty.');
   });
 });
+
+describe('a level reached on a day with a slip', () => {
+  const st0 = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-08', rollover: 4, screensOff: '23:00', u: 1 });
+  const seen = { badges: [], quests: [], level: 1, full: null, lad: core.LADDER_V };
+  let days: Days = {};
+  for (let i = 0; i < 12; i++) days = core.addEvent(days, core.addDays('2026-10-01', i), 'rode', '21:00').days;
+  it('is earned and shown at once, and its celebration waits for the next day', () => {
+    const slipped = core.addEvent(days, '2026-10-12', 'slipped', '22:40').days;
+    const lvl = core.gameCompute(slipped, st0, {}, '2026-10-12').level.n;
+    expect(lvl).toBeGreaterThan(1);
+    const today = core.checkNew(slipped, { ...st0, seen }, {}, '2026-10-12', false);
+    expect(today.items.some((it) => it.type === 'level')).toBe(false);
+    expect((today.st || { seen }).seen!.level).toBe(1);
+    const next = core.checkNew(slipped, today.st || { ...st0, seen }, {}, '2026-10-13', false);
+    expect(next.items.find((it) => it.type === 'level')).toMatchObject({ type: 'level', from: 1 });
+  });
+  it('on a day with no slip, it is celebrated right away', () => {
+    const r = core.checkNew(days, { ...st0, seen }, {}, '2026-10-12', false);
+    expect(r.items[0]).toMatchObject({ type: 'level', from: 1 });
+  });
+});

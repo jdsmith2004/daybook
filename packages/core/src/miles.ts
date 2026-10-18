@@ -57,7 +57,11 @@ export function checkNew(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const fromLvl = sn.level;
   const newB = g.badges.filter((b) => b.done && sn.badges.indexOf(b.id) < 0);
   const newQ = g.quests.filter((q) => q.done && sn.quests.indexOf(q.id) < 0);
-  const lvlUp = g.level.n > sn.level;
+  /* a level reached on a day with a slip is earned and shows at once, but its celebration waits for the next day: right
+     after a slip is not the moment for a full-screen party. The level is not marked seen, so the next day's first change
+     celebrates it. */
+  const slipDay = (days[tk]?.events || []).some((e) => e.outcome === 'slipped');
+  const lvlUp = g.level.n > sn.level && !slipDay;
   /* the full ring is retired (October 2026): Your day and Next up already say when today is done */
   const perfect = false;
   if (!(newB.length || newQ.length || lvlUp || perfect)) return { st: null, items: [] };
@@ -67,7 +71,7 @@ export function checkNew(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     const wk = 'w' + g.week + ':';
     seen.quests = seen.quests.filter((id) => id.indexOf(wk) === 0);
     newQ.forEach((q) => seen.quests.indexOf(q.id) < 0 && seen.quests.push(q.id));
-    seen.level = Math.max(seen.level, g.level.n);
+    if (lvlUp) seen.level = Math.max(seen.level, g.level.n);
     if (perfect) seen.full = tk;
     s.seen = seen;
   });

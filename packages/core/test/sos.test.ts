@@ -213,3 +213,30 @@ describe('a text to your safe person', () => {
     expect(core.smsLink('', 'Hi', true)).toBe('sms:&body=Hi');
   });
 });
+
+describe('your urge plan in SOS', () => {
+  const st = core.normSettings({ v: 1, start: '2026-10-01', rollover: 4, u: 1 });
+  it('late at night: the line for bed or late at night, its first sentence, as one sentence', () => {
+    expect(core.urPlanNow(st, 23)).toBe('When I am in bed late at night, I will get up and leave the room for 10 minutes.');
+    expect(core.urPlanNow(st, 2)).toBe('When I am in bed late at night, I will get up and leave the room for 10 minutes.');
+  });
+  it('in the day the feeling is not known, so no line', () => {
+    expect(core.urPlanNow(st, 15)).toBeNull();
+  });
+  it('the person’s own words, a blank line, and no line for the night', () => {
+    const own = { ...st, plan: [{ when: "I'm awake late, scrolling", then: 'I will put the phone in the kitchen. Then read.' }] };
+    expect(core.urPlanNow(own, 23)).toBe("When I'm awake late, scrolling, I will put the phone in the kitchen.");
+    expect(
+      core.urPlanNow(
+        {
+          ...st,
+          plan: [
+            { when: '', then: '' },
+            { when: 'I am lonely or low', then: 'Text a friend.' },
+          ],
+        },
+        23,
+      ),
+    ).toBeNull();
+  });
+});

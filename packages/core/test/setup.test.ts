@@ -94,3 +94,12 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
     }
   });
 });
+
+describe('the goal it suggests', () => {
+  it('"Quit for good" starts tomorrow, on a first try too; wanting to understand the pattern starts with a tracking week', () => {
+    expect(core.obSuggest({ aim: 'quit', tried: 't0' })).toBe('now');
+    expect(core.obSuggest({ aim: 'quit', tried: 't1' })).toBe('now');
+    expect(core.obSuggest({ aim: 'learn', tried: 't0' })).toBe('week');
+    expect(core.obSuggest({})).toBe('week');
+  });
+});

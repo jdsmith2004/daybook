@@ -65,13 +65,15 @@ export interface SetupAnswers {
 }
 
 /** the goal the setup suggests (legacy obSuggest). About once a day or more, for years or after many tries:
-    a clean run is a hard first goal, so step down first. */
+    a clean run is a hard first goal, so step down first. "Quit for good" starts tomorrow, on a first try too: someone ready
+    to quit tonight is not told to wait a week (the owner, October 18). The tracking week is for someone who wants to
+    understand the pattern first, or did not say. */
 export function obSuggest(a: SetupAnswers): string {
   if (a.aim === 'learn') return 'week';
   if ((a.freq === 'f3' || a.freq === 'f4') && (a.years === 'y2' || a.years === 'y3' || a.tried === 't2')) return 'step';
   if (a.aim === 'nights') return 'nights';
   if (a.aim === 'less') return 'less';
-  if (a.aim === 'quit') return a.tried === 't0' ? 'week' : 'now';
+  if (a.aim === 'quit') return 'now';
   return (a.when || []).indexOf('late') >= 0 ? 'nights' : 'week';
 }
 

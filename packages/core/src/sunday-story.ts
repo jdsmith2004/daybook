@@ -9,6 +9,7 @@
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
 import { addDays, didText, eventsOf, evMs, slipMoments, trigText } from './legacy/core.js';
+import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
 import { sunChange, sunLastGoal, sunWeek, type SunWeek } from './sunday';
@@ -20,11 +21,6 @@ const dateOf = (k: DayKey) => {
   return new Date(y, m - 1, d);
 };
 const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-/** where the log starts: its first day, or the start date when that is earlier */
-function firstKey(days: Days, st: Settings): DayKey {
-  const first = Object.keys(days).sort()[0];
-  return first && first < st.start ? first : st.start;
-}
 const weekKeys = (sun: DayKey) => Array.from({ length: 7 }, (_, i) => addDays(sun, i - 6));
 
 /* ---------- the seven days ---------- */
@@ -39,7 +35,7 @@ export interface StoryDay {
   slipped: number;
 }
 export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): StoryDay[] {
-  const first = firstKey(days, st);
+  const first = logStart(days, st);
   return weekKeys(sun).map((k) => {
     const ev = days[k]?.events || [];
     const slipped = ev.filter((e) => e.outcome === 'slipped').length;
@@ -59,7 +55,7 @@ export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): St
 export function storyBest(days: Days, st: Settings, sun: DayKey, now: number): number {
   const roll = st.rollover;
   const at = (k: DayKey) => evMs(k, String(roll).padStart(2, '0') + ':00', roll);
-  const a = Math.max(at(addDays(sun, -6)), at(firstKey(days, st)));
+  const a = Math.max(at(addDays(sun, -6)), at(logStart(days, st)));
   const b = Math.min(now, at(addDays(sun, 1)));
   if (b <= a) return 0;
   const sl = slipMoments(days, st, b).filter((t) => t >= a && t <= b);

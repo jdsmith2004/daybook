@@ -28,6 +28,7 @@ import {
   weekStats,
   type RunLedger,
 } from './legacy/core.js';
+import { logStart } from './log-start';
 import { urStats } from './sos';
 import { phaseLabel } from './view';
 import { TOOLS } from './legacy/core.js';
@@ -82,10 +83,7 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
 
 /** the days, newest first, in weeks: 28 at first, or all of them */
 export function daysList(days: Days, st: Settings, tk: DayKey, all: boolean) {
-  const ks = allKeys(days);
-  let first = st.start;
-  if (ks.length && ks[0] < first) first = ks[0];
-  first = minKey(first, tk);
+  const first = minKey(logStart(days, st), tk);
   const total = diffDays(tk, first) + 1;
   const limit = all ? total : Math.min(total, 28);
   const L = runLedger(days, st, tk);

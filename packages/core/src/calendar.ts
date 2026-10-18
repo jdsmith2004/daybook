@@ -3,7 +3,8 @@
    nothing logged. The months go back to where the log starts. A tap on a day opens its summary: how it went, what
    happened (each entry with its time, what set it off and what helped), the check-in at a glance, and the rest of the
    day (tools used, lessons read, a talk-through, phone away, hard hours held). Checked by test/calendar.test.ts. */
-import { addDays, allKeys, dayPoints, fmtDate, LESSONS, runLedger, sortedEvents, statusOf, sumDay } from './legacy/core.js';
+import { addDays, dayPoints, fmtDate, LESSONS, runLedger, sortedEvents, statusOf, sumDay } from './legacy/core.js';
+import { logStart } from './log-start';
 import { urSosLines, urTool } from './sos';
 import { eventRow, plural } from './view';
 import type { DayEvent, DayKey, Days, Settings } from './types';
@@ -40,10 +41,7 @@ const shiftYm = (ym: string, n: number) => {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 };
 /** where the log starts: the start date, or an earlier day with something logged */
-export function calFirst(days: Days, st: Settings): DayKey {
-  const ks = allKeys(days);
-  return ks.length && ks[0] < st.start ? ks[0] : st.start;
-}
+export const calFirst = logStart;
 
 /** one month, day by day. ym defaults to this month; a month outside the log is moved inside it. */
 export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | null): CalMonth {

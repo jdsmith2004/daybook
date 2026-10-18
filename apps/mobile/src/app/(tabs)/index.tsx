@@ -22,7 +22,7 @@ import {
   todayMeasure,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AccountCard } from '@/components/account';
@@ -52,14 +52,16 @@ export default function Today() {
     if (ready && st && shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
   }, [ready, st, snap.days, tk, apply]);
 
-  /* the log starts with the first real entry: blank days before it are not counted, so the start (and a Day 1 before it)
-     moves there, once, with a note. Not while an account is still bringing the log in, when the first entry may not be
-     here yet. */
+  /* the log starts with the first log: blank days before it are not counted, so the start (and a Day 1 before it) moves
+     there, once, with a note. Not while an account is still bringing the log in, when the first log may not be here yet. */
   const syncing = sync.status.k === 'busy' || sync.status.k === 'ask' || !sync.loaded;
+  const moved = useRef(0);
   useEffect(() => {
     if (!ready || !st || syncing) return;
     const c = startFromLog(snap.days, st, tk);
-    if (c) apply(c);
+    if (!c) return;
+    apply(c);
+    moved.current = Date.now();
   }, [ready, st, snap.days, tk, apply, syncing]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
@@ -69,14 +71,15 @@ export default function Today() {
     router.push('/graduated');
   }, [ready, st, snap.days, tk, apply]);
 
-  /* hard hours that passed with no slip are kept (a calm move), once, with a word */
+  /* hard hours that passed with no slip are kept (a calm move), once, with a word. A note says one thing at a time, so
+     when the start is moving, its note goes first and this waits for the clock's next tick, half a minute on. */
   useEffect(() => {
-    if (!ready || !st) return;
+    if (!ready || !st || Date.now() - moved.current < 10000 || (!syncing && startFromLog(snap.days, st, tk))) return;
     const x = riskToKeep(snap.days, st, tk, now);
     if (!x) return;
     update((s0) => ({ ...s0, days: keepHard(s0.days, x.k, x.r.win.start) }));
     say((x.k === tk ? 'You got through ' : 'Last night you got through ') + x.r.win.label + ', your hardest hours.');
-  }, [ready, st, snap.days, tk, now, update, say]);
+  }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 

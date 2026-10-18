@@ -8,6 +8,7 @@
      difference is big enough to mean something.
    Everything is worked out on the device, from the person's own log. */
 import { addDays, diffDays, eventsOf, optText, sumDay } from './legacy/core.js';
+import { logStart } from './log-start';
 import { riskWindow, type RiskWindow } from './risk';
 import { talksOf, TALK_NEEDS, type TalkNeed } from './talk';
 import { plural } from './view';
@@ -19,14 +20,9 @@ const dateOf = (k: DayKey) => {
   const [y, m, d] = k.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
-/** the first day the log knows about */
-function firstKey(days: Days, st: Settings): DayKey {
-  const ks = Object.keys(days).sort();
-  return ks.length && ks[0] < st.start ? ks[0] : st.start;
-}
 /** the days in a range, oldest first */
 export function patKeys(range: PatRange, days: Days, st: Settings, tk: DayKey): DayKey[] {
-  const first = firstKey(days, st);
+  const first = logStart(days, st);
   const lo = range === 'all' ? first : addDays(tk, range === '30' ? -29 : -89);
   const out: DayKey[] = [];
   for (let k = lo < first ? first : lo; k <= tk; k = addDays(k, 1)) out.push(k);
@@ -50,7 +46,7 @@ export interface PatGaps {
 export function patGaps(days: Days, st: Settings, tk: DayKey): PatGaps {
   const runs: number[] = [];
   let run = 0;
-  for (let k = firstKey(days, st); k <= tk; k = addDays(k, 1)) {
+  for (let k = logStart(days, st); k <= tk; k = addDays(k, 1)) {
     if (sumDay(days[k]).slipped > 0) {
       runs.push(run);
       run = 0;

@@ -1,8 +1,9 @@
 /* Changes to settings, as pure functions: each takes the settings and returns new ones, with what to tell the person.
    They follow the legacy action handlers exactly (see legacy/index.html, the 'clean-mode', 'step-on' ... cases). */
-import { addDays, allKeys, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
-import type { CountMode, Day, DayKey, Days, Settings } from './types';
+import { addDays, diffDays, fmtDate, isKey, isTime, normRoutine, normSettings, phaseOf, ROUTINE_KEYS, TOOLS } from './legacy/core.js';
+import type { CountMode, DayKey, Days, Settings } from './types';
 import { urLikeOf, urOffOf } from './sos';
+import { firstLog } from './log-start';
 
 /** the next change time for a record: now, and always later than the last change (legacy nextU) */
 export function nextU(prev: { u?: number } | null | undefined, now = Date.now()): number {
@@ -187,31 +188,15 @@ export function setDate(st: Settings, k: 'start' | 'day1', v: string | null): Ch
     };
   return { st, toast: 'Day 1 cannot come before the tracking start.' };
 }
-/* ---------- counting starts with the first real entry ---------- */
-/** something the person logged or did that day. Not what the app fills in by itself (a hard hour held, and the calm move it adds), a change to the
-    day's routine, or last night's screens answered the next morning (that answer is kept on the night before). */
-export function realDay(d: Day | null | undefined): boolean {
-  if (!d) return false;
-  if (d.events && d.events.length) return true;
-  const c = d.checkin;
-  if (c && (c.done || c.m != null || c.c != null || c.e != null || c.s != null || c.h != null || c.ro != null || (c.n || '').trim())) return true;
-  const p = d.p;
-  return !!(
-    p &&
-    (p.w.length || p.wd || p.r || p.c - (p.hw != null ? 1 : 0) > 0 || p.m || p.tl.length || p.po || p.ls.length || p.lv.length || (p.tt && p.tt.length))
-  );
-}
-/** the first day with a real entry */
-export function firstEntry(days: Days): DayKey | null {
-  return allKeys(days).find((k) => realDay(days[k])) || null;
-}
-/** The log starts with the first real entry. Days with nothing logged count from Day 1 on (a slip that is not logged is
-    not a slip), but only once the person is using the app: blank days before the first entry were never tracked, so they
-    must not show as clean days, a first stretch, or a pattern. The tracking start moves to the first entry, and so do a
+/* ---------- counting starts with the first log ---------- */
+export { firstLog, loggedDay, logStart } from './log-start';
+/** The log starts with the first log (log-start.ts). Days with nothing logged count from Day 1 on (a slip that is not
+    logged is not a slip), but only once the person is logging: blank days before the first log were never tracked, so they
+    must not show as clean days, a first stretch, or a pattern. The tracking start moves to the first log, and so do a
     Day 1 and a step-down start that came before it, once, with a note. Dates picked by hand stay where they were put.
     Null when there is nothing to move. */
 export function startFromLog(days: Days, st: Settings, tk: DayKey): Change | null {
-  const k0 = firstEntry(days);
+  const k0 = firstLog(days);
   if (!k0 || k0 > tk || st.start >= k0 || st.startHand === st.start) return null;
   /* a Day 1 picked by hand before the first entry: the person says those days were clean */
   if (st.day1 && st.day1 < k0 && st.d1Hand === st.day1) return null;

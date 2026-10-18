@@ -10,6 +10,7 @@
    ("w3", by the person's own weeks), which stay readable in the Journal. Its answers are also written into the record's
    text fields, so older copies of the app can read them too. */
 import { addDays, didIds, didText, eventsOf, fmtClock, sumDay, trigText } from './legacy/core.js';
+import { logStart } from './log-start';
 import { talksOf } from './talk';
 import { urTool } from './sos';
 import { plural } from './view';
@@ -151,8 +152,7 @@ export interface SunWeek {
   tools: Record<string, { n: number; w: number }>;
 }
 export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey): SunWeek {
-  const first = Object.keys(days).sort()[0];
-  const from = first && first < st.start ? first : st.start;
+  const from = logStart(days, st);
   const w: SunWeek = {
     sun,
     days: 0,

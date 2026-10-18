@@ -3,10 +3,14 @@
    came before it, with a note. Dates picked by hand stay put. */
 import { describe, expect, it } from 'vitest';
 import { normSettings, streaks } from '../src/legacy/core.js';
-import { firstEntry, realDay, setDate, startFromLog } from '../src/actions';
+import { firstLog, loggedDay, logStart, setDate, startFromLog } from '../src/actions';
 import { morningDone, phoneAway, setScreensOff } from '../src/day';
 import { keepHard } from '../src/risk';
 import { addEvent } from '../src/mutate';
+import { recordLesson } from '../src/lessons';
+import { LESSONS } from '../src/legacy/core.js';
+import { patGaps } from '../src/pattern';
+import { calMonth } from '../src/calendar';
 import type { Days } from '../src/types';
 
 /* set up on Tuesday the 6th, a tracking week, so Day 1 was Tuesday the 13th; the first entry is Saturday the 17th */
@@ -14,15 +18,39 @@ const st = normSettings({ start: '2026-10-06', day1: '2026-10-13' });
 const tk = '2026-10-18';
 const log = (): Days => addEvent({}, '2026-10-17', 'rode', '21:00', {}, 1).days;
 
-describe('the first real entry', () => {
-  it('is something the person logged or did, not what the app filled in', () => {
-    expect(realDay(undefined)).toBe(false);
-    expect(realDay(log()['2026-10-17'])).toBe(true);
-    expect(realDay(phoneAway({}, '2026-10-16', '22:40', 1)['2026-10-16'])).toBe(true);
+describe('the first log', () => {
+  it('is an urge or slip logged, or a check-in answered, not a lesson or what the app keeps by itself', () => {
+    expect(loggedDay(undefined)).toBe(false);
+    expect(loggedDay(log()['2026-10-17'])).toBe(true);
+    expect(loggedDay(morningDone({}, '2026-10-16', 1)['2026-10-16'])).toBe(true);
+    expect(loggedDay(phoneAway({}, '2026-10-16', '22:40', 1)['2026-10-16'])).toBe(false);
+    expect(loggedDay(recordLesson({}, '2026-10-16', LESSONS[0], 1).days['2026-10-16'])).toBe(false);
     /* last night's screens, answered the next morning, sit on the night before */
-    expect(realDay(setScreensOff({}, '2026-10-16', 'Y', 1)['2026-10-16'])).toBe(false);
-    expect(realDay(keepHard({}, '2026-10-15', 22)['2026-10-15'])).toBe(false);
-    expect(firstEntry({ ...keepHard({}, '2026-10-15', 22), ...log() })).toBe('2026-10-17');
+    expect(loggedDay(setScreensOff({}, '2026-10-16', 'Y', 1)['2026-10-16'])).toBe(false);
+    expect(loggedDay(keepHard({}, '2026-10-15', 22)['2026-10-15'])).toBe(false);
+    expect(firstLog({ ...keepHard({}, '2026-10-15', 22), ...log() })).toBe('2026-10-17');
+  });
+});
+
+/* set up on Thursday the 8th with a lesson read, nothing logged until the 11th, slips on the 12th, 15th and 16th */
+describe('a lesson on setup day, and the first log three days later', () => {
+  const sd = normSettings({ start: '2026-10-08', day1: '2026-10-15', cleanMode: 'step', stepAt: '2026-10-08' });
+  let days = recordLesson({}, '2026-10-08', LESSONS[0], 1).days;
+  days = addEvent(days, '2026-10-11', 'rode', '20:00', {}, 1).days;
+  for (const k of ['2026-10-12', '2026-10-15', '2026-10-16']) days = addEvent(days, k, 'slipped', '22:00', {}, 1).days;
+  it('the start moves to the first log', () => {
+    expect(startFromLog(days, sd, tk)!.st.start).toBe('2026-10-11');
+  });
+  it('the days before it are not a first stretch, even with something kept on them', () => {
+    const moved = startFromLog(days, sd, tk)!.st;
+    const g = patGaps(days, moved, tk);
+    expect(g.runs).toEqual([1, 2, 0]);
+    expect(g.now).toBe(1);
+    expect(logStart(days, moved)).toBe('2026-10-11');
+    expect(calMonth(days, moved, tk, '2026-10').days.find((d) => d.k === '2026-10-09')!.kind).toBe('before');
+  });
+  it('an entry from before a later start still opens the log', () => {
+    expect(logStart(days, normSettings({ start: '2026-10-14', day1: null }))).toBe('2026-10-11');
   });
 });
 

@@ -1,18 +1,18 @@
-/* One week, looked back on: the counts, the average ratings against last week, what the week shows, and four questions to
-   answer (worth 20 points once written). Used in Journal > Weeks and on its own page. Ported from the legacy weekBody. */
-import { changeReview, fmtDate, REVIEW_QS, setDay1, weekView } from '@daybook/core';
+/* One week by the person's own weeks, looked back on: the counts, the average ratings against last week, what the week
+   shows, and the four answers of an older weekly review, when there is one (the Sunday review took its place, see
+   sunday.ts). Used in Journal > Weeks and on its own page. Ported from the legacy weekBody. */
+import { fmtDate, REVIEW_QS, setDay1, weekView } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Spark } from '@/components/charts';
-import { Field } from '@/components/choices';
 import { Card, Chip, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }) {
   const c = useTheme();
-  const { snap, tk, update, apply } = useStore();
+  const { snap, tk, apply } = useStore();
   const st = snap.settings!;
   const v = weekView(snap.days, st, tk, k);
   const w = v.w;
@@ -126,37 +126,19 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
           </Text>
         </Card>
       ) : null}
-      <Card>
-        <T v="h2">Questions for day 7</T>
-        {[
-          'Are my ratings changing? (Journal › Patterns › Feelings over time)',
-          'Are urges strongest when I am bored, lonely, stressed, or in bed? (Journal › Patterns › What sets it off)',
-          'Do not assume this habit caused every low rating. Use the numbers to learn.',
-          'Seven data points are noisy. Look again at 14 and 30 days.',
-        ].map((q, i) => (
-          <T key={i}>
-            {i + 1}. {q}
-          </T>
-        ))}
-      </Card>
-      <Card>
-        <View style={s.between}>
+      {REVIEW_QS.some(([id]) => a[id].trim()) ? (
+        <Card>
           <T v="h2">My review</T>
-          <T v="small" tone="muted">
-            about 10 minutes · +20 points
-          </T>
-        </View>
-        {REVIEW_QS.map(([id, label]) => (
-          <Field
-            key={v.wk + id}
-            label={label}
-            multiline
-            maxLength={1500}
-            defaultValue={a[id]}
-            onChangeText={(t) => update((s0) => ({ ...s0, reviews: changeReview(s0.reviews, v.wk, (r) => void (r.a[id] = t)) }))}
-          />
-        ))}
-      </Card>
+          {REVIEW_QS.filter(([id]) => a[id].trim()).map(([id, label]) => (
+            <View key={id} style={{ gap: 2 }}>
+              <T v="small" tone="muted">
+                {label}
+              </T>
+              <T>{a[id]}</T>
+            </View>
+          ))}
+        </Card>
+      ) : null}
     </>
   );
 }

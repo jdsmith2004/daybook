@@ -51,12 +51,12 @@ import {
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
-import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
+import { OwnChip, OwnField } from '@/components/own';
 import { KnownLine, Sources } from '@/components/research';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
@@ -197,6 +197,7 @@ export default function TalkIt() {
   const ownField = (placeholder: string, onSave: (t: string) => void) => (
     <OwnField
       placeholder={placeholder}
+      max={TALK_OWN_LEN}
       onSave={(t) => {
         onSave(t);
         setOwn(null);
@@ -991,54 +992,6 @@ export default function TalkIt() {
   );
 }
 
-/* an answer in the person's own words. The box and its button sit together near the top, so the keyboard never covers them. */
-function OwnField({ placeholder, onSave, onCancel }: { placeholder: string; onSave: (t: string) => void; onCancel: () => void }) {
-  const [text, setText] = useState('');
-  const save = () => {
-    const t = text.replace(/\s+/g, ' ').trim().slice(0, TALK_OWN_LEN);
-    if (t) onSave(t);
-  };
-  return (
-    <Appear by={8} duration={220} style={s.own}>
-      <Field
-        label="In your own words"
-        hideLabel
-        value={text}
-        onChangeText={setText}
-        maxLength={TALK_OWN_LEN}
-        autoFocus
-        placeholder={placeholder}
-        returnKeyType="done"
-        onSubmitEditing={save}
-      />
-      <View style={s.ownRow}>
-        <View style={{ flex: 1 }}>
-          <Button label="Add" onPress={save} />
-        </View>
-        <Link label="Cancel" onPress={onCancel} />
-      </View>
-    </Appear>
-  );
-}
-
-/* the small "+ Your own" chip at the end of a list of chips */
-function OwnChip({ onPress }: { onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Add your own"
-      onPress={() => {
-        buzz('tap');
-        onPress();
-      }}
-      style={({ pressed }) => [s.ownChip, { borderColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name="plus" size={16} color={c.accentText} />
-      <Text style={[s.ownChipT, { color: c.accentText }]}>Your own</Text>
-    </Pressable>
-  );
-}
-
 /* expected against what it really gave, each time looked back on, with the numbers on the bars */
 function Evidence({ rows }: { rows: { e: number; g: number }[] }) {
   const c = useTheme();
@@ -1121,19 +1074,6 @@ const s = StyleSheet.create({
   },
   planT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
   pts: { fontFamily: font.display, fontSize: 18, textAlign: 'center' },
-  own: { alignSelf: 'stretch', gap: 10, marginTop: 4 },
-  ownRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  ownChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-  },
-  ownChipT: { fontFamily: font.bodySemi, fontSize: 15.5 },
   ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
   evBars: { height: 122, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 18 },
   evCol: { alignItems: 'center', gap: 4 },

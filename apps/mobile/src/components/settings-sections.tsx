@@ -50,6 +50,7 @@ import {
   useThemePref,
   type ReminderPrefs,
   type ThemePref,
+  REVIEW_AT,
 } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
@@ -91,7 +92,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const lock = useLockPref();
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
-    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind' || k === 'risk'));
+    const turningOn = Object.entries(patch).some(
+      ([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'),
+    );
     if (turningOn && !(await allowReminders())) {
       say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
       return;
@@ -377,6 +380,12 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             ) : null}
             <OnOff name="Wind down" sub={'At ' + wind + ', an hour before screens-off at ' + so} on={rem.wind} onPick={(on) => setRem({ wind: on })} />
             <OnOff
+              name="Sunday review"
+              sub={'Sundays at ' + fmtClock(REVIEW_AT) + ': two minutes to look back on the week and pick one small goal'}
+              on={rem.review}
+              onPick={(on) => setRem({ review: on })}
+            />
+            <OnOff
               name="Heads-up before hard hours"
               sub="When your log shows a time of day that is often hard, a nudge 90 minutes before, to talk it through"
               on={rem.risk}
@@ -385,7 +394,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
           </>
         ) : (
           <>
-            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Three are enough:</T>
+            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Three a day are enough, and one on Sunday:</T>
             <T>
               • <B>When I wake up:</B> “Last night's questions.” Two taps.
             </T>
@@ -394,6 +403,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             </T>
             <T>
               • <B>{wind}:</B> “Wind down.” One hour before screens-off at {so}.
+            </T>
+            <T>
+              • <B>Sunday, {fmtClock(REVIEW_AT)}:</B> “Look back on my week.” Two minutes.
             </T>
             <T v="small" tone="muted">
               Use your clock app. Name each alarm the way it is written above. In the Daybook app on a phone, Daybook can remind you itself.

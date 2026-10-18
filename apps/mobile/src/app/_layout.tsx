@@ -93,9 +93,11 @@ function Shell() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />
           {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, the evening check-in, going deeper, good night, a lesson */}
-          {['sos', 'tool/[id]', 'log', 'sunrise', 'checkin', 'talk', 'deeper', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup', 'graduated'].map((name) => (
-            <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-          ))}
+          {['sos', 'tool/[id]', 'log', 'sunrise', 'checkin', 'talk', 'review', 'deeper', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup', 'graduated'].map(
+            (name) => (
+              <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+            ),
+          )}
           {/* the sheets: one thing, over everything */}
           {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'privacy'].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

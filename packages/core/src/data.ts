@@ -1,5 +1,6 @@
 /* Reviews, backups, and the records that sync moves. */
 import { isKey, mergeOpts, normDay, normSettings } from './legacy/core.js';
+import { normSun } from './sunday';
 import type { Day, DayKey, Days, Review, Reviews, Settings, Snapshot } from './types';
 
 /** a weekly review, cleaned up (legacy normReview, from its STORE section) */
@@ -7,14 +8,26 @@ export function normReview(r: unknown, k: string): Review {
   const o = (r && typeof r === 'object' ? r : {}) as { a?: Record<string, unknown>; u?: unknown };
   const a = o.a || {};
   const t = (v: unknown) => String(v || '').slice(0, 1500);
-  return {
+  const out: Review = {
     k,
     a: { hard: t(a.hard), helped: t(a.helped), change: t(a.change), proud: t(a.proud) },
     u: typeof o.u === 'number' ? o.u : 0,
   };
+  /* a Sunday review keeps its answers as they were picked, too */
+  const sun = /^s/.test(k) ? normSun((r as { sun?: unknown } | null)?.sun) : null;
+  if (sun) out.sun = sun;
+  return out;
 }
 
-export const isReviewKey = (k: string) => /^w\d{1,4}$/.test(k);
+/** a weekly review by the person's own weeks ("w3"), or a Sunday review by its Sunday ("s2026-10-18") */
+/** a real Sunday, as a log day key */
+const isSundayKey = (k: string) => {
+  if (!isKey(k)) return false;
+  const [y, m, d] = k.split('-').map(Number);
+  const t = new Date(y, m - 1, d);
+  return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d && t.getDay() === 0;
+};
+export const isReviewKey = (k: string) => /^w\d{1,4}$/.test(k) || (/^s\d{4}-\d{2}-\d{2}$/.test(k) && isSundayKey(k.slice(1)));
 
 /* ---------- backups: the same JSON file the legacy app saves and restores ---------- */
 
@@ -76,7 +89,8 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
    Everything is one of three kinds of record, each with its own id and a last-changed time (u, in ms):
      settings             the one settings record
      days/YYYY-MM-DD      one day
-     reviews/wN           one weekly review
+     reviews/wN           one weekly review, by the person's own weeks (the older kind)
+     reviews/sYYYY-MM-DD  one Sunday review, by its Sunday
    Sync is last change wins, per record. That is the same rule the legacy app uses with its account database. */
 
 export type RecordId = 'settings' | `days/${string}` | `reviews/${string}`;

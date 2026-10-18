@@ -70,8 +70,20 @@ export interface ReminderPrefs {
   wind: boolean;
   /** a heads-up 90 minutes before the hard hours the log points to (core: risk.ts); on unless turned off */
   risk: boolean;
+  /** Sunday afternoons: time for the Sunday review (core: sunday.ts) */
+  review: boolean;
 }
-export const REMINDER_DEFAULTS: ReminderPrefs = { morning: false, morningAt: '08:00', checkin: false, checkinAt: '18:00', wind: false, risk: true };
+export const REMINDER_DEFAULTS: ReminderPrefs = {
+  morning: false,
+  morningAt: '08:00',
+  checkin: false,
+  checkinAt: '18:00',
+  wind: false,
+  risk: true,
+  review: false,
+};
+/** when the Sunday review reminder comes */
+export const REVIEW_AT = '17:00';
 const RKEY = 'daybook.reminders';
 let reminders: ReminderPrefs = REMINDER_DEFAULTS;
 AsyncStorage.getItem(RKEY)

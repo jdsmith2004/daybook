@@ -1,4 +1,4 @@
-/* Reminders on a phone: up to three gentle daily notifications, made on the phone itself (nothing is sent from a server, and
+/* Reminders on a phone: up to three gentle daily notifications and one on Sunday afternoons, made on the phone itself (nothing is sent from a server, and
    nothing about the log leaves the phone). The words are plain on purpose, because a notification can show on a locked
    screen: nothing in them says what Daybook is for. Tapping one opens Today (or, for Talk it through, the screen it is for). */
 import { fmtClock } from '@daybook/core';
@@ -6,7 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
-import type { ReminderPrefs } from './prefs';
+import { REVIEW_AT, type ReminderPrefs } from './prefs';
 
 export const remindersOffered = true;
 const CHANNEL = 'reminders';
@@ -41,7 +41,7 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
     if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   const heads = p.risk ? risk.filter((t) => t > Date.now()).slice(0, 7) : [];
-  const any = p.morning || p.checkin || (p.wind && screensOff) || heads.length;
+  const any = p.morning || p.checkin || (p.wind && screensOff) || p.review || heads.length;
   if (!any) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
   if (Platform.OS === 'android')
@@ -54,6 +54,12 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
     await Notifications.scheduleNotificationAsync({
       content: { title: 'Daybook', body: r.body, data: { url: '/' } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, ...hm(r.at), channelId: CHANNEL },
+    });
+  /* Sunday afternoons (1 is Sunday): the Sunday review */
+  if (p.review)
+    await Notifications.scheduleNotificationAsync({
+      content: { title: 'Daybook', body: 'Two minutes to look back on your week.', data: { url: '/review' } },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, ...hm(REVIEW_AT), channelId: CHANNEL },
     });
   /* before the hard hours: one each day they are expected, opening Today, where the card waits */
   for (const [i, t] of heads.entries())

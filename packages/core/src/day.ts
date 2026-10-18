@@ -6,7 +6,6 @@ import {
   fmtClock,
   fmtLeft,
   HX_NEXT,
-  weekOf,
   minToClock,
   morningInfo,
   reachedOn,
@@ -19,7 +18,7 @@ import {
 import { faithOf, firstUndone, lessonNo, lessonsDone, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
-import type { Checkin, DayKey, Days, Play, Reviews, Settings } from './types';
+import type { Checkin, DayKey, Days, Play, Settings } from './types';
 
 /** the short status on the right of a stop */
 export function stopStatus(s: RhythmStop, windMin: number): string {
@@ -292,14 +291,4 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number): Nex
     }
   }
   return o;
-}
-
-/** "Week N is done": the last full week, while its review has no answers yet (legacy weekNudge) */
-export function weekNudge(st: Settings, reviews: Reviews, tk: DayKey): number | null {
-  const cw = weekOf(tk, st);
-  const last = cw - 1;
-  if (last < 0) return null;
-  const r = reviews['w' + last];
-  if (r && Object.keys(r.a).some((k) => r.a[k as keyof typeof r.a] && r.a[k as keyof typeof r.a].trim())) return null;
-  return last;
 }

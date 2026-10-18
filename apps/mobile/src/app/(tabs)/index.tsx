@@ -19,7 +19,6 @@ import {
   phaseLabel,
   shouldAutoStep,
   todayMeasure,
-  weekNudge,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -28,11 +27,12 @@ import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'reac
 import { AccountCard } from '@/components/account';
 import { Hero } from '@/components/hero';
 import { RiskCard } from '@/components/risk-card';
+import { SundayCard } from '@/components/sunday-card';
 import { TalkCard } from '@/components/talk-card';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
 import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
-import { Button, Card, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { useStore } from '@/lib/store';
@@ -74,7 +74,6 @@ export default function Today() {
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
   const ph = phaseLabel(tk, st);
-  const nudge = weekNudge(st, snap.reviews, tk);
   const be = String(st.becoming || '').trim();
   /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
   const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
@@ -119,6 +118,7 @@ export default function Today() {
           scroll.current?.scrollTo({ y: Math.max(0, dayY - 12), animated: true });
         }}
       />
+      <SundayCard snap={snap} tk={tk} />
       <CountNotes snap={snap} tk={tk} />
       {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
       <TodaySoFar snap={snap} tk={tk} />
@@ -127,13 +127,6 @@ export default function Today() {
         <YourDay snap={snap} tk={tk} now={now} openStop={stop} />
       </View>
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), faithOf(st), false)} /> : null}
-      {nudge != null ? (
-        <Card tone="note">
-          <T v="label">Week {nudge + 1} is done.</T>
-          <T v="small">Ten minutes to look at the patterns and pick one change. Worth 20 points.</T>
-          <Button kind="ghost" label="Open review" onPress={() => router.push({ pathname: '/week/[k]', params: { k: String(nudge) } })} />
-        </Card>
-      ) : null}
     </Screen>
   );
 }

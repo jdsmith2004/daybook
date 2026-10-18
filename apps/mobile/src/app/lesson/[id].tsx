@@ -42,7 +42,6 @@ import {
   recordLesson,
   type Settings,
   srcNote,
-  weekOf,
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -183,7 +182,7 @@ export default function LessonScreen() {
     else if (g.a === 'talk') router.push('/talk');
     else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
     else if (g.a === 'growth') router.push('/growth');
-    else if (g.a === 'week') router.push({ pathname: '/week/[k]', params: { k: String(Math.max(0, weekOf(tk, st))) } });
+    else if (g.a === 'week') router.push('/review');
     else if (g.a === 'tab') {
       if ((g.v === 'settings' && g.open === 's-lists') || (g.v === 'plan' && g.open === 'lists'))
         router.push({ pathname: '/plan', params: { pane: 'lists', add: ownList() } });

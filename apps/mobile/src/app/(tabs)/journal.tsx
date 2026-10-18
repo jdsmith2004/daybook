@@ -38,6 +38,7 @@ import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { DaysCard } from '@/components/today';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -60,7 +61,7 @@ export default function Journal() {
       ? 'Everything you log shows up here by itself. Tap a day to add or fix something.'
       : pane === 'patterns'
         ? 'When it gets hard, what sets it off, and how you are climbing.'
-        : 'One short look back each week.';
+        : 'Your Sunday reviews, and each week in numbers.';
   const cw = Math.max(0, weekOf(tk, st));
   return (
     <Screen eyebrow="My Daybook" title="Journal" sub={<T tone="muted">{sub}</T>} scrollRef={scroll}>
@@ -81,7 +82,13 @@ export default function Journal() {
           ) : pane === 'patterns' ? (
             <PatternsPane onGo={(y) => scroll.current?.scrollTo({ y: Math.max(0, inset.top + 16 + paneY + y - 12), animated: true })} />
           ) : (
-            <WeekView k={week == null ? cw : week} onNav={setWeek} />
+            <>
+              <SundayList snap={snap} tk={tk} />
+              <T v="h2" style={{ marginTop: 6 }}>
+                Week by week
+              </T>
+              <WeekView k={week == null ? cw : week} onNav={setWeek} />
+            </>
           )}
         </Appear>
       </View>

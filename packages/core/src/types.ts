@@ -1,6 +1,7 @@
 /* The data model. One settings record, one record per day, one per weekly review. Every rule in Daybook is worked out from
    these at the time it is shown (points, levels, badges, runs, saves, step down), so nothing derived is ever stored. */
 import type { Talk } from './talk';
+import type { SunReview } from './sunday';
 
 export type DayKey = string; // 'YYYY-MM-DD', the logical day (it rolls over at settings.rollover o'clock)
 export type Clock = string; // 'HH:MM', 24-hour
@@ -86,6 +87,8 @@ export interface Review {
   k: string;
   a: { hard: string; helped: string; change: string; proud: string };
   u: number;
+  /** a Sunday review (key "s" and its Sunday): what worked, what to change, and one goal (sunday.ts) */
+  sun?: SunReview;
 }
 
 export type Reviews = Record<string, Review>;

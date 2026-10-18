@@ -26,3 +26,4 @@ export * from './accounts';
 export * from './cognito';
 export * from './rekindle-learn';
 export * from './pattern';
+export * from './sunday';

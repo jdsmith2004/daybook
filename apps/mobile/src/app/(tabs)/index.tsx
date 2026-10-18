@@ -4,7 +4,7 @@
 import {
   accountAsk,
   autoStep,
-  day1FromLog,
+  startFromLog,
   faithOf,
   LESSONS,
   lessonsDone,
@@ -52,12 +52,13 @@ export default function Today() {
     if (ready && st && shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
   }, [ready, st, snap.days, tk, apply]);
 
-  /* blank days before the first real entry are not counted: Day 1 moves to that entry, once, with a note. Not while an
-     account is still bringing the log in, when the first entry may not be here yet. */
+  /* the log starts with the first real entry: blank days before it are not counted, so the start (and a Day 1 before it)
+     moves there, once, with a note. Not while an account is still bringing the log in, when the first entry may not be
+     here yet. */
   const syncing = sync.status.k === 'busy' || sync.status.k === 'ask' || !sync.loaded;
   useEffect(() => {
     if (!ready || !st || syncing) return;
-    const c = day1FromLog(snap.days, st, tk);
+    const c = startFromLog(snap.days, st, tk);
     if (c) apply(c);
   }, [ready, st, snap.days, tk, apply, syncing]);
 

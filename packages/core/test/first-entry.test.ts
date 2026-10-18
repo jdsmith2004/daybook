@@ -1,8 +1,9 @@
-/* Counting starts with the first real entry: blank days between Day 1 and the first thing logged are not counted. Day 1
-   moves to that entry (and the tracking start to the day before it), with a note. A Day 1 picked by hand stays put. */
+/* The log starts with the first real entry: blank days before it were never tracked, so they do not count as clean days,
+   a first stretch or a pattern. The tracking start moves to the first entry, and so do a Day 1 and a step-down start that
+   came before it, with a note. Dates picked by hand stay put. */
 import { describe, expect, it } from 'vitest';
 import { normSettings, streaks } from '../src/legacy/core.js';
-import { day1FromLog, firstEntry, realDay, setDate } from '../src/actions';
+import { firstEntry, realDay, setDate, startFromLog } from '../src/actions';
 import { morningDone, phoneAway, setScreensOff } from '../src/day';
 import { keepHard } from '../src/risk';
 import { addEvent } from '../src/mutate';
@@ -25,35 +26,49 @@ describe('the first real entry', () => {
   });
 });
 
-describe('Day 1 moves to the first entry', () => {
-  it('when the blank days came before any entry', () => {
+describe('the log starts with the first entry', () => {
+  it('counting that began before any entry starts on the first entry', () => {
     const days = log();
     expect(streaks(days, st, tk).clean).toBe(6);
-    const c = day1FromLog(days, st, tk)!;
-    expect(c.st.day1).toBe('2026-10-17');
-    expect(c.st.start).toBe('2026-10-16');
+    const c = startFromLog(days, st, tk)!;
+    expect([c.st.start, c.st.day1]).toEqual(['2026-10-17', '2026-10-17']);
     expect(c.toast).toBe('Counting now starts Saturday, Oct 17, your first entry. Days before it had nothing logged, so they do not count.');
     expect(streaks(days, c.st, tk).clean).toBe(2);
     /* once is enough */
-    expect(day1FromLog(days, c.st, tk)).toBe(null);
+    expect(startFromLog(days, c.st, tk)).toBe(null);
   });
-  it('not when the log started before Day 1 (a gap after it still counts)', () => {
+  it('stepping down: blank days before the first entry are not a first stretch', () => {
+    const sd = normSettings({ start: '2026-10-08', day1: '2026-10-15', cleanMode: 'step', stepAt: '2026-10-08' });
+    let days = addEvent({}, '2026-10-11', 'rode', '20:00', {}, 1).days;
+    days = addEvent(days, '2026-10-12', 'slipped', '22:00', {}, 1).days;
+    const c = startFromLog(days, sd, tk)!;
+    expect([c.st.start, c.st.day1, c.st.stepAt]).toEqual(['2026-10-11', '2026-10-15', '2026-10-11']);
+    expect(c.toast).toMatch(/^Your log now starts Sunday, Oct 11, your first entry\./);
+  });
+  it('a start a few blank days before the first entry moves too, before Day 1 comes', () => {
     const days = { ...addEvent({}, '2026-10-08', 'rode', '20:00', {}, 1).days, ...log() };
-    expect(day1FromLog(days, st, tk)).toBe(null);
+    const c = startFromLog(days, st, tk)!;
+    expect([c.st.start, c.st.day1]).toEqual(['2026-10-08', '2026-10-13']);
   });
-  it('not before anything is logged, and not for a Day 1 still to come or today', () => {
-    expect(day1FromLog({}, st, tk)).toBe(null);
-    expect(day1FromLog(log(), normSettings({ start: '2026-10-16', day1: '2026-10-18' }), tk)).toBe(null);
-    expect(day1FromLog(log(), normSettings({ start: '2026-10-10', day1: '2026-10-20' }), tk)).toBe(null);
+  it('nothing to move: nothing logged, or the log already starts with an entry', () => {
+    expect(startFromLog({}, st, tk)).toBe(null);
+    expect(startFromLog(log(), normSettings({ start: '2026-10-17', day1: '2026-10-18' }), tk)).toBe(null);
   });
-  it('not for a Day 1 picked by hand', () => {
-    const hand = setDate(st, 'day1', '2026-10-12').st;
-    expect(hand.d1Hand).toBe('2026-10-12');
-    expect(day1FromLog(log(), hand, tk)).toBe(null);
+  it('dates picked by hand stay put', () => {
+    const d1 = setDate(st, 'day1', '2026-10-12').st;
+    expect(d1.d1Hand).toBe('2026-10-12');
+    expect(startFromLog(log(), d1, tk)).toBe(null);
+    const s0 = setDate(normSettings({ start: '2026-10-16', day1: null }), 'start', '2026-10-10').st;
+    expect(s0.startHand).toBe('2026-10-10');
+    expect(startFromLog(log(), s0, tk)).toBe(null);
+  });
+  it('Day 1 can be the day tracking starts', () => {
+    expect(setDate(normSettings({ start: '2026-10-17', day1: null }), 'day1', '2026-10-17').st.day1).toBe('2026-10-17');
+    expect(normSettings({ start: '2026-10-17', day1: '2026-10-17' }).day1).toBe('2026-10-17');
   });
   it('a morning answered on the first day counts that day, not the night before', () => {
     let days = setScreensOff({}, '2026-10-16', 'Y', 1);
     days = morningDone(days, '2026-10-17', 2);
-    expect(day1FromLog(days, st, tk)!.st.day1).toBe('2026-10-17');
+    expect(startFromLog(days, st, tk)!.st.start).toBe('2026-10-17');
   });
 });

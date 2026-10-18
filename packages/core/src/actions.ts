@@ -164,26 +164,28 @@ export function setDay1(st: Settings, v: 'none' | 'later' | 'today' | 'tomorrow'
         : 'Day 1 is ' + fmtDate(d1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.',
   };
 }
-/** a date picked for Day 1 (it has to come after the tracking start), or for the tracking start */
+/** a date picked for Day 1 (on or after the tracking start), or for the tracking start. Both are kept as picked by hand,
+    so the log's start (startFromLog) never moves them. */
 export function setDate(st: Settings, k: 'start' | 'day1', v: string | null): Change {
   if (k === 'start') {
     if (!v || !isKey(v)) return { st };
     return {
       st: changeSettings(st, (s) => {
         s.start = v;
-        if (s.day1 && s.day1 <= v) s.day1 = addDays(v, 7);
+        s.startHand = v;
+        if (s.day1 && s.day1 < v) s.day1 = addDays(v, 7);
       }),
     };
   }
   if (!v) return { st: changeSettings(st, (s) => void (s.day1 = null)) };
-  if (isKey(v) && v > st.start)
+  if (isKey(v) && v >= st.start)
     return {
       st: changeSettings(st, (s) => {
         s.day1 = v;
         s.d1Hand = v;
       }),
     };
-  return { st, toast: 'Day 1 has to come after the tracking start.' };
+  return { st, toast: 'Day 1 cannot come before the tracking start.' };
 }
 /* ---------- counting starts with the first real entry ---------- */
 /** something the person logged or did that day. Not what the app fills in by itself (a hard hour held, and the calm move it adds), a change to the
@@ -203,23 +205,25 @@ export function realDay(d: Day | null | undefined): boolean {
 export function firstEntry(days: Days): DayKey | null {
   return allKeys(days).find((k) => realDay(days[k])) || null;
 }
-/** Days with nothing logged count from Day 1 on (a slip that is not logged is not a slip), but only once the person is
-    using the app: when Day 1 has passed and the log only starts later, the blank days before it were never really
-    tracked. Day 1 moves to the first entry, the tracking start to the day before it, and a note says so. A Day 1 picked
-    by hand stays where it was put. Null when there is nothing to move. */
-export function day1FromLog(days: Days, st: Settings, tk: DayKey): Change | null {
-  if (!st.day1 || st.day1 >= tk || st.d1Hand === st.day1) return null;
+/** The log starts with the first real entry. Days with nothing logged count from Day 1 on (a slip that is not logged is
+    not a slip), but only once the person is using the app: blank days before the first entry were never tracked, so they
+    must not show as clean days, a first stretch, or a pattern. The tracking start moves to the first entry, and so do a
+    Day 1 and a step-down start that came before it, once, with a note. Dates picked by hand stay where they were put.
+    Null when there is nothing to move. */
+export function startFromLog(days: Days, st: Settings, tk: DayKey): Change | null {
   const k0 = firstEntry(days);
-  if (!k0 || k0 <= st.day1 || k0 > tk) return null;
+  if (!k0 || k0 > tk || st.start >= k0 || st.startHand === st.start) return null;
+  /* a Day 1 picked by hand before the first entry: the person says those days were clean */
+  if (st.day1 && st.day1 < k0 && st.d1Hand === st.day1) return null;
+  const counting = !!st.day1 && st.day1 < k0;
+  const when = fmtDate(k0, { weekday: 'long', month: 'short', day: 'numeric' });
   return {
     st: changeSettings(st, (s) => {
-      s.day1 = k0;
-      s.start = addDays(k0, -1);
+      s.start = k0;
+      if (s.day1 && s.day1 < k0) s.day1 = k0;
+      if (s.stepAt && s.stepAt < k0) s.stepAt = k0;
     }),
-    toast:
-      'Counting now starts ' +
-      fmtDate(k0, { weekday: 'long', month: 'short', day: 'numeric' }) +
-      ', your first entry. Days before it had nothing logged, so they do not count.',
+    toast: (counting ? 'Counting now starts ' : 'Your log now starts ') + when + ', your first entry. Days before it had nothing logged, so they do not count.',
   };
 }
 

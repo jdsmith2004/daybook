@@ -277,7 +277,7 @@ function normSettings(s){
  const o=Object.assign({},d,s||{});
  if(!isKey(o.start))o.start=d.start;
  if(o.day1===undefined)o.day1=d.day1;
- else if(o.day1!==null&&(!isKey(o.day1)||o.day1<=o.start))o.day1=addDays(o.start,7);
+ else if(o.day1!==null&&(!isKey(o.day1)||o.day1<o.start))o.day1=addDays(o.start,7);
  if(!(o.rollover>=0&&o.rollover<=6))o.rollover=4;
  if(!isTime(o.screensOff))o.screensOff='23:00';
  if(!Array.isArray(o.safety)||o.safety.length!==SAFETY.length)o.safety=SAFETY.map((_,i)=>!!(o.safety&&o.safety[i]));

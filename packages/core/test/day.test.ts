@@ -130,8 +130,9 @@ describe('Day 1', () => {
     expect(core.setDay1(st, 'none', '2026-10-15')).toMatchObject({ toast: 'Just tracking. Nothing is counted, and you can start a Day 1 any time.' });
     expect(core.setDay1(st, 'week', '2026-10-15').toast).toBe('Day 1 is Thursday, Oct 22.');
   });
-  it('a picked date has to come after the tracking start', () => {
-    expect(core.setDate(st, 'day1', '2026-10-10').toast).toBe('Day 1 has to come after the tracking start.');
+  it('a picked date cannot come before the tracking start (the start day itself is fine)', () => {
+    expect(core.setDate(st, 'day1', '2026-10-09').toast).toBe('Day 1 cannot come before the tracking start.');
+    expect(core.setDate(st, 'day1', '2026-10-10').st.day1).toBe('2026-10-10');
     expect(core.setDate(st, 'day1', '2026-10-12').st.day1).toBe('2026-10-12');
     expect(core.setDate(st, 'start', '2026-10-20').st.day1).toBe('2026-10-27');
   });

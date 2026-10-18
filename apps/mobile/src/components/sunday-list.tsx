@@ -1,7 +1,20 @@
 /* Journal > Weeks, on top: the Sunday reviews (core: sunday.ts), newest first. Each one shows what worked, what to change,
    and the goal, with how the goal went in the week after (counted from the log, or as the person said). A tap on Change
    opens that week's review again. */
-import { addDays, SUN_LAST, sunDue, sunGoalCount, sunGoalLine, sunKey, sunList, sunOf, sunRange, type Snapshot, type SunReview } from '@daybook/core';
+import {
+  addDays,
+  storyIfLine,
+  SUN_LAST,
+  sunDue,
+  sunGoalCount,
+  sunGoalLine,
+  sunKey,
+  sunList,
+  sunOf,
+  sunRange,
+  type Snapshot,
+  type SunReview,
+} from '@daybook/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -27,7 +40,7 @@ export function SundayList({ snap, tk }: { snap: Snapshot; tk: string }) {
           <View style={{ flex: 1 }}>
             <T v="h2">Sunday reviews</T>
             <T v="small" tone="muted">
-              Each Sunday, two minutes: what worked, what to change, and one small goal for the week.
+              Each Sunday, a few minutes to walk through the week, and one small goal for the next.
             </T>
           </View>
         </View>
@@ -78,7 +91,24 @@ function SundayRow({ sun, r, snap, tk, onChange }: { sun: string; r: SunReview; 
           ) : null}
         </View>
       ) : null}
+      {r.it ? <Note icon="compass" label="If-then plan" text={storyIfLine(r.it)} /> : null}
+      {r.nt ? <Note icon="pencil" label="A note to myself" text={'“' + r.nt + '”'} /> : null}
     </Card>
+  );
+}
+
+function Note({ icon, label, text }: { icon: string; label: string; text: string }) {
+  const c = useTheme();
+  return (
+    <View style={{ gap: 2 }}>
+      <View style={s.lineHead}>
+        <Icon name={icon} size={15} color={c.violetText} />
+        <T v="small" tone="muted">
+          {label}
+        </T>
+      </View>
+      <T>{text}</T>
+    </View>
   );
 }
 

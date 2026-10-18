@@ -416,7 +416,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               • <B>{wind}:</B> “Wind down.” One hour before screens-off at {so}.
             </T>
             <T>
-              • <B>Sunday, {fmtClock(REVIEW_AT)}:</B> “Look back on my week.” Two minutes.
+              • <B>Sunday, {fmtClock(REVIEW_AT)}:</B> “Look back on my week.” A few minutes.
             </T>
             <T v="small" tone="muted">
               Use your clock app. Name each alarm the way it is written above. In the Daybook app on a phone, Daybook can remind you itself.

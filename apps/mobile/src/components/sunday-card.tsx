@@ -1,13 +1,14 @@
 /* The Sunday review on Today (core: sunday.ts). On Sunday (and on Monday, while last week's is still open) a card asks for
-   two minutes: what worked, what to change, and one small goal. Once it is done, the goal waits here: on Sunday as the
-   goal for the week ahead, and through the week with how it is going when the log can count it ("2 of 5 nights so
-   far"). */
-import { isSunday, SUN_GOALS, sunDue, sunGoalLine, sunGoalNow, sunKey, type Snapshot } from '@daybook/core';
+   a few minutes to look back on the week. Once it is done, the goal waits here: on Sunday as the goal for the week ahead,
+   and through the week with how it is going when the log can count it ("2 of 5 nights so far"). With it, whatever extras
+   the person chose on Sunday: their if-then plan, a word on one of the harder days, and their note to themselves from
+   Wednesday on. */
+import { isSunday, storyIfLine, SUN_GOALS, sunDue, sunGoalLine, sunGoalNow, sunKey, sunPlanNow, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, Icon, T } from '@/components/ui';
-import { useTheme } from '@/lib/theme';
+import { toneOf, useTheme } from '@/lib/theme';
 
 export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const c = useTheme();
@@ -24,7 +25,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           <View style={{ flex: 1 }}>
             <T v="label">{due.late ? 'Last week’s review is still open' : 'Your Sunday review'}</T>
             <T v="small" tone="muted">
-              Two minutes: what worked, what to change, and one small goal. +20 points.
+              Your week, one thing at a time, and one small goal for the next. +20 points.
             </T>
           </View>
         </View>
@@ -56,7 +57,23 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       </Card>
     );
   const now = sunGoalNow(snap.days, snap.reviews, tk);
-  if (!now) return null;
+  const plan = sunPlanNow(snap.reviews, tk);
+  const extras = plan ? (
+    <>
+      {plan.hard ? (
+        <Extra
+          icon="calendar"
+          tone="coral"
+          title="Today is one of your harder days"
+          text={plan.it ? storyIfLine(plan.it) : 'Plan the hard hours ahead. SOS is one tap.'}
+        />
+      ) : plan.it ? (
+        <Extra icon="compass" tone="violet" title="Your plan this week" text={storyIfLine(plan.it)} />
+      ) : null}
+      {plan.nt ? <Extra icon="pencil" tone="sun" title="From you, on Sunday" text={'“' + plan.nt + '”'} /> : null}
+    </>
+  ) : null;
+  if (!now) return plan && (plan.hard || plan.it || plan.nt) ? <Card>{extras}</Card> : null;
   const k = now.g.k ? SUN_GOALS[now.g.k] : null;
   const frac = now.done != null && now.g.n ? Math.min(1, now.done / now.g.n) : null;
   return (
@@ -88,7 +105,27 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           ))}
         </View>
       ) : null}
+      {extras}
     </Card>
+  );
+}
+
+/* one of the extras from Sunday: an icon, a small title, and the words */
+function Extra({ icon, tone, title, text }: { icon: string; tone: string; title: string; text: string }) {
+  const c = useTheme();
+  const t = toneOf(c, tone);
+  return (
+    <View style={s.head}>
+      <View style={[s.ic, { backgroundColor: t.soft }]}>
+        <Icon name={icon} size={20} color={t.text} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <T v="eyebrow" tone="muted">
+          {title}
+        </T>
+        <T v="label">{text}</T>
+      </View>
+    </View>
   );
 }
 

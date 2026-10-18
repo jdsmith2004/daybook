@@ -14,6 +14,8 @@ import {
   rateUrTool,
   rkStepFor,
   setUrOff,
+  storyIfLine,
+  sunPlanNow,
   UR_STR,
   UR_STR_ADJ,
   urAnswer,
@@ -193,7 +195,13 @@ export default function Sos() {
   if (ur.step === 'tools') {
     const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now, st, sos.mem) : null;
     const was = offed ? urTool(offed) : null;
-    const lead = ur.again ? String(ur.cx?.do || '') : 'Pick what will help you most in this moment, or start the one below.';
+    /* the if-then plan made on Sunday, when there is one, comes first: it was decided while calm */
+    const plan = sunPlanNow(snap.reviews, tk);
+    const lead = ur.again
+      ? String(ur.cx?.do || '')
+      : plan?.it
+        ? 'Your plan: ' + storyIfLine(plan.it)
+        : 'Pick what will help you most in this moment, or start the one below.';
     return (
       <SceneFrame
         title="SOS"

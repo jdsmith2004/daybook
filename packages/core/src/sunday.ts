@@ -32,6 +32,11 @@ export interface SunReview {
   g: SunGoal | null;
   /** how last week's goal went, when the log could not count it */
   last?: SunLast;
+  /** the extras, each only when the person chose it: an if-then plan for the hardest moment (when, then), the hard days
+      of the week ahead (0 is Sunday), and a note to their future self, shown midweek */
+  it?: { w: string; t: string };
+  hd?: number[];
+  nt?: string;
 }
 export type SunLast = 'most' | 'some' | 'not';
 export const SUN_LAST: [SunLast, string, string][] = [
@@ -40,6 +45,7 @@ export const SUN_LAST: [SunLast, string, string][] = [
   ['not', 'Not this time', 'Honest is what helps. A new week, a new try.'],
 ];
 export const SUN_LEN = 60;
+export const SUN_NOTE_LEN = 160;
 export const SUN_MAX = 6;
 
 const clean = (v: unknown, max = SUN_LEN) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
@@ -62,6 +68,14 @@ export function normSun(x: unknown): SunReview | null {
   const n = g && Number.isInteger(g.n) && (g.n as number) >= 1 && (g.n as number) <= 7 ? (g.n as number) : undefined;
   const out: SunReview = { w: lines(v.w), c: lines(v.c), g: t ? { t, ...(k && n ? { k, n } : {}) } : null };
   if (v.last === 'most' || v.last === 'some' || v.last === 'not') out.last = v.last;
+  const it = v.it && typeof v.it === 'object' ? (v.it as Record<string, unknown>) : null;
+  if (it && clean(it.w, 80) && clean(it.t, 80)) out.it = { w: clean(it.w, 80), t: clean(it.t, 80) };
+  if (Array.isArray(v.hd)) {
+    const hd = v.hd.filter((d, i, a): d is number => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6 && a.indexOf(d) === i).slice(0, 2);
+    if (hd.length) out.hd = hd;
+  }
+  const nt = clean(v.nt, SUN_NOTE_LEN);
+  if (nt) out.nt = nt;
   return out;
 }
 
@@ -318,6 +332,15 @@ export function sunGoalNow(days: Days, reviews: Reviews, tk: DayKey): { g: SunGo
   const r = reviews[sunKey(addDays(sun, -7))]?.sun;
   if (!r || !r.g) return null;
   return { g: r.g, sun, done: sunGoalCount(days, r.g, sun, tk) };
+}
+/** this week's plan from last Sunday's review: the goal, the if-then plan, the hard days and the note, for Today and SOS.
+    nt shows from Wednesday on; hard is true on one of the hard days. */
+export function sunPlanNow(reviews: Reviews, tk: DayKey): { sun: DayKey; it: SunReview['it'] | null; hard: boolean; nt: string | null } | null {
+  const sun = sunOf(tk);
+  const r = reviews[sunKey(addDays(sun, -7))]?.sun;
+  if (!r || (!r.it && !r.hd && !r.nt)) return null;
+  const wd = dateOf(tk).getDay();
+  return { sun, it: r.it || null, hard: !!r.hd && r.hd.indexOf(wd) >= 0, nt: r.nt && (wd === 0 || wd >= 3) ? r.nt : null };
 }
 /** last week's goal, looked back on in this week's review: what it was, and how it went */
 export function sunLastGoal(days: Days, reviews: Reviews, sun: DayKey, tk: DayKey) {

@@ -58,7 +58,7 @@ export async function scheduleReminders(p: ReminderPrefs, screensOff: string | n
   /* Sunday afternoons (1 is Sunday): the Sunday review */
   if (p.review)
     await Notifications.scheduleNotificationAsync({
-      content: { title: 'Daybook', body: 'Two minutes to look back on your week.', data: { url: '/review' } },
+      content: { title: 'Daybook', body: 'A few minutes to look back on your week.', data: { url: '/review' } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, ...hm(REVIEW_AT), channelId: CHANNEL },
     });
   /* before the hard hours: one each day they are expected, opening Today, where the card waits */

@@ -28,7 +28,7 @@ export function SheetFrame({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  /* on iOS a sheet already opens below the status bar, so it needs no room for it (the Account page, pushed full height, does) */
+  /* on iOS a sheet already opens below the status bar, so it needs no room for it */
   const route = useRoute();
   const card = Platform.OS === 'ios' && SHEETS.includes(route.name);
   return (

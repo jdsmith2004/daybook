@@ -461,7 +461,7 @@ function Seg({ value, onPick }: { value: Strength | null; onPick: (v: Strength) 
                 shadowRadius: 0,
               },
             ]}>
-            <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1}>
+            <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {label}
             </Text>
           </Pressable>

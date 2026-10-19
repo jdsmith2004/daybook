@@ -115,7 +115,12 @@ export function CelebrateHost() {
   if (!cur || !st) return null;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Pressable accessibilityLabel="Close" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.5)' }]} onPress={() => setCur(null)} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.5)' }]}
+        onPress={() => setCur(null)}
+      />
       {boom ? <Confetti key={boom.n} big={boom.big} /> : null}
       <View style={s.center} pointerEvents="box-none">
         <Card it={cur} more={queue.length > 0} onClose={() => setCur(null)} />

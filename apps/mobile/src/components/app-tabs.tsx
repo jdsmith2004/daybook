@@ -94,7 +94,7 @@ function SosTab() {
             ]}>
             <Icon name="life" size={29} color={c.sosInk} />
           </View>
-          <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: c.coralText, fontFamily: font.bodyBold, marginTop: 30 }]}>
+          <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: c.coralText, fontFamily: font.bodyBold, marginTop: 34 }]}>
             SOS
           </Text>
         </>
@@ -119,8 +119,9 @@ const s = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 56, paddingVertical: 6, borderRadius: 16 },
   label: { fontFamily: font.bodySemi, fontSize: 11.5 },
   sos: {
+    /* raised enough that its shadow ends above the SOS label, also on a phone with a Home button (no room under the bar) */
     position: 'absolute',
-    top: -26,
+    top: -30,
     width: 62,
     height: 62,
     borderRadius: 31,

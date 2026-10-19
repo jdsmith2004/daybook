@@ -1079,7 +1079,12 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
   }
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 10 }]}>
-      <Pressable accessibilityLabel="Close" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.45)' }]} onPress={onClose} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.45)' }]}
+        onPress={onClose}
+      />
       <View style={[s.sheet, { backgroundColor: c.bg, paddingBottom: inset.bottom + 12, maxWidth: MAX_WIDTH }]}>
         <View style={[s.grab, { backgroundColor: c.lip }]} />
         <View style={s.top}>

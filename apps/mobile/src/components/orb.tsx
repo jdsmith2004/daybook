@@ -3,7 +3,10 @@
 import { breathPhase, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View } from 'react-native';
-import { Text } from '@/components/text';
+import { BIG_MAX, Text } from '@/components/text';
+
+/** the words over the sun sit in a row of a set height above it, so they stay close to their size */
+const ON_ART = 1.1;
 import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { buzz } from '@/lib/feel';
@@ -125,7 +128,9 @@ export function Orb({
         </Animated.View>
       </View>
       <View style={{ alignItems: 'center', gap: 6 }} accessibilityLiveRegion="polite">
-        <Text style={[s.phase, { color: ink || c.ink }]}>{words}</Text>
+        <Text maxFontSizeMultiplier={BIG_MAX} style={[s.phase, { color: ink || c.ink }]}>
+          {words}
+        </Text>
         <Text style={[s.pill, { color: ink || c.ink, backgroundColor: c.scBtn }]} accessibilityElementsHidden importantForAccessibility="no">
           {time}
         </Text>
@@ -250,8 +255,14 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
       <View
         style={[s.ph, box && sun ? { position: 'absolute', left: 0, right: 0, top: Math.max(0, box.h + EDGE - HI * d - GAP - ROW) } : null]}
         accessibilityLiveRegion="polite">
-        <Text style={[s.phase, { color: c.ink }]}>{PH_TXT[ph.k]}</Text>
-        <Text style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]} accessibilityElementsHidden importantForAccessibility="no">
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.phase, { color: c.ink }]}>
+          {PH_TXT[ph.k]}
+        </Text>
+        <Text
+          maxFontSizeMultiplier={ON_ART}
+          style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no">
           {breaths ? (done < breaths ? 'Breath ' + (done + 1) + ' of ' + breaths : 'Well done') : left > 0 ? fmtMS(left * 1000) : 'Keep going'}
         </Text>
       </View>
@@ -277,7 +288,7 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   orb: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 30, elevation: 6 },
-  phase: { fontFamily: font.display, fontSize: 30 },
+  phase: { fontFamily: font.display, fontSize: 30, lineHeight: 38 },
   guide: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', opacity: 0.18 },
   time: { fontFamily: font.bodySemi, fontSize: 16, opacity: 0.8, fontVariant: ['tabular-nums'] },
 });

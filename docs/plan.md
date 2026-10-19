@@ -107,9 +107,6 @@ and its route sends a person who has not graduated to Milestones, as it should.
 - **Today offers a locked lesson as "Next up" with Start and "+10 points"**, and Start opens the account sheet. Without an
   account this happens every day after lesson 3, including the morning after a slip, which the account rules otherwise
   keep quiet (`accountAsk`). A design call: skip locked lessons in Next up, or say "opens with a free account" on the card.
-- **Some older lessons' "Behind this" notes read as a list of doubts** (lesson 9: "shows a link, not a cause, and it was not
-  about porn ... not a tested result"), against the rule that the scope speaks with confidence. They live in
-  `legacy/core.js`; rewriting them is a content pass for the owner's review, not a bug fix.
 - **On the SE, a few full-screen moments scroll** (Good night with its tips, a lesson's cover, Move's list). Everything is
   reachable and the main button is the last thing; the screens are simply taller than 667 points.
 - **The software keyboard could only be tested on one page** (My plan's lists): the simulator lets it be turned on only

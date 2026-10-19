@@ -20,8 +20,9 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS, logging, Rekindle, the plan, the tools and Today work with no account. An account opens sync,
   a safe copy, and the lessons after the first three (see accounts.ts). Ask for one only at good moments, never after a slip.
-- **Lessons teach with confidence.** Do the research well, then write plainly and surely. A lesson must be wholesome, true
-  to its spirit, motivating and hopeful; it should never read as unsure. Not every line has to be proven in a paper.
+- **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
+  written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
+  validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` and let it deploy; GitHub keeps everything, so a change can always be rolled back.
   Say when a piece of work needs a different model or effort, and otherwise just keep going on the one in use.
@@ -85,7 +86,7 @@ cd apps/mobile && npx expo start
   alone (the legacy app, `core.js`, the golden fixtures). Run `npm run format` before committing; CI fails on unformatted
   files. Do not hand-format against it or add a second config.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
-- **Lessons rest on good research and speak with confidence.** Science in a lesson cites a source in `SRC` or `OB_SRC` and does not invent numbers. The scope ("Behind this") says where the research comes from and what it means for the reader, in a sure, hopeful voice, without piling up doubts.
+- **Lessons speak with confidence and hope.** New lessons name their source in `SRC` or `OB_SRC` and write the scope ("Behind this") in a sure, hopeful voice. Existing scope notes are left as they are (see "Lessons inspire hope" above).
 - **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add analytics or anything that reads people's logs on the server. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.

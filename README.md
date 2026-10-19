@@ -42,6 +42,17 @@ The iPhone app is built from GitHub, so no Mac or any one computer is needed: Ac
 (`.github/workflows/store.yml`). It runs the checks, builds on Expo's servers and sends the build to TestFlight. The
 one-time setup (Expo, signing, the App Store record) is in [docs/launch.md](docs/launch.md).
 
+Submitting for App Review is step 7 of [docs/launch.md](docs/launch.md): every text to paste, and a prompt for Claude in
+Chrome, so it can be done from any computer. The pages the store links to (support, privacy policy, terms of use) are
+plain HTML in `apps/mobile/public`, published with the web app:
+
+- Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
+- Privacy policy: https://d3c9g6kent5bsr.cloudfront.net/privacy.html
+- Terms of use: https://d3c9g6kent5bsr.cloudfront.net/terms.html
+
+When something the app keeps or sends changes, update `privacy.html` (and its date) in the same change, and the App
+Privacy answers in launch.md step 6.
+
 `apps/mobile/eas.json` has the build profiles. By hand, from `apps/mobile`:
 
 ```sh

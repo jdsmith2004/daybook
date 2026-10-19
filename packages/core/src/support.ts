@@ -16,6 +16,12 @@ import type { DayKey, Days, Settings } from './types';
 
 /** where a tip goes. Empty: nothing about tips shows. */
 export const SUPPORT_URL: string = 'https://buy.stripe.com/fZudRb2Rn3QafC3gWCeUU00';
+/** the public pages next to the web app (apps/mobile/public): help, the privacy policy and the terms, which the App
+    Store links to as well */
+export const SITE_URL = 'https://d3c9g6kent5bsr.cloudfront.net';
+export const SITE_PAGES = { support: SITE_URL + '/support.html', privacy: SITE_URL + '/privacy.html', terms: SITE_URL + '/terms.html' };
+/** where people write for help (the owner's choice, October 19, 2026) */
+export const SUPPORT_EMAIL = 'jeffreydsmith.cs@gmail.com';
 /** days since the start before Today asks */
 export const TIP_AFTER = 30;
 /** days with no slip before Today asks (the day of a slip and the quest's three days) */

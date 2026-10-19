@@ -13,14 +13,14 @@ for more: past that, builds wait for the next month), and free GitHub Actions an
 
 ## 0. Decisions (in chat)
 
-| Decision               | Suggested                                                 | Why                                                                                                                                           |
-| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`) | It can never change once step 3 runs. Tell Claude before then if you want another.                                                            |
-| Name on the App Store  | Daybook: Quit Without Shame                               | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                     |
-| Where it is offered    | The United States only, for now                           | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                             |
-| Tip service            | A Stripe Payment Link (done, October 19)                  | The giver picks the amount ($5 suggested); cards, Apple Pay and others. The statement says JEFFREY until Stripe accepts DAYBOOK (see step 1). |
-| Support email          | A new address used only for Daybook                       | The App Store needs a support page. Claude makes the page once there is an address.                                                           |
-| Your developer account | Tell Claude: individual or organization                   | An individual account shows your legal name as the seller on the App Store.                                                                   |
+| Decision               | Suggested                                                   | Why                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`)   | It can never change once step 3 runs. Tell Claude before then if you want another.                                                            |
+| Name on the App Store  | Daybook: Quit Without Shame                                 | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                     |
+| Where it is offered    | The United States only, for now                             | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                             |
+| Tip service            | A Stripe Payment Link (done, October 19)                    | The giver picks the amount ($5 suggested); cards, Apple Pay and others. The statement says JEFFREY until Stripe accepts DAYBOOK (see step 1). |
+| Support email          | jeffreydsmith.cs@gmail.com (the owner's choice, October 19) | On the support, privacy and terms pages. A Daybook-only address can replace it later: change `SUPPORT_EMAIL` and the three pages.             |
+| Your developer account | Tell Claude: individual or organization                     | An individual account shows your legal name as the seller on the App Store.                                                                   |
 
 ## 1. The tip page (done, October 19)
 
@@ -125,13 +125,17 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   >
   > Daybook is not medical care. If you are in crisis in the US, call or text 988.
 
-- **Privacy Policy URL:** https://d3c9g6kent5bsr.cloudfront.net/privacy (the GitHub Pages copy answers with a 404 code, so
-  use this one, or a real domain later).
-- **Support URL:** the support page Claude makes from step 0's email.
+- **Privacy Policy URL:** https://d3c9g6kent5bsr.cloudfront.net/privacy.html
+- **Support URL:** https://d3c9g6kent5bsr.cloudfront.net/support.html
+- **Marketing URL:** leave empty for now.
+- **Copyright:** 2026 Jeff Smith
+- The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
+  (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
 - **Screenshots:** the six in `docs/store/` (1290 × 2796, iPhone 6.9-inch), in order. Download them from GitHub on
   whichever computer you are using.
 - **Age rating:** answer the questions as they are: no nudity or sexual content; mature themes (porn is named and talked
-  about plainly); health information (lessons on changing a habit). Accept the rating it gives.
+  about plainly); medical or treatment information: infrequent (lessons on changing a habit, not treatment); no user
+  chat, no web browsing, no gambling. If it offers a higher rating than it gives, choose 18+, which matches the terms.
 - **App Privacy** (what Apple shows as the privacy label). Data is collected only for people who make an account, only to
   make the app work, linked to that account, and never used to track:
   - Contact info: email address.
@@ -145,4 +149,44 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   > Daybook works fully without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
   > free account syncs a copy and opens the lessons after the first three. "Support Daybook" opens a tip
   > page in the browser; tips unlock nothing, and the link is offered on the United States storefront only, under
-  > guideline 3.1.1(a). The app has no ads and no analytics.
+  > guideline 3.1.1(a). The app has no ads and no analytics. Reminders are local notifications made on the device, with
+  > plain words that do not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
+
+- **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Settings, then Sync), with a
+  new email address you control, and type its email and password into App Review Information yourself. Never put that
+  password in a chat, a commit or this repository.
+
+## 7. Submit for review (you, or Claude in Chrome with you watching, about 20 minutes)
+
+Do this only after the TestFlight walk on your phone (step 5) looks right. Claude in Chrome may fill in and press
+**Add for Review** and **Submit for Review** when you say so in that chat; it still never types a password, a 2-factor
+code, bank or tax details, and never accepts an agreement or anything that costs money.
+
+Paste this into Claude in Chrome:
+
+```
+Daybook: submit the iPhone app for App Review. Everything to paste is in
+github.com/jdsmith2004/daybook/blob/main/docs/launch.md, step 6. Rules: never type a password,
+a 2-factor code, bank or tax details; never accept an agreement; stop and ask me if anything costs
+money or is unclear.
+
+1. appstoreconnect.apple.com → Apps → Daybook: Quit Without Shame → the iOS app's 1.0 version
+   ("Prepare for Submission").
+2. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL
+   (empty), copyright. Upload the six screenshots from docs/store/ in order to the 6.9-inch slot
+   (download them from GitHub first).
+3. Build: choose the newest build that finished processing (the one I tested in TestFlight).
+4. App Information: name and subtitle from step 6; category Health & Fitness, second Lifestyle;
+   content rights: no third-party content; age rating questions as in step 6.
+5. App Privacy: privacy policy URL from step 6, then the data types exactly as listed there
+   (each: used for app functionality, linked to the user, not used for tracking). Publish it.
+6. Pricing and Availability: Free, United States only. Check it is still so.
+7. App Review Information: notes from step 6. Contact: my name and email (ask me for the phone
+   number and let me type it). Sign-in required: yes, and STOP so I type the test account myself.
+8. Version release: "Manually release this version".
+9. Show me the whole page, then wait for me to say "submit". Then Add for Review → Submit for
+   Review. Tell me the status it shows.
+```
+
+Review usually takes one to three days. If Apple asks a question or rejects it, paste their message to Claude Code: the
+reply, or the fix and a new build (step 5), goes from there. When it is approved, press **Release this version**.

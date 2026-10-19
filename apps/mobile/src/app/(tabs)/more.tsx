@@ -1,9 +1,9 @@
 /* More: where I am, my plan, milestones, help, how Daybook works, and every setting, on one page. Ported from the legacy
    viewMore and viewSettings. */
-import { badgeDone, gameCompute, phaseLabel, shownBadges } from '@daybook/core';
+import { badgeDone, gameCompute, phaseLabel, shownBadges, SITE_PAGES } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
-import { View, type ScrollViewInstance } from 'react-native';
+import { Linking, View, type ScrollViewInstance } from 'react-native';
 
 import { HelpFoot } from '@/components/help-foot';
 import { LinkCard } from '@/components/link-card';
@@ -40,6 +40,12 @@ export default function More() {
           title="How Daybook works"
           sub="What it is for, a quick self-check, and your goals. Walk through it any time."
           onPress={() => router.push('/setup')}
+        />
+        <LinkCard
+          icon="ask"
+          title="Help and support"
+          sub="Common questions, and how to write to the person who builds Daybook"
+          onPress={() => Linking.openURL(SITE_PAGES.support).catch(() => undefined)}
         />
         <TipRow />
       </View>

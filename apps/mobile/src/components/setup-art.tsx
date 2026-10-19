@@ -537,9 +537,10 @@ export function PicPattern({ a }: { a: SetupAnswers }) {
           </View>
         ))}
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      {/* each label starts under its own bar: four parts of three bars, with the same gaps as the bars */}
+      <View style={{ flexDirection: 'row', gap: 4 }}>
         {['12 AM', '6 AM', '12 PM', '6 PM'].map((x) => (
-          <T key={x} v="small" tone="muted">
+          <T key={x} v="small" tone="muted" style={{ flex: 1 }}>
             {x}
           </T>
         ))}

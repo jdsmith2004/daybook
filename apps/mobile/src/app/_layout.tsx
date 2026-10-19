@@ -20,6 +20,7 @@ import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
+import '@/lib/setup-keep';
 import { SyncProvider } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';

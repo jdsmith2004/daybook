@@ -91,7 +91,7 @@ import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
-import { setupKeep, type SetupFlow } from '@/lib/setup-keep';
+import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
@@ -143,12 +143,29 @@ export default function Setup() {
   useEffect(() => {
     if (!f.redo && !f.saved && st) {
       setupKeep.flow = null;
+      storeSetup(null);
       close();
     }
   }, [f.redo, f.saved, st]);
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [i]);
+  /* a new person's place is kept on the device as they go, and let go once the setup is saved. Opened right at launch,
+     the page may come up before the kept place is read: it picks up there if nothing was answered yet. */
+  useEffect(() => {
+    if (f.redo) return;
+    let live = true;
+    setupStored.then((v) => {
+      if (live && v) setF((x) => (x.i === 0 && !Object.keys(x.a).length && !x.saved ? { ...v } : x));
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!f.redo) storeSetup(f.saved || pg.k === 'done' ? null : f);
+  }, [f, pg.k]);
 
   const busy = () => Date.now() < until.current;
   const set = (patch: Partial<Flow> | ((x: Flow) => Partial<Flow>)) =>
@@ -893,7 +910,9 @@ export default function Setup() {
                   setRemAt(x);
                   buzz('tap');
                 }}>
-                <Text style={[s.optT, { color: c.ink, flex: 0 }]}>{fmtClock(x)}</Text>
+                <Text style={[s.optT, { color: c.ink, flex: 0 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  {fmtClock(x)}
+                </Text>
               </Opt>
             ))}
           </View>

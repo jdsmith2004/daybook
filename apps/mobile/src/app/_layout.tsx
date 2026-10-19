@@ -4,21 +4,21 @@ import { InstrumentSans_400Regular } from '@expo-google-fonts/instrument-sans/40
 import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500Medium';
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
-import { riskAlerts } from '@daybook/core';
+import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, type ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState, Platform } from 'react-native';
 
 import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
 import { Toast } from '@/components/toast';
 import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, type NavState } from '@/lib/nav';
-import { useReminderPrefs } from '@/lib/prefs';
-import { listenForTaps, scheduleReminders } from '@/lib/reminders';
+import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
+import { listenForTaps, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import { SyncProvider } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -26,18 +26,41 @@ import { useTheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-/* the phone's reminders follow the choices in Settings, the screens-off time, and the hard hours the log points to
-   (a heads-up before each, for the coming week); a tap on one opens Today */
+/* the phone's notifications (core nudges.ts): each time the app opens, what was delivered is judged (helped or missed) and the
+   plan for today and tomorrow, with the come-back notes, is made again; the phone's schedule changes only when the plan does.
+   A tap on one opens its screen. All of it stays on this phone. */
 function Reminders() {
   const prefs = useReminderPrefs();
-  const { snap, tk, now } = useStore();
-  const so = snap.settings?.screensOff ?? null;
-  const risk = snap.settings ? riskAlerts(snap.days, snap.settings, tk, now) : [];
-  const key = risk.join(',');
+  const log = useNudgeLog();
+  const { ready, snap, tk } = useStore();
+  const live = useRef(snap);
+  live.current = snap;
+  const [openAt, setOpenAt] = useState(() => Date.now());
   useEffect(() => {
-    scheduleReminders(prefs, so, key ? key.split(',').map(Number) : []).catch(() => undefined);
-  }, [prefs, so, key]);
-  useEffect(() => listenForTaps(), []);
+    if (!ready || !log.ready || !remindersOffered) return;
+    const opened = async () => {
+      const t = Date.now();
+      const ok = await remindersAllowed().catch(() => false);
+      const s = live.current;
+      setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
+      setOpenAt(t);
+    };
+    opened();
+    const sub = AppState.addEventListener('change', (a) => a === 'active' && opened());
+    return () => sub.remove();
+  }, [ready, log.ready]);
+  const plan = useMemo(
+    () => (ready && log.ready ? nudgePlan(snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt) : null),
+    [ready, snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt],
+  );
+  const key = plan ? nudgeKey(plan) : null;
+  useEffect(() => {
+    if (!plan || !remindersOffered) return;
+    scheduleNudges(plan).catch(() => undefined);
+    setNudgeLog((l) => nudgeKeep(l, plan, Date.now()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  useEffect(() => listenForTaps((id) => setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }))), []);
   return null;
 }
 

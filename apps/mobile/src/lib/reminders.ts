@@ -1,15 +1,29 @@
-/* Reminders on a phone: up to three gentle daily notifications and one on Sunday afternoons, made on the phone itself (nothing is sent from a server, and
-   nothing about the log leaves the phone). The words are plain on purpose, because a notification can show on a locked
-   screen: nothing in them says what Daybook is for. Tapping one opens Today (or, for Talk it through, the screen it is for). */
-import { fmtClock } from '@daybook/core';
+/* Reminders on a phone, made on the phone itself: nothing is sent from a server, and nothing about the log leaves the phone.
+   Core nudges.ts plans them (today and tomorrow, then a few come-back notes) from the log and the choices in Settings;
+   this schedules that plan, one notification at a time, and makes it again each time the app opens. The words are plain on
+   purpose, because a notification can show on a locked screen: nothing in them says what Daybook is for. Tapping one opens
+   Today (or the screen it is for). On Android each kind has its own channel, so one can be quieted without the others. */
+import type { Nudge, NudgeKind } from '@daybook/core';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
-import { REVIEW_AT, type ReminderPrefs } from './prefs';
-
 export const remindersOffered = true;
 const CHANNEL = 'reminders';
+/* the Android channels: the check-ins (and Talk it through) keep the first channel's id, so a phone that has it keeps its choice */
+const CHANNELS: { id: string; name: string; kinds: NudgeKind[] }[] = [
+  { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'morning', 'wind'] },
+  { id: 'hard-hours', name: 'Hard hours', kinds: ['risk'] },
+  { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
+  { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'] },
+];
+const channelOf = (k: NudgeKind) => (CHANNELS.find((c) => c.kinds.includes(k)) || CHANNELS[0]).id;
+let channelsMade = false;
+async function makeChannels() {
+  if (Platform.OS !== 'android' || channelsMade) return;
+  for (const c of CHANNELS) await Notifications.setNotificationChannelAsync(c.id, { name: c.name, importance: Notifications.AndroidImportance.DEFAULT });
+  channelsMade = true;
+}
 
 /* while the app is open, a reminder does not need to pop up over it */
 Notifications.setNotificationHandler({
@@ -25,49 +39,21 @@ export async function allowReminders(): Promise<boolean> {
   return r.granted;
 }
 
-const hm = (t: string) => {
-  const [h, m] = t.split(':').map(Number);
-  return { hour: h, minute: m };
-};
-const before = (t: string, min: number) => {
-  const [h, m] = t.split(':').map(Number);
-  const x = (h * 60 + m - min + 1440) % 1440;
-  return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0');
-};
-
-/** the reminders as they should be: everything Daybook scheduled is replaced by these */
-export async function scheduleReminders(p: ReminderPrefs, screensOff: string | null, risk: number[] = []): Promise<void> {
-  /* the daily ones and the hard-hours heads-ups are replaced; a one-off from Talk it through (below) stays */
+/** the plan from core nudgePlan, as the phone's schedule: everything Daybook scheduled is replaced by it (a one-off from Talk it through stays) */
+export async function scheduleNudges(plan: Nudge[]): Promise<void> {
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
     if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
-  const heads = p.risk ? risk.filter((t) => t > Date.now()).slice(0, 7) : [];
-  const any = p.morning || p.checkin || (p.wind && screensOff) || p.review || heads.length;
-  if (!any) return;
-  if (!(await Notifications.getPermissionsAsync()).granted) return;
-  if (Platform.OS === 'android')
-    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
-  const list: { body: string; at: string }[] = [];
-  if (p.morning) list.push({ body: 'Last night’s questions. Two taps.', at: p.morningAt });
-  if (p.checkin) list.push({ body: 'Check in. Under a minute.', at: p.checkinAt });
-  if (p.wind && screensOff) list.push({ body: 'Wind down. Screens off at ' + fmtClock(screensOff) + '.', at: before(screensOff, 60) });
-  for (const r of list)
+  if (!plan.length || !(await Notifications.getPermissionsAsync()).granted) return;
+  await makeChannels();
+  const now = Date.now();
+  for (const n of plan) {
+    if (n.at <= now) continue;
     await Notifications.scheduleNotificationAsync({
-      content: { title: 'Daybook', body: r.body, data: { url: '/' } },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, ...hm(r.at), channelId: CHANNEL },
+      identifier: n.id,
+      content: { title: 'Daybook', body: n.body, data: { url: n.url, id: n.id }, ...(n.quiet ? { interruptionLevel: 'passive' as const } : {}) },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: channelOf(n.k) },
     });
-  /* Sunday afternoons (1 is Sunday): the Sunday review */
-  if (p.review)
-    await Notifications.scheduleNotificationAsync({
-      content: { title: 'Daybook', body: 'A few minutes to look back on your week.', data: { url: '/review' } },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 1, ...hm(REVIEW_AT), channelId: CHANNEL },
-    });
-  /* before the hard hours: one each day they are expected, opening Today, where the card waits */
-  for (const [i, t] of heads.entries())
-    await Notifications.scheduleNotificationAsync({
-      identifier: 'risk-' + i,
-      content: { title: 'Daybook', body: 'Your hard hours start soon. Two quiet minutes now make them easier.', data: { url: '/' } },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
-    });
+  }
 }
 
 /** whether this phone lets Daybook send notifications (without asking) */
@@ -81,8 +67,7 @@ const TALK = 'talk';
 export async function scheduleTalk(t: number, body: string, url: string): Promise<boolean> {
   await cancelTalk();
   if (t <= Date.now() || !(await allowReminders())) return false;
-  if (Platform.OS === 'android')
-    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+  await makeChannels();
   await Notifications.scheduleNotificationAsync({
     identifier: TALK,
     content: { title: 'Daybook', body, data: { url } },
@@ -94,10 +79,13 @@ export async function cancelTalk(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(TALK).catch(() => undefined);
 }
 
-/** a tap on a reminder opens its screen (Today unless it says otherwise), whether the app was open or not */
-export function listenForTaps(): () => void {
+/** a tap on a reminder opens its screen (Today unless it says otherwise), whether the app was open or not. onTap hears
+    which one, so the phone can tell which reminders help (core nudgeLearn). */
+export function listenForTaps(onTap: (id: string) => void = () => undefined): () => void {
   const go = (r: Notifications.NotificationResponse | null | undefined) => {
     if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    const id = r.notification.request.content.data?.id;
+    if (typeof id === 'string') onTap(id);
     const url = r.notification.request.content.data?.url;
     if (typeof url === 'string' && url.startsWith('/')) router.navigate(url as '/');
     Notifications.clearLastNotificationResponse();

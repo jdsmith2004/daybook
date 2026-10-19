@@ -26,6 +26,9 @@ import {
   urOffOf,
   urTool,
   type RecordId,
+  NUDGE_LEARNED,
+  NUDGE_PREF,
+  nudgeResume,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -43,6 +46,7 @@ import { pickBackupText, saveBackupFile } from '@/lib/backup';
 import { forgetDrafts } from '@/lib/drafts';
 import {
   setLockPref,
+  setNudgeLog,
   setReminderPrefs,
   setSoundPref,
   setThemePref,
@@ -102,6 +106,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       return;
     }
     setReminderPrefs({ ...rem, ...patch });
+    /* a reminder turned on again starts fresh, every day (core nudges.ts) */
+    for (const k of NUDGE_LEARNED) if (patch[NUDGE_PREF[k]] === true) setNudgeLog((l) => nudgeResume(l, k));
   };
   const first = (asked || '').replace(/^s-/, '') as Sec;
   const [open, setOpen] = useState<Partial<Record<Sec, boolean>>>(first ? { [first]: true } : {});
@@ -365,7 +371,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         remindersOffered ? (
           <>
             <T v="small" tone="muted">
-              Up to three a day. They are made on this phone, and the words never say what Daybook is for, because a reminder can show on a locked screen.
+              Up to three a day, and none about something you already did. They are made on this phone, and the words never say what Daybook is for, because a
+              reminder can show on a locked screen. One that stops helping goes quiet, and Today says so.
             </T>
             <OnOff name="Last night’s questions" sub={'Each morning at ' + fmtClock(rem.morningAt)} on={rem.morning} onPick={(on) => setRem({ morning: on })} />
             {rem.morning ? (
@@ -401,6 +408,12 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               sub="When your log shows a time of day that is often hard, a nudge 90 minutes before, to talk it through"
               on={rem.risk}
               onPick={(on) => setRem({ risk: on })}
+            />
+            <OnOff
+              name="If you are away for a while"
+              sub="A few short notes that Daybook is still here, over two weeks. Then it stays quiet until you open it."
+              on={rem.back !== false}
+              onPick={(on) => setRem({ back: on })}
             />
           </>
         ) : (

@@ -1,5 +1,5 @@
 /* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a talk-through that still matters (Talk it through), the hard hours (risk.ts: from two hours before, a push to talk it through), the flame with Next up and SOS, any note about how days
-   are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, and a nudge when last week's review is waiting.
+   are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, a word about the reminders (nudge-card.tsx), and a nudge when last week's review is waiting.
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
   accountAsk,
@@ -29,6 +29,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AccountCard } from '@/components/account';
 import { TipCard, TipTop } from '@/components/support';
 import { Hero } from '@/components/hero';
+import { NudgeCard } from '@/components/nudge-card';
 import { RiskCard } from '@/components/risk-card';
 import { SundayCard } from '@/components/sunday-card';
 import { TalkCard } from '@/components/talk-card';
@@ -134,6 +135,7 @@ export default function Today() {
       <TodaySoFar snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
+      {ask || tip ? null : <NudgeCard snap={snap} tk={tk} />}
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
     </Screen>

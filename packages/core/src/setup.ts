@@ -190,6 +190,7 @@ export type PageKind =
   | 'person'
   | 'becoming'
   | 'review'
+  | 'remind'
   | 'free'
   | 'done';
 export interface ObPage {
@@ -209,7 +210,11 @@ export interface ObPage {
   hi?: string;
   own?: string;
   n?: number;
-  need?: (a: SetupAnswers) => boolean;
+  need?: (a: SetupAnswers, env: ObEnv) => boolean;
+}
+/** what the device can do: notify (a phone app; a web page cannot remind once it is closed) */
+export interface ObEnv {
+  notify?: boolean;
 }
 export const OB_PAGES: ObPage[] = [
   { id: 'hello', s: 'welcome', k: 'hello' },
@@ -339,11 +344,13 @@ export const OB_PAGES: ObPage[] = [
   { id: 'person', s: 'plan', k: 'person', key: 'person' },
   { id: 'becoming', s: 'plan', k: 'becoming', key: 'be' },
   { id: 'review', s: 'plan', k: 'review' },
+  /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
+  { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
   /* Daybook is free, said plainly with a tip button (support.ts); only when a tip link is set */
   { id: 'free', s: 'plan', k: 'free', need: () => !!SUPPORT_URL },
   { id: 'done', s: 'plan', k: 'done' },
 ];
-export const obPages = (a: SetupAnswers) => OB_PAGES.filter((pg) => !pg.need || pg.need(a));
+export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env));
 
 /** a walk-through starts from the last answers and the plan as it is now */
 export function obPrefill(st: Settings | null): SetupAnswers {

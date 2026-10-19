@@ -1,0 +1,205 @@
+/* Notifications that fit the person: skipped when done, capped, kinder after a slip, a backup once the habit holds,
+   quieter when ignored, and a fade to silence when the app goes quiet. */
+import { describe, expect, it } from 'vitest';
+import * as core from '../src/index';
+import type { Days, NudgeLog, NudgePrefs } from '../src/index';
+
+/* 2026-10-14 is a Wednesday; the tests run in America/Chicago time */
+const tk = '2026-10-14';
+const at = (s: string) => new Date(s).getTime();
+const st = core.normSettings({ ...core.defaultSettings('2026-09-01'), day1: '2026-09-02', screensOff: '22:30' });
+const ci: NudgePrefs = { ...core.NUDGE_DEFAULTS, checkin: true, risk: false };
+const log0 = core.nudgeLogNew();
+const plan = (days: Days, prefs: NudgePrefs, now: number, log: NudgeLog = log0, k = tk) => core.nudgePlan(days, st, {}, prefs, log, k, now);
+const routine = (p: core.Nudge[]) => p.filter((n) => n.k !== 'back');
+const checkedIn = (days: Days, k: string, when: string): Days => ({
+  ...days,
+  [k]: {
+    d: k,
+    events: [],
+    p: null,
+    u: 1,
+    checkin: { m: null, c: null, e: null, s: null, h: null, so: null, ro: null, n: '', done: true, at: at(when) },
+  },
+});
+const slip = (days: Days, k: string, time: string) => core.addEvent(days, k, 'slipped', time, {}, 1).days;
+
+describe('the plan', () => {
+  it('is empty with nothing turned on, or before setup', () => {
+    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00'))).toEqual([]);
+    expect(core.nudgePlan({}, null, {}, ci, log0, tk, at('2026-10-14T09:00'))).toEqual([]);
+  });
+
+  it('covers today and tomorrow at the set time, and skips what is done or past', () => {
+    const p = routine(plan({}, ci, at('2026-10-14T09:00')));
+    expect(p.map((n) => [n.id, n.at, n.body])).toEqual([
+      ['checkin-2026-10-14', at('2026-10-14T18:00'), 'Check in. Under a minute.'],
+      ['checkin-2026-10-15', at('2026-10-15T18:00'), 'Check in. Under a minute.'],
+    ]);
+    expect(routine(plan(checkedIn({}, tk, '2026-10-14T14:00'), ci, at('2026-10-14T14:05'))).map((n) => n.d)).toEqual(['2026-10-15']);
+    expect(routine(plan({}, ci, at('2026-10-14T18:30'))).map((n) => n.d)).toEqual(['2026-10-15']);
+  });
+
+  it('when the app goes quiet, fades: four come-back notes, then nothing', () => {
+    const p = plan({}, ci, at('2026-10-14T21:40')).filter((n) => n.k === 'back');
+    expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-18', '2026-10-21', '2026-10-28']);
+    /* at the time of day the app was open, kept to the daytime */
+    expect(new Date(p[0].at).getHours()).toBe(19);
+    expect(new Date(plan({}, ci, at('2026-10-14T13:20'))[2].at).toTimeString().slice(0, 5)).toBe('13:20');
+    expect(p[3].body).toBe('Daybook will stay quiet now. Everything is kept for when you come back.');
+    expect(plan({}, { ...ci, back: false }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
+    expect(plan({}, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
+    /* nothing past the last note */
+    expect(Math.max(...plan({}, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-10-28T10:00'));
+  });
+
+  it('keeps at most three a day, an hour apart, the heads-up first', () => {
+    let d: Days = {};
+    for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
+    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, checkin: true, wind: true, risk: true, checkinAt: '18:00' };
+    const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
+    expect(today.map((n) => n.k)).toEqual(['morning', 'risk', 'wind']);
+    expect(today.find((n) => n.k === 'risk')!.at).toBe(at('2026-10-14T17:30'));
+  });
+
+  it('on a Sunday, folds the review into the check-in reminder', () => {
+    const p = routine(plan({}, { ...ci, review: true }, at('2026-10-18T09:00'), log0, '2026-10-18'));
+    expect(p[0]).toMatchObject({ k: 'checkin', d: '2026-10-18', also: 'sunday', body: 'Check in, and a few minutes to look back on your week.' });
+    const alone = routine(plan({}, { ...ci, checkin: false, review: true }, at('2026-10-18T09:00'), log0, '2026-10-18'));
+    expect(alone[0]).toMatchObject({ k: 'sunday', url: '/review', quiet: true, at: at('2026-10-18T17:00') });
+  });
+
+  it('after a slip, sends no more, only kinder words', () => {
+    const d = slip({}, tk, '21:30');
+    const before = routine(plan({}, ci, at('2026-10-14T22:00')));
+    const after = routine(plan(d, ci, at('2026-10-14T22:00')));
+    expect(after.length).toBe(before.length);
+    expect(after[0]).toMatchObject({ d: '2026-10-15', body: 'A new day. Everything you built is still here.' });
+  });
+
+  it('while the Rekindle quest is open, its reminder takes the check-in reminder’s place', () => {
+    const d = slip({}, '2026-10-12', '21:30');
+    const words = (k: string) => routine(plan(d, ci, at(k + 'T09:00'), log0, k)).map((n) => n.d + ' ' + n.body);
+    expect(words('2026-10-14')).toEqual([
+      '2026-10-14 Your Rekindle quest is still open. One small step today.',
+      '2026-10-15 Your Rekindle quest is still open. One small step today.',
+    ]);
+    expect(words('2026-10-16')).toEqual(['2026-10-16 Check in. Under a minute.', '2026-10-17 Check in. Under a minute.']);
+  });
+});
+
+describe('the habit takes over', () => {
+  let own: Days = {};
+  for (let i = 1; i <= 5; i++) own = checkedIn(own, core.addDays(tk, -i), core.addDays(tk, -i) + 'T16:00');
+
+  it('checking in on your own most days moves the reminder later, as a backup', () => {
+    expect(core.ciOnOwn(own, st, ci, tk)).toBe(true);
+    expect(routine(plan(own, ci, at('2026-10-14T09:00')))[0].at).toBe(at('2026-10-14T19:30'));
+    /* never past screens-off less half an hour */
+    expect(core.ciBackupAt({ ...st, screensOff: '22:00' }, { ...ci, checkinAt: '21:00' })).toBe('21:30');
+    expect(core.ciOnOwn(own, st, { ...ci, ciKeep: true }, tk)).toBe(false);
+    expect(core.ciOnOwn(checkedIn({}, '2026-10-13', '2026-10-13T16:00'), st, ci, tk)).toBe(false);
+  });
+
+  it('Today says so once, with the set time as the other choice', () => {
+    expect(core.nudgeCard(own, st, ci, log0, tk)).toMatchObject({ k: 'backup', at: '19:30', no: 'Keep it at 6:00 PM' });
+    expect(core.nudgeCard(own, st, ci, { ...log0, bk: tk }, tk)).toBeNull();
+  });
+
+  it('offers to move the reminder to when the person really checks in', () => {
+    let late: Days = {};
+    for (let i = 1; i <= 6; i++) late = checkedIn(late, core.addDays(tk, -i), core.addDays(tk, -i) + 'T21:4' + (i % 3));
+    expect(core.ciUsual(late, st, tk)).toBe('21:45');
+    expect(core.nudgeCard(late, st, ci, log0, tk)).toMatchObject({ k: 'time', at: '21:45', yes: 'Move it to 9:45 PM' });
+    expect(core.nudgeCard(late, st, ci, { ...log0, tm: '2026-10-01' }, tk)).toBeNull();
+    expect(core.nudgeCard(late, st, ci, { ...log0, tm: '2026-09-10' }, tk)).not.toBeNull();
+  });
+});
+
+describe('learning from what happened', () => {
+  /* one check-in reminder delivered on day k, then the app opened at `open` */
+  const after = (log: NudgeLog, k: string, open: number, days: Days = {}, allowed = true) => {
+    const n = { id: 'checkin-' + k, k: 'checkin' as const, d: k, at: at(k + 'T18:00') };
+    return core.nudgeLearn({ ...log, plan: [n], opens: [...log.opens, open] }, days, st, {}, open, allowed);
+  };
+  const ignored = (log: NudgeLog, k: string) => after(log, k, at(core.addDays(k, 1) + 'T12:00'));
+
+  it('three misses in a row step a kind down, then pause it', () => {
+    let log = log0;
+    for (const k of ['2026-10-01', '2026-10-02', '2026-10-03']) log = ignored(log, k);
+    expect(log.lv.checkin).toBe(1);
+    /* every other day now */
+    const p = routine(plan({}, ci, at('2026-10-14T09:00'), log));
+    expect(p.length).toBe(1);
+    for (const k of ['2026-10-04', '2026-10-06', '2026-10-08']) log = ignored(log, k);
+    expect(log.lv.checkin).toBe(2);
+    expect(routine(plan({}, ci, at('2026-10-14T09:00'), log))).toEqual([]);
+    expect(core.nudgeCard({}, st, ci, log, tk)).toMatchObject({
+      k: 'paused',
+      kind: 'checkin',
+      p: 'The check-in reminder has not been helping lately, so Daybook paused it. Everything else stays the same.',
+    });
+    expect(routine(plan({}, ci, at('2026-10-14T09:00'), core.nudgeResume(log, 'checkin'))).length).toBe(2);
+  });
+
+  it('a tap, an open soon after, or the thing done counts as a help, and steps back up', () => {
+    const down: NudgeLog = { ...log0, lv: { checkin: 1 }, miss: { checkin: 2 } };
+    expect(after(down, '2026-10-05', at('2026-10-05T19:00')).lv.checkin).toBe(0);
+    const tapped = core.nudgeLearn(
+      { ...down, plan: [{ id: 'checkin-2026-10-05', k: 'checkin', d: '2026-10-05', at: at('2026-10-05T18:00') }], taps: ['checkin-2026-10-05'] },
+      {},
+      st,
+      {},
+      at('2026-10-07T12:00'),
+      true,
+    );
+    expect(tapped).toMatchObject({ lv: { checkin: 0 }, miss: { checkin: 0 }, taps: [] });
+    const did = checkedIn({}, '2026-10-05', '2026-10-05T23:00');
+    expect(after(down, '2026-10-05', at('2026-10-06T12:00'), did).lv.checkin).toBe(0);
+  });
+
+  it('waits a few hours before calling it a miss, and judges nothing the phone did not deliver', () => {
+    const soon = core.nudgeLearn(
+      { ...log0, plan: [{ id: 'checkin-2026-10-05', k: 'checkin', d: '2026-10-05', at: at('2026-10-05T18:00') }] },
+      {},
+      st,
+      {},
+      at('2026-10-05T20:30'),
+      true,
+    );
+    expect(soon.wait.length).toBe(1);
+    expect(soon.miss.checkin || 0).toBe(0);
+    const off = after({ ...log0, miss: { checkin: 2 } }, '2026-10-05', at('2026-10-07T12:00'), {}, false);
+    expect(off).toMatchObject({ lv: {}, miss: { checkin: 2 }, wait: [] });
+  });
+
+  it('no card in the two days after a slip', () => {
+    const log: NudgeLog = { ...log0, lv: { checkin: 2 } };
+    expect(core.nudgeCard(slip({}, core.addDays(tk, -1), '21:00'), st, ci, log, tk)).toBeNull();
+    expect(core.nudgeCard(slip({}, core.addDays(tk, -2), '21:00'), st, ci, log, tk)).not.toBeNull();
+  });
+
+  it('a new plan keeps what was due until it is judged', () => {
+    const due = { id: 'checkin-2026-10-13', k: 'checkin' as const, d: '2026-10-13', at: at('2026-10-13T18:00') };
+    const kept = core.nudgeKeep({ ...log0, plan: [due] }, plan({}, ci, at('2026-10-14T09:00')), at('2026-10-14T09:00'));
+    expect(kept.plan[0]).toEqual(due);
+    expect(kept.plan.length).toBe(1 + 2 + core.NUDGE_BACK.length);
+  });
+
+  it('a stored log is read safely', () => {
+    expect(core.normNudgeLog(null)).toMatchObject({ plan: [], wait: [], lv: {}, taps: [], bk: null });
+    expect(core.normNudgeLog({ taps: ['a', 3], opens: [1, 'x'] })).toMatchObject({ taps: ['a'], opens: [1] });
+  });
+});
+
+it('the words never say what Daybook is for, and use no contractions', () => {
+  const all = JSON.stringify({ ...core.NUDGE_WORDS, wind: core.NUDGE_WORDS.wind('10:30 PM') });
+  expect(all).not.toMatch(/porn|slip|clean|urge|addict|relapse|sober|habit|sex|streak|lose|lost your/i);
+  expect(all).not.toMatch(/n['’]t|['’](re|ll|ve|d|m)\b|\b(it|that|there|what)['’]s\b/i);
+});
+
+it('the setup asks when to check in only where the device can notify, right after the review', () => {
+  expect(core.obPages({}).some((p) => p.id === 'remind')).toBe(false);
+  const ids = core.obPages({}, { notify: true }).map((p) => p.id);
+  expect(ids.indexOf('remind')).toBe(ids.indexOf('review') + 1);
+});

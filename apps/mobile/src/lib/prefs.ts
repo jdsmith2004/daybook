@@ -1,6 +1,7 @@
 /* Choices that belong to this device, not to the log: the theme (auto, light or dark) and the sound guide. Kept in AsyncStorage, like the legacy
    app kept it in the browser (daybook.theme), so it never syncs and never goes into a backup. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NUDGE_DEFAULTS, NUDGE_SUNDAY_AT, normNudgeLog, nudgeLogNew, type NudgeLog, type NudgePrefs } from '@daybook/core';
 import { useSyncExternalStore } from 'react';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
@@ -60,30 +61,11 @@ export const useSoundPref = () =>
     () => sound,
   );
 
-/* reminders: which of the three daily reminders are on, and their times (kept on the device: each phone decides) */
-export interface ReminderPrefs {
-  morning: boolean;
-  morningAt: string;
-  checkin: boolean;
-  checkinAt: string;
-  /** the wind-down reminder follows the screens-off time: an hour before it */
-  wind: boolean;
-  /** a heads-up 90 minutes before the hard hours the log points to (core: risk.ts); on unless turned off */
-  risk: boolean;
-  /** Sunday afternoons: time for the Sunday review (core: sunday.ts) */
-  review: boolean;
-}
-export const REMINDER_DEFAULTS: ReminderPrefs = {
-  morning: false,
-  morningAt: '08:00',
-  checkin: false,
-  checkinAt: '18:00',
-  wind: false,
-  risk: true,
-  review: false,
-};
+/* reminders: which ones are on, and their times (kept on the device: each phone decides; the rules are core nudges.ts) */
+export type ReminderPrefs = NudgePrefs;
+export const REMINDER_DEFAULTS: ReminderPrefs = NUDGE_DEFAULTS;
 /** when the Sunday review reminder comes */
-export const REVIEW_AT = '17:00';
+export const REVIEW_AT = NUDGE_SUNDAY_AT;
 const RKEY = 'daybook.reminders';
 let reminders: ReminderPrefs = REMINDER_DEFAULTS;
 AsyncStorage.getItem(RKEY)
@@ -104,6 +86,33 @@ export const useReminderPrefs = () =>
     sub,
     () => reminders,
     () => reminders,
+  );
+
+/* what this phone remembers about its notifications: what is scheduled, what was tapped, and which kinds have stepped down
+   (core nudges.ts). It stays on this phone: never synced, never in a backup. */
+const NKEY = 'daybook.nudges';
+let nudges: NudgeLog & { ready: boolean } = { ...nudgeLogNew(), ready: false };
+AsyncStorage.getItem(NKEY)
+  .then((v) => {
+    nudges = { ...normNudgeLog(v ? JSON.parse(v) : null), ready: true };
+    emit();
+  })
+  .catch(() => {
+    nudges = { ...nudges, ready: true };
+    emit();
+  });
+export function setNudgeLog(f: (l: NudgeLog) => NudgeLog) {
+  const { ready, ...cur } = nudges;
+  nudges = { ...f(cur), ready };
+  emit();
+  const { ready: _r, ...keep } = nudges;
+  AsyncStorage.setItem(NKEY, JSON.stringify(keep)).catch(() => undefined);
+}
+export const useNudgeLog = () =>
+  useSyncExternalStore(
+    sub,
+    () => nudges,
+    () => nudges,
   );
 
 /* the lock: Face ID, Touch ID or the phone's passcode when Daybook opens (kept on the device) */

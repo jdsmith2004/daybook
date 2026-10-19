@@ -2,7 +2,7 @@
    numbers on a slider, low on the screen where the thumb is, whether you reached out, one optional line, then the day as it is saved and what comes next.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
-import { checkinFormOf, checkinSaveText, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
+import { checkinFormOf, checkinSaveText, fmtClock, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -14,14 +14,21 @@ import { CountUp } from '@/components/count-up';
 import { TalkDoor } from '@/components/talk-card';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
-import { Button, Icon, T } from '@/components/ui';
+import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { close } from '@/lib/nav';
+import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
+import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 type Rated = 'm' | 'c' | 'e' | 's';
+/** the clock now, rounded down to a quarter hour: "21:45" */
+const clockNear = (ms: number) => {
+  const d = new Date(ms);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
+};
 const RATE: Record<Rated, { name: string; q: string; lo: string; hi: string }> = {
   m: { name: 'Motivation', q: 'How much motivation did you have today?', lo: 'none', hi: 'lots' },
   c: { name: 'Connection', q: 'How close did you feel to people today?', lo: 'distant', hi: 'close' },
@@ -33,7 +40,8 @@ type Step = (typeof STEPS)[number] | 'end';
 
 export default function Checkin() {
   const c = useTheme();
-  const { snap, tk, now, update } = useStore();
+  const { snap, tk, now, update, say } = useStore();
+  const prefs = useReminderPrefs();
   const st = snap.settings;
   const { k: kp } = useLocalSearchParams<{ k?: string }>();
   const k = (kp && kp <= tk ? kp : tk) as DayKey;
@@ -242,8 +250,24 @@ export default function Checkin() {
         ) : null}
       </>
     );
+    /* no reminder yet (the setup's "Not now", or none asked): one offer, at about the time this check-in was done */
+    const remAt = clockNear(now);
+    const offer = remindersOffered && !prefs.checkin && k === tk;
     footer = (
-      <View style={s.foot}>
+      <View style={[s.foot, { gap: 10 }]}>
+        {offer ? (
+          <Chip
+            label={'Remind me at ' + fmtClock(remAt) + ' each day'}
+            on={false}
+            onPress={async () => {
+              const ok = await allowReminders();
+              if (ok) {
+                setReminderPrefs({ ...prefs, checkin: true, checkinAt: remAt });
+                say('Daybook will remind you at ' + fmtClock(remAt) + ', unless you have checked in already.');
+              } else say('Notifications are off for Daybook. You can turn them on in your phone’s settings.');
+            }}
+          />
+        ) : null}
         <Button label="Done" onPress={close} />
       </View>
     );

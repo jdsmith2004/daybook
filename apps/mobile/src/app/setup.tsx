@@ -14,6 +14,7 @@ import {
   OB_GUESS,
   OB_SECS,
   OB_SO,
+  NUDGE_WORDS,
   OB_THEN,
   obBecoming,
   obCap,
@@ -88,6 +89,8 @@ import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
+import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { setupKeep, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
@@ -123,9 +126,13 @@ export default function Setup() {
     if (cold && st) router.replace('/');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const rem = useReminderPrefs();
+  const [remAt, setRemAt] = useState(rem.checkinAt);
+  /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
+  const env = { notify: remindersOffered && !(f.redo && rem.checkin) };
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
-  const P = obPages(f.a);
+  const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
   const pg = P[i];
   const a = f.a;
@@ -152,7 +159,7 @@ export default function Setup() {
   const setA = (patch: SetupAnswers) => set((x) => ({ a: { ...x.a, ...patch } }));
   const go = (d: number) =>
     setF((x) => {
-      const PP = obPages(x.a);
+      const PP = obPages(x.a, env);
       const cur = PP[x.i];
       const to = Math.max(0, Math.min(PP.length - 1, x.i + d));
       if (to === x.i) return x;
@@ -168,7 +175,7 @@ export default function Setup() {
       setF((x) => {
         if (x.i !== at) return x;
         until.current = 0;
-        return { ...x, i: Math.min(obPages(x.a).length - 1, x.i + 1) };
+        return { ...x, i: Math.min(obPages(x.a, env).length - 1, x.i + 1) };
       });
     }, 380);
   };
@@ -187,8 +194,8 @@ export default function Setup() {
       ...x,
       saved: true,
       changed: r.changed,
-      /* the page after the review: "Daybook is free" when a tip link is set, then the end */
-      i: Math.min(obPages(x.a).length - 1, obPages(x.a).findIndex((p) => p.k === 'review') + 1),
+      /* the page after the review: when to check in (on a phone), "Daybook is free" when a tip link is set, then the end */
+      i: Math.min(obPages(x.a, env).length - 1, obPages(x.a, env).findIndex((p) => p.k === 'review') + 1),
     }));
     await replace({ ...snap, settings: r.st }, ['settings']);
   };
@@ -208,7 +215,7 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const back = i === 0 || pg.k === 'done' || pg.k === 'free' ? null : <Back onPress={() => !f.saved && go(-1)} />;
+  const back = i === 0 || pg.k === 'done' || pg.k === 'free' || pg.k === 'remind' ? null : <Back onPress={() => !f.saved && go(-1)} />;
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
@@ -837,6 +844,70 @@ export default function Setup() {
         );
         foot = <Next label={ch.length ? 'Save what is ticked' : 'Finish'} noIcon onPress={save} />;
       }
+      break;
+    }
+    case 'remind': {
+      /* when to check in, with the phone's one permission prompt: the question at the top, the time and what the
+         notification will look like in the middle, the times low, Remind me at the bottom (core nudges.ts) */
+      const yes = async () => {
+        if (busy()) return;
+        until.current = Date.now() + 1500;
+        const ok = await allowReminders();
+        until.current = 0;
+        if (ok) {
+          setReminderPrefs({ ...rem, checkin: true, checkinAt: remAt, review: true });
+          buzz('lit');
+        } else say('Notifications are off for Daybook. You can turn them on later in your phone’s settings.');
+        go(1);
+      };
+      body = (
+        <>
+          <Q h="When should Daybook check in with you?" sub="One short reminder a day, so the check-in becomes part of your evening." />
+          <Mid>
+            <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
+              <Text style={[s.remBig, { color: c.ink }]}>{fmtClock(remAt)}</Text>
+              {/* what it will look like on a locked screen: plain words that say nothing about what Daybook is for */}
+              <View
+                style={[s.lock, { backgroundColor: c.scheme === 'dark' ? c.surface2 : '#2A2350' }]}
+                accessible
+                accessibilityLabel="A reminder will look like this: Daybook. Check in. Under a minute.">
+                <View style={[s.lockIc, { backgroundColor: c.accent }]}>
+                  <Icon name="flame" size={16} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.lockT}>Daybook</Text>
+                  <Text style={s.lockB}>{NUDGE_WORDS.checkin}</Text>
+                </View>
+                <Text style={s.lockW}>now</Text>
+              </View>
+            </View>
+          </Mid>
+          <View style={s.grid3}>
+            {OB_REMIND.map((x) => (
+              <Opt
+                key={x}
+                on={remAt === x}
+                t={t}
+                style={{ flexBasis: '30%', flexGrow: 1, justifyContent: 'center' }}
+                onPress={() => {
+                  setRemAt(x);
+                  buzz('tap');
+                }}>
+                <Text style={[s.optT, { color: c.ink, flex: 0 }]}>{fmtClock(x)}</Text>
+              </Opt>
+            ))}
+          </View>
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+            Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Never at night.
+          </T>
+        </>
+      );
+      foot = (
+        <View key="f" style={{ flex: 1, gap: 6 }}>
+          <Next key="n" label="Remind me" onPress={yes} off={false} />
+          <Ghost label="Not now" onPress={() => !busy() && go(1)} />
+        </View>
+      );
       break;
     }
     case 'free': {
@@ -1617,7 +1688,16 @@ function Hold({ onDone }: { onDone: () => void }) {
   );
 }
 
+/** the reminder times the setup offers */
+const OB_REMIND = ['17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+
 const s = StyleSheet.create({
+  remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
+  lock: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14 },
+  lockIc: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  lockT: { fontFamily: font.bodyBold, fontSize: 14, color: '#FFFFFF' },
+  lockB: { fontFamily: font.body, fontSize: 14, lineHeight: 19, color: '#FFFFFFE6' },
+  lockW: { fontFamily: font.body, fontSize: 12, color: '#FFFFFFA6', alignSelf: 'flex-start' },
   top: {
     flexDirection: 'row',
     alignItems: 'center',

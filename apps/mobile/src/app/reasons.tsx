@@ -149,11 +149,12 @@ export default function Reasons() {
             if (edit === i)
               return (
                 <View key={i} style={[s.item, { borderColor: t.ic }]}>
+                  {/* the group comes first, so the box and its Save stay together above the keyboard */}
+                  <CatChips label="Group" cur={editCat} onPick={setEditCat} />
                   <Field label={'Reason ' + (i + 1)} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} autoFocus />
                   <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
                     {draft.length} of {REASON_LEN}
                   </T>
-                  <CatChips label="Group" cur={editCat} onPick={setEditCat} />
                   <View style={s.row}>
                     <Button label="Save" onPress={save} />
                     <Button kind="ghost" label="Cancel" onPress={() => setEdit(null)} />
@@ -245,13 +246,13 @@ export default function Reasons() {
             <T v="small" tone="muted">
               In your own words. Short and true beats long and fancy.
             </T>
-            <Field key={addKey} label="New reason" hideLabel multiline maxLength={REASON_LEN} value={add} placeholder="I want to…" onChangeText={setAdd} />
-            <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
-              {add.length} of {REASON_LEN}
-            </T>
             <CatChips label="Group, optional" cur={addCat} onPick={(id) => setAddCat(addCat === id ? null : id)} />
             <T v="small" tone="muted">
               Picking a group is optional. If you skip it, Daybook guesses.
+            </T>
+            <Field key={addKey} label="New reason" hideLabel multiline maxLength={REASON_LEN} value={add} placeholder="I want to…" onChangeText={setAdd} />
+            <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
+              {add.length} of {REASON_LEN}
             </T>
             <Button label="Add reason" disabled={!add.trim()} onPress={addIt} />
           </Card>

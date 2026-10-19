@@ -36,7 +36,7 @@ export default function Wind() {
   return (
     <SceneFrame title="Wind-down" sky="night" onClose={close}>
       {/* the sky gives way when the list is long, so the list, the button and Not yet all fit */}
-      <FitArt>
+      <FitArt drop={0.6}>
         <NightSky />
       </FitArt>
       <T v="title" style={s.c} accessibilityRole="header">

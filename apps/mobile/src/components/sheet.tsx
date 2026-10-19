@@ -1,8 +1,8 @@
 /* A sheet: a page that opens over everything for one thing (how points work, where I am, a day, an entry, a badge). It has a
    title, an optional line under it, and a Close button. Like the legacy sheets. */
 import { router, useRoute } from 'expo-router';
-import type { ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,12 +19,15 @@ export function SheetFrame({
   children,
   onClose = closeSheet,
   footer,
+  scrollRef,
 }: {
   title: string;
   sub?: string;
   children: ReactNode;
   onClose?: () => void;
   footer?: ReactNode;
+  /** to bring something low in the sheet into view (a confirm that opens at the bottom) */
+  scrollRef?: Ref<ScrollViewInstance>;
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
@@ -34,6 +37,7 @@ export function SheetFrame({
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView
+        ref={scrollRef}
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"

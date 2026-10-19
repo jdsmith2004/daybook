@@ -24,12 +24,13 @@ import {
   type When,
 } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AddOwn, BigOption, Field } from '@/components/choices';
 import { Pill } from '@/components/form';
+import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { WhenPill, WhenSheet } from '@/components/when';
@@ -54,6 +55,7 @@ export default function Entry() {
   const [all, setAll] = useState(false);
   const [adding, setAdding] = useState<'trig' | 'did' | null>(null);
   const [del, setDel] = useState(false);
+  const scroll = useRef<ScrollViewInstance>(null);
   if (!st || !isKey(date)) return <Redirect href="/" />;
   const e = id ? snap.days[date]?.events.find((x) => x.id === id) || null : null;
 
@@ -75,10 +77,6 @@ export default function Entry() {
     return (
       <SheetFrame title="Add an entry">
         <T style={{ fontSize: 18 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
-        <View style={{ gap: 10 }}>
-          <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
-          <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
-        </View>
         <WhenPill w={when || whenStart(date, now, roll)} none={!when} now={now} onPress={() => setWhenOpen(true)} />
         <WhenSheet
           open={whenOpen}
@@ -96,6 +94,11 @@ export default function Entry() {
           {isToday ? 'Filled in for you. Tap it if this happened earlier.' : 'Tap it to set the time, or say you are not sure.'}
           {ph.p === 'tracking' ? ' Tracking week: no pass or fail, just learning.' : ''} Either choice earns points for being honest.
         </T>
+        {/* the two answers sit low, by the thumb */}
+        <Dock>
+          <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
+          <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
+        </Dock>
       </SheetFrame>
     );
   }
@@ -140,7 +143,7 @@ export default function Entry() {
   };
   const sos = urSosLines(e);
   return (
-    <SheetFrame title={(rode ? 'Rode it out' : 'Slipped') + (e.time ? ' · ' + fmtClock(e.time) : '')}>
+    <SheetFrame title={(rode ? 'Rode it out' : 'Slipped') + (e.time ? ' · ' + fmtClock(e.time) : '')} scrollRef={scroll}>
       {fresh ? (
         <View style={[s.saved, { backgroundColor: c.mintSoft }]}>
           <T tone="mintText" style={{ flex: 1 }}>
@@ -241,7 +244,14 @@ export default function Entry() {
           </View>
         </View>
       ) : (
-        <Pressable accessibilityRole="button" onPress={() => setDel(true)} style={s.delBtn}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setDel(true);
+            /* the question opens below the fold: bring it up */
+            setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 60);
+          }}
+          style={s.delBtn}>
           <Icon name="trash" size={18} color={c.danger} />
           <Text style={{ fontFamily: font.bodySemi, color: c.danger }}>Delete</Text>
         </Pressable>

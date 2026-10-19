@@ -7,7 +7,7 @@
       "sub": "A slip is data, not a reset. What you build stays yours.",
       "bg": "night",
       "theme": "light",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "sos",
@@ -16,7 +16,7 @@
       "sub": "Breathe first, then a tool that fits the moment.",
       "bg": "dawn",
       "theme": "light",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "grow",
@@ -25,7 +25,7 @@
       "sub": "Points only go up. A slip never takes them away.",
       "bg": "night",
       "theme": "dark",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "pattern",
@@ -34,7 +34,7 @@
       "sub": "Your log shows the hours and moments that are hardest for you.",
       "bg": "cream",
       "theme": "light",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "learn",
@@ -43,7 +43,7 @@
       "sub": "Short, plain and hopeful. A few minutes a day.",
       "bg": "day",
       "theme": "light",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "private",
@@ -52,7 +52,7 @@
       "sub": "No ads, no tracking. Without an account, your log never leaves your phone.",
       "bg": "cream",
       "theme": "light",
-      "sizes": ["ios69", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "feature",

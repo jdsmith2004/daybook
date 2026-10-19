@@ -1,7 +1,7 @@
 /* The screenshot studio (dev only, web only, EXPO_PUBLIC_SHOTS=1): one store image at its exact size. The real app runs in a
    phone-sized frame (an iframe of this same build, on the demo log), with a caption above it on a brand background.
    Everything about the look is in config.ts. URL params:
-     size     a key of SIZES (ios69, play-phone, play-feature, ios-header, ios-search)
+     size     a key of SIZES (ios69, ios63, play-phone, play-feature, ios-header, ios-search)
      screen   the app path to show, like / or /learn (screen2, screen3: more phones in the wide layouts)
      caption  the headline; sub: a smaller line under it
      bg       a key of BACKGROUNDS; theme: light or dark (the app's own theme inside the phone)

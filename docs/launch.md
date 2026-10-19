@@ -133,7 +133,8 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
 - **Screenshots:** the six in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
-  (README, "Store screenshots"). Download them from GitHub on whichever computer you are using.
+  (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same six from
+  `store-assets/ios63/` (1206 × 2622) there. Download them from GitHub on whichever computer you are using.
 - **Header and search results** (new in App Store Connect for iOS 27; optional, and reviewed like the rest): the header
   is `store-assets/ios-header/01-header.png` (3840 × 1646, 21:9) and the search card `store-assets/ios-search/01-search.png`
   (3840 × 2560, 3:2), on the version page's Header and Search Results tab. Apple asks that these suit a 4+ rating even
@@ -180,6 +181,7 @@ money or is unclear.
    ("Prepare for Submission").
 2. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL
    (empty), copyright. Upload the six screenshots from store-assets/ios69/ in order to the 6.9-inch slot
+   (or store-assets/ios63/ to the 6.1-inch or 6.3-inch slot)
    (download them from GitHub first), and the header and search images from store-assets/ios-header and ios-search.
 3. Build: choose the newest build that finished processing (the one I tested in TestFlight).
 4. App Information: name and subtitle from step 6; category Health & Fitness, second Lifestyle;

@@ -87,7 +87,7 @@ npm run shots -- --size ios69    # one size
 ```
 
 **Add a scene:** add an entry to `shots.json`: `name`, `sizes` (keys of `SIZES` in `apps/mobile/src/shots/config.ts`:
-`ios69`, `play-phone`, `play-feature`, `ios-header`, `ios-search`), `screen` (an app path, like `/learn` or
+`ios69`, `ios63`, `play-phone`, `play-feature`, `ios-header`, `ios-search`), `screen` (an app path, like `/learn` or
 `/journal?pane=patterns`; `screen2` and `screen3` put more phones in the wide images), `caption` and `sub`, `bg` (a key
 of `BACKGROUNDS`), `theme` (`light` or `dark`), and if needed `at` (the demo moment, like `2026-10-17T21:30:00`) and
 `scroll` (pixels down the screen). Files are numbered in the order of `shots.json`. Captions only describe what the app

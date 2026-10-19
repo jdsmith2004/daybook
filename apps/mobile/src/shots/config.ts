@@ -16,6 +16,8 @@ export interface Size {
 export const SIZES: Record<string, Size> = {
   /* App Store, iPhone 6.9-inch: one of the three sizes Apple takes for it (1290 x 2796) */
   ios69: { w: 1290, h: 2796, scale: 3, kind: 'phone', device: 'iphone', use: 'App Store screenshots, iPhone 6.9-inch' },
+  /* App Store, iPhone 6.3-inch (1206 x 2622), for the 6.1-inch and 6.3-inch slot */
+  ios63: { w: 1206, h: 2622, scale: 3, kind: 'phone', device: 'iphone', use: 'App Store screenshots, iPhone 6.3-inch' },
   /* Google Play phone screenshots: 9:16, 1080 wide (big enough for Play's featured spots) */
   'play-phone': { w: 1080, h: 1920, scale: 3, kind: 'phone', device: 'android', use: 'Google Play phone screenshots' },
   /* Google Play feature graphic, the banner at the top of the listing */

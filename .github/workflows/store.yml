@@ -39,6 +39,45 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - name: Build on EAS and send to TestFlight
+      # The build is queued without waiting, then watched every 30 seconds, so the run page and its summary show where it
+      # is (in the queue and at what place, building, done) instead of one silent step.
+      - name: Queue the build on Expo
+        id: queue
         working-directory: apps/mobile
-        run: npx --yes eas-cli@24.10.0 build --platform ios --profile production --non-interactive --auto-submit
+        run: |
+          npx --yes eas-cli@24.10.0 build --platform ios --profile production --non-interactive --no-wait --json > "$RUNNER_TEMP/build.json"
+          id=$(jq -r '.[0].id' "$RUNNER_TEMP/build.json")
+          url="https://expo.dev/accounts/jeffspresso/projects/daybook/builds/$id"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "$(date -u +%H:%M) UTC: build queued: $url"
+          { echo "## iPhone build"; echo; echo "- $(date -u +%H:%M) UTC: queued on Expo ([see it there]($url))"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Wait for the build (status every 30 seconds)
+        working-directory: apps/mobile
+        run: |
+          start=$(date +%s); last=''
+          while true; do
+            b=$(npx --yes eas-cli@24.10.0 build:view ${{ steps.queue.outputs.id }} --json 2>/dev/null || echo '{}')
+            status=$(echo "$b" | jq -r '.status // "UNKNOWN"')
+            place=$(echo "$b" | jq -r '.queuePosition // empty')
+            left=$(echo "$b" | jq -r 'if .estimatedWaitTimeLeftSeconds then (.estimatedWaitTimeLeftSeconds / 60 | ceil | tostring) else empty end')
+            mins=$(( ($(date +%s) - start) / 60 ))
+            line="$status"
+            [ -n "$place" ] && line="$line, place $place in the queue"
+            [ -n "$left" ] && line="$line, about $left min to start"
+            echo "$(date -u +%H:%M) UTC, $mins min: $line"
+            if [ "$status" != "$last" ]; then echo "- $(date -u +%H:%M) UTC ($mins min): $status" >> "$GITHUB_STEP_SUMMARY"; last=$status; fi
+            case "$status" in
+              FINISHED) exit 0 ;;
+              ERRORED | CANCELED)
+                echo "::error::The build $status after $mins min. The Expo link in the summary has its logs."
+                exit 1
+                ;;
+            esac
+            sleep 30
+          done
+      - name: Send to TestFlight
+        working-directory: apps/mobile
+        run: |
+          echo "- $(date -u +%H:%M) UTC: sending to App Store Connect" >> "$GITHUB_STEP_SUMMARY"
+          npx --yes eas-cli@24.10.0 submit --platform ios --profile production --id ${{ steps.queue.outputs.id }} --non-interactive --wait
+          { echo "- $(date -u +%H:%M) UTC: sent. Apple now processes it (often 10 to 30 minutes); it then shows as Ready to test in TestFlight."; } >> "$GITHUB_STEP_SUMMARY"

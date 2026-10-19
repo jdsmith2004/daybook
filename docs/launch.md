@@ -88,7 +88,8 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 
 1. On github.com/jdsmith2004/daybook: Actions, **App Store**, Run workflow, on `main`.
 2. It runs the checks, builds on Expo (the free queue can take a while), and sends the build to TestFlight. A green check
-   means it is on its way.
+   means it is on its way. While it runs, the "Wait for the build" step prints the status every 30 seconds (the place in
+   Expo's queue, then building), and the run's summary page lists each stage with its time and a link to the build on Expo.
 3. In App Store Connect, TestFlight: when the build says Ready to test (about 15 minutes of processing), add yourself as a
    tester and install it with the TestFlight app. Walk it on your phone before anything goes to review.
 

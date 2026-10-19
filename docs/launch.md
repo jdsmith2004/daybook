@@ -136,7 +136,8 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   whichever computer you are using.
 - **Age rating:** answer the questions as they are: no nudity or sexual content; mature themes (porn is named and talked
   about plainly); medical or treatment information: infrequent (lessons on changing a habit, not treatment); no user
-  chat, no web browsing, no gambling. If it offers a higher rating than it gives, choose 18+, which matches the terms.
+  chat, no web browsing, no gambling. Daybook is for anyone 13 or older (the terms and the privacy policy say so), so answer
+  honestly and take the rating Apple gives; if it comes out at 18+, tell Claude, because then teenagers could not get it.
 - **App Privacy** (what Apple shows as the privacy label). Data is collected only for people who make an account, only to
   make the app work, linked to that account, and never used to track:
   - Contact info: email address.

@@ -25,6 +25,7 @@ apps/mobile/android/
 *.keystore
 *.mobileprovision
 google-services.json
+play-key.json
 GoogleService-Info.plist
 
 # Terraform: state and inputs can hold account details, so they stay out of git

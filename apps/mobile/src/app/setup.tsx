@@ -84,7 +84,7 @@ import {
   PicWeek,
   whenIcon,
 } from '@/components/setup-art';
-import { openTip } from '@/components/support';
+import { openTip, TIP_URL } from '@/components/support';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { buzz } from '@/lib/feel';
@@ -129,7 +129,7 @@ export default function Setup() {
   const rem = useReminderPrefs();
   const [remAt, setRemAt] = useState(rem.checkinAt);
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
-  const env = { notify: remindersOffered && !(f.redo && rem.checkin) };
+  const env = { notify: remindersOffered && !(f.redo && rem.checkin), tips: !!TIP_URL };
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const P = obPages(f.a, env);

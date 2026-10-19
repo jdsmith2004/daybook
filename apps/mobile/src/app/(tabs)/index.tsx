@@ -27,7 +27,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AccountCard } from '@/components/account';
-import { TipCard, TipTop } from '@/components/support';
+import { TIP_URL, TipCard, TipTop } from '@/components/support';
 import { Hero } from '@/components/hero';
 import { NudgeCard } from '@/components/nudge-card';
 import { RiskCard } from '@/components/risk-card';
@@ -93,7 +93,7 @@ export default function Today() {
   /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
   const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
-  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask);
+  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL);
   const sub = (
     <>
       {be ? (
@@ -123,7 +123,7 @@ export default function Today() {
       eyebrow="My Daybook"
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
-      action={tipButton(snap.days, tk) ? <TipTop /> : undefined}>
+      action={tipButton(snap.days, tk, TIP_URL) ? <TipTop /> : undefined}>
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
       <TalkCard snap={snap} now={now} />

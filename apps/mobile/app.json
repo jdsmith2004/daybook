@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.jdsmith2004.daybook",
       "adaptiveIcon": {
         "backgroundColor": "#1B1550",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

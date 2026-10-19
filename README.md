@@ -50,6 +50,9 @@ plain HTML in `apps/mobile/public`, published with the web app:
 - Privacy policy: https://d3c9g6kent5bsr.cloudfront.net/privacy.html
 - Terms of use: https://d3c9g6kent5bsr.cloudfront.net/terms.html
 
+Android has its own button (Actions, **Google Play**) and its own one-time setup and listing: step 8 of
+[docs/launch.md](docs/launch.md).
+
 When something the app keeps or sends changes, update `privacy.html` (and its date) in the same change, and the App
 Privacy answers in launch.md step 6.
 

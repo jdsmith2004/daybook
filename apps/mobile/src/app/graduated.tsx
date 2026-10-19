@@ -1,7 +1,7 @@
 /* "You graduated": the celebration the first time graduation is earned (opened from Today), and the award page after that
    (opened from Milestones). Fireworks and confetti, the flame in its cap, the numbers that got the person here, and who they
    are becoming. Nothing about Today changes. Under it, quietly, the tip link (support.ts), when one is set. */
-import { fmtDate, gameCompute, GRAD_DAYS, GRAD_WINDOW, gradInfo, lessonsDone, SUPPORT_URL, TIP_WORDS, urEvidence } from '@daybook/core';
+import { fmtDate, gameCompute, GRAD_DAYS, GRAD_WINDOW, gradInfo, lessonsDone, TIP_WORDS, urEvidence } from '@daybook/core';
 import { Redirect } from 'expo-router';
 import { useEffect } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
@@ -9,7 +9,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { Confetti } from '@/components/celebrate';
 import { Fireworks, GradFlame } from '@/components/grad';
 import { SceneFrame } from '@/components/scene';
-import { openTip } from '@/components/support';
+import { openTip, TIP_URL } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -74,7 +74,7 @@ export default function Graduated() {
           <T v="small" style={[s.p, { color: ink, opacity: 0.85 }]}>
             Your flame wears its cap from now on. Today stays just as it is, and a hard day later never takes this away.
           </T>
-          {SUPPORT_URL ? (
+          {TIP_URL ? (
             <T v="small" style={[s.p, { color: ink, opacity: 0.85 }]}>
               {TIP_WORDS.grad}{' '}
               <Text accessibilityRole="link" onPress={openTip} style={{ fontFamily: font.bodySemi, color: ink, textDecorationLine: 'underline' }}>

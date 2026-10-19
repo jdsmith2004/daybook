@@ -215,6 +215,8 @@ export interface ObPage {
 /** what the device can do: notify (a phone app; a web page cannot remind once it is closed) */
 export interface ObEnv {
   notify?: boolean;
+  /** false where no tip link is offered (Android): the free page, with its tip button, is skipped */
+  tips?: boolean;
 }
 export const OB_PAGES: ObPage[] = [
   { id: 'hello', s: 'welcome', k: 'hello' },
@@ -347,7 +349,7 @@ export const OB_PAGES: ObPage[] = [
   /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
   /* Daybook is free, said plainly with a tip button (support.ts); only when a tip link is set */
-  { id: 'free', s: 'plan', k: 'free', need: () => !!SUPPORT_URL },
+  { id: 'free', s: 'plan', k: 'free', need: (_a, env) => !!SUPPORT_URL && env.tips !== false },
   { id: 'done', s: 'plan', k: 'done' },
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env));

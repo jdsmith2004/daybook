@@ -192,3 +192,67 @@ money or is unclear.
 
 Review usually takes one to three days. If Apple asks a question or rejects it, paste their message to Claude Code: the
 reply, or the fix and a new build (step 5), goes from there. When it is approved, press **Release this version**.
+
+## 8. Google Play (Android)
+
+The same app, built and sent by its own button: Actions, **Google Play**, Run workflow (`.github/workflows/play.yml`). It
+builds on Expo, then sends the build to Google Play as a **draft on the internal testing track**; nothing reaches the
+public until you roll it out in the Play Console. The package name is `com.jdsmith2004.daybook` (in `apps/mobile/app.json`),
+the same as on iPhone, and like the bundle ID it can never change once the first build is uploaded.
+
+**Rules that change: check them before relying on them.** Two of Google's rules shape this plan, and both have changed
+before. Read the current wording first:
+
+- New **personal** developer accounts must run a **closed test** before they can publish to everyone: when this was
+  written, at least 12 testers opted in for 14 days in a row. Organization accounts are exempt.
+  [Google's help page](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en).
+- Google's API cannot create an app's first release, so **the first build is uploaded by hand** in the Play Console;
+  after that the button sends builds itself. [Expo's Android submit docs](https://docs.expo.dev/submit/android/).
+
+**No tip link on Android.** Google Play asks that tips to a developer go through its own billing, so the Android app shows
+no tip link anywhere (Today, More, setup, graduation); iPhone and the web keep it. If tips on Android are wanted later,
+they would be Play in-app products, and that is a separate piece of work.
+
+1. **The developer account (only you).** play.google.com/console: sign up. It costs **$25, once**, and Google checks your
+   identity (and asks for a phone and maybe a document). Choose **personal** unless you have a registered business.
+   Claude in Chrome never pays or types identity details.
+2. **The app.** In the Play Console: Create app. Name: Daybook: Quit Without Shame. Default language: English (United
+   States). App, Free. Accept the declarations yourself.
+3. **The key for the button (you, about 10 minutes).** It lets the workflow upload builds. It is a secret: it goes only into
+   GitHub, never into a chat, a commit or a file in this repository.
+   1. console.cloud.google.com: make (or pick) a project, then IAM and admin, Service accounts, Create service account
+      (name: `daybook-play`). No roles are needed here.
+   2. On that account: Keys, Add key, JSON. A file downloads.
+   3. Play Console, Users and permissions, Invite new users: the service account's email, with access to Daybook and the
+      **Release** permissions (release to testing tracks and production, manage testing tracks).
+   4. github.com/jdsmith2004/daybook: Settings, Secrets and variables, Actions, New repository secret. Name:
+      `GOOGLE_PLAY_KEY`. Value: the whole JSON file's text. Then delete the downloaded file.
+4. **The first build, by hand.** Run the Google Play workflow. The build finishes, and the send step fails the first time,
+   because Google has never seen the app. Open the Expo link in the run's summary, download the `.aab`, and in the Play
+   Console: Testing, Internal testing, Create new release, upload it, save. From now on the button sends each build.
+5. **Testers.** Internal testing: add yourself (and anyone helping) by Google account email and install from the link it
+   gives. Then the closed test for production access: Testing, Closed testing, a track with at least the number of testers
+   Google asks for, kept opted in for the days it asks. Ask people you trust; the testers' list is private.
+6. **The listing and the forms (Claude drafts, you or Claude in Chrome paste).** Main store listing, plus every page in
+   Policy, App content:
+   - **App name:** Daybook: Quit Without Shame
+   - **Short description** (80 letters at most): Private help to quit porn. Log urges and slips without shame.
+   - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
+     is free, with nothing to unlock." (no tips on Android).
+   - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), a feature graphic at 1024 × 500,
+     and 2 to 8 phone screenshots. Claude makes the feature graphic and the screenshots from the app; ask for them.
+   - **Category:** Health & Fitness. **Contact email:** jeffreydsmith.cs@gmail.com. **Privacy policy:**
+     https://d3c9g6kent5bsr.cloudfront.net/privacy.html
+   - **App access:** some features need a sign-in (lessons after the first three): give the review test account from step
+     6, typed in by you.
+   - **Ads:** no. **Target audience:** 13 and older (13 to 15, 16 to 17, 18 and over); not under 13, which would bring in
+     the Families rules. **Content rating:** answer the questionnaire as in step 6 (porn is named and discussed plainly; no
+     sexual images, no user chat). **Health apps:** declare it as a health and wellness app (habit change), not a medical
+     device.
+   - **Data safety** (collected only with an account; all of it optional, encrypted in transit, never shared, and people
+     can delete it in the app or by email): personal info (email address, user IDs, religious beliefs from the faith
+     question), health and fitness (health info: the log), app activity (other user-generated content: notes and plans).
+     Used for app functionality and account management only.
+7. **Production.** When the closed test is done, apply for production access in the Play Console's dashboard, then release
+   the newest build to production (start at a staged rollout if it offers one). Review usually takes a few days; paste any
+   message from Google to Claude Code.

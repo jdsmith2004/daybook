@@ -62,3 +62,8 @@ it('the setup shows its free page only when a link is set, just before the end',
   const all = core.OB_PAGES.map((p) => p.id);
   expect(all.indexOf('free')).toBe(all.indexOf('done') - 1);
 });
+
+it('the setup skips its free page where no tip link is offered (Android)', () => {
+  expect(core.obPages({}, { tips: false }).some((p) => p.id === 'free')).toBe(false);
+  expect(core.obPages({}, { tips: true }).some((p) => p.id === 'free')).toBe(!!core.SUPPORT_URL);
+});

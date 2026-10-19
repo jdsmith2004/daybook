@@ -321,7 +321,7 @@ function WeekBar({ w, max, cur, i }: { w: StoryWeek; max: number; cur: boolean; 
           }}
         />
       </View>
-      <Text style={[s.wkL, { color: cur ? c.ink : c.muted }]}>{cur ? 'This' : m + '/' + d}</Text>
+      <Text style={[s.wkL, { color: cur ? c.ink : c.muted }]}>{m + '/' + d}</Text>
     </View>
   );
 }

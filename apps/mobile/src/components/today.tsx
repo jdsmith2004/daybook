@@ -410,8 +410,6 @@ const s = StyleSheet.create({
   pts: { fontFamily: font.display, fontSize: 32, lineHeight: 36 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   win: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 },
-  cellBox: { width: `${100 / 7}%`, alignItems: 'center', justifyContent: 'center' },
   cell: { width: 26, height: 26, borderRadius: 13 },
   cellSm: { width: 12, height: 12, borderRadius: 6 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 6 },

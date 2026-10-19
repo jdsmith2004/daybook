@@ -539,7 +539,11 @@ export default function Review() {
               </View>
             ) : null}
             <Button label={saved ? 'Save my week' : 'Save my week · +20'} onPress={() => save(goal)} />
-            {!goal ? <Link label="No goal this week" onPress={() => save(null)} /> : null}
+            {!goal ? (
+              <View style={{ alignItems: 'center' }}>
+                <Link label="No goal this week" onPress={() => save(null)} />
+              </View>
+            ) : null}
           </Dock>
         </>
       );

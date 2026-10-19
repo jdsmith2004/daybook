@@ -650,7 +650,9 @@ export default function Log() {
         {noteAndTime}
         <Dock>
           <Button label="Done" onPress={close} />
-          <Link label="Undo this entry" onPress={undo} />
+          <View style={{ alignItems: 'center' }}>
+            <Link label="Undo this entry" onPress={undo} />
+          </View>
         </Dock>
       </>
     );

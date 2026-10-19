@@ -1,7 +1,8 @@
 /* A line of the person's own words that reads like a page, not a form: a small label, their words, and a pencil. Tap it to
    change the words in place; Done (or leaving the box) saves. With nothing written yet it shows a gentle prompt instead. */
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Icon, T } from '@/components/ui';

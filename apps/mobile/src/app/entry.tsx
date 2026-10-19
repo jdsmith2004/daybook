@@ -25,7 +25,8 @@ import {
 } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { AddOwn, BigOption, Field } from '@/components/choices';
 import { Pill } from '@/components/form';

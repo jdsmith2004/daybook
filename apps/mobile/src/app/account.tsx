@@ -5,7 +5,8 @@
 import { CognitoError, emailOk, PASSWORD_MIN, passwordOk } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { TextInput } from '@/components/text';
 
 import { Field } from '@/components/choices';
 import { Segments } from '@/components/form';

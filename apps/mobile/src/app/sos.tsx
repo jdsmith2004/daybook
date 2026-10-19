@@ -37,7 +37,8 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';

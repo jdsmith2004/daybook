@@ -6,7 +6,8 @@
 import { calNeighbors, daySummary, fmtClock, fmtDate, isKey, phaseLabel, setScreensOff, stepSleep, type CalKind } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { CheckinBlock } from '@/components/checkin';
 import { Stepper, YesNo } from '@/components/form';

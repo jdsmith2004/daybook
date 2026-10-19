@@ -2,7 +2,8 @@
    it, and "Add" puts a new one at the end. A row just added (from a lesson, or here) glows for a moment so it is easy to find. */
 import { listAdd, listEdit, listMove, listRemove, LISTS, type ListKey } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, TextInput, View, type LayoutChangeEvent } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { TextInput } from '@/components/text';
 
 import { Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';

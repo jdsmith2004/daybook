@@ -4,7 +4,8 @@
    With Reduce Motion on, they show as they end. */
 import { lxLoopNodes, TALK_CARDS, type Art, type RkArt, type Settings, type TalkArt } from '@daybook/core';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
+import { Animated, Easing, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { RkArtView } from '@/components/rk-art';

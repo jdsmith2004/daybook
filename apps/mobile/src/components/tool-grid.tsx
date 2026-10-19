@@ -1,7 +1,8 @@
 /* Every tool, in its four groups (the legacy toolCard and the Tools grid). Used by the Tools tab and by the second SOS screen,
    where each tool can carry a small tag ("Worked 3 of 4", core: urTags). */
 import { TOOL_GROUPS, TOOLS, urTried, type Days } from '@daybook/core';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { font, useTheme, type Palette } from '@/lib/theme';

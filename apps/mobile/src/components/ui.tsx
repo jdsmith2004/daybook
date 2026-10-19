@@ -1,7 +1,8 @@
 /* The small building blocks every screen uses: text, cards, buttons, chips, icons and progress bars. */
 import { ICO } from '@daybook/core';
 import { createContext, useContext, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { BIG_MAX, Text, TEXT_MAX } from '@/components/text';
 import { SvgXml } from 'react-native-svg';
 
 import { font, useTheme, type Palette } from '@/lib/theme';
@@ -20,7 +21,7 @@ export function T({
   const c = useTheme();
   const ink = useContext(InkContext);
   const color = ink && (tone === 'ink' || tone === 'muted') ? ink[tone] : (c[tone as keyof Palette] as string);
-  return <Text {...rest} style={[styles[v], { color }, style]} />;
+  return <Text maxFontSizeMultiplier={v === 'title' || v === 'big' || v === 'h2' ? BIG_MAX : TEXT_MAX} {...rest} style={[styles[v], { color }, style]} />;
 }
 
 export function Card({ children, style, tone }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'plain' | 'note' }) {

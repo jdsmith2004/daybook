@@ -20,7 +20,8 @@ import {
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { EntryRows } from '@/components/entry-rows';
 import { Flames, Missions } from '@/components/rekindle';

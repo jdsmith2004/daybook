@@ -3,7 +3,8 @@
    changes a line's words before it is added (it sits at the top, above the keyboard), and a tool or page to open. */
 import { ITEM_WHEN_LEN, ITEM_WHERE, itemButton, itemDone, itemLen, type PItem } from '@daybook/core';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { font, useTheme, type Tone } from '@/lib/theme';

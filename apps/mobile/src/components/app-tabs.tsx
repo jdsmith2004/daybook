@@ -3,7 +3,11 @@
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import { Text } from '@/components/text';
+
+/** tab labels barely grow with the phone's text size, like the iOS tab bar (a long press is not needed: each tab has an icon) */
+const TAB_MAX = 1.15;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui';
@@ -57,7 +61,9 @@ function TabButton({ children, isFocused, icon, ...props }: TabTriggerSlotProps 
       accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [s.tab, isFocused && { backgroundColor: c.accentSoft }, pressed && { opacity: 0.7 }]}>
       <Icon name={icon} size={26} color={isFocused ? c.accentText : c.muted} />
-      <Text style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>{children}</Text>
+      <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>
+        {children}
+      </Text>
     </Pressable>
   );
 }
@@ -88,7 +94,9 @@ function SosTab() {
             ]}>
             <Icon name="life" size={29} color={c.sosInk} />
           </View>
-          <Text style={[s.label, { color: c.coralText, fontFamily: font.bodyBold, marginTop: 30 }]}>SOS</Text>
+          <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: c.coralText, fontFamily: font.bodyBold, marginTop: 30 }]}>
+            SOS
+          </Text>
         </>
       )}
     </Pressable>

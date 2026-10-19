@@ -4,7 +4,8 @@
 import { calLabel, calMonth, type CalKind, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';

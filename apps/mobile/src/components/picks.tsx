@@ -3,6 +3,7 @@
    for a thumb. */
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { AnimatedText } from '@/components/text';
 
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
@@ -81,9 +82,9 @@ function PickBtn({ label, a11y, on, big, onPress }: { label: string; a11y: strin
             ],
           },
         ]}>
-        <Animated.Text style={[s.t, big && s.tBig, { color: fill.interpolate({ inputRange: [0, 1], outputRange: [c.ink, c.accentInk] }) }]} numberOfLines={1}>
+        <AnimatedText style={[s.t, big && s.tBig, { color: fill.interpolate({ inputRange: [0, 1], outputRange: [c.ink, c.accentInk] }) }]} numberOfLines={1}>
           {label}
-        </Animated.Text>
+        </AnimatedText>
       </Animated.View>
     </Pressable>
   );

@@ -27,7 +27,8 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';

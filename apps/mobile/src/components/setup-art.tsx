@@ -2,7 +2,8 @@
    the legacy obPic* pictures: the Today screen in a phone with notes pointing at it, the numbered steps, the lesson cards
    in a stack, SOS on the tab bar, and the shapes (the curves, the heart, the people) are the legacy SVG paths. */
 import { fmtClock, fmtHour, isTime, OB_MINS, OB_PEAK, OB_WHEN, obTop, obTool, type SetupAnswers } from '@daybook/core';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Flame } from '@/components/flame';

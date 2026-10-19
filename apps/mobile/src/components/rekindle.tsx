@@ -3,7 +3,8 @@
    pictures are in rk-art.tsx. */
 import { RK_WAIT, type Mission } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Path } from 'react-native-svg';
 
 import { Flame } from '@/components/flame';

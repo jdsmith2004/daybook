@@ -17,7 +17,8 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Button, Card, Icon, T } from '@/components/ui';
 import { font, toneOf, useTheme } from '@/lib/theme';

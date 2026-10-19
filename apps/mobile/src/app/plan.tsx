@@ -34,7 +34,8 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Pressable, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Editable } from '@/components/editable';

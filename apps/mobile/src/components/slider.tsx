@@ -9,6 +9,7 @@
      everything moves straight to where it ends. */
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { AnimatedText } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -259,8 +260,8 @@ export function SliderValue({
     <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {value != null ? (
         <Animated.View style={[s.readRow, lift]}>
-          <Animated.Text style={[big ? s.huge : s.big, { color: c.ink }]}>{show(value)}</Animated.Text>
-          {unit ? <Animated.Text style={[s.unit, { color: c.muted }]}>{unit}</Animated.Text> : null}
+          <AnimatedText style={[big ? s.huge : s.big, { color: c.ink }]}>{show(value)}</AnimatedText>
+          {unit ? <AnimatedText style={[s.unit, { color: c.muted }]}>{unit}</AnimatedText> : null}
         </Animated.View>
       ) : big ? (
         <View style={[s.wait, { borderColor: c.accent, opacity: 0.55 }]}>

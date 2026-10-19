@@ -6,13 +6,13 @@ import {
   Easing,
   Pressable,
   StyleSheet,
-  Text,
   View,
   type GestureResponderEvent,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';

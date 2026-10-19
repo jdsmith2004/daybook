@@ -5,7 +5,8 @@
 import { hardHeld, riskDay, talkClock, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Button, Icon, T } from '@/components/ui';

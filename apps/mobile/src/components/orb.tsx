@@ -2,7 +2,8 @@
    left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS screen. */
 import { breathPhase, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { buzz } from '@/lib/feel';

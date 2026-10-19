@@ -3,7 +3,8 @@
    because money never opens anything. On Android there is no tip link: Google Play asks that tips to the developer go
    through its own billing, so TIP_URL is empty there and every tip spot stays hidden. */
 import { SUPPORT_URL, tipAnswered, TIP_WORDS } from '@daybook/core';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { LinkCard } from '@/components/link-card';
 import { SHOTS_ANDROID } from '@/shots/boot';

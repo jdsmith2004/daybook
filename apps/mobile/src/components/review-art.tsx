@@ -5,7 +5,8 @@
 import { LESSONS, SRC, type StoryDay, type StoryTeach, type StoryWeek } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { AnimatedText, Text } from '@/components/text';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { SourceLine } from '@/components/research';
@@ -349,7 +350,7 @@ export function WeekBars({ weeks }: { weeks: StoryWeek[] }) {
 export function Big({ children, color, delay = 150 }: { children: React.ReactNode; color?: string; delay?: number }) {
   const c = useTheme();
   const v = useOnce(delay, 520, NATIVE);
-  return <Animated.Text style={[s.big, { color: color || c.ink }, pop(v)]}>{children}</Animated.Text>;
+  return <AnimatedText style={[s.big, { color: color || c.ink }, pop(v)]}>{children}</AnimatedText>;
 }
 
 const s = StyleSheet.create({

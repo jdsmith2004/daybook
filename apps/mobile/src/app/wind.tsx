@@ -3,7 +3,8 @@
    "Your day" and from Next up. Ported from the wind-down stop that was inside Your day. */
 import { clockOf, fmtClock, gameCompute, phoneAway, rhythm, windLine, windToggle } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Link } from '@/components/choices';
 import { NightSky } from '@/components/night-sky';

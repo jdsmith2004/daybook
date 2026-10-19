@@ -2,7 +2,8 @@
    "+ Your own" chip at the end of the list, and the box that opens. The box and its button sit together near the top,
    so the keyboard never covers them. */
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';

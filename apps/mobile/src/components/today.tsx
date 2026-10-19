@@ -20,7 +20,8 @@ import {
   type Snapshot,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { StretchRuler, WeekDots } from '@/components/step-art';
 import { Bar, Button, Card, Icon, T } from '@/components/ui';

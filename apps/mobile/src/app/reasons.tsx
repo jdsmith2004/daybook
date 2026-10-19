@@ -3,7 +3,8 @@
 import { moveReason, RCATS, REASON_LEN, REASON_MAX, reasonCat, reasonIdeas, removeReason, saveReason, setField } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
 import { Collapse } from '@/components/form';

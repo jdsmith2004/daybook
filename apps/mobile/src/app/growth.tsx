@@ -2,7 +2,8 @@
 import { gameCompute, LEVELS, nextLine, STAGES, stageLevel, stagePts, stageState, STEPS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { closeSheet, SheetFrame } from '@/components/sheet';

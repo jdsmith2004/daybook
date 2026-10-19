@@ -10,7 +10,8 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';

@@ -5,7 +5,8 @@
 import { checkinFormOf, checkinSaveText, fmtClock, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { DoneMark } from '@/components/done-mark';

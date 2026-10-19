@@ -4,7 +4,8 @@
    or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off. */
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';

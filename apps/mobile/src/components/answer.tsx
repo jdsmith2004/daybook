@@ -2,7 +2,8 @@
    under the finger, springs back, and when picked it fills with its color and shows a check that pops in. Answer is
    one row (one choice, or one of several with multi); AnswerChip is the small rounded kind for quick lists. */
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { AnimatedText, Text } from '@/components/text';
 
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -124,7 +125,7 @@ export function AnswerChip({ label, on, tone = 'accent', onPress }: { label: str
             transform: [{ translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, 2] }) }],
           },
         ]}>
-        <Animated.Text style={[s.chipT, { color: fill.interpolate({ inputRange: [0, 1], outputRange: [c.ink, t.ink] }) }]}>{label}</Animated.Text>
+        <AnimatedText style={[s.chipT, { color: fill.interpolate({ inputRange: [0, 1], outputRange: [c.ink, t.ink] }) }]}>{label}</AnimatedText>
       </Animated.View>
     </Pressable>
   );

@@ -4,7 +4,8 @@ import { lessonById, lessonNo, lessonsDone, lmin } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { LinkCard } from '@/components/link-card';
 import { Card, Icon, T } from '@/components/ui';

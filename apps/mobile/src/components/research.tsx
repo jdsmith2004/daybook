@@ -1,7 +1,8 @@
 /* The research cards' shared pieces (Talk it through and Rekindle): the sources as small chips that open the paper, and
    a card read before as its one line, which opens to the full card and its picture. */
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Reveal } from '@/components/form';
 import { Icon, T } from '@/components/ui';

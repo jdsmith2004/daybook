@@ -21,7 +21,8 @@ import {
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import { SvgXml } from 'react-native-svg';
 
 import { Icon } from '@/components/ui';

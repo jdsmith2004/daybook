@@ -2,7 +2,8 @@
    Ported from the legacy sheetPoints and pointsListHtml. */
 import { addDays, gameCompute, nextLine } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { DayColumns } from '@/components/charts';
 import { Flame } from '@/components/flame';

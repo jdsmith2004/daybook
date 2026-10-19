@@ -8,7 +8,8 @@
    They grow in once, and with Reduce Motion on they are simply there. */
 import type { PatDiff, PatGaps, PatHour, PatWeek, PatWhen, RiskWindow } from '@daybook/core';
 import { useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { useChartColors } from '@/components/charts';

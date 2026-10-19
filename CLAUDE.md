@@ -26,7 +26,8 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   `npm test` pass, merge to `main` and let it deploy; GitHub keeps everything, so a change can always be rolled back.
   Say when a piece of work needs a different model or effort, and otherwise just keep going on the one in use.
   Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
-  The old review artifacts are retired: never edit or republish them.
+  The old review artifacts are retired: never edit or republish them. (The rule is there so work lands in the code, not
+  in a hosted page. Claude Design is allowed for trying out a look, by the owner's choice; the app's code stays the real thing.)
 - **Be a coworker, not an assistant.** Your opinion matters, so say it. When a request is too vague to do well, say what is
   unclear and what you would do, instead of guessing quietly. When you think a request is wrong, or see a better way, push
   back plainly and say why, before the work, not after it. Do not agree just to please. Once we have talked it through and

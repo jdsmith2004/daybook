@@ -5,12 +5,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useRef, type ReactNode, type Ref } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
 import { Icon, T } from '@/components/ui';
-import { useBackLabel } from '@/lib/nav';
+import { useBackLabel, useOverModal } from '@/lib/nav';
 import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export function Screen({
@@ -43,7 +43,11 @@ export function Screen({
   hidden?: boolean;
 }) {
   const c = useTheme();
-  const inset = useSafeAreaInsets();
+  const safe = useSafeAreaInsets();
+  /* on iOS a page opened over a sheet or a full-screen moment is itself a card below the status bar (components/sheet.tsx) */
+  const over = useOverModal();
+  const card = Platform.OS === 'ios' && over;
+  const inset = card ? { ...safe, top: 0 } : safe;
   const label = useBackLabel(typeof back === 'string' ? back : 'Back');
   const y = useRef(0);
   const page = (
@@ -61,6 +65,8 @@ export function Screen({
       }
       scrollEventThrottle={onScroll ? 32 : undefined}
       contentInsetAdjustmentBehavior="never"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
       <Appear webOnly style={[s.col, hidden ? { opacity: 0 } : null]}>

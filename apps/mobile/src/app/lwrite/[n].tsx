@@ -58,6 +58,7 @@ export default function Lwrite() {
             <ScrollView
               style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
               contentContainerStyle={s.cardIn}
+              automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled">
               {!fin ? (
                 <>
@@ -102,7 +103,13 @@ export default function Lwrite() {
                     That is in your plan.
                   </T>
                   <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
-                  <Route label="Read it in My plan" onPress={() => router.replace({ pathname: '/plan', params: { pane: 'learned' } })} />
+                  <Route
+                    label="Read it in My plan"
+                    onPress={() => {
+                      close();
+                      router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                    }}
+                  />
                   <Route
                     label="Back to Learn"
                     onPress={() => {

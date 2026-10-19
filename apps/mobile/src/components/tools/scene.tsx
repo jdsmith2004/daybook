@@ -436,7 +436,7 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
 }
 
 /* ---------- reach a person ---------- */
-export function Message({ finish, exit, sos }: ToolProps) {
+export function Message({ finish }: ToolProps) {
   const c = useTheme();
   const { say } = useStore();
   const st = useCareSettings();
@@ -489,7 +489,6 @@ export function Message({ finish, exit, sos }: ToolProps) {
       </View>
       <Dock>
         <Button label="I sent it" onPress={() => finish('message', { noCalm: true, reach: true, msg: 'Reaching out takes guts.' })} />
-        <Button label={sos ? 'Not now, back to SOS' : 'Not now'} kind="ghost" onPress={exit} />
       </Dock>
       <T v="small" tone="muted" style={s.c}>
         Only if and when you want to. Calling counts too, and so does sitting with someone.

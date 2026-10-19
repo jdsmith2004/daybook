@@ -201,9 +201,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         'Schedule',
         'Screens-off time, start date, new day',
         <>
-          <Field label="Screens off by (nightly)" hint="The wind-down opens an hour before. The next morning, Daybook asks if it happened.">
+          <Field label="Screens off" hint="The wind-down opens an hour before. The next morning, Daybook asks if it happened.">
             <Stepper
-              label="Screens off by"
+              label="Each night by"
               text={so}
               unset={false}
               less="15 minutes earlier"
@@ -253,7 +253,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             hint={
               <>
                 <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be
-                saved: finish the Rekindle quest by the next night and your run keeps going.{'\n\n'}
+                saved: finish the Rekindle quest within three days and your run keeps going.{'\n\n'}
                 <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and
                 fewer slips each week. When your stretch passes a week, or a week has one slip or none, Daybook offers to start counting days.
               </>

@@ -324,7 +324,6 @@ export default function Log() {
         </Dock>
       </>
     );
-    footer = <Link label="Not now" onPress={close} />;
   } else if (step === 'trigger') {
     const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
     const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;

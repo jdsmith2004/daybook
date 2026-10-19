@@ -151,7 +151,7 @@ export default function Morning() {
         </Dock>
       </>
     );
-    footer = mi.h == null ? <Link label="Skip this one" onPress={next} /> : null;
+    footer = <Link label="Skip this one" onPress={next} hidden={mi.h != null} />;
   } else if (!answered) {
     body = (
       <>
@@ -217,7 +217,6 @@ export default function Morning() {
         </Dock>
       </>
     );
-    footer = ls ? <Link label="Later" onPress={close} /> : null;
   }
 
   const i = STEPS.indexOf(step);

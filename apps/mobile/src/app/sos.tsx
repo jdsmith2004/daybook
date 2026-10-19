@@ -40,7 +40,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { BigOption, Link } from '@/components/choices';
+import { BigOption } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HorizonSun } from '@/components/orb';
 import { SceneFrame } from '@/components/scene';
@@ -287,7 +287,7 @@ export default function Sos() {
     const r = t ? ur.rate?.[t.id] || 0 : 0;
     const off = !!t && urOffOf(st).indexOf(t.id) >= 0;
     return (
-      <SceneFrame title="SOS" sky={sky} onClose={close} footer={<Link label="Not now" onPress={close} />}>
+      <SceneFrame title="SOS" sky={sky} onClose={close}>
         <Flame level={level} size={80} />
         <T v="title" style={s.c} accessibilityRole="header">
           How is it now?

@@ -40,15 +40,10 @@ export function SlipEditor() {
   };
   return (
     <View style={{ gap: 12 }}>
-      <View style={s.between}>
-        <T v="h2">If I slip</T>
-        <T v="small" tone="muted">
-          {filled} of {SLIP_MAX} steps
-        </T>
-      </View>
+      {/* the card around it already says "If I slip" */}
       <T v="small" tone="muted">
-        Read this now, while it is calm. A slip is data, not a reset. These are your steps: change them so they sound like you. After you log a slip, they show
-        on Today. Changes save as you type.
+        {filled} of {SLIP_MAX} steps. Read this now, while it is calm. A slip is data, not a reset. These are your steps: change them so they sound like you.
+        After you log a slip, they show on Today. Changes save as you type.
       </T>
       {!n ? <T tone="muted">No steps yet. Add one, or go back to the starter plan.</T> : null}
       {rows.map((t, i) =>

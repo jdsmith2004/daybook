@@ -59,6 +59,7 @@ export function SceneFrame({
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
         contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + 24 }]}
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
           <View style={s.col}>

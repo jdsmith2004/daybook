@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Field, Link } from '@/components/choices';
+import { Field } from '@/components/choices';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -80,7 +80,6 @@ export default function Deeper() {
               say('You told someone. That takes real courage.');
             }}
           />
-          <Button label="Not now" kind="ghost" onPress={close} />
           <T v="small" tone="muted" style={s.c}>
             Calling counts too, and so does telling them in person.
           </T>
@@ -131,7 +130,6 @@ export default function Deeper() {
           say('Traced it back. That is the deeper mission done.');
         }}
       />
-      <Link label="Not now" onPress={close} />
     </SceneFrame>
   );
 }

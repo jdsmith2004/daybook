@@ -12,7 +12,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Text } from '@/components/text';
+import { BIG_MAX, Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -332,7 +332,15 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
                 shadowRadius: 0,
               },
             ]}>
-            <Text style={[seg.t, { color: on ? c.ink : c.accentText }]}>{name}</Text>
+            {/* a tab name stays whole: it grows less with the phone's text size, and shrinks a little before it would break */}
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              maxFontSizeMultiplier={BIG_MAX}
+              style={[seg.t, { color: on ? c.ink : c.accentText }]}>
+              {name}
+            </Text>
           </Pressable>
         );
       })}
@@ -341,6 +349,15 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
 }
 const seg = StyleSheet.create({
   wrap: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 17 },
-  b: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13, borderWidth: 2, borderColor: 'transparent' },
+  b: {
+    flex: 1,
+    minHeight: 42,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
   t: { fontFamily: font.bodySemi, fontSize: 15 },
 });

@@ -61,6 +61,61 @@ never covered a text box; the notification prompt shows on the setup page from a
 - Support opens the tip page in Safari on iOS. App Store rules (3.1.1) are strict about payments that leave the app; it is
   worth a look before review, if that has not been settled already.
 
+### Part 2: the screens part 1 did not walk
+
+Walked on the iPhone 16 Pro (light and dark), the largest text size, the iPhone SE (3rd generation) and the iPhone 16 Pro
+Max, as the made-up person C (about 60 days in): the More tab and every Settings section, My plan (all four panes, an
+if-then plan and a reason edited, a calm move added, the slip steps), a full lesson read, practiced and finished, a
+checkpoint, Talk it through to the end, every SOS tool's first screen and a breathing session, the morning questions,
+the wind-down and good night, Going deeper, the mode, growth, milestones, points, day and entry sheets (an entry edited
+and deleted), every help page, the sources and privacy.
+
+**Found and fixed**
+
+- **The keyboard covered text boxes low on a page.** No page, sheet or full-screen moment made room for it: in My plan,
+  "Add a calm move" sat completely under the keyboard. They all make room now, and a page or sheet lets the keyboard be
+  dragged away.
+- **Owner's rule: no link that only does what the X does.** "Not yet" (wind-down), "Not now" (SOS, the log, Going deeper
+  twice, Reach a person) and "Later" (morning) are gone. The pause keeps its "Not now", because it also stops the timer.
+  The rule is in CLAUDE.md.
+- **The wind-down did not fit:** its note ran into the home bar and "Not yet" was off the screen; on the SE the main button
+  was too. The night sky shrinks, then steps aside. Good night's button was below the fold for the same reason.
+- **The sleep and check-in sliders jumped about 70 points under the finger** on the first touch, because "Skip this one"
+  vanished. The link keeps its room now.
+- **"Behind this lesson" stopped short of the screen bottom**, with the lesson's Next button peeking out under it. It is
+  laid over the whole screen now.
+- **In a lesson's question, the comment under a picked answer could land below the card's edge.** The card scrolls to it.
+- **A page opened over a sheet or a full-screen moment had an empty band at the top** (Settings from the privacy sheet;
+  My plan, help or Settings from a lesson). It no longer pads for the status bar there. The checkpoint's "Read it in My
+  plan" leaves the checkpoint first, so Back says the right place.
+- **"Add an entry" had its two answers at the top.** They sit low now, by the thumb.
+- **Deleting an entry asked below the fold**, cut off. The sheet scrolls to the question.
+- **At the largest text size, My plan's tabs broke mid-word ("Learne / d").** Tab names stay on one line.
+- **Settings said the Rekindle quest must be done "by the next night"**; the rule is three days (Where I am says so too).
+- Smaller: the slip steps editor said "If I slip" twice; Settings' screens-off time had two labels; Settings said "Changes
+  save as you type" where nothing is typed; the reasons editor put four group buttons between the box and Save (the
+  groups come first now, so Save stays above the keyboard).
+
+**Checked, nothing wrong:** every Settings switch, stepper and chip, the theme, the celebration preview, reminders (the
+notification prompt), the lock prompt, saving and restoring (the file pickers open), the delete-everything question
+("Keep my log"); reordering and reading reasons; the safety net and next steps; Talk's science cards and its plan; the
+breathing timer; the help pages' links and Copy buttons; points never dropped. Graduation was not reachable (62 of 90),
+and its route sends a person who has not graduated to Milestones, as it should.
+
+**Left, with why**
+
+- **Today offers a locked lesson as "Next up" with Start and "+10 points"**, and Start opens the account sheet. Without an
+  account this happens every day after lesson 3, including the morning after a slip, which the account rules otherwise
+  keep quiet (`accountAsk`). A design call: skip locked lessons in Next up, or say "opens with a free account" on the card.
+- **Some older lessons' "Behind this" notes read as a list of doubts** (lesson 9: "shows a link, not a cause, and it was not
+  about porn ... not a tested result"), against the rule that the scope speaks with confidence. They live in
+  `legacy/core.js`; rewriting them is a content pass for the owner's review, not a bug fix.
+- **On the SE, a few full-screen moments scroll** (Good night with its tips, a lesson's cover, Move's list). Everything is
+  reachable and the main button is the last thing; the screens are simply taller than 667 points.
+- **The software keyboard could only be tested on one page** (My plan's lists): the simulator lets it be turned on only
+  while it is in front. The same setting is on every page, sheet and moment, so the rest should behave the same.
+- A dev build shows "Open debugger to view warnings" on a cold start; it is not in the shipped app and was not traced.
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

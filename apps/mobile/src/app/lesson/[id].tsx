@@ -125,6 +125,8 @@ export default function LessonScreen() {
   const next = nextAfter(L, done);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
+  /* the comment under a picked answer can land below the card's edge on a short phone: bring it into view */
+  const reveal = () => setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);
 
   const record = () => {
     if (rec) return;
@@ -316,6 +318,7 @@ export default function LessonScreen() {
                 setRc(j);
                 setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
                 buzz('tap');
+                reveal();
               }}
             />
             {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
@@ -418,6 +421,7 @@ export default function LessonScreen() {
                   if (card.sv)
                     apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
                   buzz('tap');
+                  reveal();
                 }}
               />
               {pk != null ? <Reply text={card.c![pk][1]} t={t} /> : null}
@@ -590,7 +594,8 @@ export default function LessonScreen() {
       title={'Lesson ' + n + ' of ' + LESSONS.length + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')}
       onClose={close}
       c={c}
-      inset={inset}>
+      inset={inset}
+      over={sheet ? <SheetOver sheet={sheet} L={L} onClose={() => setSheet(null)} /> : null}>
       {prog}
       <ScrollView
         ref={scroll}
@@ -598,6 +603,7 @@ export default function LessonScreen() {
         onContentSizeChange={fit.onContentSizeChange}
         style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
         contentContainerStyle={s.cardIn}
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
           <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
@@ -606,7 +612,6 @@ export default function LessonScreen() {
         </FitProvider>
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}
-      {sheet ? <SheetOver sheet={sheet} L={L} onClose={() => setSheet(null)} /> : null}
     </Frame>
   );
 }
@@ -618,12 +623,15 @@ function Frame({
   children,
   c,
   inset,
+  over,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   c: ReturnType<typeof useTheme>;
   inset: { top: number; bottom: number };
+  /** something over the whole screen, like the sources sheet (outside the padded column, so it reaches the edges) */
+  over?: ReactNode;
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
@@ -642,6 +650,7 @@ function Frame({
         </View>
         {children}
       </View>
+      {over}
     </View>
   );
 }
@@ -1099,7 +1108,11 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
-        <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 12, paddingBottom: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled">
           {body}
         </ScrollView>
         <Next label={btn} noIcon onPress={onClose} />

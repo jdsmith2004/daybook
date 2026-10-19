@@ -74,6 +74,8 @@ cd apps/mobile && npx expo start
   - The main button (Next, Save, Done, Start, Continue) is at the very bottom, full width, with any quiet link (Skip,
     Cancel) just under it.
   - Close and Back stay at the top, as they are by platform habit.
+  - No "Not yet", "Not now", "Later" or similar link that only closes the page: the X already does that. A quiet link
+    is there only when it does something the X does not (skip one question, record a choice, go somewhere else).
   - The one exception is a text box and the button that saves it: they stay together near the top, because the keyboard
     covers the bottom of the screen while typing.
   - In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`

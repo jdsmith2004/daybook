@@ -12,7 +12,7 @@ export default function Settings() {
   const params = useLocalSearchParams<{ open?: string }>();
   const scroll = useRef<ScrollViewInstance>(null);
   return (
-    <Screen title="Settings" sub={<T tone="muted">Make Daybook yours. Changes save as you type.</T>} back="More" scrollRef={scroll}>
+    <Screen title="Settings" sub={<T tone="muted">Make Daybook yours. Changes save as you go.</T>} back="More" scrollRef={scroll}>
       <SettingsSections open={params.open} onOpenLayout={(y) => setTimeout(() => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true }), 200)} />
     </Screen>
   );

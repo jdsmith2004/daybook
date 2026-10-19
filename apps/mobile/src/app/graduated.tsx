@@ -4,7 +4,8 @@
 import { fmtDate, gameCompute, GRAD_DAYS, GRAD_WINDOW, gradInfo, lessonsDone, TIP_WORDS, urEvidence } from '@daybook/core';
 import { Redirect } from 'expo-router';
 import { useEffect } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Confetti } from '@/components/celebrate';
 import { Fireworks, GradFlame } from '@/components/grad';

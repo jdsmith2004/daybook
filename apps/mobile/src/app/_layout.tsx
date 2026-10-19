@@ -16,10 +16,11 @@ import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
 import { Toast } from '@/components/toast';
 import { forgetDrafts } from '@/lib/drafts';
-import { keepRootState, type NavState } from '@/lib/nav';
+import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
+import '@/lib/setup-keep';
 import { SyncProvider } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -136,7 +137,7 @@ function Shell() {
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}
           {/* the sheets: one thing, over everything */}
-          {['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'privacy'].map((name) => (
+          {SHEETS.map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           ))}
         </Stack>

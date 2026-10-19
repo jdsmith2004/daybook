@@ -1,7 +1,8 @@
 /* Calm your body: Breathe, and 5-4-3-2-1. Ported from the legacy SCENES.breathe and SCENES.ground. */
 import { breathPhase, GROUND, PATTERNS } from '@daybook/core';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';

@@ -5,7 +5,8 @@
 import { celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { Flames } from '@/components/rekindle';
@@ -114,7 +115,12 @@ export function CelebrateHost() {
   if (!cur || !st) return null;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Pressable accessibilityLabel="Close" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.5)' }]} onPress={() => setCur(null)} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.5)' }]}
+        onPress={() => setCur(null)}
+      />
       {boom ? <Confetti key={boom.n} big={boom.big} /> : null}
       <View style={s.center} pointerEvents="box-none">
         <Card it={cur} more={queue.length > 0} onClose={() => setCur(null)} />

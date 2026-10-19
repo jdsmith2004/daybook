@@ -3,7 +3,8 @@
 import { LCHECKS, LESSONS, LUNITS, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LxCheck } from '@/components/lesson-art';

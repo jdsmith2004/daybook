@@ -4,7 +4,8 @@
    - TalkDoor, the way in from the tools (in Learn and in SOS) and from a check-in that says caring is low */
 import { messageTexts, talkClock, talkDue, talkMoveWords, talkPlanLine, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { SafeTextButton } from '@/components/safe-text';
 import { Button, Card, Icon, T } from '@/components/ui';

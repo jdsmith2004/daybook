@@ -1,7 +1,8 @@
 /* Picking a date by days: − Thursday, Oct 22 +. Simple, works the same everywhere, and reads well with a screen reader.
    An empty date can be allowed (for "no Day 1"). */
 import { addDays, fmtDate, type DayKey } from '@daybook/core';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';

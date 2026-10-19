@@ -28,7 +28,8 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
@@ -138,7 +139,7 @@ function DaysPane() {
                 <Pressable
                   key={r.key}
                   accessibilityRole="button"
-                  accessibilityLabel={`${r.weekday} ${r.date}. ${r.pill}. ${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
+                  accessibilityLabel={`${r.weekday} ${r.date}. ${r.pill}. ${r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) : ''}${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
                   onPress={() => router.push({ pathname: '/day/[date]', params: { date: r.key } })}
                   style={({ pressed }) => [s.day, { borderTopColor: c.line, opacity: pressed ? 0.75 : 1 }]}>
                   <View style={{ width: 56 }}>
@@ -151,7 +152,7 @@ function DaysPane() {
                     <T v="small" tone="muted">
                       {r.phase}
                     </T>
-                    <T v="small">{r.times}</T>
+                    <T v="small">{r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) + r.times : r.times}</T>
                     {r.rate ? (
                       <T v="small" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
                         {r.rate}

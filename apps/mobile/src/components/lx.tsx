@@ -1,7 +1,8 @@
 /* The buttons and text every full-screen step uses: the lesson player and the setup. Moved here from the lesson player. */
 import type { Settings } from '@daybook/core';
 import { lfmt } from '@daybook/core';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';

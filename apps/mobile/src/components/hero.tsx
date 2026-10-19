@@ -9,7 +9,11 @@ import { CHEERS, emblemScene, heroNumber, nextUp, type GameState, type NextUp, t
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
+
+/** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
+const ON_ART = 1.15;
 import Svg, { Path } from 'react-native-svg';
 
 import { GradFlame } from '@/components/grad';
@@ -166,8 +170,10 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
           accessibilityLabel={h.say + ' Opens your days.'}
           onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })}
           style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
-          <Text style={[s.eb, { color: soft }]}>{h.eb.toUpperCase()}</Text>
-          <Text style={[s.n, { color: ink }]}>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
+            {h.eb.toUpperCase()}
+          </Text>
+          <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} adjustsFontSizeToFit style={[s.n, { color: ink }]}>
             {h.n}
             {h.unit ? <Text style={[s.unit, { color: soft }]}>{' ' + h.unit}</Text> : null}
           </Text>
@@ -181,10 +187,12 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
         {h && h.chip ? (
           <View style={[s.chip, { backgroundColor: glass }]}>
             {h.star ? <Icon name="star" size={13} color={ink} /> : null}
-            <Text style={[s.chipT, { color: ink }]}>{h.chip}</Text>
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
+              {h.chip}
+            </Text>
           </View>
         ) : null}
-        <Text style={[s.lvT, { color: ink }]}>
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
           Level {lvl.n} · {lvl.name} ›
         </Text>
       </Pressable>

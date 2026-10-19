@@ -16,7 +16,8 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 
 import { Segments } from '@/components/form';
 import { B, ChipBtn, Code, CopyChip, Ext, Fine, HCard, Links, Note, NumRow, OL, P, RelLesson, Sec, UL } from '@/components/help-bits';

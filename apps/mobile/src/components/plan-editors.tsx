@@ -1,7 +1,8 @@
 /* The slip plan editor in My plan: my own steps, in order. Every change saves right away. Ported from the legacy slipEditor. */
 import { saveSlip, SLIP_LEN, SLIP_MAX, slipClean, slipIsStarter, slipSteps, resetSlip } from '@daybook/core';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
 import { Button, Icon, T } from '@/components/ui';

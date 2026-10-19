@@ -75,6 +75,8 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
     date: fmtDate(key, { month: 'short', day: 'numeric' }),
     phase: phaseLabel(key, st),
     times: evs.length ? times : c ? 'No urges logged' : 'Nothing logged',
+    /** how many entries the day has (the times alone do not say what they are) */
+    n: evs.length,
     rate,
     pill,
     pts,

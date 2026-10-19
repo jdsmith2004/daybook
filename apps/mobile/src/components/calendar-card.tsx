@@ -4,7 +4,8 @@
 import { calLabel, calMonth, type CalKind, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -22,6 +23,14 @@ const WORD: Record<CalKind, string> = {
   ahead: 'still to come',
 };
 /** the look of a day: its fill, its border, and the color of its number */
+type CalDay = ReturnType<typeof calMonth>['days'][number];
+/** the month in rows of seven: blanks before the 1st and after the last day */
+function weeks(lead: number, days: CalDay[]) {
+  const all: (CalDay | null)[] = [...Array<null>(lead).fill(null), ...days];
+  while (all.length % 7) all.push(null);
+  return Array.from({ length: all.length / 7 }, (_, i) => all.slice(i * 7, i * 7 + 7));
+}
+
 function look(kind: CalKind, c: Palette) {
   switch (kind) {
     case 'ok':
@@ -97,47 +106,52 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           ))}
         </View>
       ) : null}
+      {/* week rows of seven equal cells: a width of 100/7 percent each rounds up on iOS and pushes Saturday onto the next line */}
       <View style={s.grid}>
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <View key={'h' + i} style={s.box}>
-            <Text style={[s.dow, { color: c.muted }]}>{d}</Text>
+        <View style={s.week}>
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <View key={'h' + i} style={s.dowBox}>
+              <Text style={[s.dow, { color: c.muted }]}>{d}</Text>
+            </View>
+          ))}
+        </View>
+        {weeks(m.lead, m.days).map((row, w) => (
+          <View key={'w' + w} style={s.week}>
+            {row.map((d, i) => {
+              if (!d) return <View key={'b' + w + '-' + i} style={s.box} />;
+              const l = look(d.kind, c);
+              const open = d.kind !== 'ahead' && d.kind !== 'before';
+              const inner = (
+                <>
+                  <Text style={[s.num, { color: l.ink }]}>{d.d}</Text>
+                  {d.slips > 1 && d.kind !== 'ok' ? <Text style={[s.many, { color: l.ink }]}>×{d.slips}</Text> : null}
+                </>
+              );
+              const style = [
+                s.cell,
+                { backgroundColor: l.bg, borderColor: l.bd, borderStyle: d.kind === 'ahead' ? ('dashed' as const) : ('solid' as const) },
+                d.today && { outlineColor: c.accent, outlineWidth: 2.5, outlineOffset: 2, outlineStyle: 'solid' as const },
+              ];
+              return (
+                <View key={d.k} style={s.box}>
+                  {open ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={calLabel(d.k) + ': ' + WORD[d.kind] + (d.today ? ', today so far' : '') + '. Open the day.'}
+                      onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+                      style={({ pressed }) => [...style, pressed && { opacity: 0.75 }]}>
+                      {inner}
+                    </Pressable>
+                  ) : (
+                    <View style={style} accessibilityLabel={calLabel(d.k) + ': ' + WORD[d.kind]}>
+                      {inner}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         ))}
-        {Array.from({ length: m.lead }, (_, i) => (
-          <View key={'b' + i} style={s.box} />
-        ))}
-        {m.days.map((d) => {
-          const l = look(d.kind, c);
-          const open = d.kind !== 'ahead' && d.kind !== 'before';
-          const inner = (
-            <>
-              <Text style={[s.num, { color: l.ink }]}>{d.d}</Text>
-              {d.slips > 1 && d.kind !== 'ok' ? <Text style={[s.many, { color: l.ink }]}>×{d.slips}</Text> : null}
-            </>
-          );
-          const style = [
-            s.cell,
-            { backgroundColor: l.bg, borderColor: l.bd, borderStyle: d.kind === 'ahead' ? ('dashed' as const) : ('solid' as const) },
-            d.today && { outlineColor: c.accent, outlineWidth: 2.5, outlineOffset: 2, outlineStyle: 'solid' as const },
-          ];
-          return (
-            <View key={d.k} style={s.box}>
-              {open ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={calLabel(d.k) + ': ' + WORD[d.kind] + (d.today ? ', today so far' : '') + '. Open the day.'}
-                  onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
-                  style={({ pressed }) => [...style, pressed && { opacity: 0.75 }]}>
-                  {inner}
-                </Pressable>
-              ) : (
-                <View style={style} accessibilityLabel={calLabel(d.k) + ': ' + WORD[d.kind]}>
-                  {inner}
-                </View>
-              )}
-            </View>
-          );
-        })}
       </View>
       {legend.length ? (
         <View style={s.legend}>
@@ -167,8 +181,10 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   chipT: { fontFamily: font.bodySemi, fontSize: 13 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  box: { width: `${100 / 7}%`, aspectRatio: 1, padding: 3 },
+  grid: { gap: 0 },
+  week: { flexDirection: 'row' },
+  dowBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
+  box: { flex: 1, aspectRatio: 1, padding: 3 },
   dow: { textAlign: 'center', fontFamily: font.bodySemi, fontSize: 12.5, marginTop: 'auto', marginBottom: 2 },
   cell: { flex: 1, borderRadius: 11, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   num: { fontFamily: font.bodyBold, fontSize: 15 },

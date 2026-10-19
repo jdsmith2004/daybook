@@ -37,7 +37,8 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
@@ -460,7 +461,7 @@ function Seg({ value, onPick }: { value: Strength | null; onPick: (v: Strength) 
                 shadowRadius: 0,
               },
             ]}>
-            <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1}>
+            <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {label}
             </Text>
           </Pressable>

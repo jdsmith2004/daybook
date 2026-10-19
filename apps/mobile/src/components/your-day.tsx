@@ -6,7 +6,8 @@ import { pathNote, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, ty
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Fragment, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnOff } from '@/components/form';

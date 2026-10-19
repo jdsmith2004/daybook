@@ -2,6 +2,7 @@
    from a lesson) gets a Back button that names the page underneath it. On the web the page eases in. A screen can follow its
    own scrolling (onScroll), float something over its top that stays put while the page scrolls (overlay), and keep a small
    button beside its title (action). */
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useRef, type ReactNode, type Ref } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -22,6 +23,7 @@ export function Screen({
   onScroll,
   overlay,
   action,
+  hidden,
 }: {
   eyebrow?: string;
   title: string;
@@ -37,6 +39,8 @@ export function Screen({
   overlay?: ReactNode;
   /** a small button at the top right, beside the title */
   action?: ReactNode;
+  /** keep the page out of sight while it moves into place (Learn scrolls to the next lesson before it shows) */
+  hidden?: boolean;
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
@@ -56,10 +60,10 @@ export function Screen({
           : undefined
       }
       scrollEventThrottle={onScroll ? 32 : undefined}
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
-      <Appear webOnly style={s.col}>
+      <Appear webOnly style={[s.col, hidden ? { opacity: 0 } : null]}>
         {back ? (
           <Pressable
             accessibilityRole="button"
@@ -94,15 +98,21 @@ export function Screen({
       </Appear>
     </ScrollView>
   );
-  if (!overlay) return page;
+  /* the page scrolls under the clock and the battery: a band of the page color keeps them readable */
+  const bar = inset.top ? (
+    <LinearGradient pointerEvents="none" colors={[c.bg, c.bg, c.bg + '00']} locations={[0, 0.75, 1]} style={[s.bar, { height: inset.top + 12 }]} />
+  ) : null;
   return (
     <View style={{ flex: 1 }}>
       {page}
-      <View pointerEvents="box-none" style={[s.over, { top: inset.top + 8 }]}>
-        <View pointerEvents="box-none" style={s.col}>
-          {overlay}
+      {bar}
+      {overlay ? (
+        <View pointerEvents="box-none" style={[s.over, { top: inset.top + 8 }, hidden ? { opacity: 0 } : null]}>
+          <View pointerEvents="box-none" style={s.col}>
+            {overlay}
+          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -112,6 +122,7 @@ const s = StyleSheet.create({
   col: { width: '100%', maxWidth: MAX_WIDTH, gap: 14 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   over: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
+  bar: { position: 'absolute', top: 0, left: 0, right: 0 },
   back: {
     flexDirection: 'row',
     alignItems: 'center',

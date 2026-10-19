@@ -4,8 +4,9 @@
    With Reduce Motion on, they show as they end. */
 import { lxLoopNodes, TALK_CARDS, type Art, type RkArt, type Settings, type TalkArt } from '@daybook/core';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
-import Svg, { Circle, Defs, G, Marker, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { Animated, Easing, View } from 'react-native';
+import { Text } from '@/components/text';
+import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { RkArtView } from '@/components/rk-art';
 import { TalkArtView } from '@/components/talk-art';
@@ -188,7 +189,17 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
       </SvgText>
     </G>
   );
-  const arrow = (d: string) => <Path key={d} d={d} stroke={t.text} strokeWidth={3} strokeLinecap="round" markerEnd="url(#lxah)" />;
+  /* a line with a drawn head at its end (an SVG marker draws its head off the line on iOS) */
+  const arrow = (x1: number, y1: number, x2: number, y2: number) => {
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    const p = (d: number, s: number) => `${x2 - Math.cos(a) * d - Math.sin(a) * s} ${y2 - Math.sin(a) * d + Math.cos(a) * s}`;
+    return (
+      <G key={`${x1} ${y1}`}>
+        <Path d={`M${x1} ${y1}L${p(6, 0)}`} stroke={t.text} strokeWidth={3} strokeLinecap="round" />
+        <Path d={`M${x2} ${y2}L${p(11, 6.5)}L${p(11, -6.5)}Z`} fill={t.text} />
+      </G>
+    );
+  };
   return (
     <Svg
       width="100%"
@@ -196,19 +207,14 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
       viewBox="0 0 330 190"
       style={{ maxWidth: 330 }}
       accessibilityLabel={`Your loop: ${n.join(', then ')}, and back to the start`}>
-      <Defs>
-        <Marker id="lxah" viewBox="0 0 10 10" refX={8} refY={5} markerWidth={7} markerHeight={7} orient="auto-start-reverse">
-          <Path d="M1 1L9 5L1 9z" fill={t.text} />
-        </Marker>
-      </Defs>
       {box(14, 16, n[0])}
       {box(204, 16, n[1])}
       {box(204, 126, n[2])}
       {box(14, 126, n[3])}
-      {arrow('M134 40H196')}
-      {arrow('M260 72V118')}
-      {arrow('M196 150H134')}
-      {arrow('M70 118V72')}
+      {arrow(134, 40, 198, 40)}
+      {arrow(260, 72, 260, 120)}
+      {arrow(196, 150, 132, 150)}
+      {arrow(70, 118, 70, 70)}
       <SvgText x={165} y={100} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
         {o.c || 'YOUR LOOP'}
       </SvgText>

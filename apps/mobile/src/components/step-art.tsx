@@ -4,7 +4,8 @@
 import { type stepRuler, type stepWeek } from '@daybook/core';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { useOnce } from '@/components/talk-art';
 import { Icon } from '@/components/ui';

@@ -44,7 +44,8 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
@@ -539,7 +540,11 @@ export default function Review() {
               </View>
             ) : null}
             <Button label={saved ? 'Save my week' : 'Save my week · +20'} onPress={() => save(goal)} />
-            {!goal ? <Link label="No goal this week" onPress={() => save(null)} /> : null}
+            {!goal ? (
+              <View style={{ alignItems: 'center' }}>
+                <Link label="No goal this week" onPress={() => save(null)} />
+              </View>
+            ) : null}
           </Dock>
         </>
       );

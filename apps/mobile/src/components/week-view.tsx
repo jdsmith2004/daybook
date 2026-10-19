@@ -3,7 +3,8 @@
    sunday.ts). Used in Journal > Weeks and on its own page. Ported from the legacy weekBody. */
 import { fmtDate, REVIEW_QS, setDay1, weekView } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Spark } from '@/components/charts';
 import { Card, Chip, Icon, T } from '@/components/ui';

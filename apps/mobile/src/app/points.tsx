@@ -2,7 +2,8 @@
    Ported from the legacy sheetPoints and pointsListHtml. */
 import { addDays, gameCompute, nextLine } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { DayColumns } from '@/components/charts';
 import { Flame } from '@/components/flame';
@@ -27,9 +28,11 @@ export default function Points() {
       <View style={s.hero}>
         <Flame level={lvl.n} size={112} alive />
         <View style={{ flex: 1, gap: 6 }}>
-          <T>
-            <Text style={[s.big, { color: c.ink }]}>{g.pts.toLocaleString('en-US')}</Text> points
-          </T>
+          {/* the number is its own line of text: inside a body line, iOS gives it the body's short line and cuts off its top */}
+          <View style={s.pts} accessible accessibilityLabel={`${g.pts.toLocaleString('en-US')} points`}>
+            <Text style={[s.big, { color: c.ink }]}>{g.pts.toLocaleString('en-US')}</Text>
+            <T>points</T>
+          </View>
           <Bar frac={lvl.frac} from={c.sun} />
           <T v="small" tone="muted">
             {nextLine(lvl)}
@@ -58,5 +61,6 @@ export default function Points() {
 
 const s = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  big: { fontFamily: font.display, fontSize: 30 },
+  pts: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  big: { fontFamily: font.display, fontSize: 30, lineHeight: 38 },
 });

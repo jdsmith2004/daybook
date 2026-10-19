@@ -24,7 +24,8 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';

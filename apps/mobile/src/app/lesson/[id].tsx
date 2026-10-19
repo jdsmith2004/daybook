@@ -46,7 +46,8 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
@@ -1078,7 +1079,12 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
   }
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 10 }]}>
-      <Pressable accessibilityLabel="Close" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.45)' }]} onPress={onClose} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,16,50,0.45)' }]}
+        onPress={onClose}
+      />
       <View style={[s.sheet, { backgroundColor: c.bg, paddingBottom: inset.bottom + 12, maxWidth: MAX_WIDTH }]}>
         <View style={[s.grab, { backgroundColor: c.lip }]} />
         <View style={s.top}>

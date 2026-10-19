@@ -3,7 +3,8 @@
    numbers as a table underneath, for anyone who would rather read them (and for screen readers). Drawn at the width shown. */
 import { fmtDate, fmtHour, type DayKey } from '@daybook/core';
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
 import { Icon, T } from '@/components/ui';

@@ -5,7 +5,8 @@
 import { checkinFormOf, checkinSaveText, fmtClock, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { DoneMark } from '@/components/done-mark';
@@ -25,9 +26,13 @@ import { font, useTheme } from '@/lib/theme';
 
 type Rated = 'm' | 'c' | 'e' | 's';
 /** the clock now, rounded down to a quarter hour: "21:45" */
+/** the reminder offered after a check-in: about the time it was done, but never at night (core nudges.ts: Daybook never
+    picks a night time on its own), so a check-in after 10 PM offers 10 PM, the latest time the setup offers */
 const clockNear = (ms: number) => {
   const d = new Date(ms);
-  return String(d.getHours()).padStart(2, '0') + ':' + String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
+  const h = d.getHours();
+  if (h >= 22 || h < 5) return '22:00';
+  return String(h).padStart(2, '0') + ':' + String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
 };
 const RATE: Record<Rated, { name: string; q: string; lo: string; hi: string }> = {
   m: { name: 'Motivation', q: 'How much motivation did you have today?', lo: 'none', hi: 'lots' },

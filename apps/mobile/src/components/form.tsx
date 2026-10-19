@@ -6,13 +6,13 @@ import {
   Easing,
   Pressable,
   StyleSheet,
-  Text,
   View,
   type GestureResponderEvent,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -257,6 +257,8 @@ export function Reveal({ open, style, children }: { open: boolean; style?: Style
   const [phase, setPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(open ? 'open' : 'closed');
   const [h, setH] = useState(0);
   const v = useRef(new Animated.Value(open ? 1 : 0)).current;
+  /* the height is measured once it is known; a later change (a line added while it moves) only resizes, never restarts */
+  const known = h > 0;
   useEffect(() => {
     if (open) setPhase((p) => (p === 'closed' || p === 'closing' ? (reduce ? 'open' : 'opening') : p));
     else setPhase((p) => (p === 'open' || p === 'opening' ? (reduce ? 'closed' : 'closing') : p));
@@ -266,16 +268,16 @@ export function Reveal({ open, style, children }: { open: boolean; style?: Style
       Animated.timing(v, { toValue: to, duration: ms, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(
         ({ finished }) => finished && setPhase(done),
       );
-    if (phase === 'opening' && h > 0) ease(1, 280, 'open');
+    if (phase === 'opening' && known) ease(1, 280, 'open');
     else if (phase === 'closing') ease(0, 220, 'closed');
     else if (phase === 'open') v.setValue(1);
     else if (phase === 'closed') v.setValue(0);
-  }, [phase, h, v]);
+  }, [phase, known, v]);
   if (phase === 'closed') return null;
   const moving = phase !== 'open';
   return (
     <Animated.View style={moving ? { height: v.interpolate({ inputRange: [0, 1], outputRange: [0, h] }), opacity: v, overflow: 'hidden' } : null}>
-      <View style={style} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
+      <View style={[style, moving ? s.measure : null]} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
         {children}
       </View>
     </Animated.View>
@@ -302,6 +304,8 @@ const s = StyleSheet.create({
   sum: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, minHeight: 60 },
   ic: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   in: { paddingHorizontal: 14, paddingBottom: 14, gap: 12 },
+  /* while it grows or folds, the content keeps its own height (out of the flow), so its height stays one steady number */
+  measure: { position: 'absolute', top: 0, left: 0, right: 0 },
 });
 
 /** a row of two to four panes (Lessons / Tools, Days / Patterns / Weeks) */

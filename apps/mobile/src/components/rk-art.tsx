@@ -5,7 +5,8 @@
    and with Reduce Motion on they simply show their last frame. */
 import type { RkArt, RkComebacks } from '@daybook/core';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';

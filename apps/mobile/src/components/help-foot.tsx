@@ -1,6 +1,7 @@
 /* The line at the bottom of More and the help pages: 988, any hour (US), with a Copy button. From the legacy helpFoot. */
 import * as Clipboard from 'expo-clipboard';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';

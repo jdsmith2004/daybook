@@ -98,7 +98,9 @@ export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
 /* ---------- the embers (the first Rekindle screen) ---------- */
 export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey, lit: boolean, sp: boolean) {
   const g = gameCompute(days, st, reviews, tk);
-  const kept = ['Level ' + g.level.n + ' · ' + g.level.name, g.pts + ' points'].concat(g.S.rode ? [plural(g.S.rode as number, 'urge') + ' ridden out'] : []);
+  const kept = ['Level ' + g.level.n + ' · ' + g.level.name, g.pts.toLocaleString('en-US') + ' points'].concat(
+    g.S.rode ? [plural(g.S.rode as number, 'urge') + ' ridden out'] : [],
+  );
   const h = lit ? 'Still burning. Still yours.' : sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.';
   const p = lit ? 'A slip can burn it low. It cannot put it out. Nothing was taken away.' : 'It is down to embers. Embers hold the heat.';
   const op = lit ? rkOpen(days, st, tk, date).op : null;

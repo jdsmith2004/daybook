@@ -2,7 +2,8 @@
    the box for an answer of your own, a quiet text link, and a text field. */
 import { OPT_LEN } from '@daybook/core';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, StyleSheet, View, type TextInputProps } from 'react-native';
+import { Text, TextInput } from '@/components/text';
 
 import { Button, Icon, T } from '@/components/ui';
 import { font, useTheme, type Palette } from '@/lib/theme';

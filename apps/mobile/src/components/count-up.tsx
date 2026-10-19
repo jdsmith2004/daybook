@@ -2,6 +2,7 @@
    Motion on, it is simply the number. */
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, type StyleProp, type TextStyle } from 'react-native';
+import { AnimatedText } from '@/components/text';
 
 import { useReducedMotion } from '@/lib/motion';
 
@@ -33,8 +34,8 @@ export function CountUp({
     };
   }, [to, delay, duration, reduce, v]);
   return (
-    <Animated.Text style={style} accessibilityLabel={prefix + to + suffix}>
+    <AnimatedText style={style} accessibilityLabel={prefix + to + suffix}>
       {prefix + (reduce ? to : n) + suffix}
-    </Animated.Text>
+    </AnimatedText>
   );
 }

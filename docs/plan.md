@@ -96,6 +96,26 @@ changed in the smallest way). The golden fixtures moved on purpose, by a guarded
 save went from ended to waiting, or a phone-away now counts on a later night (with its Rekindled bonus, so some points and
 one level went up, never down), and the changed words. Next to show the owner: "Next goal 3 days" after a long run.
 
+## Money and the App Store (October 19, 2026)
+
+The owner's decision: Daybook stays free for everyone, with a tip jar that unlocks nothing, so it is worth the time to keep
+building. No subscriptions, no ads (they need tracking), no paid streak protection (it sells fear of losing a run).
+
+1. **The tip jar** (core `support.ts`, built; hidden until `SUPPORT_URL` is set). Today asks once: a month in, from 9 AM to
+   8 PM, never within four days of a slip (which covers the Rekindle quest), never beside the account card or within three
+   days of its "Not now". The account card already owns the first week, so the tip ask waits a month, when a person knows
+   whether Daybook helps. After either answer it never comes back; the link stays as a quiet row on More and a line under
+   graduation. On iPhone, a link out to pay is allowed on the US App Store only (3.1.1(a), after Epic v. Apple; Apple may
+   win back a small fee at the Supreme Court, not before mid-2027), so the iPhone app is offered in the US only while the
+   link is in it. Google Play allows outside donation links only for tax-exempt groups: Android needs another answer first.
+2. **The App Store, from any computer.** Actions, App Store, Run workflow (`.github/workflows/store.yml`) runs the checks,
+   builds on Expo's servers and sends the build to TestFlight. The one-time setup, the listing words, the privacy label
+   and the review notes are in [launch.md](launch.md).
+3. **Then marketing**, in this order once the morning after a slip (fix 4) is settled: the store and a home page, search
+   (lessons as public articles), communities as the owner (said plainly, asking for criticism), counselors and group
+   leaders, then launch sites. No paid ads, no fake reviews or accounts, nothing aimed at teenagers, and no counting of
+   people in the app: only the stores' own download counts, the tip count, and a feedback link.
+
 Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;

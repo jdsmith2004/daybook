@@ -9,6 +9,7 @@ import { HelpFoot } from '@/components/help-foot';
 import { LinkCard } from '@/components/link-card';
 import { Screen } from '@/components/screen';
 import { SettingsSections } from '@/components/settings-sections';
+import { TipRow } from '@/components/support';
 import { T } from '@/components/ui';
 import { SetupFirst } from '@/components/welcome';
 import { useStore } from '@/lib/store';
@@ -40,6 +41,7 @@ export default function More() {
           sub="What it is for, a quick self-check, and your goals. Walk through it any time."
           onPress={() => router.push('/setup')}
         />
+        <TipRow />
       </View>
       <HelpFoot />
       <View style={{ gap: 2, marginTop: 6 }}>

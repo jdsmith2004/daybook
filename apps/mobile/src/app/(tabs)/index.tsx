@@ -3,6 +3,7 @@
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
   accountAsk,
+  tipAsk,
   autoStep,
   startFromLog,
   LESSONS,
@@ -25,6 +26,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AccountCard } from '@/components/account';
+import { TipCard } from '@/components/support';
 import { Hero } from '@/components/hero';
 import { RiskCard } from '@/components/risk-card';
 import { SundayCard } from '@/components/sunday-card';
@@ -89,6 +91,7 @@ export default function Today() {
   /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
   const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
+  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask);
   const sub = (
     <>
       {be ? (
@@ -127,6 +130,7 @@ export default function Today() {
       <CareCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
+      {tip ? <TipCard /> : null}
     </Screen>
   );
 }

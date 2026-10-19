@@ -1,0 +1,140 @@
+# Launch: the App Store and the tip jar
+
+Everything here works from a browser, on any computer. **You** means the owner (or Claude in Chrome, with the owner
+watching). **Claude** means a Claude Code session on this repository.
+
+**Never paste a password, key or token into a chat, a commit or a file in this repository.** Secrets go only into
+GitHub's secret settings or into Expo. A project ID, an account name, the App Store app ID and the tip link are not
+secrets, and can be sent to Claude in chat.
+
+What it costs: the Apple Developer Program (already paid), the free Expo plan (15 iOS builds a month, and it never bills
+for more: past that, builds wait for the next month), and free GitHub Actions and Codespaces hours for this public repository.
+
+## 0. Decisions (in chat)
+
+| Decision               | Suggested                                                 | Why                                                                                                       |
+| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`) | It can never change once step 3 runs. Tell Claude before then if you want another.                        |
+| Name on the App Store  | Daybook: Quit Without Shame                               | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list. |
+| Where it is offered    | The United States only, for now                           | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).         |
+| Tip service            | Ko-fi                                                     | No account needed to tip, no cut of tips beyond card fees, and monthly tips if someone wants them.        |
+| Support email          | A new address used only for Daybook                       | The App Store needs a support page. Claude makes the page once there is an address.                       |
+| Your developer account | Tell Claude: individual or organization                   | An individual account shows your legal name as the seller on the App Store.                               |
+
+## 1. The tip page (you, about 10 minutes)
+
+1. Sign up at ko-fi.com. Page name: **Daybook**.
+2. Connect payouts (Stripe or PayPal) yourself. Bank and tax details are entered only by you, never by Claude.
+3. Leave donations on. Leave the shop, commissions and memberships with perks off: a tip opens nothing.
+4. If Ko-fi offers to show a public list of supporters, turn it off, so no one is shown as a Daybook user.
+5. Page text to paste:
+
+   > Daybook is a free, private app for quitting porn, or another habit, without shame. No ads, no tracking, and nothing to
+   > unlock. One person builds it. Tips pay for the developer account and the servers, and for the time to keep making it
+   > better. Thank you.
+
+6. Send Claude the page link. Claude sets `SUPPORT_URL` in `packages/core/src/support.ts` and publishes. Until then,
+   nothing about tips shows anywhere.
+
+## 2. Expo (you, about 10 minutes)
+
+1. Sign up at expo.dev (the free plan).
+2. Create a project named **daybook** (the name must match `slug` in app.json). Send Claude the **project ID** and your
+   **account name**. Claude adds them to app.json.
+3. Account settings, Access tokens: create a token named `github-store` and copy it.
+4. On github.com/jdsmith2004/daybook: Settings, Secrets and variables, Actions, New repository secret. Name: `EXPO_TOKEN`.
+   Value: the token. (This is what lets the App Store button build from any computer.)
+
+## 3. Signing, once (you, about 15 minutes, in the browser)
+
+The first iPhone build needs your Apple sign-in once, to make the signing certificate. After this, no step needs it.
+
+1. Wait until Claude says the project ID from step 2 is in `main`.
+2. On github.com/jdsmith2004/daybook: Code, Codespaces, **Create codespace on main**. A terminal opens in the browser.
+3. Run, one line at a time:
+
+   ```sh
+   npm ci
+   cd apps/mobile
+   npx eas-cli@24.10.0 login
+   npx eas-cli@24.10.0 credentials -p ios
+   ```
+
+4. In the menus: choose the **production** profile, say yes to logging in to Apple (Apple ID, password, then the code on
+   your phone), and set up everything needed to build (the distribution certificate and the provisioning profile). If it
+   asks about push notifications, say no: Daybook's reminders are made on the phone.
+5. Then, in the same menu: App Store Connect, manage your API key, set up your project to use an API key for EAS Submit,
+   and let it make a new key. Expo keeps it; nothing goes in this repository.
+6. If a question is unclear, copy it to Claude in chat (never a password). When done, delete the codespace (Codespaces
+   list, the three dots, Delete).
+
+## 4. The App Store record (you or Claude in Chrome, about 10 minutes)
+
+1. appstoreconnect.apple.com, Apps, the plus button, **New App**:
+   - Platform: iOS. Name: from step 0. Primary language: English (U.S.).
+   - Bundle ID: `com.jdsmith2004.daybook` (it shows up after step 3). SKU: `daybook-ios`. User access: full.
+2. App Information: copy the **Apple ID** (a number) and send it to Claude. Claude adds it to `apps/mobile/eas.json` as
+   `ascAppId`, which lets the button send builds to TestFlight on its own.
+3. Pricing and Availability: price **Free**; availability **United States** only (see step 0).
+
+## 5. Build and test (you, from any computer or phone)
+
+1. On github.com/jdsmith2004/daybook: Actions, **App Store**, Run workflow, on `main`.
+2. It runs the checks, builds on Expo (the free queue can take a while), and sends the build to TestFlight. A green check
+   means it is on its way.
+3. In App Store Connect, TestFlight: when the build says Ready to test (about 15 minutes of processing), add yourself as a
+   tester and install it with the TestFlight app. Walk it on your phone before anything goes to review.
+
+## 6. The listing (Claude drafts, you or Claude in Chrome paste)
+
+- **Name:** Daybook: Quit Without Shame
+- **Subtitle:** Private help to quit porn
+- **Category:** Health & Fitness. Second: Lifestyle.
+- **Keywords:** `addiction,pornfree,recovery,urges,relapse,habit,tracker,clean,sober,journal,accountability,sobriety`
+  (no other app's name or trademark, by the store's rules)
+- **Promotional text:** Free for everyone. No ads, no tracking, nothing to unlock. A slip is data, not a reset.
+- **Description:**
+
+  > Daybook is a private, honest companion for quitting porn, or another habit, without shame. Log urges and slips in a
+  > few taps, learn your pattern, and keep going after a hard day. A slip is data, not a reset: what you build stays yours.
+  >
+  > What is inside
+  > • SOS: breathe first, then a tool that fits the moment.
+  > • Rekindle: after a slip, a short, honest look back and a small quest that can keep your run.
+  > • Your pattern: the hours and moments that are hardest for you, from your own log.
+  > • Lessons built on good research, written plainly.
+  > • Your own plan: why you are doing this, and what you will do when an urge comes.
+  > • An evening wind-down, a morning check, and a weekly review.
+  > • Graduation: a permanent award at 90 days with no slip.
+  >
+  > Private by design
+  > • No ads. No tracking. Nothing is sold.
+  > • Your log stays on your phone. A free account is optional: it keeps a copy safe and syncs with the web, readable only
+  > with your sign-in, and Delete my account removes everything.
+  > • Face ID lock, and a plain name and icon on your home screen.
+  >
+  > Free for everyone
+  > Daybook is free, with nothing to unlock. If it helps you, you can leave a tip.
+  >
+  > Daybook is not medical care. If you are in crisis in the US, call or text 988.
+
+- **Privacy Policy URL:** https://d3c9g6kent5bsr.cloudfront.net/privacy (the GitHub Pages copy answers with a 404 code, so
+  use this one, or a real domain later).
+- **Support URL:** the support page Claude makes from step 0's email.
+- **Screenshots:** iPhone 6.9-inch (1290 × 2796), 3 to 10 of them. Claude makes these from the app.
+- **Age rating:** answer the questions as they are: no nudity or sexual content; mature themes (porn is named and talked
+  about plainly); health information (lessons on changing a habit). Accept the rating it gives.
+- **App Privacy** (what Apple shows as the privacy label). Data is collected only for people who make an account, only to
+  make the app work, linked to that account, and never used to track:
+  - Contact info: email address.
+  - Health and fitness: health (the log of urges and slips is health data a person gives).
+  - Sensitive info: religious beliefs (setup asks how much faith matters, and that answer syncs).
+  - User content: other user content (the log, notes, plans).
+  - Identifiers: user ID.
+  - Tracking: **no**. Data used to track you: **none**.
+- **Notes for App Review:**
+
+  > Daybook works fully without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
+  > free account syncs a copy and opens the lessons after the first three. "Support Daybook" opens a tip
+  > page in the browser; tips unlock nothing, and the link is offered on the United States storefront only, under
+  > guideline 3.1.1(a). The app has no ads and no analytics.

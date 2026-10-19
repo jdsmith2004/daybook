@@ -38,16 +38,19 @@ The golden tests in `packages/core/test` check those rules against fixtures reco
 
 ## Building for the stores
 
-`apps/mobile/eas.json` has the build profiles. From `apps/mobile`:
+The iPhone app is built from GitHub, so no Mac or any one computer is needed: Actions, **App Store**, Run workflow
+(`.github/workflows/store.yml`). It runs the checks, builds on Expo's servers and sends the build to TestFlight. The
+one-time setup (Expo, signing, the App Store record) is in [docs/launch.md](docs/launch.md).
+
+`apps/mobile/eas.json` has the build profiles. By hand, from `apps/mobile`:
 
 ```sh
 npx eas-cli@latest login
-npx eas-cli@latest init                          # links the project to your Expo account (once)
 npx eas-cli@latest build --profile preview      # an install link for your own phone
 npx eas-cli@latest build --profile production   # for the App Store and Google Play
 ```
 
-The bundle ID (iOS) and package name (Android) are set the first time you build, and cannot change after the app is in a store.
+The bundle ID (iOS, in `app.json`) and package name (Android) cannot change after the app is in a store.
 
 ## Working from a computer signed in to another GitHub account
 

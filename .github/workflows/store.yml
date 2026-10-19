@@ -1,0 +1,44 @@
+# The iPhone app: checks everything, then builds it on Expo's servers (EAS Build) and sends it to TestFlight (EAS Submit).
+# Nothing here needs a Mac or any one computer: run it from the Actions tab on github.com, on any computer or phone
+# (Actions > App Store > Run workflow). The one-time setup it needs is in docs/launch.md. The free Expo plan gives 15 iOS
+# builds a month and never charges for more: past that, builds wait for the next month.
+name: App Store
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    name: Build and send to TestFlight
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Set up?
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::The EXPO_TOKEN secret is not set yet. See docs/launch.md, step 2."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build on EAS and send to TestFlight
+        working-directory: apps/mobile
+        run: npx --yes eas-cli@24.10.0 build --platform ios --profile production --non-interactive --auto-submit

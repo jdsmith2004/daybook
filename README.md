@@ -66,6 +66,35 @@ npx eas-cli@latest build --profile production   # for the App Store and Google P
 
 The bundle ID (iOS, in `app.json`) and package name (Android) cannot change after the app is in a store.
 
+## Store screenshots
+
+`npm run shots` makes every store image from the real app, with no outside tool: the App Store screenshots (iPhone
+6.9-inch), the App Store header and search-results images, and the Google Play screenshots and feature graphic. They land
+in `store-assets/<size>/NN-name.png` at the exact pixel size each store asks for.
+
+How it works: it builds the web app with `EXPO_PUBLIC_SHOTS=1`, which turns on screenshot mode (`apps/mobile/src/shots`).
+In that mode the app runs on a made-up demo log (`demo.ts`) kept in memory, with the clock starting at the same moment
+every time, motion reduced, and every request to another site blocked: it never reads anyone's real data or reaches the
+account or sync server. The page `/shots` (which exists only in that build) draws one image: the real app in a phone frame,
+a caption above it, on a brand background. `scripts/shots.ts` opens it with Playwright for each scene, waits for fonts and
+pictures, and saves the PNG. A normal build has none of this: there `/shots` just goes to Today.
+
+```sh
+npm run shots                    # build in screenshot mode, then every scene
+npm run shots -- --no-build      # reuse the last build (after changing only shots.json)
+npm run shots -- --only today    # scenes whose name has "today"
+npm run shots -- --size ios69    # one size
+```
+
+**Add a scene:** add an entry to `shots.json`: `name`, `sizes` (keys of `SIZES` in `apps/mobile/src/shots/config.ts`:
+`ios69`, `play-phone`, `play-feature`, `ios-header`, `ios-search`), `screen` (an app path, like `/learn` or
+`/journal?pane=patterns`; `screen2` and `screen3` put more phones in the wide images), `caption` and `sub`, `bg` (a key
+of `BACKGROUNDS`), `theme` (`light` or `dark`), and if needed `at` (the demo moment, like `2026-10-17T21:30:00`) and
+`scroll` (pixels down the screen). Files are numbered in the order of `shots.json`. Captions only describe what the app
+really does. The frame, fonts, colors and caption layout are all in `config.ts`, so a style change there updates every
+image. To look at one by hand: `EXPO_PUBLIC_SHOTS=1 npx expo start --web` in `apps/mobile`, then open
+`/shots?size=ios69&screen=/&caption=Hello`.
+
 ## Working from a computer signed in to another GitHub account
 
 Commit and push this repository only as yourself. In this repository:

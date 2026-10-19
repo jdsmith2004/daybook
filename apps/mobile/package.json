@@ -1,7 +1,7 @@
 {
   "name": "@daybook/mobile",
   "version": "0.1.0",
-  "main": "expo-router/entry",
+  "main": "./index.js",
   "dependencies": {
     "@daybook/core": "*",
     "@expo-google-fonts/fredoka": "^0.4.1",

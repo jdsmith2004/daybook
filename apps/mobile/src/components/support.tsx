@@ -6,12 +6,13 @@ import { SUPPORT_URL, tipAnswered, TIP_WORDS } from '@daybook/core';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LinkCard } from '@/components/link-card';
+import { SHOTS_ANDROID } from '@/shots/boot';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 /** the tip link on this platform, or '' where none is offered */
-export const TIP_URL = Platform.OS === 'android' ? '' : SUPPORT_URL;
+export const TIP_URL = Platform.OS === 'android' || SHOTS_ANDROID ? '' : SUPPORT_URL;
 export const openTip = () => (TIP_URL ? Linking.openURL(TIP_URL).catch(() => undefined) : undefined);
 
 export function TipCard() {

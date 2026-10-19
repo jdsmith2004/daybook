@@ -132,8 +132,12 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Copyright:** 2026 Jeff Smith
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
-- **Screenshots:** the six in `docs/store/` (1290 × 2796, iPhone 6.9-inch), in order. Download them from GitHub on
-  whichever computer you are using.
+- **Screenshots:** the six in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
+  (README, "Store screenshots"). Download them from GitHub on whichever computer you are using.
+- **Header and search results** (new in App Store Connect for iOS 27; optional, and reviewed like the rest): the header
+  is `store-assets/ios-header/01-header.png` (3840 × 1646, 21:9) and the search card `store-assets/ios-search/01-search.png`
+  (3840 × 2560, 3:2), on the version page's Header and Search Results tab. Apple asks that these suit a 4+ rating even
+  when the app is rated higher, so they never name what Daybook is for; without them, search shows the screenshots.
 - **Age rating:** answer the questions as they are: no nudity or sexual content; mature themes (porn is named and talked
   about plainly); medical or treatment information: infrequent (lessons on changing a habit, not treatment); no user
   chat, no web browsing, no gambling. Daybook is for anyone 13 or older (the terms and the privacy policy say so), so answer
@@ -175,8 +179,8 @@ money or is unclear.
 1. appstoreconnect.apple.com → Apps → Daybook: Quit Without Shame → the iOS app's 1.0 version
    ("Prepare for Submission").
 2. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL
-   (empty), copyright. Upload the six screenshots from docs/store/ in order to the 6.9-inch slot
-   (download them from GitHub first).
+   (empty), copyright. Upload the six screenshots from store-assets/ios69/ in order to the 6.9-inch slot
+   (download them from GitHub first), and the header and search images from store-assets/ios-header and ios-search.
 3. Build: choose the newest build that finished processing (the one I tested in TestFlight).
 4. App Information: name and subtitle from step 6; category Health & Fitness, second Lifestyle;
    content rights: no third-party content; age rating questions as in step 6.
@@ -239,8 +243,9 @@ they would be Play in-app products, and that is a separate piece of work.
    - **Short description** (80 letters at most): Private help to quit porn. Log urges and slips without shame.
    - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
      is free, with nothing to unlock." (no tips on Android).
-   - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), a feature graphic at 1024 × 500,
-     and 2 to 8 phone screenshots. Claude makes the feature graphic and the screenshots from the app; ask for them.
+   - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), the feature graphic
+     `store-assets/play-feature/01-feature.png` (1024 × 500), and the six phone screenshots in `store-assets/play-phone/`
+     (1080 × 1920), all made by `npm run shots`. The Android ones show no tip button, as the Android app has none.
    - **Category:** Health & Fitness. **Contact email:** jeffreydsmith.cs@gmail.com. **Privacy policy:**
      https://d3c9g6kent5bsr.cloudfront.net/privacy.html
    - **App access:** some features need a sign-in (lessons after the first three): give the review test account from step

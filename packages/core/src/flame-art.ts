@@ -516,6 +516,12 @@ export function flameSvg(n: number, o: { still?: boolean; locked?: boolean; size
   return `<svg class="${cls}" viewBox="0 0 120 120" style="width:${size}px;height:${size}px" aria-hidden="true" focusable="false">${defsFor(id, sc.sky)}${body}</svg>`;
 }
 
+/** the full flame alone on a clear background (no sky), w by w * 1.2 in its own box, for store art */
+export function flameFigureSvg(): string {
+  const id = 'em' + ++seq;
+  return `<svg viewBox="-60 -10 120 140" xmlns="http://www.w3.org/2000/svg">${defsFor(id)}${shadow(id, 0, 122, 50)}${flameFig(id, 'full', 0, 120, 1)}</svg>`;
+}
+
 /** the flame on its own, for the app icon: the full flame on the night sky with its glow, filling the square */
 export function flameIconSvg(): string {
   const id = 'em' + ++seq;

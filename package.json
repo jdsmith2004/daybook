@@ -12,7 +12,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "icons": "node --experimental-strip-types --no-warnings tools/make-icons.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "shots": "node --experimental-strip-types --no-warnings scripts/shots.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

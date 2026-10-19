@@ -1,0 +1,84 @@
+{
+  "scenes": [
+    {
+      "name": "today",
+      "screen": "/",
+      "caption": "Quit porn without shame",
+      "sub": "A slip is data, not a reset. What you build stays yours.",
+      "bg": "night",
+      "theme": "light",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "sos",
+      "screen": "/sos",
+      "caption": "Help the moment an urge hits",
+      "sub": "Breathe first, then a tool that fits the moment.",
+      "bg": "dawn",
+      "theme": "light",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "grow",
+      "screen": "/miles",
+      "caption": "Watch your flame grow",
+      "sub": "Points only go up. A slip never takes them away.",
+      "bg": "night",
+      "theme": "dark",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "pattern",
+      "screen": "/journal?pane=patterns",
+      "caption": "Learn your pattern",
+      "sub": "Your log shows the hours and moments that are hardest for you.",
+      "bg": "cream",
+      "theme": "light",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "learn",
+      "screen": "/learn",
+      "caption": "Lessons built on research",
+      "sub": "Short, plain and hopeful. A few minutes a day.",
+      "bg": "day",
+      "theme": "light",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "private",
+      "screen": "/privacy",
+      "caption": "Private by design",
+      "sub": "No ads, no tracking. Without an account, your log never leaves your phone.",
+      "bg": "cream",
+      "theme": "light",
+      "sizes": ["ios69", "play-phone"]
+    },
+    {
+      "name": "feature",
+      "screen": "/",
+      "caption": "Daybook",
+      "sub": "Quit without shame. Keep going after a hard day.",
+      "bg": "night",
+      "theme": "light",
+      "sizes": ["play-feature"]
+    },
+    {
+      "name": "header",
+      "caption": "Keep going after a hard day",
+      "bg": "dawn",
+      "sizes": ["ios-header"]
+    },
+    {
+      "name": "search",
+      "screen": "/",
+      "screen2": "/learn",
+      "screen3": "/miles",
+      "caption": "A private, honest companion",
+      "sub": "for changing a habit, one day at a time",
+      "bg": "night",
+      "theme": "light",
+      "sizes": ["ios-search"]
+    }
+  ]
+}

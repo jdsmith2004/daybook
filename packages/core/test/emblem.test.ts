@@ -13,6 +13,12 @@ describe('the flame in its own sky', () => {
       expect(sc.xml).not.toMatch(/r="57\.2" fill="none"/);
     }
   });
+  it('no two parts of a drawing share an id (a shared one breaks the soft frame)', () => {
+    for (let l = 1; l <= 60; l++) {
+      const ids = [...emblemScene(l).xml.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+      expect(new Set(ids).size, `level ${l}`).toBe(ids.length);
+    }
+  });
   it('a night sky has stars and light words; a day sky has dark words', () => {
     const night = emblemScene(17);
     expect(night.stars).toBe(true);

@@ -1,5 +1,5 @@
 /* The flame spirit: one drawing for each of the 60 levels (packages/core, the emblem). With `alive`, the figure moves gently in
-   a way that fits its form (a fire flickers, the lighthouse and the suns breathe slowly, the stars twinkle), and only the
+   a way that fits its form (a fire flickers, the rising flame flickers and floats, the suns breathe slowly, the stars twinkle), and only the
    figure: the drawing is split into layers (core emblemLayers), so its sky, its round frame and its hills stay still. Each
    change of `pulse` (a tap on the flame) sends one slow bloom through it: the figure swells and settles, its glow brightens,
    and a soft ring of light spreads out and fades. It is still under Reduce Motion, when locked, and in long lists (which
@@ -12,11 +12,11 @@ import { SvgXml } from 'react-native-svg';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 
 /* [how far the figure grows, how long one breath takes, how much its glow dims, how far it sways (degrees), how far it
-   floats (a share of its size)] for each kind of form: a fire flickers and sways, the lighthouse and the suns breathe and
+   floats (a share of its size)] for each kind of form: a fire flickers and sways, the rising flame flickers and floats, the suns breathe and
    drift, the stars twinkle and drift */
 const MOTION: [number, number, number, number, number][] = [
   [0.035, 1100, 0.25, 1.6, 0.006],
-  [0.02, 2800, 0.3, 0, 0.008],
+  [0.03, 1500, 0.25, 1.2, 0.02],
   [0.03, 3200, 0.25, 0, 0.012],
   [0.03, 2400, 0.35, 0, 0.012],
 ];

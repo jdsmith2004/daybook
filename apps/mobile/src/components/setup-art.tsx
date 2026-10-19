@@ -556,15 +556,15 @@ export function PicFlame() {
   const c = useTheme();
   const st: [number, string, number][] = [
     [1, 'Spark', 40],
-    [8, 'Campfire', 52],
-    [17, 'Lighthouse', 64],
-    [28, 'Full Sun', 78],
+    [13, 'Campfire', 52],
+    [28, 'Rising', 64],
+    [48, 'Full Sun', 78],
   ];
   return (
     <View
       style={{ gap: 10, alignItems: 'center' }}
       accessible
-      accessibilityLabel="The flame grows in stages, from a spark to a campfire, a lighthouse, and a full sun">
+      accessibilityLabel="The flame grows in stages, from a spark to a campfire, then rising, and a full sun">
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
         {st.map((x) => (
           <View key={x[0]} style={{ alignItems: 'center', gap: 2 }}>

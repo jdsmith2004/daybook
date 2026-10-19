@@ -49,7 +49,7 @@ type Kind = keyof typeof SHAPES;
 function defsFor(id: string, sky?: string[]) {
   let d =
     `<linearGradient id="${id}fo" x1=".1" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#FF8F2E"/><stop offset=".5" stop-color="#FF6B1E"/><stop offset="1" stop-color="#E5421A"/></linearGradient>` +
-    `<linearGradient id="${id}fm" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#FFB234"/><stop offset="1" stop-color="#FF8C1E"/></linearGradient>` +
+    `<linearGradient id="${id}fd" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#FFB234"/><stop offset="1" stop-color="#FF8C1E"/></linearGradient>` +
     `<radialGradient id="${id}fi" cx="44%" cy="28%" r="80%"><stop offset="0" stop-color="#FFEA55"/><stop offset=".45" stop-color="#FFD033"/><stop offset=".85" stop-color="#FFB224"/><stop offset="1" stop-color="#FFA21E"/></radialGradient>` +
     `<radialGradient id="${id}hl"><stop offset="0" stop-color="#FFF6B0" stop-opacity=".6"/><stop offset="1" stop-color="#FFF6B0" stop-opacity="0"/></radialGradient>` +
     `<linearGradient id="${id}bs" x1="0" y1="0" x2="0" y2="1"><stop offset=".6" stop-color="#FF8A1A" stop-opacity="0"/><stop offset="1" stop-color="#FF8A1A" stop-opacity=".7"/></linearGradient>` +
@@ -94,7 +94,7 @@ function flameFig(id: string, kind: Kind, cx: number, by: number, k: number, o: 
   let g = `<g class="em-flame" style="animation-delay:${o.delay || 0}s"><g transform="translate(${f(cx)} ${f(by)}) scale(${k})${lean} translate(0 -120)">`;
   g += `<path d="${out}" fill="url(#${id}fo)"/>`;
   g += `<g clip-path="url(#${id}co${kind})"><ellipse cx="46" cy="98" rx="26" ry="36" fill="url(#${id}rd)"/></g>`;
-  if (mid) g += `<path d="${mid}" fill="url(#${id}fm)"/>`;
+  if (mid) g += `<path d="${mid}" fill="url(#${id}fd)"/>`;
   g += `<path d="${heart}" fill="url(#${id}fi)"/>`;
   g += `<g clip-path="url(#${id}ci${kind})"><rect x="-40" y="30" width="80" height="86" fill="url(#${id}bs)"/><ellipse cx="-4" cy="${kind === 'full' ? 60 : 72}" rx="22" ry="16" fill="url(#${id}hl)"/></g>`;
   if (o.face !== false) g += kind === 'full' ? face(id) : kind === 'small' ? face(id, 0.82, 88) : face(id, 0.86, 88);
@@ -122,7 +122,7 @@ function sunFig(id: string, cx: number, cy: number, r: number, o: { n?: number; 
   }
   const s = r / 44;
   let g = `<g transform="translate(${f(cx)} ${f(cy)})">`;
-  g += `<g class="sn-rays" fill="url(#${id}fo)">${tips}</g><g fill="url(#${id}fm)">${inner}</g>`;
+  g += `<g class="sn-rays" fill="url(#${id}fo)">${tips}</g><g fill="url(#${id}fd)">${inner}</g>`;
   g += `<circle r="${f(r)}" fill="url(#${id}fi)"/>`;
   g += `<g transform="scale(${f(r / 40)})" clip-path="url(#${id}cs)"><rect x="-40" y="-10" width="80" height="50" fill="url(#${id}bs)"/><ellipse cx="-8" cy="-18" rx="24" ry="16" fill="url(#${id}hl)"/></g>`;
   g += `<g transform="scale(${f(s)}) translate(0 -88)">${face(id)}</g>`;
@@ -474,8 +474,8 @@ const SCENES: ((id: string, t: number, st: number) => Scene)[] = [
     if (st >= 4)
       h +=
         sparkle(14, 24, 3.6, '#FFE27A', 0) + sparkle(106, 22, 3.6, '#FFE27A', 1) + sparkle(100, 104, 3.4, '#FFE27A', 2) + sparkle(20, 104, 3.4, '#FFE27A', 3);
-    h += glow(id, 60, 46, 22);
-    h += fig(sunFig(id, 60, 46, 10, { n: 8, len: 4 }), true);
+    h += glow(id, 60, 46, 26);
+    h += fig(sunFig(id, 60, 46, 13, { n: 10, len: 5 }), true);
     h += hill(110, '#0C0828', 6);
     return { sky: ['#0B0A2E', '#1A1550', '#2C2072'], layers: h };
   },
@@ -521,6 +521,6 @@ export function flameIconSvg(): string {
   const id = 'em' + ++seq;
   return (
     `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${defsFor(id, ['#15103C', '#281F66', '#3A2C86'])}` +
-    `<rect width="120" height="120" fill="url(#${id}sk)"/><circle cx="60" cy="66" r="54" fill="url(#${id}go)"/>${shadow(id, 60, 110, 46)}${flameFig(id, 'full', 60, 108, 0.86)}</svg>`
+    `<rect width="120" height="120" fill="url(#${id}sk)"/><circle cx="60" cy="66" r="54" fill="url(#${id}go)"/>${shadow(id, 60, 106, 42)}${flameFig(id, 'full', 60, 104, 0.76)}</svg>`
   );
 }

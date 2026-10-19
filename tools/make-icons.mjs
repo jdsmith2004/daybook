@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 /*
- * Makes the app icons from the flame spirit itself (level 9, the campfire), so the icon is the same art as the app.
+ * Makes the app icons from the flame spirit itself (packages/core flame-art.ts), so the icon is the same art as the app:
+ * the full flame on its night sky for the icon, and the campfire's flame in its round frame for the rest.
  * Draws the SVG in Chromium and saves PNGs into apps/mobile/assets/images:
  *   icon.png                     1024, full bleed (iOS rounds the corners itself)
  *   android-icon-foreground.png  1024, the flame badge inside Android's safe zone, transparent around it
  *   android-icon-background.png  1024, the night color
  *   splash-icon.png              1024, the flame badge on transparent
  *   favicon.png                  48, the flame badge for the browser tab
- * Run it again after the emblem changes:  npm run icons
+ * Run it again after the flame changes:  npm run icons  (Node runs the TypeScript file directly)
  */
 import { chromium } from 'playwright-core';
 import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Em } from '../packages/core/src/legacy/core.js';
+import { flameIconSvg, flameSvg } from '../packages/core/src/flame-art.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'apps/mobile/assets/images');
-const LEVEL = 9;
+const LEVEL = 13;
 const NIGHT = '#1B1550';
 
 function findChromium() {
@@ -35,12 +36,9 @@ function findChromium() {
 }
 
 /* the badge: the emblem as the app draws it, with its round frame */
-const badge = (size) => Em.emblem(LEVEL, { still: true, size }).replace(/ class="[^"]*"/g, '');
-/* full bleed: the same scene with no round clip and no frame, so the sky fills the square */
-const bleed = (size) =>
-  badge(size)
-    .replace(/<g clip-path="url\(#[^)]+\)">/, '<g>')
-    .replace(/<circle cx="60" cy="60" r="57\.2"[^>]*\/><circle cx="60" cy="60" r="58\.6"[^>]*\/>/, '');
+const badge = (size) => flameSvg(LEVEL, { still: true, size }).replace(/ class="[^"]*"/g, '');
+/* full bleed: the flame alone on its night sky, filling the square */
+const bleed = (size) => flameIconSvg().replace('<svg ', `<svg width="${size}" height="${size}" `);
 
 const jobs = [
   { file: 'icon.png', size: 1024, html: (s) => bleed(s), bg: NIGHT },

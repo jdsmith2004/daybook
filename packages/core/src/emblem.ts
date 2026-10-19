@@ -1,12 +1,13 @@
-/* The flame spirit for native screens. The legacy emblem is an SVG string made for the web, with CSS classes that animate it.
-   react-native-svg draws the same shapes from the string; it ignores classes, so the native flame is still, and the size
-   comes from the component instead of an inline style. */
-import { Em } from './legacy/core.js';
+/* The flame spirit for native screens. The drawing (flame-art.ts) is an SVG string made for the web too, with CSS classes
+   that animate it. react-native-svg draws the same shapes from the string; it ignores classes, so the app moves the parts
+   itself (emblemLayers), and the size comes from the component instead of an inline style. The legacy emblem in core.js
+   is the old drawing, kept only as the frozen record the golden tests check. */
+import { flameSvg } from './flame-art';
 
 /** the flame for a level on the 60-level ladder. locked: a form not reached yet, drawn faded. classes: keep the legacy
     classes that name each part (em-fig is the figure, sn-glow its glow), for emblemLayers. */
 export function emblemXml(level: number, locked = false, classes = false): string {
-  const x = Em.emblem(level, { still: true, locked })
+  const x = flameSvg(level, { still: true, locked })
     .replace(/ style="width:\d+px;height:\d+px"/, '')
     .replace(/ style="[^"]*"/g, '')
     .replace(/ aria-hidden="true"/g, '')
@@ -69,7 +70,7 @@ export function emblemScene(level: number, classes = false): EmblemScene {
 
 /* ---------- the flame in layers, so only the figure moves ---------- */
 /** the flame in four drawings laid over each other (in its own sky when soft, or in its round frame): the sky and what is behind the figure, the glow, the
-    figure (the spark, the torch, the lighthouse lamp, the sun), and what is in front of it (hills that a rising sun sits
+    figure (the spark, the torch, the rising flame, the sun), and what is in front of it (hills that a rising sun sits
     behind). Each is a whole 120 by 120 drawing with its own ids, so they line up exactly. at: the figure's middle, as a
     share of the width and height, for growing it in place. */
 export interface EmblemLayers {

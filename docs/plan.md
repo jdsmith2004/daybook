@@ -299,7 +299,7 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
    - Two new forms at the top beyond Full Sun (for example **Constellation** and **North Star**), so long-time users have
      somewhere new to go.
 3. **Every form looks clearly different**, and every step inside a form adds something you can see (a new element, not just
-   a brighter color). The 12 forms keep the story: a spark, kindling, campfire, torch, beacon, lighthouse, sunrise, daybreak,
+   a brighter color). The 12 forms keep the story: a spark, kindling, campfire, torch, beacon, rising (it took the lighthouse's place on October 19), sunrise, daybreak,
    bright day, full sun, constellation, north star.
 4. **Nobody goes down.** Points stay the source of truth. Every old level maps to a new level at the same form or later
    (`OLD_TO_NEW`), the kept floor in `settings.seen.level` is converted once, and the new curve is checked so that no point

@@ -93,14 +93,14 @@ export const STAGES: Stage[] = [
     ],
   },
   {
-    name: 'Lighthouse',
-    meaning: 'A steady light that keeps its place when the water is rough.',
+    name: 'Rising',
+    meaning: 'What you built is strong enough to rise on its own.',
     steps: [
-      'A small lighthouse on the rocks.',
-      'Its lamp turns for the first time.',
-      'A taller tower, with longer beams.',
-      'Waves break below, and the light holds.',
-      'The beams sweep across the whole sea.',
+      'The flame lifts off the ground.',
+      'Embers trail behind it.',
+      'It rises higher and rounder.',
+      'Pink clouds gather below it.',
+      'It hangs over the hills, almost a sun.',
     ],
   },
   {

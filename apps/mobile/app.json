@@ -2,6 +2,7 @@
   "expo": {
     "name": "Daybook",
     "slug": "daybook",
+    "owner": "jdsmith2004",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -78,6 +79,11 @@
       "reactCompiler": true
     },
     "description": "A private, honest companion for changing a habit.",
-    "backgroundColor": "#FFF8EB"
+    "backgroundColor": "#FFF8EB",
+    "extra": {
+      "eas": {
+        "projectId": "bcb49295-f433-4d78-b7bb-a72dadeec359"
+      }
+    }
   }
 }

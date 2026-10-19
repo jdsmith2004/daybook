@@ -15,7 +15,7 @@ import { addDays, diffDays, eventsOf, isKey } from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
 /** where a tip goes. Empty: nothing about tips shows. */
-export const SUPPORT_URL: string = '';
+export const SUPPORT_URL: string = 'https://buy.stripe.com/fZudRb2Rn3QafC3gWCeUU00';
 /** days since the start before Today asks */
 export const TIP_AFTER = 30;
 /** days with no slip before Today asks (the day of a slip and the quest's three days) */

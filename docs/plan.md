@@ -113,7 +113,7 @@ building. No subscriptions, no ads (they need tracking), no paid streak protecti
    link is in it. Google Play allows outside donation links only for tax-exempt groups, so when
    Daybook goes to Google Play (the owner, October 19), tips there go through Google Play's own payments, which take
    Google Pay: a few fixed tip sizes, unlocking nothing, with the same words. The same store tips (Apple's in-app
-   purchase, which takes Apple Pay) would let the iPhone app reach countries outside the US. The tip page for now is Ko-fi.
+   purchase, which takes Apple Pay) would let the iPhone app reach countries outside the US. The tip page is a Stripe Payment Link (live October 19; the giver picks the amount).
 2. **The App Store, from any computer.** Actions, App Store, Run workflow (`.github/workflows/store.yml`) runs the checks,
    builds on Expo's servers and sends the build to TestFlight. The one-time setup, the listing words, the privacy label
    and the review notes are in [launch.md](launch.md).

@@ -13,30 +13,27 @@ for more: past that, builds wait for the next month), and free GitHub Actions an
 
 ## 0. Decisions (in chat)
 
-| Decision               | Suggested                                                 | Why                                                                                                                              |
-| ---------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`) | It can never change once step 3 runs. Tell Claude before then if you want another.                                               |
-| Name on the App Store  | Daybook: Quit Without Shame                               | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                        |
-| Where it is offered    | The United States only, for now                           | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                |
-| Tip service            | Ko-fi (the owner's choice, October 19)                    | Quickest to set up, PayPal and monthly tips built in. A Stripe Payment Link is the later option (the statement can say DAYBOOK). |
-| Support email          | A new address used only for Daybook                       | The App Store needs a support page. Claude makes the page once there is an address.                                              |
-| Your developer account | Tell Claude: individual or organization                   | An individual account shows your legal name as the seller on the App Store.                                                      |
+| Decision               | Suggested                                                 | Why                                                                                                                                           |
+| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`) | It can never change once step 3 runs. Tell Claude before then if you want another.                                                            |
+| Name on the App Store  | Daybook: Quit Without Shame                               | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                     |
+| Where it is offered    | The United States only, for now                           | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                             |
+| Tip service            | A Stripe Payment Link (done, October 19)                  | The giver picks the amount ($5 suggested); cards, Apple Pay and others. The statement says JEFFREY until Stripe accepts DAYBOOK (see step 1). |
+| Support email          | A new address used only for Daybook                       | The App Store needs a support page. Claude makes the page once there is an address.                                                           |
+| Your developer account | Tell Claude: individual or organization                   | An individual account shows your legal name as the seller on the App Store.                                                                   |
 
-## 1. The tip page (you, about 10 minutes)
+## 1. The tip page (done, October 19)
 
-1. Sign up at ko-fi.com. Page name: **Daybook**. Use `apps/mobile/assets/images/icon.png` as the page picture.
-2. Connect payouts (Stripe or PayPal) yourself. Bank and tax details are entered only by you, never by Claude. With Stripe
-   connected, Ko-fi can take Apple Pay and Google Pay on phones that have them.
-3. Leave donations on. Leave the shop, commissions and memberships with perks off: a tip opens nothing.
-4. If Ko-fi offers to show a public list of supporters, turn it off, so no one is shown as a Daybook user.
-5. Page text to paste:
+A Stripe Payment Link, "Tip for Daybook": the giver chooses the amount ($5 suggested), and the thank-you page says "Thank
+you. Your tip keeps Daybook free and helps it reach the next person." It is in `SUPPORT_URL` in
+`packages/core/src/support.ts`. Left to do in Stripe:
 
-   > Daybook is a free, private app for quitting porn, or another habit, without shame. No ads, no subscription, and
-   > nothing locked. One person builds it, and it runs on tips from the people it helps. Tips pay for the servers and the
-   > developer account, and for the time to make it better and reach more people who need it. Thank you.
-
-6. Send Claude the page link. Claude sets `SUPPORT_URL` in `packages/core/src/support.ts` and publishes. Until then,
-   nothing about tips shows anywhere.
+1. The **Action required** banner (identity or bank details): only you. Until it is cleared, payouts (and maybe payments)
+   can be held.
+2. Settings, Business details: set the website to `https://jdsmith2004.github.io/daybook/` and the public business name
+   to **Daybook**. Then try the statement descriptor **DAYBOOK** again (it was refused while the website was a Ko-fi page);
+   until then it says JEFFREY.
+3. Settings, Branding: upload `apps/mobile/assets/images/icon.png` as the icon, with the accent color `#6247EA`.
 
 ## 2. Expo (you, about 10 minutes)
 

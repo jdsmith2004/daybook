@@ -47,7 +47,13 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
   const tk = f.tk;
 
   it('offers the same pages, goals, reasons and plans', () => {
-    expect(core.obPages(a).map((p) => p.id)).toEqual(f.pages);
+    /* the legacy pages, in order; 'free' (Daybook is free, with the tip link, support.ts) is new and checked in support.test.ts */
+    expect(
+      core
+        .obPages(a)
+        .map((p) => p.id)
+        .filter((id) => id !== 'free'),
+    ).toEqual(f.pages);
     expect(core.obPrefill(st)).toEqual(f.prefill);
     expect(core.obGoals(st, tk).map((g) => [g.id, g.t, g.s, g.goal])).toEqual(f.goals);
     expect(core.obSug(a, st, tk)).toBe(f.sug);

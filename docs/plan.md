@@ -1,5 +1,66 @@
 # What is planned next
 
+## iPhone bug hunt (October 19, 2026)
+
+The iPhone app was walked in the iOS Simulator (iPhone 16 Pro, iPhone SE 3rd generation, iPhone 16 Pro Max, iOS 26.5) as
+made-up people: A, brand new at 11 PM (SOS before setup, the whole setup, the first check-in); B, day 3 the morning after a
+slip (Sunrise, the Today cards); C, about 60 days in (many logs and lessons, a slip on day 60, the Sunday review, the
+Journal calendar, the pattern). Also dark mode, the largest text size, VoiceOver labels, the keyboard, a forced quit, and
+the notification prompt. Every log was made up on the spot; no one's real data was used.
+
+**Found and fixed**
+
+- **A big gap above every tab page's title.** `Screen` padded the top by the safe area and iOS added it again
+  (`contentInsetAdjustmentBehavior="automatic"`). It is `"never"` now. Sheets (points, a day, an entry, a badge, the
+  account) had the same extra band and lose it on iOS too.
+- **Learn flashed a wrong layout when it opened** (the header, then an empty map, then a jump to the next lesson). The page
+  scrolled to the next lesson only after it was drawn, and the lands near it were drawn a moment later. It stays out of
+  sight until it is in place, then shows.
+- **The points number was cut off at the top** ("How your flame grows"). A 30-point number sat inside a body line with a
+  21-point line height, and iOS clipped it. It is its own line now. The other big numbers (Today, the slider, the Sunday
+  review, setup) were checked and are whole.
+- **Opening and closing a tile in Settings (and every collapsible tile) lagged for up to two seconds.** Timing it showed the
+  animation restarting about 60 times per tap: the content was squeezed with the growing box, its measured height
+  changed every frame, and each change started the animation again. The content is measured out of the flow now; one
+  tap is one animation of about 290 ms.
+- **The Journal calendar put every date under the wrong weekday.** Seven cells of 100/7 percent rounded up on iOS, so
+  Saturday wrapped to the next line. The month is drawn in week rows now.
+- **The loop picture's arrows (setup, the habit lesson, Talk) were drawn off their lines**, one pointing backwards: SVG
+  markers render badly on iOS. The heads are drawn as part of each arrow.
+- **At the largest text sizes, words broke in the middle** ("Tuesda / y", "Tod / ay") and the tab bar covered half the
+  page. Every Text now comes from `components/text.tsx`, which lets text grow up to 1.5 times (headings 1.25 times, tab
+  labels and words on pictures about 1.15 times). The hero card and SOS were fixed at that size too.
+- **Setup forgot its place.** It was kept only in memory, so if iOS closed Daybook in the background, a new person started
+  again at the first question. It is kept on the device now (never synced) and let go once setup is saved.
+- **On a phone with a Home button, the raised SOS button covered half of its label.**
+- **The reminder offered after a late check-in was 11 PM**, against the rule that Daybook never picks a night time by
+  itself. A check-in after 10 PM offers 10 PM.
+- **Setup's sample "When it happens" chart had its hour labels in the wrong places** ("6 PM" under the 10 PM bar).
+- Smaller: a band of the page color behind the clock and battery, so scrolled cards no longer run under them; Journal days
+  say what their times are ("Logged at 9:30 PM"); Rekindle writes points with a comma; the Sunday review's week bars all
+  show their date; lone links at the bottom are centered; setup's 10:00 PM fits on one line; "Very strong" fits in SOS;
+  the backdrops that close a sheet are buttons for VoiceOver.
+
+**Checked, nothing wrong:** points and level never dropped with a slip on day 60 (2,935, then 2,940 for the honest log;
+level 38 kept); SOS before setup saves the entry and carries it into the first day; Sunrise and Rekindle; the keyboard
+never covered a text box; the notification prompt shows on the setup page from a fresh install; dark mode; the Pro Max.
+
+**Left, with why**
+
+- **The day after a first-week slip, Today's flame says "No slip · 0 of the last 1 day."** It is the rule for the first
+  week (`graduate.ts`), but a big zero is the first thing seen the morning after. A design call for the owner.
+- **The Sunrise plan choice "Use Reach a person in Daybook."** reads oddly. The words are in the legacy rules and the
+  golden fixtures, and saved plans hold them, so changing them needs a word map in `normSettings`. The owner's call.
+- **The Sunday review's clock picture is shrunk to make room** even when there is room to spare (the shrink-to-fit for
+  short phones). Changing it touches every page that fits a picture; worth its own careful pass.
+- **Seen once, not repeated:** with the on-screen keyboard up, the first tap on "Add" in the review's own-words box only
+  closed the keyboard; in setup, a second tile tapped right after the first was not picked. Both worked every other time.
+- **Not walked:** a real account (user D). Signing up needs an email code, and the simulator has no address I control, so
+  sign up, sync, sign out, sign in and Delete my account were not tested. Rotation is off on purpose (the app is portrait
+  only). The SE could only be checked through links: tapping on it needs a one-time OK in the simulator panel.
+- Support opens the tip page in Safari on iOS. App Store rules (3.1.1) are strict about payments that leave the app; it is
+  worth a look before review, if that has not been settled already.
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

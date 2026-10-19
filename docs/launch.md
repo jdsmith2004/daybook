@@ -28,7 +28,7 @@ With Stripe (suggested):
 1. Sign up at stripe.com as an individual, and enter your identity and bank details yourself (never Claude).
 2. Settings, Public details: set the statement descriptor to **DAYBOOK**, so a bank statement says nothing more.
 3. Payment Links, New: a product named **Tip for Daybook**, price type **Customers choose what to pay** (suggest $5).
-   After payment, show the confirmation page with: "Thank you. Daybook stays free for the next person."
+   After payment, show the confirmation page with: "Thank you. Your tip keeps Daybook free and helps it reach the next person." Under Branding, upload `apps/mobile/assets/images/icon.png` as the icon.
 4. Copy the link (it starts with https://buy.stripe.com/).
 
 Or with Ko-fi: sign up at ko-fi.com, page name **Daybook**, connect payouts yourself, leave only donations on, and hide any

@@ -867,17 +867,25 @@ export default function Setup() {
           </View>
           <T style={s.p}>{TIP_WORDS.intro.p}</T>
           <T style={s.p}>{TIP_WORDS.intro.p2}</T>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel="Leave a tip. Opens a page in the browser. The setup waits for you."
-            onPress={openTip}
-            style={({ pressed }) => [s.tip, { backgroundColor: c.sunSoft, opacity: pressed ? 0.85 : 1 }]}>
-            <Icon name="heart" size={20} color={c.sunText} />
-            <Text style={[s.tipT, { color: c.sunText }]}>{TIP_WORDS.go}</Text>
-          </Pressable>
         </>
       );
-      foot = nextBtn('Continue');
+      /* the tip sits low, always in view, just over Continue */
+      foot = (
+        <View key="f" style={{ flex: 1, gap: 10 }}>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Support Daybook. Opens a page in the browser to leave a tip. The setup waits for you."
+            onPress={openTip}
+            style={({ pressed }) => [s.tip, { opacity: pressed ? 0.85 : 1 }]}>
+            <LinearGradient colors={[c.sun, '#FF9A5C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            <View style={{ zIndex: 1 }}>
+              <Icon name="heart" size={22} color={c.onSun} />
+            </View>
+            <Text style={[s.tipT, { color: c.onSun, zIndex: 1 }]}>{TIP_WORDS.go}</Text>
+          </Pressable>
+          {nextBtn('Continue')}
+        </View>
+      );
       break;
     }
     case 'done': {
@@ -1670,8 +1678,8 @@ const s = StyleSheet.create({
   orbWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
   orb: { position: 'absolute', left: 10, top: 10, right: 10, bottom: 10, borderRadius: 999 },
   orbDot: { position: 'absolute', width: 30, height: 30, borderRadius: 999 },
-  tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 18, marginTop: 4 },
-  tipT: { fontFamily: font.bodyBold, fontSize: 17 },
+  tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 56, borderRadius: 18, overflow: 'hidden' },
+  tipT: { fontFamily: font.bodyBold, fontSize: 18 },
   mid: { flexGrow: 1, minHeight: 90, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
   hsm: { fontSize: 26, lineHeight: 31 },

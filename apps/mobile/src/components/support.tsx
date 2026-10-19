@@ -56,14 +56,14 @@ export function TipTop() {
       accessibilityLabel="Support Daybook. Daybook is free; this opens a page to leave a tip."
       onPress={openTip}
       hitSlop={6}
-      style={({ pressed }) => [s.top, { backgroundColor: c.sunSoft, opacity: pressed ? 0.85 : 1 }]}>
-      <Icon name="heart" size={16} color={c.sunText} />
-      <Text style={[s.topT, { color: c.sunText }]}>{TIP_WORDS.top}</Text>
+      style={({ pressed }) => [s.top, { backgroundColor: c.sun, opacity: pressed ? 0.85 : 1 }]}>
+      <Icon name="heart" size={16} color={c.onSun} />
+      <Text style={[s.topT, { color: c.onSun }]}>{TIP_WORDS.top}</Text>
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, marginTop: 2 },
-  topT: { fontFamily: font.bodySemi, fontSize: 14 },
+  topT: { fontFamily: font.bodyBold, fontSize: 14 },
 });

@@ -42,10 +42,11 @@ it('asks once: after either answer, Today never asks again', () => {
   expect(core.tipAsk({}, st, core.addDays(tk, 200), 12, null, url)).toBe(false);
 });
 
-it('the words make no demand and promise nothing for money', () => {
+it('the words are honest about the need, never threaten, and promise nothing for money', () => {
   const all = JSON.stringify(core.TIP_WORDS);
   expect(all).not.toMatch(/n't|alive|only \d|%|unlock (more|every)|premium/i);
-  expect(core.TIP_WORDS.p).toContain('nothing to unlock');
+  expect(core.TIP_WORDS.p).toContain('nothing locked');
+  expect(all).not.toMatch(/shut|close down|go away|lose/i);
 });
 
 it('the Support button on Today hides in the days after a slip, and with no link', () => {

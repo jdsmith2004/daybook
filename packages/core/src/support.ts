@@ -43,25 +43,25 @@ function calm(days: Days, tk: DayKey): boolean {
 /** whether Today shows its small Support button at the top: always, except in the days after a slip */
 export const tipButton = (days: Days, tk: DayKey, url = SUPPORT_URL): boolean => !!url && calm(days, tk);
 
-/** the one ask is answered ("Leave a tip" or "No thanks"): Today never asks again */
+/** the one ask is answered ("Support Daybook" or "Not right now"): Today never asks again */
 export const tipAnswered = (st: Settings, tk: DayKey, now = Date.now()): Change => ({
   st: changeSettings(st, (s) => void (s.tipAsk = tk), now),
 });
 
 /** the words, in one place */
 export const TIP_WORDS = {
-  h: 'Daybook is free, and it stays free.',
-  p: 'No ads, no tracking, and nothing to unlock. One person builds it. If it has helped you, a tip helps keep it free for the next person.',
-  go: 'Leave a tip',
-  no: 'No thanks',
-  foot: 'This card will not come back. The link stays on More, if you ever want it.',
-  row: { title: 'Support Daybook', sub: 'Free for everyone, with no ads and no tracking. A tip helps keep it that way.' },
-  grad: 'Daybook is free for everyone. If it helped you get here, a tip helps keep it free for the next person.',
+  h: 'Daybook runs on tips.',
+  p: 'No ads, no subscription, and nothing locked. One person builds it, and tips from the people it helps are what keep it going and let it reach more people who need it. If it has helped you, a tip of any size makes a real difference.',
+  go: 'Support Daybook',
+  no: 'Not right now',
+  foot: 'This card will not come back. Support stays at the top of Today and on More.',
+  row: { title: 'Support Daybook', sub: 'Daybook runs on tips. They pay for the servers, and for the time to make it better.' },
+  grad: 'Daybook runs on tips from people like you. If it helped you get here, a tip helps the next person get here too.',
   /** the setup's page, near its end */
   intro: {
     h: 'Everything in Daybook is free.',
-    p: 'Daybook is made by one person, and kept going by people who chip in.',
-    p2: 'If you can, a small tip keeps it free for the next person. If you cannot, that is completely fine. Daybook is just as much yours.',
+    p: 'Daybook is built by one person, and it runs on tips from the people it helps. Tips pay for the servers and the developer account, and for the time to make it better and reach more people who need it.',
+    p2: 'If Daybook helps you, a tip of any size makes a real difference. If you cannot right now, that is okay. Daybook is yours either way.',
     pills: ['No ads', 'No tracking', 'Nothing locked'],
   },
   /** the small button at the top of Today */

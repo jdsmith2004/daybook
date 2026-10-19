@@ -35,7 +35,11 @@ you. Your tip keeps Daybook free and helps it reach the next person." It is in `
    until then it says JEFFREY.
 3. Settings, Branding: upload `apps/mobile/assets/images/icon.png` as the icon, with the accent color `#6247EA`.
 
-## 2. Expo (you, about 10 minutes)
+## 2. Expo (you, about 10 minutes; done October 19 except the token)
+
+The project is `daybook` under the Expo account `jeffspresso`, and its ID is in `apps/mobile/app.json`. Left to do: steps 3
+and 4 below, with a token from the jeffspresso account (the secret saved earlier came from another account, so builds
+would fail with it).
 
 1. Sign up at expo.dev (the free plan).
 2. Create a project named **daybook** (the name must match `slug` in app.json). Send Claude the **project ID** and your
@@ -44,7 +48,7 @@ you. Your tip keeps Daybook free and helps it reach the next person." It is in `
 4. On github.com/jdsmith2004/daybook: Settings, Secrets and variables, Actions, New repository secret. Name: `EXPO_TOKEN`.
    Value: the token. (This is what lets the App Store button build from any computer.)
 
-## 3. Signing, once (you, about 15 minutes, in the browser)
+## 3. Signing, once (you, about 15 minutes, in the browser; done October 19)
 
 The first iPhone build needs your Apple sign-in once, to make the signing certificate. After this, no step needs it.
 
@@ -67,7 +71,11 @@ The first iPhone build needs your Apple sign-in once, to make the signing certif
 6. If a question is unclear, copy it to Claude in chat (never a password). When done, delete the codespace (Codespaces
    list, the three dots, Delete).
 
-## 4. The App Store record (you or Claude in Chrome, about 10 minutes)
+## 4. The App Store record (you or Claude in Chrome, about 10 minutes; done October 19)
+
+Made: "Daybook: Quit Without Shame", free, United States only. Its Apple ID is `ascAppId` in `apps/mobile/eas.json`. Before
+the first build, the Account Holder accepts the updated Apple Developer Program License Agreement in App Store Connect
+(Apple refuses uploads until then).
 
 1. appstoreconnect.apple.com, Apps, the plus button, **New App**:
    - Platform: iOS. Name: from step 0. Primary language: English (U.S.).

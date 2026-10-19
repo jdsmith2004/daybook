@@ -9,6 +9,9 @@ export function keepRootState(get: () => State | undefined) {
   rootState = get;
 }
 
+/** the sheets: one thing, over everything (on iOS a card that slides up below the status bar) */
+export const SHEETS = ['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'privacy'];
+
 /** the full-screen moments: closing one goes back past all of them at once */
 const SCENE = /^(sos|tool\/\[id\]|log|sunrise|morning|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated)$/;
 

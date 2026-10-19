@@ -22,6 +22,7 @@ export function Screen({
   onScroll,
   overlay,
   action,
+  hidden,
 }: {
   eyebrow?: string;
   title: string;
@@ -37,6 +38,8 @@ export function Screen({
   overlay?: ReactNode;
   /** a small button at the top right, beside the title */
   action?: ReactNode;
+  /** keep the page out of sight while it moves into place (Learn scrolls to the next lesson before it shows) */
+  hidden?: boolean;
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
@@ -56,10 +59,10 @@ export function Screen({
           : undefined
       }
       scrollEventThrottle={onScroll ? 32 : undefined}
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
-      <Appear webOnly style={s.col}>
+      <Appear webOnly style={[s.col, hidden ? { opacity: 0 } : null]}>
         {back ? (
           <Pressable
             accessibilityRole="button"
@@ -98,7 +101,7 @@ export function Screen({
   return (
     <View style={{ flex: 1 }}>
       {page}
-      <View pointerEvents="box-none" style={[s.over, { top: inset.top + 8 }]}>
+      <View pointerEvents="box-none" style={[s.over, { top: inset.top + 8 }, hidden ? { opacity: 0 } : null]}>
         <View pointerEvents="box-none" style={s.col}>
           {overlay}
         </View>

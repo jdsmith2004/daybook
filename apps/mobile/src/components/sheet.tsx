@@ -1,13 +1,14 @@
 /* A sheet: a page that opens over everything for one thing (how points work, where I am, a day, an entry, a badge). It has a
    title, an optional line under it, and a Close button. Like the legacy sheets. */
-import { router } from 'expo-router';
+import { router, useRoute } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';
+import { SHEETS } from '@/lib/nav';
 import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export const closeSheet = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -27,9 +28,14 @@ export function SheetFrame({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
+  /* on iOS a sheet already opens below the status bar, so it needs no room for it (the Account page, pushed full height, does) */
+  const route = useRoute();
+  const card = Platform.OS === 'ios' && SHEETS.includes(route.name);
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[s.scroll, { paddingTop: inset.top + 12, paddingBottom: inset.bottom + 28 }]}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[s.scroll, { paddingTop: (card ? 0 : inset.top) + 12, paddingBottom: inset.bottom + 28 }]}>
         <Appear webOnly by={24} style={s.col}>
           <View style={s.head}>
             <View style={{ flex: 1, gap: 2 }}>

@@ -94,13 +94,25 @@ export default function Learn() {
     g.y = y;
     look();
   };
-  /* the page opens with the next lesson in view, and moves to the new one after a lesson is finished */
+  /* the page opens with the next lesson in view, and moves to the new one after a lesson is finished. Until it has moved
+     there and drawn the lands around it, the page stays out of sight, so it never shows the top of the map and then jumps. */
   const aimed = useRef(false);
+  const [placed, setPlaced] = useState(pane !== 'lessons');
+  const show = () => requestAnimationFrame(() => requestAnimationFrame(() => setPlaced(true)));
   const ready = () => {
     if (aimed.current || geo.current.map < 0 || geo.current.pane < 0) return;
     aimed.current = true;
-    setTimeout(() => aim(false), 60);
+    setTimeout(() => {
+      aim(false);
+      show();
+    }, 60);
   };
+  /* in case the map never measures (a very slow phone), show the page anyway */
+  useEffect(() => {
+    if (placed) return;
+    const t = setTimeout(() => setPlaced(true), 900);
+    return () => clearTimeout(t);
+  }, [placed]);
   const walked = useRef(m.walked);
   useEffect(() => {
     if (walked.current === m.walked) return;
@@ -120,6 +132,7 @@ export default function Learn() {
     <Screen
       eyebrow="My Daybook"
       scrollRef={scroll}
+      hidden={!placed}
       title="Learn"
       onScroll={(y, h) => {
         geo.current.y = y;
@@ -150,6 +163,7 @@ export default function Learn() {
           aimed.current = false;
           geo.current.map = -1;
           geo.current.pane = -1;
+          setPlaced(p !== 'lessons');
           if (p === 'tools') setView({ focus: -1, win: [0, 2], hide: -1 });
         }}
       />

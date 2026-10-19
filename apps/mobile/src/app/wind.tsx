@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { Link } from '@/components/choices';
+import { FitArt } from '@/components/fit';
 import { NightSky } from '@/components/night-sky';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Icon, T } from '@/components/ui';
@@ -34,8 +34,11 @@ export default function Wind() {
     router.push({ pathname: '/night', params: { at, gain: String(gain) } });
   };
   return (
-    <SceneFrame title="Wind-down" sky="night" onClose={close} footer={p && p.po ? null : <Link label="Not yet" onPress={close} />}>
-      <NightSky />
+    <SceneFrame title="Wind-down" sky="night" onClose={close}>
+      {/* the sky gives way when the list is long, so the list, the button and Not yet all fit */}
+      <FitArt>
+        <NightSky />
+      </FitArt>
       <T v="title" style={s.c} accessibilityRole="header">
         Time to wind down
       </T>

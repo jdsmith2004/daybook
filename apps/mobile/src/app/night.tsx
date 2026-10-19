@@ -5,6 +5,7 @@ import { bedPlans, fmtClock, rhythm } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { FitArt } from '@/components/fit';
 import { NightSky } from '@/components/night-sky';
 import { SceneFrame } from '@/components/scene';
 import { Button, T } from '@/components/ui';
@@ -28,7 +29,10 @@ export default function Night() {
           <Button label="Good night" icon="moon" onPress={close} />
         </View>
       }>
-      <NightSky />
+      {/* the sky steps aside on a phone too short for it, so Good night stays in reach */}
+      <FitArt drop={0.5}>
+        <NightSky />
+      </FitArt>
       <T v="title" style={s.c} accessibilityRole="header">
         Phone down. Good night.
       </T>

@@ -151,8 +151,15 @@ export function AddOwn({ kind, onSave, onCancel }: { kind: 'trig' | 'did'; onSav
   );
 }
 
-export function Link({ label, onPress, tone = 'accentText' }: { label: string; onPress: () => void; tone?: keyof Palette }) {
+/** a quiet link. hidden: keeps its room but cannot be seen or tapped, so what sits above it does not jump when it goes */
+export function Link({ label, onPress, tone = 'accentText', hidden }: { label: string; onPress: () => void; tone?: keyof Palette; hidden?: boolean }) {
   const c = useTheme();
+  if (hidden)
+    return (
+      <View style={[s.link, { opacity: 0 }]} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Text style={s.linkT}>{label}</Text>
+      </View>
+    );
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => [s.link, pressed && { opacity: 0.7 }]}>
       <Text style={[s.linkT, { color: c[tone] as string }]}>{label}</Text>

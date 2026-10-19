@@ -139,7 +139,7 @@ export default function Checkin() {
         </Dock>
       </>
     );
-    footer = v == null ? <Link label="Skip this one" onPress={next} /> : null;
+    footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
   } else if (step === 'ro') {
     const pick = (v: 'Y' | 'N') => {
       set({ ...form, ro: v });

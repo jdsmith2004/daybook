@@ -1096,7 +1096,7 @@ export default function Setup() {
         </View>
         <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (k + 1) + ' of ' + ps.length} />
         <View style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-          <ScrollView ref={scroll} contentContainerStyle={s.cardIn} keyboardShouldPersistTaps="handled">
+          <ScrollView ref={scroll} contentContainerStyle={s.cardIn} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
             {body}
           </ScrollView>
         </View>

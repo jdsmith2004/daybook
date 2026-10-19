@@ -71,3 +71,18 @@ export function useBackLabel(fallback: string): string {
     return fallback;
   }
 }
+
+/** whether this page was opened on top of a sheet or a full-screen moment. iOS then shows it as a card that slides up below
+    the status bar (like a sheet), so it needs no room for the clock and the battery. */
+export function useOverModal(): boolean {
+  const nav = useNavigation();
+  const route = useRoute();
+  try {
+    const st = nav.getState() as State | undefined;
+    if (!st) return false;
+    const i = st.routes.findIndex((r) => r.key === route.key);
+    return st.routes.slice(0, Math.max(0, i)).some((r) => SHEETS.includes(r.name) || SCENE.test(r.name));
+  } catch {
+    return false;
+  }
+}

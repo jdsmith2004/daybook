@@ -34,6 +34,8 @@ export function SheetFrame({
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[s.scroll, { paddingTop: (card ? 0 : inset.top) + 12, paddingBottom: inset.bottom + 28 }]}>
         <Appear webOnly by={24} style={s.col}>

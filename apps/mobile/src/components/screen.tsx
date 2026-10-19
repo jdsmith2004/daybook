@@ -1,6 +1,7 @@
 /* A scrolling screen with the page color, a title, and room for the tab bar. A page opened on top of the tabs (from More, or
    from a lesson) gets a Back button that names the page underneath it. On the web the page eases in. A screen can follow its
-   own scrolling (onScroll), and float something over its top that stays put while the page scrolls (overlay). */
+   own scrolling (onScroll), float something over its top that stays put while the page scrolls (overlay), and keep a small
+   button beside its title (action). */
 import { router } from 'expo-router';
 import { useRef, type ReactNode, type Ref } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -20,6 +21,7 @@ export function Screen({
   back,
   onScroll,
   overlay,
+  action,
 }: {
   eyebrow?: string;
   title: string;
@@ -33,6 +35,8 @@ export function Screen({
   onScroll?: (y: number, height: number) => void;
   /** something that floats over the top of the page and stays put */
   overlay?: ReactNode;
+  /** a small button at the top right, beside the title */
+  action?: ReactNode;
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
@@ -71,14 +75,19 @@ export function Screen({
           </Pressable>
         ) : null}
         <View style={{ gap: 2, marginBottom: 4 }}>
-          {eyebrow ? (
-            <T v="eyebrow" tone="muted">
-              {eyebrow}
-            </T>
-          ) : null}
-          <T v="title" accessibilityRole="header">
-            {title}
-          </T>
+          <View style={s.head}>
+            <View style={{ flex: 1, gap: 2 }}>
+              {eyebrow ? (
+                <T v="eyebrow" tone="muted">
+                  {eyebrow}
+                </T>
+              ) : null}
+              <T v="title" accessibilityRole="header">
+                {title}
+              </T>
+            </View>
+            {action}
+          </View>
           {sub}
         </View>
         {children}
@@ -101,6 +110,7 @@ export function Screen({
 const s = StyleSheet.create({
   content: { paddingHorizontal: 16, alignItems: 'center' },
   col: { width: '100%', maxWidth: MAX_WIDTH, gap: 14 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   over: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   back: {
     flexDirection: 'row',

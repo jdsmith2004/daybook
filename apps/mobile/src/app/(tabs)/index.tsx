@@ -4,6 +4,7 @@
 import {
   accountAsk,
   tipAsk,
+  tipButton,
   autoStep,
   startFromLog,
   LESSONS,
@@ -26,7 +27,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AccountCard } from '@/components/account';
-import { TipCard } from '@/components/support';
+import { TipCard, TipTop } from '@/components/support';
 import { Hero } from '@/components/hero';
 import { RiskCard } from '@/components/risk-card';
 import { SundayCard } from '@/components/sunday-card';
@@ -117,7 +118,11 @@ export default function Today() {
     </>
   );
   return (
-    <Screen eyebrow="My Daybook" title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })} sub={sub}>
+    <Screen
+      eyebrow="My Daybook"
+      title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
+      sub={sub}
+      action={tipButton(snap.days, tk) ? <TipTop /> : undefined}>
       <PauseBanner />
       <RekindleCard snap={snap} tk={tk} />
       <TalkCard snap={snap} now={now} />

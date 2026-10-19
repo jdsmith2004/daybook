@@ -1,7 +1,8 @@
 /* Support. Daybook is free for everyone, with no ads and no tracking, and money never opens anything: no lesson, no tool,
    no setting. One link lets a person leave a tip.
 
-   Today asks once, at a good moment: a month in, in the daytime, and never in a hard one (no slip in the last four days,
+   The setup says so plainly near its end, with a tip button under it (like ScreenZen), and Today keeps a small Support
+   button at its top, except in the four days after a slip. Today also asks once, at a good moment: a month in, in the daytime, and never in a hard one (no slip in the last four days,
    which covers the Rekindle quest's three days). It never sits next to the account card, and waits a few days after that
    card's "Not now", so two asks never come together. After the one ask, the link stays as a quiet row on More and a line
    under graduation. With no link set, nothing about tips shows anywhere. Checked by test/support.test.ts.
@@ -30,9 +31,17 @@ export function tipAsk(days: Days, st: Settings, tk: DayKey, hour: number, acct:
   if (hour < TIP_HOURS[0] || hour >= TIP_HOURS[1]) return false;
   if (diffDays(tk, st.start) < TIP_AFTER) return false;
   if (isKey(st.acctNo) && diffDays(tk, st.acctNo as DayKey) < TIP_GAP) return false;
+  return calm(days, tk);
+}
+
+/** no slip today or in the days before it (TIP_CALM in all) */
+function calm(days: Days, tk: DayKey): boolean {
   const from = addDays(tk, 1 - TIP_CALM);
   return !eventsOf(days).some((e) => e.outcome === 'slipped' && e.key >= from && e.key <= tk);
 }
+
+/** whether Today shows its small Support button at the top: always, except in the days after a slip */
+export const tipButton = (days: Days, tk: DayKey, url = SUPPORT_URL): boolean => !!url && calm(days, tk);
 
 /** the one ask is answered ("Leave a tip" or "No thanks"): Today never asks again */
 export const tipAnswered = (st: Settings, tk: DayKey, now = Date.now()): Change => ({
@@ -48,4 +57,13 @@ export const TIP_WORDS = {
   foot: 'This card will not come back. The link stays on More, if you ever want it.',
   row: { title: 'Support Daybook', sub: 'Free for everyone, with no ads and no tracking. A tip helps keep it that way.' },
   grad: 'Daybook is free for everyone. If it helped you get here, a tip helps keep it free for the next person.',
+  /** the setup's page, near its end */
+  intro: {
+    h: 'Everything in Daybook is free.',
+    p: 'Daybook is made by one person, and kept going by people who chip in.',
+    p2: 'If you can, a small tip keeps it free for the next person. If you cannot, that is completely fine. Daybook is just as much yours.',
+    pills: ['No ads', 'No tracking', 'Nothing locked'],
+  },
+  /** the small button at the top of Today */
+  top: 'Support',
 };

@@ -1,12 +1,13 @@
-/* The one tip ask on Today, and the quiet link after it (support.ts decides when, and holds the words). The link opens in
-   the browser; nothing in Daybook changes after a tip, because money never opens anything. */
+/* The tip jar in the app (support.ts decides when, and holds the words): the small Support button at the top of Today, the
+   one ask on Today, and the quiet row on More. The link opens in the browser; nothing in Daybook changes after a tip,
+   because money never opens anything. */
 import { SUPPORT_URL, tipAnswered, TIP_WORDS } from '@daybook/core';
-import { Linking, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LinkCard } from '@/components/link-card';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
-import { useTheme } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 export const openTip = () => Linking.openURL(SUPPORT_URL).catch(() => undefined);
 
@@ -45,3 +46,24 @@ export function TipRow() {
   if (!SUPPORT_URL) return null;
   return <LinkCard icon="heart" tone="sun" title={TIP_WORDS.row.title} sub={TIP_WORDS.row.sub} onPress={openTip} />;
 }
+
+/** the small Support button beside Today's title */
+export function TipTop() {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel="Support Daybook. Daybook is free; this opens a page to leave a tip."
+      onPress={openTip}
+      hitSlop={6}
+      style={({ pressed }) => [s.top, { backgroundColor: c.sunSoft, opacity: pressed ? 0.85 : 1 }]}>
+      <Icon name="heart" size={16} color={c.sunText} />
+      <Text style={[s.topT, { color: c.sunText }]}>{TIP_WORDS.top}</Text>
+    </Pressable>
+  );
+}
+
+const s = StyleSheet.create({
+  top: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, marginTop: 2 },
+  topT: { fontFamily: font.bodySemi, fontSize: 14 },
+});

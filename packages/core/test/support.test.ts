@@ -47,3 +47,17 @@ it('the words make no demand and promise nothing for money', () => {
   expect(all).not.toMatch(/n't|alive|only \d|%|unlock (more|every)|premium/i);
   expect(core.TIP_WORDS.p).toContain('nothing to unlock');
 });
+
+it('the Support button on Today hides in the days after a slip, and with no link', () => {
+  expect(core.tipButton({}, tk, url)).toBe(true);
+  expect(core.tipButton({}, tk, '')).toBe(false);
+  expect(core.tipButton(core.addEvent({}, core.addDays(tk, 1 - core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(false);
+  expect(core.tipButton(core.addEvent({}, core.addDays(tk, -core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(true);
+});
+
+it('the setup shows its free page only when a link is set, just before the end', () => {
+  const ids = core.obPages({}).map((p) => p.id);
+  expect(ids.includes('free')).toBe(!!core.SUPPORT_URL);
+  const all = core.OB_PAGES.map((p) => p.id);
+  expect(all.indexOf('free')).toBe(all.indexOf('done') - 1);
+});

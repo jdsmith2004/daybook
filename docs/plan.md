@@ -105,7 +105,10 @@ building. No subscriptions, no ads (they need tracking), no paid streak protecti
    8 PM, never within four days of a slip (which covers the Rekindle quest), never beside the account card or within three
    days of its "Not now". The account card already owns the first week, so the tip ask waits a month, when a person knows
    whether Daybook helps. After either answer it never comes back; the link stays as a quiet row on More and a line under
-   graduation. On iPhone, a link out to pay is allowed on the US App Store only (3.1.1(a), after Epic v. Apple; Apple may
+   graduation. The owner then asked for it to be more like ScreenZen, with How We Feel's look (October 19): the setup says
+   "Everything in Daybook is free" just before its end, with a Leave a tip button low and Continue as the main button;
+   Today keeps a small Support button at its top right, hidden in the four days after a slip. Messages ("+5 points") now
+   sit at the top on the tabs too, so they never cover a button. On iPhone, a link out to pay is allowed on the US App Store only (3.1.1(a), after Epic v. Apple; Apple may
    win back a small fee at the Supreme Court, not before mid-2027), so the iPhone app is offered in the US only while the
    link is in it. Google Play allows outside donation links only for tax-exempt groups: Android needs another answer first.
 2. **The App Store, from any computer.** Actions, App Store, Run workflow (`.github/workflows/store.yml`) runs the checks,

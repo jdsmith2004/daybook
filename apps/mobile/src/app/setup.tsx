@@ -27,6 +27,7 @@ import {
   obHeard,
   obLast,
   obPages,
+  TIP_WORDS,
   obPrefill,
   obReasonList,
   obReasonOpts,
@@ -82,6 +83,7 @@ import {
   PicWeek,
   whenIcon,
 } from '@/components/setup-art';
+import { openTip } from '@/components/support';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { buzz } from '@/lib/feel';
@@ -185,7 +187,8 @@ export default function Setup() {
       ...x,
       saved: true,
       changed: r.changed,
-      i: obPages(x.a).length - 1,
+      /* the page after the review: "Daybook is free" when a tip link is set, then the end */
+      i: Math.min(obPages(x.a).length - 1, obPages(x.a).findIndex((p) => p.k === 'review') + 1),
     }));
     await replace({ ...snap, settings: r.st }, ['settings']);
   };
@@ -205,7 +208,7 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const back = i === 0 || pg.k === 'done' ? null : <Back onPress={() => !f.saved && go(-1)} />;
+  const back = i === 0 || pg.k === 'done' || pg.k === 'free' ? null : <Back onPress={() => !f.saved && go(-1)} />;
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
@@ -834,6 +837,47 @@ export default function Setup() {
         );
         foot = <Next label={ch.length ? 'Save what is ticked' : 'Finish'} noIcon onPress={save} />;
       }
+      break;
+    }
+    case 'free': {
+      /* Daybook is free, said plainly (like ScreenZen), with a soft, bright look (like How We Feel); a tip is the low,
+         quiet choice, and Continue is the main button */
+      body = (
+        <>
+          <Mid>
+            <View style={s.orbWrap}>
+              <LinearGradient colors={[c.sun, c.coral]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
+              <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
+              <View style={[s.orbDot, { backgroundColor: c.sky, width: 22, height: 22, bottom: 10, right: 0 }]} />
+              <View style={{ zIndex: 1 }}>
+                <Icon name="heart" size={64} color="#FFFFFF" />
+              </View>
+            </View>
+          </Mid>
+          <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
+            {TIP_WORDS.intro.h}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+            {TIP_WORDS.intro.pills.map((x) => (
+              <View key={x} style={[s.gift, { backgroundColor: c.mintSoft }]}>
+                <Icon name="check" size={16} color={c.mintText} />
+                <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>{x}</Text>
+              </View>
+            ))}
+          </View>
+          <T style={s.p}>{TIP_WORDS.intro.p}</T>
+          <T style={s.p}>{TIP_WORDS.intro.p2}</T>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Leave a tip. Opens a page in the browser. The setup waits for you."
+            onPress={openTip}
+            style={({ pressed }) => [s.tip, { backgroundColor: c.sunSoft, opacity: pressed ? 0.85 : 1 }]}>
+            <Icon name="heart" size={20} color={c.sunText} />
+            <Text style={[s.tipT, { color: c.sunText }]}>{TIP_WORDS.go}</Text>
+          </Pressable>
+        </>
+      );
+      foot = nextBtn('Continue');
       break;
     }
     case 'done': {
@@ -1623,6 +1667,11 @@ const s = StyleSheet.create({
   },
   cardIn: { padding: 22, gap: 14, flexGrow: 1 },
   art: { minHeight: 90, alignItems: 'center', justifyContent: 'center' },
+  orbWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
+  orb: { position: 'absolute', left: 10, top: 10, right: 10, bottom: 10, borderRadius: 999 },
+  orbDot: { position: 'absolute', width: 30, height: 30, borderRadius: 999 },
+  tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 18, marginTop: 4 },
+  tipT: { fontFamily: font.bodyBold, fontSize: 17 },
   mid: { flexGrow: 1, minHeight: 90, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
   hsm: { fontSize: 26, lineHeight: 31 },

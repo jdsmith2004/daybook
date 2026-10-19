@@ -1,6 +1,6 @@
 /* A short message after an action: a line of words, or what the action earned ("+15 points", and why). After a slip it is
-   said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. On the tabs it sits low, above
-   the tab bar; in a full-screen moment it sits at the top, so it never covers the answers there. A message from before SOS
+   said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. It sits at the top, over the
+   title, where things are read and never tapped, so it never covers the answers or buttons low on the screen. A message from before SOS
    or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off. */
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -28,7 +28,7 @@ export function Toast() {
     if (HUSH.test(path)) setLeft(shown.current);
   }, [path]);
   if (!toast || toast === left) return null;
-  const at = MOMENT.test(path) ? { top: inset.top + 62 } : { bottom: inset.bottom + 96 };
+  const at = { top: inset.top + (MOMENT.test(path) ? 62 : 10) };
   if ('pts' in toast) {
     const bg = toast.quiet ? c.ink : c.sun;
     const fg = toast.quiet ? c.bg : c.onSun;

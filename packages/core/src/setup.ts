@@ -37,6 +37,7 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { SUPPORT_URL } from './support';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
@@ -189,6 +190,7 @@ export type PageKind =
   | 'person'
   | 'becoming'
   | 'review'
+  | 'free'
   | 'done';
 export interface ObPage {
   id: string;
@@ -337,6 +339,8 @@ export const OB_PAGES: ObPage[] = [
   { id: 'person', s: 'plan', k: 'person', key: 'person' },
   { id: 'becoming', s: 'plan', k: 'becoming', key: 'be' },
   { id: 'review', s: 'plan', k: 'review' },
+  /* Daybook is free, said plainly with a tip button (support.ts); only when a tip link is set */
+  { id: 'free', s: 'plan', k: 'free', need: () => !!SUPPORT_URL },
   { id: 'done', s: 'plan', k: 'done' },
 ];
 export const obPages = (a: SetupAnswers) => OB_PAGES.filter((pg) => !pg.need || pg.need(a));

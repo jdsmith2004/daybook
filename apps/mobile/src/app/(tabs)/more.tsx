@@ -19,7 +19,7 @@ export default function More() {
   const params = useLocalSearchParams<{ open?: string }>();
   const scroll = useRef<ScrollViewInstance>(null);
   const st = snap.settings;
-  if (!st) return <SetupFirst title="More" line="Your plan, your badges, settings and backups live here once setup has built your plan." />;
+  if (!st) return <SetupFirst title="More" line="Your plan, your badges and settings live here once setup has built your plan." />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const shown = shownBadges(g.badges, st);
   const got = shown.filter((b) => badgeDone(b, st)).length;

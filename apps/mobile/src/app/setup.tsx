@@ -88,6 +88,7 @@ import {
 import { openTip, TIP_URL } from '@/components/support';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
+import { BACKUP_FILES } from '@/lib/backup-files';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
@@ -288,12 +289,14 @@ export default function Setup() {
           <SosRow />
           <View style={s.links}>
             {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
+              <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in'} onPress={() => sync.signInNow()} />
+            ) : null}
+            {BACKUP_FILES ? (
               <>
-                <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in'} onPress={() => sync.signInNow()} />
-                <Text style={{ color: c.muted }}>·</Text>
+                {sync.status.k !== 'off' && sync.status.k !== 'on' ? <Text style={{ color: c.muted }}>·</Text> : null}
+                <TextLink label="I have a backup file" onPress={restore} />
               </>
             ) : null}
-            <TextLink label="I have a backup file" onPress={restore} />
           </View>
         </Show>
       );

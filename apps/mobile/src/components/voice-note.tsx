@@ -98,7 +98,7 @@ export function VoiceRecorder() {
         </T>
       ) : null}
       <T v="small" tone="muted">
-        Up to a minute, in your own voice. It stays on this phone: backups and sync do not include it. SOS has a button to play it.
+        Up to a minute, in your own voice. It stays on this phone: sync does not include it. SOS has a button to play it.
       </T>
     </View>
   );

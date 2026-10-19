@@ -43,6 +43,7 @@ import { SyncBody } from '@/components/sync-card';
 import { B } from '@/components/help-bits';
 import { Button, Chip, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
+import { BACKUP_FILES } from '@/lib/backup-files';
 import { forgetDrafts } from '@/lib/drafts';
 import {
   setLockPref,
@@ -463,18 +464,20 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
 
       {sec(
         'data',
-        'Save, back up, delete',
-        'Spreadsheet and backup files',
+        BACKUP_FILES ? 'Save, back up, delete' : 'Save or delete',
+        BACKUP_FILES ? 'Spreadsheet and backup files' : 'Spreadsheets, or delete everything',
         <>
           <T v="small" tone="muted">
-            {signedIn
-              ? 'Your log is saved on this device and in your account. A backup file is still a good idea now and then.'
-              : 'Your log is saved on this device only. Save a backup now and then so you can restore it.'}
+            {signedIn ? 'Your log is saved on this device and in your account.' : 'Your log is saved on this device only. A free account keeps a safe copy.'}
           </T>
           <Button kind="ghost" label="Save days as a spreadsheet (CSV)" onPress={() => save('days')} />
           <Button kind="ghost" label="Save every entry with its time (CSV)" onPress={() => save('events')} />
-          <Button kind="ghost" label="Save a full backup (JSON)" onPress={() => save('json')} />
-          <Button kind="ghost" label="Restore from a backup…" onPress={restore} disabled={busy} />
+          {BACKUP_FILES ? (
+            <>
+              <Button kind="ghost" label="Save a full backup (JSON)" onPress={() => save('json')} />
+              <Button kind="ghost" label="Restore from a backup…" onPress={restore} disabled={busy} />
+            </>
+          ) : null}
           {wipe ? (
             <View style={{ gap: 8 }}>
               <T v="label" tone="danger">

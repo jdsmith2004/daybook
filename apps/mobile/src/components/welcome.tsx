@@ -11,6 +11,7 @@ import { Screen } from '@/components/screen';
 import { ErasedNote, TrustChoice } from '@/components/sync-card';
 import { Button, Card, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
+import { BACKUP_FILES } from '@/lib/backup-files';
 import { setupKeep } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
@@ -84,7 +85,7 @@ export function Welcome() {
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
           {signedIn
             ? 'You are signed in, so what you log now syncs to your account.'
-            : 'Your log is saved on this device only. You can save a backup from Settings.'}
+            : 'Your log is saved on this device only. A free account keeps a safe copy.'}
         </T>
         {sync.status.k === 'off' || sync.status.k === 'on' ? null : sync.status.k === 'busy' ? (
           <T tone="muted" style={{ textAlign: 'center' }}>
@@ -101,7 +102,7 @@ export function Welcome() {
             {sync.status.msg}
           </T>
         ) : null}
-        <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} />
+        {BACKUP_FILES ? <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} /> : null}
       </Card>
     </Screen>
   );

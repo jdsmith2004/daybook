@@ -114,7 +114,7 @@ export function SyncBody() {
           tone="sun"
           icon="down"
           title="Use my account’s log here"
-          sub="This device’s log is replaced by your account’s. Save a backup first if you want to keep it."
+          sub="This device’s log is replaced by your account’s."
           onPress={() => sync.choose('account')}
         />
         <Button kind="ghost" label="Not now" onPress={() => sync.signOutNow(false)} />

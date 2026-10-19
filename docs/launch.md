@@ -141,8 +141,10 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   when the app is rated higher, so they never name what Daybook is for; without them, search shows the screenshots.
 - **Age rating:** answer the questions as they are: no nudity or sexual content; mature themes (porn is named and talked
   about plainly); medical or treatment information: infrequent (lessons on changing a habit, not treatment); no user
-  chat, no web browsing, no gambling. Daybook is for anyone 13 or older (the terms and the privacy policy say so), so answer
-  honestly and take the rating Apple gives; if it comes out at 18+, tell Claude, because then teenagers could not get it.
+  chat, no web browsing, no gambling. Apple rated it 16+, so the terms and the privacy policy say Daybook is for anyone 16 or
+  older. If the rating ever changes, tell Claude so the pages change with it; at 18+, teenagers could not get it.
+- **Regulated medical device** (App Information, "Declare Regulated Medical Device"; required for the US, UK and EU):
+  **No**. Daybook is a self-help habit tool, not a medical device, and the listing and terms say it is not medical care.
 - **App Privacy** (what Apple shows as the privacy label). Data is collected only for people who make an account, only to
   make the app work, linked to that account, and never used to track:
   - Contact info: email address.
@@ -153,7 +155,7 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   - Tracking: **no**. Data used to track you: **none**.
 - **Notes for App Review:**
 
-  > Daybook works fully without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
+  > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
   > free account syncs a copy and opens the lessons after the first three. "Support Daybook" opens a tip
   > page in the browser; tips unlock nothing, and the link is offered on the United States storefront only, under
   > guideline 3.1.1(a). The app has no ads and no analytics. Reminders are local notifications made on the device, with
@@ -181,7 +183,7 @@ money or is unclear.
    ("Prepare for Submission").
 2. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL
    (empty), copyright. Upload the six screenshots from store-assets/ios69/ in order to the 6.9-inch slot
-   (or store-assets/ios63/ to the 6.1-inch or 6.3-inch slot)
+   (and store-assets/ios63/ to the 6.1-inch or 6.3-inch slot; check Media Manager shows no missing size)
    (download them from GitHub first), and the header and search images from store-assets/ios-header and ios-search.
 3. Build: choose the newest build that finished processing (the one I tested in TestFlight).
 4. App Information: name and subtitle from step 6; category Health & Fitness, second Lifestyle;
@@ -252,7 +254,7 @@ they would be Play in-app products, and that is a separate piece of work.
      https://d3c9g6kent5bsr.cloudfront.net/privacy.html
    - **App access:** some features need a sign-in (lessons after the first three): give the review test account from step
      6, typed in by you.
-   - **Ads:** no. **Target audience:** 13 and older (13 to 15, 16 to 17, 18 and over); not under 13, which would bring in
+   - **Ads:** no. **Target audience:** 16 and older (16 to 17, 18 and over), to match the App Store's 16+; not under 13, which would bring in
      the Families rules. **Content rating:** answer the questionnaire as in step 6 (porn is named and discussed plainly; no
      sexual images, no user chat). **Health apps:** declare it as a health and wellness app (habit change), not a medical
      device.

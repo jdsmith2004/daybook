@@ -2,7 +2,7 @@
   "expo": {
     "name": "Daybook",
     "slug": "daybook",
-    "owner": "jdsmith2004",
+    "owner": "jeffspresso",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -82,7 +82,7 @@
     "backgroundColor": "#FFF8EB",
     "extra": {
       "eas": {
-        "projectId": "bcb49295-f433-4d78-b7bb-a72dadeec359"
+        "projectId": "47843351-7cbe-4495-aa73-09f662f84b6c"
       }
     }
   }

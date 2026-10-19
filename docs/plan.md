@@ -122,6 +122,76 @@ building. No subscriptions, no ads (they need tracking), no paid streak protecti
    leaders, then launch sites. No paid ads, no fake reviews or accounts, nothing aimed at teenagers, and no counting of
    people in the app: only the stores' own download counts, the tip count, and a feedback link.
 
+## Notifications that fit the person (October 19, 2026): a plan, waiting on the owner
+
+The owner: plan when and how Daybook notifies, from the best apps, by how the person is doing, and adapting to how they
+respond, so people do not turn notifications off. **Nothing here is built yet.**
+
+What exists now (`apps/mobile/src/lib/reminders.ts`): all made on the phone, no server. Morning, check-in and wind-down
+reminders and the Sunday review are off until turned on; the heads-up 90 minutes before the hard hours is on; Talk it
+through can set a one-off. They repeat daily whatever happens, the phone is asked for permission only when one is turned
+on, and one Android channel holds them all.
+
+What the best apps teach:
+
+- **Duolingo** picks each day's reminder with a bandit that learns which messages work for each person, times it from
+  when they last practiced, and stops when reminders are ignored ("These reminders don't seem to be working. We'll stop
+  sending them for now."). Its strongest lever is the streak about to end. Daybook takes the learning, the timing and the
+  stopping, and never the loss: a notification that sells fear of losing a run breaks "earned things stay earned".
+- **Headspace and I Am Sober** ask for a time during setup and tie the reminder to the person's own commitment (a set
+  time is an if-then plan). Asking in context, with a sample of the notification and how often it comes, is the common
+  advice for the one permission prompt iOS allows; a "Not now" keeps that prompt for later.
+- **HeartSteps** (a study of exercise prompts) found the same prompt lost about 2% of its effect each day until, by four
+  weeks, it did nothing: people get used to a fixed reminder. Its next version sent prompts only when they fit the moment,
+  with a daily cap. So a reminder that never changes is a reminder that gets ignored, then turned off.
+
+The rules:
+
+1. **Every notification is about something the person chose, is useful now, and is skipped when the thing is done.** A
+   check-in done at 2 PM means no 6 PM reminder.
+2. **At most two a day**, three hours apart, never between screens-off and the morning (10 PM to 8 AM when unset), and
+   never within an hour of using the app. The hard-hours heads-up wins over a routine reminder.
+3. **After a slip, never more notifications, only kinder ones.** The next day's check-in says "A new day. Everything you
+   built is still here." During the Rekindle quest, its one reminder a day replaces the check-in ("Day 2 of 3. One small
+   step today."). This joins fix 4 (the morning after).
+4. **The habit takes over.** When the person checks in on their own before the reminder on 5 of the last 7 days, the
+   check-in reminder becomes a backup: it comes 90 minutes after their usual time, and only if they have not checked in.
+   Today says so once, with "Keep it daily" as the other choice. The goal is a person who does not need the app.
+5. **Ignored kinds get quieter, then pause, and say so.** On the phone, each kind keeps a count: a tap, or the thing done
+   within three hours, is a help; neither is a miss. Three misses in a row step it down (daily, then every other day,
+   then paused); one help steps it back up, never above what the person chose. When one pauses, Today says once: "The
+   evening reminder has not been helping lately, so Daybook paused it." with Turn it back on and Leave it off.
+6. **The time follows the person, with their yes.** When the thing is done more than an hour from the set time on most
+   days, Today offers once to move the reminder there ("You usually check in around 9:40 PM. Move the reminder?").
+7. **When the app goes quiet, Daybook fades, and stops.** Notifications are planned 14 days ahead as one-offs (not daily
+   repeats) and planned again each time the app opens. The plan assumes no opens, so if the person stays away, the
+   routine ones stop after two days and four come-back notes take their place: day 2 "Daybook is here when you are
+   ready.", day 4 "Nothing is lost. One tap to pick up where you left off.", day 7 "A minute today is enough.", day 14
+   "Daybook will stay quiet now. Everything is kept for when you come back." Then nothing, until they open it. This is
+   the moment most people quit after a slip, so the words are all hope, never guilt.
+8. **By stage.** The first week: the check-in, the Sunday review, and the heads-up once the log shows hard hours; small,
+   close goals only. No milestone or points notifications ever (they are shown in the app, and pushing them makes a game
+   of it). After graduation, Daybook suggests the Sunday review alone, with a choice.
+9. **The phone's own settings stay easy.** Each kind has its own Android channel (Check-ins, Hard hours, Sunday review,
+   Follow-ups), so a person can quiet one without losing all. On iPhone, the morning and Sunday ones arrive quietly (no
+   sound or light, `interruptionLevel: 'passive'`) and the rest normally; none is time-sensitive. If the person turns
+   notifications off in the phone's settings, Daybook never asks again on its own; Settings says how to turn them on.
+10. **Nothing leaves the phone.** No push server and no analytics: the counts live in the phone's storage, are never
+    synced, and cost nothing at any number of people. The words still never say what Daybook is for.
+
+**The ask.** A setup page in the plan section, after the urge plan: "When should Daybook check in with you?", with a sample
+lock-screen notification big in the middle, a time wheel low, "At most two a day. Never at night. The words never say
+what Daybook is for.", then Remind me (the phone's prompt; the check-in and the Sunday review turn on) and Not now. After
+Not now, the end of the first check-in offers it once more; the hard-hours and Sunday offers stay as they are.
+
+**How it would be built.** Core `nudges.ts` holds the rules with no UI (`nudgePlan(days, settings, prefs, counts, now)`
+returns the next 14 days of notifications, with their kind, time, words and screen), tested like the rest of core. The app's
+`reminders.ts` schedules that plan (64 pending is iOS's limit, so 14 days fits), records each delivery, tap and pause on the
+phone, and makes the Android channels. One working day; Opus, high.
+
+Open for the owner: the setup page (or ask only later), the Sunday review on with that yes, the four come-back notes and
+the last "stay quiet" one, and pausing on its own after three misses (or only offering to).
+
 Earlier tiers, all done:
 
 The owner's direction is in CLAUDE.md ("What the owner has asked for"). Everything here follows it. Build the tiers in order;

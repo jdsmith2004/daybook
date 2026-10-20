@@ -49,13 +49,19 @@ export default function Tool() {
   const st = useCareSettings();
   if (!tool || !st) return <Redirect href="/" />;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
-  /* a pause that is running (or done) closes everything on X, like the legacy sceneExit: the timer keeps going, and Today shows it */
+  /* a pause that is running (or done) on its own closes everything on X, like the legacy sceneExit: the timer keeps going,
+     and Today shows it. Started from SOS, the X stops the pause and goes back to the tool list, like every other tool. */
   const exitHere =
     tool.id === 'pause' && sos.timer
-      ? () => {
-          sos.end();
-          close();
-        }
+      ? sos.ur
+        ? () => {
+            sos.setTimer(null);
+            exit();
+          }
+        : () => {
+            sos.end();
+            close();
+          }
       : exit;
   const p: ToolProps = { finish, exit: exitHere, sos: !!sos.ur, combo: combo === '1', level };
   /* late at night, a tool from SOS goes dark too */

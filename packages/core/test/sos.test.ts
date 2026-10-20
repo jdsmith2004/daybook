@@ -240,3 +240,20 @@ describe('your urge plan in SOS', () => {
     ).toBeNull();
   });
 });
+
+describe('what do I need and the menu ideas', () => {
+  it('every need has one thing to do, and tired goes to bed only at night', () => {
+    for (const n of core.NEEDS as unknown as [string][]) expect(core.needDo(n[0], false).label).toBeTruthy();
+    expect(core.needDo('tired', true).tool).toBe('bed');
+    expect(core.needDo('tired', false).tool).toBe('pause');
+    expect(core.needDo('hungry', false).tool).toBeNull();
+  });
+  it('a menu idea opens its tool when it is one', () => {
+    expect(core.ideaTool('Walk around the block')).toBe('move');
+    expect(core.ideaTool('Ten squats or push-ups')).toBe('move');
+    expect(core.ideaTool('Text a friend: "thinking of you"')).toBe('message');
+    expect(core.ideaTool('Call someone for five minutes')).toBe('message');
+    expect(core.ideaTool('Make a hot drink')).toBeNull();
+    expect(core.ideaTool('Take a shower')).toBeNull();
+  });
+});

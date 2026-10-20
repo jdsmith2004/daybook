@@ -24,10 +24,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { fmtMS, Orb, useSeconds } from '@/components/orb';
+import { useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
-import { WavyRing } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
@@ -35,6 +34,7 @@ import { useSos, type PauseTimer } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
+import { BEAT_BREATH, ToolTimer } from './timer';
 import type { ToolProps } from './types';
 
 export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
@@ -171,16 +171,21 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     const el = (nowMs - t.start) / 1000;
     return (
       <Stage key="run" dir={1}>
+        <T v="title" style={s.c} accessibilityRole="header">
+          Let the wave pass.
+        </T>
         <Middle>
-          {/* the ten minutes as a squiggle around the sun that fills as time passes, crawling slowly */}
-          <View style={{ width: RING, alignItems: 'center' }}>
-            <View style={s.ringAt} pointerEvents="none">
-              <WavyRing size={RING} p={1 - left / t.dur} color={c.scheme === 'dark' ? c.sun : c.accent} track={c.line} />
-            </View>
-            <View style={{ marginTop: (RING - ORB) / 2 }}>
-              <Orb pattern={guide ? 'calm' : null} sec={el} label="Waiting it out" time={fmtMS(left)} size={ORB} />
-            </View>
-          </View>
+          {/* Move's timer: the squiggle ring fills as the ten minutes pass, and a soft shape inside breathes slowly by
+              itself (4 in, 6 out); the breathing guide adds the words */}
+          <ToolTimer
+            p={1 - left / t.dur}
+            left={left}
+            sec={el}
+            beat={guide ? { ...BEAT_BREATH, words: ['Breathe in', 'Breathe out'] } : BEAT_BREATH}
+            label="Waiting it out"
+            color={c.scheme === 'dark' ? c.sun : c.accent}
+            ink={c.accentText}
+          />
         </Middle>
         <Dock>
           <Card style={{ alignSelf: 'stretch', alignItems: 'center' }}>
@@ -271,7 +276,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         </View>
       </Dock>
       <Link
-        label="Not now"
+        label="Skip this question"
         onPress={() => {
           sos.setTimer(null);
           close();
@@ -285,13 +290,8 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   );
 }
 
-/* the squiggle sits just outside the sun's glow, and close enough that the words under the sun stay clear of it */
-const ORB = 240;
-const RING = 262;
-
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
-  ringAt: { position: 'absolute', top: 0 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   opts: { alignSelf: 'stretch', gap: 10 },
 });

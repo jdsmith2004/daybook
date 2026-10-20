@@ -1395,3 +1395,38 @@ curious (all steps), and the 5-4-3-2-1 Finish.
 
 - Decided (the owner, October 20): the first SOS screen keeps its horizon sun; particle breath is for Breathe and the pause.
 - The shapes beyond the tools (Today, badges, Learn)?
+
+## SOS tools, second pass (2026-10-20, the owner on the simulator)
+
+_Effort: medium for every step (screens, motion and small rules)._
+
+What the owner saw on the iPhone build, and what changes:
+
+1. **One squiggle everywhere.** The 10-minute ring's squiggle is the model: the line starts straight, turns squiggly as it
+   fills, crawls slowly and moves smoothly. Get curious's wave is the opposite today (a static squiggle drawn in at once,
+   a dot that jumps once a second). Every squiggly line on the SOS screens (the pause and Move rings, Get curious's wave,
+   Play it forward's marks) is drawn by one function with one set of numbers (`SQUIGGLE` in `components/shapes.tsx`): the
+   part still to come is a plain, quiet line; the part done is the squiggle; it eases in from flat; it crawls; progress
+   comes from a smooth clock, not a once-a-second tick.
+2. **The 10-minute pause, rethought like Move's timer.** The still breath dots inside the ring looked broken (the same
+   dots as Breathe, standing still). The pause now uses Move's timer: the squiggle ring, a soft shape inside that breathes
+   slowly by itself (4 seconds in, 6 out), the time left big in the middle. "Breathing guide" adds the words (Breathe in,
+   Breathe out) to the shape. One shared `ToolTimer` (components/tools/timer.tsx) for both.
+3. **What do I need?, from the ground up.** Today: five chips, then cards piling up under them. New: one question with five
+   big choices low on the screen, pick one; then one page for that need, its shape and icon big in the middle, what helps
+   in a sentence, and one main button that does it (Move, Reach a person, Go to bed at night, Surprise me, or "I will do
+   it"). "Something else is true" goes back to the five.
+4. **Move: the pick page and the run page.** Pick: "In my seat / On my feet" first, then the moves as one clean list
+   (name, a small shape, the how in one line) that start on a tap. Run: the move's name and how sit at the top to be read,
+   the timer (unchanged, the owner likes it) in the middle, "I am done" at the bottom, "Change the move" under it.
+5. **The strength switch glitch.** Changing A little / Strong / Very strong picked a new "do now" line, so the whole first
+   SOS screen reflowed and the sun jumped. The line now stays put for the whole SOS; strength only changes what is
+   suggested on the next screen.
+6. **Closing a tool from SOS.** The X went back to SOS's first screen (which reads like starting over). It now goes back
+   to the tool list. A running pause started from SOS stops and also goes back to the list; a pause
+   started on its own still keeps counting after the X.
+7. **Surprise me leads on.** After the pick: "I will do it", "Another one", and when the idea is one of the tools (a walk
+   or push-ups is Move, a text or a call is Reach a person, a hot drink or a shower is not a tool) a button that opens it.
+   From SOS a quiet "Back to the tools" is always there.
+8. **A glitch pass** over every tool on the iPhone build, and **standards** for tools written down (docs/design-standards.md,
+   pointed to from CLAUDE.md), so new tools and any later use of these patterns across the app follow the same rules.

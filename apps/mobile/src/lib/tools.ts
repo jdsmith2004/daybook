@@ -54,14 +54,14 @@ export function useFinishTool(lr = false) {
   };
 }
 
-/** the X on a tool: back to SOS when SOS started it, otherwise close */
+/** the X on a tool: back to SOS's tool list when SOS started it (to pick another), otherwise close */
 export function useToolExit(lr = false) {
   const sos = useSos();
   return () => {
     if (lr) router.back();
     else if (sos.ur) {
       sos.setCombo(null);
-      sos.set({ ...sos.ur, step: 'now' });
+      sos.set({ ...sos.ur, step: 'tools' });
       router.back();
     } else close();
   };

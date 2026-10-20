@@ -1,6 +1,6 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
 import { CU_BODY, CU_CHG, CU_D, CU_FEEL, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
@@ -10,7 +10,7 @@ import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Appear } from '@/components/appear';
 import { Button, Card, Chip, T } from '@/components/ui';
-import { blobPath, MorphShape, Shape, WavyLine } from '@/components/shapes';
+import { along, blobPath, envelope, MorphShape, plainPath, Shape, SQUIGGLE, squigglePath, useClock, WavyLine, type Along } from '@/components/shapes';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
@@ -125,7 +125,7 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
       <T v="title" style={s.c} accessibilityRole="header">
         Now just watch it.
       </T>
-      <Wave p={p} color={c.accent} track={c.muted} />
+      <Wave start={w0} color={c.accent} track={c.muted} />
       <T v="label">{p < 1 ? fmtMS(CU_MS - sec * 1000) : 'Watched'}</T>
       <T style={s.c}>{(line ? line + ' ' : '') + 'Breathe slowly and follow the dot. You are not trying to make the urge go away.'}</T>
       <Dock>
@@ -146,22 +146,19 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
   );
 }
 
-/* the 90-second wave: it builds, peaks a little before the middle, and falls back. The whole wave draws itself in as soon
-   as the step opens, as a soft track of fine wiggles (like Android's wavy progress), so the shape of an urge is there to
-   see at once; then the part already watched fills in color behind the dot, which rides the front with a soft glow. */
-function Wave({ p, color, track }: { p: number; color: string; track: string }) {
+/* the 90-second wave: the shape of an urge, which builds, peaks a little before the middle, and falls back. The whole
+   wave is there at once as a plain, quiet line, so its shape is plain to see; the part already watched turns into the
+   squiggle (the same one as the timer rings, components/shapes SQUIGGLE), easing in from flat and crawling, behind a dot
+   that glides along the front on a smooth clock. */
+function Wave({ start, color, track }: { start: number | null; color: string; track: string }) {
   const reduce = useReducedMotion();
   const [w, setW] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
-  const draw = useRef(new Animated.Value(reduce ? 1 : 0)).current;
-  const [drawn, setDrawn] = useState(reduce ? 1 : 0);
+  /* a smooth clock for the dot and the crawl (useClock runs about 30 times a second) */
+  const sec = useClock(start != null);
+  const p = start == null ? 0 : Math.min(1, (Date.now() - start) / CU_MS);
   useEffect(() => {
-    if (reduce) {
-      setDrawn(1);
-      return;
-    }
-    const id = draw.addListener(({ value }) => setDrawn(value));
-    Animated.timing(draw, { toValue: 1, duration: 1400, delay: 150, easing: Easing.bezier(0.05, 0.7, 0.1, 1), useNativeDriver: false }).start();
+    if (reduce) return;
     const a = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
@@ -169,24 +166,17 @@ function Wave({ p, color, track }: { p: number; color: string; track: string }) 
       ]),
     );
     a.start();
-    return () => {
-      a.stop();
-      draw.removeListener(id);
-    };
-  }, [reduce, pulse, draw]);
+    return () => a.stop();
+  }, [reduce, pulse]);
   const k = w / WV_W;
   const h = WV_H * k;
-  const last = SQUIG.length - 1;
-  const i = Math.min(last, Math.round(p * last));
-  const j = Math.round(drawn * last);
-  const [x, y] = SQUIG[i];
-  const path = (n: number) =>
-    n > 0
-      ? 'M' +
-        SQUIG.slice(0, n + 1)
-          .map((q) => q.join(' '))
-          .join(' L')
-      : '';
+  const L = useMemo(() => along(CU_BASE.map(([x, y]) => [x * k, y * k] as [number, number])), [k]);
+  const head = p * L.len;
+  const phase = reduce ? 0 : sec * SQUIGGLE.speed * Math.PI * 2;
+  const done = squigglePath(L, 0, head, SQUIGGLE.amp * envelope(p), SQUIGGLE.wavelength, phase);
+  const rest = plainPath(L, p > 0 ? Math.min(L.len, head + SQUIGGLE.stroke + 4) : 0, L.len);
+  const at = L.pts.length ? pointOn(L, head) : [0, 0];
+  const [x, y] = at;
   return (
     <View
       style={s.wave}
@@ -195,34 +185,44 @@ function Wave({ p, color, track }: { p: number; color: string; track: string }) 
       importantForAccessibility="no-hide-descendants">
       {w ? (
         <View style={{ width: w, height: h }}>
-          <Svg width={w} height={h} viewBox={`0 0 ${WV_W} ${WV_H}`}>
-            {j > 0 ? <Path d={path(j)} stroke={track} strokeOpacity={0.22} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
-            {i > 0 ? <Path d={path(Math.min(i, j))} stroke={color} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
+          <Svg width={w} height={h}>
+            {rest ? (
+              <Path d={rest} stroke={track} strokeOpacity={0.3} strokeWidth={SQUIGGLE.stroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            ) : null}
+            {done ? <Path d={done} stroke={color} strokeWidth={SQUIGGLE.stroke} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
           </Svg>
           <Animated.View
             style={[
               s.glow,
               {
-                left: x * k - 22,
-                top: y * k - 22,
+                left: x - 22,
+                top: y - 22,
                 backgroundColor: color,
                 opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.28] }),
                 transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.1] }) }],
               },
             ]}
           />
-          <View style={[s.dot, { left: x * k - 8, top: y * k - 8, backgroundColor: color, borderColor: '#FFFFFF' }]} />
+          <View style={[s.dot, { left: x - 8, top: y - 8, backgroundColor: color, borderColor: '#FFFFFF' }]} />
         </View>
       ) : null}
     </View>
   );
 }
-/* CU_D is four cubic curves from (10,96) to (250,96), drawn in a 260 by 110 box; room is left for the dot's glow */
+/* the point at length s along a path */
+function pointOn(L: Along, s: number): [number, number] {
+  let j = 1;
+  while (j < L.pts.length - 1 && L.at[j] < s) j++;
+  const a = L.pts[j - 1];
+  const b = L.pts[j];
+  const f = Math.max(0, Math.min(1, (s - L.at[j - 1]) / (L.at[j] - L.at[j - 1] || 1)));
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+}
+/* CU_D is four cubic curves from (10,96) to (250,96), drawn in a 260 by 116 box; room is left for the dot's glow */
 const WV_W = 260;
 const WV_H = 116;
-/* points along CU_D, each pushed out along the curve's normal by a small wiggle that fades in and out at the ends, so
-   the squiggle starts and lands calmly */
-const SQUIG: [number, number][] = (() => {
+/* points along CU_D, close together, with no wiggle: the squiggle is added as it is drawn */
+const CU_BASE: [number, number][] = (() => {
   const segs: number[][] = [
     [10, 96, 46, 96, 62, 76, 82, 50],
     [82, 50, 102, 24, 112, 10, 128, 10],
@@ -241,20 +241,7 @@ const SQUIG: [number, number][] = (() => {
     }
   });
   base.push([250, 96]);
-  /* the wiggles follow the length of the curve, not its x, so they stay even on the steep parts */
-  let len = 0;
-  const at = base.map((q, j) => (len += j ? Math.hypot(q[0] - base[j - 1][0], q[1] - base[j - 1][1]) : 0));
-  return base.map(([bx, by], j) => {
-    const a = base[Math.max(0, j - 1)];
-    const b = base[Math.min(base.length - 1, j + 1)];
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    const d = Math.hypot(dx, dy) || 1;
-    const f = at[j] / len;
-    const amp = 2.2 * Math.min(1, f * 10, (1 - f) * 10);
-    const o = amp * Math.sin((at[j] / 13) * Math.PI * 2);
-    return [+(bx - (dy / d) * o).toFixed(1), +(by + (dx / d) * o).toFixed(1)];
-  });
+  return base;
 })();
 
 /* ---------- name the thought ---------- */
@@ -471,14 +458,14 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
             <T v="small" tone="slipText">
               Giving in
             </T>
-            <WavyLine width={44} p={1} color={c.slip} track={c.slip} stroke={3} wave={11} amp={2.5} />
+            <WavyLine width={60} p={1} ease={false} color={c.slip} track={c.slip} />
             <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
           </Card>
           <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
             <T v="small" tone="mintText">
               Riding it out
             </T>
-            <WavyLine width={44} p={1} color={c.mint} track={c.mint} stroke={3} wave={11} amp={2.5} />
+            <WavyLine width={60} p={1} ease={false} color={c.mint} track={c.mint} />
             <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
           </Card>
         </View>

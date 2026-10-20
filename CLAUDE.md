@@ -96,6 +96,8 @@ cd apps/mobile && npx expo start
     covers the bottom of the screen while typing.
   - In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`
     (components/scene.tsx), which pushes them to the bottom. For a number from a range, use `Slider` (components/slider.tsx).
+- **Tools and moments follow docs/design-standards.md:** one squiggle (`SQUIGGLE`), one timer (`ToolTimer`), smooth motion,
+  two-step choices, and the X going one step back. Read it before building or changing a tool, or reusing these patterns.
 - **Formatting is Prettier, from one place.** `.prettierrc.json` at the root sets it for everything (single quotes, lines up
   to 160, `>` on the last line of a tag), `.editorconfig` covers editors, and `.prettierignore` leaves the frozen files
   alone (the legacy app, `core.js`, the golden fixtures). Run `npm run format` before committing; CI fails on unformatted

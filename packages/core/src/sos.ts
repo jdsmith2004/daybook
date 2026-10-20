@@ -552,6 +552,54 @@ export function pickIdea(st: Settings | null, avoid: string | null, rand: Rand):
   return x;
 }
 
+/* ---------- what do I need? ---------- */
+/** for each need in NEEDS: its icon, what helps in a few words, and the one thing to do about it: a tool to open, or null
+    for something done away from the phone (the button then says what it is). Tired goes to bed at night and to a rest of
+    ten minutes (the pause) in the daytime. */
+export interface NeedDo {
+  ic: string;
+  head: string;
+  tool: string | null;
+  label: string;
+  /** what helps, when it differs from the need's own words (tired, by the time of day) */
+  text?: string;
+}
+const NEED_DO: Record<string, NeedDo> = {
+  hungry: { ic: 'leaf', head: 'Eat something real.', tool: null, label: 'I will eat something' },
+  angry: { ic: 'bolt', head: 'Move it out of your body first.', tool: 'move', label: 'Move for 2 minutes' },
+  lonely: { ic: 'heart', head: 'Reach one person.', tool: 'message', label: 'Reach a person' },
+  tired: {
+    ic: 'moon',
+    head: 'Rest is the move.',
+    tool: 'pause',
+    label: 'Rest for 10 minutes',
+    text: 'Running on empty makes every urge louder. A short rest or a step outside clears the head. Ten minutes is enough.',
+  },
+  bored: { ic: 'dice', head: 'Give your hands a job.', tool: 'surprise', label: 'Surprise me' },
+};
+export function needDo(id: string, night: boolean): NeedDo {
+  const d = NEED_DO[id] || { ic: 'heart', head: 'Name it, then meet it.', tool: null, label: 'I will do it' };
+  if (id === 'tired' && night)
+    return {
+      ...d,
+      head: 'Sleep is the move tonight.',
+      tool: 'bed',
+      label: 'Go to bed',
+      text: 'Urges are louder when you are tired. Bed, with the phone charging in another room, is the strongest move tonight.',
+    };
+  return d;
+}
+
+/** the tool an idea from the calm-move menu is, when it is one: moving is Move, a text or a call is Reach a person, a slow
+    breath is Breathe. Anything else (a hot drink, a shower, a hobby) is done away from the phone, so null. */
+export function ideaTool(text: string): string | null {
+  const t = String(text || '').toLowerCase();
+  if (/\b(text|call|message)\b/.test(t)) return 'message';
+  if (/\b(breath|breathe|breathing)\b/.test(t)) return 'breathe';
+  if (/\b(walk|squats?|push-?ups?|stretch|jumping|run|move|dance)\b/.test(t)) return 'move';
+  return null;
+}
+
 /* ---------- from you ---------- */
 /** what SOS shows in your own words: the note written on a calm day, or else one of your reasons. pick (0 to 1) chooses the
     reason, and is kept for the whole SOS so the line does not change while you read it. */

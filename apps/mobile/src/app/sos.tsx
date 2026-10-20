@@ -95,7 +95,9 @@ export default function Sos() {
 
   /* picked once per screen, like the legacy urCx: the line to do now (and whether to try something new), then, after a tool,
      one thing worth knowing. Each is kept with the SOS so it does not change while you read it. */
-  const key = ur ? (ur.again ? 'a' + ur.again : 'first') + '|' + (ur.strength || '') : '';
+  /* the line stays put for the whole first screen: changing how strong it is must not swap the words and move everything
+     (strength changes only what the next screen suggests) */
+  const key = ur ? (ur.again ? 'a' + ur.again : 'first') : '';
   useLayoutEffect(() => {
     if (!ur || !st) return;
     if ((ur.step === 'now' || ur.step === 'tools') && (ur.cx?.k !== key || ur.explore == null)) {

@@ -14,6 +14,9 @@ import {
   MENU_DEFAULT,
   MOVES_SIT,
   NEEDS,
+  urTool,
+  needDo,
+  ideaTool,
   reasonCat,
   safeName,
   urEntry,
@@ -34,15 +37,16 @@ import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Appear } from '@/components/appear';
 import { PickRow } from '@/components/picks';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
-import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
+import { Shape, type ShapeKind } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSendText } from '@/components/safe-text';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font, useTheme, type Palette } from '@/lib/theme';
 
+import { ToolTimer, type BeatOf } from './timer';
 import type { ToolProps } from './types';
 
 const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in your messages.') =>
@@ -51,54 +55,19 @@ const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in 
     .catch(() => say('Could not copy. Press and hold the text to copy it.'));
 
 /* ---------- move ---------- */
-/* the beat a move keeps: two parts that take turns (seconds each), how far the shape shrinks, and the words for each
-   part. A squeeze is held for five, then let go; rolls and turns go slow; on your feet it is a livelier, steady pulse. */
-type BeatOf = { dur: [number, number]; low: number; words?: [string, string]; kind: ShapeKind };
+/* the beat a move keeps: a squeeze is held for five, then let go; rolls and turns go slow; on your feet it is a livelier,
+   steady pulse (components/tools/timer.tsx) */
 const BEAT_HOLD: BeatOf = { dur: [5, 3], low: 0.74, words: ['Hold', 'Let go'], kind: 'cookie12' };
 const BEAT_FLOW: BeatOf = { dur: [3, 3], low: 0.86, kind: 'cookie9' };
 const BEAT_UP: BeatOf = { dur: [0.45, 0.55], low: 0.9, kind: 'softBurst' };
 /** the seated moves that are a hold and a letting go */
 const HOLDS = ['squeeze', 'feet', 'palms', 'toes'];
 
-/** a soft cookie that grows through the first part of the beat and eases back in the second, kept in step with the clock.
-    With Reduce Motion on it stays still, and the words (Hold, Let go) still keep the beat. */
-function Beat({ beat, sec, color, reduce, children }: { beat: BeatOf; sec: number; color: string; reduce: boolean; children: React.ReactNode }) {
-  const [a, b] = beat.dur;
-  const cyc = a + b;
-  const into = sec % cyc;
-  const first = into < a;
-  /* which part of which round: changes once per part, and each change starts the next easing */
-  const part = Math.floor(sec / cyc) * 2 + (first ? 0 : 1);
-  const v = useRef(new Animated.Value(beat.low)).current;
-  useEffect(() => {
-    if (reduce) return v.setValue(1);
-    const left = (first ? a - into : cyc - into) * 1000;
-    Animated.timing(v, {
-      toValue: first ? 1 : beat.low,
-      duration: Math.max(60, left),
-      easing: first ? Easing.inOut(Easing.sin) : Easing.out(Easing.cubic),
-      useNativeDriver: NATIVE,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [part, reduce]);
-  return (
-    <View style={s.beat}>
-      <Animated.View style={[StyleSheet.absoluteFill, s.beatIn, { transform: [{ scale: v }] }]}>
-        <Shape kind={beat.kind} size={206} color={color} />
-      </Animated.View>
-      {children}
-      {beat.words ? (
-        <T v="label" tone="coralText">
-          {beat.words[first ? 0 : 1]}
-        </T>
-      ) : null}
-    </View>
-  );
-}
+/** each move's own small shape on the pick list: the shape its beat keeps on the run page */
+const beatOf = (sit: boolean, id: string): BeatOf => (!sit ? BEAT_UP : HOLDS.indexOf(id) >= 0 ? BEAT_HOLD : BEAT_FLOW);
 
 export function Move({ finish, level }: ToolProps) {
   const c = useTheme();
-  const reduce = useReducedMotion();
   const sos = useSos();
   /* in a seat (at work, in a meeting, in a car) or free to get up. Remembered on this device, and a seat is the start,
      because it works anywhere. */
@@ -134,70 +103,87 @@ export function Move({ finish, level }: ToolProps) {
         </Dock>
       </Stage>
     );
+  /* the pick: where you are first, then the moves for it as one list. A tap starts the move. */
   if (!pick)
     return (
       <Stage key="pick" dir={0}>
         <T v="title" style={s.c} accessibilityRole="header">
           Move for 2 minutes.
         </T>
-        <T style={s.c}>Body first, decision later. Moving in your seat counts, and no one has to notice.</T>
+        <T style={s.c}>Body first, decision later. Pick one move and keep it going.</T>
         <Dock>
-          <T v="small" tone="muted" style={s.c}>
-            Can you get up right now?
-          </T>
           <PickRow
-            label="Can you get up right now?"
+            label="Where are you?"
             list={[
-              { k: 'sit', label: 'Not right now' },
-              { k: 'up', label: 'Yes' },
+              { k: 'sit', label: 'In my seat' },
+              { k: 'up', label: 'On my feet' },
             ]}
             cur={sit ? 'sit' : 'up'}
             onPick={(k) => sos.setMem((m) => ({ ...m, moveSit: k === 'sit' }))}
           />
-          <Appear key={sit ? 'sit' : 'up'} by={6} duration={240}>
-            <View style={s.grid}>
-              {list.map(([id, name, sub]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    setPick(id);
-                    setM0(Date.now());
-                    buzz('tap');
-                  }}
-                  style={({ pressed }) => [s.tile, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+          <Appear key={sit ? 'sit' : 'up'} by={6} duration={240} style={s.list}>
+            {list.map(([id, name, sub], j) => (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                accessibilityLabel={name + '. ' + sub}
+                onPress={() => {
+                  setPick(id);
+                  setM0(Date.now());
+                  buzz('tap');
+                }}
+                style={({ pressed }) => [s.mrow, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                <Shape kind={beatOf(sit, id).kind} size={30} color={c.coral} turn={j * 23} />
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
                   <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
-                </Pressable>
-              ))}
-            </View>
+                </View>
+                <Icon name="next" size={18} color={c.muted} />
+              </Pressable>
+            ))}
           </Appear>
           <T v="small" tone="muted" style={s.c}>
-            {sit ? 'Slow and small still counts. Stop if anything hurts.' : 'Stop if anything hurts. A slow walk counts too.'}
+            {sit ? 'Slow and small counts, and no one has to notice. Stop if anything hurts.' : 'A slow walk counts too. Stop if anything hurts.'}
           </T>
         </Dock>
       </Stage>
     );
   const m = list.find((x) => x[0] === pick) || list[0];
-  const beat = !sit ? BEAT_UP : HOLDS.indexOf(m[0]) >= 0 ? BEAT_HOLD : BEAT_FLOW;
+  /* the run: the move and how to do it at the top, to be read; the timer in the middle; done at the bottom */
   return (
     <Stage key="run" dir={1}>
+      <T v="eyebrow" tone="muted">
+        {sit ? 'In your seat' : 'On your feet'}
+      </T>
+      <T v="title" style={s.c} accessibilityRole="header">
+        {m[1]}
+      </T>
+      <T style={s.c}>{m[2]}.</T>
       <Middle>
-        <WavyRing size={270} p={1 - left / MOVE_MS} color={c.coral} track={c.line} stroke={6}>
-          <Beat beat={beat} sec={sec} color={c.surface} reduce={reduce}>
-            <T v="label" style={[s.c, { maxWidth: 170 }]}>
-              {m[1]}
-            </T>
-            <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
-          </Beat>
-        </WavyRing>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Go.
-        </T>
-        <T style={s.c}>{m[2]}. Keep going until the ring closes, or stop when you feel the shift.</T>
+        <ToolTimer
+          p={1 - left / MOVE_MS}
+          left={left}
+          sec={sec}
+          beat={beatOf(sit, m[0])}
+          label={sit ? 'Slow and steady' : 'Keep it going'}
+          color={c.coral}
+          ink={c.coralText}
+        />
       </Middle>
       <Dock>
-        <Button label="I am done" kind="ghost" onPress={() => setDone(true)} />
+        <T v="small" tone="muted" style={s.c}>
+          Keep going until the ring closes, or stop when you feel the shift.
+        </T>
+        <Button label="I am done" onPress={() => setDone(true)} />
+        <View style={s.quiet}>
+          <Link
+            label="Change the move"
+            onPress={() => {
+              setPick(null);
+              setM0(null);
+            }}
+          />
+        </View>
       </Dock>
     </Stage>
   );
@@ -335,7 +321,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
 const SUR_KINDS: ShapeKind[] = ['cookie9', 'sunny', 'clover4', 'gem', 'puffy', 'cookie6', 'softBurst', 'heart', 'pentagon', 'clover8'];
 const SUR_SOFT = ['surface', 'sunSoft', 'mintSoft', 'coralSoft', 'accentSoft', 'skySoft', 'violetSoft', 'coralSoft', 'sunSoft', 'mintSoft'] as const;
 
-export function Surprise({ finish }: ToolProps) {
+export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
   const c = useTheme();
   const { snap } = useStore();
   const reduce = useReducedMotion();
@@ -398,6 +384,8 @@ export function Surprise({ finish }: ToolProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const size = Math.min(300, width - 56);
+  const tid = !spinning && pick ? ideaTool(pick) : null;
+  const pickTool = tid ? urTool(tid) : null;
   const card = (small: string, text: string) => {
     const k = face % SUR_KINDS.length;
     const fs = text.length <= 22 ? 28 : text.length <= 44 ? 24 : 20;
@@ -448,7 +436,27 @@ export function Surprise({ finish }: ToolProps) {
         ) : (
           <>
             <Button label="I will do it" onPress={() => setDoing(true)} />
-            <Button label="Another one" kind="ghost" icon="dice" onPress={spin} />
+            <View style={s.two}>
+              <View style={{ flex: 1 }}>
+                <Button label="Another one" kind="ghost" icon="dice" onPress={spin} />
+              </View>
+              {/* an idea that is one of the tools (a walk is Move, a text is Reach a person) opens it */}
+              {pickTool ? (
+                <View style={{ flex: 1 }}>
+                  <Button
+                    label={'Open ' + pickTool.name}
+                    kind="ghost"
+                    icon={pickTool.ic}
+                    onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: pickTool.id } })}
+                  />
+                </View>
+              ) : null}
+            </View>
+            {fromSos ? (
+              <View style={s.quiet}>
+                <Link label="Back to the tools" onPress={exit} />
+              </View>
+            ) : null}
             <T v="small" tone="muted" style={s.c}>
               {menu.length} ideas in your menu. Edit them in My plan, under Lists.
             </T>
@@ -460,50 +468,97 @@ export function Surprise({ finish }: ToolProps) {
 }
 
 /* ---------- what do I need? ---------- */
+/* one question with five big choices low on the screen; then one page for the need picked: its shape big in the middle,
+   what helps, and one button that does it (core needDo) */
+const NEED_SHAPE: Record<string, ShapeKind> = { hungry: 'cookie9', angry: 'softBurst', lonely: 'cookie12', tired: 'cookie6', bored: 'clover4' };
+const NEED_TONE: Record<string, readonly [keyof Palette, keyof Palette]> = {
+  hungry: ['sunSoft', 'sunText'],
+  angry: ['coralSoft', 'coralText'],
+  lonely: ['violetSoft', 'violetText'],
+  tired: ['skySoft', 'skyText'],
+  bored: ['mintSoft', 'mintText'],
+};
+
 export function Halt({ finish, now }: ToolProps & { now: number }) {
   const c = useTheme();
-  const [sel, setSel] = useState<string[]>([]);
+  const [need, setNeed] = useState<string | null>(null);
+  /* back to the five from a need slides in from the left; the first time it just appears */
+  const [back, setBack] = useState(false);
   const night = urNight(new Date(now).getHours());
-  const picked = NEEDS.filter((n) => sel.indexOf(n[0]) >= 0);
-  return (
-    <>
-      <T v="title" style={s.c} accessibilityRole="header">
-        What is true right now?
-      </T>
-      <T style={s.c}>Urges often show up when a plain need is going unmet. Tap anything that fits. You can pick more than one.</T>
-      <Dock>
-        <View style={s.wrap}>
-          {NEEDS.map((n) => (
-            <Chip
-              key={n[0]}
-              label={n[1]}
-              on={sel.indexOf(n[0]) >= 0}
-              onPress={() => setSel(sel.indexOf(n[0]) >= 0 ? sel.filter((x) => x !== n[0]) : sel.concat(n[0]))}
-            />
-          ))}
-        </View>
-        {picked.length ? (
-          <>
-            {picked.map((n) => {
-              /* at night, "Tired" goes straight to bed */
-              const go = n[0] === 'tired' && night ? (['bed', 'Go to bed'] as [string, string]) : n[3];
+  const n = NEEDS.find((x) => x[0] === need);
+  if (!n)
+    return (
+      <Stage key="ask" dir={back ? -1 : 0}>
+        <T v="title" style={s.c} accessibilityRole="header">
+          What do you need most right now?
+        </T>
+        <T style={s.c}>Urges often show up when a plain need is going unmet. Pick the one that is loudest.</T>
+        <Dock>
+          <View style={s.list}>
+            {NEEDS.map(([id, name], j) => {
+              const [bg, ink] = NEED_TONE[id] || (['accentSoft', 'accentText'] as const);
               return (
-                <Card key={n[0]} style={{ alignSelf: 'stretch', backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
-                  <T v="label">{n[1]}</T>
-                  <T>{n[2]}</T>
-                  {go ? <Button label={go[1]} kind="ghost" onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: go[0] } })} /> : null}
-                </Card>
+                <Pressable
+                  key={id}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setNeed(id);
+                    buzz('tap');
+                  }}
+                  style={({ pressed }) => [s.mrow, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                  <Shape kind={NEED_SHAPE[id] || 'cookie9'} size={40} color={c[bg] as string} turn={j * 17}>
+                    <View>
+                      <Icon name={needDo(id, night).ic} size={20} color={c[ink] as string} />
+                    </View>
+                  </Shape>
+                  <Text style={[s.tileT, { color: c.ink, flex: 1 }]}>{name}</Text>
+                  <Icon name="next" size={18} color={c.muted} />
+                </Pressable>
               );
             })}
-            <Button label="Done" onPress={() => finish('halt')} />
-          </>
-        ) : (
+          </View>
           <T v="small" tone="muted" style={s.c}>
             Nothing is wrong with a need. Naming it is the first move.
           </T>
-        )}
+        </Dock>
+      </Stage>
+    );
+  const d = needDo(n[0], night);
+  const [bg, ink] = NEED_TONE[n[0]] || (['accentSoft', 'accentText'] as const);
+  return (
+    <Stage key={'need' + n[0]} dir={1}>
+      <T v="eyebrow" tone="muted">
+        {n[1]}
+      </T>
+      <T v="title" style={s.c} accessibilityRole="header">
+        {d.head}
+      </T>
+      <T style={s.c}>{d.text || n[2]}</T>
+      <Middle>
+        <Shape kind={NEED_SHAPE[n[0]] || 'cookie9'} size={150} color={c[bg] as string} turn={8}>
+          <View>
+            <Icon name={d.ic} size={60} color={c[ink] as string} />
+          </View>
+        </Shape>
+      </Middle>
+      <Dock>
+        <Button
+          label={d.label}
+          onPress={() =>
+            d.tool ? router.replace({ pathname: '/tool/[id]', params: { id: d.tool } }) : finish('halt', { msg: 'You met the need. That is real care.' })
+          }
+        />
+        <View style={s.quiet}>
+          <Link
+            label="Something else is true"
+            onPress={() => {
+              setBack(true);
+              setNeed(null);
+            }}
+          />
+        </View>
       </Dock>
-    </>
+    </Stage>
   );
 }
 
@@ -710,15 +765,28 @@ const s = StyleSheet.create({
   },
   tileT: { fontFamily: font.bodyBold, fontSize: 16 },
   tileS: { fontFamily: font.body, fontSize: 13 },
-  beat: { width: 206, height: 206, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  beatIn: { alignItems: 'center', justifyContent: 'center' },
-  time: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 56, fontVariant: ['tabular-nums'] },
+  list: { alignSelf: 'stretch', gap: 8 },
+  two: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
+  quiet: { alignSelf: 'stretch', alignItems: 'center' },
+  mrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 58,
+    borderRadius: 18,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
   planLine: { alignSelf: 'stretch', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 },
   check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
   box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   surIn: { alignItems: 'center', gap: 6 },
   surT: { fontFamily: font.display, textAlign: 'center' },
-  btnSpace: { height: 104 },
+  btnSpace: { height: 160 },
   reason: {
     alignSelf: 'stretch',
     minHeight: 220,

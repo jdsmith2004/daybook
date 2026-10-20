@@ -3,6 +3,7 @@
    single-choice pages move on by themselves after a tap. A new person's plan is built from their answers. Opened again, nothing
    changes until the last page, where the person ticks which changes to keep. Ported from the legacy SCENES.onb. */
 import {
+  accountLater,
   BE_LEN,
   fmtClock,
   fmtDate,
@@ -104,7 +105,7 @@ type Flow = SetupFlow;
 export default function Setup() {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const { snap, tk, replace, say, current } = useStore();
+  const { snap, tk, replace, say, current, apply } = useStore();
   const sync = useSync();
   const st = snap.settings;
   const [f, setF] = useState<Flow>(() => {
@@ -979,7 +980,15 @@ export default function Setup() {
       foot = (
         <View key="f" style={{ flex: 1, gap: 4 }}>
           <Next label="Make my free account" noIcon onPress={() => !busy() && sync.signInNow({ why: 'setup' })} off={false} />
-          <TextLink label="Keep it on this phone for now" onPress={() => !busy() && go(1)} />
+          <TextLink
+            label="Keep it on this phone for now"
+            onPress={() => {
+              if (busy()) return;
+              /* a choice, kept: Today does not ask again for a week (accounts.ts) */
+              if (st) apply(accountLater(st, tk));
+              go(1);
+            }}
+          />
         </View>
       );
       break;

@@ -4,6 +4,7 @@
 import {
   addDays,
   dayKind,
+  isKey,
   fmtClock,
   fmtDate,
   gameCompute,
@@ -66,6 +67,19 @@ export function rkTellText(st: Settings | null): string {
     'rough night. I slipped. I am not looking for a lecture, I just did not want to keep it to myself. Can you check on me tomorrow?'
   );
 }
+/** Day 1: a text to the safe person, so the start is not a secret. Someone who does not hide is who the person is
+    becoming. Daybook sends nothing: the person's own messages app opens with the words, or they copy them. */
+export function startTellText(st: Settings | null): string {
+  const nm = safeName(st);
+  return (
+    (nm ? 'Hey ' + nm + ', ' : 'Hey, ') + 'today I am starting to quit something that has had a hold on me. No need to say much. It helps to know you know.'
+  );
+}
+/** whether Today offers it: Day 1 is today, a safe person is named, and it was not answered before */
+export const tellStartDue = (st: Settings, tk: DayKey): boolean => st.day1 === tk && !!safeName(st) && !isKey(st.toldStart);
+/** the card answered, either way: it does not come back */
+export const tellStartDone = (st: Settings, tk: DayKey, now = Date.now()) => changeSettings(st, (s) => void (s.toldStart = tk), now);
+
 export function lowerFirst(s: string): string {
   s = String(s || '')
     .trim()

@@ -197,3 +197,35 @@ export function riskAlerts(days: Days, st: Settings, tk: DayKey, now: number, n 
   }
   return out;
 }
+
+/** The first pattern, early: once three entries have a time, and before the hard hours above are known, one line on
+    Today when most of them fall in the same two hours ("2 of your 3 urges came between 10 PM and midnight"). Words only:
+    no heads-ups until riskWindow finds the hard hours. Quiet on the day of a slip and the day after. It is the first sign
+    that Daybook is learning the person's own pattern, in the first week, when that matters most. */
+export function firstPattern(days: Days, st: Settings, tk: DayKey): string | null {
+  if (riskWindow(days, st, tk)) return null;
+  if ([tk, addDays(tk, -1)].some((k) => (days[k]?.events || []).some((e) => e.outcome === 'slipped'))) return null;
+  const hrs = eventsOf(days, addDays(tk, -(RISK_DAYS - 1)))
+    .filter((e) => e.key <= tk && !!e.time && /^\d\d:\d\d$/.test(e.time))
+    .map((e) => +e.time!.slice(0, 2));
+  if (hrs.length < 3) return null;
+  const score = Array(24).fill(0);
+  hrs.forEach((h) => score[h]++);
+  let best = 0;
+  let start = 0;
+  for (let i = 0; i < 24; i++) {
+    const h = (st.rollover + i) % 24;
+    const v = score[h] + score[(h + 1) % 24];
+    if (v > best) {
+      best = v;
+      start = h;
+    }
+  }
+  if (best < 2 || best * 2 < hrs.length) return null;
+  const who = best === hrs.length ? 'All ' + best + ' of your urges' : best + ' of your ' + hrs.length + ' urges';
+  const span = riskLabel(start)
+    .replace(' to ', ' and ')
+    .replace(/\b12 AM\b/, 'midnight')
+    .replace(/\b12 PM\b/, 'noon');
+  return who + ' came between ' + span + '. Your pattern is starting to show, and knowing when is half of being ready.';
+}

@@ -19,7 +19,8 @@ it('without an account, the first lessons on the path are open, and finished one
 
 it('asks after the first level-up or the first week, and never with an account', () => {
   expect(core.accountAsk({}, st0(tk), tk, 1, false)).toBeNull();
-  expect(core.accountAsk({}, st0(tk), tk, 2, false)).toBe('level');
+  expect(core.accountAsk({}, st0(tk), tk, 2, false)).toBeNull();
+  expect(core.accountAsk({}, st0(tk), tk, core.ACCT_LEVEL, false)).toBe('level');
   expect(core.accountAsk({}, st0(core.addDays(tk, -7)), tk, 1, false)).toBe('week');
   expect(core.accountAsk({}, st0(core.addDays(tk, -7)), tk, 5, true)).toBeNull();
 });
@@ -61,4 +62,10 @@ it('without an account, Next up never offers a lesson that waits behind one', ()
     expect(o.t).toMatch(/^Read again: /);
   }
   expect(seen).toBeGreaterThan(0);
+});
+
+it('a new person who keeps it on the phone at the end of setup is not asked again for a week', () => {
+  const st = core.accountLater(st0(tk), tk, 1).st;
+  expect(core.accountAsk({}, st, tk, core.ACCT_LEVEL, false)).toBeNull();
+  expect(core.accountAsk({}, st, core.addDays(tk, core.ACCT_WAIT), core.ACCT_LEVEL, false)).toBe('week');
 });

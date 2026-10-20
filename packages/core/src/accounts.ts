@@ -13,6 +13,9 @@ import type { DayKey, Days, Settings } from './types';
 export const LEARN_FREE = 3;
 /** after "Not now", days before Daybook asks again */
 export const ACCT_WAIT = 7;
+/** the first level-up that asks: the first step of Kindling, a new form of the flame. Not level 2: the setup alone gives
+    20 points and level 2 starts at 18, so level 2 is day 0, right after the setup's own account page. */
+export const ACCT_LEVEL = 6;
 
 /** the lessons open without an account */
 export const freeLessons = (): Lesson[] => lessonPath().slice(0, LEARN_FREE);
@@ -35,7 +38,7 @@ export function accountAsk(days: Days, st: Settings, tk: DayKey, level: number, 
   const hard = eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
   if (hard) return null;
   if (diffDays(tk, st.start) >= 7) return 'week';
-  if (level >= 2) return 'level';
+  if (level >= ACCT_LEVEL) return 'level';
   return null;
 }
 

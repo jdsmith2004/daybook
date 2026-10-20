@@ -37,6 +37,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { DateStep } from '@/components/date-step';
+import { STORAGE_LINE } from '@/components/home-screen';
 import { Collapse, OnOff, Stepper } from '@/components/form';
 import { confirmUnlock, lockOffered } from '@/components/lock';
 import { SyncBody } from '@/components/sync-card';
@@ -468,7 +469,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         BACKUP_FILES ? 'Spreadsheet and backup files' : 'Spreadsheets, or delete everything',
         <>
           <T v="small" tone="muted">
-            {signedIn ? 'Your log is saved on this device and in your account.' : 'Your log is saved on this device only. A free account keeps a safe copy.'}
+            {signedIn
+              ? 'Your log is saved on this device and in your account.'
+              : 'Your log is saved on this device only. A free account keeps a safe copy.' + (STORAGE_LINE ? ' ' + STORAGE_LINE : '')}
           </T>
           <Button kind="ghost" label="Save days as a spreadsheet (CSV)" onPress={() => save('days')} />
           <Button kind="ghost" label="Save every entry with its time (CSV)" onPress={() => save('events')} />

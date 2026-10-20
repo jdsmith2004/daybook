@@ -127,11 +127,16 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
         <T v="eyebrow" tone="muted">
           {t.eyebrow}
         </T>
-        <View style={s.facts}>
-          {fact(f.dl, 'day logged', 'days logged')}
-          {fact(f.rode, 'urge ridden out', 'urges ridden out')}
-          {fact(f.slips, 'slip logged', 'slips logged')}
-        </View>
+        {/* day 0: one warm line, not three zeros */}
+        {f.dl || f.rode || f.slips ? (
+          <View style={s.facts}>
+            {fact(f.dl, 'day logged', 'days logged')}
+            {fact(f.rode, 'urge ridden out', 'urges ridden out')}
+            {fact(f.slips, 'slip logged', 'slips logged')}
+          </View>
+        ) : (
+          <T style={{ fontSize: 17, lineHeight: 24 }}>Nothing logged yet. Your first entry starts the log.</T>
+        )}
         <T v="small" tone="muted">
           {sub} <LinkText label="How this works" onPress={() => router.push('/mode')} />
         </T>

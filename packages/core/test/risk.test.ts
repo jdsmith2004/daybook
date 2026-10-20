@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { hardHeld, keepHard, riskAlerts, riskAt, riskDay, riskLabel, riskToKeep, riskWindow } from '../src/risk';
+import * as core from '../src/index';
 import { newTalk } from '../src/talk';
 import { saveTalk } from '../src/talk-log';
 import type { Days, Settings } from '../src/types';
@@ -76,4 +77,18 @@ describe('the day', () => {
     expect(t[0]).toBe(at('2026-10-14T19:30:00'));
     expect(t).toHaveLength(6);
   });
+});
+
+it('the first pattern: three timed entries, most in two hours, words only, quiet after a slip', () => {
+  const st = core.normSettings({ start: '2026-10-01', rollover: 4, u: 1 });
+  const tk = '2026-10-10';
+  let days = core.addEvent({}, '2026-10-05', 'rode', '22:10').days;
+  days = core.addEvent(days, '2026-10-06', 'rode', '23:40').days;
+  expect(core.firstPattern(days, st, tk)).toBeNull();
+  days = core.addEvent(days, '2026-10-07', 'rode', '14:00').days;
+  expect(core.firstPattern(days, st, tk)).toMatch(/^2 of your 3 urges came between 10 PM and /);
+  /* the morning after a slip it stays quiet */
+  const slipped = core.addEvent(days, '2026-10-09', 'slipped', '13:00').days;
+  expect(core.firstPattern(slipped, st, tk)).toBeNull();
+  expect(core.firstPattern(days, st, tk)).not.toMatch(/n't|'re|'s /);
 });

@@ -83,3 +83,19 @@ describe('a level reached on a day with a slip', () => {
     expect(r.items[0]).toMatchObject({ type: 'level', from: 1 });
   });
 });
+
+it('who you are, in numbers: only what was done, said as who the person is, and it only goes up', () => {
+  const st = { ...core.normSettings({ start: '2026-10-01', day1: '2026-10-02', u: 1 }), onb: { n: 1, at: 1, a: { freq: 'f3', mins: 'm2' }, hist: [] } };
+  const tk = '2026-10-12';
+  expect(core.identityLines({}, st, {}, tk)).toEqual([]);
+  let days = core.addEvent({}, '2026-10-05', 'rode', '22:00').days;
+  days = core.addEvent(days, '2026-10-06', 'slipped', '23:00').days;
+  const lines = core.identityLines(days, st, {}, tk);
+  expect(lines.map((x) => x.n)).toEqual(['1 time', '1 slip, every one logged']);
+  for (const x of lines) expect(x.who).toMatch(/^You are someone who /);
+  /* the hours given back: nine finished days with no slip since Day 1, at the setup's pace */
+  const h = core.hoursBack(days, st, tk);
+  const H = core.obHours(st.onb.a)!;
+  expect(h).toBe(core.obRnd((9 * H.yr) / 365));
+  expect(core.hoursBack(days, { ...st, onb: null }, tk)).toBeNull();
+});

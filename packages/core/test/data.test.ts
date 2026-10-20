@@ -108,3 +108,20 @@ it('the dirty list keeps another tab’s marks, and never one this copy already 
   /* the other tab changed days/a again after this copy sent it: kept */
   expect(core.mergeDirty({ 'days/a': 6 }, {}, { 'days/a': 5 })).toEqual({ 'days/a': 6 });
 });
+
+it('restoring a backup keeps a Sunday review’s picked answers', () => {
+  const b = core.readBackup(
+    JSON.stringify({
+      app: 'daybook',
+      settings: null,
+      days: {},
+      reviews: {
+        's2026-10-18': { a: { hard: '', helped: '', change: '', proud: '' }, sun: { w: ['Phone out of the bedroom'], c: [], g: { t: 'Lights off by 11' } } },
+      },
+    }),
+  );
+  const r = core.restoreBackup({ settings: null, days: {}, reviews: {} }, b, 500).snap;
+  expect(r.reviews['s2026-10-18'].sun?.w).toEqual(['Phone out of the bedroom']);
+  expect(r.reviews['s2026-10-18'].sun?.g?.t).toBe('Lights off by 11');
+  expect(r.reviews['s2026-10-18'].u).toBe(500);
+});

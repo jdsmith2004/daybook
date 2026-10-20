@@ -73,6 +73,8 @@ export function SyncBody() {
   const sync = useSync();
   const { now, say } = useStore();
   const [ask, setAsk] = useState<null | 'out' | 'delete'>(null);
+  /* changes that would be lost by removing the log now (sync.signOutNow) */
+  const [lose, setLose] = useState(0);
   const st = sync.status;
   if (st.k === 'off') return null;
 
@@ -154,9 +156,29 @@ export function SyncBody() {
           <T v="small" tone="muted">
             Your account keeps your log either way.
           </T>
+          {lose ? (
+            <T v="small" tone="danger" accessibilityLiveRegion="polite">
+              {lose === 1 ? 'One change has' : lose + ' changes have'} not reached your account yet. Removing the log from this device now loses{' '}
+              {lose === 1 ? 'it' : 'them'}. Keep the log here, or try again when you are online.
+            </T>
+          ) : null}
           <Button kind="ghost" label="Sign out, keep the log on this device" onPress={() => sync.signOutNow(false)} />
-          <Button kind="danger" label="Sign out and remove it from this device" onPress={() => sync.signOutNow(true)} />
-          <Button kind="ghost" label="Stay signed in" onPress={() => setAsk(null)} />
+          <Button
+            kind="danger"
+            label={lose ? 'Remove it anyway' : 'Sign out and remove it from this device'}
+            onPress={async () => {
+              const r = await sync.signOutNow(true, !!lose);
+              setLose(r.waiting);
+            }}
+          />
+          <Button
+            kind="ghost"
+            label="Stay signed in"
+            onPress={() => {
+              setAsk(null);
+              setLose(0);
+            }}
+          />
         </View>
       ) : ask === 'delete' ? (
         <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>

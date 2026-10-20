@@ -66,8 +66,9 @@ interface SyncValue {
   token: () => Promise<string>;
   /** the answer to the first-sign-in question */
   choose: (how: 'combine' | 'account') => Promise<void>;
-  /** sign out; with `remove`, the log leaves this device too */
-  signOutNow: (remove: boolean) => Promise<void>;
+  /** sign out; with `remove`, the log leaves this device too. What is waiting is sent first; with `remove`, when some of it
+      could not be sent, nothing happens unless `anyway`, and the number waiting comes back so the person can decide. */
+  signOutNow: (remove: boolean, anyway?: boolean) => Promise<{ waiting: number }>;
   /** erase the log in the account (every device clears it on its next sync). False when the account could not be reached. */
   eraseAccount: () => Promise<boolean>;
   /** delete the account and everything in it, for good. Gives back what to tell the person. */
@@ -383,10 +384,15 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   );
 
   const signOutNow = useCallback(
-    async (remove: boolean) => {
+    async (remove: boolean, anyway = false) => {
       const s = sessionRef.current;
       /* send what is waiting first, so nothing made here is lost to the other devices */
-      if (!remove && keptRef.current) await round();
+      if (keptRef.current) {
+        paused.current = false;
+        await round();
+      }
+      const waiting = Object.keys(current().dirty).length;
+      if (remove && waiting && !anyway) return { waiting };
       await saveKept(null);
       sessionRef.current = null;
       setSession(null);
@@ -396,8 +402,9 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         await onErased();
       }
       await signOut(s);
+      return { waiting: 0 };
     },
-    [round, saveKept, erase, onErased],
+    [round, current, saveKept, erase, onErased],
   );
 
   /** a call to the sync API outside a sync round, with the token renewed once if it was turned down */

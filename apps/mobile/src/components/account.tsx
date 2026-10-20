@@ -3,6 +3,7 @@ import { accountLater, accountWords, diffDays, type AcctWhy } from '@daybook/cor
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
+import { STORAGE_LINE } from '@/components/home-screen';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
@@ -23,6 +24,7 @@ export function AccountCard({ why, locked }: { why: AcctWhy; locked: number }) {
         </T>
       </View>
       <T v="small">{w.p}</T>
+      {STORAGE_LINE ? <T v="small">{STORAGE_LINE}</T> : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
         <Button kind="ghost" label="Not now" onPress={() => apply(accountLater(snap.settings!, tk))} />

@@ -8,6 +8,8 @@ import {
   GRAD_DAYS,
   gradInfo,
   gradLine,
+  hoursBack,
+  identityLines,
   LEVELS,
   nextLine,
   shownBadges,
@@ -43,6 +45,8 @@ export default function Miles() {
   const shown = shownBadges(g.badges, st);
   const earned = shown.filter((b) => badgeDone(b, st));
   const gi = gradInfo(snap.days, st, tk);
+  const who = identityLines(snap.days, st, snap.reviews, tk);
+  const back = hoursBack(snap.days, st, tk);
   const todo = shown.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
   return (
     <Screen title="Milestones" sub={<T tone="muted">Your flame, graduation, and your badges.</T>} back="More">
@@ -74,6 +78,29 @@ export default function Miles() {
           </View>
         </View>
       </Card>
+      {who.length || back ? (
+        <Card>
+          <T v="h2">Who you are becoming</T>
+          {who.map((x) => (
+            <View key={x.who} style={s.row}>
+              <View style={[s.whoIc, { backgroundColor: c.mintSoft }]}>
+                <Icon name={x.ic} size={18} color={c.mintText} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <T v="label">{x.who}</T>
+                <T v="small" tone="muted">
+                  {x.n}
+                </T>
+              </View>
+            </View>
+          ))}
+          {back ? (
+            <T v="small" tone="mintText" style={{ fontFamily: font.bodySemi }}>
+              About {back.toLocaleString('en-US')} {back === 1 ? 'hour' : 'hours'} given back to your life so far, at the pace you told the setup.
+            </T>
+          ) : null}
+        </Card>
+      ) : null}
       {gi.at ? (
         <Card style={{ backgroundColor: c.sunSoft }}>
           <View style={s.row}>
@@ -192,6 +219,7 @@ export default function Miles() {
 }
 
 const s = StyleSheet.create({
+  whoIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   lvl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 12, minHeight: 32, borderRadius: 999 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },

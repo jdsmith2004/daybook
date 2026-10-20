@@ -242,3 +242,14 @@ describe('the run waits for you (three days after the slip)', () => {
     expect(core.rkComebacks(base().days, st2, K).runs).toEqual([9]);
   });
 });
+
+it('Day 1: tell the safe person you started, once, in plain words', () => {
+  const st = { ...core.normSettings({ start: '2026-10-01', day1: '2026-10-08', u: 1 }), safePerson: 'Sam' };
+  expect(core.tellStartDue(st, '2026-10-08')).toBe(true);
+  expect(core.tellStartDue(st, '2026-10-09')).toBe(false);
+  expect(core.tellStartDue({ ...st, safePerson: '' }, '2026-10-08')).toBe(false);
+  expect(core.tellStartDue(core.tellStartDone(st, '2026-10-08', 5), '2026-10-08')).toBe(false);
+  const t = core.startTellText(st);
+  expect(t.startsWith('Hey Sam, ')).toBe(true);
+  expect(t).not.toMatch(/n't|'re|'m|porn/i);
+});

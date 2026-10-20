@@ -2,7 +2,8 @@
    sheetGrowth and badgeDone. */
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
-import { addDays, dayPoints, gameCompute, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { addDays, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { hardHeld } from './risk';
 import { formOfLevel, LADDER_V, LEVELS, STEPS, type Level } from './levels';
 import { changeSettings } from './actions';
 import type { DayKey, Days, Reviews } from './types';
@@ -154,3 +155,46 @@ export const stageLevel = (i: number, lvl: Level) => {
   const s = stageState(i, lvl);
   return s === 'done' ? i * STEPS + STEPS : s === 'now' ? lvl.n : i * STEPS + 1;
 };
+
+/* ---------- who you are, in numbers ----------
+   The counts Daybook already keeps, said as who the person is, never as a score: "You are someone who rides out urges."
+   Every one only goes up. A line shows once its count is one or more. */
+export interface IdLine {
+  ic: string;
+  who: string;
+  n: string;
+}
+export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: DayKey): IdLine[] {
+  const S0 = gameCompute(days, st, reviews, tk).S;
+  const num = (v: unknown) => (typeof v === 'number' ? v : 0);
+  const S = { rode: num(S0.rode), slips: num(S0.slips), lessons: num(S0.lessons), checkins: num(S0.checkins) };
+  const sunrise = eventsOf(days).filter((e) => e.outcome === 'slipped' && e.rk && isKey(e.rk.at)).length;
+  const held = hardHeld(days);
+  const times = (n: number, one: string, many: string) => n + ' ' + (n === 1 ? one : many);
+  const out: (IdLine | null)[] = [
+    S.rode ? { ic: 'wave', who: 'You are someone who rides out urges.', n: times(S.rode, 'time', 'times') } : null,
+    S.slips ? { ic: 'leaf', who: 'You are someone who tells the truth, even about a slip.', n: times(S.slips, 'slip', 'slips') + ', every one logged' } : null,
+    sunrise ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(sunrise, 'comeback', 'comebacks') } : null,
+    held ? { ic: 'shield', who: 'You are someone who gets through the hard hours.', n: times(held, 'time', 'times') } : null,
+    S.lessons ? { ic: 'book', who: 'You are someone who learns how this works.', n: times(S.lessons, 'lesson', 'lessons') + ' finished' } : null,
+    S.checkins ? { ic: 'pencil', who: 'You are someone who looks honestly at the day.', n: times(S.checkins, 'check-in', 'check-ins') } : null,
+  ];
+  return out.filter((x): x is IdLine => !!x);
+}
+
+/** the hours given back so far: the days with no slip since Day 1, at the pace the person told the setup (obHours).
+    null without a Day 1, without those answers, or before the first hour. It only goes up: a slip takes nothing back. */
+export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {
+  const H = st.onb && st.onb.a ? obHours(st.onb.a) : null;
+  const d1 = isKey(st.day1) ? (st.day1 as DayKey) : null;
+  if (!H || !d1 || d1 >= tk) return null;
+  const slips = new Set(
+    eventsOf(days)
+      .filter((e) => e.outcome === 'slipped')
+      .map((e) => e.key),
+  );
+  let n = 0;
+  for (let k = d1; k < tk; k = addDays(k, 1)) if (!slips.has(k)) n++;
+  const h = (n * H.yr) / 365;
+  return h >= 1 ? obRnd(h) : null;
+}

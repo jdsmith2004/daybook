@@ -29,15 +29,19 @@ import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';
+import { FirstPatternLine } from '@/components/first-pattern';
 import { Hero } from '@/components/hero';
+import { HomeScreenCard } from '@/components/home-screen';
 import { NudgeCard } from '@/components/nudge-card';
 import { RiskCard } from '@/components/risk-card';
 import { SundayCard } from '@/components/sunday-card';
 import { TalkCard } from '@/components/talk-card';
+import { TellStartCard } from '@/components/tell-start';
 import { Screen } from '@/components/screen';
 import { CountNotes, DaysCard } from '@/components/today';
 import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
 import { Icon, T } from '@/components/ui';
+import { WeekCard } from '@/components/week-card';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { useStore } from '@/lib/store';
@@ -130,15 +134,19 @@ export default function Today() {
       <TalkCard snap={snap} now={now} />
       <RiskCard snap={snap} tk={tk} now={now} />
       <Hero g={g} snap={snap} tk={tk} now={now} />
+      <TellStartCard snap={snap} tk={tk} />
+      <WeekCard snap={snap} tk={tk} />
       <SundayCard snap={snap} tk={tk} />
       <CountNotes snap={snap} tk={tk} />
       {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
       <TodaySoFar snap={snap} tk={tk} />
+      <FirstPatternLine snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
       {ask || tip ? null : <NudgeCard snap={snap} tk={tk} />}
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
+      <HomeScreenCard />
     </Screen>
   );
 }

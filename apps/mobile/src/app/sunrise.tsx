@@ -41,7 +41,7 @@ import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
-import { useTheme } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 export default function Sunrise() {
   const { snap, tk, now, update, say } = useStore();
@@ -132,6 +132,8 @@ export default function Sunrise() {
         <T style={s.c}>
           {after ? 'Yesterday is logged and done, and nothing reset.' : 'The slip is logged and done, and nothing reset.'} Two minutes to finish your quest.
         </T>
+        {/* who the person said they are becoming: one slip does not change it */}
+        {String(st.becoming || '').trim() ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{'Still true: ' + String(st.becoming).trim()}</T> : null}
         {run0 ? <LineNote b={`Your ${run0}-day run waits for you.`} rest={`This check is one of the steps, any time until ${rkUntil(k)} night.`} /> : null}
         <Flames on={[r.m1, r.m2, r.m3]} big />
         {cb.before ? (

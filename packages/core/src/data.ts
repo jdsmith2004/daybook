@@ -74,7 +74,8 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
   });
   const reviews: Reviews = { ...here.reviews };
   Object.keys(b.reviews).forEach((k) => {
-    reviews[k] = { k, a: b.reviews[k].a, u: now };
+    /* a Sunday review keeps its picked answers too */
+    reviews[k] = { ...b.reviews[k], k, u: now };
   });
   let settings = here.settings;
   if (b.settings) {

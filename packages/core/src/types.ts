@@ -154,6 +154,10 @@ export interface Settings {
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */
   acctNo?: DayKey | null;
+  /** the day the first week's look back was opened (week.ts). Optional. */
+  wk1?: DayKey | null;
+  /** the day the "tell your safe person you started" card on Day 1 was answered (rekindle.ts). Optional. */
+  toldStart?: DayKey | null;
   /** the day the one tip ask on Today was answered (see support.ts). Optional, so older records need no change. */
   tipAsk?: DayKey | null;
   u: number;

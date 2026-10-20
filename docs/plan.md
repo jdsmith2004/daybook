@@ -1370,6 +1370,15 @@ ring that fills as a squiggle) and `WavyLine`. All of it respects Reduce Motion.
 11. **Get curious's first two steps** breathe with a small shape, not an icon in a circle.
 12. **Go to bed reads lighter**: the four plans as a short choice under the three checks.
 
+All twelve were built on October 20 in four parallel sessions, merged and deployed. Checked on the web only; iOS,
+Android and Reduce Motion have not been tried.
+
+Choices made along the way (kept unless the owner says otherwise): Stop in Breathe after one full breath goes to the
+finish and counts as a calm move; a pattern changed from SOS also becomes the Tools default; 5-4-3-2-1 has no Next button
+(each step moves on after the last shape); unfound shapes and Move's beat shape use the plain card color, because the pale
+tones vanished on the skies; Go to bed's checks moved into the lower half with the plans; Name the thought's main button is
+"Let it go", with Done as a quiet link.
+
 ### Waiting on the owner
 
 - The first SOS screen's horizon sun stays as it is (it is in the store screenshots). Particle breath there too?

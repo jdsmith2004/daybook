@@ -28,6 +28,8 @@ export default function Account() {
   const [mode, setMode] = useState<'new' | 'in'>(p.why === 'in' ? 'in' : 'new');
   const [step, setStep] = useState<Step>('start');
   const [email, setEmail] = useState('');
+  /* a new account types the email twice: it is the way back in, and a typo there cannot be fixed later */
+  const [email2, setEmail2] = useState('');
   const [pw, setPw] = useState('');
   const [code, setCode] = useState('');
   const [show, setShow] = useState(false);
@@ -78,6 +80,8 @@ export default function Account() {
   const start = () =>
     run(async () => {
       if (!emailOk(email)) throw new CognitoError('InvalidParameterException', 'Check the email address and try again.');
+      if (mode === 'new' && email.trim().toLowerCase() !== email2.trim().toLowerCase())
+        throw new CognitoError('InvalidParameterException', 'The two emails do not match. Check them both.');
       if (mode === 'new') {
         if (!passwordOk(pw))
           throw new CognitoError('InvalidPasswordException', `Pick a password with at least ${PASSWORD_MIN} characters. A short sentence works well.`);
@@ -263,14 +267,30 @@ export default function Account() {
           textContentType={mode === 'new' ? 'emailAddress' : 'username'}
           returnKeyType="next"
         />
+        {mode === 'new' ? (
+          <Field
+            label="Email again"
+            value={email2}
+            onChangeText={setEmail2}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="next"
+          />
+        ) : null}
         <Pw value={pw} onChange={setPw} show={show} setShow={setShow} label="Password" isNew={mode === 'new'} onSubmit={start} />
         {mode === 'new' ? (
           <T v="small" tone="muted">
-            At least {PASSWORD_MIN} characters. A short sentence you will remember works well. Check the email too: it is how you get back in if you forget the
-            password.
+            At least {PASSWORD_MIN} characters. A short sentence you will remember works well.
           </T>
         ) : null}
-        <Button label={mode === 'new' ? 'Create my account' : 'Sign in'} onPress={start} disabled={busy || !email.trim() || !pw} />
+        <Button
+          label={mode === 'new' ? 'Create my account' : 'Sign in'}
+          onPress={start}
+          disabled={busy || !email.trim() || !pw || (mode === 'new' && !email2.trim())}
+        />
         {mode === 'in' ? <LinkText label="Forgot your password?" onPress={() => (setStep('forgot'), setErr(''))} /> : null}
         <TrustChoice />
       </>

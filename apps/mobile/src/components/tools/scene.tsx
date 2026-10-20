@@ -643,10 +643,8 @@ export function Reasons({ finish }: ToolProps) {
         Why I am doing this
       </T>
       <Middle>
-        {/* a light stack: a soft shape and the next card peek out from behind the one on top */}
+        {/* a light stack: the next card peeks out from behind the one on top */}
         <View style={s.stack}>
-          <Shape kind="sunny" size={84} color={c.sunSoft} turn={i * 22} style={s.peekShape} />
-          <Shape kind="cookie4" size={52} color={c.accentSoft} turn={i * -18} style={s.peekShape2} />
           {n > 1 ? <View style={[s.peek, { backgroundColor: c.surface2, borderColor: c.cardEdge }]} /> : null}
           <Animated.View
             {...pan.panHandlers}
@@ -659,12 +657,15 @@ export function Reasons({ finish }: ToolProps) {
               x={dir * 28}
               duration={260}
               style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
-              <View style={s.row}>
-                <Icon name={cat.ic} size={18} color={c.muted} />
-                <T v="small" tone="muted">
-                  {cat.name}
-                </T>
-              </View>
+              <Shape kind="cookie12" size={56} color={c.accentSoft} turn={i * 15}>
+                {/* in a View, so on the web it sits over the shape and not under it */}
+                <View>
+                  <Icon name={cat.ic} size={24} color={c.accent} />
+                </View>
+              </Shape>
+              <T v="small" tone="muted" style={s.medalName}>
+                {cat.name}
+              </T>
               <Text style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.25, color: c.ink, textAlign: 'center' }}>{text}</Text>
             </Appear>
           </Animated.View>
@@ -732,8 +733,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   stack: { alignSelf: 'stretch' },
-  peekShape: { position: 'absolute', top: -34, right: -14 },
-  peekShape2: { position: 'absolute', bottom: -22, left: -8 },
+  medalName: { marginTop: -8 },
   peek: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 26, borderWidth: 2, transform: [{ rotate: '-4deg' }, { translateY: 10 }] },
   sq: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

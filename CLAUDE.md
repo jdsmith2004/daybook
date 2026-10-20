@@ -29,7 +29,7 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
-  `npm test` pass, merge to `main` and let it deploy; GitHub keeps everything, so a change can always be rolled back.
+  `npm test` pass, merge to `main` (deploying as below); GitHub keeps everything, so a change can always be rolled back.
   Effort levels save usage: every plan marks each step with the Opus effort level it needs (high for sync, accounts,
   data and anything that can lose what a person earned; medium for screens, words and small rules; low for mechanical
   changes). The owner sets the effort, and the session does every step marked for that level, in order, then stops and
@@ -43,12 +43,16 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   the owner decides, do it that way and stay focused on the task. Push back only when there is a real disagreement with
   what the owner asked, and not in every report. Choices you made yourself are not pushback: stand behind them, and say
   plainly what you chose where the owner should know (a decision made on their behalf, a risk, something untested).
-- **Publish live every time.** Every change should reach the live site so the owner can see it. Free publishing is always
-  fine (the GitHub Pages preview at https://jdsmith2004.github.io/daybook/, and the AWS site, which costs about nothing per
-  deploy). If something would cost money, tell the owner what and how much before relying on it.
-  CloudFront gives 1,000 free cache refreshes (invalidation paths) a month, and each AWS deploy uses 2. Before publishing,
-  count this month's AWS deploys (`gh run list --workflow Deploy`); once the month has used 900 paths (450 deploys), ask the
-  owner before publishing again.
+- **Deploy to AWS when it is worth it, not on every push.** Every push to `main` still updates the free GitHub Pages
+  preview (https://jdsmith2004.github.io/daybook/). The AWS site deploys only when the last commit of a push has
+  `[deploy]` in its message (or the owner presses Actions, Deploy, Run workflow). Use your judgment: add `[deploy]` once
+  per finished piece of work the owner should see live (a feature, a fix people would notice, a change to the public
+  pages or the sync service), on the last commit of that work, not on each small commit along the way. Plan and doc
+  changes never need it. Say in the report whether you deployed. If something would cost money, tell the owner what and
+  how much before relying on it. CloudFront gives 1,000 free cache refreshes (invalidation paths) a month, and each AWS
+  deploy uses 2. Before deploying, count this month's successful AWS deploys
+  (`gh run list --workflow Deploy --status success`); once the month has used 900 paths (450 deploys), ask the owner
+  before deploying again.
 
 ## How the code is laid out
 

@@ -7,6 +7,9 @@
 # - The account details are secrets, so they are masked in the public logs.
 # - Only the two jobs that talk to AWS can get an AWS token, and neither runs npm: the code that installs and builds
 #   packages never has a way into AWS.
+#
+# When it runs: a push to main deploys only when its last commit's message has [deploy] in it, so a batch of small
+# changes goes out once. Actions > Deploy > Run workflow deploys main at any time.
 name: Deploy
 
 on:
@@ -24,6 +27,7 @@ concurrency:
 jobs:
   ready:
     name: Set up?
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy]')
     runs-on: ubuntu-latest
     outputs:
       go: ${{ steps.check.outputs.go }}

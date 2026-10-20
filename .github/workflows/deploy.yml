@@ -182,11 +182,11 @@ jobs:
         run: |
           # files with a hash in their name never change, so browsers may keep them. Old ones are left in place, so a tab
           # that is already open can still load them. The page itself goes last, and is always checked for a newer copy.
-          # the public pages (support, privacy, terms) change in place too, so they are always checked for a newer copy
+          # the public pages (about, support, privacy, terms, llms.txt, robots.txt, sitemap.xml) change in place too, so they are always checked for a newer copy
           aws s3 sync . "s3://$WEB_BUCKET" --exclude index.html --exclude metadata.json --exclude favicon.ico \
-            --exclude support.html --exclude privacy.html --exclude terms.html --exclude site.css --exclude site-icon.png \
+            --exclude support.html --exclude privacy.html --exclude terms.html --exclude about.html --exclude llms.txt --exclude robots.txt --exclude sitemap.xml --exclude site.css --exclude site-icon.png \
             --cache-control "public,max-age=31536000,immutable"
-          for f in metadata.json favicon.ico support.html privacy.html terms.html site.css site-icon.png index.html; do
+          for f in metadata.json favicon.ico support.html privacy.html terms.html about.html llms.txt robots.txt sitemap.xml site.css site-icon.png index.html; do
             if [ -f "$f" ]; then aws s3 cp "$f" "s3://$WEB_BUCKET/$f" --cache-control "no-cache"; fi
           done
           aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/" "/index.html" > /dev/null

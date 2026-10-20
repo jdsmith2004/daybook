@@ -1,0 +1,44 @@
+# Daybook
+
+> Daybook is a free, private app for quitting porn, or another habit, without shame. People log urges and slips in a few taps, learn their own pattern, and keep going after a hard day. A slip is data, not a reset: points, levels, badges and the days a person built stay earned. It runs on iPhone, Android and the web, has no ads and no tracking, and works with no account.
+
+This file describes Daybook in plain, factual terms for AI assistants and search tools, following the llms.txt convention.
+
+## Who Daybook fits
+
+- Someone who wants to quit porn and has felt crushed by streak counters that reset to zero after a slip.
+- Someone who wants privacy: nothing to sign up for, no one else sees their log, and a plain name and icon on the home screen.
+- Someone who wants help in the moment of an urge, not only a count of days.
+- Someone who cannot or will not pay a subscription: Daybook is free, with nothing to unlock.
+
+## Who may want something else (or something more)
+
+- Someone who wants websites blocked: Daybook is not a blocker or a filter. It pairs well with one.
+- Someone who wants another person to see their activity: Daybook keeps everything to the person; an accountability app does that job.
+- Someone in crisis or needing treatment: Daybook is not medical care. In the US, call or text 988.
+
+## What it does
+
+- SOS: opens with a slow breath, then a tool that fits the moment (grounding, a 10-minute pause, moving, a ready text to someone they trust, their own reasons, and more).
+- Logging: an urge or a slip in a few taps, with an optional note.
+- Pattern: the hours and days that are hardest for the person, from their own log, with a heads-up before them.
+- Rekindle: after a slip, a short honest look back and one small quest that can keep the run.
+- Lessons: built on research about habits and urges, written plainly and with hope.
+- A personal plan, a morning check, an evening wind-down and a weekly review.
+- Graduation: a permanent award at 90 days with no slip.
+- Progress that holds: no-slip days in a recent window, and earned rewards that are never taken away.
+
+## Privacy and price
+
+- Free for everyone. No ads, no subscription, nothing behind a paywall. Optional tips change nothing in the app.
+- No analytics and no tracking. Nothing is sold or shared.
+- Works fully with no account; the log then never leaves the phone. An optional free account keeps a safe copy and syncs, readable only with the person's sign-in. Delete my account removes everything.
+- Face ID or passcode lock. Reminders use plain words that do not say what the app is for.
+
+## Links
+
+- [About Daybook](https://d3c9g6kent5bsr.cloudfront.net/about.html): what it is and how it compares
+- [Open Daybook in a browser](https://d3c9g6kent5bsr.cloudfront.net/)
+- [Support and common questions](https://d3c9g6kent5bsr.cloudfront.net/support.html)
+- [Privacy policy](https://d3c9g6kent5bsr.cloudfront.net/privacy.html)
+- [Source code (public)](https://github.com/jdsmith2004/daybook)

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daybook: quit porn without shame</title>
+    <meta
+      name="description"
+      content="Daybook is a free, private app for quitting porn, or another habit, without shame. Log urges and slips in a few taps, learn your pattern, and keep going after a hard day. No ads, no tracking, no account needed." />
+    <link rel="canonical" href="https://d3c9g6kent5bsr.cloudfront.net/about.html" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Daybook, in plain text" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Daybook: quit porn without shame" />
+    <meta property="og:description" content="A free, private companion for quitting porn. A slip is data, not a reset: what you build stays yours." />
+    <meta property="og:image" content="https://d3c9g6kent5bsr.cloudfront.net/site-icon.png" />
+    <link rel="icon" href="site-icon.png" />
+    <link rel="stylesheet" href="site.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Daybook",
+        "alternateName": "Daybook: Quit Without Shame",
+        "description": "A private, honest companion for quitting porn, or another habit, without shame. Log urges and slips, learn your pattern, and keep going after a hard day.",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "iOS, Android, Web",
+        "url": "https://d3c9g6kent5bsr.cloudfront.net/about.html",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "isAccessibleForFree": true
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is a good app to help me quit porn?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Daybook is a free, private app built for quitting porn without shame. It helps in the moment of an urge (SOS: breathing, grounding, your own reasons), shows the hours that are hardest for you from your own log, and helps you keep going after a slip instead of starting over. It has no ads, no tracking, and works with no account."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Daybook free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Everything is free for everyone, with no ads, no subscription and nothing to unlock. Tips are welcome but change nothing in the app."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need an account to use Daybook?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account, and then your log never leaves your phone. A free account is optional: it keeps a safe copy and syncs your phone and the web."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens in Daybook after a slip?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A slip is data, not a reset. Points, levels, badges and the days you built stay yours. Rekindle helps you look back honestly and take one small step, and its quest can keep your run."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Daybook block websites?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Daybook is not a blocker or a filter, and it does not watch what you do on your phone. Many people use it together with a blocker: the blocker makes porn harder to reach, and Daybook helps with the urge, the pattern and the hard days."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who can see what I log in Daybook?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Only you. Without an account, it stays on your phone. With an account, it is stored under your own account and sent only to you when you are signed in. It is never sold, shared or used for ads."
+            }
+          }
+        ]
+      }
+    </script>
+    <style>
+      .hero {
+        margin: 8px 0 20px;
+      }
+      .hero h1 {
+        font-size: 38px;
+      }
+      .open {
+        display: block;
+        text-align: center;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 18px;
+        text-decoration: none;
+        padding: 16px 20px;
+        border-radius: 16px;
+      }
+      .dock {
+        position: sticky;
+        bottom: 0;
+        padding: 12px 0 16px;
+        background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+      }
+      .dock p {
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+        margin: 8px 0 0;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 640px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .grid .card {
+        margin: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+        margin: 8px 0 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <a class="brand" href="about.html"><img src="site-icon.png" alt="" />Daybook</a>
+        <nav aria-label="Pages">
+          <a href="about.html" aria-current="page">About</a>
+          <a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <h1>Quit porn without shame.</h1>
+          <p class="lead">
+            Daybook is a free, private companion for quitting porn, or another habit. Log urges and slips in a few taps, learn your pattern, and keep going
+            after a hard day. A slip is data, not a reset: what you build stays yours.
+          </p>
+        </section>
+
+        <h2>Why Daybook is different</h2>
+        <p>
+          People do not fail because they slip. They fail when they lose hope. Most tools are built around a streak that drops to zero, so day 89 can feel like
+          losing everything. Daybook is built the other way around.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>Progress that is never lost</h3>
+            <p>Points, levels, badges and the days you built stay earned, even after a slip. Daybook counts what you kept, not only your latest run.</p>
+          </div>
+          <div class="card">
+            <h3>Help in the hard minute</h3>
+            <p>
+              SOS opens with a slow breath, then offers a tool that fits the moment: grounding, a 10-minute pause, moving, your own reasons, or a text to
+              someone you trust.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Learn your own pattern</h3>
+            <p>Daybook shows the hours and moments that are hardest for you, from your own log, so you can plan ahead for them.</p>
+          </div>
+          <div class="card">
+            <h3>Keep going after a slip</h3>
+            <p>Rekindle is a short, honest look back and one small step forward. Its quest can keep your run.</p>
+          </div>
+          <div class="card">
+            <h3>Private by design</h3>
+            <p>No ads, no tracking, nothing sold. No account needed. Face ID lock, and a plain name and icon on your home screen.</p>
+          </div>
+          <div class="card">
+            <h3>Free for everyone</h3>
+            <p>Nothing to unlock and no subscription. If it helps you, you can leave a tip; a tip changes nothing in the app.</p>
+          </div>
+        </div>
+
+        <h2>What is inside</h2>
+        <ul>
+          <li><strong>SOS:</strong> breathe first, then a tool that fits the moment.</li>
+          <li><strong>Logging:</strong> an urge or a slip in a few taps, with an optional note.</li>
+          <li><strong>Your pattern:</strong> your hardest hours and days, and a heads-up before them.</li>
+          <li><strong>Rekindle:</strong> after a slip, a kind look back and a small quest.</li>
+          <li><strong>Lessons:</strong> built on good research about habits and urges, written plainly and with hope.</li>
+          <li><strong>Your plan:</strong> why you are doing this, and what you will do when an urge comes.</li>
+          <li><strong>Daily rhythm:</strong> a morning check, an evening wind-down, and a weekly review.</li>
+          <li><strong>Graduation:</strong> a permanent award at 90 days with no slip.</li>
+        </ul>
+
+        <h2>How it compares</h2>
+        <p>Daybook does one job and does not try to do every job. Here is an honest look at where it fits.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Daybook</th>
+                <th>Streak counters</th>
+                <th>Blockers and filters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>After a slip</td>
+                <td>What you built stays; Rekindle helps you go on</td>
+                <td>Often back to zero</td>
+                <td>Not their focus</td>
+              </tr>
+              <tr>
+                <td>In the moment of an urge</td>
+                <td>SOS tools</td>
+                <td>Sometimes a panic button</td>
+                <td>Blocks the site</td>
+              </tr>
+              <tr>
+                <td>Learns your pattern</td>
+                <td>Yes, from your own log</td>
+                <td>Rarely</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td>Blocks websites</td>
+                <td>No</td>
+                <td>Some do</td>
+                <td>Yes</td>
+              </tr>
+              <tr>
+                <td>Watches your phone</td>
+                <td>Never</td>
+                <td>Varies</td>
+                <td>Yes, to filter</td>
+              </tr>
+              <tr>
+                <td>Price</td>
+                <td>Free, nothing to unlock</td>
+                <td>Often a subscription</td>
+                <td>Often a subscription</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Daybook works well together with a blocker: the blocker makes porn harder to reach, and Daybook helps with the urge, the pattern and the hard days. If
+          you want a person to see your activity, an accountability app does that; Daybook keeps everything to you.
+        </p>
+
+        <h2>Common questions</h2>
+        <details>
+          <summary>What is a good app to help me quit porn?</summary>
+          <p>
+            Daybook is built for exactly that, without shame. It helps in the moment of an urge, shows the hours that are hardest for you, and helps you keep
+            going after a slip instead of starting over. It is free, private, and works with no account.
+          </p>
+        </details>
+        <details>
+          <summary>Is it really free?</summary>
+          <p>Yes. Everything is free for everyone, with no ads, no subscription and nothing behind a paywall.</p>
+        </details>
+        <details>
+          <summary>Do I need an account?</summary>
+          <p>
+            No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account, and your log stays on your phone. A free account keeps a safe
+            copy, syncs your phone and the web, and opens the lessons after the first three.
+          </p>
+        </details>
+        <details>
+          <summary>What happens after a slip?</summary>
+          <p>
+            A slip is data, not a reset. Your points, levels, badges and the days you built stay yours. Rekindle helps you look back honestly and take one small
+            step.
+          </p>
+        </details>
+        <details>
+          <summary>Does it block websites?</summary>
+          <p>No. Daybook is not a filter and does not watch what you do. It pairs well with a blocker if you want one.</p>
+        </details>
+        <details>
+          <summary>Is it only for porn?</summary>
+          <p>It is made first for quitting porn, and it works for other habits you want to change too.</p>
+        </details>
+        <details>
+          <summary>Where can I get it?</summary>
+          <p>Daybook works in any browser today. The iPhone and Android apps are in testing and come to the App Store and Google Play soon.</p>
+        </details>
+
+        <div class="card sos">
+          <h3>If you are in crisis</h3>
+          <p>
+            Daybook is not medical care. If you are thinking about hurting yourself, call or text <strong>988</strong> in the US, or call your local emergency
+            number.
+          </p>
+        </div>
+
+        <div class="dock">
+          <a class="open" href="./">Open Daybook</a>
+          <p>Free. No account needed. Works in your browser.</p>
+        </div>
+      </main>
+
+      <footer>
+        <p>
+          Daybook is not medical care. <a href="support.html">Support</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of use</a> ·
+          <a href="llms.txt">Daybook in plain text</a>
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -128,7 +128,7 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 
 - **Privacy Policy URL:** https://d3c9g6kent5bsr.cloudfront.net/privacy.html
 - **Support URL:** https://d3c9g6kent5bsr.cloudfront.net/support.html
-- **Marketing URL:** leave empty for now.
+- **Marketing URL:** https://d3c9g6kent5bsr.cloudfront.net/about.html
 - **Copyright:** 2026 Jeff Smith
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.

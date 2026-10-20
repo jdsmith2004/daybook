@@ -141,3 +141,22 @@ export const useLockPref = () =>
     () => (lockLoaded ? lock : null),
     () => (lockLoaded ? lock : null),
   );
+
+/* Breathe from Tools: the last pattern and length, so it starts right away the next time (kept on the device) */
+export type BreathePref = { pat: string; mins: number };
+const BKEY = 'daybook.breathe';
+let breathe: BreathePref = { pat: 'calm', mins: 1 };
+AsyncStorage.getItem(BKEY)
+  .then((v) => {
+    const o = v ? JSON.parse(v) : null;
+    if (!o || typeof o.pat !== 'string' || typeof o.mins !== 'number') return;
+    breathe = { pat: o.pat, mins: o.mins };
+    emit();
+  })
+  .catch(() => undefined);
+export const getBreathePref = () => breathe;
+export function setBreathePref(b: BreathePref) {
+  breathe = b;
+  emit();
+  AsyncStorage.setItem(BKEY, JSON.stringify(b)).catch(() => undefined);
+}

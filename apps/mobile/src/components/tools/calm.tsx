@@ -2,23 +2,31 @@
 import { breathPhase, GROUND, PATTERNS } from '@daybook/core';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { Text } from '@/components/text';
+import { Shape, type ShapeKind } from '@/components/shapes';
 
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
-import { setSoundPref, useSoundPref } from '@/lib/prefs';
+import { getBreathePref, setBreathePref, setSoundPref, useSoundPref } from '@/lib/prefs';
 import { play } from '@/lib/sound';
-import { font, useTheme } from '@/lib/theme';
+import { useReducedMotion } from '@/lib/motion';
+import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 import type { ToolProps } from './types';
 
-export function Breathe({ finish, sos, level }: ToolProps) {
-  /* from SOS it starts right away, with the sigh, for three minutes */
-  const [pat, setPat] = useState<keyof typeof PATTERNS>(sos ? 'sigh' : 'calm');
-  const [mins, setMins] = useState(sos ? 3 : 1);
-  const [startedAt, setStartedAt] = useState<number | null>(sos ? Date.now() : null);
+const isPat = (k: string): k is keyof typeof PATTERNS => k in PATTERNS;
+
+export function Breathe({ finish, exit, sos, level }: ToolProps) {
+  /* from SOS it starts right away with the sigh, for three minutes; from Tools it starts right away with the last choice */
+  const [pat, setPat] = useState<keyof typeof PATTERNS>(() => {
+    const k = getBreathePref().pat;
+    return sos ? 'sigh' : isPat(k) ? k : 'calm';
+  });
+  const [mins, setMins] = useState(() => (sos ? 3 : getBreathePref().mins || 1));
+  const [startedAt, setStartedAt] = useState<number | null>(() => Date.now());
   const [done, setDone] = useState(false);
   const sec = useSeconds(startedAt, !!startedAt && !done);
   const total = mins * 60;
@@ -40,10 +48,18 @@ export function Breathe({ finish, sos, level }: ToolProps) {
     else if (phK === 'in2') play('in2');
     else if (phK === 'out') play('out');
   }, [phIdx, phK]);
+  const P = PATTERNS[pat] || PATTERNS.calm;
+  /* a breath counts once its breath out is done */
+  const cycle = P.ph.reduce((a, b) => a + b[1], 0);
+  const breaths = Math.floor(Math.min(sec, total) / cycle);
   if (done)
     return (
       <Stage key="done" dir={0}>
-        <Finish level={level} title="Nice. Notice how you feel." text="Shoulders, jaw, hands. Even a little softer is a win." />
+        <Finish
+          level={level}
+          title="Nice. Notice how you feel."
+          text={(breaths > 1 ? 'You took ' + breaths + ' slow breaths. ' : '') + 'Shoulders, jaw, hands. Even a little softer is a win.'}
+        />
         <Dock>
           <Button label="Done" onPress={() => finish('breathe')} />
         </Dock>
@@ -67,21 +83,27 @@ export function Breathe({ finish, sos, level }: ToolProps) {
               <Pick key={m} on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
             ))}
           </View>
-          <Button label="Start" onPress={() => setStartedAt(Date.now())} />
+          <Button
+            label="Start"
+            onPress={() => {
+              setBreathePref({ pat, mins });
+              setStartedAt(Date.now());
+            }}
+          />
         </Dock>
       </Stage>
     );
-  const P = PATTERNS[pat] || PATTERNS.calm;
   return (
-    <Stage key="run" dir={1}>
+    <Stage key="run" dir={0}>
       <Middle>
         <Orb pattern={pat} sec={sec} size={270} time={fmtMS((total - sec) * 1000)} />
         <T v="small" tone="muted" style={s.c}>
-          {P.name}: {P.desc}
+          {P.name}: {P.desc} · {mins} min
         </T>
       </Middle>
       <Dock>
         <View style={s.row}>
+          <Chip label="Change" on={false} onPress={() => setStartedAt(null)} />
           <Chip
             label="Sound guide"
             on={snd}
@@ -90,7 +112,8 @@ export function Breathe({ finish, sos, level }: ToolProps) {
               if (!snd) play('on', true);
             }}
           />
-          <Chip label="Change or stop" on={false} onPress={() => setStartedAt(null)} />
+          {/* stopping after a breath or more still counts: it goes to the finish */}
+          <Chip label="Stop" on={false} onPress={() => (breaths > 0 ? setDone(true) : exit())} />
         </View>
       </Dock>
     </Stage>
@@ -118,11 +141,34 @@ function Pick({ on, title, sub, onPress }: { on: boolean; title: string; sub?: s
   );
 }
 
+/* each sense has its own shape and color, so each step of 5-4-3-2-1 looks and feels new */
+const SENSE: { kind: ShapeKind; tone: string }[] = [
+  { kind: 'cookie', tone: 'sun' },
+  { kind: 'clover', tone: 'mint' },
+  { kind: 'scallop', tone: 'sky' },
+  { kind: 'flower', tone: 'coral' },
+  { kind: 'pent', tone: 'violet' },
+];
+/** how big the shapes are for a count, so they fill the lower half without crowding (5 sit as 3 and 2) */
+const SHAPE_SIZE = [0, 150, 124, 100, 112, 96];
+
 export function Ground({ finish, level }: ToolProps) {
   const c = useTheme();
   const [i, setI] = useState(0);
-  const [n, setN] = useState(0);
-  if (i >= GROUND.length)
+  const [found, setFound] = useState<boolean[]>([]);
+  const g = GROUND[i];
+  const n = found.filter(Boolean).length;
+  const all = !!g && n >= g[0];
+  /* after the last one of a step, a short beat, then on to the next by itself */
+  useEffect(() => {
+    if (!all) return;
+    const t = setTimeout(() => {
+      setI((x) => x + 1);
+      setFound([]);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [all]);
+  if (!g)
     return (
       <Stage key="done" dir={0}>
         <Finish level={level} title="You are here." text="Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now." />
@@ -131,7 +177,9 @@ export function Ground({ finish, level }: ToolProps) {
         </Dock>
       </Stage>
     );
-  const g = GROUND[i];
+  const sense = SENSE[i % SENSE.length];
+  const tone = toneOf(c, sense.tone);
+  const size = SHAPE_SIZE[g[0]] || 96;
   return (
     <Stage key={'g' + i} dir={i ? 1 : 0}>
       <View style={s.steps} accessibilityElementsHidden>
@@ -146,42 +194,85 @@ export function Ground({ finish, level }: ToolProps) {
         <T style={s.c}>{g[2]}</T>
       </View>
       <Dock>
-        <View style={s.dots} accessibilityLabel="Tap once for each one you find">
+        <View style={s.dots} accessibilityLabel="Tap a shape for each one you find">
           {Array.from({ length: g[0] }, (_, j) => (
-            <Pressable
+            <Bloom
               key={j}
-              accessibilityRole="button"
-              accessibilityLabel="Found one"
-              accessibilityState={{ checked: j < n }}
+              on={!!found[j]}
+              kind={sense.kind}
+              turn={(j * 37) % 90}
+              size={size}
+              tone={tone}
+              word={g[1]}
               onPress={() => {
-                if (n >= g[0]) return;
-                setN(n + 1);
-                buzz('tap');
+                if (found[j] || all) return;
+                setFound((f) => {
+                  const x = f.slice();
+                  x[j] = true;
+                  return x;
+                });
+                buzz(n + 1 >= g[0] ? 'lit' : 'tap');
               }}
-              style={[
-                s.dot,
-                {
-                  backgroundColor: j < n ? c.mint : c.surface,
-                  borderColor: j < n ? c.mint : c.line,
-                },
-              ]}>
-              {j < n ? <Icon name="check" color="#FFFFFF" size={22} /> : null}
-            </Pressable>
+            />
           ))}
         </View>
-        <T v="small" tone="muted" style={s.c}>
-          {n >= g[0] ? 'All ' + g[0] + ' found.' : n + ' of ' + g[0] + '. Tap a circle each time you find one.'}
+        <T v="small" tone="muted" style={s.c} accessibilityLiveRegion="polite">
+          {all
+            ? i === GROUND.length - 1
+              ? 'All found.'
+              : 'All ' + g[0] + ' found. On to the next.'
+            : n + ' of ' + g[0] + '. Tap a shape each time you find one.'}
         </T>
-        <Button
-          label={i === GROUND.length - 1 ? 'Finish' : 'Next'}
-          disabled={n < g[0]}
-          onPress={() => {
-            setI(i + 1);
-            setN(0);
-          }}
-        />
       </Dock>
     </Stage>
+  );
+}
+
+/** one thing to find: a soft shape with the sense's word, that blooms (a pop and a fill of color) when tapped */
+function Bloom({
+  on,
+  kind,
+  turn,
+  size,
+  tone,
+  word,
+  onPress,
+}: {
+  on: boolean;
+  kind: ShapeKind;
+  turn: number;
+  size: number;
+  tone: Tone;
+  word: string;
+  onPress: () => void;
+}) {
+  const c = useTheme();
+  const still = useReducedMotion();
+  const pop = useSharedValue(1);
+  useEffect(() => {
+    if (!on || still) return;
+    pop.value = withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, { damping: 7, stiffness: 220 }));
+  }, [on, still, pop]);
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={on ? word + ': found' : word + ': tap when you find one'}
+      accessibilityState={{ checked: on }}
+      onPress={onPress}
+      hitSlop={6}>
+      <Reanimated.View style={st}>
+        <Shape kind={kind} size={size} color={on ? tone.ic : c.surface} turn={turn}>
+          {/* in a View, so on the web it paints over the shape */}
+          {on ? (
+            <View>
+              <Icon name="check" color={tone.ink} size={Math.round(size * 0.3)} />
+            </View>
+          ) : null}
+          <Text style={[s.word, { color: on ? tone.ink : tone.text, fontSize: Math.round(size * 0.17) }]}>{word}</Text>
+        </Shape>
+      </Reanimated.View>
+    </Pressable>
   );
 }
 
@@ -218,15 +309,8 @@ const s = StyleSheet.create({
   dots: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     justifyContent: 'center',
   },
-  dot: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  word: { fontFamily: font.bodyBold },
 });

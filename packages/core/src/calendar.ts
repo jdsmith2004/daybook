@@ -3,6 +3,7 @@
    nothing logged. The months go back to where the log starts. A tap on a day opens its summary: how it went, what
    happened (each entry with its time, what set it off and what helped), the check-in at a glance, and the rest of the
    day (tools used, lessons read, a talk-through, phone away, hard hours held). Checked by test/calendar.test.ts. */
+import { awayGapAt, awayGaps, awaySlipDay } from './away';
 import { addDays, dayPoints, fmtDate, LESSONS, runLedger, sortedEvents, statusOf, sumDay } from './legacy/core.js';
 import { logStart } from './log-start';
 import { urSosLines, urTool } from './sos';
@@ -32,6 +33,19 @@ export interface CalMonth {
   prev: string | null;
   next: string | null;
   sum: { noSlip: number; slips: number; rode: number; logged: number };
+  /** the gaps away that touch this month, each as one line: "Oct 6 to 15 · away · 3 slips" */
+  gaps: { from: DayKey; to: DayKey; n: number | null; line: string }[];
+}
+
+/** "Oct 6 to 15", "Sep 28 to Oct 3", or one day "Oct 6" */
+export function awaySpan(from: DayKey, to: DayKey): string {
+  const d = (k: DayKey) => fmtDate(k, { month: 'short', day: 'numeric' });
+  if (from === to) return d(from);
+  return from.slice(0, 7) === to.slice(0, 7) ? d(from) + ' to ' + Number(to.slice(8)) : d(from) + ' to ' + d(to);
+}
+/** a gap away as one line (away.ts): its days, and the slips the person said they had, or that it is not known yet */
+export function awayLine(g: { from: DayKey; to: DayKey; n: number | null }): string {
+  return awaySpan(g.from, g.to) + ' · away · ' + (g.n == null ? 'not known yet' : g.n === 0 ? 'no slips' : plural(g.n, 'slip'));
 }
 
 const ymOf = (k: DayKey) => k.slice(0, 7);
@@ -81,6 +95,9 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
                 ? 'away'
                 : 'none';
       if (kind === 'ok') sum.noSlip++;
+      /* a gap answered: its slips and its no-slip days count with the rest */
+      if (kind === 'away' && awaySlipDay(days, st, k, tk)) sum.slips++;
+      else if (kind === 'away' && awayGapAt(days, st, k, tk)?.n != null) sum.noSlip++;
       sum.slips += s.slipped;
       sum.rode += s.rode;
       if (s.n || s.checked) sum.logged++;
@@ -95,6 +112,12 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
     prev: m > lo ? shiftYm(m, -1) : null,
     next: m < hi ? shiftYm(m, 1) : null,
     sum,
+    gaps: awayGaps(days, st, tk)
+      .filter((g) => g.to >= m + '-01' && g.from <= m + '-31' && g.to >= (st.day1 || g.to))
+      .map((g) => {
+        const from = st.day1 && g.from < st.day1 ? st.day1 : g.from;
+        return { from, to: g.to, n: g.n, line: awayLine({ from, to: g.to, n: g.n }) };
+      }),
   };
 }
 
@@ -140,7 +163,10 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
           : kind === 'ahead'
             ? 'Still to come'
             : kind === 'away'
-              ? 'You were away'
+              ? (() => {
+                  const g = awayGapAt(days, st, key, tk);
+                  return g ? awayLine({ from: st.day1 && g.from < st.day1 ? st.day1 : g.from, to: g.to, n: g.n }) : 'You were away';
+                })()
               : 'Nothing logged';
   const events = sortedEvents(d, st.rollover).map((e) => {
     const r = eventRow(e, st);

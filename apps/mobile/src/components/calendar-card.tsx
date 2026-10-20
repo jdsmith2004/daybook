@@ -19,7 +19,7 @@ const WORD: Record<CalKind, string> = {
   slip: 'a slip',
   logged: 'logged',
   none: 'nothing logged',
-  away: 'not known, you were away',
+  away: 'you were away',
   before: 'before the log started',
   ahead: 'still to come',
 };
@@ -70,7 +70,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       ['open', 'Run can keep going'],
       ['slip', 'Slip'],
       ['logged', 'Logged'],
-      ['away', 'Away, not known'],
+      ['away', 'Away'],
     ] as [CalKind, string][]
   ).filter(([k]) => kinds.has(k));
   const chips = [
@@ -177,6 +177,22 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           })}
         </View>
       ) : null}
+      {/* each gap away as one line: its days and its slips, or a way to fill it in (core away.ts) */}
+      {m.gaps.map((g) => (
+        <View key={g.from} style={s.gap}>
+          <View style={[s.keyDot, { backgroundColor: c.surface2, borderColor: c.muted, borderStyle: 'dotted' }]} />
+          <T v="small" tone="muted" style={{ flex: 1 }}>
+            {g.line}
+          </T>
+          {g.n == null ? (
+            <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/back')}>
+              <T v="small" style={{ color: c.accentText, textDecorationLine: 'underline' }}>
+                Fill in
+              </T>
+            </Pressable>
+          ) : null}
+        </View>
+      ))}
       <T v="small" tone="muted">
         Tap a day to see it, or to add or fix something.
       </T>
@@ -200,5 +216,6 @@ const s = StyleSheet.create({
   many: { position: 'absolute', bottom: 1, right: 4, fontFamily: font.bodyBold, fontSize: 9.5 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },
   key: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  gap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   keyDot: { width: 14, height: 14, borderRadius: 4, borderWidth: 2.5 },
 });

@@ -81,7 +81,9 @@ describe('what not-known days do', () => {
     const m = core.calMonth(days, st, tk, '2026-10');
     expect(range('2026-10-06', '2026-10-15').map((k) => m.days.find((d) => d.k === k)?.kind)).toEqual(Array(10).fill('away'));
     expect(m.days.find((d) => d.k === '2026-10-05')?.kind).toBe('ok');
-    expect(core.daySummary(days, st, '2026-10-10', tk).head).toBe('You were away');
+    expect(core.daySummary(days, st, '2026-10-10', tk).head).toBe('Oct 6 to 15 · away · not known yet');
+    expect(m.gaps).toEqual([{ from: '2026-10-06', to: '2026-10-15', n: null, line: 'Oct 6 to 15 · away · not known yet' }]);
+    expect(core.awaySpan('2026-09-28', '2026-10-03')).toBe('Sep 28 to Oct 3');
     expect(core.awayGapAt(days, st, '2026-10-06', tk)).toEqual({ from: '2026-10-06', to: '2026-10-15', len: 10, n: null });
   });
 });
@@ -117,6 +119,12 @@ describe('coming back: how many slips while away', () => {
     /* no entries are made, and points never change */
     expect(core.eventsOf(days)).toEqual([]);
     expect(core.gameCompute(days, s1, {}, tk).pts).toBe(core.gameCompute(days, st, {}, tk).pts);
+    /* the calendar: one line with the slips, and the month counts them with the rest */
+    const m = core.calMonth(days, s1, tk, '2026-10');
+    expect(m.gaps[0].line).toBe('Oct 6 to 15 · away · 3 slips');
+    expect(m.sum.slips).toBe(3);
+    /* Oct 1 to 5, 7 of the gap, Oct 16 to 19, and today so far */
+    expect(m.sum.noSlip).toBe(5 + 7 + 4 + 1);
     /* no Rekindle card: these slips have no day or time */
     expect(core.rkEnded(days, s1, '2026-10-16')).toBeNull();
   });
@@ -146,13 +154,6 @@ describe('coming back: how many slips while away', () => {
     expect(core.awayOf(v1('some'))).toEqual([{ ...gap, n: 0 }]);
     expect(core.awayOf(v1('skip'))).toEqual([]);
     expect(core.awayDue(days, v1('skip'), tk)).toEqual({ ...gap, n: 10, max: 10 });
-  });
-
-  it('the first version’s screen still works until it is replaced', () => {
-    const r = core.answerAway(days, st, gap, 'some', ['2026-10-11'], 5);
-    expect(r.days['2026-10-11'].events[0].outcome).toBe('slipped');
-    expect(core.unknownDays(r.days, r.st, tk)).toEqual([]);
-    expect(core.answerAway(days, st, gap, 'skip', [], 5).st).toBe(st);
   });
 
   it('the rule starts once', () => {

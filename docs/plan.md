@@ -1381,5 +1381,5 @@ tones vanished on the skies; Go to bed's checks moved into the lower half with t
 
 ### Waiting on the owner
 
-- The first SOS screen's horizon sun stays as it is (it is in the store screenshots). Particle breath there too?
+- Decided (the owner, October 20): the first SOS screen keeps its horizon sun; particle breath is for Breathe and the pause.
 - The shapes beyond the tools (Today, badges, Learn)?

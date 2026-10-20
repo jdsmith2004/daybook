@@ -19,27 +19,30 @@ export const toolTone = (c: Palette, t: string) =>
     coral: [c.coralSoft, c.coralText],
   })[t] || [c.surface2, c.ink];
 
-/* each tool's own shape, turned a little as if placed by hand. `wobble` makes a loose blob. */
-const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number; wobble?: number }> = {
-  breathe: { kind: 'scallop', turn: 8 },
-  ground: { kind: 'clover', turn: 14 },
+/* each tool's own Material shape, picked for what the tool does, and turned a little as if placed by hand: sunny for
+   breath, a steady arch to come back to the room, a flower to get curious, a cloud for a thought, an arrow forward, a
+   cookie to wait, a burst to move, a moon-like oval for bed, a very sunny surprise, a gem for a need, a heart for a person,
+   and a 12-sided cookie for your reasons */
+const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number }> = {
+  breathe: { kind: 'sunny', turn: 8 },
+  ground: { kind: 'arch', turn: 0 },
   curious: { kind: 'flower', turn: -6 },
-  thought: { kind: 'circle', turn: 0, wobble: 0.7 },
-  forward: { kind: 'tri', turn: -10 },
-  pause: { kind: 'cookie', turn: 12 },
-  move: { kind: 'pent', turn: 6 },
-  bed: { kind: 'circle', turn: 0, wobble: 0.45 },
-  surprise: { kind: 'flower', turn: 16 },
-  halt: { kind: 'cookie', turn: -8 },
-  message: { kind: 'clover', turn: -12 },
-  reasons: { kind: 'scallop', turn: -4 },
+  thought: { kind: 'puffy', turn: -8 },
+  forward: { kind: 'arrow', turn: 90 },
+  pause: { kind: 'cookie9', turn: 12 },
+  move: { kind: 'softBurst', turn: 6 },
+  bed: { kind: 'oval', turn: 0 },
+  surprise: { kind: 'verySunny', turn: 16 },
+  halt: { kind: 'gem', turn: 0 },
+  message: { kind: 'heart', turn: 0 },
+  reasons: { kind: 'cookie12', turn: -4 },
 };
 
 /** a tool's icon on its own soft shape (the Tools grid, the SOS button) */
 export function ToolShape({ id, ic, size, iconSize, color, ink }: { id: string; ic: string; size: number; iconSize: number; color: string; ink: string }) {
-  const k = TOOL_SHAPES[id] || { kind: 'cookie', turn: 0 };
+  const k = TOOL_SHAPES[id] || { kind: 'cookie9', turn: 0 };
   return (
-    <Shape kind={k.kind} size={size} color={color} turn={k.turn} wobble={k.wobble} seed={id.length}>
+    <Shape kind={k.kind} size={size} color={color} turn={k.turn}>
       {/* on the web the shape's drawing is placed absolutely and would paint over a plain child, so the icon is placed too */}
       <View style={{ position: 'relative' }}>
         <Icon name={ic} size={iconSize} color={ink} />

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { Text } from '@/components/text';
-import { Shape, type ShapeKind } from '@/components/shapes';
+import { MorphShape, type ShapeKind } from '@/components/shapes';
 
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
@@ -142,13 +142,15 @@ function Pick({ on, title, sub, onPress }: { on: boolean; title: string; sub?: s
   );
 }
 
-/* each sense has its own shape and color, so each step of 5-4-3-2-1 looks and feels new */
-const SENSE: { kind: ShapeKind; tone: string }[] = [
-  { kind: 'cookie', tone: 'sun' },
-  { kind: 'clover', tone: 'mint' },
-  { kind: 'scallop', tone: 'sky' },
-  { kind: 'flower', tone: 'coral' },
-  { kind: 'pent', tone: 'violet' },
+/* each sense has its own family of shapes and its own color, so each step of 5-4-3-2-1 looks and feels new: sunny
+   shapes to see, leaves to touch, soft rounded ones to hear, a cloud to smell, a heart to taste. Each thing found turns
+   from a plain circle into one of them. */
+const SENSE: { kinds: ShapeKind[]; tone: string }[] = [
+  { kinds: ['sunny', 'cookie9', 'verySunny', 'cookie12', 'softBurst'], tone: 'sun' },
+  { kinds: ['clover4', 'puffyDiamond', 'clover8', 'cookie4'], tone: 'mint' },
+  { kinds: ['cookie6', 'bun', 'pill'], tone: 'sky' },
+  { kinds: ['puffy', 'flower'], tone: 'coral' },
+  { kinds: ['heart'], tone: 'violet' },
 ];
 /** how big the shapes are for a count, so they fill the lower half without crowding (5 sit as 3 and 2) */
 const SHAPE_SIZE = [0, 150, 124, 100, 112, 96];
@@ -205,8 +207,8 @@ export function Ground({ finish, level }: ToolProps) {
             <Bloom
               key={j}
               on={!!found[j]}
-              kind={sense.kind}
-              turn={(j * 37) % 90}
+              kind={sense.kinds[j % sense.kinds.length]}
+              turn={sense.kinds[j % sense.kinds.length] === 'heart' ? 0 : (j * 37) % 60}
               size={size}
               tone={tone}
               word={g[1]}
@@ -268,7 +270,7 @@ function Bloom({
       onPress={onPress}
       hitSlop={6}>
       <Reanimated.View style={st}>
-        <Shape kind={kind} size={size} color={on ? tone.ic : c.surface} turn={turn}>
+        <MorphShape kind={on ? kind : 'circle'} size={size} color={on ? tone.ic : c.surface} turn={turn}>
           {/* in a View, so on the web it paints over the shape */}
           {on ? (
             <View>
@@ -276,7 +278,7 @@ function Bloom({
             </View>
           ) : null}
           <Text style={[s.word, { color: on ? tone.ink : tone.text, fontSize: Math.round(size * 0.17) }]}>{word}</Text>
-        </Shape>
+        </MorphShape>
       </Reanimated.View>
     </Pressable>
   );

@@ -47,3 +47,18 @@ export function useAppear(delay = 0, duration = 420, easing = Easing.out(Easing.
 export const rise = (v: Animated.Value, by = 10) => ({ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [by, 0] }) }] });
 /** fade in while growing a little */
 export const pop = (v: Animated.Value, from = 0.86) => ({ opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [from, 1] }) }] });
+
+/* Material 3 Expressive's springs (motion physics): spatial springs move things and may overshoot a little; effects
+   springs (color, opacity) settle with no bounce. Android gives them as stiffness and a damping ratio; React Native's
+   spring takes the damping itself, which is 2 × ratio × √stiffness for a mass of 1. */
+const spr = (stiffness: number, ratio: number) => ({ stiffness, damping: 2 * ratio * Math.sqrt(stiffness), mass: 1 });
+export const SPRING = {
+  /** small things: a tap, a check, a chip */
+  fast: spr(800, 0.6),
+  /** most moves: a card, a shape changing into another */
+  default: spr(380, 0.8),
+  /** big, slow moves: a whole scene settling */
+  slow: spr(200, 0.8),
+  /** color and opacity: no bounce */
+  effects: spr(1600, 1),
+};

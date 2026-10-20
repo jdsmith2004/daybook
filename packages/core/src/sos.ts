@@ -543,7 +543,8 @@ export function bedPlans(st: Settings | null): [string, string, string][] {
 
 /** an idea from the calm-move menu, not the one just shown */
 export function pickIdea(st: Settings | null, avoid: string | null, rand: Rand): string {
-  const m = (st && st.menu) || MENU_DEFAULT;
+  /* an empty menu is the starting menu */
+  const m = st && st.menu && st.menu.length ? st.menu : MENU_DEFAULT;
   if (m.length < 2) return m[0] || 'Walk around the block';
   let x: string;
   do x = m[Math.floor(rand() * m.length)];

@@ -10,7 +10,7 @@ import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Appear } from '@/components/appear';
 import { Button, Card, Chip, T } from '@/components/ui';
-import { blobPath, Shape, WavyLine } from '@/components/shapes';
+import { blobPath, MorphShape, Shape, WavyLine } from '@/components/shapes';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
@@ -146,14 +146,22 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
   );
 }
 
-/* the 90-second wave: it builds, peaks a little before the middle, and falls back. It is drawn in as a thick squiggle as the
-   time passes, small wiggles riding on the big curve, and the dot rides the front with a soft glow that breathes. */
+/* the 90-second wave: it builds, peaks a little before the middle, and falls back. The whole wave draws itself in as soon
+   as the step opens, as a soft track of fine wiggles (like Android's wavy progress), so the shape of an urge is there to
+   see at once; then the part already watched fills in color behind the dot, which rides the front with a soft glow. */
 function Wave({ p, color, track }: { p: number; color: string; track: string }) {
   const reduce = useReducedMotion();
   const [w, setW] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
+  const draw = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const [drawn, setDrawn] = useState(reduce ? 1 : 0);
   useEffect(() => {
-    if (reduce) return;
+    if (reduce) {
+      setDrawn(1);
+      return;
+    }
+    const id = draw.addListener(({ value }) => setDrawn(value));
+    Animated.timing(draw, { toValue: 1, duration: 1400, delay: 150, easing: Easing.bezier(0.05, 0.7, 0.1, 1), useNativeDriver: false }).start();
     const a = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
@@ -161,16 +169,21 @@ function Wave({ p, color, track }: { p: number; color: string; track: string }) 
       ]),
     );
     a.start();
-    return () => a.stop();
-  }, [reduce, pulse]);
+    return () => {
+      a.stop();
+      draw.removeListener(id);
+    };
+  }, [reduce, pulse, draw]);
   const k = w / WV_W;
   const h = WV_H * k;
-  const i = Math.min(SQUIG.length - 1, Math.round(p * (SQUIG.length - 1)));
+  const last = SQUIG.length - 1;
+  const i = Math.min(last, Math.round(p * last));
+  const j = Math.round(drawn * last);
   const [x, y] = SQUIG[i];
-  const drawn =
-    i > 0
+  const path = (n: number) =>
+    n > 0
       ? 'M' +
-        SQUIG.slice(0, i + 1)
+        SQUIG.slice(0, n + 1)
           .map((q) => q.join(' '))
           .join(' L')
       : '';
@@ -183,22 +196,22 @@ function Wave({ p, color, track }: { p: number; color: string; track: string }) 
       {w ? (
         <View style={{ width: w, height: h }}>
           <Svg width={w} height={h} viewBox={`0 0 ${WV_W} ${WV_H}`}>
-            <Path d={CU_D} stroke={track} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray="1 7" />
-            {drawn ? <Path d={drawn} stroke={color} strokeWidth={9} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            {j > 0 ? <Path d={path(j)} stroke={track} strokeOpacity={0.22} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            {i > 0 ? <Path d={path(Math.min(i, j))} stroke={color} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
           </Svg>
           <Animated.View
             style={[
               s.glow,
               {
-                left: x * k - 26,
-                top: y * k - 26,
+                left: x * k - 22,
+                top: y * k - 22,
                 backgroundColor: color,
-                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.38] }),
-                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.15] }) }],
+                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.28] }),
+                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.1] }) }],
               },
             ]}
           />
-          <View style={[s.dot, { left: x * k - 9, top: y * k - 9, backgroundColor: color }]} />
+          <View style={[s.dot, { left: x * k - 8, top: y * k - 8, backgroundColor: color, borderColor: '#FFFFFF' }]} />
         </View>
       ) : null}
     </View>
@@ -238,8 +251,8 @@ const SQUIG: [number, number][] = (() => {
     const dy = b[1] - a[1];
     const d = Math.hypot(dx, dy) || 1;
     const f = at[j] / len;
-    const amp = 3.6 * Math.min(1, f * 8, (1 - f) * 8);
-    const o = amp * Math.sin((at[j] / 15) * Math.PI * 2);
+    const amp = 2.2 * Math.min(1, f * 10, (1 - f) * 10);
+    const o = amp * Math.sin((at[j] / 13) * Math.PI * 2);
     return [+(bx - (dy / d) * o).toFixed(1), +(by + (dx / d) * o).toFixed(1)];
   });
 })();
@@ -484,16 +497,22 @@ function Breath() {
   const c = useTheme();
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
+  /* how far the breath is, to change the shape with it: a soft cookie when empty, a sunny shape when full */
+  const [t, setT] = useState(0);
   useEffect(() => {
     if (reduce) return;
+    const id = v.addListener(({ value }) => setT(value));
     const a = Animated.loop(
       Animated.sequence([
-        Animated.timing(v, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-        Animated.timing(v, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+        Animated.timing(v, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
       ]),
     );
     a.start();
-    return () => a.stop();
+    return () => {
+      a.stop();
+      v.removeListener(id);
+    };
   }, [reduce, v]);
   return (
     <Animated.View
@@ -503,16 +522,14 @@ function Breath() {
         s.breath,
         {
           transform: [
-            { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.15] }) },
-            { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '24deg'] }) },
+            { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.08] }) },
+            { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '30deg'] }) },
           ],
         },
       ]}>
-      <Shape kind="cookie" size={76} color={c.sunSoft}>
-        <Animated.View style={{ transform: [{ rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-48deg'] }) }] }}>
-          <Shape kind="flower" size={34} color={c.sun} />
-        </Animated.View>
-      </Shape>
+      <MorphShape kind="cookie9" to="sunny" t={t} size={112} color={c.sunSoft}>
+        <MorphShape kind="cookie4" to="cookie7" t={t} size={46} color={c.sun} turn={-t * 50} />
+      </MorphShape>
     </Animated.View>
   );
 }
@@ -528,8 +545,8 @@ const s = StyleSheet.create({
   calmWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   calm: { fontFamily: font.display, fontSize: 24, lineHeight: 30, textAlign: 'center' },
   thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
-  breath: { width: 76, height: 76, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  breath: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   wave: { alignSelf: 'stretch', alignItems: 'center' },
-  glow: { position: 'absolute', width: 52, height: 52, borderRadius: 26 },
-  dot: { position: 'absolute', width: 18, height: 18, borderRadius: 9 },
+  glow: { position: 'absolute', width: 44, height: 44, borderRadius: 22 },
+  dot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
 });

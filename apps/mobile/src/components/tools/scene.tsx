@@ -11,6 +11,7 @@ import {
   messageTexts,
   MOVE_MS,
   MOVES,
+  MENU_DEFAULT,
   MOVES_SIT,
   NEEDS,
   reasonCat,
@@ -52,10 +53,10 @@ const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in 
 /* ---------- move ---------- */
 /* the beat a move keeps: two parts that take turns (seconds each), how far the shape shrinks, and the words for each
    part. A squeeze is held for five, then let go; rolls and turns go slow; on your feet it is a livelier, steady pulse. */
-type BeatOf = { dur: [number, number]; low: number; words?: [string, string] };
-const BEAT_HOLD: BeatOf = { dur: [5, 3], low: 0.74, words: ['Hold', 'Let go'] };
-const BEAT_FLOW: BeatOf = { dur: [3, 3], low: 0.86 };
-const BEAT_UP: BeatOf = { dur: [0.45, 0.55], low: 0.9 };
+type BeatOf = { dur: [number, number]; low: number; words?: [string, string]; kind: ShapeKind };
+const BEAT_HOLD: BeatOf = { dur: [5, 3], low: 0.74, words: ['Hold', 'Let go'], kind: 'cookie12' };
+const BEAT_FLOW: BeatOf = { dur: [3, 3], low: 0.86, kind: 'cookie9' };
+const BEAT_UP: BeatOf = { dur: [0.45, 0.55], low: 0.9, kind: 'softBurst' };
 /** the seated moves that are a hold and a letting go */
 const HOLDS = ['squeeze', 'feet', 'palms', 'toes'];
 
@@ -83,7 +84,7 @@ function Beat({ beat, sec, color, reduce, children }: { beat: BeatOf; sec: numbe
   return (
     <View style={s.beat}>
       <Animated.View style={[StyleSheet.absoluteFill, s.beatIn, { transform: [{ scale: v }] }]}>
-        <Shape kind="cookie" size={206} color={color} />
+        <Shape kind={beat.kind} size={206} color={color} />
       </Animated.View>
       {children}
       {beat.words ? (
@@ -182,7 +183,7 @@ export function Move({ finish, level }: ToolProps) {
   return (
     <Stage key="run" dir={1}>
       <Middle>
-        <WavyRing size={270} p={1 - left / MOVE_MS} color={c.coral} track={c.line} stroke={9} waves={16} phase={reduce ? 0 : -sec * 0.8}>
+        <WavyRing size={270} p={1 - left / MOVE_MS} color={c.coral} track={c.line} stroke={6}>
           <Beat beat={beat} sec={sec} color={c.surface} reduce={reduce}>
             <T v="label" style={[s.c, { maxWidth: 170 }]}>
               {m[1]}
@@ -251,7 +252,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
   const cur = plans.find((x) => x[0] === plan) || plans[0];
   return (
     <>
-      <Shape kind="scallop" size={96} color={c.violetSoft} turn={8}>
+      <Shape kind="cookie6" size={96} color={c.violetSoft} turn={8}>
         {/* in a View, so on the web it sits over the shape and not under it */}
         <View>
           <Icon name="moon" size={40} color={c.violetText} />
@@ -329,16 +330,18 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
 }
 
 /* ---------- surprise me ---------- */
-/* while it picks, the card flips through soft shapes and colors; it lands on the first, a plain cookie that stands out on the sky */
-const SUR_KINDS: ShapeKind[] = ['cookie', 'flower', 'scallop', 'clover', 'pent'];
-const SUR_SOFT = ['surface', 'sunSoft', 'mintSoft', 'coralSoft', 'accentSoft'] as const;
+/* while it picks, the card flips through Android's shapes and soft colors; it lands on the first, a calm cookie in the
+   card color that stands out on the sky */
+const SUR_KINDS: ShapeKind[] = ['cookie9', 'sunny', 'clover4', 'gem', 'puffy', 'cookie6', 'softBurst', 'heart', 'pentagon', 'clover8'];
+const SUR_SOFT = ['surface', 'sunSoft', 'mintSoft', 'coralSoft', 'accentSoft', 'skySoft', 'violetSoft', 'coralSoft', 'sunSoft', 'mintSoft'] as const;
 
 export function Surprise({ finish }: ToolProps) {
   const c = useTheme();
   const { snap } = useStore();
   const reduce = useReducedMotion();
   const { width } = useWindowDimensions();
-  const menu = snap.settings?.menu || [];
+  /* an empty menu is the starting menu, as everywhere else */
+  const menu = snap.settings?.menu?.length ? snap.settings.menu : MENU_DEFAULT;
   const [pick, setPick] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [doing, setDoing] = useState(false);
@@ -642,7 +645,8 @@ export function Reasons({ finish }: ToolProps) {
       <Middle>
         {/* a light stack: a soft shape and the next card peek out from behind the one on top */}
         <View style={s.stack}>
-          <Shape kind="cookie" size={160} color={c.accentSoft} wobble={0.5} seed={i + 1} turn={i * 25} style={s.peekShape} />
+          <Shape kind="sunny" size={84} color={c.sunSoft} turn={i * 22} style={s.peekShape} />
+          <Shape kind="cookie4" size={52} color={c.accentSoft} turn={i * -18} style={s.peekShape2} />
           {n > 1 ? <View style={[s.peek, { backgroundColor: c.surface2, borderColor: c.cardEdge }]} /> : null}
           <Animated.View
             {...pan.panHandlers}
@@ -728,7 +732,8 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   stack: { alignSelf: 'stretch' },
-  peekShape: { position: 'absolute', top: -46, right: -30 },
+  peekShape: { position: 'absolute', top: -34, right: -14 },
+  peekShape2: { position: 'absolute', bottom: -22, left: -8 },
   peek: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 26, borderWidth: 2, transform: [{ rotate: '-4deg' }, { translateY: 10 }] },
   sq: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

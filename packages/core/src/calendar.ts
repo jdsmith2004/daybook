@@ -140,7 +140,7 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
           : kind === 'ahead'
             ? 'Still to come'
             : kind === 'away'
-              ? 'Not known. You were away'
+              ? 'You were away'
               : 'Nothing logged';
   const events = sortedEvents(d, st.rollover).map((e) => {
     const r = eventRow(e, st);

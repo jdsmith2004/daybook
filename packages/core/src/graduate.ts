@@ -7,7 +7,7 @@
    away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, computeMetrics, eventsOf, isKey } from './legacy/core.js';
-import { dayKnown } from './away';
+import { awaySlipDay, dayKnown } from './away';
 import type { DayKey, Days, Settings } from './types';
 
 /** no-slip days needed, within the last GRAD_WINDOW days */
@@ -45,7 +45,7 @@ export function gradInfo(days: Days, st: Settings, tk: DayKey): GradInfo {
     for (let i = 1; i <= GRAD_WINDOW; i++) {
       const k = addDays(tk, -i);
       /* only days Daybook knows about: a long gap away never graduates anyone by itself (away.ts) */
-      if (k >= first && !slips.has(k) && dayKnown(days, st, k, tk)) count++;
+      if (k >= first && !slips.has(k) && dayKnown(days, st, k, tk) && !awaySlipDay(days, st, k, tk)) count++;
     }
   const at = gradOf(st);
   const longest = first ? computeMetrics(days, st, tk).longest : 0;
@@ -117,7 +117,7 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
     if (k < first || !dayKnown(days, st, k, tk)) cells.push('none');
     else {
       m++;
-      if (slips.has(k)) cells.push('slip');
+      if (slips.has(k) || awaySlipDay(days, st, k, tk)) cells.push('slip');
       else {
         n++;
         cells.push('ok');

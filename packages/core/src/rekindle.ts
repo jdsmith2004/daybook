@@ -384,7 +384,8 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
   if (!st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return null;
   const full = rkFullDays(days);
   const L = runLedger(days, st, tk);
-  const slip = (k: DayKey) => k >= st.day1! && dayKind(k, days[k], st, tk, undefined, days) === 'slip';
+  /* a slip logged on its day: the slips counted from a gap away have no quest and no card of their own */
+  const slip = (k: DayKey) => k >= st.day1! && sumDay(days[k]).slipped > 0 && dayKind(k, days[k], st, tk, undefined, days) === 'slip';
   for (let i = 1; i <= RK_DAYS + 1; i++) {
     const k = addDays(tk, -i);
     if (!slip(k) || L.kind[k] === 'saved' || L.kind[k] === 'open') continue;

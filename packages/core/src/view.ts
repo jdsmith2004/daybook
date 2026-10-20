@@ -1,6 +1,7 @@
 /* The Today cards as data. The legacy app builds these inside its HTML templates, reading the global Store and the clock.
    Here they are pure: the screen passes in the log, the settings, today's key and the time, and gets back what to show.
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
+import { awayGapAt } from './away';
 import {
   addDays,
   DID_T,
@@ -88,7 +89,8 @@ export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   for (let i = 0; i < 30; i++) {
     const k = addDays(v.first, i);
     const kind: CellKind = sk.kind[k] || dayKind(k, days[k], st, tk, mode, days);
-    v.cells.push({ k, kind, today: k === tk });
+    /* a gap away has one gray look; its no-slip days still count */
+    v.cells.push({ k, kind: awayGapAt(days, st, k, tk) ? 'unknown' : kind, today: k === tk });
     if (kind === 'ok' || kind === 'one') v.good++;
   }
   /* the comeback: hours since the last slip, while the run is short and the slip was recent */

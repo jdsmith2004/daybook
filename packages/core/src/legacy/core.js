@@ -5,7 +5,7 @@
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
-import { dayKnown, unknownDays } from '../away';
+import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -403,7 +403,8 @@ function statusOf(key,day,st,today,days){
  if(s.slipped)return 'slip';
  /* from Day 1 on, a day with no slip logged counts, whether or not a check-in was saved, unless the person was away long
     enough that Daybook does not know (away.ts) */
- if(phaseOf(key,st).p==='quitting')return days&&!dayKnown(days,st,key,today)?'unknown':'clean';
+ /* a day inside a gap away (away.ts) is not shown as a day of its own: the gap has one look, and one line with its slips */
+ if(phaseOf(key,st).p==='quitting')return days&&awayGapAt(days,st,key,today)?'unknown':'clean';
  if(s.checked)return 'tracked';
  if(s.n)return 'events';
  return 'empty';
@@ -425,8 +426,12 @@ const cleanLimit=(st,mode)=>(mode||(st&&st.cleanMode))==='gentle'?1:0;
 function dayKind(key,day,st,today,mode,days){
  if(key>today)return 'ahead';
  if(!st.day1||key<st.day1)return 'before';
- const n=sumDay(day).slipped;
- if(n===0&&days&&!dayKnown(days,st,key,today))return 'unknown';
+ let n=sumDay(day).slipped;
+ if(n===0&&days){
+  if(!dayKnown(days,st,key,today))return 'unknown';
+  /* one of the slips the person said they had while away (away.ts): it takes this day */
+  if(awaySlipDay(days,st,key,today))n=1;
+ }
  return n===0?'ok':n<=cleanLimit(st,mode)?'one':'slip';
 }
 /* ===== SAVING A RUN =====
@@ -549,7 +554,7 @@ function stepView(days,st,nowMs){
  const last=sl.length?sl[sl.length-1]:null;
  /* after days Daybook does not know about (away.ts), the stretch it can vouch for starts when the person came back; the best
     stretch already shown stays as it is */
- const uk=unknownDays(days,st,tk),ukEnd=uk.length?evMs(addDays(uk[uk.length-1],1),p2(roll)+':00',roll):-Infinity;
+ const af=awayStretchFrom(days,st,tk),ukEnd=af?evMs(af,p2(roll)+':00',roll):-Infinity;
  const curH=Math.max(0,(nowMs-Math.max(last!=null?last:startMs,ukEnd))/36e5);
  let bestPast=0,bestSince=0;const recent=[];
  for(let i=1;i<sl.length;i++){
@@ -2793,7 +2798,7 @@ const HX_NEXT={
  evening:{ic:'pencil',t:'Check-in',s:'About a minute',pts:10},
  night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:15}
 };
-const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry',unknown:'Not known · you were away'};
+const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry',unknown:'Away'};
 const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},

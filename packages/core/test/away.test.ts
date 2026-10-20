@@ -53,7 +53,7 @@ describe('which days are known', () => {
 
 describe('what not-known days do', () => {
   const st = base();
-  /* here Oct 1 to 5, away Oct 6 to 15 (8 not known: Oct 8 to 15), back Oct 16 */
+  /* here Oct 1 to 5, away Oct 6 to 15 (Oct 6 and 7 in the grace, Oct 8 to 15 not known), back Oct 16 */
   const days = opened([...range('2026-10-01', '2026-10-05'), ...range('2026-10-16', '2026-10-19')]);
 
   it('a run pauses through them, and goes on after', () => {
@@ -77,50 +77,82 @@ describe('what not-known days do', () => {
     expect(core.gradInfo({}, s2, tk).at).toBe('2026-09-01');
   });
 
-  it('the calendar says so, without the word missed', () => {
+  it('every day of the gap has one look, the grace days too', () => {
     const m = core.calMonth(days, st, tk, '2026-10');
-    expect(m.days.find((d) => d.k === '2026-10-10')?.kind).toBe('away');
-    expect(core.daySummary(days, st, '2026-10-10', tk).head).toBe('Not known. You were away');
+    expect(range('2026-10-06', '2026-10-15').map((k) => m.days.find((d) => d.k === k)?.kind)).toEqual(Array(10).fill('away'));
+    expect(m.days.find((d) => d.k === '2026-10-05')?.kind).toBe('ok');
+    expect(core.daySummary(days, st, '2026-10-10', tk).head).toBe('You were away');
+    expect(core.awayGapAt(days, st, '2026-10-06', tk)).toEqual({ from: '2026-10-06', to: '2026-10-15', len: 10, n: null });
   });
 });
 
-describe('coming back', () => {
+describe('coming back: how many slips while away', () => {
   const st = base();
   const days = opened([...range('2026-10-01', '2026-10-05'), ...range('2026-10-16', '2026-10-19')]);
-  const gap = { from: '2026-10-08', to: '2026-10-15' };
+  const gap = { from: '2026-10-06', to: '2026-10-15' };
 
-  it('asks about the gap once the person is back', () => {
-    expect(core.awayDue(days, st, tk)).toEqual({ ...gap, n: 8 });
+  it('asks about the whole time away, once the person is back', () => {
+    expect(core.awayDue(days, st, tk)).toEqual({ ...gap, n: 10, max: 10 });
   });
 
-  it('"No slips": the days count', () => {
-    const r = core.answerAway(days, st, gap, 'clean', [], 5);
-    expect(core.unknownDays(r.days, r.st, tk)).toEqual([]);
-    expect(core.awayDue(r.days, r.st, tk)).toBeNull();
-    expect(core.runLedger(r.days, r.st, tk).cur).toBe(20);
+  it('no slips: every day of the gap counts', () => {
+    const s1 = core.answerAwaySlips(st, gap, 0, 5);
+    expect(core.unknownDays(days, s1, tk)).toEqual([]);
+    expect(core.awayDue(days, s1, tk)).toBeNull();
+    expect(core.runLedger(days, s1, tk).cur).toBe(20);
+    expect(core.gradInfo(days, s1, tk).count).toBe(19);
+    expect(core.awayStretchFrom(days, s1, tk)).toBeNull();
   });
 
-  it('"Some slips" with days picked: those are slips, the others count', () => {
-    const r = core.answerAway(days, st, gap, 'some', ['2026-10-11'], 5);
-    expect(r.days['2026-10-11'].events[0].outcome).toBe('slipped');
-    expect(core.unknownDays(r.days, r.st, tk)).toEqual([]);
-    expect(core.awayDue(r.days, r.st, tk)).toBeNull();
-    expect(core.dayKind('2026-10-12', r.days['2026-10-12'], r.st, tk, undefined, r.days)).toBe('ok');
+  it('3 slips: each takes one day, the run starts again after the gap, the longest stays', () => {
+    const s1 = core.answerAwaySlips(st, gap, 3, 5);
+    expect(core.unknownDays(days, s1, tk)).toEqual([]);
+    expect(range('2026-10-06', '2026-10-15').filter((k) => core.awaySlipDay(days, s1, k, tk))).toEqual(['2026-10-13', '2026-10-14', '2026-10-15']);
+    const L = core.runLedger(days, s1, tk);
+    expect(L.cur).toBe(5);
+    expect(L.longest).toBe(12);
+    /* Oct 1 to 19: 19 days, 3 slips */
+    expect(core.gradInfo(days, s1, tk).count).toBe(16);
+    expect(core.awayStretchFrom(days, s1, tk)).toBe('2026-10-16');
+    /* no entries are made, and points never change */
+    expect(core.eventsOf(days)).toEqual([]);
+    expect(core.gameCompute(days, s1, {}, tk).pts).toBe(core.gameCompute(days, st, {}, tk).pts);
+    /* no Rekindle card: these slips have no day or time */
+    expect(core.rkEnded(days, s1, '2026-10-16')).toBeNull();
   });
 
-  it('"Some slips" with no day picked, or "rather not say": not known, and not asked again', () => {
-    for (const r of [core.answerAway(days, st, gap, 'some', [], 5), core.answerAway(days, st, gap, 'skip', [], 5)]) {
-      expect(r.st.away).toEqual([{ ...gap, a: 'skip' }]);
-      expect(core.unknownDays(r.days, r.st, tk)).toEqual(range('2026-10-08', '2026-10-15'));
-      expect(core.awayDue(r.days, r.st, tk)).toBeNull();
-      /* the run before the gap goes on from where it paused */
-      expect(core.runLedger(r.days, r.st, tk).cur).toBe(12);
-    }
+  it('gentle counting lets each of those days count, as it does a logged slip', () => {
+    const s1 = { ...core.answerAwaySlips(st, gap, 3, 5), cleanMode: 'gentle' as const };
+    expect(core.dayKind('2026-10-14', undefined, s1, tk, undefined, days)).toBe('one');
+  });
+
+  it('never more slips than days, and never fewer than none', () => {
+    expect(core.awayOf(core.answerAwaySlips(st, gap, 99, 5))[0].n).toBe(core.AWAY_MAX);
+    expect(core.awayOf(core.answerAwaySlips(st, gap, -2, 5))[0].n).toBe(0);
+    const s1 = core.answerAwaySlips(st, gap, 30, 5);
+    expect(core.gradInfo(days, s1, tk).count).toBe(9);
   });
 
   it('an answer from another device arrives with the settings and counts here too', () => {
-    const there = core.answerAway(days, st, gap, 'clean', [], 5).st;
-    expect(core.normSettings(JSON.parse(JSON.stringify(there))).away).toEqual([{ ...gap, a: 'clean' }]);
+    const there = core.answerAwaySlips(st, gap, 2, 5);
+    const here = core.normSettings(JSON.parse(JSON.stringify(there)));
+    expect(core.awayOf(here)).toEqual([{ ...gap, n: 2 }]);
+    expect(core.runLedger(days, here, tk).cur).toBe(5);
+  });
+
+  it('reads the first version’s answers: clean and some as no slips left, skip as not answered', () => {
+    const v1 = (a: string) => ({ ...st, away: [{ ...gap, a }] }) as unknown as Settings;
+    expect(core.awayOf(v1('clean'))).toEqual([{ ...gap, n: 0 }]);
+    expect(core.awayOf(v1('some'))).toEqual([{ ...gap, n: 0 }]);
+    expect(core.awayOf(v1('skip'))).toEqual([]);
+    expect(core.awayDue(days, v1('skip'), tk)).toEqual({ ...gap, n: 10, max: 10 });
+  });
+
+  it('the first version’s screen still works until it is replaced', () => {
+    const r = core.answerAway(days, st, gap, 'some', ['2026-10-11'], 5);
+    expect(r.days['2026-10-11'].events[0].outcome).toBe('slipped');
+    expect(core.unknownDays(r.days, r.st, tk)).toEqual([]);
+    expect(core.answerAway(days, st, gap, 'skip', [], 5).st).toBe(st);
   });
 
   it('the rule starts once', () => {

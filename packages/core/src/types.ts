@@ -158,8 +158,8 @@ export interface Settings {
   acctNo?: DayKey | null;
   /** the first day the app marked the days it was opened (away.ts); the quiet-day rule counts from here. Set once. */
   awayFrom?: DayKey | null;
-  /** the answers about gaps away (away.ts): how the not-known days went. Optional. */
-  away?: { from: DayKey; to: DayKey; a: 'clean' | 'some' | 'skip' }[];
+  /** the answers about gaps away (away.ts): n, the slips while away. Optional. (The first version kept `a` instead.) */
+  away?: { from: DayKey; to: DayKey; n?: number; a?: 'clean' | 'some' | 'skip' }[];
   /** the day the first week's look back was opened (week.ts). Optional. */
   wk1?: DayKey | null;
   /** the day the "tell your safe person you started" card on Day 1 was answered (rekindle.ts). Optional. */

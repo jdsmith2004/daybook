@@ -1324,3 +1324,53 @@ Pay in Safari. Android stays hidden until Google Play's US rules for links out a
 - (medium) Android: check Google Play's current US policy on links to pay outside Play; if allowed, show it there too.
 - (medium, owner's choice) Apple Pay inside the app, without leaving it, is only possible through Apple's In-App
   Purchase (a "tip" product, Apple keeps 15%); Apple Pay on its own is not allowed for digital tips.
+
+## The tools, made open and playful (2026-10-20)
+
+The owner wants the exercises to feel open and creative: Android's playful shapes and squiggly lines, and breathing like
+How We Feel's (on a breath in, a spray of dots flies out in a loose scatter, settles into a perfect circle, and drifts
+back in on the breath out). The tools today are plain circles, rings and cards. `components/shapes.tsx` is the shared
+kit: `Shape` (cookie, scallop, clover, flower, rounded triangle and pentagon, circle, loose blob), `WavyRing` (a timer
+ring that fills as a squiggle) and `WavyLine`. All of it respects Reduce Motion.
+
+### The tools and their flows today
+
+- **Calm your body.** Breathe: from SOS it starts at once (the sigh, 3 minutes); from Tools it opens on a setup page with
+  7 choices (4 patterns, 3 lengths) before anything breathes. One gold sun grows and shrinks. 5-4-3-2-1: a giant number,
+  a row of plain circles to tap one by one, then Next (disabled until all are tapped).
+- **Ride the wave.** Get curious: 5 steps (notice, let it be, where, what it feels like, watch a 90-second wave with a
+  dot). Name the thought: pick or write a thought, then a card "I notice I am having the thought that…". Play it
+  forward: two lists of feelings, then the two hours side by side. Ten-minute pause: a still sun in a plain ring, an idea
+  to try, then "How is the urge now?".
+- **Change the scene.** Move: sit or stand, pick a move, a plain 2-minute ring. Go to bed: three checkboxes and four
+  plans in one long page. Surprise me: a slot spin through the calm-move menu. What do I need?: chips that open cards.
+- **Reach out.** Reach a person: three texts, your own, then crisis lines, all in one long page. My reasons: one card
+  with arrows.
+- Every tool ends on the same Finish: the flame on one widening ring.
+
+### Changes, most important first
+
+1. **Particle breath** (Breathe, and the pause's breathing guide): dots fly out in a loose, random scatter on the breath
+   in, gather into a perfect ring at the top, shimmer on a hold, and drift back to the center on the breath out. A new
+   scatter every breath. Replaces the one sun in `Orb`.
+2. **Breathe starts at once, everywhere**: the last pattern and length are remembered on the device, and the setup page
+   becomes a small "Change" choice; "Change or stop" becomes two plain chips.
+3. **Timers as squiggles**: the pause's 10-minute ring and Move's 2-minute ring become a slowly crawling `WavyRing`;
+   Get curious's 90-second wave becomes a thick squiggle the dot rides.
+4. **5-4-3-2-1 blooms**: each sense has its own shape (cookies for sight, clovers for touch…) that blooms when tapped,
+   with the sense's icon; after the last one it moves on by itself.
+5. **One Finish, many shapes**: the end of a tool scatters a few shapes in the tool's color that settle around the
+   flame, once.
+6. **Tools on shapes**: each tool's icon sits on its own shape in the Tools grid and on the SOS list, not a rounded square.
+7. **Name the thought floats away**: the thought card can be sent off like a leaf on a stream ("Let it go"), and the
+   words "A thought is not an order" stay.
+8. **My reasons swipe**: a soft card stack that turns with a swipe as well as the arrows.
+9. **Surprise me lands**: the spin flips through shapes and lands with a soft bounce.
+10. **Move keeps a beat**: a shape that pulses at the move's pace (hold five, let go) during the 2 minutes.
+11. **Get curious's first two steps** breathe with a small shape, not an icon in a circle.
+12. **Go to bed reads lighter**: the four plans as a short choice under the three checks.
+
+### Waiting on the owner
+
+- The first SOS screen's horizon sun stays as it is (it is in the store screenshots). Particle breath there too?
+- The shapes beyond the tools (Today, badges, Learn)?

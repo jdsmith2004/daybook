@@ -81,10 +81,11 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
   auto_deploy = true
-  # a ceiling on requests, so a runaway client (or anyone else) cannot run up a bill
+  # a ceiling on requests, so a runaway client (or anyone else) cannot run up a bill. High enough for a few hundred
+  # people whose reminders open the app at the same minute; each person also has a daily write allowance (services/api)
   default_route_settings {
-    throttling_burst_limit = 10
-    throttling_rate_limit  = 5
+    throttling_burst_limit = 100
+    throttling_rate_limit  = 50
   }
 }
 

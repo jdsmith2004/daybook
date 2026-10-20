@@ -14,7 +14,7 @@
    Who is asking comes only from the signed token that API Gateway checked (its `sub`). Every record is checked and cleaned
    with the same rules the apps use (@daybook/core), so nothing malformed is ever stored. Sizes are capped, and each person
    has a daily write allowance, so a broken client (or a stolen token) cannot run up a bill. */
-import { normRecord } from '@daybook/core';
+import { normRecord, WHY_FUTURE, WHY_LARGE } from '@daybook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
 import { BadCursor, type Store } from './store';
@@ -101,13 +101,13 @@ export function makeHandler(store: Store, clock: () => number = Date.now, delete
           continue;
         }
         if (r.u > now + MAX_SKEW) {
-          bad.push({ id, why: 'its time is in the future' });
+          bad.push({ id, why: WHY_FUTURE });
           continue;
         }
         const d = r.data == null ? null : JSON.stringify(r.data);
         const size = d ? Buffer.byteLength(d) : 0;
         if (size > (r.id === 'settings' ? MAX_SETTINGS : MAX_RECORD)) {
-          bad.push({ id, why: 'too large' });
+          bad.push({ id, why: WHY_LARGE });
           continue;
         }
         bytes += size + r.id.length;

@@ -7,7 +7,19 @@
    the account's log. An account with nothing in it takes the device's. When both have a log, the person chooses: combine
    them (the newer copy of each day and of the settings wins) or use the account's log on this device. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { accountHasLog, hasLog, pendingRecords, pullAll, pushAll, snapshotOf, type SyncRecord, type SyncTransport } from '@daybook/core';
+import {
+  accountHasLog,
+  hasLog,
+  joinRecords,
+  pendingRecords,
+  pullAll,
+  pushAll,
+  snapshotOf,
+  syncFailure,
+  CLOCK_OK,
+  type SyncRecord,
+  type SyncTransport,
+} from '@daybook/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
@@ -34,7 +46,7 @@ export type SyncStatus =
   | { k: 'out' } // signed out
   | { k: 'busy'; what: string }
   | { k: 'ask'; recs: SyncRecord[]; now: number } // first sign-in: both have a log
-  | { k: 'on' }
+  | { k: 'on'; note?: string } // note: what the last round could not save, said plainly
   | { k: 'expired' }
   | { k: 'error'; msg: string };
 
@@ -72,10 +84,38 @@ interface SyncValue {
 
 const Ctx = createContext<SyncValue | null>(null);
 
+/** "One change was", "3 changes were" */
+const changes = (n: number) => (n === 1 ? 'One change was' : n + ' changes were');
+
+/** how long a call to the sync API may take before it counts as no connection */
+const TIMEOUT = 20_000;
+/** a call to the sync API and its answer, given up after TIMEOUT (a stalled connection must not hold a round, or the
+    "Syncing…" line, for good). Throws a plain Error when it runs out, which reads as "could not reach your account". */
+async function callWithin(url: string, init: RequestInit): Promise<{ status: number; ok: boolean; body: Record<string, unknown> }> {
+  const ctl = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, no) => {
+    timer = setTimeout(() => {
+      ctl.abort();
+      no(new Error('timeout'));
+    }, TIMEOUT);
+  });
+  try {
+    const r = await Promise.race([fetch(url, { ...init, signal: ctl.signal }), late]);
+    const body = (await Promise.race([r.json().catch(() => ({})), late])) as Record<string, unknown>;
+    return { status: r.status, ok: r.ok, body: body && typeof body === 'object' ? body : {} };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 class HttpError extends Error {
   constructor(
     public status: number,
     msg: string,
+    /** the sync function answered with its own words (the daily allowance, a size limit); false for the gateway's own
+        answers, like its request ceiling */
+    public ours = false,
   ) {
     super(msg);
   }
@@ -83,7 +123,7 @@ class HttpError extends Error {
 
 export function SyncProvider({ children, onErased }: { children: ReactNode; onErased: () => Promise<void> }) {
   const store = useStore();
-  const { ready, dirty, current, mergeFromAccount, ackPushed, markAllDirty, replaceFromAccount, erase } = store;
+  const { ready, dirty, current, replace, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, erase } = store;
   const [status, setStatus] = useState<SyncStatus>(syncOffered ? { k: 'out' } : { k: 'off' });
   const [session, setSession] = useState<Session | null>(null);
   const [kept, setKept] = useState<Kept | null>(null);
@@ -109,16 +149,17 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     const call = async (method: string, query: string, body?: unknown) => {
       for (let tries = 0; ; tries++) {
         const token = await accessToken(s, tries > 0);
-        const r = await fetch(SYNC_URL + query, {
+        const r = await callWithin(SYNC_URL + query, {
           method,
           headers: { authorization: 'Bearer ' + token, ...(body ? { 'content-type': 'application/json' } : {}) },
           body: body ? JSON.stringify(body) : undefined,
         });
         if (r.status === 401 && tries === 0) continue;
         if (r.status === 401) throw new SignInExpired('Sign in again to keep syncing.');
-        const out = await r.json().catch(() => ({}));
-        if (!r.ok) throw new HttpError(r.status, (out && out.error) || 'Sync did not work this time.');
-        return out;
+        if (!r.ok)
+          throw new HttpError(r.status, typeof r.body.error === 'string' ? r.body.error : 'Sync did not work this time.', typeof r.body.error === 'string');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return r.body as any;
       }
     };
     return {
@@ -127,12 +168,26 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     };
   }, []);
 
+  /* the gateway's request ceiling was hit (many people syncing at once): one quiet retry, a few seconds on */
+  const retried = useRef(false);
+  const roundRef = useRef<() => Promise<void>>(async () => undefined);
   const fail = useCallback((e: unknown) => {
     if (e instanceof SignInExpired) setStatus({ k: 'expired' });
     else if (e instanceof HttpError) {
+      const what = syncFailure(e.status, e.ours, retried.current);
+      /* a retry is a sync round, which needs a device that has joined its account */
+      if (what === 'retry' && keptRef.current) {
+        retried.current = true;
+        setStatus({ k: 'busy', what: 'Your account is busy. Trying again in a moment…' });
+        setTimeout(() => roundRef.current(), 3000 + Math.random() * 5000);
+        return;
+      }
       /* too much today, or too large: stop trying until the app is opened again */
-      if (e.status === 429 || e.status === 413) paused.current = true;
-      setStatus({ k: 'error', msg: e.message });
+      if (what === 'pause') paused.current = true;
+      setStatus({
+        k: 'error',
+        msg: e.status === 429 && !e.ours ? 'Your account is busy right now. Your changes are kept here and will sync later.' : e.message,
+      });
     } else setStatus({ k: 'error', msg: 'Could not reach your account. Your changes are kept here and will sync later.' });
   }, []);
 
@@ -146,6 +201,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       return;
     }
     running.current = true;
+    let restamped = false;
     try {
       do {
         again.current = false;
@@ -154,19 +210,32 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         const p = await pullAll(t, k.since);
         await mergeFromAccount(p.records);
         const pend = pendingRecords(current().snap, current().dirty);
+        let note = '';
         if (pend.length) {
           const r = await pushAll(t, pend);
           await ackPushed(r.acked);
+          /* changes stamped while this phone's clock was ahead: once the clock is right, they take the account's time and
+             go again; while it is still ahead, they wait, and the person is told why */
+          if (r.clock.length && !restamped && Math.abs(Date.now() - r.now) < CLOCK_OK) {
+            await restamp(r.clock, r.now);
+            restamped = true;
+            again.current = true;
+          } else if (r.clock.length)
+            note = changes(r.clock.length) + ' not saved to your account yet, because this phone’s clock is ahead. Check its date and time.';
+          else if (r.refused.length)
+            note = changes(r.refused.length) + ' too large to save to your account. This device keeps ' + (r.refused.length === 1 ? 'it.' : 'them.');
         }
         await saveKept({ ...keptRef.current!, since: p.now, at: Date.now() });
-        setStatus({ k: 'on' });
+        retried.current = false;
+        setStatus(note ? { k: 'on', note } : { k: 'on' });
       } while (again.current);
     } catch (e) {
       fail(e);
     } finally {
       running.current = false;
     }
-  }, [transport, mergeFromAccount, current, ackPushed, saveKept, fail]);
+  }, [transport, mergeFromAccount, current, ackPushed, restamp, saveKept, fail]);
+  roundRef.current = round;
 
   /* at start: the kept sign-in, if any */
   useEffect(() => {
@@ -189,10 +258,11 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         setStatus({ k: 'on' });
         round();
       } else if (s) {
-        /* signed in but never joined (the app closed during the first sign-in): start that again */
+        /* signed in but never joined (the app closed, or the account could not be reached, during the first sign-in): join
+           now. Until it gets through, the person is still signed in: nothing locks, and Settings says what went wrong. */
         setSession(s);
         sessionRef.current = s;
-        setStatus({ k: 'out' });
+        join(s).catch(fail);
       } else if (k) {
         /* joined before, but the sign-in is gone: in a browser it lasts only while the tab is open. The log is still here. */
         keptRef.current = k;
@@ -231,6 +301,18 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     return () => clearTimeout(id);
   }, [kept, waiting, dirty, round]);
 
+  /** this device's log and the account's, together: the newer copy of each day, and the settings of the log with more
+      days (core joinRecords), so a fresh setup on one device never replaces what the other earned */
+  const combine = useCallback(
+    async (recs: SyncRecord[]) => {
+      const j = joinRecords(current().snap, recs);
+      if (j.mine) await replace({ ...current().snap, settings: j.mine }, ['settings']);
+      await markAllDirty();
+      await mergeFromAccount(j.recs);
+    },
+    [current, replace, markAllDirty, mergeFromAccount],
+  );
+
   /** joins this device to the account, the first time */
   const join = useCallback(
     async (s: Session) => {
@@ -246,15 +328,12 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       const theirs = snapshotOf(p.records);
       /* a new device takes the account's log, as long as the account has settings to take */
       if (there && !hasLog(here) && theirs.settings) await replaceFromAccount(theirs);
-      else {
-        await mergeFromAccount(p.records);
-        await markAllDirty();
-      }
+      else await combine(p.records);
       await saveKept({ sub: s.sub, since: p.now, at: Date.now() });
       setStatus({ k: 'on' });
       await round();
     },
-    [transport, current, replaceFromAccount, mergeFromAccount, markAllDirty, saveKept, round],
+    [transport, current, replaceFromAccount, combine, saveKept, round],
   );
 
   const signInNow = useCallback((o?: { why?: string; then?: string }) => {
@@ -292,10 +371,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       try {
         setStatus({ k: 'busy', what: 'Joining your account…' });
         if (how === 'account') await replaceFromAccount(snapshotOf(recs));
-        else {
-          await markAllDirty();
-          await mergeFromAccount(recs);
-        }
+        else await combine(recs);
         await saveKept({ sub: s.sub, since: now, at: Date.now() });
         setStatus({ k: 'on' });
         await round();
@@ -303,7 +379,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         fail(e);
       }
     },
-    [status, replaceFromAccount, markAllDirty, mergeFromAccount, saveKept, round, fail],
+    [status, replaceFromAccount, combine, saveKept, round, fail],
   );
 
   const signOutNow = useCallback(
@@ -331,9 +407,9 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     for (let tries = 0; tries < 2; tries++) {
       try {
         const token = await accessToken(s, tries > 0);
-        const r = await fetch(SYNC_URL + query, { method, headers: { authorization: 'Bearer ' + token } });
+        const r = await callWithin(SYNC_URL + query, { method, headers: { authorization: 'Bearer ' + token } });
         if (r.status === 401 && tries === 0) continue;
-        return { status: r.status, body: await r.json().catch(() => ({})) };
+        return { status: r.status, body: r.body };
       } catch {
         return null;
       }

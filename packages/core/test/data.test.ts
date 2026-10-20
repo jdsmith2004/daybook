@@ -90,3 +90,21 @@ describe('sync records', () => {
     expect(back.settings).toEqual(s.settings);
   });
 });
+
+it('a request the sync API turns down: the gateway ceiling retries once, the allowance and size pause', () => {
+  expect(core.syncFailure(429, false, false)).toBe('retry');
+  expect(core.syncFailure(429, false, true)).toBe('error');
+  expect(core.syncFailure(429, true, false)).toBe('pause');
+  expect(core.syncFailure(413, true, false)).toBe('pause');
+  expect(core.syncFailure(500, false, false)).toBe('error');
+});
+
+it('the dirty list keeps another tab’s marks, and never one this copy already sent', () => {
+  /* this copy had days/a at 5 and sent it; the other tab marked days/b; days/c was changed in both, the other tab later */
+  const stored = { 'days/a': 5, 'days/b': 7, 'days/c': 9 };
+  const mine = { 'days/c': 8, settings: 3 };
+  const seen = { 'days/a': 5, 'days/c': 8, settings: 3 };
+  expect(core.mergeDirty(stored, mine, seen)).toEqual({ 'days/b': 7, 'days/c': 9, settings: 3 });
+  /* the other tab changed days/a again after this copy sent it: kept */
+  expect(core.mergeDirty({ 'days/a': 6 }, {}, { 'days/a': 5 })).toEqual({ 'days/a': 6 });
+});

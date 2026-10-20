@@ -108,7 +108,7 @@ export function SyncBody() {
           tone="accent"
           icon="plus"
           title="Combine them"
-          sub="Keeps every day from both. Where both have the same day or your settings, the newer one is kept."
+          sub="Keeps every day from both. Where both have the same day, the newer one is kept. Your plan and progress stay with the log that has more days."
           onPress={() => sync.choose('combine')}
         />
         <BigOption
@@ -127,7 +127,9 @@ export function SyncBody() {
       ? 'Sign in again to keep syncing. Your log is still here.'
       : st.k === 'error'
         ? st.msg
-        : syncedAgo(sync.at, now) + (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '');
+        : syncedAgo(sync.at, now) +
+          (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '') +
+          (st.k === 'on' && st.note ? '. ' + st.note : '');
   return (
     <>
       {sync.email ? (

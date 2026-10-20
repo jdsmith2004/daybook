@@ -112,3 +112,12 @@ it('a reset for an email that was never confirmed says so plainly', async () => 
   const { c } = fake({ ForgotPassword: { ok: false, body: { __type: 'InvalidParameterException' } } });
   await expect(c.forgot('me@example.com')).rejects.toMatchObject({ code: 'NotVerified' });
 });
+
+it('a call that never answers counts as no connection, within the limit', async () => {
+  let aborted = false;
+  const never = (_u: string, init: { signal?: AbortSignal }) =>
+    new Promise<{ ok: boolean; text(): Promise<string> }>(() => init.signal?.addEventListener('abort', () => (aborted = true)));
+  const c = core.cognitoClient('us-east-2', 'client', never as never, 30);
+  await expect(c.signIn('a@example.com', 'a long password here')).rejects.toMatchObject({ code: 'Network' });
+  expect(aborted).toBe(true);
+});

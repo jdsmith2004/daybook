@@ -192,11 +192,34 @@ describe('two devices of one person', () => {
     const a = new Device(transport('alice'));
     a.change((s) => ({ ...s, settings: st(100) }), 100);
     a.change((s) => addRode(s, '2026-10-10', 110), 110);
-    /* a broken clock: a change time two days ahead of the server */
-    a.dirty['days/2026-10-10'] = serverNow + 2 * 86400_000;
-    a.snap.days['2026-10-10'] = { ...a.snap.days['2026-10-10'], u: serverNow + 2 * 86400_000 };
+    /* a day too large for the account: 200 entries with long notes */
+    const ev = { ...a.snap.days['2026-10-10'].events[0], note: 'x'.repeat(500) };
+    a.snap.days['2026-10-10'] = { ...a.snap.days['2026-10-10'], events: Array.from({ length: 200 }, (_, i) => ({ ...ev, id: 'e' + i })) };
     const r = await a.sync();
     expect(r.refused.map((x) => x.id)).toEqual(['days/2026-10-10']);
+    expect(r.clock).toEqual([]);
+    expect(a.dirty).toEqual({});
+  });
+
+  it('a change stamped while the clock was ahead waits, then goes with the account’s time once the clock is right', async () => {
+    const a = new Device(transport('alice'));
+    a.change((s) => ({ ...s, settings: st(100) }), 100);
+    a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    /* a broken clock: a change time two days ahead of the server */
+    const ahead = serverNow + 2 * 86400_000;
+    a.dirty['days/2026-10-10'] = ahead;
+    a.snap.days['2026-10-10'] = { ...a.snap.days['2026-10-10'], u: ahead };
+    const r = await a.sync();
+    expect(r.clock).toEqual(['days/2026-10-10']);
+    expect(r.refused).toEqual([]);
+    expect(a.dirty['days/2026-10-10']).toBe(ahead);
+    /* the clock is right again: the record takes the account's time and is saved */
+    const m = core.restampRecords(a.snap, a.dirty, r.clock, r.now);
+    a.snap = m.snap;
+    a.dirty = m.dirty;
+    expect(a.snap.days['2026-10-10'].u).toBe(r.now);
+    const again = await a.sync();
+    expect(again.saved).toBe(1);
     expect(a.dirty).toEqual({});
   });
 });
@@ -221,6 +244,90 @@ describe('the first sign-in on a device', () => {
     const recs: SyncRecord[] = [{ id: 'days/2026-10-10', u: 5, data: null }];
     expect(core.accountHasLog(recs)).toBe(false);
   });
+  /* what the app's combine does (lib/sync.tsx): this device's settings first when they win, every record marked to send,
+     then the account's records merged, then a round */
+  async function join(d: Device, recs: SyncRecord[]) {
+    const j = core.joinRecords(d.snap, recs);
+    if (j.mine) d.snap = { ...d.snap, settings: j.mine };
+    d.dirty = core.allDirty(d.snap, d.dirty);
+    const m = core.mergeRemote(d.snap, d.dirty, j.recs);
+    d.snap = m.snap;
+    d.dirty = m.dirty;
+    await d.sync();
+  }
+  /* sixty days on the phone: Day 1, graduation, a practiced lesson, the person's own reasons */
+  function phoneWithLog(d: Device) {
+    d.change(
+      (s) => ({ ...s, settings: { ...st(100, 'phone'), gradAt: '2026-09-01', reasons: ['My kids'], learn: { ...st(100).learn, prac: { l1: 1 } } } }),
+      100,
+    );
+    let k = '2026-08-01';
+    for (let i = 0; i < 60; i++) {
+      const key = k;
+      d.change((s) => addRode(s, key, 200 + i), 200 + i);
+      k = core.addDays(k, 1);
+    }
+  }
+
+  it('a fresh setup on another device never replaces the settings of a real log', async () => {
+    /* the web: a new setup, an account made at its end, nothing logged */
+    const web = new Device(transport('alice'));
+    web.change((s) => ({ ...s, settings: { ...st(9000, 'web'), start: '2026-10-19', day1: '2026-10-20' } }), 9000);
+    await web.sync();
+    /* the phone, with its log, signs in afterwards: its settings are older, but they win */
+    const phone = new Device(transport('alice'));
+    phoneWithLog(phone);
+    serverNow += 1000;
+    const p = await core.pullAll(phone.t, 0);
+    expect(core.accountHasLog(p.records)).toBe(false);
+    await join(phone, p.records);
+    expect(phone.snap.settings?.goal).toBe('phone');
+    expect(phone.snap.settings?.start).toBe('2026-10-01');
+    expect(phone.snap.settings?.day1).toBe('2026-10-08');
+    expect(phone.snap.settings?.gradAt).toBe('2026-09-01');
+    expect(phone.snap.settings?.reasons).toEqual(['My kids']);
+    expect(phone.snap.settings?.learn.prac).toEqual({ l1: 1 });
+    expect(phone.dirty).toEqual({});
+    /* and the web takes them on its next round */
+    serverNow += 1000;
+    await web.sync();
+    expect(web.snap.settings?.goal).toBe('phone');
+    expect(web.snap.settings?.start).toBe('2026-10-01');
+  });
+
+  it('a new phone that logged one urge never replaces the account’s settings when combining', async () => {
+    const old = new Device(transport('alice'));
+    phoneWithLog(old);
+    await old.sync();
+    const fresh = new Device(transport('alice'));
+    fresh.change((s) => ({ ...s, settings: { ...st(9000, 'new phone'), start: '2026-10-19', day1: '2026-10-20' } }), 9000);
+    fresh.change((s) => addRode(s, '2026-10-19', 9001), 9001);
+    serverNow += 1000;
+    const p = await core.pullAll(fresh.t, 0);
+    expect(core.hasLog(fresh.snap) && core.accountHasLog(p.records)).toBe(true);
+    await join(fresh, p.records);
+    expect(fresh.snap.settings?.goal).toBe('phone');
+    expect(fresh.snap.settings?.gradAt).toBe('2026-09-01');
+    expect(Object.keys(fresh.snap.days).length).toBe(61);
+    serverNow += 1000;
+    await old.sync();
+    expect(old.snap.settings?.goal).toBe('phone');
+    expect(Object.keys(old.snap.days).length).toBe(61);
+  });
+
+  it('what the losing settings earned is kept', () => {
+    const own = { ...st(100, 'mine'), gradAt: null, seen: { badges: ['a'], quests: [], level: 3, full: null, lad: 4 } };
+    const theirs = { ...st(200, 'theirs'), gradAt: '2026-09-01', seen: { badges: ['b'], quests: [], level: 9, full: null, lad: 4 } };
+    const here: Snapshot = { settings: own, days: { '2026-10-10': core.addEvent({}, '2026-10-10', 'rode', '22:00', {}, 50).days['2026-10-10'] }, reviews: {} };
+    const j = core.joinRecords(here, [{ id: 'settings', u: 200, data: theirs }]);
+    expect(j.recs).toEqual([]);
+    expect(j.mine?.goal).toBe('mine');
+    expect(j.mine?.gradAt).toBe('2026-09-01');
+    expect(j.mine?.seen?.badges.sort()).toEqual(['a', 'b']);
+    expect(j.mine?.seen?.level).toBe(9);
+    expect(j.mine?.u).toBe(201);
+  });
+
   it('can take the account’s log as it is', async () => {
     const a = new Device(transport('alice'));
     a.change((s) => ({ ...s, settings: st(100, 'account') }), 100);

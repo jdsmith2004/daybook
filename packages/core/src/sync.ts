@@ -10,7 +10,8 @@
    The network parts take a transport, so the same code runs against the real API and, in tests, against the API's own
    handler with an in-memory table. Checked by services/api/test/client.test.ts. */
 import { normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
-import type { Snapshot } from './types';
+import { isKey } from './legacy/core.js';
+import type { Settings, Snapshot } from './types';
 
 /** the records this device changed and has not sent yet: id -> the change time it had */
 export type Dirty = Record<string, number>;
@@ -145,12 +146,43 @@ export interface PushResult {
   refused: { id: string; why: string }[];
   /** records that could not be saved this time and stay dirty */
   retry: string[];
+  /** records the account turned down because their change time is ahead of its clock (this device's clock is, or was,
+      ahead). They stay dirty: once the clock is right, restampRecords gives them the account's time and they go again. */
+  clock: string[];
   saved: number;
+  /** the account's clock at its last answer (0 when nothing was sent) */
+  now: number;
+}
+
+/** the words the sync API refuses a record with when its change time is ahead of the server's clock */
+export const WHY_FUTURE = 'its time is in the future';
+/** and when it is too large */
+export const WHY_LARGE = 'too large';
+
+/** a device clock this close to the account's counts as right */
+export const CLOCK_OK = 5 * 60_000;
+
+/** the log with these records given a new change time (records the account turned down for a clock that was ahead, once
+    the clock is right again), and the dirty list with that time, so they are sent again and win as the change made now */
+export function restampRecords(s: Snapshot, dirty: Dirty, ids: string[], u: number): { snap: Snapshot; dirty: Dirty } {
+  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews } };
+  const d: Dirty = { ...dirty };
+  for (const id of ids) {
+    const p = parseId(id);
+    if (!p) continue;
+    if (p.kind === 'settings') {
+      if (snap.settings) snap.settings = { ...snap.settings, u };
+    } else if (p.kind === 'days') {
+      if (snap.days[p.key]) snap.days[p.key] = { ...snap.days[p.key], u };
+    } else if (snap.reviews[p.key]) snap.reviews[p.key] = { ...snap.reviews[p.key], u };
+    d[id] = u;
+  }
+  return { snap, dirty: d };
 }
 
 /** sends the records, a batch at a time */
 export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<PushResult> {
-  const res: PushResult = { acked: {}, refused: [], retry: [], saved: 0 };
+  const res: PushResult = { acked: {}, refused: [], retry: [], clock: [], saved: 0, now: 0 };
   const u = new Map(recs.map((r) => [r.id as string, r.u]));
   const send: SyncRecord[] = [];
   for (const r of recs) {
@@ -161,6 +193,7 @@ export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<Pus
   }
   for (const part of batches(send)) {
     const a = await t.push(part);
+    res.now = a.now;
     for (const id of a.saved) {
       if (u.has(id)) res.acked[id] = u.get(id)!;
       res.saved++;
@@ -169,6 +202,7 @@ export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<Pus
     for (const b of a.bad) {
       const id = String(b.id);
       if (b.why === 'could not save, try again') res.retry.push(id);
+      else if (b.why === WHY_FUTURE) res.clock.push(id);
       else if (u.has(id)) {
         res.refused.push({ id, why: b.why });
         res.acked[id] = u.get(id)!;
@@ -178,11 +212,37 @@ export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<Pus
   return res;
 }
 
+/** what a device does when the sync API turns a request down: retry once soon (the gateway's own request ceiling, hit
+    when many people sync at the same minute), pause until the app opens again (the person's daily allowance, or a body
+    too large: retrying cannot help), or show the error and try on the next round. ours: the answer carried the sync
+    function's own words. retried: this is already the retry. */
+export function syncFailure(status: number, ours: boolean, retried: boolean): 'retry' | 'pause' | 'error' {
+  if (status === 429 && !ours) return retried ? 'error' : 'retry';
+  if (status === 429 || status === 413) return 'pause';
+  return 'error';
+}
+
 /** the dirty list after a push: each acked record is cleared, unless it changed again while the push was out */
 export function clearAcked(dirty: Dirty, acked: Record<string, number>): Dirty {
   const d: Dirty = { ...dirty };
   for (const id of Object.keys(acked)) if (d[id] === acked[id]) delete d[id];
   return d;
+}
+
+/** The dirty list to write to storage, when another copy of Daybook (a second browser tab) may share it. `mine` is this
+    copy's own list, which it sends from; `seen` is the latest change time this copy has had for each id. A mark in
+    storage that this copy never had, or that is newer than any it had, came from the other copy and is kept, so that
+    copy's change is still sent (by it, or on the next launch). This copy never takes those marks into its own list: it
+    could hold an older copy of that record, or none at all, and would send that instead. */
+export function mergeDirty(stored: Dirty, mine: Dirty, seen: Dirty): Dirty {
+  const out: Dirty = { ...mine };
+  for (const id of Object.keys(stored)) {
+    const v = stored[id];
+    if (typeof v !== 'number') continue;
+    if (id in out) out[id] = Math.max(out[id], v);
+    else if (v > (seen[id] ?? -1)) out[id] = v;
+  }
+  return out;
 }
 
 /** every record in the log, as dirty (when a device first joins an account and keeps what it has) */
@@ -202,4 +262,43 @@ export function accountHasLog(recs: SyncRecord[]) {
 /** the log the account holds, on its own (to replace this device's log with it) */
 export function snapshotOf(recs: SyncRecord[]): Snapshot {
   return mergeRemote({ settings: null, days: {}, reviews: {} }, {}, recs).snap;
+}
+
+/** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
+    already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have */
+function keepEarned(win: Settings, lose: Settings): Settings {
+  const out = JSON.parse(JSON.stringify(win)) as Settings;
+  const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
+  if (g) out.gradAt = g;
+  if (lose.seen) {
+    const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
+    s.badges = [...new Set([...s.badges, ...lose.seen.badges])];
+    s.level = Math.max(s.level, lose.seen.level);
+    out.seen = s;
+  }
+  out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };
+  out.learn.notes = { ...lose.learn.notes, ...out.learn.notes };
+  out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
+  return out;
+}
+
+/** A device joining an account, when both may hold settings. The settings record holds what was earned and built (the
+    start, Day 1, graduation, the plan, lesson marks), so it goes with the log that has more days, never simply with the
+    newer clock: a fresh setup on a second device must not replace a real log's settings, and a new phone that logged one
+    urge must not replace the account's. On a tie, the earlier start wins, then the newer change. What the other side had
+    earned is kept on the winner.
+    Gives back the account's records to merge, and `mine`: settings to save on this device first (marked to send), when
+    this device's win. When the account's win, its settings record comes back with a change time past this device's, so
+    the merge takes it. */
+export function joinRecords(here: Snapshot, recs: SyncRecord[]): { recs: SyncRecord[]; mine: Settings | null } {
+  const theirs = snapshotOf(recs).settings;
+  const own = here.settings;
+  if (!own || !theirs) return { recs, mine: null };
+  const nHere = Object.keys(here.days).length;
+  const nThere = recs.filter((r) => r.data != null && r.id.startsWith('days/')).length;
+  const mineWins = nHere !== nThere ? nHere > nThere : own.start !== theirs.start ? own.start < theirs.start : (own.u || 0) >= (theirs.u || 0);
+  const u = Math.max(own.u || 0, theirs.u || 0) + 1;
+  if (mineWins) return { recs: recs.filter((r) => r.id !== 'settings'), mine: { ...keepEarned(own, theirs), u } };
+  const won = { ...keepEarned(theirs, own), u };
+  return { recs: recs.map((r) => (r.id === 'settings' ? { id: 'settings', u, data: won } : r)), mine: null };
 }

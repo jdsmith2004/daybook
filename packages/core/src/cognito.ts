@@ -55,23 +55,45 @@ export function cognitoWords(code: string): string {
   }
 }
 
-type Fetch = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ ok: boolean; text(): Promise<string> }>;
+type Fetch = (
+  url: string,
+  init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal },
+) => Promise<{ ok: boolean; text(): Promise<string> }>;
 
-export function cognitoClient(region: string, clientId: string, fetchFn: Fetch = fetch as unknown as Fetch) {
+/** how long a call to Cognito may take before it counts as no connection */
+export const COGNITO_TIMEOUT = 20_000;
+
+export function cognitoClient(region: string, clientId: string, fetchFn: Fetch = fetch as unknown as Fetch, timeoutMs = COGNITO_TIMEOUT) {
   const url = `https://cognito-idp.${region}.amazonaws.com/`;
   /** calls made with the person's access token (their own account) send it instead of the client id */
   async function call(op: string, body: Record<string, unknown>, withClient = true): Promise<Record<string, any>> {
+    /* a stalled connection must not leave a spinner up for good: past the limit it is the same as no connection */
+    const ctl = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<never>((_, no) => {
+      timer = setTimeout(() => {
+        ctl.abort();
+        no(new Error('timeout'));
+      }, timeoutMs);
+    });
     let res;
+    let text: string;
     try {
-      res = await fetchFn(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-amz-json-1.1', 'X-Amz-Target': 'AWSCognitoIdentityProviderService.' + op },
-        body: JSON.stringify(withClient ? { ClientId: clientId, ...body } : body),
-      });
+      res = await Promise.race([
+        fetchFn(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-amz-json-1.1', 'X-Amz-Target': 'AWSCognitoIdentityProviderService.' + op },
+          body: JSON.stringify(withClient ? { ClientId: clientId, ...body } : body),
+          signal: ctl.signal,
+        }),
+        late,
+      ]);
+      text = await Promise.race([res.text(), late]);
     } catch {
       throw new CognitoError('Network', cognitoWords('Network'));
+    } finally {
+      clearTimeout(timer);
     }
-    const text = await res.text();
     let j: Record<string, any> = {};
     try {
       j = text ? JSON.parse(text) : {};

@@ -16,9 +16,11 @@ import {
   winWhy,
   type CelItem,
   logicalKey,
+  mergeDirty,
   normDay,
   normReview,
   normSettings,
+  restampRecords,
   type Change,
   type DayKey,
   type RecordId,
@@ -87,6 +89,8 @@ interface StoreValue {
   ackPushed: (acked: Record<string, number>) => Promise<void>;
   /** for sync: every record here is to be sent (a device joining an account and keeping its log) */
   markAllDirty: () => Promise<void>;
+  /** for sync: these records get the account's time and are sent again (they were stamped while the clock was ahead) */
+  restamp: (ids: string[], u: number) => Promise<void>;
   /** for sync: this device takes the account's log as it is */
   replaceFromAccount: (snap: Snapshot) => Promise<void>;
   /** what is showing at the bottom: a line of words, or the points an action earned */
@@ -117,6 +121,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const savedSeen = useRef<string[] | null>(null);
   const snapRef = useRef(snap);
   const dirtyRef = useRef(dirty);
+  /* the latest change time this copy has had for each record id, so writing the dirty list keeps marks only another copy
+     (a second browser tab) made (core mergeDirty) */
+  const seenRef = useRef<Record<string, number>>({});
   useEffect(() => {
     snapRef.current = snap;
     dirtyRef.current = dirty;
@@ -132,6 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
            the start moving) reads the loaded snapshot, not the empty one */
         snapRef.current = s;
         dirtyRef.current = d;
+        seenRef.current = { ...d };
         setSnap(s);
         setDirty(d);
       })
@@ -164,23 +172,46 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [schedule],
   );
 
-  /* writes the changed records, and marks them not synced yet */
-  const persist = useCallback(async (next: Snapshot, ids: RecordId[]) => {
-    const d = { ...dirtyRef.current };
-    const sets: [string, string][] = [];
-    const dels: string[] = [];
-    for (const id of ids) {
-      const r = recordOf(next, id);
-      d[id] = (r && 'u' in r && r.u) || Date.now();
-      if (r) sets.push([P + id, JSON.stringify(r)]);
-      else dels.push(P + id);
+  /* the dirty list as it goes to storage: this copy's own, with any marks another copy of Daybook (a second browser tab)
+     left there (core mergeDirty). Read just before the write, so the two copies do not wipe out each other's marks. */
+  const dirtyEntry = useCallback(async (): Promise<[string, string]> => {
+    const mine = dirtyRef.current;
+    for (const id of Object.keys(mine)) seenRef.current[id] = Math.max(seenRef.current[id] ?? -1, mine[id]);
+    let stored: Record<string, number> = {};
+    try {
+      const raw = await AsyncStorage.getItem(DIRTY);
+      const v = raw ? JSON.parse(raw) : {};
+      stored = v && typeof v === 'object' ? v : {};
+    } catch {
+      stored = {};
     }
-    sets.push([DIRTY, JSON.stringify(d)]);
-    dirtyRef.current = d;
-    setDirty(d);
-    await AsyncStorage.multiSet(sets);
-    if (dels.length) await AsyncStorage.multiRemove(dels);
+    return [DIRTY, JSON.stringify(mergeDirty(stored, dirtyRef.current, seenRef.current))];
   }, []);
+  const writeDirty = useCallback(async () => {
+    const [k, v] = await dirtyEntry();
+    await AsyncStorage.setItem(k, v);
+  }, [dirtyEntry]);
+
+  /* writes the changed records, and marks them not synced yet (in the same write, so a record is never saved unmarked) */
+  const persist = useCallback(
+    async (next: Snapshot, ids: RecordId[]) => {
+      const d = { ...dirtyRef.current };
+      const sets: [string, string][] = [];
+      const dels: string[] = [];
+      for (const id of ids) {
+        const r = recordOf(next, id);
+        d[id] = (r && 'u' in r && r.u) || Date.now();
+        if (r) sets.push([P + id, JSON.stringify(r)]);
+        else dels.push(P + id);
+      }
+      dirtyRef.current = d;
+      setDirty(d);
+      sets.push(await dirtyEntry());
+      await AsyncStorage.multiSet(sets);
+      if (dels.length) await AsyncStorage.multiRemove(dels);
+    },
+    [dirtyEntry],
+  );
 
   /* a change the store makes by itself (marking what was seen): saved, but nothing is said */
   const commitSettings = useCallback(
@@ -307,11 +338,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDirty({});
   }, []);
 
-  const saveDirty = useCallback(async (d: Record<string, number>) => {
-    dirtyRef.current = d;
-    setDirty(d);
-    await AsyncStorage.setItem(DIRTY, JSON.stringify(d));
-  }, []);
+  const saveDirty = useCallback(
+    async (d: Record<string, number>) => {
+      dirtyRef.current = d;
+      setDirty(d);
+      await writeDirty();
+    },
+    [writeDirty],
+  );
   const current = useCallback(() => ({ snap: snapRef.current, dirty: dirtyRef.current }), []);
   /* writes records that came from the account: saved here, but not marked as changed here */
   const writeQuiet = useCallback(async (next: Snapshot, ids: RecordId[]) => {
@@ -335,13 +369,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const marks = saveDirty(m.dirty);
       await writeQuiet(m.snap, m.changed);
       await marks;
-      if (dirtyRef.current !== m.dirty) await AsyncStorage.setItem(DIRTY, JSON.stringify(dirtyRef.current));
+      if (dirtyRef.current !== m.dirty) await writeDirty();
       return m.changed.length;
     },
-    [writeQuiet, saveDirty],
+    [writeQuiet, saveDirty, writeDirty],
   );
   const ackPushed = useCallback(async (acked: Record<string, number>) => saveDirty(clearAcked(dirtyRef.current, acked)), [saveDirty]);
   const markAllDirty = useCallback(async () => saveDirty(allDirty(snapRef.current, dirtyRef.current)), [saveDirty]);
+  const restamp = useCallback(
+    async (ids: string[], u: number) => {
+      const m = restampRecords(snapRef.current, dirtyRef.current, ids, u);
+      snapRef.current = m.snap;
+      setSnap(m.snap);
+      const marks = saveDirty(m.dirty);
+      await writeQuiet(m.snap, ids.filter((id) => recordOf(m.snap, id as RecordId)) as RecordId[]);
+      await marks;
+    },
+    [writeQuiet, saveDirty],
+  );
   const replaceFromAccount = useCallback(
     async (next: Snapshot) => {
       const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P) && k !== DIRTY);
@@ -354,9 +399,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSnap(next);
       savedSeen.current = null;
       await writeQuiet(next, ids);
-      await saveDirty({});
+      /* this device now holds the account's log as it is: nothing here, in any tab, is waiting to be sent */
+      dirtyRef.current = {};
+      setDirty({});
+      await AsyncStorage.setItem(DIRTY, '{}');
     },
-    [writeQuiet, saveDirty],
+    [writeQuiet],
   );
 
   const value = useMemo<StoreValue>(
@@ -375,12 +423,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       mergeFromAccount,
       ackPushed,
       markAllDirty,
+      restamp,
       replaceFromAccount,
       toast,
       say,
       hooks,
     }),
-    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, replaceFromAccount, toast, say],
+    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, toast, say],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

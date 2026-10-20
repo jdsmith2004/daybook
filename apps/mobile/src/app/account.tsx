@@ -14,7 +14,7 @@ import { closeSheet, SheetFrame } from '@/components/sheet';
 import { SyncBody, TrustChoice } from '@/components/sync-card';
 import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
-import { cognito, keepTokens } from '@/lib/auth';
+import { cognito, keepTokens, type Session } from '@/lib/auth';
 import { buzz } from '@/lib/feel';
 import { useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
@@ -37,6 +37,7 @@ export default function Account() {
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
   const chal = useRef('');
+  const session = useRef<Session | null>(null);
   if (sync.status.k === 'off') return <Redirect href="/" />;
 
   const run = async (f: () => Promise<void>) => {
@@ -56,10 +57,16 @@ export default function Account() {
   /* signed in: keep the session, let sync carry on, and go where the person was headed */
   const finish = async (t: Parameters<typeof keepTokens>[0]) => {
     const s = await keepTokens(t);
+    session.current = s;
     setStep('done');
     buzz('save');
     await sync.startWith(s);
   };
+  /* signed in, but the account could not be reached to bring the log together: try again */
+  const retry = () =>
+    run(async () => {
+      if (session.current) await sync.startWith(session.current);
+    });
   const leave = () => {
     if (p.then) router.replace({ pathname: '/lesson/[id]', params: { id: p.then } });
     else closeSheet();
@@ -126,10 +133,21 @@ export default function Account() {
           : 'A free account keeps a copy of your progress safe and the same on every device you use. It is private to you.';
 
   let body;
+  const failed = sync.status.k === 'error' || sync.status.k === 'expired';
   if (step === 'done')
     body =
       sync.status.k === 'ask' ? (
         <SyncBody />
+      ) : failed ? (
+        <View style={{ gap: 14, paddingVertical: 8 }}>
+          <T v="h2">{mode === 'new' ? 'Your account is made.' : 'You are signed in.'}</T>
+          <T tone="danger" accessibilityLiveRegion="polite">
+            {sync.status.k === 'error' ? sync.status.msg : 'Sign in again to keep syncing.'}
+          </T>
+          <T tone="muted">Your log is safe on this device. Daybook tries again each time it opens.</T>
+          {busy ? <ActivityIndicator color={c.accent} /> : <Button label="Try again" onPress={retry} />}
+          {p.then ? <LinkText label="Open the lesson" onPress={leave} /> : null}
+        </View>
       ) : (
         <View style={{ gap: 14, alignItems: 'center', paddingVertical: 8 }}>
           <View style={[s.ok, { backgroundColor: c.mintSoft }]}>

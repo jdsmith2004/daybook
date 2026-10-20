@@ -1,6 +1,6 @@
 /* The breathing sun: it grows while you breathe in and shrinks while you breathe out, with the words for each step and the time
    left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS screen. */
-import { breathPhase, PH_TXT } from '@daybook/core';
+import { breathPhase, PATTERNS, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing as RNEasing, Platform, StyleSheet, View } from 'react-native';
 import Reanimated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
@@ -74,6 +74,26 @@ function scatter(): number[] {
   return out;
 }
 
+/** the exact seconds left in this step of the breath (breathPhase rounds them up), so each step's motion ends on time
+    even when the screen notices the step a moment late */
+function stepLeft(pat: string, sec: number) {
+  const ph = (PATTERNS as Record<string, { ph: [string, number][] }>)[pat]?.ph;
+  if (!ph) return 0;
+  let x = sec % ph.reduce((a, b) => a + b[1], 0);
+  for (const [, d] of ph) {
+    if (x < d) return d - x;
+    x -= d;
+  }
+  return 0;
+}
+/** a soft start and landing for a step that runs from `a` to `b`, read on the UI thread */
+function eased(v: number, a: number, b: number) {
+  'worklet';
+  if (b === a) return v;
+  const q = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return a + (b - a) * (0.5 - 0.5 * Math.cos(q * Math.PI));
+}
+
 export function Orb({
   pattern,
   sec,
@@ -100,6 +120,9 @@ export function Orb({
   const idx = ph ? ph.idx : -1;
   /* p: how full the breath is (0 at rest, 1 on the ring). out: 1 while breathing out (the straight way back in) */
   const p = useSharedValue(0);
+  /* where this step of the breath started and where it ends, to ease the glow and the dots' size along it */
+  const from = useSharedValue(0);
+  const to = useSharedValue(0);
   const out = useSharedValue(0);
   const rot = useSharedValue(0);
   const clock = useSharedValue(0);
@@ -121,19 +144,24 @@ export function Orb({
       p.value = withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.sin) });
       return;
     }
-    const ms = ph.dur * 1000;
+    const ms = Math.max(60, stepLeft(pattern as string, sec) * 1000);
     if (ph.k === 'in' || ph.k === 'in1') {
       far.value = scatter();
       out.value = 0;
       p.value = 0;
+      from.value = 0;
+      to.value = ph.k === 'in1' ? IN1 : 1;
       /* even through the breath: each dot eases itself (a gentle start and a soft landing) */
-      p.value = withTiming(ph.k === 'in1' ? IN1 : 1, { duration: ms, easing: Easing.linear });
+      p.value = withTiming(to.value, { duration: ms, easing: Easing.linear });
     } else if (ph.k === 'in2') {
       out.value = 0;
+      from.value = p.value;
+      to.value = 1;
       p.value = withTiming(1, { duration: ms, easing: Easing.linear });
     } else if (ph.k === 'out') {
       home.value = cluster();
       out.value = 1;
+      from.value = to.value = 0;
       p.value = withTiming(0, { duration: ms, easing: Easing.inOut(Easing.sin) });
     } else if (p.value > 0.5) {
       /* a hold at the top: the ring turns a little */
@@ -149,7 +177,8 @@ export function Orb({
   /* one warm family, golds to amber: deeper on a light sky, where the palest gold would fade, and lighter at night */
   const cols = c.scheme === 'dark' ? ['#FFD25A', '#FFE9A8', '#FFB547', '#FFC97A'] : ['#F6A91F', '#FFC832', '#EE8A25', '#FFB43A'];
   const glow = useAnimatedStyle(() => {
-    const v = still ? (pattern ? 0.5 + 0.5 * p.value : 0.6) : p.value;
+    const e = out.value > 0.5 ? p.value : eased(p.value, from.value, to.value);
+    const v = still ? (pattern ? 0.5 + 0.5 * e : 0.6) : e;
     return { opacity: 0.4 + 0.5 * v, transform: [{ scale: 0.75 + 0.4 * v }] };
   }, [still, pattern]);
   return (
@@ -197,6 +226,8 @@ export function Orb({
             rr={rr}
             color={cols[l.col]}
             p={p}
+            from={from}
+            to={to}
             out={out}
             rot={rot}
             clock={clock}
@@ -226,6 +257,8 @@ function Dot({
   rr,
   color,
   p,
+  from,
+  to,
   out,
   rot,
   clock,
@@ -239,6 +272,8 @@ function Dot({
   rr: number;
   color: string;
   p: SharedValue<number>;
+  from: SharedValue<number>;
+  to: SharedValue<number>;
   out: SharedValue<number>;
   rot: SharedValue<number>;
   clock: SharedValue<number>;
@@ -277,7 +312,8 @@ function Dot({
       const delay = l.seed * STAGGER;
       const q = Math.min(1, Math.max(0, (v - delay) / (1 - delay)));
       const t = 0.5 - 0.5 * Math.cos(q * Math.PI);
-      const swing = Math.sin(q * Math.PI);
+      /* the swing follows the eased path too, so a dot leaves the cluster and lands on the ring at rest, never with a flick */
+      const swing = Math.sin(t * Math.PI);
       const rh = Math.hypot(hx, hy);
       const th = Math.atan2(hy, hx);
       let da = a - th;
@@ -292,11 +328,13 @@ function Dot({
       x = rad * Math.cos(ang);
       y = rad * Math.sin(ang);
     }
+    /* the size and brightness ease along the step too: a linear breath in would stop dead at the top */
+    const e = out.value > 0.5 ? v : eased(v, from.value, to.value);
     /* at rest the cluster breathes very slightly, so it never looks frozen */
     const drift = 1 + 0.04 * (1 - v) * Math.sin((clock.value + l.seed) * TAU);
     return {
-      opacity: (0.72 + 0.28 * v) * (0.85 + 0.15 * twinkle),
-      transform: [{ translateX: x * drift }, { translateY: y * drift }, { scale: (0.62 + 0.38 * v) * (1 + 0.08 * twinkle * v) }],
+      opacity: (0.72 + 0.28 * e) * (0.85 + 0.15 * twinkle),
+      transform: [{ translateX: x * drift }, { translateY: y * drift }, { scale: (0.62 + 0.38 * e) * (1 + 0.08 * twinkle * e) }],
     };
   }, [still, breathing, rr]);
   return (
@@ -375,7 +413,12 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
   }, [rise]);
   useEffect(() => {
     if (reduced.current || ph.k === 'hold') return;
-    Animated.timing(rise, { toValue: riseOf(ph.k), duration: ph.dur * 1000, easing: RNEasing.inOut(RNEasing.sin), useNativeDriver: NATIVE }).start();
+    Animated.timing(rise, {
+      toValue: riseOf(ph.k),
+      duration: Math.max(60, stepLeft('calm', sec) * 1000),
+      easing: RNEasing.inOut(RNEasing.sin),
+      useNativeDriver: NATIVE,
+    }).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ph.idx]);
   /* the biggest sun that fits under the words, leaving room for the line above it */

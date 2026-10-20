@@ -33,7 +33,8 @@ function Beat({ beat, sec, color, ink, children }: { beat: BeatOf; sec: number; 
     Animated.timing(v, {
       toValue: first ? 1 : beat.low,
       duration: Math.max(60, left),
-      easing: first ? Easing.inOut(Easing.sin) : Easing.out(Easing.cubic),
+      /* the same soft start and landing both ways, so the turn at the top and the bottom never jerks */
+      easing: Easing.inOut(Easing.sin),
       useNativeDriver: NATIVE,
     }).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps

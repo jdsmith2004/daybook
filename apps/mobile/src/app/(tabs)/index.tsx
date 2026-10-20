@@ -3,6 +3,9 @@
    Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
 import {
   accountAsk,
+  awayDue,
+  awayStart,
+  markOpen,
   tipAsk,
   tipButton,
   autoStep,
@@ -28,6 +31,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
+import { BackRow } from '@/components/back-row';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';
 import { FirstPatternLine } from '@/components/first-pattern';
 import { Hero } from '@/components/hero';
@@ -44,9 +48,13 @@ import { Icon, T } from '@/components/ui';
 import { WeekCard } from '@/components/week-card';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
+
+/** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
+const LAUNCH = Date.now();
 
 export default function Today() {
   const c = useTheme();
@@ -71,6 +79,30 @@ export default function Today() {
     apply(c);
     moved.current = Date.now();
   }, [ready, st, snap.days, tk, apply, syncing]);
+
+  /* this day is marked as one the app was opened, and the first time, the quiet-day rule starts (core away.ts, back.ts).
+     With an account, only after this launch's first sync got through: a second device must not write a newer copy of
+     today before it has the other device's entries for it. */
+  const synced = sync.status.k === 'off' || sync.status.k === 'out' || (sync.status.k === 'on' && !!sync.at && sync.at >= LAUNCH);
+  useEffect(() => {
+    if (!ready || !st || syncing || !synced) return;
+    const on = awayStart(st, tk);
+    if (on) apply({ st: on });
+    if (!snap.days[tk]?.p?.o) update((s0) => ({ ...s0, days: markOpen(s0.days, tk) }));
+  }, [ready, st, snap.days, tk, apply, update, syncing, synced]);
+
+  /* back after days away (core awayDue): Welcome back opens once, and once more the next day if it was closed unanswered;
+     after that the gap waits as a quiet row (BackRow). Kept in this device's memory, never synced. */
+  const sos = useSos();
+  const due = st && !syncing ? awayDue(snap.days, st, tk) : null;
+  const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
+  const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
+  useEffect(() => {
+    if (!ready || !due || !askAgain) return;
+    sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: asked && asked.from === due.from ? asked.n + 1 : 1, d: tk } }));
+    router.push('/back');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, due?.from, askAgain, tk]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -134,6 +166,7 @@ export default function Today() {
       <TalkCard snap={snap} now={now} />
       <RiskCard snap={snap} tk={tk} now={now} />
       <Hero g={g} snap={snap} tk={tk} now={now} />
+      {due && !askAgain ? <BackRow n={due.n} /> : null}
       <TellStartCard snap={snap} tk={tk} />
       <WeekCard snap={snap} tk={tk} />
       <SundayCard snap={snap} tk={tk} />

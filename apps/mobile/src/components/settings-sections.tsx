@@ -246,8 +246,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             : 'Strict: no slip logged',
         <>
           <T v="small" tone="muted">
-            A day counts when no slip is logged on it. A day with nothing logged counts too. This only changes how days are counted. It never changes what you
-            log.
+            A day counts when no slip is logged on it. A day with nothing logged counts too, as long as you are around: after two days in a row with Daybook not
+            opened, the days after are not known. They do not count, and they never take anything away. When you come back, Daybook asks how they went. This
+            only changes how days are counted. It never changes what you log.
           </T>
           <Field
             label="Counting"

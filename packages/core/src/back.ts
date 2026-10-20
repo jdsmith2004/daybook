@@ -2,8 +2,8 @@
    Pure functions the app calls; the rule itself is in away.ts. Checked by test/away.test.ts. */
 import { changeSettings } from './actions';
 import { awayFromOf, withAway, type AwayAnswer } from './away';
-import { isKey } from './legacy/core.js';
-import { addEvent } from './mutate';
+import { blankP, isKey } from './legacy/core.js';
+import { addEvent, changeDay, withDay } from './mutate';
 import type { DayKey, Days, Settings } from './types';
 
 /** the quiet-day rule starts today, once: from now on the app marks each day it is opened (p.o). Null when already on. */
@@ -27,4 +27,23 @@ export function answerAway(
   let next = days;
   for (const k of picked) next = addEvent(next, k, 'slipped', null, {}, now).days;
   return { days: next, st: changeSettings(st, (s) => void (s.away = withAway(s, gap, kept)), now) };
+}
+
+/** today marked as a day the app was opened (p.o), or the same log when it already is */
+export function markOpen(days: Days, tk: DayKey, now = Date.now()): Days {
+  if (days[tk]?.p?.o) return days;
+  return withDay(
+    days,
+    tk,
+    changeDay(
+      days[tk],
+      tk,
+      (d) => {
+        const p = d.p || blankP();
+        p.o = true;
+        d.p = p;
+      },
+      now,
+    ),
+  );
 }

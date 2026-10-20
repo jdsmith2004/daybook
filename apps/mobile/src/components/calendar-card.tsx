@@ -48,6 +48,9 @@ function look(kind: CalKind, c: Palette) {
       return { bg: c.skySoft, bd: c.skySoft, ink: c.skyText };
     case 'none':
       return { bg: c.surface2, bd: c.surface2, ink: c.muted };
+    /* not known (away.ts): no color, a dotted outline, never a mark that looks like a failure */
+    case 'away':
+      return { bg: c.surface2, bd: c.muted, ink: c.muted };
     default:
       return { bg: 'transparent', bd: kind === 'ahead' ? c.line : 'transparent', ink: c.muted };
   }
@@ -67,6 +70,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       ['open', 'Run can keep going'],
       ['slip', 'Slip'],
       ['logged', 'Logged'],
+      ['away', 'Away, not known'],
     ] as [CalKind, string][]
   ).filter(([k]) => kinds.has(k));
   const chips = [
@@ -130,7 +134,11 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
               );
               const style = [
                 s.cell,
-                { backgroundColor: l.bg, borderColor: l.bd, borderStyle: d.kind === 'ahead' ? ('dashed' as const) : ('solid' as const) },
+                {
+                  backgroundColor: l.bg,
+                  borderColor: l.bd,
+                  borderStyle: d.kind === 'ahead' ? ('dashed' as const) : d.kind === 'away' ? ('dotted' as const) : ('solid' as const),
+                },
                 d.today && { outlineColor: c.accent, outlineWidth: 2.5, outlineOffset: 2, outlineStyle: 'solid' as const },
               ];
               return (
@@ -160,7 +168,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
             const l = look(k, c);
             return (
               <View key={k} style={s.key}>
-                <View style={[s.keyDot, { backgroundColor: l.bg, borderColor: l.bd }]} />
+                <View style={[s.keyDot, { backgroundColor: l.bg, borderColor: l.bd, borderStyle: k === 'away' ? 'dotted' : 'solid' }]} />
                 <T v="small" tone="muted">
                   {t}
                 </T>

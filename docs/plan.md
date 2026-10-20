@@ -168,7 +168,8 @@ graduation does not take the award away (the core test covers it; it was not wal
 - The Sunrise choice now reads "Open Reach a person in Daybook." (rules and golden expectations updated; old days keep
   what they saved).
 - Good night folds its loud-night plan into one tap on phones shorter than 700 points, so it fits the SE.
-- The tip link is on the web only. The App Store, like Google Play, asks for its own billing for tips (rule 3.1.1).
+- ~~The tip link is on the web only.~~ Reversed by the owner on October 20: the tip jar is part of the app and was
+  wanted. It is back on iPhone (US storefront, 3.1.1(a)); see "Tips" under Launch site.
 - Left as they are: the review clock's shrink-to-fit, the graduation flame stepping aside on the SE, and the level bar
   under "90 of 90".
 
@@ -1312,3 +1313,14 @@ Next, in order:
    ask for votes); Product Hunt at 12:01 AM Pacific midweek once a few supporters are ready.
 5. (low) **A domain**, once the owner buys one: point it at CloudFront and change the canonical links, the sitemap and
    `llms.txt`.
+
+### Tips (the owner, October 20, 2026)
+
+The tip jar was hidden on iPhone on October 19 by a Claude pick, against what the owner had built it for. It is back on
+the web and on iPhone. The Stripe tip page already takes Apple Pay, so a tip from the iPhone app can be paid with Apple
+Pay in Safari. Android stays hidden until Google Play's US rules for links out are checked (medium, next).
+
+- (owner) A new iPhone build is needed for TestFlight and review: Actions, App Store, Run workflow (one EAS build).
+- (medium) Android: check Google Play's current US policy on links to pay outside Play; if allowed, show it there too.
+- (medium, owner's choice) Apple Pay inside the app, without leaving it, is only possible through Apple's In-App
+  Purchase (a "tip" product, Apple keeps 15%); Apple Pay on its own is not allowed for digital tips.

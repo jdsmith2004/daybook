@@ -25,6 +25,9 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   time, and every question inside it can still be skipped. Its last page asks for a free account, because the plan was
   just built; "Keep it on this phone" stays as a quiet choice, since an account is never required (care is never locked,
   and the App Store does not allow forcing sign-up for features that work without one).
+- **The tip jar stays in the app.** Support (the Support button on Today, the one ask, the row on More) is on the web
+  and in the iPhone app, opening the Stripe tip page (which takes Apple Pay). It is never removed or hidden on a platform
+  without asking the owner first. A tip never unlocks anything.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.

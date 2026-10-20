@@ -4,6 +4,7 @@
 import { ITEM_WHEN_LEN, ITEM_WHERE, itemButton, itemDone, itemLen, type PItem } from '@daybook/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text, TextInput } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
@@ -141,25 +142,27 @@ export function LineEditor({ it, t, onAdd, onCancel }: { it: PItem; t: Tone; onA
           <T v="label">Then I will</T>
         </>
       ) : null}
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        multiline
-        autoFocus
-        maxLength={itemLen(it)}
-        accessibilityLabel={it.k === 'plan' ? 'Then I will' : 'The words'}
-        style={[input, { minHeight: 84, textAlignVertical: 'top' }]}
-        placeholderTextColor={c.muted}
-      />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !ok }}
-        disabled={!ok}
-        onPress={() => onAdd({ ...it, when: it.k === 'plan' ? when.trim() : it.when, text: text.trim() })}
-        style={({ pressed }) => [s.btn, { backgroundColor: ok ? c.accent : c.lip, shadowColor: c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
-        <Icon name="plus" size={19} color={ok ? c.accentInk : c.muted} />
-        <Text style={[s.btnT, { color: ok ? c.accentInk : c.muted }]}>{itemButton(it)}</Text>
-      </Pressable>
+      <KeepAbove style={{ gap: 10 }}>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          multiline
+          autoFocus
+          maxLength={itemLen(it)}
+          accessibilityLabel={it.k === 'plan' ? 'Then I will' : 'The words'}
+          style={[input, { minHeight: 84, textAlignVertical: 'top' }]}
+          placeholderTextColor={c.muted}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !ok }}
+          disabled={!ok}
+          onPress={() => onAdd({ ...it, when: it.k === 'plan' ? when.trim() : it.when, text: text.trim() })}
+          style={({ pressed }) => [s.btn, { backgroundColor: ok ? c.accent : c.lip, shadowColor: c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+          <Icon name="plus" size={19} color={ok ? c.accentInk : c.muted} />
+          <Text style={[s.btnT, { color: ok ? c.accentInk : c.muted }]}>{itemButton(it)}</Text>
+        </Pressable>
+      </KeepAbove>
       <Pressable accessibilityRole="button" onPress={onCancel} style={s.link}>
         <Text style={[s.linkT, { color: c.accentText }]}>Cancel</Text>
       </Pressable>

@@ -3,6 +3,7 @@
    so the keyboard never covers them. */
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
@@ -18,24 +19,26 @@ export function OwnField({ placeholder, max, onSave, onCancel }: { placeholder: 
     if (t) onSave(t);
   };
   return (
-    <Appear by={8} duration={220} style={s.own}>
-      <Field
-        label="In your own words"
-        hideLabel
-        value={text}
-        onChangeText={setText}
-        maxLength={max}
-        autoFocus
-        placeholder={placeholder}
-        returnKeyType="done"
-        onSubmitEditing={save}
-      />
-      <View style={s.ownRow}>
-        <View style={{ flex: 1 }}>
-          <Button label="Add" onPress={save} />
+    <Appear by={8} duration={220}>
+      <KeepAbove style={s.own}>
+        <Field
+          label="In your own words"
+          hideLabel
+          value={text}
+          onChangeText={setText}
+          maxLength={max}
+          autoFocus
+          placeholder={placeholder}
+          returnKeyType="done"
+          onSubmitEditing={save}
+        />
+        <View style={s.ownRow}>
+          <View style={{ flex: 1 }}>
+            <Button label="Add" onPress={save} />
+          </View>
+          <Link label="Cancel" onPress={onCancel} />
         </View>
-        <Link label="Cancel" onPress={onCancel} />
-      </View>
+      </KeepAbove>
     </Appear>
   );
 }

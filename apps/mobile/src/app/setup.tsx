@@ -58,6 +58,7 @@ import {
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1097,7 +1098,7 @@ export default function Setup() {
         <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (k + 1) + ' of ' + ps.length} />
         <View style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
           <ScrollView ref={scroll} contentContainerStyle={s.cardIn} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
-            {body}
+            <KeyboardRoom scroll={scroll}>{body}</KeyboardRoom>
           </ScrollView>
         </View>
         <View style={s.foot}>

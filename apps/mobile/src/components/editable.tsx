@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
+import { KeepAbove } from '@/components/keyboard';
 import { Icon, T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';
 
@@ -45,30 +46,32 @@ export function Editable({
 
   if (editing)
     return (
-      <Appear by={4} duration={180} style={{ gap: 8 }}>
-        {label ? <T v="label">{label}</T> : null}
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          onBlur={done}
-          autoFocus
-          multiline
-          maxLength={maxLength}
-          placeholder={placeholder}
-          placeholderTextColor={c.muted}
-          accessibilityLabel={label || prompt}
-          style={[big ? s.inBig : s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.accent }]}
-        />
-        <Pressable
-          accessibilityRole="button"
-          onPress={done}
-          hitSlop={8}
-          style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
-          <Icon name="check" size={16} color={c.accentInk} />
-          <T v="label" style={{ color: c.accentInk }}>
-            Done
-          </T>
-        </Pressable>
+      <Appear by={4} duration={180}>
+        <KeepAbove style={{ gap: 8 }}>
+          {label ? <T v="label">{label}</T> : null}
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            onBlur={done}
+            autoFocus
+            multiline
+            maxLength={maxLength}
+            placeholder={placeholder}
+            placeholderTextColor={c.muted}
+            accessibilityLabel={label || prompt}
+            style={[big ? s.inBig : s.in, { color: c.ink, backgroundColor: c.surface, borderColor: c.accent }]}
+          />
+          <Pressable
+            accessibilityRole="button"
+            onPress={done}
+            hitSlop={8}
+            style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
+            <Icon name="check" size={16} color={c.accentInk} />
+            <T v="label" style={{ color: c.accentInk }}>
+              Done
+            </T>
+          </Pressable>
+        </KeepAbove>
       </Appear>
     );
 

@@ -6,6 +6,7 @@ import { checkinFormOf, checkinSaveText, fmtClock, gameCompute, rhythm, saveChec
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
@@ -173,7 +174,7 @@ export default function Checkin() {
         <T v="title" style={s.c} accessibilityRole="header">
           Anything about today?
         </T>
-        <View style={{ alignSelf: 'stretch', gap: 12 }}>
+        <KeepAbove style={{ alignSelf: 'stretch', gap: 12 }}>
           <Field
             label="One line about the day (optional)"
             hideLabel
@@ -193,7 +194,7 @@ export default function Checkin() {
           <T v="small" tone="muted" style={s.c}>
             If something happened today, log it too. A slip is data, not a reset.
           </T>
-        </View>
+        </KeepAbove>
       </>
     );
   } else {

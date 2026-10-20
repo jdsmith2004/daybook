@@ -2,6 +2,7 @@
 import { CU_BODY, CU_CHG, CU_D, CU_FEEL, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -203,7 +204,7 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
         </T>
         <T style={s.c}>Pick the closest one, or write your own.</T>
         {writing ? (
-          <View style={{ width: '100%', gap: 8 }}>
+          <KeepAbove style={{ width: '100%', gap: 8 }}>
             <Field
               label="The thought, in your words"
               hideLabel
@@ -227,7 +228,7 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
               />
               <Link label="Cancel" onPress={() => setWriting(false)} />
             </View>
-          </View>
+          </KeepAbove>
         ) : null}
         <Dock>
           <Tiles

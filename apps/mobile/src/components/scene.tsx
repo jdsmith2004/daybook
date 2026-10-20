@@ -8,8 +8,9 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimension
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { FitArt, FitProvider, useFitRoom } from '@/components/fit';
+import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { Flame } from '@/components/flame';
+import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
@@ -58,36 +59,38 @@ export function SceneFrame({
         ref={scroll}
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
-        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + 24 }]}
+        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + (SHORT ? 10 : 24) }]}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
-          <View style={s.col}>
-            <View style={s.top}>
-              <View style={s.topL}>
-                {onBack ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.round, { backgroundColor: btn }]}>
-                    <Icon name="back" color={ink} />
-                  </Pressable>
-                ) : null}
-                <T v="eyebrow" style={{ color: dark ? nightInk.muted : c.muted }} accessibilityRole="header">
-                  {title}
-                </T>
+          <KeyboardRoom scroll={scroll}>
+            <View style={[s.col, SHORT && s.colShort]}>
+              <View style={s.top}>
+                <View style={s.topL}>
+                  {onBack ? (
+                    <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.round, { backgroundColor: btn }]}>
+                      <Icon name="back" color={ink} />
+                    </Pressable>
+                  ) : null}
+                  <T v="eyebrow" style={{ color: dark ? nightInk.muted : c.muted }} accessibilityRole="header">
+                    {title}
+                  </T>
+                </View>
+                <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
+                  <Icon name="x" color={ink} />
+                </Pressable>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
-                <Icon name="x" color={ink} />
-              </Pressable>
+              {dots ? (
+                <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
+                  {Array.from({ length: dots.n }, (_, j) => (
+                    <Dot key={j} state={j < dots.i ? 2 : j === dots.i ? 1 : 0} colors={[btn, dark ? '#FFC832' : c.sun, dark ? nightInk.ink : c.accent]} />
+                  ))}
+                </View>
+              ) : null}
+              <View style={[s.card, SHORT && s.cardShort]}>{children}</View>
+              {footer ? <View style={s.foot}>{footer}</View> : null}
             </View>
-            {dots ? (
-              <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
-                {Array.from({ length: dots.n }, (_, j) => (
-                  <Dot key={j} state={j < dots.i ? 2 : j === dots.i ? 1 : 0} colors={[btn, dark ? '#FFC832' : c.sun, dark ? nightInk.ink : c.accent]} />
-                ))}
-              </View>
-            ) : null}
-            <View style={s.card}>{children}</View>
-            {footer ? <View style={s.foot}>{footer}</View> : null}
-          </View>
+          </KeyboardRoom>
         </FitProvider>
         {sheet && !pinSheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
@@ -228,6 +231,9 @@ const s = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 6, paddingHorizontal: 2 },
   dot: { flex: 1, height: 6, borderRadius: 3 },
   card: { flexGrow: 1, alignItems: 'center', gap: 14, paddingTop: 8 },
+  /* a short phone (the SE) packs a little tighter, so a moment fits without scrolling */
+  colShort: { gap: 10 },
+  cardShort: { gap: 12, paddingTop: 2 },
   foot: { alignItems: 'center', paddingTop: 4 },
   dock: { marginTop: 'auto', alignSelf: 'stretch', gap: 10, paddingTop: 10 },
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },

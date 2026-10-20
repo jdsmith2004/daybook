@@ -9,7 +9,8 @@ import { Text } from '@/components/text';
 
 import { Confetti } from '@/components/celebrate';
 import { Fireworks, GradFlame } from '@/components/grad';
-import { SceneFrame } from '@/components/scene';
+import { FitArt } from '@/components/fit';
+import { Dock, SceneFrame } from '@/components/scene';
 import { openTip, TIP_URL } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -44,13 +45,15 @@ export default function Graduated() {
     </View>
   );
   return (
-    <SceneFrame title="Graduation" sky="night" onClose={close} footer={<Button label="Keep going" onPress={close} />}>
+    <SceneFrame title="Graduation" sky="night" onClose={close}>
       <Fireworks bursts={6} />
       <Confetti big />
       <View style={s.body}>
-        <Animated.View style={pop(flame, 0.5)}>
-          <GradFlame level={g.level.n} size={150} />
-        </Animated.View>
+        <FitArt drop={0.4}>
+          <Animated.View style={pop(flame, 0.5)}>
+            <GradFlame level={g.level.n} size={150} />
+          </Animated.View>
+        </FitArt>
         <Animated.View style={[{ alignItems: 'center', gap: 8 }, rise(words, 14)]}>
           <Text style={[s.eye, { color: ink }]}>{fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</Text>
           <Text style={[s.h, { color: ink }]} accessibilityRole="header">
@@ -85,6 +88,9 @@ export default function Graduated() {
           ) : null}
         </Animated.View>
       </View>
+      <Dock>
+        <Button label="Keep going" onPress={close} />
+      </Dock>
     </SceneFrame>
   );
 }

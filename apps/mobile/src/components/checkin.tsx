@@ -5,6 +5,7 @@ import { checkinFormOf, checkinLine, checkinSaveText, saveCheckin, type CheckinF
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
@@ -128,14 +129,16 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
       <Rate label="Energy" lo="drained" hi="full" value={form.e} onChange={(v) => set('e', v)} />
       <Rate label="Stress" lo="calm" hi="high" value={form.s} onChange={(v) => set('s', v)} />
       <YesNo label="Reached out to someone today?" value={form.ro} onPick={(v) => set('ro', form.ro === v ? null : v)} />
-      <Field
-        label="One line about the day (optional)"
-        value={form.n}
-        maxLength={200}
-        placeholder="Rough day at work. Texted a friend."
-        onChangeText={(t) => set('n', t)}
-      />
-      <Button label={done ? 'Update check-in' : isToday ? 'Save today' : 'Save this day'} onPress={save} />
+      <KeepAbove style={{ gap: 14 }}>
+        <Field
+          label="One line about the day (optional)"
+          value={form.n}
+          maxLength={200}
+          placeholder="Rough day at work. Texted a friend."
+          onChangeText={(t) => set('n', t)}
+        />
+        <Button label={done ? 'Update check-in' : isToday ? 'Save today' : 'Save this day'} onPress={save} />
+      </KeepAbove>
       {done ? (
         <Pressable accessibilityRole="button" onPress={cancel} style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
           <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Cancel changes</Text>

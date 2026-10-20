@@ -5,6 +5,7 @@ import type { ReactNode, Ref } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 
 import { Appear } from '@/components/appear';
+import { KeyboardRoom, useKeyboardRoom } from '@/components/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';
@@ -34,10 +35,11 @@ export function SheetFrame({
   /* on iOS a sheet already opens below the status bar, so it needs no room for it */
   const route = useRoute();
   const card = Platform.OS === 'ios' && SHEETS.includes(route.name);
+  const kb = useKeyboardRoom(scrollRef, card);
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View onLayout={kb.onLayout} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView
-        ref={scrollRef}
+        ref={kb.ref}
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
@@ -58,8 +60,10 @@ export function SheetFrame({
               <Icon name="x" color={c.ink} />
             </Pressable>
           </View>
-          {children}
-          {footer}
+          <KeyboardRoom room={kb.room}>
+            {children}
+            {footer}
+          </KeyboardRoom>
         </Appear>
       </ScrollView>
     </View>

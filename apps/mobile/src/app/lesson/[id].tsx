@@ -47,6 +47,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -606,9 +607,11 @@ export default function LessonScreen() {
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
-          <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
-            {body}
-          </Appear>
+          <KeyboardRoom scroll={scroll}>
+            <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
+              {body}
+            </Appear>
+          </KeyboardRoom>
         </FitProvider>
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}

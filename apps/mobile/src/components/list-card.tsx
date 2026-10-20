@@ -3,6 +3,7 @@
 import { listAdd, listEdit, listMove, listRemove, LISTS, type ListKey } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { TextInput } from '@/components/text';
 
 import { Card, Icon, T } from '@/components/ui';
@@ -119,7 +120,7 @@ export function ListCard({
             />
           ))}
           {adding ? (
-            <View style={[s.addBox, { borderColor: c.accent, backgroundColor: c.surface }]}>
+            <KeepAbove style={[s.addBox, { borderColor: c.accent, backgroundColor: c.surface }]}>
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
@@ -152,7 +153,7 @@ export function ListCard({
                   </T>
                 </Pressable>
               </View>
-            </View>
+            </KeepAbove>
           ) : rows.length < L.max ? (
             <Pressable
               accessibilityRole="button"
@@ -259,7 +260,7 @@ function Row({
         )}
       </Pressable>
       {open ? (
-        <View style={{ gap: 10, paddingTop: 4 }}>
+        <KeepAbove style={{ gap: 10, paddingTop: 4 }}>
           <TextInput
             value={val}
             onChangeText={setVal}
@@ -276,7 +277,7 @@ function Row({
             <View style={{ flex: 1 }} />
             <Tool icon="check" label="Done" on onPress={() => (onSave(val), onToggle())} />
           </View>
-        </View>
+        </KeepAbove>
       ) : null}
     </Animated.View>
   );

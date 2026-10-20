@@ -173,10 +173,17 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
           <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
             {h.eb.toUpperCase()}
           </Text>
-          <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} adjustsFontSizeToFit style={[s.n, { color: ink }]}>
-            {h.n}
-            {h.unit ? <Text style={[s.unit, { color: soft }]}>{' ' + h.unit}</Text> : null}
-          </Text>
+          {/* the words beside the number wrap to a second line on a narrow phone, so they never run under the level */}
+          <View style={s.nRow}>
+            <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.n, { color: ink }]}>
+              {h.n}
+            </Text>
+            {h.unit ? (
+              <Text maxFontSizeMultiplier={ON_ART} style={[s.unit, { color: soft }]}>
+                {h.unit}
+              </Text>
+            ) : null}
+          </View>
         </Pressable>
       ) : null}
       <Pressable
@@ -285,8 +292,9 @@ const s = StyleSheet.create({
   num: { position: 'absolute', left: 14, bottom: 16, maxWidth: '52%' },
   eb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },
   n: { fontFamily: font.display, fontSize: 34, lineHeight: 38 },
-  unit: { fontFamily: font.display, fontSize: 17 },
-  lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '50%' },
+  nRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 20, paddingBottom: 4 },
+  lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '45%' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
   chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
   lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },

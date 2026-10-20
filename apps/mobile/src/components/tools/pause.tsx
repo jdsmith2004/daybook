@@ -32,7 +32,6 @@ import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
-import { useReducedMotion } from '@/lib/motion';
 import { useCareSettings, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -41,7 +40,6 @@ import type { ToolProps } from './types';
 export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   const { snap, update, say } = useStore();
   const c = useTheme();
-  const reduce = useReducedMotion();
   const sos = useSos();
   const st = useCareSettings();
   const t = sos.timer;
@@ -177,7 +175,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
           {/* the ten minutes as a squiggle around the sun that fills as time passes, crawling slowly */}
           <View style={{ width: RING, alignItems: 'center' }}>
             <View style={s.ringAt} pointerEvents="none">
-              <WavyRing size={RING} p={1 - left / t.dur} color={c.sun} track={c.line} waves={16} phase={reduce ? 0 : -el * 0.6} />
+              <WavyRing size={RING} p={1 - left / t.dur} color={c.scheme === 'dark' ? c.sun : c.accent} track={c.line} />
             </View>
             <View style={{ marginTop: (RING - ORB) / 2 }}>
               <Orb pattern={guide ? 'calm' : null} sec={el} label="Waiting it out" time={fmtMS(left)} size={ORB} />
@@ -201,15 +199,17 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
           <T v="small" tone="muted" style={s.c}>
             Ten minutes is a guide. End the pause whenever the urge eases.
           </T>
-          <Link
-            label="Want a person right now?"
-            onPress={() => {
-              endEarly();
-              sos.setTimer(null);
-              if (sos.ur) sos.set({ ...sos.ur, used: sos.ur.used.concat('pause') });
-              router.replace({ pathname: '/tool/[id]', params: { id: 'message' } });
-            }}
-          />
+          <View style={{ alignSelf: 'center' }}>
+            <Link
+              label="Want a person right now?"
+              onPress={() => {
+                endEarly();
+                sos.setTimer(null);
+                if (sos.ur) sos.set({ ...sos.ur, used: sos.ur.used.concat('pause') });
+                router.replace({ pathname: '/tool/[id]', params: { id: 'message' } });
+              }}
+            />
+          </View>
         </Dock>
       </Stage>
     );

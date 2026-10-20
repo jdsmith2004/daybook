@@ -1379,6 +1379,18 @@ finish and counts as a calm move; a pattern changed from SOS also becomes the To
 tones vanished on the skies; Go to bed's checks moved into the lower half with the plans; Name the thought's main button is
 "Let it go", with Done as a quiet link.
 
+### Design pass (done, 2026-10-20)
+
+The shapes are now Android's own: `lib/m3-shapes.ts` ports androidx RoundedPolygon and all 35 Material shapes
+(Apache 2.0), and `shapes.tsx` builds `Shape`, `MorphShape`, `WavyRing` and `WavyLine` on it at Material's proportions
+(thin stroke, small wiggle, a slow crawl). `lib/motion.ts` holds Material's springs. The breath dots drift out evenly
+and land on the ring with no burst; the Get curious wave draws in quickly and fills behind its dot; each 5-4-3-2-1
+sense has its own family of shapes that morph in; the tool icons, Move's beat, Surprise's faces and the Finish burst
+use varied shapes. My reasons: the two faint shapes behind the card are gone, and the category sits in a soft cookie
+medallion at the top of the card. An empty calm-move menu falls back to the starting ideas (app and `pickIdea` in core).
+Checked on the web build at phone size, light and dark: SOS tools list, My reasons, Name the thought, Go to bed, Get
+curious (all steps), and the 5-4-3-2-1 Finish.
+
 ### Waiting on the owner
 
 - Decided (the owner, October 20): the first SOS screen keeps its horizon sun; particle breath is for Breathe and the pause.

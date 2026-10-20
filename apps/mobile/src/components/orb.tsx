@@ -31,21 +31,22 @@ export function useSeconds(start: number | null, on = true) {
   return start == null ? 0 : Math.max(0, (now - start) / 1000);
 }
 
-/* the particle breath: about thirty dots of a few sizes. At rest they sit in a soft cluster at the center. On a breath in
-   they burst out along random paths to a loose scatter, then glide into an evenly spaced ring; on a hold they shimmer and
-   the ring turns slowly; on a breath out they drift back in, curling a little. Each breath gets a fresh scatter. The
-   motion runs on Reanimated shared values (the UI thread on iOS and Android, plain JavaScript on the web). */
-const DOTS = 30;
-/** where the burst ends and the glide into the ring begins, as a part of the breath in */
-const BURST = 0.38;
+/* the particle breath: about thirty dots of several sizes. At rest they sit in a soft cluster at the center. On a breath
+   in each one travels a curved path out through its own random spot and settles into an evenly spaced ring right at the
+   top of the breath, so the scatter opens as slowly and evenly as the breath fills (never a burst to suck in at once); on
+   a hold they shimmer and the ring turns slowly; on a breath out they drift back in, curling a little. Each breath gets a
+   fresh scatter. The motion runs on Reanimated shared values (the UI thread on iOS and Android, plain JavaScript on the web). */
+const DOTS = 32;
+/** the dots start one after another over this part of the breath in, so the bloom unfolds */
+const STAGGER = 0.14;
 /** how far a breath in goes on the first of the sigh's two breaths in */
 const IN1 = 0.8;
 const TAU = Math.PI * 2;
 
 /** one dot's own look: its size (a part of the orb's size), its color and how it twinkles */
 const LOOK = Array.from({ length: DOTS }, (_, i) => ({
-  d: [0.05, 0.062, 0.038, 0.072, 0.045][i % 5],
-  col: i % 3,
+  d: [0.052, 0.068, 0.034, 0.078, 0.044, 0.026, 0.058][i % 7],
+  col: (i * 5) % 4,
   /* whole numbers, so the twinkle loops without a jump */
   tw: 1 + (i % 3),
   seed: (i * 0.618) % 1,
@@ -65,9 +66,9 @@ function cluster(): number[] {
 function scatter(): number[] {
   const out: number[] = [];
   for (let i = 0; i < DOTS; i++) {
-    /* near its own place on the ring, so the glide into the ring stays short and calm */
-    const a = (i / DOTS) * TAU + (Math.random() - 0.5) * 1.6;
-    const r = 0.45 + Math.random() * 0.75;
+    /* near its own place on the ring, so its path stays a calm curve; some fly past the ring and some stay short of it */
+    const a = (i / DOTS) * TAU - Math.PI / 2 + (Math.random() - 0.5) * 1.8;
+    const r = 0.5 + Math.random() * 0.62;
     out.push(r * Math.cos(a), r * Math.sin(a));
   }
   return out;
@@ -125,10 +126,11 @@ export function Orb({
       far.value = scatter();
       out.value = 0;
       p.value = 0;
+      /* even through the breath: each dot eases itself (a gentle start and a soft landing) */
       p.value = withTiming(ph.k === 'in1' ? IN1 : 1, { duration: ms, easing: Easing.linear });
     } else if (ph.k === 'in2') {
       out.value = 0;
-      p.value = withTiming(1, { duration: ms, easing: Easing.out(Easing.quad) });
+      p.value = withTiming(1, { duration: ms, easing: Easing.linear });
     } else if (ph.k === 'out') {
       home.value = cluster();
       out.value = 1;
@@ -144,8 +146,8 @@ export function Orb({
   const words = ph ? PH_TXT[ph.k] : label || '';
   /* the radius of the ring the dots make at the top of a breath */
   const rr = size * 0.37;
-  /* on a light sky the palest gold fades, so it is a deeper gold there */
-  const cols = [c.sun, c.sun2, c.scheme === 'dark' ? '#FFE79A' : '#F5B02E'];
+  /* one warm family, golds to amber: deeper on a light sky, where the palest gold would fade, and lighter at night */
+  const cols = c.scheme === 'dark' ? ['#FFD25A', '#FFE9A8', '#FFB547', '#FFC97A'] : ['#F6A91F', '#FFC832', '#EE8A25', '#FFB43A'];
   const glow = useAnimatedStyle(() => {
     const v = still ? (pattern ? 0.5 + 0.5 * p.value : 0.6) : p.value;
     return { opacity: 0.4 + 0.5 * v, transform: [{ scale: 0.75 + 0.4 * v }] };
@@ -168,8 +170,8 @@ export function Orb({
             <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#orbGlow)" />
           </Svg>
         </Reanimated.View>
-        {/* how full a breath in goes: a faint ring where the dots gather */}
-        <View style={[s.guide, { width: rr * 2, height: rr * 2, borderRadius: rr, borderColor: ink || c.ink }]} />
+        {/* how full a breath in goes: a faint ring where the dots gather, only while there is a breath to follow */}
+        {pattern ? <View style={[s.guide, { width: rr * 2, height: rr * 2, borderRadius: rr, borderColor: ink || c.ink }]} /> : null}
         {ring != null ? (
           <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
             <Circle cx={size / 2} cy={size / 2} r={R} stroke={ink || c.ink} strokeOpacity={0.14} strokeWidth={6} fill="none" />
@@ -216,11 +218,6 @@ export function Orb({
     </View>
   );
 }
-
-const ease = (x: number) => {
-  'worklet';
-  return x * x * (3 - 2 * x);
-};
 
 /** one dot of the particle breath */
 function Dot({
@@ -273,14 +270,27 @@ function Dot({
       x = hx + (tx - hx) * v;
       y = hy + (ty - hy) * v;
     } else {
-      /* breathing in: a burst out to the scatter, then a glide into the ring */
-      const q1 = Math.min(1, v / BURST);
-      const e1 = 1 - Math.pow(1 - q1, 3);
-      const e2 = ease(Math.max(0, (v - BURST) / (1 - BURST)));
-      const sx = hx + (far.value[i * 2] * rr - hx) * e1;
-      const sy = hy + (far.value[i * 2 + 1] * rr - hy) * e1;
-      x = sx + (rr * Math.cos(a) - sx) * e2;
-      y = sy + (rr * Math.sin(a) - sy) * e2;
+      /* breathing in: each dot drifts out from the cluster to its place on the ring, in polar terms so the opening grows
+         evenly with the breath: its distance from the middle starts gently, rises steadily and eases into the ring at the
+         very top, like air filling the lungs (never a sudden burst), while it swings out through its own random scatter spot on the way and
+         back. Each dot sets off a little after the one before, and all land together. */
+      const delay = l.seed * STAGGER;
+      const q = Math.min(1, Math.max(0, (v - delay) / (1 - delay)));
+      const t = 0.5 - 0.5 * Math.cos(q * Math.PI);
+      const swing = Math.sin(q * Math.PI);
+      const rh = Math.hypot(hx, hy);
+      const th = Math.atan2(hy, hx);
+      let da = a - th;
+      da -= Math.round(da / TAU) * TAU;
+      const fx = far.value[i * 2];
+      const fy = far.value[i * 2 + 1];
+      const rf = Math.hypot(fx, fy) * rr;
+      let fa = Math.atan2(fy, fx) - (th + da / 2);
+      fa -= Math.round(fa / TAU) * TAU;
+      const rad = rh + (rr - rh) * t + (rf - (rh + rr) / 2) * swing * 0.5;
+      const ang = th + da * t + fa * swing * 0.6;
+      x = rad * Math.cos(ang);
+      y = rad * Math.sin(ang);
     }
     /* at rest the cluster breathes very slightly, so it never looks frozen */
     const drift = 1 + 0.04 * (1 - v) * Math.sin((clock.value + l.seed) * TAU);
@@ -299,12 +309,23 @@ function Dot({
           borderRadius: d / 2,
           marginLeft: -d / 2,
           marginTop: -d / 2,
-          backgroundColor: color,
-          boxShadow: `0 0 ${Math.round(d * 0.7)}px ${color}`,
+          /* a soft halo, lighter than the dot, so it glows without going muddy */
+          boxShadow: `0 0 ${Math.round(d * 0.6)}px ${color}70`,
         },
         st,
-      ]}
-    />
+      ]}>
+      {/* each dot is a small lit sphere: a pale spot of light up and to the left, deepening to its color at the edge */}
+      <Svg width={d} height={d}>
+        <Defs>
+          <RadialGradient id={'dot' + i} cx="38%" cy="34%" r="70%">
+            <Stop offset="0" stopColor="#FFFBEA" />
+            <Stop offset="0.45" stopColor={color} />
+            <Stop offset="1" stopColor={color} stopOpacity={0.92} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={d / 2} cy={d / 2} r={d / 2} fill={`url(#dot${i})`} />
+      </Svg>
+    </Reanimated.View>
   );
 }
 
@@ -459,6 +480,6 @@ const s = StyleSheet.create({
   dot: { position: 'absolute', left: '50%', top: '50%' },
   orb: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 30, elevation: 6 },
   phase: { fontFamily: font.display, fontSize: 30, lineHeight: 38 },
-  guide: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', opacity: 0.18 },
+  guide: { position: 'absolute', borderWidth: 1, opacity: 0.1 },
   time: { fontFamily: font.bodySemi, fontSize: 16, opacity: 0.8, fontVariant: ['tabular-nums'] },
 });

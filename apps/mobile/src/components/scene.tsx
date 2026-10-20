@@ -13,7 +13,7 @@ import { Flame } from '@/components/flame';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
 
 export function SceneFrame({
@@ -151,15 +151,16 @@ export function Middle({ children }: { children: ReactNode }) {
     the words under it. The Dock with Done goes after it. */
 /* the shapes that fly out from behind the flame and settle around it: where each lands (x, y from the center), its kind,
    size, turn and color slot. Fixed, so every Finish is the same loose, hand-placed ring. */
-const BURST: { x: number; y: number; kind: ShapeKind; size: number; turn: number; wobble?: number; tint: number }[] = [
-  { x: -96, y: -42, kind: 'cookie', size: 32, turn: 12, tint: 0 },
-  { x: -58, y: -86, kind: 'tri', size: 22, turn: -20, tint: 1 },
-  { x: 8, y: -100, kind: 'circle', size: 16, turn: 0, wobble: 0.6, tint: 2 },
-  { x: 66, y: -80, kind: 'clover', size: 30, turn: 30, tint: 3 },
-  { x: 104, y: -24, kind: 'pent', size: 20, turn: 8, tint: 1 },
-  { x: 96, y: 46, kind: 'flower', size: 27, turn: -14, tint: 0 },
-  { x: -100, y: 40, kind: 'scallop', size: 22, turn: 4, tint: 2 },
-  { x: -70, y: 84, kind: 'circle', size: 14, turn: 0, wobble: 0.8, tint: 3 },
+const BURST: { x: number; y: number; kind: ShapeKind; size: number; turn: number; tint: number }[] = [
+  { x: -98, y: -40, kind: 'cookie4', size: 30, turn: 12, tint: 0 },
+  { x: -62, y: -88, kind: 'pill', size: 20, turn: -35, tint: 1 },
+  { x: 4, y: -106, kind: 'sunny', size: 24, turn: 0, tint: 2 },
+  { x: 66, y: -82, kind: 'clover4', size: 30, turn: 20, tint: 3 },
+  { x: 108, y: -22, kind: 'gem', size: 20, turn: 10, tint: 1 },
+  { x: 98, y: 46, kind: 'cookie6', size: 27, turn: -14, tint: 0 },
+  { x: 58, y: 92, kind: 'triangle', size: 16, turn: 24, tint: 2 },
+  { x: -102, y: 42, kind: 'softBurst', size: 24, turn: 4, tint: 2 },
+  { x: -66, y: 90, kind: 'heart', size: 17, turn: -10, tint: 3 },
 ];
 
 /** the end of a tool: the flame pops in and a few shapes burst out from behind it and settle around it, once. `tone` is the
@@ -168,18 +169,22 @@ export function Finish({ level, title, text, tone }: { level: number; title: str
   const c = useTheme();
   const reduce = useReducedMotion();
   const pop = useRef(new Animated.Value(0)).current;
-  const burst = useRef(new Animated.Value(0)).current;
+  /* each shape on its own spring (Material's default spatial spring: a touch of overshoot), leaving one after another */
+  const fly = useRef(BURST.map(() => new Animated.Value(0))).current;
   useEffect(() => {
     if (reduce) {
       pop.setValue(1);
-      burst.setValue(1);
+      fly.forEach((v) => v.setValue(1));
       return;
     }
     Animated.parallel([
-      Animated.spring(pop, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }),
-      Animated.timing(burst, { toValue: 1, duration: 1000, delay: 80, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+      Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }),
+      Animated.stagger(
+        45,
+        fly.map((v) => Animated.spring(v, { toValue: 1, ...SPRING.default, delay: 80, useNativeDriver: NATIVE })),
+      ),
     ]).start();
-  }, [reduce, pop, burst]);
+  }, [reduce, pop, fly]);
   const own = tone ? ({ sky: c.sky, mint: c.mint, accent: c.accent, sun: c.sun, violet: c.violet, coral: c.coral } as Record<string, string>)[tone] : undefined;
   const tints = own ? [own, c.sun, c.sun2, own] : [c.sun, c.sun2, c.coral, c.violet];
   return (
@@ -187,10 +192,8 @@ export function Finish({ level, title, text, tone }: { level: number; title: str
       <FitArt drop={0.4}>
         <View style={s.finArt}>
           {BURST.map((b, i) => {
-            /* each shape leaves a little after the one before, overshoots a touch, and settles */
-            const start = i * 0.04;
-            const out = burst.interpolate({ inputRange: [start, 1], outputRange: [0, 1], extrapolate: 'clamp' });
-            const fly = burst.interpolate({ inputRange: [start, start + (1 - start) * 0.7, 1], outputRange: [0, 1.08, 1], extrapolate: 'clamp' });
+            const f = fly[i];
+            const out = f.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' });
             return (
               <Animated.View
                 key={i}
@@ -199,14 +202,14 @@ export function Finish({ level, title, text, tone }: { level: number; title: str
                   {
                     opacity: out.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 0.9, 0.9] }),
                     transform: [
-                      { translateX: fly.interpolate({ inputRange: [0, 1], outputRange: [0, b.x] }) },
-                      { translateY: fly.interpolate({ inputRange: [0, 1], outputRange: [10, b.y] }) },
+                      { translateX: f.interpolate({ inputRange: [0, 1], outputRange: [0, b.x] }) },
+                      { translateY: f.interpolate({ inputRange: [0, 1], outputRange: [10, b.y] }) },
                       { scale: out.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }) },
                       { rotate: out.interpolate({ inputRange: [0, 1], outputRange: [b.turn - 90 + 'deg', b.turn + 'deg'] }) },
                     ],
                   },
                 ]}>
-                <Shape kind={b.kind} size={b.size} color={tints[b.tint]} wobble={b.wobble} seed={i + 1} />
+                <Shape kind={b.kind} size={b.size} color={tints[b.tint]} />
               </Animated.View>
             );
           })}

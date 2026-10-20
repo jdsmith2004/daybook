@@ -190,8 +190,8 @@ graduation does not take the award away (the core test covers it; it was not wal
 
 **Sign-up without an emailed code (October 19, 2026):** the pre-sign-up trigger confirms new accounts made in the app and
 leaves the email unverified; Settings offers "Confirm your email" (a code, then password reset works), and a reset for an
-unconfirmed email says so plainly. Built and tested (unit tests, Terraform validate); off until the owner applies
-`infra/bootstrap` and `auto_confirm` is turned on (infra/README.md). Not yet tried against the real Cognito.
+unconfirmed email says so plainly. Built and tested (unit tests, Terraform validate); the owner applied `infra/bootstrap` and
+`auto_confirm` is on. Not yet tried against the real Cognito from a phone.
 
 ## The remap (October 17, 2026)
 

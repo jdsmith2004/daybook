@@ -27,7 +27,7 @@ variable "signup_zip" {
 variable "auto_confirm" {
   description = "true: signing up in the app needs no emailed code (the sign-up trigger confirms the account and leaves the email unverified until the person confirms it from Settings). Needs the daybook-app-signup role, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "invite_only" {

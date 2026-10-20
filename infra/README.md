@@ -69,7 +69,7 @@ account at once and leaves the email unverified, so a mistyped address can never
 confirms their email later from Settings, which turns password reset on. It also means sign-ups send no email, so Cognito's
 built-in limit (about 50 emails a day) no longer caps them.
 
-It is off until the trigger's role exists. To turn it on:
+It is on. It needed the trigger's role first, made this way:
 
 1. Apply the bootstrap stack once with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It adds the
    `daybook-app-signup` role (its own logs, nothing else) and lets deploys hand that role to the trigger.

@@ -57,7 +57,7 @@ export const tipAnswered = (st: Settings, tk: DayKey, now = Date.now()): Change 
 /** the words, in one place */
 export const TIP_WORDS = {
   h: 'Daybook runs on tips.',
-  p: 'No ads, no subscription, and nothing locked. One person builds it, and tips from the people it helps are what keep it going and let it reach more people who need it. If it has helped you, a tip of any size makes a real difference.',
+  p: 'No ads, no subscription, and nothing to pay for. One person builds it, and tips from the people it helps are what keep it going and let it reach more people who need it. If it has helped you, a tip of any size makes a real difference.',
   go: 'Support Daybook',
   no: 'Not right now',
   foot: 'This card will not come back. Support stays at the top of Today and on More.',
@@ -68,7 +68,7 @@ export const TIP_WORDS = {
     h: 'Everything in Daybook is free.',
     p: 'Daybook is built by one person, and it runs on tips from the people it helps. Tips pay for the servers and the developer account, and for the time to make it better and reach more people who need it.',
     p2: 'If Daybook helps you, a tip of any size makes a real difference. If you cannot right now, that is okay. Daybook is yours either way.',
-    pills: ['No ads', 'No tracking', 'Nothing locked'],
+    pills: ['No ads', 'No tracking', 'No subscription'],
   },
   /** the small button at the top of Today */
   top: 'Support',

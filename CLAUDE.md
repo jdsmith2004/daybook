@@ -20,6 +20,11 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS, logging, Rekindle, the plan, the tools and Today work with no account. An account opens sync,
   a safe copy, and the lessons after the first three (see accounts.ts). Ask for one only at good moments, never after a slip.
+- **Setup is hard to skip, and it ends with the account ask.** A new person is meant to finish setup and leave knowing the
+  app will help them. There is no "skip setup" button; closing setup (or SOS, or leaving the app) brings it back the next
+  time, and every question inside it can still be skipped. Its last page asks for a free account, because the plan was
+  just built; "Keep it on this phone" stays as a quiet choice, since an account is never required (care is never locked,
+  and the App Store does not allow forcing sign-up for features that work without one).
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.

@@ -25,7 +25,7 @@ export default function Account() {
   const c = useTheme();
   const sync = useSync();
   const p = useLocalSearchParams<{ why?: string; then?: string }>();
-  const [mode, setMode] = useState<'new' | 'in'>('new');
+  const [mode, setMode] = useState<'new' | 'in'>(p.why === 'in' ? 'in' : 'new');
   const [step, setStep] = useState<Step>('start');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -113,9 +113,13 @@ export default function Account() {
   };
 
   const why =
-    p.why === 'lesson'
-      ? 'The first three lessons are open to everyone. A free account opens all of them.'
-      : 'A free account keeps a copy of your progress safe and the same on every device you use. It is private to you.';
+    mode === 'in'
+      ? 'Sign in to bring your log, your plan and your progress to this device.'
+      : p.why === 'lesson'
+        ? 'The first three lessons are open to everyone. A free account opens all of them.'
+        : p.why === 'setup'
+          ? 'Your plan is built. A free account keeps it, your log and your progress safe, and the same on every device you use. It is private to you.'
+          : 'A free account keeps a copy of your progress safe and the same on every device you use. It is private to you.';
 
   let body;
   if (step === 'done')
@@ -270,7 +274,7 @@ export default function Account() {
 
   return (
     <SheetFrame
-      title={step === 'done' ? 'Welcome' : mode === 'new' && step === 'start' ? 'Create your free account' : 'Your account'}
+      title={step === 'done' ? 'Welcome' : step !== 'start' ? 'Your account' : mode === 'new' ? 'Create your free account' : 'Welcome back'}
       sub={step === 'start' ? why : undefined}>
       {body}
       {busy && step === 'start' ? <ActivityIndicator color={c.accent} /> : null}

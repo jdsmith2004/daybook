@@ -162,6 +162,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
 /* ---------- the pages ---------- */
 export type PageKind =
   | 'hello'
+  | 'account'
   | 'how'
   | 'tiles'
   | 'years'
@@ -217,6 +218,8 @@ export interface ObEnv {
   notify?: boolean;
   /** false where no tip link is offered (Android): the free page, with its tip button, is skipped */
   tips?: boolean;
+  /** true when this build has accounts and the person is not signed in: the account page shows once the plan is built */
+  account?: boolean;
 }
 export const OB_PAGES: ObPage[] = [
   { id: 'hello', s: 'welcome', k: 'hello' },
@@ -350,6 +353,9 @@ export const OB_PAGES: ObPage[] = [
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
   /* Daybook is free, said plainly with a tip button (support.ts); only when a tip link is set */
   { id: 'free', s: 'plan', k: 'free', need: (_a, env) => !!SUPPORT_URL && env.tips !== false },
+  /* a free account, asked for at the best moment there is: the plan was just built, and nothing has gone wrong yet
+     (accounts.ts). It comes last, so it is the one ask left in mind. Never required: "Keep it on this phone" goes on. */
+  { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
   { id: 'done', s: 'plan', k: 'done' },
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env));

@@ -109,3 +109,10 @@ describe('the goal it suggests', () => {
     expect(core.obSuggest({})).toBe('week');
   });
 });
+
+it('asks for a free account once the plan is built, only when the build has accounts and the person is not signed in', () => {
+  expect(core.obPages({}).some((p) => p.id === 'account')).toBe(false);
+  const ids = core.obPages({}, { account: true, notify: true }).map((p) => p.id);
+  expect(ids.indexOf('account')).toBeGreaterThan(ids.indexOf('review'));
+  expect(ids.indexOf('account')).toBe(ids.indexOf('done') - 1);
+});

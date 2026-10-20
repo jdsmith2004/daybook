@@ -172,6 +172,22 @@ graduation does not take the award away (the core test covers it; it was not wal
 - Left as they are: the review clock's shrink-to-fit, the graduation flame stepping aside on the SE, and the level bar
   under "90 of 90".
 
+**Onboarding and sign-in pass (October 19, 2026):**
+
+- Setup is hard to skip. The "Skip setup and start a tracking week" link is gone. Closing SOS (or a tool or log opened from
+  it) brings setup back, and so does Daybook coming back from the background. Only setup's own X keeps the welcome page up,
+  until the next time. Checked on the web build and on the iPhone 16 Pro simulator.
+- Setup ends with "Your plan is ready. Keep it safe.": a free account as the main button, "Keep it on this phone for now"
+  as the quiet link. It is the last page before "Welcome in", after the plan is saved, and it drops out by itself once the
+  person is signed in. No Back button there (the plan is already saved).
+- "Sign in" on the welcome page and setup's first page now opens the account sheet on its Sign in tab, titled "Welcome
+  back", instead of on Create an account. The keep-me-signed-in box no longer shows on the welcome page before sign-in.
+- The free page said "Nothing locked"; lessons after the third open with a free account, so it says "No subscription",
+  and the support page says "nothing behind a paywall".
+- SOS before setup says "Setup can wait. This comes first." instead of "You can set up Daybook later."
+- Not tested: creating an account and the email code (it needs a real inbox), and signing in to an account that already has
+  a log. Those need the owner on TestFlight.
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

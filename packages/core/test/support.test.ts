@@ -45,7 +45,7 @@ it('asks once: after either answer, Today never asks again', () => {
 it('the words are honest about the need, never threaten, and promise nothing for money', () => {
   const all = JSON.stringify(core.TIP_WORDS);
   expect(all).not.toMatch(/n't|alive|only \d|%|unlock (more|every)|premium/i);
-  expect(core.TIP_WORDS.p).toContain('nothing locked');
+  expect(core.TIP_WORDS.p).toContain('nothing to pay for');
   expect(all).not.toMatch(/shut|close down|go away|lose/i);
 });
 
@@ -56,11 +56,12 @@ it('the Support button on Today hides in the days after a slip, and with no link
   expect(core.tipButton(core.addEvent({}, core.addDays(tk, -core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(true);
 });
 
-it('the setup shows its free page only when a link is set, just before the end', () => {
+it('the setup shows its free page only when a link is set, just before the end (and the account ask)', () => {
   const ids = core.obPages({}).map((p) => p.id);
   expect(ids.includes('free')).toBe(!!core.SUPPORT_URL);
+  expect(ids.indexOf('free')).toBe(ids.indexOf('done') - 1);
   const all = core.OB_PAGES.map((p) => p.id);
-  expect(all.indexOf('free')).toBe(all.indexOf('done') - 1);
+  expect(all.indexOf('free')).toBe(all.indexOf('account') - 1);
 });
 
 it('the setup skips its free page where no tip link is offered (Android)', () => {

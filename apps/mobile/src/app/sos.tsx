@@ -49,6 +49,7 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -65,6 +66,11 @@ export default function Sos() {
   /* the small tag on each tool: how it went for you */
   const tags = useMemo(() => (st ? urTags(snap.days, st, tk, sos.mem) : {}), [snap.days, st, tk, sos.mem]);
   const voice = useVoice();
+  /* before setup, help comes first and the setup comes right after: once SOS (or anything it opens) closes, the setup opens
+     again, even if its X was used before (components/welcome.tsx) */
+  useState(() => {
+    if (!snap.settings) setupKeep.shut = false;
+  });
   /* which reason "From you" shows, when there is no note: picked once, so it stays put while you read it */
   const [pick] = useState(() => Math.random());
 
@@ -345,7 +351,7 @@ export default function Sos() {
   /* before setup the person has no words of their own yet: none are shown, not the starting ones */
   const fy = snap.settings ? urFromYou(st, pick) : null;
   /* before setup there is no "who I am becoming" yet: one line says the setup can wait */
-  const be = snap.settings ? String(st.becoming || '').trim() : 'You can set up Daybook later.';
+  const be = snap.settings ? String(st.becoming || '').trim() : 'Setup can wait. This comes first.';
   const mine = !!fy || !!voice.uri;
   const rec = urEvidence(snap.days);
   const lines = String(ur.cx?.do || '')

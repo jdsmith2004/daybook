@@ -132,7 +132,13 @@ export default function Setup() {
   const rem = useReminderPrefs();
   const [remAt, setRemAt] = useState(rem.checkinAt);
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
-  const env = { notify: remindersOffered && !(f.redo && rem.checkin), tips: !!TIP_URL };
+  /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
+     drops out of the list and the setup moves on by itself */
+  const env = {
+    notify: remindersOffered && !(f.redo && rem.checkin),
+    tips: !!TIP_URL,
+    account: !f.redo && sync.status.k !== 'off' && sync.status.k !== 'on',
+  };
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const P = obPages(f.a, env);
@@ -235,7 +241,7 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const back = i === 0 || pg.k === 'done' || pg.k === 'free' || pg.k === 'remind' ? null : <Back onPress={() => !f.saved && go(-1)} />;
+  const back = i === 0 || pg.k === 'done' || pg.k === 'free' || pg.k === 'remind' || pg.k === 'account' ? null : <Back onPress={() => !f.saved && go(-1)} />;
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
@@ -290,7 +296,10 @@ export default function Setup() {
           <SosRow />
           <View style={s.links}>
             {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
-              <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'Sign in'} onPress={() => sync.signInNow()} />
+              <TextLink
+                label={sync.status.k === 'busy' ? sync.status.what : 'I already have an account: sign in'}
+                onPress={() => sync.signInNow({ why: 'in' })}
+              />
             ) : null}
             {BACKUP_FILES ? (
               <>
@@ -930,6 +939,47 @@ export default function Setup() {
         <View key="f" style={{ flex: 1, gap: 6 }}>
           <Next key="n" label="Remind me" onPress={yes} off={false} />
           <Ghost label="Not now" onPress={() => !busy() && go(1)} />
+        </View>
+      );
+      break;
+    }
+    case 'account': {
+      /* the plan is built: a free account keeps it. The ask is the main button; staying on this phone is a quiet link that
+         records that choice and goes on. */
+      body = (
+        <>
+          <Mid>
+            <View style={s.orbWrap}>
+              <LinearGradient colors={[c.accent, c.sky]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
+              <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
+              <View style={[s.orbDot, { backgroundColor: c.sun, width: 22, height: 22, bottom: 10, right: 0 }]} />
+              <View style={{ zIndex: 1 }}>
+                <Icon name="shield" size={60} color="#FFFFFF" />
+              </View>
+            </View>
+          </Mid>
+          <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
+            Your plan is ready. Keep it safe.
+          </Text>
+          <View style={{ gap: 8 }}>
+            {[
+              'Your plan, your log and every point you earn, kept safe',
+              'Every lesson open, not just the first three',
+              'The same on a new phone, or on the web',
+              'Free, and private to you. Nothing is shared or sold.',
+            ].map((x) => (
+              <View key={x} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                <Icon name="check" size={18} color={c.mintText} />
+                <T style={{ flex: 1 }}>{x}</T>
+              </View>
+            ))}
+          </View>
+        </>
+      );
+      foot = (
+        <View key="f" style={{ flex: 1, gap: 4 }}>
+          <Next label="Make my free account" noIcon onPress={() => !busy() && sync.signInNow({ why: 'setup' })} off={false} />
+          <TextLink label="Keep it on this phone for now" onPress={() => !busy() && go(1)} />
         </View>
       );
       break;

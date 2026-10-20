@@ -23,9 +23,8 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
-import Svg, { Circle } from 'react-native-svg';
 
 import { Field, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
@@ -34,9 +33,11 @@ import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Appear } from '@/components/appear';
 import { PickRow } from '@/components/picks';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
+import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSendText } from '@/components/safe-text';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -49,8 +50,54 @@ const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in 
     .catch(() => say('Could not copy. Press and hold the text to copy it.'));
 
 /* ---------- move ---------- */
+/* the beat a move keeps: two parts that take turns (seconds each), how far the shape shrinks, and the words for each
+   part. A squeeze is held for five, then let go; rolls and turns go slow; on your feet it is a livelier, steady pulse. */
+type BeatOf = { dur: [number, number]; low: number; words?: [string, string] };
+const BEAT_HOLD: BeatOf = { dur: [5, 3], low: 0.74, words: ['Hold', 'Let go'] };
+const BEAT_FLOW: BeatOf = { dur: [3, 3], low: 0.86 };
+const BEAT_UP: BeatOf = { dur: [0.45, 0.55], low: 0.9 };
+/** the seated moves that are a hold and a letting go */
+const HOLDS = ['squeeze', 'feet', 'palms', 'toes'];
+
+/** a soft cookie that grows through the first part of the beat and eases back in the second, kept in step with the clock.
+    With Reduce Motion on it stays still, and the words (Hold, Let go) still keep the beat. */
+function Beat({ beat, sec, color, reduce, children }: { beat: BeatOf; sec: number; color: string; reduce: boolean; children: React.ReactNode }) {
+  const [a, b] = beat.dur;
+  const cyc = a + b;
+  const into = sec % cyc;
+  const first = into < a;
+  /* which part of which round: changes once per part, and each change starts the next easing */
+  const part = Math.floor(sec / cyc) * 2 + (first ? 0 : 1);
+  const v = useRef(new Animated.Value(beat.low)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(1);
+    const left = (first ? a - into : cyc - into) * 1000;
+    Animated.timing(v, {
+      toValue: first ? 1 : beat.low,
+      duration: Math.max(60, left),
+      easing: first ? Easing.inOut(Easing.sin) : Easing.out(Easing.cubic),
+      useNativeDriver: NATIVE,
+    }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [part, reduce]);
+  return (
+    <View style={s.beat}>
+      <Animated.View style={[StyleSheet.absoluteFill, s.beatIn, { transform: [{ scale: v }] }]}>
+        <Shape kind="cookie" size={206} color={color} />
+      </Animated.View>
+      {children}
+      {beat.words ? (
+        <T v="label" tone="coralText">
+          {beat.words[first ? 0 : 1]}
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
 export function Move({ finish, level }: ToolProps) {
   const c = useTheme();
+  const reduce = useReducedMotion();
   const sos = useSos();
   /* in a seat (at work, in a meeting, in a car) or free to get up. Remembered on this device, and a seat is the start,
      because it works anywhere. */
@@ -130,30 +177,18 @@ export function Move({ finish, level }: ToolProps) {
       </Stage>
     );
   const m = list.find((x) => x[0] === pick) || list[0];
-  const R = 112;
-  const C = 2 * Math.PI * R;
+  const beat = !sit ? BEAT_UP : HOLDS.indexOf(m[0]) >= 0 ? BEAT_HOLD : BEAT_FLOW;
   return (
     <Stage key="run" dir={1}>
       <Middle>
-        <View style={s.ring}>
-          <Svg width={240} height={240} style={StyleSheet.absoluteFill}>
-            <Circle cx={120} cy={120} r={R} stroke={c.ink} strokeOpacity={0.12} strokeWidth={10} fill="none" />
-            <Circle
-              cx={120}
-              cy={120}
-              r={R}
-              stroke={c.coral}
-              strokeWidth={10}
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${C}`}
-              strokeDashoffset={C * (1 - left / MOVE_MS)}
-              transform="rotate(-90 120 120)"
-            />
-          </Svg>
-          <T v="label">{m[1]}</T>
-          <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
-        </View>
+        <WavyRing size={270} p={1 - left / MOVE_MS} color={c.coral} track={c.line} stroke={9} waves={16} phase={reduce ? 0 : -sec * 0.8}>
+          <Beat beat={beat} sec={sec} color={c.surface} reduce={reduce}>
+            <T v="label" style={[s.c, { maxWidth: 170 }]}>
+              {m[1]}
+            </T>
+            <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
+          </Beat>
+        </WavyRing>
         <T v="title" style={s.c} accessibilityRole="header">
           Go.
         </T>
@@ -212,11 +247,15 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
     router.dismissAll();
     router.push({ pathname: '/night', params: { at, gain: String(gain), plan: planText } });
   };
+  const cur = plans.find((x) => x[0] === plan) || plans[0];
   return (
     <>
-      <View style={[s.moon, { backgroundColor: c.violetSoft }]}>
-        <Icon name="moon" size={40} color={c.violetText} />
-      </View>
+      <Shape kind="scallop" size={96} color={c.violetSoft} turn={8}>
+        {/* in a View, so on the web it sits over the shape and not under it */}
+        <View>
+          <Icon name="moon" size={40} color={c.violetText} />
+        </View>
+      </Shape>
       <T v="title" style={s.c} accessibilityRole="header">
         {night ? 'The best move tonight is sleep.' : 'Practice the bedtime move.'}
       </T>
@@ -227,54 +266,25 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
             : 'Urges are often harder to resist when you are tired. Three things, then a plan for the thoughts.'
           : 'Late at night this is often the strongest tool. Walk through it now so it is easy later.'}
       </T>
-      <View style={{ alignSelf: 'stretch', gap: 8 }}>
-        {BED.map(([id, t, sub]) => {
-          const on = tick.indexOf(id) >= 0;
-          return (
-            <Pressable
-              key={id}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: on }}
-              onPress={() => {
-                setTick(on ? tick.filter((x) => x !== id) : tick.concat(id));
-                buzz('tap');
-              }}
-              style={[s.check, { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent' }]}>
-              <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
-                {on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
-              </View>
-              <View style={{ flex: 1 }}>
-                <T v="label">{t}</T>
-                <T v="small" tone="muted">
-                  {sub}
-                </T>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
       <Dock>
-        <T v="h2" style={{ alignSelf: 'flex-start' }}>
-          If the thoughts get loud in bed
-        </T>
-        <View style={{ alignSelf: 'stretch', gap: 8 }} accessibilityRole="radiogroup">
-          {plans.map(([id, t, sub]) => {
-            const on = plan === id;
+        <View style={{ alignSelf: 'stretch', gap: 8 }}>
+          {BED.map(([id, t, sub]) => {
+            const on = tick.indexOf(id) >= 0;
             return (
               <Pressable
                 key={id}
-                accessibilityRole="radio"
+                accessibilityRole="checkbox"
                 accessibilityState={{ checked: on }}
                 onPress={() => {
-                  setPlan(id);
-                  sos.setMem((m) => ({ ...m, bedPlan: id }));
+                  setTick(on ? tick.filter((x) => x !== id) : tick.concat(id));
                   buzz('tap');
                 }}
-                style={[s.check, { backgroundColor: on ? c.accentSoft : c.surface, borderColor: on ? c.accent : 'transparent' }]}>
+                style={[s.check, { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent' }]}>
+                <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
+                  {on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
+                </View>
                 <View style={{ flex: 1 }}>
-                  <T v="label" tone={on ? 'accentText' : 'ink'}>
-                    {t}
-                  </T>
+                  <T v="label">{t}</T>
                   <T v="small" tone="muted">
                     {sub}
                   </T>
@@ -283,6 +293,29 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
             );
           })}
         </View>
+        {/* one plan for the thoughts, picked from a few chips, with the picked one's words under them */}
+        <T v="label" style={{ alignSelf: 'flex-start', marginTop: 6 }}>
+          If the thoughts get loud in bed
+        </T>
+        <View style={[s.wrap, { justifyContent: 'flex-start', alignSelf: 'stretch' }]} accessibilityRole="radiogroup">
+          {plans.map(([id, t]) => (
+            <Chip
+              key={id}
+              label={t}
+              on={plan === id}
+              onPress={() => {
+                setPlan(id);
+                sos.setMem((m) => ({ ...m, bedPlan: id }));
+                buzz('tap');
+              }}
+            />
+          ))}
+        </View>
+        <Appear key={cur[0]} by={4} duration={200} style={[s.planLine, { backgroundColor: c.violetSoft }]}>
+          <T tone="violetText" accessibilityLiveRegion="polite">
+            {cur[2]}
+          </T>
+        </Appear>
         <Button label={night ? 'Good night' : 'Done'} onPress={go} />
       </Dock>
       {night ? (
@@ -295,18 +328,46 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
 }
 
 /* ---------- surprise me ---------- */
+/* while it picks, the card flips through soft shapes and colors; it lands on the first, a plain cookie that stands out on the sky */
+const SUR_KINDS: ShapeKind[] = ['cookie', 'flower', 'scallop', 'clover', 'pent'];
+const SUR_SOFT = ['surface', 'sunSoft', 'mintSoft', 'coralSoft', 'accentSoft'] as const;
+
 export function Surprise({ finish }: ToolProps) {
   const c = useTheme();
   const { snap } = useStore();
+  const reduce = useReducedMotion();
+  const { width } = useWindowDimensions();
   const menu = snap.settings?.menu || [];
   const [pick, setPick] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [doing, setDoing] = useState(false);
+  const [face, setFace] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* flip: each new face turns in from its edge; land: the last one settles with a soft bounce */
+  const flip = useRef(new Animated.Value(1)).current;
+  const land = useRef(new Animated.Value(1)).current;
+  const reduceRef = useRef(reduce);
+  reduceRef.current = reduce;
+  const turnFace = (k: number) => {
+    setFace(k);
+    if (reduceRef.current) return;
+    flip.setValue(0.15);
+    Animated.timing(flip, { toValue: 1, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }).start();
+  };
+  const settle = () => {
+    setFace(0);
+    flip.setValue(1);
+    if (reduceRef.current) return;
+    land.setValue(0.78);
+    Animated.spring(land, { toValue: 1, friction: 3.6, tension: 120, useNativeDriver: NATIVE }).start();
+  };
   const spin = () => {
     const final = menu[Math.floor(Math.random() * menu.length)] || 'Walk around the block';
     setDoing(false);
-    if (menu.length < 2) return setPick(final);
+    if (menu.length < 2) {
+      settle();
+      return setPick(final);
+    }
     setSpinning(true);
     let n = 0;
     const total = 15;
@@ -315,10 +376,12 @@ export function Surprise({ finish }: ToolProps) {
       if (n >= total) {
         setSpinning(false);
         setPick(final);
+        settle();
         buzz('lit');
         return;
       }
       setPick(menu[Math.floor(Math.random() * menu.length)]);
+      turnFace(n);
       timer.current = setTimeout(step, 55 + n * n * 2.4);
     };
     timer.current = setTimeout(step, 55);
@@ -330,16 +393,29 @@ export function Surprise({ finish }: ToolProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const card = (small: string, text: string) => (
-    <View style={[s.sur, { backgroundColor: c.violetSoft, shadowColor: c.lip }]} accessibilityLiveRegion="polite">
-      {small ? (
-        <T v="small" tone="violetText">
-          {small}
-        </T>
-      ) : null}
-      <Text style={[s.surT, { color: c.ink }]}>{text}</Text>
-    </View>
-  );
+  const size = Math.min(300, width - 56);
+  const card = (small: string, text: string) => {
+    const k = face % SUR_KINDS.length;
+    const fs = text.length <= 22 ? 28 : text.length <= 44 ? 24 : 20;
+    return (
+      <Animated.View
+        style={{ transform: [{ scaleX: flip }, { scale: land }] }}
+        accessibilityLiveRegion={spinning ? 'none' : 'polite'}
+        accessible
+        accessibilityLabel={(small ? small + ': ' : '') + text}>
+        <Shape kind={SUR_KINDS[k]} size={size} color={c[SUR_SOFT[k]]} turn={face * 23}>
+          <View style={[s.surIn, { maxWidth: size * 0.66 }]}>
+            {small ? (
+              <T v="small" tone="violetText">
+                {small}
+              </T>
+            ) : null}
+            <Text style={[s.surT, { color: c.ink, fontSize: fs, lineHeight: fs * 1.2 }]}>{text}</Text>
+          </View>
+        </Shape>
+      </Animated.View>
+    );
+  };
   if (doing)
     return (
       <Stage key="doing" dir={1}>
@@ -361,15 +437,7 @@ export function Surprise({ finish }: ToolProps) {
       <T style={s.c} tone="muted">
         From your calm-move menu.
       </T>
-      <Middle>
-        {spinning ? (
-          card('', pick || '…')
-        ) : (
-          <Appear key={'got:' + pick} by={0} duration={320} style={s.got}>
-            {card('Try this', pick || '')}
-          </Appear>
-        )}
-      </Middle>
+      <Middle>{spinning ? card('', pick || '…') : card('Try this', pick || '')}</Middle>
       <Dock>
         {spinning ? (
           <View style={s.btnSpace} />
@@ -503,14 +571,40 @@ export function Reasons({ finish }: ToolProps) {
   const st = useCareSettings();
   const r = st?.reasons || [];
   const note = String(st?.note || '').trim();
+  const reduce = useReducedMotion();
   const [i0, setI] = useState(0);
   /* the next reason slides in from the side it was asked for */
   const [dir, setDir] = useState<1 | -1>(1);
   const turn = (d: 1 | -1) => {
     setDir(d);
-    setI(i0 + d);
+    setI((x) => x + d);
     buzz('tap');
   };
+  /* a sideways swipe turns the card too: it follows the finger, and past a short way (or a quick flick) it flies off and
+     the next one comes in from the other side; a short drag springs back */
+  const dx = useRef(new Animated.Value(0)).current;
+  const live = useRef({ n: r.length, reduce, turn });
+  live.current = { n: r.length, reduce, turn };
+  const back = () => Animated.spring(dx, { toValue: 0, friction: 6, tension: 140, useNativeDriver: NATIVE }).start();
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => live.current.n > 1 && Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, g) => dx.setValue(g.dx),
+      onPanResponderRelease: (_, g) => {
+        const d: 0 | 1 | -1 = g.dx < -60 || (g.dx < 0 && g.vx < -0.5) ? 1 : g.dx > 60 || (g.dx > 0 && g.vx > 0.5) ? -1 : 0;
+        if (!d) return back();
+        if (live.current.reduce) {
+          dx.setValue(0);
+          return live.current.turn(d);
+        }
+        Animated.timing(dx, { toValue: -d * 420, duration: 150, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }).start(() => live.current.turn(d));
+      },
+      onPanResponderTerminate: back,
+    }),
+  ).current;
+  /* the card that flew off comes back to the middle only once the next reason is in it */
+  useEffect(() => dx.setValue(0), [i0, dx]);
   const noteCard = note ? (
     <Card tone="note" style={{ alignSelf: 'stretch' }}>
       <T v="small" tone="muted">
@@ -545,20 +639,31 @@ export function Reasons({ finish }: ToolProps) {
         Why I am doing this
       </T>
       <Middle>
-        <Appear
-          key={'r' + i}
-          by={0}
-          x={dir * 28}
-          duration={260}
-          style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
-          <View style={s.row}>
-            <Icon name={cat.ic} size={18} color={c.muted} />
-            <T v="small" tone="muted">
-              {cat.name}
-            </T>
-          </View>
-          <Text style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.25, color: c.ink, textAlign: 'center' }}>{text}</Text>
-        </Appear>
+        {/* a light stack: a soft shape and the next card peek out from behind the one on top */}
+        <View style={s.stack}>
+          <Shape kind="cookie" size={160} color={c.accentSoft} wobble={0.5} seed={i + 1} turn={i * 25} style={s.peekShape} />
+          {n > 1 ? <View style={[s.peek, { backgroundColor: c.surface2, borderColor: c.cardEdge }]} /> : null}
+          <Animated.View
+            {...pan.panHandlers}
+            style={{
+              transform: [{ translateX: dx }, { rotate: dx.interpolate({ inputRange: [-300, 0, 300], outputRange: ['-7deg', '0deg', '7deg'] }) }],
+            }}>
+            <Appear
+              key={'r' + i}
+              by={0}
+              x={dir * 28}
+              duration={260}
+              style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
+              <View style={s.row}>
+                <Icon name={cat.ic} size={18} color={c.muted} />
+                <T v="small" tone="muted">
+                  {cat.name}
+                </T>
+              </View>
+              <Text style={{ fontFamily: font.display, fontSize: size, lineHeight: size * 1.25, color: c.ink, textAlign: 'center' }}>{text}</Text>
+            </Appear>
+          </Animated.View>
+        </View>
       </Middle>
       <Dock>
         {n > 1 ? (
@@ -599,25 +704,14 @@ const s = StyleSheet.create({
   },
   tileT: { fontFamily: font.bodyBold, fontSize: 16 },
   tileS: { fontFamily: font.body, fontSize: 13 },
-  ring: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
-  time: { fontFamily: font.displayBold, fontSize: 56, lineHeight: 64, fontVariant: ['tabular-nums'] },
-  moon: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+  beat: { width: 206, height: 206, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  beatIn: { alignItems: 'center', justifyContent: 'center' },
+  time: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 56, fontVariant: ['tabular-nums'] },
+  planLine: { alignSelf: 'stretch', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 },
   check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
   box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  sur: {
-    alignSelf: 'stretch',
-    minHeight: 170,
-    borderRadius: 26,
-    padding: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  surT: { fontFamily: font.display, fontSize: 30, lineHeight: 36, textAlign: 'center' },
-  got: { alignSelf: 'stretch' },
+  surIn: { alignItems: 'center', gap: 6 },
+  surT: { fontFamily: font.display, textAlign: 'center' },
   btnSpace: { height: 104 },
   reason: {
     alignSelf: 'stretch',
@@ -632,5 +726,8 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     shadowOffset: { width: 0, height: 4 },
   },
+  stack: { alignSelf: 'stretch' },
+  peekShape: { position: 'absolute', top: -46, right: -30 },
+  peek: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 26, borderWidth: 2, transform: [{ rotate: '-4deg' }, { translateY: 10 }] },
   sq: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

@@ -27,16 +27,21 @@ import { Flame } from '@/components/flame';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
+import { WavyRing } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
+import { useReducedMotion } from '@/lib/motion';
 import { useCareSettings, useStore } from '@/lib/store';
+import { useTheme } from '@/lib/theme';
 
 import type { ToolProps } from './types';
 
 export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   const { snap, update, say } = useStore();
+  const c = useTheme();
+  const reduce = useReducedMotion();
   const sos = useSos();
   const st = useCareSettings();
   const t = sos.timer;
@@ -165,10 +170,19 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     );
   if (mode === 'run' && t) {
     const left = t.start + t.dur - nowMs;
+    const el = (nowMs - t.start) / 1000;
     return (
       <Stage key="run" dir={1}>
         <Middle>
-          <Orb pattern={guide ? 'calm' : null} sec={(nowMs - t.start) / 1000} label="Waiting it out" time={fmtMS(left)} ring={left / t.dur} size={250} />
+          {/* the ten minutes as a squiggle around the sun that fills as time passes, crawling slowly */}
+          <View style={{ width: RING, alignItems: 'center' }}>
+            <View style={s.ringAt} pointerEvents="none">
+              <WavyRing size={RING} p={1 - left / t.dur} color={c.sun} track={c.line} waves={16} phase={reduce ? 0 : -el * 0.6} />
+            </View>
+            <View style={{ marginTop: (RING - ORB) / 2 }}>
+              <Orb pattern={guide ? 'calm' : null} sec={el} label="Waiting it out" time={fmtMS(left)} size={ORB} />
+            </View>
+          </View>
         </Middle>
         <Dock>
           <Card style={{ alignSelf: 'stretch', alignItems: 'center' }}>
@@ -271,8 +285,13 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   );
 }
 
+/* the squiggle sits just outside the sun's glow, and close enough that the words under the sun stay clear of it */
+const ORB = 240;
+const RING = 262;
+
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
+  ringAt: { position: 'absolute', top: 0 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   opts: { alignSelf: 'stretch', gap: 10 },
 });

@@ -30,7 +30,10 @@ The goal is a lasting change of identity: from "I am a porn addict" to "I am som
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` and let it deploy; GitHub keeps everything, so a change can always be rolled back.
-  Say when a piece of work needs a different model or effort, and otherwise just keep going on the one in use.
+  Effort levels save usage: every plan marks each step with the Opus effort level it needs (high for sync, accounts,
+  data and anything that can lose what a person earned; medium for screens, words and small rules; low for mechanical
+  changes). The owner sets the effort, and the session does every step marked for that level, in order, then stops and
+  says which level to switch to for what is left. It never starts a step marked for another level.
   Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
   The old review artifacts are retired: never edit or republish them. (The rule is there so work lands in the code, not
   in a hosted page. Claude Design is allowed for trying out a look, by the owner's choice; the app's code stays the real thing.)

@@ -525,3 +525,475 @@ Today: 30 levels, 10 flame forms with 3 small steps each, points from `5 × i ×
    still counts."), using the run that just ended. No "lost", "failed" or "reset" anywhere.
 2. Setup's "Use it a lot less" goal: keep it as a gentle way in (recommended), unless the owner says otherwise.
 3. Anything the owner noticed on the live site in the meantime.
+
+## Fable review (October 19, 2026)
+
+A read of the code, not a walk on a device: `packages/core` (the rules, sync, setup, accounts, graduation, nudges),
+`apps/mobile/src` (the store, sync, auth, the setup, Today, the log, Settings, the account sheet), `services/api` and
+`infra`. The iPhone bug hunts above were taken as known, and the decisions listed there are not reopened. Every
+scenario below uses made-up people and dates. The one test throughout: does it help the person become, and see
+themselves as, someone free of the habit?
+
+The short version: the rules are sound and well tested; the app's words keep hope first; the weak spots are at the edges
+that no test or walk has reached yet, and three of them can cost a person something they earned.
+
+### Bugs
+
+**1. A second device's first sign-in can replace the settings that hold earned things.** _Blocks testers._
+Evidence: `apps/mobile/src/lib/sync.tsx:235-258` (`join`) and `:287-307` (`choose('combine')`), with
+`packages/core/src/sync.ts:90-103` (`mergeRemote`: the newer settings record wins). The settings record holds `start`,
+`day1`, `gradAt`, `seen`, the lesson notes and practice marks, the reasons, the plan and the setup record, and points
+count some of it.
+Reproduce: Person P has 60 days on the phone and no account. P opens the web app, does the setup there (a fresh settings
+record, `start` today) and makes the account at its end. P then signs in on the phone. The account holds only a settings
+record, so `accountHasLog` is false, the phone merges rather than asks, and the web's newer settings replace the
+phone's. Day 1 jumps to today, the graduation count starts over, lesson notes and the plan are gone, and points drop.
+"Combine them" does the same whenever the other device touched its settings later.
+Fix: in `join`, when the device has a log and the account has none, drop the account's settings record before merging
+(the device's settings go up with `markAllDirty`). In combine, settings follow the side with the real log (more days, or
+the earlier `start`), never the newer clock. One client test: a fresh setup on a second device never replaces a log's
+settings.
+
+**2. Today asks for an account the moment setup ends, right after the person said "Keep it on this phone for now".**
+_Hurts trust._ Evidence: `SETUP_PTS=20` (`packages/core/src/legacy/core.js:677`), level 2 starts at 18 points
+(`packages/core/src/levels.ts:169-178`), `accountAsk` returns `level` at level 2 (`packages/core/src/accounts.ts:38`),
+and the setup's link only moves on (`apps/mobile/src/app/setup.tsx:982`), so `acctNo` is never set.
+Reproduce: finish setup, choose "Keep it on this phone for now", go to Today: the account card is there, on day 0.
+Fix: the link applies `accountLater` (a week of quiet, the rule that already exists), and the level gate moves to the
+first new form (Kindling, level 6, two or three honest days), which is the "first level-up" the plan meant.
+
+**3. "Your account is ready" shows even when joining the account failed, and the next launch looks signed out.**
+_Hurts trust._ Evidence: `apps/mobile/src/app/account.tsx:57-62` sets `done` before `startWith`; the done body
+(`:129-149`) says "Your log is kept safe" unless the status is `busy` or `ask`; `startWith` catches the failure into an
+`error` status with no `kept` (`sync.tsx:264-285`); at launch a session with no `kept` becomes `out`
+(`sync.tsx:191-195`), which locks the lessons and shows the sign-in card again.
+Reproduce: make an account with the sync API unreachable (airplane mode right after Cognito answers, or the gateway
+throttled). Fix: the done step reads the status; on `error` it shows the message and a "Try again" that calls
+`startWith` again. At launch, a session with no `kept` runs `join` instead of showing `out`.
+
+**4. A stalled connection leaves "Syncing…" up for good, and no later round can run.** _Hurts trust._
+Evidence: `sync.tsx:112` (`fetch` with no timeout) and `:144-148, 166-168` (`running.current` is only freed when the
+request settles). Cognito calls have no timeout either (`packages/core/src/cognito.ts:66`), so the account sheet's
+spinner can hang. Reproduce: start a sync and walk out of Wi-Fi range mid-request. Fix: an `AbortController` with a
+20-second limit on every sync and Cognito call; an aborted round sets the "could not reach your account" status and
+frees `running`.
+
+**5. Records the account refuses are dropped without a word, and the status still says "Synced just now".**
+_Hurts trust._ Evidence: `sync.tsx:156-160` ignores `r.refused`, which core reports
+(`packages/core/src/sync.ts:152-179`, test `services/api/test/client.test.ts:191`). Two causes: a record over the size
+cap, and a phone clock more than a day ahead (`services/api/src/sync.ts:103`). In the clock case every push is refused
+and every dirty mark is cleared, so nothing ever reaches the account while Settings says it did.
+Reproduce: set the phone's date a week ahead, log an urge, sync. Fix: the status keeps the refused ids ("3 changes could
+not be saved to your account: check the phone's date and time"), and the clock case keeps the records dirty.
+
+**6. The API's ceiling is 5 requests a second for everyone, and a throttled sync pauses until the next open.**
+_Polish now, hurts trust with testers._ Evidence: `infra/app/api.tf:85-88` (burst 10, rate 5, for the whole API) and
+`sync.tsx:132-135` (any 429 pauses with "Sync did not work this time"). Fifty testers whose check-in reminders fire at
+6 PM is a burst of a hundred requests. Fix: 50 a second with a burst of 100 (still a ceiling; a request costs almost
+nothing), and on a gateway 429 retry after a short wait instead of pausing; keep the pause for the daily allowance,
+which has its own words.
+
+**7. On the web, Safari can clear the whole log after a week away, and nothing says so.** _Hurts trust._
+Evidence: on the web the log lives in the browser's storage (`apps/mobile/src/lib/store.tsx:3`, AsyncStorage is
+localStorage there). Safari's tracking prevention deletes a site's script-writable storage after seven days of Safari use
+with no visit to the site; web apps added to the Home Screen are spared. Reproduce: use Daybook in iPhone Safari with no
+account and no Home Screen icon, use Safari for a week without opening it, come back to the welcome page.
+Fix: on the web only, one plain line on the days card and the account card ("In Safari, a site's storage can be cleared
+after a week away. Add Daybook to your Home Screen, or make a free account."), and a one-time Add to Home Screen card.
+Care is not locked; the person is told.
+
+**8. Day 0 opens with three zeros.** _Polish._ Evidence: `apps/mobile/src/components/today.tsx:117-134` (the tracking
+card: 0 days logged, 0 urges ridden out, 0 slips logged). Fix: when all three are zero, one line: "Nothing logged yet.
+Your first entry starts the log."
+
+**9. "Sign out and remove it from this device" can lose unsent changes.** _Polish._ Evidence: `sync.tsx:309-325` only
+syncs first when the log stays; the card says "Your account keeps your log either way" (`sync-card.tsx:153`). Fix: sync
+first in both cases; if that fails, say how many changes would be lost and ask again.
+
+**10. Two browser tabs can lose each other's "not synced yet" marks.** _Polish, web only._ Evidence: `store.tsx:178`
+writes the whole dirty list from one tab's memory. Fix: read, merge and write the list in `persist`, or listen for the
+`storage` event. Rare, and the loss is one missed push, not the record.
+
+**11. A restored backup drops the Sunday review's picked answers.** _Polish, dev builds only._ Evidence:
+`packages/core/src/data.ts:77` keeps `a` and not `sun`. Fix: `{ ...normReview(b.reviews[k], k), u: now }`.
+
+**A design call, not a bug.** Graduation counts days with nothing logged, by the rule that a slip not logged is not a
+slip (`packages/core/src/graduate.ts:41-46`). So someone who stops opening Daybook on day 10 and comes back a hundred
+days later is graduated on that open. Honest by the rule, but it reads as a party for an app they did not use. A kinder
+shape: after 30 days with nothing logged, Today says "Welcome back" and the award waits for the first logged day.
+
+### Risks not yet tested
+
+- **Real accounts against Cognito** (sign-up with no code, sign-in, "Confirm your email", forgot password, sign out,
+  delete account). Not tried from a phone yet. Test on TestFlight and the AWS web app with a made-up inbox: make the
+  account on the phone; sign in on the web (expect the web to take the phone's log); confirm the email from Settings;
+  forgot password from the web; delete the account from the phone and confirm the web says the sign-in ran out and the log
+  is still there. Check API Gateway's JWT authorizer takes the access token (`client_id`, not `aud`) on the first call.
+- **Two devices and conflicts.** Phone and web, both signed in. Edit the same day on both while offline, go online, expect
+  the later edit on both. Delete a day on one, expect it gone on the other. "Delete everything" on one, expect the other to
+  return to setup, then "Bring my log back" within the week. Then bug 1's scenario, after its fix.
+- **Reading older data.** No shipped version exists yet, so the risk is ahead: `normDay` drops fields it does not know
+  (`core.js:380`), so an older build that re-saves a day written by a newer one loses the new fields, and sync spreads
+  that. Keep new day fields optional and tolerated by `normDay` one release before they are written. If anyone used the
+  legacy web page, their log does not carry over now that backup files are dev-only; worth a line to those testers.
+- **Notifications.** Never seen delivered. Test on a phone with the clock: the check-in reminder at its time, skipped on a
+  day already checked in, the kinder words the morning after a slip, the come-back notes after two days away, a tap
+  opening the right screen, and the pause after three misses. On Android 14 and 15, check the reminder arrives on time
+  under battery saving (exact alarms) and that the four channels show in the phone's settings.
+- **Android.** Never built or walked. A pass on one real phone: the keyboard over every text box, the status bar band, the
+  lock with a fingerprint, the keystore sign-in surviving a restart, the back gesture inside full-screen moments, fonts and
+  haptics, and the Play internal track install.
+- **The web on phones.** Safari and Chrome on a phone: Add to Home Screen, a cold start on `/setup` (handled), the lock is
+  absent on purpose, "Stay signed in" unticked (the sign-in should go when the tab closes), and bug 7. The GitHub Pages
+  preview has no sync (no `EXPO_PUBLIC_*` in `preview.yml`), so accounts are only testable on the AWS site.
+- **Slow or no network.** Log offline for a day, then sync (the dirty list is tested in memory, not on a phone). A sync
+  started on a weak signal (bug 4). The account sheet on a slow connection.
+- **Large logs.** Seed three years through the shots seed, then time Today, Journal, the pattern charts and the first join
+  (about 1,100 records: three pull pages, six push batches). Points and levels are recomputed on every change; a year is
+  fine by reading, three years is unmeasured.
+- **Cost with testers.** Fifty testers at thirty sync rounds a day is a few thousand requests a day: pennies. The $5 alert
+  stands. Cognito's built-in email now only serves "Confirm your email" and resets, so its 50-a-day cap is not a limit on
+  sign-ups.
+
+### Features
+
+Each one judged by the one test. Sizes: S under a day, M a few days, L a week or more.
+
+1. **Identity sentences in Milestones** (S). Every count becomes a sentence about who the person is: "You are someone
+   who rides out urges: 14 times." "You are someone who logs honestly: 3 slips, all logged." "You are someone who gets
+   through the hard hours: 9 held." Nothing new is counted; the frame changes from score to self. Touches "Progress is
+   never all or nothing" (these only go up).
+2. **Time given back** (S). The setup already works out the hours a year. From Day 1, one line on Milestones: "About 18
+   hours given back so far", from the setup's rate and the days with no slip. A gain that never drops, tied to the life
+   the person said they wanted. Touches "No big goals pushed early": it stays off Today.
+3. **"Becoming" at the sunrise check and on graduation** (S). The sentence from setup shows once more the morning after
+   a slip ("Still true: I am becoming someone who is free of this."), and on the graduation screen. Hope first, in the
+   person's own words, at the two moments it matters most.
+4. **Tell your safe person you started** (S). Day 1 offers the same hand-off Rekindle has for a slip: a prefilled text in
+   the person's own messaging app, nothing sent by Daybook. Someone who does not hide is the identity. Touches privacy:
+   nothing leaves the device except by the person's own hand.
+5. **The first pattern sentence, early** (M). The pattern needs weeks of data; the sense that "this app gets me" is wanted
+   in week one. After the third logged urge, one line on Today: "Two of your three urges came after 10 PM. Your wind-down
+   is already set for 10 PM." Built on `risk.ts` with a lower bar for words only (no heads-ups until the real threshold).
+6. **A seven-day look back on day 7** (M). One screen, once: what was logged, what was learned, the sentence they chose,
+   and the next small goal. It closes the tracking week as a thing finished, not a count to keep. Touches "No big goals
+   pushed early": the 90 is not mentioned here.
+7. **Add to Home Screen on the web** (S). A one-time card with the two taps. It protects the log (bug 7) and makes the web
+   feel like the app.
+
+Ideas that would only win attention, and so are not proposed: a Home Screen widget with the day count (a number to
+protect); daily quote notifications (noise, and the words show on a locked screen); a shareable streak image (a streak to
+show off, which a slip then "breaks"); any leaderboard or community count; a countdown to graduation.
+
+### Order of work
+
+Before outside testers:
+
+1. Bug 1: settings never replaced by a second device's fresh setup (earned things stay earned).
+2. Bug 2: the setup's "Keep it on this phone" records "Not now"; the level gate moves to the first new form.
+3. Bug 3: the account sheet tells the truth when joining fails, and launch retries the join.
+4. Bug 4: timeouts on sync and Cognito calls.
+5. Bug 5: refused records and a wrong clock are said, not hidden.
+6. Bug 6: the API ceiling and the 429 retry.
+7. Bug 7: the Safari storage line and the Home Screen card on the web.
+8. The account walk on TestFlight and the AWS web app, two devices, with the conflict script above.
+9. One Android pass on a real phone, notifications included.
+10. Bug 8: day 0's three zeros become one warm line.
+
+After:
+
+11. Features 1 to 4 (small, all about the identity).
+12. Feature 5, the first pattern sentence, then feature 6, the day-7 look back.
+13. The graduation-after-absence design call.
+14. Bugs 9 to 11 and the large-log timing.
+
+### The plan, step by step (for the session that does the work)
+
+Each step is one commit, marked with the Opus effort level it needs (see CLAUDE.md, Working style). The order is the "before outside testers" list above. Before each commit: `npm run format`,
+`npm run typecheck`, `npm test`; for app changes, `npx expo export --platform web` and a look. Merge to `main` and let
+it deploy. Count this month's AWS deploys first (`gh run list --workflow Deploy`).
+
+**Step 1. Settings never replaced by a second device's fresh setup.** _Effort: high._ Files: `apps/mobile/src/lib/sync.tsx` (`join`,
+`choose`), `packages/core/src/sync.ts`, `services/api/test/client.test.ts`.
+
+- In core `sync.ts`, add `keepSettingsOf(here: Snapshot, recs: SyncRecord[]): SyncRecord[]`: when `hasLog(here)` and
+  the account's records hold no day and no review, return the records without the `settings` record. Pure, tested.
+- In `join`: on the merge path (`!there`, or the device has a log and the account has none) merge
+  `keepSettingsOf(here, p.records)` instead of `p.records`. The device's own settings then go up with `markAllDirty`.
+- In `choose('combine')`: settings follow the side with the real log. Add `pickSettings(here, recs)` in core: compare
+  the device's day count with the account's; the side with more days keeps its settings; on a tie the earlier `start`
+  wins; on a tie there too the newer `u` wins (today's rule). When the device's settings are kept, bump their `u` past
+  the account's before merging (`changeSettings(st, () => {}, Math.max(now, theirs.u + 1))`), so the push wins and the
+  other device takes them on its next pull.
+- The ask card's words change: "Where both have the same day, the newer one is kept. Your plan and progress stay with
+  the log that has more days." (`components/sync-card.tsx:111`).
+- Tests in `client.test.ts`: (a) phone with 60 days, account with a fresh settings record only: after join, the phone's
+  `start`, `day1`, `gradAt`, `learn.prac` and `reasons` are unchanged and the account's settings record is the phone's;
+  (b) combine with the same shape: same outcome; (c) a new device (no days) still takes the account's log as it is.
+- Done when: the three tests pass and the existing ten in that file still pass.
+
+**Step 2. No account ask on day 0.** _Effort: medium._ Files: `apps/mobile/src/app/setup.tsx:982`, `packages/core/src/accounts.ts`,
+`packages/core/test/accounts.test.ts`.
+
+- The "Keep it on this phone for now" link applies `accountLater(st, tk)` through `apply`, then `go(1)`. `st` is set by
+  then (the plan was saved on the review page), so `apply` keeps it.
+- In `accounts.ts`, replace `level >= 2` with `level >= ACCT_LEVEL`, `export const ACCT_LEVEL = 6` (the first step of
+  Kindling), with a comment: level 2 is 18 points and setup gives 20, so level 2 is day 0.
+- Tests: "finishing setup and keeping it on the phone waits a week"; "asks at the first new form, not at level 2".
+- Done when: a fresh setup ending in "Keep it on this phone" shows no account card on Today for seven days.
+
+**Step 3. The account sheet tells the truth when joining fails; launch retries the join.** _Effort: high._ Files:
+`apps/mobile/src/app/account.tsx:129-149`, `apps/mobile/src/lib/sync.tsx:171-208, 264-285`.
+
+- In `account.tsx`, the done body has a third branch: `sync.status.k === 'error'` or `'expired'` shows the status
+  message in the danger tone and a "Try again" button that calls `sync.startWith(session)`; keep the session from
+  `keepTokens` in a ref so it can be passed again. "Done" stays available under it, with the line "Your log is on this
+  device. Daybook will try again when it opens."
+- In `sync.tsx` at launch: the `s && !k` branch sets the session and calls `join(s)` (inside a try, `fail` on error)
+  instead of setting `out`. `useAccount` then reads `busy` as having an account, so nothing flashes locked.
+- Done when: with the sync URL pointed at a dead address, creating an account shows the error and Try again, and a
+  relaunch shows "Syncing…" then the error, never "Off".
+
+**Step 4. Timeouts.** _Effort: high._ Files: `apps/mobile/src/lib/sync.tsx:108-128, 328-342`, `packages/core/src/cognito.ts:58-88`.
+
+- A small helper in `sync.tsx`: `fetchWithin(ms, url, init)` using `AbortController`; 20 seconds for sync, used by
+  `transport.call` and `callApi`. An abort throws a plain `Error`, so `fail` gives "Could not reach your account. Your
+  changes are kept here and will sync later."
+- `cognitoClient` takes an optional `timeoutMs` (default 20,000) and passes an `AbortSignal` in `init`; the `Fetch`
+  type gains `signal?: AbortSignal`. An abort becomes `CognitoError('Network', ...)`. `test/cognito.test.ts`: a fetch
+  that never settles is turned into the Network error within the limit (use fake timers).
+- Done when: the tests pass and a round against a sink address ends in the error status within 20 seconds, with
+  "Sync now" working afterwards.
+
+**Step 5. Refused records and a wrong clock are said.** _Effort: high._ Files: `packages/core/src/sync.ts:140-179`,
+`apps/mobile/src/lib/sync.tsx:139-169`, `apps/mobile/src/components/sync-card.tsx`.
+
+- In `pushAll`, a record refused for "its time is in the future" is not acked (it stays dirty) and is reported with
+  `why: 'clock'`; "too large" and "not a valid record" stay as they are (let go, reported).
+- `SyncStatus` gains `{ k: 'on'; refused?: { n: number; clock: boolean } }`. The round keeps the refused list from the
+  last push. The sync card's line adds "· 1 change could not be saved: the phone's clock is ahead. Check the date and
+  time." or "· 2 changes were too large to save" after "Synced just now".
+- Test in `client.test.ts`: the clock case keeps the record dirty and reports `clock`; the next push after the clock
+  is fixed saves it.
+- Done when: the test passes and the words are plain, with no contractions.
+
+**Step 6. The API ceiling and the 429 retry.** _Effort: high._ Files: `infra/app/api.tf:85-88`, `apps/mobile/src/lib/sync.tsx:130-137`.
+
+- `throttling_rate_limit = 50`, `throttling_burst_limit = 100`, with the comment updated (a ceiling against a runaway
+  client, high enough for a few hundred people's reminders at once).
+- In `fail`: a 429 whose body has no `error` (the gateway's own) does not pause; the round schedules one retry after
+  3 to 8 seconds (random), once. A 429 with the allowance's words pauses as today. 413 pauses as today.
+- Done when: `terraform validate` passes in CI and the client test "a gateway 429 retries once, an allowance 429
+  pauses" passes (MemoryStore transport that answers 429 once).
+
+**Step 7. Safari's storage and the Home Screen, on the web only.** _Effort: medium._ Files: `apps/mobile/src/components/account.tsx`,
+`apps/mobile/src/components/today.tsx` (the tracking card and the sm card), a new `apps/mobile/src/components/home-screen.tsx`
+with a `.web.tsx` body and a native stub, `apps/mobile/src/lib/prefs.ts` (one device flag).
+
+- One line, web only, under the days card's sub text and in the account card's small print: "In Safari, a site's storage
+  can be cleared after a week away. Add Daybook to your Home Screen, or make a free account."
+- `HomeScreenCard`: shows once on the web when `window.matchMedia('(display-mode: standalone)')` is false and the flag
+  is unset; two steps for Safari (Share, Add to Home Screen) and two for Chrome; "Got it" sets the flag. No "Not now".
+  It sits after the account card on Today.
+- `apps/mobile/public/privacy.html` gains one sentence under "On your device": the browser may clear a site's storage.
+- Done when: the card shows on a phone browser and not in a Home Screen web app, and nothing shows on iOS or Android.
+
+**Step 8. The account walk.** _Effort: owner, on devices._ Not code. On TestFlight and the AWS web app with a made-up inbox, in this order, writing
+what happens into this file as a part 4 of the bug hunt: sign up on the phone; confirm the email from Settings; sign in
+on the web (expect the phone's log); edit the same day on both offline, then online; delete a day on the web; "Delete
+everything" on the phone, then "Bring my log back" on the web; forgot password from the web; sign out and remove on the
+phone, sign in again (expect the account's log); delete the account on the web, expect the phone to say the sign-in ran
+out. Then the step-1 scenario.
+
+**Step 9. One Android pass.** _Effort: owner, on devices._ Not code until something is found. A Play internal build on one phone: the list under
+Risks. Findings go into this file.
+
+**Step 10. Day 0's three zeros.** _Effort: medium._ File: `apps/mobile/src/components/today.tsx:117-134`. When `f.dl`, `f.rode` and
+`f.slips` are all zero, the facts row is replaced by one line: "Nothing logged yet. Your first entry starts the log."
+The sub line and the link stay.
+
+**After testers**
+
+**Step 11. Identity sentences in Milestones.** _Effort: medium._ Files: `packages/core/src/miles.ts` (a pure `identityLines(days, st, tk)`
+returning `{ who: string; n: number }[]`), `apps/mobile/src/app/miles.tsx` (one card, "Who you are, in numbers"),
+`packages/core/test/miles.test.ts`. Lines: urges ridden out, slips logged honestly, hard hours held, lessons finished,
+check-ins saved, comebacks (sunrise checks done). A line shows once its count is 1 or more. Words say who the person
+is, never what they avoid.
+
+**Step 12. Time given back.** _Effort: medium._ Files: `packages/core/src/setup.ts` (`obHours` already gives the rate), a pure
+`hoursBack(days, st, tk)` in `miles.ts`: no-slip days since Day 1 times the daily rate from `st.onb.a`; null when there
+is no setup record. One line on Milestones under the identity card: "About 18 hours given back so far." Test: the rate
+and the count; null without a setup record.
+
+**Step 13. "Becoming" at the sunrise check and on graduation.** _Effort: medium._ Files: `apps/mobile/src/app/sunrise.tsx` (the `hi`
+step shows `st.becoming` under its headline, prefixed "Still true:"), `apps/mobile/src/app/graduated.tsx` (already
+planned to show it; make sure it does). No core change.
+
+**Step 14. Tell your safe person you started.** _Effort: medium._ Files: `packages/core/src/rekindle.ts` (a `rkStartText(st)` next to
+`rkTellText`), `apps/mobile/src/components/your-day.tsx` or the Day 1 card: on Day 1, when `safePerson` is set, one row
+"Tell [name] you started" that opens the messaging app with the text (the same `Linking` call Reach a person uses).
+Shown once (a `p.r` mark that day, or a settings flag `toldStart: DayKey`). Test the words.
+
+**Step 15. The first pattern sentence.** _Effort: medium._ Files: `packages/core/src/risk.ts` (a `firstPattern(days, st, tk)` with a bar
+of three timed urges, words only), `apps/mobile/src/components/risk-card.tsx` or a small card on Today, shown from the
+third timed entry until the real window exists, and never on the day of a slip or the day after. Test: the threshold,
+the words, the quiet days.
+
+**Step 16. The day-7 look back.** _Effort: medium._ Files: a new `apps/mobile/src/app/week.tsx` full-screen moment (`SceneFrame`, `Dock`),
+`packages/core/src/sunday.ts` or a new `week.ts` for the facts, `_layout.tsx` and `nav.ts` entries. Opens once, from
+Today, on day 7 of the tracking week. No 90-day mention.
+
+**Step 17. The graduation-after-absence design call.** _Decided: see "Quiet days" below, which replaces it._
+
+**Step 18. Bugs 9 to 11, and the large-log timing.** _Effort: high for the dirty list, medium for the rest._ Sign out and remove syncs first (`sync.tsx:309-325`); the dirty
+list is read, merged and written in `persist` (`store.tsx:168-183`); `restoreBackup` keeps `sun` (`data.ts:77`); then
+seed three years through the shots seed and time Today, Journal and the first join, writing the numbers here.
+
+**Large-log timing (October 19, 2026).** Three years of made-up logs (1,095 days, an entry and a check-in on each),
+timed on a Mac in Node: points, levels and badges (`gameCompute`) 8.7 ms; Milestones' identity lines 7.7 ms; the month
+calendar 2.9 ms; Today's measure 1.3 ms; the days card 1.1 ms; nudges 0.6 ms; hard hours 0.3 ms; merging 1,096 records on
+a first join 0.8 ms. A phone is perhaps three to five times slower, so `gameCompute` near 40 ms: fine on each change, and
+the first thing to memoize if Today ever feels slow with a long log.
+
+## Quiet days: pause, then ask (decided October 19, 2026)
+
+**The owner's call:** days with nothing logged no longer count as no-slip days forever. After **2 quiet days** the count
+**pauses** (it never drops), and when the person comes back, one kind question fills in the gap. A reset after a gap was
+considered and turned down: it hits people at the moment they come back, when hope matters most, and punishes the ones who
+stayed clean without the app ("Never make a long run feel like something that can be lost").
+
+**Why:** today, from Day 1 on, a day with no slip logged counts as a no-slip day ("a slip not logged is not a slip"), for
+runs, Today's measure and graduation's 90 of 100. That is right while the person is around and wrong when they are gone:
+someone who stops opening Daybook on day 10 and comes back four months later finds a big count, or a graduation, that
+Daybook made up. A clean day must be one Daybook has reason to believe.
+
+### The rules
+
+- **Present.** A day is present when anything was logged (an urge or slip, a check-in, the morning questions) or the app
+  was opened that day (a new `p.o: true` on the day, written the first time Today shows each day; it does not start the log
+  and earns no points).
+- **Quiet.** A day from Day 1 on that is not present. The first **2** quiet days in a row count as now (no slip logged, no
+  slip). From the **3rd** quiet day in a row on, each one is **not known** until the person says, and keeps being not known
+  while the gap goes on. `QUIET_GRACE = 2` in one place.
+- **Not known** counts as neither: not a no-slip day, not a slip. Runs pause (the run before the gap stays, and goes on
+  from there on return), Today's measure and graduation count only known no-slip days. Points, levels, badges and
+  graduation already earned never change.
+- **Coming back** after not-known days: the first open shows "Welcome back" (a full-screen moment, the answers low by the
+  thumb, `Dock`), before anything else but SOS:
+  - Title: "Welcome back. Everything you built is still here." Under it: "You were away 12 days. How did they go?"
+  - **"No slips"**: the days count as no-slip days. The count jumps up, and that is said warmly.
+  - **"Some slips"**: a short step: pick the days that had a slip on a small calendar of the gap (each is logged as a slip
+    with no time), or "I am not sure which days". Picked days are slips; the others are no-slip days; "not sure" keeps them
+    all not known. No Rekindle quest for slips older than its three days.
+  - **"I would rather not say"**: the days stay not known. The count picks up from where it paused. Never asked again for
+    that gap.
+  - The X closes it with the gap still unanswered: it is offered again the next day, once, then stays as a quiet row on
+    the Days card ("12 days not known · Fill in"), never a card that asks every day.
+- **Where the answer is kept:** `settings.away: { from: DayKey; to: DayKey; a: 'clean' | 'some' | 'skip' }[]` (synced, so
+  every device agrees). Slips picked are ordinary slip entries on their days. Not-known days are worked out from the log and
+  `away`; nothing else is stored.
+- **Before Day 1** (the tracking week, just tracking) nothing is counted, so gaps only change the calendar.
+- **Step down:** the stretch since the last slip pauses at the gap too. On "No slips" it carries on as if never paused; on
+  "rather not say" it shows the stretch since coming back, and the best stretch stays.
+- **Graduation** counts known no-slip days only, so it can never arrive by itself after months away. The 100-day window lets
+  not-known days roll off, so a long gap never closes the way for good. `gradAt` once set stays.
+- **The calendar** gets a "not known" look (a dotted outline, no color), and the day sheet says "Not logged. You were
+  away." Never "missed".
+- **Nudges:** the come-back notes stay as they are (2, 4, 7, 14 days). The Welcome back question is never in a
+  notification.
+
+### Steps (each one commit; each marked with its effort)
+
+1. **Core rules.** _Effort: high._ New `packages/core/src/away.ts`: `presentDay`, `quietRuns(days, st, tk)` (the gaps
+   with their first not-known day), `dayKnown(days, st, k, tk)`, `awayDue(days, st, tk)` (the gap to ask about, or null),
+   `answerAway(days, st, gap, a, slipDays)` (returns new days and settings), all pure, with unit tests: a 1- and 2-day gap
+   still counts; the 3rd day is not known; each answer; "some" with and without picked days; an answer synced from another
+   device; the app opened on a day counts it present.
+2. **Wire it into counting.** _Effort: high._ The legacy counting in `src/legacy/core.js` (`statusOf`, `dayKind`,
+   `streaks`, `runLedger`, `stepView`) asks `dayKnown` (core.js already imports `levels.ts`; import `away.ts` the same
+   way, or move `statusOf` and `dayKind` to TypeScript and remove them from core.js). `graduate.ts` (`gradInfo`,
+   `todayMeasure`) and `calendar.ts` count only known days. Run the golden tests: fixtures with gaps of 3 days or more will
+   change on purpose; update the expected values by hand in the same commit and say why in the message. Tests: graduation
+   never arrives through a gap; a run pauses and resumes; points never drop.
+   **Done (October 19, 2026, steps 1 and 2):** `packages/core/src/away.ts` (the rule), `back.ts` (`awayStart`, `answerAway`),
+   `dayKind` / `statusOf` / `runLedger` / `stepView` in `core.js` (with the log passed in), graduation, Today's measure, the
+   hours given back and the calendar (`'away'` kind), tests in `test/away.test.ts`. One change to the plan: the rule counts
+   only from `settings.awayFrom`, the first day the app marks opens. Before it, opening left no mark, so older days count
+   exactly as they always did; that keeps every earned count and the golden record unchanged (no fixture moved). With no
+   `awayFrom`, the rule is off: it is shipped inert until step 3 turns it on.
+
+3. **Present on open, and turning the rule on.** _Effort: medium._ Both together, never one without the other: Today
+   writes `p.o` once per log day and, the first time, applies `awayStart(st, tk)` (sets `awayFrom` to today). A new
+   person's setup save sets it too. Not before setup, and not while sync is joining (wait for the log to arrive).
+   `loggedDay` (log-start.ts) does not count `p.o`, so it never moves the start.
+4. **Welcome back.** _Effort: medium._ `apps/mobile/src/app/back.tsx` full-screen moment (SceneFrame, Dock), opened by
+   Today when `awayDue` and not shown today; the gap calendar for "Some slips"; the quiet Days card row afterwards;
+   `_layout.tsx` and `nav.ts` entries. Words: no contractions, never "missed", "lost" or "reset".
+5. **Calendar and day sheet.** _Effort: medium._ The not-known look and words in Journal and the day sheet.
+6. **Words elsewhere.** _Effort: medium._ "How I count days" in Settings, Where I am (`MODE_LEGEND`), and the help page
+   on counting say how quiet days count; setup's "A slip is data, not a reset" page stays as it is.
+7. **Check.** _Effort: medium._ In the browser with a made-up person: a 2-day gap (counts), a 12-day gap answered each way,
+   graduation at 88 of 90 with a gap, step down with a gap, and a second device that answered first.
+
+**Done (October 19, 2026, steps 3 to 7):** Today marks each day opened and starts the rule (`awayStart`), only after the
+launch's first sync with an account (a second device must not write a newer copy of today before it has the other's
+entries). Welcome back (`app/back.tsx`) opens once on return, once more the next day if closed, then a quiet row on Today
+(`components/back-row.tsx`); the not-known days have a dotted, softly filled look in the calendar; Settings and Where I am
+say how quiet days count (the Days card's short line is pinned by the golden fixtures and stays). Checked in the browser
+with a made-up person: away Oct 6 to 18, "Some slips" with one day picked, and "I would rather not say" (7 of 90, the run
+paused at 8 days). Seen in passing, not changed: someone who never logged anything and then answers "Some slips" has that
+slip become their first entry, so the existing start-moves-to-the-first-entry rule moves Day 1 to it. Rare, and older
+than this work; worth a look if it ever shows up with a tester.
+
+### Quiet days, simplified (the owner, October 19, 2026)
+
+The first version asked too much ("No slips", "Some slips" with a day picker, "rather not say"). Now:
+
+- **Welcome back asks one thing:** "Welcome back. Everything you built is still here. While you were away (Oct 8 to 18),
+  how many slips did you have?" The number big in the middle, a slider from 0 low by the thumb (0 to the number of days
+  away, capped at 30), and Save at the bottom. No other choices: the X leaves the gap unanswered (asked once more the next
+  day, then the quiet row), and an unanswered gap stays gray and counts neither way.
+- **Kept as** `settings.away: { from, to, n }[]` (n = slips while away). No slip entries are made: Daybook does not know
+  the days or times, so the pattern, hard hours and Rekindle never see them. Older entries with `a` are read as: 'clean'
+  is n = 0, 'skip' is unanswered; 'some' keeps its picked slip entries and the rest of the gap is n = 0.
+- **How it counts (each slip takes one day):** n = 0, every gap day is a no-slip day. n > 0, the gap gives (days - n)
+  no-slip days toward graduation and Today's measure (at least 0); for counting, the slips sit on the last n days of the
+  gap, so the run ends at the gap and starts again the day after it. The longest run stays. No Rekindle quest and no save.
+  Points never change (they come only from things done).
+- **The calendar:** every day of the gap is one gray look (the same for answered and unanswered), and under the month a
+  line per gap: "Oct 8 to 18 · away · 3 slips", "· no slips", or "· not known yet" with a Fill in link. A gray day's sheet
+  says the same line. The month's chips count the gap's slips with the others.
+
+**Steps**
+
+1. **Core: the count answer.** _Effort: high._ `away.ts`: entries become `{ from, to, n }` (read the old shape as above),
+   `dayKnown` true for every day of an answered gap, a new `awaySlipDay(days, st, k, tk)` true on the last n days of an
+   answered gap; `dayKind` gives 'slip' there (so runs end), `gradInfo` and `todayMeasure` treat those days as slips, and
+   the hours given back skip them. `back.ts`: `answerAway(st, gap, n)` (no entries made). Tests: n = 0 counts every day;
+   an 11-day gap with n = 3 gives 8 toward graduation and a run starting the day after; an old 'some' or 'clean' entry
+   still reads right; a second device's answer counts here; points unchanged.
+2. **Welcome back, one slider.** _Effort: medium._ `app/back.tsx`: the question, the big number (`SliderValue big`),
+   `Slider` (components/slider.tsx) from 0, Save in `Dock`; the done words: n = 0 "Then those days count.", n > 0
+   "Thank you for being honest. A slip is data, not a reset." Remove the day picker and the "rather not say" link.
+3. **Calendar and day sheet.** _Effort: medium._ One gray look for all gap days (`calendar.ts` 'away' kind for answered
+   and unanswered gaps, `calendar-card.tsx`), the per-gap line under the month with "Fill in" when unanswered, the day
+   sheet's line, and the month's slip chip including gap slips.
+4. **Check.** _Effort: medium._ In the browser: an 11-day gap answered 0 and 3, an unanswered gap, and the run and
+   graduation numbers before and after.
+
+**Done (October 19, 2026, step 1 of "Quiet days, simplified"):** `away.ts` keeps `{ from, to, n }` and works out the
+gaps (the whole quiet stretch, grace days included), the not-known days, and the days that carry the slips from an answer
+(`awaySlipDay`, the last n of the gap); `dayKind` counts those as slips (so runs end and start again after the gap, and
+gentle counting treats them as it does a logged slip), graduation, Today's measure and the hours given back skip them,
+step down's stretch starts after the latest gap with slips or no answer (`awayStretchFrom`), and every gap day reports as
+away (`statusOf` 'unknown', the Days card strip gray, the calendar's 'away'). New: `answerAwaySlips(st, gap, n)`,
+`awayGaps`, `awayGapAt`, `AWAY_MAX = 30`; `awayDue` now also gives `max` for the slider. The first version's
+`answerAway(days, st, gap, a, picked)` stays as a thin wrapper only so the current screen works; step 2 replaces the
+screen and removes it.
+
+**Done (October 19, 2026, steps 2 to 4 of "Quiet days, simplified"):** Welcome back asks one question with a slider
+(0 to the days away, at most 30; the ends read "0 slips" and "13 slips"; Save shows once it is touched); the first
+version's answers are gone. The calendar shows each gap as one gray stretch with a line under the month ("Oct 6 to 18 ·
+away · 3 slips", or "not known yet" with Fill in), the day sheet says the same, and the month's chips count the gap's
+slips and no-slip days. Checked in the browser with a made-up person away Oct 6 to 18 who answered 3: 15 of 90 toward
+graduation, the current run 1 day (today), the longest run kept at 15.

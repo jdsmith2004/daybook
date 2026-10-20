@@ -91,7 +91,8 @@ export function Shape({
       <Svg width={size} height={size} style={{ position: 'absolute' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Path d={d} fill={color} />
       </Svg>
-      {children}
+      {/* in a View of its own, so on the web it paints over the shape and not under it */}
+      {children != null ? <View style={{ alignItems: 'center', justifyContent: 'center' }}>{children}</View> : null}
     </View>
   );
 }
@@ -146,7 +147,8 @@ export function WavyRing({
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke * 0.45} fill="none" />
         {d ? <Path d={d} stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" /> : null}
       </Svg>
-      {children}
+      {/* in a View of its own, so on the web it paints over the shape and not under it */}
+      {children != null ? <View style={{ alignItems: 'center', justifyContent: 'center' }}>{children}</View> : null}
     </View>
   );
 }

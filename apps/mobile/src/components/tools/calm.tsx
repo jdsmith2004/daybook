@@ -57,6 +57,7 @@ export function Breathe({ finish, exit, sos, level }: ToolProps) {
       <Stage key="done" dir={0}>
         <Finish
           level={level}
+          tone="sky"
           title="Nice. Notice how you feel."
           text={(breaths > 1 ? 'You took ' + breaths + ' slow breaths. ' : '') + 'Shoulders, jaw, hands. Even a little softer is a win.'}
         />
@@ -171,7 +172,12 @@ export function Ground({ finish, level }: ToolProps) {
   if (!g)
     return (
       <Stage key="done" dir={0}>
-        <Finish level={level} title="You are here." text="Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now." />
+        <Finish
+          level={level}
+          tone="mint"
+          title="You are here."
+          text="Feel your feet on the floor. Take one slow breath. The wave has less to hold on to now."
+        />
         <Dock>
           <Button label="Done" onPress={() => finish('ground', { msg: 'You came back to the room.' })} />
         </Dock>

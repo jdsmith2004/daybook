@@ -1,14 +1,15 @@
 /* Good night: after "Phone away". The last thing seen before the hardest hour, so it carries the plan for a loud night (the one
    picked in SOS "Go to bed", or slow breathing) and, when today's check-in is still open, one tap to do it first.
-   Ported from the legacy SCENES.night. */
+   On a short phone (the SE) the plan folds into one tap, so Good night fits without scrolling. Ported from the legacy SCENES.night. */
 import { bedPlans, fmtClock, rhythm } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { FitArt } from '@/components/fit';
 import { NightSky } from '@/components/night-sky';
 import { SceneFrame } from '@/components/scene';
-import { Button, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 
@@ -18,6 +19,9 @@ export default function Night() {
   const st = snap.settings;
   const g = Number(gain) || 0;
   const plans = bedPlans(st);
+  const short = useWindowDimensions().height < 700;
+  const [open, setOpen] = useState(false);
+  const shown = !short || open;
   const ci = st ? rhythm(snap.days, st, tk, now).stops.find((x) => x.k === 'evening' && !x.done) : null;
   return (
     <SceneFrame
@@ -52,20 +56,33 @@ export default function Night() {
         </View>
       ) : null}
       <View style={s.box}>
-        <T v="eyebrow" style={{ color: '#CFC8F2' }}>
-          If the thoughts get loud
-        </T>
-        {plan ? <T v="label">{plan}</T> : null}
-        {plans
-          .filter((p) => !plan || !plan.startsWith(p[1]))
-          .map((p) => (
-            <View key={p[0]} style={{ gap: 1 }}>
-              <T v="label">{p[1]}</T>
-              <T v="small" style={{ color: '#CFC8F2' }}>
-                {p[2]}
-              </T>
+        {short ? (
+          <Pressable onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityState={{ expanded: open }} hitSlop={8} style={s.fold}>
+            <T v="eyebrow" style={{ color: '#CFC8F2' }}>
+              If the thoughts get loud
+            </T>
+            <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
+              <Icon name="down" size={18} color="#CFC8F2" />
             </View>
-          ))}
+          </Pressable>
+        ) : (
+          <T v="eyebrow" style={{ color: '#CFC8F2' }}>
+            If the thoughts get loud
+          </T>
+        )}
+        {shown && plan ? <T v="label">{plan}</T> : null}
+        {!shown
+          ? null
+          : plans
+              .filter((p) => !plan || !plan.startsWith(p[1]))
+              .map((p) => (
+                <View key={p[0]} style={{ gap: 1 }}>
+                  <T v="label">{p[1]}</T>
+                  <T v="small" style={{ color: '#CFC8F2' }}>
+                    {p[2]}
+                  </T>
+                </View>
+              ))}
       </View>
     </SceneFrame>
   );
@@ -73,5 +90,6 @@ export default function Night() {
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
+  fold: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 },
   box: { alignSelf: 'stretch', gap: 10, padding: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)' },
 });

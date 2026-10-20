@@ -1,7 +1,7 @@
 /* The tip jar in the app (support.ts decides when, and holds the words): the small Support button at the top of Today, the
    one ask on Today, and the quiet row on More. The link opens in the browser; nothing in Daybook changes after a tip,
-   because money never opens anything. On Android there is no tip link: Google Play asks that tips to the developer go
-   through its own billing, so TIP_URL is empty there and every tip spot stays hidden. */
+   because money never opens anything. The tip link is on the web only: Google Play and the App Store (rule 3.1.1) ask that
+   tips to the developer go through their own billing, so TIP_URL is empty in the apps and every tip spot stays hidden. */
 import { SUPPORT_URL, tipAnswered, TIP_WORDS } from '@daybook/core';
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -13,7 +13,7 @@ import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 /** the tip link on this platform, or '' where none is offered */
-export const TIP_URL = Platform.OS === 'android' || SHOTS_ANDROID ? '' : SUPPORT_URL;
+export const TIP_URL = Platform.OS !== 'web' || SHOTS_ANDROID ? '' : SUPPORT_URL;
 export const openTip = () => (TIP_URL ? Linking.openURL(TIP_URL).catch(() => undefined) : undefined);
 
 export function TipCard() {

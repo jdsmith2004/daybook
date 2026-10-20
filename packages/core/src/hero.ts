@@ -39,6 +39,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
     if (t.k === 'grad') return out('Graduated', String(t.n), 'of the last 100 days', 'Still going');
     if (t.k === 'way') return out('Toward graduation', String(t.n), 'of ' + GRAD_DAYS);
     if (t.of === 'Day 1 is today') return out('Quitting', 'Day 1', 'is today');
+    if (t.of === 'Today counts') return out('Still going', 'Today', 'counts');
     return out('No slip', String(t.n), t.of.replace(/ with no slip$/, ''));
   }
   const p = phaseOf(tk, st);

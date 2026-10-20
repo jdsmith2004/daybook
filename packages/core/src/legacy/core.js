@@ -2635,7 +2635,7 @@ const OB_TOP=['late','lonely','stress','bored','tired','scroll'];
 /* each hard moment: the urge plan row it fills, its "if", how a question says it, and three "then" choices */
 const OB_THEN={
  late:[0,'I am in bed late at night','you are in bed late at night',['Leave the room for 10 minutes. Then bed, no phone.','Charge my phone in another room and go to sleep.','One minute of slow breathing. Phone in another room.']],
- lonely:[1,'I am lonely or low','you feel lonely or low',['Text or call one person. A message counts.','Go somewhere with people around.','Use Reach a person in Daybook.']],
+ lonely:[1,'I am lonely or low','you feel lonely or low',['Text or call one person. A message counts.','Go somewhere with people around.','Open Reach a person in Daybook.']],
  bored:[2,'I am bored or idle','you are bored or idle',['A 10-minute walk outside.','10 minutes on a hobby or project.','Pick one thing from my calm moves.']],
  stress:[3,'I am stressed or anxious','you are stressed or wound up',['Move my body, then write one sentence about the stress.','One minute of slow breathing, long breath out.','Step outside for five minutes.']],
  tired:[4,'I am tired but still up','you are tired but still up',['Go to bed now. Phone charges outside the room.','Drink water and start my wind-down.','Phone down. One minute of slow breathing.']],

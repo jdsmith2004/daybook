@@ -47,3 +47,18 @@ it('the words are warm, with no contractions', () => {
   expect(w).toContain('other 37 lessons');
   expect(w).not.toMatch(/\b\w+n[’']t\b|must|required/i);
 });
+
+it('without an account, Next up never offers a lesson that waits behind one', () => {
+  const st = st0('2026-09-01');
+  const days = { '2026-10-01': { p: { ls: ['l1', 'l2', 'l3'] } } } as unknown as core.Days;
+  const done = core.lessonsDone(days);
+  let seen = 0;
+  for (let h = 0; h < 24; h++) {
+    const o = core.nextUp(days, st, tk, new Date(2026, 9, 15, h, 30).getTime(), false);
+    if (o.act !== 'lesson') continue;
+    seen++;
+    expect(core.lessonOpen(core.lessonById(o.v!)!, done, false)).toBe(true);
+    expect(o.t).toMatch(/^Read again: /);
+  }
+  expect(seen).toBeGreaterThan(0);
+});

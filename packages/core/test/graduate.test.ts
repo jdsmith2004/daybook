@@ -95,6 +95,11 @@ describe('the one day number on Today', () => {
     expect([m.n, m.of]).toEqual([2, 'of the last 2 days with no slip']);
     expect(m.cells!.slice(0, 5)).toEqual(['none', 'none', 'none', 'none', 'none']);
   });
+  it('never shows a big zero the day after a slip', () => {
+    const days = { '2026-10-01': slip('2026-10-01') } as unknown as Days;
+    const m = core.todayMeasure(days, st0, '2026-10-02')!;
+    expect([m.n, m.of]).toEqual([0, 'Today counts']);
+  });
   it('after a week with no slip it is the way to graduation, and nothing before Day 1', () => {
     const m = core.todayMeasure({}, st0, '2026-10-20')!;
     expect(m.k).toBe('way');

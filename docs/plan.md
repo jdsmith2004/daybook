@@ -161,6 +161,17 @@ graduation does not take the award away (the core test covers it; it was not wal
   own plan (Sunrise only opens the morning after a slip), the Sunday review's note, and the SOS tools' own-words boxes.
   They use the same text box and the same pairing with their button, so they should behave the same.
 
+**Decided after part 3 (October 19, 2026; the owner asked Claude to pick):**
+
+- Next up never offers a lesson that needs an account. Without one, the lesson stop is a re-read of an open lesson.
+- The day after a slip with no slip-free day in the window, Today says "Still going · Today counts" instead of a big zero.
+- The Sunrise choice now reads "Open Reach a person in Daybook." (rules and golden expectations updated; old days keep
+  what they saved).
+- Good night folds its loud-night plan into one tap on phones shorter than 700 points, so it fits the SE.
+- The tip link is on the web only. The App Store, like Google Play, asks for its own billing for tips (rule 3.1.1).
+- Left as they are: the review clock's shrink-to-fit, the graduation flame stepping aside on the SE, and the level bar
+  under "90 of 90".
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

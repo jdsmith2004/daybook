@@ -4,10 +4,12 @@
 import {
   addDays,
   blankP,
+  diffDays,
   fmtClock,
   fmtDate,
   fmtLeft,
   HX_NEXT,
+  LESSONS,
   minToClock,
   morningInfo,
   reachedOn,
@@ -18,6 +20,7 @@ import {
   sumDay,
   type RhythmStop,
 } from './legacy/core.js';
+import { lessonOpen } from './accounts';
 import { firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
@@ -426,8 +429,10 @@ export interface NextUp {
   when?: string;
   pips?: ('on' | 'now' | '')[];
 }
-/** the part of the day that is open now, or the next one to open (legacy nextUp) */
-export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number): NextUp {
+/** the part of the day that is open now, or the next one to open (legacy nextUp). Without an account (`account` false),
+    a lesson that waits behind one is never offered: Next up gives a re-read of a finished lesson instead, so Today never
+    turns into a sign-up page (and never on the morning after a slip). */
+export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): NextUp {
   const r = rhythm(days, st, tk, nowMs);
   const n = r.stops.length;
   const done = r.stops.filter((s) => s.done).length;
@@ -448,14 +453,16 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number): Nex
     pips: r.stops.map((x) => (x.done ? 'on' : x.k === s.k ? 'now' : '')),
   };
   if (s.k === 'lesson') {
-    const nl = firstUndone(lessonsDone(days));
-    if (nl) {
+    const doneIds = lessonsDone(days);
+    const nl = firstUndone(doneIds);
+    if (nl && lessonOpen(nl, doneIds, account)) {
       o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;
     } else {
-      const R = reviewPick(tk);
+      const read = LESSONS.filter((L) => lessonOpen(L, doneIds, account));
+      const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
       o.t = 'Read again: ' + R.title;
       o.s = 'A quick re-read';
       o.pts = 5;

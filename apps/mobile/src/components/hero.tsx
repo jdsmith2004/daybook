@@ -23,6 +23,7 @@ import { lookOf, openStopKey } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
+import { useAccount } from '@/lib/sync';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
 const SCENE_H = 262;
@@ -30,7 +31,7 @@ const FLAME = 206;
 const FLAME_TOP = 2;
 
 export function Hero({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
-  const o = nextUp(snap.days, snap.settings!, tk, now);
+  const o = nextUp(snap.days, snap.settings!, tk, now, useAccount());
   return (
     <>
       <Card style={s.card}>

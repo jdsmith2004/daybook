@@ -123,5 +123,7 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
   }
   cells.push('today');
   if (!m) return { k: 'week', n: 0, of: 'Day 1 is today', sub: 'One day at a time is plenty.', cells };
+  /* never a big zero the morning after a slip: today is the day that counts */
+  if (!n) return { k: 'week', n: 0, of: 'Today counts', sub: 'A slip is data, not a reset. Today is a fresh day.', cells };
   return { k: 'week', n, of: `of the last ${m} ${m === 1 ? 'day' : 'days'} with no slip`, sub: 'Small and close: one day at a time.', cells };
 }

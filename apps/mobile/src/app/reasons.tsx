@@ -4,6 +4,7 @@ import { moveReason, RCATS, REASON_LEN, REASON_MAX, reasonCat, reasonIdeas, remo
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
@@ -151,14 +152,16 @@ export default function Reasons() {
                 <View key={i} style={[s.item, { borderColor: t.ic }]}>
                   {/* the group comes first, so the box and its Save stay together above the keyboard */}
                   <CatChips label="Group" cur={editCat} onPick={setEditCat} />
-                  <Field label={'Reason ' + (i + 1)} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} autoFocus />
-                  <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
-                    {draft.length} of {REASON_LEN}
-                  </T>
-                  <View style={s.row}>
-                    <Button label="Save" onPress={save} />
-                    <Button kind="ghost" label="Cancel" onPress={() => setEdit(null)} />
-                  </View>
+                  <KeepAbove style={{ gap: 10 }}>
+                    <Field label={'Reason ' + (i + 1)} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} autoFocus />
+                    <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
+                      {draft.length} of {REASON_LEN}
+                    </T>
+                    <View style={s.row}>
+                      <Button label="Save" onPress={save} />
+                      <Button kind="ghost" label="Cancel" onPress={() => setEdit(null)} />
+                    </View>
+                  </KeepAbove>
                 </View>
               );
             const head = (
@@ -250,11 +253,13 @@ export default function Reasons() {
             <T v="small" tone="muted">
               Picking a group is optional. If you skip it, Daybook guesses.
             </T>
-            <Field key={addKey} label="New reason" hideLabel multiline maxLength={REASON_LEN} value={add} placeholder="I want to…" onChangeText={setAdd} />
-            <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
-              {add.length} of {REASON_LEN}
-            </T>
-            <Button label="Add reason" disabled={!add.trim()} onPress={addIt} />
+            <KeepAbove style={{ gap: 10 }}>
+              <Field key={addKey} label="New reason" hideLabel multiline maxLength={REASON_LEN} value={add} placeholder="I want to…" onChangeText={setAdd} />
+              <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
+                {add.length} of {REASON_LEN}
+              </T>
+              <Button label="Add reason" disabled={!add.trim()} onPress={addIt} />
+            </KeepAbove>
           </Card>
           {reasonIdeas(rs).length ? (
             <Card>

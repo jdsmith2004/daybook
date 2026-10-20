@@ -45,6 +45,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { AnswerChip, ChipWrap } from '@/components/answer';
@@ -766,26 +767,28 @@ export default function Review() {
         <T v="title" style={s.c} accessibilityRole="header">
           What will you need to hear midweek?
         </T>
-        <Field
-          label="My note"
-          hideLabel
-          multiline
-          maxLength={SUN_NOTE_LEN}
-          value={note}
-          onChangeText={setNote}
-          placeholder="Like: You have done this before."
-        />
-        <Button
-          label="Save my note"
-          disabled={!note.trim()}
-          onPress={() => {
-            store({ nt: note.trim() });
-            buzz('save');
-            say('Today shows it to you from Wednesday on.');
-            setDir(-1);
-            setAfter('done');
-          }}
-        />
+        <KeepAbove style={{ alignSelf: 'stretch', gap: 14 }}>
+          <Field
+            label="My note"
+            hideLabel
+            multiline
+            maxLength={SUN_NOTE_LEN}
+            value={note}
+            onChangeText={setNote}
+            placeholder="Like: You have done this before."
+          />
+          <Button
+            label="Save my note"
+            disabled={!note.trim()}
+            onPress={() => {
+              store({ nt: note.trim() });
+              buzz('save');
+              say('Today shows it to you from Wednesday on.');
+              setDir(-1);
+              setAfter('done');
+            }}
+          />
+        </KeepAbove>
         <T v="small" tone="muted" style={s.c}>
           Or start from one of these:
         </T>

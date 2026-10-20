@@ -113,6 +113,54 @@ and its route sends a person who has not graduated to Milestones, as it should.
   while it is in front. The same setting is on every page, sheet and moment, so the rest should behave the same.
 - A dev build shows "Open debugger to view warnings" on a cold start; it is not in the shipped app and was not traced.
 
+### Part 3: graduation, the on-screen keyboard, and the iPhone SE
+
+Walked on the iPhone 16 Pro and the iPhone SE (3rd generation) as a made-up person G: Day 1 on July 11, ten slips in the
+last 100 days, so October 19 is 90 of 90 (seeded straight into the simulator's storage; nothing real). The hardware
+keyboard was turned off, so every text box was tried with the on-screen keyboard. The SE's moments were measured (content
+height against the 667-point screen), not only looked at.
+
+**Found and fixed**
+
+- **Graduation never happened on a fresh open.** At 90 of 90, opening Daybook went to Milestones instead of the
+  celebration, and the award was not kept. Today records graduation as soon as it draws, but on a cold start the store
+  still held the empty starting snapshot at that moment, so the change was made to nothing and lost. The store now holds
+  what it loaded before anything draws. The same timing could drop the other changes Today makes on opening (the start
+  moving to the first log, step-down counting). Checked after: the celebration opens once, the date is kept, a later
+  visit to Today does not open it again, Milestones shows "See your graduation", and Today keeps the same cards with the
+  flame in its cap and "Graduated · 90 of the last 100 days".
+- **The graduation screen scrolled on every phone**, with "Keep going" as a small button in the middle of the page. It
+  is a full-width button at the bottom now, and the flame gives up room on a short phone.
+- **The keyboard covered the Save, Add and Done buttons under text boxes.** iOS scrolls a page only far enough to show
+  the caret, so the box's lower edge and its button stayed under the keyboard (My plan's own-words lines, an entry's
+  note in its sheet, and others). Every text box now brings itself and its button up to just above the keyboard
+  (`components/keyboard.tsx`, used by every TextInput). In a sheet it also allows for the sheet starting lower on the
+  screen. Checked with the keyboard up: My plan (Why, own words, a new rule, calm moves added and reworded), My reasons
+  (add and the longer why), an entry's note, and the check-in's line about the day.
+- **On the SE, Today's "90 of the last 100 days" ran under "Level 47 · Full Sun".** The words beside the big number
+  wrap to a second line now.
+- **On the SE, the check-in, the morning questions, the wind-down and the graduation scrolled** by 2 to 30 points. On a
+  short phone a moment's parts sit a little closer, the big slider number is a little smaller, and the slider's waiting
+  ring is smaller. All of them fit now, with the main button at the bottom. Talk, SOS, the quick log, the Sunday review,
+  Go deeper and the tools (pause, breathe, move, 5-4-3-2-1, what do I need, name the thought, reasons) already fit.
+
+**Checked, nothing wrong:** the largest text size on the graduation screen (it scrolls, the picture steps aside, Keep
+going is the last thing) and on Today with the graduated card; setup's first pages and Talk's first steps; a slip after
+graduation does not take the award away (the core test covers it; it was not walked in the simulator).
+
+**Left, with why**
+
+- **On the SE, Good night still runs about 60 points past the screen** because of its tips card ("If the thoughts get
+  loud"). Everything is reachable and the button is last. Folding the tips into a tap is a design call.
+- **Reach a person** is a list, so it scrolls on the SE by design. Sheets scroll too, as pages do.
+- **On the SE the graduation flame steps aside** to fit the facts and the button. The cap still shows on Today and in
+  Milestones. If the flame matters more on the celebration than the tip line, the tip line could move to the award page.
+- **The yellow bar under Today's "90 of 90" is level progress,** and right under the graduation count it reads as
+  progress toward graduation. Worth a look when Today is next touched.
+- **Not walked with the keyboard:** setup's later text boxes (its own words, the person, who I am becoming), Sunrise's
+  own plan (Sunrise only opens the morning after a slip), the Sunday review's note, and the SOS tools' own-words boxes.
+  They use the same text box and the same pairing with their button, so they should behave the same.
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

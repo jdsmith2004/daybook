@@ -26,6 +26,7 @@ import {
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { AddOwn, BigOption, Field } from '@/components/choices';
@@ -218,15 +219,17 @@ export default function Entry() {
           </T>
         </View>
       )}
-      <Field
-        label="Note (optional)"
-        multiline
-        maxLength={500}
-        defaultValue={e.note}
-        placeholder="What would make this easier next time?"
-        onChangeText={(t) => patch({ note: t })}
-      />
-      <Button label="Done" onPress={closeSheet} />
+      <KeepAbove style={{ gap: 14 }}>
+        <Field
+          label="Note (optional)"
+          multiline
+          maxLength={500}
+          defaultValue={e.note}
+          placeholder="What would make this easier next time?"
+          onChangeText={(t) => patch({ note: t })}
+        />
+        <Button label="Done" onPress={closeSheet} />
+      </KeepAbove>
       {del ? (
         <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
           <T v="label">Delete this entry?</T>

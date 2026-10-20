@@ -9,6 +9,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInsta
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
+import { KeyboardRoom, useKeyboardRoom } from '@/components/keyboard';
 import { Icon, T } from '@/components/ui';
 import { useBackLabel, useOverModal } from '@/lib/nav';
 import { MAX_WIDTH, useTheme } from '@/lib/theme';
@@ -50,9 +51,10 @@ export function Screen({
   const inset = card ? { ...safe, top: 0 } : safe;
   const label = useBackLabel(typeof back === 'string' ? back : 'Back');
   const y = useRef(0);
+  const kb = useKeyboardRoom(scrollRef, card);
   const page = (
     <ScrollView
-      ref={scrollRef}
+      ref={kb.ref}
       style={{ flex: 1, backgroundColor: c.bg }}
       onLayout={onScroll ? (e) => onScroll(y.current, e.nativeEvent.layout.height) : undefined}
       onScroll={
@@ -100,7 +102,7 @@ export function Screen({
           </View>
           {sub}
         </View>
-        {children}
+        <KeyboardRoom room={kb.room}>{children}</KeyboardRoom>
       </Appear>
     </ScrollView>
   );
@@ -109,7 +111,7 @@ export function Screen({
     <LinearGradient pointerEvents="none" colors={[c.bg, c.bg, c.bg + '00']} locations={[0, 0.75, 1]} style={[s.bar, { height: inset.top + 12 }]} />
   ) : null;
   return (
-    <View style={{ flex: 1 }}>
+    <View onLayout={kb.onLayout} style={{ flex: 1 }}>
       {page}
       {bar}
       {overlay ? (

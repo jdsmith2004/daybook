@@ -9,6 +9,7 @@
      everything moves straight to where it ends. */
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { SHORT } from '@/components/fit';
 import { AnimatedText } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
@@ -260,11 +261,11 @@ export function SliderValue({
     <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {value != null ? (
         <Animated.View style={[s.readRow, lift]}>
-          <AnimatedText style={[big ? s.huge : s.big, { color: c.ink }]}>{show(value)}</AnimatedText>
+          <AnimatedText style={[big ? (SHORT ? s.hugeShort : s.huge) : s.big, { color: c.ink }]}>{show(value)}</AnimatedText>
           {unit ? <AnimatedText style={[s.unit, { color: c.muted }]}>{unit}</AnimatedText> : null}
         </Animated.View>
       ) : big ? (
-        <View style={[s.wait, { borderColor: c.accent, opacity: 0.55 }]}>
+        <View style={[s.wait, SHORT && s.waitShort, { borderColor: c.accent, opacity: 0.55 }]}>
           <Icon name="down" size={30} color={c.muted} />
         </View>
       ) : (
@@ -291,6 +292,9 @@ const s = StyleSheet.create({
   /* before the first touch: a quiet ring pointing down at the slider */
   wait: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   huge: { fontFamily: font.displayBold, fontSize: 128, lineHeight: 140, fontVariant: ['tabular-nums'] },
+  /* a short phone (the SE): the number gives up a little so the question, slider and Next fit without scrolling */
+  waitShort: { width: 76, height: 76, borderRadius: 38, marginBottom: 4 },
+  hugeShort: { fontFamily: font.displayBold, fontSize: 96, lineHeight: 100, fontVariant: ['tabular-nums'] },
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },

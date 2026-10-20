@@ -35,6 +35,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { KeepAbove } from '@/components/keyboard';
 import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
@@ -340,20 +341,22 @@ function IfThenForm({
         style={input}
       />
       {when0 ? null : ideas(WHEN_IDEAS, when, setWhen)}
-      <T v="label">Then I will</T>
-      <TextInput
-        value={then}
-        onChangeText={setThen}
-        multiline
-        maxLength={PLAN_THEN_LEN}
-        autoFocus={!!when0}
-        placeholder="One clear thing I will do"
-        placeholderTextColor={c.muted}
-        accessibilityLabel="Then I will"
-        style={[input, { minHeight: 64 }]}
-      />
-      {then0 ? null : ideas(THEN_IDEAS, then, setThen, true)}
-      <Button label={save} disabled={!ok} onPress={() => onSave(when, then)} />
+      <KeepAbove style={{ gap: 8 }}>
+        <T v="label">Then I will</T>
+        <TextInput
+          value={then}
+          onChangeText={setThen}
+          multiline
+          maxLength={PLAN_THEN_LEN}
+          autoFocus={!!when0}
+          placeholder="One clear thing I will do"
+          placeholderTextColor={c.muted}
+          accessibilityLabel="Then I will"
+          style={[input, { minHeight: 64 }]}
+        />
+        {then0 ? null : ideas(THEN_IDEAS, then, setThen, true)}
+        <Button label={save} disabled={!ok} onPress={() => onSave(when, then)} />
+      </KeepAbove>
       <Pressable accessibilityRole="button" onPress={onCancel} style={s.remove}>
         <T v="small" style={{ color: c.accentText, fontFamily: font.bodySemi, textDecorationLine: 'underline' }}>
           Cancel

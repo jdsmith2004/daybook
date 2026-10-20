@@ -128,6 +128,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     load()
       .then(({ snap: s, dirty: d }) => {
+        /* the refs first: the first screen's effects run before this provider's own, and a change they make (graduation,
+           the start moving) reads the loaded snapshot, not the empty one */
+        snapRef.current = s;
+        dirtyRef.current = d;
         setSnap(s);
         setDirty(d);
       })

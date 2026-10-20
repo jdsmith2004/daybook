@@ -2,8 +2,9 @@
    typed (settings.learn.wr). It earns no points: it is for the person, not for a score. Ported from the legacy SCENES.lwrite. */
 import { LCHECKS, LESSONS, LUNITS, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { KeyboardRoom } from '@/components/keyboard';
 import { Text, TextInput } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,6 +21,7 @@ export default function Lwrite() {
   const c = useTheme();
   const inset = useSafeAreaInsets();
   const [i, setI] = useState(0);
+  const scroll = useRef<ScrollViewInstance>(null);
   const st = snap.settings;
   if (!st) return <Redirect href="/" />;
   const C = LCHECKS[n - 1];
@@ -56,69 +58,72 @@ export default function Lwrite() {
               ))}
             </View>
             <ScrollView
+              ref={scroll}
               style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
               contentContainerStyle={s.cardIn}
               automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled">
-              {!fin ? (
-                <>
-                  <View style={s.eye}>
-                    <View style={[s.ei, { backgroundColor: t.soft }]}>
-                      <Icon name="pencil" size={16} color={t.text} />
+              <KeyboardRoom scroll={scroll}>
+                {!fin ? (
+                  <>
+                    <View style={s.eye}>
+                      <View style={[s.ei, { backgroundColor: t.soft }]}>
+                        <Icon name="pencil" size={16} color={t.text} />
+                      </View>
+                      <Text style={[s.eyeT, { color: t.text }]}>
+                        WRITE IT OUT · {i + 1} OF {total}
+                      </Text>
                     </View>
-                    <Text style={[s.eyeT, { color: t.text }]}>
-                      WRITE IT OUT · {i + 1} OF {total}
-                    </Text>
-                  </View>
-                  <T style={s.h} accessibilityRole="header">
-                    {C.q[i]}
-                  </T>
-                  <T tone="muted" style={{ fontSize: 17 }}>
-                    A few sentences is plenty. Only you see this.
-                  </T>
-                  <TextInput
-                    key={i}
-                    accessibilityLabel="Your answer"
-                    multiline
-                    maxLength={LWRITE_LEN}
-                    defaultValue={txt[i] || ''}
-                    placeholder="Start anywhere"
-                    placeholderTextColor={c.muted}
-                    onChangeText={(v) => apply({ st: lwriteSave(snap.settings!, n, i, v) })}
-                    style={[s.wr, { borderColor: c.accent, color: c.ink, backgroundColor: c.surface }]}
-                  />
-                  <T v="small" tone="mintText">
-                    ✓ Saved as you type
-                  </T>
-                </>
-              ) : (
-                <>
-                  <View style={{ alignItems: 'center' }}>
-                    <LxCheck />
-                  </View>
-                  <T v="label" tone="mintText">
-                    CHECKPOINT SAVED
-                  </T>
-                  <T style={s.h} accessibilityRole="header">
-                    That is in your plan.
-                  </T>
-                  <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
-                  <Route
-                    label="Read it in My plan"
-                    onPress={() => {
-                      close();
-                      router.push({ pathname: '/plan', params: { pane: 'learned' } });
-                    }}
-                  />
-                  <Route
-                    label="Back to Learn"
-                    onPress={() => {
-                      close();
-                      router.navigate('/learn');
-                    }}
-                  />
-                </>
-              )}
+                    <T style={s.h} accessibilityRole="header">
+                      {C.q[i]}
+                    </T>
+                    <T tone="muted" style={{ fontSize: 17 }}>
+                      A few sentences is plenty. Only you see this.
+                    </T>
+                    <TextInput
+                      key={i}
+                      accessibilityLabel="Your answer"
+                      multiline
+                      maxLength={LWRITE_LEN}
+                      defaultValue={txt[i] || ''}
+                      placeholder="Start anywhere"
+                      placeholderTextColor={c.muted}
+                      onChangeText={(v) => apply({ st: lwriteSave(snap.settings!, n, i, v) })}
+                      style={[s.wr, { borderColor: c.accent, color: c.ink, backgroundColor: c.surface }]}
+                    />
+                    <T v="small" tone="mintText">
+                      ✓ Saved as you type
+                    </T>
+                  </>
+                ) : (
+                  <>
+                    <View style={{ alignItems: 'center' }}>
+                      <LxCheck />
+                    </View>
+                    <T v="label" tone="mintText">
+                      CHECKPOINT SAVED
+                    </T>
+                    <T style={s.h} accessibilityRole="header">
+                      That is in your plan.
+                    </T>
+                    <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                    <Route
+                      label="Read it in My plan"
+                      onPress={() => {
+                        close();
+                        router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                      }}
+                    />
+                    <Route
+                      label="Back to Learn"
+                      onPress={() => {
+                        close();
+                        router.navigate('/learn');
+                      }}
+                    />
+                  </>
+                )}
+              </KeyboardRoom>
             </ScrollView>
             <View style={s.foot}>
               {!fin && i > 0 ? (

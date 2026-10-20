@@ -30,6 +30,7 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { KeepAbove } from '@/components/keyboard';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { LineNote } from '@/components/line-note';
 import { Flames, Missions } from '@/components/rekindle';
@@ -214,7 +215,7 @@ export default function Sunrise() {
         </T>
         <T style={s.c}>…then I will:</T>
         {own != null ? (
-          <View style={{ width: '100%', gap: 10 }}>
+          <KeepAbove style={{ width: '100%', gap: 10 }}>
             <Field
               label="My own plan"
               hideLabel
@@ -235,7 +236,7 @@ export default function Sunrise() {
               />
               <Link label="Cancel" onPress={() => setOwn(null)} />
             </View>
-          </View>
+          </KeepAbove>
         ) : (
           <Dock>
             {P.opts.map((o, j) => {

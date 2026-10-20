@@ -38,3 +38,5 @@ export * from './sunday-story';
 export * from './calendar';
 export * from './hero';
 export * from './week';
+export * from './away';
+export * from './back';

@@ -11,7 +11,7 @@ import type { DayEvent, DayKey, Days, Settings } from './types';
 
 /** ok: no slip. one: one slip, and the gentle count still counts it. saved: a slip the run came through (a save). open: a
     slip the run can still come through. slip, logged, none, before (the log had not started), ahead (still to come). */
-export type CalKind = 'ok' | 'one' | 'saved' | 'open' | 'slip' | 'logged' | 'none' | 'before' | 'ahead';
+export type CalKind = 'ok' | 'one' | 'saved' | 'open' | 'slip' | 'logged' | 'none' | 'before' | 'ahead' | 'away';
 export interface CalDay {
   k: DayKey;
   /** the day of the month */
@@ -63,7 +63,7 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
     if (k > tk) kind = 'ahead';
     else if (k < first) kind = 'before';
     else {
-      const status = statusOf(k, d, st, tk);
+      const status = statusOf(k, d, st, tk, days);
       kind =
         status === 'slip'
           ? gentle && s.slipped === 1
@@ -77,7 +77,9 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
             ? 'ok'
             : status === 'tracked' || status === 'events'
               ? 'logged'
-              : 'none';
+              : status === 'unknown'
+                ? 'away'
+                : 'none';
       if (kind === 'ok') sum.noSlip++;
       sum.slips += s.slipped;
       sum.rode += s.rode;
@@ -137,7 +139,9 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
           ? 'Logged'
           : kind === 'ahead'
             ? 'Still to come'
-            : 'Nothing logged';
+            : kind === 'away'
+              ? 'Not known. You were away'
+              : 'Nothing logged';
   const events = sortedEvents(d, st.rollover).map((e) => {
     const r = eventRow(e, st);
     return { id: e.id, outcome: e.outcome, time: r.time, what: r.what, meta: r.meta, sos: urSosLines(e), note: (e.note || '').trim() };

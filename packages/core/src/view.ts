@@ -87,7 +87,7 @@ export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   v.first = sk.counted <= 30 ? (st.day1 as DayKey) : addDays(tk, -29);
   for (let i = 0; i < 30; i++) {
     const k = addDays(v.first, i);
-    const kind: CellKind = sk.kind[k] || dayKind(k, days[k], st, tk, mode);
+    const kind: CellKind = sk.kind[k] || dayKind(k, days[k], st, tk, mode, days);
     v.cells.push({ k, kind, today: k === tk });
     if (kind === 'ok' || kind === 'one') v.good++;
   }

@@ -26,6 +26,7 @@ const HEAD: Record<CalKind, { ic: string; tone: (c: Palette) => [string, string]
   slip: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
   logged: { ic: 'pencil', tone: (c) => [c.skySoft, c.skyText] },
   none: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
+  away: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
   before: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
   ahead: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
 };

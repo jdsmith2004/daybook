@@ -4,7 +4,7 @@ import type { Days, Day, DayEvent, DayKey, Settings, Reviews, CountMode, Checkin
 import type { Lesson, Unit } from '../lessons';
 import type { Level } from '../levels';
 
-export type DayKindName = 'ok' | 'one' | 'slip' | 'before' | 'ahead';
+export type DayKindName = 'ok' | 'one' | 'slip' | 'before' | 'ahead' | 'unknown';
 
 /* ---------- dates ---------- */
 export function p2(n: number): string;
@@ -42,7 +42,7 @@ export function phaseOf(key: DayKey, st: Settings): { p: 'before' | 'tracking' |
 export const RUN_DEEP: number;
 /** days after a slip in which its Rekindle quest can still save the run */
 export const RK_DAYS: number;
-export function dayKind(key: DayKey, day: Day | undefined, st: Settings, today: DayKey, mode?: CountMode): DayKindName;
+export function dayKind(key: DayKey, day: Day | undefined, st: Settings, today: DayKey, mode?: CountMode, days?: Days): DayKindName;
 export function rkFullDays(days: Days): Record<DayKey, 1>;
 export interface RunLedger {
   cur: number;
@@ -407,4 +407,4 @@ export function triggerCounts(evs: DayEvent[], opts: Settings['opts']): { k: str
 export function patterns(days: Days): { cleanN: number; slipN: number; rows: { label: string; kind: 'avg' | 'pct'; clean: number | null; slip: number | null; gap: number | null }[] };
 export function daysCsv(days: Days, st: Settings, today: DayKey): string;
 export function eventsCsv(days: Days, st: Settings): string;
-export function statusOf(key: DayKey, d: Day | undefined, st: Settings, tk: DayKey): string;
+export function statusOf(key: DayKey, d: Day | undefined, st: Settings, tk: DayKey, days?: Days): string;

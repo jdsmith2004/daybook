@@ -70,6 +70,8 @@ export interface Play {
   tt?: Talk[];
   /** a hard hour held this day (risk.ts): the hour it started */
   hw?: number;
+  /** the app was opened this day (away.ts): the person was here. It earns nothing and does not start the log. */
+  o?: true;
 }
 
 export interface Day {
@@ -154,6 +156,10 @@ export interface Settings {
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */
   acctNo?: DayKey | null;
+  /** the first day the app marked the days it was opened (away.ts); the quiet-day rule counts from here. Set once. */
+  awayFrom?: DayKey | null;
+  /** the answers about gaps away (away.ts): how the not-known days went. Optional. */
+  away?: { from: DayKey; to: DayKey; a: 'clean' | 'some' | 'skip' }[];
   /** the day the first week's look back was opened (week.ts). Optional. */
   wk1?: DayKey | null;
   /** the day the "tell your safe person you started" card on Day 1 was answered (rekindle.ts). Optional. */

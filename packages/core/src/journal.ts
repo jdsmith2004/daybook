@@ -39,7 +39,7 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   const d = days[key];
   const s = sumDay(d);
   const rk = L && L.kind[key];
-  const status = statusOf(key, d, st, tk);
+  const status = statusOf(key, d, st, tk, days);
   const evs = sortedEvents(d, st.rollover);
   const times =
     evs

@@ -3,6 +3,7 @@
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
 import { addDays, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { dayKnown } from './away';
 import { hardHeld } from './risk';
 import { formOfLevel, LADDER_V, LEVELS, STEPS, type Level } from './levels';
 import { changeSettings } from './actions';
@@ -194,7 +195,7 @@ export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {
       .map((e) => e.key),
   );
   let n = 0;
-  for (let k = d1; k < tk; k = addDays(k, 1)) if (!slips.has(k)) n++;
+  for (let k = d1; k < tk; k = addDays(k, 1)) if (!slips.has(k) && dayKnown(days, st, k, tk)) n++;
   const h = (n * H.yr) / 365;
   return h >= 1 ? obRnd(h) : null;
 }

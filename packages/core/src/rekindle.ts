@@ -153,7 +153,7 @@ export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, 
     /* a second slip on the day a run can still be saved: say so */
     const { op } = rkOpen(days, st, tk, date);
     if (op) return 'Your ' + op.run + '-day run can still be saved. Finish the Rekindle quest by ' + rkUntil(op.k) + ' night.';
-    if (dayKind(date, days[date], st, tk) === 'one') return 'With gentle counting, today still counts. Nothing you earned is gone.';
+    if (dayKind(date, days[date], st, tk, undefined, days) === 'one') return 'With gentle counting, today still counts. Nothing you earned is gone.';
     /* a run that ends here (a second slip within a week cannot be saved): what was built is kept, and said so */
     const before = runLedger(days, st, addDays(date, -1)).cur;
     return before > 0
@@ -384,7 +384,7 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
   if (!st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return null;
   const full = rkFullDays(days);
   const L = runLedger(days, st, tk);
-  const slip = (k: DayKey) => k >= st.day1! && dayKind(k, days[k], st, tk) === 'slip';
+  const slip = (k: DayKey) => k >= st.day1! && dayKind(k, days[k], st, tk, undefined, days) === 'slip';
   for (let i = 1; i <= RK_DAYS + 1; i++) {
     const k = addDays(tk, -i);
     if (!slip(k) || L.kind[k] === 'saved' || L.kind[k] === 'open') continue;

@@ -5,6 +5,7 @@
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
+import { dayKnown, unknownDays } from '../away';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -366,7 +367,9 @@ function normP(p){
  const q={w,wd:p.wd===true,r:p.r===true,c:Math.max(0,Math.min(50,parseInt(p.c,10)||0)),m:p.m===true,tl,po:isTime(p.po)?p.po:null,ls,lv,ov};
  const tt=normTalks(p.tt);if(tt.length)q.tt=tt;
  if(Number.isInteger(p.hw)&&p.hw>=0&&p.hw<24)q.hw=p.hw;
- return pEmpty(q)&&!Object.keys(ov).length?null:q;
+ /* o: the app was opened that day (away.ts). It keeps the day as present, and is not something done. */
+ if(p.o===true)q.o=true;
+ return pEmpty(q)&&!Object.keys(ov).length&&!q.o?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}
 /* a day counts as active when something was done, not when only the routine was edited */
@@ -394,12 +397,13 @@ function phaseOf(key,st){
  if(!st.day1||key<st.day1)return {p:'tracking',n:diffDays(key,st.start)+1};
  return {p:'quitting',n:diffDays(key,st.day1)+1};
 }
-function statusOf(key,day,st,today){
+function statusOf(key,day,st,today,days){
  if(key>today)return 'future';
  const s=sumDay(day);
  if(s.slipped)return 'slip';
- /* from Day 1 on, a day with no slip logged counts, whether or not a check-in was saved */
- if(phaseOf(key,st).p==='quitting')return 'clean';
+ /* from Day 1 on, a day with no slip logged counts, whether or not a check-in was saved, unless the person was away long
+    enough that Daybook does not know (away.ts) */
+ if(phaseOf(key,st).p==='quitting')return days&&!dayKnown(days,st,key,today)?'unknown':'clean';
  if(s.checked)return 'tracked';
  if(s.n)return 'events';
  return 'empty';
@@ -416,11 +420,13 @@ function eventsOf(days,fromKey){
    A day counts when no slip is logged on it. A day with nothing logged counts too: not logging a slip is not a slip.
    "Strict" is the default. "Gentle" lets a day with one slip still count, for a rough stretch. Switching never changes what is logged. */
 const cleanLimit=(st,mode)=>(mode||(st&&st.cleanMode))==='gentle'?1:0;
-/* what kind of day it was: ok (no slip), one (one slip, which still counts in gentle), slip (does not count), before (tracking week), ahead */
-function dayKind(key,day,st,today,mode){
+/* what kind of day it was: ok (no slip), one (one slip, which still counts in gentle), slip (does not count), before (tracking week), ahead,
+   or unknown: nothing logged while the person was away long enough that Daybook does not know (away.ts; only when the log is given) */
+function dayKind(key,day,st,today,mode,days){
  if(key>today)return 'ahead';
  if(!st.day1||key<st.day1)return 'before';
  const n=sumDay(day).slipped;
+ if(n===0&&days&&!dayKnown(days,st,key,today))return 'unknown';
  return n===0?'ok':n<=cleanLimit(st,mode)?'one':'slip';
 }
 /* ===== SAVING A RUN =====
@@ -442,8 +448,11 @@ function runLedger(days,st,today,mode,noSave){
  if(!st.day1)return L;
  const canSave=!noSave&&(mode==='strict'||mode==='gentle'),full=canSave?rkFullDays(days):{};
  for(let k=st.day1;k<=today;k=addDays(k,1)){
+  const dk=dayKind(k,days[k],st,today,mode,days);
+  /* a day Daybook does not know about pauses the run: it neither counts nor ends it (away.ts) */
+  if(dk==='unknown')continue;
   L.counted++;
-  if(dayKind(k,days[k],st,today,mode)!=='slip'){L.cur++;L.clean++}
+  if(dk!=='slip'){L.cur++;L.clean++}
   else{
    let s=null;const run=L.cur;
    if(full[k]&&run>=1){
@@ -537,7 +546,11 @@ function slipsInWeek(days,st,w){const r=weekRange(w,st);let n=0;for(let k=r[0];k
 function stepView(days,st,nowMs){
  const roll=st.rollover,tk=logicalKey(nowMs,roll),sl=slipMoments(days,st,nowMs);
  const stepAt=st.stepAt||st.day1||st.start,stepMs=evMs(stepAt,p2(roll)+':00',roll),startMs=evMs(st.start,p2(roll)+':00',roll);
- const last=sl.length?sl[sl.length-1]:null,curH=Math.max(0,(nowMs-(last!=null?last:startMs))/36e5);
+ const last=sl.length?sl[sl.length-1]:null;
+ /* after days Daybook does not know about (away.ts), the stretch it can vouch for starts when the person came back; the best
+    stretch already shown stays as it is */
+ const uk=unknownDays(days,st,tk),ukEnd=uk.length?evMs(addDays(uk[uk.length-1],1),p2(roll)+':00',roll):-Infinity;
+ const curH=Math.max(0,(nowMs-Math.max(last!=null?last:startMs,ukEnd))/36e5);
  let bestPast=0,bestSince=0;const recent=[];
  for(let i=1;i<sl.length;i++){
   const g=(sl[i]-sl[i-1])/36e5;
@@ -2780,7 +2793,7 @@ const HX_NEXT={
  evening:{ic:'pencil',t:'Check-in',s:'About a minute',pts:10},
  night:{ic:'moon',t:'Wind-down',s:'A few minutes',pts:15}
 };
-const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry'};
+const STATUS_TXT={clean:'No slip',tracked:'Logged',events:'No check-in',empty:'No entry',unknown:'Not known · you were away'};
 const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','Change the scene'],['connect','Reach out']];
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},

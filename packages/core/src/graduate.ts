@@ -3,9 +3,11 @@
 
    It stays quiet early on. Before the first 7 days in a row with no slip, Daybook only mentions that it exists; after that it
    shows the count, warmly, and never as a countdown. Once earned, settings.gradAt holds the date and is never cleared, so the
-   award survives later slips, rule changes and sync. Today does not change. Checked by test/graduate.test.ts. */
+   award survives later slips, rule changes and sync. Today does not change. Days Daybook does not know about (a long gap
+   away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, computeMetrics, eventsOf, isKey } from './legacy/core.js';
+import { dayKnown } from './away';
 import type { DayKey, Days, Settings } from './types';
 
 /** no-slip days needed, within the last GRAD_WINDOW days */
@@ -42,7 +44,8 @@ export function gradInfo(days: Days, st: Settings, tk: DayKey): GradInfo {
   if (first)
     for (let i = 1; i <= GRAD_WINDOW; i++) {
       const k = addDays(tk, -i);
-      if (k >= first && !slips.has(k)) count++;
+      /* only days Daybook knows about: a long gap away never graduates anyone by itself (away.ts) */
+      if (k >= first && !slips.has(k) && dayKnown(days, st, k, tk)) count++;
     }
   const at = gradOf(st);
   const longest = first ? computeMetrics(days, st, tk).longest : 0;
@@ -111,7 +114,7 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
   let m = 0;
   for (let i = WEEK; i >= 1; i--) {
     const k = addDays(tk, -i);
-    if (k < first) cells.push('none');
+    if (k < first || !dayKnown(days, st, k, tk)) cells.push('none');
     else {
       m++;
       if (slips.has(k)) cells.push('slip');

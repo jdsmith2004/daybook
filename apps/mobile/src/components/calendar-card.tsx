@@ -19,6 +19,7 @@ const WORD: Record<CalKind, string> = {
   slip: 'a slip',
   logged: 'logged',
   none: 'nothing logged',
+  away: 'not known, you were away',
   before: 'before the log started',
   ahead: 'still to come',
 };

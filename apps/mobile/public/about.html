@@ -2,18 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Daybook: quit porn without shame</title>
     <meta
       name="description"
-      content="Daybook is a free, private app for quitting porn, or another habit, without shame. Log urges and slips in a few taps, learn your pattern, and keep going after a hard day. No ads, no tracking, no account needed." />
+      content="Daybook is a free, private app for quitting porn, or another habit, without shame. Get help in the hard minute, learn your pattern, and keep going after a slip. No ads, no tracking, no account needed." />
+    <meta name="theme-color" content="#1b1550" />
     <link rel="canonical" href="https://d3c9g6kent5bsr.cloudfront.net/about.html" />
     <link rel="alternate" type="text/plain" href="llms.txt" title="Daybook, in plain text" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Daybook: quit porn without shame" />
     <meta property="og:description" content="A free, private companion for quitting porn. A slip is data, not a reset: what you build stays yours." />
-    <meta property="og:image" content="https://d3c9g6kent5bsr.cloudfront.net/site-icon.png" />
+    <meta property="og:image" content="https://d3c9g6kent5bsr.cloudfront.net/shots/01-today.webp" />
     <link rel="icon" href="site-icon.png" />
+    <link rel="preload" href="fonts/fredoka-600.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="site.css" />
     <script type="application/ld+json">
       {
@@ -21,10 +23,11 @@
         "@type": "SoftwareApplication",
         "name": "Daybook",
         "alternateName": "Daybook: Quit Without Shame",
-        "description": "A private, honest companion for quitting porn, or another habit, without shame. Log urges and slips, learn your pattern, and keep going after a hard day.",
+        "description": "A free, private companion for quitting porn, or another habit, without shame. Help in the hard minute, your own pattern, and a way to keep going after a slip.",
         "applicationCategory": "HealthApplication",
         "operatingSystem": "iOS, Android, Web",
         "url": "https://d3c9g6kent5bsr.cloudfront.net/about.html",
+        "screenshot": "https://d3c9g6kent5bsr.cloudfront.net/shots/01-today.webp",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "isAccessibleForFree": true
       }
@@ -39,7 +42,7 @@
             "name": "What is a good app to help me quit porn?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Daybook is a free, private app built for quitting porn without shame. It helps in the moment of an urge (SOS: breathing, grounding, your own reasons), shows the hours that are hardest for you from your own log, and helps you keep going after a slip instead of starting over. It has no ads, no tracking, and works with no account."
+              "text": "Daybook is a free, private app built for quitting porn without shame. It helps in the moment of an urge, shows the hours that are hardest for you from your own log, and helps you keep going after a slip instead of starting over. It has no ads and no tracking, and it works with no account."
             }
           },
           {
@@ -52,10 +55,18 @@
           },
           {
             "@type": "Question",
+            "name": "Who can see what I log in Daybook?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Only you. Without an account, it stays on your phone. With an account, it is stored under your own account and sent only to you when you are signed in. It is never sold, shared or used for ads."
+            }
+          },
+          {
+            "@type": "Question",
             "name": "Do I need an account to use Daybook?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account, and then your log never leaves your phone. A free account is optional: it keeps a safe copy and syncs your phone and the web."
+              "text": "No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account. A free account is optional: it keeps a safe copy and syncs your phone and the web."
             }
           },
           {
@@ -63,7 +74,7 @@
             "name": "What happens in Daybook after a slip?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "A slip is data, not a reset. Points, levels, badges and the days you built stay yours. Rekindle helps you look back honestly and take one small step, and its quest can keep your run."
+              "text": "A slip is data, not a reset. Points, levels, badges and the good days you built stay yours. Rekindle helps you look back honestly and take one small step."
             }
           },
           {
@@ -71,63 +82,222 @@
             "name": "Does Daybook block websites?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Daybook is not a blocker or a filter, and it does not watch what you do on your phone. Many people use it together with a blocker: the blocker makes porn harder to reach, and Daybook helps with the urge, the pattern and the hard days."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Who can see what I log in Daybook?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only you. Without an account, it stays on your phone. With an account, it is stored under your own account and sent only to you when you are signed in. It is never sold, shared or used for ads."
+              "text": "No. Daybook is not a blocker or a filter, and it does not watch what you do on your phone. Many people use it together with a blocker."
             }
           }
         ]
       }
     </script>
     <style>
+      /* Fredoka, the app's display face (SIL Open Font License, fonts/OFL.txt), served from this site, never a font service */
+      @font-face {
+        font-family: 'Fredoka';
+        src: url('fonts/fredoka-600.woff2') format('woff2');
+        font-weight: 600;
+        font-display: swap;
+      }
+      :root {
+        --night: #1b1550;
+        --dusk: #4a2f86;
+        --dawn: #f2a07b;
+        --on-night: #ffffff;
+        --on-night-soft: #d9d3ff;
+        --display: 'Fredoka', ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      html {
+        overflow-x: hidden;
+      }
+      h1,
+      h2,
+      .big {
+        font-family: var(--display);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      /* the top: night turning to daybreak, like the store pictures */
       .hero {
-        margin: 8px 0 20px;
+        background:
+          radial-gradient(120% 60% at 50% 105%, var(--dawn) 0%, transparent 60%), linear-gradient(180deg, var(--night) 0%, var(--dusk) 70%, #7a4a8f 100%);
+        color: var(--on-night);
+        padding-bottom: 28px;
+      }
+      .hero .wrap {
+        padding-bottom: 0;
+      }
+      .hero header {
+        margin-bottom: 20px;
+      }
+      .hero header .brand,
+      .hero nav a {
+        color: var(--on-night);
+      }
+      .hero nav a {
+        opacity: 0.85;
+      }
+      .pill {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.14);
+        color: var(--on-night);
+        font-weight: 600;
+        font-size: 14px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        margin-bottom: 14px;
       }
       .hero h1 {
-        font-size: 38px;
+        font-size: 44px;
+        line-height: 1.05;
+        margin: 0 0 14px;
       }
-      .open {
-        display: block;
-        text-align: center;
-        background: var(--accent);
-        color: #fff;
-        font-weight: 700;
-        font-size: 18px;
-        text-decoration: none;
-        padding: 16px 20px;
-        border-radius: 16px;
+      .hero .lead {
+        color: var(--on-night-soft);
+        margin-bottom: 16px;
       }
-      .dock {
-        position: sticky;
-        bottom: 0;
-        padding: 12px 0 16px;
-        background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 22px;
+        padding: 0;
+        list-style: none;
       }
-      .dock p {
-        text-align: center;
-        color: var(--muted);
+      .chips li {
+        margin: 0;
         font-size: 14px;
-        margin: 8px 0 0;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
       }
-      .grid {
+      .shots {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        margin: 0 -16px;
+        padding: 4px 16px 10px;
+        scrollbar-width: none;
+      }
+      .shots::-webkit-scrollbar {
+        display: none;
+      }
+      .shots img {
+        flex: 0 0 auto;
+        width: 62%;
+        max-width: 240px;
+        height: auto;
+        aspect-ratio: 600 / 1300;
+        border-radius: 22px;
+        scroll-snap-align: center;
+        box-shadow: 0 12px 30px rgba(10, 6, 40, 0.35);
+      }
+      .swipe {
+        text-align: center;
+        font-size: 14px;
+        color: var(--on-night-soft);
+        margin: 6px 0 0;
+      }
+
+      /* why hope matters: the same 89 days, two ways */
+      .two {
         display: grid;
         gap: 12px;
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        margin: 16px 0;
       }
-      @media (min-width: 640px) {
-        .grid {
-          grid-template-columns: 1fr 1fr;
-        }
+      .two .card {
+        margin: 0;
+        text-align: center;
       }
-      .grid .card {
+      .two .big {
+        font-size: 44px;
+        line-height: 1.1;
+        margin: 6px 0 2px;
+      }
+      .two small {
+        display: block;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .arrow {
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .lost .big {
+        color: var(--muted);
+      }
+      .kept {
+        background: var(--mint-soft);
+        border-color: transparent;
+      }
+      .kept .big {
+        color: var(--mint-text);
+      }
+
+      /* three ways it helps */
+      .steps {
+        counter-reset: s;
+        list-style: none;
+        padding: 0;
+      }
+      .steps li {
+        counter-increment: s;
+        position: relative;
+        padding: 16px 18px 16px 64px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        margin: 0 0 12px;
+      }
+      .steps li::before {
+        content: counter(s);
+        position: absolute;
+        left: 18px;
+        top: 16px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-family: var(--display);
+        font-weight: 600;
+        display: grid;
+        place-items: center;
+      }
+      .steps p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* what Daybook never does */
+      .never {
+        list-style: none;
+        padding: 0;
         margin: 0;
       }
+      .never li {
+        padding-left: 30px;
+        position: relative;
+        margin-bottom: 10px;
+      }
+      .never li::before {
+        content: '\2713';
+        position: absolute;
+        left: 0;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--mint-soft);
+        color: var(--mint-text);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 20px;
+        text-align: center;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
@@ -145,194 +315,299 @@
         color: var(--muted);
         font-weight: 600;
       }
+      td:nth-child(2) {
+        font-weight: 600;
+      }
       .scroll {
         overflow-x: auto;
+      }
+
+      .get {
+        display: grid;
+        gap: 10px;
+        margin: 12px 0;
+      }
+      .get .card {
+        margin: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .get .card h3 {
+        margin: 0;
+      }
+      .get .card span {
+        color: var(--muted);
+        font-size: 15px;
+        text-align: right;
+      }
+      .get .now span {
+        color: var(--mint-text);
+        font-weight: 600;
+      }
+
+      /* the main button sits low, where the thumb is, on every screen of the page */
+      .dock {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+        background: linear-gradient(to bottom, transparent, var(--bg) 28%);
+      }
+      .dock .inner {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .open {
+        display: block;
+        text-align: center;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 18px;
+        text-decoration: none;
+        padding: 16px 20px;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(98, 71, 234, 0.3);
+      }
+      .dock p {
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+        margin: 8px 0 0;
+      }
+      main.wrap {
+        padding-bottom: 8px;
+      }
+      footer.wrap {
+        margin-top: 0;
+        padding-top: 0;
+        border: 0;
+      }
+      footer.wrap p {
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <a class="brand" href="about.html"><img src="site-icon.png" alt="" />Daybook</a>
-        <nav aria-label="Pages">
-          <a href="about.html" aria-current="page">About</a>
-          <a href="support.html">Support</a>
-          <a href="privacy.html">Privacy</a>
-        </nav>
-      </header>
+    <section class="hero">
+      <div class="wrap">
+        <header>
+          <a class="brand" href="about.html"><img src="site-icon.png" alt="" />Daybook</a>
+          <nav aria-label="Pages">
+            <a href="support.html">Support</a>
+            <a href="privacy.html">Privacy</a>
+          </nav>
+        </header>
 
-      <main>
-        <section class="hero">
-          <h1>Quit porn without shame.</h1>
-          <p class="lead">
-            Daybook is a free, private companion for quitting porn, or another habit. Log urges and slips in a few taps, learn your pattern, and keep going
-            after a hard day. A slip is data, not a reset: what you build stays yours.
-          </p>
-        </section>
-
-        <h2>Why Daybook is different</h2>
-        <p>
-          People do not fail because they slip. They fail when they lose hope. Most tools are built around a streak that drops to zero, so day 89 can feel like
-          losing everything. Daybook is built the other way around.
-        </p>
-        <div class="grid">
-          <div class="card">
-            <h3>Progress that is never lost</h3>
-            <p>Points, levels, badges and the days you built stay earned, even after a slip. Daybook counts what you kept, not only your latest run.</p>
-          </div>
-          <div class="card">
-            <h3>Help in the hard minute</h3>
-            <p>
-              SOS opens with a slow breath, then offers a tool that fits the moment: grounding, a 10-minute pause, moving, your own reasons, or a text to
-              someone you trust.
-            </p>
-          </div>
-          <div class="card">
-            <h3>Learn your own pattern</h3>
-            <p>Daybook shows the hours and moments that are hardest for you, from your own log, so you can plan ahead for them.</p>
-          </div>
-          <div class="card">
-            <h3>Keep going after a slip</h3>
-            <p>Rekindle is a short, honest look back and one small step forward. Its quest can keep your run.</p>
-          </div>
-          <div class="card">
-            <h3>Private by design</h3>
-            <p>No ads, no tracking, nothing sold. No account needed. Face ID lock, and a plain name and icon on your home screen.</p>
-          </div>
-          <div class="card">
-            <h3>Free for everyone</h3>
-            <p>Nothing to unlock and no subscription. If it helps you, you can leave a tip; a tip changes nothing in the app.</p>
-          </div>
-        </div>
-
-        <h2>What is inside</h2>
-        <ul>
-          <li><strong>SOS:</strong> breathe first, then a tool that fits the moment.</li>
-          <li><strong>Logging:</strong> an urge or a slip in a few taps, with an optional note.</li>
-          <li><strong>Your pattern:</strong> your hardest hours and days, and a heads-up before them.</li>
-          <li><strong>Rekindle:</strong> after a slip, a kind look back and a small quest.</li>
-          <li><strong>Lessons:</strong> built on good research about habits and urges, written plainly and with hope.</li>
-          <li><strong>Your plan:</strong> why you are doing this, and what you will do when an urge comes.</li>
-          <li><strong>Daily rhythm:</strong> a morning check, an evening wind-down, and a weekly review.</li>
-          <li><strong>Graduation:</strong> a permanent award at 90 days with no slip.</li>
+        <span class="pill">Coming soon to the App Store</span>
+        <h1>Quit porn without shame.</h1>
+        <p class="lead">Get help in the hard minute, learn your own pattern, and keep going after a slip. What you build stays yours.</p>
+        <ul class="chips" aria-label="At a glance">
+          <li>Free</li>
+          <li>No ads</li>
+          <li>No tracking</li>
+          <li>No account needed</li>
         </ul>
 
-        <h2>How it compares</h2>
-        <p>Daybook does one job and does not try to do every job. Here is an honest look at where it fits.</p>
-        <div class="scroll">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Daybook</th>
-                <th>Streak counters</th>
-                <th>Blockers and filters</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>After a slip</td>
-                <td>What you built stays; Rekindle helps you go on</td>
-                <td>Often back to zero</td>
-                <td>Not their focus</td>
-              </tr>
-              <tr>
-                <td>In the moment of an urge</td>
-                <td>SOS tools</td>
-                <td>Sometimes a panic button</td>
-                <td>Blocks the site</td>
-              </tr>
-              <tr>
-                <td>Learns your pattern</td>
-                <td>Yes, from your own log</td>
-                <td>Rarely</td>
-                <td>No</td>
-              </tr>
-              <tr>
-                <td>Blocks websites</td>
-                <td>No</td>
-                <td>Some do</td>
-                <td>Yes</td>
-              </tr>
-              <tr>
-                <td>Watches your phone</td>
-                <td>Never</td>
-                <td>Varies</td>
-                <td>Yes, to filter</td>
-              </tr>
-              <tr>
-                <td>Price</td>
-                <td>Free, nothing to unlock</td>
-                <td>Often a subscription</td>
-                <td>Often a subscription</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="shots" aria-label="Pictures of the app">
+          <img src="shots/01-today.webp" width="600" height="1300" alt="Today: your day, your progress toward graduation, and the SOS button." />
+          <img src="shots/02-sos.webp" width="600" height="1300" loading="lazy" alt="SOS: breathe first, then a tool that fits the moment." />
+          <img src="shots/03-grow.webp" width="600" height="1300" loading="lazy" alt="Milestones: points only go up, and a slip never takes them away." />
+          <img src="shots/04-pattern.webp" width="600" height="1300" loading="lazy" alt="Your pattern: the hours and moments that are hardest for you." />
+          <img src="shots/05-learn.webp" width="600" height="1300" loading="lazy" alt="Lessons: short, plain and hopeful, a few minutes a day." />
+          <img
+            src="shots/06-private.webp"
+            width="600"
+            height="1300"
+            loading="lazy"
+            alt="Privacy: no ads, no tracking, and without an account your log never leaves your phone." />
         </div>
+        <p class="swipe">Swipe to see more</p>
+      </div>
+    </section>
+
+    <main class="wrap">
+      <h2>A slip is not the end of the road.</h2>
+      <p>
+        Most quit apps count days until a slip, then show a zero. That zero hurts, and shame after a slip makes the next one more likely. Daybook counts what
+        you kept, so a hard day stays a hard day.
+      </p>
+      <div class="two" aria-label="The same 89 days, counted two ways">
+        <div class="card lost">
+          <small>A streak counter</small>
+          <p class="big">0</p>
+          <small class="arrow">89 days, one slip, back to zero</small>
+        </div>
+        <div class="card kept">
+          <small>Daybook</small>
+          <p class="big">89</p>
+          <small class="arrow">89 good days, one slip, all 89 kept</small>
+        </div>
+      </div>
+      <p>Points, levels and badges never go down. Graduation comes with 90 days free of a slip in your last 100, and once earned, it is yours for good.</p>
+
+      <h2>How Daybook helps</h2>
+      <ol class="steps">
+        <li>
+          <h3>In the hard minute</h3>
+          <p>Tap SOS. Breathe first, then pick a tool that fits: grounding, a 10-minute pause, moving, your own reasons, or a text to someone you trust.</p>
+        </li>
+        <li>
+          <h3>Over the weeks</h3>
+          <p>Log urges and slips in a few taps. Daybook shows the hours and moments that are hardest for you, and gives you a heads-up before them.</p>
+        </li>
+        <li>
+          <h3>After a slip</h3>
+          <p>Rekindle is a short, honest look back and one small step forward. Its quest can keep your run.</p>
+        </li>
+      </ol>
+      <p>
+        Also inside: short lessons built on research about habits and urges, your own plan, a morning check, an evening wind-down and a weekly review. It works
+        for other habits too.
+      </p>
+
+      <h2>What Daybook never does</h2>
+      <div class="card">
+        <ul class="never">
+          <li>Never shows ads, tracks you, or sells or shares what you log.</li>
+          <li>Never needs an account to help you. Without one, your log never leaves your phone.</li>
+          <li>Never takes away what you earned.</li>
+          <li>Never says what it is for on your home screen or in a reminder.</li>
+          <li>Never locks care behind a paywall. It is free, for everyone.</li>
+        </ul>
+      </div>
+      <p>Want the details? The <a href="privacy.html">privacy policy</a> says exactly what is kept, where, and how to delete it.</p>
+
+      <h2>How it compares</h2>
+      <p>Daybook does one job well. Here is an honest look at where it fits.</p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Daybook</th>
+              <th>Streak counters</th>
+              <th>Blockers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>After a slip</td>
+              <td>What you built stays</td>
+              <td>Often back to zero</td>
+              <td>Not their focus</td>
+            </tr>
+            <tr>
+              <td>In the moment</td>
+              <td>SOS tools</td>
+              <td>Sometimes a panic button</td>
+              <td>Blocks the site</td>
+            </tr>
+            <tr>
+              <td>Your pattern</td>
+              <td>From your own log</td>
+              <td>Rarely</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Blocks websites</td>
+              <td>No</td>
+              <td>Some do</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Price</td>
+              <td>Free</td>
+              <td>Often a subscription</td>
+              <td>Often a subscription</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Daybook pairs well with a blocker: the blocker makes porn harder to reach, and Daybook helps with the urge, the pattern and the hard days.</p>
+
+      <h2>Built by one person</h2>
+      <div class="card">
         <p>
-          Daybook works well together with a blocker: the blocker makes porn harder to reach, and Daybook helps with the urge, the pattern and the hard days. If
-          you want a person to see your activity, an accountability app does that; Daybook keeps everything to you.
+          Daybook is made by one person, in the open: its code is public, so anyone can check that it keeps its word about privacy. Every message is read, and
+          ideas from people using it shape what comes next.
         </p>
+        <p><a href="support.html">Write to us</a> · <a href="https://github.com/jdsmith2004/daybook">See the code</a></p>
+      </div>
 
-        <h2>Common questions</h2>
-        <details>
-          <summary>What is a good app to help me quit porn?</summary>
-          <p>
-            Daybook is built for exactly that, without shame. It helps in the moment of an urge, shows the hours that are hardest for you, and helps you keep
-            going after a slip instead of starting over. It is free, private, and works with no account.
-          </p>
-        </details>
-        <details>
-          <summary>Is it really free?</summary>
-          <p>Yes. Everything is free for everyone, with no ads, no subscription and nothing behind a paywall.</p>
-        </details>
-        <details>
-          <summary>Do I need an account?</summary>
-          <p>
-            No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account, and your log stays on your phone. A free account keeps a safe
-            copy, syncs your phone and the web, and opens the lessons after the first three.
-          </p>
-        </details>
-        <details>
-          <summary>What happens after a slip?</summary>
-          <p>
-            A slip is data, not a reset. Your points, levels, badges and the days you built stay yours. Rekindle helps you look back honestly and take one small
-            step.
-          </p>
-        </details>
-        <details>
-          <summary>Does it block websites?</summary>
-          <p>No. Daybook is not a filter and does not watch what you do. It pairs well with a blocker if you want one.</p>
-        </details>
-        <details>
-          <summary>Is it only for porn?</summary>
-          <p>It is made first for quitting porn, and it works for other habits you want to change too.</p>
-        </details>
-        <details>
-          <summary>Where can I get it?</summary>
-          <p>Daybook works in any browser today. The iPhone and Android apps are in testing and come to the App Store and Google Play soon.</p>
-        </details>
-
-        <div class="card sos">
-          <h3>If you are in crisis</h3>
-          <p>
-            Daybook is not medical care. If you are thinking about hurting yourself, call or text <strong>988</strong> in the US, or call your local emergency
-            number.
-          </p>
+      <h2>Get Daybook</h2>
+      <div class="get">
+        <div class="card now">
+          <h3>On the web</h3>
+          <span>Ready now</span>
         </div>
-
-        <div class="dock">
-          <a class="open" href="./">Open Daybook</a>
-          <p>Free. No account needed. Works in your browser.</p>
+        <div class="card">
+          <h3>iPhone</h3>
+          <span>Coming soon to the App Store</span>
         </div>
-      </main>
+        <div class="card">
+          <h3>Android</h3>
+          <span>In testing</span>
+        </div>
+      </div>
+      <p>Start on the web today. When the phone app comes, make a free account and your log comes with you.</p>
 
-      <footer>
+      <h2>Common questions</h2>
+      <details>
+        <summary>Is it really free?</summary>
+        <p>Yes. Everything is free for everyone, with no ads, no subscription and nothing behind a paywall. Tips are welcome and change nothing.</p>
+      </details>
+      <details>
+        <summary>Who can see what I log?</summary>
         <p>
-          Daybook is not medical care. <a href="support.html">Support</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of use</a> ·
-          <a href="llms.txt">Daybook in plain text</a>
+          Only you. Without an account, it stays on your phone. With an account, it is stored under your own account and sent only to you when you are signed
+          in.
         </p>
-      </footer>
+      </details>
+      <details>
+        <summary>Do I need an account?</summary>
+        <p>
+          No. SOS, logging, Rekindle, your plan, the tools and Today all work with no account. A free account keeps a safe copy, syncs your phone and the web,
+          and opens the lessons after the first three.
+        </p>
+      </details>
+      <details>
+        <summary>What happens after a slip?</summary>
+        <p>A slip is data, not a reset. Your points, levels, badges and good days stay yours, and Rekindle helps you take one small step.</p>
+      </details>
+      <details>
+        <summary>Does it block websites?</summary>
+        <p>No. Daybook is not a filter and does not watch what you do. It pairs well with a blocker if you want one.</p>
+      </details>
+      <details>
+        <summary>Is it only for porn?</summary>
+        <p>It is made first for quitting porn, and it works for other habits you want to change too.</p>
+      </details>
+
+      <div class="card sos">
+        <h3>If you are in crisis</h3>
+        <p>
+          Daybook is not medical care. If you are thinking about hurting yourself, call or text <strong>988</strong> in the US, or call your local emergency
+          number.
+        </p>
+      </div>
+    </main>
+
+    <div class="dock">
+      <div class="inner">
+        <a class="open" href="./">Start now, free</a>
+        <p>Works in your browser. No account needed.</p>
+      </div>
     </div>
+
+    <footer class="wrap">
+      <p>
+        Daybook is not medical care. <a href="support.html">Support</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of use</a> ·
+        <a href="llms.txt">Daybook in plain text</a>
+      </p>
+    </footer>
   </body>
 </html>

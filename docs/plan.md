@@ -1276,3 +1276,39 @@ to the sunrise end page (F1); a stale sunrise check uses `close()` (`sunrise.tsx
 **D1. Device check: the seams.** _Effort: owner, on a phone._ Night to check-in and back; SOS to Talk it through and
 back; an urge and a slip at 11 PM; the quest's Go deeper; a lesson's Talk it through; each notification tap; a Sunday
 note; Welcome back after a tap. Findings go here.
+
+## Launch site (2026-10-20)
+
+The owner asked for research on how app sites build excitement, then a page rebuilt from the ground up. The research
+(landing pages of I Am Sober, Finch and Quittr; Apple's marketing rules; Unbounce benchmarks; email tools) said:
+
+- One goal per page. With a web app that already works, the main button is "Start now, free", not a waitlist.
+- Plain words, the outcome first, and privacy said plainly: visitors to a sensitive-topic app are wary, with reason.
+- Shame after a slip makes the next one more likely, which is the case for "a slip is data, not a reset".
+- Avoid "rewire your brain", success percentages, testosterone or before-and-after claims, and "Are you addicted?" copy
+  (Apple 1.4.1, ad rules, and it is not the voice of Daybook).
+- Referral waitlists depend on people sharing, which few do for this topic. A pre-order would push the launch back for
+  a gain nobody has shown. A countdown has no evidence behind it.
+
+Done (medium): `about.html` rebuilt: a night-to-daybreak hero with the six store pictures, "a slip is not the end of
+the road" (a streak counter's 0 next to Daybook's 89 kept), three ways it helps, what Daybook never does, the honest
+comparison, who builds it, where to get it, the FAQ, the crisis card, and "Start now, free" fixed low, where the thumb
+is. The Fredoka font is served from the site, never a font service.
+
+Next, in order:
+
+1. (medium) **The day the iPhone app is live:** swap "Coming soon" for Apple's black "Download on the App Store" badge
+   (from the Apple marketing toolbox, unaltered, at least 40 px tall) linking to `https://apps.apple.com/app/id6824362830`;
+   add the Smart App Banner (`<meta name="apple-itunes-app" content="app-id=6824362830">`) to `about.html` only, never
+   to the web app; update `llms.txt` and the FAQ "Where can I get it?".
+2. (medium, needs the owner) **"Tell me when Daybook is on Android":** a plain form to Buttondown (free to 100 people,
+   tracking off by default, double opt-in, no script). The owner makes the Buttondown account, turns off open and click
+   tracking, and sets the sender name to "Daybook" with subjects that never say what it is for. `privacy.html` then says
+   the email is kept by Buttondown, only to send that one note. Self-hosting on SES would avoid the third party but needs
+   a new role in `infra/bootstrap` (high), so it waits.
+3. (medium) **The same day as the Play release:** the Google Play badge next to Apple's (App Store first, same size).
+4. (owner) **Spreading the word, after launch:** Bing Webmaster Tools (import from Search Console); a short honest post
+   where the rules allow it (read each community's rules first, about one promotional post per nine helpful ones, never
+   ask for votes); Product Hunt at 12:01 AM Pacific midweek once a few supporters are ready.
+5. (low) **A domain**, once the owner buys one: point it at CloudFront and change the canonical links, the sitemap and
+   `llms.txt`.

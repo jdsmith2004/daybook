@@ -12,3 +12,6 @@ apps/mobile/ios/
 apps/mobile/android/
 apps/mobile/expo-env.d.ts
 coverage/
+
+# Google Search Console checks this file word for word
+apps/mobile/public/google*.html

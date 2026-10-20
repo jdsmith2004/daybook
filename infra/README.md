@@ -62,6 +62,19 @@ You need a **personal** AWS account, the AWS CLI, and Terraform 1.10 or newer (`
 
 5. **Phone builds.** The Deploy summary also lists three `EXPO_PUBLIC_*` values. Put them in `apps/mobile/.env.local` (git ignores it) or in EAS environment variables, and phone builds can sign in and sync too. They are public, like the web app itself.
 
+## Sign-up with no emailed code
+
+Signing up in the app can skip the emailed code: Cognito's pre-sign-up trigger (`services/api/src/signup.ts`) confirms the
+account at once and leaves the email unverified, so a mistyped address can never be used to reset the password. The person
+confirms their email later from Settings, which turns password reset on. It also means sign-ups send no email, so Cognito's
+built-in limit (about 50 emails a day) no longer caps them.
+
+It is off until the trigger's role exists. To turn it on:
+
+1. Apply the bootstrap stack once with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It adds the
+   `daybook-app-signup` role (its own logs, nothing else) and lets deploys hand that role to the trigger.
+2. Set `auto_confirm` to `true` in `infra/app/variables.tf` and push; the next deploy makes the trigger.
+
 ## Signing in from a local web server
 
 Sign-up and sign-in are native screens in the app that call the Cognito API directly, so they work from any address. The

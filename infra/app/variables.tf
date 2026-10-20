@@ -18,6 +18,18 @@ variable "lambda_zip" {
   default     = "../../services/api/dist/sync.zip"
 }
 
+variable "signup_zip" {
+  description = "The built sign-up trigger (npm run build -w @daybook/api)."
+  type        = string
+  default     = "../../services/api/dist/signup.zip"
+}
+
+variable "auto_confirm" {
+  description = "true: signing up in the app needs no emailed code (the sign-up trigger confirms the account and leaves the email unverified until the person confirms it from Settings). Needs the daybook-app-signup role, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
+  type        = bool
+  default     = false
+}
+
 variable "invite_only" {
   description = "true: only the owner can make accounts (with the AWS CLI). false (the default): anyone can sign up in the app, with a checked email. Cognito's built-in email sends about 50 a day, which also caps new sign-ups a day."
   type        = bool

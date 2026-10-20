@@ -50,6 +50,8 @@ interface SyncValue {
   /** after the account sheet signed in: carry on syncing with this session */
   startWith: (s: Session) => Promise<void>;
   syncNow: () => Promise<void>;
+  /** a fresh access token for the signed-in person, for calls about their own account (confirming their email) */
+  token: () => Promise<string>;
   /** the answer to the first-sign-in question */
   choose: (how: 'combine' | 'account') => Promise<void>;
   /** sign out; with `remove`, the log leaves this device too */
@@ -388,6 +390,11 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       syncNow: async () => {
         paused.current = false;
         await round();
+      },
+      token: async () => {
+        const s = sessionRef.current;
+        if (!s) throw new SignInExpired();
+        return accessToken(s);
       },
       choose,
       signOutNow,

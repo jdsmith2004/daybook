@@ -92,3 +92,23 @@ it('small helpers', () => {
   expect(core.emailOk(' me@example.com ')).toBe(true);
   expect(core.emailOk('me@example')).toBe(false);
 });
+
+it('a sign-up the trigger confirmed needs no code', async () => {
+  const { c } = fake({ SignUp: { body: { UserConfirmed: true } } });
+  expect(await c.signUp('me@example.com', 'a long password')).toEqual({ confirmed: true });
+});
+
+it('confirms the email later with the access token alone, and reads whether it is confirmed', async () => {
+  const { calls, c } = fake({ GetUser: { body: { UserAttributes: [{ Name: 'email_verified', Value: 'false' }] } } });
+  expect(await c.emailVerified('tok')).toBe(false);
+  await c.sendEmailCode('tok');
+  await c.verifyEmail('tok', '12 34 56');
+  expect(calls.map((x) => x.op)).toEqual(['GetUser', 'GetUserAttributeVerificationCode', 'VerifyUserAttribute']);
+  expect(calls[0].body).toEqual({ AccessToken: 'tok' });
+  expect(calls[2].body).toEqual({ AccessToken: 'tok', AttributeName: 'email', Code: '123456' });
+});
+
+it('a reset for an email that was never confirmed says so plainly', async () => {
+  const { c } = fake({ ForgotPassword: { ok: false, body: { __type: 'InvalidParameterException' } } });
+  await expect(c.forgot('me@example.com')).rejects.toMatchObject({ code: 'NotVerified' });
+});

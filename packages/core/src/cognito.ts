@@ -44,6 +44,8 @@ export function cognitoWords(code: string): string {
       return 'Too many tries for now. Wait a few minutes, then try again.';
     case 'InvalidParameterException':
       return 'Check the email address and try again.';
+    case 'NotVerified':
+      return 'This email was never confirmed, so the password cannot be reset. If you are still signed in on another device, confirm your email in Settings there, then try again.';
     case 'CodeDeliveryFailureException':
       return 'The email with your code could not be sent. Check the address and try again.';
     case 'Network':
@@ -57,13 +59,14 @@ type Fetch = (url: string, init: { method: string; headers: Record<string, strin
 
 export function cognitoClient(region: string, clientId: string, fetchFn: Fetch = fetch as unknown as Fetch) {
   const url = `https://cognito-idp.${region}.amazonaws.com/`;
-  async function call(op: string, body: Record<string, unknown>): Promise<Record<string, any>> {
+  /** calls made with the person's access token (their own account) send it instead of the client id */
+  async function call(op: string, body: Record<string, unknown>, withClient = true): Promise<Record<string, any>> {
     let res;
     try {
       res = await fetchFn(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-amz-json-1.1', 'X-Amz-Target': 'AWSCognitoIdentityProviderService.' + op },
-        body: JSON.stringify({ ClientId: clientId, ...body }),
+        body: JSON.stringify(withClient ? { ClientId: clientId, ...body } : body),
       });
     } catch {
       throw new CognitoError('Network', cognitoWords('Network'));
@@ -92,7 +95,8 @@ export function cognitoClient(region: string, clientId: string, fetchFn: Fetch =
   const email = (e: string) => e.trim().toLowerCase();
 
   return {
-    /** makes the account; Cognito emails a 6-digit code to confirm it */
+    /** makes the account. Where the sign-up trigger is on (infra/app auth.tf), it is confirmed at once and no code is sent;
+        otherwise Cognito emails a 6-digit code to confirm it */
     async signUp(e: string, password: string): Promise<{ confirmed: boolean }> {
       const r = await call('SignUp', { Username: email(e), Password: password, UserAttributes: [{ Name: 'email', Value: email(e) }] });
       return { confirmed: !!r.UserConfirmed };
@@ -124,8 +128,27 @@ export function cognitoClient(region: string, clientId: string, fetchFn: Fetch =
       if (!r.AuthenticationResult) throw new CognitoError('Error', cognitoWords('Error'));
       return tokensOf(r.AuthenticationResult);
     },
+    /** an account whose email was never confirmed has nowhere to send the code: that gets its own plain answer */
     async forgot(e: string): Promise<void> {
-      await call('ForgotPassword', { Username: email(e) });
+      try {
+        await call('ForgotPassword', { Username: email(e) });
+      } catch (err) {
+        if (err instanceof CognitoError && err.code === 'InvalidParameterException') throw new CognitoError('NotVerified', cognitoWords('NotVerified'));
+        throw err;
+      }
+    },
+    /** whether the signed-in person's email is confirmed (password reset needs it) */
+    async emailVerified(accessToken: string): Promise<boolean> {
+      const r = await call('GetUser', { AccessToken: accessToken }, false);
+      const a = (r.UserAttributes || []) as { Name: string; Value: string }[];
+      return a.some((x) => x.Name === 'email_verified' && x.Value === 'true');
+    },
+    /** emails a 6-digit code to confirm the signed-in person's email */
+    async sendEmailCode(accessToken: string): Promise<void> {
+      await call('GetUserAttributeVerificationCode', { AccessToken: accessToken, AttributeName: 'email' }, false);
+    },
+    async verifyEmail(accessToken: string, code: string): Promise<void> {
+      await call('VerifyUserAttribute', { AccessToken: accessToken, AttributeName: 'email', Code: code.replace(/\D/g, '') }, false);
     },
     async reset(e: string, code: string, password: string): Promise<void> {
       await call('ConfirmForgotPassword', { Username: email(e), ConfirmationCode: code.replace(/\D/g, ''), Password: password });

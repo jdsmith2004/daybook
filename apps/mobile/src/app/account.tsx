@@ -135,7 +135,10 @@ export default function Account() {
             {mode === 'new' ? 'Your account is ready.' : 'You are signed in.'}
           </T>
           <T tone="muted" style={{ textAlign: 'center' }}>
-            {sync.status.k === 'busy' ? sync.status.what : 'Your log is kept safe, and every lesson is open.'}
+            {sync.status.k === 'busy'
+              ? sync.status.what
+              : 'Your log is kept safe, and every lesson is open.' +
+                (mode === 'new' ? ' Confirm your email in Settings any time, so a forgotten password can be reset.' : '')}
           </T>
           {sync.status.k === 'busy' ? <ActivityIndicator color={c.accent} /> : <Button label={p.then ? 'Open the lesson' : 'Done'} onPress={leave} />}
         </View>
@@ -263,7 +266,8 @@ export default function Account() {
         <Pw value={pw} onChange={setPw} show={show} setShow={setShow} label="Password" isNew={mode === 'new'} onSubmit={start} />
         {mode === 'new' ? (
           <T v="small" tone="muted">
-            At least {PASSWORD_MIN} characters. A short sentence you will remember works well.
+            At least {PASSWORD_MIN} characters. A short sentence you will remember works well. Check the email too: it is how you get back in if you forget the
+            password.
           </T>
         ) : null}
         <Button label={mode === 'new' ? 'Create my account' : 'Sign in'} onPress={start} disabled={busy || !email.trim() || !pw} />

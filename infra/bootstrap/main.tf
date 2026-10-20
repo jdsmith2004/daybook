@@ -4,7 +4,7 @@
  *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from a workflow running
  *      on this repo's main branch
  *   3. the sync function's role, with exactly what it may do (the Daybook table, its own logs, deleting a user who closes their
- *      account). It is made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
+ *      account), and the sign-up trigger's role (its own logs, nothing else). They are made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
  *      an outside account, a way into the table
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
  *      this account
@@ -161,6 +161,37 @@ resource "aws_iam_role_policy" "sync" {
   })
 }
 
+/* ---------- 3b. the sign-up trigger's role ----------
+   Cognito calls this function when someone signs up in the app; it confirms the account without an emailed code and reads
+   and stores nothing, so all it may do is write its own logs. */
+resource "aws_iam_role" "signup" {
+  name                 = "daybook-app-signup"
+  description          = "The Daybook sign-up trigger Lambda. Made by the bootstrap stack; deploys may pass it to the Lambda but never change it."
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = local.account } }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "signup" {
+  name = "daybook-signup"
+  role = aws_iam_role.signup.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+      Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-signup:*"]
+    }]
+  })
+}
+
 /* what the deploy role may change: only Daybook's own resources. It cannot make, change or act as any role. */
 resource "aws_iam_role_policy" "deploy" {
   name = "daybook-deploy"
@@ -213,17 +244,17 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["*"]
       },
       {
-        # look at the sync role (Terraform reads it), and hand it to the Lambda, but never change it
+        # look at the app roles (Terraform reads them), and hand them to their Lambdas, but never change them
         Sid      = "ReadTheSyncRole"
         Effect   = "Allow"
         Action   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies"]
-        Resource = [aws_iam_role.sync.arn]
+        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn]
       },
       {
         Sid       = "PassTheSyncRoleToLambdaOnly"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
-        Resource  = [aws_iam_role.sync.arn]
+        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn]
         Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } }
       },
       {
@@ -236,11 +267,19 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["*"]
       },
       {
+        # API Gateway may call the sync function, and Cognito the sign-up trigger; nothing else may be let in
         Sid       = "OnlyApiGatewayMayCallIt"
         Effect    = "Deny"
         Action    = ["lambda:AddPermission"]
         Resource  = ["*"]
-        Condition = { StringNotEquals = { "lambda:Principal" = "apigateway.amazonaws.com" } }
+        Condition = { StringNotEquals = { "lambda:Principal" = ["apigateway.amazonaws.com", "cognito-idp.amazonaws.com"] } }
+      },
+      {
+        Sid       = "CognitoNeverCallsTheSyncFunction"
+        Effect    = "Deny"
+        Action    = ["lambda:AddPermission"]
+        Resource  = ["arn:${local.arn}:lambda:${var.region}:${local.account}:function:daybook-sync"]
+        Condition = { StringEquals = { "lambda:Principal" = "cognito-idp.amazonaws.com" } }
       },
       {
         Sid      = "NeverActAsTheAppRoles"

@@ -188,6 +188,11 @@ graduation does not take the award away (the core test covers it; it was not wal
 - Not tested: creating an account and the email code (it needs a real inbox), and signing in to an account that already has
   a log. Those need the owner on TestFlight.
 
+**Sign-up without an emailed code (October 19, 2026):** the pre-sign-up trigger confirms new accounts made in the app and
+leaves the email unverified; Settings offers "Confirm your email" (a code, then password reset works), and a reset for an
+unconfirmed email says so plainly. Built and tested (unit tests, Terraform validate); off until the owner applies
+`infra/bootstrap` and `auto_confirm` is turned on (infra/README.md). Not yet tried against the real Cognito.
+
 ## The remap (October 17, 2026)
 
 A full walkthrough at phone size (new, day 3 after a slip, day 60) found that Daybook has grown into too many separate

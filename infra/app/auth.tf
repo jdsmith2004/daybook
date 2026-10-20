@@ -45,6 +45,54 @@ resource "aws_cognito_user_pool" "users" {
   user_attribute_update_settings {
     attributes_require_verification_before_update = ["email"]
   }
+
+  # with auto_confirm, the sign-up trigger confirms new accounts, so no code is emailed at sign-up
+  dynamic "lambda_config" {
+    for_each = var.auto_confirm ? [1] : []
+    content {
+      pre_sign_up = aws_lambda_function.signup[0].arn
+    }
+  }
+}
+
+/* ---------- the sign-up trigger (services/api/src/signup.ts) ----------
+   Confirms an account made in the app at once, with the email left unverified, so a mistyped address can never be used to
+   reset the password. Its role (logs only) is made by the bootstrap stack; only Cognito may call it. */
+data "aws_iam_role" "signup" {
+  count = var.auto_confirm ? 1 : 0
+  name  = "daybook-app-signup"
+}
+
+resource "aws_cloudwatch_log_group" "signup" {
+  count             = var.auto_confirm ? 1 : 0
+  name              = "/aws/lambda/daybook-signup"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_function" "signup" {
+  count            = var.auto_confirm ? 1 : 0
+  function_name    = "daybook-signup"
+  role             = data.aws_iam_role.signup[0].arn
+  runtime          = "nodejs22.x"
+  architectures    = ["arm64"]
+  handler          = "index.handler"
+  filename         = var.signup_zip
+  source_code_hash = filebase64sha256(var.signup_zip)
+  memory_size      = 128
+  timeout          = 5
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.signup[0].name
+  }
+}
+
+resource "aws_lambda_permission" "signup" {
+  count         = var.auto_confirm ? 1 : 0
+  statement_id  = "cognito-pre-sign-up"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.signup[0].function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.users.arn
 }
 
 resource "aws_cognito_user_pool_domain" "users" {

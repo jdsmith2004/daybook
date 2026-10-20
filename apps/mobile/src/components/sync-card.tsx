@@ -5,11 +5,12 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { BigOption } from '@/components/choices';
+import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
-import { keepPerTrust } from '@/lib/auth';
+import { CognitoError } from '@daybook/core';
+import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
@@ -135,6 +136,7 @@ export function SyncBody() {
         </T>
       ) : null}
       <ErasedNote />
+      {st.k === 'on' ? <ConfirmEmail /> : null}
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
@@ -179,6 +181,85 @@ export function SyncBody() {
         </View>
       )}
     </>
+  );
+}
+
+/* Signing up needs no emailed code, so the email starts unconfirmed, and a password cannot be reset until it is confirmed
+   (a mistyped address can then never open someone's log). This offers to confirm it, quietly, until it is done. */
+function ConfirmEmail() {
+  const c = useTheme();
+  const sync = useSync();
+  const { say } = useStore();
+  const [done, setDone] = useState<boolean | null>(null);
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    let live = true;
+    sync
+      .token()
+      .then((t) => cognito.emailVerified(t))
+      .then((v) => live && setDone(v))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (done !== false) return null;
+  const run = async (f: (t: string) => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setErr('');
+    try {
+      await f(await sync.token());
+    } catch (e) {
+      setErr(e instanceof CognitoError ? e.message : 'Something went wrong. Try again in a moment.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <View style={[s.confirm, { backgroundColor: c.surface2 }]}>
+      <T v="label">Confirm your email</T>
+      <T v="small" tone="muted">
+        {sent
+          ? `We sent a 6-digit code to ${sync.email}. It can take a minute; check the spam folder too.`
+          : 'Then you can reset your password if you ever forget it. Until then, a forgotten password cannot be reset.'}
+      </T>
+      {sent ? (
+        <>
+          <Field
+            label="Code"
+            value={code}
+            onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            maxLength={6}
+          />
+          <Button
+            label="Confirm"
+            disabled={busy || code.length !== 6}
+            onPress={() =>
+              run(async (t) => {
+                await cognito.verifyEmail(t, code);
+                setDone(true);
+                say('Your email is confirmed.');
+              })
+            }
+          />
+          <LinkText label="Send the code again" onPress={() => run((t) => cognito.sendEmailCode(t))} />
+        </>
+      ) : (
+        <Button kind="ghost" label="Send me a code" disabled={busy} onPress={() => run(async (t) => (await cognito.sendEmailCode(t), setSent(true)))} />
+      )}
+      {err ? (
+        <T v="small" tone="danger" accessibilityLiveRegion="polite">
+          {err}
+        </T>
+      ) : null}
+    </View>
   );
 }
 

@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { Flame } from '@/components/flame';
+import { Shape, type ShapeKind } from '@/components/shapes';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
@@ -148,36 +149,67 @@ export function Middle({ children }: { children: ReactNode }) {
 
 /** the finish of a tool or a moment: the flame pops in on a soft ring that widens once, in the middle of the screen, with
     the words under it. The Dock with Done goes after it. */
-export function Finish({ level, title, text }: { level: number; title: string; text?: string }) {
+/* the shapes that fly out from behind the flame and settle around it: where each lands (x, y from the center), its kind,
+   size, turn and color slot. Fixed, so every Finish is the same loose, hand-placed ring. */
+const BURST: { x: number; y: number; kind: ShapeKind; size: number; turn: number; wobble?: number; tint: number }[] = [
+  { x: -96, y: -42, kind: 'cookie', size: 32, turn: 12, tint: 0 },
+  { x: -58, y: -86, kind: 'tri', size: 22, turn: -20, tint: 1 },
+  { x: 8, y: -100, kind: 'circle', size: 16, turn: 0, wobble: 0.6, tint: 2 },
+  { x: 66, y: -80, kind: 'clover', size: 30, turn: 30, tint: 3 },
+  { x: 104, y: -24, kind: 'pent', size: 20, turn: 8, tint: 1 },
+  { x: 96, y: 46, kind: 'flower', size: 27, turn: -14, tint: 0 },
+  { x: -100, y: 40, kind: 'scallop', size: 22, turn: 4, tint: 2 },
+  { x: -70, y: 84, kind: 'circle', size: 14, turn: 0, wobble: 0.8, tint: 3 },
+];
+
+/** the end of a tool: the flame pops in and a few shapes burst out from behind it and settle around it, once. `tone` is the
+    tool's color (sky, mint, accent, sun, violet, coral); without it the shapes are warm. */
+export function Finish({ level, title, text, tone }: { level: number; title: string; text?: string; tone?: string }) {
   const c = useTheme();
   const reduce = useReducedMotion();
   const pop = useRef(new Animated.Value(0)).current;
-  const ring = useRef(new Animated.Value(0)).current;
+  const burst = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (reduce) {
       pop.setValue(1);
-      ring.setValue(1);
+      burst.setValue(1);
       return;
     }
     Animated.parallel([
       Animated.spring(pop, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }),
-      Animated.timing(ring, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+      Animated.timing(burst, { toValue: 1, duration: 1000, delay: 80, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
     ]).start();
-  }, [reduce, pop, ring]);
+  }, [reduce, pop, burst]);
+  const own = tone ? ({ sky: c.sky, mint: c.mint, accent: c.accent, sun: c.sun, violet: c.violet, coral: c.coral } as Record<string, string>)[tone] : undefined;
+  const tints = own ? [own, c.sun, c.sun2, own] : [c.sun, c.sun2, c.coral, c.violet];
   return (
     <View style={s.middle}>
       <FitArt drop={0.4}>
         <View style={s.finArt}>
-          <Animated.View
-            style={[
-              s.finRing,
-              {
-                borderColor: c.sun,
-                opacity: ring.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
-                transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
-              },
-            ]}
-          />
+          {BURST.map((b, i) => {
+            /* each shape leaves a little after the one before, overshoots a touch, and settles */
+            const start = i * 0.04;
+            const out = burst.interpolate({ inputRange: [start, 1], outputRange: [0, 1], extrapolate: 'clamp' });
+            const fly = burst.interpolate({ inputRange: [start, start + (1 - start) * 0.7, 1], outputRange: [0, 1.08, 1], extrapolate: 'clamp' });
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  s.finShape,
+                  {
+                    opacity: out.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 0.9, 0.9] }),
+                    transform: [
+                      { translateX: fly.interpolate({ inputRange: [0, 1], outputRange: [0, b.x] }) },
+                      { translateY: fly.interpolate({ inputRange: [0, 1], outputRange: [10, b.y] }) },
+                      { scale: out.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }) },
+                      { rotate: out.interpolate({ inputRange: [0, 1], outputRange: [b.turn - 90 + 'deg', b.turn + 'deg'] }) },
+                    ],
+                  },
+                ]}>
+                <Shape kind={b.kind} size={b.size} color={tints[b.tint]} wobble={b.wobble} seed={i + 1} />
+              </Animated.View>
+            );
+          })}
           <Animated.View
             style={{
               opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
@@ -239,8 +271,9 @@ const s = StyleSheet.create({
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
   center: { textAlign: 'center' },
-  finArt: { width: 190, height: 190, alignItems: 'center', justifyContent: 'center' },
-  finRing: { position: 'absolute', width: 170, height: 170, borderRadius: 85, borderWidth: 3 },
+  finArt: { width: 250, height: 220, alignItems: 'center', justifyContent: 'center' },
+  /* every burst shape starts at the middle, behind the flame */
+  finShape: { position: 'absolute', left: 125 - 17, top: 110 - 17, width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   sheet: {
     alignSelf: 'stretch',
     gap: 14,

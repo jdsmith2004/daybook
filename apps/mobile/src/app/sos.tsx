@@ -44,7 +44,7 @@ import { BigOption } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HorizonSun } from '@/components/orb';
 import { SceneFrame } from '@/components/scene';
-import { ToolGrid, toolTone } from '@/components/tool-grid';
+import { ToolGrid, ToolShape, toolTone } from '@/components/tool-grid';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
@@ -495,9 +495,7 @@ function Go({ tool, title, sub, label, onPress }: { tool: Tool; title: string; s
           transform: [{ translateY: pressed ? 4 : 0 }],
         },
       ]}>
-      <View style={[s.gi, { backgroundColor: c.surface }]}>
-        <Icon name={tool.ic} size={26} color={ink} />
-      </View>
+      <ToolShape id={tool.id} ic={tool.ic} size={54} iconSize={26} color={c.surface} ink={ink} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[s.gt, { color: c.accentInk }]}>{title}</Text>
         {sub ? <Text style={[s.gs, { color: c.accentInk }]}>{sub}</Text> : null}
@@ -610,7 +608,6 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 3,
   },
-  gi: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   gt: { fontFamily: font.display, fontSize: 21, lineHeight: 25 },
   gs: { fontFamily: font.body, fontSize: 14, lineHeight: 18, marginTop: 3, opacity: 0.88 },
   alt: { flexDirection: 'row', gap: 8, marginTop: 2 },

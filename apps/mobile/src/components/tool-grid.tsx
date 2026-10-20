@@ -2,6 +2,7 @@
    where each tool can carry a small tag ("Worked 3 of 4", core: urTags). */
 import { TOOL_GROUPS, TOOLS, urTried, type Days } from '@daybook/core';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
@@ -17,6 +18,35 @@ export const toolTone = (c: Palette, t: string) =>
     violet: [c.violetSoft, c.violetText],
     coral: [c.coralSoft, c.coralText],
   })[t] || [c.surface2, c.ink];
+
+/* each tool's own shape, turned a little as if placed by hand. `wobble` makes a loose blob. */
+const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number; wobble?: number }> = {
+  breathe: { kind: 'scallop', turn: 8 },
+  ground: { kind: 'clover', turn: 14 },
+  curious: { kind: 'flower', turn: -6 },
+  thought: { kind: 'circle', turn: 0, wobble: 0.7 },
+  forward: { kind: 'tri', turn: -10 },
+  pause: { kind: 'cookie', turn: 12 },
+  move: { kind: 'pent', turn: 6 },
+  bed: { kind: 'circle', turn: 0, wobble: 0.45 },
+  surprise: { kind: 'flower', turn: 16 },
+  halt: { kind: 'cookie', turn: -8 },
+  message: { kind: 'clover', turn: -12 },
+  reasons: { kind: 'scallop', turn: -4 },
+};
+
+/** a tool's icon on its own soft shape (the Tools grid, the SOS button) */
+export function ToolShape({ id, ic, size, iconSize, color, ink }: { id: string; ic: string; size: number; iconSize: number; color: string; ink: string }) {
+  const k = TOOL_SHAPES[id] || { kind: 'cookie', turn: 0 };
+  return (
+    <Shape kind={k.kind} size={size} color={color} turn={k.turn} wobble={k.wobble} seed={id.length}>
+      {/* on the web the shape's drawing is placed absolutely and would paint over a plain child, so the icon is placed too */}
+      <View style={{ position: 'relative' }}>
+        <Icon name={ic} size={iconSize} color={ink} />
+      </View>
+    </Shape>
+  );
+}
 
 export function ToolGrid({ days, onPick, tags }: { days: Days; onPick: (id: string) => void; tags?: Record<string, string> }) {
   const c = useTheme();
@@ -41,9 +71,7 @@ export function ToolGrid({ days, onPick, tags }: { days: Days; onPick: (id: stri
                   accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
                   onPress={() => onPick(t.id)}
                   style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-                  <View style={[s.ic, { backgroundColor: soft }]}>
-                    <Icon name={t.ic} size={22} color={ink} />
-                  </View>
+                  <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
                   <View style={{ flex: 1 }}>
                     <Text style={[s.name, { color: c.ink }]}>{t.name}</Text>
                     <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
@@ -80,7 +108,6 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  ic: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: font.bodyBold, fontSize: 15 },
   desc: { fontFamily: font.body, fontSize: 12.5 },
   tag: { fontFamily: font.bodySemi, fontSize: 12, marginTop: 1 },

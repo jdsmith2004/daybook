@@ -997,3 +997,282 @@ version's answers are gone. The calendar shows each gap as one gray stretch with
 away · 3 slips", or "not known yet" with Fill in), the day sheet says the same, and the month's chips count the gap's
 slips and no-slip days. Checked in the browser with a made-up person away Oct 6 to 18 who answered 3: 15 of 90 toward
 graduation, the current run 1 day (today), the longest run kept at 15.
+
+## Flow review (2026-10-19)
+
+A read of the code, not a walk on a device: where each part of the app leaves the person when it ends, and whether that
+next step makes sense. Setup, Today, the morning questions, the check-in, the wind-down and Good night, SOS and its tools,
+Rekindle, Talk it through, lessons, Journal and the calendar, Welcome back, the Sunday review, accounts and Settings. The
+earlier reviews above are taken as known, and their decisions are not reopened (the Rekindle quest's "Save your run"
+words were chosen on October 18 and stay). Every example uses a made-up person.
+
+The short version: each screen is good on its own; the seams between them are where hope leaks. The main cause is one
+helper. `close()` in `apps/mobile/src/lib/nav.ts:21` leaves every full-screen moment at once, which is right for SOS and
+wrong whenever one moment opens another on purpose (night opens the check-in, a lesson opens Talk it through, the quest
+opens Go deeper, the review opens a lesson). The person then lands on Today, mid-thought, and loses the screen they meant
+to return to. Step F1 fixes that once, so most of the other fixes are small.
+
+Effort: every step is marked. High only where a step touches sync, accounts or earned data; medium for screens, words and
+small rules; owner for device checks. Notifications have never been seen on a real phone, so every notification step
+ends with a device check.
+
+### The owner's two notes
+
+**1. Night: after the check-in, back to Good night.** Confirmed. Good night's "Check in first" pushes `/checkin`
+(`apps/mobile/src/app/night.tsx:143`). The check-in's Done and X both call `close()` (`checkin.tsx:277, 288`), and since
+wind-down, Good night and the check-in are all full-screen moments, all three close and the person lands on Today, phone in
+hand, at the hour that matters most. Two smaller things on the same screen: the check-in's end can show "Next: the
+wind-down." (`checkin.tsx:203-256`) and offers "Remind me at 11:20 PM each day" (`:259-275`), neither of which makes sense
+after the phone is already going down.
+
+**2. Hard hours: plan ahead the night before, and check in when they start.** What already exists:
+
+- `risk.ts`: `riskWindow` finds the two-hour window (weekdays and weekends apart, a score of 6 and a quarter of all
+  signals); `riskDay` gives its phase; `keepHard` records a window held with no slip as `p.hw` (kept for good, shown as
+  "Held your hard hours" in the calendar and counted in the Sunday review); `firstPattern` gives the early words-only line.
+- `nudges.ts`: one heads-up, kind `risk`, 90 minutes before the window ("Your hard hours start soon. Two quiet minutes now
+  make them easier."), first in priority, on its own Android channel, learning like the others. It opens Today (`url`
+  defaults to `'/'`, `nudges.ts:234`), where the risk card offers Talk it through.
+- SOS: the first screen asks "How strong is it?" (optional: A little, Strong, Very strong), then the tools; Strong and
+  Very strong already lean the suggestion toward Breathe, 5-4-3-2-1 and Move (`UR_STRN`). "My reasons" is a tool
+  (`components/tools/scene.tsx:500`). Opening SOS starts an urge in memory (`sos.tsx:91`); an entry is saved only when
+  "How is it now?" is answered.
+
+What is missing: a "reliable" bar (today one strong week is enough to count), the note the night before, a short
+plan-ahead moment, the note at the start of the window, and an SOS that can hear "there is no urge right now". Steps H1 to
+H6 below.
+
+Three choices made here, for the owner to know:
+
+- **The words have no contractions.** "Let's plan ahead" and "Let's check in" become "Tomorrow has a hard hour coming.
+  Plan ahead in one minute." and "Your hard hour is starting. Check in?" (CLAUDE.md: no contractions; and nothing on a
+  locked screen says what Daybook is for, which both lines keep).
+- **Not more notifications, different ones.** Once the window is reliable, the night-before note and the at-start
+  check-in replace the 90-minute heads-up for that window (two notes instead of three). The heads-up stays for windows
+  that are found but not yet reliable. The daily cap of three still holds, and the day of a slip and the day after get no
+  night-before note ("after a slip, never more notifications, only kinder ones").
+- **The night-before note never comes at night.** Daybook does not pick a night time on its own. It comes at the
+  check-in reminder's time when that is on (and then it is one notification that does both), otherwise an hour before
+  screens-off, and never after 9 PM. For a window that starts in the afternoon or evening, "the night before" is a day too
+  early to be useful: the plan-ahead comes that morning instead ("Today has a hard hour coming...").
+
+### Gaps found
+
+Ranked by how much they cost the person's hope, or their sense that Daybook will help. Each one is a step below.
+
+1. **Notification taps open Today, not the thing they name.** "Check in. Under a minute." opens Today; so do the
+   morning, wind-down and hard-hours notes (`nudges.ts:234-247`; only the Sunday one opens `/review`). On Sundays the
+   check-in note promises "a few minutes to look back on your week" and then neither the note nor the check-in's end
+   leads there.
+2. **Talk it through from SOS drops the urge.** `sos.tsx:272` replaces SOS with `/talk`, which ends the urge with nothing
+   saved, starts Talk at its first page while the urge is happening, and every Done closes to Today (`talk.tsx:770, 944,
+963`): no "How is it now?", no ridden-out credit.
+3. **An urge ridden out late at night ends on Today.** SOS passes `night=1` to the log (`sos.tsx:169`), which only
+   darkens the sky; Done goes to Today (`log.tsx:652`). Good night is one tap away for Go to bed, never for the urge
+   itself.
+4. **A slip at night: the quest asks for "Phone away" and gives no button for it.** The mission says to tap Phone away on
+   Today (`rekindle.ts:231-233`); "Done for tonight" (`log.tsx:608`) goes to Today, the worst place to be at that hour.
+5. **Go deeper closes the quest.** `log.tsx:602` pushes `/deeper`; its Save, "I told them" and Close call `close()`
+   (`deeper.tsx:32, 79, 129`), so the quest closes too and the fourth flame is never seen lighting.
+6. **Moments opened from a lesson or the review close them too.** Talk it through and the review from a lesson
+   (`lesson/[id].tsx:213, 216`), Halt's swapped-in tool (`components/tools/scene.tsx:422`, no `lr`), Go to bed's
+   `dismissAll` (`:212`), a lesson opened from the review (`review.tsx:395`) or the morning (`morning.tsx:211`). The
+   review's answers live only in screen state (`review.tsx:112-119`), so they are lost.
+7. **The combine question's "Not now" signs the person out, and the sheet says "You are signed in".** `sync-card.tsx:123`
+   calls `signOutNow(false)`; `account.tsx:135-165` does not treat `out` as a failure and shows the signed-in body with
+   "Open the lesson", which leads straight back to the account sheet.
+8. **Good night has no SOS.** The last screen before the hardest hour has only Good night and the X (`night.tsx`).
+9. **A slip added from the Journal gets no Rekindle.** The day sheet's "Add an entry" (`entry.tsx:421`) saves the slip
+   and shows Done; a slip logged for today or yesterday there never reaches the embers or the quest. The same for "I went
+   ahead" looked back on in Talk it through (`talk.tsx:940-944`).
+10. **Welcome back can close the screen a notification opened.** Today pushes `/back` (`(tabs)/index.tsx:103`) on top of
+    whatever the tap opened; "Go to Today" (`back.tsx:43`) closes both.
+11. **Lesson 3's "Next" runs into the account sheet.** `nextAfter` (`packages/core/src/lessons.ts:160`) ignores the
+    lock; "Next: <title>" (`lesson/[id].tsx:389, 587`) opens lesson 4, which redirects to the account sheet (`:125`).
+    Locked lessons tapped in Learn (`(tabs)/learn.tsx:272, 304`) open the sheet with no reason and do not open the lesson
+    after sign-up.
+12. **The check-in's end names a next step and gives no way to take it.** "Next: the wind-down." is plain text
+    (`checkin.tsx:247-256`); "If something happened today, log it too" (`:195`) has no link.
+13. **The hard-hours card says "SOS is one tap" and has no SOS button** (`components/risk-card.tsx:301-303`).
+14. **Go to bed saves the win silently.** The urge is saved as ridden out (`components/tools/scene.tsx:186-213`) and
+    Good night never says so.
+15. **Small seams.** "Tonight's wind-down" in Learn opens Today (`(tabs)/learn.tsx:447`); Reasons' Back always says "My
+    plan" (`reasons.tsx:116`); My plan has no way to try a tool; moving the start date can move Day 1 without a word
+    (`packages/core/src/actions.ts:170-178`); "Close for tonight" on the quest only closes, like the X (`log.tsx:435`);
+    on the lesson's practice step "Not now" does what Done does and sits above it (`lesson/[id].tsx:537-546`); "How is it
+    now?" answers are not in a `Dock` (`sos.tsx:310-314`); the log's end after SOS asks for a note twice (`log.tsx:635-650`).
+
+**Setup, Today and the mornings:**
+
+16. **Day 7 asks for three things at once.** For someone who chose "Keep it on this phone", the week of quiet ends on
+    day 7 (`ACCT_WAIT`, `packages/core/src/accounts.ts:15, 40`), the same day as "Your first week is done" (WeekCard)
+    and, on a Sunday, the review card (`(tabs)/index.tsx:171-180`). Two "a week in" cards and up to three asks, on a
+    Today that can hold ten cards that day.
+17. **Today's main step shows twice.** The hero's Next up band (`components/hero.tsx:246`) and Your day's open tile
+    (`components/your-day.tsx:159`) each give the same stop its own big button, every day of the first week.
+18. **The morning after a slip asks about screens-off twice.** The sunrise check asks it (`sunrise.tsx:150-176`); the
+    morning questions start on the same step even when it is answered (`morning.tsx:412-439`), and both are offered on
+    Today that morning.
+19. **"Morning done." leads nowhere when no lesson waits** (`morning.tsx:538`). Done closes to Today with nothing ahead.
+20. **Setup's last page makes "Go to Today" the main button** (`setup.tsx:1097`) and "Start lesson 1" a smaller route
+    above it (`:1083-1093`). The first lesson is the step that builds the most hope on day 0.
+21. **Graduation can open over an unanswered Welcome back** (`(tabs)/index.tsx:103, 111`); "Keep going"
+    (`graduated.tsx:254`) closes both, and the away question has already been counted as asked once.
+22. **Go deeper from the sunrise check closes the sunrise end page** (`sunrise.tsx:281`), so the person loses their
+    missions and plan card.
+23. **The sunrise check greets with "Welcome back."** (`sunrise.tsx:130`), the words of the away screen
+    (`back.tsx:59`). The person never left; it hints that they fell away.
+24. **Small ones.** The morning's "Nothing to ask yet" (`morning.tsx:398-411`) offers only Done; a stale sunrise check
+    redirects to `/` from inside a moment (`sunrise.tsx:64`) instead of `close()`; after a setup walk-through, "Back to
+    Today" and Done do the same thing (`setup.tsx:1060, 1097`).
+
+Seen and left alone: the setup's "Daybook is free" page comes between the reminder ask and the account ask, but only on
+the web (the tip link is web-only, decided), and the Rekindle quest's "Save your run" words (decided October 18).
+
+### Steps (each one commit; each marked with its effort)
+
+Order: the shared fix first, then the owner's two notes, then the rest by harm. Before each commit: `npm run format`,
+`npm run typecheck`, `npm test`, `npx expo export --platform web` and a look. New words: plain, no contractions, never
+shame.
+
+**F1. Close only what was opened on purpose.** _Effort: medium._ `apps/mobile/src/lib/nav.ts`. Add `closeTo()`: a moment
+opened from another moment with a `from` param (or `lr`, as tools already do in `lib/tools.ts:47-62`) goes back one
+(`router.back()`); everything else keeps `close()`. Use it in the check-in, Talk it through, Go deeper, the review and the
+lesson. Test by hand: SOS, then a tool, then X still closes everything (SOS's rule is unchanged).
+
+**N1. Night: back to Good night after the check-in.** _Effort: medium._ `night.tsx:143` pushes
+`{ pathname: '/checkin', params: { from: 'night' } }`. In `checkin.tsx`, with `from=night`: Done and X go back one
+(F1), the end's main button reads "Back to good night", the sky is `night`, and "Next: the wind-down" and the reminder
+offer are hidden. Good night then shows "Checked in. The day is logged." in place of the "One minute first?" box (it
+already hides when the evening stop is done; check that it re-renders on return). Done when: wind-down, Phone away,
+Check in first, Done lands on Good night, and Good night closes to where the wind-down started.
+
+**H1. A reliable hard hour.** _Effort: medium._ `packages/core/src/risk.ts`: `riskSure(days, st, k): RiskWindow | null`,
+the window from `riskWindow` when, in the last 21 days, slips started inside it on at least 3 different days (urges and
+talks do not count here: the notes are for windows the log is sure of). `RISK_SURE_DAYS = 21`, `RISK_SURE_MIN = 3`.
+Tests: three slip days at 9 AM in three weeks is sure; two is not; three slips on one day is not; old slips roll off.
+
+**H2. The two notes.** _Effort: medium._ `packages/core/src/nudges.ts`, `test/nudges.test.ts`,
+`apps/mobile/src/lib/reminders.ts`.
+
+- Two new kinds, both learning, both under the `risk` switch and the Hard hours channel: `ahead` and `hour`. Priority
+  next to `risk`.
+- `ahead`, on the day before a day whose `riskSure` window starts before noon: "Tomorrow has a hard hour coming. Plan
+  ahead in one minute." At the check-in reminder's time when it is on (then the check-in note carries it, like the Sunday
+  one: "Check in, and plan ahead for tomorrow."), otherwise an hour before screens-off, never after 9 PM. For a window
+  from noon on, it comes the same day at 10 AM (or the morning reminder's time): "Today has a hard hour coming. Plan ahead
+  in one minute." Opens `/ahead`. Not on the day of a slip or the day after. Skipped when the plan for that window is
+  already made.
+- `hour`, at the start of a `riskSure` window: "Your hard hour is starting. Check in?" Opens `/sos?ask=hard`. It
+  replaces the 90-minute `risk` heads-up for that window; `risk` stays for windows that are found but not sure.
+- Helped (for learning): a tap, an open within the hour, the plan made (`ahead`), or the window held (`hour`).
+- `NUDGE_WORDS.name` gains "The plan-ahead the day before" and "The check-in when hard hours start", so a pause says
+  which one.
+- Tests: a sure 9 AM window gives `ahead` the evening before at the check-in time and `hour` at 9:00, no `risk` for that
+  day; a found-not-sure window gives only `risk`; a slip yesterday drops `ahead`; the cap of three holds with the morning
+  and check-in reminders on; nothing lands after 9 PM except `hour` for a night window.
+- Done when: the tests pass. Then the device check in H6.
+
+**H3. Plan ahead, one minute.** _Effort: medium._ New `apps/mobile/src/app/ahead.tsx` (a full-screen moment:
+`SceneFrame`, `Dock`; add to `SCENE` in `nav.ts` and the stack in `_layout.tsx`). Title at the top: "Tomorrow, 9 to 11
+AM is usually hard." and "A plan made now is easier to follow then." Low, by the thumb, one pick: "When it starts, I
+will..." with the person's own urge plan first (`st.plan`), then Breathe, Move, Be somewhere else, Text my safe person.
+Save at the bottom; a quiet "Talk it through instead" under it. Saved on this phone only (in the SOS memory, like
+`bedPlan`: `ahead: { k, start, pick }`), so nothing new is synced and no day record changes. The done words: "Planned.
+Daybook will check in at 9 AM." The risk card on Today counts a made plan like a talk-through ("You are ready").
+
+**H4. SOS at a hard hour: "Is there a pull right now?"** _Effort: medium._ `apps/mobile/src/app/sos.tsx`,
+`apps/mobile/src/components/tools/scene.tsx` (Reasons).
+
+- With `ask=hard`, the first screen's optional strength question becomes one question with four big choices low by the
+  thumb: "No, I feel steady", "A little", "Strong", "Very strong". The plan from H3, when there is one, shows at the top:
+  "Your plan from last night: Move."
+- "No, I feel steady": the urge in memory ends with nothing saved (`sos.end()`), and My reasons opens on its own (not
+  inside SOS) with one line above it: "What matters most to you in the next two hours?" Its Done says "That is who you
+  are. Daybook is here if it changes." and goes to Today. No entry, no points: the hour, if held, is recorded by
+  `keepHard` as it is now.
+- "A little": the tools, with the plan's tool suggested first.
+- "Strong" or "Very strong": straight into the fastest tool, skipping the list: Breathe, or 5-4-3-2-1 when Breathe is
+  marked Not for me. It returns to "How is it now?" as every SOS tool does, and the entry is saved there as now.
+- Done when: each of the four paths ends where it says, and the steady path leaves the log unchanged.
+
+**H5. The hard-hours card on Today.** _Effort: medium._ `components/risk-card.tsx`: during the hours an SOS button next
+to Talk it through (the card says "SOS is one tap"); before them, when the plan is made, "Planned: Move. Daybook will
+check in at 9 AM." The 90-minute heads-up's tap opens Today as now, where this card is.
+
+**H6. Device check: hard hours.** _Effort: owner, on a phone._ A made-up log with slips at 9 AM on three days: the
+evening note at the check-in time, its tap opening Plan ahead, the 9:00 note, its tap opening SOS with the question, each
+of the four answers, and on Android the Hard hours channel. Also at 11 PM for a night window.
+
+**S1. Notification taps open the thing they name.** _Effort: medium._ `nudges.ts:234-247`: check-in opens `/checkin`,
+morning `/morning`, wind-down `/wind`, the 90-minute heads-up `/` (the risk card). The kind words the morning after a
+slip keep `/`. On Sunday the combined note opens `/checkin?then=review` and the check-in's end offers "Look back on your
+week" above Done. Test the urls in `nudges.test.ts`. Device check with H6.
+
+**S2. Talk it through from SOS keeps the urge.** _Effort: medium._ `sos.tsx:272` pushes `/talk?from=sos` over SOS
+instead of replacing it; Talk starts after its first page; its end goes back to SOS at "How is it now?" (F1), so the
+entry is saved there as for any tool.
+
+**S3. At night, the end of an urge or a slip leads to Good night.** _Effort: high_ (the slip half feeds the Rekindle
+quest's phone-away mission, which saves a run). After an urge ridden out with `night=1`, the log's main button is "Phone
+away, good night": it runs the same phone-away action the wind-down uses and opens `/night` with "You rode it out. That
+makes 14." On the quest at night, the phone-away mission gets a "Phone away" button that does the same. Test in core that
+the mission counts exactly as the Today button's does. Also Go to bed: pass `rode=1` and show the same line (item 14).
+
+**S4. Go deeper returns to the quest.** _Effort: medium._ `deeper.tsx` uses F1 when opened from the log, so the quest
+shows the flame lighting.
+
+**S5. Lessons, the review and tools return where they started.** _Effort: medium._ Pass `lr` through Halt's swap
+(`components/tools/scene.tsx:422`); Go to bed dismisses everything only when SOS is open; Talk it through and the review
+opened from a lesson, and a lesson opened from the review or the morning, go back one (F1).
+
+**S6. The combine question tells the truth.** _Effort: high_ (accounts). `sync-card.tsx:123`: the ghost button reads
+"Sign out, decide later"; `account.tsx` treats `out` after this choice as its own body: "Signed out. Your log is on this
+phone, untouched. Sign in again when you are ready to choose." with Done.
+
+**S7. Good night has an SOS.** _Effort: medium._ `night.tsx`: a quiet "SOS" link inside "If the thoughts get loud" that
+opens `/sos` (it already goes dark at night).
+
+**S8. A slip from the Journal or a look back reaches Rekindle.** _Effort: medium._ In `entry.tsx`, a slip for today or
+yesterday shows "Light the embers" as the main button, which replaces the sheet with `/log` at `rkStepFor`'s step. The
+same for "I went ahead" in Talk it through's look back (`talk.tsx:940-944`). The quest's rules are untouched.
+
+**S9. Welcome back never closes what a tap opened.** _Effort: medium._ `(tabs)/index.tsx:103` pushes `/back` only when
+no full-screen moment is open; otherwise it waits for the next time Today shows.
+
+**S10. The account ask after lesson 3 says what it is.** _Effort: medium._ When the next lesson is locked, the button
+reads "Open the next lessons with a free account" and passes `{ why: 'lesson', then: id }`; "Back to Today" stays the
+main button. Learn's lock line and map card pass the same, so the tapped lesson opens after sign-up.
+
+**S11. The check-in's end leads somewhere.** _Effort: medium._ "Next: the wind-down." becomes a button that replaces the
+check-in with `/wind`; "log it too" becomes a quiet link to `/log`. (Not when opened from night: N1.)
+
+**S12. Small seams.** _Effort: medium._ Item 15, one commit: Learn's wind-down link pushes `/wind`; Reasons uses
+`useBackLabel('My plan')`; My plan gains a "Try a tool" row; moving the start date says "Day 1 moved to Oct 27, a week
+after tracking starts." when it moves Day 1; remove "Close for tonight" (the X does it); remove the practice step's "Not
+now"; put "How is it now?" answers in a `Dock`; one note box at the log's end after SOS.
+
+**T1. Day 7 holds one ask.** _Effort: medium._ `(tabs)/index.tsx`: the AccountCard waits while `firstWeekDue` is true;
+the end of `app/week.tsx` carries the ask instead ("Keep this week safe with a free account", with "Keep it on this phone"
+recording `accountLater` as setup does), right after the person has seen what they built. The Sunday card waits a day
+when the week card shows. Test the order in `accounts.test.ts` if `accountAsk` changes.
+
+**T2. One button for today's next step.** _Effort: medium._ `components/your-day.tsx`: when the hero's Next up band shows
+a stop, that stop's tile is a plain row (tap still opens it), so there is one big start button on Today.
+
+**T3. The morning after a slip asks once.** _Effort: medium._ `morning.tsx` starts at the sleep step when screens-off is
+already answered for that night; Today hides the morning stop while the sunrise check is open. "Welcome back." on the
+sunrise check becomes "Good morning." (`sunrise.tsx:130`).
+
+**T4. Mornings and setup end with a next step.** _Effort: medium._ "Morning done." with no lesson waiting names the next
+stop with its button ("Tonight: screens off at 11 PM" or the check-in); "Nothing to ask yet" offers lesson 1. Setup's
+last page: "Start lesson 1" becomes the main button and "Go to Today" the quiet link under it; after a walk-through, drop
+the extra "Back to Today".
+
+**T5. One full-screen moment at a time from Today.** _Effort: medium._ `(tabs)/index.tsx`: graduation waits while Welcome
+back is due and unanswered (the next Today shows it), joined with S9's rule; Go deeper from the sunrise check goes back
+to the sunrise end page (F1); a stale sunrise check uses `close()` (`sunrise.tsx:64`).
+
+**D1. Device check: the seams.** _Effort: owner, on a phone._ Night to check-in and back; SOS to Talk it through and
+back; an urge and a slip at 11 PM; the quest's Go deeper; a lesson's Talk it through; each notification tap; a Sunday
+note; Welcome back after a tap. Findings go here.

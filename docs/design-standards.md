@@ -17,6 +17,11 @@ CLAUDE.md's thumb-zone and words rules still come first; these add to them.
   cannot.
 - **Something still must not look alive.** Do not reuse a moving pattern (the breath dots, a beat) standing still: if it
   is not moving, it looks broken. Either it moves, or it is a plain shape.
+- **One breath curve.** Anything that breathes (the Breathe dots, the timer's beat, the SOS sun, the small sun in the
+  tools) reads `breathAt` from `lib/breath.ts` on a clock (`useBreathClock`), never a chain of one timed animation per
+  step. The curve speeds up gently, keeps an even pace through the middle and slows the same way into the turn, so it never
+  rushes and never stops dead. Where there are many parts, each follows a moment after the last, so the turn rolls through
+  them, and something slow (a turn, a twinkle) keeps going on the holds.
 - **Reduce Motion.** Every animation has a still version. Words (Hold, Let go; Breathe in, Breathe out) keep the beat
   when the shape cannot.
 - **Text does not jump.** A choice on a screen (like how strong an urge is) must not swap the words above it or move the

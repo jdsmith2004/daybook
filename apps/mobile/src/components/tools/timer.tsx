@@ -2,14 +2,16 @@
    (components/shapes WavyRing), and inside it a soft shape that keeps a beat (a hold and a letting go, a slow breath, a
    lively pulse), with what is happening and the time left big in the middle. With Reduce Motion the shape stays still,
    and the words (Hold, Let go; Breathe in, Breathe out) still keep the beat. See docs/design-standards.md. */
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { fmtMS } from '@/components/orb';
 import { T } from '@/components/ui';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
+import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 /** a beat: two parts that take turns (seconds each), how far the shape shrinks, the words for each part, and its shape */
@@ -17,33 +19,33 @@ export type BeatOf = { dur: [number, number]; low: number; words?: [string, stri
 /** a slow, calm breath: 4 seconds in, 6 out */
 export const BEAT_BREATH: BeatOf = { dur: [4, 6], low: 0.8, kind: 'cookie9' };
 
-/** a soft shape that grows through the first part of the beat and eases back in the second, kept in step with the clock */
+/** a soft shape that grows through the first part of the beat and eases back in the second, on the one breath curve
+    (lib/breath) read from a clock every frame, so the turns are soft and it stays in step with the words */
 function Beat({ beat, sec, color, ink, children }: { beat: BeatOf; sec: number; color: string; ink: string; children: React.ReactNode }) {
   const reduce = useReducedMotion();
   const [a, b] = beat.dur;
-  const cyc = a + b;
-  const into = sec % cyc;
-  const first = into < a;
-  /* which part of which round: changes once per part, and each change starts the next easing */
-  const part = Math.floor(sec / cyc) * 2 + (first ? 0 : 1);
-  const v = useRef(new Animated.Value(beat.low)).current;
-  useEffect(() => {
-    if (reduce) return v.setValue(1);
-    const left = (first ? a - into : cyc - into) * 1000;
-    Animated.timing(v, {
-      toValue: first ? 1 : beat.low,
-      duration: Math.max(60, left),
-      /* the same soft start and landing both ways, so the turn at the top and the bottom never jerks */
-      easing: Easing.inOut(Easing.sin),
-      useNativeDriver: NATIVE,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [part, reduce]);
+  const first = sec % (a + b) < a;
+  const steps = useMemo<Steps>(
+    () => [
+      ['in', a],
+      ['out', b],
+    ],
+    [a, b],
+  );
+  const clock = useBreathClock(sec, !reduce);
+  const low = beat.low;
+  const grow = useAnimatedStyle(
+    () => {
+      const v = reduce ? 1 : breathAt(steps, clock.value)[0];
+      return { transform: [{ scale: low + (1 - low) * v }] };
+    },
+    webDeps(reduce, steps, low),
+  );
   return (
     <View style={s.beat}>
-      <Animated.View style={[StyleSheet.absoluteFill, s.beatIn, { transform: [{ scale: v }] }]}>
+      <Reanimated.View style={[StyleSheet.absoluteFill, s.beatIn, grow]}>
         <Shape kind={beat.kind} size={BEAT} color={color} />
-      </Animated.View>
+      </Reanimated.View>
       {children}
       {beat.words ? <Text style={[s.word, { color: ink }]}>{beat.words[first ? 0 : 1]}</Text> : null}
     </View>

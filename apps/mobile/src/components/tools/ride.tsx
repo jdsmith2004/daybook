@@ -12,6 +12,7 @@ import { Appear } from '@/components/appear';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { along, blobPath, envelope, MorphShape, plainPath, Shape, SQUIGGLE, squigglePath, useClock, WavyLine, type Along } from '@/components/shapes';
 import { Dock, Middle, Stage } from '@/components/scene';
+import { breathAt, useBreathSeconds, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
@@ -483,43 +484,24 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
 function Breath() {
   const c = useTheme();
   const reduce = useReducedMotion();
-  const v = useRef(new Animated.Value(0)).current;
-  /* how far the breath is, to change the shape with it: a soft cookie when empty, a sunny shape when full */
-  const [t, setT] = useState(0);
-  useEffect(() => {
-    if (reduce) return;
-    const id = v.addListener(({ value }) => setT(value));
-    const a = Animated.loop(
-      Animated.sequence([
-        Animated.timing(v, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-        Animated.timing(v, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-      ]),
-    );
-    a.start();
-    return () => {
-      a.stop();
-      v.removeListener(id);
-    };
-  }, [reduce, v]);
+  /* how far the breath is, on the one breath curve (lib/breath), to change the shape with it: a soft cookie when empty,
+     a sunny shape when full */
+  const t = breathAt(BREATH, useBreathSeconds(!reduce))[0];
   return (
-    <Animated.View
+    <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[
-        s.breath,
-        {
-          transform: [
-            { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.08] }) },
-            { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '30deg'] }) },
-          ],
-        },
-      ]}>
+      style={[s.breath, { transform: [{ scale: 0.86 + 0.22 * t }, { rotate: t * 30 + 'deg' }] }]}>
       <MorphShape kind="cookie9" to="sunny" t={t} size={112} color={c.sunSoft}>
         <MorphShape kind="cookie4" to="cookie7" t={t} size={46} color={c.sun} turn={-t * 50} />
       </MorphShape>
-    </Animated.View>
+    </View>
   );
 }
+const BREATH: Steps = [
+  ['in', 4],
+  ['out', 6],
+];
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },

@@ -2,19 +2,19 @@
    left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS screen. */
 import { breathPhase, PATTERNS, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing as RNEasing, Platform, StyleSheet, View } from 'react-native';
-import Reanimated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
+import { StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { BIG_MAX, Text } from '@/components/text';
 
 /** the words over the sun sit in a row of a set height above it, so they stay close to their size */
 const ON_ART = 1.1;
 import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
-const NATIVE = Platform.OS !== 'web';
 export const fmtMS = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
@@ -32,66 +32,34 @@ export function useSeconds(start: number | null, on = true) {
 }
 
 /* the particle breath: about thirty dots of several sizes. At rest they sit in a soft cluster at the center. On a breath
-   in each one travels a curved path out through its own random spot and settles into an evenly spaced ring right at the
-   top of the breath, so the scatter opens as slowly and evenly as the breath fills (never a burst to suck in at once); on
-   a hold they shimmer and the ring turns slowly; on a breath out they drift back in, curling a little. Each breath gets a
-   fresh scatter. The motion runs on Reanimated shared values (the UI thread on iOS and Android, plain JavaScript on the web). */
+   in each one travels a curved path out through its own spot and settles into an evenly spaced ring at the top of the
+   breath; on a breath out they drift back in, curling a little, to a fresh cluster. Every dot reads the one breath curve
+   (lib/breath) from a clock on the UI thread, each a moment after the one before, so the turn at the top and the bottom
+   rolls through the dots like a wave and nothing ever stops dead. The ring turns slowly all the time, and the dots
+   twinkle, so it is never frozen. */
 const DOTS = 32;
-/** the dots start one after another over this part of the breath in, so the bloom unfolds */
-const STAGGER = 0.14;
-/** how far a breath in goes on the first of the sigh's two breaths in */
-const IN1 = 0.8;
+/** the last dot follows the breath this many seconds after the first */
+const LAG = 0.45;
+/** how fast the ring turns, in turns a minute */
+const SPIN = 0.35;
 const TAU = Math.PI * 2;
 
-/** one dot's own look: its size (a part of the orb's size), its color and how it twinkles */
+/** one dot's own look: its size (a part of the orb's size), its color, how it twinkles, and how late it follows */
 const LOOK = Array.from({ length: DOTS }, (_, i) => ({
   d: [0.052, 0.068, 0.034, 0.078, 0.044, 0.026, 0.058][i % 7],
   col: (i * 5) % 4,
-  /* whole numbers, so the twinkle loops without a jump */
   tw: 1 + (i % 3),
   seed: (i * 0.618) % 1,
 }));
 
-/** a fresh soft cluster near the center: x and y for each dot, as parts of the orb's radius */
-function cluster(): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < DOTS; i++) {
-    const a = Math.random() * TAU;
-    const r = Math.sqrt(Math.random()) * 0.3;
-    out.push(r * Math.cos(a), r * Math.sin(a));
-  }
-  return out;
-}
-/** a fresh loose scatter: each dot flies out to a random spot, some past the ring and some short of it */
-function scatter(): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < DOTS; i++) {
-    /* near its own place on the ring, so its path stays a calm curve; some fly past the ring and some stay short of it */
-    const a = (i / DOTS) * TAU - Math.PI / 2 + (Math.random() - 0.5) * 1.8;
-    const r = 0.5 + Math.random() * 0.62;
-    out.push(r * Math.cos(a), r * Math.sin(a));
-  }
-  return out;
-}
+/** no breath to follow: the cluster rests */
+const STILL: Steps = [['hold', 1]];
 
-/** the exact seconds left in this step of the breath (breathPhase rounds them up), so each step's motion ends on time
-    even when the screen notices the step a moment late */
-function stepLeft(pat: string, sec: number) {
-  const ph = (PATTERNS as Record<string, { ph: [string, number][] }>)[pat]?.ph;
-  if (!ph) return 0;
-  let x = sec % ph.reduce((a, b) => a + b[1], 0);
-  for (const [, d] of ph) {
-    if (x < d) return d - x;
-    x -= d;
-  }
-  return 0;
-}
-/** a soft start and landing for a step that runs from `a` to `b`, read on the UI thread */
-function eased(v: number, a: number, b: number) {
+/** a steady random number (0 to 1) for a round and a dot, the same on every frame */
+function rnd(n: number) {
   'worklet';
-  if (b === a) return v;
-  const q = Math.min(1, Math.max(0, (v - a) / (b - a)));
-  return a + (b - a) * (0.5 - 0.5 * Math.cos(q * Math.PI));
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
 }
 
 export function Orb({
@@ -99,88 +67,37 @@ export function Orb({
   sec,
   label,
   time,
-  ring,
   size = 240,
   ink,
 }: {
   /** the breathing pattern (calm, box, slow, sigh), or null to stay still */
   pattern: string | null;
   sec: number;
-  /** the word shown when not breathing (like "Waiting it out") */
+  /** the word shown when not breathing */
   label?: string;
   time: string;
-  /** 0 to 1: how much of the ring is left */
-  ring?: number | null;
   size?: number;
   ink?: string;
 }) {
   const c = useTheme();
   const still = useReducedMotion();
   const ph = pattern ? breathPhase(pattern, sec) : null;
-  const idx = ph ? ph.idx : -1;
-  /* p: how full the breath is (0 at rest, 1 on the ring). out: 1 while breathing out (the straight way back in) */
-  const p = useSharedValue(0);
-  /* where this step of the breath started and where it ends, to ease the glow and the dots' size along it */
-  const from = useSharedValue(0);
-  const to = useSharedValue(0);
-  const out = useSharedValue(0);
-  const rot = useSharedValue(0);
-  const clock = useSharedValue(0);
-  const home = useSharedValue(cluster());
-  const far = useSharedValue(scatter());
-  useEffect(() => {
-    if (still) {
-      cancelAnimation(clock);
-      clock.value = 0;
-      return;
-    }
-    clock.value = 0;
-    clock.value = withRepeat(withTiming(1, { duration: 7000, easing: Easing.linear }), -1, false);
-    return () => cancelAnimation(clock);
-  }, [still, clock]);
-  useEffect(() => {
-    if (!ph) {
-      out.value = 1;
-      p.value = withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.sin) });
-      return;
-    }
-    const ms = Math.max(60, stepLeft(pattern as string, sec) * 1000);
-    if (ph.k === 'in' || ph.k === 'in1') {
-      far.value = scatter();
-      out.value = 0;
-      p.value = 0;
-      from.value = 0;
-      to.value = ph.k === 'in1' ? IN1 : 1;
-      /* even through the breath: each dot eases itself (a gentle start and a soft landing) */
-      p.value = withTiming(to.value, { duration: ms, easing: Easing.linear });
-    } else if (ph.k === 'in2') {
-      out.value = 0;
-      from.value = p.value;
-      to.value = 1;
-      p.value = withTiming(1, { duration: ms, easing: Easing.linear });
-    } else if (ph.k === 'out') {
-      home.value = cluster();
-      out.value = 1;
-      from.value = to.value = 0;
-      p.value = withTiming(0, { duration: ms, easing: Easing.inOut(Easing.sin) });
-    } else if (p.value > 0.5) {
-      /* a hold at the top: the ring turns a little */
-      rot.value = withTiming(rot.value + 0.05 * ph.dur, { duration: ms, easing: Easing.inOut(Easing.sin) });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, !!ph]);
-  const R = size / 2 - 8;
-  const C = 2 * Math.PI * R;
+  const steps: Steps = (pattern && (PATTERNS as Record<string, { ph: Steps }>)[pattern]?.ph) || STILL;
+  const clock = useBreathClock(sec);
   const words = ph ? PH_TXT[ph.k] : label || '';
   /* the radius of the ring the dots make at the top of a breath */
   const rr = size * 0.37;
   /* one warm family, golds to amber: deeper on a light sky, where the palest gold would fade, and lighter at night */
   const cols = c.scheme === 'dark' ? ['#FFD25A', '#FFE9A8', '#FFB547', '#FFC97A'] : ['#F6A91F', '#FFC832', '#EE8A25', '#FFB43A'];
-  const glow = useAnimatedStyle(() => {
-    const e = out.value > 0.5 ? p.value : eased(p.value, from.value, to.value);
-    const v = still ? (pattern ? 0.5 + 0.5 * e : 0.6) : e;
-    return { opacity: 0.4 + 0.5 * v, transform: [{ scale: 0.75 + 0.4 * v }] };
-  }, [still, pattern]);
+  const glow = useAnimatedStyle(
+    () => {
+      /* the glow follows a little behind the dots, so it is still settling as they turn */
+      const v = breathAt(steps, clock.value - LAG * 0.6)[0];
+      const e = still ? 0.5 + 0.5 * v : v;
+      return { opacity: 0.4 + 0.5 * e, transform: [{ scale: 0.75 + 0.4 * e }] };
+    },
+    webDeps(still, steps),
+  );
   return (
     <View style={{ alignItems: 'center', gap: 14 }}>
       <View
@@ -199,43 +116,10 @@ export function Orb({
             <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#orbGlow)" />
           </Svg>
         </Reanimated.View>
-        {/* how full a breath in goes: a faint ring where the dots gather, only while there is a breath to follow */}
+        {/* how full a breath in goes: a faint ring where the dots gather */}
         {pattern ? <View style={[s.guide, { width: rr * 2, height: rr * 2, borderRadius: rr, borderColor: ink || c.ink }]} /> : null}
-        {ring != null ? (
-          <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-            <Circle cx={size / 2} cy={size / 2} r={R} stroke={ink || c.ink} strokeOpacity={0.14} strokeWidth={6} fill="none" />
-            <Circle
-              cx={size / 2}
-              cy={size / 2}
-              r={R}
-              stroke={c.sun}
-              strokeWidth={6}
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${C}`}
-              strokeDashoffset={C * (1 - Math.max(0, Math.min(1, ring)))}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            />
-          </Svg>
-        ) : null}
         {LOOK.map((l, i) => (
-          <Dot
-            key={i}
-            i={i}
-            size={size}
-            rr={rr}
-            color={cols[l.col]}
-            p={p}
-            from={from}
-            to={to}
-            out={out}
-            rot={rot}
-            clock={clock}
-            home={home}
-            far={far}
-            still={still}
-            breathing={!!pattern}
-          />
+          <Dot key={i} i={i} size={size} rr={rr} color={cols[l.col]} steps={steps} clock={clock} still={still} />
         ))}
       </View>
       <View style={{ alignItems: 'center', gap: 6 }} accessibilityLiveRegion="polite">
@@ -256,87 +140,69 @@ function Dot({
   size,
   rr,
   color,
-  p,
-  from,
-  to,
-  out,
-  rot,
+  steps,
   clock,
-  home,
-  far,
   still,
-  breathing,
 }: {
   i: number;
   size: number;
   rr: number;
   color: string;
-  p: SharedValue<number>;
-  from: SharedValue<number>;
-  to: SharedValue<number>;
-  out: SharedValue<number>;
-  rot: SharedValue<number>;
+  steps: Steps;
   clock: SharedValue<number>;
-  home: SharedValue<number[]>;
-  far: SharedValue<number[]>;
   still: boolean;
-  breathing: boolean;
 }) {
   const l = LOOK[i];
   const d = Math.max(4, size * l.d);
-  const st = useAnimatedStyle(() => {
-    const twinkle = Math.sin((clock.value * l.tw + l.seed) * TAU);
-    const a = (i / DOTS) * TAU - Math.PI / 2 + rot.value;
-    if (still) {
-      /* Reduce Motion: a still ring that softly brightens on a breath in and dims on a breath out */
-      const v = breathing ? p.value : 0.4;
-      return { opacity: 0.35 + 0.65 * v, transform: [{ translateX: rr * Math.cos(a) }, { translateY: rr * Math.sin(a) }, { scale: 0.75 + 0.25 * v }] };
-    }
-    const v = p.value;
-    const hx = home.value[i * 2] * rr;
-    const hy = home.value[i * 2 + 1] * rr;
-    let x: number;
-    let y: number;
-    if (out.value > 0.5) {
-      /* breathing out: straight back to the cluster, curling a little on the way */
-      const b = a + (1 - v) * 0.7;
-      const tx = rr * Math.cos(b);
-      const ty = rr * Math.sin(b);
-      x = hx + (tx - hx) * v;
-      y = hy + (ty - hy) * v;
-    } else {
-      /* breathing in: each dot drifts out from the cluster to its place on the ring, in polar terms so the opening grows
-         evenly with the breath: its distance from the middle starts gently, rises steadily and eases into the ring at the
-         very top, like air filling the lungs (never a sudden burst), while it swings out through its own random scatter spot on the way and
-         back. Each dot sets off a little after the one before, and all land together. */
-      const delay = l.seed * STAGGER;
-      const q = Math.min(1, Math.max(0, (v - delay) / (1 - delay)));
-      const t = 0.5 - 0.5 * Math.cos(q * Math.PI);
-      /* the swing follows the eased path too, so a dot leaves the cluster and lands on the ring at rest, never with a flick */
-      const swing = Math.sin(t * Math.PI);
-      const rh = Math.hypot(hx, hy);
-      const th = Math.atan2(hy, hx);
-      let da = a - th;
-      da -= Math.round(da / TAU) * TAU;
-      const fx = far.value[i * 2];
-      const fy = far.value[i * 2 + 1];
-      const rf = Math.hypot(fx, fy) * rr;
-      let fa = Math.atan2(fy, fx) - (th + da / 2);
-      fa -= Math.round(fa / TAU) * TAU;
-      const rad = rh + (rr - rh) * t + (rf - (rh + rr) / 2) * swing * 0.5;
-      const ang = th + da * t + fa * swing * 0.6;
-      x = rad * Math.cos(ang);
-      y = rad * Math.sin(ang);
-    }
-    /* the size and brightness ease along the step too: a linear breath in would stop dead at the top */
-    const e = out.value > 0.5 ? v : eased(v, from.value, to.value);
-    /* at rest the cluster breathes very slightly, so it never looks frozen */
-    const drift = 1 + 0.04 * (1 - v) * Math.sin((clock.value + l.seed) * TAU);
-    return {
-      opacity: (0.72 + 0.28 * e) * (0.85 + 0.15 * twinkle),
-      transform: [{ translateX: x * drift }, { translateY: y * drift }, { scale: (0.62 + 0.38 * e) * (1 + 0.08 * twinkle * e) }],
-    };
-  }, [still, breathing, rr]);
+  const st = useAnimatedStyle(
+    () => {
+      const now = clock.value;
+      const [v, k, out] = breathAt(steps, now - l.seed * LAG);
+      /* its place on the ring, which turns slowly all the time */
+      const a = (i / DOTS) * TAU - Math.PI / 2 + (now / 60) * SPIN * TAU;
+      const twinkle = Math.sin(((now / 7) * l.tw + l.seed) * TAU);
+      if (still) {
+        /* Reduce Motion: a still ring that softly brightens on a breath in and dims on a breath out */
+        const a0 = (i / DOTS) * TAU - Math.PI / 2;
+        return { opacity: 0.35 + 0.65 * v, transform: [{ translateX: rr * Math.cos(a0) }, { translateY: rr * Math.sin(a0) }, { scale: 0.75 + 0.25 * v }] };
+      }
+      /* a breath out of round k ends in cluster k + 1, where the breath in of the next round starts */
+      const h = k + out;
+      const ha = rnd(h * 131 + i * 7 + 1) * TAU;
+      const hr = Math.sqrt(rnd(h * 131 + i * 7 + 2)) * 0.3 * rr;
+      const hx = hr * Math.cos(ha);
+      const hy = hr * Math.sin(ha);
+      let x: number;
+      let y: number;
+      if (out) {
+        /* breathing out: back to the cluster, curling a little on the way */
+        const b = a + (1 - v) * 0.7;
+        x = hx + (rr * Math.cos(b) - hx) * v;
+        y = hy + (rr * Math.sin(b) - hy) * v;
+      } else {
+        /* breathing in: out from the cluster to its place on the ring, in polar terms so the opening grows evenly, swinging
+         out through its own spot on the way (the swing is 0 at both ends, so it leaves and lands at rest) */
+        const swing = Math.sin(v * Math.PI);
+        let da = a - ha;
+        da -= Math.round(da / TAU) * TAU;
+        const fa0 = (i / DOTS) * TAU - Math.PI / 2 + (rnd(k * 131 + i * 7 + 3) - 0.5) * 1.8;
+        const rf = (0.5 + rnd(k * 131 + i * 7 + 4) * 0.62) * rr;
+        let fa = fa0 - (ha + da / 2);
+        fa -= Math.round(fa / TAU) * TAU;
+        const rad = hr + (rr - hr) * v + (rf - (hr + rr) / 2) * swing * 0.5;
+        const ang = ha + da * v + fa * swing * 0.6;
+        x = rad * Math.cos(ang);
+        y = rad * Math.sin(ang);
+      }
+      /* at rest the cluster breathes very slightly, so it never looks frozen */
+      const drift = 1 + 0.04 * (1 - v) * Math.sin((now / 7 + l.seed) * TAU);
+      return {
+        opacity: (0.72 + 0.28 * v) * (0.85 + 0.15 * twinkle),
+        transform: [{ translateX: x * drift }, { translateY: y * drift }, { scale: (0.62 + 0.38 * v) * (1 + 0.08 * twinkle * v) }],
+      };
+    },
+    webDeps(still, rr, steps),
+  );
   return (
     <Reanimated.View
       style={[
@@ -367,8 +233,11 @@ function Dot({
   );
 }
 
-/* how far up the SOS sun is for each step of a breath: 1 is fully risen, 0 is low on the horizon */
-const riseOf = (k: string) => (k === 'in' || k === 'in2' ? 1 : k === 'in1' ? 0.7 : 0);
+/* the SOS sun breathes calm: 4 in (it rises), 6 out (it sinks) */
+const CALM: Steps = [
+  ['in', 4],
+  ['out', 6],
+];
 /* how much of the sun shows when it is fully risen and when it is low, and how far it reaches down behind the sheet */
 const HI = 0.64;
 const LO = 0.3;
@@ -400,27 +269,9 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
     else if (done === breaths) buzz('lit');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
-  const rise = useRef(new Animated.Value(0)).current;
-  const reduced = useRef(false);
+  const still = useReducedMotion();
+  const clock = useBreathClock(sec, on);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((r) => {
-        reduced.current = r;
-        if (r) rise.setValue(0.5);
-      })
-      .catch(() => undefined);
-  }, [rise]);
-  useEffect(() => {
-    if (reduced.current || ph.k === 'hold') return;
-    Animated.timing(rise, {
-      toValue: riseOf(ph.k),
-      duration: Math.max(60, stepLeft('calm', sec) * 1000),
-      easing: RNEasing.inOut(RNEasing.sin),
-      useNativeDriver: NATIVE,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ph.idx]);
   /* the biggest sun that fits under the words, leaving room for the line above it */
   const d = box ? Math.max(0, Math.min(box.w * 0.8, 330, (box.h + EDGE - ROW - GAP) / HI)) : 0;
   const sun = d >= 72;
@@ -428,6 +279,18 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
   const W = box ? box.w + SIDE * 2 : 0;
   /* the glow around the sun, as wide as it can be without being cut off at the top of its room */
   const glow = box ? Math.min(d * 1.9, 2 * (box.h + EDGE - HI * d + d / 2) + 24) : 0;
+  /* 1 is fully risen, 0 is low on the horizon; with Reduce Motion it stays half risen */
+  const lift = useAnimatedStyle(
+    () => {
+      const v = still ? 0.5 : breathAt(CALM, clock.value)[0];
+      return { transform: [{ translateY: (HI - LO) * d * (1 - v) }] };
+    },
+    webDeps(still, d),
+  );
+  const shine = useAnimatedStyle(() => {
+    const v = still ? 0.5 : breathAt(CALM, clock.value - 0.25)[0];
+    return { opacity: 0.55 + 0.45 * v };
+  }, webDeps(still));
   return (
     <View style={s.hz} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       {box && sun ? (
@@ -447,18 +310,20 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
             <Rect x={0} y={0} width={W} height={H} fill="url(#hz)" />
           </Svg>
           {/* the sun with its glow, moving up and down together */}
-          <Animated.View
-            style={{
-              position: 'absolute',
-              left: (W - glow) / 2,
-              top: box.h + EDGE - HI * d - (glow - d) / 2,
-              width: glow,
-              height: glow,
-              alignItems: 'center',
-              justifyContent: 'center',
-              transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [(HI - LO) * d, 0] }) }],
-            }}>
-            <Animated.View style={[StyleSheet.absoluteFill, { opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) }]}>
+          <Reanimated.View
+            style={[
+              {
+                position: 'absolute',
+                left: (W - glow) / 2,
+                top: box.h + EDGE - HI * d - (glow - d) / 2,
+                width: glow,
+                height: glow,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              lift,
+            ]}>
+            <Reanimated.View style={[StyleSheet.absoluteFill, shine]}>
               <Svg width={glow} height={glow}>
                 <Defs>
                   <RadialGradient id="hzGlow" cx="50%" cy="50%" r="50%">
@@ -468,7 +333,7 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
                 </Defs>
                 <Circle cx={glow / 2} cy={glow / 2} r={glow / 2} fill="url(#hzGlow)" />
               </Svg>
-            </Animated.View>
+            </Reanimated.View>
             <View style={[s.orb, { width: d, height: d, borderRadius: d / 2, shadowColor: '#FFB43A' }]}>
               <Svg width={d} height={d}>
                 <Defs>
@@ -481,7 +346,7 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
                 <Circle cx={d / 2} cy={d / 2} r={d / 2} fill="url(#hzCore)" />
               </Svg>
             </View>
-          </Animated.View>
+          </Reanimated.View>
         </View>
       ) : null}
       {/* the words for this breath, just above the sun at its highest */}

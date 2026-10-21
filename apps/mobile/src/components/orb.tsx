@@ -1,5 +1,5 @@
-/* The breathing sun: it grows while you breathe in and shrinks while you breathe out, with the words for each step and the time
-   left. Orb is used by Breathe and the 10-minute pause (as a guide); HorizonSun is the first SOS screen. */
+/* The breath on screen, with the words for each step and the time left. Orb is Breathe's particle breath; HorizonSun is the
+   sun on the first SOS screen. */
 import { breathPhase, PATTERNS, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -89,6 +89,9 @@ export function Orb({
   const rr = size * 0.37;
   /* one warm family, golds to amber: deeper on a light sky, where the palest gold would fade, and lighter at night */
   const cols = c.scheme === 'dark' ? ['#FFD25A', '#FFE9A8', '#FFB547', '#FFC97A'] : ['#F6A91F', '#FFC832', '#EE8A25', '#FFB43A'];
+  /* the glow: a deeper gold on a light sky; at night a paler, thinner one, since gold at strength over a dark blue mixes to a
+     muddy brown instead of reading as light */
+  const [glowColor, glowAlpha] = c.scheme === 'dark' ? ['#FFE4A0', 0.22] : ['#FFC43C', 0.3];
   const glow = useAnimatedStyle(
     () => {
       /* the glow follows a little behind the dots, so it is still settling as they turn */
@@ -109,8 +112,8 @@ export function Orb({
           <Svg width={size} height={size}>
             <Defs>
               <RadialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset="0.3" stopColor="#FFC43C" stopOpacity={0.3} />
-                <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
+                <Stop offset="0.3" stopColor={glowColor} stopOpacity={glowAlpha} />
+                <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
               </RadialGradient>
             </Defs>
             <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#orbGlow)" />

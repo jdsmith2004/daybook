@@ -43,7 +43,7 @@ import { Text } from '@/components/text';
 import { BigOption } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HorizonSun } from '@/components/orb';
-import { SceneFrame } from '@/components/scene';
+import { Dock, SceneFrame } from '@/components/scene';
 import { ToolGrid, ToolShape, toolTone } from '@/components/tool-grid';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
@@ -309,42 +309,46 @@ export default function Sos() {
           ) : null}
           {ur.strength ? 'It started out ' + UR_STR_ADJ[ur.strength] + '. ' : ''}Tap what is true now.
         </T>
-        <View style={s.opts}>
-          <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => save('rode')} />
-          <BigOption tone="sun" icon="timer" title="Still strong" sub="Try something different." onPress={() => save('again')} />
-          <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => save('slipped')} />
-        </View>
-        {t ? (
-          <View style={[s.rate, { backgroundColor: c.scBtn }]} accessibilityRole="radiogroup" accessibilityLabel={'Would you use ' + t.name + ' again?'}>
-            <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
-              Would you use {t.name} again?
-            </T>
-            <View style={s.rateRow}>
-              <Chip label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
-              <Chip label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
-            </View>
-            {r === 1 ? (
-              <T v="small" tone="muted" style={s.c}>
-                Good to know. SOS will offer it more.
-              </T>
-            ) : r === -1 ? (
-              off ? (
-                <T v="small" tone="muted" style={s.c}>
-                  It will not be suggested again. It stays in the list.
-                </T>
-              ) : st.urPin === t.id ? (
-                <T v="small" tone="muted" style={s.c}>
-                  Good to know. It is still your go-to in Settings.
-                </T>
-              ) : (
-                <Pressable accessibilityRole="button" onPress={() => notForMe(t.id, true)} style={s.plan}>
-                  <Text style={[s.planT, { color: c.accentText }]}>Stop suggesting {t.name}</Text>
-                </Pressable>
-              )
-            ) : null}
-          </View>
-        ) : null}
         {ur.cx?.kn ? <Know text={ur.cx.kn.t} /> : null}
+        {/* the answers sit low, where the thumb is (CLAUDE.md): the question about the tool, then the three answers lowest,
+            as the main thing to tap */}
+        <Dock>
+          {t ? (
+            <View style={[s.rate, { backgroundColor: c.scBtn }]} accessibilityRole="radiogroup" accessibilityLabel={'Would you use ' + t.name + ' again?'}>
+              <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
+                Would you use {t.name} again?
+              </T>
+              <View style={s.rateRow}>
+                <Chip label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
+                <Chip label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
+              </View>
+              {r === 1 ? (
+                <T v="small" tone="muted" style={s.c}>
+                  Good to know. SOS will offer it more.
+                </T>
+              ) : r === -1 ? (
+                off ? (
+                  <T v="small" tone="muted" style={s.c}>
+                    It will not be suggested again. It stays in the list.
+                  </T>
+                ) : st.urPin === t.id ? (
+                  <T v="small" tone="muted" style={s.c}>
+                    Good to know. It is still your go-to in Settings.
+                  </T>
+                ) : (
+                  <Pressable accessibilityRole="button" onPress={() => notForMe(t.id, true)} style={s.plan}>
+                    <Text style={[s.planT, { color: c.accentText }]}>Stop suggesting {t.name}</Text>
+                  </Pressable>
+                )
+              ) : null}
+            </View>
+          ) : null}
+          <View style={s.opts}>
+            <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => save('rode')} />
+            <BigOption tone="sun" icon="timer" title="Still strong" sub="Try something different." onPress={() => save('again')} />
+            <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => save('slipped')} />
+          </View>
+        </Dock>
       </SceneFrame>
     );
   }

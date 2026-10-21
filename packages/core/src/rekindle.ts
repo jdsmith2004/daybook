@@ -161,6 +161,23 @@ export function rkAskNow(days: Days, st: Settings | null, tk: DayKey): RkAsk | n
   }
   return null;
 }
+/** the run question, still to answer. Care comes first (the owner, October 21): the slip's Rekindle asks it at its end, after
+    the embers, the feeling and the record, and when it is closed before an answer, the sunrise check asks it the next morning.
+    No answer is "kept for now": the run waits for the quest exactly as a kept run does (runLedger), so closing loses nothing,
+    and nothing extra is stored. null when there is nothing to ask (answered, a short run, the window closed, the run saved). */
+export function rkAskOpen(days: Days, st: Settings | null, tk: DayKey, k: DayKey): RkAsk | null {
+  const a = rkAsk(days, st, tk, k);
+  return a && a.open && a.keep == null ? a : null;
+}
+/** Today's card while the question waits for the sunrise check: kept for now, and when it is asked, instead of asking at night */
+export function rkKeptForNow(a: Pick<RkAsk, 'k' | 'run'>, tk: DayKey): { b: string; rest: string } {
+  return {
+    b: 'Your ' + a.run + '-day run is kept for now.',
+    rest:
+      (tk <= a.k ? 'In the morning, your sunrise check asks' : 'Your sunrise check asks') +
+      ' whether to keep it going or start fresh. Nothing is lost by waiting.',
+  };
+}
 /** gives or changes the answer on the slip entry evId: keep the run going (true) or start fresh (false). Only while the save
     window is open and the run is not saved yet: a saved run stays saved. Going back to keep reopens the wait. The answer is kept
     on one slip of the day only. null when it cannot change. */
@@ -558,12 +575,14 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
 }
 
 /* ---------- the sunrise check ---------- */
-/** the steps: hello, last night's screens (when not answered and the phone was not put away), what came before, the plan.
-    Last night is the night before today (tk), which is the slip's night the morning after. */
-export function srSteps(days: Days, r: RekindleState, tk: DayKey = addDays(r.k, 1)): string[] {
+/** the steps: hello, the run question when it is still open and unanswered (given st: rkAskOpen), last night's screens (when
+    not answered and the phone was not put away), what came before, the plan. Last night is the night before today (tk), which
+    is the slip's night the morning after. */
+export function srSteps(days: Days, r: RekindleState, tk: DayKey = addDays(r.k, 1), st?: Settings | null): string[] {
   const d = days[addDays(tk, -1)];
   const so = d && d.checkin ? d.checkin.so : null;
-  return ['hi'].concat(!r.m2 && so == null ? ['so'] : [], ['before', 'plan']);
+  const run = st && rkAskOpen(days, st, tk, r.k) ? ['run'] : [];
+  return ['hi'].concat(run, !r.m2 && so == null ? ['so'] : [], ['before', 'plan']);
 }
 
 /** the plans to pick from: the person's own plan for this moment first (from My plan), then a few that fit it */

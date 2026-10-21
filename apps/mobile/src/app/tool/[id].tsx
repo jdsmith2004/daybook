@@ -77,13 +77,13 @@ export default function Tool() {
       body = <Ground {...p} />;
       break;
     case 'curious':
-      body = <Curious {...p} step={step} setStep={setStep} />;
+      body = <Curious {...p} step={step} setStep={setStep} dir={dir} />;
       break;
     case 'thought':
       body = <Thought {...p} text={text} setText={setText} />;
       break;
     case 'forward':
-      body = <Forward {...p} step={step} setStep={setStep} />;
+      body = <Forward {...p} step={step} setStep={setStep} dir={dir} />;
       break;
     case 'pause':
       body = <Pause {...p} now={now} />;
@@ -113,7 +113,9 @@ export default function Tool() {
       dots={stepped ? { n: nSteps, i: step, label: `Step ${step + 1} of ${nSteps}` } : null}
       onBack={stepped && step > 0 ? () => setStep(step - 1) : tool.id === 'thought' && text ? () => setText(null) : null}
       onClose={p.exit}>
-      <Stage key={stepped ? 'step' + step : tool.id} dir={dir}>
+      {/* one Stage per tool: a stepped tool slides each step in itself, so what was picked on one step is still there on
+          the next (a Stage with a new key would start the tool over) */}
+      <Stage key={tool.id} dir={stepped ? 0 : dir}>
         {body}
       </Stage>
     </SceneFrame>

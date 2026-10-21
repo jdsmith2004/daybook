@@ -21,7 +21,11 @@ import { font, useTheme } from '@/lib/theme';
 import type { ToolProps } from './types';
 
 /* ---------- get curious ---------- */
-export function Curious({ finish, step, setStep }: ToolProps & { step: number; setStep: (i: number) => void }) {
+/** the steps of a stepped tool (Get curious, Play it forward): the step number and which way it slides live in Tool, and
+    what was picked lives here, so the tool stays mounted from step to step and only the Stage slides */
+type Stepped = { step: number; setStep: (i: number) => void; dir: -1 | 0 | 1 };
+
+export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
   const c = useTheme();
   const [body, setBody] = useState<string | null>(null);
   const [feel, setFeel] = useState<string | null>(null);
@@ -38,7 +42,7 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
   );
   if (step === 0)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <Middle>
           <Breath />
           <T v="eyebrow" tone="muted">
@@ -50,11 +54,11 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           <T style={s.c}>That is all you have to see right now. Drop your shoulders and unclench your jaw. Take one slow breath.</T>
         </Middle>
         {next}
-      </>
+      </Stage>
     );
   if (step === 1)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <Middle>
           <Breath />
           <T v="eyebrow" tone="muted">
@@ -66,11 +70,11 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           <T style={s.c}>You do not have to fight it or obey it. Give it a minute without doing anything about it.</T>
         </Middle>
         {next}
-      </>
+      </Stage>
     );
   if (step === 2)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <T v="eyebrow" tone="muted">
           Look closer
         </T>
@@ -90,11 +94,11 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           />
         </Dock>
         <Link label="Skip" onPress={() => setStep(3)} />
-      </>
+      </Stage>
     );
   if (step === 3)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <T v="eyebrow" tone="muted">
           Name it
         </T>
@@ -114,12 +118,12 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
           />
         </Dock>
         <Link label="Skip" onPress={() => setStep(4)} />
-      </>
+      </Stage>
     );
   const p = Math.min(1, (sec * 1000) / CU_MS);
   const line = cuLine(body, feel);
   return (
-    <>
+    <Stage key={'s' + step} dir={dir}>
       <T v="eyebrow" tone="muted">
         Watch it
       </T>
@@ -143,7 +147,7 @@ export function Curious({ finish, step, setStep }: ToolProps & { step: number; s
         ) : null}
         <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
       </Dock>
-    </>
+    </Stage>
   );
 }
 
@@ -262,9 +266,6 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
   if (!text)
     return (
       <Stage key="pick" dir={0}>
-        <T v="eyebrow" tone="muted">
-          Name the thought
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           What is the urge telling you?
         </T>
@@ -397,7 +398,7 @@ function BlobCard({ color, lip, children }: { color: string; lip: string; childr
 const THOUGHT_BLOB = blobPath(50, 50, 45, 4, 0.06, Math.PI / 4, 0.45, 3, true);
 
 /* ---------- play it forward ---------- */
-export function Forward({ finish, step, setStep }: ToolProps & { step: number; setStep: (i: number) => void }) {
+export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
   const c = useTheme();
   const { mem, setMem } = useSos();
   /* your answers from last time are already picked */
@@ -409,7 +410,7 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
   };
   if (step === 0)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <T v="eyebrow" tone="muted">
           If I give in
         </T>
@@ -421,11 +422,11 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
           <Tiles list={FWD_A} cur={a} onPick={(v) => toggle(a, setA, v)} />
           <Button label="Next" onPress={() => setStep(1)} />
         </Dock>
-      </>
+      </Stage>
     );
   if (step === 1)
     return (
-      <>
+      <Stage key={'s' + step} dir={dir}>
         <T v="eyebrow" tone="muted">
           If I ride it out
         </T>
@@ -443,13 +444,13 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
             }}
           />
         </Dock>
-      </>
+      </Stage>
     );
   const words = (list: [string, string][], ids: string[]) => list.filter((x) => ids.indexOf(x[0]) >= 0).map((x) => x[1].toLowerCase());
   const wa = words(FWD_A, a);
   const wb = words(FWD_B, b);
   return (
-    <>
+    <Stage key={'s' + step} dir={dir}>
       <T v="title" style={s.c} accessibilityRole="header">
         Which hour do you want?
       </T>
@@ -475,7 +476,7 @@ export function Forward({ finish, step, setStep }: ToolProps & { step: number; s
       <Dock>
         <Button label="Ride it out" onPress={() => finish('forward', { msg: 'You picked the better hour.' })} />
       </Dock>
-    </>
+    </Stage>
   );
 }
 

@@ -65,19 +65,22 @@ export function KnownLine({
   src,
   map,
   art,
+  icon = 'check',
 }: {
   short: string;
   body: string;
   src: string[];
   map: Record<string, [string, string]>;
   art: React.ReactNode;
+  /** a check for a card read before; another icon for one shown only as its line */
+  icon?: string;
 }) {
   const c = useTheme();
   const [open, setOpen] = useState(false);
   return (
     <View style={[s.known, { backgroundColor: c.surface, shadowColor: c.lip }]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.knownHead}>
-        <Icon name="check" size={18} color={c.mintText} />
+        <Icon name={icon} size={18} color={c.mintText} />
         <T style={{ flex: 1 }}>{short}</T>
         <Icon name={open ? 'up' : 'down'} size={18} color={c.muted} />
       </Pressable>

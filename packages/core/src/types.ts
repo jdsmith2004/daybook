@@ -39,6 +39,8 @@ export interface DayEvent {
   rk?: Rekindle;
   /** minutes waited before a slip */
   wt?: 0 | 5 | 10 | 20 | null;
+  /** a slip that ends a run of RUN_ASK days or more: true keep the run going (Rekindle saves it), false start fresh, absent not answered yet */
+  keep?: boolean;
 }
 
 export interface Checkin {

@@ -1454,6 +1454,7 @@ there whether the run is kept or not. Only the current run is what the person ch
 ### Steps (each one commit on the branch `counting-adapts`; each marked with its effort)
 
 **A1. Keep or start fresh, in core.** _Effort: high (the run, earned things, sync)._
+
 - A slip that ends a run of `RUN_ASK = 7` days or more, and is the first slip in 7 days (today's `rkFullDays`), carries
   the person's answer on the slip entry: `keep: true` (keep the run going), `keep: false` (start fresh), or no answer
   yet. The field survives normalization, export and import, and sync merging (newest edit of the entry wins, as for
@@ -1470,6 +1471,7 @@ there whether the run is kept or not. Only the current run is what the person ch
   week, sync merge of the field.
 
 **A2. The question on screen.** _Effort: medium (screens and words)._
+
 - In the slip flow (`app/log.tsx`, the first Rekindle step), when core says the slip ends a run of 7 days or more: the
   question at the top ("Your 47-day run" and one line), two big choices low on the screen: "Keep it going" (the quest
   saves it, by the weekday) and "Start fresh" ("Your 47 days stay your longest run"). Then the quest as today.
@@ -1478,6 +1480,7 @@ there whether the run is kept or not. Only the current run is what the person ch
 - Words: no contractions, hopeful, never shame; both answers are good answers.
 
 **A3. Hours after a slip.** _Effort: medium (a small rule and Today's number)._
+
 - `heroNumber` while counting days: for 72 hours after the latest slip, unless that slip's run was kept (saved or
   waiting with keep), the number is the time since the slip, in hours ("14 hours since your last slip"), with the
   window measure as its chip ("6 of the last 7 days"), so what was earned stays in view. After 72 hours, or when a new
@@ -1485,6 +1488,7 @@ there whether the run is kept or not. Only the current run is what the person ch
 - Tests in `test/hero.test.ts`.
 
 **A4. Counting switches by itself, both ways.** _Effort: high (counting mode, graduation award)._
+
 - Setup: the goals no longer include "Step down first" or "Cut way back first"; the mode comes from how often:
   about once a day or more (`f3`, `f4`) starts in step down, anything less starts counting days. Gentle is never set by
   setup. A walk-through after setup never changes a mode the person picked in Settings.
@@ -1497,4 +1501,6 @@ there whether the run is kept or not. Only the current run is what the person ch
 
 **A5. Check and ship.** _Effort: low._ `npm run format`, `npm run typecheck`, `npm test`, `npx expo export --platform
 web` and a look at setup, a slip after a 7-day run (both answers), Today in the first hours after a slip, and the
-switch note, light and dark. Merge to `main` with `[deploy]`.
+switch note, light and dark. Before merging, set `RUN_ASK_FROM` in `core.js` to the day this reaches `main` (A1 set it to
+2026-10-22): slips on earlier days keep the old rule, so a short run someone already saved is never taken away. Merge to
+`main` with `[deploy]`.

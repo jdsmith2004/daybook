@@ -344,6 +344,8 @@ function normEvent(e){
  }
  /* how long the person waited before a slip, in minutes (0, 5, 10 or 20 and up). Waiting is a skill, so it is counted even when the urge won. */
  if([0,5,10,20].indexOf(e.wt)>=0)o.wt=e.wt;
+ /* keep or start fresh, on a slip that ends a run of RUN_ASK days or more: true keep the run going, false start fresh, absent not answered */
+ if(e.outcome==='slipped'&&(e.keep===true||e.keep===false))o.keep=e.keep;
  return o;
 }
 function normCheckin(c){
@@ -439,15 +441,22 @@ function dayKind(key,day,st,today,mode,days){
    (one small thing, the phone away one night, a sunrise check one morning, and for a run of 14 days or more one deeper mission)
    within RK_DAYS days after the slip (the owner, October 18: the run waits for you), and the run keeps going. An honest "screens stayed
    on" never ends it: the phone can go away another night. The slip stays in the log, and the day is marked as saved, so the count of days
-   with no slip stays honest. Later slips that week get a short Rekindle and cannot save a run. Worked out from the log, like everything else. */
-const RUN_DEEP=14,RK_DAYS=3;
+   with no slip stays honest. Later slips that week get a short Rekindle and cannot save a run. Worked out from the log, like everything else.
+   Keep or start fresh (the owner, October 21): a slip that ends a run of RUN_ASK days or more asks the person, on the slip entry, whether to
+   keep the run going (keep: true, the save above) or start fresh (keep: false, the run ends on the slip day like any slip). No answer yet
+   waits, as before. A shorter run ends at the slip. Slips on days before RUN_ASK_FROM keep the rule they were made under (any run could be
+   saved), so a save already earned is never taken away. */
+const RUN_DEEP=14,RK_DAYS=3,RUN_ASK=7,RUN_ASK_FROM='2026-10-22';
+/* the answer on a slip day: true keep, false start fresh, null not answered (rekindle.ts rkKeep writes it on one slip of the day) */
+function rkKeepOf(day){const e=((day&&day.events)||[]).find(x=>x.outcome==='slipped'&&typeof x.keep==='boolean');return e?e.keep:null}
 function rkFullDays(days){
  const out={};let last=null;
  allKeys(days).forEach(k=>{if(sumDay(days[k]).slipped>0&&(!last||diffDays(k,last)>=7)){out[k]=1;last=k}});
  return out;
 }
-/* the run, day by day. kind[k] is 'saved' or 'open' for a slip day that was saved or can still be. open: the save still in play, if any. */
-function runLedger(days,st,today,mode,noSave){
+/* the run, day by day. kind[k] is 'saved' or 'open' for a slip day that was saved or can still be. open: the save still in play, if any.
+   runs, when given, gets the run before each first slip in 7 days (rekindle.ts rkAsk). */
+function runLedger(days,st,today,mode,noSave,runs){
  mode=mode||st.cleanMode;
  const L={cur:0,longest:0,clean:0,counted:0,saves:0,kind:{},open:null};
  if(!st.day1)return L;
@@ -460,7 +469,8 @@ function runLedger(days,st,today,mode,noSave){
   if(dk!=='slip'){L.cur++;L.clean++}
   else{
    let s=null;const run=L.cur;
-   if(full[k]&&run>=1){
+   if(full[k]&&runs)runs[k]=run;
+   if(full[k]&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
     const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,RK_DAYS);
     const done=!!(r&&r.m1&&r.m2&&r.m3&&r.ev.rk.at<=dl&&(!deep||r.m4));
     s=done?'saved':today<=dl?'open':null;
@@ -3101,6 +3111,9 @@ export {
   dayKind,
   RUN_DEEP,
   RK_DAYS,
+  RUN_ASK,
+  RUN_ASK_FROM,
+  rkKeepOf,
   rkFullDays,
   runLedger,
   streaks,

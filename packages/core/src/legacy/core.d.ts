@@ -42,6 +42,12 @@ export function phaseOf(key: DayKey, st: Settings): { p: 'before' | 'tracking' |
 export const RUN_DEEP: number;
 /** days after a slip in which its Rekindle quest can still save the run */
 export const RK_DAYS: number;
+/** a slip that ends a run this long or longer asks: keep the run going, or start fresh */
+export const RUN_ASK: number;
+/** slips on days before this keep the rule they were made under: a run of any length could be saved */
+export const RUN_ASK_FROM: DayKey;
+/** the keep-or-start-fresh answer on a slip day: true keep, false start fresh, null not answered */
+export function rkKeepOf(day: Day | undefined | null): boolean | null;
 export function dayKind(key: DayKey, day: Day | undefined, st: Settings, today: DayKey, mode?: CountMode, days?: Days): DayKindName;
 export function rkFullDays(days: Days): Record<DayKey, 1>;
 export interface RunLedger {
@@ -53,7 +59,7 @@ export interface RunLedger {
   kind: Partial<Record<DayKey, 'saved' | 'open'>>;
   open: { k: DayKey; run: number; deep: boolean } | null;
 }
-export function runLedger(days: Days, st: Settings, today: DayKey, mode?: CountMode, noSave?: boolean): RunLedger;
+export function runLedger(days: Days, st: Settings, today: DayKey, mode?: CountMode, noSave?: boolean, runs?: Record<DayKey, number>): RunLedger;
 export function streaks(days: Days, st: Settings, today: DayKey, mode?: CountMode, noSave?: boolean): RunLedger;
 export function roughPatch(days: Days, st: Settings, today: DayKey): boolean;
 export function reachedOn(d: Day | undefined): boolean;

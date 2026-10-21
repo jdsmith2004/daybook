@@ -11,8 +11,11 @@ import {
   OB_THEN,
   optText,
   rkFullDays,
+  rkKeepOf,
   rkOf,
   RK_DAYS,
+  RUN_ASK,
+  RUN_ASK_FROM,
   RUN_DEEP,
   runLedger,
   SLIP_STEPS,
@@ -109,6 +112,94 @@ export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
   return { L, op: L.open && L.open.k === k ? L.open : null, saved: L.kind[k] === 'saved' };
 }
 
+/* ---------- keep the run, or start fresh ---------- */
+export interface RkAsk {
+  /** the slip day */
+  k: DayKey;
+  /** the run the slip ended, in days (RUN_ASK or more) */
+  run: number;
+  /** a run of RUN_DEEP days or more: keeping it takes the deeper mission too */
+  deep: boolean;
+  /** the slip entry that holds the answer (or will) */
+  evId: string;
+  /** true keep the run going, false start fresh, null not answered yet */
+  keep: boolean | null;
+  /** the weekday the save window closes: "until Wednesday night" */
+  until: string;
+  /** the answer can still be given or changed: inside the window, and the run is not saved yet */
+  open: boolean;
+  /** the run was saved (it stays saved) */
+  saved: boolean;
+}
+/** whether the slip on day k asks "keep the run going, or start fresh?": the first slip in 7 days, a slip that ends the day's count,
+    after a run of RUN_ASK days or more, while counting days (strict or gentle). Asked while the save window is open (RK_DAYS);
+    after that it still says what was answered. null when it does not ask. */
+export function rkAsk(days: Days, st: Settings | null, tk: DayKey, k: DayKey): RkAsk | null {
+  if (!st || !st.day1 || k < st.day1 || k > tk) return null;
+  if (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle') return null;
+  if (!rkFullDays(days)[k] || dayKind(k, days[k], st, tk, undefined, days) !== 'slip') return null;
+  const runs: Record<DayKey, number> = {};
+  const L = runLedger(days, st, tk, undefined, false, runs);
+  const run = runs[k] || 0;
+  const r = rkOf(days, k, st);
+  if (run < RUN_ASK || !r) return null;
+  const keep = rkKeepOf(days[k]);
+  const inWindow = tk <= addDays(k, RK_DAYS);
+  if (!inWindow && keep == null) return null;
+  const saved = L.kind[k] === 'saved';
+  const holder = days[k].events.find((e) => e.outcome === 'slipped' && typeof e.keep === 'boolean');
+  return { k, run, deep: run >= RUN_DEEP, evId: (holder || r.ev).id, keep, until: rkUntil(k), open: inWindow && !saved, saved };
+}
+/** gives or changes the answer on the slip entry evId: keep the run going (true) or start fresh (false). Only while the save
+    window is open and the run is not saved yet: a saved run stays saved. Going back to keep reopens the wait. The answer is kept
+    on one slip of the day only. null when it cannot change. */
+export function rkKeep(days: Days, st: Settings, tk: DayKey, k: DayKey, evId: string, keep: boolean, now = Date.now()): Days | null {
+  const a = rkAsk(days, st, tk, k);
+  if (!a || !a.open) return null;
+  const ev = days[k].events.find((e) => e.id === evId && e.outcome === 'slipped');
+  if (!ev) return null;
+  if (ev.keep === keep && a.keep === keep) return days;
+  const day = changeDay(
+    days[k],
+    k,
+    (d) => {
+      for (const e of d.events) {
+        if (e.id === evId) e.keep = keep;
+        else delete e.keep;
+      }
+    },
+    now,
+  );
+  return withDay(days, k, day);
+}
+/** start fresh, in words: what was built stays on record, and the new run counts from the day after the slip */
+export function rkFresh(days: Days, st: Settings, tk: DayKey, a: Pick<RkAsk, 'k' | 'run'>): { b: string; rest: string } {
+  const L = runLedger(days, st, tk);
+  const b = a.run >= L.longest ? 'Your ' + a.run + '-day run stays your longest.' : 'Your ' + a.run + ' days stay on your record.';
+  const rest =
+    tk <= a.k
+      ? 'Your fresh run starts tomorrow. Your points, level and badges all stay.'
+      : 'Your fresh run counts from ' +
+        fmtDate(addDays(a.k, 1), { weekday: 'long' }) +
+        (L.cur > 0 ? ', and it is already ' + plural(L.cur, 'day') : '') +
+        '. Your points, level and badges all stay.';
+  return { b, rest };
+}
+/** the start-fresh answer on day k, when it was given */
+const freshOf = (days: Days, st: Settings, tk: DayKey, k: DayKey) => {
+  const a = rkAsk(days, st, tk, k);
+  return a && a.keep === false ? a : null;
+};
+/** the run a short slip ended (under RUN_ASK days): it ends at the slip, with nothing to save. 0 when it is not one. */
+function shortRun(days: Days, st: Settings, tk: DayKey, k: DayKey): number {
+  if (!st.day1 || k < st.day1 || k < RUN_ASK_FROM || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return 0;
+  if (!rkFullDays(days)[k] || dayKind(k, days[k], st, tk, undefined, days) !== 'slip') return 0;
+  const runs: Record<DayKey, number> = {};
+  runLedger(days, st, tk, undefined, false, runs);
+  const run = runs[k] || 0;
+  return run < RUN_ASK ? run : 0;
+}
+
 /* ---------- the embers (the first Rekindle screen) ---------- */
 export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey, lit: boolean, sp: boolean) {
   const g = gameCompute(days, st, reviews, tk);
@@ -118,12 +209,20 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const h = lit ? 'Still burning. Still yours.' : sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.';
   const p = lit ? 'A slip can burn it low. It cannot put it out. Nothing was taken away.' : 'It is down to embers. Embers hold the heat.';
   const op = lit ? rkOpen(days, st, tk, date).op : null;
+  const fresh = lit && !op ? freshOf(days, st, tk, date) : null;
+  const short = lit && !op && !fresh ? shortRun(days, st, tk, date) : 0;
   return {
     level: g.level.n,
     h,
     p,
     kept: lit ? kept : [],
-    line: op ? { b: 'Your ' + op.run + '-day run waits for you.', rest: 'The Rekindle quest saves it, any time until ' + rkUntil(date) + ' night.' } : null,
+    line: op
+      ? { b: 'Your ' + op.run + '-day run waits for you.', rest: 'The Rekindle quest saves it, any time until ' + rkUntil(date) + ' night.' }
+      : fresh
+        ? rkFresh(days, st, tk, fresh)
+        : short
+          ? { b: 'Your ' + plural(short, 'day') + (short === 1 ? ' is' : ' are') + ' kept.', rest: 'A new run starts tomorrow.' }
+          : null,
   };
 }
 
@@ -131,10 +230,12 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     next to where the person started, and this slip takes one day off the way to graduation, never the rest. */
 export function rkHonor(days: Days, st: Settings, tk: DayKey, date: DayKey): string | null {
   const op = rkOpen(days, st, tk, date).op;
-  if (!op || op.run < 7) return null;
+  /* a run kept going, or one the person chose to start fresh after: either way, what was built is honored */
+  const run = op ? op.run : freshOf(days, st, tk, date)?.run || 0;
+  if (run < RUN_ASK) return null;
   const g = gradInfo(days, st, tk);
   const grad = g.show && !g.at ? ` You are at ${g.count} of ${GRAD_DAYS} toward graduation. A slip takes one day off, never the rest.` : '';
-  return `${op.run} days. That is huge, and it still counts.` + grad;
+  return `${run} days. That is huge, and it still counts.` + grad;
 }
 
 /* ---------- the short Rekindle ---------- */
@@ -156,10 +257,12 @@ export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, 
     if (dayKind(date, days[date], st, tk, undefined, days) === 'one') return 'With gentle counting, today still counts. Nothing you earned is gone.';
     /* a run that ends here (a second slip within a week cannot be saved): what was built is kept, and said so */
     const before = runLedger(days, st, addDays(date, -1)).cur;
+    const kept = (before === 1 ? 'Your 1 day is kept' : 'Your ' + before + ' days are kept') + ', and so are your points, level and badges.';
+    /* another slip on the day the person chose to start fresh, or on the day a short run ended: the run ended with the first slip */
+    if (before > 0 && freshOf(days, st, tk, date)) return 'You chose to start fresh, so a new run starts tomorrow. ' + kept;
+    if (before > 0 && shortRun(days, st, tk, date)) return 'A new run starts tomorrow. ' + kept;
     return before > 0
-      ? 'A second slip within a week cannot be saved, so a new run starts tomorrow. ' +
-          (before === 1 ? 'Your 1 day is kept' : 'Your ' + before + ' days are kept') +
-          ', and so are your points, level and badges.'
+      ? 'A second slip within a week cannot be saved, so a new run starts tomorrow. ' + kept
       : 'Your next run starts tomorrow. Your points, level and badges all stay.';
   }
   return 'Nothing is being counted yet, so nothing was lost. Your points, level and badges all stay.';
@@ -315,13 +418,14 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
   const u = rkUntil(r.k);
   const base = { flames, why: null, missions: [] as Mission[], care: [] as string[], sunrise: false, quote: null, line: !!op };
   if (r.phase === 'day') {
+    const fresh = op ? null : freshOf(days, st, tk, r.k);
     return {
       ...base,
       kind: 'day',
       icon: 'flame',
       h: op ? 'Save your ' + op.run + '-day run' : 'Rekindle quest',
       p: lit + ' of ' + flames.length + ' lit · until ' + u + ' night',
-      why: op ? 'Your run waits for you. The slip stays in your log either way.' : null,
+      why: op ? 'Your run waits for you. The slip stays in your log either way.' : fresh ? 'You chose to start fresh. ' + rkFresh(days, st, tk, fresh).b : null,
       missions: rkMissions(r, st, { where: 'today', deep: !!(op && op.deep), hour, until: u }),
       care: slipCare(st),
     };
@@ -370,8 +474,9 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
 export interface RkEnded {
   /** the run that ended, in days */
   run: number;
-  /** clock: the quest closed with steps left. again: a second slip within a week, which cannot be saved */
-  why: 'clock' | 'again';
+  /** clock: the quest closed with steps left. again: a second slip within a week, which cannot be saved. fresh: the person
+      chose to start fresh (said once the answer can no longer change) */
+  why: 'clock' | 'again' | 'fresh';
   lit: number;
   of: number;
   longest: number;
@@ -394,11 +499,20 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
     if (full[k] && Array.from({ length: RK_DAYS }, (_, j) => addDays(k, j + 1)).some(slip)) continue;
     const run = runLedger(days, st, addDays(k, -1)).cur;
     if (run < 1) return null;
+    /* a short run ends at the slip, with no quest to close: the slip's own screens said so */
+    if (full[k] && k >= RUN_ASK_FROM && run < RUN_ASK) return null;
     const r = rkOf(days, k, st);
-    const deep = run >= RUN_DEEP;
+    const fresh = full[k] && rkKeepOf(days[k]) === false;
+    const deep = run >= RUN_DEEP && !fresh;
     const lit = r ? [r.m1, r.m2, r.m3, deep && r.m4].filter(Boolean).length : 0;
     const of = deep ? 4 : 3;
     const g = gradInfo(days, st, tk);
+    const counts = L.cur > 0 ? ', and it is already ' + L.cur + (L.cur === 1 ? ' day' : ' days') : '';
+    if (fresh) {
+      const text =
+        'You chose to start fresh. Your new run counts from ' + fmtDate(addDays(k, 1), { weekday: 'long' }) + counts + '. What you built stays yours.';
+      return { run, why: 'fresh', lit, of, longest: L.longest, grad: g.show && !g.at ? g.count : null, text };
+    }
     const text = full[k]
       ? 'The quest closed last night with ' +
         lit +
@@ -406,7 +520,7 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
         of +
         ' lit. Your new run counts from ' +
         fmtDate(addDays(k, 1), { weekday: 'long' }) +
-        (L.cur > 0 ? ', and it is already ' + L.cur + (L.cur === 1 ? ' day' : ' days') : '') +
+        counts +
         '. What you built stays yours.'
       : 'A second slip within a week cannot be saved, so a new run started today. What you built stays yours.';
     return { run, why: full[k] ? 'clock' : 'again', lit, of, longest: L.longest, grad: g.show && !g.at ? g.count : null, text };

@@ -1,9 +1,10 @@
 /* Talk it through, outside the flow itself (app/talk.tsx):
-   - TalkCard on Today, while a talk-through still matters: waiting to decide, time to decide, a changed plan until its
+   - TalkCard on Today, while a talk-through still matters: waiting to decide, time to decide, a wait that passed (the
+     morning after, with no slip: "It passed" is a calm move), a changed plan until its
      look back, or "look back" (core: talkDueNow; a go-ahead is asked about for three days, a change plan the next morning)
    - TalkLook, the same look back at the end of the morning stop (app/morning.tsx)
    - TalkDoor, the way in from the tools (in Learn and in SOS) and from a check-in that says caring is low */
-import { messageTexts, talkAgo, talkClock, talkDueNow, talkPlanLine, talkUntilLine, type DayKey, type Snapshot } from '@daybook/core';
+import { lookBack, messageTexts, talkAgo, talkClock, talkDueNow, talkPlanLine, talkUntilLine, type DayKey, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -24,25 +25,45 @@ function lookWords(d: Due, tk: DayKey): { head: string; sub: string } {
   if (!ago) return { head: 'When it has passed, look back.', sub: 'One minute. Honest is what counts.' };
   return { head: 'One minute about ' + ago + '.', sub: 'You chose with your eyes open. Whatever happened, honest is what counts.' };
 }
+/** a decide-later, in the person's own terms, so it makes sense even when they do not remember choosing it: when they
+    talked it through, and the time they picked */
+function waitWords(d: Due, tk: DayKey): { head: string; sub: string } {
+  const t = d.talk;
+  const ago = talkAgo(d.k, tk, t.t);
+  const chose =
+    (ago ? ago.charAt(0).toUpperCase() + ago.slice(1) : 'At ' + talkClock(t.t)) +
+    ' you talked it through and chose to wait' +
+    (t.at ? ' until ' + talkClock(t.at) : '');
+  if (d.due === 'passed') return { head: 'You waited' + (ago ? ' ' + ago : '') + '.', sub: chose + '. No slip since. If it faded, that is a win.' };
+  return { head: 'Time to decide.', sub: chose + '. Now choose, with your eyes open.' };
+}
 const openTalk = (q: 'decide' | 'look', id: string) => router.push(('/talk?' + q + '=' + id) as '/talk');
 
 export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
   const c = useTheme();
-  const { tk } = useStore();
+  const { tk, update, say } = useStore();
   const d = talkDueNow(snap.days, snap.settings, tk, now);
   if (!d) return null;
   const t = d.talk;
   const open = (q: 'decide' | 'look') => openTalk(q, t.id);
-  const look = d.due === 'look' ? lookWords(d, tk) : null;
-  const head =
-    d.due === 'waiting' ? 'Deciding at ' + talkClock(t.at!) + '.' : d.due === 'decide' ? 'Time to decide.' : look ? look.head : 'Your plan, talked through';
-  const sub =
-    d.due === 'waiting' ? talkUntilLine(t) : d.due === 'decide' ? 'You chose to decide now. Choose with your eyes open.' : look ? look.sub : talkPlanLine(t);
+  const look = d.due === 'look' ? lookWords(d, tk) : d.due === 'decide' || d.due === 'passed' ? waitWords(d, tk) : null;
+  const head = d.due === 'waiting' ? 'Deciding at ' + talkClock(t.at!) + '.' : look ? look.head : 'Your plan, talked through';
+  const sub = d.due === 'waiting' ? talkUntilLine(t) : look ? look.sub : talkPlanLine(t);
+  /* the wait did its work: a calm move, and the card goes */
+  const passed = () => {
+    buzz('save');
+    update((s0) => ({ ...s0, days: lookBack(s0.days, t.id, { went: false, f: [], g: null, c: [] }, tk) }));
+    say('It passed. Waiting worked.');
+  };
   return (
     <Card>
       <View style={s.head}>
         <View style={[s.ic, { backgroundColor: c.violetSoft }]}>
-          <Icon name={d.due === 'waiting' || d.due === 'decide' ? 'timer' : t.p === 'change' ? 'compass' : 'sun'} size={20} color={c.violetText} />
+          <Icon
+            name={d.due === 'passed' ? 'leaf' : d.due === 'waiting' || d.due === 'decide' ? 'timer' : t.p === 'change' ? 'compass' : 'sun'}
+            size={20}
+            color={c.violetText}
+          />
         </View>
         <View style={{ flex: 1 }}>
           <T v="label">{head}</T>
@@ -51,7 +72,12 @@ export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
           </T>
         </View>
       </View>
-      {d.due === 'waiting' || d.due === 'decide' ? (
+      {d.due === 'passed' ? (
+        <>
+          <Button label="It passed" onPress={passed} />
+          <Button kind="ghost" label="It is still on my mind" onPress={() => open('decide')} />
+        </>
+      ) : d.due === 'waiting' || d.due === 'decide' ? (
         <Button kind={d.due === 'decide' ? 'primary' : 'ghost'} label="Decide now" onPress={() => open('decide')} />
       ) : d.due === 'look' ? (
         <Button label="Look back" onPress={() => open('look')} />

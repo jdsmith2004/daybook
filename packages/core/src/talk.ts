@@ -530,7 +530,7 @@ export function talkById(days: Days, id: string): { k: DayKey; talk: Talk } | nu
   return talksOf(days).find((x) => x.talk.id === id) || null;
 }
 
-export type TalkDue = 'decide' | 'waiting' | 'plan' | 'look';
+export type TalkDue = 'decide' | 'waiting' | 'passed' | 'plan' | 'look';
 const HOUR = 3600000;
 /** the hour the morning starts, for looking back on a change plan */
 export const TALK_MORNING_H = 6;
@@ -564,10 +564,26 @@ export function talkLookAt(t: Pick<Talk, 't' | 'at'>, hard: TalkHard = []): numb
   return look;
 }
 
-/** what one talk-through needs from Today at now, if anything */
-function dueOf(t: Talk, now: number, hard: TalkHard): TalkDue | null {
+const p2 = (n: number) => String(n).padStart(2, '0');
+/** a slip in the log after the talk-through at t on log day k: later that day (or with no time), or on a later day */
+export function slipSince(days: Days, k: DayKey, t: number): boolean {
+  const d = new Date(t);
+  const since = p2(d.getHours()) + ':' + p2(d.getMinutes());
+  return Object.keys(days).some((dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || e.time >= since)));
+}
+
+/** what one talk-through needs from Today at now, if anything. A decide-later or a changed plan is settled by a slip
+    logged after it: the slip was already looked at honestly when it was logged, so Today does not ask again. */
+function dueOf(t: Talk, k: DayKey, days: Days, now: number, hard: TalkHard): TalkDue | null {
   if (!t.p || t.a) return null;
-  if (t.p === 'wait') return now - t.t < WAIT_FOR ? (t.at && now < t.at ? 'waiting' : 'decide') : null;
+  if (t.p !== 'open' && slipSince(days, k, t.t)) return null;
+  /* a decide-later: waiting, then time to decide; once the morning after its moment comes with no slip, the wait has
+     done its work, and Today says so ("passed") instead of asking to decide about a night that is over */
+  if (t.p === 'wait') {
+    if (now - t.t >= WAIT_FOR) return null;
+    if (t.at && now < t.at) return 'waiting';
+    return now >= morningAfter(t.at ?? t.t) ? 'passed' : 'decide';
+  }
   /* going ahead with eyes open: "look back" from the start, until it is answered or three days have gone by */
   if (t.p === 'open') return now - t.t < TALK_OPEN_FOR ? 'look' : null;
   /* a change plan stays on Today until its look back opens (the next morning), then "Did your plan hold?" for a day,
@@ -577,12 +593,12 @@ function dueOf(t: Talk, now: number, hard: TalkHard): TalkDue | null {
   return now - look < LOOK_FOR && !inHard(now, hard) ? 'look' : null;
 }
 /** the talk-through Today (and the morning stop) should show, if one still matters, the latest first: waiting to
-    decide, time to decide, a change plan before its look back, or "look back". `hard` is the person's hard hours
+    decide, time to decide, a wait that passed, a change plan before its look back, or "look back". `hard` is the person's hard hours
     (talkDueNow in talk-log.ts fills it in). */
 export function talkDue(days: Days, now: number, hard: TalkHard = []): { k: DayKey; talk: Talk; due: TalkDue } | null {
   const all = talksOf(days);
   for (let i = all.length - 1; i >= 0; i--) {
-    const due = dueOf(all[i].talk, now, hard);
+    const due = dueOf(all[i].talk, all[i].k, days, now, hard);
     if (due) return { ...all[i], due };
   }
   return null;

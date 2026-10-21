@@ -172,6 +172,35 @@ describe('Today and looking back', () => {
     expect(talkDue(now, at('2026-10-18T06:00:00'))!.due).toBe('look');
     expect(talkDue(saveTalk({}, k, base(), T0), T0)).toBeNull();
   });
+  it('a wait that reaches the next morning with no slip has passed', () => {
+    const night = at('2026-10-17T23:00:00');
+    const wait = saveTalk({}, k, base({ t: night, p: 'wait', mo: '30', at: night + 30 * 60000 }), night);
+    expect(talkDue(wait, night + 40 * 60000)!.due).toBe('decide');
+    expect(talkDue(wait, at('2026-10-18T05:59:00'))!.due).toBe('decide');
+    expect(talkDue(wait, at('2026-10-18T09:46:00'))!.due).toBe('passed');
+    /* "Tomorrow morning" is decided that morning, not skipped */
+    const morning = saveTalk({}, k, base({ t: night, p: 'wait', mo: 'morning', at: at('2026-10-18T08:00:00') }), night);
+    expect(talkDue(morning, at('2026-10-18T09:46:00'))!.due).toBe('decide');
+    /* "It passed" is a calm move, and the card goes */
+    const done = lookBack(wait, base().id, { went: false, f: [], g: null, c: [] }, '2026-10-18', at('2026-10-18T09:50:00'));
+    expect(talkDue(done, at('2026-10-18T09:51:00'))).toBeNull();
+    expect(done[k]!.events).toHaveLength(0);
+  });
+  it('a slip logged after a wait or a changed plan settles it; a go-ahead still gets its look back', () => {
+    const night = at('2026-10-17T23:00:00');
+    for (const p of ['wait', 'change'] as const) {
+      let days = saveTalk({}, k, base({ t: night, p, m: ['walk'], mo: '30', at: night + 30 * 60000 }), night);
+      days = addEvent(days, '2026-10-18', 'slipped', '00:40', {}, at('2026-10-18T00:41:00')).days;
+      expect(talkDue(days, at('2026-10-18T09:46:00')), p).toBeNull();
+    }
+    /* a slip from before the talk-through does not count */
+    let early = saveTalk({}, k, base({ t: night, p: 'wait', mo: '30', at: night + 30 * 60000 }), night);
+    early = addEvent(early, k, 'slipped', '14:00', {}, at('2026-10-17T14:01:00')).days;
+    expect(talkDue(early, night + 40 * 60000)!.due).toBe('decide');
+    let open = saveTalk({}, k, base({ t: night, p: 'open', e: 7 }), night);
+    open = addEvent(open, '2026-10-18', 'slipped', '00:40', {}, at('2026-10-18T00:41:00')).days;
+    expect(talkDue(open, at('2026-10-18T09:46:00'))!.due).toBe('look');
+  });
   it('choosing something else is a calm move, and nothing is logged', () => {
     const days = lookBack(saveTalk({}, k, base({ p: 'change', m: ['walk'] }), T0), base().id, { went: false, f: [], g: null, c: [] }, k, T0 + 3600000);
     expect(days[k]!.p!.c).toBe(2);

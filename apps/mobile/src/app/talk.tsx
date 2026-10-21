@@ -1,13 +1,16 @@
 /* Talk it through: for when a slip feels planned, owed, certain, or you have stopped caring (core: talk.ts, with the
-   research). One question at a time:
-   - who it is for, then "Which ones sound like you?"
-   - what your mind is doing: a short card with a moving picture and its source for each one picked (a single line for
-     cards already read), ending with curiosity over shame
-   - what the part of you that wants it is after, how much you want tonight to go differently, said back without judging
+   research). One question at a time, kept short for the moment:
+   - "Which ones sound like you?"
+   - what your mind is doing: the other cards for what was picked as one line each, then at most two in full with a
+     moving picture and the source (the unread one that fits best, and curiosity over shame the first time). Every card
+     stays a tap away ("Read the research").
+   - what you are really after, how much you want tonight to go differently, said back without judging
    - three honest paths: change the plan, wait and decide later, or go ahead with eyes open (notice the body, say what
-     you expect it to give, come back afterwards)
+     you expect it to give, come back afterwards). Going ahead is saved the moment it is chosen, so it waits for a look
+     back even when the screen is closed.
    Two more ways in: ?decide=<id> (a "decide later" time has come: the paths again) and ?look=<id> (looking back: did
-   it hold, or how was it really, with your own numbers over time). Going ahead goes in the log as an honest slip. */
+   it hold, or how was it really, with your own numbers over time). Going ahead goes in the log as an honest slip.
+   Making a plan earns its points as always; they show on Today, not here. */
 import {
   gameCompute,
   lookBack,
@@ -15,9 +18,9 @@ import {
   newTalk,
   saveTalk,
   TALK_AFTER_FEEL,
+  TALK_CARDS,
   TALK_COST,
   TALK_FEEL,
-  TALK_FOR,
   TALK_MOVES,
   TALK_NEEDS,
   TALK_OWN_LEN,
@@ -26,18 +29,21 @@ import {
   TALK_SRC,
   TALK_WAITS,
   TALK_WHERE,
+  talkAgo,
   talkById,
   talkCard,
-  talkCards,
   talkClock,
   talkEvidence,
   talkEvidenceLine,
+  talkHeld,
+  talkHeldTag,
   talkMomentsNow,
   talkMomentTime,
   talkMoveWords,
   talkMoves,
   talkNeedWord,
   talkPlanLine,
+  talkReading,
   talkReflect,
   talkTypedWhys,
   talkWaitTime,
@@ -51,13 +57,13 @@ import {
   type TalkSign,
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
-import { CountUp } from '@/components/count-up';
+import { Link } from '@/components/choices';
 import { OwnChip, OwnField } from '@/components/own';
 import { SafeTextButton } from '@/components/safe-text';
 import { KnownLine, Sources } from '@/components/research';
@@ -66,7 +72,7 @@ import { Slider, SliderValue } from '@/components/slider';
 import { TalkArtView } from '@/components/talk-art';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { play } from '@/lib/sound';
@@ -74,10 +80,10 @@ import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 type Step =
-  | 'for'
   | 'signs'
   | 'known'
   | 'mind'
+  | 'read'
   | 'need'
   | 'want'
   | 'why'
@@ -137,7 +143,7 @@ export default function TalkIt() {
   /* deciding starts the paths fresh; looking back keeps what was chosen */
   const [talk, setTalk] = useState<Talk>(() => (found ? (params.decide ? { ...found.talk, p: null, m: [], mo: null, at: null } : found.talk) : newTalk(now)));
   const day = found ? found.k : tk;
-  const [step, setStep] = useState<Step>(look ? 'lWent' : decide ? 'path' : 'for');
+  const [step, setStep] = useState<Step>(look ? 'lWent' : decide ? 'path' : 'signs');
   const [hist, setHist] = useState<Step[]>([]);
   const [dir, setDir] = useState(1);
   const [ci, setCi] = useState(0);
@@ -153,17 +159,18 @@ export default function TalkIt() {
   });
   /* the step where an answer in the person's own words is being typed */
   const [own, setOwn] = useState<Step | null>(null);
-  const [pts0] = useState(() => (st ? gameCompute(snap.days, st, snap.reviews, tk).pts : 0));
+  /* going ahead is saved as soon as it is chosen (it waits for a look back from then on) */
+  const [pending, setPending] = useState(false);
+  const moving = useRef(false);
   const seen = Array.isArray(sos.mem.talkSeen) ? (sos.mem.talkSeen as string[]) : [];
   const [seen0] = useState(seen);
-  /* a card is "read" once it has been shown */
+  /* a card is "read" once it has been shown in full */
   const markSeen = (k: TalkArt) => {
     if (seen.indexOf(k) < 0) sos.setMem((m) => ({ ...m, talkSeen: (Array.isArray(m.talkSeen) ? (m.talkSeen as string[]) : []).concat(k) }));
   };
-  const cards = talkCards(talk.s);
-  const fresh = cards.filter((x) => seen0.indexOf(x.k) < 0);
-  const known = cards.filter((x) => seen0.indexOf(x.k) >= 0);
+  const { fresh, known } = talkReading(talk.s, seen0);
   const card: TalkCard | undefined = fresh[ci];
+  const held = useMemo(() => talkHeld(snap.days), [snap.days]);
   useEffect(() => {
     if (step === 'mind' && card) markSeen(card.k);
     if (step === 'oLiking') markSeen('liking');
@@ -173,6 +180,9 @@ export default function TalkIt() {
   if (!st) return null;
   const set = (p: Partial<Talk>) => setTalk((t) => ({ ...t, ...p }));
   const go = (next: Step) => {
+    /* a go-ahead keeps what is noticed as it is answered, in case the screen is closed before the end */
+    if (pending && talk.p === 'open') persist(talk);
+    moving.current = false;
     setOwn(null);
     setHist((h) => h.concat(step));
     setDir(1);
@@ -209,7 +219,21 @@ export default function TalkIt() {
     />
   );
   const addOwn = (list: string[], t: string) => (list.some((x) => x.toLowerCase() === t.toLowerCase()) ? list : list.concat(t));
-  const gain = () => Math.max(0, gameCompute(snap.days, st, snap.reviews, tk).pts - pts0);
+
+  /* choosing a path. Going ahead is saved now, so it reaches the look back (and the log) even if nothing else is
+     answered. Changing the choice afterwards puts back what was there before (a decide-later still waiting, or nothing). */
+  const choosePath = () => {
+    if (talk.p === 'open') {
+      const t = { ...talk, at: now + 3600000 };
+      setTalk(t);
+      persist(t);
+      setPending(true);
+    } else if (pending) {
+      persist(decide && found ? found.talk : { ...talk, p: null, m: [], mo: null, at: null });
+      setPending(false);
+    }
+    go(talk.p === 'change' ? 'cMoves' : talk.p === 'wait' ? 'wWhen' : 'oLiking');
+  };
 
   /* finishing a path: saved, a reminder if asked for, then the closing screen */
   const finishPath = (t: Talk) => {
@@ -219,11 +243,12 @@ export default function TalkIt() {
     if (remind && remindersOffered && at) {
       const body =
         t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan: ' + talkMoveWords(t).join('. ') + '.';
-      scheduleTalk(at, body, '/talk?' + (t.p === 'wait' ? 'decide=' : 'look=') + t.id).then(setReminded);
+      /* a change plan's reminder comes at its moment, so it opens Today with the plan, not the look back */
+      scheduleTalk(at, body, t.p === 'change' ? '/' : '/talk?' + (t.p === 'wait' ? 'decide=' : 'look=') + t.id).then(setReminded);
     }
     if (t.p === 'open') {
       buzz('save');
-      close();
+      closeAll();
       say('Come back after. One minute.');
       return;
     }
@@ -253,42 +278,16 @@ export default function TalkIt() {
       <View style={s.btnSpace} />
     );
 
-  if (step === 'for') {
-    body = (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Planning a slip?
-        </T>
-        <View style={s.middle}>
-          <T v="label" style={s.c}>
-            This is for when…
-          </T>
-          {TALK_FOR.map((t, i) => (
-            <Appear key={i} delay={120 + i * 90} by={10} style={[s.forRow, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-              <View style={[s.forIc, { backgroundColor: c.violetSoft }]}>
-                <Icon name={['calendar', 'trophy', 'leaf', 'wave'][i]} size={20} color={c.violetText} />
-              </View>
-              <T style={{ flex: 1 }}>{t}</T>
-            </Appear>
-          ))}
-          <Appear delay={560} by={8}>
-            <T style={[s.c, s.warm]}>If that is you right now, you are not broken, and nothing you have built is lost. We can look at it together.</T>
-          </Appear>
-        </View>
-        <Dock>
-          <Button label="Talk it through" onPress={() => go('signs')} />
-        </Dock>
-      </>
-    );
-  } else if (step === 'signs') {
+  /* "Read the research": every card in full, a quiet link away */
+  const readLink = <Link label="Read the research" onPress={() => go('read')} />;
+
+  if (step === 'signs') {
     body = (
       <>
         <T v="title" style={s.c} accessibilityRole="header">
           Which ones sound like you?
         </T>
-        <T style={s.c} tone="muted">
-          Pick any. Each one changes what comes next.
-        </T>
+        <T style={[s.c, s.warm]}>You are not broken, and nothing you have built is lost.</T>
         <Dock>
           <View style={s.list}>
             {TALK_SIGNS.map(([k, words, ic]) => (
@@ -303,27 +302,60 @@ export default function TalkIt() {
               />
             ))}
           </View>
-          {next(known.length ? 'known' : 'mind', talk.s.length > 0)}
+          {next(known.length ? 'known' : fresh.length ? 'mind' : 'need', talk.s.length > 0)}
         </Dock>
       </>
     );
   } else if (step === 'known') {
+    const allRead = known.every((x) => seen0.indexOf(x.k) >= 0);
     body = (
       <>
         <T v="eyebrow" tone="muted">
           What your mind is doing
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          You know these already
+          {allRead ? 'You know these already' : 'A few things to know'}
         </T>
         <View style={[s.middle, { gap: 8 }]}>
           {known.map((x, i) => (
             <Appear key={x.k} delay={100 + i * 80} by={8} style={{ alignSelf: 'stretch' }}>
-              <KnownLine short={x.short} body={x.body} src={x.src} map={TALK_SRC} art={<TalkArtView k={x.k} />} />
+              <KnownLine
+                short={x.short}
+                body={x.body}
+                src={x.src}
+                map={TALK_SRC}
+                art={<TalkArtView k={x.k} />}
+                icon={seen0.indexOf(x.k) >= 0 ? 'check' : 'sparkle'}
+              />
             </Appear>
           ))}
         </View>
         <Dock>{next(fresh.length ? 'mind' : 'need')}</Dock>
+      </>
+    );
+    foot = readLink;
+  } else if (step === 'read') {
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          The research
+        </T>
+        <T v="title" style={s.c} accessibilityRole="header">
+          What your mind is doing
+        </T>
+        {TALK_CARDS.map((x) => (
+          <View key={x.k} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip, gap: 10 }]}>
+            <Text style={[s.planT, { color: c.ink }]} accessibilityRole="header">
+              {x.title}
+            </Text>
+            <TalkArtView k={x.k} />
+            <T style={s.body}>{x.body}</T>
+            <Sources keys={x.src} map={TALK_SRC} />
+          </View>
+        ))}
+        <Dock>
+          <Button label="Back to talking it through" onPress={back} />
+        </Dock>
       </>
     );
   } else if (step === 'mind' && card) {
@@ -353,6 +385,8 @@ export default function TalkIt() {
         </Dock>
       </Appear>
     );
+    /* with no one-line page, the research is reached from the last card */
+    if (last && !known.length) foot = readLink;
   } else if (step === 'need') {
     body = (
       <>
@@ -360,7 +394,7 @@ export default function TalkIt() {
           Talking it through
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          What is the part of you that wants it really after?
+          What are you really after tonight?
         </T>
         {own === 'need' ? (
           ownField('Like: comfort, or control', (t) => set({ n: null, nx: t }))
@@ -368,7 +402,21 @@ export default function TalkIt() {
           <Dock>
             <View style={s.list}>
               {TALK_NEEDS.map(([k, name, sub, ic]) => (
-                <Answer key={k} icon={ic} tone={NEED_TONE[k]} title={name} sub={sub} on={talk.n === k} onPress={() => set({ n: k, nx: undefined })} />
+                <Answer
+                  key={k}
+                  icon={ic}
+                  tone={NEED_TONE[k]}
+                  title={name}
+                  sub={sub}
+                  on={talk.n === k}
+                  onPress={() => {
+                    /* one answer: picking it moves on (once, however many taps) */
+                    set({ n: k, nx: undefined });
+                    if (moving.current) return;
+                    moving.current = true;
+                    setTimeout(() => go('want'), 220);
+                  }}
+                />
               ))}
               <Answer
                 icon="pencil"
@@ -379,7 +427,7 @@ export default function TalkIt() {
                 onPress={() => setOwn('need')}
               />
             </View>
-            {next('want', !!talk.n || !!talk.nx)}
+            {talk.nx && !talk.n ? next('want') : null}
           </Dock>
         )}
       </>
@@ -455,7 +503,7 @@ export default function TalkIt() {
           Choose your path.
         </T>
         <T style={s.c} tone="muted">
-          All three are honest. The point is to choose, not to drift.
+          All three are honest. Choosing is the point.
         </T>
         <Dock>
           <View style={s.list}>
@@ -463,7 +511,13 @@ export default function TalkIt() {
               <Answer key={k} icon={ic} tone={PATH_TONE[k]} title={name} sub={sub} on={talk.p === k} onPress={() => set({ p: k, m: [], mo: null, at: null })} />
             ))}
           </View>
-          {next(talk.p === 'change' ? 'cMoves' : talk.p === 'wait' ? 'wWhen' : 'oLiking', !!talk.p)}
+          {talk.p ? (
+            <Appear by={10} duration={220}>
+              <Button label="Next" onPress={choosePath} />
+            </Appear>
+          ) : (
+            <View style={s.btnSpace} />
+          )}
         </Dock>
       </>
     );
@@ -484,13 +538,14 @@ export default function TalkIt() {
         ) : (
           <Dock>
             <View style={s.list}>
-              {talkMoves(talk.n).map((k) => (
+              {talkMoves(talk.n, held).map((k) => (
                 <Answer
                   key={k}
                   multi
                   icon={MOVE_IC[k]}
                   tone={k === 'away' || k === 'block' ? 'accent' : 'mint'}
                   title={TALK_MOVES[k][0]}
+                  sub={talkHeldTag(held, k) || undefined}
                   on={talk.m.indexOf(k) >= 0}
                   onPress={() => set({ m: toggle(talk.m, k) })}
                 />
@@ -596,7 +651,7 @@ export default function TalkIt() {
           One thing to do in the meantime
         </T>
         <T style={s.c} tone="muted">
-          {talk.n ? 'Something that gives you a little ' + needWord + '.' : 'Something that meets that need a little.'}
+          A little of that, another way.
         </T>
         {own === 'wUntil' ? (
           ownField('Like: play guitar for 20 minutes', (t) => set({ m: [], mx: [t] }))
@@ -740,14 +795,13 @@ export default function TalkIt() {
       </>
     );
   } else if (step === 'done') {
-    const g = gain();
     const wait = talk.p === 'wait';
     const texting = talk.m.indexOf('text') >= 0;
     body = (
       <>
         <Finish
           level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
-          title={wait ? 'Decision moved to ' + (talk.at ? talkClock(talk.at) : 'later') + '.' : 'You changed the plan.'}
+          title={wait ? (talk.at ? 'You decide at ' + talkClock(talk.at) + '.' : 'You decide later.') : 'You changed the plan.'}
           text={
             wait
               ? 'If you still want it then, come back and choose with your eyes open. No pressure either way.'
@@ -763,26 +817,28 @@ export default function TalkIt() {
             {reminded ? 'Daybook will remind you. ' : ''}It waits on Today.
           </T>
         </Appear>
-        {g ? <CountUp to={g} prefix="+" suffix={g === 1 ? ' point' : ' points'} delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         {/* a plan to text someone starts with a text already written */}
         <Dock>
           {texting ? <SafeTextButton body={messageTexts(st)[1]} /> : null}
-          <Button label="Done" kind={texting ? 'ghost' : 'primary'} onPress={close} />
+          <Button label="Done" kind={texting ? 'ghost' : 'primary'} onPress={closeAll} />
         </Dock>
       </>
     );
   } else if (step === 'lWent') {
     const change = talk.p === 'change';
+    /* a go-ahead from an earlier day says when it was */
+    const ago = talkAgo(day, tk, talk.t);
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Looking back
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {change ? 'Did your plan hold?' : 'Welcome back. Did you go ahead?'}
         </T>
         <T style={s.c} tone="muted">
-          {change ? talkPlanLine(talk) : 'Either answer is useful. Honest is what counts.'}
+          {change
+            ? talkPlanLine(talk)
+            : ago
+              ? 'You chose with your eyes open ' + ago + '. Either answer is useful.'
+              : 'Either answer is useful. Honest is what counts.'}
         </T>
         <Dock>
           <Answer
@@ -814,9 +870,6 @@ export default function TalkIt() {
   } else if (step === 'lFeel') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Looking back
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           Right now, how do you feel?
         </T>
@@ -844,9 +897,6 @@ export default function TalkIt() {
   } else if (step === 'lGave') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Looking back
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {talk.n ? 'How much ' + needWord + ' did it actually give you?' : 'How much of what you needed did it actually give you?'}
         </T>
@@ -867,9 +917,6 @@ export default function TalkIt() {
   } else if (step === 'lCost') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Looking back
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           What did it cost?
         </T>
@@ -922,7 +969,6 @@ export default function TalkIt() {
     /* lEnd */
     const went = after.went;
     const ev = talkEvidence(snap.days);
-    const g = gain();
     body = went ? (
       <>
         <T v="eyebrow" tone="muted">
@@ -937,11 +983,11 @@ export default function TalkIt() {
             <T style={s.c}>{talkEvidenceLine(ev)}</T>
           </Appear>
           <Appear delay={460} by={8} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-            <T>It is in your log as a slip: data, not a reset. Nothing you have built is gone, and tomorrow is a fresh day.</T>
+            <T>It is in your log as a slip: data, not a reset. Nothing you built is gone.</T>
           </Appear>
         </View>
         <Dock>
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
         </Dock>
       </>
     ) : (
@@ -958,32 +1004,30 @@ export default function TalkIt() {
             </T>
           </Appear>
         ) : null}
-        {g ? <CountUp to={g} prefix="+" suffix={g === 1 ? ' point' : ' points'} delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         <Dock>
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
         </Dock>
       </>
     );
   }
 
-  /* the progress dots follow the part of the talk-through you are in */
+  /* the progress dots follow the questions of the part you are in (the closing screens have none) */
   const flow: Step[] = look
-    ? ['lWent', 'lFeel', 'lGave', 'lCost', 'lEnd']
+    ? ['lWent', 'lFeel', 'lGave', 'lCost']
     : [
-        ...(decide ? [] : (['for', 'signs'] as Step[])),
+        ...(decide ? [] : (['signs'] as Step[])),
         ...(decide ? [] : known.length ? (['known'] as Step[]) : []),
         ...(decide ? [] : fresh.map(() => 'mind' as Step)),
         ...(decide ? [] : (['need', 'want', 'why'] as Step[])),
         'path',
         ...((talk.p === 'wait' ? ['wWhen', 'wUntil'] : talk.p === 'open' ? ['oLiking', 'oBody', 'oExpect', 'oReady'] : ['cMoves', 'cWhen']) as Step[]),
-        'done',
       ];
   const i = step === 'mind' ? flow.indexOf('mind') + ci : flow.indexOf(step);
   return (
     <SceneFrame
       title={look ? 'Looking back' : 'Talk it through'}
       sky="violet"
-      dots={step === 'for' || step === 'done' || step === 'lEnd' ? null : { n: flow.length, i, label: 'Step ' + (i + 1) + ' of ' + flow.length }}
+      dots={i < 0 ? null : { n: flow.length, i, label: 'Step ' + (i + 1) + ' of ' + flow.length }}
       onBack={step !== 'done' && step !== 'lEnd' && (hist.length || (step === 'mind' && ci > 0)) ? back : null}
       onClose={close}
       footer={foot}>
@@ -1079,7 +1123,6 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   planT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
-  pts: { fontFamily: font.display, fontSize: 18, textAlign: 'center' },
   ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
   evBars: { height: 122, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 18 },
   evCol: { alignItems: 'center', gap: 4 },

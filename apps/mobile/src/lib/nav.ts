@@ -36,6 +36,20 @@ export function close() {
   else router.replace('/');
 }
 
+/** finish a full-screen moment: every full-screen moment on top closes at once (SOS under it too), back to where the
+    person started. close() is for the X, which may go one step back; this is for Done and the other finishing buttons. */
+export function closeAll() {
+  let st = rootState();
+  while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
+  const routes = st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
+  let n = 0;
+  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name) && !(n > 0 && routes[routes.length - 1 - n].name === 'setup')) n++;
+  if (n > 0) router.dismiss(n);
+  else if (router.canDismiss()) router.dismissAll();
+  else if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
 /** the tab showing under the pages (kept by the tab bar) */
 let lastTab = 'index';
 export function keepTab(path: string) {

@@ -47,14 +47,6 @@ export const TALK_SRC: Record<string, [string, string]> = {
 };
 
 /* ---------- who it is for ---------- */
-/** the opening: "This is for when..." */
-export const TALK_FOR = [
-  'You have caught yourself planning it: the time, the place, maybe what you would watch.',
-  'A voice says you are owed it, after a hard day or a long run.',
-  'You have stopped caring whether you slip.',
-  'It feels like it is going to happen anyway.',
-];
-
 export type TalkSign = 'plan' | 'owed' | 'care' | 'anyway' | 'replay';
 /** "Which ones sound like you?": [id, the words, an icon] */
 export const TALK_SIGNS: [TalkSign, string, string][] = [
@@ -151,9 +143,21 @@ export function talkCards(signs: TalkSign[]): TalkCard[] {
 }
 export const talkCard = (k: TalkArt) => TALK_CARDS.find((c) => c.k === k)!;
 
+/** the reading for one talk-through, kept short for the moment: at most two cards in full (the unread one that fits
+    the most of what was picked, and "Curiosity works better than shame" only until it has been read once), and every
+    other card for what was picked as its one line. All of them stay a tap away ("Read the research"). */
+export function talkReading(signs: TalkSign[], seen: string[]): { fresh: TalkCard[]; known: TalkCard[] } {
+  const cards = talkCards(signs);
+  const fits = (c: TalkCard) => c.for.filter((s) => signs.indexOf(s) >= 0).length;
+  let best: TalkCard | null = null;
+  for (const c of cards) if (c.k !== 'lens' && seen.indexOf(c.k) < 0 && (!best || fits(c) > fits(best))) best = c;
+  const fresh = cards.filter((c) => c === best || (c.k === 'lens' && seen.indexOf('lens') < 0));
+  return { fresh, known: cards.filter((c) => fresh.indexOf(c) < 0) };
+}
+
 /* ---------- talking it through ---------- */
 export type TalkNeed = 'relief' | 'reward' | 'escape' | 'rest' | 'close' | 'bored';
-/** "What is the part of you that wants it really after?": [id, the words, a short line, an icon, as it reads in "when I want ..."] */
+/** "What are you really after tonight?": [id, the words, a short line, an icon, as it reads in "when I want ..."] */
 export const TALK_NEEDS: [TalkNeed, string, string, string, string][] = [
   ['relief', 'Relief', 'From stress or pressure', 'wind', 'relief'],
   ['reward', 'A reward', 'After a hard day or a long run', 'trophy', 'a reward'],
@@ -249,10 +253,37 @@ const NEED_MOVES: Record<TalkNeed, TalkMove[]> = {
   close: ['text', 'call', 'people'],
   bored: ['fill', 'out', 'hands'],
 };
-/** the moves offered for a need: the ones that meet it, then the two that break the plan's earliest links */
-export function talkMoves(need: TalkNeed | null): TalkMove[] {
-  const list = need ? NEED_MOVES[need] : ['walk', 'text', 'fill'];
-  return (list as TalkMove[]).concat(['away', 'block']);
+/** the moves offered for a need: the ones that meet it, then the two that break the plan's earliest links. Given what
+    the log has shown (talkHeld), the moves whose plan held before come first, the most held first. */
+export function talkMoves(need: TalkNeed | null, held: TalkHeld = {}): TalkMove[] {
+  const all = ((need ? NEED_MOVES[need] : ['walk', 'text', 'fill']) as TalkMove[]).concat(['away', 'block']);
+  const h = (m: TalkMove) => held[m]?.held || 0;
+  const rate = (m: TalkMove) => h(m) / (held[m]?.n || 1);
+  return all
+    .filter((m) => h(m) > 0)
+    .sort((a, b) => h(b) - h(a) || rate(b) - rate(a) || all.indexOf(a) - all.indexOf(b))
+    .concat(all.filter((m) => h(m) === 0));
+}
+/** for each move: how many change plans with it were looked back on (n), and how many of those held */
+export type TalkHeld = Partial<Record<TalkMove, { held: number; n: number }>>;
+export function talkHeld(days: Days): TalkHeld {
+  const out: TalkHeld = {};
+  for (const { talk } of talksOf(days)) {
+    if (talk.p !== 'change' || !talk.a) continue;
+    for (const m of talk.m) {
+      const r = (out[m] = out[m] || { held: 0, n: 0 });
+      r.n++;
+      if (!talk.a.went) r.held++;
+    }
+  }
+  return out;
+}
+/** the line under a move whose plan held before ("Held 3 of 4 times"), the way SOS tags its tools. A move that has not
+    held yet has no line. */
+export function talkHeldTag(held: TalkHeld, m: TalkMove): string {
+  const r = held[m];
+  if (!r || !r.held) return '';
+  return r.n === 1 ? 'Held last time' : 'Held ' + r.held + ' of ' + r.n + ' times';
 }
 
 /** when the plan is for: [id, the words, minutes after midnight (null for now, or a number of minutes from now when negative)] */
@@ -500,17 +531,82 @@ export function talkById(days: Days, id: string): { k: DayKey; talk: Talk } | nu
 }
 
 export type TalkDue = 'decide' | 'waiting' | 'plan' | 'look';
-/** the talk-through Today should show, if one still matters (the latest within a day and a half):
-    waiting to decide, time to decide, a change plan before its time, or "How did it go?" */
-export function talkDue(days: Days, now: number): { k: DayKey; talk: Talk; due: TalkDue } | null {
-  const all = talksOf(days).filter((x) => x.talk.p && !x.talk.a && now - x.talk.t < 36 * 3600000);
-  const x = all[all.length - 1];
-  if (!x) return null;
-  const t = x.talk;
-  if (t.p === 'wait') return { ...x, due: t.at && now < t.at ? 'waiting' : 'decide' };
-  /* a change plan is shown until its moment ("right now": for an hour), then "Did your plan hold?" */
-  if (t.p === 'change' && now < (t.at ?? t.t + 3600000)) return { ...x, due: 'plan' };
-  return { ...x, due: 'look' };
+const HOUR = 3600000;
+/** the hour the morning starts, for looking back on a change plan */
+export const TALK_MORNING_H = 6;
+/** how long a decide-later stays on Today, and how long a change plan's look back is offered once it opens */
+const WAIT_FOR = 36 * HOUR;
+const LOOK_FOR = 24 * HOUR;
+/** an eyes-open go-ahead is asked about for three days (on Today and at the morning stop), and then let go: no slip is
+    ever written for one that was not answered */
+export const TALK_OPEN_FOR = 72 * HOUR;
+/** hard hours, as [start, end] times (ms) */
+export type TalkHard = [number, number][];
+
+/** the first morning after t */
+function morningAfter(t: number): number {
+  const d = new Date(t);
+  d.setHours(TALK_MORNING_H, 0, 0, 0);
+  if (d.getTime() <= t) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+const inHard = (t: number, hard: TalkHard) => hard.some(([a, b]) => t >= a && t < b);
+/** when "Did your plan hold?" opens for a change plan: the later of the next morning and two hours after the moment
+    ("right now": the time it was talked through), and never inside the hard hours (it waits for them to end) */
+export function talkLookAt(t: Pick<Talk, 't' | 'at'>, hard: TalkHard = []): number {
+  const moment = t.at ?? t.t;
+  let look = Math.max(morningAfter(moment), moment + 2 * HOUR);
+  for (let i = 0; i < 8; i++) {
+    const h = hard.find(([a, b]) => look >= a && look < b);
+    if (!h) break;
+    look = h[1];
+  }
+  return look;
+}
+
+/** what one talk-through needs from Today at now, if anything */
+function dueOf(t: Talk, now: number, hard: TalkHard): TalkDue | null {
+  if (!t.p || t.a) return null;
+  if (t.p === 'wait') return now - t.t < WAIT_FOR ? (t.at && now < t.at ? 'waiting' : 'decide') : null;
+  /* going ahead with eyes open: "look back" from the start, until it is answered or three days have gone by */
+  if (t.p === 'open') return now - t.t < TALK_OPEN_FOR ? 'look' : null;
+  /* a change plan stays on Today until its look back opens (the next morning), then "Did your plan hold?" for a day,
+     and never inside the hard hours */
+  const look = talkLookAt(t, hard);
+  if (now < look) return 'plan';
+  return now - look < LOOK_FOR && !inHard(now, hard) ? 'look' : null;
+}
+/** the talk-through Today (and the morning stop) should show, if one still matters, the latest first: waiting to
+    decide, time to decide, a change plan before its look back, or "look back". `hard` is the person's hard hours
+    (talkDueNow in talk-log.ts fills it in). */
+export function talkDue(days: Days, now: number, hard: TalkHard = []): { k: DayKey; talk: Talk; due: TalkDue } | null {
+  const all = talksOf(days);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const due = dueOf(all[i].talk, now, hard);
+    if (due) return { ...all[i], due };
+  }
+  return null;
+}
+
+const keyDate = (k: DayKey) => {
+  const [y, m, d] = k.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+/** when a talk-through on log day k was, as it reads from log day tk: '' (today), 'last night', 'yesterday', or
+    'on Monday' */
+export function talkAgo(k: DayKey, tk: DayKey, t: number): string {
+  const n = Math.round((keyDate(tk).getTime() - keyDate(k).getTime()) / (24 * HOUR));
+  if (n <= 0) return '';
+  const h = new Date(t).getHours();
+  if (n === 1) return h >= 17 || h < TALK_MORNING_H ? 'last night' : 'yesterday';
+  return 'on ' + keyDate(k).toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+/** the decide-later card's line: "Until then: a real treat: food I love, a game, a show." (only the first letter
+    lowered, so "I" stays "I") */
+export function talkUntilLine(t: Pick<Talk, 'm' | 'mx'>): string {
+  const w = talkMoveWords(t)[0] || 'something kind for yourself';
+  return 'Until then: ' + (/^I\b/.test(w) ? w : w.charAt(0).toLowerCase() + w.slice(1)).replace(/[.!]+$/, '') + '.';
 }
 
 /** what looking back has shown: going ahead with eyes open (what was expected against what it gave), and the times

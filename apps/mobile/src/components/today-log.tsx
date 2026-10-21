@@ -13,6 +13,7 @@ import {
   rkAskNow,
   rkCard,
   rkEnded,
+  rkChoice,
   rkFresh,
   rkKeep,
   slipCare,
@@ -155,19 +156,14 @@ function RunChoice({ snap, tk, a, sun }: { snap: Snapshot; tk: string; a: RkAsk;
     buzz('tap');
   };
   if (a.keep == null) {
+    const w = rkChoice(snap.days, snap.settings!, tk, a);
     return (
       <View style={{ gap: 10 }}>
         <T v="label" style={lit ? { color: lit.ink } : undefined}>
-          {'Keep your ' + a.run + '-day run going, or start fresh? Both are good answers.'}
+          {'Keep your ' + a.run + '-day run going, or start fresh? ' + w.line}
         </T>
-        <BigOption
-          tone="sun"
-          icon="flame"
-          title="Keep it going"
-          sub={'The Rekindle quest saves it, any time until ' + a.until + ' night.'}
-          onPress={() => choose(true)}
-        />
-        <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={rkFresh(snap.days, snap.settings!, tk, a).b} onPress={() => choose(false)} />
+        <BigOption tone="sun" icon="flame" title="Keep it going" sub={w.keep} onPress={() => choose(true)} />
+        <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={w.fresh} onPress={() => choose(false)} />
       </View>
     );
   }

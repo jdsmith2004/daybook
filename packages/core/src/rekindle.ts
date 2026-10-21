@@ -196,6 +196,24 @@ export function rkFresh(days: Days, st: Settings, tk: DayKey, a: Pick<RkAsk, 'k'
         '. Your points, level and badges all stay.';
   return { b, rest };
 }
+/** the two answers to "keep the run going, or start fresh?", in words that say plainly what each one means: a kept run
+    goes on with the slip day in it (marked as the day you came back), once the quest is done; a fresh run counts only
+    days with no slip. Both keep what was earned. The slip flow and Today's card both use these. */
+export function rkChoice(days: Days, st: Settings, tk: DayKey, a: Pick<RkAsk, 'k' | 'run' | 'until'>) {
+  /* the longest as of the slip: a run still waiting for the answer goes on counting after it */
+  const longest = a.run >= runLedger(days, st, a.k < tk ? a.k : tk).longest;
+  return {
+    line: 'Both are good answers. The slip stays in your log either way, and your points, level and badges stay yours.',
+    keep:
+      'Finish the Rekindle quest by ' + a.until + ' night and your run goes on from ' + a.run + '. The slip day stays in it, marked as the day you came back.',
+    fresh:
+      'A new run ' +
+      (tk <= a.k ? 'starts tomorrow' : 'counts from ' + fmtDate(addDays(a.k, 1), { weekday: 'long' })) +
+      ' and counts only days with no slip. Your ' +
+      plural(a.run, 'day') +
+      (longest ? ' stay on record as your longest run.' : ' stay on your record.'),
+  };
+}
 /** the start-fresh answer on day k, when it was given */
 const freshOf = (days: Days, st: Settings, tk: DayKey, k: DayKey) => {
   const a = rkAsk(days, st, tk, k);

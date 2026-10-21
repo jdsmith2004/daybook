@@ -24,6 +24,7 @@ import { lessonOpen } from './accounts';
 import { firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
+import { nightWin } from './night-win';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
 
 /** the short status on the right of a stop */
@@ -276,6 +277,8 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
     const pts = (k: string) => '+' + HX_NEXT[k].pts + ' points';
     if (s.k === 'morning') {
       const said = morningSaid(days, st, tk);
+      /* last night's win, said first (night-win.ts) */
+      const win = s.done ? null : nightWin(days, st, tk);
       return {
         ...base,
         sky: 'sun',
@@ -283,7 +286,7 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
         title: 'Last night',
         line: s.done ? said.join(' · ') || 'Answered' : 'Two quick questions',
         head: new Date(nowMs).getHours() < 12 ? 'Good morning' : 'About last night',
-        body: 'Two quick questions about last night' + (lessonOpen ? ', then today’s lesson.' : '.'),
+        body: (win ? win.line + ' Then two quick questions' : 'Two quick questions about last night') + (lessonOpen ? ', then today’s lesson.' : '.'),
         chips: [HX_NEXT.morning.s || '', pts('morning')],
         btn: 'Start',
         go: 'morning',

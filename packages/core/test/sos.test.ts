@@ -114,7 +114,78 @@ describe('SOS memory and rounds', () => {
         mem,
       ).cap,
     ).toBe('You often pick this one.');
-    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({ thought: 'You like this' });
+    /* picking it is not liking it: the tag waits for picks that ended in It passed */
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+  });
+
+  it('"You like this" counts only picks that ended in It passed, or a Yes', () => {
+    const st = core.normSettings({ start: '2026-10-01' });
+    /* the pause, picked and stopped twice: no tag */
+    let mem: core.UrMem = core.urNote(core.urNote({}, 'move', 'pause'), 'move', 'pause');
+    mem = core.urWon(mem, { rounds: [['pause', 's']], mine: ['pause'] });
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+    /* a suggested tool that passed is not a pick of your own */
+    mem = core.urWon(mem, { rounds: [['move', 'p']], mine: ['pause'] });
+    expect(mem.won).toBeUndefined();
+    /* picked yourself and passed, twice */
+    mem = core.urWon(mem, { rounds: [['pause', 'p']], mine: ['pause'] });
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+    mem = core.urWon(mem, {
+      rounds: [
+        ['pause', 's'],
+        ['pause', 'p'],
+      ],
+      mine: ['pause'],
+    });
+    expect(mem.won).toEqual({ pause: 2 });
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({ pause: 'You like this' });
+    /* a Yes to "Would you use it again?" is enough by itself */
+    expect(core.urTags({}, core.rateUrTool(st, 'reasons', 1), '2026-10-15', {})).toEqual({ reasons: 'You like this' });
+  });
+
+  it('your own record wins the suggestion, and says why in your numbers', () => {
+    const st = core.normSettings({ start: '2026-08-01' });
+    const now = new Date(2026, 9, 15, 21, 0).getTime();
+    const tk = '2026-10-15';
+    /* forty days in: Breathe passed every time, fifteen times */
+    let days: Days = {};
+    for (let i = 1; i <= 15; i++) days = core.addEvent(days, core.addDays(tk, -i), 'rode', '20:30', { tr: [['breathe', 'p']] }).days;
+    const sc = { ...core.newUrge(now, 0), explore: false };
+    const pk = core.urPickSug({ ...sc }, days, st, tk, now, {}, () => 0.99);
+    expect(pk.top.id).toBe('breathe');
+    expect(pk.mode).toBe('own');
+    expect(core.urSuggestion(pk, 'mid', days, now, st, {}).cap).toBe('Worked 15 of the 15 times you tried it.');
+    /* even when SOS would try something new */
+    expect(core.urPickSug({ ...sc, explore: true }, days, st, tk, now, {}, () => 0).top.id).toBe('breathe');
+    /* a Not really takes it off the top spot (the ranking still weighs it), and Not for me lets it go */
+    expect(core.urPickSug({ ...sc }, days, core.rateUrTool(st, 'breathe', -1), tk, now, {}, () => 0.99).mode).not.toBe('own');
+    expect(core.urPickSug({ ...sc }, days, core.setUrOff(st, 'breathe', true), tk, now, {}, () => 0.99).top.id).not.toBe('breathe');
+    /* once used in this SOS, the next round moves on */
+    expect(core.urPickSug({ ...sc, used: ['breathe'], again: 1 }, days, st, tk, now, {}, () => 0.99).top.id).not.toBe('breathe');
+    /* one win is not a record yet: with no record, Breathe still waits for a second round (the first screen breathes) */
+    const one = core.addEvent({}, core.addDays(tk, -1), 'rode', '20:30', { tr: [['breathe', 'p']] }).days;
+    expect(core.urRank(sc, one, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(true);
+    expect(core.urRank(sc, days, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(false);
+    /* of two proven tools, the surer one comes first */
+    let two: Days = {};
+    for (let i = 1; i <= 6; i++) two = core.addEvent(two, core.addDays(tk, -i), 'rode', '20:30', { tr: [['move', i <= 3 ? 'p' : 's']] }).days;
+    for (let i = 7; i <= 9; i++) two = core.addEvent(two, core.addDays(tk, -i), 'rode', '20:30', { tr: [['ground', 'p']] }).days;
+    expect(core.urPickSug({ ...sc }, two, st, tk, now, {}, () => 0.99).top.id).toBe('ground');
+  });
+
+  it('a tool not tried yet says so, with its time', () => {
+    const st = core.normSettings({ start: '2026-10-01' });
+    const now = new Date(2026, 9, 15, 15, 0).getTime();
+    const sc = { ...core.newUrge(now, 0), trigger: 'stress', explore: true };
+    const pk = core.urPickSug({ ...sc }, {}, st, '2026-10-15', now, {}, () => 0);
+    expect(pk.mode).toBe('fresh');
+    expect(core.urSuggestion(pk, null, {}, now, st, {}).cap).toMatch(/^Not tried yet\.( (One minute|Two minutes|Three minutes)\.)?$/);
+  });
+
+  it('remembers when an SOS was last open', () => {
+    expect(core.urLastAt({})).toBeNull();
+    expect(core.urLastAt({ sosAt: 5000, last: { t: 3000, tool: null, out: 'rode' } })).toBe(5000);
+    expect(core.urLastAt({ last: { t: 3000, tool: null, out: 'rode' } })).toBe(3000);
   });
 
   it('never suggests a tool marked Not for me, and weighs Would you use this again', () => {

@@ -31,6 +31,7 @@ import {
   UR_TRIG_PH,
   urLift,
   urMinText,
+  urRate,
 } from './legacy/core.js';
 import { lowerFirst, rkWaitOf } from './rekindle';
 import { lessonsDone } from './lessons';
@@ -52,6 +53,10 @@ export interface UrMem {
   pick?: Record<string, number>;
   /** Move: whether the moves shown are the ones for a seat (in a meeting, at work, in a car) or for getting up */
   moveSit?: boolean;
+  /** the tools you chose yourself that ended in "It passed", counted up to 4: only these make the "You like this" tag */
+  won?: Record<string, number>;
+  /** when an SOS was last open on this device (opened or closed): Today holds the one tip ask for a few hours after it */
+  sosAt?: number;
   [bucket: string]: unknown;
 }
 
@@ -70,6 +75,8 @@ export interface UrState {
   roundDone: boolean;
   sug: string | null;
   comboFrom?: string | null;
+  /** the tools picked in this SOS over the one suggested (for urWon) */
+  mine?: string[];
   /** "Would you use this again?" answered in this SOS (1 yes, -1 not really), so a change of mind counts once */
   rate?: Record<string, 1 | -1>;
   /** the line to do now and the thing worth knowing, picked once per screen */
@@ -190,6 +197,8 @@ export interface Ranked {
   score: number;
   r: Rec | null;
   rt: Rec | null;
+  /** the whole record for this tool, whatever set the urge off */
+  ra: Rec | null;
   tk: string;
   pin: boolean;
   off: boolean;
@@ -229,10 +238,14 @@ export function urRank(
     s += Math.min(5, pickOf(mem, id) * 1.25);
     const lk = urLikeOf(st, id);
     s += lk > 0 ? lk * 2 : lk * 3;
-    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message' || (id === 'breathe' && !sc.again));
-    return { id, score: s, r, rt, tk: ctx, pin: id === pin, off };
+    /* the first SOS screen already breathes, so Breathe waits for a second round, unless your own record says it works */
+    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message' || (id === 'breathe' && !sc.again && !urProven(ra)));
+    return { id, score: s, r, rt, ra, tk: ctx, pin: id === pin, off };
   }).sort((a, b) => b.score - a.score || UR_PREF.indexOf(a.id) - UR_PREF.indexOf(b.id));
 }
+
+/** a tool that has worked for you at least twice (the last four months) */
+const urProven = (r: Rec | null | undefined): r is Rec => !!r && r.w >= 2;
 
 /** the last SOS, if it was under 90 minutes ago: waves often come in sets */
 export function urLast(mem: UrMem, now: number) {
@@ -242,7 +255,8 @@ export function urLast(mem: UrMem, now: number) {
 
 export interface Pick_ {
   top: Ranked;
-  mode: '' | 'pin' | 'last' | 'fresh';
+  /** own: picked from your own record (a tool that has worked for you at least twice) */
+  mode: '' | 'pin' | 'last' | 'fresh' | 'own';
   combo?: Ranked;
   last?: { t: number; tool: string | null; out: string };
 }
@@ -267,6 +281,13 @@ export function urPickSug(sc: UrState, days: Days, st: Settings | null, tk: DayK
     const x = rank.find((y) => y.id === last.tool);
     if (x && ok(x)) return pair({ top: x, mode: 'last', last });
   }
+  /* your own record wins: a tool that has worked for you at least twice comes first, the surest of them (by its rate of
+     wins), unless you said Not really to it, and Go to bed only at night */
+  const night = urNight(hourOf(now));
+  const own = rank
+    .filter((x) => ok(x) && urProven(x.ra) && urLikeOf(st, x.id) >= 0 && (x.id !== 'bed' || night))
+    .sort((a, b) => urRate(b.ra) - urRate(a.ra) || b.ra!.w - a.ra!.w)[0];
+  if (own) return pair({ top: own, mode: 'own' });
   if (sc.explore) {
     const tried = urTried(days);
     const x = rank.find((y) => !tried[y.id] && y.score >= 4 && ok(y));
@@ -277,7 +298,13 @@ export function urPickSug(sc: UrState, days: Days, st: Settings | null, tk: DayK
 
 export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], days: Days, now: number, st?: Settings | null, mem?: UrMem): string {
   if (mode === 'fresh')
-    return x.tk === 'late' && x.id === 'bed' ? 'New for you. Late at night, sleep is often the strongest move.' : 'New for you. Worth a try.';
+    return x.tk === 'late' && x.id === 'bed' ? 'Not tried yet. Late at night, sleep is often the strongest move.' : 'Not tried yet.' + urHowLong(x.id);
+  if (mode === 'own') {
+    const ph = (UR_TRIG_PH as Record<string, string>)[x.tk];
+    if (x.rt && ph && x.rt.w >= 2) return 'Worked ' + x.rt.w + ' of ' + x.rt.n + ' times when ' + ph + '.';
+    const a = x.ra || { n: 0, w: 0 };
+    return 'Worked ' + a.w + ' of the ' + a.n + ' times you tried it.';
+  }
   if (mode === 'last' && last) {
     const mn = Math.max(1, Math.round((now - last.t) / 60000));
     return 'It helped ' + (mn < 60 ? mn + (mn === 1 ? ' minute' : ' minutes') + ' ago' : 'about an hour ago') + '.';
@@ -291,8 +318,16 @@ export function urWhyTool(x: Ranked, mode: Pick_['mode'], last: Pick_['last'], d
   if (x.tk === 'late' && x.id === 'bed') return 'Late at night, sleep is often the strongest move.';
   if (st && urLikeOf(st, x.id) > 0) return 'You said you would use it again.';
   if (mem && pickOf(mem, x.id) >= 2) return 'You often pick this one.';
-  if (!urTried(days)[x.id]) return 'New for you.';
+  if (!urTried(days)[x.id]) return 'Not tried yet.';
   return (UR_META as Record<string, { does: string }>)[x.id]?.does || '';
+}
+
+/** how long a tool takes, as a few words after "Not tried yet." (" Two minutes."), or nothing when it is not a set time */
+function urHowLong(id: string): string {
+  const m = String((UR_META as Record<string, { mins: string }>)[id]?.mins || '').match(/^(?:About )?(\d+) min$/);
+  const n = m ? +m[1] : 0;
+  const w = ['', 'One minute', 'Two minutes', 'Three minutes'][n];
+  return w ? ' ' + w + '.' : '';
 }
 
 /** the suggestion's button and the line under it (legacy urGoHtml and urCapText) */
@@ -316,7 +351,7 @@ export function urSuggestion(pk: Pick_, strength: Strength | null, days: Days, n
   const w = urWhyTool(pk.top, pk.mode, pk.last, days, now, st, mem);
   const own = w === m.does ? '' : w;
   const cap =
-    strength && pk.mode !== 'pin' && pk.mode !== 'fresh'
+    strength && pk.mode !== 'pin' && pk.mode !== 'fresh' && pk.mode !== 'own'
       ? 'Picked for a ' + (UR_STR_ADJ as Record<string, string>)[strength] + ' urge.' + (/\d/.test(own) ? ' ' + own : '')
       : own;
   return { tool: t, combo: null, title: t.name, sub, label: t.name, cap };
@@ -337,7 +372,26 @@ export function urNote(mem: UrMem, sug: string | null, picked: string | null): U
   return Object.keys(pick).length ? { ...mem, pass, pick } : { ...mem, pass };
 }
 
-/** the small tag on each tool in SOS: how it went for you, or that you often choose it */
+/** an SOS that ended in "It passed": each tool you chose yourself whose round passed counts once (up to 4), for the tag */
+export function urWon(mem: UrMem, sc: Pick<UrState, 'rounds' | 'mine'>): UrMem {
+  const mine = sc.mine || [];
+  const ids = (sc.rounds || []).filter((r) => r[1] === 'p' && mine.indexOf(r[0]) >= 0 && urTool(r[0])).map((r) => r[0]);
+  if (!ids.length) return mem;
+  const won = { ...(mem.won && typeof mem.won === 'object' ? mem.won : {}) };
+  ids.filter((id, i) => ids.indexOf(id) === i).forEach((id) => (won[id] = Math.min(4, (won[id] | 0) + 1)));
+  return { ...mem, won };
+}
+const wonOf = (mem: UrMem, id: string) => (mem.won && typeof mem.won === 'object' ? mem.won[id] | 0 : 0);
+
+/** when an SOS was last open on this device: the later of the last one opened or closed (sosAt) and the last one saved */
+export function urLastAt(mem: UrMem): number | null {
+  const a = typeof mem.sosAt === 'number' && Number.isFinite(mem.sosAt) ? mem.sosAt : 0;
+  const b = mem.last && typeof mem.last === 'object' && typeof mem.last.t === 'number' ? mem.last.t : 0;
+  return Math.max(a, b) || null;
+}
+
+/** the small tag on each tool in SOS: how it went for you, or that you like it (a Yes to "Would you use it again?", or
+    choosing it yourself in SOS when that ended in "It passed", twice). Opening a tool and stopping it does not count. */
 export function urTags(days: Days, st: Settings | null, tk: DayKey, mem: UrMem): Record<string, string> {
   const S = urStats(days, tk);
   const out: Record<string, string> = {};
@@ -346,7 +400,7 @@ export function urTags(days: Days, st: Settings | null, tk: DayKey, mem: UrMem):
     if (st && st.urPin === t.id) out[t.id] = 'Your go-to';
     else if (r && r.n >= 2 && r.w) out[t.id] = 'Worked ' + r.w + ' of ' + r.n;
     else if (r && r.l >= 2) out[t.id] = 'Helped ' + r.l + ' times';
-    else if (urLikeOf(st, t.id) > 0 || pickOf(mem, t.id) >= 2) out[t.id] = 'You like this';
+    else if (urLikeOf(st, t.id) > 0 || wonOf(mem, t.id) >= 2) out[t.id] = 'You like this';
   });
   return out;
 }

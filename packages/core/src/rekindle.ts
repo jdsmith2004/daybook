@@ -470,7 +470,7 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       kind: 'day',
       icon: 'flame',
       h: op ? 'Save your ' + op.run + '-day run' : 'Rekindle quest',
-      p: lit + ' of ' + flames.length + ' lit · until ' + u + ' night',
+      p: plural(flames.length - lit, 'step') + ' left · until ' + u + ' night',
       why: op ? 'Your run waits for you. The slip stays in your log either way.' : fresh ? 'You chose to start fresh. ' + rkFresh(days, st, tk, fresh).b : null,
       missions: rkMissions(r, st, { where: 'today', deep: !!(op && op.deep), hour, until: u }),
       care: slipCare(st),
@@ -496,22 +496,28 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       kind: 'almost',
       icon: 'flame',
       h: 'Your ' + op.run + '-day run is waiting',
-      p: lit + ' of ' + flames.length + ' lit · it waits until ' + u + ' night.',
+      p: plural(flames.length - lit, 'step') + ' left · it waits until ' + u + ' night.',
       missions: rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }),
     };
   }
   const pl = r.ev.rk && r.ev.rk.pl;
+  /* the sunrise check is done and steps are left: they can still be done until the quest closes, so they stay here with
+     their buttons (a score with no way to finish it is worse than no score) */
+  const left = !saved && r.n < 3 && tk <= addDays(r.k, RK_DAYS) ? rkMissions(r, st, { where: 'today', deep: false, left: true, hour, until: u }) : [];
   return {
     ...base,
     kind: 'done',
     line: false,
     icon: r.n === 3 || saved ? 'flame' : 'sunrise',
-    h: saved ? 'Run saved' : r.n === 3 ? 'Rekindled' : r.n + ' of 3 lit',
+    h: saved ? 'Run saved' : r.n === 3 ? 'Rekindled' : 'You came back',
     p: saved
       ? 'Your run is ' + plural(L.cur, 'day') + ' and still going. The gold mark on your calendar shows where you came back.'
       : r.n === 3
         ? 'All three missions done. Your fire is back to full.'
-        : 'You came back. That is the real skill.',
+        : left.length
+          ? 'That is the real skill. ' + plural(left.length, 'small step') + ' left, any time until ' + u + ' night.'
+          : 'That is the real skill.',
+    missions: left,
     quote: pl ? { when: srWhen(r.ev.trigger, st), then: lowerFirst(pl) } : null,
   };
 }

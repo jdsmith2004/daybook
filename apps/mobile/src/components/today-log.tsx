@@ -32,7 +32,7 @@ import { Text } from '@/components/text';
 
 import { BigOption, Link } from '@/components/choices';
 import { EntryRows } from '@/components/entry-rows';
-import { Flames, Missions } from '@/components/rekindle';
+import { Missions } from '@/components/rekindle';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -107,9 +107,6 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           <T v="small" tone="muted" style={sun ? { color: '#625A85' } : undefined}>
             {k.p}
           </T>
-          <View style={{ alignItems: 'flex-start' }}>
-            <Flames on={k.flames} />
-          </View>
         </View>
       </View>
       {k.why && !(ask && ask.keep !== true) ? <T>{k.why}</T> : null}

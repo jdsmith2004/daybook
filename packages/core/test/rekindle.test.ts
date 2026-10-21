@@ -253,3 +253,18 @@ it('Day 1: tell the safe person you started, once, in plain words', () => {
   expect(t.startsWith('Hey Sam, ')).toBe(true);
   expect(t).not.toMatch(/n't|'re|'m|porn/i);
 });
+
+it('after the sunrise check, the steps still open stay on Today with their buttons until the quest closes', () => {
+  const st = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-01', rollover: 4, u: 1, cleanMode: 'gentle' });
+  const K = '2026-10-20';
+  let days: Days = core.addEvent({}, K, 'slipped', '23:00').days;
+  const tk = core.addDays(K, 1);
+  days[K]!.events[0]!.rk = { at: tk, pl: '' } as never;
+  const act = core.rkActive(days, st, tk)!;
+  const c = core.rkCard(days, st, tk, act, 9);
+  expect(c.kind).toBe('done');
+  expect(c.h).toBe('You came back');
+  expect(c.p).toBe('That is the real skill. 2 small steps left, any time until Friday night.');
+  expect(c.missions.map((m) => m.key)).toEqual(['m1', 'm2']);
+  expect(c.missions[0]!.actions.map((a) => a.label)).toEqual(['I did it']);
+});

@@ -150,6 +150,17 @@ export function rkAsk(days: Days, st: Settings | null, tk: DayKey, k: DayKey): R
   const holder = days[k].events.find((e) => e.outcome === 'slipped' && typeof e.keep === 'boolean');
   return { k, run, deep: run >= RUN_DEEP, evId: (holder || r.ev).id, keep, until: rkUntil(k), open: inWindow && !saved, saved };
 }
+/** the question Today shows: the latest slip's, while it can still be given or changed (inside the window, the run not saved).
+    null when the latest slip in the window does not ask, or a later slip already ended the run. */
+export function rkAskNow(days: Days, st: Settings | null, tk: DayKey): RkAsk | null {
+  for (let i = 0; i <= RK_DAYS; i++) {
+    const k = addDays(tk, -i);
+    if (!sumDay(days[k]).slipped) continue;
+    const a = rkAsk(days, st, tk, k);
+    return a && a.open ? a : null;
+  }
+  return null;
+}
 /** gives or changes the answer on the slip entry evId: keep the run going (true) or start fresh (false). Only while the save
     window is open and the run is not saved yet: a saved run stays saved. Going back to keep reopens the wait. The answer is kept
     on one slip of the day only. null when it cannot change. */

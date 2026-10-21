@@ -121,6 +121,18 @@ describe('changing the answer', () => {
     expect(L(days, tk).kind[K]).toBe('saved');
   });
 
+  it('Today asks of the latest slip, while it can still change', () => {
+    const fresh = slip(K, { keep: false });
+    for (let i = 0; i <= core.RK_DAYS; i++) expect(core.rkAskNow(fresh, st, core.addDays(K, i))).toMatchObject({ k: K, keep: false, open: true });
+    expect(core.rkAskNow(fresh, st, core.addDays(K, core.RK_DAYS + 1))).toBeNull();
+    expect(core.rkAskNow(slip(K, { keep: true, done: true }), st, core.addDays(K, 1))).toBeNull();
+    expect(core.rkAskNow(slip(K6), st, K6)).toBeNull();
+    expect(core.rkAskNow(slip(K), st, core.addDays(K, -1))).toBeNull();
+    /* a second slip that week ended the run: nothing is left to choose */
+    const two = { ...slip(K, { keep: true }), ...slip(core.addDays(K, 2), { id: 's2' }) };
+    expect(core.rkAskNow(two, st, core.addDays(K, 2))).toBeNull();
+  });
+
   it('keeps the answer on one slip of the day', () => {
     const days = slip(K, { more: [{ id: 's2', time: '23:00', outcome: 'slipped', keep: true }] });
     const next = core.rkKeep(days, st, K, K, 's1', false, 10)!;

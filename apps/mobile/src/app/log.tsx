@@ -19,8 +19,11 @@ import {
   OPT_MAX,
   patchEvent,
   removeEvent,
+  rkAsk,
   rkEmbers,
+  rkFresh,
   rkHonor,
+  rkKeep,
   rkLightLine,
   rkComebackLine,
   rkComebacks,
@@ -137,6 +140,16 @@ export default function Log() {
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
   const hour = new Date(now).getHours();
+  /* keep the run going, or start fresh: asked first, when the slip ends a run of 7 days or more (core rkAsk) */
+  const runQ = step === 'rk0' && snap.settings ? rkAsk(snap.days, snap.settings, tk, date) : null;
+  const chooseRun = (keep: boolean) => {
+    if (!runQ) return;
+    update((s0) => {
+      const d = s0.settings ? rkKeep(s0.days, s0.settings, tk, runQ.k, runQ.evId, keep) : null;
+      return d ? { ...s0, days: d } : s0;
+    });
+    buzz('tap');
+  };
 
   const go = (next: Step, back = false) => {
     setDir(1);
@@ -389,6 +402,35 @@ export default function Log() {
       </>
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
+  } else if (runQ && runQ.open && runQ.keep == null) {
+    /* the question, before the embers: both answers are good ones, and the embers then follow the answer */
+    sky = 'ember';
+    title = 'Rekindle';
+    dots = rkDots(0);
+    body = (
+      <>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {'Your ' + runQ.run + '-day run'}
+        </T>
+        <T style={s.center}>Both are good answers. What you built stays yours either way.</T>
+        <View style={s.middle} accessible accessibilityLabel={runQ.run + ' days in a row'}>
+          <T v="big" style={s.runN}>
+            {String(runQ.run)}
+          </T>
+          <T tone="muted">days in a row</T>
+        </View>
+        <Dock>
+          <BigOption
+            tone="sun"
+            icon="flame"
+            title="Keep it going"
+            sub={'The Rekindle quest saves it, any time until ' + runQ.until + ' night.'}
+            onPress={() => chooseRun(true)}
+          />
+          <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={rkFresh(snap.days, snap.settings!, tk, runQ).b} onPress={() => chooseRun(false)} />
+        </Dock>
+      </>
+    );
   } else if (step === 'rk0') {
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
     const honor = rkHonor(snap.days, st, tk, date);
@@ -712,6 +754,7 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  runN: { fontSize: 84, lineHeight: 92 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
   list: { alignSelf: 'stretch', gap: 9 },
   keptBox: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },

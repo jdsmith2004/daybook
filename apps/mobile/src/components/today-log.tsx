@@ -10,12 +10,16 @@ import {
   gameCompute,
   GRAD_DAYS,
   rkActive,
+  rkAskNow,
   rkCard,
   rkEnded,
+  rkFresh,
+  rkKeep,
   slipCare,
   sortedEvents,
   sumDay,
   withDay,
+  type RkAsk,
   type Snapshot,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +27,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
+import { BigOption, Link } from '@/components/choices';
 import { EntryRows } from '@/components/entry-rows';
 import { Flames, Missions } from '@/components/rekindle';
 import { SunArt } from '@/components/sun-art';
@@ -74,8 +79,11 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const { act, now } = useLogActions();
   const st = snap.settings!;
   const r = rkActive(snap.days, st, tk);
-  if (!r) return <RunKeptCard snap={snap} tk={tk} />;
+  /* keep the run going, or start fresh: what was picked, while it can still change (core rkAskNow) */
+  const a = rkAskNow(snap.days, st, tk);
+  if (!r) return a ? <FreshCard snap={snap} tk={tk} a={a} /> : <RunKeptCard snap={snap} tk={tk} />;
   const k = rkCard(snap.days, st, tk, r, new Date(now).getHours());
+  const ask = a && a.k === r.k ? a : null;
   const colors: [string, string] = k.kind === 'sun' ? ['#FFD9B4', '#FFF3DE'] : k.line ? [c.slipSoft, c.surface] : [c.sunSoft, c.surface];
   const sun = k.kind === 'sun';
   const ink = sun ? '#2A2350' : undefined;
@@ -101,7 +109,8 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           </View>
         </View>
       </View>
-      {k.why ? <T>{k.why}</T> : null}
+      {k.why && !(ask && ask.keep !== true) ? <T>{k.why}</T> : null}
+      {ask ? <RunChoice snap={snap} tk={tk} a={ask} /> : null}
       {k.sunrise ? <Button label="Start my sunrise check" icon="sunrise" onPress={() => router.push('/sunrise')} /> : null}
       {k.missions.length ? <Missions list={k.missions} onAction={(_m, a) => act(a, r.k)} /> : null}
       {k.quote ? (
@@ -128,6 +137,63 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           ))}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/* the answer to "keep the run going, or start fresh?", while it can still change: unanswered (the app closed in the middle of the
+   slip's Rekindle), the same question and two choices; answered, which one, and a quiet link to the other */
+function RunChoice({ snap, tk, a }: { snap: Snapshot; tk: string; a: RkAsk }) {
+  const { update } = useStore();
+  const choose = (keep: boolean) => {
+    update((s0) => {
+      const d = s0.settings ? rkKeep(s0.days, s0.settings, tk, a.k, a.evId, keep) : null;
+      return d ? { ...s0, days: d } : s0;
+    });
+    buzz('tap');
+  };
+  if (a.keep == null) {
+    return (
+      <View style={{ gap: 10 }}>
+        <T v="label">{'Keep your ' + a.run + '-day run going, or start fresh? Both are good answers.'}</T>
+        <BigOption
+          tone="sun"
+          icon="flame"
+          title="Keep it going"
+          sub={'The Rekindle quest saves it, any time until ' + a.until + ' night.'}
+          onPress={() => choose(true)}
+        />
+        <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={rkFresh(snap.days, snap.settings!, tk, a).b} onPress={() => choose(false)} />
+      </View>
+    );
+  }
+  const f = a.keep ? null : rkFresh(snap.days, snap.settings!, tk, a);
+  return (
+    <View style={{ gap: 2 }}>
+      <T v="small" tone="muted">
+        {f ? 'You chose to start fresh. ' + f.b + ' ' + f.rest : 'You chose to keep it going.'}
+      </T>
+      <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
+        <Link label={a.keep ? 'Start fresh instead' : 'Keep my run going instead'} onPress={() => choose(!a.keep)} />
+      </View>
+    </View>
+  );
+}
+
+/* after the first day of a fresh start, Today has no quest card, but the answer can still change until the window closes */
+function FreshCard({ snap, tk, a }: { snap: Snapshot; tk: string; a: RkAsk }) {
+  const c = useTheme();
+  return (
+    <View style={[s.card, { borderColor: c.cardEdge, backgroundColor: c.surface }]} accessibilityRole="summary">
+      <View style={[s.top, { alignItems: 'center' }]}>
+        <View style={[s.ico, { backgroundColor: c.mintSoft }]}>
+          <Icon name="sparkle" size={22} color={c.mintText} />
+        </View>
+        <T v="h2" style={{ flex: 1 }} accessibilityRole="header">
+          {a.keep === false ? 'A fresh start' : 'Your ' + a.run + '-day run'}
+        </T>
+      </View>
+      <RunChoice snap={snap} tk={tk} a={a} />
     </View>
   );
 }

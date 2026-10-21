@@ -5,7 +5,7 @@
    The curve is like a ball thrown up: it speeds up gently, keeps an even pace through the middle (never a rush), and
    slows the same way into the turn, so the turn at the top and the bottom is soft and quick, never a dead stop. See
    docs/design-standards.md (Breathing). */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
 
@@ -56,13 +56,17 @@ export function breathAt(steps: Steps, sec: number): [number, number, number] {
 }
 
 /** a clock on the UI thread: seconds since `sec0` seconds before mount, updated every frame while on (it reads the real
-    time, so it stays with the seconds the screen shows) */
+    time, so it stays with the seconds the screen shows). The frame callback is made once and registered once for the
+    life of the screen; `on` only starts and stops it. (A new callback on every render made Reanimated unregister and
+    register it again each time, and turning it off in the same tick as the unmount hit one already gone.) */
 export function useBreathClock(sec0: number, on = true) {
   const [origin] = useState(() => Date.now() - sec0 * 1000);
   const t = useSharedValue(sec0);
-  const cb = useFrameCallback(() => {
+  const tick = useCallback(() => {
+    'worklet';
     t.value = (Date.now() - origin) / 1000;
-  }, on);
+  }, [origin, t]);
+  const cb = useFrameCallback(tick, false);
   useEffect(() => {
     cb.setActive(on);
     // eslint-disable-next-line react-hooks/exhaustive-deps

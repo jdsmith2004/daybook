@@ -15,6 +15,7 @@ import {
   trigFits,
   urAnswer,
   urEntry,
+  urWon,
   withDay,
   type Outcome,
 } from '@daybook/core';
@@ -113,7 +114,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         id = r.id;
         return { ...s, days: r.days };
       }).days;
-      sos.setMem((m) => ({ ...m, last: e.last }));
+      sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
       const step = v === 'slipped' ? rkStepFor(days, e.key) : !e.trig ? 'trigger' : v === 'rode' && !e.did.length ? 'did' : 'done';
       sos.end();
       router.dismissAll();

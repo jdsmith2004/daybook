@@ -1,9 +1,11 @@
-/* The morning: a short full-screen moment, like the check-in, under a sunrise sky. It asks what the app does not know about
-   last night (core: morningAsk): whether the phone stayed away, when it was put away, or else whether screens went off.
+/* The morning: a short full-screen moment, like the check-in, under a sunrise sky. After a night SOS that was ridden out, it
+   opens with that win, one line, and asks what helped, for a note SOS shows first next time (core: nightWin; the end of the
+   check-in does not ask it at night). Then it asks what the app does not know about last night (core: morningAsk): whether the phone stayed away, when it was put away, or else whether screens went off.
    Then sleep, big in the middle with the slider under the thumb. Then the morning is done, and today's lesson is one tap
    away. Answers are saved as they are given, so closing early keeps them. Opened from Last night in "Your day" and from
    Next up. */
 import {
+  changeSettings,
   clockOf,
   fmtClock,
   gameCompute,
@@ -13,9 +15,12 @@ import {
   morningDone,
   morningInfo,
   morningSaid,
+  nightWin,
   setScreensOff,
   setSleep,
   stopTiles,
+  urTool,
+  winNote,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -23,27 +28,35 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+import { Answer } from '@/components/answer';
 import { Appear } from '@/components/appear';
-import { BigOption, Link } from '@/components/choices';
+import { AddTile, BigOption, Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { DoneMark } from '@/components/done-mark';
+import { KeepAbove } from '@/components/keyboard';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
-import { Button, Icon, T } from '@/components/ui';
+import { TalkLook, talkLookNow } from '@/components/talk-card';
+import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-const STEPS = ['so', 'h', 'end'] as const;
-type Step = (typeof STEPS)[number];
+type Step = 'won' | 'so' | 'h' | 'end';
 const hoursText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
 
 export default function Morning() {
   const c = useTheme();
   const { snap, tk, now, update } = useStore();
   const st = snap.settings;
-  const [step, setStep] = useState<Step>('so');
+  /* last night's win is fixed when the morning opens, so it does not vanish while the note is written */
+  const [win] = useState(() => (st ? nightWin(snap.days, st, tk) : null));
+  const STEPS: Step[] = win ? ['won', 'so', 'h', 'end'] : ['so', 'h', 'end'];
+  const [step, setStep] = useState<Step>(STEPS[0]);
+  /* the note being written, null while it is closed */
+  const [draft, setDraft] = useState<string | null>(null);
+  const [noteSaved, setNoteSaved] = useState(false);
   const [hist, setHist] = useState<Step[]>([]);
   const [dir, setDir] = useState(1);
   const [pts0] = useState(() => (st ? gameCompute(snap.days, st, snap.reviews, tk).pts : 0));
@@ -72,7 +85,93 @@ export default function Morning() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
 
-  if (!mi.applies) {
+  if (step === 'won' && win) {
+    const note = String(st.note || '').trim();
+    const ask = win.askNote && !noteSaved;
+    const saveNote = () => {
+      const t = String(draft || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 600);
+      if (!t) return;
+      update((s0) => (s0.settings ? { ...s0, settings: changeSettings(s0.settings, (x) => void (x.note = t)) } : s0));
+      buzz('save');
+      setNoteSaved(true);
+      setDraft(null);
+    };
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          {win.eyebrow}
+        </T>
+        <T v="title" style={s.c} accessibilityRole="header">
+          {win.line}
+        </T>
+        <T style={s.c}>{win.sub}</T>
+        {draft != null ? (
+          /* the note box and its button stay together near the top, above the keyboard */
+          <KeepAbove style={{ width: '100%', gap: 10 }}>
+            <Field
+              label="A note for your next hard moment"
+              multiline
+              autoFocus
+              maxLength={600}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder={winNote(win, null)}
+            />
+            <T v="small" tone="muted">
+              SOS shows it to you first next time. You can change it in My plan.
+            </T>
+            <View style={s.row}>
+              <Button label="Save my note" onPress={saveNote} />
+              <Link label="Cancel" onPress={() => setDraft(null)} />
+            </View>
+          </KeepAbove>
+        ) : (
+          <>
+            {ask ? (
+              <T style={s.c} tone="muted">
+                What helped? Pick one, and it starts a note that SOS shows you first next time.
+              </T>
+            ) : null}
+            <View style={s.middle} accessible accessibilityLabel={win.rode + ' urges ridden out'}>
+              <T v="big" style={s.bigN}>
+                {String(win.rode)}
+              </T>
+              <T tone="muted">{win.rode === 1 ? 'urge ridden out' : 'urges ridden out'}</T>
+            </View>
+            <Dock>
+              {ask ? (
+                <View style={s.list}>
+                  {win.helped.map((h) => (
+                    <Answer key={h.id} icon={h.ic} tone={urTool(h.id)?.tone || 'accent'} title={h.name} onPress={() => setDraft(winNote(win, h.id))} />
+                  ))}
+                  <AddTile
+                    label={win.helped.length ? 'Something else' : 'Write what helped'}
+                    icon="pencil"
+                    block
+                    onPress={() => setDraft(winNote(win, null))}
+                  />
+                </View>
+              ) : note ? (
+                <Card style={{ alignSelf: 'stretch', gap: 4 }}>
+                  <T v="small" tone="muted">
+                    {noteSaved ? 'Saved. SOS shows it to you first next time.' : 'Your note for next time'}
+                  </T>
+                  <T>{note}</T>
+                  <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
+                    <Link label="Change my note" onPress={() => setDraft(note)} />
+                  </View>
+                </Card>
+              ) : null}
+              <Button label={mi.applies ? 'Next' : 'Done'} onPress={mi.applies ? next : close} />
+            </Dock>
+          </>
+        )}
+      </>
+    );
+  } else if (!mi.applies) {
     body = (
       <>
         <T v="title" style={s.c} accessibilityRole="header">
@@ -172,6 +271,8 @@ export default function Morning() {
     /* today's lesson, when it is part of today and not read yet */
     const lt = stopTiles(snap.days, st, tk, now).tiles.find((t) => t.k === 'lesson' && !t.done);
     const ls = lt ? lessonStop(snap.days, st, tk) : null;
+    /* a talk-through from last night waiting for its look back goes first; the lesson stays on Today */
+    const look = talkLookNow(snap, tk, now);
     body = (
       <>
         <DoneMark />
@@ -189,7 +290,9 @@ export default function Morning() {
           ))}
         </Appear>
         <Dock>
-          {ls ? (
+          {look ? (
+            <TalkLook d={look} />
+          ) : ls ? (
             <>
               <Appear delay={420} by={14} style={[s.lesson, { backgroundColor: c.surface, shadowColor: c.lip }]}>
                 <View style={[s.lessonIc, { backgroundColor: c.skySoft }]}>
@@ -228,7 +331,7 @@ export default function Morning() {
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}
       footer={footer}>
-      <Appear key={step} x={step === 'so' && !hist.length ? 0 : 36 * dir} by={0} duration={280} style={s.stage}>
+      <Appear key={step} x={!hist.length ? 0 : 36 * dir} by={0} duration={280} style={s.stage}>
         {body}
       </Appear>
     </SceneFrame>
@@ -263,6 +366,9 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
+  bigN: { fontSize: 84, lineHeight: 92 },
+  list: { alignSelf: 'stretch', gap: 9 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   btnSpace: { height: 52 },
   pts: { fontFamily: font.display, fontSize: 18 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },

@@ -32,11 +32,12 @@ import {
   urSuggestion,
   urTags,
   urTool,
+  urWon,
   type Strength,
   type Tool,
 } from '@daybook/core';
 import { Redirect, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -78,9 +79,16 @@ export default function Sos() {
   const [front, setFront] = useState(true);
   /* the tool just set to Not for me (for Undo) */
   const [offed, setOffed] = useState<string | null>(null);
+  /* SOS opened first (a notification or a bookmark) stays under what it hands on to (Go to bed, the pause): once that
+     ends the SOS and closes, SOS comes back into view with nothing open, so it closes too, to Today */
+  const began = useRef(false);
+  const open = useRef(ur);
+  open.current = ur;
+  if (ur) began.current = true;
   useFocusEffect(
     useCallback(() => {
       setFront(true);
+      if (began.current && !open.current) close();
       return () => setFront(false);
     }, []),
   );
@@ -129,7 +137,8 @@ export default function Sos() {
     if (!ur || !urTool(id)) return;
     const sug = ur.step === 'tools' && pk ? pk.top.id : ur.sug;
     sos.setMem((m) => urNote(m, sug, id));
-    sos.set({ ...ur, sug });
+    /* a tool chosen over the suggestion is yours: if its round passes, it counts toward "You like this" (core urWon) */
+    sos.set({ ...ur, sug, mine: sug && id !== sug ? (ur.mine || []).concat(id) : ur.mine });
     sos.setCombo(combo && id !== 'bed' ? 'bed' : null);
     buzz('tap');
     router.push({ pathname: '/tool/[id]', params: { id } });
@@ -152,7 +161,7 @@ export default function Sos() {
       id = r.id;
       return { ...s, days: r.days };
     }).days;
-    sos.setMem((m) => ({ ...m, last: e.last }));
+    sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
     const step = v === 'slipped' ? rkStepFor(days, e.key) : !e.trig ? 'trigger' : v === 'rode' && !e.did.length ? 'did' : 'done';
     const kl = ur.cx?.kn?.l || '';
     sos.end();
@@ -172,6 +181,12 @@ export default function Sos() {
         kl,
       },
     });
+  };
+
+  /* Talk it through opens on top of SOS, so its X comes back here (to the tools), and the urge is still open to log */
+  const talk = () => {
+    buzz('tap');
+    router.push('/talk');
   };
 
   const sky = night ? 'night' : 'violet';
@@ -214,7 +229,7 @@ export default function Sos() {
         ? 'Your plan: ' + storyIfLine(plan.it)
         : own
           ? 'Your plan: ' + own
-          : 'Pick what will help you most in this moment, or start the one below.';
+          : 'Pick one, or start the one below.';
     return (
       <SceneFrame
         title="SOS"
@@ -266,14 +281,7 @@ export default function Sos() {
             ) : null}
             <View style={s.alt}>
               <Alt icon="check" label="It passed" onPress={() => save('rode')} />
-              <Alt
-                icon="chat"
-                label="Talk it through"
-                onPress={() => {
-                  buzz('tap');
-                  router.replace('/talk');
-                }}
-              />
+              <Alt icon="chat" label="Talk it through" onPress={talk} />
             </View>
           </>
         }>
@@ -285,7 +293,7 @@ export default function Sos() {
             {lead}
           </T>
         ) : null}
-        <ToolGrid days={snap.days} tags={tags} onPick={(id) => pickTool(id)} />
+        <ToolGrid days={snap.days} tags={tags} fresh={false} onPick={(id) => pickTool(id)} />
       </SceneFrame>
     );
   }
@@ -319,8 +327,8 @@ export default function Sos() {
                 Would you use {t.name} again?
               </T>
               <View style={s.rateRow}>
-                <Chip label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
-                <Chip label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
+                <Chip role="radio" label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
+                <Chip role="radio" label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
               </View>
               {r === 1 ? (
                 <T v="small" tone="muted" style={s.c}>
@@ -402,6 +410,8 @@ export default function Sos() {
         <Text style={[s.nextT, { color: c.accentInk }]}>Next</Text>
         <Icon name="next" size={24} color={c.accentInk} />
       </Pressable>
+      {/* for a time and a place already decided: talk it through, without the tools first (the sun keeps breathing) */}
+      <TalkLink onPress={talk} />
     </>
   );
 
@@ -439,6 +449,16 @@ export default function Sos() {
 }
 
 /* ---------- the parts ---------- */
+/* its own component, so it reads the sheet's colors (the sheet is night-dark even in a light theme) */
+function TalkLink({ onPress }: { onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={6} style={s.plan}>
+      <Text style={[s.planT, { color: c.accentText }]}>Already decided? Talk it through</Text>
+    </Pressable>
+  );
+}
+
 function Lab({ text, aside }: { text: string; aside?: string }) {
   const c = useTheme();
   return (

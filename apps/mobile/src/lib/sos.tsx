@@ -47,6 +47,9 @@ export function SosProvider({ children }: { children: ReactNode }) {
   const [timer, setTimerState] = useState<PauseTimer | null>(null);
   const [phone, setPhoneState] = useState('');
   const memRef = useRef(mem);
+  /* the open SOS, read by end() without waiting for a render */
+  const urRef = useRef(ur);
+  urRef.current = ur;
 
   useEffect(() => {
     AsyncStorage.multiGet([MEM, TIMER, PHONE])
@@ -83,16 +86,24 @@ export function SosProvider({ children }: { children: ReactNode }) {
     setPhoneState(p);
     (p ? AsyncStorage.setItem(PHONE, JSON.stringify(p)) : AsyncStorage.removeItem(PHONE)).catch(() => undefined);
   }, []);
-  const begin = useCallback((pts: number) => {
-    const u = newUrge(Date.now(), pts);
-    setUr(u);
-    setCombo(null);
-    return u;
-  }, []);
+  /* when an SOS was last open, opened or closed (core urLastAt): Today holds the one tip ask for a few hours after it */
+  const begin = useCallback(
+    (pts: number) => {
+      const u = newUrge(Date.now(), pts);
+      urRef.current = u;
+      setUr(u);
+      setCombo(null);
+      setMem((m) => ({ ...m, sosAt: u.t0 }));
+      return u;
+    },
+    [setMem],
+  );
   const end = useCallback(() => {
+    if (urRef.current) setMem((m) => ({ ...m, sosAt: Date.now() }));
+    urRef.current = null;
     setUr(null);
     setCombo(null);
-  }, []);
+  }, [setMem]);
 
   const forget = useCallback(async () => {
     setUr(null);

@@ -17,10 +17,29 @@ const SCENE = /^(sos|tool\/\[id\]|log|sunrise|morning|checkin|talk|review|deeper
 
 /** leave a full-screen moment (legacy closeScene): every full-screen moment on top closes, and the person is back where they
     started it (a tab, or a page like My plan). Opened directly (a web link), it goes to Today. SOS opened from inside the
-    setup closes back to the setup, on the page where it was left. */
+    setup closes back to the setup, on the page where it was left. Talk it through opened from SOS closes back to SOS. */
 export function close() {
   let st = rootState();
   /* Expo Router keeps the app's stack inside one "__root" route */
+  while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
+  const routes = st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
+  /* Talk it through opened from SOS closes back to SOS, where the urge is still open (to log, or to pick a tool) */
+  if (routes.length >= 2 && routes[routes.length - 1].name === 'talk' && routes[routes.length - 2].name === 'sos') {
+    router.back();
+    return;
+  }
+  let n = 0;
+  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name) && !(n > 0 && routes[routes.length - 1 - n].name === 'setup')) n++;
+  if (n > 0) router.dismiss(n);
+  else if (router.canDismiss()) router.dismissAll();
+  else if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
+/** finish a full-screen moment: every full-screen moment on top closes at once (SOS under it too), back to where the
+    person started. close() is for the X, which may go one step back; this is for Done and the other finishing buttons. */
+export function closeAll() {
+  let st = rootState();
   while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
   const routes = st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
   let n = 0;

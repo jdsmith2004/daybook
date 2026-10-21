@@ -28,6 +28,22 @@ it('never asks within four days of a slip, which covers the Rekindle quest', () 
   expect(core.tipAsk(core.addEvent({}, tk, 'rode', '21:00').days, month, tk, 12, null, url)).toBe(true);
 });
 
+it('waits three hours after any SOS or any slip', () => {
+  const now = new Date(2026, 9, 15, 12, 0).getTime();
+  const H = 3600_000;
+  expect(core.tipAsk({}, month, tk, 12, null, url, { now, sos: null })).toBe(true);
+  expect(core.tipAsk({}, month, tk, 12, null, url, { now, sos: now - 10 * 60_000 })).toBe(false);
+  expect(core.tipAsk({}, month, tk, 12, null, url, { now, sos: now - core.TIP_QUIET * H + 60_000 })).toBe(false);
+  expect(core.tipAsk({}, month, tk, 12, null, url, { now, sos: now - core.TIP_QUIET * H - 60_000 })).toBe(true);
+  /* a slip (on its own the four calm days hold the ask longer; the three hours hold either way) */
+  expect(core.tipQuiet(core.addEvent({}, tk, 'slipped', '10:30').days, month, { now, sos: null })).toBe(true);
+  expect(core.tipQuiet(core.addEvent({}, tk, 'slipped', '08:30').days, month, { now, sos: null })).toBe(false);
+  expect(core.tipQuiet(core.addEvent({}, tk, 'rode', '11:30').days, month, { now, sos: null })).toBe(false);
+  /* after midnight, a slip is on the evening's log day */
+  const late = new Date(2026, 9, 16, 2, 0).getTime();
+  expect(core.tipQuiet(core.addEvent({}, tk, 'slipped', '01:00').days, month, { now: late, sos: null })).toBe(true);
+});
+
 it('never sits next to the account card, and waits a few days after its "Not now"', () => {
   expect(core.tipAsk({}, month, tk, 12, 'week', url)).toBe(false);
   const no = core.accountLater(month, core.addDays(tk, 1 - core.TIP_GAP), 1).st;

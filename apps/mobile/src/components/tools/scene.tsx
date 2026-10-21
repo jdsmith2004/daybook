@@ -21,6 +21,7 @@ import {
   safeName,
   urEntry,
   urNight,
+  urWon,
   addEvent,
   withDay,
 } from '@daybook/core';
@@ -216,7 +217,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         const sc = { ...ur, used: ur.used.concat('bed'), rounds: (ur.rounds || []).concat(first, [['bed', 'p']]) };
         const e = urEntry(sc, 'rode', s.settings, Date.now());
         days = addEvent(days, e.key, 'rode', e.time, e.fields).days;
-        sos.setMem((m) => ({ ...m, last: e.last }));
+        sos.setMem((m) => ({ ...urWon(m, sc), last: e.last }));
       }
       const day = changeDay(days[tk], tk, (d) => {
         const q = d.p || blankP();
@@ -251,9 +252,15 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         {night
           ? combo
             ? 'Three things, then a plan for the thoughts.'
-            : 'Urges are often harder to resist when you are tired. Three things, then a plan for the thoughts.'
+            : 'Urges are louder when you are tired. Three things, then a plan for the thoughts.'
           : 'Late at night this is often the strongest tool. Walk through it now so it is easy later.'}
       </T>
+      {/* read at the top, not under the main button (the thumb rule) */}
+      {night ? (
+        <T v="small" tone="muted" style={s.c}>
+          Tomorrow morning Daybook asks one thing: did the phone stay away?
+        </T>
+      ) : null}
       <Dock>
         <View style={{ alignSelf: 'stretch', gap: 8 }}>
           {BED.map(([id, t, sub]) => {
@@ -285,10 +292,14 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         <T v="label" style={{ alignSelf: 'flex-start', marginTop: 6 }}>
           If the thoughts get loud in bed
         </T>
-        <View style={[s.wrap, { justifyContent: 'flex-start', alignSelf: 'stretch' }]} accessibilityRole="radiogroup">
+        <View
+          style={[s.wrap, { justifyContent: 'flex-start', alignSelf: 'stretch' }]}
+          accessibilityRole="radiogroup"
+          accessibilityLabel="If the thoughts get loud in bed">
           {plans.map(([id, t]) => (
             <Chip
               key={id}
+              role="radio"
               label={t}
               on={plan === id}
               onPress={() => {
@@ -306,11 +317,6 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         </Appear>
         <Button label={night ? 'Good night' : 'Done'} onPress={go} />
       </Dock>
-      {night ? (
-        <T v="small" tone="muted" style={s.c}>
-          Tomorrow morning Daybook asks one thing: did the phone stay away?
-        </T>
-      ) : null}
     </>
   );
 }
@@ -359,8 +365,9 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
       return setPick(final);
     }
     setSpinning(true);
+    /* about a second in all: eight faces, slowing down (55 ms, then 55 + 3n² ms), so the idea can be read soon */
     let n = 0;
-    const total = 15;
+    const total = 8;
     const step = () => {
       n++;
       if (n >= total) {
@@ -372,7 +379,7 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
       }
       setPick(menu[Math.floor(Math.random() * menu.length)]);
       turnFace(n);
-      timer.current = setTimeout(step, 55 + n * n * 2.4);
+      timer.current = setTimeout(step, 55 + n * n * 3);
     };
     timer.current = setTimeout(step, 55);
   };
@@ -550,7 +557,7 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
         />
         <View style={s.quiet}>
           <Link
-            label="Something else is true"
+            label="Pick another need"
             onPress={() => {
               setBack(true);
               setNeed(null);
@@ -563,63 +570,80 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
 }
 
 /* ---------- reach a person ---------- */
+/* the three texts at the top, each opening the messages app; "I sent it" docked where the thumb is. Writing your own and
+   the free lines (988, the Crisis Text Line) open in place from quiet links, so the page stays short enough for the
+   button to sit low. */
 export function Message({ finish }: ToolProps) {
-  const c = useTheme();
   const { say } = useStore();
   const st = useCareSettings();
   const nm = safeName(st);
   const list = messageTexts(st);
   const [own, setOwn] = useState('');
+  const [writing, setWriting] = useState(false);
+  const [lines, setLines] = useState(false);
   const send = useSendText();
   return (
     <>
       <T v="title" style={s.c} accessibilityRole="header">
         {nm ? 'Text ' + nm : 'A short text is enough'}
       </T>
-      <T style={s.c}>
-        {(nm ? 'Your safe person. ' : '') + 'Pick one and it opens in your messages app, ready to send. Reaching out is strength, not weakness.'}
-      </T>
-      {list.map((m) => (
-        <Card key={m} style={{ alignSelf: 'stretch' }}>
-          <T selectable>{m}</T>
-          <View style={s.row}>
-            <Chip label={nm ? 'Text ' + nm : 'Send'} on={false} onPress={() => send(m)} />
-            <Chip label="Copy" on={false} onPress={() => copy(m, say)} />
-          </View>
-        </Card>
-      ))}
-      <View style={{ alignSelf: 'stretch', gap: 8 }}>
-        <Field label="Or write your own" multiline maxLength={300} value={own} onChangeText={setOwn} placeholder="In your own words" />
-        <View style={s.row}>
-          <Chip label="Send mine" on={false} onPress={() => (own.trim() ? send(own.trim()) : say('Write a few words first.'))} />
-          <Chip label="Copy mine" on={false} onPress={() => (own.trim() ? copy(own.trim(), say) : say('Write a few words first.'))} />
-        </View>
-      </View>
-      <View style={{ alignSelf: 'stretch', gap: 8 }}>
-        <T v="eyebrow" tone="muted">
-          No one to text right now?
-        </T>
-        {FREE_LINES.map(([name, how, sub, num]) => (
-          <Card key={name} style={{ alignSelf: 'stretch' }}>
-            <T v="label">{name}</T>
-            <T v="label" tone="accentText">
-              {how}
-            </T>
-            <T v="small" tone="muted">
-              {sub}
-            </T>
-            <View style={s.row}>
-              <Chip label="Copy" on={false} onPress={() => copy(num, say, 'Copied ' + num + '.')} />
+      <T style={s.c}>{(nm ? 'Your safe person. ' : '') + 'Pick one and it opens in your messages app, ready to send. Reaching out is strength.'}</T>
+      {lines ? (
+        <Appear key="lines" by={6} duration={240} style={s.list}>
+          <T v="eyebrow" tone="muted">
+            No one to text right now?
+          </T>
+          {FREE_LINES.map(([name, how, sub, num]) => (
+            <Card key={name} style={{ alignSelf: 'stretch' }}>
+              <T v="label">{name}</T>
+              <T v="label" tone="accentText">
+                {how}
+              </T>
+              <T v="small" tone="muted">
+                {sub}
+              </T>
+              <View style={s.row}>
+                <Chip label="Copy" on={false} onPress={() => copy(num, say, 'Copied ' + num + '.')} />
+              </View>
+            </Card>
+          ))}
+        </Appear>
+      ) : (
+        <Appear key="texts" by={6} duration={240} style={s.list}>
+          {list.map((m) => (
+            <Card key={m} style={{ alignSelf: 'stretch' }}>
+              <T selectable>{m}</T>
+              <View style={s.row}>
+                <Chip label={nm ? 'Text ' + nm : 'Send'} on={false} onPress={() => send(m)} />
+                <Chip label="Copy" on={false} onPress={() => copy(m, say)} />
+              </View>
+            </Card>
+          ))}
+          {/* a text box and its buttons stay together near the top, where the keyboard does not cover them */}
+          {writing ? (
+            <View style={{ alignSelf: 'stretch', gap: 8 }}>
+              <Field label="Your own words" multiline autoFocus maxLength={300} value={own} onChangeText={setOwn} placeholder="In your own words" />
+              <View style={s.row}>
+                <Chip label="Send mine" on={false} onPress={() => (own.trim() ? send(own.trim()) : say('Write a few words first.'))} />
+                <Chip label="Copy mine" on={false} onPress={() => (own.trim() ? copy(own.trim(), say) : say('Write a few words first.'))} />
+              </View>
             </View>
-          </Card>
-        ))}
-      </View>
+          ) : (
+            <View style={s.quiet}>
+              <Link label="Write my own" onPress={() => setWriting(true)} />
+            </View>
+          )}
+        </Appear>
+      )}
       <Dock>
+        <T v="small" tone="muted" style={s.c}>
+          Only if and when you want to. Calling counts too, and so does sitting with someone.
+        </T>
         <Button label="I sent it" onPress={() => finish('message', { noCalm: true, reach: true, msg: 'Reaching out takes guts.' })} />
+        <View style={s.quiet}>
+          <Link label={lines ? 'Back to the texts' : 'No one to text?'} onPress={() => setLines(!lines)} />
+        </View>
       </Dock>
-      <T v="small" tone="muted" style={s.c}>
-        Only if and when you want to. Calling counts too, and so does sitting with someone.
-      </T>
     </>
   );
 }

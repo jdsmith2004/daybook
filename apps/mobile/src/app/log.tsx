@@ -2,8 +2,9 @@
    and Back or Undo is always one tap away. After a slip comes Rekindle: the full one for the first slip in any 7 days,
    the short one for any other. The full one: breathe the embers back up and see everything kept, say how it feels
    right now, a few short cards on what just happened that fit that feeling (each with a moving picture and its
-   source; cards read before are one line), your own record of comebacks, then the quest. Ported from the legacy
-   SCENES.checkin. */
+   source; cards read before are one line), your own record of comebacks, then (when the slip ends a run of 7 days or
+   more) keep the run going or start fresh, then the quest. Care first, the count last: closing before that answer keeps
+   the run for now, and the sunrise check asks it the next morning. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
   addOption,
@@ -39,6 +40,7 @@ import {
   whenFromEntry,
   whenLabel,
   whenStart,
+  winLater,
   type DayEvent,
   type Outcome,
   type When,
@@ -65,8 +67,8 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkl';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkl'];
+type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkR' | 'rkl';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkR', 'rkl'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
@@ -109,6 +111,8 @@ export default function Log() {
   const [askNote, setAskNote] = useState<boolean | null>(null);
   const [lit, setLit] = useState(false);
   const [rkSeen, setRkSeen] = useState(false);
+  /* the run question was reached in this sitting: its step stays (with the answer shown) for Back, after it is answered */
+  const [runAsked, setRunAsked] = useState(false);
   /* how it feels right now (never stored), and which card of "What just happened" is showing */
   const [feels, setFeels] = useState<RkFeel[]>([]);
   const [ci, setCi] = useState(0);
@@ -130,8 +134,10 @@ export default function Log() {
     sos.setMem((m) => ({ ...m, rkSeen: (Array.isArray(m.rkSeen) ? (m.rkSeen as string[]) : []).concat(card.k) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, ci]);
-  /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing */
-  const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim());
+  /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing. After an urge
+     ridden out at night it waits for the morning stop, which asks what helped (core winLater), so it is asked once. */
+  const evNow = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
+  const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim() && !winLater(st, date, evNow));
   useEffect(() => {
     if (step === 'done' && askNote == null) setAskNote(askNow);
   }, [step, askNote, askNow]);
@@ -140,8 +146,11 @@ export default function Log() {
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
   const hour = new Date(now).getHours();
-  /* keep the run going, or start fresh: asked first, when the slip ends a run of 7 days or more (core rkAsk) */
-  const runQ = step === 'rk0' && snap.settings ? rkAsk(snap.days, snap.settings, tk, date) : null;
+  /* keep the run going, or start fresh: asked at the end of the full Rekindle, when the slip ends a run of 7 days or more and
+     it is not answered yet (core rkAskOpen). Not answered, the run is kept for now. */
+  const rkOn = outcome === 'slipped' && step !== 'q1' && step !== 'trigger' && step !== 'rkl' && !!snap.settings;
+  const runAll = rkOn ? rkAsk(snap.days, snap.settings, tk, date) : null;
+  const runQ = runAll && runAll.open && (runAll.keep == null || runAsked) ? runAll : null;
   const chooseRun = (keep: boolean) => {
     if (!runQ) return;
     update((s0) => {
@@ -149,6 +158,8 @@ export default function Log() {
       return d ? { ...s0, days: d } : s0;
     });
     buzz('tap');
+    setRkSeen(true);
+    go('done');
   };
 
   const go = (next: Step, back = false) => {
@@ -282,8 +293,8 @@ export default function Log() {
     </View>
   ) : null;
 
-  /* the progress dots of the full Rekindle: the embers, the feeling, the cards, the record, the quest */
-  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + 2;
+  /* the progress dots of the full Rekindle: the embers, the feeling, the cards, the record, the run question, the quest */
+  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + (runQ ? 1 : 0) + 2;
   const rkDots = (i: number) => ({ n: rkN, i, label: i >= rkN - 1 ? 'All done' : 'Step ' + (i + 1) + ' of ' + rkN });
 
   /* ---------- the steps ---------- */
@@ -402,31 +413,6 @@ export default function Log() {
       </>
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
-  } else if (runQ && runQ.open && runQ.keep == null) {
-    /* the question, before the embers: both answers are good ones, each saying plainly what it means, and the embers then
-       follow the answer */
-    const choice = rkChoice(snap.days, st, tk, runQ);
-    sky = 'ember';
-    title = 'Rekindle';
-    dots = rkDots(0);
-    body = (
-      <>
-        <T v="title" style={s.h} accessibilityRole="header">
-          {'Your ' + runQ.run + '-day run'}
-        </T>
-        <T style={s.center}>{choice.line}</T>
-        <View style={s.middle} accessible accessibilityLabel={runQ.run + ' days in a row'}>
-          <T v="big" style={s.runN}>
-            {String(runQ.run)}
-          </T>
-          <T tone="muted">days in a row</T>
-        </View>
-        <Dock>
-          <BigOption tone="sun" icon="flame" title="Keep it going" sub={choice.keep} onPress={() => chooseRun(true)} />
-          <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={choice.fresh} onPress={() => chooseRun(false)} />
-        </Dock>
-      </>
-    );
   } else if (step === 'rk0') {
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
     const honor = rkHonor(snap.days, st, tk, date);
@@ -563,7 +549,7 @@ export default function Log() {
     const cb = rkComebacks(snap.days, st, date);
     sky = 'sun';
     title = 'Rekindle';
-    dots = rkDots(rkN - 2);
+    dots = rkDots(rkN - (runQ ? 3 : 2));
     body = (
       <>
         <T v="eyebrow" tone="muted">
@@ -580,8 +566,13 @@ export default function Log() {
         </View>
         <Dock>
           <Button
-            label="See my quest"
+            label={runQ ? 'Next' : 'See my quest'}
             onPress={() => {
+              if (runQ) {
+                setRunAsked(true);
+                go('rkR');
+                return;
+              }
               setRkSeen(true);
               go('done');
             }}
@@ -589,6 +580,58 @@ export default function Log() {
         </Dock>
       </>
     );
+  } else if (step === 'rkR' && runQ) {
+    /* the run question, at the end: both answers are good ones, each saying plainly what it means. "Decide in the morning"
+       goes on to the quest with the run kept for now, and the sunrise check asks again. */
+    const choice = rkChoice(snap.days, st, tk, runQ);
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = rkDots(rkN - 2);
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          Your run
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {'Your ' + runQ.run + '-day run'}
+        </T>
+        <T style={s.center}>{choice.line}</T>
+        <View style={s.middle} accessible accessibilityLabel={runQ.run + ' days in a row'}>
+          <T v="big" style={s.runN}>
+            {String(runQ.run)}
+          </T>
+          <T tone="muted">days in a row</T>
+        </View>
+        <Dock>
+          <BigOption
+            tone="sun"
+            icon="flame"
+            title="Keep it going"
+            sub={choice.keep}
+            selected={runQ.keep == null ? null : runQ.keep}
+            onPress={() => chooseRun(true)}
+          />
+          <BigOption
+            tone="mint"
+            icon="sparkle"
+            title="Start fresh"
+            sub={choice.fresh}
+            selected={runQ.keep == null ? null : !runQ.keep}
+            onPress={() => chooseRun(false)}
+          />
+        </Dock>
+      </>
+    );
+    footer =
+      runQ.keep == null ? (
+        <Link
+          label="Decide in the morning"
+          onPress={() => {
+            setRkSeen(true);
+            go('done');
+          }}
+        />
+      ) : null;
   } else if (step === 'rkl') {
     sky = 'sun';
     title = 'Rekindle';

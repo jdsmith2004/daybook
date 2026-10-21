@@ -2,7 +2,7 @@
    sun on the first SOS screen. */
 import { breathPhase, PATTERNS, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { BIG_MAX, Text } from '@/components/text';
 
@@ -274,6 +274,15 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
   }, [done]);
   const still = useReducedMotion();
   const clock = useBreathClock(sec, on);
+  /* a screen reader hears each turn of the breath: the words are a live region (Android and the web), and iOS, which has
+     no live regions, is told each one */
+  const say = PH_TXT[ph.k] + (breaths && done < breaths ? '. Breath ' + (done + 1) + ' of ' + breaths : breaths ? '. Well done' : '');
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || !on) return;
+    AccessibilityInfo.isScreenReaderEnabled()
+      .then((yes) => yes && AccessibilityInfo.announceForAccessibility(say))
+      .catch(() => undefined);
+  }, [say, on]);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   /* the biggest sun that fits under the words, leaving room for the line above it */
   const d = box ? Math.max(0, Math.min(box.w * 0.8, 330, (box.h + EDGE - ROW - GAP) / HI)) : 0;
@@ -355,15 +364,18 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
       {/* the words for this breath, just above the sun at its highest */}
       <View
         style={[s.ph, box && sun ? { position: 'absolute', left: 0, right: 0, top: Math.max(0, box.h + EDGE - HI * d - GAP - ROW) } : null]}
-        accessibilityLiveRegion="polite">
+        accessible={Platform.OS !== 'web'}
+        accessibilityLabel={Platform.OS !== 'web' ? say : undefined}
+        accessibilityLiveRegion="polite"
+        aria-live="polite">
         <Text maxFontSizeMultiplier={ON_ART} style={[s.phase, { color: c.ink }]}>
           {PH_TXT[ph.k]}
         </Text>
         <Text
           maxFontSizeMultiplier={ON_ART}
           style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no">
+          accessibilityElementsHidden={!breaths}
+          importantForAccessibility={breaths ? 'auto' : 'no'}>
           {breaths ? (done < breaths ? 'Breath ' + (done + 1) + ' of ' + breaths : 'Well done') : left > 0 ? fmtMS(left * 1000) : 'Keep going'}
         </Text>
       </View>

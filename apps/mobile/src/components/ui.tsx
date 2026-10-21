@@ -71,12 +71,13 @@ export function Button({
   );
 }
 
-export function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+/** a small choice. role radio: one of a few answers inside a radiogroup (it reads as checked, not selected) */
+export function Chip({ label, on, onPress, role }: { label: string; on: boolean; onPress: () => void; role?: 'radio' }) {
   const c = useTheme();
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
+      accessibilityRole={role || 'button'}
+      accessibilityState={role ? { checked: on } : { selected: on }}
       onPress={onPress}
       style={({ pressed }) => [styles.chip, { backgroundColor: on ? c.accent : c.surface, borderColor: on ? c.accent : c.line, opacity: pressed ? 0.85 : 1 }]}>
       <Text style={[styles.chipText, { color: on ? c.accentInk : c.ink }]}>{label}</Text>

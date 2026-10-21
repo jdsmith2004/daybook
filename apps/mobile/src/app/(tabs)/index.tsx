@@ -7,6 +7,7 @@ import {
   awayStart,
   markOpen,
   tipAsk,
+  urLastAt,
   tipButton,
   autoCount,
   autoStep,
@@ -136,7 +137,7 @@ export default function Today() {
   /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
   const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
-  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL);
+  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   const sub = (
     <>
       {be ? (

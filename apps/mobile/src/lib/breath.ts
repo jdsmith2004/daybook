@@ -70,15 +70,21 @@ export function useBreathClock(sec0: number, on = true) {
   return t;
 }
 
-/** the same clock as a number on the JavaScript side, every frame, for a shape that redraws its outline (a morph) */
+/** the same clock as a number on the JavaScript side, about 30 times a second (like useClock in components/shapes), for a
+    shape that redraws its outline (a morph): every redraw is a new path and a layout, so it does not run every frame */
 export function useBreathSeconds(on = true) {
   const [t, setT] = useState(0);
   useEffect(() => {
     if (!on) return;
     const t0 = Date.now();
     let raf = 0;
+    let last = 0;
     const tick = () => {
-      setT((Date.now() - t0) / 1000);
+      const now = Date.now();
+      if (now - last > 32) {
+        last = now;
+        setT((now - t0) / 1000);
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

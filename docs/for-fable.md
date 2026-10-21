@@ -28,7 +28,24 @@ severity, each with the file and line, and nothing changed without asking.
 
 Suggested: Fable at high effort, one run, the files above attached.
 
-## 2. The SOS tools' shapes and motion (open, October 21, 2026)
+## 2. The SOS tools' shapes and motion: done (October 21, 2026)
+
+Fable read orb.tsx, lib/breath.ts, lib/m3-shapes.ts, shapes.tsx, motion.ts, timer.tsx and the tool files, spot-checked
+the shape port against androidx (RoundedCorner, the cut sharing between corners, star, rectangle, circle, customPolygon
+with mirroring, normalized: all match; the arc is split into quarter turns where androidx draws one cubic, and the bounds
+are measured on the curve where androidx uses the control points, so shapes fill their box by a hair more), and measured
+the plain web build in Chromium at phone size, light and dark: the dots were sampled ten times a second over a full
+breath (no dot moved more than 15 points in a tenth of a second, the ring lands at full size as the words change, the
+cluster rests at the bottom), the ids were checked for collisions (none), the console for errors (none), and Reduce
+Motion (a still ring, 32 of 32 dots still). Nothing in the breath was broken on the web, and nothing was found by reading
+that would break on iOS or Android. Fixed and deployed: the "How is it now?" answers now sit in a Dock at the bottom
+(they were in the top third); the dark-mode glow behind the breath is a paler, thinner gold (gold at strength over the
+dark blue mixed to brown); the small breath in Get curious redraws its morphing outline about 30 times a second instead
+of every frame (it was a new path and a layout on every frame, on the JavaScript thread); a stale comment in orb.tsx.
+Not verified, since nobody could run it on a phone here: how heavy 32 shadowed dots are on a mid-range Android, and the
+`boxShadow` on each dot (New Architecture only; outset shadows need Android 9 or later). Noted, not changed: the dark
+palette's `sunSoft` is a dark olive, so the Get curious breath and Surprise's spinning faces read as brown at night; the
+breath clock re-registers its frame callback on every render (ten a second), which is wasteful but harmless.
 
 The brief:
 

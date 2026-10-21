@@ -411,9 +411,7 @@ export default function Sos() {
         <Icon name="next" size={24} color={c.accentInk} />
       </Pressable>
       {/* for a time and a place already decided: talk it through, without the tools first (the sun keeps breathing) */}
-      <Pressable accessibilityRole="button" onPress={talk} hitSlop={6} style={s.plan}>
-        <Text style={[s.planT, { color: c.accentText }]}>Already decided? Talk it through</Text>
-      </Pressable>
+      <TalkLink onPress={talk} />
     </>
   );
 
@@ -451,6 +449,16 @@ export default function Sos() {
 }
 
 /* ---------- the parts ---------- */
+/* its own component, so it reads the sheet's colors (the sheet is night-dark even in a light theme) */
+function TalkLink({ onPress }: { onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={6} style={s.plan}>
+      <Text style={[s.planT, { color: c.accentText }]}>Already decided? Talk it through</Text>
+    </Pressable>
+  );
+}
+
 function Lab({ text, aside }: { text: string; aside?: string }) {
   const c = useTheme();
   return (

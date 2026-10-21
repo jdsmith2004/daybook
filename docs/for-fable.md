@@ -245,3 +245,10 @@ no code; commit only the report.
 ```
 
 Suggested next: Opus at medium for changes 1, 2, 4 to 10 and bugs 1 and 3 to 11; high for change 3 (bug 2).
+
+**Done (October 21, 2026, Opus high):** every change and bug above, with the owner's answers to the open questions: the run
+question at the end of Rekindle (kept for now if closed, asked again at the sunrise check); points from Talk it through
+show on Today, not on its screens; the tip ask waits 3 hours after any SOS or slip; and a quiet "Already decided? Talk it
+through" on the first SOS screen. The research cards are reachable from "Read the research" on Talk it through's short
+page; no new lessons. The "stopped caring" path went from 16 taps to 11 (the brief said about 8; the one-liner page and the
+"why" page were kept). Open question 6 (Go to bed before setup) was left as it is.

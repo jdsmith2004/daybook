@@ -21,7 +21,7 @@ import {
   removeEvent,
   rkAsk,
   rkEmbers,
-  rkFresh,
+  rkChoice,
   rkHonor,
   rkKeep,
   rkLightLine,
@@ -403,7 +403,9 @@ export default function Log() {
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
   } else if (runQ && runQ.open && runQ.keep == null) {
-    /* the question, before the embers: both answers are good ones, and the embers then follow the answer */
+    /* the question, before the embers: both answers are good ones, each saying plainly what it means, and the embers then
+       follow the answer */
+    const choice = rkChoice(snap.days, st, tk, runQ);
     sky = 'ember';
     title = 'Rekindle';
     dots = rkDots(0);
@@ -412,7 +414,7 @@ export default function Log() {
         <T v="title" style={s.h} accessibilityRole="header">
           {'Your ' + runQ.run + '-day run'}
         </T>
-        <T style={s.center}>Both are good answers. What you built stays yours either way.</T>
+        <T style={s.center}>{choice.line}</T>
         <View style={s.middle} accessible accessibilityLabel={runQ.run + ' days in a row'}>
           <T v="big" style={s.runN}>
             {String(runQ.run)}
@@ -420,14 +422,8 @@ export default function Log() {
           <T tone="muted">days in a row</T>
         </View>
         <Dock>
-          <BigOption
-            tone="sun"
-            icon="flame"
-            title="Keep it going"
-            sub={'The Rekindle quest saves it, any time until ' + runQ.until + ' night.'}
-            onPress={() => chooseRun(true)}
-          />
-          <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={rkFresh(snap.days, snap.settings!, tk, runQ).b} onPress={() => chooseRun(false)} />
+          <BigOption tone="sun" icon="flame" title="Keep it going" sub={choice.keep} onPress={() => chooseRun(true)} />
+          <BigOption tone="mint" icon="sparkle" title="Start fresh" sub={choice.fresh} onPress={() => chooseRun(false)} />
         </Dock>
       </>
     );

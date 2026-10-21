@@ -110,7 +110,7 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
         </View>
       </View>
       {k.why && !(ask && ask.keep !== true) ? <T>{k.why}</T> : null}
-      {ask ? <RunChoice snap={snap} tk={tk} a={ask} /> : null}
+      {ask ? <RunChoice snap={snap} tk={tk} a={ask} sun={sun} /> : null}
       {k.sunrise ? <Button label="Start my sunrise check" icon="sunrise" onPress={() => router.push('/sunrise')} /> : null}
       {k.missions.length ? <Missions list={k.missions} onAction={(_m, a) => act(a, r.k)} /> : null}
       {k.quote ? (
@@ -143,8 +143,10 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
 
 /* the answer to "keep the run going, or start fresh?", while it can still change: unanswered (the app closed in the middle of the
    slip's Rekindle), the same question and two choices; answered, which one, and a quiet link to the other */
-function RunChoice({ snap, tk, a }: { snap: Snapshot; tk: string; a: RkAsk }) {
+function RunChoice({ snap, tk, a, sun }: { snap: Snapshot; tk: string; a: RkAsk; sun?: boolean }) {
   const { update } = useStore();
+  /* the morning-after card keeps its light sunrise colors in either theme, so its words do too */
+  const lit = sun ? { ink: '#2A2350', muted: '#625A85', link: '#4A33C2' } : null;
   const choose = (keep: boolean) => {
     update((s0) => {
       const d = s0.settings ? rkKeep(s0.days, s0.settings, tk, a.k, a.evId, keep) : null;
@@ -155,7 +157,9 @@ function RunChoice({ snap, tk, a }: { snap: Snapshot; tk: string; a: RkAsk }) {
   if (a.keep == null) {
     return (
       <View style={{ gap: 10 }}>
-        <T v="label">{'Keep your ' + a.run + '-day run going, or start fresh? Both are good answers.'}</T>
+        <T v="label" style={lit ? { color: lit.ink } : undefined}>
+          {'Keep your ' + a.run + '-day run going, or start fresh? Both are good answers.'}
+        </T>
         <BigOption
           tone="sun"
           icon="flame"
@@ -170,11 +174,11 @@ function RunChoice({ snap, tk, a }: { snap: Snapshot; tk: string; a: RkAsk }) {
   const f = a.keep ? null : rkFresh(snap.days, snap.settings!, tk, a);
   return (
     <View style={{ gap: 2 }}>
-      <T v="small" tone="muted">
+      <T v="small" tone="muted" style={lit ? { color: lit.muted } : undefined}>
         {f ? 'You chose to start fresh. ' + f.b + ' ' + f.rest : 'You chose to keep it going.'}
       </T>
       <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
-        <Link label={a.keep ? 'Start fresh instead' : 'Keep my run going instead'} onPress={() => choose(!a.keep)} />
+        <Link label={a.keep ? 'Start fresh instead' : 'Keep my run going instead'} color={lit?.link} onPress={() => choose(!a.keep)} />
       </View>
     </View>
   );

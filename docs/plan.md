@@ -1504,3 +1504,11 @@ web` and a look at setup, a slip after a 7-day run (both answers), Today in the 
 switch note, light and dark. Before merging, set `RUN_ASK_FROM` in `core.js` to the day this reaches `main` (A1 set it to
 2026-10-22): slips on earlier days keep the old rule, so a short run someone already saved is never taken away. Merge to
 `main` with `[deploy]`.
+
+### Done (2026-10-21)
+
+A1 to A5 are built and on `main`. `RUN_ASK_FROM` stays 2026-10-22, the day after the merge, so no slip logged under the
+old app (where a short run could be saved) is judged by the new rule. Found and fixed on the way: the hard-hours card
+said "That makes 0 times" until today was recorded, and on the morning-after card in dark mode the start-fresh line and
+its link were faint. Left as decided: a walk-through after setup never changes how days count (only the log and
+Settings do), and the switch to counting days waits until Day 1.

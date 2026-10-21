@@ -117,6 +117,23 @@ describe('two devices of one person', () => {
     }
   });
 
+  it('keep the run or start fresh: the answer on a slip goes across, and the later change wins', async () => {
+    const k = '2026-10-15';
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, days: core.addEvent(s.days, k, 'slipped', '22:00', { id: 's1', keep: true }, 100).days }), 100);
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(b.snap.days[k].events[0].keep).toBe(true);
+    b.change((s) => ({ ...s, days: core.patchEvent(s.days, k, 's1', { keep: false }, 300) }), 300);
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    for (const d of [a, b]) expect(d.snap.days[k].events[0].keep).toBe(false);
+  });
+
   it('a deleted day stays deleted, and an older copy does not bring it back', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

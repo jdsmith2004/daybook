@@ -8,6 +8,7 @@ import {
   markOpen,
   tipAsk,
   tipButton,
+  autoCount,
   autoStep,
   startFromLog,
   LESSONS,
@@ -22,6 +23,7 @@ import {
   graduate,
   p2,
   phaseLabel,
+  shouldAutoCount,
   shouldAutoStep,
   todayMeasure,
 } from '@daybook/core';
@@ -63,10 +65,14 @@ export default function Today() {
   const account = useAccount();
   const sync = useSync();
 
-  /* a rough stretch switches counting to step down by itself, once, with a note (legacy cleanAutoCheck) */
+  /* counting switches by itself, both ways, with a note each time (Settings, "Switch for me"): a rough stretch moves counting
+     days to step down (legacy cleanAutoCheck), and once the stretches get long, step down moves to counting days. Each
+     switch holds for two weeks, so it never flips back and forth. */
   useEffect(() => {
-    if (ready && st && shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
-  }, [ready, st, snap.days, tk, apply]);
+    if (!ready || !st) return;
+    if (shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
+    else if (shouldAutoCount(snap.days, st, tk, now)) apply(autoCount(st, tk));
+  }, [ready, st, snap.days, tk, now, apply]);
 
   /* the log starts with the first log: blank days before it are not counted, so the start (and a Day 1 before it) moves
      there, once, with a note. Not while an account is still bringing the log in, when the first log may not be here yet. */

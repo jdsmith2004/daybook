@@ -152,7 +152,20 @@ export function AddOwn({ kind, onSave, onCancel }: { kind: 'trig' | 'did'; onSav
 }
 
 /** a quiet link. hidden: keeps its room but cannot be seen or tapped, so what sits above it does not jump when it goes */
-export function Link({ label, onPress, tone = 'accentText', hidden }: { label: string; onPress: () => void; tone?: keyof Palette; hidden?: boolean }) {
+export function Link({
+  label,
+  onPress,
+  tone = 'accentText',
+  color,
+  hidden,
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: keyof Palette;
+  /** a fixed color, for a card that keeps its own light colors in either theme */
+  color?: string;
+  hidden?: boolean;
+}) {
   const c = useTheme();
   if (hidden)
     return (
@@ -162,7 +175,7 @@ export function Link({ label, onPress, tone = 'accentText', hidden }: { label: s
     );
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => [s.link, pressed && { opacity: 0.7 }]}>
-      <Text style={[s.linkT, { color: c[tone] as string }]}>{label}</Text>
+      <Text style={[s.linkT, { color: color || (c[tone] as string) }]}>{label}</Text>
     </Pressable>
   );
 }

@@ -1430,3 +1430,85 @@ What the owner saw on the iPhone build, and what changes:
    From SOS a quiet "Back to the tools" is always there.
 8. **A glitch pass** over every tool on the iPhone build, and **standards** for tools written down (docs/design-standards.md,
    pointed to from CLAUDE.md), so new tools and any later use of these patterns across the app follow the same rules.
+
+## Counting that adapts, hours after a slip, and keeping a run (the owner, October 21, 2026)
+
+What the owner asked for:
+
+- **Step down and counting days switch by themselves, both ways.** Setup does not ask which one. How often the person
+  says they struggle picks the start, and the log moves them after that.
+- **Hours after a loss.** Right after a slip, Today shows how long it has been since, in hours, because a growing number
+  of hours is more motivating than a run that just ended.
+- **Keep the run, or start fresh: their choice, every time.** When a slip ends a run of 7 days or more, Daybook asks
+  whether to keep the run going (the Rekindle quest saves it, as today) or start fresh. Circumstances change, so it asks
+  at every such slip, and the answer can be changed while the run can still be saved.
+
+Decided with the owner: the soft path is the Rekindle save; ask at every slip that ends a run of 7 days or more; a run
+shorter than 7 days simply ends (the hours since the slip become the number); setup no longer offers "Step down first"
+or "Cut way back first", and Gentle counting stays only as a quiet choice in Settings (anyone on it keeps it).
+
+What holds, from CLAUDE.md: nothing earned is taken away. Today's main measure (no-slip days in a window) is unchanged,
+the longest run stays on record, the slip stays in the log, and Rekindle's care (missions, sunrise, points, badge) is
+there whether the run is kept or not. Only the current run is what the person chooses about.
+
+### Steps (each one commit on the branch `counting-adapts`; each marked with its effort)
+
+**A1. Keep or start fresh, in core.** _Effort: high (the run, earned things, sync)._
+
+- A slip that ends a run of `RUN_ASK = 7` days or more, and is the first slip in 7 days (today's `rkFullDays`), carries
+  the person's answer on the slip entry: `keep: true` (keep the run going), `keep: false` (start fresh), or no answer
+  yet. The field survives normalization, export and import, and sync merging (newest edit of the entry wins, as for
+  other entry fields).
+- `runLedger`: a slip day can be saved only when the run before it was `RUN_ASK` days or more and `keep !== false`.
+  With `keep: false` the run ends on that day (the slip day is a plain slip). No answer yet behaves as today: the run
+  waits for the quest until `RK_DAYS` after the slip. A run shorter than `RUN_ASK` ends at the slip.
+- Actions: `rkKeep(days, k, evId, keep, now)` sets or changes the answer while the save window is open; changing it
+  back to keep reopens the wait if the window is still open, and a run already saved stays saved.
+- The words that promise a save (`rkEmbers`, `rkLightLine`, `rkQuest`, `rkCard`, `rkEnded`, `srEnd`, `runChips`) follow
+  the answer: "start fresh" never says "your run waits".
+- Golden fixtures: where a run under 7 days was saved, the expected values change by hand in this commit, with why in
+  the message. New unit tests for the question, both answers, changing the answer, the 7-day edge, a second slip in the
+  week, sync merge of the field.
+
+**A2. The question on screen.** _Effort: medium (screens and words)._
+
+- In the slip flow (`app/log.tsx`, the first Rekindle step), when core says the slip ends a run of 7 days or more: the
+  question at the top ("Your 47-day run" and one line), two big choices low on the screen: "Keep it going" (the quest
+  saves it, by the weekday) and "Start fresh" ("Your 47 days stay your longest run"). Then the quest as today.
+- While the answer can still change (the save window), Today's Rekindle card says which was picked with a quiet link
+  to change it. Unanswered (the app closed mid-flow), the card asks the same question.
+- Words: no contractions, hopeful, never shame; both answers are good answers.
+
+**A3. Hours after a slip.** _Effort: medium (a small rule and Today's number)._
+
+- `heroNumber` while counting days: for 72 hours after the latest slip, unless that slip's run was kept (saved or
+  waiting with keep), the number is the time since the slip, in hours ("14 hours since your last slip"), with the
+  window measure as its chip ("6 of the last 7 days"), so what was earned stays in view. After 72 hours, or when a new
+  run passes it, back to the window measure. Step down already counts in hours and is unchanged.
+- Tests in `test/hero.test.ts`.
+
+**A4. Counting switches by itself, both ways.** _Effort: high (counting mode, graduation award)._
+
+- Setup: the goals no longer include "Step down first" or "Cut way back first"; the mode comes from how often:
+  about once a day or more (`f3`, `f4`) starts in step down, anything less starts counting days. Gentle is never set by
+  setup. A walk-through after setup never changes a mode the person picked in Settings.
+- Step down to counting days: when `stepView` says ready, Daybook switches by itself (the same as "Start counting days"
+  today, `stepGrad` stamped, so its award is kept), and Today shows a one-time note in place of the button.
+- Counting days to step down: unchanged (`shouldAutoStep`, a rough week), with the 14-day hold after any switch so it
+  never flips back and forth.
+- Settings: "Switch for me" covers both directions ("Daybook moves you between step down and counting days as your log
+  changes"); "Leave it" keeps whatever the person picked. The three manual chips stay.
+
+**A5. Check and ship.** _Effort: low._ `npm run format`, `npm run typecheck`, `npm test`, `npx expo export --platform
+web` and a look at setup, a slip after a 7-day run (both answers), Today in the first hours after a slip, and the
+switch note, light and dark. Before merging, set `RUN_ASK_FROM` in `core.js` to the day this reaches `main` (A1 set it to
+2026-10-22): slips on earlier days keep the old rule, so a short run someone already saved is never taken away. Merge to
+`main` with `[deploy]`.
+
+### Done (2026-10-21)
+
+A1 to A5 are built and on `main`. `RUN_ASK_FROM` stays 2026-10-22, the day after the merge, so no slip logged under the
+old app (where a short run could be saved) is judged by the new rule. Found and fixed on the way: the hard-hours card
+said "That makes 0 times" until today was recorded, and on the morning-after card in dark mode the start-fresh line and
+its link were faint. Left as decided: a walk-through after setup never changes how days count (only the log and
+Settings do), and the switch to counting days waits until Day 1.

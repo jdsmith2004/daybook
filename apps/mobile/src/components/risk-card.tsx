@@ -35,7 +35,8 @@ export function RiskCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
   const startH = r.win.label.split(' to ')[0];
   const at = startH.replace(/^(\d+)$/, '$1 ' + (r.win.start < 12 ? 'AM' : 'PM'));
 
-  /* afterwards, held */
+  /* afterwards, held. Today is recorded a moment after this shows (Today's keepHard), so it counts from the start. */
+  const held = hardHeld(snap.days) + (snap.days[tk]?.p?.hw == null ? 1 : 0);
   if (r.phase === 'after')
     return (
       <Appear by={10} style={[s.card, { backgroundColor: c.mintSoft, borderColor: c.mint, shadowColor: c.lip }]}>
@@ -49,7 +50,7 @@ export function RiskCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
           </View>
         </View>
         <T>
-          Your hardest hours, held. That makes {hardHeld(snap.days)} {hardHeld(snap.days) === 1 ? 'time' : 'times'}, and every one stays.
+          Your hardest hours, held. That makes {held} {held === 1 ? 'time' : 'times'}, and every one stays.
         </T>
       </Appear>
     );

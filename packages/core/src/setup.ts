@@ -65,20 +65,29 @@ export interface SetupAnswers {
   [k: string]: unknown;
 }
 
-/** the goal the setup suggests (legacy obSuggest). About once a day or more, for years or after many tries:
-    a clean run is a hard first goal, so step down first. "Quit for good" starts tomorrow, on a first try too: someone ready
-    to quit tonight is not told to wait a week (the owner, October 18). The tracking week is for someone who wants to
-    understand the pattern first, or did not say. */
+/** the goal the setup suggests (legacy obSuggest). "Quit for good" starts tomorrow, on a first try too: someone ready to quit
+    tonight is not told to wait a week (the owner, October 18). The tracking week is for someone who wants to understand the
+    pattern first, or did not say. How days count is not a goal any more (obMode): "Step down first" and "Cut way back first"
+    are gone, so "Use it a lot less" gets the same start as no answer (the owner, October 21). */
 export function obSuggest(a: SetupAnswers): string {
   if (a.aim === 'learn') return 'week';
-  if ((a.freq === 'f3' || a.freq === 'f4') && (a.years === 'y2' || a.years === 'y3' || a.tried === 't2')) return 'step';
   if (a.aim === 'nights') return 'nights';
-  if (a.aim === 'less') return 'less';
   if (a.aim === 'quit') return 'now';
   return (a.when || []).indexOf('late') >= 0 ? 'nights' : 'week';
 }
 
+/** how days count from the start, from how often the person said it happens: about once a day or more starts in step down
+    (a clean run is a hard first goal then, and Daybook moves them to counting days once their stretches get long); anything
+    less, or no answer, counts days strictly. Setup never sets gentle counting; it stays a quiet choice in Settings. */
+export const obMode = (a: SetupAnswers): CountMode => (a.freq === 'f3' || a.freq === 'f4' ? 'step' : 'strict');
+/** the counting the plan gives: a new person gets obMode. A walk-through keeps the counting the person has: after setup, only
+    the log (switching, both ways) and the person in Settings move it, so a walk-through never undoes a choice made there. */
+export const obPlanMode = (a: SetupAnswers, st: Settings | null): CountMode => (st ? st.cleanMode : obMode(a));
+
 export type Goal = (typeof OB_GOALS)[number];
+/** the goals setup offers: every legacy goal but the two that were about counting ("Step down first", "Cut way back first").
+    A walk-through by someone who picked one of those keeps the counting it gave them. */
+const SETUP_GOALS: Goal[] = OB_GOALS.filter((g) => g.id !== 'step' && g.id !== 'less');
 export const obDate = (k: DayKey | null | undefined) => (k ? fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' }) : 'not set');
 export const obCount = (m: CountMode | string) =>
   m === 'gentle'
@@ -91,17 +100,13 @@ export const obCount = (m: CountMode | string) =>
 export const obStarted = (st: Settings | null, tk: DayKey) => !!(st && st.day1 && st.day1 <= tk);
 /** the goals on offer. Once counting has started they keep the Day 1 the person has, and the tracking week is behind them. */
 export function obGoals(st: Settings | null, tk: DayKey): Goal[] {
-  if (!obStarted(st, tk)) return OB_GOALS;
+  if (!obStarted(st, tk)) return SETUP_GOALS;
   const d = obDate(st!.day1);
-  return OB_GOALS.filter((g) => g.id !== 'week').map((g) => ({
+  return SETUP_GOALS.filter((g) => g.id !== 'week').map((g) => ({
     ...g,
     ...(g.id === 'now'
       ? { t: 'Quit, keep counting', s: 'Day 1 stays ' + d + '.', goal: 'Quit porn. Log honestly, slips included.' }
-      : g.id === 'nights'
-        ? { s: 'Screens off first. Day 1 stays ' + d + '.' }
-        : g.id === 'step'
-          ? { s: 'Longer stretches, fewer slips each week. Day 1 stays ' + d + '.' }
-          : { s: 'One slip is okay. Day 1 stays ' + d + '.' }),
+      : { s: 'Screens off first. Day 1 stays ' + d + '.' }),
   }));
 }
 export const obSug = (a: SetupAnswers, st: Settings | null, tk: DayKey) => {
@@ -413,21 +418,23 @@ export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObC
   const out: ObChange[] = [];
   const g = obGoal(a, st, tk);
   const d1 = obDay1(g, st, tk);
-  if (!st || g.goal !== cur.goal || g.mode !== cur.cleanMode || (d1 !== undefined && d1 !== cur.day1))
+  const mode = obPlanMode(a, st);
+  if (!st || g.goal !== cur.goal || (d1 !== undefined && d1 !== cur.day1))
     out.push({
       k: 'goal',
       l: 'Goal',
       from: cur.goal,
       to: g.t,
       sub0: (cur.day1 ? 'Day 1: ' + obDate(cur.day1) + ' · ' : '') + obCount(cur.cleanMode),
-      sub1: 'Day 1: ' + obDate(d1 === undefined ? cur.day1 : d1) + ' · ' + obCount(g.mode),
+      sub1: 'Day 1: ' + obDate(d1 === undefined ? cur.day1 : d1) + ' · ' + obCount(mode),
       apply: (s) => {
         s.goal = g.goal;
-        if (s.cleanMode !== g.mode) {
-          if (g.mode === 'step') s.stepAt = d1 !== undefined ? d1 : tk;
-          s.cleanMode = g.mode;
+        /* only a new person's counting is set here (obPlanMode); step down starts on Day 1 */
+        if (s.cleanMode !== mode) {
+          if (mode === 'step') s.stepAt = d1 !== undefined ? d1 : tk;
+          s.cleanMode = mode;
           s.cleanNote = null;
-          s.cleanHold = g.mode === 'strict' ? tk : null;
+          s.cleanHold = null;
         }
         if (d1 !== undefined) s.day1 = d1;
       },
@@ -600,13 +607,21 @@ export function obTries(a: SetupAnswers): ObShow {
   };
 }
 
-/** under the goals: the Day 1 it sets, how days count, and why this one */
+/** under the goals: the Day 1 it sets, how days count, and why this one. In step down, "Why this one?" also says why step down,
+    and that Daybook moves the person to counting days once their stretches get long. "Quit, starting tomorrow" explains a
+    clear line, which is about strict counting, so in step down its place goes to the step-down why. */
 export function obGoalInfo(a: SetupAnswers, st: Settings | null, tk: DayKey) {
   const g = obGoal(a, st, tk);
+  const mode = obPlanMode(a, st);
   const W = OB_GWHY[g.id];
+  const S = OB_GWHY.step;
   const d1 = obDay1(g, st, tk);
   const d1t = d1 === undefined ? 'Day 1 stays ' + obDate(st && st.day1) + '.' : 'Day 1: ' + obDate(d1) + '.';
-  return { soft: '**' + d1t + '** ' + obCount(g.mode) + '.', more: { label: 'Why this one?', paras: ['**' + W.h + '** ' + W.p, W.f], keys: [W.src] } };
+  const ws = mode === 'step' ? (g.id === 'now' ? [S] : [W, S]) : [W];
+  return {
+    soft: '**' + d1t + '** ' + obCount(mode) + '.',
+    more: { label: 'Why this one?', paras: ws.flatMap((w) => ['**' + w.h + '** ' + w.p, w.f]), keys: ws.map((w) => w.src) },
+  };
 }
 
 /** the SOS page: what it would offer first for the hardest moment */
@@ -631,8 +646,6 @@ export function obFirst(goalId: string, so: string) {
       week: 'This week: log every urge, whatever happens. Tap SOS when one starts.',
       now: `Day 1 is tomorrow. Tonight: screens off at ${s}, phone out of the bedroom.`,
       nights: `Tonight: screens off at ${s}, phone charging outside the bedroom.`,
-      less: 'Day 1 is tomorrow. One slip or fewer still counts as a day.',
-      step: 'This week: log every slip, whatever happens. Then the step-down plan starts: longer stretches, fewer slips each week.',
     } as Record<string, string>
   )[goalId];
 }

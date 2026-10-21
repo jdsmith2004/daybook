@@ -16,6 +16,7 @@ import {
   rkChoice,
   rkFresh,
   rkKeep,
+  rkKeptForNow,
   slipCare,
   sortedEvents,
   sumDay,
@@ -25,6 +26,7 @@ import {
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -111,7 +113,7 @@ export function RekindleCard({ snap, tk }: { snap: Snapshot; tk: string }) {
         </View>
       </View>
       {k.why && !(ask && ask.keep !== true) ? <T>{k.why}</T> : null}
-      {ask ? <RunChoice snap={snap} tk={tk} a={ask} sun={sun} /> : null}
+      {ask ? ask.keep == null && !r.m3 ? <RunWait snap={snap} tk={tk} a={ask} sun={sun} /> : <RunChoice snap={snap} tk={tk} a={ask} sun={sun} /> : null}
       {k.sunrise ? <Button label="Start my sunrise check" icon="sunrise" onPress={() => router.push('/sunrise')} /> : null}
       {k.missions.length ? <Missions list={k.missions} onAction={(_m, a) => act(a, r.k)} /> : null}
       {k.quote ? (
@@ -175,6 +177,27 @@ function RunChoice({ snap, tk, a, sun }: { snap: Snapshot; tk: string; a: RkAsk;
       </T>
       <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
         <Link label={a.keep ? 'Start fresh instead' : 'Keep my run going instead'} color={lit?.link} onPress={() => choose(!a.keep)} />
+      </View>
+    </View>
+  );
+}
+
+/* the question not answered yet, before the sunrise check: the run is kept for now and the sunrise check asks, so the night
+   of a slip is not a night for deciding about a count. A quiet link opens the question for someone who wants to decide now. */
+function RunWait({ snap, tk, a, sun }: { snap: Snapshot; tk: string; a: RkAsk; sun?: boolean }) {
+  const [open, setOpen] = useState(false);
+  if (open) return <RunChoice snap={snap} tk={tk} a={a} sun={sun} />;
+  const w = rkKeptForNow(a, tk);
+  return (
+    <View style={{ gap: 2 }}>
+      <T style={sun ? { color: '#2A2350' } : undefined}>
+        <T v="label" style={sun ? { color: '#2A2350' } : undefined}>
+          {w.b}
+        </T>{' '}
+        {w.rest}
+      </T>
+      <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
+        <Link label="Decide now" color={sun ? '#4A33C2' : undefined} onPress={() => setOpen(true)} />
       </View>
     </View>
   );

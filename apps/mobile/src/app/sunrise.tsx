@@ -1,6 +1,6 @@
-/* The sunrise check: the morning after a slip (or a later morning, while the run still waits to be saved): last night's
-   screens (if not answered yet), what came just before, and one if-then plan. Finishing it is the third mission. Ported from
-   the legacy SCENES.sunrise. */
+/* The sunrise check: the morning after a slip (or a later morning, while the run still waits to be saved): keep the run
+   going or start fresh (when the slip's Rekindle closed before that answer), last night's screens (if not answered yet),
+   what came just before, and one if-then plan. Finishing it is the third mission. Ported from the legacy SCENES.sunrise. */
 import {
   addDays,
   addOption,
@@ -13,8 +13,11 @@ import {
   OPT_MAX,
   patchEvent,
   rkActive,
+  rkAsk,
+  rkChoice,
   rkComebackLine,
   rkComebacks,
+  rkKeep,
   rkMissions,
   rkOf,
   rkOpen,
@@ -52,7 +55,7 @@ export default function Sunrise() {
     const r = rkActive(snap.days, st, tk);
     if (!r || r.phase !== 'sun') return null;
     const { op } = rkOpen(snap.days, st, tk, r.k);
-    return { k: r.k, evId: r.ev.id, seq: srSteps(snap.days, r, tk), first: r.m3 ? 'end' : 'hi', run0: op ? op.run : 0 };
+    return { k: r.k, evId: r.ev.id, seq: srSteps(snap.days, r, tk, st), first: r.m3 ? 'end' : 'hi', run0: op ? op.run : 0 };
   });
   const [step, setStep] = useState(start?.first || 'hi');
   const [hist, setHist] = useState<string[]>([]);
@@ -147,6 +150,66 @@ export default function Sunrise() {
         </Dock>
       </>
     );
+  } else if (step === 'run') {
+    /* keep the run going, or start fresh: asked here when the slip's Rekindle closed before the answer. Until then the run
+       was kept for now. Skip keeps it that way; Today asks again once this check is done. */
+    const a = rkAsk(snap.days, st, tk, k);
+    const choice = a && a.open ? rkChoice(snap.days, st, tk, a) : null;
+    const pickRun = (keep: boolean) => {
+      if (!a || !a.open) return next();
+      update((s0) => {
+        const d = s0.settings ? rkKeep(s0.days, s0.settings, tk, a.k, a.evId, keep) : null;
+        return d ? { ...s0, days: d } : s0;
+      });
+      buzz('tap');
+      next();
+    };
+    body =
+      a && choice ? (
+        <>
+          <T v="eyebrow" tone="muted">
+            Your run
+          </T>
+          <T v="title" style={s.c} accessibilityRole="header">
+            {'Keep your ' + a.run + '-day run going, or start fresh?'}
+          </T>
+          <T style={s.c}>{choice.line}</T>
+          <View style={s.middle} accessible accessibilityLabel={a.run + ' days in a row'}>
+            <T v="big" style={s.runN}>
+              {String(a.run)}
+            </T>
+            <T tone="muted">days in a row</T>
+          </View>
+          <Dock>
+            <BigOption
+              tone="sun"
+              icon="flame"
+              title="Keep it going"
+              sub={choice.keep}
+              selected={a.keep == null ? null : a.keep}
+              onPress={() => pickRun(true)}
+            />
+            <BigOption
+              tone="mint"
+              icon="sparkle"
+              title="Start fresh"
+              sub={choice.fresh}
+              selected={a.keep == null ? null : !a.keep}
+              onPress={() => pickRun(false)}
+            />
+          </Dock>
+        </>
+      ) : (
+        <>
+          <T v="title" style={s.c} accessibilityRole="header">
+            {a && a.saved ? 'Your run is saved.' : 'Nothing to decide here now.'}
+          </T>
+          <Dock>
+            <Button label="Next" onPress={next} />
+          </Dock>
+        </>
+      );
+    footer = a && a.keep == null ? <Link label="Skip" onPress={next} /> : null;
   } else if (step === 'so') {
     /* last night: the slip's night the morning after, a later night after that */
     const ln = addDays(tk, -1);
@@ -331,4 +394,6 @@ const s = StyleSheet.create({
   opts: { width: '100%', gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   moon: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+  middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
+  runN: { fontSize: 84, lineHeight: 92 },
 });

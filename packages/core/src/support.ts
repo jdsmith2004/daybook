@@ -3,7 +3,7 @@
 
    The setup says so plainly near its end, with a tip button under it (like ScreenZen), and Today keeps a small Support
    button at its top, except in the four days after a slip. Today also asks once, at a good moment: a month in, in the daytime, and never in a hard one (no slip in the last four days,
-   which covers the Rekindle quest's three days). It never sits next to the account card, and waits a few days after that
+   which covers the Rekindle quest's three days), and never in the three hours after an SOS or a slip. It never sits next to the account card, and waits a few days after that
    card's "Not now", so two asks never come together. After the one ask, the link stays as a quiet row on More and a line
    under graduation. With no link set, nothing about tips shows anywhere. Checked by test/support.test.ts.
 
@@ -11,7 +11,8 @@
    the US alone while this link is in it. */
 import { changeSettings, type Change } from './actions';
 import type { AcctWhy } from './accounts';
-import { addDays, diffDays, eventsOf, isKey } from './legacy/core.js';
+import { addDays, diffDays, eventsOf, isKey, isTime, logicalKey } from './legacy/core.js';
+import { riskAt } from './risk';
 import type { DayKey, Days, Settings } from './types';
 
 /** where a tip goes. Empty: nothing about tips shows. */
@@ -30,11 +31,30 @@ export const TIP_CALM = 4;
 export const TIP_GAP = 3;
 /** Today asks only from this hour, and until before the second */
 export const TIP_HOURS: [number, number] = [9, 20];
+/** hours after an SOS or a slip before Today asks (the owner's choice, October 21, 2026) */
+export const TIP_QUIET = 3;
 
-/** whether Today asks for a tip now. acct: the account card's answer for today (accountAsk). */
-export function tipAsk(days: Days, st: Settings, tk: DayKey, hour: number, acct: AcctWhy | null, url = SUPPORT_URL): boolean {
+/** the moment just now: when an SOS was last open on this device (core urLastAt), and the time */
+export interface TipNear {
+  now: number;
+  sos: number | null;
+}
+
+/** whether an SOS or a slip was under TIP_QUIET hours ago */
+export function tipQuiet(days: Days, st: Settings, near: TipNear): boolean {
+  const from = near.now - TIP_QUIET * 3600_000;
+  if (near.sos != null && near.sos > from && near.sos <= near.now + 60_000) return true;
+  const k0 = addDays(logicalKey(near.now, st.rollover), -1);
+  return eventsOf(days, k0).some(
+    (e) => e.outcome === 'slipped' && isTime(e.time) && riskAt(e.key, +e.time.slice(0, 2), st.rollover, +e.time.slice(3, 5)) > from,
+  );
+}
+/** whether Today asks for a tip now. acct: the account card's answer for today (accountAsk). near: the time and the last
+    SOS, so the ask waits TIP_QUIET hours after an SOS or a slip. */
+export function tipAsk(days: Days, st: Settings, tk: DayKey, hour: number, acct: AcctWhy | null, url = SUPPORT_URL, near: TipNear | null = null): boolean {
   if (!url || isKey(st.tipAsk) || acct) return false;
   if (hour < TIP_HOURS[0] || hour >= TIP_HOURS[1]) return false;
+  if (near && tipQuiet(days, st, near)) return false;
   if (diffDays(tk, st.start) < TIP_AFTER) return false;
   if (isKey(st.acctNo) && diffDays(tk, st.acctNo as DayKey) < TIP_GAP) return false;
   return calm(days, tk);

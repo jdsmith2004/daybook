@@ -271,7 +271,7 @@ export function stepWeek(days: Days, st: Settings, v: StepView): { k: DayKey; l:
 export function stepOffer(days: Days, st: Settings, tk: DayKey): boolean {
   if (!st || st.cleanMode === 'step' || st.cleanNote || !st.day1 || tk < st.day1) return false;
   if (st.stepNo && tk < addDays(st.stepNo, 14)) return false;
-  if (st.cleanHold && tk < addDays(st.cleanHold, 14)) return false;
+  if (inCountHold(st, tk)) return false;
   const from = maxKey(st.start, addDays(tk, -6));
   const n = diffDays(tk, from) + 1;
   if (n < 5) return false;
@@ -280,12 +280,23 @@ export function stepOffer(days: Days, st: Settings, tk: DayKey): boolean {
   return sd >= 3;
 }
 
+/** the two weeks after a switch of counting (cleanHold), when Daybook does not switch by itself, so it never flips back and forth */
+export const inCountHold = (st: Settings, tk: DayKey) => !!st.cleanHold && tk < addDays(st.cleanHold, 14);
+
 /** whether Daybook should switch to step down by itself now (legacy cleanAutoCheck's test). The caller saves the change. */
 export function shouldAutoStep(days: Days, st: Settings, tk: DayKey): boolean {
   if (!st) return false;
   if (st.cleanMode === 'step' || st.cleanAuto === false) return false;
-  if (st.cleanHold && tk < addDays(st.cleanHold, 14)) return false;
+  if (inCountHold(st, tk)) return false;
   return roughPatch(days, st, tk);
+}
+
+/** whether Daybook should move step down to counting days by itself now: the stretches got long (stepView's ready), switching
+    is left to Daybook, counting has started, and the last switch was two weeks ago or more. The caller saves autoCount. */
+export function shouldAutoCount(days: Days, st: Settings, tk: DayKey, nowMs: number): boolean {
+  if (!st || st.cleanMode !== 'step' || st.cleanAuto === false) return false;
+  if (!st.day1 || tk < st.day1 || inCountHold(st, tk)) return false;
+  return stepView(days, st, nowMs).ready;
 }
 
 /** one entry in a list (legacy eventRow): the time, what happened, and the details in a line */

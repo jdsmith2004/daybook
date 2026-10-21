@@ -140,8 +140,11 @@ export interface Settings {
   seen: { badges: string[]; quests: string[]; level: number; full: DayKey | null; lad: number } | null;
   opts: { trig: { id: string; t: string; off?: true }[]; did: { id: string; t: string; off?: true }[] };
   cleanMode: CountMode;
+  /** switch for me: Daybook moves between step down and counting days as the log changes (false: leave it) */
   cleanAuto: boolean;
-  cleanNote: { on: DayKey; m: 'step' | 'gentle' } | null;
+  /** the note Today shows once after counting changed by itself: to step down ('step'), to counting days ('count'), or the
+      old gentle switch ('gentle') */
+  cleanNote: { on: DayKey; m: 'step' | 'count' | 'gentle' } | null;
   cleanHold: DayKey | null;
   stepAt: DayKey | null;
   stepNo: DayKey | null;

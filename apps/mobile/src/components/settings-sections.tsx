@@ -257,7 +257,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                 <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be
                 saved: finish the Rekindle quest within three days and your run keeps going.{'\n\n'}
                 <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and
-                fewer slips each week. When your stretch passes a week, or a week has one slip or none, Daybook offers to start counting days.
+                fewer slips each week. When your stretch passes a week, or a week has one slip or none, you are ready to count days, and Daybook moves you there
+                (or offers to, when switching is left to you).
               </>
             }>
             <Chips label="Counting">
@@ -266,10 +267,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               <Chip label="Step down" on={st.cleanMode === 'step'} onPress={() => apply(setCountMode(st, 'step', tk))} />
             </Chips>
           </Field>
-          <Field
-            label="Rough stretches"
-            hint="If slips land on most days of a week, Daybook switches to step down by itself and tells you. It never switches back unless you do.">
-            <Chips label="Rough stretches">
+          <Field label="Switching" hint="Daybook moves you between step down and counting days as your log changes, and tells you when it does.">
+            <Chips label="Switching">
               <Chip label="Switch for me" on={st.cleanAuto !== false} onPress={() => apply(setCleanAuto(st, true))} />
               <Chip label="Leave it" on={st.cleanAuto === false} onPress={() => apply(setCleanAuto(st, false))} />
             </Chips>

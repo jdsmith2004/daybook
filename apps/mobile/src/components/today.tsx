@@ -372,6 +372,21 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
       </Card>
     );
   }
+  if (st.cleanNote?.m === 'count') {
+    return (
+      <Card tone="note">
+        <T v="h2">Counting days now</T>
+        <T>Your stretches got long, so Daybook counts days now. Your run starts from your last slip.</T>
+        <T>The Stepped up badge is yours, and your points and badges come with you. If a week gets hard later, Daybook steps down with you again.</T>
+        <View style={s.actions}>
+          <Button label="Okay" onPress={() => apply(cleanOk(st))} />
+        </View>
+        <T v="small" tone="muted">
+          You can switch any time in Settings.
+        </T>
+      </Card>
+    );
+  }
   if (st.cleanNote) {
     return (
       <Card tone="note">

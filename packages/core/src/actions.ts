@@ -45,7 +45,8 @@ export function setCountMode(st: Settings, mode: string, tk: DayKey): Change {
   };
 }
 
-/** Settings: switch to step down by itself in a rough stretch */
+/** Settings: switching, both ways. On ("Switch for me"), Daybook moves to step down in a rough week and back to counting days
+    once the stretches get long, and tells the person each time. Off ("Leave it"), the mode stays as the person picked it. */
 export function setCleanAuto(st: Settings, on: boolean): Change {
   return { st: changeSettings(st, (s) => void (s.cleanAuto = on)) };
 }
@@ -98,13 +99,28 @@ export function cleanKeep(st: Settings, tk: DayKey): Change {
   };
 }
 
-/** the switch to step down that shouldAutoStep asks for (legacy cleanAutoCheck), with the note Today shows once */
+/** the switch to step down that shouldAutoStep asks for (legacy cleanAutoCheck), with the note Today shows once. It holds
+    for two weeks (cleanHold), so Daybook does not switch back by itself straight away. */
 export function autoStep(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
       s.cleanMode = 'step';
       s.stepAt = tk;
       s.cleanNote = { on: tk, m: 'step' };
+      s.cleanHold = tk;
+    }),
+  };
+}
+
+/** the switch to counting days that shouldAutoCount asks for: the same as "Start counting days" (stepGrad is stamped, so the
+    Stepped up badge is earned and kept), with the note Today shows once in place of the button */
+export function autoCount(st: Settings, tk: DayKey): Change {
+  return {
+    st: changeSettings(st, (s) => {
+      s.cleanMode = 'strict';
+      s.cleanHold = tk;
+      s.stepGrad = tk;
+      s.cleanNote = { on: tk, m: 'count' };
     }),
   };
 }
@@ -226,7 +242,7 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   [
     'step',
     'Stepping down',
-    'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When you are ready, Daybook offers to start counting days.',
+    'For when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and fewer slips each week. When your stretches get long, Daybook moves you to counting days.',
   ],
   [
     'track',

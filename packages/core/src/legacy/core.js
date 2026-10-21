@@ -309,7 +309,7 @@ function normSettings(s){
     stepAt: the day the step-down plan started. stepNo: the day its offer was turned down (it waits two weeks). stepGrad: the day it was finished. */
  o.cleanMode=o.cleanMode==='gentle'||o.cleanMode==='step'?o.cleanMode:'strict';
  o.cleanAuto=o.cleanAuto!==false;
- o.cleanNote=(o.cleanNote&&isKey(o.cleanNote.on))?{on:o.cleanNote.on,m:o.cleanNote.m==='step'?'step':'gentle'}:null;
+ o.cleanNote=(o.cleanNote&&isKey(o.cleanNote.on))?{on:o.cleanNote.on,m:o.cleanNote.m==='step'||o.cleanNote.m==='count'?o.cleanNote.m:'gentle'}:null;
  o.cleanHold=isKey(o.cleanHold)?o.cleanHold:null;
  o.stepAt=isKey(o.stepAt)?o.stepAt:null;
  o.stepNo=isKey(o.stepNo)?o.stepNo:null;
@@ -2684,7 +2684,7 @@ const OB_GWHY={
  week:{h:'Why a tracking week first?',p:'You cannot change a pattern you cannot see. For seven days you log what happens, with no rules and nothing to fail. Then you set Day 1 knowing your hard hours and what sets it off.',f:'In a review of 138 experiments, tracking progress helped people reach their goals, and it helped more when the progress was written down.',src:'harkin'},
  now:{h:'Why a clear line?',p:'A clear line works when you already know your pattern. If you slip, nothing resets: your points, level, and badges stay, and the next day counts again.',f:'Among people quitting smoking, those whose confidence dropped after a slip slipped again sooner. Protecting your confidence matters more than a perfect record.',src:'kirchner'},
  nights:{h:'Why nights first?',p:'Late at night you are tired, often alone, and holding a phone. Fix that hour first and the biggest fight gets smaller. You track for a week, then set Day 1.',f:'After a night without sleep, people’s reward systems overreacted to pleasant pictures. A tired brain makes any quick reward look bigger than it is.',src:'gujar'},
- step:{h:'Why step down?',p:'When it happens most days, a clean run is out of reach at first, and losing it every day or two wears you down. So you aim for longer stretches between slips, counted in hours at first, and fewer slips each week. When your stretch passes a week, Daybook offers to start counting days.',f:'For smoking, a review of 22 trials found that cutting down first and quitting all at once worked about equally well in the long run.',src:'lindson'},
+ step:{h:'Why step down?',p:'When it happens most days, a clean run is out of reach at first, and losing it every day or two wears you down. So you aim for longer stretches between slips, counted in hours at first, and fewer slips each week. When your stretches get long, Daybook moves you to counting days by itself.',f:'For smoking, a review of 22 trials found that cutting down first and quitting all at once worked about equally well in the long run.',src:'lindson'},
  less:{h:'Why cut back first?',p:'A goal you can keep builds confidence, and confidence carries you through the next hard moment. A day counts with one slip or fewer. Switch to strict counting in Settings when you are ready.',f:'Among people quitting smoking, those whose confidence dropped after a slip slipped again sooner. A goal you can keep protects it.',src:'kirchner'}
 };
 /* reasons offered on "What do you want your life to look like instead?", by what the person said it costs them */

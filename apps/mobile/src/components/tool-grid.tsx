@@ -51,10 +51,12 @@ export function ToolShape({ id, ic, size, iconSize, color, ink }: { id: string; 
   );
 }
 
-export function ToolGrid({ days, onPick, tags }: { days: Days; onPick: (id: string) => void; tags?: Record<string, string> }) {
+/** fresh: mark the tools not tried yet with "New" (Learn). SOS leaves it off: in the middle of an urge eleven badges are
+    noise, and its tags say what has worked instead. */
+export function ToolGrid({ days, onPick, tags, fresh = true }: { days: Days; onPick: (id: string) => void; tags?: Record<string, string>; fresh?: boolean }) {
   const c = useTheme();
   const tried = urTried(days);
-  const any = TOOLS.some((t) => tried[t.id]);
+  const any = fresh && TOOLS.some((t) => tried[t.id]);
   return (
     <View style={{ alignSelf: 'stretch', gap: 14 }}>
       {TOOL_GROUPS.map(([g, name]) => (

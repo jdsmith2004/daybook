@@ -29,6 +29,7 @@ import { CountUp } from '@/components/count-up';
 import { DoneMark } from '@/components/done-mark';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
+import { TalkLook, talkLookNow } from '@/components/talk-card';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -172,6 +173,8 @@ export default function Morning() {
     /* today's lesson, when it is part of today and not read yet */
     const lt = stopTiles(snap.days, st, tk, now).tiles.find((t) => t.k === 'lesson' && !t.done);
     const ls = lt ? lessonStop(snap.days, st, tk) : null;
+    /* a talk-through from last night waiting for its look back goes first; the lesson stays on Today */
+    const look = talkLookNow(snap, tk, now);
     body = (
       <>
         <DoneMark />
@@ -189,7 +192,9 @@ export default function Morning() {
           ))}
         </Appear>
         <Dock>
-          {ls ? (
+          {look ? (
+            <TalkLook d={look} />
+          ) : ls ? (
             <>
               <Appear delay={420} by={14} style={[s.lesson, { backgroundColor: c.surface, shadowColor: c.lip }]}>
                 <View style={[s.lessonIc, { backgroundColor: c.skySoft }]}>

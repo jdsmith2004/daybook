@@ -36,6 +36,100 @@ matters.
 picture of each day, so a change to one feature cannot quietly break another (the "Time to decide" and Rekindle bugs of
 October 21 only showed across days). Effort: medium.
 
+### Today, one moment at a time (the Fable review, October 22, 2026; the owner: do it)
+
+**The verdict.** One card at a time is the right shape for the top of Today, but on its own it is a half fix. Today is
+crowded because three systems each own "what to do next" (the Rekindle missions, the Next up band on the flame, the
+open tile in Your day: three "Start" buttons for the same two morning minutes), and because the game voice (points,
+"+5", levels, "1 of 3 lit") talks over the identity voice ("you came back"). Fix the owner of "next" and the voice, and
+the one-card rule follows. Keep every rule that counts progress; cut most of what displays it on Today.
+
+**What the pictures showed** (`docs/today-review/`, a made-up person: `before-*.png` the app today, `mock-*.png` a
+rough mock, not the app):
+
+- The morning after a slip on day 9 of quitting: the Rekindle card, then the flame with "TOWARD GRADUATION 7 of 90". The
+  gate is seven clean days in a row, which arrives on day 7 or 8 for anyone doing well, so the 90 shows up the morning
+  after their first slip. That is a big goal pushed early.
+- A calm day: "Lesson 5 · Start" on the flame band and again, bigger, in Your day. "+N points" four times on one screen.
+- Stepping down, the morning after a slip: nothing says a slip happened. The full Rekindle fires only for the first slip
+  in seven days, so the people who slip most often get the least care the next morning.
+
+**What decides the one card.** One pure function in core, `moment.ts`, takes the log and the clock and returns one
+card. First match wins:
+
+1. A pause in progress (the slim banner; it is live).
+2. In the hard hours now: SOS forward, plus "talk it through".
+3. The morning after a slip, until the sunrise check is done. In every mode, including step down, for every slip, not
+   only the first in a week.
+4. The day of a slip, after it: the care card, one small thing.
+5. A talk-through due: decide now, it passed, look back.
+6. Hard hours in the next two hours: the plan card.
+7. Days away not known: the fill-in row.
+8. The Sunday review, Sunday and Monday.
+9. One-time moments: first week done, Day 1 tell the safe person, a counting switch note, a paused reminder.
+10. A calm day: the day's next stop (last night, lesson, check-in, wind-down). Everything done: "All done. Rest well."
+    and the identity line.
+
+When two moments overlap, the second becomes the card as soon as the first is done, and a one-line "and one more" under
+the card names it. The asks (account, tip, counts) are never the card: they stay one at a time under Your day, with
+the rules they already have.
+
+**Always visible, in this order.** The date and the "who I am becoming" line. The moment card. SOS with "Already
+happened" and "Planning a slip?" under it (care is never locked; these are the log's doors). One standing row: a small
+flame, one number, one line, opening Milestones. Your day as plain rows; the open stop lives in the card above, never as
+a second tile with its own button.
+
+**The one number** holds what was earned and never drops to zero. Quitting: no-slip days in the last 7, and in the
+first week "6 of your first 7 days". Stepping down: this stretch, with the best beside it. For 72 hours after a
+run-ending slip, hours since it (the owner, October 21). The way to graduation stays off Today until 30 days hold, and
+lives in Milestones from day 7 as now.
+
+**One tap away, and where.** Level, points, badges and the forms: Milestones, from the flame row. The mode chip: More
+only. The days card and the step-down ruler: Journal, Days (already there). Today's entries: Journal, Days, today. The
+Sunday goal's "2 of 5 nights": the standing row's line, Monday to Saturday. The first-pattern line: a one-time calm-day
+moment, then Journal, Pattern.
+
+**Merge or cut, by CLAUDE.md's question.**
+
+- Points: keep the rules (the source of truth for levels; earned stays earned). Remove every "+N points" and the level
+  bar from Today. A number to chase is a cost.
+- Levels and badges: keep both, in Milestones. The flame's form name is the only level word on Today ("a Torch"). The
+  level-up celebration stays (the flame growing is the identity picture). Badge pop-ups become quiet toasts.
+- Weekly quests: already retired. Remove the quest card and quest celebrations from the app; the legacy rule stays so
+  points earned stay.
+- Rekindle missions: rebuild as roadmap move 3. Until then, take "Decide now" off Today: the run question belongs in
+  the sunrise check, where the owner put it.
+- Modes: keep all three rules (step down is real clinical practice). Cut the chip from Today. The auto-switch notes
+  stay as one-time moments.
+- Streak-like numbers: "best 56 h" and "longest run" hold what was earned and may stay in the standing row. "7 of 90"
+  moves as above.
+- Nudges: keep, as a low-priority moment.
+- Asks: keep the tip jar, the Support button at the top, and the rules. All three asks stay below Your day.
+
+**Risks and how they are met.** Two hard things at once: the "and one more" line and the promotion rule; the hard-hours
+card outranks everything but a live pause. The big flame sky leaves Today: the small flame row keeps it one tap from
+Milestones, where the form still grows. "Today so far" moves to Journal: the toast after logging and the standing row's
+"1 logged today" cover it. Showing or hiding is UI only, so nothing earned or synced changes; the graduation gate is
+display only (`ready` and the award stay). The sunrise check for every slip in every mode adds sunrise points for more
+people, which only adds.
+
+**Steps (each one commit; each marked with its effort):**
+
+1. **Medium.** Core `moment.ts`: the priority list as data with words and the action, plus tests across scripted days.
+2. **Medium.** Today rebuilt on it: header, the moment card, the SOS block, the standing row, Your day as rows, the asks
+   under it. Points chips, the level bar and the mode chip removed from Today.
+3. **Medium.** The pieces moved: entries to Journal, the Sunday goal line into the standing row, the mode label on
+   More, the small flame row opening Milestones.
+4. **Medium.** The graduation number on Today waits until 30 days hold; Milestones keeps the line from day 7. Tests in
+   `graduate.test.ts` and `hero.test.ts` updated.
+5. **Low.** The quest card and quest celebrations removed from the app; `core.js` untouched.
+6. **High.** Roadmap move 3: the sunrise check and the comeback flames for every slip in every mode, lighting themselves
+   from what the person really does, the run question inside the sunrise check and off Today. Points for the sunrise
+   check unchanged; nothing earned is taken away.
+7. **Medium.** The story-test harness: a scripted week of a made-up person walked through the real web app with a
+   picture per day (Playwright against `expo export --platform web`, the clock fixed with `page.clock`, the log seeded
+   into `localStorage` under `daybook:` keys; the review's pictures were made this way).
+
 ### Feedback and opt-in counts (the owner, October 22, 2026)
 
 The owner chose: **opt-in counts** (off until the person says yes), an **anonymous feedback box**, and four questions to

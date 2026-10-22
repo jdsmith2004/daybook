@@ -4,6 +4,8 @@ node_modules/
 # builds
 dist/
 apps/mobile/dist-shots/
+apps/mobile/dist-story/
+story-shots/
 web-build/
 *.tsbuildinfo
 

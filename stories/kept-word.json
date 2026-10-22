@@ -1,0 +1,63 @@
+{
+  "about": "Started Wednesday October 7, Day 1 Wednesday October 14: a calm week, a Sunday, a slip on Wednesday night, the morning after, and the comeback",
+  "settings": {
+    "start": "2026-10-07",
+    "day1": "2026-10-14",
+    "becoming": "I am someone who keeps my word to myself.",
+    "rollover": 4,
+    "screensOff": "23:00"
+  },
+  "never": ["Time to decide"],
+  "visits": [
+    {
+      "day": "2026-10-15",
+      "open": "10:00",
+      "what": "the first week is done",
+      "expect": "Your first week is done",
+      "after": [{ "settings": { "wk1": "2026-10-15" } }]
+    },
+    { "day": "2026-10-16", "open": "08:30", "what": "a calm morning", "expect": "Good morning", "after": [{ "morning": true }] },
+    {
+      "day": "2026-10-17",
+      "open": "22:30",
+      "what": "an urge ridden out, then the wind-down",
+      "before": [{ "morning": true }, { "rode": "21:40", "trigger": "Bored" }],
+      "expect": "Time to wind down"
+    },
+    { "day": "2026-10-18", "open": "11:00", "what": "Sunday", "before": [{ "morning": true }], "expect": "Your Sunday review" },
+    { "day": "2026-10-19", "open": "09:00", "what": "Monday, last week still open", "before": [{ "morning": true }], "expect": "review is still open" },
+    {
+      "day": "2026-10-20",
+      "open": "10:00",
+      "what": "a calm day",
+      "before": [{ "morning": true }],
+      "after": [{ "rode": "15:20" }],
+      "expect": "Lesson \\d+ of \\d+"
+    },
+    {
+      "day": "2026-10-21",
+      "open": "23:30",
+      "what": "the night of a slip",
+      "before": [{ "morning": true }, { "slip": "23:10", "trigger": "Stressed" }],
+      "tap": ["I did one small thing"],
+      "expect": "Logged\\. That took honesty"
+    },
+    { "day": "2026-10-22", "open": "08:00", "what": "the morning after", "after": [{ "sunrise": true, "keep": true }], "expect": "The morning after" },
+    {
+      "day": "2026-10-23",
+      "open": "10:00",
+      "what": "the comeback, noticed: a day with no slip lit the third flame, and the run is saved",
+      "before": [{ "morning": true }],
+      "expect": "Run saved\\. You came back",
+      "absent": ["After a slip", "run is waiting"]
+    },
+    {
+      "day": "2026-10-24",
+      "open": "10:00",
+      "what": "a calm day after",
+      "before": [{ "morning": true }],
+      "expect": "Lesson \\d+ of \\d+",
+      "absent": ["After a slip", "run is waiting", "Your comeback"]
+    }
+  ]
+}

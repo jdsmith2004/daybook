@@ -72,6 +72,7 @@ npm test                 # all tests (core golden tests run in America/Chicago t
 npm run typecheck
 npm run format           # Prettier over the whole repo (format:check is what CI runs)
 npm run icons            # app icons from the flame
+npm run story            # a scripted week of a made-up person, walked through the web app, a picture per day
 npm run build -w @daybook/api
 cd apps/mobile && npx expo start
 ```

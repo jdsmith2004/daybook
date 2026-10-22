@@ -1,0 +1,38 @@
+{
+  "about": "Slips on most days from the start, in step down since Wednesday October 14: a slip on Monday night, the morning after, a calmer stretch",
+  "settings": {
+    "start": "2026-10-07",
+    "day1": "2026-10-14",
+    "becoming": "I am someone who keeps my word to myself.",
+    "rollover": 4,
+    "screensOff": "23:00",
+    "cleanMode": "step",
+    "stepAt": "2026-10-14",
+    "wk1": "2026-10-14"
+  },
+  "history": {
+    "2026-10-07": [{ "slip": "22:40" }],
+    "2026-10-08": [{ "slip": "13:15" }],
+    "2026-10-10": [{ "slip": "23:50" }],
+    "2026-10-11": [{ "slip": "17:20" }],
+    "2026-10-12": [{ "slip": "21:05" }],
+    "2026-10-14": [{ "slip": "15:30" }, { "small": true }],
+    "2026-10-15": [{ "rode": "22:10" }],
+    "2026-10-16": [{ "slip": "00:40" }, { "small": true }],
+    "2026-10-17": [{ "slip": "19:45" }],
+    "2026-10-18": [{ "rode": "14:00" }]
+  },
+  "never": ["Time to decide"],
+  "visits": [
+    { "day": "2026-10-19", "open": "22:20", "what": "the night of a slip, in the hard hours", "before": [{ "slip": "21:50" }], "expect": "Your hard hours" },
+    { "day": "2026-10-20", "open": "08:15", "what": "the morning after: the sunrise check, in step down too", "expect": "The morning after" },
+    {
+      "day": "2026-10-21",
+      "open": "12:30",
+      "what": "an urge ridden out",
+      "before": [{ "morning": true }, { "rode": "11:45", "trigger": "Stressed" }],
+      "expect": "Lesson \\d+ of \\d+"
+    },
+    { "day": "2026-10-22", "open": "09:00", "what": "a calm day", "before": [{ "morning": true }], "expect": "Lesson \\d+ of \\d+" }
+  ]
+}

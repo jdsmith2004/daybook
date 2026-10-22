@@ -1,9 +1,10 @@
 /* Name the feeling: the Mood Meter grid, Daybook style. A color picks the corner of feeling, then a pannable 10 by 10
    field of feeling bubbles, each colored by where it sits (energy down the rows, pleasantness across the columns).
-   Tapping a bubble grows it into one of the Material shapes and eases its neighbors aside, the word and its line show in
-   the bar at the bottom, and naming it leads on to the tool that fits (core feelings.ts). The pan, the throw and the
-   push around the chosen bubble all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth
-   while it moves. */
+   The middle of the screen is the eye of the field: whatever bubble slides under it swells into one of the Material
+   shapes and presses the whole field outward, near bubbles strongly and far ones a little, so dragging feels like
+   rolling a heavy ball through a pool of light ones. A throw glides and then settles with a bubble in the eye, its word
+   shows in the bar at the bottom, and naming it leads on to the tool that fits (core feelings.ts). The pan, the focus
+   and the push all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth while it moves. */
 import { FEEL_QUADS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -11,7 +12,18 @@ import { StatusBar } from 'expo-status-bar';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDecay, withTiming, type SharedValue } from 'react-native-reanimated';
+import Reanimated, {
+  Easing,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  type DerivedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Link } from '@/components/choices';
@@ -101,23 +113,23 @@ const Bub = memo(function Bub({
   dia: number;
   isSel: boolean;
   onPick: (r: number, c: number) => void;
-  sx: SharedValue<number>;
-  sy: SharedValue<number>;
+  sx: DerivedValue<number>;
+  sy: DerivedValue<number>;
   amt: SharedValue<number>;
 }) {
   const f = FEELINGS[r][c];
   const color = FEEL_COLORS[r][c];
-  /* the field around the chosen bubble: it grows half again, and its neighbors ease away with a soft falloff, so the
-     choice rolls through the field instead of snapping */
+  /* the field around the focused bubble: it grows half again, and the growing takes room, so every other bubble is
+     pressed outward: the near ring strongly, the far corners faintly, the whole field giving way at once. The press
+     rises from nothing at the focus (the ball itself does not slide), peaks on the near ring, then dies away slowly. */
   const st = useAnimatedStyle(
     () => {
       const dx = (c - sx.value) * step;
       const dy = (r - sy.value) * step;
       const d2 = dx * dx + dy * dy;
       const d = Math.sqrt(d2);
-      const sig = 0.95 * step;
-      const gs = 0.45 * step;
-      const push = amt.value * 0.5 * step * Math.exp(-d2 / (2 * sig * sig));
+      const gs = 0.55 * step;
+      const push = amt.value * 0.9 * step * (d / (d + 0.6 * step)) * Math.exp(-d / (2.2 * step));
       const scale = 1 + amt.value * 0.5 * Math.exp(-d2 / (2 * gs * gs));
       return { transform: [{ translateX: d > 1 ? (push * dx) / d : 0 }, { translateY: d > 1 ? (push * dy) / d : 0 }, { scale }] };
     },
@@ -160,15 +172,12 @@ const clamp = (v: number, lo: number, hi: number) => {
 /* ---------- the grid screen ---------- */
 function FeelGrid({
   start,
-  picked,
   onBack,
   onClose,
   onNext,
 }: {
-  /** the cell the field opens centered on */
+  /** the cell the field opens with in the eye */
   start: { r: number; c: number };
-  /** a pick kept from last time (coming back from the named page) */
-  picked: { r: number; c: number } | null;
   onBack: () => void;
   onClose: () => void;
   onNext: (r: number, c: number) => void;
@@ -180,54 +189,61 @@ function FeelGrid({
   const step = Math.min(W, 430) / 4.25;
   const dia = step * 0.93;
   const content = N * step;
-  const [sel, setSel] = useState(picked);
-  const [barH, setBarH] = useState(168);
+  const [sel, setSel] = useState(start);
+  const [barH, setBarH] = useState(160);
   const head = inset.top + 60;
   const footTop = H - barH - 8;
-  /* where the field may sit: its edges stop a little inside the screen (centered instead, on a window taller or wider
-     than the whole field) */
-  const [bx0, bx1] = content + 24 <= W ? [(W - content) / 2, (W - content) / 2] : [W - content - 12, 12];
-  const [by0, by1] = content <= footTop - head ? [head + (footTop - head - content) / 2, head + (footTop - head - content) / 2] : [footTop - content, head];
-  const tx = useSharedValue(clamp(W / 2 - (start.c + 0.5) * step, bx0, bx1));
-  const ty = useSharedValue(clamp((head + footTop) / 2 - (start.r + 0.5) * step, by0, by1));
-  /* the chosen cell the push field bends around (sx, sy in cells; amt eases the field in) */
-  const sx = useSharedValue(picked ? picked.c : 0);
-  const sy = useSharedValue(picked ? picked.r : 0);
-  const amt = useSharedValue(picked ? 1 : 0);
+  /* the eye of the field: the point in the middle of the open sky. Whatever bubble sits under it is the one being tried
+     on, so the field may slide until any cell, corners included, rests in the eye. */
+  const cx = W / 2;
+  const cy = (head + footTop) / 2;
+  const [bx0, bx1] = [cx - (N - 0.5) * step, cx - 0.5 * step];
+  const [by0, by1] = [cy - (N - 0.5) * step, cy - 0.5 * step];
+  const tx = useSharedValue(cx - (start.c + 0.5) * step);
+  const ty = useSharedValue(cy - (start.r + 0.5) * step);
+  /* the focus the push field bends around, in cells: read straight off the pan, so the swell rolls through the bubbles
+     with the finger, never a frame behind */
+  const sx = useDerivedValue(() => clamp((cx - tx.value) / step - 0.5, 0, N - 1), webDeps(tx, cx, step));
+  const sy = useDerivedValue(() => clamp((cy - ty.value) / step - 0.5, 0, N - 1), webDeps(ty, cy, step));
+  const amt = useSharedValue(0);
+  useEffect(() => {
+    amt.value = reduce ? 1 : withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) });
+  }, [reduce, amt]);
+  /* the bar's first real layout can move the eye a little: slide the field the same way, so the centered bubble stays
+     centered and the snap targets stay true */
+  const cyAt = useRef(cy);
+  useEffect(() => {
+    const d = cy - cyAt.current;
+    if (!d) return;
+    cyAt.current = cy;
+    ty.value = clamp(ty.value + d, by0, by1);
+  }, [cy, by0, by1, ty]);
+  /* the cell in the eye, kept on the JS side for the bar and the shape; it ticks like a picker wheel as the field slides */
+  const onCell = (i: number) => {
+    setSel({ r: Math.floor(i / N), c: i % N });
+    buzz('tick');
+  };
+  useAnimatedReaction(
+    () => Math.round(sy.value) * N + Math.round(sx.value),
+    (cur, prev) => {
+      if (prev !== null && cur !== prev) runOnJS(onCell)(cur);
+    },
+    webDeps(sx, sy),
+  );
   /* a click right after a drag (the web: mouse up fires one) is the drag letting go, not a pick */
   const dragAt = useRef(0);
   const markDrag = () => {
     dragAt.current = Date.now();
   };
-  const glide = { duration: 260, easing: Easing.out(Easing.cubic) };
+  /* a tap does not grow the bubble where it is: it rolls the field over until that bubble rests in the eye */
   const pick = (r: number, cc: number) => {
     if (Date.now() - dragAt.current < 250) return;
     buzz('tap');
-    setSel({ r, c: cc });
-    if (amt.value < 0.02) {
-      sx.value = cc;
-      sy.value = r;
-    } else {
-      sx.value = reduce ? cc : withTiming(cc, glide);
-      sy.value = reduce ? r : withTiming(r, glide);
-    }
-    amt.value = reduce ? 1 : withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-    /* ease the field over so the chosen bubble sits clear of the edges and the bar */
-    const cx = (cc + 0.5) * step;
-    const cy = (r + 0.5) * step;
-    let nx = tx.value;
-    let ny = ty.value;
-    const mx = step * 0.95;
-    if (cx + nx < mx) nx += mx - (cx + nx);
-    else if (cx + nx > W - mx) nx -= cx + nx - (W - mx);
-    const mTop = head + step * 0.6;
-    const mBot = footTop - step * 0.6;
-    if (cy + ny < mTop) ny += mTop - (cy + ny);
-    else if (cy + ny > mBot) ny -= cy + ny - mBot;
-    nx = clamp(nx, bx0, bx1);
-    ny = clamp(ny, by0, by1);
-    if (nx !== tx.value) tx.value = reduce ? nx : withTiming(nx, glide);
-    if (ny !== ty.value) ty.value = reduce ? ny : withTiming(ny, glide);
+    const nx = cx - (cc + 0.5) * step;
+    const ny = cy - (r + 0.5) * step;
+    const glide = { duration: 320, easing: Easing.out(Easing.cubic) };
+    tx.value = reduce ? nx : withTiming(nx, glide);
+    ty.value = reduce ? ny : withTiming(ny, glide);
   };
   const pan = useMemo(
     () =>
@@ -239,20 +255,30 @@ function FeelGrid({
         })
         .onEnd((e) => {
           'worklet';
-          if (reduce) return;
-          tx.value = withDecay({ velocity: e.velocityX, clamp: [bx0, bx1] });
-          ty.value = withDecay({ velocity: e.velocityY, clamp: [by0, by1] });
+          /* let the throw run out, then settle with whichever bubble the eye would land nearest snapped into it: the
+             field always comes to rest trying a feeling on */
+          const px = clamp(tx.value + e.velocityX * 0.4, bx0, bx1);
+          const py = clamp(ty.value + e.velocityY * 0.4, by0, by1);
+          const gx = cx - (Math.round((cx - px) / step - 0.5) + 0.5) * step;
+          const gy = cy - (Math.round((cy - py) / step - 0.5) + 0.5) * step;
+          if (reduce) {
+            tx.value = gx;
+            ty.value = gy;
+            return;
+          }
+          tx.value = withSpring(gx, { velocity: e.velocityX, damping: 30, stiffness: 120, mass: 1 });
+          ty.value = withSpring(gy, { velocity: e.velocityY, damping: 30, stiffness: 120, mass: 1 });
         })
         .onFinalize((e) => {
           'worklet';
           if (Math.abs(e.translationX) + Math.abs(e.translationY) > 10) runOnJS(markDrag)();
         }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bx0, bx1, by0, by1, reduce],
+    [bx0, bx1, by0, by1, cx, cy, step, reduce],
   );
   const canvas = useAnimatedStyle(() => ({ transform: [{ translateX: tx.value }, { translateY: ty.value }] }), webDeps(tx, ty));
   const [skyA, skyB] = skies[c.scheme].night;
-  const f = sel ? feelAt(sel.r, sel.c) : null;
+  const f = feelAt(sel.r, sel.c)!;
   return (
     <View style={{ flex: 1, backgroundColor: skyB, overflow: 'hidden' }}>
       <StatusBar style="light" />
@@ -296,23 +322,12 @@ function FeelGrid({
       <LinearGradient colors={[skyB + '00', skyB]} style={[s.rise, { height: barH + 48 }]} pointerEvents="none" />
       <View style={[s.foot, { paddingBottom: inset.bottom + 12 }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
         <View style={s.bar}>
-          {f ? (
-            <>
-              <Text style={s.barW}>{f.w}</Text>
-              <Text style={s.barHow} numberOfLines={2}>
-                {f.how}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={s.barW}>Find the word that fits</Text>
-              <Text style={s.barHow} numberOfLines={2}>
-                Drag to look around, and tap a feeling to try it on.
-              </Text>
-            </>
-          )}
+          <Text style={s.barW}>{f.w}</Text>
+          <Text style={s.barHow} numberOfLines={2}>
+            {f.how}
+          </Text>
         </View>
-        <Button label="Name it" disabled={!sel} onPress={() => sel && onNext(sel.r, sel.c)} />
+        <Button label="Name it" onPress={() => onNext(sel.r, sel.c)} />
       </View>
     </View>
   );
@@ -339,7 +354,6 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
     return (
       <FeelGrid
         start={sel || { r: from.r, c: from.c }}
-        picked={sel}
         onBack={() => {
           setSel(null);
           setStep('quad');
@@ -458,7 +472,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   barW: { fontFamily: font.display, fontSize: 20, lineHeight: 26, color: nightInk.ink },
-  barHow: { fontFamily: font.body, fontSize: 13, lineHeight: 18, color: nightInk.muted },
+  /* two lines of room always, so the bar never changes height (a moving bar would move the eye of the grid) */
+  barHow: { fontFamily: font.body, fontSize: 13, lineHeight: 18, height: 36, color: nightInk.muted },
   quads: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, rowGap: 10 },
   quad: { alignItems: 'center', justifyContent: 'center' },
   quadT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: INK, textAlign: 'center' },

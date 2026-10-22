@@ -75,6 +75,22 @@ It is on. It needed the trigger's role first, made this way:
    `daybook-app-signup` role (its own logs, nothing else) and lets deploys hand that role to the trigger.
 2. Set `auto_confirm` to `true` in `infra/app/variables.tf` and push; the next deploy makes the trigger.
 
+## Opt-in counts and feedback (the pulse)
+
+`infra/app/pulse.tf` adds the `daybook-pulse` function and table: the opt-in counts and the anonymous feedback box
+(`services/api/src/pulse.ts`, core `pulse.ts`). It is apart from sync: its doors need no sign-in, so its role can touch
+only its own table, never `daybook-records`. The table keeps totals per day and the feedback, never who sent anything.
+It costs pennies (a few cents a month at a few hundred people).
+
+It is off until its role exists:
+
+1. Apply the bootstrap stack once more with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It adds the
+   `daybook-app-pulse` role (the pulse table and its own logs, nothing else) and lets deploys hand that role to the
+   function.
+2. Set `pulse` to `true` in `infra/app/variables.tf` and push with `[deploy]`.
+3. To read the counts: sign in to the app, open Stats in More, and copy the account id it shows. Add it as the
+   repository secret `DAYBOOK_OWNER_SUB` and deploy again. Only that account can read them.
+
 ## Signing in from a local web server
 
 Sign-up and sign-in are native screens in the app that call the Cognito API directly, so they work from any address. The

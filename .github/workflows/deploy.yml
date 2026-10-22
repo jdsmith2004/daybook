@@ -72,6 +72,7 @@ jobs:
           path: |
             services/api/dist/sync.zip
             services/api/dist/signup.zip
+            services/api/dist/pulse.zip
           retention-days: 3
 
   infra:
@@ -86,6 +87,8 @@ jobs:
       TF_IN_AUTOMATION: '1'
       TF_VAR_region: ${{ vars.AWS_REGION }}
       TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      # the one account that may read the opt-in counts and feedback (the Stats page in the app shows it); empty: no one
+      TF_VAR_owner_sub: ${{ secrets.DAYBOOK_OWNER_SUB }}
       ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
     outputs:
       sync_url: ${{ steps.out.outputs.sync_url }}

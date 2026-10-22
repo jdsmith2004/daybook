@@ -4,7 +4,8 @@
  *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from a workflow running
  *      on this repo's main branch
  *   3. the sync function's role, with exactly what it may do (the Daybook table, its own logs, deleting a user who closes their
- *      account), and the sign-up trigger's role (its own logs, nothing else). They are made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
+ *      account), the sign-up trigger's role (its own logs, nothing else), and the pulse function's role (its own table of
+ *      opt-in totals and feedback, nothing else). They are made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
  *      an outside account, a way into the table
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
  *      this account
@@ -192,6 +193,45 @@ resource "aws_iam_role_policy" "signup" {
   })
 }
 
+/* ---------- 3c. the pulse function's role ----------
+   The opt-in counts and anonymous feedback (services/api/src/pulse.ts). Its door is open (no sign-in), so its role can
+   touch nothing but its own table: add to the totals, keep feedback, and read them back for the owner. It can never
+   reach daybook-records, where the logs are. */
+resource "aws_iam_role" "pulse" {
+  name                 = "daybook-app-pulse"
+  description          = "The Daybook pulse Lambda (opt-in counts and feedback). Made by the bootstrap stack; deploys may pass it to the Lambda but never change it."
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = local.account } }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "pulse" {
+  name = "daybook-pulse"
+  role = aws_iam_role.pulse.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:UpdateItem", "dynamodb:PutItem", "dynamodb:Query"]
+        Resource = ["arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-pulse"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-pulse:*"]
+      },
+    ]
+  })
+}
+
 /* what the deploy role may change: only Daybook's own resources. It cannot make, change or act as any role. */
 resource "aws_iam_role_policy" "deploy" {
   name = "daybook-deploy"
@@ -248,13 +288,13 @@ resource "aws_iam_role_policy" "deploy" {
         Sid      = "ReadTheSyncRole"
         Effect   = "Allow"
         Action   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies"]
-        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn]
+        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn]
       },
       {
         Sid       = "PassTheSyncRoleToLambdaOnly"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
-        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn]
+        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn]
         Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } }
       },
       {

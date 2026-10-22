@@ -87,6 +87,16 @@ resource "aws_apigatewayv2_stage" "default" {
     throttling_burst_limit = 100
     throttling_rate_limit  = 50
   }
+  # the pulse's open doors get a lower ceiling: a device sends one batch a day
+  dynamic "route_settings" {
+    for_each = var.pulse ? ["POST /pulse", "POST /pulse/feedback"] : []
+    content {
+      route_key              = route_settings.value
+      throttling_burst_limit = 20
+      throttling_rate_limit  = 10
+    }
+  }
+  depends_on = [aws_apigatewayv2_route.pulse_open]
 }
 
 resource "aws_lambda_permission" "api" {

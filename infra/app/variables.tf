@@ -41,3 +41,21 @@ variable "dev_origins" {
   type        = list(string)
   default     = []
 }
+
+variable "pulse" {
+  description = "true: the opt-in counts and feedback (infra/app/pulse.tf). Needs the daybook-app-pulse role, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
+  type        = bool
+  default     = false
+}
+
+variable "pulse_zip" {
+  description = "The built pulse Lambda (npm run build -w @daybook/api)."
+  type        = string
+  default     = "../../services/api/dist/pulse.zip"
+}
+
+variable "owner_sub" {
+  description = "The owner's account id (Cognito sub), the only one that may read the counts and feedback. Set by the deploy workflow from the DAYBOOK_OWNER_SUB secret; the Stats page in the app shows it. Empty: no one can read them."
+  type        = string
+  default     = ""
+}

@@ -4,7 +4,8 @@
      written, so no one's log can show up in a shot;
    - the clock starts at the same moment every time (DEMO.at, or the page's ?at=), so the output is the same each run;
    - nothing leaves the page: any request to another site fails, so sync and the account never reach a server;
-   - motion is reduced, so every shot is taken with things already settled. */
+   - motion is reduced, so every shot is taken with things already settled; a page opened with ?motion=1 keeps full motion,
+     for a recording that shows the app moving (the breathing sun, the entrances). */
 import { AccessibilityInfo } from 'react-native';
 
 import { DEMO } from './config';
@@ -65,5 +66,5 @@ if (typeof window !== 'undefined') {
     return realFetch(input, init);
   };
 
-  AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
+  if (q.get('motion') !== '1') AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
 }

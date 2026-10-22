@@ -2060,3 +2060,12 @@ showing people still opening Daybook, and three calls.
 > question myself. If not, that is fine, and thank you for running this place.
 >
 > [your name] (u/[username])
+
+## Short videos: the daybook-shorts pipeline (2026-10-22)
+
+The marketing videos live in their own private repository, `jdsmith2004/daybook-shorts` (checked out next to this one):
+script, record, voice, render, review, post, one command each, with Jeff's approval before anything posts. Its README
+holds the weekly loop and its docs/plan.md the decisions. The one change here: shots mode (`EXPO_PUBLIC_SHOTS=1`) keeps
+full motion when a page is opened with `?motion=1`, so the recorder can show the breathing sun moving; every shot still
+takes the settled, reduced-motion path. The recorder builds this app in shots mode with the sync and counts variables
+blank, so no account card and nothing that could reach a server.

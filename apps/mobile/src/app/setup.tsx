@@ -60,19 +60,21 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Linking, Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
-import { KeyboardRoom } from '@/components/keyboard';
+import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Field } from '@/components/choices';
+import { FitArt, SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
-import { LessonArt, LxCheck, LxIco } from '@/components/lesson-art';
-import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
-import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicSteps, PicToday, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
+import { LessonArt, LxCheck } from '@/components/lesson-art';
+import { Ghost, Next, Rich, Route } from '@/components/lx';
+import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
+import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicToday, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
 import { useClock } from '@/components/shapes';
+import { Slider, SliderValue } from '@/components/slider';
+import { ToolShape } from '@/components/tool-grid';
 import { ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
@@ -85,13 +87,14 @@ import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
-import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
+import { useReducedMotion } from '@/lib/motion';
+import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Sky, type Tone } from '@/lib/theme';
 
 type Flow = SetupFlow;
 
 export default function Setup() {
   const c = useTheme();
-  const inset = useSafeAreaInsets();
+  const win = useWindowDimensions();
   const { snap, tk, replace, say, current, apply } = useStore();
   const sync = useSync();
   const st = snap.settings;
@@ -128,7 +131,6 @@ export default function Setup() {
   };
   const [breathed, setBreathed] = useState(false);
   const until = useRef(0);
-  const scroll = useRef<ScrollViewInstance>(null);
   const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
   const pg = P[i];
@@ -144,9 +146,6 @@ export default function Setup() {
       close();
     }
   }, [f.redo, f.saved, st]);
-  useEffect(() => {
-    scroll.current?.scrollTo({ y: 0, animated: false });
-  }, [i]);
   /* a new person's place is kept on the device as they go, and let go once the setup is saved. Opened right at launch,
      the page may come up before the kept place is read: it picks up there if nothing was answered yet. */
   useEffect(() => {
@@ -175,7 +174,10 @@ export default function Setup() {
       ...(typeof patch === 'function' ? patch(x) : patch),
     }));
   const setA = (patch: SetupAnswers) => set((x) => ({ a: { ...x.a, ...patch } }));
-  const go = (d: number) =>
+  /* which way the pages slide: forward from the right, Back from the left, and the first one just fades in */
+  const [dir, setDir] = useState<-1 | 0 | 1>(0);
+  const go = (d: number) => {
+    setDir(d < 0 ? -1 : 1);
     setF((x) => {
       const PP = obPages(x.a, env);
       const cur = PP[x.i];
@@ -185,10 +187,12 @@ export default function Setup() {
       until.current = Date.now() + 260;
       return { ...x, i: to };
     });
+  };
   /* a one-tap answer moves on by itself, unless the person already moved */
   const later = () => {
     const at = i;
     until.current = Date.now() + 420;
+    setDir(1);
     setTimeout(() => {
       setF((x) => {
         if (x.i !== at) return x;
@@ -208,6 +212,7 @@ export default function Setup() {
     setupKeep.flow = null;
     buzz('lit');
     until.current = Date.now() + 700;
+    setDir(1);
     setF((x) => ({
       ...x,
       saved: true,
@@ -233,15 +238,17 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const back = i === 0 || pg.k === 'done' || pg.k === 'remind' || pg.k === 'account' ? null : <Back onPress={() => !f.saved && go(-1)} />;
+  const noBack = i === 0 || pg.k === 'done' || pg.k === 'remind' || pg.k === 'account';
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
-      <View key="s" style={{ flex: 1 }}>
+      <View key="s">
         <Ghost label={label} onPress={() => !busy() && go(1)} />
       </View>
     ) : (
-      <Next key="n" label={label} onPress={() => !busy() && go(1)} off={false} />
+      <View key="n">
+        <Next label={label} onPress={() => !busy() && go(1)} off={false} />
+      </View>
     );
   const pick = (key: string, v: string, auto: boolean) => {
     if (busy()) return;
@@ -255,19 +262,28 @@ export default function Setup() {
   const lastLine = (key: string, list: ObOpt[]) => {
     const l = obLast(st, f.redo, key, list);
     return l ? (
-      <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+      <T v="small" tone="muted" style={s.c}>
         {l}
       </T>
     ) : null;
   };
+  /* the scene pages have no card: the art sits big on the act's sky. Every other page is a question or a teaching card. */
+  const bare = ['hello', 'hours', 'waves', 'breathe', 'curve', 'tries', 'slip'].includes(pg.k) || (pg.k === 'done' && !f.redo);
+  const W = Math.min(win.width, MAX_WIDTH) - 32;
 
   switch (pg.k) {
     case 'hello': {
       const prev = st && st.onb;
       body = f.redo ? (
-        <Show st={st} art={<PicToday />} h="Walk through it again." line="Nothing changes until the last page.">
+        <>
+          <Head h="Walk through it again." sub="Nothing changes until the last page." />
+          <Middle>
+            <FitArt min={0.45}>
+              <PicToday />
+            </FitArt>
+          </Middle>
           {prev && prev.at ? (
-            <T v="small" tone="muted">
+            <T v="small" tone="muted" style={s.c}>
               Last time:{' '}
               {fmtDate(keyOfDate(new Date(prev.at)), {
                 month: 'long',
@@ -277,13 +293,18 @@ export default function Setup() {
               .
             </T>
           ) : null}
-        </Show>
+        </>
       ) : (
-        <Show
-          st={st}
-          art={<PicToday />}
-          h="Quit porn, one honest day at a time."
-          line="A plan built from your answers, help when urges hit, and progress you can see. Free. No ads, no subscription.">
+        <>
+          <Head
+            h="Quit porn, one honest day at a time."
+            sub="A plan built from your answers, help when urges hit, and progress you can see. Free. No ads, no subscription."
+          />
+          <Middle>
+            <FitArt min={0.45}>
+              <PicToday />
+            </FitArt>
+          </Middle>
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
           <SosRow />
           <View style={s.links}>
@@ -300,9 +321,35 @@ export default function Setup() {
               </>
             ) : null}
           </View>
-        </Show>
+        </>
       );
       foot = nextBtn(f.redo ? 'Start' : 'Get started');
+      break;
+    }
+    case 'how': {
+      body = (
+        <>
+          <Head h="Three parts, about 8 minutes." sub="Only you see your answers. You can skip any question." />
+          <Middle>
+            <View style={s.acts}>
+              {OB_SECS.map((x) => {
+                const at = toneOf(c, x[2]);
+                const time = ACT_TIME[x[0]] || '';
+                return (
+                  <View key={x[0]} style={[s.act, { backgroundColor: at.soft }]} accessible accessibilityLabel={`${x[1]} · ${time}`}>
+                    <ShapePic id={ACT_SHAPE[x[0]] || 'pause'} ic={x[3]} t={at} size={52} />
+                    <T style={s.actT}>
+                      <Text style={{ fontFamily: font.bodyBold, color: at.text }}>{x[1]}</Text>
+                      <Text style={{ color: c.muted }}> · {time}</Text>
+                    </T>
+                  </View>
+                );
+              })}
+            </View>
+          </Middle>
+        </>
+      );
+      foot = nextBtn('Next');
       break;
     }
     case 'tiles':
@@ -310,7 +357,7 @@ export default function Setup() {
       const key = pg.key!;
       body = (
         <>
-          <Q h={pg.h!} sub={pg.sub} />
+          <Head h={pg.h!} sub={pg.sub} />
           <QArt pg={pg} t={t} />
           <IconTiles
             list={pg.list!}
@@ -332,10 +379,26 @@ export default function Setup() {
       const idx = list.findIndex((x) => x[0] === a[key]);
       body = (
         <>
-          <Q h={pg.h!} sub={pg.sub} />
-          <Mid>{key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}</Mid>
-          <Text style={[s.slv, { color: idx >= 0 ? t.text : c.muted }]}>{idx >= 0 ? obCap(String(list[idx][3])) : 'Tap to answer'}</Text>
-          <Steps n={list.length} cur={idx} t={t} labels={list.map((x) => String(x[3]))} lo={pg.lo!} hi={pg.hi!} onPick={(j) => pick(key, list[j][0], false)} />
+          <Head h={pg.h!} sub={pg.sub} />
+          <Middle>
+            {/* the picture sits small above the chosen words, and steps aside when the screen is short */}
+            <FitArt min={0.6} drop={0.7}>
+              {key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}
+            </FitArt>
+            <SliderValue big words value={idx >= 0 ? idx : null} show={(v) => obCap(String(list[v][3]))} hint="Slide below to answer" />
+          </Middle>
+          <Slider
+            label={pg.h!}
+            value={idx >= 0 ? idx : null}
+            min={0}
+            max={list.length - 1}
+            lo={pg.lo!}
+            hi={pg.hi!}
+            readout={false}
+            endsShowValue={false}
+            show={(v) => obCap(String(list[v][3]))}
+            onChange={(j) => pick(key, list[j][0], false)}
+          />
           {lastLine(key, list)}
         </>
       );
@@ -346,18 +409,16 @@ export default function Setup() {
       const v = a['b' + pg.n] as string | undefined;
       body = (
         <>
-          <Text style={[s.hq, { color: c.ink }]} accessibilityRole="header">
-            In the last 6 months, how often is this true for you?
-          </Text>
+          <Head h="In the last 6 months, how often is this true for you?" small />
           {/* the statement, big, in the middle; the three answers low, as one row */}
-          <Mid>
+          <Middle>
             <View style={[s.quote, { backgroundColor: t.soft }]}>
               <Text style={[s.quoteM, { color: t.ic }]} accessibilityElementsHidden importantForAccessibility="no">
                 “
               </Text>
               <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
             </View>
-          </Mid>
+          </Middle>
           <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
             {OB_BPS_C.map(([id, label], j) => {
               const on = v === id;
@@ -386,7 +447,7 @@ export default function Setup() {
             })}
           </View>
           {pg.n === 0 ? (
-            <T v="small" tone="muted">
+            <T v="small" tone="muted" style={s.c}>
               Only you see your answers. A quick, tested check.
             </T>
           ) : null}
@@ -399,7 +460,7 @@ export default function Setup() {
       const h = obHeard(a);
       body = (
         <Show st={st} art={<PicHeart />} h={h.h} line={h.line} more={h.more}>
-          {h.line2 ? <Rich text={h.line2} st={st} style={s.p} /> : null}
+          {h.line2 ? <Rich text={h.line2} st={st} style={[s.p, s.c]} /> : null}
         </Show>
       );
       foot = nextBtn('Keep going');
@@ -411,8 +472,9 @@ export default function Setup() {
       const own = pg.own ? String(a[pg.own] || '').trim() : '';
       body = (
         <>
-          <Q h={pg.h!} sub={pg.sub} />
-          <Grow />
+          <Head h={pg.h!} sub={pg.sub} />
+          {/* the tiles are the thing: no picture, so they sit low */}
+          <Middle>{null}</Middle>
           <IconTiles
             list={pg.list!}
             cols={pg.cols || 2}
@@ -443,11 +505,11 @@ export default function Setup() {
     case 'guess': {
       body = (
         <>
-          <Q h="How many hours a year do you think you spend on porn?" sub="Guess first. Then see your number." />
-          <Mid>
-            <Text style={[s.big, { color: t.text }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
+          <Head h="How many hours a year do you think you spend on porn?" sub="Guess first. Then see your number." />
+          <Middle>
+            <Text style={[s.huge, { color: t.text }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
             <T tone="muted">hours a year</T>
-          </Mid>
+          </Middle>
           <View style={s.grid3}>
             {OB_GUESS.map((n) => (
               <Opt
@@ -472,15 +534,17 @@ export default function Setup() {
         </>
       );
       foot = (
-        <Next
-          label="Just show me"
-          onPress={() => {
-            if (busy()) return;
-            set({ hg: 'skip' });
-            until.current = 0;
-            go(1);
-          }}
-        />
+        <View key="n">
+          <Next
+            label="Just show me"
+            onPress={() => {
+              if (busy()) return;
+              set({ hg: 'skip' });
+              until.current = 0;
+              go(1);
+            }}
+          />
+        </View>
       );
       break;
     }
@@ -488,22 +552,25 @@ export default function Setup() {
       const R = obReveal(a, f.hg);
       body = (
         <>
-          <View style={[s.art, { paddingVertical: 10 }]}>
+          {/* the payoff of the first act: the number, big, with what it means under it and the comparisons low */}
+          <Middle>
             <CountUp to={R.yr} color={t.text} />
             <T tone="muted">hours a year at your pace</T>
+            <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
+              {R.h}
+            </T>
+          </Middle>
+          <View style={s.rows}>
+            {R.guess != null ? <Compare g={R.guess} yr={R.yr} t={t} /> : null}
+            {R.rows.map((r) => (
+              <View key={r[0]} style={s.eq}>
+                <Icon name={r[0]} size={20} color={t.text} />
+                <Rich text={r[1]} st={st} style={{ flex: 1 }} />
+              </View>
+            ))}
+            <Soft icon="leaf" text={R.soft} />
+            <More more={R.more} />
           </View>
-          <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-            {R.h}
-          </Text>
-          {R.guess != null ? <Compare g={R.guess} yr={R.yr} t={t} /> : null}
-          {R.rows.map((r) => (
-            <View key={r[0]} style={s.eq}>
-              <Icon name={r[0]} size={20} color={t.text} />
-              <Rich text={r[1]} st={st} style={{ flex: 1 }} />
-            </View>
-          ))}
-          <Soft icon="leaf" text={R.soft} />
-          <More more={R.more} />
         </>
       );
       foot = nextBtn('Next');
@@ -524,7 +591,7 @@ export default function Setup() {
                 : 'When an urge hits, tap SOS: slow breathing starts on its own, then one thing to try.'
             }
             st={st}
-            style={s.p}
+            style={[s.p, s.c]}
           />
         </Show>
       );
@@ -533,7 +600,7 @@ export default function Setup() {
     }
     case 'tries': {
       const x = obTries(a);
-      body = <Show st={st} art={<PicTries />} h={x.h} line={x.line} more={x.more} />;
+      body = <Show st={st} art={<PicTries width={W} />} h={x.h} line={x.line} more={x.more} />;
       foot = nextBtn('Next');
       break;
     }
@@ -541,10 +608,12 @@ export default function Setup() {
       const custom = isTime(a.so) && OB_SO.indexOf(a.so as string) < 0;
       body = (
         <>
-          <Q h="What time should your screens go off at night?" sub="An hour before, a short wind-down starts." />
-          <Mid>
-            <LxIco name="moon" t={t} size={110} />
-          </Mid>
+          <Head h="What time should your screens go off at night?" sub="An hour before, a short wind-down starts." />
+          <Middle>
+            <FitArt min={0.5} drop={0.5}>
+              <ShapePic id="bed" ic="moon" t={t} size={120} />
+            </FitArt>
+          </Middle>
           <View style={s.grid3}>
             {OB_SO.concat(custom ? [a.so as string] : []).map((x) => (
               <Opt
@@ -582,8 +651,8 @@ export default function Setup() {
       const gi = obGoalInfo(a, st, tk);
       body = (
         <>
-          <Q h="Which starting point fits you best?" />
-          <Grow />
+          <Head h="Which starting point fits you best?" />
+          <Middle>{null}</Middle>
           <View style={{ gap: 10 }}>
             {goals.map((g) => (
               <Opt key={g.id} on={v === g.id} t={t} onPress={() => pick('goal', g.id, false)}>
@@ -616,8 +685,8 @@ export default function Setup() {
       const rs = a.rs || [];
       body = (
         <>
-          <Q h="What do you want your life to look like instead?" sub="Pick what matters most. It shows up on hard nights." />
-          <Grow />
+          <Head h="What do you want your life to look like instead?" sub="Pick what matters most. It shows up on hard nights." />
+          <Middle>{null}</Middle>
           <View style={s.pills}>
             {obReasonOpts(a, st, f.redo).map((x) => {
               const on = rs.indexOf(x) >= 0;
@@ -664,8 +733,8 @@ export default function Setup() {
       const cur = obThenPick(a, st, f.redo, tp);
       body = (
         <>
-          <Q h={`When ${T0[2]}, what will you do instead?`} sub="A plan made ahead is easier to follow." />
-          <Grow />
+          <Head h={`When ${T0[2]}, what will you do instead?`} sub="A plan made ahead is easier to follow." />
+          <Middle>{null}</Middle>
           <View style={{ gap: 10 }}>
             {obThenOpts(a, st, f.redo, tp).map((x) => (
               <Opt
@@ -714,16 +783,19 @@ export default function Setup() {
     }
     case 'person': {
       const has = !!String(a.person || '').trim();
+      /* the text box stays near the top, where the keyboard leaves it in sight */
       body = (
         <>
-          <Q h="Who could be your safe person?" sub="Someone calm you could tell when you slip. A first name is enough." />
+          <Head h="Who could be your safe person?" sub="Someone calm you could tell when you slip. A first name is enough." />
           <Field label="Their name" maxLength={80} placeholder="A first name" defaultValue={a.person || ''} onChangeText={(v) => setA({ person: v })} />
-          <T v="small" tone="muted">
+          <T v="small" tone="muted" style={s.c}>
             Only you see the name. Daybook never contacts anyone. You can skip this.
           </T>
-          <Mid>
-            <LxIco name="chat" t={t} size={110} />
-          </Mid>
+          <Middle>
+            <FitArt min={0.5} drop={0.5}>
+              <ShapePic id="message" ic="chat" t={t} size={110} />
+            </FitArt>
+          </Middle>
         </>
       );
       foot = nextBtn(has ? 'Next' : 'Skip', !has);
@@ -732,12 +804,23 @@ export default function Setup() {
     case 'becoming': {
       const cur = obBecoming(a);
       const own = OB_BE.indexOf(cur) < 0 ? cur : '';
+      /* the text box near the top; the starter sentences low */
       body = (
         <>
-          <Q h="Who are you becoming?" sub="One sentence about the person you are growing into. Daybook shows it to you on hard days." />
-          <Mid>
-            <LxIco name="star" t={t} size={90} />
-          </Mid>
+          <Head h="Who are you becoming?" sub="One sentence about the person you are growing into. Daybook shows it to you on hard days." />
+          <Field
+            key={'be' + (own ? 1 : 0)}
+            label="Write my own"
+            maxLength={BE_LEN}
+            placeholder="I am someone who…"
+            defaultValue={own}
+            onChangeText={(v) => setA({ be: v })}
+          />
+          <Middle>
+            <FitArt min={0.5} drop={0.6}>
+              <ShapePic id="surprise" ic="star" t={t} size={96} />
+            </FitArt>
+          </Middle>
           <View style={{ gap: 10 }}>
             {OB_BE.map((x) => (
               <Opt
@@ -755,15 +838,7 @@ export default function Setup() {
               </Opt>
             ))}
           </View>
-          <Field
-            key={'be' + (own ? 1 : 0)}
-            label="Write my own"
-            maxLength={BE_LEN}
-            placeholder="I am someone who…"
-            defaultValue={own}
-            onChangeText={(v) => setA({ be: v })}
-          />
-          <T v="small" tone="muted">
+          <T v="small" tone="muted" style={s.c}>
             Say who you are, not what you avoid. You can change it any time in My plan.
           </T>
         </>
@@ -781,103 +856,110 @@ export default function Setup() {
         const rs = obReasonList(a);
         body = (
           <>
-            <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-              Here is your plan.
-            </Text>
-            <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-              <View style={[s.planRow, { borderTopWidth: 0 }]}>
-                <Flame level={1} size={48} />
-                <View>
-                  <T v="small" tone="muted">
-                    Day 1
-                  </T>
-                  <Text
-                    style={{
-                      fontFamily: font.display,
-                      fontSize: 22,
-                      color: c.ink,
-                    }}>
-                    {obDate(obDay1(g, null, tk))}
-                  </Text>
+            <Head h="Here is your plan." />
+            <Middle>
+              <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+                <View style={[s.planRow, { borderTopWidth: 0 }]}>
+                  <Flame level={1} size={48} alive />
+                  <View>
+                    <T v="small" tone="muted">
+                      Day 1
+                    </T>
+                    <Text
+                      style={{
+                        fontFamily: font.display,
+                        fontSize: 22,
+                        color: c.ink,
+                      }}>
+                      {obDate(obDay1(g, null, tk))}
+                    </Text>
+                  </View>
                 </View>
+                <PlanRow icon="flag" l="Goal" v={g.t} />
+                <PlanRow icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
+                {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null}
+                <PlanRow icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />
+                <PlanRow icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
+                {obBecoming(a) ? <PlanRow icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null}
               </View>
-              <PlanRow icon="flag" l="Goal" v={g.t} />
-              <PlanRow icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
-              {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null}
-              <PlanRow icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />
-              <PlanRow icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
-              {obBecoming(a) ? <PlanRow icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null}
-            </View>
+            </Middle>
             <Text style={[s.pledge, { color: c.ink }]}>I will log honestly, slips included.</Text>
           </>
         );
-        foot = <Hold onDone={save} />;
+        foot = (
+          <View key="h">
+            <Hold onDone={save} />
+          </View>
+        );
       } else {
         const keep = f.keep ?? ch.map((x) => x.k);
         body = !ch.length ? (
           <>
-            <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-              Your plan already matches.
-            </Text>
-            <T>Nothing in your answers changes your goal, reasons, or plan. Your self-check is saved, so next time you can compare.</T>
+            <Head h="Your plan already matches." />
+            <Middle>
+              <T style={[s.p, s.c]}>Nothing in your answers changes your goal, reasons, or plan. Your self-check is saved, so next time you can compare.</T>
+            </Middle>
           </>
         ) : (
           <>
-            <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-              Which changes do you want to keep?
-            </Text>
-            <T tone="muted">Ticked items change. Anything you untick stays as it is.</T>
-            <View style={{ gap: 10 }}>
-              {ch.map((x) => {
-                const on = keep.indexOf(x.k) >= 0;
-                return (
-                  <Pressable
-                    key={x.k}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: on }}
-                    onPress={() =>
-                      set({
-                        keep: on ? keep.filter((k) => k !== x.k) : keep.concat(x.k),
-                      })
-                    }
-                    style={[
-                      s.ch,
-                      {
-                        backgroundColor: c.surface,
-                        borderColor: on ? t.ic : c.line,
-                      },
-                    ]}>
-                    <View
+            <Head h="Which changes do you want to keep?" sub="Ticked items change. Anything you untick stays as it is." />
+            <Middle>
+              <View style={{ gap: 10, alignSelf: 'stretch' }}>
+                {ch.map((x) => {
+                  const on = keep.indexOf(x.k) >= 0;
+                  return (
+                    <Pressable
+                      key={x.k}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: on }}
+                      onPress={() =>
+                        set({
+                          keep: on ? keep.filter((k) => k !== x.k) : keep.concat(x.k),
+                        })
+                      }
                       style={[
-                        s.bx,
+                        s.ch,
                         {
-                          backgroundColor: on ? t.ic : c.surface,
+                          backgroundColor: c.surface,
                           borderColor: on ? t.ic : c.line,
                         },
                       ]}>
-                      {on ? <Icon name="check" size={16} color="#fff" /> : null}
-                    </View>
-                    <View style={{ flex: 1, gap: 3 }}>
-                      <T v="label">{x.l}</T>
-                      <T v="small" tone="muted">
-                        Now: {x.from}
-                        {x.sub0 ? ' · ' + x.sub0 : ''}
-                      </T>
-                      <T v="small" tone="accentText">
-                        New: {x.to}
-                        {x.sub1 ? ' · ' + x.sub1 : ''}
-                      </T>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <T v="small" tone="muted">
+                      <View
+                        style={[
+                          s.bx,
+                          {
+                            backgroundColor: on ? t.ic : c.surface,
+                            borderColor: on ? t.ic : c.line,
+                          },
+                        ]}>
+                        {on ? <Icon name="check" size={16} color={t.ink} /> : null}
+                      </View>
+                      <View style={{ flex: 1, gap: 3 }}>
+                        <T v="label">{x.l}</T>
+                        <T v="small" tone="muted">
+                          Now: {x.from}
+                          {x.sub0 ? ' · ' + x.sub0 : ''}
+                        </T>
+                        <T v="small" tone="accentText">
+                          New: {x.to}
+                          {x.sub1 ? ' · ' + x.sub1 : ''}
+                        </T>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Middle>
+            <T v="small" tone="muted" style={s.c}>
               Your self-check answers are saved either way, so next time you can compare.
             </T>
           </>
         );
-        foot = <Next label={ch.length ? 'Save what is ticked' : 'Finish'} noIcon onPress={save} />;
+        foot = (
+          <View key="s">
+            <Next label={ch.length ? 'Save what is ticked' : 'Finish'} noIcon onPress={save} />
+          </View>
+        );
       }
       break;
     }
@@ -907,26 +989,26 @@ export default function Setup() {
       };
       body = (
         <>
-          <Q h="When should Daybook check in with you?" sub="One short reminder a day, so the check-in becomes part of your evening." />
-          <Mid>
+          <Head h="When should Daybook check in with you?" sub="One short reminder a day, so the check-in becomes part of your evening." />
+          <Middle>
             <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
               <Text style={[s.remBig, { color: c.ink }]}>{fmtClock(remAt)}</Text>
               {/* what it will look like on a locked screen: plain words that say nothing about what Daybook is for */}
               <View
-                style={[s.lock, { backgroundColor: c.scheme === 'dark' ? c.surface2 : '#2A2350' }]}
+                style={[s.lock, { backgroundColor: skies.light.night[0] }]}
                 accessible
                 accessibilityLabel="A reminder will look like this: Daybook. Check in. Under a minute.">
                 <View style={[s.lockIc, { backgroundColor: c.accent }]}>
-                  <Icon name="flame" size={16} color="#FFFFFF" />
+                  <Icon name="flame" size={16} color={c.accentInk} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.lockT}>Daybook</Text>
-                  <Text style={s.lockB}>{NUDGE_WORDS.checkin}</Text>
+                  <Text style={[s.lockT, { color: nightInk.ink }]}>Daybook</Text>
+                  <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin}</Text>
                 </View>
-                <Text style={s.lockW}>now</Text>
+                <Text style={[s.lockW, { color: nightInk.muted }]}>now</Text>
               </View>
             </View>
-          </Mid>
+          </Middle>
           <View style={s.grid3}>
             {OB_REMIND.map((x) => (
               <Opt
@@ -944,13 +1026,13 @@ export default function Setup() {
               </Opt>
             ))}
           </View>
-          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          <T v="small" tone="muted" style={s.c}>
             Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Never at night.
           </T>
         </>
       );
       foot = (
-        <View key="f" style={{ flex: 1, gap: 6 }}>
+        <View key="f" style={{ gap: 6 }}>
           <Next key="n" label="Remind me" onPress={yes} off={false} />
           <Ghost label="Not now" onPress={notNow} />
         </View>
@@ -962,19 +1044,19 @@ export default function Setup() {
          records that choice and goes on. */
       body = (
         <>
-          <Mid>
-            <View style={s.orbWrap}>
-              <LinearGradient colors={[c.accent, c.sky]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
-              <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
-              <View style={[s.orbDot, { backgroundColor: c.sun, width: 22, height: 22, bottom: 10, right: 0 }]} />
-              <View style={{ zIndex: 1 }}>
-                <Icon name="shield" size={60} color="#FFFFFF" />
+          <Head h="Your plan is ready. Keep it safe." />
+          <Middle>
+            <FitArt min={0.5} drop={0.5}>
+              <View style={s.orbWrap}>
+                <LinearGradient colors={[c.accent, c.sky]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
+                <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
+                <View style={[s.orbDot, { backgroundColor: c.sun, width: 22, height: 22, bottom: 10, right: 0 }]} />
+                <View style={{ zIndex: 1 }}>
+                  <Icon name="shield" size={60} color={c.accentInk} />
+                </View>
               </View>
-            </View>
-          </Mid>
-          <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
-            Your plan is ready. Keep it safe.
-          </Text>
+            </FitArt>
+          </Middle>
           <View style={{ gap: 8 }}>
             {[
               'Your plan, your log and every point you earn, kept safe',
@@ -991,7 +1073,7 @@ export default function Setup() {
         </>
       );
       foot = (
-        <View key="f" style={{ flex: 1, gap: 4 }}>
+        <View key="f" style={{ gap: 4 }}>
           <Next label="Make my free account" noIcon onPress={() => !busy() && sync.signInNow({ why: 'setup' })} off={false} />
           <TextLink
             label="Keep it on this phone for now"
@@ -1010,31 +1092,31 @@ export default function Setup() {
       if (f.redo) {
         body = (
           <>
-            <Mid>
+            <Head
+              h={f.changed ? 'Saved. Your plan is up to date.' : 'All set.'}
+              sub={
+                (f.changed ? 'Your changes are in My plan and Settings.' : 'Nothing in your plan changed.') +
+                ' Your answers are kept, so the next walk-through can show how things moved.'
+              }
+            />
+            <Middle>
               <LxCheck />
-            </Mid>
-            <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
-              {f.changed ? 'Saved. Your plan is up to date.' : 'All set.'}
-            </Text>
-            <T style={s.p}>
-              {(f.changed ? 'Your changes are in My plan and Settings.' : 'Nothing in your plan changed.') +
-                ' Your answers are kept, so the next walk-through can show how things moved.'}
-            </T>
+            </Middle>
             <Route label="Read my plan" onPress={() => !busy() && router.replace('/plan')} />
-            <Route label="Back to Today" onPress={() => !busy() && close()} />
           </>
+        );
+        foot = (
+          <View key="d">
+            <Next label="Done" noIcon onPress={() => !busy() && close()} />
+          </View>
         );
       } else {
         const g = obGoal(a, null, tk);
+        /* the finale, on the sun's sky: the flame alive and big, the four small things low, the first lesson one tap away */
         body = (
           <>
-            <Mid>
-              <Flame level={2} size={140} />
-            </Mid>
-            <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
-              Welcome in.
-            </Text>
-            <T style={s.p}>{obFirst(g.id, st ? st.screensOff : '23:00')}</T>
+            <Head h="Welcome in." sub={obFirst(g.id, st ? st.screensOff : '23:00')} />
+            <Finish level={2} alive size={SHORT ? 130 : 170} tone="sun" />
             <View style={{ gap: 6 }}>
               {OB_TAKES.map((x) => (
                 <View key={x} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -1054,6 +1136,10 @@ export default function Setup() {
                 <Text style={{ fontFamily: font.bodyBold, color: c.sunText }}>Day Zero badge</Text>
               </View>
             </View>
+          </>
+        );
+        foot = (
+          <View key="d" style={{ gap: 10 }}>
             <Route
               label="Start lesson 1"
               small="1–5 min · You do not need to feel ready"
@@ -1065,85 +1151,53 @@ export default function Setup() {
                 })
               }
             />
-          </>
+            <Next label="Go to Today" noIcon onPress={() => !busy() && close()} />
+          </View>
         );
       }
-      foot = <Next label={f.redo ? 'Done' : 'Go to Today'} noIcon onPress={() => !busy() && close()} />;
       break;
     }
     default:
-      body = <ShowPage k={pg.k} t={t} st={st} a={a} />;
+      body = <ShowPage k={pg.k} t={t} st={st} a={a} W={W} />;
       foot = nextBtn('Next');
   }
 
   const fin = pg.k === 'done';
-  /* one bar for the whole setup; the label names the act */
-  const w = fin ? 1 : (i + 1) / P.length;
+  /* one bar for the whole setup; its title is the act, and a screen reader hears the page number */
+  const frac = fin ? 1 : (i + 1) / P.length;
+  const barLabel = fin ? 'Setup complete' : (f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1] + ': page ' + (i + 1) + ' of ' + P.length;
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: c.bg,
-        paddingTop: inset.top + 8,
-        paddingBottom: inset.bottom + 12,
-        paddingHorizontal: 16,
-      }}>
-      {/* each part of the setup has its own color, washed over the whole screen, with the page as a white card on it */}
-      <LinearGradient colors={[t.soft, t.soft, c.bg]} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
-      <View
-        style={{
-          flex: 1,
-          width: '100%',
-          maxWidth: 520,
-          alignSelf: 'center',
-          gap: 12,
-        }}>
-        <View style={s.top}>
-          <View
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-            accessible
-            accessibilityLabel={(f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1]}>
-            <View style={[s.si, { backgroundColor: t.soft }]}>
-              <Icon name={sec[3]} size={16} color={t.text} />
-            </View>
-            <Text style={[s.secT, { color: t.text }]}>{sec[1].toUpperCase()}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {/* help is one tap away on every page; the setup waits underneath, where it was left */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="SOS. Help with an urge right now. The setup waits for you."
-              onPress={() => router.push('/sos')}
-              style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
-              <Icon name="life" size={17} color={c.sosInk} />
-              <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              onPress={exit}
-              style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
-              <Icon name="x" color={c.ink} />
-            </Pressable>
-          </View>
+    <SceneFrame
+      title={sec[1]}
+      sky={sec[2] as Sky}
+      bar={{ frac, label: barLabel, color: fin ? c.mint : t.ic }}
+      bare={bare}
+      onBack={noBack ? null : () => !f.saved && go(-1)}
+      onClose={exit}
+      topRight={
+        /* help is one tap away on every page; the setup waits underneath, where it was left */
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="SOS. Help with an urge right now. The setup waits for you."
+          onPress={() => router.push('/sos')}
+          style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
+          <Icon name="life" size={17} color={c.sosInk} />
+          <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
+        </Pressable>
+      }>
+      <Stage key={pg.id} dir={dir}>
+        {/* every page fills the width, and its Dock sits at the bottom */}
+        <View style={s.page}>
+          {body}
+          <Dock>{foot}</Dock>
         </View>
-        <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (i + 1) + ' of ' + P.length} />
-        <View style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-          <ScrollView ref={scroll} contentContainerStyle={s.cardIn} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
-            <KeyboardRoom scroll={scroll}>{body}</KeyboardRoom>
-          </ScrollView>
-        </View>
-        <View style={s.foot}>
-          {back}
-          {foot}
-        </View>
-      </View>
-    </View>
+      </Stage>
+    </SceneFrame>
   );
 }
 
 /* the pages that only show something */
-function ShowPage({ k, t, st, a }: { k: string; t: Tone; st: Settings | null; a: SetupAnswers }) {
+function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null; a: SetupAnswers; W: number }) {
   switch (k) {
     case 'loop':
       return (
@@ -1196,7 +1250,7 @@ function ShowPage({ k, t, st, a }: { k: string; t: Tone; st: Settings | null; a:
       return (
         <Show
           st={st}
-          art={<PicCurve />}
+          art={<PicCurve width={W} />}
           h="Change takes weeks, not days."
           line="A new habit took about **66 days** to feel automatic. One missed day barely mattered."
           more={{
@@ -1210,9 +1264,11 @@ function ShowPage({ k, t, st, a }: { k: string; t: Tone; st: Settings | null; a:
         />
       );
     case 'slip':
-      return <Show st={st} art={<PicSlip />} h="A slip is data, not a reset." line="Your points, level, and badges stay. The next day counts again." />;
+      return (
+        <Show st={st} art={<PicSlip width={W} />} h="A slip is data, not a reset." line="Your points, level, and badges stay. The next day counts again." />
+      );
     default:
-      return <Show st={st} art={<PicSteps />} h="Three parts, about 8 minutes." line="Only you see your answers. You can skip any question." />;
+      return null;
   }
 }
 
@@ -1229,13 +1285,8 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
   }, [done, sec, onDone]);
   return (
     <>
-      <View style={{ gap: 10 }}>
-        <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-          Try it now. Thirty seconds of slow breathing.
-        </Text>
-        <T style={s.p}>This is what SOS starts with. Breathe with the circle, or skip.</T>
-      </View>
-      <Mid>
+      <Head h="Try it now. Thirty seconds of slow breathing." sub="This is what SOS starts with. Breathe with the circle, or skip." />
+      <Middle>
         <ToolTimer
           p={gone / BREATHE_SECS}
           left={(BREATHE_SECS - gone) * 1000}
@@ -1245,11 +1296,13 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
           color={c.scheme === 'dark' ? c.sun : c.accent}
           ink={c.accentText}
         />
-      </Mid>
+      </Middle>
     </>
   );
 }
 
+/* a page that shows something: the title at the top and the words under it, then the picture in the open middle, and
+   "Behind this" under the picture */
 function Show({
   art,
   h,
@@ -1265,46 +1318,56 @@ function Show({
   children?: ReactNode;
   st: Settings | null;
 }) {
-  const c = useTheme();
   return (
     <>
-      <Mid>{art}</Mid>
-      <View style={{ gap: 10 }}>
-        <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
-          {h}
-        </Text>
-        {line ? <Rich text={line} st={st} style={s.p} /> : null}
-        {more ? <More more={more} /> : null}
-        {children}
-      </View>
+      <Head h={h} sub={line ? <Rich text={line} st={st} style={[s.p, s.c]} /> : undefined} />
+      {children}
+      <Middle>
+        <FitArt min={0.5} stretch>
+          {art}
+        </FitArt>
+      </Middle>
+      {more ? <More more={more} /> : null}
     </>
   );
 }
 
 /* ---------- small pieces ---------- */
-function Q({ h, sub }: { h: string; sub?: string }) {
-  const c = useTheme();
+/* the top of a page: the title, then the words under it (a string, or a Rich line) */
+function Head({ h, sub, small }: { h: string; sub?: ReactNode; small?: boolean }) {
   return (
-    <View style={{ gap: 6 }}>
-      <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
+    <View style={s.head}>
+      <T v="title" style={[s.c, small ? s.titleSm : SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
         {h}
-      </Text>
-      {sub ? (
-        <T tone="muted" style={s.p}>
+      </T>
+      {typeof sub === 'string' ? (
+        <T tone="muted" style={[s.c, s.p]}>
           {sub}
         </T>
-      ) : null}
+      ) : (
+        sub
+      )}
     </View>
   );
 }
-function QArt({ pg, t }: { pg: ObPage; t: Tone }) {
-  if (!pg.art) return <Grow />;
-  return <Mid>{pg.art === 'flame' ? <Flame level={1} size={110} /> : <LxIco name={pg.art} t={t} size={110} />}</Mid>;
+/* a small picture in the act's color: a Material shape with the page's icon on it, the app's look for a picture */
+function ShapePic({ id, ic, t, size }: { id: string; ic: string; t: Tone; size: number }) {
+  return <ToolShape id={id} ic={ic} size={size} iconSize={Math.round(size * 0.42)} color={t.ic} ink={t.ink} />;
 }
-/* the open middle of a page: the picture, as big as it fits, between the question above and the answers below (or the
-   words below, on a page that shows something). On a short screen it shrinks to its picture and the card scrolls. */
-function Mid({ children }: { children: ReactNode }) {
-  return <View style={s.mid}>{children}</View>;
+/* which shape each one-tap page wears, and each act */
+const PAGE_SHAPE: Record<string, string> = { years: 'pause', faith: 'breathe', tried: 'surprise' };
+const ACT_SHAPE: Record<string, string> = { you: 'curious', hour: 'breathe', plan: 'surprise' };
+const ACT_TIME: Record<string, string> = { you: 'about 3 minutes', hour: 'about 2 minutes', plan: 'about 3 minutes' };
+/* the open middle of a one-tap page: the flame (alive) on the first question, else a shape with the page's icon */
+function QArt({ pg, t }: { pg: ObPage; t: Tone }) {
+  if (!pg.art) return <Middle>{null}</Middle>;
+  return (
+    <Middle>
+      <FitArt min={0.5} drop={0.5}>
+        {pg.art === 'flame' ? <Flame level={1} size={120} alive /> : <ShapePic id={PAGE_SHAPE[pg.id] || 'pause'} ic={pg.art} t={t} size={110} />}
+      </FitArt>
+    </Middle>
+  );
 }
 /* how often, as a circle: empty for Never, half for Occasionally, full for Very often */
 function FreqDot({ n, col }: { n: number; col: string }) {
@@ -1315,8 +1378,6 @@ function FreqDot({ n, col }: { n: number; col: string }) {
     </Svg>
   );
 }
-/* a page with no picture: the answers still sit low, near the thumb */
-const Grow = () => <View style={{ flexGrow: 1 }} />;
 function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPress: () => void; children: ReactNode; style?: object }) {
   const c = useTheme();
   return (
@@ -1406,80 +1467,6 @@ function IconTiles({
           </Pressable>
         );
       })}
-    </View>
-  );
-}
-/** the answers on a scale, as stops along a track */
-function Steps({
-  n,
-  cur,
-  t,
-  labels,
-  lo,
-  hi,
-  onPick,
-}: {
-  n: number;
-  cur: number;
-  t: Tone;
-  labels: string[];
-  lo: string;
-  hi: string;
-  onPick: (j: number) => void;
-}) {
-  const c = useTheme();
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="radiogroup">
-        {Array.from({ length: n }, (_, j) => (
-          <View key={j} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-            {j > 0 ? (
-              <View
-                style={{
-                  flex: 1,
-                  height: 6,
-                  backgroundColor: cur >= j ? t.ic : c.line,
-                }}
-              />
-            ) : (
-              <View style={{ flex: 1 }} />
-            )}
-            <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ checked: cur === j }}
-              accessibilityLabel={labels[j]}
-              hitSlop={8}
-              onPress={() => onPick(j)}
-              style={[
-                s.stop,
-                {
-                  borderColor: cur >= j && cur >= 0 ? t.ic : c.line,
-                  backgroundColor: cur === j ? t.ic : cur > j ? t.ic : c.surface,
-                },
-              ]}
-            />
-            {j < n - 1 ? (
-              <View
-                style={{
-                  flex: 1,
-                  height: 6,
-                  backgroundColor: cur > j ? t.ic : c.line,
-                }}
-              />
-            ) : (
-              <View style={{ flex: 1 }} />
-            )}
-          </View>
-        ))}
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <T v="small" tone="muted">
-          {lo}
-        </T>
-        <T v="small" tone="muted">
-          {hi}
-        </T>
-      </View>
     </View>
   );
 }
@@ -1589,46 +1576,12 @@ function PlanRow({ icon, l, v }: { icon: string; l: string; v: string }) {
     </View>
   );
 }
-function Bar({ w, col, label }: { w: number; col: string; label: string }) {
-  const c = useTheme();
-  const v = useRef(new Animated.Value(w)).current;
-  useEffect(() => {
-    Animated.timing(v, {
-      toValue: w,
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [v, w]);
-  return (
-    <View
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={label}
-      style={{
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: c.lip,
-        overflow: 'hidden',
-      }}>
-      <Animated.View
-        style={{
-          height: '100%',
-          borderRadius: 5,
-          backgroundColor: col,
-          width: v.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0%', '100%'],
-          }),
-        }}
-      />
-    </View>
-  );
-}
-/** your own number counts up */
+/** your own number counts up, big. With Reduce Motion on, it is the final number at once. */
 function CountUp({ to, color }: { to: number; color: string }) {
+  const still = useReducedMotion();
   const [n, setN] = useState(0);
   useEffect(() => {
+    if (still) return;
     const t0 = Date.now();
     let raf = 0;
     const tick = () => {
@@ -1638,8 +1591,18 @@ function CountUp({ to, color }: { to: number; color: string }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [to]);
-  return <Text style={[s.big, { color }]}>{n.toLocaleString('en-US')}</Text>;
+  }, [to, still]);
+  const shown = (still ? to : n).toLocaleString('en-US');
+  /* the size follows the digits of the final number, so it never changes while it counts and never runs off the screen */
+  const len = to.toLocaleString('en-US').length;
+  const size = Math.round((len >= 7 ? 72 : len >= 6 ? 88 : len >= 5 ? 104 : 128) * (SHORT ? 0.78 : 1));
+  return (
+    <Text
+      accessibilityLabel={`${to.toLocaleString('en-US')} hours a year at your pace`}
+      style={{ fontFamily: font.displayBold, fontSize: size, lineHeight: Math.round(size * 1.1), color, fontVariant: ['tabular-nums'] }}>
+      {shown}
+    </Text>
+  );
 }
 function Compare({ g, yr, t }: { g: number; yr: number; t: Tone }) {
   const c = useTheme();
@@ -1669,19 +1632,28 @@ function Compare({ g, yr, t }: { g: number; yr: number; t: Tone }) {
     </View>
   );
 }
-/** hold to commit: a short hold, so the plan feels like a promise. A tap, then a second tap, also works. */
+/** hold to commit: a short hold, so the plan feels like a promise. A tap, then a second tap, also works. The fill grows as you
+    hold; with Reduce Motion on it shows full at once, and the hold still takes the same time. */
 function Hold({ onDone }: { onDone: () => void }) {
   const c = useTheme();
+  const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   const [label, setLabel] = useState('Hold to commit');
   const done = useRef(false);
   const tap2 = useRef(0);
   const held = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finish = () => {
     if (done.current) return;
     done.current = true;
     onDone();
   };
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -1692,6 +1664,15 @@ function Hold({ onDone }: { onDone: () => void }) {
       onPressIn={() => {
         held.current = false;
         buzz('tap');
+        if (timer.current) clearTimeout(timer.current);
+        if (reduce) {
+          v.setValue(1);
+          timer.current = setTimeout(() => {
+            held.current = true;
+            finish();
+          }, 1100);
+          return;
+        }
         Animated.timing(v, {
           toValue: 1,
           duration: 1100,
@@ -1705,13 +1686,16 @@ function Hold({ onDone }: { onDone: () => void }) {
         });
       }}
       onPressOut={() => {
+        if (timer.current) clearTimeout(timer.current);
         if (!done.current) {
           v.stopAnimation();
-          Animated.timing(v, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: false,
-          }).start();
+          if (reduce) v.setValue(0);
+          else
+            Animated.timing(v, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: false,
+            }).start();
         }
       }}
       onPress={() => {
@@ -1748,31 +1732,20 @@ const s = StyleSheet.create({
   remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14 },
   lockIc: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  lockT: { fontFamily: font.bodyBold, fontSize: 14, color: '#FFFFFF' },
-  lockB: { fontFamily: font.body, fontSize: 14, lineHeight: 19, color: '#FFFFFFE6' },
-  lockW: { fontFamily: font.body, fontSize: 12, color: '#FFFFFFA6', alignSelf: 'flex-start' },
-  top: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-  },
-  si: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
-  x: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  lockT: { fontFamily: font.bodyBold, fontSize: 14 },
+  lockB: { fontFamily: font.body, fontSize: 14, lineHeight: 19 },
+  lockW: { fontFamily: font.body, fontSize: 12, alignSelf: 'flex-start' },
+  c: { textAlign: 'center' },
+  page: { flexGrow: 1, alignSelf: 'stretch', gap: 14 },
+  head: { gap: 8, alignSelf: 'stretch' },
+  title26: { fontSize: 26, lineHeight: 31 },
+  titleShort: { fontSize: 24, lineHeight: 29 },
+  titleSm: { fontSize: 22, lineHeight: 27 },
+  rows: { alignSelf: 'stretch', gap: 8 },
+  acts: { alignSelf: 'stretch', gap: 12 },
+  act: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 22 },
+  actT: { flex: 1, fontSize: 17, lineHeight: 24 },
+  huge: { fontFamily: font.displayBold, fontSize: SHORT ? 72 : 96, lineHeight: SHORT ? 78 : 104, fontVariant: ['tabular-nums'] },
   sosPill: {
     height: 40,
     paddingHorizontal: 14,
@@ -1798,26 +1771,10 @@ const s = StyleSheet.create({
   sosRowB: { fontFamily: font.bodyBold, fontSize: 15 },
   sosRowS: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: 8 },
-  card: {
-    flex: 1,
-    borderRadius: 28,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  cardIn: { padding: 22, gap: 14, flexGrow: 1 },
-  art: { minHeight: 90, alignItems: 'center', justifyContent: 'center' },
   orbWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
   orb: { position: 'absolute', left: 10, top: 10, right: 10, bottom: 10, borderRadius: 999 },
   orbDot: { position: 'absolute', width: 30, height: 30, borderRadius: 999 },
-  tip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 56, borderRadius: 18, overflow: 'hidden' },
-  tipT: { fontFamily: font.bodyBold, fontSize: 18 },
-  mid: { flexGrow: 1, minHeight: 90, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
-  h: { fontFamily: font.display, fontSize: 30, lineHeight: 34 },
-  hsm: { fontSize: 26, lineHeight: 31 },
-  p: { fontSize: 18, lineHeight: 26 },
-  hq: { fontFamily: font.display, fontSize: 21, lineHeight: 26 },
+  p: { fontSize: SHORT ? 16 : 18, lineHeight: SHORT ? 23 : 26 },
   quote: { alignSelf: 'stretch', minHeight: 170, justifyContent: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 24, borderRadius: 22 },
   quoteM: { position: 'absolute', top: 6, left: 18, fontFamily: font.display, fontSize: 48, lineHeight: 52 },
   quoteT: { fontFamily: font.display, fontSize: 23, lineHeight: 30 },
@@ -1880,9 +1837,6 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  big: { fontFamily: font.display, fontSize: 64, lineHeight: 70 },
-  slv: { fontFamily: font.display, fontSize: 22, textAlign: 'center' },
-  stop: { width: 26, height: 26, borderRadius: 13, borderWidth: 3 },
   eq: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   soft: {
     flexDirection: 'row',
@@ -1904,7 +1858,7 @@ const s = StyleSheet.create({
     borderWidth: 2,
     maxWidth: '100%',
   },
-  plan: { borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 14 },
+  plan: { alignSelf: 'stretch', borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 14 },
   planRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1941,7 +1895,6 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  foot: { flexDirection: 'row', gap: 10 },
   hold: {
     flex: 1,
     minHeight: 60,

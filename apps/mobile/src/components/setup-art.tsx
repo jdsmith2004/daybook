@@ -283,7 +283,7 @@ export function PicPeople() {
   );
 }
 
-export function PicTries() {
+export function PicTries({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
     fontSize: 10,
@@ -292,7 +292,11 @@ export function PicTries() {
     textAnchor: 'middle' as const,
   };
   return (
-    <Svg width={320} height={150} viewBox="0 0 320 150" accessibilityLabel="A line that climbs, drops back, and climbs again a few times, until one try sticks">
+    <Svg
+      width={width}
+      height={(width * 150) / 320}
+      viewBox="0 0 320 150"
+      accessibilityLabel="A line that climbs, drops back, and climbs again a few times, until one try sticks">
       <Path d="M12 132H308" stroke={c.line} strokeWidth={2} />
       <Path
         d="M14 124L62 82L76 120L132 66L146 112L214 46L226 66L304 22"
@@ -326,7 +330,7 @@ export function PicTries() {
   );
 }
 
-export function PicCurve() {
+export function PicCurve({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
     fontSize: 10,
@@ -335,7 +339,11 @@ export function PicCurve() {
     textAnchor: 'middle' as const,
   };
   return (
-    <Svg width={320} height={150} viewBox="0 0 330 150" accessibilityLabel="A habit curve: it rises over about 66 days, and one bad day is only a small dip">
+    <Svg
+      width={width}
+      height={(width * 150) / 330}
+      viewBox="0 0 330 150"
+      accessibilityLabel="A habit curve: it rises over about 66 days, and one bad day is only a small dip">
       <Path d="M10 132H320" stroke={c.line} strokeWidth={2} />
       <Path d="M10 128C56 124 96 104 116 88L126 102L136 84C186 54 250 34 318 30" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
       <Circle cx={252} cy={38} r={8} fill={c.sun} />
@@ -352,14 +360,14 @@ export function PicCurve() {
   );
 }
 
-export function PicSlip() {
+export function PicSlip({ width = 300 }: { width?: number }) {
   const c = useTheme();
   return (
     <View
       style={{ alignItems: 'center', gap: 6 }}
       accessible
       accessibilityLabel="Two lines. A streak counter climbs, then drops to zero at a slip. Daybook points keep climbing through the slip.">
-      <Svg width={300} height={150} viewBox="0 0 300 150">
+      <Svg width={width} height={(width * 150) / 300} viewBox="0 0 300 150">
         <Path d="M10 126H292" stroke={c.line} strokeWidth={2} />
         <Path d="M160 22V126" stroke={c.slip} strokeWidth={2} strokeDasharray="4 4" />
         <Path d="M12 122L60 112L110 100L160 88V124L210 116L260 106L290 100" stroke={c.muted} strokeWidth={3} fill="none" />

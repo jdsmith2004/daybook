@@ -35,6 +35,7 @@ export function Slider({
   unit,
   hint = 'Slide or tap the line',
   readout = true,
+  endsShowValue = true,
 }: {
   label: string;
   value: number | null;
@@ -53,6 +54,8 @@ export function Slider({
   hint?: string;
   /** false when the screen shows the number itself, larger, somewhere else (with SliderValue) */
   readout?: boolean;
+  /** false when the values are words (the setup's "3 to 5 times"): the ends then show only `lo` and `hi` */
+  endsShowValue?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -211,10 +214,10 @@ export function Slider({
       </View>
       <View style={s.ends}>
         <T v="small" tone="muted">
-          {lo ? show(min) + ' · ' + lo : show(min) + (unit ? ' ' + unit : '')}
+          {lo ? (endsShowValue ? show(min) + ' · ' + lo : lo) : show(min) + (unit ? ' ' + unit : '')}
         </T>
         <T v="small" tone="muted">
-          {hi ? hi + ' · ' + show(max) : show(max) + (unit ? ' ' + unit : '')}
+          {hi ? (endsShowValue ? hi + ' · ' + show(max) : hi) : show(max) + (unit ? ' ' + unit : '')}
         </T>
       </View>
     </View>
@@ -231,6 +234,7 @@ export function SliderValue({
   caption,
   hint = 'Slide or tap the line',
   big,
+  words,
 }: {
   value: number | null;
   show?: (v: number) => string;
@@ -239,6 +243,8 @@ export function SliderValue({
   caption?: string;
   hint?: string;
   big?: boolean;
+  /** with `big`: the value is a few words ("3 to 5 times a week"), so the type is smaller and wraps */
+  words?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -260,8 +266,10 @@ export function SliderValue({
   return (
     <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {value != null ? (
-        <Animated.View style={[s.readRow, lift]}>
-          <AnimatedText style={[big ? (SHORT ? s.hugeShort : s.huge) : s.big, { color: c.ink }]}>{show(value)}</AnimatedText>
+        <Animated.View style={[s.readRow, words && s.readWords, lift]}>
+          <AnimatedText style={[big ? (words ? (SHORT ? s.wordsShort : s.words) : SHORT ? s.hugeShort : s.huge) : s.big, { color: c.ink }]}>
+            {show(value)}
+          </AnimatedText>
           {unit ? <AnimatedText style={[s.unit, { color: c.muted }]}>{unit}</AnimatedText> : null}
         </Animated.View>
       ) : big ? (
@@ -295,6 +303,9 @@ const s = StyleSheet.create({
   /* a short phone (the SE): the number gives up a little so the question, slider and Next fit without scrolling */
   waitShort: { width: 76, height: 76, borderRadius: 38, marginBottom: 4 },
   hugeShort: { fontFamily: font.displayBold, fontSize: 96, lineHeight: 100, fontVariant: ['tabular-nums'] },
+  words: { fontFamily: font.displayBold, fontSize: 42, lineHeight: 48, textAlign: 'center' },
+  wordsShort: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 39, textAlign: 'center' },
+  readWords: { justifyContent: 'center', paddingHorizontal: 8 },
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },

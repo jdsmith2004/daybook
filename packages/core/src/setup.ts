@@ -555,10 +555,18 @@ export function obHeard(a: SetupAnswers): ObShow {
 }
 
 /** the wave page: the person's hardest moment, said in their own pick, when they answered it */
+const OB_WAVE_OPEN: Record<string, string> = {
+  late: 'Late at night, in bed',
+  bored: 'Bored and alone at home',
+  stress: 'Stressed and wound up',
+  lonely: 'Lonely or low',
+  tired: 'Tired at the end of the day',
+  scroll: 'Scrolling your phone',
+};
 export function obWave(a: SetupAnswers) {
   const has = (a.when || []).length > 0;
-  const label = has ? (OB_WHEN.find((x) => x[0] === obTop(a)) || [])[1] : '';
-  return { h: label ? `${label}, an urge rises, peaks, and passes.` : 'Urges rise, peak, and pass.' };
+  const open = has ? OB_WAVE_OPEN[obTop(a)] : '';
+  return { h: open ? `${open}, an urge rises, peaks, and passes.` : 'Urges rise, peak, and pass.' };
 }
 
 /** the four small things the first day asks, shown under the first step on the last page */

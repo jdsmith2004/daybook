@@ -22,6 +22,9 @@ export function SceneFrame({
   onBack,
   onClose,
   dots,
+  bar,
+  bare,
+  topRight,
   footer,
   sheet,
   pinSheet,
@@ -32,6 +35,14 @@ export function SceneFrame({
   onBack?: (() => void) | null;
   onClose: () => void;
   dots?: { n: number; i: number; label: string } | null;
+  /** one smooth progress bar for a long flow (the setup): `frac` of the way, 0 to 1, and its words for a screen reader
+      ("page 4 of 35"). The title above it is then the name of the part. With a bar, the page sits on a white card,
+      unless it is `bare`. */
+  bar?: { frac: number; label: string; color?: string } | null;
+  /** with a bar: this page has no card, the art sits big on the sky itself */
+  bare?: boolean;
+  /** something small next to Close in the top bar (the setup's SOS pill) */
+  topRight?: ReactNode;
   footer?: ReactNode;
   /** a sheet along the bottom edge, below the card (the SOS screens) */
   sheet?: ReactNode;
@@ -49,7 +60,7 @@ export function SceneFrame({
   const scroll = useRef<ScrollViewInstance>(null);
   /* a picture inside (FitArt) shrinks so the page fits a short phone */
   const fit = useFitRoom();
-  const at = dots ? dots.i + '/' + dots.n : '';
+  const at = dots ? dots.i + '/' + dots.n : bar ? bar.label : '';
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [at, title]);
@@ -77,10 +88,14 @@ export function SceneFrame({
                     {title}
                   </T>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
-                  <Icon name="x" color={ink} />
-                </Pressable>
+                <View style={s.topR}>
+                  {topRight}
+                  <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: btn }]}>
+                    <Icon name="x" color={ink} />
+                  </Pressable>
+                </View>
               </View>
+              {bar ? <ProgressBar frac={bar.frac} label={bar.label} track={btn} color={bar.color ?? c.accent} /> : null}
               {dots ? (
                 <View style={s.dots} accessible accessibilityRole="progressbar" accessibilityLabel={dots.label}>
                   {Array.from({ length: dots.n }, (_, j) => (
@@ -88,7 +103,10 @@ export function SceneFrame({
                   ))}
                 </View>
               ) : null}
-              <View style={[s.card, SHORT && s.cardShort]}>{children}</View>
+              <View style={[s.card, SHORT && s.cardShort, bar && !bare && (SHORT ? s.paperShort : s.paper)]}>
+                {bar ? <Paper on={!bare} /> : null}
+                {children}
+              </View>
               {footer ? <View style={s.foot}>{footer}</View> : null}
             </View>
           </KeyboardRoom>
@@ -110,6 +128,35 @@ export function SceneFrame({
   ) : (
     body
   );
+}
+
+/** the one bar of a long flow: it eases to where the flow now is */
+function ProgressBar({ frac, label, track, color }: { frac: number; label: string; track: string; color: string }) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(frac)).current;
+  useEffect(() => {
+    if (reduce) v.setValue(frac);
+    else Animated.timing(v, { toValue: frac, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [frac, reduce, v]);
+  return (
+    <View style={[s.track, { backgroundColor: track }]} accessible accessibilityRole="progressbar" accessibilityLabel={label}>
+      <Animated.View
+        style={[s.fill, { backgroundColor: color, width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }) }]}
+      />
+    </View>
+  );
+}
+
+/** the white card behind a question page; it fades in and out as the flow moves between cards and bare scenes */
+function Paper({ on }: { on: boolean }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) v.setValue(on ? 1 : 0);
+    else Animated.timing(v, { toValue: on ? 1 : 0, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [on, reduce, v]);
+  return <Animated.View pointerEvents="none" style={[s.paperBg, { backgroundColor: c.surface, shadowColor: c.lip, opacity: v }]} />;
 }
 
 /** one segment of the progress bar: to come (0), now (1, longer and bright) or done (2). It grows and changes color
@@ -165,7 +212,22 @@ const BURST: { x: number; y: number; kind: ShapeKind; size: number; turn: number
 
 /** the end of a tool: the flame pops in and a few shapes burst out from behind it and settle around it, once. `tone` is the
     tool's color (sky, mint, accent, sun, violet, coral); without it the shapes are warm. */
-export function Finish({ level, title, text, tone }: { level: number; title: string; text?: string; tone?: string }) {
+export function Finish({
+  level,
+  title,
+  text,
+  tone,
+  alive,
+  size = 150,
+}: {
+  level: number;
+  title?: string;
+  text?: string;
+  tone?: string;
+  /** the flame moves gently (the end of the setup) */
+  alive?: boolean;
+  size?: number;
+}) {
   const c = useTheme();
   const reduce = useReducedMotion();
   const pop = useRef(new Animated.Value(0)).current;
@@ -218,15 +280,17 @@ export function Finish({ level, title, text, tone }: { level: number; title: str
               opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
               transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
             }}>
-            <Flame level={level} size={150} />
+            <Flame level={level} size={size} alive={alive} />
           </Animated.View>
         </View>
       </FitArt>
-      <Appear delay={220}>
-        <T v="title" style={s.center} accessibilityRole="header">
-          {title}
-        </T>
-      </Appear>
+      {title ? (
+        <Appear delay={220}>
+          <T v="title" style={s.center} accessibilityRole="header">
+            {title}
+          </T>
+        </Appear>
+      ) : null}
       {text ? (
         <Appear delay={320}>
           <T style={s.center}>{text}</T>
@@ -261,6 +325,23 @@ const s = StyleSheet.create({
   pinned: { paddingHorizontal: 16, alignItems: 'center' },
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  topR: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 4 },
+  paper: { padding: 18, borderRadius: 28 },
+  paperShort: { padding: 14, borderRadius: 24 },
+  paperBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 28,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
   topL: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   dots: { flexDirection: 'row', gap: 6, paddingHorizontal: 2 },

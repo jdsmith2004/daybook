@@ -130,6 +130,17 @@ it('tells the setup as three acts, in one order', () => {
   expect(at).toEqual([...at].sort());
 });
 
+it("names the person's hardest moment on the wave page", () => {
+  const w = (when: string[]) => core.obWave({ when }).h;
+  expect(w(['late'])).toBe('Late at night, in bed, an urge rises, peaks, and passes.');
+  expect(w(['bored'])).toBe('Bored and alone at home, an urge rises, peaks, and passes.');
+  expect(w(['stress'])).toBe('Stressed and wound up, an urge rises, peaks, and passes.');
+  expect(w(['lonely'])).toBe('Lonely or low, an urge rises, peaks, and passes.');
+  expect(w(['tired'])).toBe('Tired at the end of the day, an urge rises, peaks, and passes.');
+  expect(w(['scroll'])).toBe('Scrolling your phone, an urge rises, peaks, and passes.');
+  expect(core.obWave({}).h).toBe('Urges rise, peak, and pass.');
+});
+
 it('asks for a free account once the plan is built, only when the build has accounts and the person is not signed in', () => {
   expect(core.obPages({}).some((p) => p.id === 'account')).toBe(false);
   const ids = core.obPages({}, { account: true, notify: true }).map((p) => p.id);

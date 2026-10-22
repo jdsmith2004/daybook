@@ -26,10 +26,23 @@ describe('the number on the flame', () => {
     expect([h.eb, h.n, h.unit]).toEqual(['No slip', '2', 'of the last 3 days']);
     expect(heroNumber({}, normSettings({ start: '2026-10-17', day1: tk }), tk, now)!.n).toBe('Day 1');
   });
-  it('quitting, on the way: the count toward graduation', () => {
+  it('quitting, on the way: the count toward graduation, once 30 days hold', () => {
     const st = normSettings({ start: '2026-07-01', day1: '2026-07-08' });
     const h = heroNumber({}, st, tk, now)!;
     expect([h.eb, h.unit]).toEqual(['Toward graduation', 'of 90']);
+    const h30 = heroNumber({}, normSettings({ start: '2026-09-11', day1: '2026-09-18' }), tk, now)!;
+    expect([h30.eb, h30.n, h30.unit]).toEqual(['Toward graduation', '30', 'of 90']);
+  });
+  it('quitting, before 30 days hold: the week, even after the first week in a row', () => {
+    const h = heroNumber({}, normSettings({ start: '2026-10-03', day1: '2026-10-10' }), tk, now)!;
+    expect([h.eb, h.n, h.unit]).toEqual(['No slip', '7', 'of the last 7 days']);
+    const h29 = heroNumber({}, normSettings({ start: '2026-09-12', day1: '2026-09-19' }), tk, now)!;
+    expect([h29.eb, h29.n]).toEqual(['No slip', '7']);
+  });
+  it('graduated: the count that keeps going', () => {
+    const st = normSettings({ start: '2026-10-03', day1: '2026-10-10', gradAt: '2026-10-15' });
+    const h = heroNumber({}, st, tk, now)!;
+    expect([h.eb, h.chip]).toEqual(['Graduated', 'Still going']);
   });
   it('tracking: which day it is, and when Day 1 comes', () => {
     const h = heroNumber({}, normSettings({ start: '2026-10-16', day1: '2026-10-23' }), tk, now)!;
@@ -54,22 +67,23 @@ describe('the hours after a slip', () => {
 
   it('start fresh: the hours since the slip, with the days that hold beside them', () => {
     const h = hero(slip(K, { keep: false }));
-    expect([h.eb, h.n, h.unit, h.chip, h.star]).toEqual(['Since your last slip', '13', 'hours', '7 of 90 toward graduation', false]);
-    expect(h.say).toBe('13 hours since your last slip. 7 of 90 toward graduation.');
+    expect([h.eb, h.n, h.unit, h.chip, h.star]).toEqual(['Since your last slip', '13', 'hours', '6 of the last 7 days', false]);
+    expect(h.say).toBe('13 hours since your last slip. 6 of the last 7 days with no slip.');
   });
   it('right after the slip: under an hour', () => {
     const h = hero(slip(K, { keep: false }), st, at + 5 * 60e3);
-    expect([h.n, h.unit, h.chip]).toEqual(['<1', 'hour', '7 of 90 toward graduation']);
-    expect(h.say).toBe('Under an hour since your last slip. 7 of 90 toward graduation.');
+    /* the slip's day is still today, open: the 7 finished days before it all hold */
+    expect([h.n, h.unit, h.chip]).toEqual(['<1', 'hour', '7 of the last 7 days']);
+    expect(h.say).toBe('Under an hour since your last slip. 7 of the last 7 days with no slip.');
   });
   it('for 72 hours, then the days that hold again', () => {
     expect(hero(slip(K, { keep: false }), st, at + 71 * H).n).toBe('71');
     const h = hero(slip(K, { keep: false }), st, at + 73 * H);
-    expect([h.eb, h.n, h.unit]).toEqual(['Toward graduation', '9', 'of 90']);
+    expect([h.eb, h.n, h.unit]).toEqual(['No slip', '6', 'of the last 7 days']);
     expect(hoursSinceSlip(slip(K, { keep: false }), st, logicalKey(at + 73 * H, 4), at + 73 * H)).toBeNull();
   });
   it('a kept run: no hours, the run goes on', () => {
-    for (const d of [slip(K, { keep: true }), slip(K), slip(K, { keep: true, done: true })]) expect(hero(d).eb).toBe('Toward graduation');
+    for (const d of [slip(K, { keep: true }), slip(K), slip(K, { keep: true, done: true })]) expect(hero(d).eb).toBe('No slip');
   });
   it('a run under 7 days ends at the slip: the hours', () => {
     const h = hero(slip('2026-11-07'), st, new Date(2026, 10, 7, 22, 0).getTime() + 14 * H);
@@ -82,7 +96,7 @@ describe('the hours after a slip', () => {
   });
   it('gentle: a slip that still counts as a good day keeps the days; a second slip that day is the hours', () => {
     const g = normSettings({ start: '2026-10-25', day1: '2026-11-01', cleanMode: 'gentle' });
-    expect(hero(slip(K), g).eb).toBe('Toward graduation');
+    expect(hero(slip(K), g).eb).toBe('No slip');
     const h = hero(slip(K, { two: true, keep: false }), g);
     expect([h.eb, h.n]).toEqual(['Since your last slip', '12']);
   });

@@ -1,10 +1,11 @@
 /* Graduation: a celebration and an award that is kept for good. It is earned with 90 no-slip days within the last 100, not 90
    in a row, so a slip never wipes out what was built: a slip at day 89 makes the count 88, and it climbs again the next day.
 
-   It stays quiet early on. Before the first 7 days in a row with no slip, Daybook only mentions that it exists; after that it
-   shows the count, warmly, and never as a countdown. Once earned, settings.gradAt holds the date and is never cleared, so the
-   award survives later slips, rule changes and sync. Today does not change. Days Daybook does not know about (a long gap
-   away, away.ts) count neither way. Checked by test/graduate.test.ts. */
+   It stays quiet early on. Before the first 7 days in a row with no slip, Daybook only mentions that it exists; after that
+   Milestones shows the count, warmly, and never as a countdown. Today waits longer: the count shows there only once 30 days
+   hold (GRAD_TODAY), so a big goal is never pushed in the first weeks. Display only: the count and the award do not change.
+   Once earned, settings.gradAt holds the date and is never cleared, so the award survives later slips, rule changes and
+   sync; earning it does not change Today. Days Daybook does not know about (a long gap away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, computeMetrics, eventsOf, isKey } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
@@ -15,6 +16,8 @@ export const GRAD_DAYS = 90;
 export const GRAD_WINDOW = 100;
 /** the first stretch with no slip, in a row, before Daybook starts showing the way to graduation */
 export const GRAD_GATE = 7;
+/** no-slip days within the window before Today shows the way to graduation (Milestones shows it from GRAD_GATE) */
+export const GRAD_TODAY = 30;
 /** from here on, an "almost there" word */
 export const GRAD_NEAR = 80;
 
@@ -58,6 +61,9 @@ export function gradInfo(days: Days, st: Settings, tk: DayKey): GradInfo {
   };
 }
 
+/** Today shows the count toward graduation (or the award): once graduated, or once GRAD_TODAY days hold */
+export const gradOnToday = (g: GradInfo): boolean => !!g.at || (g.show && g.count >= GRAD_TODAY);
+
 /** record graduation: the date is set once and never changed */
 export const graduate = (st: Settings, tk: DayKey, now = Date.now()): Change => ({
   st: gradOf(st) ? st : changeSettings(st, (s) => void (s.gradAt = tk), now),
@@ -74,7 +80,7 @@ export function gradLine(g: GradInfo): string | null {
 /** what Milestones says before the first week, quietly */
 export const GRAD_ABOUT = `Graduation is a big one for later: ${GRAD_DAYS} days with no slip within ${GRAD_WINDOW}. A hard day does not erase the others. For now, one day at a time is plenty.`;
 
-/** the one day number Today shows (in the flame card). Before the first week with no slip, only the last 7 days, small and
+/** the one day number Today shows (in the flame card). Until GRAD_TODAY days hold, only the last 7 days, small and
     close; after that, the way to graduation; once graduated, the count that keeps going. It never drops to zero after a
     slip: a slip takes one day off, and the rest stay. Null before Day 1 (the tracking week has its own card). */
 export interface TodayMeasure {
@@ -96,7 +102,7 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
   if (!first || first > tk) return null;
   const g = gradInfo(days, st, tk);
   if (g.at) return { k: 'grad', n: g.count, of: `of the last ${GRAD_WINDOW} days with no slip`, sub: 'Graduated, for good. Still going.' };
-  if (g.show)
+  if (gradOnToday(g))
     return {
       k: 'way',
       n: g.count,

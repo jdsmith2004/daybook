@@ -1,6 +1,6 @@
 /* The number on the flame's picture at the top of Today: the one number for where the person is. Stepping down: this
-   stretch, with the best before it. Quitting: the days that hold (todayMeasure: the last week at first, then the way to
-   graduation). The tracking week: which day of it. Just tracking: how many days so far. It holds what was earned, like
+   stretch, with the best before it. Quitting: the days that hold (todayMeasure: the last week until 30 days hold, then the
+   way to graduation). The tracking week: which day of it. Just tracking: how many days so far. It holds what was earned, like
    the measures it comes from. Right after a slip that ended the run (the owner, October 21: hours are more motivating
    after a loss), the hours since it, for 72 hours, with the days that hold beside them. Checked by test/hero.test.ts. */
 import { GRAD_DAYS, todayMeasure } from './graduate';

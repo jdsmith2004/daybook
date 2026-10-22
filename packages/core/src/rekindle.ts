@@ -25,7 +25,7 @@ import {
   type RekindleState,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
-import { GRAD_DAYS, gradInfo } from './graduate';
+import { GRAD_DAYS, gradInfo, gradOnToday } from './graduate';
 import { changeDay, withDay } from './mutate';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
@@ -273,14 +273,15 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
 }
 
 /** after a slip that ends a long stretch: words that honor what was built (null for a short one). A long run is a huge win
-    next to where the person started, and this slip takes one day off the way to graduation, never the rest. */
+    next to where the person started, and this slip takes one day off the way to graduation, never the rest (that count is
+    named once GRAD_TODAY days hold, as on Today). */
 export function rkHonor(days: Days, st: Settings, tk: DayKey, date: DayKey): string | null {
   const op = rkOpen(days, st, tk, date).op;
   /* a run kept going, or one the person chose to start fresh after: either way, what was built is honored */
   const run = op ? op.run : freshOf(days, st, tk, date)?.run || 0;
   if (run < RUN_ASK) return null;
   const g = gradInfo(days, st, tk);
-  const grad = g.show && !g.at ? ` You are at ${g.count} of ${GRAD_DAYS} toward graduation. A slip takes one day off, never the rest.` : '';
+  const grad = gradOnToday(g) && !g.at ? ` You are at ${g.count} of ${GRAD_DAYS} toward graduation. A slip takes one day off, never the rest.` : '';
   return `${run} days. That is huge, and it still counts.` + grad;
 }
 
@@ -532,7 +533,7 @@ export interface RkEnded {
   lit: number;
   of: number;
   longest: number;
-  /** the count toward graduation, when it is shown */
+  /** the count toward graduation, when Today shows it (gradOnToday) */
   grad: number | null;
   text: string;
 }
@@ -563,7 +564,7 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
     if (fresh) {
       const text =
         'You chose to start fresh. Your new run counts from ' + fmtDate(addDays(k, 1), { weekday: 'long' }) + counts + '. What you built stays yours.';
-      return { run, why: 'fresh', lit, of, longest: L.longest, grad: g.show && !g.at ? g.count : null, text };
+      return { run, why: 'fresh', lit, of, longest: L.longest, grad: gradOnToday(g) && !g.at ? g.count : null, text };
     }
     const text = full[k]
       ? 'The quest closed last night with ' +
@@ -575,7 +576,7 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
         counts +
         '. What you built stays yours.'
       : 'A second slip within a week cannot be saved, so a new run started today. What you built stays yours.';
-    return { run, why: full[k] ? 'clock' : 'again', lit, of, longest: L.longest, grad: g.show && !g.at ? g.count : null, text };
+    return { run, why: full[k] ? 'clock' : 'again', lit, of, longest: L.longest, grad: gradOnToday(g) && !g.at ? g.count : null, text };
   }
   return null;
 }

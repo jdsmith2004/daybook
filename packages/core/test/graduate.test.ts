@@ -72,6 +72,11 @@ it('after a slip that ends a long run, Rekindle honors the run and the way to gr
   expect(core.rkHonor(short, st0(core.addDays(tk, -3)), tk, tk)).toBeNull();
 });
 
+it('a run under 30 days is honored without naming the 90', () => {
+  const h = core.rkHonor(core.addEvent({}, tk, 'slipped', '22:00').days, st0(core.addDays(tk, -20)), tk, tk);
+  expect(h).toBe('20 days. That is huge, and it still counts.');
+});
+
 describe('the one day number on Today', () => {
   const st0 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
   const slip = (d: string) => ({
@@ -100,11 +105,40 @@ describe('the one day number on Today', () => {
     const m = core.todayMeasure(days, st0, '2026-10-02')!;
     expect([m.n, m.of]).toEqual([0, 'Today counts']);
   });
-  it('after a week with no slip it is the way to graduation, and nothing before Day 1', () => {
-    const m = core.todayMeasure({}, st0, '2026-10-20')!;
+  it('the way to graduation waits on Today until 30 days hold, while Milestones has the line from the first week', () => {
+    /* day 8, after a first run of 7 days: the week on Today, the count in Milestones */
+    const tk8 = '2026-10-09';
+    const g = core.gradInfo({}, st0, tk8);
+    expect([g.show, g.count]).toEqual([true, 8]);
+    expect(core.gradLine(g)).toBe('8 of 90 toward graduation. Every day with no slip in your last 100 counts.');
+    const m = core.todayMeasure({}, st0, tk8)!;
+    expect([m.k, m.n, m.of]).toEqual(['week', 7, 'of the last 7 days with no slip']);
+    expect(core.gradOnToday(g)).toBe(false);
+    /* 29 days: still the week */
+    expect(core.todayMeasure({}, st0, '2026-10-30')!.k).toBe('week');
+  });
+  it('once 30 days hold, it is the way to graduation, and nothing before Day 1', () => {
+    const m = core.todayMeasure({}, st0, '2026-10-31')!;
     expect(m.k).toBe('way');
-    expect(m.n).toBe(19);
+    expect(m.n).toBe(core.GRAD_TODAY);
     expect(m.of).toBe('of 90 toward graduation');
     expect(core.todayMeasure({}, { ...st0, day1: '2026-11-01' }, '2026-10-20')).toBeNull();
+  });
+  it('30 days that hold without a first week in a row stay quiet on Today too', () => {
+    let days: Days = {};
+    for (let i = 5; i <= 60; i += 5) days = { ...days, [core.addDays('2026-10-01', i)]: slip(core.addDays('2026-10-01', i)) } as unknown as Days;
+    const tk = '2026-12-05';
+    const g = core.gradInfo(days, st0, tk);
+    expect(g.show).toBe(false);
+    expect(g.count).toBeGreaterThanOrEqual(core.GRAD_TODAY);
+    expect(core.todayMeasure(days, st0, tk)!.k).toBe('week');
+  });
+  it('once graduated, it is the count that keeps going, at any count', () => {
+    const st = core.graduate(st0, '2026-10-20').st;
+    let days: Days = {};
+    for (let i = 1; i <= 25; i++) days = { ...days, [core.addDays('2026-11-20', -i)]: slip(core.addDays('2026-11-20', -i)) } as unknown as Days;
+    const m = core.todayMeasure(days, st, '2026-11-20')!;
+    expect(m.k).toBe('grad');
+    expect(m.of).toBe('of the last 100 days with no slip');
   });
 });

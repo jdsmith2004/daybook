@@ -1,5 +1,70 @@
 # What is planned next
 
+## Setup as a story: three acts, three payoffs (the owner, October 22, 2026)
+
+**What the owner asked for:** setup has to be the best-built part of the app: better visuals, more excitement, better
+teaching, following what is known about good onboarding. Research first (cheap agents), design and flow by Claude, the
+building outsourced.
+
+**What the research holds up** (most onboarding advice is vendor blogs; this is the part with some evidence behind it):
+value before the end (Calm opens with a breath before any question; Reframe's quiz teaches while it asks, and its
+"building your plan" screen works because something is being built); a question earns its place only when the answer
+changes something the person sees; the account ask comes last (Duolingo's own number: about +20% daily use); and for a
+shame-free app, no dependency score, no urgency, and no pledge that frames a future slip as a broken promise (the
+abstinence violation effect, Marlatt). Nobody has a credible number for the right length; the setup funnel in the counts
+will measure ours per page.
+
+**What the walk found** (all 39 web pages at 390 by 844, light and dark): the question pages work (clean, low, one tap),
+and so do the five statements, the hours reveal, the real pictures and the sourced "Behind this". The problems: no arc
+(41 pages, 50 to 60 taps, 8 to 10 minutes, every page the same white card, the bar resetting seven times, "about 5
+minutes" not true); pages 20 to 31 are twelve "read it, tap Next" pages in a row, a tour of the app before the person has
+used it, and nothing in them uses the answers except the SOS line and the pattern chart; nothing happens (the first tool
+is tried after setup); the payoff is flat ("Here is your plan" is a list that appears, "Welcome in" a small static
+flame); placeholder icons in pale circles; two asks back to back at the end (tip, then account); and off-standard
+details (teaching pages put the title at the bottom, a hand-rolled track instead of `Slider`, hard-coded colors, no
+Reduce Motion, no page transition).
+
+**The owner's decisions (October 22):** merge the five tour pages (SOS, lessons, your day, pattern, flame) into one and
+let Today teach the rest (this reverses "setup keeps every screen" from October 17, for the tour pages only; every
+question stays); the tip page leaves setup (the tip jar stays in the app: Today's one ask and the row on More; "free, no
+ads, no subscription" moves to the welcome page); a real 30-second slow-breathing moment inside setup, skippable; keep
+"Hold to commit" as the one ceremony, the hold lighting the flame, the promise about honesty and never about not slipping.
+
+**The design.** Every question stays. The flow becomes a story in three acts, each ending on a payoff, each looking
+different (its own color washing the whole screen on its opening and payoff pages, white cards for the questions):
+
+1. **You** (hello, how, aim, years, freq, mins, faith, the five statements, heard with "far from the only one" folded in,
+   costs, guess) → **payoff: your hours**, the number counting up on a full-color page.
+2. **Your hardest hour** (when → "Late at night, in bed. Here is what an urge does there", the wave full-bleed → **try it
+   now: 30 seconds of slow breathing**, the real SOS breath, skippable → the loop, "the way out is people" → who could be
+   your safe person, so the teaching sits inside the question → one page, "A day in Daybook", in place of the five tour
+   pages) → **payoff: you just rode one out.**
+3. **What to expect, and your plan** (curve, tried, tries, slip as a short full-bleed story; "takes" folds into the
+   welcome page → goal, reasons, if-then, screens off, becoming) → **payoff: the plan builds itself**, row by row from the
+   answers as each is computed, then the hold that lights the flame, then "Welcome in" with the flame alive, the level bar
+   filling to +20 and the first step.
+
+Then the account ask (as now) and the reminder page. About 33 pages and 40 taps, and the person leaves having done one
+real thing. Across the whole flow: one progress bar for the full setup with the three act names, an honest time on the
+first page, titles at the top on every page, a page transition, `Slider` for freq and mins, the flame alive, Reduce
+Motion honored, theme tokens only, and the pale-circle icons drawn as real small pictures or dropped.
+
+**Steps (each one commit; each marked with its effort; the owner has not set a level, so the work runs at Medium):**
+
+1. **Medium.** The structure: `OB_PAGES` in the new order with the merges (heard+common; sos, lessons, day, pattern and
+   flame → one `tour` page; takes → done; `breathe` new, after when; loop just before person; so into the plan act; free
+   out), `OB_SECS` as the three acts, one progress bar over the whole flow, the honest time and the free line on hello.
+   `PULSE_KEYS` and the privacy page list follow the page ids in the same change; the setup fixtures' `pages` are updated
+   by hand (the order is a design change, not a rule change); the walk-through (redo) still works.
+2. **Medium.** The look: act openings and payoffs as full-color scenes, titles on top everywhere, a slide-and-fade between
+   pages, `Slider` on freq and mins with the big value in the middle, the flame alive, Reduce Motion, theme tokens, the
+   placeholder icons replaced or dropped.
+3. **Medium.** The payoffs: the hours count-up as the act-one close; the breathe page on the SOS breath (`ToolTimer`,
+   `SQUIGGLE`, design-standards.md); the plan assembling row by row; the hold lighting the flame; Welcome in with the
+   level bar filling (display only, points rules unchanged).
+4. **Medium.** The walk: a Playwright pass of the whole flow as a new person and as a walk-through, light and dark, 390 by
+   844 and the SE height, screenshots to the owner; the funnel checked against the new ids.
+
 ## Today, with its flame back (the owner, October 22, 2026)
 
 **What the owner said** about the one-card Today: it is simpler, but it lost its soul. The flame is the mascot, the

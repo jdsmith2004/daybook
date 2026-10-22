@@ -130,6 +130,25 @@ people, which only adds.
    picture per day (Playwright against `expo export --platform web`, the clock fixed with `page.clock`, the log seeded
    into `localStorage` under `daybook:` keys; the review's pictures were made this way).
 
+**Done (October 22, 2026), all seven steps.** Today is the one card (core `moment.ts` `pickMoment`), SOS, the standing
+row (`standRow`) and Your day as rows. The sunrise check comes after every slip in every mode (`sunriseDue`); three
+flames light themselves (`rkLights`); from `RK_BACK_FROM` (2026-10-19) a waiting run is also saved by the sunrise check
+plus the third flame (core.js `rkThirdOf`, beside the old missions, which still save it). `npm run story` walks two
+made-up people through the web app.
+
+Choices made on the owner's behalf, to revisit if they feel wrong:
+
+- The third flame is "the next urge ridden out, or a full day with no slip" (the open question above).
+- The talk-through waiting to decide ("Deciding at 9 PM") and the "Your plan, talked through" state are not the card;
+  the card shows decide now, it passed and look back, as listed.
+- The "hard hours held" card left Today; the toast when they are kept says it, and the count stays in Milestones.
+- The Sunday goal's extras (the if-then plan, the harder day, the note) moved with the goal card to Journal, Days.
+- The first pattern is the card for one day only (kept on the device), then it lives in Journal, Pattern.
+- A reminder note that is not "paused" is the card only once the day is done.
+
+Left, not in the seven steps: badge pop-ups as quiet toasts (the review's "merge or cut" list; the story runs show
+pop-ups most days). The slip's own Rekindle scene still lists "one small thing" as its only mission.
+
 ### Feedback and opt-in counts (the owner, October 22, 2026)
 
 The owner chose: **opt-in counts** (off until the person says yes), an **anonymous feedback box**, and four questions to

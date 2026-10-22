@@ -50,6 +50,14 @@ export function closeAll() {
   else router.replace('/');
 }
 
+/** whether a sheet is open on top: Today shows through behind it, so Today keeps its place */
+export function sheetOnTop(): boolean {
+  let st = rootState();
+  while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
+  const top = st?.routes[st.index ?? st.routes.length - 1];
+  return !!top && SHEETS.includes(top.name);
+}
+
 /** the tab showing under the pages (kept by the tab bar) */
 let lastTab = 'index';
 export function keepTab(path: string) {

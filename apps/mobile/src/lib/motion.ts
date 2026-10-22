@@ -5,14 +5,26 @@ import { AccessibilityInfo, Animated, Easing, Platform } from 'react-native';
 
 export const NATIVE = Platform.OS !== 'web';
 
+/* Reduce Motion, asked once when the app starts and kept up to date, so a page or a card can start moving in its first frame
+   instead of waiting a beat for the answer (that wait showed as a blank card on phones). */
+let reduceNow: boolean | null = null;
+try {
+  AccessibilityInfo.isReduceMotionEnabled()
+    .then((r) => (reduceNow = r))
+    .catch(() => (reduceNow = false));
+  AccessibilityInfo.addEventListener('reduceMotionChanged', (r) => (reduceNow = r));
+} catch {
+  reduceNow = false;
+}
+/** Reduce Motion now, as far as it is known yet */
+const askReduce = (): Promise<boolean> => (reduceNow !== null ? Promise.resolve(reduceNow) : AccessibilityInfo.isReduceMotionEnabled().catch(() => false));
+
 /** true when the person asked their device for less motion (false until known) */
 export function useReducedMotion() {
-  const [r, setR] = useState(false);
+  const [r, setR] = useState(() => !!reduceNow);
   useEffect(() => {
     let live = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((x) => live && setR(x))
-      .catch(() => undefined);
+    askReduce().then((x) => live && setR(x));
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (x) => setR(x));
     return () => {
       live = false;
@@ -24,16 +36,16 @@ export function useReducedMotion() {
 
 /** a value that goes from 0 to 1 once, after delay ms (or is 1 at once with Reduce Motion on) */
 export function useAppear(delay = 0, duration = 420, easing = Easing.out(Easing.cubic)) {
-  const v = useRef(new Animated.Value(0)).current;
+  const v = useRef(new Animated.Value(reduceNow ? 1 : 0)).current;
   useEffect(() => {
     let live = true;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .catch(() => false)
-      .then((r) => {
-        if (!live) return;
-        if (r) v.setValue(1);
-        else Animated.timing(v, { toValue: 1, duration, delay, easing, useNativeDriver: NATIVE }).start();
-      });
+    const go = (r: boolean) => {
+      if (!live) return;
+      if (r) v.setValue(1);
+      else Animated.timing(v, { toValue: 1, duration, delay, easing, useNativeDriver: NATIVE }).start();
+    };
+    if (reduceNow !== null) go(reduceNow);
+    else askReduce().then(go);
     return () => {
       live = false;
       v.stopAnimation();

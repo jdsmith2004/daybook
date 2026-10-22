@@ -36,9 +36,9 @@ import {
   shouldAutoStep,
   standRow,
 } from '@daybook/core';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useRef } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { AppState, Pressable, StyleSheet, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
@@ -53,6 +53,7 @@ import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
+import { sheetOnTop } from '@/lib/nav';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -133,6 +134,33 @@ export default function Today() {
     say((x.k === tk ? 'You got through ' : 'Last night you got through ') + x.r.win.label + ', your hardest hours.');
   }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
+  /* Today always opens on the flame and the next step: once it is out of sight (another tab, a lesson, a page, or the app
+     put away), it goes back to the top, so coming back never shows it jump. A sheet only covers part of it, so a sheet
+     keeps the place. */
+  const scroll = useRef<ScrollViewInstance>(null);
+  const top = useCallback(() => scroll.current?.scrollTo({ y: 0, animated: false }), []);
+  const away = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const left = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      clearTimeout(away.current);
+      /* a hidden tab cannot scroll on the web, so it also goes up as it comes back, before it is drawn */
+      if (left.current) top();
+      left.current = false;
+      return () => {
+        left.current = !sheetOnTop();
+        if (left.current) away.current = setTimeout(top, 450);
+      };
+    }, [top]),
+  );
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (a) => a === 'background' && top());
+    return () => {
+      sub.remove();
+      clearTimeout(away.current);
+    };
+  }, [top]);
+
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 
   /* the first pattern is a calm-day moment for one day, then it lives in Journal, Pattern (kept on this device) */
@@ -178,6 +206,7 @@ export default function Today() {
   );
   return (
     <Screen
+      scrollRef={scroll}
       eyebrow="My Daybook"
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}

@@ -45,7 +45,7 @@ import {
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
@@ -111,6 +111,8 @@ export default function LessonScreen() {
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
+  /* a new card starts at its top, set as it comes in (it is still clear then): the old card never jumps before it goes */
+  useLayoutEffect(() => scroll.current?.scrollTo({ y: 0, animated: false }), [stage, i]);
 
   if (!st) return <Redirect href="/" />;
   if (!L)
@@ -154,7 +156,6 @@ export default function LessonScreen() {
     if (d > 0 && cur.t === 'card' && cur.c.k === 'guess' && !(gu[cur.ci] && gu[cur.ci].lock)) return;
     setI(to);
     if (seq[to].t === 'done') record();
-    top();
   };
   const practiced = () => {
     setPrac(true);
@@ -162,7 +163,6 @@ export default function LessonScreen() {
   };
   const toStage = (s: Stage) => {
     setStage(s);
-    top();
   };
 
   /* the practice step. Nothing here finishes the lesson, and a tool or page it opens comes back to this same step. */
@@ -238,7 +238,6 @@ export default function LessonScreen() {
       setRcTried([]);
       setStage('run');
       if (lessonHasQuick(L) && st.learn.len !== ln) apply({ st: changeSettings(st, (s0) => void (s0.learn.len = ln)) });
-      top();
     };
     body = (
       <>

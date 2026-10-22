@@ -9,6 +9,7 @@ import {
   fmtDate,
   isTime,
   keyOfDate,
+  levelOf,
   OB_BE,
   OB_PAGES,
   OB_BPS,
@@ -65,7 +66,9 @@ import { Text } from '@/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { Appear } from '@/components/appear';
 import { Field } from '@/components/choices';
+import { CountUp } from '@/components/count-up';
 import { FitArt, SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck } from '@/components/lesson-art';
@@ -75,7 +78,7 @@ import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicToday, PicTries, PicWe
 import { useClock } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
 import { ToolShape } from '@/components/tool-grid';
-import { ToolTimer, type BeatOf } from '@/components/tools/timer';
+import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
@@ -87,7 +90,7 @@ import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
-import { useReducedMotion } from '@/lib/motion';
+import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Sky, type Tone } from '@/lib/theme';
 
 type Flow = SetupFlow;
@@ -130,6 +133,14 @@ export default function Setup() {
     account: !f.redo && sync.status.k !== 'off' && sync.status.k !== 'on',
   };
   const [breathed, setBreathed] = useState(false);
+  /* the hold finished: the flame in the plan lights, and the setup moves on a moment later */
+  const [lit, setLit] = useState(false);
+  const litTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopLit = () => {
+    if (litTimer.current) clearTimeout(litTimer.current);
+    litTimer.current = null;
+  };
+  useEffect(() => stopLit, []);
   const until = useRef(0);
   const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
@@ -177,6 +188,10 @@ export default function Setup() {
   /* which way the pages slide: forward from the right, Back from the left, and the first one just fades in */
   const [dir, setDir] = useState<-1 | 0 | 1>(0);
   const go = (d: number) => {
+    if (litTimer.current) {
+      stopLit();
+      setLit(false);
+    }
     setDir(d < 0 ? -1 : 1);
     setF((x) => {
       const PP = obPages(x.a, env);
@@ -206,11 +221,11 @@ export default function Setup() {
     if (!st) setupKeep.shut = true;
     close();
   };
-  const save = async () => {
+  const save = async (quiet?: boolean) => {
     if (f.saved) return;
     const r = obSave(a, st, f.keep ?? obChanges(a, st, tk).map((x) => x.k), tk);
     setupKeep.flow = null;
-    buzz('lit');
+    if (!quiet) buzz('lit');
     until.current = Date.now() + 700;
     setDir(1);
     setF((x) => ({
@@ -221,6 +236,16 @@ export default function Setup() {
       i: Math.min(obPages(x.a, env).length - 1, obPages(x.a, env).findIndex((p) => p.k === 'review') + 1),
     }));
     await replace({ ...snap, settings: r.st }, ['settings']);
+  };
+  /* the hold is done: a small buzz, the flame lights, and about half a second later the plan is saved and the next page opens */
+  const commit = () => {
+    if (litTimer.current || f.saved) return;
+    buzz('lit');
+    setLit(true);
+    litTimer.current = setTimeout(() => {
+      litTimer.current = null;
+      save(true);
+    }, 500);
   };
   const restore = async () => {
     try {
@@ -381,11 +406,12 @@ export default function Setup() {
         <>
           <Head h={pg.h!} sub={pg.sub} />
           <Middle>
-            {/* the picture sits small above the chosen words, and steps aside when the screen is short */}
-            <FitArt min={0.6} drop={0.7}>
-              {key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}
-            </FitArt>
-            <SliderValue big words value={idx >= 0 ? idx : null} show={(v) => obCap(String(list[v][3]))} hint="Slide below to answer" />
+            <SlideShow
+              grow={key === 'freq' ? 1.12 : 1.3}
+              idx={idx}
+              pic={key === 'freq' ? <PicWeek i={idx} /> : <PicDial i={idx} />}
+              words={idx >= 0 ? obCap(String(list[idx][3])) : null}
+            />
           </Middle>
           <Slider
             label={pg.h!}
@@ -554,22 +580,34 @@ export default function Setup() {
         <>
           {/* the payoff of the first act: the number, big, with what it means under it and the comparisons low */}
           <Middle>
-            <CountUp to={R.yr} color={t.text} />
+            <Hours to={R.yr} color={t.text} />
             <T tone="muted">hours a year at your pace</T>
-            <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
-              {R.h}
-            </T>
+            <Appear delay={HOURS_VERDICT}>
+              <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
+                {R.h}
+              </T>
+            </Appear>
           </Middle>
           <View style={s.rows}>
-            {R.guess != null ? <Compare g={R.guess} yr={R.yr} t={t} /> : null}
-            {R.rows.map((r) => (
-              <View key={r[0]} style={s.eq}>
-                <Icon name={r[0]} size={20} color={t.text} />
-                <Rich text={r[1]} st={st} style={{ flex: 1 }} />
-              </View>
+            {R.guess != null ? (
+              <Appear delay={HOURS_BARS - 100}>
+                <Compare g={R.guess} yr={R.yr} t={t} />
+              </Appear>
+            ) : null}
+            {R.rows.map((r, j) => (
+              <Appear key={r[0]} delay={HOURS_ROWS + j * 120}>
+                <View style={s.eq}>
+                  <Icon name={r[0]} size={20} color={t.text} />
+                  <Rich text={r[1]} st={st} style={{ flex: 1 }} />
+                </View>
+              </Appear>
             ))}
-            <Soft icon="leaf" text={R.soft} />
-            <More more={R.more} />
+            <Appear delay={HOURS_ROWS + R.rows.length * 120}>
+              <Soft icon="leaf" text={R.soft} />
+            </Appear>
+            <Appear delay={HOURS_ROWS + R.rows.length * 120}>
+              <More more={R.more} />
+            </Appear>
           </View>
         </>
       );
@@ -854,41 +892,55 @@ export default function Setup() {
         const T0 = OB_THEN[tp];
         const th = a.thenT === tp ? a.then : null;
         const rs = obReasonList(a);
+        const planRows = 5 + (th ? 1 : 0) + (obBecoming(a) ? 1 : 0);
         body = (
           <>
             <Head h="Here is your plan." />
             <Middle>
+              {/* the plan builds itself: the rows come in one by one, top to bottom, the unlit flame first */}
               <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-                <View style={[s.planRow, { borderTopWidth: 0 }]}>
-                  <Flame level={1} size={48} alive />
-                  <View>
-                    <T v="small" tone="muted">
-                      Day 1
-                    </T>
-                    <Text
-                      style={{
-                        fontFamily: font.display,
-                        fontSize: 22,
-                        color: c.ink,
-                      }}>
-                      {obDate(obDay1(g, null, tk))}
-                    </Text>
-                  </View>
-                </View>
-                <PlanRow icon="flag" l="Goal" v={g.t} />
-                <PlanRow icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
-                {th ? <PlanRow icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null}
-                <PlanRow icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />
-                <PlanRow icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
-                {obBecoming(a) ? <PlanRow icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null}
+                {[
+                  <View key="d" style={[s.planRow, { borderTopWidth: 0 }]}>
+                    <PlanFlame lit={lit} />
+                    <View>
+                      <T v="small" tone="muted">
+                        Day 1
+                      </T>
+                      <Text
+                        style={{
+                          fontFamily: font.display,
+                          fontSize: 22,
+                          color: c.ink,
+                        }}>
+                        {obDate(obDay1(g, null, tk))}
+                      </Text>
+                    </View>
+                  </View>,
+                  <PlanRow key="g" icon="flag" l="Goal" v={g.t} />,
+                  <PlanRow key="s" icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />,
+                  th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
+                  <PlanRow key="w" icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />,
+                  <PlanRow key="p" icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />,
+                  obBecoming(a) ? <PlanRow key="b" icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null,
+                ]
+                  .filter(Boolean)
+                  .map((row, j) => (
+                    <Appear key={j} by={12} delay={PLAN_AT + j * PLAN_STEP} duration={320}>
+                      {row}
+                    </Appear>
+                  ))}
               </View>
             </Middle>
-            <Text style={[s.pledge, { color: c.ink }]}>I will log honestly, slips included.</Text>
+            <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
+              <Text style={[s.pledge, { color: c.ink }]}>I will log honestly, slips included.</Text>
+            </Appear>
           </>
         );
         foot = (
           <View key="h">
-            <Hold onDone={save} />
+            <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
+              <Hold onDone={commit} />
+            </Appear>
           </View>
         );
       } else {
@@ -1117,6 +1169,9 @@ export default function Setup() {
           <>
             <Head h="Welcome in." sub={obFirst(g.id, st ? st.screensOff : '23:00')} />
             <Finish level={2} alive size={SHORT ? 130 : 170} tone="sun" />
+            <Appear delay={500}>
+              <LevelBar />
+            </Appear>
             <View style={{ gap: 6 }}>
               {OB_TAKES.map((x) => (
                 <View key={x} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -1128,9 +1183,6 @@ export default function Setup() {
               ))}
             </View>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <View style={[s.gift, { backgroundColor: c.mintSoft }]}>
-                <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>+{SETUP_PTS} points</Text>
-              </View>
               <View style={[s.gift, { backgroundColor: c.sunSoft }]}>
                 <Icon name="sun" size={16} color={c.sunText} />
                 <Text style={{ fontFamily: font.bodyBold, color: c.sunText }}>Day Zero badge</Text>
@@ -1272,31 +1324,70 @@ function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null;
   }
 }
 
-/* Thirty seconds of slow breathing, 4 seconds in and 4 out, on the shared timer. A placeholder for the real SOS breath (a later
-   step). Skip is on the page until the thirty seconds end; then it reads Next. */
+/* Thirty seconds of slow breathing on the real SOS breath (4 in, 6 out), on the shared timer. It starts by itself the moment the
+   page shows. While it runs, the page offers only Skip; when it ends the words change, the phone gives a small buzz, and Next
+   comes. Back on the page after it ended, it shows the finished words and does not start again. Under Reduce Motion the
+   shape stays still and the words keep the beat. */
 const BREATHE_SECS = 30;
-const BREATHE_BEAT: BeatOf = { dur: [4, 4], low: 0.8, kind: 'cookie9', words: ['Breathe in', 'Breathe out'] };
+const BREATHE_BEAT: BeatOf = { ...BEAT_BREATH, words: ['Breathe in', 'Breathe out'] };
 function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
   const c = useTheme();
-  const sec = useClock(!done);
+  const sec = useClock(true);
   const gone = done ? BREATHE_SECS : Math.min(sec, BREATHE_SECS);
   useEffect(() => {
-    if (!done && sec >= BREATHE_SECS) onDone();
+    if (done || sec < BREATHE_SECS) return;
+    buzz('lit');
+    onDone();
   }, [done, sec, onDone]);
   return (
     <>
-      <Head h="Try it now. Thirty seconds of slow breathing." sub="This is what SOS starts with. Breathe with the circle, or skip." />
+      <Head
+        h={done ? 'You just rode one out.' : 'Try it now. Thirty seconds of slow breathing.'}
+        sub={done ? 'That is the whole skill. SOS does this with you, any time.' : 'This is what SOS starts with. Breathe with the shape.'}
+      />
       <Middle>
         <ToolTimer
           p={gone / BREATHE_SECS}
           left={(BREATHE_SECS - gone) * 1000}
-          sec={gone}
+          sec={sec}
           beat={BREATHE_BEAT}
           label={done ? 'Well done' : 'Breathing'}
           color={c.scheme === 'dark' ? c.sun : c.accent}
           ink={c.accentText}
         />
       </Middle>
+    </>
+  );
+}
+
+/* the freq and mins pages: the picture big on its own with a muted "Slide to answer" under it; once there is an answer, the picture
+   settles smaller above the chosen words. The block under the picture keeps one height, so nothing jumps. */
+function SlideShow({ idx, pic, words, grow }: { idx: number; pic: ReactNode; words: string | null; grow: number }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const BIG = SHORT ? Math.min(grow, 1.12) : grow;
+  const k = useRef(new Animated.Value(idx >= 0 ? 0 : 1)).current;
+  const set = idx >= 0;
+  useEffect(() => {
+    if (reduce) return k.setValue(set ? 0 : 1);
+    Animated.spring(k, { toValue: set ? 0 : 1, ...SPRING.default, useNativeDriver: NATIVE }).start();
+  }, [set, reduce, k]);
+  return (
+    <>
+      <FitArt min={0.6} drop={0.7}>
+        <Animated.View style={{ transform: [{ scale: k.interpolate({ inputRange: [0, 1], outputRange: [1, BIG] }) }], marginVertical: SHORT ? 6 : 18 }}>
+          {pic}
+        </Animated.View>
+      </FitArt>
+      <View style={{ minHeight: SHORT ? 80 : 104, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
+        {words != null ? (
+          <SliderValue big words value={idx} show={() => words} />
+        ) : (
+          <T v="label" tone="muted" style={s.c}>
+            Slide to answer
+          </T>
+        )}
+      </View>
     </>
   );
 }
@@ -1562,6 +1653,60 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
     </Pressable>
   );
 }
+/* the plan builds itself: rows come in about 90 ms apart, after a short wait (ms) */
+const PLAN_AT = 200;
+const PLAN_STEP = 90;
+/** the flame in the Day 1 row: it shows unlit (the locked look) until the hold is done, then pops alive on a spring with a bloom of
+    light. With Reduce Motion on it is simply lit at once. */
+function PlanFlame({ lit }: { lit: boolean }) {
+  const reduce = useReducedMotion();
+  const pop = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (!lit || reduce) return pop.setValue(1);
+    pop.setValue(0.6);
+    Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
+  }, [lit, reduce, pop]);
+  return (
+    <Animated.View style={{ transform: [{ scale: pop }] }}>
+      <Flame level={1} size={48} alive={lit} locked={!lit} pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame, not lit yet'} />
+    </Animated.View>
+  );
+}
+/** "Level 1 → Level 2": the bar fills over about a second as the page shows (Reduce Motion: full at once). It is only a picture of
+    what setup already gives (SETUP_PTS points, which is the first level up: core levels.ts), so it is full. */
+function LevelBar() {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const from = levelOf(0);
+  const to = levelOf(SETUP_PTS);
+  const share = from.next ? Math.min(1, SETUP_PTS / from.next) : 1;
+  const v = useRef(new Animated.Value(reduce ? share : 0)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(share);
+    Animated.timing(v, { toValue: share, delay: 700, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    return () => v.stopAnimation();
+  }, [reduce, share, v]);
+  return (
+    <View style={{ alignSelf: 'stretch', gap: 6 }} accessible accessibilityLabel={`Level ${from.n} to level ${to.n}. Plus ${SETUP_PTS} points.`}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <T v="label">
+          Level {from.n} → Level {to.n}
+        </T>
+        <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>+{SETUP_PTS} points</Text>
+      </View>
+      <View style={{ height: 14, borderRadius: 7, backgroundColor: c.mintSoft, overflow: 'hidden' }}>
+        <Animated.View
+          style={{ height: '100%', borderRadius: 7, backgroundColor: c.mint, width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }}
+        />
+      </View>
+    </View>
+  );
+}
 function PlanRow({ icon, l, v }: { icon: string; l: string; v: string }) {
   const c = useTheme();
   return (
@@ -1576,59 +1721,66 @@ function PlanRow({ icon, l, v }: { icon: string; l: string; v: string }) {
     </View>
   );
 }
-/** your own number counts up, big. With Reduce Motion on, it is the final number at once. */
-function CountUp({ to, color }: { to: number; color: string }) {
-  const still = useReducedMotion();
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (still) return;
-    const t0 = Date.now();
-    let raf = 0;
-    const tick = () => {
-      const k = Math.min(1, (Date.now() - t0) / 1100);
-      setN(Math.round(to * (1 - Math.pow(1 - k, 3))));
-      if (k < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [to, still]);
-  const shown = (still ? to : n).toLocaleString('en-US');
+/* the close of the first act, in order: the number counts up, then the verdict, then the bars grow, then the rows (ms after the page) */
+const HOURS_COUNT = 250;
+const HOURS_VERDICT = 1450;
+const HOURS_BARS = 1950;
+const HOURS_ROWS = 2500;
+/** your own number counts up, big, over about a second. With Reduce Motion on, it is the final number at once. */
+function Hours({ to, color }: { to: number; color: string }) {
   /* the size follows the digits of the final number, so it never changes while it counts and never runs off the screen */
   const len = to.toLocaleString('en-US').length;
   const size = Math.round((len >= 7 ? 72 : len >= 6 ? 88 : len >= 5 ? 104 : 128) * (SHORT ? 0.78 : 1));
   return (
-    <Text
-      accessibilityLabel={`${to.toLocaleString('en-US')} hours a year at your pace`}
-      style={{ fontFamily: font.displayBold, fontSize: size, lineHeight: Math.round(size * 1.1), color, fontVariant: ['tabular-nums'] }}>
-      {shown}
-    </Text>
+    <CountUp
+      to={to}
+      delay={HOURS_COUNT}
+      duration={1100}
+      format={(n) => n.toLocaleString('en-US')}
+      label={`${to.toLocaleString('en-US')} hours a year at your pace`}
+      style={{ fontFamily: font.displayBold, fontSize: size, lineHeight: Math.round(size * 1.1), color, fontVariant: ['tabular-nums'] }}
+    />
+  );
+}
+/** the two bars grow from the left to their lengths, one after the other (Reduce Motion: already there) */
+function Bar({ share, color, delay }: { share: number; color: string; delay: number }) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(1);
+    Animated.timing(v, { toValue: 1, delay, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    return () => v.stopAnimation();
+  }, [reduce, delay, v]);
+  return (
+    <Animated.View
+      style={{
+        width: v.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${share}%`] }),
+        minWidth: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: color,
+      }}
+    />
   );
 }
 function Compare({ g, yr, t }: { g: number; yr: number; t: Tone }) {
   const c = useTheme();
   const top = Math.max(g, yr) || 1;
-  const row = (l: string, v: number, txt: string, col: string) => (
+  const row = (l: string, v: number, txt: string, col: string, delay: number) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <T v="small" tone="muted" style={{ width: 86 }}>
         {l}
       </T>
       <View style={{ flex: 1 }}>
-        <View
-          style={{
-            width: `${Math.max(6, Math.round((v / top) * 100))}%`,
-            height: 12,
-            borderRadius: 6,
-            backgroundColor: col,
-          }}
-        />
+        <Bar share={Math.max(6, Math.round((v / top) * 100))} color={col} delay={delay} />
       </View>
       <T v="label">{txt}</T>
     </View>
   );
   return (
     <View style={{ gap: 8 }} accessible accessibilityLabel={`You guessed ${g} hours. Your pace is about ${yr} hours.`}>
-      {row('You guessed', g, g + (g >= 800 ? '+' : ''), c.line)}
-      {row('Your pace', yr, yr.toLocaleString('en-US'), t.ic)}
+      {row('You guessed', g, g + (g >= 800 ? '+' : ''), c.line, HOURS_BARS)}
+      {row('Your pace', yr, yr.toLocaleString('en-US'), t.ic, HOURS_BARS + 350)}
     </View>
   );
 }

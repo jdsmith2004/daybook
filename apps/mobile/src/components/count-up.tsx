@@ -12,6 +12,8 @@ export function CountUp({
   duration = 700,
   prefix = '',
   suffix = '',
+  format = String,
+  label,
   style,
 }: {
   to: number;
@@ -19,6 +21,10 @@ export function CountUp({
   duration?: number;
   prefix?: string;
   suffix?: string;
+  /** how the number is written (thousands commas, for one) */
+  format?: (n: number) => string;
+  /** what a screen reader says, when it is more than the number */
+  label?: string;
   style?: StyleProp<TextStyle>;
 }) {
   const reduce = useReducedMotion();
@@ -34,8 +40,8 @@ export function CountUp({
     };
   }, [to, delay, duration, reduce, v]);
   return (
-    <AnimatedText style={style} accessibilityLabel={prefix + to + suffix}>
-      {prefix + (reduce ? to : n) + suffix}
+    <AnimatedText style={style} accessibilityLabel={label ?? prefix + format(to) + suffix}>
+      {prefix + format(reduce ? to : n) + suffix}
     </AnimatedText>
   );
 }

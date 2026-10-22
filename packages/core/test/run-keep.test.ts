@@ -167,7 +167,8 @@ describe('the words follow the answer', () => {
   it('keep, and no answer yet, read as today', () => {
     for (const days of [slip(K), slip(K, { keep: true })]) {
       expect(words(days, K)).toContain('Your 7-day run waits for you.');
-      expect(core.rkQuest(days, st, K, K, days[K].events[0], 21).h).toBe('Save your 7-day run');
+      /* from RK_BACK_FROM on, coming back saves the run: no errands to finish */
+      expect(core.rkQuest(days, st, K, K, days[K].events[0], 21).h).toBe('Your 7-day run waits for you');
     }
   });
 

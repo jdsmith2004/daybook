@@ -46,6 +46,10 @@ export const RK_DAYS: number;
 export const RUN_ASK: number;
 /** slips on days before this keep the rule they were made under: a run of any length could be saved */
 export const RUN_ASK_FROM: DayKey;
+/** slips from this day on can also save a run by coming back: the sunrise check, and the third flame lighting by itself */
+export const RK_BACK_FROM: DayKey;
+/** the third comeback flame for the slip on day k, as of today: the next urge ridden out, or a full day with no slip */
+export function rkThirdOf(days: Days, k: DayKey, st: Settings | null, today: DayKey): { k: DayKey; rode: boolean } | null;
 /** the keep-or-start-fresh answer on a slip day: true keep, false start fresh, null not answered */
 export function rkKeepOf(day: Day | undefined | null): boolean | null;
 export function dayKind(key: DayKey, day: Day | undefined, st: Settings, today: DayKey, mode?: CountMode, days?: Days): DayKindName;

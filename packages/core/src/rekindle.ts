@@ -13,7 +13,9 @@ import {
   rkFullDays,
   rkKeepOf,
   rkOf,
+  RK_BACK_FROM,
   RK_DAYS,
+  rkThirdOf,
   RUN_ASK,
   RUN_ASK_FROM,
   RUN_DEEP,
@@ -409,8 +411,26 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
   const { op } = rkOpen(days, st, tk, date);
   const deep = !!(op && op.deep);
   const u = rkUntil(date);
+  if (rkBack(date)) {
+    /* the comeback: no errands. One small thing stays (it is care, not a task); the flames light themselves. */
+    const l = rkLights(days, st, tk, date);
+    return {
+      r,
+      flames: l.flames.map((f) => f.on),
+      lights: l.flames,
+      h: op ? 'Your ' + op.run + '-day run waits for you' : 'Your comeback starts now',
+      p: 'Three flames light themselves from what you do: this honest log, the sunrise check tomorrow morning, and the next urge you ride out or a day with no slip.',
+      askWait: st.cleanMode === 'step',
+      missions: rkMissions(r, st, { where: 'scene', deep: false, hour, until: u }).filter((m) => m.key === 'm1'),
+      prize: op
+        ? { b: 'All three lit by ' + u + ' night: your run is saved', s: 'Coming back is what saves it.' }
+        : { b: 'You are someone who comes back', s: 'Every comeback counts, and the count only goes up.' },
+      done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
+    };
+  }
   return {
     r,
+    lights: null as RkLight[] | null,
     flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []),
     h: op ? 'Save your ' + op.run + '-day run' : 'Your Rekindle quest',
     p: op
@@ -423,6 +443,78 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
       : { b: 'Light all three: Rekindled', s: 'A new badge and 20 bonus points.' },
     done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
   };
+}
+
+/* ---------- the comeback, noticed (roadmap move 3, docs/plan.md) ----------
+   No task list: three flames that light themselves from what the person really does after any slip, in any mode. The
+   first is the honest log itself; the second, the sunrise check the next morning; the third, the next urge ridden out or
+   a full day with no slip (core.js rkThirdOf). From RK_BACK_FROM on, the sunrise check and the third flame also save a run
+   that waits (runLedger), so a run is saved by coming back, not by errands. The comeback count only goes up. */
+/** slips from this day on are saved by coming back, and their words say so */
+export const rkBack = (k: DayKey) => k >= RK_BACK_FROM;
+export interface RkLight {
+  on: boolean;
+  /** what was done, or what lights it */
+  t: string;
+}
+/** the three comeback flames for the slip on day k, as of tk */
+export function rkLights(days: Days, st: Settings, tk: DayKey, k: DayKey): { flames: RkLight[]; lit: number; third: { k: DayKey; rode: boolean } | null } {
+  const r = rkOf(days, k, st);
+  const third = rkThirdOf(days, k, st, tk);
+  const wd = (d: DayKey) => fmtDate(d, { weekday: 'long' });
+  const flames: RkLight[] = [
+    { on: true, t: 'You logged it honestly' },
+    r && r.m3 ? { on: true, t: 'You came back for the sunrise check' } : { on: false, t: 'The sunrise check, the next morning' },
+    third
+      ? { on: true, t: third.rode ? 'You rode out the next urge' + (third.k === k ? '' : ', ' + wd(third.k)) : 'A day with no slip, ' + wd(third.k) }
+      : { on: false, t: 'The next urge ridden out, or a day with no slip' },
+  ];
+  return { flames, lit: flames.filter((f) => f.on).length, third };
+}
+/** every slip the person came back from (the sunrise check, or the third flame), up to tk. It only goes up. */
+export function rkComebackCount(days: Days, st: Settings, tk: DayKey): number {
+  let n = 0;
+  for (const k of Object.keys(days).sort())
+    if (k <= tk && sumDay(days[k]).slipped > 0) {
+      const r = rkOf(days, k, st);
+      if ((r && r.m3) || rkThirdOf(days, k, st, tk)) n++;
+    }
+  return n;
+}
+/** "You are someone who comes back: 3 comebacks." */
+export const rkComebackSay = (n: number) => 'You are someone who comes back: ' + n + (n === 1 ? ' comeback.' : ' comebacks.');
+
+/** the slip the sunrise check is for: the latest slip before today, the morning after it (any slip, any mode), or later
+    while its run still waits to be saved. null once the check is done, or when nothing waits. */
+export function sunriseDue(days: Days, st: Settings | null, tk: DayKey): (RekindleState & { first: boolean }) | null {
+  if (!st) return null;
+  for (let i = 1; i <= RK_DAYS; i++) {
+    const k = addDays(tk, -i);
+    if (!sumDay(days[k]).slipped) continue;
+    const r = rkOf(days, k, st);
+    if (!r || r.m3) return null;
+    if (i === 1) return { ...r, first: true };
+    return runLedger(days, st, tk).kind[k] === 'open' ? { ...r, first: false } : null;
+  }
+  return null;
+}
+
+/** the day all three flames lit for the latest slip, said once on that day: the comeback, noticed. null on any other day. */
+export function comebackNow(days: Days, st: Settings, tk: DayKey) {
+  for (let i = 1; i <= RK_DAYS + 1; i++) {
+    const k = addDays(tk, -i);
+    if (!sumDay(days[k]).slipped) continue;
+    const r = rkOf(days, k, st);
+    const l = rkLights(days, st, tk, k);
+    if (!r || !r.m3 || !l.third || !isKey(r.ev.rk && r.ev.rk.at)) return null;
+    /* a day with no slip is known the morning after it */
+    const thirdDay = l.third.rode ? l.third.k : addDays(l.third.k, 1);
+    const litDay = (r.ev.rk!.at as DayKey) > thirdDay ? (r.ev.rk!.at as DayKey) : thirdDay;
+    if (litDay !== tk) return null;
+    const { L, saved } = rkOpen(days, st, tk, k);
+    return { k, flames: l.flames, saved, run: saved ? L.cur : 0, n: rkComebackCount(days, st, tk) };
+  }
+  return null;
 }
 
 /* ---------- on Today ---------- */
@@ -557,8 +649,8 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
     const r = rkOf(days, k, st);
     const fresh = full[k] && rkKeepOf(days[k]) === false;
     const deep = run >= RUN_DEEP && !fresh;
-    const lit = r ? [r.m1, r.m2, r.m3, deep && r.m4].filter(Boolean).length : 0;
-    const of = deep ? 4 : 3;
+    const lit = rkBack(k) ? rkLights(days, st, tk, k).lit : r ? [r.m1, r.m2, r.m3, deep && r.m4].filter(Boolean).length : 0;
+    const of = deep && !rkBack(k) ? 4 : 3;
     const g = gradInfo(days, st, tk);
     const counts = L.cur > 0 ? ', and it is already ' + L.cur + (L.cur === 1 ? ' day' : ' days') : '';
     if (fresh) {
@@ -567,14 +659,19 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
       return { run, why: 'fresh', lit, of, longest: L.longest, grad: gradOnToday(g) && !g.at ? g.count : null, text };
     }
     const text = full[k]
-      ? 'The quest closed last night with ' +
-        lit +
-        ' of ' +
-        of +
-        ' lit. Your new run counts from ' +
-        fmtDate(addDays(k, 1), { weekday: 'long' }) +
-        counts +
-        '. What you built stays yours.'
+      ? rkBack(k)
+        ? 'Your run waited until last night. Your new run counts from ' +
+          fmtDate(addDays(k, 1), { weekday: 'long' }) +
+          counts +
+          '. What you built stays yours, and coming back still counts.'
+        : 'The quest closed last night with ' +
+          lit +
+          ' of ' +
+          of +
+          ' lit. Your new run counts from ' +
+          fmtDate(addDays(k, 1), { weekday: 'long' }) +
+          counts +
+          '. What you built stays yours.'
       : 'A second slip within a week cannot be saved, so a new run started today. What you built stays yours.';
     return { run, why: full[k] ? 'clock' : 'again', lit, of, longest: L.longest, grad: gradOnToday(g) && !g.at ? g.count : null, text };
   }
@@ -652,6 +749,20 @@ export function srFinish(
 /** the end of the sunrise check (legacy srEndHtml), as words */
 export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: RekindleState, run0: number) {
   const { L, op, saved } = rkOpen(days, st, tk, k);
+  if (rkBack(k)) {
+    const l = rkLights(days, st, tk, k);
+    const h = saved ? 'Run saved.' : 'You came back. That is the skill.';
+    const sub = saved
+      ? 'Your run is ' + plural(L.cur, 'day') + ' and still going. You saved it by coming back.'
+      : op
+        ? 'One more flame lights itself: the next urge you ride out, or a day with no slip, by ' +
+          rkUntil(k) +
+          ' night. Your ' +
+          op.run +
+          '-day run waits for you.'
+        : rkComebackSay(rkComebackCount(days, st, tk)) + (run0 ? ' Your longest run stays.' : '');
+    return { h, sub, flames: l.flames.map((f) => f.on), lights: l.flames, celebrate: saved || l.lit === 3, op, saved };
+  }
   const n = r.n;
   const deep = !!(op && op.deep) || (saved && r.m4);
   const h = saved
@@ -679,7 +790,7 @@ export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: Rekind
         : n === 3
           ? 'All three missions done. Your fire is back to full, and the Rekindled badge is yours.'
           : 'Every flame you lit counts. Light all three next time for the badge.';
-  return { h, sub, flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []), celebrate: n === 3 || saved, op, saved };
+  return { h, sub, flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []), lights: null as RkLight[] | null, celebrate: n === 3 || saved, op, saved };
 }
 
 /* ---------- going deeper (the fourth mission for a run of 14 days or more) ---------- */

@@ -12,7 +12,9 @@ import {
   optList,
   OPT_MAX,
   patchEvent,
-  rkActive,
+  rkBack,
+  rkLights,
+  sunriseDue,
   rkAsk,
   rkChoice,
   rkComebackLine,
@@ -36,7 +38,7 @@ import { StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { LineNote } from '@/components/line-note';
-import { Flames, Missions } from '@/components/rekindle';
+import { Flames, Lights, Missions } from '@/components/rekindle';
 import { Comebacks } from '@/components/rk-art';
 import { Dock, SceneFrame } from '@/components/scene';
 import { SunArt } from '@/components/sun-art';
@@ -53,8 +55,9 @@ export default function Sunrise() {
   /* what this check is about is fixed when it opens */
   const [start] = useState(() => {
     if (!st) return null;
-    const r = rkActive(snap.days, st, tk);
-    if (!r || r.phase !== 'sun') return null;
+    /* any slip, in any mode: the morning after it, or later while its run waits (core sunriseDue) */
+    const r = sunriseDue(snap.days, st, tk);
+    if (!r) return null;
     const { op } = rkOpen(snap.days, st, tk, r.k);
     return { k: r.k, evId: r.ev.id, seq: srSteps(snap.days, r, tk, st), first: r.m3 ? 'end' : 'hi', run0: op ? op.run : 0 };
   });
@@ -122,6 +125,8 @@ export default function Sunrise() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
 
+  /* slips from RK_BACK_FROM on: the three comeback flames, which light themselves (core rkLights) */
+  const comeback = rkBack(k);
   if (step === 'hi') {
     const cb = rkComebacks(snap.days, st, k);
     const after = tk === addDays(k, 1);
@@ -135,12 +140,22 @@ export default function Sunrise() {
           Welcome back.
         </T>
         <T style={s.c}>
-          {after ? 'Yesterday is logged and done, and nothing reset.' : 'The slip is logged and done, and nothing reset.'} Two minutes to finish your quest.
+          {after ? 'Yesterday is logged and done, and nothing reset.' : 'The slip is logged and done, and nothing reset.'}{' '}
+          {comeback ? 'Two minutes, and the second flame lights.' : 'Two minutes to finish your quest.'}
         </T>
         {/* who the person said they are becoming: one slip does not change it */}
         {String(st.becoming || '').trim() ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{'Still true: ' + String(st.becoming).trim()}</T> : null}
-        {run0 ? <LineNote b={`Your ${run0}-day run waits for you.`} rest={`This check is one of the steps, any time until ${rkUntil(k)} night.`} /> : null}
-        <Flames on={[r.m1, r.m2, r.m3]} big />
+        {run0 ? (
+          <LineNote
+            b={`Your ${run0}-day run waits for you.`}
+            rest={
+              comeback
+                ? `Coming back saves it: this check, then the next urge you ride out or a day with no slip, by ${rkUntil(k)} night.`
+                : `This check is one of the steps, any time until ${rkUntil(k)} night.`
+            }
+          />
+        ) : null}
+        <Flames on={comeback ? rkLights(snap.days, st, tk, k).flames.map((f) => f.on) : [r.m1, r.m2, r.m3]} big />
         {cb.before ? (
           <>
             <Comebacks cb={cb} />
@@ -154,7 +169,7 @@ export default function Sunrise() {
     );
   } else if (step === 'run') {
     /* keep the run going, or start fresh: asked here when the slip's Rekindle closed before the answer. Until then the run
-       was kept for now. Skip keeps it that way; Today asks again once this check is done. */
+       was kept for now. Skip keeps it that way (no answer is a kept run). */
     const a = rkAsk(snap.days, st, tk, k);
     const choice = a && a.open ? rkChoice(snap.days, st, tk, a) : null;
     const pickRun = (keep: boolean) => {
@@ -338,7 +353,9 @@ export default function Sunrise() {
           {e.sub}
           {gain ? <T v="label" tone="mintText">{`  +${gain} points`}</T> : null}
         </T>
-        {e.op ? (
+        {e.lights ? (
+          <Lights list={e.lights} />
+        ) : e.op ? (
           <Missions
             list={rkMissions(r, st, { where: 'scene', deep: e.op.deep, left: true, hour, until: rkUntil(k) })}
             onAction={(_m, act) => {

@@ -447,6 +447,27 @@ function dayKind(key,day,st,today,mode,days){
    waits, as before. A shorter run ends at the slip. Slips on days before RUN_ASK_FROM keep the rule they were made under (any run could be
    saved), so a save already earned is never taken away. */
 const RUN_DEEP=14,RK_DAYS=3,RUN_ASK=7,RUN_ASK_FROM='2026-10-22';
+/* Coming back saves the run (the owner, October 22, docs/plan.md roadmap move 3): for slips from RK_BACK_FROM on, a run is also saved
+   when, within RK_DAYS, the sunrise check is done and the third flame lights by itself (rkThirdOf: the next urge ridden out, or a full
+   day with no slip). No errands. The missions above still save it too, so a save is never harder than before and nothing is taken away. */
+const RK_BACK_FROM='2026-10-19';
+/* the third comeback flame for the slip on day k, as of today: the first urge ridden out after the slip (that day, later, or the days
+   after, up to the window), or the first full day after it with no slip. {k:the day it lit, rode:true for an urge} or null. */
+function rkThirdOf(days,k,st,today){
+ const roll=st&&st.rollover!=null?st.rollover:4,dl=addDays(k,RK_DAYS),ev=sortedEvents(days[k],roll);
+ let last=-1;ev.forEach((e,i)=>{if(e.outcome==='slipped')last=i});
+ if(ev.slice(last+1).some(e=>e.outcome==='rode'))return {k,rode:true};
+ for(let d=addDays(k,1);d<=dl&&d<=today;d=addDays(d,1)){
+  const x=days[d];
+  if(x&&x.events&&x.events.some(e=>e.outcome==='rode')){
+   const sl=sortedEvents(x,roll),fi=sl.findIndex(e=>e.outcome==='slipped'),ri=sl.findIndex(e=>e.outcome==='rode');
+   if(fi<0||ri<fi)return {k:d,rode:true};
+  }
+  if(d<today&&!sumDay(x).slipped)return {k:d,rode:false};
+  if(sumDay(x).slipped)return null;
+ }
+ return null;
+}
 /* the answer on a slip day: true keep, false start fresh, null not answered (rekindle.ts rkKeep writes it on one slip of the day) */
 function rkKeepOf(day){const e=((day&&day.events)||[]).find(x=>x.outcome==='slipped'&&typeof x.keep==='boolean');return e?e.keep:null}
 function rkFullDays(days){
@@ -472,7 +493,7 @@ function runLedger(days,st,today,mode,noSave,runs){
    if(full[k]&&runs)runs[k]=run;
    if(full[k]&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
     const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,RK_DAYS);
-    const done=!!(r&&r.m1&&r.m2&&r.m3&&r.ev.rk.at<=dl&&(!deep||r.m4));
+    const done=!!(r&&r.m3&&r.ev.rk.at<=dl&&((r.m1&&r.m2&&(!deep||r.m4))||(k>=RK_BACK_FROM&&rkThirdOf(days,k,st,today))));
     s=done?'saved':today<=dl?'open':null;
     if(s)L.kind[k]=s;
     if(s==='open')L.open={k,run,deep};
@@ -3111,6 +3132,8 @@ export {
   dayKind,
   RUN_DEEP,
   RK_DAYS,
+  RK_BACK_FROM,
+  rkThirdOf,
   RUN_ASK,
   RUN_ASK_FROM,
   rkKeepOf,

@@ -5,12 +5,12 @@
     2. in the hard hours now: SOS forward, and talk it through
     3. the morning after a slip, until the sunrise check is done
     4. the day of a slip, after it: one small thing
-    5. a talk-through due: decide now, it passed, look back (and a comeback still in progress)
+    5. a talk-through due: decide now, it passed, look back
     6. hard hours in the next two hours: the plan
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday
-    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, a paused reminder,
-       the first pattern
+    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, the comeback
+       noticed (all three flames lit), a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well."
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
@@ -21,7 +21,7 @@ import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
-import { rkActive, rkAskNow, rkCard, rkEnded, rkOpen, safeName, tellStartDue } from './rekindle';
+import { comebackNow, rkComebackSay, rkEnded, rkOpen, safeName, sunriseDue, tellStartDue } from './rekindle';
 import { firstPattern, riskDay } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
@@ -44,7 +44,6 @@ export type MomentKind =
   | 'count-note'
   | 'step-offer'
   | 'run-ended'
-  | 'run-answer'
   | 'nudge'
   | 'first-pattern'
   | 'calm'
@@ -98,7 +97,6 @@ const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).jo
 /** every moment that applies now, in order. The calm day (or done) is always last. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
   const out: Moment[] = [];
-  const hour = new Date(now).getHours();
   const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string) =>
     out.push({ k, eb, h, p, btn, go, one, ...(v ? { v } : {}) });
 
@@ -122,18 +120,16 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           'your hard hours',
         );
 
-  /* 3 and 4. after a slip */
-  const r = rkActive(days, st, tk);
-  const sun = r && r.phase === 'sun' ? r : null;
-  if (sun && !sun.m3) {
+  /* 3 and 4. after a slip: the sunrise check for every slip, in every mode (rekindle.ts sunriseDue) */
+  const sun = sunriseDue(days, st, tk);
+  if (sun) {
     const op = rkOpen(days, st, tk, sun.k).op;
     const kept = op ? 'Your ' + op.run + (op.run === 1 ? ' day is' : ' days are') + ' kept. ' : 'What you built stays yours. ';
-    const first = tk === addDays(sun.k, 1);
     m(
       'morning-after',
-      first ? 'The morning after' : 'Your sunrise check',
-      first ? 'You came back. That is the skill.' : 'Your sunrise check is ready.',
-      (first ? 'Last night is in the log, honestly. ' : '') + kept + 'Two minutes, then the day goes on as usual.',
+      sun.first ? 'The morning after' : 'Your sunrise check',
+      sun.first ? 'You came back. That is the skill.' : 'Your sunrise check is ready.',
+      (sun.first ? 'Last night is in the log, honestly. ' : '') + kept + 'Two minutes, then the day goes on as usual.',
       'Start my sunrise check',
       'sunrise',
       'your sunrise check',
@@ -162,11 +158,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           : ['Look back.', 'One minute. Honest is what counts.', 'Look back'];
     m('talk', 'Talk it through', w[0], w[1], w[2], 'talk', t.due === 'look' ? 'a look back' : 'a choice to make', t.talk.id);
   }
-  if (sun && sun.m3) {
-    const k = rkCard(days, st, tk, sun, hour);
-    if (k.missions.length) m('comeback', 'Your comeback', k.h, k.p, null, null, 'your comeback');
-  }
-
   if (hard && hard.phase === 'soon')
     hard.talked
       ? m('hard-soon', hardEb, 'You are ready.', 'You talked it through. If it gets hard anyway, SOS is one tap.', null, null, 'your hard hours')
@@ -224,10 +215,17 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   const ended = rkEnded(days, st, tk);
   if (ended)
     m('run-ended', 'What you built', 'Your ' + ended.run + (ended.run === 1 ? ' day is kept' : ' days are kept'), ended.text, null, null, 'what you built');
-  else if (!r) {
-    const a = rkAskNow(days, st, tk);
-    if (a) m('run-answer', 'Your run', a.keep === false ? 'A fresh start' : 'Your ' + a.run + '-day run', '', null, null, 'your run');
-  }
+  const cb = comebackNow(days, st, tk);
+  if (cb)
+    m(
+      'comeback',
+      'Your comeback',
+      cb.saved ? 'Run saved. You came back.' : 'All three lit. You came back.',
+      cb.flames.map((f) => f.t).join('. ') + '. ' + rkComebackSay(cb.n),
+      null,
+      null,
+      'your comeback',
+    );
   if (dev.nudge && dev.nudge.k === 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   const pat = firstPattern(days, st, tk);
   if (pat && (!dev.patternDay || dev.patternDay === tk))

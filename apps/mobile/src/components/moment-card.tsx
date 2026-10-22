@@ -1,8 +1,8 @@
 /* The one card at the top of Today (core pickMoment, moment.ts): whatever the moment is, it is the only thing asking for a
    tap. The day's open stop, the morning after, the day of a slip and the simple moments are drawn here, in the colors of
-   their moment; the moments with their own choices (the hard hours, a talk-through, a comeback, a counting note, a word
-   about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when two overlap. */
-import { type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
+   their moment; the comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through,
+   a counting note, a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when two overlap. */
+import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +14,8 @@ import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
 import { CountNotes } from '@/components/today';
-import { PauseBanner, RekindleCard, useLogActions } from '@/components/today-log';
+import { Lights } from '@/components/rekindle';
+import { PauseBanner, RunKeptCard, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
 import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
@@ -43,10 +44,10 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
       return <RiskCard snap={snap} tk={tk} now={now} />;
     case 'talk':
       return <TalkCard snap={snap} now={now} />;
-    case 'comeback':
     case 'run-ended':
-    case 'run-answer':
-      return <RekindleCard snap={snap} tk={tk} />;
+      return <RunKeptCard snap={snap} tk={tk} />;
+    case 'comeback':
+      return <Comeback m={m} snap={snap} tk={tk} />;
     case 'tell-start':
       return <TellStartCard snap={snap} tk={tk} />;
     case 'count-note':
@@ -118,6 +119,23 @@ function Tile({ m, sky, then, sunrise, onPress }: { m: Moment; sky: StopTile['sk
       ) : null}
       {then ? <Text style={[s.then, { color: soft }]}>{then}</Text> : null}
     </View>
+  );
+}
+
+/* all three flames lit after a slip: the comeback, noticed, once (core comebackNow). Nothing to do, so no button. */
+function Comeback({ m, snap, tk }: { m: Moment; snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const cb = comebackNow(snap.days, snap.settings!, tk);
+  if (!cb) return null;
+  return (
+    <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
+      <Text style={[s.eb, { color: c.sunText }]}>{m.eb.toUpperCase()}</Text>
+      <T v="h2" accessibilityRole="header">
+        {m.h}
+      </T>
+      <Lights list={cb.flames} />
+      <T tone="muted">{rkComebackSay(cb.n)}</T>
+    </Card>
   );
 }
 

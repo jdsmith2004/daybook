@@ -1,7 +1,7 @@
-/* Rekindle's pieces: the flames (one per mission, each catching with a pop when it is lit), the embers you hold to
+/* Rekindle's pieces: the comeback's three flames with what lit each (Lights), the flames (one per mission, each catching with a pop when it is lit), the embers you hold to
    breathe on (sparks fly when they catch), the missions list, and "Did you wait first?". The "What just happened"
    pictures are in rk-art.tsx. */
-import { RK_WAIT, type Mission } from '@daybook/core';
+import { RK_WAIT, type Mission, type RkLight } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -12,6 +12,23 @@ import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
+
+/* ---------- the comeback: three flames that light themselves, each naming what was done ---------- */
+export function Lights({ list }: { list: RkLight[] }) {
+  const c = useTheme();
+  return (
+    <View style={{ alignSelf: 'stretch', gap: 8 }}>
+      {list.map((f, i) => (
+        <View key={i} style={s.light} accessible accessibilityLabel={(f.on ? 'Lit: ' : 'Not lit yet: ') + f.t}>
+          <OneFlame lit={f.on} w={26} />
+          <T style={{ flex: 1, color: f.on ? c.ink : c.muted }} v={f.on ? 'label' : 'body'}>
+            {f.t}
+          </T>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 /* ---------- one flame per mission: lit or still waiting ---------- */
 export function Flames({ on, big }: { on: boolean[]; big?: boolean }) {
@@ -292,6 +309,7 @@ export function WaitPicker({ cur, onPick }: { cur: number | null | undefined; on
 }
 
 const s = StyleSheet.create({
+  light: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   flames: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 14 },
   ember: { width: 200, height: 200, alignItems: 'center', justifyContent: 'center' },
   flameGlow: { position: 'absolute', backgroundColor: '#FFB43A' },

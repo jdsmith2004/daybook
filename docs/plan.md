@@ -1748,9 +1748,11 @@ feels like being watched, gets the account banned, and breaks the trust Daybook 
    or three weeks before the first post.
 2. **(owner, decision) A real domain.** The site is at a cloudfront.net address, which looks like a scam link in a post. A
    domain costs about $10 to $15 a year. Until then, the GitHub Pages address is the better link.
-3. **(medium) A "Help test Daybook" page,** `apps/mobile/public/testers.html`: what Daybook is in three lines, the web
+3. **Done (October 21): the "Help test Daybook" page,** `apps/mobile/public/testers.html` (`/testers.html` on the site): what Daybook is in three lines, the web
    link, the iPhone link (the TestFlight public link until the store approves, then the store), the Android opt-in link,
-   what to send back and where (the support email), and the privacy promise. One link for every post.
+   what to send back and where (Send feedback in More, the four questions), and the privacy promise. One link for every post.
+   Until the TestFlight and Play links exist, its quiet link under the button asks for an invite by email (Android
+   testers include their Google account email); when they exist, they replace it.
 4. **(owner; Claude in Chrome can fill the fields)** TestFlight: an external group with a public link (it needs a beta
    review, usually about a day). Google Play: the closed testing track with a Google Group as its tester list, so people
    join on their own; the opt-in link goes on the tester page. A personal account needs 12 testers opted in for 14 days

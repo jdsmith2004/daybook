@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Help test Daybook</title>
+    <meta
+      name="description"
+      content="Daybook is a free, private app for quitting porn without shame. Before it launches, we are looking for a few people to use it for two weeks and say honestly what helps." />
+    <link rel="icon" href="site-icon.png" />
+    <link rel="stylesheet" href="site.css" />
+    <style>
+      ol {
+        padding-left: 22px;
+      }
+      ol li {
+        margin: 6px 0;
+      }
+
+      /* the main button sits low, where the thumb is (as on the about page) */
+      .dock {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+        background: linear-gradient(to bottom, transparent, var(--bg) 28%);
+      }
+      .dock .inner {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .open {
+        display: block;
+        text-align: center;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 18px;
+        text-decoration: none;
+        padding: 16px 20px;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(98, 71, 234, 0.3);
+      }
+      .dock p {
+        text-align: center;
+        font-size: 15px;
+        margin: 10px 0 0;
+      }
+      .dock p a {
+        font-weight: 600;
+      }
+      .wrap.page {
+        padding-bottom: 8px;
+      }
+      footer.wrap {
+        margin-top: 0;
+        padding-top: 0;
+        border: 0;
+      }
+      footer.wrap p {
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap page">
+      <header>
+        <a class="brand" href="./"><img src="site-icon.png" alt="" />Daybook</a>
+        <nav aria-label="Pages">
+          <a href="about.html">About</a>
+          <a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+        </nav>
+      </header>
+
+      <main>
+        <h1>Help test Daybook</h1>
+        <p class="lead">
+          Daybook is a free, private app for quitting porn without shame. Before it launches, we are looking for a few people to use it for two weeks and say
+          honestly what helps and what does not.
+        </p>
+
+        <div class="card">
+          <h3>What it is</h3>
+          <ul>
+            <li>Log urges and slips in a few taps, honestly.</li>
+            <li>See the hours and moments that are hardest for you, from your own log.</li>
+            <li>SOS for when an urge hits: breathe first, then a tool that fits the moment.</li>
+          </ul>
+          <p>A slip does not reset you to zero. What you build stays yours, because a slip is data, not failure.</p>
+        </div>
+
+        <h2>How to try it</h2>
+        <div class="card">
+          <h3>Today, on any phone or computer</h3>
+          <p>Open Daybook in your browser with the button below. Nothing to install and no account needed.</p>
+        </div>
+        <div class="card">
+          <h3>The iPhone or Android app</h3>
+          <p>
+            The apps are almost ready. Write to us with the link below and say which phone you use. For Android, add the email of the Google account on your
+            phone, so it can be added to the test. You get an invite as soon as the app can be installed.
+          </p>
+        </div>
+
+        <h2>What we ask of you</h2>
+        <ol>
+          <li>Use Daybook for two weeks, whenever it fits your day. There is no wrong way to use it.</li>
+          <li>When the app asks, think about turning on anonymous counts. They show whether people come back, and the app shows exactly what is sent.</li>
+          <li>
+            On day 2, day 7 and day 14, open More, then Send feedback, and answer these in a few words:
+            <ul>
+              <li>What did you open Daybook for today?</li>
+              <li>After a hard moment or a slip, did Daybook help you keep going, or make it harder?</li>
+              <li>What one thing would you change?</li>
+              <li>How would you describe Daybook to a friend, in one line?</li>
+            </ul>
+          </li>
+          <li>If you are open to a 15-minute call, add an email to your feedback. It is never needed.</li>
+        </ol>
+
+        <div class="card short">
+          <h3>Your privacy</h3>
+          <ul>
+            <li>No account needed. Your log stays on your phone, or in your browser on the web.</li>
+            <li>Anonymous counts only if you say yes: never your words, your log or who you are.</li>
+            <li>Feedback is sent with no name and no email, unless you add one to get a reply.</li>
+            <li>No ads, no tracking, nothing sold. The code is public, so anyone can check.</li>
+          </ul>
+          <p>The <a href="privacy.html">privacy policy</a> says exactly what is kept.</p>
+        </div>
+
+        <div class="card sos">
+          <h3>If you are in crisis</h3>
+          <p>
+            Daybook is not medical care. If you are thinking about hurting yourself, call or text <strong>988</strong> in the US, or call your local emergency
+            number.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <div class="dock">
+      <div class="inner">
+        <a class="open" href="./">Open Daybook, free</a>
+        <p>
+          <a
+            href="mailto:jeffreydsmith.cs@gmail.com?subject=Testing%20Daybook&amp;body=My%20phone%20(iPhone%20or%20Android)%3A%20%0A%0AFor%20Android%2C%20the%20Google%20account%20email%20on%20my%20phone%3A%20"
+            >Ask for the iPhone or Android invite</a
+          >
+        </p>
+      </div>
+    </div>
+
+    <footer class="wrap">
+      <p>Daybook is not medical care. <a href="support.html">Support</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms of use</a></p>
+    </footer>
+  </body>
+</html>

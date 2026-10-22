@@ -9,6 +9,16 @@ export async function scheduleNudges(_plan: Nudge[]): Promise<void> {}
 export async function remindersAllowed(): Promise<boolean> {
   return false;
 }
+export async function remindersState(): Promise<{ granted: boolean; canAskAgain: boolean }> {
+  return { granted: false, canAskAgain: false };
+}
+export async function exactAlarmsOk(): Promise<boolean> {
+  return true;
+}
+export async function exactAlarmsAsk(): Promise<boolean> {
+  return true;
+}
+export function openPhoneSettings(): void {}
 export async function scheduleTalk(_t: number, _body: string, _url: string): Promise<boolean> {
   return false;
 }

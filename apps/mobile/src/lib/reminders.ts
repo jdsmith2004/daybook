@@ -2,26 +2,35 @@
    Core nudges.ts plans them (today and tomorrow, then a few come-back notes) from the log and the choices in Settings;
    this schedules that plan, one notification at a time, and makes it again each time the app opens. The words are plain on
    purpose, because a notification can show on a locked screen: nothing in them says what Daybook is for. Tapping one opens
-   Today (or the screen it is for). On Android each kind has its own channel, so one can be quieted without the others. */
-import type { Nudge, NudgeKind } from '@daybook/core';
+   Today (or the screen it is for). On Android each kind has its own channel, so one can be quieted without the others.
+   On iPhone each note carries its flame picture (core Nudge.pic, apps/mobile/assets/notify); Android shows the fixed small
+   and large icons from app.json, because a local note there cannot carry a picture of its own. */
+import type { Nudge, NudgeKind, NudgePic } from '@daybook/core';
+import { Asset } from 'expo-asset';
+import { File, Paths } from 'expo-file-system';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 export const remindersOffered = true;
 const CHANNEL = 'reminders';
 /* the Android channels: the check-ins (and Talk it through) keep the first channel's id, so a phone that has it keeps its choice */
-const CHANNELS: { id: string; name: string; kinds: NudgeKind[] }[] = [
+/* the come-back notes are low: no sound, no pop-up, only in the list */
+const CHANNELS: { id: string; name: string; kinds: NudgeKind[]; low?: boolean }[] = [
   { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'morning', 'wind'] },
   { id: 'hard-hours', name: 'Hard hours', kinds: ['risk'] },
   { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
-  { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'] },
+  { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'], low: true },
 ];
 const channelOf = (k: NudgeKind) => (CHANNELS.find((c) => c.kinds.includes(k)) || CHANNELS[0]).id;
 let channelsMade = false;
 async function makeChannels() {
   if (Platform.OS !== 'android' || channelsMade) return;
-  for (const c of CHANNELS) await Notifications.setNotificationChannelAsync(c.id, { name: c.name, importance: Notifications.AndroidImportance.DEFAULT });
+  for (const c of CHANNELS)
+    await Notifications.setNotificationChannelAsync(c.id, {
+      name: c.name,
+      importance: c.low ? Notifications.AndroidImportance.LOW : Notifications.AndroidImportance.DEFAULT,
+    });
   channelsMade = true;
 }
 
@@ -39,6 +48,28 @@ export async function allowReminders(): Promise<boolean> {
   return r.granted;
 }
 
+/* the flame pictures, iPhone only. iOS moves an attached file into its own store, so each note gets its own copy in the cache. */
+const PICS: Record<NudgePic, number> = {
+  'flame-bright': require('@/assets/notify/flame-bright.png'),
+  'flame-warm': require('@/assets/notify/flame-warm.png'),
+  'flame-steady': require('@/assets/notify/flame-steady.png'),
+  'flame-ember': require('@/assets/notify/flame-ember.png'),
+  'flame-asleep': require('@/assets/notify/flame-asleep.png'),
+};
+async function attach(n: Nudge): Promise<Notifications.NotificationContentAttachmentIos[]> {
+  if (Platform.OS !== 'ios') return [];
+  try {
+    const [a] = await Asset.loadAsync(PICS[n.pic] ?? PICS['flame-bright']);
+    if (!a.localUri) return [];
+    const to = new File(Paths.cache, 'note-' + n.id + '.png');
+    if (to.exists) to.delete();
+    new File(a.localUri).copy(to);
+    return [{ identifier: n.pic, url: to.uri, type: null, typeHint: 'public.png' }];
+  } catch {
+    return [];
+  }
+}
+
 /** the plan from core nudgePlan, as the phone's schedule: everything Daybook scheduled is replaced by it (a one-off from Talk it through stays) */
 export async function scheduleNudges(plan: Nudge[]): Promise<void> {
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
@@ -48,9 +79,18 @@ export async function scheduleNudges(plan: Nudge[]): Promise<void> {
   const now = Date.now();
   for (const n of plan) {
     if (n.at <= now) continue;
+    /* the come-back notes arrive quietly on iPhone too */
+    const quiet = n.quiet || n.k === 'back';
+    const attachments = await attach(n);
     await Notifications.scheduleNotificationAsync({
       identifier: n.id,
-      content: { title: 'Daybook', body: n.body, data: { url: n.url, id: n.id }, ...(n.quiet ? { interruptionLevel: 'passive' as const } : {}) },
+      content: {
+        title: 'Daybook',
+        body: n.body,
+        data: { url: n.url, id: n.id },
+        ...(quiet ? { interruptionLevel: 'passive' as const } : {}),
+        ...(attachments.length ? { attachments } : {}),
+      },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: channelOf(n.k) },
     });
   }
@@ -59,6 +99,27 @@ export async function scheduleNudges(plan: Nudge[]): Promise<void> {
 /** whether this phone lets Daybook send notifications (without asking) */
 export async function remindersAllowed(): Promise<boolean> {
   return (await Notifications.getPermissionsAsync()).granted;
+}
+/** what the phone says, for the ask on Today (core notify.ts): granted, and whether its own prompt can still show */
+export async function remindersState(): Promise<{ granted: boolean; canAskAgain: boolean }> {
+  const p = await Notifications.getPermissionsAsync();
+  return { granted: p.granted, canAskAgain: p.canAskAgain };
+}
+
+/** Android 12 and newer: whether notes can come at their exact time. Without it, Android may send them up to an hour
+    late, which is fine for a check-in and wrong for the heads-up before hard hours. Always true elsewhere. */
+export async function exactAlarmsOk(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  return (await Notifications.getExactAlarmPermissionsAsync().catch(() => ({ granted: true }))).granted;
+}
+/** opens Android's page to allow exact times, and says whether it is allowed after */
+export async function exactAlarmsAsk(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  return (await Notifications.requestExactAlarmPermissionsAsync().catch(() => ({ granted: false }))).granted;
+}
+/** the phone's settings page for Daybook, where notifications can be turned on after a no */
+export function openPhoneSettings(): void {
+  Linking.openSettings().catch(() => undefined);
 }
 
 const TALK = 'talk';

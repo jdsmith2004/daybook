@@ -77,10 +77,12 @@ function eye(id: string, x: number, y: number, R: number, inward: number) {
   );
 }
 const stroke = (d: string, w: number, c = BROW) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
-/** the face, centred on its eyes at (0, 84) in the figure's box; s scales it around there */
-function face(id: string, s = 1, cy = 84) {
+/** an eye closed in rest: a soft curve like a small smile, where the eye was */
+const restEye = (x: number) => stroke(`M${x - 10} 82Q${x} 91 ${x + 10} 82`, 3.6, '#4A1A0A');
+/** the face, centred on its eyes at (0, 84) in the figure's box; s scales it around there. rest: the eyes closed, content */
+function face(id: string, s = 1, cy = 84, rest = false) {
   const g =
-    `<g class="sn-eyes">${eye(id, -17, 84, 13, 1)}${eye(id, 17, 84, 13, -1)}</g>` +
+    (rest ? restEye(-17) + restEye(17) : `<g class="sn-eyes">${eye(id, -17, 84, 13, 1)}${eye(id, 17, 84, 13, -1)}</g>`) +
     stroke('M-27 63Q-20 57.5 -12 60', 3) +
     stroke('M12 60Q20 57.5 27 63', 3) +
     stroke('M-6.5 101Q0 107.5 6.5 101', 3.4);
@@ -88,7 +90,7 @@ function face(id: string, s = 1, cy = 84) {
 }
 
 /** a flame with its base at (cx, by), k times its box (100 by 120). face: false for the small side flames */
-function flameFig(id: string, kind: Kind, cx: number, by: number, k: number, o: { face?: boolean; delay?: number; lean?: number } = {}) {
+function flameFig(id: string, kind: Kind, cx: number, by: number, k: number, o: { face?: boolean; delay?: number; lean?: number; rest?: boolean } = {}) {
   const [out, mid, heart] = SHAPES[kind];
   const lean = o.lean ? ` rotate(${o.lean} 0 120)` : '';
   let g = `<g class="em-flame" style="animation-delay:${o.delay || 0}s"><g transform="translate(${f(cx)} ${f(by)}) scale(${k})${lean} translate(0 -120)">`;
@@ -97,7 +99,7 @@ function flameFig(id: string, kind: Kind, cx: number, by: number, k: number, o: 
   if (mid) g += `<path d="${mid}" fill="url(#${id}fd)"/>`;
   g += `<path d="${heart}" fill="url(#${id}fi)"/>`;
   g += `<g clip-path="url(#${id}ci${kind})"><rect x="-40" y="30" width="80" height="86" fill="url(#${id}bs)"/><ellipse cx="-4" cy="${kind === 'full' ? 60 : 72}" rx="22" ry="16" fill="url(#${id}hl)"/></g>`;
-  if (o.face !== false) g += kind === 'full' ? face(id) : kind === 'small' ? face(id, 0.82, 88) : face(id, 0.86, 88);
+  if (o.face !== false) g += kind === 'full' ? face(id, 1, 84, o.rest) : kind === 'small' ? face(id, 0.82, 88, o.rest) : face(id, 0.86, 88, o.rest);
   return g + '</g></g>';
 }
 /** a soft shadow on the ground under a figure */
@@ -529,4 +531,39 @@ export function flameIconSvg(): string {
     `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${defsFor(id, ['#15103C', '#281F66', '#3A2C86'])}` +
     `<rect width="120" height="120" fill="url(#${id}sk)"/><circle cx="60" cy="66" r="54" fill="url(#${id}go)"/>${shadow(id, 60, 106, 42)}${flameFig(id, 'full', 60, 104, 0.76)}</svg>`
   );
+}
+
+/* ---------- the pictures in a note ---------- */
+/* One for each way a note speaks. The flame backs off with the person and rests, and it is always lit: it is never shown
+   out, sad or sick. sky: its three colors; glow: the light's color, how strong, how wide; kind, k, by: the flame; n: stars */
+export type NoteMood = 'bright' | 'warm' | 'steady' | 'ember' | 'asleep';
+const NOTE: Record<NoteMood, { sky: string[]; glow: [string, number, number]; kind: Kind; k: number; by: number; n: number; rest?: boolean }> = {
+  /* the app icon: the full flame at its best */
+  bright: { sky: ['#15103C', '#281F66', '#3A2C86'], glow: ['#FFC25A', 0.75, 56], kind: 'full', k: 0.76, by: 104, n: 6 },
+  /* the kinder words: the full flame in a dawn of rose and amber, a soft warm light */
+  warm: { sky: ['#2C2175', '#7A4399', '#E0808C'], glow: ['#FFB7A8', 0.6, 54], kind: 'full', k: 0.72, by: 104, n: 3 },
+  /* come back, day 2 and 4: the small flame, calm */
+  steady: { sky: ['#17113F', '#2B2169', '#3E2D88'], glow: ['#FFC25A', 0.5, 44], kind: 'small', k: 0.6, by: 104, n: 8 },
+  /* day 7 and 14: the spark, a little lower and a little smaller */
+  ember: { sky: ['#15103C', '#221A5C', '#33287A'], glow: ['#FFC25A', 0.42, 36], kind: 'tiny', k: 0.5, by: 106, n: 10 },
+  /* day 30: the spark resting, eyes closed and smiling, still lit under the stars */
+  asleep: { sky: ['#0B0A2E', '#1A1550', '#2C2072'], glow: ['#FFC25A', 0.36, 32], kind: 'tiny', k: 0.44, by: 108, n: 12, rest: true },
+};
+/** the flame for a note's picture (iPhone): a square SVG 120 by 120 with no motion, as the mood asks */
+export function flameNoteSvg(mood: NoteMood): string {
+  const m = NOTE[mood] || NOTE.bright,
+    id = 'em' + ++seq,
+    [gc, go, gr] = m.glow,
+    cy = m.by - 60 * m.k;
+  let h = `<rect width="120" height="120" fill="url(#${id}sk)"/>${stars(m.n, 0.8)}`;
+  if (m.rest) h += `<path d="M98 7A10 10 0 1 0 106 23A8 8 0 1 1 98 7Z" fill="#FFF3B0" opacity=".85"/>`;
+  h += `<circle cx="60" cy="${f(cy)}" r="${gr}" fill="url(#${id}ng)"/>${shadow(id, 60, m.by + 2, 56 * m.k)}`;
+  h += flameFig(id, m.kind, 60, m.by, m.k, { rest: m.rest });
+  const ng = `<defs><radialGradient id="${id}ng"><stop offset="0" stop-color="${gc}" stop-opacity="${go}"/><stop offset="1" stop-color="${gc}" stop-opacity="0"/></radialGradient></defs>`;
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${defsFor(id, m.sky)}${ng}${h}</svg>`.replace(/ (class|style)="[^"]*"/g, '');
+}
+
+/** the full flame's outline in white on clear, for Android's small note icon (it uses only the alpha) */
+export function flameMaskSvg(): string {
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><path d="${OUT}" fill="#fff" transform="translate(60 12) scale(.8)"/></svg>`;
 }

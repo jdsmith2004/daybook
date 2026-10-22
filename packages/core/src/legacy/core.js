@@ -2663,10 +2663,6 @@ LESSONS.push(...lessonsMore(SRC));
 /* ------------------------------------------------------------------------------------------------
    onboarding: the setup answers and the self-check
    ------------------------------------------------------------------------------------------------ */
-const OB_SECS=[
- ['welcome','Welcome','sky','sun'],['you','About you','violet','compass'],['check','Quick check','accent','heart'],
- ['facts','The facts','slip','chart'],['helps','How Daybook helps','mint','life'],['expect','What to expect','sky','sunrise'],['plan','Your plan','sun','shield']
-];
 const OB_AIM=[['quit','Quit for good','flag'],['less','Use it a lot less','sliders'],['nights','Take back my nights','moon'],['learn','Understand my pattern','compass']];
 const OB_FREQ=[['f0','Less than once a week',.5,'less than once a week'],['f1','1 to 2 times',1.5,'1 to 2 times a week'],['f2','3 to 5 times',4,'3 to 5 times a week'],['f3','About once a day',7,'about once a day'],['f4','More than once a day',14,'more than once a day']];
 const OB_MINS=[['m0','Under 15 minutes',10,'under 15 minutes'],['m1','15 to 30 minutes',22,'15 to 30 minutes'],['m2','30 minutes to an hour',45,'30 minutes to an hour'],['m3','1 to 2 hours',90,'1 to 2 hours'],['m4','More than 2 hours',150,'more than 2 hours']];
@@ -3200,7 +3196,6 @@ export {
   bL,
   SRC,
   LESSONS,
-  OB_SECS,
   OB_AIM,
   OB_FREQ,
   OB_MINS,

@@ -72,15 +72,6 @@ it('the Support button on Today hides in the days after a slip, and with no link
   expect(core.tipButton(core.addEvent({}, core.addDays(tk, -core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(true);
 });
 
-it('the setup shows its free page only when a link is set, just before the end (and the account ask)', () => {
-  const ids = core.obPages({}).map((p) => p.id);
-  expect(ids.includes('free')).toBe(!!core.SUPPORT_URL);
-  expect(ids.indexOf('free')).toBe(ids.indexOf('done') - 1);
-  const all = core.OB_PAGES.map((p) => p.id);
-  expect(all.indexOf('free')).toBe(all.indexOf('account') - 1);
-});
-
-it('the setup skips its free page where no tip link is offered (Android)', () => {
-  expect(core.obPages({}, { tips: false }).some((p) => p.id === 'free')).toBe(false);
-  expect(core.obPages({}, { tips: true }).some((p) => p.id === 'free')).toBe(!!core.SUPPORT_URL);
+it('the setup has no tip page: the tip jar is on Today and More, and the welcome page says Daybook is free', () => {
+  expect(core.OB_PAGES.some((p) => p.id === 'free')).toBe(false);
 });

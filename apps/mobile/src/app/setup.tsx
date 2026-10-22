@@ -1,5 +1,5 @@
-/* How Daybook works: the setup, and the walk-through that can be opened again any time. Seven sections, each with its own color;
-   the bar at the top shows how far you are in this section only. One question per page, every question can be skipped, and
+/* How Daybook works: the setup, and the walk-through that can be opened again any time. Three acts, each with its own color;
+   the bar at the top shows how far you are in the whole setup. One question per page, every question can be skipped, and
    single-choice pages move on by themselves after a tap. A new person's plan is built from their answers. Opened again, nothing
    changes until the last page, where the person ticks which changes to keep. Ported from the legacy SCENES.onb. */
 import {
@@ -30,13 +30,14 @@ import {
   obHeard,
   obLast,
   obPages,
-  TIP_WORDS,
   obPrefill,
   obReasonList,
   obReasonOpts,
   obReveal,
   obSave,
   obSosLine,
+  obWave,
+  OB_TAKES,
   obSrc,
   obSug,
   obThenOpts,
@@ -70,25 +71,9 @@ import { Field } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { LessonArt, LxCheck, LxIco } from '@/components/lesson-art';
 import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
-import {
-  PicCurve,
-  PicDay,
-  PicDial,
-  PicFlame,
-  PicHeart,
-  PicLesson,
-  PicPattern,
-  PicPeople,
-  PicSlip,
-  PicSos,
-  PicSteps,
-  PicTakes,
-  PicToday,
-  PicTries,
-  PicWeek,
-  whenIcon,
-} from '@/components/setup-art';
-import { openTip, TIP_URL } from '@/components/support';
+import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicSteps, PicToday, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
+import { useClock } from '@/components/shapes';
+import { ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
@@ -139,9 +124,9 @@ export default function Setup() {
      drops out of the list and the setup moves on by itself */
   const env = {
     notify: remindersOffered && !(f.redo && rem.checkin),
-    tips: !!TIP_URL,
     account: !f.redo && sync.status.k !== 'off' && sync.status.k !== 'on',
   };
+  const [breathed, setBreathed] = useState(false);
   const until = useRef(0);
   const scroll = useRef<ScrollViewInstance>(null);
   const P = obPages(f.a, env);
@@ -227,7 +212,7 @@ export default function Setup() {
       ...x,
       saved: true,
       changed: r.changed,
-      /* the page after the review: when to check in (on a phone), "Daybook is free" when a tip link is set, then the end */
+      /* the page after the review: when to check in (on a phone), the account ask, then the end */
       i: Math.min(obPages(x.a, env).length - 1, obPages(x.a, env).findIndex((p) => p.k === 'review') + 1),
     }));
     await replace({ ...snap, settings: r.st }, ['settings']);
@@ -248,7 +233,7 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const back = i === 0 || pg.k === 'done' || pg.k === 'free' || pg.k === 'remind' || pg.k === 'account' ? null : <Back onPress={() => !f.saved && go(-1)} />;
+  const back = i === 0 || pg.k === 'done' || pg.k === 'remind' || pg.k === 'account' ? null : <Back onPress={() => !f.saved && go(-1)} />;
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
@@ -298,7 +283,7 @@ export default function Setup() {
           st={st}
           art={<PicToday />}
           h="Quit porn, one honest day at a time."
-          line="A plan built from your answers, help when urges hit, and progress you can see.">
+          line="A plan built from your answers, help when urges hit, and progress you can see. Free. No ads, no subscription.">
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
           <SosRow />
           <View style={s.links}>
@@ -412,7 +397,11 @@ export default function Setup() {
     }
     case 'heard': {
       const h = obHeard(a);
-      body = <Show st={st} art={<PicHeart />} h={h.h} line={h.line} more={h.more} />;
+      body = (
+        <Show st={st} art={<PicHeart />} h={h.h} line={h.line} more={h.more}>
+          {h.line2 ? <Rich text={h.line2} st={st} style={s.p} /> : null}
+        </Show>
+      );
       foot = nextBtn('Keep going');
       break;
     }
@@ -520,20 +509,28 @@ export default function Setup() {
       foot = nextBtn('Next');
       break;
     }
-    case 'sos': {
+    case 'breathe':
+      body = <Breathe done={breathed} onDone={() => setBreathed(true)} />;
+      foot = breathed ? nextBtn('Next') : nextBtn('Skip', true);
+      break;
+    case 'tour': {
       const x = obSosLine(a);
-      body = <Show st={st} art={<PicSos a={a} when={x.when} />} h="When an urge hits, tap SOS." line={x.line} />;
+      body = (
+        <Show st={st} art={<PicDay a={a} />} h="A day in Daybook" line="About five minutes a day. Each stop opens at its time.">
+          <Rich
+            text={
+              (a.when || []).length > 0
+                ? `When an urge hits, tap SOS: slow breathing starts on its own, then one thing to try, like **${x.tool.name}**.`
+                : 'When an urge hits, tap SOS: slow breathing starts on its own, then one thing to try.'
+            }
+            st={st}
+            style={s.p}
+          />
+        </Show>
+      );
       foot = nextBtn('Next');
       break;
     }
-    case 'day':
-      body = <Show st={st} art={<PicDay a={a} />} h="Your day takes about 5 minutes." line="Four short stops. Each one opens at its time." />;
-      foot = nextBtn('Next');
-      break;
-    case 'pattern':
-      body = <Show st={st} art={<PicPattern a={a} />} h="See when it hits hardest." line="Log an urge in a few taps. Your charts show the pattern." />;
-      foot = nextBtn('Next');
-      break;
     case 'tries': {
       const x = obTries(a);
       body = <Show st={st} art={<PicTries />} h={x.h} line={x.line} more={x.more} />;
@@ -1009,55 +1006,6 @@ export default function Setup() {
       );
       break;
     }
-    case 'free': {
-      /* Daybook is free, said plainly (like ScreenZen), with a soft, bright look (like How We Feel); a tip is the low,
-         quiet choice, and Continue is the main button */
-      body = (
-        <>
-          <Mid>
-            <View style={s.orbWrap}>
-              <LinearGradient colors={[c.sun, c.coral]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
-              <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
-              <View style={[s.orbDot, { backgroundColor: c.sky, width: 22, height: 22, bottom: 10, right: 0 }]} />
-              <View style={{ zIndex: 1 }}>
-                <Icon name="heart" size={64} color="#FFFFFF" />
-              </View>
-            </View>
-          </Mid>
-          <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
-            {TIP_WORDS.intro.h}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-            {TIP_WORDS.intro.pills.map((x) => (
-              <View key={x} style={[s.gift, { backgroundColor: c.mintSoft }]}>
-                <Icon name="check" size={16} color={c.mintText} />
-                <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>{x}</Text>
-              </View>
-            ))}
-          </View>
-          <T style={s.p}>{TIP_WORDS.intro.p}</T>
-          <T style={s.p}>{TIP_WORDS.intro.p2}</T>
-        </>
-      );
-      /* the tip sits low, always in view, just over Continue */
-      foot = (
-        <View key="f" style={{ flex: 1, gap: 10 }}>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel="Support Daybook. Opens a page in the browser to leave a tip. The setup waits for you."
-            onPress={openTip}
-            style={({ pressed }) => [s.tip, { opacity: pressed ? 0.85 : 1 }]}>
-            <LinearGradient colors={[c.sun, '#FF9A5C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            <View style={{ zIndex: 1 }}>
-              <Icon name="heart" size={22} color={c.onSun} />
-            </View>
-            <Text style={[s.tipT, { color: c.onSun, zIndex: 1 }]}>{TIP_WORDS.go}</Text>
-          </Pressable>
-          {nextBtn('Continue')}
-        </View>
-      );
-      break;
-    }
     case 'done': {
       if (f.redo) {
         body = (
@@ -1087,6 +1035,16 @@ export default function Setup() {
               Welcome in.
             </Text>
             <T style={s.p}>{obFirst(g.id, st ? st.screensOff : '23:00')}</T>
+            <View style={{ gap: 6 }}>
+              {OB_TAKES.map((x) => (
+                <View key={x} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Icon name="check" size={16} color={c.mintText} />
+                  <T v="small" tone="muted">
+                    {x}
+                  </T>
+                </View>
+              ))}
+            </View>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
               <View style={[s.gift, { backgroundColor: c.mintSoft }]}>
                 <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>+{SETUP_PTS} points</Text>
@@ -1114,14 +1072,13 @@ export default function Setup() {
       break;
     }
     default:
-      body = <ShowPage k={pg.k} t={t} st={st} />;
+      body = <ShowPage k={pg.k} t={t} st={st} a={a} />;
       foot = nextBtn('Next');
   }
 
-  const ps = P.filter((x) => x.s === pg.s);
-  const k = ps.indexOf(pg);
   const fin = pg.k === 'done';
-  const w = fin ? 1 : (k + 1) / ps.length;
+  /* one bar for the whole setup; the label names the act */
+  const w = fin ? 1 : (i + 1) / P.length;
   return (
     <View
       style={{
@@ -1170,7 +1127,7 @@ export default function Setup() {
             </Pressable>
           </View>
         </View>
-        <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (k + 1) + ' of ' + ps.length} />
+        <Bar w={w} col={fin ? c.mint : t.ic} label={fin ? 'Setup complete' : sec[1] + ': page ' + (i + 1) + ' of ' + P.length} />
         <View style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
           <ScrollView ref={scroll} contentContainerStyle={s.cardIn} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
             <KeyboardRoom scroll={scroll}>{body}</KeyboardRoom>
@@ -1186,7 +1143,7 @@ export default function Setup() {
 }
 
 /* the pages that only show something */
-function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
+function ShowPage({ k, t, st, a }: { k: string; t: Tone; st: Settings | null; a: SetupAnswers }) {
   switch (k) {
     case 'loop':
       return (
@@ -1219,47 +1176,12 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
           }}
         />
       );
-    case 'common':
-      return (
-        <Show
-          st={st}
-          art={<PicPeople />}
-          h="You are far from the only one."
-          line="About **1 in 10 men** say urges like these cause them real distress. Help works."
-          more={{
-            label: 'Behind this',
-            paras: [
-              'In a national US survey, about 1 in 10 men reported real distress from sexual urges and behavior they found hard to control. In another national sample, about 11% of men and 3% of women agreed, at least somewhat, that they are addicted to porn.',
-              'A 2022 review of treatments found that treatment appeared to improve symptoms, and therapy that builds skills (CBT) had the strongest support.',
-            ],
-            keys: ['dickenson', 'grubbs19', 'antons'],
-          }}
-        />
-      );
-    case 'lessons':
-      return (
-        <Show
-          st={st}
-          art={<PicLesson />}
-          h={`${LESSONS.length} short lessons. One a day is plenty.`}
-          line="Each takes 1 to 5 minutes, with the research linked."
-        />
-      );
-    case 'flame':
-      return (
-        <Show
-          st={st}
-          art={<PicFlame />}
-          h="Your flame grows as you show up."
-          line="Honest logs, lessons, and urges you ride out earn points. **Points never go down.**"
-        />
-      );
     case 'waves':
       return (
         <Show
           st={st}
           art={<LessonArt art={['wave', {}]} ic="wave" t={t} st={st} />}
-          h="Urges rise, peak, and pass."
+          h={obWave(a).h}
           line="You can ride one out without acting on it. SOS walks you through it."
           more={{
             label: 'Behind this',
@@ -1289,11 +1211,43 @@ function ShowPage({ k, t, st }: { k: string; t: Tone; st: Settings | null }) {
       );
     case 'slip':
       return <Show st={st} art={<PicSlip />} h="A slip is data, not a reset." line="Your points, level, and badges stay. The next day counts again." />;
-    case 'takes':
-      return <Show st={st} art={<PicTakes />} h="Here is what it takes." line="Small things, most days. Perfect is not required." />;
     default:
-      return <Show st={st} art={<PicSteps />} h="Three steps, about 5 minutes." line="Only you see your answers. You can skip any question." />;
+      return <Show st={st} art={<PicSteps />} h="Three parts, about 8 minutes." line="Only you see your answers. You can skip any question." />;
   }
+}
+
+/* Thirty seconds of slow breathing, 4 seconds in and 4 out, on the shared timer. A placeholder for the real SOS breath (a later
+   step). Skip is on the page until the thirty seconds end; then it reads Next. */
+const BREATHE_SECS = 30;
+const BREATHE_BEAT: BeatOf = { dur: [4, 4], low: 0.8, kind: 'cookie9', words: ['Breathe in', 'Breathe out'] };
+function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
+  const c = useTheme();
+  const sec = useClock(!done);
+  const gone = done ? BREATHE_SECS : Math.min(sec, BREATHE_SECS);
+  useEffect(() => {
+    if (!done && sec >= BREATHE_SECS) onDone();
+  }, [done, sec, onDone]);
+  return (
+    <>
+      <View style={{ gap: 10 }}>
+        <Text style={[s.h, s.hsm, { color: c.ink }]} accessibilityRole="header">
+          Try it now. Thirty seconds of slow breathing.
+        </Text>
+        <T style={s.p}>This is what SOS starts with. Breathe with the circle, or skip.</T>
+      </View>
+      <Mid>
+        <ToolTimer
+          p={gone / BREATHE_SECS}
+          left={(BREATHE_SECS - gone) * 1000}
+          sec={gone}
+          beat={BREATHE_BEAT}
+          label={done ? 'Well done' : 'Breathing'}
+          color={c.scheme === 'dark' ? c.sun : c.accent}
+          ink={c.accentText}
+        />
+      </Mid>
+    </>
+  );
 }
 
 function Show({

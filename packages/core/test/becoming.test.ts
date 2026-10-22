@@ -10,9 +10,9 @@ it('a new person starts with no sentence, and an old settings record gets an emp
   expect(core.normSettings({ becoming: 7 }).becoming).toBe('');
 });
 
-it('setup asks it after the safe person and before the plan', () => {
+it('setup asks it in the plan, after the screens-off time and before the review', () => {
   const ids = core.obPages({}).map((p) => p.id);
-  expect(ids.indexOf('becoming')).toBe(ids.indexOf('person') + 1);
+  expect(ids.indexOf('becoming')).toBe(ids.indexOf('so') + 1);
   expect(ids.indexOf('review')).toBe(ids.indexOf('becoming') + 1);
 });
 

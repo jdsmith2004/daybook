@@ -37,7 +37,6 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
-import { SUPPORT_URL } from './support';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
@@ -178,18 +177,13 @@ export type PageKind =
   | 'guess'
   | 'hours'
   | 'loop'
-  | 'common'
-  | 'sos'
-  | 'lessons'
-  | 'day'
   | 'so'
-  | 'pattern'
-  | 'flame'
   | 'waves'
+  | 'breathe'
+  | 'tour'
   | 'curve'
   | 'tries'
   | 'slip'
-  | 'takes'
   | 'goal'
   | 'reasons'
   | 'then'
@@ -197,7 +191,6 @@ export type PageKind =
   | 'becoming'
   | 'review'
   | 'remind'
-  | 'free'
   | 'done';
 export interface ObPage {
   id: string;
@@ -221,17 +214,22 @@ export interface ObPage {
 /** what the device can do: notify (a phone app; a web page cannot remind once it is closed) */
 export interface ObEnv {
   notify?: boolean;
-  /** false where no tip link is offered (Android): the free page, with its tip button, is skipped */
-  tips?: boolean;
   /** true when this build has accounts and the person is not signed in: the account page shows once the plan is built */
   account?: boolean;
 }
+/** the three acts of the setup: id, name, tone and icon. Every page points at its act with `s`. */
+export const OB_SECS: [string, string, string, string][] = [
+  ['you', 'You', 'violet', 'compass'],
+  ['hour', 'Your hardest hour', 'mint', 'life'],
+  ['plan', 'Your plan', 'sun', 'shield'],
+];
+/* The order is a story in three acts (the owner, October 22, 2026): you, your hardest hour, your plan. */
 export const OB_PAGES: ObPage[] = [
-  { id: 'hello', s: 'welcome', k: 'hello' },
-  { id: 'how', s: 'welcome', k: 'how' },
+  { id: 'hello', s: 'you', k: 'hello' },
+  { id: 'how', s: 'you', k: 'how' },
   {
     id: 'aim',
-    s: 'welcome',
+    s: 'you',
     k: 'tiles',
     key: 'aim',
     list: OB_AIM,
@@ -291,15 +289,15 @@ export const OB_PAGES: ObPage[] = [
     keep: 1,
     art: 'star',
   },
-  { id: 'b0', s: 'check', k: 'bps', n: 0 },
-  { id: 'b1', s: 'check', k: 'bps', n: 1 },
-  { id: 'b2', s: 'check', k: 'bps', n: 2 },
-  { id: 'b3', s: 'check', k: 'bps', n: 3 },
-  { id: 'b4', s: 'check', k: 'bps', n: 4 },
-  { id: 'heard', s: 'check', k: 'heard' },
+  { id: 'b0', s: 'you', k: 'bps', n: 0 },
+  { id: 'b1', s: 'you', k: 'bps', n: 1 },
+  { id: 'b2', s: 'you', k: 'bps', n: 2 },
+  { id: 'b3', s: 'you', k: 'bps', n: 3 },
+  { id: 'b4', s: 'you', k: 'bps', n: 4 },
+  { id: 'heard', s: 'you', k: 'heard' },
   {
     id: 'costs',
-    s: 'facts',
+    s: 'you',
     k: 'multi',
     key: 'costs',
     list: OB_COST,
@@ -309,13 +307,11 @@ export const OB_PAGES: ObPage[] = [
     keep: 1,
     own: 'ownCost',
   },
-  { id: 'guess', s: 'facts', k: 'guess', need: (a) => !!obHours(a) },
-  { id: 'hours', s: 'facts', k: 'hours', need: (a) => !!obHours(a) },
-  { id: 'loop', s: 'facts', k: 'loop' },
-  { id: 'common', s: 'facts', k: 'common' },
+  { id: 'guess', s: 'you', k: 'guess', need: (a) => !!obHours(a) },
+  { id: 'hours', s: 'you', k: 'hours', need: (a) => !!obHours(a) },
   {
     id: 'when',
-    s: 'helps',
+    s: 'hour',
     k: 'multi',
     key: 'when',
     list: OB_WHEN,
@@ -324,17 +320,17 @@ export const OB_PAGES: ObPage[] = [
     cols: 2,
     keep: 1,
   },
-  { id: 'sos', s: 'helps', k: 'sos' },
-  { id: 'lessons', s: 'helps', k: 'lessons' },
-  { id: 'day', s: 'helps', k: 'day' },
-  { id: 'so', s: 'helps', k: 'so', key: 'so' },
-  { id: 'pattern', s: 'helps', k: 'pattern' },
-  { id: 'flame', s: 'helps', k: 'flame' },
-  { id: 'waves', s: 'expect', k: 'waves' },
-  { id: 'curve', s: 'expect', k: 'curve' },
+  { id: 'wave', s: 'hour', k: 'waves' },
+  /* thirty seconds of slow breathing, the way SOS starts (a placeholder until the real breath is built) */
+  { id: 'breathe', s: 'hour', k: 'breathe' },
+  { id: 'loop', s: 'hour', k: 'loop' },
+  { id: 'person', s: 'hour', k: 'person', key: 'person' },
+  /* one page in place of the five tour pages: SOS, lessons, your day, the pattern, the flame */
+  { id: 'tour', s: 'hour', k: 'tour' },
+  { id: 'curve', s: 'plan', k: 'curve' },
   {
     id: 'tried',
-    s: 'expect',
+    s: 'plan',
     k: 'tiles',
     key: 'tried',
     list: OB_TRIED,
@@ -345,19 +341,16 @@ export const OB_PAGES: ObPage[] = [
     keep: 1,
     art: 'flag',
   },
-  { id: 'tries', s: 'expect', k: 'tries' },
-  { id: 'slip', s: 'expect', k: 'slip' },
-  { id: 'takes', s: 'expect', k: 'takes' },
+  { id: 'tries', s: 'plan', k: 'tries' },
+  { id: 'slip', s: 'plan', k: 'slip' },
   { id: 'goal', s: 'plan', k: 'goal', key: 'goal' },
   { id: 'reasons', s: 'plan', k: 'reasons', key: 'rs' },
   { id: 'ifthen', s: 'plan', k: 'then', key: 'then' },
-  { id: 'person', s: 'plan', k: 'person', key: 'person' },
+  { id: 'so', s: 'plan', k: 'so', key: 'so' },
   { id: 'becoming', s: 'plan', k: 'becoming', key: 'be' },
   { id: 'review', s: 'plan', k: 'review' },
   /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
-  /* Daybook is free, said plainly with a tip button (support.ts); only when a tip link is set */
-  { id: 'free', s: 'plan', k: 'free', need: (_a, env) => !!SUPPORT_URL && env.tips !== false },
   /* a free account, asked for at the best moment there is: the plan was just built, and nothing has gone wrong yet
      (accounts.ts). It comes last, so it is the one ask left in mind. Never required: "Keep it on this phone" goes on. */
   { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
@@ -515,6 +508,8 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
 export interface ObShow {
   h: string;
   line: string;
+  /** a second line under the first */
+  line2?: string;
   /** "Behind this": the detail, and the sources by key */
   more?: { label: string; paras: string[]; keys: string[] };
 }
@@ -527,19 +522,47 @@ const BPS_MORE = {
   ],
   keys: ['bps'],
 };
-/** after the five statements: a kind word that fits what was said. The score is never shown. */
+/** "far from the only one", folded into the page after the five statements: its line and its sources */
+const COMMON_LINE = 'About **1 in 10 men** say urges like these cause them real distress. Help works.';
+const COMMON_MORE = {
+  paras: [
+    'In a national US survey, about 1 in 10 men reported real distress from sexual urges and behavior they found hard to control. In another national sample, about 11% of men and 3% of women agreed, at least somewhat, that they are addicted to porn.',
+    'A 2022 review of treatments found that treatment appeared to improve symptoms, and therapy that builds skills (CBT) had the strongest support.',
+  ],
+  keys: ['dickenson', 'grubbs19', 'antons'],
+};
+/** after the five statements: a kind word that fits what was said. The score is never shown. `line2` is the second line,
+    "you are far from the only one", and `more` holds the sources of both. */
 export function obHeard(a: SetupAnswers): ObShow {
   const r = obScore(a);
-  if (!r.n) return { h: 'That is okay.', line: 'You can come back to these questions any time.' };
+  const more = (bps: boolean) => ({
+    label: 'Behind this',
+    paras: (bps ? BPS_MORE.paras : []).concat(COMMON_MORE.paras),
+    keys: (bps ? BPS_MORE.keys : []).concat(COMMON_MORE.keys),
+  });
+  const line2 = COMMON_LINE;
+  if (!r.n) return { h: 'That is okay.', line: 'You can come back to these questions any time.', line2, more: more(false) };
   if (r.s >= 6)
     return {
       h: 'Thank you for being honest.',
       line: 'This has a real hold, and it can change. Daybook will help, and free support from real people is there whenever you want more.',
-      more: BPS_MORE,
+      line2,
+      more: more(true),
     };
-  if (r.s >= 4) return { h: 'Thank you for being honest.', line: 'It sounds like this has a real hold. That is exactly what Daybook is for.', more: BPS_MORE };
-  return { h: 'Thanks. That helps.', line: 'Even a light habit can take more than it gives. Your plan will fit where you are.' };
+  if (r.s >= 4)
+    return { h: 'Thank you for being honest.', line: 'It sounds like this has a real hold. That is exactly what Daybook is for.', line2, more: more(true) };
+  return { h: 'Thanks. That helps.', line: 'Even a light habit can take more than it gives. Your plan will fit where you are.', line2, more: more(false) };
 }
+
+/** the wave page: the person's hardest moment, said in their own pick, when they answered it */
+export function obWave(a: SetupAnswers) {
+  const has = (a.when || []).length > 0;
+  const label = has ? (OB_WHEN.find((x) => x[0] === obTop(a)) || [])[1] : '';
+  return { h: label ? `${label}, an urge rises, peaks, and passes.` : 'Urges rise, peak, and pass.' };
+}
+
+/** the four small things the first day asks, shown under the first step on the last page */
+export const OB_TAKES = ['About 5 minutes a day', 'Honest logs, slips included', 'SOS when an urge hits', 'Phone out of the bedroom at night'];
 
 /** your time: the number for a year, the headline, the comparisons, and the detail (legacy obReveal). guess is a number, 'skip', or null. */
 export function obReveal(a: SetupAnswers, guess: number | 'skip' | null) {

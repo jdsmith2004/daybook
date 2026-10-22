@@ -47,13 +47,8 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
   const tk = f.tk;
 
   it('offers the same pages, goals, reasons and plans', () => {
-    /* the legacy pages, in order; 'free' (Daybook is free, with the tip link, support.ts) is new and checked in support.test.ts */
-    expect(
-      core
-        .obPages(a)
-        .map((p) => p.id)
-        .filter((id) => id !== 'free'),
-    ).toEqual(f.pages);
+    /* the pages in order: the legacy gating, with the order changed by design on October 22 (three acts) */
+    expect(core.obPages(a).map((p) => p.id)).toEqual(f.pages);
     expect(core.obPrefill(st)).toEqual(f.prefill);
     expect(core.obGoals(st, tk).map((g) => [g.id, g.t, g.s, g.goal])).toEqual(f.goals);
     expect(core.obSug(a, st, tk)).toBe(f.sug);
@@ -78,7 +73,15 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
 
   it('says the same words', () => {
     const h = core.obHeard(a);
-    has(f.heard, h.h + ' ' + h.line + ' ' + moreText(h.more));
+    /* the second line and the sources of "far from the only one" were their own page in the legacy app (now folded in) */
+    const own = h.more && {
+      ...h.more,
+      paras: h.more.paras.slice(0, h.more.paras.length - 2),
+      keys: h.more.keys.filter((k) => !['dickenson', 'grubbs19', 'antons'].includes(k)),
+    };
+    has(f.heard, h.h + ' ' + h.line + ' ' + (own && own.keys.length ? moreText(own) : ''));
+    expect(h.line2).toContain('1 in 10 men');
+    expect(h.more!.keys).toEqual(expect.arrayContaining(['dickenson', 'grubbs19', 'antons']));
     const t = core.obTries(a);
     has(f.tries, t.h + ' ' + t.line + ' ' + moreText(t.more));
     const gi = core.obGoalInfo(a, st, tk);
@@ -108,6 +111,23 @@ describe('the goal it suggests', () => {
     expect(core.obSuggest({ aim: 'learn', tried: 't0' })).toBe('week');
     expect(core.obSuggest({})).toBe('week');
   });
+});
+
+it('tells the setup as three acts, in one order', () => {
+  expect(core.obPages({}).map((p) => p.id)).toEqual([
+    ...'hello how aim years freq mins faith b0 b1 b2 b3 b4 heard costs when wave breathe loop person tour curve tried tries slip goal reasons ifthen so becoming review'.split(
+      ' ',
+    ),
+    'done',
+  ]);
+  const ids = core.obPages({ freq: 'f2', mins: 'm1' }).map((p) => p.id);
+  expect(ids.slice(ids.indexOf('costs'), ids.indexOf('when'))).toEqual(['costs', 'guess', 'hours']);
+  expect(core.OB_SECS.map((x) => x[0])).toEqual(['you', 'hour', 'plan']);
+  /* every page points at an act, and the acts run in order */
+  const order = core.OB_SECS.map((x) => x[0]);
+  const at = core.OB_PAGES.map((p) => order.indexOf(p.s));
+  expect(at.every((n) => n >= 0)).toBe(true);
+  expect(at).toEqual([...at].sort());
 });
 
 it('asks for a free account once the plan is built, only when the build has accounts and the person is not signed in', () => {

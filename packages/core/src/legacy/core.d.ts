@@ -233,7 +233,6 @@ export const OB_GOALS: { id: string; t: string; s: string; ic: string; goal: str
 export function normOnb(o: unknown): Settings['onb'];
 /** an answer: [id, label, ...]. Some lists add an icon, a number, or words for a sentence. */
 export type ObOpt = [string, string, ...(string | number)[]];
-export const OB_SECS: [string, string, string, string][];
 export const OB_AIM: [string, string, string][];
 export const OB_FREQ: [string, string, number, string][];
 export const OB_MINS: [string, string, number, string][];

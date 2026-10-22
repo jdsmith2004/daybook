@@ -38,6 +38,7 @@ import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useNow } from '@/lib/now';
 import { useSos } from '@/lib/sos';
+import { count } from '@/lib/pulse';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -50,12 +51,14 @@ export function useLogActions() {
       return { ...s, days: withDay(s.days, k, day) };
     });
     buzz('save');
+    count('rk_small');
     say('Good. That is the move.');
   };
   const phoneAway = () => {
     const st = snap.settings;
     if (!st) return;
     const at = clockOf(Date.now());
+    count('rk_phone');
     const b0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
     const next = update((s) => {
       const day = changeDay(s.days[tk], tk, (d) => {

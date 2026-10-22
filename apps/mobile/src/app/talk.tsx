@@ -72,6 +72,7 @@ import { Slider, SliderValue } from '@/components/slider';
 import { TalkArtView } from '@/components/talk-art';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close, closeAll } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -239,6 +240,7 @@ export default function TalkIt() {
   const finishPath = (t: Talk) => {
     setTalk(t);
     persist(t);
+    count('talk_done');
     const at = t.p === 'open' ? now + 3600000 : t.at;
     if (remind && remindersOffered && at) {
       const body =

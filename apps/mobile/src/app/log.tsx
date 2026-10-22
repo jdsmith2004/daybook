@@ -60,6 +60,7 @@ import { Comebacks, RkArtView } from '@/components/rk-art';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { LineNote } from '@/components/line-note';
 import { WhenPill, WhenSheet } from '@/components/when';
@@ -190,6 +191,8 @@ export default function Log() {
     let id = evId;
     let days = snap.days;
     let key = date;
+    /* a new entry (not a change to one already saved) */
+    const made = !(ev && id);
     if (ev && id) {
       if (outcome !== v)
         days = update((s) => ({
@@ -216,6 +219,7 @@ export default function Log() {
       setDate(at.key);
     }
     setOutcome(v);
+    if (made) count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
     buzz('save');
     go(v === 'slipped' ? (rkSeen ? 'done' : rkStepFor(days, key)) : 'trigger');
   };
@@ -679,8 +683,10 @@ export default function Log() {
         <Missions
           list={q.missions}
           onAction={(m, act) => {
-            if (act === 'small') patch({ recovered: true });
-            else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k: date, kind: act } });
+            if (act === 'small') {
+              patch({ recovered: true });
+              count('rk_small');
+            } else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k: date, kind: act } });
           }}
         />
         <Prize b={q.prize.b} s={q.prize.s} />

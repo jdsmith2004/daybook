@@ -131,6 +131,7 @@ describe('sending', () => {
     expect(pulseNorm(null, D0)).toEqual(pulseNew(D0));
     const s = pulseNorm({ on: true, first: D0, days: { [D0]: { sos: 3, made_up: 9 }, bad: { sos: 1 } } }, D0);
     expect(s.days).toEqual({ [D0]: { sos: 3 } });
+    expect(pulseNorm({ on: true, first: D0, days: { '2026-09-01': { sos: 1 } } }, D0).days).toEqual({});
   });
 });
 

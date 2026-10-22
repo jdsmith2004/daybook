@@ -50,6 +50,7 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -62,6 +63,7 @@ export default function Sos() {
   const sos = useSos();
   const win = useWindowDimensions();
   const st = useCareSettings();
+  useEffect(() => count('sos'), []);
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const ur = sos.ur;
   /* the small tag on each tool: how it went for you */

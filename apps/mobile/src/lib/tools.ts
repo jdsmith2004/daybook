@@ -5,6 +5,7 @@ import { blankP, changeDay, gameCompute, withDay } from '@daybook/core';
 import { router } from 'expo-router';
 
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -31,6 +32,7 @@ export function useFinishTool(lr = false) {
       return next;
     });
     buzz('save');
+    count('tool_' + id);
     const gain = after - before;
     if (sos.ur) {
       const ur = sos.ur;

@@ -39,6 +39,7 @@ import { Slider, SliderValue } from '@/components/slider';
 import { TalkLook, talkLookNow } from '@/components/talk-card';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -69,7 +70,10 @@ export default function Morning() {
     setHist((h) => h.concat(step));
     setDir(1);
     if (to === 'end' && answered && !mi.m) update((s0) => ({ ...s0, days: morningDone(s0.days, tk) }));
-    if (to === 'end' && answered) buzz('lit');
+    if (to === 'end' && answered) {
+      buzz('lit');
+      count('morning');
+    }
     setStep(to);
   };
   const next = () => go(STEPS[STEPS.indexOf(step) + 1]);

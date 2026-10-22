@@ -92,6 +92,7 @@ jobs:
       ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
     outputs:
       sync_url: ${{ steps.out.outputs.sync_url }}
+      pulse_url: ${{ steps.out.outputs.pulse_url }}
       auth_domain: ${{ steps.out.outputs.auth_domain }}
       client_id: ${{ steps.out.outputs.client_id }}
       web_url: ${{ steps.out.outputs.web_url }}
@@ -129,7 +130,7 @@ jobs:
         name: Outputs
         working-directory: infra/app
         run: |
-          for k in sync_url auth_domain client_id web_url web_bucket distribution_id; do
+          for k in sync_url pulse_url auth_domain client_id web_url web_bucket distribution_id; do
             echo "$k=$(terraform output -raw $k)" >> "$GITHUB_OUTPUT"
           done
 
@@ -139,6 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_SYNC_URL: ${{ needs.infra.outputs.sync_url }}
+      EXPO_PUBLIC_PULSE_URL: ${{ needs.infra.outputs.pulse_url }}
       EXPO_PUBLIC_AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       EXPO_PUBLIC_CLIENT_ID: ${{ needs.infra.outputs.client_id }}
       EXPO_PUBLIC_WEB_URL: ${{ needs.infra.outputs.web_url }}
@@ -171,6 +173,7 @@ jobs:
       DISTRIBUTION_ID: ${{ needs.infra.outputs.distribution_id }}
       WEB_URL: ${{ needs.infra.outputs.web_url }}
       SYNC_URL: ${{ needs.infra.outputs.sync_url }}
+      PULSE_URL: ${{ needs.infra.outputs.pulse_url }}
       AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       CLIENT_ID: ${{ needs.infra.outputs.client_id }}
     steps:
@@ -204,6 +207,7 @@ jobs:
             echo "For phone builds (apps/mobile/.env.local, or EAS environment variables):"
             echo '```'
             echo "EXPO_PUBLIC_SYNC_URL=$SYNC_URL"
+            echo "EXPO_PUBLIC_PULSE_URL=$PULSE_URL"
             echo "EXPO_PUBLIC_AUTH_DOMAIN=$AUTH_DOMAIN"
             echo "EXPO_PUBLIC_CLIENT_ID=$CLIENT_ID"
             echo '```'

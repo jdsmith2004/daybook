@@ -42,6 +42,7 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { SunArt } from '@/components/sun-art';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -107,6 +108,7 @@ export default function Sunrise() {
       return { ...s, days: f.days, settings: f.st };
     });
     setToPlan(moved);
+    count('sunrise');
     buzz('lit');
     setHist([]);
     setOwn(null);
@@ -340,8 +342,10 @@ export default function Sunrise() {
           <Missions
             list={rkMissions(r, st, { where: 'scene', deep: e.op.deep, left: true, hour, until: rkUntil(k) })}
             onAction={(_m, act) => {
-              if (act === 'small') update((s) => ({ ...s, days: patchEvent(s.days, k, evId, { recovered: true }) }));
-              else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k, kind: act } });
+              if (act === 'small') {
+                update((s) => ({ ...s, days: patchEvent(s.days, k, evId, { recovered: true }) }));
+                count('rk_small');
+              } else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k, kind: act } });
             }}
           />
         ) : null}

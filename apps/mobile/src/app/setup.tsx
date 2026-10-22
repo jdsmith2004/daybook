@@ -10,6 +10,7 @@ import {
   isTime,
   keyOfDate,
   OB_BE,
+  OB_PAGES,
   OB_BPS,
   OB_BPS_C,
   OB_GUESS,
@@ -95,6 +96,7 @@ import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
+import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
@@ -176,6 +178,10 @@ export default function Setup() {
   useEffect(() => {
     if (!f.redo) storeSetup(f.saved || pg.k === 'done' ? null : f);
   }, [f, pg.k]);
+  /* the opt-in counts: how far a new person got (core pulse.ts), kept on the device until they say yes */
+  useEffect(() => {
+    if (!f.redo) countSetup(OB_PAGES.indexOf(pg), pg.k === 'done');
+  }, [f.redo, pg]);
 
   const busy = () => Date.now() < until.current;
   const set = (patch: Partial<Flow> | ((x: Flow) => Partial<Flow>)) =>

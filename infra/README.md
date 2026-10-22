@@ -87,7 +87,8 @@ It is off until its role exists:
 1. Apply the bootstrap stack once more with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It adds the
    `daybook-app-pulse` role (the pulse table and its own logs, nothing else) and lets deploys hand that role to the
    function.
-2. Set `pulse` to `true` in `infra/app/variables.tf` and push with `[deploy]`.
+2. Set `pulse` to `true` in `infra/app/variables.tf`, add `EXPO_PUBLIC_PULSE_URL` (the Deploy summary prints it) to the
+   phone builds in `apps/mobile/eas.json`, and push with `[deploy]`.
 3. To read the counts: sign in to the app, open Stats in More, and copy the account id it shows. Add it as the
    repository secret `DAYBOOK_OWNER_SUB` and deploy again. Only that account can read them.
 

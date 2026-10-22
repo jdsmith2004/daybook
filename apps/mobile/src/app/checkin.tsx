@@ -18,6 +18,7 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
@@ -97,6 +98,7 @@ export default function Checkin() {
       return { ...s0, days };
     });
     saveDraft(k, null, tk);
+    count('checkin');
     buzz('lit');
     setMsg(text);
     setHist([]);

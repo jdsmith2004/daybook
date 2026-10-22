@@ -21,6 +21,7 @@ import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
+import { useKeepPulse } from '@/lib/pulse';
 import { SyncProvider } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -91,7 +92,8 @@ function WebChrome({ bg }: { bg: string }) {
 
 function Shell() {
   const c = useTheme();
-  const { ready } = useStore();
+  const { ready, snap } = useStore();
+  useKeepPulse(ready, snap.days);
   const [fonts, fontError] = useFonts({
     Fredoka_600SemiBold,
     Fredoka_700Bold,

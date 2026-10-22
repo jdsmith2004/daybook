@@ -62,6 +62,7 @@ import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
@@ -143,6 +144,7 @@ export default function LessonScreen() {
     });
     setGain(g);
     setAgain(a);
+    count('lesson_done');
     buzz(a ? 'save' : 'lit');
   };
   const step = (d: number) => {

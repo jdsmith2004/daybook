@@ -8,6 +8,11 @@ output "sync_url" {
   value = "${local.web_origin}/sync"
 }
 
+/* the opt-in counts and feedback, through the app's own address; empty while the pulse is off, so the app never asks */
+output "pulse_url" {
+  value = var.pulse ? "${local.web_origin}/pulse" : ""
+}
+
 /* the API Gateway address itself, for testing */
 output "api_url" {
   value = aws_apigatewayv2_api.api.api_endpoint

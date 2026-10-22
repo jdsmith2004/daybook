@@ -110,6 +110,8 @@ export interface PulseBatch {
 export const PULSE_MAX = 50;
 /** at most this many days go in one batch (a phone away for a month sends the latest ones) */
 export const PULSE_DAYS = 14;
+/** counts not sent within this many days (no network, or the server off) are let go */
+export const PULSE_KEEP = 30;
 
 export const pulseNew = (today: DayKey): PulseState => ({
   on: null,
@@ -128,7 +130,7 @@ export function pulseNorm(x: unknown, today: DayKey): PulseState {
   const keys = pulseKeys();
   const days: Record<DayKey, PulseCounts> = {};
   for (const [d, c] of Object.entries(s.days || {})) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !c || typeof c !== 'object') continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < addDays(today, -PULSE_KEEP) || !c || typeof c !== 'object') continue;
     const out: PulseCounts = {};
     for (const [k, n] of Object.entries(c)) if (keys.has(k) && Number.isFinite(n) && n > 0) out[k] = Math.min(PULSE_MAX, Math.floor(n));
     if (Object.keys(out).length) days[d] = out;

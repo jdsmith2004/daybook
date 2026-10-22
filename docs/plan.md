@@ -2076,5 +2076,19 @@ The owner is weighing a one-time payment of about $5 that unlocks some features,
 more than it can carry. Nothing is decided. Whatever is chosen: care is never locked (SOS, logging, Rekindle, the
 plan, the tools and Today stay free, as CLAUDE.md says), a digital unlock inside the app has to go through Apple's and
 Google's in-app purchase (the Stripe link stays a tip and unlocks nothing), and earned things stay earned. What the
-other quit apps charge, and how they market, is being written up in the daybook-shorts repository
-(content/systems/app-marketing.md) to inform this.
+other quit apps charge, and how they market, is written up in the daybook-shorts repository
+(content/systems/app-marketing.md). What it found, as of October 22, 2026:
+
+- Every competitor is a subscription behind a hard paywall with no free tier. Quittr's reported price differs by
+  source ($12.99 a month or $39.99 a year in a founder interview; $6.99 a week or $29.99 a year elsewhere), with an
+  exit discount. Brainbuddy is about $12.99 a month and Fortify $9.99 (undated). None of them offers a one-time price.
+- The complaints are about the paywall: charges that did not unlock, refunds unanswered for a month, and the review
+  line "porn is free, this should be free". Quittr also leaked intimate answers for hundreds of thousands of people,
+  many of them minors (404 Media, March 2026). Free, and logs that stay on the phone, are the plain difference, and the
+  videos lean on it.
+- So a one-time unlock of about $5 would still be the cheapest thing in the category by far, and it is not the price
+  that would cost trust. What matters is what it locks. Care stays free, so the candidates are things that are
+  pleasant and not needed: extra flame forms or themes, app icons, more voices for the breathing tool, a "thank you"
+  badge. Apple and Google take 15% at this size, so $5 nets about $4.25. The App Store allows a one-time non-consumable
+  in-app purchase; it is simpler than a subscription and has no renewal to support. The marketing line stays "free":
+  every tool a person needs is free, and the unlock is a way to say thanks that also gives something back.

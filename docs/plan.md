@@ -55,15 +55,27 @@ Motion honored, theme tokens only, and the pale-circle icons drawn as real small
    flame → one `tour` page; takes → done; `breathe` new, after when; loop just before person; so into the plan act; free
    out), `OB_SECS` as the three acts, one progress bar over the whole flow, the honest time and the free line on hello.
    `PULSE_KEYS` and the privacy page list follow the page ids in the same change; the setup fixtures' `pages` are updated
-   by hand (the order is a design change, not a rule change); the walk-through (redo) still works.
+   by hand (the order is a design change, not a rule change); the walk-through (redo) still works. **Done.**
 2. **Medium.** The look: act openings and payoffs as full-color scenes, titles on top everywhere, a slide-and-fade between
    pages, `Slider` on freq and mins with the big value in the middle, the flame alive, Reduce Motion, theme tokens, the
-   placeholder icons replaced or dropped.
+   placeholder icons replaced or dropped. **Done** (setup runs on `SceneFrame` and `Stage` now, with new `bar`, `bare`
+   and `topRight` props; the white card is drawn by `SceneFrame` only when `bar` is set, so no other screen changes).
 3. **Medium.** The payoffs: the hours count-up as the act-one close; the breathe page on the SOS breath (`ToolTimer`,
    `SQUIGGLE`, design-standards.md); the plan assembling row by row; the hold lighting the flame; Welcome in with the
-   level bar filling (display only, points rules unchanged).
+   level bar filling (display only, points rules unchanged). **Done.**
 4. **Medium.** The walk: a Playwright pass of the whole flow as a new person and as a walk-through, light and dark, 390 by
-   844 and the SE height, screenshots to the owner; the funnel checked against the new ids.
+   844 and the SE height, screenshots to the owner; the funnel checked against the new ids. **Done** on the web build
+   (the reminder and account pages do not show on the web, so they were checked by reading, not walking).
+
+**Done (October 22, 2026).** 35 pages, about 40 taps. Chosen on the owner's behalf: the "+20 points" chip merged into
+the level line on Welcome in ("Level 1 → Level 2 · +20 points", the bar filling); the walk-through's end page lost "Back
+to Today" (Done did the same); the breathe page keeps breathing after its 30 seconds instead of stopping dead. Known and
+left: on a 375 by 667 phone the review and the longer answer pages scroll, with the main button below the fold (fitting
+them would mean cutting content); the freq and mins track is the app's one `Slider`, which is pale before an answer, and
+changing that is a change to `slider.tsx` for the whole app; a new person who had setup half done before this change
+resumes at an index into the old order (pre-release data only); the funnel's setup ids changed, so early totals mix old
+and new names. **Not tested:** the reminder and account pages, and the hold and the breath on a real phone (the owner,
+on TestFlight: the breath's haptic at the end, the hold, Reduce Motion on).
 
 ## Today, with its flame back (the owner, October 22, 2026)
 

@@ -77,7 +77,45 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
 }
 
 /* a moment in the colors of its sky, with its one button */
-function Tile({ m, sky, then, sunrise, onPress }: { m: Moment; sky: StopTile['sky']; then: string; sunrise?: boolean; onPress: () => void }) {
+function Tile({ m, sky, sunrise, onPress }: { m: Moment; sky: StopTile['sky']; then: string; sunrise?: boolean; onPress: () => void }) {
+  return <Band m={m} sky={sunrise ? 'sun' : sky} onPress={onPress} />;
+}
+
+/* prototype: the next step as one band under the flame, the whole band is the button */
+function Band({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {
+  const c = useTheme();
+  const L = lookOf(sky, c);
+  const deep = c.scheme === 'dark' || sky === 'night';
+  const [a, b] = skies[c.scheme][sky];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={m.btn + ': ' + m.h}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [
+        s.band,
+        { shadowColor: 'rgba(20,14,60,0.45)', shadowOffset: { width: 0, height: pressed ? 1 : 5 }, transform: [{ translateY: pressed ? 4 : 0 }] },
+      ]}>
+      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[s.eb, { color: sky === 'night' ? '#FFE27A' : L.ink }]} numberOfLines={1}>
+          {m.eb.toUpperCase()}
+        </Text>
+        <Text style={[s.bandT, { color: deep ? nightInk.ink : c.ink }]} numberOfLines={2}>
+          {m.h}
+        </Text>
+      </View>
+      <View style={[s.go, { backgroundColor: L.btn }]}>
+        <Text style={[s.goT, { color: L.onBtn }]}>{(m.btn && m.btn.length < 10 ? m.btn : 'Start') + ' ›'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+export function OldTile({ m, sky, then, sunrise, onPress }: { m: Moment; sky: StopTile['sky']; then: string; sunrise?: boolean; onPress: () => void }) {
   const c = useTheme();
   const L = lookOf(sky, c);
   /* the morning after keeps its light sunrise colors in either theme, so its words do too */
@@ -219,4 +257,8 @@ const s = StyleSheet.create({
   then: { fontFamily: font.body, fontSize: 14, lineHeight: 19, textAlign: 'center' },
   ic: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   more: { paddingHorizontal: 8 },
+  band: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76, padding: 14, borderRadius: 20, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  bandT: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
+  go: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
+  goT: { fontFamily: font.bodyBold, fontSize: 15 },
 });

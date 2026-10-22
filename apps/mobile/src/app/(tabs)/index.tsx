@@ -45,7 +45,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
-import { StandRow } from '@/components/stand-row';
+import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
@@ -178,11 +178,12 @@ export default function Today() {
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
       action={tipButton(snap.days, tk, TIP_URL) ? <TipTop /> : undefined}>
-      <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+      <Hero g={g} snap={snap} tk={tk} now={now} dawn={pick.card.k === 'morning-after'}>
+        <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+      </Hero>
       <Card>
         <LogLink />
       </Card>
-      <StandRow g={g} snap={snap} tk={tk} now={now} />
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}

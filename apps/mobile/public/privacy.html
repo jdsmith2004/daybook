@@ -22,14 +22,15 @@
 
       <main>
         <h1>Privacy policy</h1>
-        <p class="date">In effect from October 19, 2026</p>
+        <p class="date">In effect from October 22, 2026</p>
 
         <div class="card short">
           <h3>The short version</h3>
           <ul>
             <li>Without an account, your log never leaves your phone.</li>
             <li>With an account, your records are kept under your account and sent only to you, when you are signed in.</li>
-            <li>No ads, no analytics, no tracking, and nothing is ever sold or shared.</li>
+            <li>No ads, no tracking, and nothing is ever sold or shared.</li>
+            <li>Only if you say yes: a few anonymous counts once a day, never your words, your log or who you are.</li>
             <li>You can delete everything, and your account, from inside the app.</li>
           </ul>
         </div>
@@ -43,7 +44,8 @@
         <h2>Without an account</h2>
         <p>
           Everything you put in Daybook (your log of urges and slips, check-ins, notes, your plan, lessons, reviews and settings) is stored on your device only,
-          or in your browser's storage when you use Daybook on the web. Daybook does not receive any of it.
+          or in your browser's storage when you use Daybook on the web. Daybook does not receive any of it. (The anonymous counts below, if you turn them on,
+          and feedback you choose to send, are not part of your log.)
         </p>
 
         <h2>With an account</h2>
@@ -68,18 +70,64 @@
         <h2>What Daybook never collects</h2>
         <ul>
           <li>Your location, contacts, photos, browsing, or any advertising identifier.</li>
-          <li>Analytics or tracking of how you use the app. Daybook has none, and no ad or tracking code from anyone else.</li>
+          <li>Tracking of any kind, and no ad or tracking code from anyone else. The only counts are the anonymous ones below, and only if you say yes.</li>
           <li>Voice notes. They stay on your phone, with or without an account.</li>
           <li>
             Anything about your reminders. Daybook's reminders are made on your phone, and the count of which ones help stays on your phone and is never sent.
           </li>
         </ul>
 
+        <h2 id="counts">Anonymous counts (only if you say yes)</h2>
+        <p>
+          Daybook is built by one person, who needs to know what helps. So the app asks once whether it may send a few anonymous counts. Until you answer,
+          nothing is sent. If you say no, nothing is counted at all. You can change your answer any time in More, where the app also shows exactly what it sent
+          last.
+        </p>
+        <p>
+          With counts on, once a day your phone sends, for days that are over, a short list of names and small numbers (each from 1 to 50), plus whether it is
+          an iPhone, Android or the web and the app's version. The server adds them to totals for everyone, per day, and keeps nothing else: not who sent them,
+          not your internet address, not the request. No count can be traced back to you, even by Daybook. These are every name that can be sent:
+        </p>
+        <ul>
+          <li>
+            <code>act_0</code>, <code>act_1</code>, <code>act_2_6</code>, <code>act_7_13</code>, <code>act_14_29</code>, <code>act_30</code>: Daybook was opened
+            that day, and how many days after it was first opened on this device.
+          </li>
+          <li>
+            <code>back_1</code>, <code>back_2_3</code>, <code>back_4_7</code>, <code>back_8</code>: Daybook was opened again after a slip, and how many days
+            later.
+          </li>
+          <li><code>slip_logged</code>, <code>urge_logged</code>: a new slip or urge was logged (only that it was, never when, why or anything written).</li>
+          <li>
+            <code>sos</code>, <code>talk_done</code>, <code>lesson_done</code>, <code>checkin</code>, <code>sunrise</code>, <code>morning</code>,
+            <code>rk_small</code>, <code>rk_phone</code>, <code>feedback</code>: SOS was opened, Talk it through finished, a lesson finished, a check-in saved,
+            the sunrise check or the morning questions done, a Rekindle step done, feedback sent.
+          </li>
+          <li>
+            <code>tool_</code> and the tool's name (breathe, ground, curious, pause, thought, forward, move, bed, surprise, halt, message, reasons): that tool
+            was used.
+          </li>
+          <li>
+            <code>setup_</code> and a setup page's name (hello, how, aim, years, freq, mins, faith, b0, b1, b2, b3, b4, heard, costs, guess, hours, loop,
+            common, when, sos, lessons, day, so, pattern, flame, waves, curve, tried, tries, slip, takes, goal, reasons, ifthen, person, becoming, review,
+            remind, free, account), and <code>setup_done</code>: how far setup got, sent once for each page.
+          </li>
+        </ul>
+        <p>Never sent: anything you write, what led to an urge or slip, any time of day, your log, check-ins or plan, your name, email or account.</p>
+
+        <h2 id="feedback">Feedback</h2>
+        <p>
+          If you send feedback from More, Daybook keeps your words, whether you were on an iPhone, Android or the web, the app's version, and when it arrived.
+          No name and no email are sent, unless you type an address to get a reply. Feedback is read only by the person who builds Daybook and is deleted after
+          180 days.
+        </p>
+
         <h2>Where it is kept, and how it is protected</h2>
         <p>
           Account records are stored with Amazon Web Services in the United States. They travel only over encrypted connections and are encrypted where they are
           stored. Each request is checked against your sign-in, so one person's records can never be sent to another. The server keeps short technical logs (the
-          time of a request and any error, never the content of your records) for 14 days, to keep it running.
+          time of a request and any error, never the content of your records) for 14 days, to keep it running. The counts and feedback have their own store,
+          apart from the records, with technical logs kept for 7 days.
         </p>
         <p>On your phone, you can lock Daybook with Face ID, Touch ID or your passcode in Settings.</p>
 

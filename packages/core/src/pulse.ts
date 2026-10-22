@@ -284,3 +284,75 @@ export function feedbackClean(x: unknown): { t: string; r: string | null; p: Pul
   const v = typeof f.v === 'string' && VER.test(f.v) ? f.v : '0';
   return { t, r, p, v };
 }
+
+/* ---------- the ask ---------- */
+/** the words, in one place */
+export const PULSE_WORDS = {
+  h: 'Help make Daybook better for the next person?',
+  p: 'Daybook can send a few anonymous counts once a day, like "opened SOS 2 times" or "came back the day after a slip". Never your words, never your log, and never who you are. It shows the one person who builds Daybook what really helps.',
+  yes: 'Yes, send counts',
+  no: 'No thanks',
+  see: 'See exactly what is sent',
+  foot: 'You can change this any time in More.',
+};
+/** the hours the ask may show, like the tip ask */
+export const PULSE_HOURS: [number, number] = [9, 20];
+/** Today asks once the person has answered nothing yet, from their second day, in the daytime, on a calm day (no slip
+    today or yesterday, and not soon after an SOS or a slip), and never beside another ask (an account or a tip). */
+export function pulseAsk(s: PulseState | null, days: Days, tk: DayKey, hour: number, other: boolean, quiet: boolean): boolean {
+  if (!s || s.on !== null || other || quiet) return false;
+  if (hour < PULSE_HOURS[0] || hour >= PULSE_HOURS[1]) return false;
+  if (daysBetween(s.first, tk) < 1) return false;
+  const y = addDays(tk, -1);
+  return ![tk, y].some((k) => (days[k]?.events || []).some((e) => e.outcome === 'slipped'));
+}
+
+/* ---------- the owner's Stats page ---------- */
+export interface PulseSummary {
+  from: DayKey;
+  to: DayKey;
+  /** batches (one a device a day) by platform */
+  platforms: [string, number][];
+  versions: [string, number][];
+  /** opened, by band of days since first opened */
+  active: [string, number][];
+  /** came back after a slip, by band */
+  back: [string, number][];
+  slips: number;
+  /** people who reached each setup page, in setup's order, then finished */
+  setup: [string, number][];
+  /** what was used, most first */
+  used: [string, number][];
+}
+/** the totals from GET /pulse (rows "<day>#<platform>" and "<day>#v#<version>"), added up for the Stats page */
+export function pulseSummary(rows: { k: string; n: Record<string, number> }[], from: DayKey, to: DayKey): PulseSummary {
+  const sum: Record<string, number> = {};
+  const plat: Record<string, number> = {};
+  const ver: Record<string, number> = {};
+  for (const r of rows) {
+    const [d, a, b] = r.k.split('#');
+    if (!d || d < from || d > to) continue;
+    if (a === 'v') {
+      ver[b] = (ver[b] || 0) + (r.n.batches || 0);
+      continue;
+    }
+    plat[a] = (plat[a] || 0) + (r.n.batches || 0);
+    for (const [k, n] of Object.entries(r.n)) if (k !== 'batches' && typeof n === 'number') sum[k] = (sum[k] || 0) + n;
+  }
+  const list = (ks: readonly string[]): [string, number][] => ks.map((k) => [k, sum[k] || 0]);
+  const desc = (o: Record<string, number>): [string, number][] => Object.entries(o).sort((x, y) => y[1] - x[1]);
+  const skip = new Set<string>([...PULSE_ACTIVE, ...PULSE_BACK, 'slip_logged']);
+  const used: Record<string, number> = {};
+  for (const [k, n] of Object.entries(sum)) if (!skip.has(k) && !k.startsWith('setup_') && n > 0) used[k] = n;
+  return {
+    from,
+    to,
+    platforms: desc(plat),
+    versions: desc(ver),
+    active: list(PULSE_ACTIVE),
+    back: list(PULSE_BACK),
+    slips: sum.slip_logged || 0,
+    setup: list(setupKeys()),
+    used: desc(used),
+  };
+}

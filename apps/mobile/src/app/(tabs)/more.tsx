@@ -7,6 +7,7 @@ import { Linking, View, type ScrollViewInstance } from 'react-native';
 
 import { HelpFoot } from '@/components/help-foot';
 import { LinkCard } from '@/components/link-card';
+import { PulseRows } from '@/components/pulse';
 import { Screen } from '@/components/screen';
 import { SettingsSections } from '@/components/settings-sections';
 import { TipRow } from '@/components/support';
@@ -48,6 +49,7 @@ export default function More() {
           onPress={() => Linking.openURL(SITE_PAGES.support).catch(() => undefined)}
         />
         <TipRow />
+        <PulseRows />
       </View>
       <HelpFoot />
       <View style={{ gap: 2, marginTop: 6 }}>

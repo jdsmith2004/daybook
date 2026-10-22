@@ -152,13 +152,19 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   - Sensitive info: religious beliefs (setup asks how much faith matters, and that answer syncs).
   - User content: other user content (the log, notes, plans).
   - Identifiers: user ID.
+  - Usage data: product interaction (the opt-in counts, core `pulse.ts`): **not linked** to the person, used for
+    analytics only, **not** used for tracking. It is optional: the app asks once and sends nothing until the person
+    says yes. Add this before a build with `EXPO_PUBLIC_PULSE_URL` goes to review.
+  - User content: other user content also covers feedback (optional, not linked unless the person types an address;
+    used for app functionality).
   - Tracking: **no**. Data used to track you: **none**.
 - **Notes for App Review:**
 
   > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
   > free account syncs a copy and opens the lessons after the first three. "Support Daybook" opens a tip
   > page in the browser; tips unlock nothing, and the link is offered on the United States storefront only, under
-  > guideline 3.1.1(a). The app has no ads and no analytics. Reminders are local notifications made on the device, with
+  > guideline 3.1.1(a). The app has no ads. It asks once whether it may send anonymous, opt-in usage counts
+  > (totals only, never the log), and sends nothing unless the person says yes. Reminders are local notifications made on the device, with
   > plain words that do not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
 - **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Settings, then Sync), with a
@@ -262,6 +268,8 @@ they would be Play in-app products, and that is a separate piece of work.
      can delete it in the app or by email): personal info (email address, user IDs, religious beliefs from the faith
      question), health and fitness (health info: the log), app activity (other user-generated content: notes and plans).
      Used for app functionality and account management only.
+     Once the opt-in counts are in a build: app activity, app interactions (optional, collected for analytics, not shared,
+     processed so it cannot be tied to a person), and feedback as other user-generated content (optional).
 7. **Production.** When the closed test is done, apply for production access in the Play Console's dashboard, then release
    the newest build to production (start at a staged rollout if it offers one). Review usually takes a few days; paste any
    message from Google to Claude Code.

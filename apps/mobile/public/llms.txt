@@ -31,7 +31,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 ## Privacy and price
 
 - Free for everyone. No ads, no subscription, nothing behind a paywall. Optional tips change nothing in the app.
-- No analytics and no tracking. Nothing is sold or shared.
+- No tracking and no ads. Nothing is sold or shared. The only counts are anonymous, opt-in totals (never a word, the log or who someone is).
 - Works fully with no account; the log then never leaves the phone. An optional free account keeps a safe copy and syncs, readable only with the person's sign-in. Delete my account removes everything.
 - Face ID or passcode lock. Reminders use plain words that do not say what the app is for.
 

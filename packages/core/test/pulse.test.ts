@@ -168,3 +168,57 @@ describe('the server check', () => {
     expect(feedbackClean({ t: 'a'.repeat(5000) })!.t).toHaveLength(2000);
   });
 });
+
+describe('the ask and the summary', () => {
+  it('asks from day two, in the daytime, on a calm day, beside no other ask', async () => {
+    const { pulseAsk } = await import('../src/pulse');
+    const s = pulseNew(D0);
+    const tk = '2026-10-23';
+    expect(pulseAsk(s, {}, tk, 12, false, false)).toBe(true);
+    expect(pulseAsk(s, {}, D0, 12, false, false)).toBe(false);
+    expect(pulseAsk(s, {}, tk, 22, false, false)).toBe(false);
+    expect(pulseAsk(s, {}, tk, 12, true, false)).toBe(false);
+    expect(pulseAsk(s, {}, tk, 12, false, true)).toBe(false);
+    expect(pulseAsk(s, addEvent({}, D0, 'slipped', '23:00').days, tk, 12, false, false)).toBe(false);
+    expect(pulseAsk(pulseAnswer(s, false, D0), {}, tk, 12, false, false)).toBe(false);
+    expect(pulseAsk(on(), {}, tk, 12, false, false)).toBe(false);
+  });
+  it('adds up the totals for the Stats page', async () => {
+    const { pulseSummary } = await import('../src/pulse');
+    const sum = pulseSummary(
+      [
+        { k: '2026-10-20#ios', n: { batches: 3, sos: 4, act_1: 2, back_1: 1, slip_logged: 2, setup_hello: 3, setup_done: 1, tool_breathe: 2 } },
+        { k: '2026-10-21#web', n: { batches: 1, sos: 1, back_2_3: 1 } },
+        { k: '2026-10-21#v#1.0.0', n: { batches: 4 } },
+        { k: '2026-09-01#ios', n: { batches: 9, sos: 9 } },
+      ],
+      '2026-10-01',
+      '2026-10-22',
+    );
+    expect(sum.platforms).toEqual([
+      ['ios', 3],
+      ['web', 1],
+    ]);
+    expect(sum.versions).toEqual([['1.0.0', 4]]);
+    expect(sum.used).toEqual([
+      ['sos', 5],
+      ['tool_breathe', 2],
+    ]);
+    expect(sum.back.slice(0, 2)).toEqual([
+      ['back_1', 1],
+      ['back_2_3', 1],
+    ]);
+    expect(sum.slips).toBe(2);
+    expect(sum.setup[0]).toEqual(['setup_hello', 3]);
+    expect(sum.setup[sum.setup.length - 1]).toEqual(['setup_done', 1]);
+  });
+});
+
+it('the privacy page lists every name a count can have', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../../../apps/mobile/public/privacy.html', import.meta.url), 'utf8');
+  for (const k of pulseKeys()) {
+    const name = k.startsWith('tool_') ? k.slice(5) : k.startsWith('setup_') && k !== 'setup_done' ? k.slice(6) : k;
+    expect(html.includes(k.startsWith('tool_') || (k.startsWith('setup_') && k !== 'setup_done') ? name : '<code>' + k + '</code>'), k).toBe(true);
+  }
+});

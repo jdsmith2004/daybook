@@ -141,3 +141,51 @@ export function useKeepPulse(ready: boolean, days: Days) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 }
+
+/* Stats shows on More once this device has opened it as the owner (the first time, by its address: /stats) */
+const OWNER = 'pulse:owner';
+let statsSeen: boolean | null = null;
+const statsSubs = new Set<(v: boolean) => void>();
+export function setStatsSeen(v: boolean) {
+  if (statsSeen === v) return;
+  statsSeen = v;
+  (v ? AsyncStorage.setItem(OWNER, '1') : AsyncStorage.removeItem(OWNER)).catch(() => undefined);
+  statsSubs.forEach((f) => f(v));
+}
+export function useStatsSeen(): boolean {
+  const [v, setV] = useState(!!statsSeen);
+  useEffect(() => {
+    if (!pulseOffered) return;
+    statsSubs.add(setV);
+    if (statsSeen == null)
+      AsyncStorage.getItem(OWNER)
+        .then((x) => {
+          statsSeen = x === '1';
+          setV(statsSeen);
+        })
+        .catch(() => undefined);
+    return () => {
+      statsSubs.delete(setV);
+    };
+  }, []);
+  return v;
+}
+
+/** the owner's Stats: the totals and the feedback (GET /pulse), with the person's sign-in. `you` is the account id
+    when it is not the owner's (to set up DAYBOOK_OWNER_SUB). */
+export async function fetchStats(token: string, from: string): Promise<{ ok: true; body: StatsBody } | { ok: false; status: number; you?: string }> {
+  try {
+    const r = await fetch(PULSE_URL + '?from=' + encodeURIComponent(from), { headers: { authorization: 'Bearer ' + token } });
+    const j = (await r.json().catch(() => null)) as (StatsBody & { you?: string }) | null;
+    if (r.ok && j && Array.isArray(j.totals)) return { ok: true, body: j };
+    return { ok: false, status: r.status, you: j && typeof j.you === 'string' ? j.you : undefined };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+export interface StatsBody {
+  from: string;
+  to: string;
+  totals: { k: string; n: Record<string, number> }[];
+  feedback: { at: number; t: string; r: string | null; p: string; v: string }[];
+}

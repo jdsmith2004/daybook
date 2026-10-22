@@ -7,6 +7,8 @@ import {
   awayStart,
   markOpen,
   tipAsk,
+  tipQuiet,
+  pulseAsk,
   urLastAt,
   tipButton,
   autoCount,
@@ -40,6 +42,8 @@ import { FirstPatternLine } from '@/components/first-pattern';
 import { Hero } from '@/components/hero';
 import { HomeScreenCard } from '@/components/home-screen';
 import { NudgeCard } from '@/components/nudge-card';
+import { PulseCard } from '@/components/pulse';
+import { usePulse } from '@/lib/pulse';
 import { RiskCard } from '@/components/risk-card';
 import { SundayCard } from '@/components/sunday-card';
 import { TalkCard } from '@/components/talk-card';
@@ -101,6 +105,7 @@ export default function Today() {
   /* back after days away (core awayDue): Welcome back opens once, and once more the next day if it was closed unanswered;
      after that the gap waits as a quiet row (BackRow). Kept in this device's memory, never synced. */
   const sos = useSos();
+  const pulse = usePulse();
   const due = st && !syncing ? awayDue(snap.days, st, tk) : null;
   const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
   const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
@@ -138,6 +143,8 @@ export default function Today() {
   const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
+  /* the counts ask, once, on a calm day, never beside another ask (core pulseAsk) */
+  const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
   const sub = (
     <>
       {be ? (
@@ -183,9 +190,10 @@ export default function Today() {
       <FirstPatternLine snap={snap} tk={tk} />
       <CareCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
-      {ask || tip ? null : <NudgeCard snap={snap} tk={tk} />}
+      {ask || tip || counts ? null : <NudgeCard snap={snap} tk={tk} />}
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
+      {counts ? <PulseCard /> : null}
       <HomeScreenCard />
     </Screen>
   );

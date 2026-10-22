@@ -110,6 +110,13 @@ only asks once a build has `EXPO_PUBLIC_PULSE_URL`. Setup's funnel counts every 
 including pages that were skipped because they did not apply (the reminder page on the web, the tip page on Android, the
 account page when signed in), so read those three as an upper bound. Next: steps 4 to 6 (medium).
 
+**Done (2026-10-22, medium):** steps 4 to 6. Today's ask (core `pulseAsk`: from day two, 9 AM to 8 PM, no slip today or
+yesterday, not soon after an SOS, never beside the account or tip ask), the Anonymous counts sheet (`/counts`: what is
+sent, what never is, the last batch exactly, the switch), Send feedback (`/feedback`), the privacy page (every count
+name, with a test that fails if one is missing), llms.txt, and the store labels in launch.md. Stats (`/stats`) reads the
+totals and feedback as the owner; it appears on More once this device has opened it as the owner, so the first time it
+is opened by its address. Stats signed in as the owner is not tested yet (it needs the pulse on). Left: step 7 (owner).
+
 ## iPhone bug hunt (October 19, 2026)
 
 The iPhone app was walked in the iOS Simulator (iPhone 16 Pro, iPhone SE 3rd generation, iPhone 16 Pro Max, iOS 26.5) as

@@ -45,7 +45,8 @@ Rank by fit: shame-free and supportive first. Stop after about 25 places and sum
 ## draft
 
 For each place marked `ready` in the log, write the draft into the log, fitted to that place's rules and size. Start
-from the moderator draft in `docs/plan.md`. A post or a group leader gets the tester page link; a moderator message asks
+from the moderator draft in `docs/plan.md`, and write it in the owner's voice by the rules in `.outreach/chrome-prompt.md`
+(steps 1, 2 and 5; kept out of git with the log). If that file is missing, ask the owner for it. A post or a group leader gets the tester page link; a moderator message asks
 permission first and has no link. Show the owner the drafts and take their changes.
 
 ## send

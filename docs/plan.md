@@ -58,6 +58,184 @@ Choices made: the band's button keeps a short word ("Start", "See it", "Fill in"
 screen-reader label; the quiet line (what was logged today, the week's goal) sits under the next step. Not seen on a
 real phone yet. Steps 3 to 6 wait (3 and 6 are medium; 4 and 5 need the owner's yes).
 
+## Notifications, second pass: the rhythm, the mood, words that learn, the flame in the note, and the ask (the owner, October 22, 2026)
+
+**What the owner asked for:** notification logic as good as Duolingo's: track how often the person uses the app and how
+they feel, research how the best notification systems are built and replicate them, send different pictures with the
+notes, back off when the person has been away and then say "we have not seen you in a bit", ask for permission in setup,
+and when notifications are off, a banner at the top of Today that says so, like Duolingo's. The owner: "go ahead".
+
+**What is already there** (October 19, "Notifications that fit the person", core `nudges.ts`, below): every note is about
+a thing the person turned on and is skipped when it is done; at most three a day, an hour apart; kinder words after a
+slip; the check-in note becomes a backup once the habit holds; a kind that is ignored three times steps down and then
+pauses, said on Today; four come-back notes (days 2, 4, 7, 14) at the time of day the app was last open, then silence; the
+setup page with the sample lock-screen note and the phone's one prompt; the Reminders section in Settings; the offers at
+the end of a check-in, the Sunday review and the risk card; an Android channel per kind; nothing on a server, nothing
+synced. The words never say what Daybook is for, because a note can show on a locked screen. Hold on to all of it.
+
+**What is missing, against the ask:**
+
+1. **The app's own rhythm is not learned.** `opens` keeps three days, only to judge a note. The come-back notes land at
+   the time of day the app happened to be open last, clamped to 10 AM to 7 PM.
+2. **The person's mood is not heard.** The check-in records motivation, connection, energy, stress and sleep every
+   evening, and no note changes with it.
+3. **One wording per kind, for ever.** Duolingo's bandit, the system the owner wants, exists to fix this.
+4. **The come-back ladder is short, fixed, and only for some.** Fourteen days, the same four lines, and only for people
+   who turned on a regular reminder. Someone with only the hard-hours heads-up, or who said "Not now" in setup and later
+   turned notifications on from the banner, gets nothing when they go quiet.
+5. **No picture in a note, and a broken icon on Android.** The plugin sets no small icon, so Android draws the launcher
+   icon through its alpha mask: a white square in the status bar.
+6. **Nothing on Today says notifications are off.** After "Not now", or a deny on the phone's prompt, the only word is
+   in Settings.
+7. **Setup's "Not now" forgets the time the person picked**, so a later "Turn on" cannot use it.
+8. **Android timing is loose.** Scheduling uses AlarmManager; without `SCHEDULE_EXACT_ALARM`, Android 14 and newer deliver
+   "within one hour" of the time. An hour late is fine for a check-in and wrong for a heads-up 90 minutes before the hard
+   hours.
+
+**What the research says** (three sourced briefs, October 22; the sources are in the steps below where they matter):
+
+- **Duolingo's bandit** (Yancey and Settles, KDD 2020, research.duolingo.com/papers/yancey.kdd20.pdf): the arms are
+  hand-written templates, each with an eligibility rule (a template "sleeps" when its rule fails). The reward is a lesson
+  done within two hours of the note, not an open. Each arm's score is its lift over the other arms on the rounds it was
+  eligible, minus a recency penalty that decays with a 15-day half-life (reusing yesterday's template cost 0.5%), chosen by
+  softmax so new arms get tried. Lift: +0.5% daily users, +2% new-user day-7 return. Their timing rule that always won
+  (Shuttleworth, Duolingo growth, on Sub Club): the next note comes 23.5 hours after the first practice of the day, not at
+  a fixed hour. Their lapse ladder: seven daily notes, then "These reminders don't seem to be working. We'll stop sending
+  them for now.", and reactivation is "tough sledding" after day 3 or 4. **No rich images in their notes**: the sad owl
+  lives in the widget and in limited-time app icons (melting, sick, dead Duo), which the company says drove opens and the
+  press called guilt and manipulation. Those, the "streak ends in 10 minutes" saves and the passive-aggressive characters
+  are the parts that run on guilt and loss, and Daybook does not take them (CLAUDE.md: never shame, earned things stay
+  earned).
+- **HeartSteps** (pmc.ncbi.nlm.nih.gov/articles/PMC6401341): a fixed walking prompt lost about 3% of its effect a day and
+  was undetectable by day 29; what effect there was came from tailoring to context, and the cap was two or three a day.
+  **Drink Less** (570 people, PMC10337295): one 8 PM prompt raised opens 3.5 times, and a rotating bank of 30 wordings did
+  no better than one fixed line over 30 days. So variety matters when notes run several a day for weeks, and one evening
+  note can stay plain. Daybook sends about one a day: a few wordings per kind, not thirty.
+- **Receptivity** (Künzler, PMC9494762): responses are highest 10 AM to 6 PM and when the phone was just used; a goal met
+  one day predicts a better response the next. Sending the instant the screen turns on cut use (PKU field study); a
+  minute or two later beat it. OneSignal reports 23% more opens from sending at each person's usual active time.
+- **Mood**: no trial isolates mood-tailored wording. What exists points one way: higher momentary stress predicts lower
+  odds of engaging (Nature Sci Rep 2026, s41598-026-39518-z), and support-seeking prompts fit badly when stress or low
+  mood is high (PMC12421209). The rule that follows: after a low mood, offer, do not ask. Finch's "First Aid" after a low
+  check-in is the one product example.
+- **Lapse ladders**: no controlled evidence on cadence or on a closing "we will stop" note. Industry practice: Braze
+  waits 14 days then weekly, timed before the person's usual high-use hour; every sequence exits the moment the person
+  returns; Google's Android design guidance forbids a "Haven't seen you in a while!" that carries no value.
+- **Frequency**: 37% of people disable notifications at 2 to 5 a week they did not want (Localytics); contextual notes open
+  three times as often as generic ones (Batch, CleverTap). Opt-in (Batch 2025): iOS 56%, Android 67% since Android 13
+  asks; a pre-prompt that explains the value lifts it; in-app messages to people who opted out lift it another 14%
+  (Airship 2025).
+- **The platforms** (docs.expo.dev/versions/v58.0.0/sdk/notifications/): iOS shows its prompt once; afterwards only
+  Settings. A local note on iOS can carry an image (`attachments: [{ identifier, url, typeHint }]`, a `file://` URL,
+  PNG or JPEG up to 10 MB, no service extension); `expo-asset`'s `Asset.loadAsync(require(...))` gives the file. **Android
+  local notes cannot carry a per-note image** in expo-notifications 58 (only the static plugin `largeIcon`, 64 dp beside
+  the text); the small `icon` is a 96 by 96 white-on-transparent PNG. App Store 5.1.2(i): an app may not require
+  notifications to use it; a dismissible banner that opens Settings is fine; one that blocks the screen or gates care is
+  not. Android 13 and newer: the system dialog can be shown twice, then only Settings; `Linking.openSettings()` opens the
+  app's page on both platforms. iOS keeps the soonest 64 pending notes (Daybook plans about a dozen). A web page cannot
+  schedule a note (Notification Triggers is abandoned), so the web stays as it is.
+
+**The design** (every rule in core, tested; the app schedules and shows):
+
+- **The rhythm.** `opens` keeps 28 days of open times (capped at 200). `usualHour(log, now)`: the hour with most opens in
+  the last 28 days, recent days weighing more, between 9 AM and 9 PM, else the hour the app is open now, else 6 PM. It
+  times the come-back notes. The judging of a note (two hours to open) stays as it is.
+- **The mood.** `weekFeel(days, tk)`: `heavy` when the mean motivation of the last three check-ins is 3 or lower or the
+  mean stress is 7 or higher (0 to 10), `steady` otherwise. On a heavy day, the routine notes offer and do not ask: the
+  check-in note becomes "A short check-in is enough tonight. Nothing to get right.", the morning and wind-down notes go
+  passive (no sound), and the hard-hours heads-up stays as it is, because it is care. Never a number, never a word that
+  says what Daybook is for. The kinder words after a slip (already there) win over the mood words.
+- **Words that learn.** Three wordings per routine kind, in `NUDGE_WORDS`. Each note carries `w`, the wording's id. The
+  log keeps `w: Record<id, { n: shown; h: helped; last: DayKey }>`, filled by `nudgeLearn` next to the kind's count.
+  `pickWords(kind, log, tk)`: score = (h + 1) / (n + 2) minus 0.1 times 0.5 to the power of (days since last sent over
+  15), plus a jitter of up to 0.02 from a hash of the day and the id (exploration without randomness, so tests hold);
+  highest score wins. Duolingo's mechanics at Daybook's size: yesterday's wording loses unless it is clearly better, a
+  never-sent wording gets its turn, a wording that helps keeps winning. Eligibility is the kind's own rule (the mood
+  words and the kinder words replace the pick for that day).
+- **The ladder, for everyone, with value in every note.** Come-back notes on days 2, 4, 7, 14 and 30 after the last
+  open, for anyone whose phone allows notifications and has not turned the notes off (the Settings switch stays), at the
+  usual hour. Two sets of words, picked by how the person left: `tender` when the last day was a slip day or the week felt
+  heavy, `plain` otherwise. Each note gives something, never only "we miss you": day 2 "Daybook is here when you are
+  ready. Your plan is one tap away."; day 4 "Nothing is lost. Everything you wrote is kept, and the next lesson takes two
+  minutes."; day 7 "A week is a long time. A minute today is enough, and Daybook starts where you are, not where you
+  were."; day 14 "Everything is kept. Whenever you come back, the door is open."; day 30 "This is the last note for now.
+  Daybook stays quiet until you open it, and everything is kept." The tender set says the same with the slip in mind
+  ("One hard night does not undo the rest. Everything you built is still here.") and no "lesson". The plan is remade on
+  every open, so coming back ends the ladder at once (as now).
+- **The flame in the note (iPhone).** Five pictures made from the flame art (`tools/make-icons.mjs`, from core
+  `flame-art.ts`), in `apps/mobile/assets/notify/`: `flame-bright` (routine notes), `flame-warm` (the kinder words after
+  a slip, and the check-in on a heavy day), `flame-steady` (come-back day 2 and 4), `flame-ember` (day 7 and 14),
+  `flame-asleep` (day 30, a small ember, still lit: the flame is never shown out). Each `Nudge` names its picture (`pic`);
+  the app attaches it on iOS. On Android the plugin gets the small `icon` (a white flame silhouette, 96 by 96) and
+  `largeIcon` (the flame badge), which fixes the white square; no per-note picture, because expo-notifications 58 does not
+  do it for local notes. The flame backs off with the person, and never looks sad, sick or dead: the pictures are a
+  flame resting, not a mascot guilting.
+- **The ask on Today.** Core `notify.ts`: `notifyAsk(env, mem, days, st, tk)` says whether the banner shows and what it
+  says. It shows while this phone can notify (a phone app, not the web), setup is done, notifications are not granted,
+  the person has not chosen "Stop asking on this phone", the X was not tapped today, and it is not the day of a slip or
+  the day after (CLAUDE.md: ask only at good moments, never after a slip). Two forms: `allow` when the phone can still
+  ask ("Turn on reminders. One short note a day, at your time, and never a word about what Daybook is for.", button
+  "Turn on"); `off` when the phone has said no ("Notifications are off for Daybook on this phone.", button "Open
+  settings", which opens the app's settings page). It sits at the very top of Today, above the flame, full width, in the
+  sun color with the bell icon and an X, like Duolingo's: the one place Daybook nags, by the owner's choice. It is never
+  a modal and never blocks anything (App Store 5.1.2). "Turn on" turns on the check-in note at the time setup remembered
+  (else 6 PM) and the Sunday review when nothing is on yet, then asks the phone. Its memory (`daybook.notify` on the
+  device: `quiet` the day of the last X, `never`, `n` the count of X's) is never synced.
+- **Setup and Settings.** Setup's "Not now" keeps the picked time in `checkinAt` with `checkin` off. Settings, Reminders
+  gets "Stop asking on this phone" (shown while the banner can show) and, on Android 14 and newer, "Exact times" when the
+  exact-alarm permission is not granted, opening the system page. The hard-hours channel asks for exact alarms when the
+  heads-up is on; the others take "within the hour" as it comes.
+- **Nothing leaves the phone**, as before: the rhythm, the mood words, the wording counts and the banner memory are on the
+  device. The privacy page gains one line: the times the app is opened are kept on the phone for 28 days, to time the
+  notes.
+
+**Choices made for the owner to know:**
+
+- **The banner comes back every day** until notifications are on or "Stop asking on this phone" is chosen, as Duolingo
+  does and as the owner asked. I would stop it after seven X's in a row and leave the row in Settings; the owner can say
+  so and it is a one-line change (`NOTIFY_MAX_X`).
+- **Three wordings per kind, not thirty.** Drink Less showed a rotating bank did nothing for one evening note; the bandit
+  is there for the people who run several notes a day for weeks, and so the app can tell which words help this person.
+- **The ladder ends at 30 days, not Duolingo's 7**, because Daybook's ladder is five notes in a month, not seven in a
+  week, and the last one says plainly that it stops. No "we miss you" without something in it.
+- **Pictures on iPhone only.** Android's expo-notifications cannot attach a per-note image to a local notification; the
+  fixed small icon and large icon are what Android gets. Said here so no one spends a day on it.
+- **No provisional (quiet) permission on iOS.** It would deliver notes without asking after "Not now"; the owner's wish is
+  the real prompt plus the banner, and "Not now" should mean not now.
+- **The lesson note** (step 5 of "Today, with its flame back") is not in these steps: it still needs the owner's yes. The
+  wording work here makes it a small step later.
+
+**Steps (each one commit; each marked with its effort):**
+
+1. **Medium.** Core `notify.ts`: `NotifyEnv` (`offered`, `granted`, `canAskAgain`), `NotifyMem` with `normNotifyMem`,
+   `notifyAsk` with the two forms and every rule above, `NOTIFY_MAX_X = Infinity`. Tests in `test/notify.test.ts`: shows
+   the day after "Not now"; not on the web; not before setup; not the day of a slip or the day after; not after the X until
+   tomorrow; `off` form when the phone cannot ask; never after "Stop asking".
+2. **Medium.** Core `nudges.ts`: `opens` to 28 days, `usualHour`, `weekFeel`, the come-back ladder on days 2, 4, 7, 14, 30
+   for everyone allowed (the plan takes `allowed`), the two sets of words, `pic` on every nudge, and the mood words on
+   heavy days. Tests: the ladder's days and hour from a made-up month of opens; tender set after a slip; heavy day words;
+   the kinder words win over the mood words; the cap of three still holds; nothing at night.
+3. **Medium.** Core `nudges.ts`: three wordings per routine kind, `w` on each nudge, `log.w` learned in `nudgeLearn`,
+   `pickWords` with the score above. Tests: rotates when nothing is known; yesterday's wording loses to a fresh one;
+   a wording that helped 5 of 6 keeps winning over one that helped 1 of 6; deterministic for a given day.
+4. **Medium.** The app's side. `tools/make-icons.mjs` makes the five pictures plus `notification-icon.png` (white
+   silhouette) and `notification-large.png`; `app.json` plugin gets `icon` and `largeIcon`, and `android.permissions` gets
+   `SCHEDULE_EXACT_ALARM`. `lib/reminders.ts`: attach `pic` on iOS via `expo-asset`; the Follow-ups channel at LOW
+   importance and the come-back notes passive on iOS; `exactAlarmsAsk()` for the Hard hours channel (`get/requestExact
+AlarmPermissionsAsync`), and `openPhoneSettings()` (`Linking.openSettings`). `_layout.tsx` passes `allowed` into the
+   plan. Read the v58 docs first (apps/mobile/AGENTS.md).
+5. **Medium.** The banner and the wiring. `components/notify-banner.tsx` at the top of Today (`(tabs)/index.tsx`, above
+   `Hero`; pull `main` first, the Today work of this morning is there), `lib/prefs.ts` memory `daybook.notify`, setup's
+   "Not now" keeps the time, Settings' two rows. `npm run shots` or a story picture of the banner through screenshot
+   mode (`EXPO_PUBLIC_SHOTS=1` can fake `offered`), saved to `docs/today-review/notify-banner.png`.
+6. **Low.** `apps/mobile/public/privacy.html` (the 28 days of open times), this plan marked done, `[deploy]` on this
+   last commit.
+7. **Owner, on a phone.** A fresh install: setup's prompt, "Not now", the banner next day, "Turn on", the check-in note at
+   its time with the flame picture (iPhone) and the right icon (Android); a deny on the phone and the `off` form opening
+   Settings; a week away on a test clock: the day 2 and 4 notes at the usual hour.
+
+Waits on the owner: stop the banner after seven X's (my suggestion) or keep it daily (as asked); the lesson note.
+
 ## The roadmap: the quit app that does not reset (2026-10-22)
 
 **The strategy.** Every quit app fails at the same moment: the slip. The count drops to zero, shame rises, and the person

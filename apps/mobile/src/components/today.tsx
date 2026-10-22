@@ -15,7 +15,6 @@ import {
   stepNo,
   stepOffer,
   stepOn,
-  type CellKind,
   type CleanView,
   type Snapshot,
 } from '@daybook/core';
@@ -26,27 +25,9 @@ import { Text } from '@/components/text';
 import { StretchRuler, WeekDots } from '@/components/step-art';
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
-import { font, useTheme, type Palette } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 /* ---------- the Days card: the month, the run, the next goal ---------- */
-const cellStyle = (kind: CellKind, c: Palette) => {
-  switch (kind) {
-    case 'ok':
-    case 'one':
-      return { backgroundColor: c.mint };
-    case 'saved':
-      return { backgroundColor: c.mint, borderWidth: 3, borderColor: c.saved };
-    case 'slip':
-      return { backgroundColor: c.slip, borderRadius: 7 };
-    case 'open':
-      return { backgroundColor: c.slip, borderRadius: 7, borderWidth: 3, borderColor: c.slipSoft };
-    case 'ahead':
-      return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: c.line };
-    default:
-      return { backgroundColor: c.surface2 };
-  }
-};
-
 function Chips({ v }: { v: CleanView }) {
   const c = useTheme();
   const ch = runChips(v);
@@ -100,9 +81,8 @@ function Chips({ v }: { v: CleanView }) {
   );
 }
 
-/** size 'sm' on Today (a strip of the last 30 days and a link to the month), 'lg' in the Journal (under the month calendar) */
+/** in the Journal, under the month calendar (size 'lg'); step down's card takes the size too */
 export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: string; now: number; size?: 'sm' | 'lg' }) {
-  const c = useTheme();
   const st = snap.settings!;
   const v = cleanView(snap.days, st, tk, now);
   const t = daysCardText(snap.days, st, v, tk);
@@ -144,30 +124,6 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
     );
   }
   if (t.step) return <StepCard snap={snap} tk={tk} now={now} size={size} v={v} />;
-  if (size === 'sm')
-    return (
-      <Card>
-        <View style={s.between}>
-          <T v="eyebrow" tone="muted">
-            {t.eyebrow}
-          </T>
-          <LinkText label="See the month ›" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })} />
-        </View>
-        <View style={s.baseline} accessibilityLabel={`${t.good} ${t.of}`}>
-          <T v="big">{t.good}</T>
-          <T tone="muted" style={{ fontSize: 16 }}>
-            {t.of}
-          </T>
-        </View>
-        <View style={s.strip} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {v.cells.map((x) => (
-            <View key={x.k} style={[s.sCell, cellStyle(x.kind, c), x.today && { borderWidth: 2, borderColor: c.accent }]} />
-          ))}
-        </View>
-        <Chips v={v} />
-        <GradRow snap={snap} tk={tk} />
-      </Card>
-    );
   return (
     <Card>
       <View style={s.between}>
@@ -423,8 +379,6 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
 
 const s = StyleSheet.create({
   grad: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 },
-  strip: { flexDirection: 'row', gap: 3 },
-  sCell: { flex: 1, height: 22, borderRadius: 5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },

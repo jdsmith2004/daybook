@@ -10,11 +10,11 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { toneOf, useTheme } from '@/lib/theme';
 
-export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
+export function SundayCard({ snap, tk, due: withDue = true }: { snap: Snapshot; tk: string; due?: boolean }) {
   const c = useTheme();
   const st = snap.settings;
   if (!st) return null;
-  const due = sunDue(snap.reviews, st, tk);
+  const due = withDue ? sunDue(snap.reviews, st, tk) : null;
   if (due)
     return (
       <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sun }}>

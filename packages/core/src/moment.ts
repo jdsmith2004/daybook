@@ -16,7 +16,10 @@
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
    days-away row, the reminders) comes in as `dev`. Checked by test/moment.test.ts. */
-import { addDays, sumDay } from './legacy/core.js';
+import { addDays, diffDays, sumDay } from './legacy/core.js';
+import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
+import { heroNumber } from './hero';
+import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
 import { rkActive, rkAskNow, rkCard, rkEnded, rkOpen, safeName, tellStartDue } from './rekindle';
 import { firstPattern, riskDay } from './risk';
@@ -278,4 +281,37 @@ export function thenLine(days: Days, st: Settings, tk: DayKey, now: number, calm
   const rest = d.tiles.filter((x) => !x.done && !(calm && x.cur));
   if (!rest.length) return '';
   return 'Then: ' + list(rest.map((x) => STOP_NAME[x.k] + (calm && (x.state === 'next' || x.state === 'later') && x.right ? ' ' + low(x.right) : ''))) + '.';
+}
+
+/* ---------- the standing row: a small flame, one number, one line ---------- */
+export interface StandRow {
+  /** the one number, with its few words: "6 of your first 7 days", "23 hours" */
+  big: string;
+  /** one line under it: "with no slip · a Torch" */
+  line: string;
+  /** all of it, for a screen reader */
+  say: string;
+}
+/** the number that holds what was earned and never drops to zero (heroNumber, todayMeasure), with the flame's form */
+export function standRow(days: Days, st: Settings, tk: DayKey, now: number, form: string): StandRow | null {
+  const h = heroNumber(days, st, tk, now);
+  if (!h) return null;
+  const f = formWord(form);
+  const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {
+    const l = [...line.filter(Boolean), f].join(' · ');
+    return { big, line: l, say: big + ', ' + l + '.' };
+  };
+  if (st.cleanMode === 'step') return row(h.n + ' ' + h.unit, 'this stretch', h.chip ? h.chip.charAt(0).toLowerCase() + h.chip.slice(1) : null);
+  const t = todayMeasure(days, st, tk);
+  if (h.eb === 'Since your last slip') return row(h.n + ' ' + h.unit, 'since your last slip', h.chip);
+  if (t && t.k === 'week') {
+    if (t.of === 'Day 1 is today') return row('Day 1', 'is today');
+    if (t.of === 'Today counts') return row('Today counts', 'a fresh day');
+    const m = /^of the last (\d+) days? with no slip$/.exec(t.of);
+    const first = st.day1 && m && diffDays(tk, st.day1) <= +m[1];
+    return row(t.n + (m ? (first ? ' of your first ' : ' of the last ') + m[1] + (m[1] === '1' ? ' day' : ' days') : ' ' + t.of), 'with no slip');
+  }
+  if (t && t.k === 'way') return row(t.n + ' of ' + GRAD_DAYS, 'toward graduation');
+  if (t && t.k === 'grad') return row(t.n + ' of the last ' + GRAD_WINDOW + ' days', 'graduated, still going');
+  return row(h.n + (h.unit ? ' ' + h.unit : ''), h.eb.toLowerCase(), h.chip ? h.chip.charAt(0).toLowerCase() + h.chip.slice(1) : null);
 }

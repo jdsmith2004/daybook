@@ -17,7 +17,6 @@ import {
   rkFresh,
   rkKeep,
   rkKeptForNow,
-  slipCare,
   sortedEvents,
   sumDay,
   withDay,
@@ -347,32 +346,6 @@ export function TodaySoFar({ snap, tk }: { snap: Snapshot; tk: string }) {
         {ct.detail}
       </T>
       <EntryRows date={tk} />
-    </Card>
-  );
-}
-
-/* after a slip that has no quest (not the first in 7 days): the slip plan, and one small thing */
-export function CareCard({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const { didSmall } = useLogActions();
-  const st = snap.settings!;
-  const day = snap.days[tk];
-  if (!sumDay(day).slipped || rkActive(snap.days, st, tk)) return null;
-  const open = (day?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered);
-  const care = slipCare(st);
-  return (
-    <Card tone="note">
-      <T v="h2">After a slip</T>
-      <T>Logged. That took honesty. Nothing resets: your points, badges, check-ins and longest streak all stay.</T>
-      {care.map((t, i) => (
-        <T key={i} v="small">{`${i + 1}. ${t}`}</T>
-      ))}
-      {open ? (
-        <Button label="I did one small thing" kind="ghost" onPress={() => didSmall(tk)} />
-      ) : (
-        <T v="label" tone="mintText">
-          ✓ One small thing done.
-        </T>
-      )}
     </Card>
   );
 }

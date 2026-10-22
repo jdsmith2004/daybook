@@ -1,6 +1,9 @@
-/* Today, in the legacy order (with who I am becoming, quietly, under the date): a pause in progress, Rekindle after a slip, a talk-through that still matters (Talk it through), the hard hours (risk.ts: from two hours before, a push to talk it through), the flame with Next up and SOS, any note about how days
-   are counted, the days card (only in the tracking week and step down: otherwise the flame card holds the one day number), today's entries, care after a slip, Your day, a word about the reminders (nudge-card.tsx), and a nudge when last week's review is waiting.
-   Graduation (graduate.ts) is recorded here the first time it is earned, and its celebration opens. */
+/* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
+   moment (a pause, the hard hours, the morning after or the day of a slip, a talk-through, days away, the Sunday review, a
+   one-time moment, or the day's next stop), with "and one more" under it when two overlap; SOS with Already happened and
+   Planning a slip? (care is never locked); one standing row (a small flame, one number, one line, opening Milestones);
+   Your day as plain rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is
+   earned, and its celebration opens. */
 import {
   accountAsk,
   awayDue,
@@ -25,36 +28,32 @@ import {
   riskToKeep,
   graduate,
   p2,
-  phaseLabel,
+  firstPattern,
+  nudgeCard,
+  pickMoment,
   shouldAutoCount,
   shouldAutoStep,
-  todayMeasure,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
-import { BackRow } from '@/components/back-row';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';
-import { FirstPatternLine } from '@/components/first-pattern';
-import { Hero } from '@/components/hero';
 import { HomeScreenCard } from '@/components/home-screen';
-import { NudgeCard } from '@/components/nudge-card';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
-import { RiskCard } from '@/components/risk-card';
+import { MomentCard } from '@/components/moment-card';
+import { StandRow } from '@/components/stand-row';
 import { SundayCard } from '@/components/sunday-card';
-import { TalkCard } from '@/components/talk-card';
-import { TellStartCard } from '@/components/tell-start';
 import { Screen } from '@/components/screen';
-import { CountNotes, DaysCard } from '@/components/today';
-import { CareCard, PauseBanner, RekindleCard, TodaySoFar } from '@/components/today-log';
-import { Icon, T } from '@/components/ui';
-import { WeekCard } from '@/components/week-card';
+import { LogLink, TodaySoFar } from '@/components/today-log';
+import { Card, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
+import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
+import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
@@ -135,12 +134,27 @@ export default function Today() {
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 
+  /* the first pattern is a calm-day moment for one day, then it lives in Journal, Pattern (kept on this device) */
+  const patDay = typeof sos.mem.firstPat === 'string' ? (sos.mem.firstPat as string) : null;
+  const pat = !!st && !patDay && !!firstPattern(snap.days, st, tk);
+  useEffect(() => {
+    if (ready && pat) sos.setMem((m) => ({ ...m, firstPat: tk }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, pat, tk]);
+  const prefs = useReminderPrefs();
+  const nlog = useNudgeLog();
+  const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
+
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
-  const ph = phaseLabel(tk, st);
   const be = String(st.becoming || '').trim();
-  /* the days card stays for the tracking week and step down; once counting, the flame card holds the one day number */
-  const showDays = st.cleanMode === 'step' || !todayMeasure(snap.days, st, tk);
+  const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
+    pause: !!sos.timer,
+    back: due && !askAgain ? due.n : null,
+    nudge,
+    patternDay: patDay || (pat ? tk : null),
+    account: !!account,
+  });
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* the counts ask, once, on a calm day, never beside another ask (core pulseAsk) */
@@ -152,21 +166,11 @@ export default function Today() {
           <Text style={[s.be, { color: c.muted }]}>{be}</Text>
         </Pressable>
       ) : null}
-      <View style={s.sub}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${ph}. What this means, and how to change it.`}
-          onPress={() => router.push('/mode')}
-          style={[s.chip, { backgroundColor: c.accentSoft }]}>
-          <Text style={[s.chipT, { color: c.accentText }]}>{ph}</Text>
-          <Icon name="next" size={14} color={c.accentText} />
-        </Pressable>
-        {early ? (
-          <T v="small" tone="muted">
-            · still {fmtDate(tk, { weekday: 'long' })}'s log until {fmtClock(p2(st.rollover) + ':00')}
-          </T>
-        ) : null}
-      </View>
+      {early ? (
+        <T v="small" tone="muted" style={{ marginTop: 4 }}>
+          Still {fmtDate(tk, { weekday: 'long' })}’s log until {fmtClock(p2(st.rollover) + ':00')}
+        </T>
+      ) : null}
     </>
   );
   return (
@@ -175,22 +179,14 @@ export default function Today() {
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
       action={tipButton(snap.days, tk, TIP_URL) ? <TipTop /> : undefined}>
-      <PauseBanner />
-      <RekindleCard snap={snap} tk={tk} />
-      <TalkCard snap={snap} now={now} />
-      <RiskCard snap={snap} tk={tk} now={now} />
-      <Hero g={g} snap={snap} tk={tk} now={now} />
-      {due && !askAgain ? <BackRow n={due.n} /> : null}
-      <TellStartCard snap={snap} tk={tk} />
-      <WeekCard snap={snap} tk={tk} />
-      <SundayCard snap={snap} tk={tk} />
-      <CountNotes snap={snap} tk={tk} />
-      {showDays ? <DaysCard snap={snap} tk={tk} now={now} size="sm" /> : null}
-      <TodaySoFar snap={snap} tk={tk} />
-      <FirstPatternLine snap={snap} tk={tk} />
-      <CareCard snap={snap} tk={tk} />
+      <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+      <Card>
+        <LogLink />
+      </Card>
+      <StandRow g={g} snap={snap} tk={tk} now={now} />
       <YourDay snap={snap} tk={tk} now={now} />
-      {ask || tip || counts ? null : <NudgeCard snap={snap} tk={tk} />}
+      <SundayCard snap={snap} tk={tk} due={false} />
+      <TodaySoFar snap={snap} tk={tk} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
       {counts ? <PulseCard /> : null}
@@ -200,8 +196,5 @@ export default function Today() {
 }
 
 const s = StyleSheet.create({
-  sub: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 4 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 32, paddingLeft: 12, paddingRight: 8, borderRadius: 999 },
-  chipT: { fontFamily: font.bodySemi, fontSize: 14 },
   be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
 });

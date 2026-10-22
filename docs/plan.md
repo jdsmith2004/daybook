@@ -1,5 +1,55 @@
 # What is planned next
 
+## Today, with its flame back (the owner, October 22, 2026)
+
+**What the owner said** about the one-card Today: it is simpler, but it lost its soul. The flame is the mascot, the
+whole app is built around leveling it up and watching it grow (the picture of getting free), and Today shrank it to a
+60-pixel thumbnail. It is still hard to know what is next in the day. The goal is a lesson every day. Maybe the morning
+check-in is not needed: start on the lesson and trust the night. SOS, Already happened and Planning a slip? matter a lot,
+and the app should lead people to its tools, but the goal is not pure function. (Now in CLAUDE.md, "The flame is the
+heart of the app".)
+
+**What I think.** The owner is right, and the review I followed was half right. Its diagnosis held: three "Start"
+buttons for the same two minutes, "+N points" four times, a game voice over the identity voice. Its cure went too far:
+it treated the flame as one of the "six systems" crowding the screen, when the flame is what the other systems are
+for. The fix keeps the one owner of "next" and puts it on the flame: the flame is the top of Today, and the one next step
+hangs right under it, so what you do and what it grows are one picture.
+
+**The picture** (`docs/today-review/flame-calm.png`, a working prototype on the branch `proto/flame-today`, not on
+main): the flame big in its sky, the number that never drops to zero, "Level 11 · Campfire" with the bar to the next
+form; under it one band, "Lesson 1 of 41 · You do not need to feel ready · Start"; SOS with Already happened and
+Planning a slip? still above the fold; Your day below. `flame-morning-after-rough.png` tries a sunrise sky for the
+morning after; it is rough because the flame drawing carries its own night circle, so the art needs a dawn version.
+
+**What stays from the one-card work:** core `moment.ts` still decides the one next step, and the moments with their own
+choices (the hard hours, a talk-through, the comeback flames, a run that ended) still show in full, under the flame, when
+they are the moment. "+N points" stays off Today (a number to chase); the level and its bar come back (the flame
+growing is the point). The comeback, the save rule and the story tests stay as they are.
+
+**Steps (each one commit; each marked with its effort):**
+
+1. **Medium.** The flame back on Today: its sky, the number, the level and the bar, tap to say hi, the sky opening
+   Milestones (the old hero, restored). The one next step as a band under it, the whole band one button. The bigger
+   moments shown in full under the flame. The small flame row goes. SOS block, Your day and the asks as now. Stories and
+   their expectations updated.
+2. **Medium.** The flame grows when you do something. Back on Today after a lesson, a check-in or an urge ridden out,
+   the bar fills to where it now is and the flame glows once, with one quiet word ("Your flame grew"). A new form keeps
+   its celebration. Display only; points rules unchanged.
+3. **Medium.** The flame's sky follows the day: a sunrise the morning after a slip (a dawn version of the flame art in
+   core `flame-art.ts`), and the quiet night once the day is done ("All done. Rest well." under a sleeping flame).
+4. **High, needs the owner's yes.** The day starts on the lesson. The morning stop (Last night: sleep and screens-off)
+   leaves the day for everyone who has not turned it on themselves, and its two questions move into the evening check-in
+   as "last night" (a day late, but the pattern charts keep them). The lesson becomes the first stop and the one the
+   day is built around. Points: the morning stop's points stop being offered, nothing earned is taken away; golden
+   fixtures only if a counted rule changes.
+5. **Medium, needs the owner's yes.** One daily notification, for the lesson, at a time the person picks in setup
+   ("A new lesson is ready. Two minutes."). The check-in reminder becomes a backup, as in rule 4 of the notification
+   plan. No word that says what Daybook is for, and no fear of losing anything.
+6. **Medium.** Leading people to the tools: a lesson that teaches a tool ends with "Try it now" and "Add it to my SOS";
+   the SOS screen shows the person's own tools first. No new cards on Today.
+
+Choices to make: steps 4 and 5 (the morning stop, and the lesson notification and its words).
+
 ## The roadmap: the quit app that does not reset (2026-10-22)
 
 **The strategy.** Every quit app fails at the same moment: the slip. The count drops to zero, shame rises, and the person

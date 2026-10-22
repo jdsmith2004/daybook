@@ -8,6 +8,20 @@ The motto: **A private, honest companion for changing a habit: log urges and sli
 
 The goal is a lasting change of identity: from "I am a porn addict" to "I am someone who is clean", and for good. Nothing in the app is the goal in itself. Streaks, counts, the flame, points, levels, badges, quests, lessons and the log are all tools and guides for that change, worth keeping only while they help it. Judge every screen, word, feature and animation by one question: does this help the person become, and see themselves as, someone who is free of the habit? Something that wins attention but does not serve that change (a streak to protect for its own sake, a number to chase, a reward that feels like a game) is a cost, not a feature.
 
+## The flame is the heart of the app (the owner, October 22, 2026)
+
+The goal is not pure function. Daybook needs form and soul as much as it needs the right button, and the flame mascot is
+that soul. The whole app is built around it: everything a person does (a lesson, an urge ridden out, an honest log, a
+comeback) feeds the flame, and they watch it level up and grow into its next form. The flame growing is the picture of the
+person getting free of the habit, so it is never shrunk to a thumbnail, hidden behind a tap, or treated as decoration to
+cut for space. When a screen is simplified, keep the spirit: the flame stays big and alive on Today, and every win shows
+up as the flame getting stronger. Judge a design by both questions: is the next step obvious, and does it still feel
+alive and warm? A screen that is tidy but has no spirit is wrong too.
+
+Every day has one simple spine: **a lesson every day**, with the next thing to do always obvious. The care tools (SOS,
+Already happened, Planning a slip?) stay in plain reach on Today, and the app actively leads people to the tools they
+need, without letting the screen turn into a list of features.
+
 ## What the owner has asked for (keep these)
 
 - **Hope first, always.** People lose when they give up hope, not when they slip. A slip after a long stretch is a huge win

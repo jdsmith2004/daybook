@@ -1,5 +1,109 @@
 # What is planned next
 
+## The roadmap: the quit app that does not reset (2026-10-22)
+
+**The strategy.** Every quit app fails at the same moment: the slip. The count drops to zero, shame rises, and the person
+leaves. Daybook is the one built for the morning after, so that is its whole identity: "Everyone slips. Daybook is built
+for the morning after." Success is measured in comebacks (how soon a person returns after a slip, and whether the gaps
+between slips grow), not in days clean. The danger for Daybook is not missing features; it is being too much to feel
+calm. On October 21 the owner, who built every part, could not tell what Today wanted from them (six systems on one
+screen). So the next work is fewer, sharper things, and learning from real people.
+
+**In order:**
+
+1. **Learn from real people.** Launch the iPhone app, find 20 to 50 people (r/pornfree fits Daybook's spirit far better
+   than r/NoFap), and stop adding features for about three weeks. Build the two ways to hear from them first:
+   anonymous feedback and opt-in counts (below). _This is the first piece of work._
+2. **Today shows one thing at a time.** One card, picked by the moment (the morning after a slip, hard hours ahead, a
+   talk-through due, a calm day); everything else one tap away. Then every system is checked against CLAUDE.md's
+   question (does this help the person see themselves as free?), and what does not is merged or cut: quests, levels
+   against points against badges, the modes. Earned things stay earned; they only stop crowding the screen.
+   Effort: medium for the screens, high wherever points or runs change.
+3. **Rekindle, rebuilt as "the comeback, noticed".** No task list: three flames that light themselves from what the person
+   really does (logged it honestly, at once; the sunrise check; the next urge ridden out or the next day with no slip),
+   each naming what was done; a comeback count that only goes up ("You are someone who comes back"); a run is saved by
+   coming back, not by errands. Open question for the owner: is "next urge ridden out or next clean day" the right third
+   flame? Effort: high (runs and points), the card medium.
+4. **See the hard night before it comes.** The hard-hours engine (risk.ts) learns each person's pattern on the phone. Use
+   it earlier and calmer: "Tuesday after a long day is your hardest night. Want a plan before 8?" Effort: medium.
+5. **One person, kept private.** An ally link: someone the person picks gets only what is sent ("rough night", "I came
+   back", "30 days"), never the log. Only after the launch feedback says people want it. Effort: high.
+
+**Not now:** more lessons, tools or game pieces; money beyond the tip jar; Android polish before iPhone people say what
+matters.
+
+**A working habit:** story tests. Scripted weeks of a made-up person's life, walked through the real web app with a
+picture of each day, so a change to one feature cannot quietly break another (the "Time to decide" and Rekindle bugs of
+October 21 only showed across days). Effort: medium.
+
+### Feedback and opt-in counts (the owner, October 22, 2026)
+
+The owner chose: **opt-in counts** (off until the person says yes), an **anonymous feedback box**, and four questions to
+answer first: do people come back after a slip, where setup loses people, which features are used, and do people stay
+(1, 7 and 30 days). This changes the rule "never add analytics" in CLAUDE.md, by the owner's choice, to the narrower
+rule below.
+
+**The promise (what CLAUDE.md, the privacy page and the store label will say):**
+
+- Off until the person turns it on. Asked once, at a calm moment (never after a slip, never in the hard hours), and a
+  switch in More at any time. Saying no changes nothing else.
+- What is sent is a short list of counts, once a day, for days already over: "opened SOS 2 times", "finished setup",
+  "came back 1 day after a slip", "day 7 of using Daybook". Never a word the person wrote, never a time, never a trigger,
+  never an id, never the log.
+- The server keeps only **totals per day** ("SOS opened 41 times on October 30"). It never stores one person's counts,
+  so nothing can be traced back to a person, even by the owner. No IP addresses are kept.
+- The words of every count are listed on the privacy page, and the app shows the person exactly what it would send.
+- Feedback is typed in the app and sent with no name and no email, unless the person adds one to get a reply.
+
+**How it is built.**
+
+- **Core, `packages/core/src/pulse.ts` (new).** The fixed list of counts (any other name is refused on both ends); the
+  day's counts kept on the device; the batch for the days that are over; the counts worked out on the device:
+  - _Do they stay:_ one "active" count a day, in a band of days since Daybook was first opened (day 0, 1, 2 to 6, 7 to
+    13, 14 to 29, 30 and on). Totals per band give the 1, 7 and 30 day picture without knowing who anyone is.
+  - _Setup:_ the furthest setup page reached and whether setup was finished (kept on the device from the first page,
+    sent only once the person says yes, so a person who closes setup and comes back later still counts).
+  - _Features:_ SOS opened, each tool used, Talk it through finished, a lesson finished, a check-in, the sunrise check,
+    the morning questions, a Rekindle step.
+  - _Comebacks:_ when the app is next opened after a slip, how soon, in bands (the same day, the next day, 2 to 3 days,
+    4 to 7, longer). Only the band is sent, never the slip.
+  - The platform (iPhone, Android, web) and the app version, so a bug in one build shows.
+- **Server, a new function `daybook-pulse`**, apart from the sync function, so the open (no sign-in) door can never reach
+  anyone's log. Its own table `daybook-pulse` (pk = the day, sk = the count's name, n = the total; feedback as its own
+  items, kept 180 days). Routes, through CloudFront like `/sync`:
+  - `POST /pulse` (no sign-in): one day's counts. Every name is checked against the list, every number capped, the body
+    small; a ceiling on writes a day, so no one can run up a bill.
+  - `POST /pulse/feedback` (no sign-in): the words (up to 2,000 characters), an optional reply address, the platform and
+    version.
+  - `GET /pulse` (signed in, and only as the owner): the totals for a range of days and the feedback.
+  - Its role is made in `infra/bootstrap` (**the owner runs it once**, as before): it may only add to and read the pulse
+    table. The function, table and routes are in `infra/app`, so a deploy makes them.
+- **App.**
+  - The ask, once: a Today card on a calm day from day 2 ("Help make Daybook better for the next person?"), Yes / No
+    thanks, with "See exactly what is sent".
+  - More: a switch, the list of what was sent last, and **Send feedback** (a sheet: a text box, an optional reply
+    address, Send).
+  - **Stats** in More, seen only when signed in as the owner: comebacks, the setup funnel, features, the 1/7/30 day
+    picture, and the feedback.
+- **Words that change:** CLAUDE.md (the rule), `privacy.html` (a section that lists every count), `about.html` and
+  `llms.txt` ("no tracking" stays true; "no analytics" becomes "anonymous, opt-in counts"), `docs/launch.md` (the App
+  Store privacy label: Usage Data, Product Interaction, not linked to the person, not used for tracking, and the same in
+  Google Play's Data safety form). **The owner updates the labels in App Store Connect and Play Console before a build
+  with this ships.**
+
+**Steps (each one commit; each marked with its effort):**
+
+1. **High.** CLAUDE.md's rule, and core `pulse.ts` with its tests (the list, the bands, the batch, the device-side
+   counts; nothing in a batch can carry a word, time, trigger or id).
+2. **High.** The `daybook-pulse` function and its tests (checks, caps, totals only, owner-only reads); `infra/bootstrap`
+   role; `infra/app` table, routes and CloudFront path; deploy workflow builds it.
+3. **High.** The app sends: the counts wired into the screens, the daily send, and nothing at all while it is off.
+4. **Medium.** The ask on Today, the switch and "what is sent" in More, Send feedback.
+5. **Medium.** The privacy page, About, llms.txt and launch.md.
+6. **Medium.** The owner's Stats page.
+7. **Owner.** Run `infra/bootstrap` once; set the GitHub secret with the owner's account id (Stats shows it); update the
+   App Store and Play privacy labels.
+
 ## iPhone bug hunt (October 19, 2026)
 
 The iPhone app was walked in the iOS Simulator (iPhone 16 Pro, iPhone SE 3rd generation, iPhone 16 Pro Max, iOS 26.5) as

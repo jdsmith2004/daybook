@@ -104,6 +104,12 @@ rule below.
 7. **Owner.** Run `infra/bootstrap` once; set the GitHub secret with the owner's account id (Stats shows it); update the
    App Store and Play privacy labels.
 
+**Done (2026-10-22, high):** steps 1 to 3. The counts are built and tested end to end against a stand-in server, but
+nothing is sent yet: the pulse is off in Terraform (`var.pulse`) until the owner applies the bootstrap stack, and the app
+only asks once a build has `EXPO_PUBLIC_PULSE_URL`. Setup's funnel counts every page up to the furthest reached,
+including pages that were skipped because they did not apply (the reminder page on the web, the tip page on Android, the
+account page when signed in), so read those three as an upper bound. Next: steps 4 to 6 (medium).
+
 ## iPhone bug hunt (October 19, 2026)
 
 The iPhone app was walked in the iOS Simulator (iPhone 16 Pro, iPhone SE 3rd generation, iPhone 16 Pro Max, iOS 26.5) as

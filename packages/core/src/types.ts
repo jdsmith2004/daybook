@@ -70,6 +70,8 @@ export interface Play {
   ov: Record<string, boolean>;
   /** Talk it through: the talk-throughs made this day */
   tt?: Talk[];
+  /** Name the feeling: each feeling named this day, and when (ms) */
+  fe?: [string, number][];
   /** a hard hour held this day (risk.ts): the hour it started */
   hw?: number;
   /** the app was opened this day (away.ts): the person was here. It earns nothing and does not start the log. */

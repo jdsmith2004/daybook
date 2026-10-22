@@ -368,10 +368,11 @@ function normP(p){
  const ov=normOv(p.ov);
  const q={w,wd:p.wd===true,r:p.r===true,c:Math.max(0,Math.min(50,parseInt(p.c,10)||0)),m:p.m===true,tl,po:isTime(p.po)?p.po:null,ls,lv,ov};
  const tt=normTalks(p.tt);if(tt.length)q.tt=tt;
+ const fe=Array.isArray(p.fe)?p.fe.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&typeof x[1]==='number').map(x=>[x[0].slice(0,24),x[1]]).slice(0,50):[];if(fe.length)q.fe=fe;
  if(Number.isInteger(p.hw)&&p.hw>=0&&p.hw<24)q.hw=p.hw;
  /* o: the app was opened that day (away.ts). It keeps the day as present, and is not something done. */
  if(p.o===true)q.o=true;
- return pEmpty(q)&&!Object.keys(ov).length&&!q.o?null:q;
+ return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}
 /* a day counts as active when something was done, not when only the routine was edited */
@@ -2837,6 +2838,7 @@ const TOOLS=[
  {id:'curious',name:'Get curious',desc:'Watch the wave',ic:'wave',tone:'accent',g:'ride'},
  {id:'pause',name:'10-minute pause',desc:'Let the wave pass',ic:'timer',tone:'sun',g:'ride'},
  {id:'thought',name:'Name the thought',desc:'A thought is not an order',ic:'sparkle',tone:'violet',g:'ride'},
+ {id:'feel',name:'Name the feeling',desc:'Find the word for it',ic:'ask',tone:'violet',g:'ride'},
  {id:'forward',name:'Play it forward',desc:'Picture the next hour',ic:'compass',tone:'mint',g:'ride'},
  {id:'move',name:'Move',desc:'Two minutes, body first',ic:'bolt',tone:'coral',g:'scene'},
  {id:'bed',name:'Go to bed',desc:'Phone away, a plan for the thoughts',ic:'moon',tone:'accent',g:'scene'},
@@ -2879,19 +2881,20 @@ const UR_META={
  move:{mins:'2 min',does:'Body first, decision later.'},
  bed:{mins:'2 min',does:'Phone away, lights off, and a plan for the thoughts.'},
  thought:{mins:'About 1 min',does:'A thought is not an order.'},
+ feel:{mins:'About 1 min',does:'Put a word on the feeling.'},
  forward:{mins:'About 1 min',does:'Picture the next hour both ways.'}
 };
 const UR_FIT={
- late:  {breathe:6,ground:4,curious:6,halt:4,surprise:2,message:3,reasons:5,pause:5,move:3,bed:9,thought:5,forward:6},
- lonely:{breathe:4,ground:3,curious:5,halt:6,surprise:3,message:9,reasons:6,pause:2,move:3,bed:2,thought:5,forward:5},
- bored: {breathe:3,ground:4,curious:5,halt:4,surprise:8,message:3,reasons:4,pause:3,move:8,bed:1,thought:4,forward:4},
- stress:{breathe:9,ground:8,curious:6,halt:5,surprise:4,message:5,reasons:4,pause:3,move:8,bed:2,thought:5,forward:4},
- tired: {breathe:5,ground:3,curious:4,halt:7,surprise:3,message:2,reasons:4,pause:4,move:3,bed:9,thought:4,forward:5},
- scroll:{breathe:4,ground:6,curious:5,halt:4,surprise:7,message:3,reasons:4,pause:4,move:7,bed:5,thought:6,forward:6},
- other: {breathe:6,ground:5,curious:7,halt:6,surprise:4,message:3,reasons:5,pause:3,move:5,bed:3,thought:7,forward:6}
+ late:  {breathe:6,ground:4,curious:6,halt:4,surprise:2,message:3,reasons:5,pause:5,move:3,bed:9,thought:5,feel:4,forward:6},
+ lonely:{breathe:4,ground:3,curious:5,halt:6,surprise:3,message:9,reasons:6,pause:2,move:3,bed:2,thought:5,feel:6,forward:5},
+ bored: {breathe:3,ground:4,curious:5,halt:4,surprise:8,message:3,reasons:4,pause:3,move:8,bed:1,thought:4,feel:4,forward:4},
+ stress:{breathe:9,ground:8,curious:6,halt:5,surprise:4,message:5,reasons:4,pause:3,move:8,bed:2,thought:5,feel:5,forward:4},
+ tired: {breathe:5,ground:3,curious:4,halt:7,surprise:3,message:2,reasons:4,pause:4,move:3,bed:9,thought:4,feel:4,forward:5},
+ scroll:{breathe:4,ground:6,curious:5,halt:4,surprise:7,message:3,reasons:4,pause:4,move:7,bed:5,thought:6,feel:5,forward:6},
+ other: {breathe:6,ground:5,curious:7,halt:6,surprise:4,message:3,reasons:5,pause:3,move:5,bed:3,thought:7,feel:6,forward:6}
 };
-const UR_STRN={low:{pause:-3,halt:1,reasons:1,curious:1,forward:1,thought:1},mid:{pause:-1},high:{breathe:2,ground:2,move:2,pause:2,curious:-2,surprise:-1,reasons:-1,forward:-1,thought:-1}};
-const UR_PREF=['breathe','move','ground','thought','halt','reasons','curious','forward','message','surprise','pause','bed'];
+const UR_STRN={low:{pause:-3,halt:1,reasons:1,curious:1,forward:1,thought:1,feel:1},mid:{pause:-1},high:{breathe:2,ground:2,move:2,pause:2,curious:-2,surprise:-1,reasons:-1,forward:-1,thought:-1,feel:-1}};
+const UR_PREF=['breathe','move','ground','thought','halt','feel','reasons','curious','forward','message','surprise','pause','bed'];
 const UR_TRIG_PH={late:'late at night',lonely:'you felt lonely or low',bored:'you were bored',stress:'you were stressed',tired:'you were tired',scroll:'after scrolling'};
 const urRate=r=>r&&r.n?(r.w+1)/(r.n+2):.5;
 const urLift=r=>!r?0:(urRate(r)-.5)*12*Math.min(1,r.n/3)+Math.min(3,r.l*.5)*Math.max(0,1-r.n/3);

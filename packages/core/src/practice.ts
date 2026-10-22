@@ -285,7 +285,7 @@ export const PRACTICE: Record<string, PStep> = {
     p: 'When an urge starts, “I notice I feel ___” turns the volume down. Add the line to your plan, then try it on a real feeling.',
     mins: 2,
     items: [plan('an urge starts after a rough day', 'Say “I notice I feel ___,” name the feeling in a word or two, then meet that feeling another way.')],
-    go: [scene('Try the Curious tool', 'curious', 'wave'), scene('Do a HALT check', 'halt', 'heart')],
+    go: [scene('Name a feeling now', 'feel', 'ask'), scene('Do a HALT check', 'halt', 'heart')],
     ok: 'You named a real feeling.',
   },
   l14: {

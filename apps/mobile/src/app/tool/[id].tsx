@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { SceneFrame, Stage } from '@/components/scene';
 import { Breathe, Ground } from '@/components/tools/calm';
+import { Feel } from '@/components/tools/feel';
 import { Pause } from '@/components/tools/pause';
 import { Curious, Forward, Thought } from '@/components/tools/ride';
 import { Bed, Halt, Message, Move, Reasons, Surprise } from '@/components/tools/scene';
@@ -22,6 +23,7 @@ const SKY: Record<string, Sky> = {
   curious: 'violet',
   pause: 'sun',
   thought: 'violet',
+  feel: 'night',
   forward: 'mint',
   move: 'coral',
   bed: 'night',
@@ -64,6 +66,8 @@ export default function Tool() {
           }
       : exit;
   const p: ToolProps = { finish, exit: exitHere, sos: !!sos.ur, combo: combo === '1', level };
+  /* Name the feeling draws its own frames (the grid screen pans full screen, which the scene's scroll view cannot hold) */
+  if (tool.id === 'feel') return <Feel {...p} now={now} />;
   /* late at night, a tool from SOS goes dark too */
   const sky: Sky = sos.ur && urNight(new Date(now).getHours()) ? 'night' : SKY[tool.id] || 'sky';
   const stepped = tool.id === 'curious' || tool.id === 'forward';

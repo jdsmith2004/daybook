@@ -28,6 +28,7 @@ const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number }> = {
   ground: { kind: 'arch', turn: 0 },
   curious: { kind: 'flower', turn: -6 },
   thought: { kind: 'puffy', turn: -8 },
+  feel: { kind: 'clover8', turn: -8 },
   forward: { kind: 'arrow', turn: 90 },
   pause: { kind: 'cookie9', turn: 12 },
   move: { kind: 'softBurst', turn: 6 },

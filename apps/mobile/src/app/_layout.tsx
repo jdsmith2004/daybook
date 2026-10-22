@@ -11,6 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
@@ -173,12 +174,15 @@ function WithSync({ children }: { children: ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <StoreProvider>
-      <SosProvider>
-        <WithSync>
-          <Shell />
-        </WithSync>
-      </SosProvider>
-    </StoreProvider>
+    /* the gesture handler needs its root view around the app for the tools that pan (Name the feeling) */
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StoreProvider>
+        <SosProvider>
+          <WithSync>
+            <Shell />
+          </WithSync>
+        </SosProvider>
+      </StoreProvider>
+    </GestureHandlerRootView>
   );
 }

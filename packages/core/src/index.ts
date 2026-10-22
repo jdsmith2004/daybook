@@ -10,6 +10,7 @@ export * from './rekindle';
 export * from './sos';
 export * from './talk';
 export * from './talk-log';
+export * from './feelings';
 export * from './risk';
 export * from './lessons';
 export * from './practice';

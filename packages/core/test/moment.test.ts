@@ -97,21 +97,28 @@ describe('the order', () => {
 describe('the standing row', () => {
   it('in the first week: of your first days, with the flame’s form', () => {
     const d = slip({}, '2026-10-16', '12:00');
-    expect(standRow(d, st, '2026-10-20', at(20, 10), 'Torch')).toMatchObject({ big: '5 of your first 6 days', line: 'with no slip · a Torch' });
-    expect(standRow({}, st, '2026-10-14', at(14, 10), 'Spark')!.big).toBe('Day 1');
+    expect(standRow(d, st, {}, '2026-10-20', at(20, 10), 'Torch')).toMatchObject({ big: '5 of your first 6 days', line: 'with no slip · a Torch' });
+    expect(standRow({}, st, {}, '2026-10-14', at(14, 10), 'Spark')!.big).toBe('Day 1');
   });
   it('after the first week: the last 7 days', () => {
     const d = slip(slip({}, '2026-10-16', '12:00'), '2026-10-21', '12:00');
-    expect(standRow(d, st, '2026-10-25', at(25, 10), 'Kindling')).toMatchObject({ big: '6 of the last 7 days', line: 'with no slip · Kindling' });
+    expect(standRow(d, st, {}, '2026-10-25', at(25, 10), 'Kindling')).toMatchObject({ big: '6 of the last 7 days', line: 'with no slip · Kindling' });
   });
   it('never a zero the morning after a slip', () => {
     const d = slip(slip({}, '2026-10-14', '12:00'), '2026-10-15', '12:00');
-    expect(standRow(d, st, '2026-10-16', at(16, 18), 'Spark')!.big).not.toMatch(/^0/);
+    expect(standRow(d, st, {}, '2026-10-16', at(16, 18), 'Spark')!.big).not.toMatch(/^0/);
+  });
+  it('a quieter line: what was logged today, and the week’s goal from Sunday', () => {
+    const d = addEvent({}, '2026-10-20', 'rode', '09:00', {}, 1).days;
+    const sun = { 's2026-10-18': { sun: { w: [], c: [], g: { t: 'Phone out of the bedroom, 5 nights', k: 'phone' as const, n: 5 } } } } as never;
+    const r = standRow(d, st, sun, '2026-10-20', at(20, 10), 'Spark')!;
+    expect(r.note).toMatch(/^1 logged today · \d of 5 nights this week$/);
+    expect(standRow({}, st, {}, '2026-10-20', at(20, 10), 'Spark')!.note).toBe('');
   });
   it('stepping down: this stretch, with the best beside it', () => {
     const s0 = normSettings({ start: '2026-10-01', day1: '2026-10-08', cleanMode: 'step', stepAt: '2026-10-08' });
     const d = slip(slip({}, '2026-10-10', '10:00'), '2026-10-17', '10:00');
-    const r = standRow(d, s0, '2026-10-18', new Date(2026, 9, 18, 9, 0).getTime(), 'Campfire')!;
+    const r = standRow(d, s0, {}, '2026-10-18', new Date(2026, 9, 18, 9, 0).getTime(), 'Campfire')!;
     expect(r.big).toBe('23 hours');
     expect(r.line).toMatch(/^this stretch · best \d+ d · a Campfire$/);
   });

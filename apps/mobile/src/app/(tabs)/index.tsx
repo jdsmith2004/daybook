@@ -46,9 +46,8 @@ import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
 import { StandRow } from '@/components/stand-row';
-import { SundayCard } from '@/components/sunday-card';
 import { Screen } from '@/components/screen';
-import { LogLink, TodaySoFar } from '@/components/today-log';
+import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
@@ -185,8 +184,6 @@ export default function Today() {
       </Card>
       <StandRow g={g} snap={snap} tk={tk} now={now} />
       <YourDay snap={snap} tk={tk} now={now} />
-      <SundayCard snap={snap} tk={tk} due={false} />
-      <TodaySoFar snap={snap} tk={tk} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
       {counts ? <PulseCard /> : null}

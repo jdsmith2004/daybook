@@ -39,6 +39,8 @@ import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
+import { TodaySoFar } from '@/components/today-log';
+import { SundayCard } from '@/components/sunday-card';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
@@ -120,8 +122,11 @@ function DaysPane() {
           : { bg: c.surface2, fg: c.muted };
   return (
     <>
+      {/* today's entries and the week's goal from Sunday live here; Today keeps one line for each (stand-row.tsx) */}
+      <TodaySoFar snap={snap} tk={tk} />
       <CalendarCard snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} size="lg" />
+      <SundayCard snap={snap} tk={tk} />
       {list.weeks.map((w) => (
         <Card key={w.wk + w.title}>
           <View style={s.between}>

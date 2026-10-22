@@ -23,7 +23,7 @@ import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
 import { rkActive, rkAskNow, rkCard, rkEnded, rkOpen, safeName, tellStartDue } from './rekindle';
 import { firstPattern, riskDay } from './risk';
-import { sunDue } from './sunday';
+import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
 import { firstWeekDue } from './week';
@@ -289,17 +289,25 @@ export interface StandRow {
   big: string;
   /** one line under it: "with no slip · a Torch" */
   line: string;
+  /** a quieter line, when there is something: "1 logged today · 2 of 5 nights this week" (the Sunday goal, Monday to
+      Saturday). Empty when there is nothing. */
+  note: string;
   /** all of it, for a screen reader */
   say: string;
 }
 /** the number that holds what was earned and never drops to zero (heroNumber, todayMeasure), with the flame's form */
-export function standRow(days: Days, st: Settings, tk: DayKey, now: number, form: string): StandRow | null {
+export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string): StandRow | null {
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
   const f = formWord(form);
+  /* today's entries (the rest is in Journal, Days) and the week's goal, set on Sunday, while it can still be counted */
+  const n = sumDay(days[tk]).n;
+  const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk);
+  const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';
+  const note = [n ? n + ' logged today' : '', goal].filter(Boolean).join(' · ');
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {
     const l = [...line.filter(Boolean), f].join(' · ');
-    return { big, line: l, say: big + ', ' + l + '.' };
+    return { big, line: l, note, say: big + ', ' + l + '.' + (note ? ' ' + note + '.' : '') };
   };
   if (st.cleanMode === 'step') return row(h.n + ' ' + h.unit, 'this stretch', h.chip ? h.chip.charAt(0).toLowerCase() + h.chip.slice(1) : null);
   const t = todayMeasure(days, st, tk);

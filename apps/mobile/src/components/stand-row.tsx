@@ -1,5 +1,5 @@
 /* The standing row on Today (core standRow): a small flame, the one number that holds what was earned, and one line with
-   the flame's form. It opens Milestones, where the level, points, badges and every form live. */
+   the flame's form, and a quieter line for what was logged today and the week's goal from Sunday. It opens Milestones, where the level, points, badges and every form live. */
 import { standRow, type GameState, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -12,7 +12,7 @@ import { font, useTheme } from '@/lib/theme';
 
 export function StandRow({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
-  const r = standRow(snap.days, snap.settings!, tk, now, g.level.name);
+  const r = standRow(snap.days, snap.settings!, snap.reviews, tk, now, g.level.name);
   if (!r) return null;
   return (
     <Pressable
@@ -29,6 +29,7 @@ export function StandRow({ g, snap, tk, now }: { g: GameState; snap: Snapshot; t
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[s.big, { color: c.ink }]}>{r.big}</Text>
         <Text style={[s.line, { color: c.muted }]}>{r.line}</Text>
+        {r.note ? <Text style={[s.note, { color: c.accentText }]}>{r.note}</Text> : null}
       </View>
       <Icon name="next" size={20} color={c.muted} />
     </Pressable>
@@ -50,4 +51,5 @@ const s = StyleSheet.create({
   },
   big: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
   line: { fontFamily: font.bodyMedium, fontSize: 14, lineHeight: 19 },
+  note: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18 },
 });

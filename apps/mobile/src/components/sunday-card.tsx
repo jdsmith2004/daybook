@@ -1,40 +1,18 @@
-/* The Sunday review on Today (core: sunday.ts). On Sunday (and on Monday, while last week's is still open) a card asks for
-   a few minutes to look back on the week. Once it is done, the goal waits here: on Sunday as the goal for the week ahead,
-   and through the week with how it is going when the log can count it ("2 of 5 nights so far"). With it, whatever extras
-   the person chose on Sunday: their if-then plan, a word on one of the harder days, and their note to themselves from
+/* The week's goal from Sunday, in Journal, Days (core: sunday.ts). The review itself is Today's card on Sunday and Monday
+   (core moment.ts), and Today's standing row keeps one line of the goal ("2 of 5 nights this week"). Here: on Sunday the
+   goal for the week ahead, and through the week how it is going when the log can count it. With it, whatever extras the
+   person chose on Sunday: their if-then plan, a word on one of the harder days, and their note to themselves from
    Wednesday on. */
-import { isSunday, storyIfLine, SUN_GOALS, sunDue, sunGoalLine, sunGoalNow, sunKey, sunPlanNow, type Snapshot } from '@daybook/core';
-import { router } from 'expo-router';
+import { isSunday, storyIfLine, SUN_GOALS, sunGoalLine, sunGoalNow, sunKey, sunPlanNow, type Snapshot } from '@daybook/core';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, Icon, T } from '@/components/ui';
+import { Card, Icon, T } from '@/components/ui';
 import { toneOf, useTheme } from '@/lib/theme';
 
-export function SundayCard({ snap, tk, due: withDue = true }: { snap: Snapshot; tk: string; due?: boolean }) {
+export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const c = useTheme();
   const st = snap.settings;
   if (!st) return null;
-  const due = withDue ? sunDue(snap.reviews, st, tk) : null;
-  if (due)
-    return (
-      <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sun }}>
-        <View style={s.head}>
-          <View style={[s.ic, { backgroundColor: c.sun }]}>
-            <Icon name="calendar" size={20} color={c.onSun} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <T v="label">{due.late ? 'Last week’s review is still open' : 'Your Sunday review'}</T>
-            <T v="small" tone="muted">
-              Your week, one thing at a time, and one small goal for the next. +20 points.
-            </T>
-          </View>
-        </View>
-        <Button
-          label={due.late ? 'Look back on last week' : 'Look back on my week'}
-          onPress={() => router.push({ pathname: '/review', params: { s: due.sun } })}
-        />
-      </Card>
-    );
   /* on Sunday, once the review is done, the goal just set is for the week ahead */
   const ahead = isSunday(tk) ? snap.reviews[sunKey(tk)]?.sun?.g : null;
   if (ahead)

@@ -2069,3 +2069,12 @@ holds the weekly loop and its docs/plan.md the decisions. The one change here: s
 full motion when a page is opened with `?motion=1`, so the recorder can show the breathing sun moving; every shot still
 takes the settled, reduced-motion path. The recorder builds this app in shots mode with the sync and counts variables
 blank, so no account card and nothing that could reach a server.
+
+### Pricing, an open decision (the owner, October 22, 2026)
+
+The owner is weighing a one-time payment of about $5 that unlocks some features, because a fully free app may cost
+more than it can carry. Nothing is decided. Whatever is chosen: care is never locked (SOS, logging, Rekindle, the
+plan, the tools and Today stay free, as CLAUDE.md says), a digital unlock inside the app has to go through Apple's and
+Google's in-app purchase (the Stripe link stays a tip and unlocks nothing), and earned things stay earned. What the
+other quit apps charge, and how they market, is being written up in the daybook-shorts repository
+(content/systems/app-marketing.md) to inform this.

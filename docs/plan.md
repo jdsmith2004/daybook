@@ -60,6 +60,15 @@ real phone yet. Steps 3 to 6 wait (3 and 6 are medium; 4 and 5 need the owner's 
 
 ## Notifications, second pass: the rhythm, the mood, words that learn, the flame in the note, and the ask (the owner, October 22, 2026)
 
+**Steps 1 to 6 built** (October 22): core `notify.ts` and `nudges.ts`, the pictures in `apps/mobile/assets/notify`, the
+Android icons, `lib/reminders.ts`, `components/notify-banner.tsx` (pictures: `docs/today-review/notify-banner.png` and
+`notify-banner-off.png`), setup, Settings and the privacy page. Step 7, the owner's check on a phone, is next. Choices made
+while building: "Turn on" on the banner asks the phone first and turns the check-in and the Sunday review on only after a
+yes; the come-back notes use the tender words when the slip was today or yesterday (a slip late last night is yesterday's
+log day); the heads-up asks for exact times through a row under it in Settings ("Allow exact times", Android only), not by
+opening the phone's page on its own; the first wording of each kind is the old one, and with nothing known the day's jitter
+picks, so the first check-in note may not be the setup sample's words.
+
 **What the owner asked for:** notification logic as good as Duolingo's: track how often the person uses the app and how
 they feel, research how the best notification systems are built and replicate them, send different pictures with the
 notes, back off when the person has been away and then say "we have not seen you in a bit", ask for permission in setup,

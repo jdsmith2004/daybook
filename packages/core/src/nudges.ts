@@ -15,6 +15,9 @@
      their own, the notes say Daybook is still here (each with something in it, never only "we miss you"), and then
      nothing comes until the person opens it. They come at the hour the app is usually open (the second pass).
    - After a heavy few days (low motivation or high stress in the check-ins), the routine notes offer and do not ask.
+   - Words that learn: each routine kind has three wordings, and the phone keeps how often each one helped. The pick is a
+     small version of Duolingo's bandit: the one that helps most wins, yesterday's loses unless it is clearly better, and a
+     wording never sent gets its turn.
    The words can show on a locked screen, so none of them says what Daybook is for. Checked by test/nudges.test.ts. */
 import { addDays, diffDays, fmtClock, morningInfo } from './legacy/core.js';
 import { rkActive, rkCard, rkOpen } from './rekindle';
@@ -99,14 +102,16 @@ export interface Nudge {
   also?: 'sunday';
   /** its picture: the flame backs off with the person, and rests; it is never shown out */
   pic: NudgePic;
+  /** the wording it carries (NUDGE_WORDS.pick), when it was picked; the mood and kinder words are not learned */
+  w?: string;
 }
 
 /** what the phone remembers about its notifications (never synced) */
 export interface NudgeLog {
   /** what is scheduled now */
-  plan: Pick<Nudge, 'id' | 'k' | 'd' | 'at' | 'also'>[];
+  plan: Pick<Nudge, 'id' | 'k' | 'd' | 'at' | 'also' | 'w'>[];
   /** delivered, and not judged yet */
-  wait: Pick<Nudge, 'id' | 'k' | 'd' | 'at' | 'also'>[];
+  wait: Pick<Nudge, 'id' | 'k' | 'd' | 'at' | 'also' | 'w'>[];
   /** each kind's step: 0 every day, 1 every other day, 2 paused */
   lv: Partial<Record<NudgeLearned, number>>;
   /** misses in a row */
@@ -119,8 +124,15 @@ export interface NudgeLog {
   bk?: DayKey | null;
   /** the day the offer to move the check-in reminder was answered */
   tm?: DayKey | null;
+  /** each wording: times judged (n), times it helped (h), the last day it was sent */
+  w: Record<string, NudgeWordRec>;
 }
-export const nudgeLogNew = (): NudgeLog => ({ plan: [], wait: [], lv: {}, miss: {}, taps: [], opens: [] });
+export interface NudgeWordRec {
+  n: number;
+  h: number;
+  last: DayKey | null;
+}
+export const nudgeLogNew = (): NudgeLog => ({ plan: [], wait: [], lv: {}, miss: {}, taps: [], opens: [], w: {} });
 /** a stored log, made safe to read */
 export function normNudgeLog(x: unknown): NudgeLog {
   const o = (x && typeof x === 'object' ? x : {}) as Partial<NudgeLog>;
@@ -135,7 +147,17 @@ export function normNudgeLog(x: unknown): NudgeLog {
     opens: arr<number>(o.opens).filter((t) => typeof t === 'number'),
     bk: typeof o.bk === 'string' ? o.bk : null,
     tm: typeof o.tm === 'string' ? o.tm : null,
+    w: normWords(o.w),
   };
+}
+function normWords(v: unknown): Record<string, NudgeWordRec> {
+  const out: Record<string, NudgeWordRec> = {};
+  if (!v || typeof v !== 'object') return out;
+  for (const [id, r] of Object.entries(v as Record<string, Partial<NudgeWordRec>>)) {
+    if (!r || typeof r !== 'object' || typeof r.n !== 'number' || typeof r.h !== 'number') continue;
+    out[id] = { n: Math.max(0, r.n), h: Math.max(0, Math.min(r.n, r.h)), last: typeof r.last === 'string' ? r.last : null };
+  }
+  return out;
 }
 
 /** the words, in one place. Plain on purpose: a notification can show on a locked screen. */
@@ -150,6 +172,26 @@ export const NUDGE_WORDS = {
   after: 'A new day. Everything you built is still here.',
   /** while the Rekindle quest is open */
   quest: 'Your Rekindle quest is still open. One small step today.',
+  /** three wordings for each routine kind (the first is the one above); {off} is the screens-off time */
+  pick: {
+    checkin: ['Check in. Under a minute.', 'How did today go? A short check-in, under a minute.', 'Your evening check-in is ready. A few taps.'],
+    morning: [
+      'Last night’s questions. Two taps.',
+      'Good morning. Two quick taps on how last night went.',
+      'Two questions about last night, then on with the day.',
+    ],
+    wind: ['Wind down. Screens off at {off}.', 'An hour to screens-off at {off}. Time to slow down.', 'Screens off at {off}. A calm hour starts now.'],
+    sunday: [
+      'A few minutes to look back on your week.',
+      'A short look back at the week, and one small goal for the next.',
+      'Your week, in a few minutes. What went well?',
+    ],
+    risk: [
+      'Your hard hours start soon. Two quiet minutes now make them easier.',
+      'A harder part of the day is coming. A plan made now makes it lighter.',
+      'Heads-up: the next few hours are often hard. Your plan is one tap away.',
+    ],
+  } as Record<NudgeLearned, string[]>,
   /** after a few heavy days: the check-in offers, it does not ask */
   heavy: 'A short check-in is enough tonight. Nothing to get right.',
   /** the come-back notes (days 2, 4, 7, 14 and 30), each with something in it */
@@ -266,6 +308,37 @@ export function weekFeel(days: Days, tk: DayKey): 'heavy' | 'steady' {
   const s = mean(cs.map((c) => c.s));
   return (m != null && m <= 3) || (s != null && s >= 7) ? 'heavy' : 'steady';
 }
+/* ---------- words that learn ---------- */
+/** a steady number in [0, 1) from a string: the jitter that lets a new wording be tried, the same every run for a day */
+function hash01(x: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < x.length; i++) h = Math.imul(h ^ x.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+/** the wording for a kind on day tk: score = (helped + 1) / (judged + 2), less 0.1 halved every 15 days since it was last
+    sent, plus up to 0.02 from the day and the id. The highest wins. Returns the wording's id (kind.index). */
+export function pickWords(kind: NudgeLearned, log: Pick<NudgeLog, 'w'>, tk: DayKey): string {
+  let best = '',
+    top = -Infinity;
+  NUDGE_WORDS.pick[kind].forEach((_, i) => {
+    const id = kind + '.' + i;
+    const r = log.w[id];
+    const fresh = r?.last ? 0.1 * Math.pow(0.5, Math.max(0, diffDays(tk, r.last)) / 15) : 0;
+    const sc = ((r?.h || 0) + 1) / ((r?.n || 0) + 2) - fresh + 0.02 * hash01(tk + '|' + id);
+    if (sc > top) {
+      top = sc;
+      best = id;
+    }
+  });
+  return best;
+}
+/** a wording's words */
+export function wordsOf(id: string, st: Pick<Settings, 'screensOff'>): string {
+  const [k, i] = id.split('.');
+  const w = (NUDGE_WORDS.pick[k as NudgeLearned] || [])[Number(i)] || '';
+  return w.replace('{off}', fmtClock(st.screensOff));
+}
+
 const slipOn = (days: Days, k: DayKey) => (days[k]?.events || []).some((e) => e.outcome === 'slipped');
 
 /* ---------- the plan ---------- */
@@ -288,20 +361,20 @@ function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, 
   const roll = st.rollover;
   const lv = (x: NudgeLearned) => log.lv[x] || 0;
   const out: Nudge[] = [];
-  const add = (kind: NudgeLearned, at: number, body: string, url = '/', quiet = false) => {
+  /* each kind's words are picked from its three, by what has helped (pickWords) */
+  const add = (kind: NudgeLearned, at: number, url = '/', quiet = false) => {
     if (doneOn(days, st, reviews, kind, k)) return;
-    out.push({ id: kind + '-' + k, k: kind, d: k, at, body, url, pic: 'flame-bright', ...(quiet ? { quiet: true as const } : {}) });
+    const w = pickWords(kind, log, k);
+    out.push({ id: kind + '-' + k, k: kind, d: k, at, body: wordsOf(w, st), url, pic: 'flame-bright', w, ...(quiet ? { quiet: true as const } : {}) });
   };
-  if (prefs.morning && onStep(lv('morning'), k, st) && morningInfo(days, st, k).applies)
-    add('morning', atOf(k, prefs.morningAt, roll), NUDGE_WORDS.morning, '/', true);
-  if (prefs.checkin && onStep(lv('checkin'), k, st)) add('checkin', atOf(k, backup ? ciBackupAt(st, prefs) : prefs.checkinAt, roll), NUDGE_WORDS.checkin);
-  if (prefs.wind && st.screensOff && onStep(lv('wind'), k, st))
-    add('wind', atOf(k, clockOf(minOf(st.screensOff) - 60), roll), NUDGE_WORDS.wind(fmtClock(st.screensOff)));
+  if (prefs.morning && onStep(lv('morning'), k, st) && morningInfo(days, st, k).applies) add('morning', atOf(k, prefs.morningAt, roll), '/', true);
+  if (prefs.checkin && onStep(lv('checkin'), k, st)) add('checkin', atOf(k, backup ? ciBackupAt(st, prefs) : prefs.checkinAt, roll));
+  if (prefs.wind && st.screensOff && onStep(lv('wind'), k, st)) add('wind', atOf(k, clockOf(minOf(st.screensOff) - 60), roll));
   if (prefs.review && isSunday(k) && onStep(lv('sunday'), k, st, true) && sunDue(reviews, st, k))
-    add('sunday', atOf(k, NUDGE_SUNDAY_AT, roll), NUDGE_WORDS.sunday, '/review', true);
+    add('sunday', atOf(k, NUDGE_SUNDAY_AT, roll), '/review', true);
   if (prefs.risk && onStep(lv('risk'), k, st)) {
     const win = riskWindow(days, st, k);
-    if (win) add('risk', riskAt(k, win.start, roll) - 90 * 60000, NUDGE_WORDS.risk);
+    if (win) add('risk', riskAt(k, win.start, roll) - 90 * 60000);
   }
   /* on a Sunday, the check-in reminder carries the review too */
   const ci = out.find((n) => n.k === 'checkin');
@@ -310,6 +383,7 @@ function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, 
     out.splice(su, 1);
     ci.body = NUDGE_WORDS.both;
     ci.also = 'sunday';
+    delete ci.w;
   }
   /* after a few heavy days, the routine notes offer and do not ask: the check-in says a short one is enough, the morning and
      wind-down come without a sound. The heads-up before hard hours stays as it is, because it is care. */
@@ -318,6 +392,7 @@ function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, 
       if (n.k === 'checkin') {
         n.body = NUDGE_WORDS.heavy;
         n.pic = 'flame-warm';
+        delete n.w;
       } else if (n.k === 'morning' || n.k === 'wind') n.quiet = true;
     }
   /* after a slip: the first routine reminder of the day says it kindly (over the mood words) */
@@ -327,6 +402,7 @@ function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, 
     first.body = kind;
     first.url = '/';
     first.pic = 'flame-warm';
+    delete first.w;
     delete first.also;
     delete first.quiet;
   }
@@ -405,7 +481,13 @@ function helped(days: Days, st: Settings, reviews: Reviews, log: NudgeLog, n: Nu
 /** the log after the app opens (record the open in opens first): what was delivered is judged, and each kind steps up or
     down. allowed: whether the phone lets Daybook notify (when it does not, nothing was delivered, so nothing is judged). */
 export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, reviews: Reviews, now: number, allowed: boolean): NudgeLog {
-  const x: NudgeLog = { ...log, lv: { ...log.lv }, miss: { ...log.miss } };
+  const x: NudgeLog = { ...log, lv: { ...log.lv }, miss: { ...log.miss }, w: { ...log.w } };
+  /* a judged wording: shown once more, helped or not, and the last day it was sent */
+  const word = (n: NudgeLog['wait'][number], h: boolean) => {
+    if (!n.w) return;
+    const r = x.w[n.w] || { n: 0, h: 0, last: null };
+    x.w[n.w] = { n: r.n + 1, h: r.h + (h ? 1 : 0), last: !r.last || n.d > r.last ? n.d : r.last };
+  };
   const due = log.plan.filter((n) => n.at <= now);
   const wait = allowed && st ? [...log.wait, ...due].filter((n) => n.k !== 'back') : [];
   x.wait = [];
@@ -414,7 +496,9 @@ export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, revie
     if (helped(days, st!, reviews, log, n)) {
       x.lv[k] = Math.max(0, (x.lv[k] || 0) - 1);
       x.miss[k] = 0;
+      word(n, true);
     } else if (now >= n.at + NUDGE_JUDGE_MIN * 60000) {
+      word(n, false);
       const m = (x.miss[k] || 0) + 1;
       if (m >= NUDGE_MISSES && (x.lv[k] || 0) < 2) {
         x.lv[k] = (x.lv[k] || 0) + 1;
@@ -431,7 +515,10 @@ export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, revie
 export function nudgeKeep(log: NudgeLog, plan: Nudge[], now: number): NudgeLog {
   const ids = new Set(plan.map((n) => n.id));
   const due = log.plan.filter((n) => n.at <= now && !ids.has(n.id));
-  return { ...log, plan: [...due, ...plan.filter((n) => n.at > now).map(({ id, k, d, at, also }) => ({ id, k, d, at, ...(also ? { also } : {}) }))] };
+  return {
+    ...log,
+    plan: [...due, ...plan.filter((n) => n.at > now).map(({ id, k, d, at, also, w }) => ({ id, k, d, at, ...(also ? { also } : {}), ...(w ? { w } : {}) }))],
+  };
 }
 /** the plan's identity, to tell when the phone's schedule needs making again */
 export const nudgeKey = (plan: Pick<Nudge, 'id' | 'at' | 'body'>[]) => plan.map((n) => n.id + '@' + n.at + ':' + n.body).join('|');

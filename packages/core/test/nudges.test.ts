@@ -35,8 +35,8 @@ describe('the plan', () => {
   it('covers today and tomorrow at the set time, and skips what is done or past', () => {
     const p = routine(plan({}, ci, at('2026-10-14T09:00')));
     expect(p.map((n) => [n.id, n.at, n.body])).toEqual([
-      ['checkin-2026-10-14', at('2026-10-14T18:00'), 'Check in. Under a minute.'],
-      ['checkin-2026-10-15', at('2026-10-15T18:00'), 'Check in. Under a minute.'],
+      ['checkin-2026-10-14', at('2026-10-14T18:00'), core.wordsOf(core.pickWords('checkin', log0, '2026-10-14'), st)],
+      ['checkin-2026-10-15', at('2026-10-15T18:00'), core.wordsOf(core.pickWords('checkin', log0, '2026-10-15'), st)],
     ]);
     expect(routine(plan(checkedIn({}, tk, '2026-10-14T14:00'), ci, at('2026-10-14T14:05'))).map((n) => n.d)).toEqual(['2026-10-15']);
     expect(routine(plan({}, ci, at('2026-10-14T18:30'))).map((n) => n.d)).toEqual(['2026-10-15']);
@@ -121,7 +121,7 @@ describe('the plan', () => {
     expect(today.find((n) => n.k === 'checkin')).toMatchObject({ body: 'A short check-in is enough tonight. Nothing to get right.', pic: 'flame-warm' });
     expect(today.map((n) => n.k)).toEqual(['checkin', 'risk', 'wind']);
     expect(today.find((n) => n.k === 'wind')!.quiet).toBe(true);
-    expect(today.find((n) => n.k === 'risk')).toMatchObject({ body: core.NUDGE_WORDS.risk, pic: 'flame-bright' });
+    expect(today.find((n) => n.k === 'risk')).toMatchObject({ body: core.wordsOf(core.pickWords('risk', log0, tk), st), pic: 'flame-bright' });
     expect(today.find((n) => n.k === 'risk')!.quiet).toBeUndefined();
     /* high stress alone is heavy too; a steady week is not */
     const stressed = checkedIn({}, '2026-10-13', '2026-10-13T21:00');
@@ -160,7 +160,7 @@ describe('the plan', () => {
       '2026-10-14 Your Rekindle quest is still open. One small step today.',
       '2026-10-15 Your Rekindle quest is still open. One small step today.',
     ]);
-    expect(words('2026-10-16')).toEqual(['2026-10-16 Check in. Under a minute.', '2026-10-17 Check in. Under a minute.']);
+    expect(words('2026-10-16')).toEqual(['2026-10-16', '2026-10-17'].map((k) => k + ' ' + core.wordsOf(core.pickWords('checkin', log0, k), st)));
   });
 });
 
@@ -274,6 +274,67 @@ describe('learning from what happened', () => {
   it('a stored log is read safely', () => {
     expect(core.normNudgeLog(null)).toMatchObject({ plan: [], wait: [], lv: {}, taps: [], bk: null });
     expect(core.normNudgeLog({ taps: ['a', 3], opens: [1, 'x'] })).toMatchObject({ taps: ['a'], opens: [1] });
+  });
+});
+
+describe('words that learn', () => {
+  const rec = (n: number, h: number, last: string | null) => ({ n, h, last });
+
+  it('three wordings per routine kind, the first being the old one', () => {
+    for (const k of core.NUDGE_LEARNED) expect(core.NUDGE_WORDS.pick[k].length).toBe(3);
+    expect(core.NUDGE_WORDS.pick.checkin[0]).toBe(core.NUDGE_WORDS.checkin);
+    expect(core.wordsOf('wind.0', st)).toBe(core.NUDGE_WORDS.wind('10:30 PM'));
+  });
+
+  it('rotates when nothing is known: each day sent and not helped, the next day tries another', () => {
+    let log: NudgeLog = log0;
+    const seen: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const k = core.addDays(tk, i);
+      const w = core.pickWords('checkin', log, k);
+      seen.push(w);
+      log = { ...log, w: { ...log.w, [w]: rec(1, 0, k) } };
+    }
+    expect(new Set(seen).size).toBe(3);
+  });
+
+  it('yesterday’s wording loses to a fresh one, and to an equal one sent longer ago', () => {
+    const y = core.addDays(tk, -1);
+    expect(core.pickWords('checkin', { w: { 'checkin.0': rec(1, 0, y), 'checkin.1': rec(1, 0, y), 'checkin.2': rec(0, 0, null) } }, tk)).toBe('checkin.2');
+    expect(core.pickWords('morning', { w: { 'morning.0': rec(3, 1, y), 'morning.1': rec(3, 1, '2026-09-20'), 'morning.2': rec(3, 1, y) } }, tk)).toBe(
+      'morning.1',
+    );
+  });
+
+  it('a wording that helped 5 of 6 keeps winning over one that helped 1 of 6', () => {
+    for (let i = 0; i < 10; i++) {
+      const k = core.addDays(tk, i);
+      const w = { 'checkin.0': rec(6, 1, core.addDays(k, -3)), 'checkin.1': rec(6, 5, core.addDays(k, -1)), 'checkin.2': rec(6, 3, core.addDays(k, -2)) };
+      expect(core.pickWords('checkin', { w }, k)).toBe('checkin.1');
+    }
+  });
+
+  it('is the same for a given day, and changes across days', () => {
+    const picks = Array.from({ length: 12 }, (_, i) => core.pickWords('sunday', log0, core.addDays(tk, i)));
+    expect(Array.from({ length: 12 }, (_, i) => core.pickWords('sunday', log0, core.addDays(tk, i)))).toEqual(picks);
+    expect(new Set(picks).size).toBeGreaterThan(1);
+  });
+
+  it('each note carries its wording, learned when it is judged; the mood and kinder words are not learned', () => {
+    const p = routine(plan({}, ci, at('2026-10-14T09:00')));
+    expect(p[0].w).toBe(core.pickWords('checkin', log0, tk));
+    const kept = core.nudgeKeep(log0, p, at('2026-10-14T09:00'));
+    expect(kept.plan[0].w).toBe(p[0].w);
+    const helped = core.nudgeLearn({ ...kept, opens: [at('2026-10-14T18:30')] }, {}, st, {}, at('2026-10-14T18:30'), true);
+    expect(helped.w[p[0].w!]).toEqual({ n: 1, h: 1, last: tk });
+    const missed = core.nudgeLearn(kept, {}, st, {}, at('2026-10-15T12:00'), true);
+    expect(missed.w[p[0].w!]).toEqual({ n: 1, h: 0, last: tk });
+    const d = slip({}, tk, '21:30');
+    expect(routine(plan(d, ci, at('2026-10-14T22:00')))[0].w).toBeUndefined();
+  });
+
+  it('a stored count is read safely', () => {
+    expect(core.normNudgeLog({ w: { 'checkin.0': { n: 2, h: 5, last: 3 }, x: 'y' } }).w).toEqual({ 'checkin.0': { n: 2, h: 2, last: null } });
   });
 });
 

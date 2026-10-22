@@ -39,12 +39,20 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
 });
 
+/* who wants to hear when the phone's answer may have changed: the plan (the come-back notes need it) and the ask on Today */
+const heard = new Set<() => void>();
+export function onPermission(f: () => void): () => void {
+  heard.add(f);
+  return () => void heard.delete(f);
+}
+
 /** asks for permission if it was never asked. False when the person said no (they can change it in the phone's settings). */
 export async function allowReminders(): Promise<boolean> {
   const cur = await Notifications.getPermissionsAsync();
   if (cur.granted) return true;
   if (!cur.canAskAgain) return false;
   const r = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: true, allowBadge: false } });
+  heard.forEach((f) => f());
   return r.granted;
 }
 

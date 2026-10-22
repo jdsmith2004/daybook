@@ -895,7 +895,17 @@ export default function Setup() {
         if (ok) {
           setReminderPrefs({ ...rem, checkin: true, checkinAt: remAt, review: true });
           buzz('lit');
-        } else say('Notifications are off for Daybook. You can turn them on later in your phone’s settings.');
+        } else {
+          /* the time is kept, so turning them on later uses it */
+          setReminderPrefs({ ...rem, checkinAt: remAt });
+          say('Notifications are off for Daybook. You can turn them on later in your phone’s settings.');
+        }
+        go(1);
+      };
+      /* not now: nothing is turned on, but the time picked is kept for the ask on Today */
+      const notNow = () => {
+        if (busy()) return;
+        setReminderPrefs({ ...rem, checkinAt: remAt });
         go(1);
       };
       body = (
@@ -945,7 +955,7 @@ export default function Setup() {
       foot = (
         <View key="f" style={{ flex: 1, gap: 6 }}>
           <Next key="n" label="Remind me" onPress={yes} off={false} />
-          <Ghost label="Not now" onPress={() => !busy() && go(1)} />
+          <Ghost label="Not now" onPress={notNow} />
         </View>
       );
       break;

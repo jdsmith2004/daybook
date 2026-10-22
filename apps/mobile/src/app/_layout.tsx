@@ -18,7 +18,7 @@ import { Toast } from '@/components/toast';
 import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
-import { listenForTaps, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
+import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { useKeepPulse } from '@/lib/pulse';
@@ -66,6 +66,8 @@ function Reminders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   useEffect(() => listenForTaps((id) => setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }))), []);
+  /* turned on from the ask on Today or Settings: the come-back notes join the plan at once */
+  useEffect(() => onPermission(() => remindersAllowed().then(setAllowed, () => undefined)), []);
   return null;
 }
 

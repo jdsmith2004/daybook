@@ -47,6 +47,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
+import { NotifyBanner } from '@/components/notify-banner';
 import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { LogLink } from '@/components/today-log';
@@ -211,6 +212,7 @@ export default function Today() {
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
       action={tipButton(snap.days, tk, TIP_URL) ? <TipTop /> : undefined}>
+      <NotifyBanner />
       <Hero g={g} snap={snap} tk={tk} now={now}>
         <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
         {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}

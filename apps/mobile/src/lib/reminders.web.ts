@@ -2,6 +2,9 @@
 import type { Nudge } from '@daybook/core';
 
 export const remindersOffered = false;
+export function onPermission(_f: () => void): () => void {
+  return () => undefined;
+}
 export async function allowReminders(): Promise<boolean> {
   return false;
 }

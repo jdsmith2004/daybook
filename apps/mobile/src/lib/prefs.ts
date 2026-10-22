@@ -1,7 +1,17 @@
 /* Choices that belong to this device, not to the log: the theme (auto, light or dark) and the sound guide. Kept in AsyncStorage, like the legacy
    app kept it in the browser (daybook.theme), so it never syncs and never goes into a backup. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NUDGE_DEFAULTS, NUDGE_SUNDAY_AT, normNudgeLog, nudgeLogNew, type NudgeLog, type NudgePrefs } from '@daybook/core';
+import {
+  NUDGE_DEFAULTS,
+  NUDGE_SUNDAY_AT,
+  normNotifyMem,
+  normNudgeLog,
+  notifyMemNew,
+  nudgeLogNew,
+  type NotifyMem,
+  type NudgeLog,
+  type NudgePrefs,
+} from '@daybook/core';
 import { useSyncExternalStore } from 'react';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
@@ -113,6 +123,28 @@ export const useNudgeLog = () =>
     sub,
     () => nudges,
     () => nudges,
+  );
+
+/* the ask on Today when notifications are off (core notify.ts): the day of the last X, "Stop asking on this phone", and
+   how many X's. It stays on this phone: never synced, never in a backup. */
+const NOKEY = 'daybook.notify';
+let notifyMem: NotifyMem = notifyMemNew();
+AsyncStorage.getItem(NOKEY)
+  .then((v) => {
+    notifyMem = normNotifyMem(v ? JSON.parse(v) : null);
+    emit();
+  })
+  .catch(() => undefined);
+export function setNotifyMem(f: (m: NotifyMem) => NotifyMem) {
+  notifyMem = f(notifyMem);
+  emit();
+  AsyncStorage.setItem(NOKEY, JSON.stringify(notifyMem)).catch(() => undefined);
+}
+export const useNotifyMem = () =>
+  useSyncExternalStore(
+    sub,
+    () => notifyMem,
+    () => notifyMem,
   );
 
 /* the lock: Face ID, Touch ID or the phone's passcode when Daybook opens (kept on the device) */

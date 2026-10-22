@@ -28,11 +28,14 @@ import {
   type RecordId,
   NUDGE_LEARNED,
   NUDGE_PREF,
+  NOTIFY_WORDS,
+  notifyCanAsk,
+  notifyNever,
   nudgeResume,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
@@ -48,11 +51,13 @@ import { BACKUP_FILES } from '@/lib/backup-files';
 import { forgetDrafts } from '@/lib/drafts';
 import {
   setLockPref,
+  setNotifyMem,
   setNudgeLog,
   setReminderPrefs,
   setSoundPref,
   setThemePref,
   useLockPref,
+  useNotifyMem,
   useReminderPrefs,
   useSoundPref,
   useThemePref,
@@ -60,7 +65,8 @@ import {
   type ThemePref,
   REVIEW_AT,
 } from '@/lib/prefs';
-import { allowReminders, remindersOffered } from '@/lib/reminders';
+import { useNotifyEnv } from '@/lib/notify-env';
+import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
@@ -97,6 +103,13 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const theme = useThemePref();
   const sound = useSoundPref();
   const rem = useReminderPrefs();
+  const notifyEnv = useNotifyEnv();
+  const notifyMem = useNotifyMem();
+  /* Android: whether notes can come at their exact time (the heads-up before hard hours needs it) */
+  const [exact, setExact] = useState(true);
+  useEffect(() => {
+    exactAlarmsOk().then(setExact, () => undefined);
+  }, []);
   const lock = useLockPref();
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
@@ -410,12 +423,28 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               on={rem.risk}
               onPick={(on) => setRem({ risk: on })}
             />
+            {rem.risk && !exact ? (
+              <Field label="Exact times" hint="Without it, this phone may send the heads-up up to an hour late. It opens the phone’s page to allow it.">
+                <Link label="Allow exact times" onPress={() => exactAlarmsAsk().then(setExact, () => undefined)} />
+              </Field>
+            ) : null}
             <OnOff
               name="If you are away for a while"
               sub="A few short notes that Daybook is still here, over a month. Then it stays quiet until you open it."
               on={rem.back !== false}
               onPick={(on) => setRem({ back: on })}
             />
+            {notifyEnv && notifyCanAsk(notifyEnv, notifyMem) ? (
+              <Field label="The ask on Today" hint="While notifications are off, a strip at the top of Today offers to turn them on.">
+                <Link
+                  label={NOTIFY_WORDS.never}
+                  onPress={() => {
+                    setNotifyMem(notifyNever);
+                    say('Daybook will not ask again on this phone. Reminders can still be turned on here.');
+                  }}
+                />
+              </Field>
+            ) : null}
           </>
         ) : (
           <>

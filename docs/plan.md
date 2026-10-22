@@ -1723,3 +1723,74 @@ old app (where a short run could be saved) is judged by the new rule. Found and 
 said "That makes 0 times" until today was recorded, and on the morning-after card in dark mode the start-fresh line and
 its link were faint. Left as decided: a walk-through after setup never changes how days count (only the log and
 Settings do), and the switch to counting days waits until Day 1.
+
+## The first testers (2026-10-21)
+
+The iPhone app is in App Store review and Android is not public yet. Before any marketing, Daybook needs 15 to 30 people
+who use it for two weeks and say honestly what helped. The search side is already written (the store listing in
+docs/launch.md, step 6); this part is finding people by hand, with Claude in Chrome doing the legwork.
+
+**Who does what (decided with the owner).** Claude in Chrome finds the places, reads their rules, finds the public
+contact, writes every message, fills it into the compose box and keeps the log. The owner is signed in to their own
+accounts and says yes to each send, one at a time; a real person answers replies that need one. The skill
+`/find-testers` (`.claude/skills/find-testers/SKILL.md`) is the prompt for this, in four modes: research, draft, send,
+status. Its log is `.outreach/log.md`, kept out of git because it names people.
+
+**Never:** a message to someone who posted about their own struggle and did not ask; a fake account, a second account,
+or bought or traded votes; a post where a community's rules forbid it; a post that hides that the owner made Daybook; a
+number, a story or a claim the app cannot back. These people may be at their lowest. A stranger's message about porn
+feels like being watched, gets the account banned, and breaks the trust Daybook is built on.
+
+**Now, while review waits**
+
+1. **(owner) A Reddit account with some history.** Most recovery subreddits remove posts from new accounts with no karma,
+   automatically. If the account is new, start now: a few honest comments a week in r/pornfree, with no links, for two
+   or three weeks before the first post.
+2. **(owner, decision) A real domain.** The site is at a cloudfront.net address, which looks like a scam link in a post. A
+   domain costs about $10 to $15 a year. Until then, the GitHub Pages address is the better link.
+3. **(medium) A "Help test Daybook" page,** `apps/mobile/public/testers.html`: what Daybook is in three lines, the web
+   link, the iPhone link (the TestFlight public link until the store approves, then the store), the Android opt-in link,
+   what to send back and where (the support email), and the privacy promise. One link for every post.
+4. **(owner; Claude in Chrome can fill the fields)** TestFlight: an external group with a public link (it needs a beta
+   review, usually about a day). Google Play: the closed testing track with a Google Group as its tester list, so people
+   join on their own; the opt-in link goes on the tester page. A personal account needs 12 testers opted in for 14 days
+   in a row (docs/launch.md, step 8), so aim for 20 to keep 12.
+5. **(low) Research:** `/find-testers research`, read only. It fills the log with places, their rules and who to ask.
+6. **(medium) Drafts:** `/find-testers draft`. The first is the message to r/pornfree's moderators, below.
+
+**Once the tester page is live**
+
+7. **Outreach, in this order:** r/pornfree's moderators (post only if they say yes), other subreddits whose rules allow
+   it, faith and men's group leaders (Celebrate Recovery chapters, church men's groups), then therapists and coaches who
+   list porn or sex addiction publicly. `/find-testers send`, one message at a time, a few a day at most.
+8. **Feedback** through what the app already has (the roadmap's feedback and opt-in counts): the tester page asks
+   testers to turn on the counts and to use Send feedback in More on day 2, day 7 and day 14, with these questions: What
+   did you open Daybook for today? After a hard moment or a slip, did Daybook help you keep going, or make it worse?
+   What one thing would you change? How would you describe Daybook to a friend in one line? (The last answers become
+   the words for marketing.) Ask three people who left a reply address for a 15-minute call.
+9. **(medium)** Claude sums up the feedback here: what to fix, and the words testers used. Then marketing starts
+   (content from the lessons; the short-video pipeline, built around what worked).
+
+**Enough to move on:** the roadmap's 20 to 50 people, 12 Android testers through 14 days, the day 7 and day 14 counts
+showing people still opening Daybook, and three calls.
+
+**The first draft: to r/pornfree's moderators** (modmail; `[ ]` parts are the owner's to fill)
+
+> **Subject:** Asking before I post: a free, private app I built for quitting
+>
+> Hi. I built a free app for quitting porn called Daybook, and I would like to find a few people to test it before it
+> launches. I know self-promotion is not welcome here without permission, so I am asking first.
+>
+> What it is: you log urges and slips in a few taps, it shows the hours and moments that are hardest for you, and it has
+> an SOS for when an urge hits. A slip does not reset you to zero: what you built stays yours, because a slip is data,
+> not failure.
+>
+> Why I think it fits here: it is free with nothing to unlock, with no ads, no tracking and no account needed. Your log
+> stays on your phone. The code is public on GitHub, so anyone can check that.
+>
+> [Optional, only if true and you want to share it: one sentence on why you built it.]
+>
+> If you are open to it, I would post one "looking for testers" thread, say plainly that I made it, and answer every
+> question myself. If not, that is fine, and thank you for running this place.
+>
+> [your name] (u/[username])

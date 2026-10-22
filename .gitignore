@@ -51,3 +51,6 @@ npm-debug.log*
 
 # Claude Code: personal, never shared
 .claude/settings.local.json
+
+# Claude in Chrome outreach log: names people, so never in git
+.outreach/

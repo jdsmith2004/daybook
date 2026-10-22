@@ -3,18 +3,21 @@
    Under the picture, in the same card, the one next step (core pickMoment, moment-card.tsx), so what you do and what it
    grows are one picture (CLAUDE.md, "The flame is the heart of the app"). The flame moves in a way that fits its form and
    the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it and it says
-   hi; tap the sky for Milestones; the level for how points work; the number for your days. */
+   hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while the
+   app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
+   to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it). */
 import { CHEERS, emblemScene, heroNumber, type GameState, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 /** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
 const ON_ART = 1.15;
 import Svg, { Path } from 'react-native-svg';
 
+import { useCelebrating } from '@/components/celebrate';
 import { GradFlame } from '@/components/grad';
 import { Card, Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -104,6 +107,40 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
     say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
     setPulse((p) => p + 1);
   };
+  /* the flame grows in front of you: what was last seen here, and the bar from there to now, once any celebration that
+     came with it is closed */
+  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts });
+  const bar = useRef(new Animated.Value(lvl.frac)).current;
+  const busy = useCelebrating();
+  const [due, setDue] = useState(false);
+  const dueRef = useRef(false);
+  const [grew, setGrew] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      const was = seen.current;
+      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts };
+      if (g.pts > was.pts && !dueRef.current) {
+        bar.setValue(lvl.n > was.n ? 0 : was.frac);
+        dueRef.current = true;
+        setDue(true);
+      } else if (!dueRef.current) bar.setValue(lvl.frac);
+    }, [g.pts, lvl.n, lvl.frac, bar]),
+  );
+  useEffect(() => {
+    if (!due || busy) return;
+    dueRef.current = false;
+    setDue(false);
+    if (reduce) bar.setValue(lvl.frac);
+    else Animated.timing(bar, { toValue: lvl.frac, duration: 1100, delay: 350, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    setPulse((p) => p + 1);
+    setGrew(true);
+    AccessibilityInfo.announceForAccessibility('Your flame grew.');
+  }, [due, busy, reduce, bar, lvl.frac]);
+  useEffect(() => {
+    if (!grew) return;
+    const t = setTimeout(() => setGrew(false), 2800);
+    return () => clearTimeout(t);
+  }, [grew]);
   return (
     <View style={s.sky}>
       {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
@@ -190,8 +227,18 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
           Level {lvl.n} · {lvl.name} ›
         </Text>
       </Pressable>
+      {grew ? (
+        <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+          <Icon name="star" size={13} color={ink} />
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
+            Your flame grew
+          </Text>
+        </View>
+      ) : null}
       <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
-        <View style={{ width: `${Math.max(0, Math.min(1, lvl.frac)) * 100}%`, height: '100%', backgroundColor: c.sun }} />
+        <Animated.View
+          style={{ width: bar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }), height: '100%', backgroundColor: c.sun }}
+        />
       </View>
     </View>
   );
@@ -213,5 +260,16 @@ const s = StyleSheet.create({
   chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
   lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
+  grew: {
+    position: 'absolute',
+    top: 12,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
   under: { padding: 14 },
 });

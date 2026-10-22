@@ -50,6 +50,14 @@ growing is the point). The comeback, the save rule and the story tests stay as t
 
 Choices to make: steps 4 and 5 (the morning stop, and the lesson notification and its words).
 
+**Done (October 22, 2026): steps 1 and 2** (the owner: "It is really good. Go ahead and build that"). The flame is back
+at the top of Today (`hero.tsx`) with the one next step under it (`moment-card.tsx` `Band`); the day of a slip keeps
+its full card. Back on Today after points come in, the bar fills from where it was, the flame blooms and "Your flame
+grew" shows for a few seconds, once any celebration that came with it is closed (`useCelebrating` in `celebrate.tsx`).
+Choices made: the band's button keeps a short word ("Start", "See it", "Fill in"), with the full action in its
+screen-reader label; the quiet line (what was logged today, the week's goal) sits under the next step. Not seen on a
+real phone yet. Steps 3 to 6 wait (3 and 6 are medium; 4 and 5 need the owner's yes).
+
 ## The roadmap: the quit app that does not reset (2026-10-22)
 
 **The strategy.** Every quit app fails at the same moment: the slip. The count drops to zero, shame rises, and the person

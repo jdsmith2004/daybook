@@ -54,6 +54,17 @@ export function useHoldCelebrations(on: boolean) {
   }, [on]);
 }
 
+/* whether a celebration is open or waiting its turn, so Today can let the flame grow once the person has closed it */
+let busy = false;
+const busySubs = new Set<() => void>();
+const busySub = (f: () => void) => (busySubs.add(f), () => void busySubs.delete(f));
+export const useCelebrating = () =>
+  useSyncExternalStore(
+    busySub,
+    () => busy,
+    () => false,
+  );
+
 export function CelebrateHost() {
   const { snap, hooks } = useStore();
   const path = usePathname();
@@ -111,6 +122,11 @@ export function CelebrateHost() {
       buzz(it.type === 'level' ? 'lit' : 'save');
     } else setBoom(null);
   }, [cur, blocked, queue]);
+
+  useEffect(() => {
+    busy = !!cur || queue.length > 0;
+    busySubs.forEach((f) => f());
+  }, [cur, queue]);
 
   if (!cur || !st) return null;
   return (

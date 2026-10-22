@@ -1,8 +1,9 @@
 /* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
    moment (a pause, the hard hours, the morning after or the day of a slip, a talk-through, days away, the Sunday review, a
-   one-time moment, or the day's next stop), with "and one more" under it when two overlap; SOS with Already happened and
-   Planning a slip? (care is never locked); one standing row (a small flame, one number, one line, opening Milestones);
-   Your day as plain rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is
+   one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
+   sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
+   one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
+   is never locked); Your day as plain rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is
    earned, and its celebration opens. */
 import {
   accountAsk,
@@ -33,6 +34,7 @@ import {
   pickMoment,
   shouldAutoCount,
   shouldAutoStep,
+  standRow,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
@@ -45,7 +47,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
-import { StandRow } from '@/components/stand-row';
+import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
@@ -158,6 +160,8 @@ export default function Today() {
   const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* the counts ask, once, on a calm day, never beside another ask (core pulseAsk) */
   const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
+  /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
+  const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
   const sub = (
     <>
       {be ? (
@@ -178,11 +182,13 @@ export default function Today() {
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
       action={tipButton(snap.days, tk, TIP_URL) ? <TipTop /> : undefined}>
-      <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+      <Hero g={g} snap={snap} tk={tk} now={now}>
+        <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+        {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
+      </Hero>
       <Card>
         <LogLink />
       </Card>
-      <StandRow g={g} snap={snap} tk={tk} now={now} />
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
@@ -194,4 +200,5 @@ export default function Today() {
 
 const s = StyleSheet.create({
   be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
+  note: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18, textAlign: 'center', marginTop: 8 },
 });

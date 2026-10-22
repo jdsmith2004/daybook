@@ -1,7 +1,10 @@
-/* The one card at the top of Today (core pickMoment, moment.ts): whatever the moment is, it is the only thing asking for a
-   tap. The day's open stop, the morning after, the day of a slip and the simple moments are drawn here, in the colors of
-   their moment; the comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through,
-   a counting note, a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when two overlap. */
+/* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
+   moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
+   next stop, the morning after, the Sunday review, the first week, a first pattern, days away), the whole band one
+   button, with the rest of the day named under it. The day of a slip keeps its full card, with its words of care; the
+   comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through, a counting note,
+   a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
+   two overlap. */
 import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -9,7 +12,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { NudgeCard } from '@/components/nudge-card';
 import { RiskCard } from '@/components/risk-card';
-import { SunArt } from '@/components/sun-art';
 import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
@@ -25,6 +27,11 @@ export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Sn
   return (
     <View style={{ gap: 8 }}>
       <TheCard m={pick.card} then={pick.then} snap={snap} tk={tk} now={now} />
+      {pick.then && BAND.has(pick.card.k) ? (
+        <T v="small" tone="muted" style={s.thenLine}>
+          {pick.then}
+        </T>
+      ) : null}
       {pick.more ? (
         <T v="small" tone="muted" style={s.more}>
           {'And one more: ' + pick.more.one + '. It comes up here next.'}
@@ -56,44 +63,86 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
     case 'nudge':
       return <NudgeCard snap={snap} tk={tk} />;
     case 'morning-after':
-      return <Tile m={m} sky="sun" sunrise then={then} onPress={() => router.push('/sunrise')} />;
+      return <Band m={m} sky="sun" onPress={() => router.push('/sunrise')} />;
     case 'slip-day':
       return <Tile m={m} sky="sun" then={then} onPress={() => didSmall(tk)} />;
     case 'calm': {
       const sky = ({ morning: 'sun', lesson: 'sky', checkin: 'violet', wind: 'night' } as const)[m.go as 'morning'] || 'violet';
-      return <Tile m={m} sky={sky} then={then} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
+      return <Band m={m} sky={sky} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
     }
     case 'sunday':
-      return <Tile m={m} sky="sun" then={then} onPress={() => router.push({ pathname: '/review', params: { s: m.v! } })} />;
+      return <Band m={m} sky="sun" onPress={() => router.push({ pathname: '/review', params: { s: m.v! } })} />;
     case 'first-week':
-      return <Tile m={m} sky="sky" then={then} onPress={() => router.push('/week')} />;
+      return <Band m={m} sky="sky" onPress={() => router.push('/week')} />;
     case 'first-pattern':
-      return <Tile m={m} sky="violet" then={then} onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'patterns' } })} />;
+      return <Band m={m} sky="violet" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'patterns' } })} />;
     case 'away':
-      return <Tile m={m} sky="sky" then={then} onPress={() => router.push('/back')} />;
+      return <Band m={m} sky="sky" onPress={() => router.push('/back')} />;
     default:
       return <Done m={m} />;
   }
 }
 
-/* a moment in the colors of its sky, with its one button */
-function Tile({ m, sky, then, sunrise, onPress }: { m: Moment; sky: StopTile['sky']; then: string; sunrise?: boolean; onPress: () => void }) {
+/* the moments that are one band under the flame (the rest of the day is named under it) */
+const BAND = new Set<Moment['k']>(['morning-after', 'calm', 'sunday', 'first-week', 'first-pattern', 'away']);
+/* the band's button stays short; the longer action is said in its label for screen readers */
+const PILL: Partial<Record<string, string>> = { sunrise: 'Start', review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
+
+/* one band in the colors of its moment, the whole band one button */
+function Band({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {
   const c = useTheme();
   const L = lookOf(sky, c);
-  /* the morning after keeps its light sunrise colors in either theme, so its words do too */
-  const lit = !!sunrise;
-  const deep = !lit && (c.scheme === 'dark' || sky === 'night');
-  const ink = lit ? '#2A2350' : deep ? nightInk.ink : c.ink;
-  const soft = lit ? '#625A85' : deep ? '#E6DEFF' : c.muted;
-  const eb = lit ? '#9A5B12' : sky === 'night' ? '#FFE27A' : L.ink;
-  const [a, b] = lit ? ['#FFD9B4', '#FFF3DE'] : skies[c.scheme][sky];
-  const btn = lit ? { bg: c.accent, ink: c.accentInk } : { bg: L.btn, ink: L.onBtn };
+  const deep = c.scheme === 'dark' || sky === 'night';
+  const [a, b] = skies[c.scheme][sky];
+  const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
   return (
-    <View style={[s.tile, { shadowColor: c.lip, borderColor: lit ? '#F6D2A6' : 'transparent' }]} accessibilityRole="summary">
-      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: lit ? 0 : 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      {lit ? <SunArt height={110} /> : <Deco sky={sky} />}
-      <Text style={[s.eb, { color: eb }, !lit && (sky === 'sun' || sky === 'night') && s.ebRoom]}>{m.eb.toUpperCase()}</Text>
-      <Text style={[s.head, { color: ink }, !lit && s.headRoom]} accessibilityRole="header">
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={(m.btn || pill) + ': ' + m.h}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [
+        s.band,
+        {
+          shadowColor: sky === 'night' ? '#0B0828' : 'rgba(20,14,60,0.45)',
+          shadowOffset: { width: 0, height: pressed ? 1 : 5 },
+          transform: [{ translateY: pressed ? 4 : 0 }],
+        },
+      ]}>
+      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[s.eb, { color: sky === 'night' ? '#FFE27A' : L.ink }]} numberOfLines={1}>
+          {m.eb.toUpperCase()}
+        </Text>
+        <Text style={[s.bandT, { color: deep ? nightInk.ink : c.ink }]} numberOfLines={3}>
+          {m.h}
+        </Text>
+      </View>
+      <View style={[s.go, { backgroundColor: L.btn }]}>
+        <Text style={[s.goT, { color: L.onBtn }]}>{pill + ' ›'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/* the day of a slip: its full card, with its words of care and its one button */
+function Tile({ m, sky, then, onPress }: { m: Moment; sky: StopTile['sky']; then: string; onPress: () => void }) {
+  const c = useTheme();
+  const L = lookOf(sky, c);
+  const deep = c.scheme === 'dark' || sky === 'night';
+  const ink = deep ? nightInk.ink : c.ink;
+  const soft = deep ? '#E6DEFF' : c.muted;
+  const eb = sky === 'night' ? '#FFE27A' : L.ink;
+  const [a, b] = skies[c.scheme][sky];
+  const btn = { bg: L.btn, ink: L.onBtn };
+  return (
+    <View style={[s.tile, { shadowColor: c.lip, borderColor: 'transparent' }]} accessibilityRole="summary">
+      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <Deco sky={sky} />
+      <Text style={[s.eb, { color: eb }, (sky === 'sun' || sky === 'night') && s.ebRoom]}>{m.eb.toUpperCase()}</Text>
+      <Text style={[s.head, { color: ink }, s.headRoom]} accessibilityRole="header">
         {m.h}
       </Text>
       {m.p ? <Text style={[s.body, { color: soft }]}>{m.p}</Text> : null}
@@ -219,4 +268,9 @@ const s = StyleSheet.create({
   then: { fontFamily: font.body, fontSize: 14, lineHeight: 19, textAlign: 'center' },
   ic: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   more: { paddingHorizontal: 8 },
+  thenLine: { paddingHorizontal: 8, textAlign: 'center' },
+  band: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76, padding: 14, borderRadius: 20, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  bandT: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
+  go: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
+  goT: { fontFamily: font.bodyBold, fontSize: 15 },
 });

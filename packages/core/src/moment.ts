@@ -281,7 +281,8 @@ export function thenLine(days: Days, st: Settings, tk: DayKey, now: number, calm
   return 'Then: ' + list(rest.map((x) => STOP_NAME[x.k] + (calm && (x.state === 'next' || x.state === 'later') && x.right ? ' ' + low(x.right) : ''))) + '.';
 }
 
-/* ---------- the standing row: a small flame, one number, one line ---------- */
+/* ---------- the standing row: one number, one line, and a quieter note ----------
+   Today shows the number on the flame's sky (heroNumber), so it uses only the note, under the next step. */
 export interface StandRow {
   /** the one number, with its few words: "6 of your first 7 days", "23 hours" */
   big: string;

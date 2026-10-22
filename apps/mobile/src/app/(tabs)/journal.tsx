@@ -122,7 +122,7 @@ function DaysPane() {
           : { bg: c.surface2, fg: c.muted };
   return (
     <>
-      {/* today's entries and the week's goal from Sunday live here; Today keeps one line for each (stand-row.tsx) */}
+      {/* today's entries and the week's goal from Sunday live here; Today keeps one line for both, under the next step */}
       <TodaySoFar snap={snap} tk={tk} />
       <CalendarCard snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} size="lg" />

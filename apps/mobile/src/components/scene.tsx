@@ -219,6 +219,7 @@ export function Finish({
   tone,
   alive,
   size = 150,
+  always,
 }: {
   level: number;
   title?: string;
@@ -227,6 +228,8 @@ export function Finish({
   /** the flame moves gently (the end of the setup) */
   alive?: boolean;
   size?: number;
+  /** the flame and its burst shrink to fit a short phone, never step aside (the end of the setup) */
+  always?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -251,7 +254,7 @@ export function Finish({
   const tints = own ? [own, c.sun, c.sun2, own] : [c.sun, c.sun2, c.coral, c.violet];
   return (
     <View style={s.middle}>
-      <FitArt drop={0.4}>
+      <FitArt drop={always ? undefined : 0.4} min={always ? 0.5 : undefined}>
         <View style={s.finArt}>
           {BURST.map((b, i) => {
             const f = fly[i];

@@ -1168,7 +1168,7 @@ export default function Setup() {
         body = (
           <>
             <Head h="Welcome in." sub={obFirst(g.id, st ? st.screensOff : '23:00')} />
-            <Finish level={2} alive size={SHORT ? 130 : 170} tone="sun" />
+            <Finish level={2} alive always size={SHORT ? 130 : 170} tone="sun" />
             <Appear delay={500}>
               <LevelBar />
             </Appear>

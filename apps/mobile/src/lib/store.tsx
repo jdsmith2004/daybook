@@ -153,8 +153,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 'pts' in t ? 3800 : 3200);
   }, []);
 
-  /* After each action (legacy afterAction): a run that was just saved, anything newly earned (a level, a badge, a quest, a full
-     ring), and then what the action earned: "+15 points · Rode it out", or the action's own words. A celebration is the reward when
+  /* After each action (legacy afterAction): a run that was just saved, anything newly earned (a level, a badge), and then
+     what the action earned: "+15 points · Rode it out", or the action's own words. A celebration is the reward when
      there is one; inside a full-screen moment only the words are said. */
   const flushRef = useRef<() => void>(() => undefined);
   const schedule = useCallback(() => {
@@ -251,8 +251,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (was && sv.saved.some((k) => was.indexOf(k) < 0)) items.push({ type: 'saved', run: sv.cur });
       const r = checkNew(cur.days, st, cur.reviews, tkNow, quiet);
       if (r.st) commitSettings(r.st);
-      if (r.items.length) fired = true;
-      items.push(...r.items);
+      /* weekly quests are retired: one finished in the last week before that is marked seen (its points stay), never celebrated */
+      const earned = r.items.filter((it) => it.type !== 'quest');
+      if (earned.length) fired = true;
+      items.push(...earned);
       if (items.length) hooks.current.onCelebrate(items);
     }
     if (fired) return;

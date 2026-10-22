@@ -191,8 +191,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             <B>Check-in.</B> Skipping it never costs you a day. A day counts as no-slip whenever no slip is logged, check-in or not.
           </T>
           <T v="small" tone="muted">
-            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right. While it is off, a weekly quest
-            about it is swapped for a different one.
+            <B>Reached out.</B> This one starts switched off. Turn it on whenever a text or call to a real person feels right.
           </T>
         </>,
       )}

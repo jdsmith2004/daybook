@@ -1,4 +1,4 @@
-/* Celebrations: a new level (or a new form of the flame), a new badge, a quest done, a full ring, a run saved. They wait their turn:
+/* Celebrations: a new level (or a new form of the flame), a new badge, a full ring, a run saved. They wait their turn:
    they show only on the main tabs, never on top of a page, a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
    quiet line instead. Anything that arrives right after a slip comes in quietly: no confetti, no buzz. Ported from the legacy
    celebrate, celNext and confetti. */
@@ -147,11 +147,6 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
     eyebrow = it.b.id === 'honest' ? 'Honesty' : 'New badge';
     title = it.b.name;
     sub = it.b.desc;
-  } else if (it.type === 'quest') {
-    art = <BadgeArt icon="star" tone="sun" size={104} earned />;
-    eyebrow = 'Quest complete';
-    title = it.q.name;
-    sub = `${it.q.hint} +${it.q.pts} points.`;
   } else if (it.type === 'perfect') {
     const lvl = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
     art = <Flame level={Math.max(1, lvl)} size={150} />;
@@ -163,7 +158,7 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
     eyebrow = 'Run saved';
     title = it.run + ' day' + (it.run === 1 ? '' : 's') + ' and counting';
     sub = 'You did the work after a slip, so your run keeps going. The gold mark on your calendar shows where you came back.';
-  } else {
+  } else if (it.type === 'more') {
     title = it.title || 'Nice';
     sub = it.sub || '';
   }

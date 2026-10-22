@@ -10,9 +10,11 @@
    - The habit takes over: when the person checks in on their own most days, the check-in reminder comes later, as a backup.
    - A kind that is ignored three times in a row steps down (every day, every other day, paused); one that helps steps back up.
      A pause is said on Today, with a choice.
-   - The plan covers today and tomorrow, then four come-back notes (2, 4, 7 and 14 days on), and is made again each time the
-     app opens. So when the app goes quiet, the reminders stop on their own, the notes say Daybook is still here, and then
-     nothing comes until the person opens it.
+   - The plan covers today and tomorrow, then five come-back notes (2, 4, 7, 14 and 30 days on) for anyone whose phone
+     allows notifications, and is made again each time the app opens. So when the app goes quiet, the reminders stop on
+     their own, the notes say Daybook is still here (each with something in it, never only "we miss you"), and then
+     nothing comes until the person opens it. They come at the hour the app is usually open (the second pass).
+   - After a heavy few days (low motivation or high stress in the check-ins), the routine notes offer and do not ask.
    The words can show on a locked screen, so none of them says what Daybook is for. Checked by test/nudges.test.ts. */
 import { addDays, diffDays, fmtClock, morningInfo } from './legacy/core.js';
 import { rkActive, rkCard, rkOpen } from './rekindle';
@@ -54,7 +56,9 @@ export const NUDGE_SUNDAY_AT: Clock = '17:00';
 export const NUDGE_MAX = 3;
 export const NUDGE_GAP = 60;
 /** the come-back notes, in days after the last time the app was open */
-export const NUDGE_BACK = [2, 4, 7, 14];
+export const NUDGE_BACK = [2, 4, 7, 14, 30];
+/** how long the open times are kept, to learn the hour the app is usually open */
+export const NUDGE_OPENS_DAYS = 28;
 /** misses in a row before a kind steps down */
 export const NUDGE_MISSES = 3;
 /** a notification helped when the app was opened this soon after it (or it was tapped, or its thing was done that day) */
@@ -75,6 +79,10 @@ export const NUDGE_PREF: Record<NudgeLearned, 'checkin' | 'morning' | 'wind' | '
   risk: 'risk',
 };
 
+/** the flame picture a notification carries (apps/mobile/assets/notify; on iPhone only) */
+export type NudgePic = 'flame-bright' | 'flame-warm' | 'flame-steady' | 'flame-ember' | 'flame-asleep';
+export const NUDGE_PICS: NudgePic[] = ['flame-bright', 'flame-warm', 'flame-steady', 'flame-ember', 'flame-asleep'];
+
 export interface Nudge {
   /** kind and day: one of each kind a day */
   id: string;
@@ -89,6 +97,8 @@ export interface Nudge {
   quiet?: true;
   /** the Sunday review, folded into the check-in reminder */
   also?: 'sunday';
+  /** its picture: the flame backs off with the person, and rests; it is never shown out */
+  pic: NudgePic;
 }
 
 /** what the phone remembers about its notifications (never synced) */
@@ -103,7 +113,7 @@ export interface NudgeLog {
   miss: Partial<Record<NudgeLearned, number>>;
   /** the notifications tapped, by id */
   taps: string[];
-  /** the times the app was opened, in the last few days */
+  /** the times the app was opened, in the last 28 days */
   opens: number[];
   /** the day the backup check-in was said on Today */
   bk?: DayKey | null;
@@ -140,11 +150,23 @@ export const NUDGE_WORDS = {
   after: 'A new day. Everything you built is still here.',
   /** while the Rekindle quest is open */
   quest: 'Your Rekindle quest is still open. One small step today.',
+  /** after a few heavy days: the check-in offers, it does not ask */
+  heavy: 'A short check-in is enough tonight. Nothing to get right.',
+  /** the come-back notes (days 2, 4, 7, 14 and 30), each with something in it */
   back: [
-    'Daybook is here when you are ready.',
-    'Nothing is lost. One tap to pick up where you left off.',
-    'A minute today is enough.',
-    'Daybook will stay quiet now. Everything is kept for when you come back.',
+    'Daybook is here when you are ready. Your plan is one tap away.',
+    'Nothing is lost. Everything you wrote is kept, and the next lesson takes two minutes.',
+    'A week is a long time. A minute today is enough, and Daybook starts where you are, not where you were.',
+    'Everything is kept. Whenever you come back, the door is open.',
+    'This is the last note for now. Daybook stays quiet until you open it, and everything is kept.',
+  ],
+  /** the same, when the person left on a hard day (a slip, or a heavy week): no lesson, the hard day in mind */
+  tender: [
+    'A hard day does not undo the rest. Everything you built is still here, and your plan is one tap away.',
+    'Nothing is lost. Everything you wrote is kept, and one quiet minute is a fine way back.',
+    'A week is a long time. A minute today is enough, and Daybook starts where you are, not where you were.',
+    'Everything you built is kept. Whenever you come back, the door is open, with no questions about the gap.',
+    'This is the last note for now. Daybook stays quiet until you open it, and everything is kept.',
   ],
   /** the cards on Today */
   name: {
@@ -211,6 +233,41 @@ export function ciUsual(days: Days, st: Settings, tk: DayKey): Clock | null {
   return clockOf(Math.round(mid / 15) * 15 + roll * 60);
 }
 
+/* ---------- the rhythm and the mood ---------- */
+/** the hours a come-back note may come (9 AM up to 9 PM) */
+const DAY_HOURS: [number, number] = [9, 21];
+/** the hour the app is usually open: the hour with most opens in the last 28 days, recent days weighing more (half as much
+    two weeks back), kept to the daytime; else the hour the app is open now, if that is daytime; else 6 PM */
+export function usualHour(log: Pick<NudgeLog, 'opens'>, now: number): number {
+  const w = new Array(24).fill(0);
+  for (const t of log.opens) {
+    const age = (now - t) / 86400000;
+    if (age < 0 || age > NUDGE_OPENS_DAYS) continue;
+    w[new Date(t).getHours()] += Math.pow(0.5, age / 14);
+  }
+  let best = -1;
+  for (let h = DAY_HOURS[0]; h < DAY_HOURS[1]; h++) if (w[h] > 0 && (best < 0 || w[h] > w[best])) best = h;
+  if (best >= 0) return best;
+  const h = new Date(now).getHours();
+  return h >= DAY_HOURS[0] && h < DAY_HOURS[1] ? h : 18;
+}
+/** how the last three check-ins (in the last week) felt: heavy when motivation is 3 or lower or stress 7 or higher, on average */
+export function weekFeel(days: Days, tk: DayKey): 'heavy' | 'steady' {
+  const cs = [];
+  for (let i = 0; i < 7 && cs.length < 3; i++) {
+    const c = days[addDays(tk, -i)]?.checkin;
+    if (c && c.done) cs.push(c);
+  }
+  const mean = (xs: (number | null)[]) => {
+    const v = xs.filter((x): x is number => typeof x === 'number');
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+  const m = mean(cs.map((c) => c.m));
+  const s = mean(cs.map((c) => c.s));
+  return (m != null && m <= 3) || (s != null && s >= 7) ? 'heavy' : 'steady';
+}
+const slipOn = (days: Days, k: DayKey) => (days[k]?.events || []).some((e) => e.outcome === 'slipped');
+
 /* ---------- the plan ---------- */
 const PRI: Record<NudgeKind, number> = { risk: 0, checkin: 1, sunday: 2, wind: 3, morning: 4, back: 5 };
 /** every other day (or Sunday) at step 1 */
@@ -227,13 +284,13 @@ function doneOn(days: Days, st: Settings, reviews: Reviews, kind: NudgeKind, k: 
 }
 
 /** the routine notifications for one log day, before the caps */
-function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, log: NudgeLog, k: DayKey, backup: boolean): Nudge[] {
+function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, log: NudgeLog, k: DayKey, backup: boolean, heavy: boolean): Nudge[] {
   const roll = st.rollover;
   const lv = (x: NudgeLearned) => log.lv[x] || 0;
   const out: Nudge[] = [];
   const add = (kind: NudgeLearned, at: number, body: string, url = '/', quiet = false) => {
     if (doneOn(days, st, reviews, kind, k)) return;
-    out.push({ id: kind + '-' + k, k: kind, d: k, at, body, url, ...(quiet ? { quiet: true as const } : {}) });
+    out.push({ id: kind + '-' + k, k: kind, d: k, at, body, url, pic: 'flame-bright', ...(quiet ? { quiet: true as const } : {}) });
   };
   if (prefs.morning && onStep(lv('morning'), k, st) && morningInfo(days, st, k).applies)
     add('morning', atOf(k, prefs.morningAt, roll), NUDGE_WORDS.morning, '/', true);
@@ -254,12 +311,22 @@ function dayList(days: Days, st: Settings, reviews: Reviews, prefs: NudgePrefs, 
     ci.body = NUDGE_WORDS.both;
     ci.also = 'sunday';
   }
-  /* after a slip: the first routine reminder of the day says it kindly */
+  /* after a few heavy days, the routine notes offer and do not ask: the check-in says a short one is enough, the morning and
+     wind-down come without a sound. The heads-up before hard hours stays as it is, because it is care. */
+  if (heavy)
+    for (const n of out) {
+      if (n.k === 'checkin') {
+        n.body = NUDGE_WORDS.heavy;
+        n.pic = 'flame-warm';
+      } else if (n.k === 'morning' || n.k === 'wind') n.quiet = true;
+    }
+  /* after a slip: the first routine reminder of the day says it kindly (over the mood words) */
   const kind = kindWords(days, st, k);
   const first = out.filter((n) => n.k !== 'risk').sort((a, b) => a.at - b.at)[0];
   if (kind && first) {
     first.body = kind;
     first.url = '/';
+    first.pic = 'flame-warm';
     delete first.also;
     delete first.quiet;
   }
@@ -289,19 +356,36 @@ function capped(list: Nudge[]): Nudge[] {
 /** whether any notification is turned on at all */
 export const nudgesOn = (p: NudgePrefs) => p.morning || p.checkin || p.wind || p.review || p.risk;
 
-/** the notifications to schedule now: today and tomorrow, then the come-back notes. now is the time the app is open. */
-export function nudgePlan(days: Days, st: Settings | null, reviews: Reviews, prefs: NudgePrefs, log: NudgeLog, tk: DayKey, now: number): Nudge[] {
-  if (!st || !nudgesOn(prefs)) return [];
-  const backup = ciOnOwn(days, st, prefs, tk);
+/** the come-back notes' pictures: the flame rests with the person, and is still lit on the last one */
+const BACK_PIC: NudgePic[] = ['flame-steady', 'flame-steady', 'flame-ember', 'flame-ember', 'flame-asleep'];
+
+/** the notifications to schedule now: today and tomorrow, then the come-back notes. now is the time the app is open.
+    allowed: whether the phone lets Daybook notify (the come-back notes are for anyone it does, unless turned off). */
+export function nudgePlan(
+  days: Days,
+  st: Settings | null,
+  reviews: Reviews,
+  prefs: NudgePrefs,
+  log: NudgeLog,
+  tk: DayKey,
+  now: number,
+  allowed: boolean,
+): Nudge[] {
+  if (!st) return [];
   const out: Nudge[] = [];
-  for (const k of [tk, addDays(tk, 1)]) out.push(...capped(dayList(days, st, reviews, prefs, log, k, backup).filter((n) => n.at > now)));
-  /* the come-back notes, only for someone who asked for a regular reminder (not just the heads-up before hard hours) */
-  if (prefs.back !== false && (prefs.checkin || prefs.morning || prefs.wind || prefs.review)) {
-    /* at the time of day the app was last open, kept to the daytime */
-    const t = clockOf(Math.min(19 * 60, Math.max(10 * 60, clockAt(now))));
+  if (nudgesOn(prefs)) {
+    const backup = ciOnOwn(days, st, prefs, tk);
+    const heavy = weekFeel(days, tk) === 'heavy';
+    for (const k of [tk, addDays(tk, 1)]) out.push(...capped(dayList(days, st, reviews, prefs, log, k, backup, heavy).filter((n) => n.at > now)));
+  }
+  if (allowed && prefs.back !== false) {
+    /* at the hour the app is usually open; tender words when the person left on a hard day */
+    const t = clockOf(usualHour(log, now) * 60);
+    const tender = slipOn(days, tk) || slipOn(days, addDays(tk, -1)) || weekFeel(days, tk) === 'heavy';
     NUDGE_BACK.forEach((n, i) => {
       const d = addDays(tk, n);
-      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), body: NUDGE_WORDS.back[i], url: '/' });
+      const body = (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
+      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), body, url: '/', pic: BACK_PIC[i] });
     });
   }
   return out.sort((a, b) => a.at - b.at);
@@ -340,7 +424,7 @@ export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, revie
   }
   x.plan = log.plan.filter((n) => n.at > now);
   x.taps = log.taps.filter((id) => x.plan.some((n) => n.id === id) || x.wait.some((n) => n.id === id));
-  x.opens = log.opens.filter((t) => t > now - 3 * 86400000).slice(-40);
+  x.opens = log.opens.filter((t) => t > now - NUDGE_OPENS_DAYS * 86400000).slice(-200);
   return x;
 }
 /** the new plan, remembered in the log. What was due by now stays in it until nudgeLearn judges it. */

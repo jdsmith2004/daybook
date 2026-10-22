@@ -10,7 +10,8 @@ const at = (s: string) => new Date(s).getTime();
 const st = core.normSettings({ ...core.defaultSettings('2026-09-01'), day1: '2026-09-02', screensOff: '22:30' });
 const ci: NudgePrefs = { ...core.NUDGE_DEFAULTS, checkin: true, risk: false };
 const log0 = core.nudgeLogNew();
-const plan = (days: Days, prefs: NudgePrefs, now: number, log: NudgeLog = log0, k = tk) => core.nudgePlan(days, st, {}, prefs, log, k, now);
+const plan = (days: Days, prefs: NudgePrefs, now: number, log: NudgeLog = log0, k = tk, allowed = true) =>
+  core.nudgePlan(days, st, {}, prefs, log, k, now, allowed);
 const routine = (p: core.Nudge[]) => p.filter((n) => n.k !== 'back');
 const checkedIn = (days: Days, k: string, when: string): Days => ({
   ...days,
@@ -26,8 +27,9 @@ const slip = (days: Days, k: string, time: string) => core.addEvent(days, k, 'sl
 
 describe('the plan', () => {
   it('is empty with nothing turned on, or before setup', () => {
-    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00'))).toEqual([]);
-    expect(core.nudgePlan({}, null, {}, ci, log0, tk, at('2026-10-14T09:00'))).toEqual([]);
+    expect(routine(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00')))).toEqual([]);
+    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00'), log0, tk, false)).toEqual([]);
+    expect(core.nudgePlan({}, null, {}, ci, log0, tk, at('2026-10-14T09:00'), true)).toEqual([]);
   });
 
   it('covers today and tomorrow at the set time, and skips what is done or past', () => {
@@ -40,17 +42,54 @@ describe('the plan', () => {
     expect(routine(plan({}, ci, at('2026-10-14T18:30'))).map((n) => n.d)).toEqual(['2026-10-15']);
   });
 
-  it('when the app goes quiet, fades: four come-back notes, then nothing', () => {
+  it('when the app goes quiet, fades: five come-back notes over a month, each with something in it, then nothing', () => {
     const p = plan({}, ci, at('2026-10-14T21:40')).filter((n) => n.k === 'back');
-    expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-18', '2026-10-21', '2026-10-28']);
-    /* at the time of day the app was open, kept to the daytime */
-    expect(new Date(p[0].at).getHours()).toBe(19);
-    expect(new Date(plan({}, ci, at('2026-10-14T13:20'))[2].at).toTimeString().slice(0, 5)).toBe('13:20');
-    expect(p[3].body).toBe('Daybook will stay quiet now. Everything is kept for when you come back.');
+    expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-18', '2026-10-21', '2026-10-28', '2026-11-13']);
+    /* with no opens known, at the hour the app is open now when that is daytime, else 6 PM */
+    expect(new Date(p[0].at).getHours()).toBe(18);
+    expect(new Date(plan({}, ci, at('2026-10-14T13:20')).filter((n) => n.k === 'back')[2].at).toTimeString().slice(0, 5)).toBe('13:00');
+    expect(p.map((n) => n.body)).toEqual(core.NUDGE_WORDS.back);
+    expect(p.map((n) => n.pic)).toEqual(['flame-steady', 'flame-steady', 'flame-ember', 'flame-ember', 'flame-asleep']);
+    expect(p[4].body).toBe('This is the last note for now. Daybook stays quiet until you open it, and everything is kept.');
     expect(plan({}, { ...ci, back: false }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
-    expect(plan({}, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
     /* nothing past the last note */
-    expect(Math.max(...plan({}, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-10-28T10:00'));
+    expect(Math.max(...plan({}, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-11-13T09:00'));
+  });
+
+  it('the come-back notes are for anyone the phone lets Daybook notify, even with only the heads-up on', () => {
+    expect(plan({}, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(5);
+    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(5);
+    expect(plan({}, ci, at('2026-10-14T09:00'), log0, tk, false).some((n) => n.k === 'back')).toBe(false);
+  });
+
+  it('the ladder comes at the hour the app is usually open, from a month of opens', () => {
+    /* most evenings around 8 PM for a month, a few late nights, and lunch the last few days */
+    const opens: number[] = [];
+    for (let i = 1; i <= 27; i++) opens.push(at(core.addDays(tk, -i) + 'T20:10'));
+    for (let i = 1; i <= 27; i += 3) opens.push(at(core.addDays(tk, -i) + 'T23:30'), at(core.addDays(tk, -i) + 'T23:50'), at(core.addDays(tk, -i) + 'T01:15'));
+    for (let i = 1; i <= 3; i++) opens.push(at(core.addDays(tk, -i) + 'T12:05'));
+    opens.push(at('2026-08-01T15:00'), at('2026-08-02T15:00'));
+    const log = { ...log0, opens };
+    expect(core.usualHour(log, at('2026-10-14T09:00'))).toBe(20);
+    const back = plan({}, ci, at('2026-10-14T09:00'), log).filter((n) => n.k === 'back');
+    expect(back.map((n) => new Date(n.at).toTimeString().slice(0, 5))).toEqual(['20:00', '20:00', '20:00', '20:00', '20:00']);
+    /* recent days weigh more: a week of lunchtimes beats three weeks back of evenings */
+    const shift = [...opens.filter((t) => t < at('2026-10-04T00:00')), ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => at(core.addDays(tk, -i) + 'T12:30'))];
+    expect(core.usualHour({ opens: shift }, at('2026-10-14T09:00'))).toBe(12);
+    /* nothing at night: only late-night opens fall back to the hour now, else 6 PM */
+    expect(core.usualHour({ opens: [at('2026-10-13T23:30'), at('2026-10-13T02:00')] }, at('2026-10-14T02:30'))).toBe(18);
+    expect(core.usualHour({ opens: [] }, at('2026-10-14T10:40'))).toBe(10);
+  });
+
+  it('tender words when the person left on a hard day', () => {
+    const words = (d: Days) =>
+      plan(d, ci, at('2026-10-14T22:00'))
+        .filter((n) => n.k === 'back')
+        .map((n) => n.body);
+    expect(words(slip({}, tk, '21:30'))).toEqual(core.NUDGE_WORDS.tender);
+    expect(words(slip({}, core.addDays(tk, -1), '23:30'))).toEqual(core.NUDGE_WORDS.tender);
+    expect(words(slip({}, core.addDays(tk, -3), '21:30'))).toEqual(core.NUDGE_WORDS.back);
+    expect(core.NUDGE_WORDS.tender.join(' ')).not.toMatch(/lesson/i);
   });
 
   it('keeps at most three a day, an hour apart, the heads-up first', () => {
@@ -67,6 +106,43 @@ describe('the plan', () => {
     expect(p[0]).toMatchObject({ k: 'checkin', d: '2026-10-18', also: 'sunday', body: 'Check in, and a few minutes to look back on your week.' });
     const alone = routine(plan({}, { ...ci, checkin: false, review: true }, at('2026-10-18T09:00'), log0, '2026-10-18'));
     expect(alone[0]).toMatchObject({ k: 'sunday', url: '/review', quiet: true, at: at('2026-10-18T17:00') });
+  });
+
+  it('after a heavy few days, the routine notes offer and do not ask; the heads-up stays as it is', () => {
+    let d: Days = {};
+    for (const k of ['2026-10-11', '2026-10-12', '2026-10-13']) {
+      d = checkedIn(d, k, k + 'T21:00');
+      d[k].checkin = { ...d[k].checkin!, m: 2, s: 6 };
+    }
+    for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
+    expect(core.weekFeel(d, tk)).toBe('heavy');
+    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, checkin: true, wind: true, risk: true, checkinAt: '15:00' };
+    const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
+    expect(today.find((n) => n.k === 'checkin')).toMatchObject({ body: 'A short check-in is enough tonight. Nothing to get right.', pic: 'flame-warm' });
+    expect(today.map((n) => n.k)).toEqual(['checkin', 'risk', 'wind']);
+    expect(today.find((n) => n.k === 'wind')!.quiet).toBe(true);
+    expect(today.find((n) => n.k === 'risk')).toMatchObject({ body: core.NUDGE_WORDS.risk, pic: 'flame-bright' });
+    expect(today.find((n) => n.k === 'risk')!.quiet).toBeUndefined();
+    /* high stress alone is heavy too; a steady week is not */
+    const stressed = checkedIn({}, '2026-10-13', '2026-10-13T21:00');
+    stressed['2026-10-13'].checkin = { ...stressed['2026-10-13'].checkin!, m: 7, s: 8 };
+    expect(core.weekFeel(stressed, tk)).toBe('heavy');
+    stressed['2026-10-13'].checkin = { ...stressed['2026-10-13'].checkin!, m: 6, s: 4 };
+    expect(core.weekFeel(stressed, tk)).toBe('steady');
+    expect(core.weekFeel({}, tk)).toBe('steady');
+    /* the cap of three still holds */
+    expect(today.length).toBeLessThanOrEqual(3);
+  });
+
+  it('the kinder words after a slip win over the mood words', () => {
+    let d: Days = {};
+    for (const k of ['2026-10-11', '2026-10-12', '2026-10-13']) {
+      d = checkedIn(d, k, k + 'T21:00');
+      d[k].checkin = { ...d[k].checkin!, m: 1 };
+    }
+    d = slip(d, tk, '21:30');
+    const next = routine(plan(d, ci, at('2026-10-14T22:00')))[0];
+    expect(next).toMatchObject({ d: '2026-10-15', body: 'A new day. Everything you built is still here.', pic: 'flame-warm' });
   });
 
   it('after a slip, sends no more, only kinder words', () => {
@@ -186,6 +262,15 @@ describe('learning from what happened', () => {
     expect(kept.plan.length).toBe(1 + 2 + core.NUDGE_BACK.length);
   });
 
+  it('keeps 28 days of open times, at most 200', () => {
+    const now = at('2026-10-14T09:00');
+    const opens = [at('2026-09-10T12:00'), at('2026-09-20T12:00'), ...Array.from({ length: 250 }, (_, i) => now - i * 3600000).reverse()];
+    const x = core.nudgeLearn({ ...log0, opens }, {}, st, {}, now, true);
+    expect(x.opens.length).toBe(200);
+    expect(x.opens.includes(at('2026-09-20T12:00'))).toBe(false);
+    expect(core.nudgeLearn({ ...log0, opens: [at('2026-09-20T12:00')] }, {}, st, {}, now, true).opens).toEqual([at('2026-09-20T12:00')]);
+  });
+
   it('a stored log is read safely', () => {
     expect(core.normNudgeLog(null)).toMatchObject({ plan: [], wait: [], lv: {}, taps: [], bk: null });
     expect(core.normNudgeLog({ taps: ['a', 3], opens: [1, 'x'] })).toMatchObject({ taps: ['a'], opens: [1] });
@@ -194,6 +279,7 @@ describe('learning from what happened', () => {
 
 it('the words never say what Daybook is for, and use no contractions', () => {
   const all = JSON.stringify({ ...core.NUDGE_WORDS, wind: core.NUDGE_WORDS.wind('10:30 PM') });
+  expect(all).not.toMatch(/miss you/i);
   expect(all).not.toMatch(/porn|slip|clean|urge|addict|relapse|sober|habit|sex|streak|lose|lost your/i);
   expect(all).not.toMatch(/n['’]t|['’](re|ll|ve|d|m)\b|\b(it|that|there|what)['’]s\b/i);
 });

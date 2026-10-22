@@ -38,6 +38,8 @@ function Reminders() {
   const live = useRef(snap);
   live.current = snap;
   const [openAt, setOpenAt] = useState(() => Date.now());
+  /* whether the phone lets Daybook notify: the come-back notes are for anyone it does */
+  const [allowed, setAllowed] = useState(false);
   useEffect(() => {
     if (!ready || !log.ready || !remindersOffered) return;
     const opened = async () => {
@@ -45,6 +47,7 @@ function Reminders() {
       const ok = await remindersAllowed().catch(() => false);
       const s = live.current;
       setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
+      setAllowed(ok);
       setOpenAt(t);
     };
     opened();
@@ -52,8 +55,8 @@ function Reminders() {
     return () => sub.remove();
   }, [ready, log.ready]);
   const plan = useMemo(
-    () => (ready && log.ready ? nudgePlan(snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt) : null),
-    [ready, snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt],
+    () => (ready && log.ready ? nudgePlan(snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed) : null),
+    [ready, snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed],
   );
   const key = plan ? nudgeKey(plan) : null;
   useEffect(() => {

@@ -412,7 +412,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             />
             <OnOff
               name="If you are away for a while"
-              sub="A few short notes that Daybook is still here, over two weeks. Then it stays quiet until you open it."
+              sub="A few short notes that Daybook is still here, over a month. Then it stays quiet until you open it."
               on={rem.back !== false}
               onPick={(on) => setRem({ back: on })}
             />

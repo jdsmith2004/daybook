@@ -41,3 +41,4 @@ export * from './week';
 export * from './away';
 export * from './back';
 export * from './night-win';
+export * from './pulse';

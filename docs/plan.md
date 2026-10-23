@@ -2266,7 +2266,7 @@ before.
 
 5. **Review screenshot and notes.** Each product needs one screenshot of where it is bought in the app (the tip sheet on
    an iPhone, from the new build) and a note for review: "A one-time tip. Daybook is free; a tip makes the person a
-   supporter, which opens sync between devices, deeper stats and extra flame looks. Everything for care stays free."
+   supporter, which opens sync between devices, a safe copy and their whole pattern. Everything for care stays free."
    The first in-app purchases go to review together with an app version, so add all three to the next version's page
    (In-App Purchases and Subscriptions, Select) before submitting it.
 6. **A sandbox tester** (to try it on a phone before review): Users and Access, Sandbox, Testers, +. On the iPhone,
@@ -2352,7 +2352,7 @@ App Store Connect (appstoreconnect.apple.com):
    - Reference name "Amazing tip", Product ID daybook.tip.amazing, price $20.00, display name "Amazing tip",
      description "A $20 tip that makes you a Daybook supporter. Thank you so much."
    For each: availability United States only, Family Sharing off, review notes: "A one-time tip. Daybook is free; a tip
-   makes the person a supporter, which opens sync between devices, deeper stats and extra flame looks. Everything for
+   makes the person a supporter, which opens sync between devices, a safe copy and their whole pattern. Everything for
    care stays free." Leave the review screenshot for me, and tell me which ones still need it.
 3. Open https://developer.apple.com/app-store/small-business-program/ and tell me whether I can enroll yet. Do not
    submit the enrollment; show me the page.

@@ -1,9 +1,10 @@
 /* The frame for a full-screen moment (logging, Rekindle, the sunrise check, SOS): a soft sky, a top bar with Back and Close,
    progress dots, the card, and a quiet link at the bottom, or a sheet along the bottom edge (SOS). Like the legacy "scene".
    A dark sky (night, ember) gives everything inside it the night colors, in either theme. */
+import { emblemLayers } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -220,6 +221,7 @@ export function Finish({
   alive,
   size = 150,
   always,
+  zoom,
 }: {
   level: number;
   title?: string;
@@ -230,6 +232,9 @@ export function Finish({
   size?: number;
   /** the flame and its burst shrink to fit a short phone, never step aside (the end of the setup) */
   always?: boolean;
+  /** the flame drawn this many times bigger, centered on the figure and cut to a round window of `size`, so the figure
+      itself fills most of it (the end of the setup: the flame big, never a small spark in a big sky) */
+  zoom?: number;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -252,6 +257,8 @@ export function Finish({
   }, [reduce, pop, fly]);
   const own = tone ? ({ sky: c.sky, mint: c.mint, accent: c.accent, sun: c.sun, violet: c.violet, coral: c.coral } as Record<string, string>)[tone] : undefined;
   const tints = own ? [own, c.sun, c.sun2, own] : [c.sun, c.sun2, c.coral, c.violet];
+  const at = useMemo(() => (zoom ? (emblemLayers(level, false)?.at ?? { x: 0.5, y: 0.5 }) : null), [zoom, level]);
+  const big = zoom ? size * zoom : size;
   return (
     <View style={s.middle}>
       <FitArt drop={always ? undefined : 0.4} min={always ? 0.5 : undefined}>
@@ -283,7 +290,15 @@ export function Finish({
               opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
               transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
             }}>
-            <Flame level={level} size={size} alive={alive} />
+            {at ? (
+              <View style={[s.window, { width: size, height: size, borderRadius: size / 2, borderColor: tints[0] }]}>
+                <View style={{ position: 'absolute', left: size / 2 - at.x * big, top: size / 2 - at.y * big }}>
+                  <Flame level={level} size={big} alive={alive} />
+                </View>
+              </View>
+            ) : (
+              <Flame level={level} size={size} alive={alive} />
+            )}
           </Animated.View>
         </View>
       </FitArt>
@@ -359,6 +374,7 @@ const s = StyleSheet.create({
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
   center: { textAlign: 'center' },
   finArt: { width: 250, height: 220, alignItems: 'center', justifyContent: 'center' },
+  window: { overflow: 'hidden', borderWidth: 4 },
   /* every burst shape starts at the middle, behind the flame */
   finShape: { position: 'absolute', left: 125 - 17, top: 110 - 17, width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   sheet: {

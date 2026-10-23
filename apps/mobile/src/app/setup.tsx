@@ -1895,7 +1895,7 @@ function Cheer() {
           </View>
         </Appear>
       ) : null}
-      <Finish level={2} alive always size={SHORT ? 130 : 170} tone="sun" />
+      <Finish level={2} alive always size={SHORT ? 150 : 196} zoom={2.6} tone="sun" />
       <Appear delay={500}>
         <LevelBar />
       </Appear>

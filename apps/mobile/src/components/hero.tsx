@@ -3,7 +3,8 @@
    Under the picture, in the same card, the one next step (core pickMoment, moment-card.tsx), so what you do and what it
    grows are one picture (CLAUDE.md, "The flame is the heart of the app"). The flame moves in a way that fits its form and
    the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it and it says
-   hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while the
+   hi; tap the sky for Milestones; the level for how points work; the number for your days. Under the level, a small key in
+   the bar's color says what the bar is: "40 points to Level 20". When points come in while the
    app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
    to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
    In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek), with words that say what it counts
@@ -254,7 +255,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
       ) : null}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points. Tap to see how points work.`}
+        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
         onPress={() => router.push('/points')}
         style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
         {h && h.chip ? (
@@ -268,6 +269,15 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
         <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
           Level {lvl.n} · {lvl.name} ›
         </Text>
+        {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
+        {lvl.next ? (
+          <View style={s.barKey}>
+            <View style={[s.barSw, { backgroundColor: c.sun }]} />
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.barT, { color: soft }]}>
+              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
       {grew ? (
         <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
@@ -336,6 +346,9 @@ const s = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
   chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
   lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },
+  barKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -2 },
+  barSw: { width: 14, height: 4, borderRadius: 2 },
+  barT: { fontFamily: font.bodySemi, fontSize: 12, lineHeight: 15 },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
   grew: {
     position: 'absolute',

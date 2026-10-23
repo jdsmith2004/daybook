@@ -71,10 +71,8 @@ export interface Moment {
 
 export interface MomentPick {
   card: Moment;
-  /** the next moment, waiting behind the card (never the calm day: the card's "then" line names the rest of the day) */
+  /** the next moment, waiting behind the card (never the calm day: Your day names the rest of the day) */
   more: Moment | null;
-  /** "Then: a lesson, the check-in and the wind-down." The day's stops still to come, on a calm day. */
-  then: string;
 }
 
 /** what only this device knows */
@@ -90,11 +88,6 @@ export interface MomentDev {
   /** signed in: lessons after the first three are open (nextUp) */
   account?: boolean;
 }
-
-const STOP_NAME: Record<string, string> = { lesson: 'a lesson', evening: 'the check-in', night: 'the wind-down' };
-const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
-/** "a, b and c" */
-const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);
 
 /** every moment that applies now, in order. The calm day (or done) is always last. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
@@ -256,9 +249,8 @@ export function pickMoment(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const card = all[0];
   const second = all[1];
   const more = second && second.k !== 'calm' && second.k !== 'done' ? second : null;
-  /* the rest of the day is named only where it helps: on a calm day */
-  const then = card.k === 'calm' ? thenLine(days, st, tk, now, true) : '';
-  return { card, more, then };
+  /* no "Then: …" line under the card: Your day already lists the rest (the owner, October 23, 2026) */
+  return { card, more };
 }
 
 /** the morning after a slip, one quiet line low on Today (under Your day), never the card: good to see you, and the way
@@ -268,13 +260,6 @@ export function afterSlipLine(days: Days, tk: DayKey): { b: string; rest: string
   return { b: 'Good to see you.', rest: 'Your stats and your pattern are in Journal.' };
 }
 
-/** "Then: a lesson, the check-in and the wind-down." The stops still to come; on a calm day, after the open one, with when */
-export function thenLine(days: Days, st: Settings, tk: DayKey, now: number, calm: boolean): string {
-  const d = stopTiles(days, st, tk, now);
-  const rest = d.tiles.filter((x) => !x.done && !(calm && x.cur));
-  if (!rest.length) return '';
-  return 'Then: ' + list(rest.map((x) => STOP_NAME[x.k] + (calm && (x.state === 'next' || x.state === 'later') && x.right ? ' ' + low(x.right) : ''))) + '.';
-}
 
 /* ---------- the standing row: one number, one line, and a quieter note ----------
    Today shows the number on the flame's sky (heroNumber), so it uses only the note, under the next step. */

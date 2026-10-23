@@ -1,19 +1,22 @@
 /* The account sheet: create an account or sign in, right inside the app, with no browser page. Email and password, then the
    6-digit code from the email (it goes on by itself once all six digits are in), and the person is signed in. Also: choosing a
-   password for an account made with a temporary one, and "Forgot password". Opened by sync.signInNow, from Settings, the
+   password for an account made with a temporary one, and "Forgot password". Sign in with Apple, where it is offered, is one
+   tap above all that (lib/apple.ts); it opens the same account as the email when that email is confirmed. Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
 import { CognitoError, emailOk, PASSWORD_MIN, passwordOk, SUP_SYNC_WORDS } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { TextInput } from '@/components/text';
 
+import { AppleButton } from '@/components/apple-button';
 import { Field } from '@/components/choices';
 import { Segments } from '@/components/form';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { SyncBody, TrustChoice } from '@/components/sync-card';
 import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
+import { apple, appleOffered, askApple } from '@/lib/apple';
 import { cognito, keepTokens, type Session } from '@/lib/auth';
 import { buzz } from '@/lib/feel';
 import { useSync } from '@/lib/sync';
@@ -38,6 +41,16 @@ export default function Account() {
   const [note, setNote] = useState('');
   const chal = useRef('');
   const session = useRef<Session | null>(null);
+  const [appleOk, setAppleOk] = useState(false);
+  /* signed in with Apple: the email is Apple's, already confirmed */
+  const [viaApple, setViaApple] = useState(false);
+  useEffect(() => {
+    let live = true;
+    appleOffered().then((v) => live && setAppleOk(v));
+    return () => {
+      live = false;
+    };
+  }, []);
   if (sync.status.k === 'off') return <Redirect href="/" />;
 
   const run = async (f: () => Promise<void>) => {
@@ -84,6 +97,18 @@ export default function Account() {
       setStep('code');
     }
   };
+  /* Apple's sheet, then the account it opens (made the first time); closing the sheet changes nothing and says nothing */
+  const withApple = () =>
+    run(async () => {
+      try {
+        const t = await apple.signIn(await askApple());
+        setViaApple(true);
+        await finish(t);
+      } catch (e) {
+        if (e instanceof CognitoError && e.code === 'AppleCancel') return;
+        throw e;
+      }
+    });
   const start = () =>
     run(async () => {
       if (!emailOk(email)) throw new CognitoError('InvalidParameterException', 'Check the email address and try again.');
@@ -154,13 +179,13 @@ export default function Account() {
             <Icon name="check" size={34} color={c.mintText} />
           </View>
           <T v="h2" style={{ textAlign: 'center' }}>
-            {mode === 'new' ? 'Your account is ready.' : 'You are signed in.'}
+            {mode === 'new' && !viaApple ? 'Your account is ready.' : 'You are signed in.'}
           </T>
           <T tone="muted" style={{ textAlign: 'center' }}>
             {sync.status.k === 'busy'
               ? sync.status.what
               : (sync.status.k === 'need' ? 'Every lesson is open. ' + SUP_SYNC_WORDS.need : 'Your log is kept safe, and every lesson is open.') +
-                (mode === 'new' ? ' Confirm your email in Settings any time, so a forgotten password can be reset.' : '')}
+                (mode === 'new' && !viaApple ? ' Confirm your email in Settings any time, so a forgotten password can be reset.' : '')}
           </T>
           {sync.status.k === 'busy' ? <ActivityIndicator color={c.accent} /> : <Button label={p.then ? 'Open the lesson' : 'Done'} onPress={leave} />}
         </View>
@@ -265,6 +290,18 @@ export default function Account() {
   else
     body = (
       <>
+        {appleOk ? (
+          <View style={s.apple}>
+            <AppleButton onPress={withApple} disabled={busy} />
+            <View style={s.or} accessibilityRole="text" accessibilityLabel="Or use your email">
+              <View style={[s.orLine, { backgroundColor: c.line }]} />
+              <T v="small" tone="muted">
+                or use your email
+              </T>
+              <View style={[s.orLine, { backgroundColor: c.line }]} />
+            </View>
+          </View>
+        ) : null}
         <Segments
           label="Create an account or sign in"
           list={[
@@ -388,6 +425,9 @@ function Pw({
 const s = StyleSheet.create({
   code: { fontFamily: font.display, fontSize: 32, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 18, paddingVertical: 14 },
   links: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  apple: { gap: 22, paddingTop: 10, paddingBottom: 8 },
+  or: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth * 2, borderRadius: 1 },
   ok: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   pwHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
 });

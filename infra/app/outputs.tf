@@ -37,3 +37,13 @@ output "web_bucket" {
 output "distribution_id" {
   value = aws_cloudfront_distribution.web.id
 }
+
+/* Sign in with Apple: "on" once it is set up, for the phone build (EXPO_PUBLIC_APPLE); and the web's Services ID, empty
+   until there is one, so the web shows no Apple button */
+output "apple" {
+  value = var.apple_sign_in ? "on" : ""
+}
+
+output "apple_services_id" {
+  value = var.apple_sign_in ? var.apple_services_id : ""
+}

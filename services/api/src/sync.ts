@@ -18,6 +18,11 @@
    POST   /sync/claim        { session } the one open door (no sign-in), for a web tip on a signed-out device: the tip is
                                        checked and marked as used, and { sup } comes back for that device to keep
 
+   Sign in with Apple (apple-sign-in.ts):
+   POST   /sync/apple { token, nonce }   the second open door: Apple's identity token for Cognito tokens { tokens }
+   POST   /sync?apple=link { token, nonce } join Apple to the signed-in account; gives { apple }
+   DELETE /sync?all=1 { apple: { code, client } } closing an Apple account: Apple's fresh code is traded and revoked first
+
    Saving records (POST /sync) needs a supporter, or an account from before tips (grandfathered); otherwise it answers
    402 { need: 'support' } and saves nothing. Everything else stays open to every signed-in person, so nobody is ever cut
    off from their own log: reading it (a new phone, a lapsed supporter getting their log back), bringing back an erased
@@ -29,6 +34,8 @@
 import { normRecord, SUP_SYNC_WORDS, WHY_FUTURE, WHY_LARGE } from '@daybook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
+import type { CheckApple, RevokeApple } from './apple-id';
+import { AppleError, appleLink, appleSignIn, type AppleUsers } from './apple-sign-in';
 import { BadCursor, type Store } from './store';
 import { claimApple, claimStripe, maySync, PayError, resolveSup, type Pay } from './supporter';
 
@@ -48,6 +55,19 @@ export const OVERLAP = 60_000;
 export const MAX_CLAIM = 32_000;
 /** the open door's route, which API Gateway passes with no sign-in */
 export const OPEN_CLAIM = 'POST /sync/claim';
+/** Sign in with Apple's open door */
+export const OPEN_APPLE = 'POST /sync/apple';
+
+/** what Sign in with Apple needs, injected so the tests need no Apple or Cognito; left out, it answers "not set up yet" */
+export interface AppleDeps {
+  users?: AppleUsers;
+  check?: CheckApple;
+  revoke?: RevokeApple;
+  /** the client id Apple gave a code to: the bundle id on iPhone, the Services ID on the web */
+  clientIds?: { ios: string; web: string };
+  /** a line for the function's log (never a token) */
+  log?: (msg: string) => void;
+}
 
 type Res = APIGatewayProxyStructuredResultV2;
 const json = (statusCode: number, body: unknown): Res => ({
@@ -81,8 +101,32 @@ async function paid(f: () => Promise<unknown>): Promise<Res> {
   }
 }
 
-export function makeHandler(store: Store, clock: () => number = Date.now, deleteUser: DeleteUser = async () => undefined, pay: Pay = {}) {
+async function signedIn(f: () => Promise<Record<string, unknown>>): Promise<Res> {
+  try {
+    return json(200, await f());
+  } catch (e) {
+    if (e instanceof AppleError) return json(e.status, { error: e.message, code: e.code });
+    throw e;
+  }
+}
+
+export function makeHandler(
+  store: Store,
+  clock: () => number = Date.now,
+  deleteUser: DeleteUser = async () => undefined,
+  pay: Pay = {},
+  apple: AppleDeps = {},
+) {
+  const appleOff = () => json(503, { error: 'Sign in with Apple is not set up yet.', code: 'AppleOff' });
   return async function handler(event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<Res> {
+    /* Sign in with Apple: Apple's token is the only proof; a sign-in sent along is never read */
+    if (event.routeKey === OPEN_APPLE) {
+      if (!apple.users || !apple.check) return appleOff();
+      const b = claimBody(event);
+      if (!b) return json(400, { error: 'Send { token, nonce }.' });
+      const { users, check } = apple;
+      return signedIn(async () => ({ tokens: await appleSignIn(users, check, b) }));
+    }
     /* the open door: a web tip from a signed-out device. It never reads a sign-in, even if one is sent. */
     if (event.routeKey === OPEN_CLAIM) {
       const b = claimBody(event);
@@ -96,6 +140,14 @@ export function makeHandler(store: Store, clock: () => number = Date.now, delete
     const username = typeof claims?.username === 'string' && claims.username ? claims.username : user;
     const method = event.requestContext.http.method;
     const q = event.queryStringParameters || {};
+
+    if (method === 'POST' && q.apple === 'link') {
+      if (!apple.users || !apple.check) return appleOff();
+      const b = claimBody(event);
+      if (!b) return json(400, { error: 'Send { token, nonce }.' });
+      const { users, check } = apple;
+      return signedIn(async () => ({ apple: await appleLink(users, check, username, b) }));
+    }
 
     if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
 
@@ -187,6 +239,16 @@ export function makeHandler(store: Store, clock: () => number = Date.now, delete
 
     if (method === 'DELETE') {
       const all = q.all === '1';
+      /* closing an account that signs in with Apple: Apple is told to forget Daybook first (Apple's rule). The account is
+         closed either way; a code that does not work only leaves a line in the log. */
+      if (all) {
+        const a = claimBody(event)?.apple as { code?: unknown; client?: unknown } | undefined;
+        if (a && typeof a === 'object' && apple.revoke && apple.clientIds) {
+          const id = a.client === 'web' ? apple.clientIds.web : apple.clientIds.ios;
+          const r = id ? await apple.revoke(a.code, id) : 'no-key';
+          apple.log?.('apple revoke on close: ' + r);
+        }
+      }
       /* closing the account: the tips linked to it are let go first, so nothing is left that points to it */
       if (all) await store.dropClaims(user);
       const n = await store.erase(user, clock(), all);

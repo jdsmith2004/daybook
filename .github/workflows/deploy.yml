@@ -73,6 +73,7 @@ jobs:
             services/api/dist/sync.zip
             services/api/dist/signup.zip
             services/api/dist/pulse.zip
+            services/api/dist/apple-auth.zip
           retention-days: 3
 
   infra:
@@ -89,10 +90,18 @@ jobs:
       TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
       # the one account that may read the opt-in counts and feedback (the Stats page in the app shows it); empty: no one
       TF_VAR_owner_sub: ${{ secrets.DAYBOOK_OWNER_SUB }}
+      # Sign in with Apple (docs/plan.md, "Sign in with Apple"): repository variables, none of them secret. The key itself is
+      # only ever in Parameter Store, put there by the owner
+      TF_VAR_apple_sign_in: ${{ vars.APPLE_SIGN_IN || 'false' }}
+      TF_VAR_apple_services_id: ${{ vars.APPLE_SERVICES_ID }}
+      TF_VAR_apple_team_id: ${{ vars.APPLE_TEAM_ID }}
+      TF_VAR_apple_key_id: ${{ vars.APPLE_KEY_ID }}
       ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
     outputs:
       sync_url: ${{ steps.out.outputs.sync_url }}
       pulse_url: ${{ steps.out.outputs.pulse_url }}
+      apple: ${{ steps.out.outputs.apple }}
+      apple_services_id: ${{ steps.out.outputs.apple_services_id }}
       auth_domain: ${{ steps.out.outputs.auth_domain }}
       client_id: ${{ steps.out.outputs.client_id }}
       web_url: ${{ steps.out.outputs.web_url }}
@@ -130,7 +139,7 @@ jobs:
         name: Outputs
         working-directory: infra/app
         run: |
-          for k in sync_url pulse_url auth_domain client_id web_url web_bucket distribution_id; do
+          for k in sync_url pulse_url auth_domain client_id web_url web_bucket distribution_id apple apple_services_id; do
             echo "$k=$(terraform output -raw $k)" >> "$GITHUB_OUTPUT"
           done
 
@@ -144,6 +153,7 @@ jobs:
       EXPO_PUBLIC_AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       EXPO_PUBLIC_CLIENT_ID: ${{ needs.infra.outputs.client_id }}
       EXPO_PUBLIC_WEB_URL: ${{ needs.infra.outputs.web_url }}
+      EXPO_PUBLIC_APPLE_SERVICES_ID: ${{ needs.infra.outputs.apple_services_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -176,6 +186,7 @@ jobs:
       PULSE_URL: ${{ needs.infra.outputs.pulse_url }}
       AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       CLIENT_ID: ${{ needs.infra.outputs.client_id }}
+      APPLE: ${{ needs.infra.outputs.apple }}
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -212,5 +223,6 @@ jobs:
             echo "EXPO_PUBLIC_PULSE_URL=$PULSE_URL"
             echo "EXPO_PUBLIC_AUTH_DOMAIN=$AUTH_DOMAIN"
             echo "EXPO_PUBLIC_CLIENT_ID=$CLIENT_ID"
+            echo "EXPO_PUBLIC_APPLE=$APPLE"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

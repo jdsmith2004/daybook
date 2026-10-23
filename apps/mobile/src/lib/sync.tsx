@@ -31,7 +31,10 @@ import { AppState } from 'react-native';
 
 import { router } from 'expo-router';
 
-import { accessToken, forgetSession, loadSession, SignInExpired, signOut, type Session } from './auth';
+import { APPLE_WORDS, CognitoError } from '@daybook/core';
+
+import { apple, appleOffered, appleRevoked, askApple } from './apple';
+import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { useStore } from './store';
 import { keptSup, loadKept, setTipHost, syncTips, watchAppleTips } from './tip';
@@ -79,8 +82,13 @@ interface SyncValue {
   signOutNow: (remove: boolean, anyway?: boolean) => Promise<{ waiting: number }>;
   /** erase the log in the account (every device clears it on its next sync). False when the account could not be reached. */
   eraseAccount: () => Promise<boolean>;
-  /** delete the account and everything in it, for good. Gives back what to tell the person. */
+  /** delete the account and everything in it, for good. Gives back what to tell the person. An account that signs in with
+      Apple asks Apple once more first, so Apple forgets Daybook too (Apple's rule). */
   deleteAccount: () => Promise<{ ok: boolean; msg: string }>;
+  /** Apple's id for the person when the account signs in with Apple too, else null */
+  apple: string | null;
+  /** joins Sign in with Apple to the signed-in account (Settings). Gives back what to tell the person ('' when they stopped). */
+  linkApple: () => Promise<{ ok: boolean; msg: string }>;
   /** what the account kept from the last "Delete everything", for a week: how many records, and when; null when unknown */
   erased: { n: number; at: number } | null;
   /** looks again at what the account kept */
@@ -92,6 +100,17 @@ interface SyncValue {
 }
 
 const Ctx = createContext<SyncValue | null>(null);
+
+/** the kept sign-in, unless it came from an Apple ID the person has since stopped using with Daybook (iPhone Settings): that
+    one is signed out, and the log stays on the device */
+async function liveSession(): Promise<Session | null> {
+  const s = await loadSession();
+  if (s?.apple && (await appleRevoked(s.apple))) {
+    await signOut(s);
+    return null;
+  }
+  return s;
+}
 
 /** "One change was", "3 changes were" */
 const changes = (n: number) => (n === 1 ? 'One change was' : n + ' changes were');
@@ -279,7 +298,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     if (!syncOffered || !ready) return;
     let live = true;
     (async () => {
-      const [s, raw] = await Promise.all([loadSession(), AsyncStorage.getItem(KEY)]);
+      const [s, raw] = await Promise.all([liveSession(), AsyncStorage.getItem(KEY)]);
       if (!live) return;
       let k: Kept | null = null;
       try {
@@ -494,7 +513,18 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   }, [callApi, round]);
 
   const deleteAccount = useCallback(async () => {
-    const r = await callApi('DELETE', '?all=1');
+    /* Apple's fresh code goes with the delete, and the server revokes it. Where Apple cannot be asked (Android), the account
+       is still closed; the person can stop Daybook in their Apple ID settings. */
+    let body: unknown;
+    if (sessionRef.current?.apple && (await appleOffered())) {
+      try {
+        const a = await askApple();
+        body = { apple: { code: a.code, client: a.client } };
+      } catch (e) {
+        return { ok: false, msg: e instanceof CognitoError && e.code !== 'AppleCancel' ? e.message : APPLE_WORDS.deleteNeedsApple + ' Nothing was deleted.' };
+      }
+    }
+    const r = await callApi('DELETE', '?all=1', body);
     if (!r) return { ok: false, msg: 'Could not reach your account. Nothing was deleted.' };
     /* the log is gone, the sign-in is not yet: asking again finishes it */
     if (r.status !== 200) return { ok: false, msg: String(r.body.error || 'Could not reach your account. Nothing was deleted.') };
@@ -506,6 +536,21 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     setStatus({ k: 'out' });
     return { ok: true, msg: 'Your account was deleted.' };
   }, [callApi, saveKept]);
+
+  const linkApple = useCallback(async () => {
+    const s = sessionRef.current;
+    if (!s) return { ok: false, msg: 'Sign in first.' };
+    try {
+      const a = await askApple();
+      const sub = await apple.link(await accessToken(s), a);
+      await keepApple(s, sub);
+      setSession({ ...s });
+      return { ok: true, msg: 'Sign in with Apple now opens this account too.' };
+    } catch (e) {
+      if (e instanceof CognitoError) return { ok: false, msg: e.code === 'AppleCancel' ? '' : e.message };
+      return { ok: false, msg: 'Could not reach your account. Try again in a moment.' };
+    }
+  }, []);
 
   /* tips (tip.ts): the signed-in account, the API, and the settings change path. A record is put on the settings only
      when it is better than theirs, so this never loops and never takes a record away. */
@@ -577,12 +622,31 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       signOutNow,
       eraseAccount,
       deleteAccount,
+      apple: session?.apple || null,
+      linkApple,
       erased,
       checkErased,
       restoreErased,
       loaded,
     }),
-    [status, session, kept, waiting, signInNow, startWith, round, choose, signOutNow, eraseAccount, deleteAccount, erased, checkErased, restoreErased, loaded],
+    [
+      status,
+      session,
+      kept,
+      waiting,
+      signInNow,
+      startWith,
+      round,
+      choose,
+      signOutNow,
+      eraseAccount,
+      deleteAccount,
+      linkApple,
+      erased,
+      checkErased,
+      restoreErased,
+      loaded,
+    ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

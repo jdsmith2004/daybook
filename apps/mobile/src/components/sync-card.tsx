@@ -5,12 +5,14 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { AppleButton } from '@/components/apple-button';
 import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
 import { UnlockCard, useLocked } from '@/components/support';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { CognitoError } from '@daybook/core';
+import { appleOffered } from '@/lib/apple';
 import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { useStore } from '@/lib/store';
@@ -168,6 +170,7 @@ export function SyncBody() {
       ) : null}
       <ErasedNote />
       {st.k === 'on' || st.k === 'need' ? <ConfirmEmail /> : null}
+      {st.k === 'on' || st.k === 'need' ? <AddApple /> : null}
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
@@ -234,6 +237,41 @@ export function SyncBody() {
         </View>
       )}
     </>
+  );
+}
+
+/* "Add Sign in with Apple": joins Apple to the account that is signed in, so Apple and the password open the same log. This is
+   the way for a Hide My Email address, or an email that is not confirmed yet (lib/sync.tsx linkApple). Hidden once joined,
+   and where Apple is not offered. */
+function AddApple() {
+  const sync = useSync();
+  const { say } = useStore();
+  const [offered, setOffered] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let live = true;
+    appleOffered().then((v) => live && setOffered(v));
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!offered || sync.apple) return null;
+  return (
+    <View style={{ gap: 6 }}>
+      <T v="small" tone="muted">
+        Sign in with Apple too, and it opens this same account.
+      </T>
+      <AppleButton
+        label="Add Sign in with Apple"
+        disabled={busy}
+        onPress={async () => {
+          setBusy(true);
+          const r = await sync.linkApple();
+          setBusy(false);
+          if (r.msg) say(r.msg);
+        }}
+      />
+    </View>
   );
 }
 

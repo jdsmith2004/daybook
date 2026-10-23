@@ -2,7 +2,7 @@
    file talks to Cognito directly (packages/core/src/cognito.ts), with no browser page. A sign-in gives a refresh token, kept in
    the keychain or keystore (secret.ts), and a short-lived access token, kept only in memory and renewed when it runs out.
    The sync API takes the access token; who the person is comes only from that signed token. */
-import { cognitoClient, CognitoError, regionOfAuthDomain, type Tokens } from '@daybook/core';
+import { appleSubOf, cognitoClient, CognitoError, regionOfAuthDomain, type Tokens } from '@daybook/core';
 
 import { AUTH_DOMAIN, CLIENT_ID } from './config';
 import { clearSecret, readSecret, writeSecret } from './secret';
@@ -13,6 +13,8 @@ export interface Session {
   refresh: string;
   sub: string;
   email: string;
+  /** Apple's id for the person, when the account signs in with Apple too (closing it then asks Apple once more) */
+  apple?: string;
 }
 /** the sign-in ran out or was taken back: the person needs to sign in again (their log is still here) */
 export class SignInExpired extends Error {}
@@ -50,6 +52,8 @@ export async function loadSession(): Promise<Session | null> {
 export async function keepTokens(t: Tokens): Promise<Session> {
   const c = claims(t.id);
   const session: Session = { refresh: t.refresh || '', sub: String(c.sub || ''), email: String(c.email || '') };
+  const a = appleSubOf(c);
+  if (a) session.apple = a;
   if (!session.sub || !session.refresh) throw new CognitoError('Error', 'Signing in did not finish. Try again.');
   await writeSecret(JSON.stringify(session));
   access = { token: t.access, exp: Math.floor(Date.now() / 1000) + t.expiresIn };
@@ -86,6 +90,12 @@ export async function accessToken(s: Session, force = false): Promise<string> {
     renewing = null;
   });
   return renewing;
+}
+
+/** keeps that Apple was joined to the signed-in account (Settings, "Add Sign in with Apple") */
+export async function keepApple(s: Session, apple: string): Promise<void> {
+  s.apple = apple;
+  await writeSecret(JSON.stringify(s));
 }
 
 /** signs this device out: takes back the refresh token and forgets it */

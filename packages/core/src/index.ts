@@ -34,6 +34,7 @@ export * from './like';
 export * from './nudges';
 export * from './notify';
 export * from './cognito';
+export * from './apple-sign-in';
 export * from './rekindle-learn';
 export * from './pattern';
 export * from './sunday';

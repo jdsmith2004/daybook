@@ -15,7 +15,7 @@ export function AppleButton({ onPress, label = 'Continue with Apple', disabled }
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
         buttonStyle={dark ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-        cornerRadius={14}
+        cornerRadius={16}
         style={[s.btn, disabled ? { opacity: 0.5 } : null]}
         onPress={() => !disabled && onPress()}
       />
@@ -33,6 +33,6 @@ export function AppleButton({ onPress, label = 'Continue with Apple', disabled }
 }
 
 const s = StyleSheet.create({
-  btn: { height: 50, width: '100%' },
-  web: { borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  btn: { height: 54, width: '100%' },
+  web: { borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
 });

@@ -2,7 +2,7 @@
    every answer into tokens or a sentence to show. */
 import { describe, expect, it } from 'vitest';
 
-import { appleClient, appleSubOf, CognitoError } from '../src';
+import { appleClient, appleSubOf, APPLE_WORDS, CognitoError } from '../src';
 
 describe('appleSubOf', () => {
   it('reads the Apple ID an account signs in with, and nothing else', () => {
@@ -37,6 +37,13 @@ describe('appleClient', () => {
     expect(e).toBeInstanceOf(CognitoError);
     expect(e.code).toBe('NotConfirmed');
     expect(e.message).toBe('There is already a Daybook account with this email.');
+  });
+
+  it('says Apple is not ready yet when the server has no Apple door (the web page comes back instead)', async () => {
+    const page = appleClient('https://day.example/sync', async () => ({ ok: true, status: 200, text: async () => '<!doctype html><html></html>' }));
+    await expect(page.signIn({ token: 't', nonce: 'n' })).rejects.toMatchObject({ code: 'AppleOff', message: APPLE_WORDS.off });
+    const off = answer(503, { error: 'Sign in with Apple is not set up yet.', code: 'AppleOff' }).c;
+    await expect(off.signIn({ token: 't', nonce: 'n' })).rejects.toMatchObject({ code: 'AppleOff', message: APPLE_WORDS.off });
   });
 
   it('says so when the internet is not there', async () => {

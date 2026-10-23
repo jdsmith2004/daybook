@@ -291,12 +291,16 @@ export default function Account() {
     body = (
       <>
         {appleOk ? (
-          <>
+          <View style={s.apple}>
             <AppleButton onPress={withApple} disabled={busy} />
-            <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-              or with your email
-            </T>
-          </>
+            <View style={s.or} accessibilityRole="text" accessibilityLabel="Or use your email">
+              <View style={[s.orLine, { backgroundColor: c.line }]} />
+              <T v="small" tone="muted">
+                or use your email
+              </T>
+              <View style={[s.orLine, { backgroundColor: c.line }]} />
+            </View>
+          </View>
         ) : null}
         <Segments
           label="Create an account or sign in"
@@ -421,6 +425,9 @@ function Pw({
 const s = StyleSheet.create({
   code: { fontFamily: font.display, fontSize: 32, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 18, paddingVertical: 14 },
   links: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  apple: { gap: 22, paddingTop: 10, paddingBottom: 8 },
+  or: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth * 2, borderRadius: 1 },
   ok: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   pwHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
 });

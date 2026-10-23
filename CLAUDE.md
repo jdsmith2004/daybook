@@ -42,6 +42,10 @@ need, without letting the screen turn into a list of features.
 - **The tip jar stays in the app.** Support (the Support button on Today, the one ask, the row on More) is on the web
   and in the iPhone app, opening the Stripe tip page (which takes Apple Pay). It is never removed or hidden on a platform
   without asking the owner first. A tip never unlocks anything.
+- **Never link to the code.** The owner worked and paid for this codebase and does not want it handed to anyone to copy
+  (the owner, October 23, 2026, and upset that a "See the code" link was put on the website). No page, app screen, store
+  listing or message ever links to the repository, says the code is public, or invites people to read it. Privacy is
+  shown by what the privacy page promises, not by pointing at the code.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.

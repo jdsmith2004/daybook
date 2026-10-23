@@ -3,8 +3,10 @@
    the short one for any other. The full one: breathe the embers back up and see everything kept, say how it feels
    right now, a few short cards on what just happened that fit that feeling (each with a moving picture and its
    source; cards read before are one line), your own record of comebacks, then (when the slip ends a run of 7 days or
-   more) keep the run going or start fresh, then the quest. Care first, the count last: closing before that answer keeps
-   the run for now, and the sunrise check asks it the next morning. Ported from the legacy SCENES.checkin. */
+   more) keep the run going or start fresh, then a minute looking back, then the quest. The short one: its closing
+   screen, then the look-back. Care first, the count last: closing before the run's answer keeps the run. Looking back
+   (what came just before, and one if-then plan) is asked here, with the slip, and never the next morning (the owner,
+   October 23, 2026); it lights the second flame (core srFinish). Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
   addOption,
@@ -30,9 +32,14 @@ import {
   rkComebacks,
   RK_FEELS,
   rkLearn,
+  rkOf,
   rkQuest,
   RK_SRC,
   rkStepFor,
+  srFinish,
+  srPlanInfo,
+  srWhen,
+  lowerFirst,
   type RkFeel,
   UR_STR_NAME,
   urMinText,
@@ -51,6 +58,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Answer } from '@/components/answer';
+import { KeepAbove } from '@/components/keyboard';
 import { Appear } from '@/components/appear';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
@@ -58,7 +66,7 @@ import { KnownLine, Sources } from '@/components/research';
 import { Embers, Flames, Missions, WaitPicker } from '@/components/rekindle';
 import { Comebacks, RkArtView } from '@/components/rk-art';
 import { Dock, SceneFrame } from '@/components/scene';
-import { Button, Chip, Icon, T } from '@/components/ui';
+import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
@@ -68,8 +76,8 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkR' | 'rkl';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkR', 'rkl'];
+type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkR' | 'rkl' | 'lb' | 'lp';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkR', 'rkl', 'lb', 'lp'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
@@ -123,6 +131,12 @@ export default function Log() {
   const [adding, setAdding] = useState(false);
   const [allOpts, setAllOpts] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  /* looking back: reached in this sitting (its dots stay), where it goes when done (the quest, or closed after the short
+     Rekindle), the plan being written, and whether the plan went into My plan */
+  const [look, setLook] = useState(false);
+  const [lookThen, setLookThen] = useState<'done' | 'close'>('done');
+  const [own, setOwn] = useState<string | null>(null);
+  const [toPlan, setToPlan] = useState(false);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   const cards = rkLearn(feels);
@@ -161,7 +175,40 @@ export default function Log() {
     });
     buzz('tap');
     setRkSeen(true);
-    go('done');
+    lookOr('done');
+  };
+
+  /* a minute looking back, once per slip day (core rkOf m3: what came before and the plan, done here or on an older
+     sunrise check), then the quest or the end */
+  const lookOpen = () => {
+    const r = snap.settings ? rkOf(snap.days, date, snap.settings) : null;
+    return outcome === 'slipped' && !!ev && !(r && r.m3);
+  };
+  const lookOr = (then: 'done' | 'close') => {
+    if (!lookOpen()) return then === 'done' ? go('done') : close();
+    setLookThen(then);
+    setLook(true);
+    go('lb');
+  };
+  const lookEnd = () => {
+    if (lookThen === 'done') go('done');
+    else close();
+  };
+  const finishLook = (text: string) => {
+    if (!evId) return lookEnd();
+    let moved = false;
+    update((s0) => {
+      if (!s0.settings) return s0;
+      const f = srFinish(s0.days, s0.settings, date, evId, text, tk);
+      moved = f.toPlan;
+      return { ...s0, days: f.days, settings: f.st };
+    });
+    setToPlan(moved);
+    setOwn(null);
+    count('sunrise');
+    buzz('lit');
+    if (lookThen === 'close') say(text ? (moved ? 'Your plan is saved, in My plan too.' : 'Your plan is saved.') : 'Saved. That counts.');
+    lookEnd();
   };
 
   const go = (next: Step, back = false) => {
@@ -228,7 +275,7 @@ export default function Log() {
     if (!evId) return;
     update((s) => ({ ...s, days: patchEvent(s.days, date, evId, p) }));
   };
-  const nextAfterTrigger = () => go(outcome === 'rode' ? 'did' : 'done');
+  const nextAfterTrigger = () => go(step === 'lb' ? 'lp' : outcome === 'rode' ? 'did' : 'done');
   const saveOwn = (kind: 'trig' | 'did', text: string) => {
     const r = addOption(st, kind, text);
     if (!r.id) {
@@ -299,7 +346,8 @@ export default function Log() {
   ) : null;
 
   /* the progress dots of the full Rekindle: the embers, the feeling, the cards, the record, the run question, the quest */
-  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + (runQ ? 1 : 0) + 2;
+  const lookN = look || (outcome === 'slipped' && step !== 'rkl' && lookOpen()) ? 2 : 0;
+  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + (runQ ? 1 : 0) + lookN + 2;
   const rkDots = (i: number) => ({ n: rkN, i, label: i >= rkN - 1 ? 'All done' : 'Step ' + (i + 1) + ' of ' + rkN });
 
   /* ---------- the steps ---------- */
@@ -554,7 +602,7 @@ export default function Log() {
     const cb = rkComebacks(snap.days, st, date);
     sky = 'sun';
     title = 'Rekindle';
-    dots = rkDots(rkN - (runQ ? 3 : 2));
+    dots = rkDots(rkN - (runQ ? 3 : 2) - lookN);
     body = (
       <>
         <T v="eyebrow" tone="muted">
@@ -579,19 +627,19 @@ export default function Log() {
                 return;
               }
               setRkSeen(true);
-              go('done');
+              lookOr('done');
             }}
           />
         </Dock>
       </>
     );
   } else if (step === 'rkR' && runQ) {
-    /* the run question, at the end: both answers are good ones, each saying plainly what it means. "Decide in the morning"
-       goes on to the quest with the run kept for now, and the sunrise check asks again. */
+    /* the run question, at the end: both answers are good ones, each saying plainly what it means. "Not now" goes on with
+       the run kept, and nothing asks again the next morning. */
     const choice = rkChoice(snap.days, st, tk, runQ);
     sky = 'sun';
     title = 'Rekindle';
-    dots = rkDots(rkN - 2);
+    dots = rkDots(rkN - 2 - lookN);
     body = (
       <>
         <T v="eyebrow" tone="muted">
@@ -630,13 +678,111 @@ export default function Log() {
     footer =
       runQ.keep == null ? (
         <Link
-          label="Decide in the morning"
+          label="Not now, keep it"
           onPress={() => {
             setRkSeen(true);
-            go('done');
+            lookOr('done');
           }}
         />
       ) : null;
+  } else if (step === 'lb' && ev) {
+    /* looking back: what came just before (the slip's trigger). The moment before is where things change. */
+    const L = optList('trig', st.opts, { time: ev.time, sel: ev.trigger, all: allOpts, notSure: true });
+    const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = lookThen === 'done' ? rkDots(rkN - 4) : { n: 2, i: 0, label: 'Step 1 of 2' };
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          Look one step back
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          What came just before the slip?
+        </T>
+        <T tone="muted" style={s.center}>
+          The moment before is the easiest place to change things.
+        </T>
+        {adding ? (
+          <AddOwn kind="trig" onSave={(t) => saveOwn('trig', t)} onCancel={() => setAdding(false)} />
+        ) : (
+          <Dock>
+            <Tiles
+              list={L.list}
+              cur={ev.trigger || null}
+              onPick={(v) => {
+                patch({ trigger: v === 'none' ? null : v });
+                buzz('tap');
+                go('lp');
+              }}
+              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
+            />
+          </Dock>
+        )}
+        {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
+      </>
+    );
+    footer = adding ? null : <Link label="Skip" onPress={() => go('lp')} />;
+  } else if (step === 'lp' && ev) {
+    /* one if-then plan for next time: the person's own plan for this moment first, then a few that fit it */
+    const P = srPlanInfo(ev, st);
+    sky = 'sun';
+    title = 'Rekindle';
+    dots = lookThen === 'done' ? rkDots(rkN - 3) : { n: 2, i: 1, label: 'Step 2 of 2' };
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          Make the plan
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          Next time {srWhen(P.t, st)}…
+        </T>
+        <T style={s.center}>…then I will:</T>
+        {own != null ? (
+          <KeepAbove style={{ width: '100%', gap: 10 }}>
+            <Field
+              label="My own plan"
+              hideLabel
+              multiline
+              autoFocus
+              maxLength={200}
+              value={own}
+              onChangeText={setOwn}
+              placeholder="Like: Leave my phone in the kitchen and read for 10 minutes."
+            />
+            <View style={s.row}>
+              <Button
+                label="Save my plan"
+                onPress={() => {
+                  const t = own.replace(/\s+/g, ' ').trim().slice(0, 200);
+                  if (t) finishLook(t);
+                }}
+              />
+              <Link label="Cancel" onPress={() => setOwn(null)} />
+            </View>
+          </KeepAbove>
+        ) : (
+          <Dock>
+            {P.opts.map((o, j) => {
+              const mine = j === 0 && !!P.mine;
+              return (
+                <BigOption
+                  key={o}
+                  tone={mine ? 'mint' : 'sun'}
+                  icon={mine ? 'star' : 'flag'}
+                  title={o}
+                  tag={mine ? 'Your plan' : undefined}
+                  onPress={() => finishLook(o)}
+                />
+              );
+            })}
+            <AddTile label="Write my own" icon="pencil" block onPress={() => setOwn('')} />
+          </Dock>
+        )}
+      </>
+    );
+    /* skipping the plan still counts when what came before was answered; with neither, nothing is marked */
+    footer = own != null ? null : <Link label="Skip the plan" onPress={() => (ev.trigger ? finishLook('') : lookEnd())} />;
   } else if (step === 'rkl') {
     sky = 'sun';
     title = 'Rekindle';
@@ -661,7 +807,7 @@ export default function Log() {
               Water, step outside, or text someone. One small step keeps one slip from turning into two.
             </T>
           </View>
-          <Button label="Done" onPress={close} />
+          <Button label={lookOpen() ? 'Next' : 'Done'} onPress={() => lookOr('close')} />
           <Link label="Show me the full Rekindle" onPress={() => go('rk0')} />
         </Dock>
       </>
@@ -691,6 +837,21 @@ export default function Log() {
           }}
         />
         <Prize b={q.prize.b} s={q.prize.s} />
+        {ev?.rk && ev.rk.pl ? (
+          <Card style={{ alignSelf: 'stretch' }}>
+            <T v="small" tone="muted">
+              Your plan
+            </T>
+            <T>
+              <T v="label">If</T> {srWhen(ev.trigger, st)}, <T v="label">then</T> {lowerFirst(ev.rk.pl)}
+            </T>
+            {toPlan ? (
+              <T v="small" tone="muted">
+                Saved to your if-then plans in My plan.
+              </T>
+            ) : null}
+          </Card>
+        ) : null}
         {noteAndTime}
         <Dock>
           <Button label={q.done} onPress={close} />

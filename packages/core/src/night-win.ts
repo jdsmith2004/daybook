@@ -1,4 +1,4 @@
-/* The morning after a night SOS that was ridden out. The slip path has its sunrise check; a win at night had nothing, and its
+/* The morning after a night SOS that was ridden out. The slip path has its look-back and Rekindle; a win at night had nothing, and its
    note for next time was asked at the end of the check-in, at 1:30 AM, while the urge was still fresh and the person should be
    going to sleep. So the next time Today opens that day, a one-line card says it ("Last night you rode one out at 1:30 AM."),
    and that is where "What helped?" and the note for next time are asked, once (apps/mobile components/night-win.tsx; the
@@ -56,7 +56,7 @@ const minOf = (t: string | null, roll: number) => {
 };
 
 /** last night's win, for the card on Today on day tk: an SOS ridden out between 10 PM and 5 AM, and no slip in those hours (a slip
-    has the sunrise check). null when there is none. */
+    has its look-back and Rekindle). null when there is none. */
 export function nightWin(days: Days, st: Settings, tk: DayKey): NightWin | null {
   const roll = st.rollover ?? 4;
   const night: (DayEvent & { key: DayKey })[] = [];

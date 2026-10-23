@@ -1,6 +1,7 @@
 /* Breathe first, decide later: the run question comes at the end of the slip's Rekindle, and when it is closed before an answer
-   the run is kept for now and the sunrise check asks the next morning. The four ways it can go: answered keep, answered fresh,
-   closed and then answered at sunrise, closed and never answered. Nothing new is stored: no answer is the absent `keep`. */
+   the run is kept, and nothing asks again the next morning (the owner, October 23, 2026). The four ways it can go: answered
+   keep, answered fresh, closed and then answered later, closed and never answered. Nothing new is stored: no answer is the
+   absent `keep`. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { DayEvent, Days, Settings } from '../src/types';
@@ -16,7 +17,6 @@ function slip(o: { keep?: boolean; done?: boolean } = {}): Days {
   if (o.done) ev.rk = { at: K1, pl: '' };
   return { [K]: { ...core.normDay({ events: [ev], checkin: o.done ? { so: 'Y' } : null }, K), u: 1 } };
 }
-const sunSteps = (days: Days, tk = K1) => core.srSteps(days, core.rkActive(days, st, tk)!, tk, st);
 
 describe('the question waits for the end of Rekindle', () => {
   it('is open and unanswered right after the slip, and the run is kept for now', () => {
@@ -36,11 +36,10 @@ describe('the question waits for the end of Rekindle', () => {
 });
 
 describe('answered at the end of Rekindle', () => {
-  it('keep: nothing more to ask, the sunrise check skips the question, and the quest saves the run', () => {
+  it('keep: nothing more to ask, and the quest saves the run', () => {
     const days = core.rkKeep(slip(), st, K, K, 's1', true, 10)!;
     expect(days[K].events[0].keep).toBe(true);
     expect(core.rkAskOpen(days, st, K, K)).toBeNull();
-    expect(sunSteps(days)).toEqual(['hi', 'so', 'before', 'plan']);
     const done = {
       [K]: { ...days[K], events: [{ ...days[K].events[0], recovered: true, rk: { at: K1, pl: '' } }], checkin: { ...days[K].checkin!, so: 'Y' as const } },
     };
@@ -50,25 +49,20 @@ describe('answered at the end of Rekindle', () => {
   it('start fresh: nothing more to ask, the run ends at the slip, and the longest run stays', () => {
     const days = core.rkKeep(slip(), st, K, K, 's1', false, 10)!;
     expect(core.rkAskOpen(days, st, K, K)).toBeNull();
-    expect(sunSteps(days)).toEqual(['hi', 'so', 'before', 'plan']);
     expect(L(days, K1)).toMatchObject({ cur: 1, longest: 7, open: null });
   });
 });
 
 describe('closed before an answer', () => {
-  it('Today says kept for now, and the sunrise check asks the next morning', () => {
+  it('the run is kept, and the next morning asks nothing about it', () => {
     const days = slip();
-    expect(core.rkKeptForNow({ k: K, run: 7 }, K)).toEqual({
-      b: 'Your 7-day run is kept for now.',
-      rest: 'In the morning, your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.',
-    });
-    expect(core.rkKeptForNow({ k: K, run: 7 }, K1).rest).toBe('Your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.');
-    expect(sunSteps(days)).toEqual(['hi', 'run', 'so', 'before', 'plan']);
-    /* without the settings, the steps read as before (the golden fixtures) */
-    expect(core.srSteps(days, core.rkActive(days, st, K1)!, K1)).toEqual(['hi', 'so', 'before', 'plan']);
+    expect(L(days, K1).open).toEqual(L(slip({ keep: true }), K1).open);
+    const all = core.moments(days, st, {}, K1, new Date(2026, 10, 9, 8).getTime()).map((m) => m.k as string);
+    expect(all).not.toContain('morning-after');
+    expect(all).not.toContain('slip-day');
   });
 
-  it('then answered at sunrise: keep holds the wait, start fresh counts from the day after the slip', () => {
+  it('then answered later: keep holds the wait, start fresh counts from the day after the slip', () => {
     const kept = core.rkKeep(slip(), st, K1, K, 's1', true, 20)!;
     expect(kept[K].events[0].keep).toBe(true);
     expect(L(kept, K1).open).toEqual({ k: K, run: 7, deep: false });

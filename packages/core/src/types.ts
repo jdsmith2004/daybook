@@ -10,9 +10,9 @@ export type Clock = string; // 'HH:MM', 24-hour
 export type Outcome = 'rode' | 'slipped';
 
 export interface Rekindle {
-  /** the day the sunrise check was done, the morning after the slip */
+  /** the day the look-back was done (right after the slip; before October 23, 2026, the sunrise check the next morning) */
   at?: DayKey;
-  /** the if-then plan made at the sunrise check */
+  /** the if-then plan made when looking back */
   pl?: string;
   /** the deeper mission for a run of 14 days or more: traced it back, or told a person */
   dp?: 'trace' | 'tell';

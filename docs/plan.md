@@ -2464,3 +2464,24 @@ signed-in app may change on its own account to the email, whether Apple is on or
 2. **Low.** The web, once the Services ID is set: the button on the account sheet, in Chrome and in Safari.
 3. **Later, if wanted.** Apple's server-to-server notices (a person stops using Apple with Daybook, or deletes their
    Apple ID) could sign out every device at once; today each iPhone notices when it opens.
+
+## Today after a slip, and the lessons ring (October 23, 2026)
+
+The owner logs a slip most days, so every next morning Today opened on the sunrise check, asking about last night's slip
+again ("Last night, did screens go off around 11 PM?", which he had already answered). His decisions:
+
+- **No questions about a slip the next day.** The morning-after card and the sunrise check are gone (core `moment.ts`,
+  `app/sunrise.tsx` removed). The morning after a slip is the regular Today.
+- **The reflection happens when the slip is logged.** Its two questions that lived only in the sunrise check, "What came
+  just before the slip?" and "Next time…, then I will…", now come after the Rekindle care in the slip flow
+  (`app/log.tsx`, steps `lb` and `lp`), each with Skip. Finishing it is the second flame ("You looked back and made a
+  plan"), stored where the sunrise check was (`rk.at`, now the slip's own day) with the same 15 points, so runs are
+  saved and points earned exactly as before. The run question is asked once, at the end of the full Rekindle; closing
+  without an answer keeps the run and nothing asks again.
+- **The screens-off question is removed everywhere**: from the sunrise check, and from a past day's page. "Phone away"
+  at night still counts by itself.
+- **One warm line, not central**: the morning after a slip, under Your day, "Good to see you. Your stats and your
+  pattern are in Journal." (core `afterSlipLine`), opening Journal, Pattern.
+- **The lessons ring stays on the flame, and says what it is.** "1 of 7 days, LESSONS THIS WEEK" instead of a bare
+  number; a tap opens a sheet that says how it fills (`app/lessons-week.tsx`); the first time a lesson lights a day,
+  the lesson's last card says so once.

@@ -11,7 +11,7 @@
    - Do people stay: one "active" count for each day the app was opened, in a band of days since it was first opened.
    - Where setup loses people: the furthest setup page reached, and setup finished (kept from the first page and sent
      once the person says yes, so someone who closed setup and came back later still counts).
-   - Which features are used: SOS, each tool, Talk it through, lessons, the check-in, the sunrise check, the Rekindle
+   - Which features are used: SOS, each tool, Talk it through, lessons, the check-in, the look-back after a slip, the Rekindle
      steps. (The morning questions had a count until they were retired on October 23, 2026.)
    - Do people come back after a slip: the next time the app is opened on a later day, how soon, as a band.
 
@@ -58,7 +58,7 @@ export function pulseMeaning(k: string): string {
     talk_done: 'Finished Talk it through',
     lesson_done: 'Finished a lesson',
     checkin: 'Saved a check-in',
-    sunrise: 'Finished the sunrise check',
+    sunrise: 'Looked back after a slip',
     rk_small: 'Did a Rekindle small thing',
     rk_phone: 'Put the phone away for a Rekindle night',
     urge_logged: 'Logged an urge',

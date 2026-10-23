@@ -1,4 +1,4 @@
-/* The evening check-in: a one-minute full-screen moment, one question at a time, like the sunrise check. Four honest 0 to 10
+/* The evening check-in: a one-minute full-screen moment, one question at a time, like the look-back after a slip. Four honest 0 to 10
    numbers on a slider, low on the screen where the thumb is, how you slept last night (optional, in hours, kept where the
    retired morning questions kept it: checkin.h, which the Sunday sleep goal and the week read), whether you reached out,
    one optional line, then the day as it is saved and what comes next.

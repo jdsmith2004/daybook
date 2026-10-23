@@ -6,8 +6,10 @@
    hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while the
    app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
    to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
-   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek). It only fills, and a slip never
-   touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen feeding the flame. */
+   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek), with words that say what it counts
+   ("1 of 7 days, lessons this week"); a tap opens the sheet that says how it fills (app/lessons-week.tsx). It only fills,
+   and a slip never touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen
+   feeding the flame. */
 import { CHEERS, emblemScene, heroNumber, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -202,10 +204,10 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Opens Learn.`}
+        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Tap to see how it fills.`}
         onPress={() => {
           buzz('tap');
-          router.navigate('/learn');
+          router.push('/lessons-week');
         }}
         style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
         <Animated.View style={{ transform: [{ scale: ringPop }] }}>
@@ -214,11 +216,13 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
             lit={c.sun}
             dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
             now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
-            ink={ink}
           />
         </Animated.View>
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
+          {shown.n} of 7 days
+        </Text>
         <Text maxFontSizeMultiplier={ON_ART} style={[s.ringT, { color: soft }]}>
-          LESSON DAYS
+          {'LESSONS\nTHIS WEEK'}
         </Text>
       </Pressable>
       <View style={s.flame} pointerEvents="box-none">
@@ -292,7 +296,7 @@ function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
   return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 /** the week's days, n of them lit (the first n lit days; a newer one waits for the bloom) */
-function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string; dim: string; now: string; ink: string }) {
+function WeekRing({ week, lit, dim, now }: { week: LessonWeek; lit: string; dim: string; now: string }) {
   const r = (RING - RING_W) / 2;
   const step = 360 / 7;
   let left = week.n;
@@ -313,9 +317,6 @@ function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string;
           );
         })}
       </Svg>
-      <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
-        {week.n}
-      </Text>
     </View>
   );
 }
@@ -348,7 +349,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
   },
   under: { padding: 14 },
-  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'center', gap: 3 },
-  ringN: { fontFamily: font.display, fontSize: 16, lineHeight: 19 },
-  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, letterSpacing: 1 },
+  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'flex-start', gap: 3 },
+  ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16, marginTop: 2 },
+  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, lineHeight: 12, letterSpacing: 1 },
 });

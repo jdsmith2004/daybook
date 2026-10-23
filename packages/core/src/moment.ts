@@ -3,15 +3,18 @@
 
     1. a pause in progress (the slim banner)
     2. in the hard hours now: SOS forward, and talk it through
-    3. the morning after a slip, until the sunrise check is done
-    4. the day of a slip, after it: one small thing
-    5. a talk-through due: decide now, it passed, look back
-    6. hard hours in the next two hours: the plan
-    7. days away not known: fill them in
-    8. the Sunday review, Sunday and Monday
-    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, the comeback
+    3. the day of a slip, after it: one small thing
+    4. a talk-through due: decide now, it passed, look back
+    5. hard hours in the next two hours: the plan
+    6. days away not known: fill them in
+    7. the Sunday review, Sunday and Monday
+    8. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, the comeback
        noticed (all three flames lit), a paused reminder, the first pattern
-   10. a calm day: the day's next stop; everything done: "All done. Rest well."
+    9. a calm day: the day's next stop; everything done: "All done. Rest well."
+
+   The morning after a slip is a regular day (the owner, October 23, 2026): nothing asks about the slip then. Its questions
+   (what came just before, the plan for next time) are asked when it is logged (app/log.tsx), and Today only adds one quiet
+   line under Your day inviting a look at the pattern (afterSlipLine).
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
@@ -21,7 +24,7 @@ import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
-import { comebackNow, rkComebackSay, rkEnded, rkOpen, safeName, sunriseDue, tellStartDue } from './rekindle';
+import { comebackNow, rkComebackSay, rkEnded, safeName, tellStartDue } from './rekindle';
 import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
@@ -32,7 +35,6 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 export type MomentKind =
   | 'pause'
   | 'hard-now'
-  | 'morning-after'
   | 'slip-day'
   | 'talk'
   | 'comeback'
@@ -50,7 +52,7 @@ export type MomentKind =
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'sunrise' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern';
+export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern';
 
 export interface Moment {
   k: MomentKind;
@@ -71,7 +73,7 @@ export interface MomentPick {
   card: Moment;
   /** the next moment, waiting behind the card (never the calm day: the card's "then" line names the rest of the day) */
   more: Moment | null;
-  /** "Then: a lesson, the check-in and the wind-down." The day's stops still to come, on a calm day and the morning after. */
+  /** "Then: a lesson, the check-in and the wind-down." The day's stops still to come, on a calm day. */
   then: string;
 }
 
@@ -103,7 +105,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   /* 1. a pause in progress */
   if (dev.pause) m('pause', 'A pause', 'Your pause', 'One tap back to it.', 'Resume', 'pause', 'your pause');
 
-  /* 2 and 6. the hard hours (risk.ts), now or in the next two hours */
+  /* 2 and 5. the hard hours (risk.ts), now or in the next two hours */
   const risk = riskDay(days, st, tk, now);
   const hard = risk && (risk.phase === 'during' || risk.phase === 'soon') ? risk : null;
   const hardEb = hard ? 'Your hard hours · ' + hard.win.label : '';
@@ -120,21 +122,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           'your hard hours',
         );
 
-  /* 3 and 4. after a slip: the sunrise check for every slip, in every mode (rekindle.ts sunriseDue) */
-  const sun = sunriseDue(days, st, tk);
-  if (sun) {
-    const op = rkOpen(days, st, tk, sun.k).op;
-    const kept = op ? 'Your ' + op.run + (op.run === 1 ? ' day is' : ' days are') + ' kept. ' : 'What you built stays yours. ';
-    m(
-      'morning-after',
-      sun.first ? 'The morning after' : 'Your sunrise check',
-      sun.first ? 'You came back. That is the skill.' : 'Your sunrise check is ready.',
-      (sun.first ? 'Last night is in the log, honestly. ' : '') + kept + 'Two minutes, then the day goes on as usual.',
-      'Start my sunrise check',
-      'sunrise',
-      'your sunrise check',
-    );
-  }
+  /* 3. the day of a slip, after it */
   const today = days[tk];
   if (sumDay(today).slipped && (today?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered))
     m(
@@ -147,7 +135,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       'one small thing',
     );
 
-  /* 5. a talk-through due; and a comeback that still has steps */
+  /* 4. a talk-through due; and a comeback that still has steps */
   const t = talkDueNow(days, st, tk, now);
   if (t && (t.due === 'decide' || t.due === 'passed' || t.due === 'look')) {
     const w =
@@ -171,7 +159,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           'a plan for your hard hours',
         );
 
-  /* 7. days away not known */
+  /* 6. days away not known */
   if (dev.back)
     m(
       'away',
@@ -183,7 +171,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       'the days away',
     );
 
-  /* 8. the Sunday review */
+  /* 7. the Sunday review */
   const sd = sunDue(reviews, st, tk);
   if (sd)
     m(
@@ -197,7 +185,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       sd.sun,
     );
 
-  /* 9. one-time moments */
+  /* 8. one-time moments */
   if (firstWeekDue(st, tk))
     m('first-week', 'One week', 'Your first week is done', 'A one-minute look back at what you did with it.', 'See my first week', 'week', 'your first week');
   if (tellStartDue(st, tk))
@@ -231,7 +219,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   if (pat && (!dev.patternDay || dev.patternDay === tk))
     m('first-pattern', 'Your pattern', 'A first pattern', pat, 'See my pattern', 'pattern', 'your first pattern');
 
-  /* 10. a calm day */
+  /* 9. a calm day */
   const d = stopTiles(days, st, tk, now);
   const cur = d.tiles.find((x) => x.cur);
   if (cur) {
@@ -268,9 +256,16 @@ export function pickMoment(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const card = all[0];
   const second = all[1];
   const more = second && second.k !== 'calm' && second.k !== 'done' ? second : null;
-  /* the rest of the day is named only where it helps: on a calm day, and the morning after ("then the day goes on as usual") */
-  const then = card.k === 'calm' || card.k === 'morning-after' ? thenLine(days, st, tk, now, card.k === 'calm') : '';
+  /* the rest of the day is named only where it helps: on a calm day */
+  const then = card.k === 'calm' ? thenLine(days, st, tk, now, true) : '';
   return { card, more, then };
+}
+
+/** the morning after a slip, one quiet line low on Today (under Your day), never the card: good to see you, and the way
+    to the pattern. Only the day after a slip day, and not once today has a slip of its own (that has its own card). */
+export function afterSlipLine(days: Days, tk: DayKey): { b: string; rest: string } | null {
+  if (!sumDay(days[addDays(tk, -1)]).slipped || sumDay(days[tk]).slipped) return null;
+  return { b: 'Good to see you.', rest: 'Your stats and your pattern are in Journal.' };
 }
 
 /** "Then: a lesson, the check-in and the wind-down." The stops still to come; on a calm day, after the open one, with when */

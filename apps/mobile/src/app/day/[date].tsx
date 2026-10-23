@@ -1,16 +1,16 @@
 /* One day (core: calendar.ts, daySummary), opened from the month calendar, the Journal list or Today's week dots. It shows the
    day first, at a glance: how it went, what happened (each entry with its time, what set it off, what helped, what SOS
    kept and any note), the check-in as small bars, and the rest of the day (tools, lessons, a talk-through, phone away).
-   Editing is one tap away: an entry opens its own sheet, and Edit opens the check-in and that night's screens-off and
+   Editing is one tap away: an entry opens its own sheet, and Edit opens the check-in and that night's
    sleep. ‹ and › step to the day before and after. Ported from the legacy sheetDay, and made to be read. */
-import { calNeighbors, daySummary, fmtClock, fmtDate, isKey, phaseLabel, setScreensOff, stepSleep, type CalKind } from '@daybook/core';
+import { calNeighbors, daySummary, fmtClock, fmtDate, isKey, phaseLabel, stepSleep, type CalKind } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { CheckinBlock } from '@/components/checkin';
-import { Stepper, YesNo } from '@/components/form';
+import { Stepper } from '@/components/form';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Dock } from '@/components/scene';
 import { Button, Card, Icon, T } from '@/components/ui';
@@ -138,14 +138,8 @@ export default function DaySheet() {
           <SheetH title="Night and sleep" />
           <Card>
             <View style={{ gap: 6 }}>
-              <YesNo
-                label={(x.po ? 'Phone away at ' + fmtClock(x.po) + '. ' : '') + 'Screens off around ' + fmtClock(st.screensOff) + ' that night?'}
-                value={ci ? ci.so : null}
-                onPick={(v) => {
-                  update((s0) => ({ ...s0, days: setScreensOff(s0.days, date, v) }));
-                  buzz('tap');
-                }}
-              />
+              {/* no "screens off that night?" question (the owner, October 23, 2026): Good night's "Phone away" says it */}
+              {x.po ? <T tone="muted">{'Phone away at ' + fmtClock(x.po) + '.'}</T> : null}
               <Stepper
                 label="Sleep the night before"
                 text={ci && ci.h != null ? ci.h.toFixed(1) + ' h' : '–'}

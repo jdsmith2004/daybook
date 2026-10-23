@@ -14,6 +14,7 @@ import {
   lcheckWritten,
   type Lesson,
   lessonById,
+  lessonDoneOn,
   lessonFamily,
   lessonHasQuick,
   lessonLog,
@@ -45,7 +46,7 @@ import {
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
@@ -65,6 +66,7 @@ import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
+import { useSos } from '@/lib/sos';
 import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
@@ -113,6 +115,15 @@ export default function LessonScreen() {
   const fit = useFitRoom();
   /* a new card starts at its top, set as it comes in (it is still clear then): the old card never jumps before it goes */
   useLayoutEffect(() => scroll.current?.scrollTo({ y: 0, animated: false }), [stage, i]);
+  /* the first time a lesson lights a day on the ring on Today (core lessonWeek), the last card says what the ring is. Once
+     per phone (kept with SOS's memory); fixed when the lesson opens, so the line stays while this lesson is on screen. */
+  const sos = useSos();
+  const [ringNote] = useState(() => !sos.mem.ringNote);
+  const ringLit = ringNote && stage === 'practiced' && lessonDoneOn(snap.days[tk]?.p);
+  useEffect(() => {
+    if (ringLit) sos.setMem((m) => ({ ...m, ringNote: tk }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ringLit]);
 
   if (!st) return <Redirect href="/" />;
   if (!L)
@@ -559,6 +570,11 @@ export default function LessonScreen() {
           {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
         <T style={s.p}>{prac ? 'That is the lesson and the practice. Pick what comes next.' : 'The practice stays in Learn whenever you want it.'}</T>
+        {ringLit ? (
+          <T style={s.p} tone="sunText">
+            That lit today on your lessons ring, on the flame in Today. One part for each day you do a lesson this week.
+          </T>
+        ) : null}
         <View style={{ gap: 10 }}>
           {due && pair ? (
             <Route

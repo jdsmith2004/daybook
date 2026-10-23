@@ -795,7 +795,7 @@ function dayPoints(days,key,st){
  add('reread','Read again',Math.min(p&&p.lv?p.lv.length:0,2)*5);
  /* Rekindle, on the day of the slip: the sunrise check the next morning, and a bonus when all three missions are done */
  const rk=rkOf(days,key,st);
- if(rk&&rk.m3){add('sunrise','Sunrise check',15);if(rk.n===3)add('rekindle','Rekindled',20)}
+ if(rk&&rk.m3){add('sunrise','Looked back',15);if(rk.n===3)add('rekindle','Rekindled',20)}
  return {total:parts.reduce((a,b)=>a+b.pts,0),parts};
 }
 /* ===== REKINDLE: the quest after a slip, worked out from the log like everything else.
@@ -2818,7 +2818,7 @@ const ICO={
 /* ------------------------------------------------------------------------------------------------
    picked: the data and pure helpers behind SOS, the tools, the day and the lessons
    ------------------------------------------------------------------------------------------------ */
-const WIN_WHY={wait:'Waited first',sunrise:'Sunrise check',rekindle:'Rekindled',log:'Logged honestly',ride:'Rode it out',pause:'Paused first',bounce:'Bounced back',checkin:'Check-in done',reach:'Reached out',lights:'Screens off on time',wind:'Wind-down done',morning:'Morning questions done',calm:'Calm move',lesson:'Lesson done',reread:'Read it again',phone:'Phone put away'};
+const WIN_WHY={wait:'Waited first',sunrise:'Looked back',rekindle:'Rekindled',log:'Logged honestly',ride:'Rode it out',pause:'Paused first',bounce:'Bounced back',checkin:'Check-in done',reach:'Reached out',lights:'Screens off on time',wind:'Wind-down done',morning:'Morning questions done',calm:'Calm move',lesson:'Lesson done',reread:'Read it again',phone:'Phone put away'};
 function rangeLabel(lo,hi){
  const a=fmtDate(lo,{month:'short',day:'numeric'});
  return a+' to '+(lo.slice(0,7)===hi.slice(0,7)?fmtDate(hi,{day:'numeric'}):fmtDate(hi,{month:'short',day:'numeric'}));

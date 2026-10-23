@@ -1,5 +1,7 @@
 /* Rekindle, checked against the legacy app: which Rekindle a slip gets, the card on Today, the short and full screens' words,
-   and the sunrise plans. The legacy screens are HTML, so the port's words are looked for in their text. */
+   and the sunrise plans. The legacy screens are HTML, so the port's words are looked for in their text. Where the owner
+   changed the words on purpose, the legacy text is not asked for: the sunrise check became a look-back right after the
+   slip (October 23, 2026), so the third mission (m3) and the card for the morning after are worded anew (LOOK). */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +19,9 @@ const logs: any[] = readdirSync(dir)
   .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')));
 
 afterEach(() => vi.useRealTimers());
+
+/** the words that changed when the sunrise check became the look-back: not in the legacy screens */
+const LOOK = (m: { key: string }) => m.key === 'm3';
 
 describe('the Rekindle words match the legacy app', () => {
   const w = JSON.parse(readFileSync(join(dir, 'rekindle-words.json'), 'utf8'));
@@ -68,10 +73,12 @@ describe.each(logs)('$name', (fx) => {
       if (!act) return;
       const html = R.card.text;
       const c = core.rkCard(days, st, tk, act, new Date(now).getHours());
-      expect(html).toContain(c.h);
-      expect(html).toContain(c.p);
+      if (c.kind !== 'sun') {
+        expect(html).toContain(c.h);
+        expect(html).toContain(c.p);
+      }
       if (c.why) expect(html).toContain(c.why);
-      for (const m of c.missions) {
+      for (const m of c.missions.filter((x) => !LOOK(x))) {
         expect(html).toContain(m.title);
         expect(html).toContain(m.sub);
         for (const a of m.actions) expect(html).toContain(a.label);
@@ -93,12 +100,13 @@ describe.each(logs)('$name', (fx) => {
         const q = core.rkQuest(days, st, tk, k, ev, hour);
         const qh = R.quest[k].text;
         expect(qh).toContain(q.h);
-        expect(qh).toContain(q.p);
         expect(qh).toContain(q.prize.b);
         expect(qh).toContain(q.prize.s);
         expect(qh).toContain(q.done);
         expect(qh.includes('Did you wait first?')).toBe(q.askWait);
-        for (const m of q.missions) {
+        if (core.rkBack(k)) expect(q.p).toContain('a minute looking back');
+        else expect(qh).toContain(q.p);
+        for (const m of q.missions.filter((x) => !LOOK(x))) {
           expect(qh).toContain(m.title);
           expect(qh).toContain(m.sub);
         }
@@ -116,7 +124,7 @@ describe.each(logs)('$name', (fx) => {
   });
 });
 
-describe('the sunrise check', () => {
+describe('looking back after a slip (once the sunrise check)', () => {
   const T = '2026-10-15';
   const setup = (plan?: Settings['plan']) => {
     const st = core.normSettings({ start: '2026-09-20', day1: '2026-09-27', ...(plan ? { plan } : {}) });
@@ -150,12 +158,14 @@ describe('the sunrise check', () => {
     expect(core.rkOf(r.days, '2026-10-14', st)?.m3).toBe(true);
   });
 
-  it('asks about last night only when it is not answered and the phone was not put away', () => {
+  it('done right after the slip, the same night: the second flame lights and the 15 points are there', () => {
     const { st, days } = setup();
-    const r = core.rkOf(days, '2026-10-14', st)!;
-    expect(core.srSteps(days, r)).toEqual(['hi', 'so', 'before', 'plan']);
-    days['2026-10-14'] = { ...days['2026-10-14'], checkin: core.normCheckin({ so: 'N' }) };
-    expect(core.srSteps(days, core.rkOf(days, '2026-10-14', st)!)).toEqual(['hi', 'before', 'plan']);
+    const K = '2026-10-14';
+    expect(core.rkOf(days, K, st)?.m3).toBe(false);
+    const f = core.srFinish(days, st, K, 'a', 'Charge my phone outside the bedroom', K);
+    expect(f.days[K].events[0].rk).toMatchObject({ at: K, pl: 'Charge my phone outside the bedroom' });
+    expect(core.rkOf(f.days, K, st)?.m3).toBe(true);
+    expect(core.dayPoints(f.days, K, st).parts.some((p: { k: string; pts: number }) => p.k === 'sunrise' && p.pts === 15)).toBe(true);
   });
 
   it('going deeper marks the fourth mission, with the trace-back answers', () => {

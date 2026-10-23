@@ -164,21 +164,12 @@ export function rkAskNow(days: Days, st: Settings | null, tk: DayKey): RkAsk | n
   return null;
 }
 /** the run question, still to answer. Care comes first (the owner, October 21): the slip's Rekindle asks it at its end, after
-    the embers, the feeling and the record, and when it is closed before an answer, the sunrise check asks it the next morning.
-    No answer is "kept for now": the run waits for the quest exactly as a kept run does (runLedger), so closing loses nothing,
+    the embers, the feeling and the record. Closed before an answer, nothing asks again (no questions the next morning: the
+    owner, October 23, 2026). No answer is "kept for now": the run waits for the quest exactly as a kept run does (runLedger), so closing loses nothing,
     and nothing extra is stored. null when there is nothing to ask (answered, a short run, the window closed, the run saved). */
 export function rkAskOpen(days: Days, st: Settings | null, tk: DayKey, k: DayKey): RkAsk | null {
   const a = rkAsk(days, st, tk, k);
   return a && a.open && a.keep == null ? a : null;
-}
-/** Today's card while the question waits for the sunrise check: kept for now, and when it is asked, instead of asking at night */
-export function rkKeptForNow(a: Pick<RkAsk, 'k' | 'run'>, tk: DayKey): { b: string; rest: string } {
-  return {
-    b: 'Your ' + a.run + '-day run is kept for now.',
-    rest:
-      (tk <= a.k ? 'In the morning, your sunrise check asks' : 'Your sunrise check asks') +
-      ' whether to keep it going or start fresh. Nothing is lost by waiting.',
-  };
 }
 /** gives or changes the answer on the slip entry evId: keep the run going (true) or start fresh (false). Only while the save
     window is open and the run is not saved yet: a saved run stays saved. Going back to keep reopens the wait. The answer is kept
@@ -331,7 +322,7 @@ export interface Mission {
 }
 
 /** the missions list (legacy rkMissions). where: in the scene right after the slip, or on Today. left: only what is left.
-    until: the weekday the quest closes, for the sunrise check's words. */
+    until: the weekday the quest closes. */
 export function rkMissions(
   r: RekindleState,
   st: Settings,
@@ -395,9 +386,9 @@ export function rkMissions(
   const m3: Mission = {
     key: 'm3',
     done: r.m3,
-    icon: r.m3 ? 'check' : 'sunrise',
-    title: 'Sunrise check',
-    sub: r.m3 ? 'Done.' : (o.until ? 'One morning until ' + o.until : 'Tomorrow morning') + ', about two minutes. It waits for you on Today.',
+    icon: r.m3 ? 'check' : 'compass',
+    title: 'Look back',
+    sub: r.m3 ? 'Done.' : 'What came just before, and one plan for next time. About a minute, right after you log it.',
     pts: 15,
     actions: [],
   };
@@ -419,7 +410,7 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
       flames: l.flames.map((f) => f.on),
       lights: l.flames,
       h: op ? 'Your ' + op.run + '-day run waits for you' : 'Your comeback starts now',
-      p: 'Three flames light themselves from what you do: this honest log, the sunrise check tomorrow morning, and the next urge you ride out or a day with no slip.',
+      p: 'Three flames light themselves from what you do: this honest log, a minute looking back, and the next urge you ride out or a day with no slip.',
       askWait: st.cleanMode === 'step',
       missions: rkMissions(r, st, { where: 'scene', deep: false, hour, until: u }).filter((m) => m.key === 'm1'),
       prize: op
@@ -447,8 +438,9 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
 
 /* ---------- the comeback, noticed (roadmap move 3, docs/plan.md) ----------
    No task list: three flames that light themselves from what the person really does after any slip, in any mode. The
-   first is the honest log itself; the second, the sunrise check the next morning; the third, the next urge ridden out or
-   a full day with no slip (core.js rkThirdOf). From RK_BACK_FROM on, the sunrise check and the third flame also save a run
+   first is the honest log itself; the second, looking back right after it (what came just before, and a plan: the
+   look-back in app/log.tsx, which keeps the old sunrise check's place in the log, rk.at); the third, the next urge ridden
+   out or a full day with no slip (core.js rkThirdOf). From RK_BACK_FROM on, the look-back and the third flame also save a run
    that waits (runLedger), so a run is saved by coming back, not by errands. The comeback count only goes up. */
 /** slips from this day on are saved by coming back, and their words say so */
 export const rkBack = (k: DayKey) => k >= RK_BACK_FROM;
@@ -464,14 +456,14 @@ export function rkLights(days: Days, st: Settings, tk: DayKey, k: DayKey): { fla
   const wd = (d: DayKey) => fmtDate(d, { weekday: 'long' });
   const flames: RkLight[] = [
     { on: true, t: 'You logged it honestly' },
-    r && r.m3 ? { on: true, t: 'You came back for the sunrise check' } : { on: false, t: 'The sunrise check, the next morning' },
+    r && r.m3 ? { on: true, t: 'You looked back and made a plan' } : { on: false, t: 'A minute looking back, after the slip' },
     third
       ? { on: true, t: third.rode ? 'You rode out the next urge' + (third.k === k ? '' : ', ' + wd(third.k)) : 'A day with no slip, ' + wd(third.k) }
       : { on: false, t: 'The next urge ridden out, or a day with no slip' },
   ];
   return { flames, lit: flames.filter((f) => f.on).length, third };
 }
-/** every slip the person came back from (the sunrise check, or the third flame), up to tk. It only goes up. */
+/** every slip the person came back from (the look-back, or the third flame), up to tk. It only goes up. */
 export function rkComebackCount(days: Days, st: Settings, tk: DayKey): number {
   let n = 0;
   for (const k of Object.keys(days).sort())
@@ -483,21 +475,6 @@ export function rkComebackCount(days: Days, st: Settings, tk: DayKey): number {
 }
 /** "You are someone who comes back: 3 comebacks." */
 export const rkComebackSay = (n: number) => 'You are someone who comes back: ' + n + (n === 1 ? ' comeback.' : ' comebacks.');
-
-/** the slip the sunrise check is for: the latest slip before today, the morning after it (any slip, any mode), or later
-    while its run still waits to be saved. null once the check is done, or when nothing waits. */
-export function sunriseDue(days: Days, st: Settings | null, tk: DayKey): (RekindleState & { first: boolean }) | null {
-  if (!st) return null;
-  for (let i = 1; i <= RK_DAYS; i++) {
-    const k = addDays(tk, -i);
-    if (!sumDay(days[k]).slipped) continue;
-    const r = rkOf(days, k, st);
-    if (!r || r.m3) return null;
-    if (i === 1) return { ...r, first: true };
-    return runLedger(days, st, tk).kind[k] === 'open' ? { ...r, first: false } : null;
-  }
-  return null;
-}
 
 /** the day all three flames lit for the latest slip, said once on that day: the comeback, noticed. null on any other day. */
 export function comebackNow(days: Days, st: Settings, tk: DayKey) {
@@ -574,11 +551,9 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       ...base,
       kind: 'sun',
       line: false,
-      icon: 'sunrise',
-      h: tk === addDays(r.k, 1) ? 'The morning after' : op ? 'Your ' + op.run + '-day run is waiting' : 'Your sunrise check',
-      p: op
-        ? 'Your ' + op.run + '-day run waits until ' + u + ' night. The sunrise check is the next step.'
-        : 'Your sunrise check is ready. About two minutes.',
+      icon: 'flame',
+      h: op ? 'Your ' + op.run + '-day run is waiting' : 'A new day',
+      p: op ? 'Your ' + op.run + '-day run waits until ' + u + ' night.' : 'Everything you built is still here.',
       sunrise: true,
       missions: op && (!r.m1 || !r.m2 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }) : [],
     };
@@ -594,7 +569,7 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
     };
   }
   const pl = r.ev.rk && r.ev.rk.pl;
-  /* the sunrise check is done and steps are left: they can still be done until the quest closes, so they stay here with
+  /* the look-back is done and steps are left: they can still be done until the quest closes, so they stay here with
      their buttons (a score with no way to finish it is worse than no score) */
   const left = !saved && r.n < 3 && tk <= addDays(r.k, RK_DAYS) ? rkMissions(r, st, { where: 'today', deep: false, left: true, hour, until: u }) : [];
   return {
@@ -678,17 +653,10 @@ export function rkEnded(days: Days, st: Settings, tk: DayKey): RkEnded | null {
   return null;
 }
 
-/* ---------- the sunrise check ---------- */
-/** the steps: hello, the run question when it is still open and unanswered (given st: rkAskOpen), last night's screens (when
-    not answered and the phone was not put away), what came before, the plan. Last night is the night before today (tk), which
-    is the slip's night the morning after. */
-export function srSteps(days: Days, r: RekindleState, tk: DayKey = addDays(r.k, 1), st?: Settings | null): string[] {
-  const d = days[addDays(tk, -1)];
-  const so = d && d.checkin ? d.checkin.so : null;
-  const run = st && rkAskOpen(days, st, tk, r.k) ? ['run'] : [];
-  return ['hi'].concat(run, !r.m2 && so == null ? ['so'] : [], ['before', 'plan']);
-}
-
+/* ---------- looking back, right after a slip (app/log.tsx) ----------
+   What came just before, and one if-then plan. It used to be the sunrise check the next morning; the owner moved it to
+   the moment the slip is logged (October 23, 2026), so nothing asks about a slip the next day. Finishing it lights the
+   second flame (rk.at, the day it was done) and keeps its 15 points. */
 /** the plans to pick from: the person's own plan for this moment first (from My plan), then a few that fit it */
 export function srPlanInfo(ev: DayEvent | null, st: Settings) {
   const t = ev && ev.trigger;
@@ -707,7 +675,7 @@ export function srPlanInfo(ev: DayEvent | null, st: Settings) {
   return { T, t: t || null, mine, opts };
 }
 
-/** finishing the sunrise check: the plan is saved on the slip, and copied into My plan when that moment's slot is free
+/** finishing the look-back: the plan is saved on the slip, and copied into My plan when that moment's slot is free
     (never over words the person typed there). Returns the new log and settings, and whether the plan went into My plan. */
 export function srFinish(
   days: Days,
@@ -744,53 +712,6 @@ export function srFinish(
     now,
   );
   return { days: withDay(days, k, day), st: nst, toPlan };
-}
-
-/** the end of the sunrise check (legacy srEndHtml), as words */
-export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: RekindleState, run0: number) {
-  const { L, op, saved } = rkOpen(days, st, tk, k);
-  if (rkBack(k)) {
-    const l = rkLights(days, st, tk, k);
-    const h = saved ? 'Run saved.' : 'You came back. That is the skill.';
-    const sub = saved
-      ? 'Your run is ' + plural(L.cur, 'day') + ' and still going. You saved it by coming back.'
-      : op
-        ? 'One more flame lights itself: the next urge you ride out, or a day with no slip, by ' +
-          rkUntil(k) +
-          ' night. Your ' +
-          op.run +
-          '-day run waits for you.'
-        : rkComebackSay(rkComebackCount(days, st, tk)) + (run0 ? ' Your longest run stays.' : '');
-    return { h, sub, flames: l.flames.map((f) => f.on), lights: l.flames, celebrate: saved || l.lit === 3, op, saved };
-  }
-  const n = r.n;
-  const deep = !!(op && op.deep) || (saved && r.m4);
-  const h = saved
-    ? 'Run saved.'
-    : op
-      ? 'Almost there.'
-      : n === 3
-        ? 'Rekindled.'
-        : n === 2
-          ? 'Two of three lit. That is a real comeback.'
-          : 'You came back. That is the skill.';
-  /* what is left, and an honest "screens stayed on" thanked: the phone can go away another night */
-  const left = [!r.m1 ? 'one small thing' : '', !r.m2 ? 'the phone away one night' : '', deep && !r.m4 ? 'going deeper' : ''].filter(Boolean);
-  const honest = !r.m2 && days[addDays(tk, -1)]?.checkin?.so === 'N';
-  const sub = saved
-    ? 'Your run is ' + plural(L.cur, 'day') + ' and still going.' + (n === 3 ? ' The Rekindled badge is yours too.' : '')
-    : op
-      ? (honest ? 'Thank you for being honest. ' : '') +
-        (left.length ? 'Left to do: ' + andList(left) + ', any time until ' + rkUntil(k) + ' night. ' : '') +
-        'Your ' +
-        op.run +
-        '-day run waits for you.'
-      : run0
-        ? 'Every flame you lit still counts, and your longest run stays.'
-        : n === 3
-          ? 'All three missions done. Your fire is back to full, and the Rekindled badge is yours.'
-          : 'Every flame you lit counts. Light all three next time for the badge.';
-  return { h, sub, flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []), lights: null as RkLight[] | null, celebrate: n === 3 || saved, op, saved };
 }
 
 /* ---------- going deeper (the fourth mission for a run of 14 days or more) ---------- */

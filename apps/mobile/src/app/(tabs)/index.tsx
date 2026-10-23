@@ -1,13 +1,15 @@
 /* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
-   moment (a pause, the hard hours, the morning after or the day of a slip, a talk-through, days away, the Sunday review, a
+   moment (a pause, the hard hours, the day of a slip, a talk-through, days away, the Sunday review, a
    one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
    is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
-   rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is earned, and its
+   rows; the morning after a slip, one quiet line under it (good to see you, and the way to Journal, Pattern; nothing
+   asks about the slip then); then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is earned, and its
    celebration opens. */
 import {
   accountAsk,
+  afterSlipLine,
   awayDue,
   awayStart,
   markOpen,
@@ -193,6 +195,7 @@ export default function Today() {
   const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
   /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
+  const after = afterSlipLine(snap.days, tk);
   const sub = (
     <>
       {be ? (
@@ -224,6 +227,20 @@ export default function Today() {
       </Card>
       <NightWinCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
+      {after ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={after.b + ' ' + after.rest + ' Opens Journal, Pattern.'}
+          onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'patterns' } })}
+          style={({ pressed }) => [s.after, pressed && { opacity: 0.7 }]}>
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+            <T v="small" style={{ fontFamily: font.bodySemi }}>
+              {after.b}
+            </T>{' '}
+            {after.rest} ›
+          </T>
+        </Pressable>
+      ) : null}
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
       {counts ? <PulseCard /> : null}
@@ -235,4 +252,5 @@ export default function Today() {
 const s = StyleSheet.create({
   be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
   note: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18, textAlign: 'center', marginTop: 8 },
+  after: { paddingVertical: 6, paddingHorizontal: 12 },
 });

@@ -146,7 +146,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
         </Pressable>
       ) : null}
       <T v="small" tone="muted">
-        Sleep and screens-off are under Night and sleep. If something happened, log it first. A slip is data, not a reset.
+        Sleep is under Night and sleep. If something happened, log it first. A slip is data, not a reset.
       </T>
     </View>
   );

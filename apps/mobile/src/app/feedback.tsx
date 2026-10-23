@@ -49,7 +49,7 @@ export default function Feedback() {
         maxLength={FEEDBACK_LEN}
         value={t}
         onChangeText={setT}
-        placeholder="Like: the sunrise check helped, but I did not know what the flames meant."
+        placeholder="Like: looking back after a slip helped, but I did not know what the flames meant."
         style={{ minHeight: 140 }}
       />
       <Field

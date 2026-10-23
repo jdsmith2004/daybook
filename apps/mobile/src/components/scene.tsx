@@ -1,4 +1,4 @@
-/* The frame for a full-screen moment (logging, Rekindle, the sunrise check, SOS): a soft sky, a top bar with Back and Close,
+/* The frame for a full-screen moment (logging, Rekindle, SOS): a soft sky, a top bar with Back and Close,
    progress dots, the card, and a quiet link at the bottom, or a sheet along the bottom edge (SOS). Like the legacy "scene".
    A dark sky (night, ember) gives everything inside it the night colors, in either theme. */
 import { emblemLayers } from '@daybook/core';

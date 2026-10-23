@@ -2,7 +2,7 @@
    after, a Sunday, a pause, days away, and a day with nothing left to do. */
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
-import { moments, pickMoment, standRow } from '../src/moment';
+import { afterSlipLine, moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
 import type { Days } from '../src/types';
 
@@ -52,11 +52,12 @@ describe('a slip, and the morning after', () => {
     );
     expect(kinds(done, '2026-10-21', at(21, 23, 40))).not.toContain('slip-day');
   });
-  it('the morning after: the sunrise check, with the run kept and the day after it', () => {
+  it('the morning after: a regular Today, nothing about the slip (the owner, October 23, 2026), and one quiet line', () => {
     const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
-    expect(p.card).toMatchObject({ k: 'morning-after', eb: 'The morning after', h: 'You came back. That is the skill.', go: 'sunrise' });
-    expect(p.card.p).toBe('Last night is in the log, honestly. Your 7 days are kept. Two minutes, then the day goes on as usual.');
-    expect(p.then).toMatch(/^Then: .*the wind-down\.$/);
+    expect(p.card.k).toBe('calm');
+    expect(kinds(d, '2026-10-22', at(22, 8))).not.toContain('slip-day');
+    expect(afterSlipLine(d, '2026-10-22')).toEqual({ b: 'Good to see you.', rest: 'Your stats and your pattern are in Journal.' });
+    expect(afterSlipLine(d, '2026-10-21')).toBeNull();
   });
   it('never a word of shame and no contractions on the slip cards', () => {
     for (const m of [...moments(d, st, {}, '2026-10-21', at(21, 23, 30)), ...moments(d, st, {}, '2026-10-22', at(22, 8))]) {
@@ -75,8 +76,8 @@ describe('the order', () => {
     expect(kinds({}, '2026-10-20', at(20, 10))).not.toContain('sunday');
   });
   it('two at once: the second waits as "and one more"', () => {
-    const p = pickMoment(slip({}, '2026-10-17'), st, {}, '2026-10-18', at(18, 8));
-    expect(p.card.k).toBe('morning-after');
+    const p = pickMoment(slip({}, '2026-10-17'), st, {}, '2026-10-18', at(18, 8), { pause: true });
+    expect(p.card.k).toBe('pause');
     expect(p.more?.k).toBe('sunday');
     expect(p.more?.one).toBe('your Sunday review');
   });

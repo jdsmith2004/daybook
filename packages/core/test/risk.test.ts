@@ -2,7 +2,9 @@
    phone heads-ups. */
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
-import { hardHeld, keepHard, riskAlerts, riskAt, riskDay, riskLabel, riskToKeep, riskWindow } from '../src/risk';
+import { normDay } from '../src/legacy/core.js';
+import { lessonPath } from '../src/lessons';
+import { hardHeld, keepHard, riskAlerts, riskAt, riskDay, riskLabel, riskLesson, riskPlanLabel, riskStartLabel, riskToKeep, riskWindow } from '../src/risk';
 import * as core from '../src/index';
 import { newTalk } from '../src/talk';
 import { saveTalk } from '../src/talk-log';
@@ -91,4 +93,51 @@ it('the first pattern: three timed entries, most in two hours, words only, quiet
   const slipped = core.addEvent(days, '2026-10-09', 'slipped', '13:00').days;
   expect(core.firstPattern(slipped, st, tk)).toBeNull();
   expect(core.firstPattern(days, st, tk)).not.toMatch(/n't|'re|'s /);
+});
+
+describe('the hard hours card, for someone doing well', () => {
+  const tk = '2026-10-13';
+  const read = (days: Days, k: string, ids: string[]): Days => {
+    const d = normDay({}, k);
+    return { ...days, [k]: { ...d, p: { ...d.p!, ls: ids } } };
+  };
+  it('offers today’s lesson until one is done today', () => {
+    const path = lessonPath();
+    expect(riskLesson({}, st, tk)).toMatchObject({ L: path[0], n: 1, again: false });
+    const yesterday = read({}, '2026-10-12', [path[0].id]);
+    expect(riskLesson(yesterday, st, tk)).toMatchObject({ L: path[1], n: 2, again: false });
+    expect(riskLesson(read(yesterday, tk, [path[1].id]), st, tk)).toBeNull();
+  });
+  it('offers a re-read, not a locked lesson, without an account', () => {
+    const path = lessonPath();
+    const free = read(
+      {},
+      '2026-10-10',
+      path.slice(0, 3).map((L) => L.id),
+    );
+    const x = riskLesson(free, st, tk, false)!;
+    expect(x.again).toBe(true);
+    expect(path.slice(0, 3)).toContain(x.L);
+    expect(riskLesson(free, st, tk, true)).toMatchObject({ L: path[3], again: false });
+  });
+  it('says when they start, and what the plan is for', () => {
+    expect(riskStartLabel(23)).toBe('11 PM');
+    expect(riskStartLabel(0)).toBe('12 AM');
+    expect(riskPlanLabel(23)).toBe('Make a plan for tonight');
+    expect(riskPlanLabel(1)).toBe('Make a plan for tonight');
+    expect(riskPlanLabel(14)).toBe('Make a plan for today');
+  });
+  it('does not learn the hard hours from a plan made ahead of them', () => {
+    let d: Days = {};
+    for (const k of ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10']) d = urge(d, k, '23:30');
+    const before = riskWindow(d, st, tk)!;
+    expect(before.start).toBe(23);
+    let p = d;
+    for (const k of ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'])
+      p = saveTalk(p, k, { ...newTalk(at(k + 'T19:10:00')), p: 'change', pr: 1 }, 1);
+    expect(riskWindow(p, st, tk)).toEqual(before);
+    /* and the plan still turns the card calm */
+    const today = saveTalk(d, tk, { ...newTalk(at('2026-10-13T21:30:00')), p: 'change', pr: 1 }, 1);
+    expect(riskDay(today, st, tk, at('2026-10-13T21:40:00'))!.talked).toBe(at('2026-10-13T21:30:00'));
+  });
 });

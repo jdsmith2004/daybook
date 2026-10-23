@@ -36,6 +36,8 @@ jobs:
           EXPO_BASE_URL: /daybook
         run: |
           npx expo export --platform web --output-dir dist
+          # the Home Screen links in public/index.html start at the site's root; here the root is /daybook
+          sed -i 's#href="/manifest.json"#href="/daybook/manifest.json"#; s#href="/apple-touch-icon.png"#href="/daybook/apple-touch-icon.png"#' dist/index.html
           cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

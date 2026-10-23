@@ -238,8 +238,9 @@ function Evolve({ from, to }: { from: number; to: number }) {
   );
 }
 
-/* confetti: a burst from the middle, falling under gravity. Skipped when the phone asks for less motion. */
-export function Confetti({ big }: { big: boolean }) {
+/* confetti: a burst from the middle, falling under gravity, or with `rain`, a shower falling from the top across the whole
+   width, each piece swaying as it drifts down (the end of the setup). Skipped when the phone asks for less motion. */
+export function Confetti({ big, rain }: { big: boolean; rain?: boolean }) {
   const c = useTheme();
   const { width: W, height: H } = useWindowDimensions();
   const t = useRef(new Animated.Value(0)).current;
@@ -247,6 +248,24 @@ export function Confetti({ big }: { big: boolean }) {
   const parts = useMemo(() => {
     const cols = [c.sun, c.sun2, c.accent, c.mint, c.violet, c.coral];
     const n = big ? 90 : 50;
+    if (rain)
+      return Array.from({ length: n }, (_, i) => {
+        /* a start above the top, so the pieces arrive one after another, and a fall a little past the bottom */
+        const y0 = -20 - Math.random() * H * 0.9;
+        const fall = H + 40 - y0;
+        const sway = 10 + Math.random() * 18;
+        const ph = Math.random() * Math.PI * 2;
+        const pts = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: Math.sin(ph + f * Math.PI * 3) * sway, y: f * fall }));
+        return {
+          x0: Math.random() * W,
+          y0,
+          s: 6 + Math.random() * 6,
+          c: cols[i % cols.length],
+          pts,
+          r: (Math.random() - 0.5) * 14,
+          round: i % 3 === 1,
+        };
+      });
     return Array.from({ length: n }, (_, i) => {
       const vx = (Math.random() - 0.5) * (big ? 12 : 9);
       const vy = -Math.random() * (big ? 13 : 10) - 4;
@@ -266,7 +285,7 @@ export function Confetti({ big }: { big: boolean }) {
         round: i % 3 === 1,
       };
     });
-  }, [big, W, H, c]);
+  }, [big, rain, W, H, c]);
   useEffect(() => {
     let alive = true;
     AccessibilityInfo.isReduceMotionEnabled()
@@ -276,13 +295,13 @@ export function Confetti({ big }: { big: boolean }) {
           setOn(false);
           return;
         }
-        Animated.timing(t, { toValue: 1, duration: 1800, easing: Easing.linear, useNativeDriver: NATIVE }).start(() => alive && setOn(false));
+        Animated.timing(t, { toValue: 1, duration: rain ? 4200 : 1800, easing: Easing.linear, useNativeDriver: NATIVE }).start(() => alive && setOn(false));
       })
       .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [t]);
+  }, [t, rain]);
   if (!on) return null;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -297,7 +316,7 @@ export function Confetti({ big }: { big: boolean }) {
             height: p.round ? p.s : p.s * 0.6,
             borderRadius: p.round ? p.s / 2 : 1,
             backgroundColor: p.c,
-            opacity: t.interpolate({ inputRange: [0, 0.75, 1], outputRange: [1, 1, 0] }),
+            opacity: t.interpolate({ inputRange: [0, rain ? 0.85 : 0.75, 1], outputRange: [1, 1, 0] }),
             transform: [
               { translateX: t.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: p.pts.map((q) => q.x) }) },
               { translateY: t.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: p.pts.map((q) => q.y) }) },

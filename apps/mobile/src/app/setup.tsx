@@ -24,7 +24,6 @@ import {
   obChanges,
   obDate,
   obDay1,
-  obFirst,
   obGoal,
   obGoalInfo,
   obGoals,
@@ -38,7 +37,6 @@ import {
   obSave,
   obSosLine,
   obWave,
-  OB_TAKES,
   obSrc,
   obSug,
   obThenOpts,
@@ -58,6 +56,11 @@ import {
   type Settings,
   type SetupAnswers,
   LESSONS,
+  LIKE_WORDS,
+  likeAnswer,
+  likeAskDue,
+  urLastAt,
+  type LikeAnswer,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -67,6 +70,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';
+import { Confetti } from '@/components/celebrate';
 import { Field } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { FitArt, SHORT } from '@/components/fit';
@@ -83,11 +87,13 @@ import { Icon, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { buzz } from '@/lib/feel';
+import { askStoreReview } from '@/lib/review';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
@@ -1163,49 +1169,10 @@ export default function Setup() {
           </View>
         );
       } else {
-        const g = obGoal(a, null, tk);
-        /* the finale, on the sun's sky: the flame alive and big, the four small things low, the first lesson one tap away */
-        body = (
-          <>
-            <Head h="Welcome in." sub={obFirst(g.id, st ? st.screensOff : '23:00')} />
-            <Finish level={2} alive always size={SHORT ? 130 : 170} tone="sun" />
-            <Appear delay={500}>
-              <LevelBar />
-            </Appear>
-            <View style={{ gap: 6 }}>
-              {OB_TAKES.map((x) => (
-                <View key={x} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Icon name="check" size={16} color={c.mintText} />
-                  <T v="small" tone="muted">
-                    {x}
-                  </T>
-                </View>
-              ))}
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <View style={[s.gift, { backgroundColor: c.sunSoft }]}>
-                <Icon name="sun" size={16} color={c.sunText} />
-                <Text style={{ fontFamily: font.bodyBold, color: c.sunText }}>Day Zero badge</Text>
-              </View>
-            </View>
-          </>
-        );
-        foot = (
-          <View key="d" style={{ gap: 10 }}>
-            <Route
-              label="Start lesson 1"
-              small="1–5 min · You do not need to feel ready"
-              onPress={() =>
-                !busy() &&
-                router.replace({
-                  pathname: '/lesson/[id]',
-                  params: { id: 'l1' },
-                })
-              }
-            />
-            <Next label="Go to Today" noIcon onPress={() => !busy() && close()} />
-          </View>
-        );
+        /* the finale, on the sun's sky: "You finished setup!", the flame big and alive with confetti falling, and once,
+           "Do you like Daybook so far?" (core like.ts). It has its own Dock. */
+        body = <Cheer />;
+        foot = null;
       }
       break;
     }
@@ -1241,7 +1208,7 @@ export default function Setup() {
         {/* every page fills the width, and its Dock sits at the bottom */}
         <View style={s.page}>
           {body}
-          <Dock>{foot}</Dock>
+          {foot ? <Dock>{foot}</Dock> : null}
         </View>
       </Stage>
     </SceneFrame>
@@ -1880,6 +1847,95 @@ function Hold({ onDone }: { onDone: () => void }) {
 /** the reminder times the setup offers */
 const OB_REMIND = ['17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
 
+/* The end of a new person's setup: a celebration, like the end of a game's first level. "You finished setup!" big at the
+   top, the flame big and alive in the middle with its burst of shapes, confetti falling over the whole page, and the level
+   bar filling. Once, and never after a slip or an SOS (core like.ts), it asks "Do you like Daybook so far?" with the two
+   answers low, where the thumb is. A Yes opens the phone's rating sheet over Today (the web has none, so it thanks them);
+   "Not yet" thanks them and offers to say what would help. When it does not ask, the first lesson and Today are the way on.
+   Under Reduce Motion the flame and the bar are still and no confetti falls. */
+function Cheer() {
+  const { snap, tk, apply, say } = useStore();
+  const sos = useSos();
+  const st = snap.settings;
+  /* decided once, when the plan is saved, so answering does not swap the page under the person */
+  const [step, setStep] = useState<'ask' | 'no' | 'off' | null>(null);
+  useEffect(() => {
+    if (step || !st) return;
+    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: urLastAt(sos.mem) }) ? 'ask' : 'off');
+  }, [step, st, snap.days, sos.mem]);
+  const [rain] = useState(() => Date.now());
+  const answer = (a: LikeAnswer) => {
+    if (!st) return;
+    buzz('tap');
+    apply(likeAnswer(st, a, tk));
+    if (a === 'no') return setStep('no');
+    say(LIKE_WORDS.thanks);
+    close();
+    /* a moment later, so the sheet comes up over Today, not over a page on its way out */
+    setTimeout(() => void askStoreReview(), 700);
+  };
+  const W = LIKE_WORDS;
+  return (
+    <>
+      <Confetti key={rain} big rain />
+      <Head h={W.h} sub={W.sub} />
+      {step === 'ask' ? (
+        <T v="label" style={[s.c, s.cheerQ]} accessibilityRole="header">
+          {W.q}
+        </T>
+      ) : step === 'no' ? (
+        <Appear>
+          <View style={{ gap: 6, alignSelf: 'stretch' }}>
+            <T v="label" style={[s.c, s.cheerQ]} accessibilityRole="header" accessibilityLiveRegion="polite">
+              {W.noH}
+            </T>
+            <T tone="muted" style={s.c}>
+              {W.noLine}
+            </T>
+          </View>
+        </Appear>
+      ) : null}
+      <Finish level={2} alive always size={SHORT ? 150 : 196} zoom={2.6} tone="sun" />
+      <Appear delay={500}>
+        <LevelBar />
+      </Appear>
+      <Dock>
+        {step === 'ask' ? (
+          <View key="ask" style={{ gap: 10 }}>
+            <Next label={W.yes} noIcon onPress={() => answer('yes')} off={false} />
+            <Ghost label={W.no} onPress={() => answer('no')} />
+          </View>
+        ) : step === 'no' ? (
+          <View key="no" style={{ gap: 4 }}>
+            <Next label={W.go} noIcon onPress={close} off={false} />
+            <TextLink
+              label={W.tell}
+              onPress={() => {
+                close();
+                router.push('/feedback');
+              }}
+            />
+          </View>
+        ) : (
+          <View key="off" style={{ gap: 10 }}>
+            <Route
+              label="Start lesson 1"
+              small="1–5 min · You do not need to feel ready"
+              onPress={() =>
+                router.replace({
+                  pathname: '/lesson/[id]',
+                  params: { id: 'l1' },
+                })
+              }
+            />
+            <Next label={W.go} noIcon onPress={close} />
+          </View>
+        )}
+      </Dock>
+    </>
+  );
+}
+
 const s = StyleSheet.create({
   remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14 },
@@ -1890,6 +1946,7 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   page: { flexGrow: 1, alignSelf: 'stretch', gap: 14 },
   head: { gap: 8, alignSelf: 'stretch' },
+  cheerQ: { fontFamily: font.bodyBold, fontSize: SHORT ? 19 : 21, lineHeight: SHORT ? 25 : 28, alignSelf: 'stretch' },
   title26: { fontSize: 26, lineHeight: 31 },
   titleShort: { fontSize: 24, lineHeight: 29 },
   titleSm: { fontSize: 22, lineHeight: 27 },
@@ -2038,14 +2095,6 @@ const s = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  gift: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
   },
   hold: {
     flex: 1,

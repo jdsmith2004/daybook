@@ -30,6 +30,7 @@ export * from './levels';
 export * from './accounts';
 export * from './support';
 export * from './supporter';
+export * from './like';
 export * from './nudges';
 export * from './notify';
 export * from './cognito';

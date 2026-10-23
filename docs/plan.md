@@ -2169,3 +2169,43 @@ other quit apps charge, and how they market, is written up in the daybook-shorts
   badge. Apple and Google take 15% at this size, so $5 nets about $4.25. The App Store allows a one-time non-consumable
   in-app purchase; it is simpler than a subscription and has no renewal to support. The marketing line stays "free":
   every tool a person needs is free, and the unlock is a way to say thanks that also gives something back.
+
+## Lessons first: no morning check-in, a calm hard-hours card (the owner, October 23, 2026)
+
+The owner: the morning check-in ("Last night: two quick questions") is a poor reason to open the app; the reason should be
+the lesson, pushed like Duolingo, because that is where growth comes from. And the hard-hours card sends people to Talk it
+through, whose first page assumes a slip is being planned; someone doing well who opened the app for a lesson is treated
+like someone about to slip. Decided by the session on the owner's word ("you choose"):
+
+- **Good night is the phone going away.** Tapping Good night (the wind-down or Go to bed) counts as phone away, with the
+  time. Nothing asks the next morning whether it stayed away.
+- **No streak that can drop to zero.** Lessons get a ring of this week's lesson days on Today (0 to 7, it fills, never
+  empties mid-week, a slip never touches it). That keeps CLAUDE.md's "never all or nothing".
+
+### A. The morning check-in goes (high: it moves data that quests, goals and points read)
+
+1. **High.** Remove the morning stop everywhere: "Last night" in Your day and in the routine (Settings), Next up, the
+   morning nudge, and the morning screen (app/morning.tsx). Saved settings with `routine.morning` stay readable and are
+   ignored. Points, wins and quests already earned from mornings stay earned (nothing recomputed downward; check the
+   golden fixtures and say in the commit message if a frozen value has to change, and why).
+2. **High.** Sleep: one optional slider in the evening check-in, "How did you sleep last night?", saved where the morning
+   saved it (`checkin.h`), so the Sunday sleep goal and the week story keep working.
+3. **High.** Phone away: Good night writes what "phones away" needs (`p.po`, and screens off on time when it is before
+   the screens-off time), so the "Screens off on time" quest and the Sunday phone goal count from it.
+4. **Medium.** The night win (an urge ridden out in SOS at night): instead of the morning screen, a one-line card on Today
+   the next time it opens, with the optional note for next time (core night-win.ts).
+
+### B. A calm hard-hours card and a short plan (medium)
+
+1. **Medium.** The hard-hours card (components/risk-card.tsx) no longer assumes a slip: "Your hard hours start at
+   11 PM." Its main button is today's lesson when it is not done yet; then "Make a plan for tonight".
+2. **Medium.** "Make a plan for tonight" opens a short Talk it through (`/talk?prep=1`): no "Planning a slip?" page, no
+   signs, no research cards, no paths. It asks what usually makes these hours hard (the needs), what to do instead (the
+   moves), and the moment, and saves the change plan as today (so the card turns to "You are ready", and the look back
+   still comes). "Planning a slip?" opens only from its own button.
+
+### C. Lessons first (medium, after A)
+
+1. **Medium.** Today's lesson is always Next up until it is done.
+2. **Medium.** A lesson notification ("Today's lesson is ready."), at a time the person picks, in place of the morning one.
+3. **Medium.** The week's lesson days as a ring of seven on Today, near the flame; each lesson visibly feeds the flame.

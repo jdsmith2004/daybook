@@ -32,16 +32,23 @@ need, without letting the screen turn into a list of features.
   measures that hold what was earned (for example, no-slip days in a recent window) over a single streak that resets.
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
-- **Never lock care.** SOS, logging, Rekindle, the plan, the tools and Today work with no account. An account opens sync,
-  a safe copy, and the lessons after the first three (see accounts.ts). Ask for one only at good moments, never after a slip.
+- **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work
+  with no account and no payment, always. A free account opens the lessons after the first three (see accounts.ts). Ask
+  for one only at good moments, never after a slip.
 - **Setup is hard to skip, and it ends with the account ask.** A new person is meant to finish setup and leave knowing the
   app will help them. There is no "skip setup" button; closing setup (or SOS, or leaving the app) brings it back the next
   time, and every question inside it can still be skipped. Its last page asks for a free account, because the plan was
   just built; "Keep it on this phone" stays as a quiet choice, since an account is never required (care is never locked,
   and the App Store does not allow forcing sign-up for features that work without one).
-- **The tip jar stays in the app.** Support (the Support button on Today, the one ask, the row on More) is on the web
-  and in the iPhone app, opening the Stripe tip page (which takes Apple Pay). It is never removed or hidden on a platform
-  without asking the owner first. A tip never unlocks anything.
+- **Daybook is free, and it asks for money (the owner, October 23, 2026).** Building it costs the owner real time and
+  money, and tips are how that comes back and how Daybook reaches more people. The free version is complete care; a tip
+  of $5 or more makes a person a supporter, which opens the extras: sync and the safe copy, the deeper stats and pattern
+  pages, and the extra flame looks (`supporter.ts`). The record allows monthly support later. The ask is warm, a little
+  pushy and very easy: a few taps, Apple's in-app purchase first on iPhone (Kind $5, Generous $10, Amazing $20), with the
+  web tip page (Stripe, which takes Apple Pay) offered as a good second choice. It never shames, never says the person
+  owes anything, never asks in the hours after an SOS or a slip, and stops for good once the person is a supporter.
+  People who had an account before this keep sync. The tip jar is never removed or hidden on a platform without asking
+  the owner first. Later the owner may sell products in the app instead; ask before building toward that.
 - **Never link to the code.** The owner worked and paid for this codebase and does not want it handed to anyone to copy
   (the owner, October 23, 2026, and upset that a "See the code" link was put on the website). No page, app screen, store
   listing or message ever links to the repository, says the code is public, or invites people to read it. Privacy is
@@ -64,8 +71,8 @@ need, without letting the screen turn into a list of features.
   the owner decides, do it that way and stay focused on the task. Push back only when there is a real disagreement with
   what the owner asked, and not in every report. Choices you made yourself are not pushback: stand behind them, and say
   plainly what you chose where the owner should know (a decision made on their behalf, a risk, something untested).
-- **Deploy to AWS when it is worth it, not on every push.** Every push to `main` still updates the free GitHub Pages
-  preview (https://jdsmith2004.github.io/daybook/). The AWS site deploys only when the last commit of a push has
+- **Deploy to AWS when it is worth it, not on every push.** The repository is private (the owner, October 23, 2026),
+  so there is no GitHub Pages preview; the AWS site is the only site. It deploys only when the last commit of a push has
   `[deploy]` in its message (or the owner presses Actions, Deploy, Run workflow). Use your judgment: add `[deploy]` once
   per finished piece of work the owner should see live (a feature, a fix people would notice, a change to the public
   pages or the sync service), on the last commit of that work, not on each small commit along the way. Plan and doc
@@ -123,7 +130,7 @@ cd apps/mobile && npx expo start
   files. Do not hand-format against it or add a second config.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons speak with confidence and hope.** New lessons name their source in `SRC` or `OB_SRC` and write the scope ("Behind this") in a sure, hopeful voice. Existing scope notes are left as they are (see "Lessons inspire hope" above).
-- **Privacy first.** The repository is public. Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add anything that reads people's logs on the server, and no analytics beyond the opt-in counts (by the owner's choice, October 22, 2026; core `pulse.ts`): off until the person says yes, only the fixed names in `PULSE_KEYS` with small numbers, never a word, time, trigger, id or the log, and the server keeps only totals per day. A new count is added to `PULSE_KEYS` and to the list on the privacy page in the same change. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
+- **Privacy first.** Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add anything that reads people's logs on the server, and no analytics beyond the opt-in counts (by the owner's choice, October 22, 2026; core `pulse.ts`): off until the person says yes, only the fixed names in `PULSE_KEYS` with small numbers, never a word, time, trigger, id or the log, and the server keeps only totals per day. A new count is added to `PULSE_KEYS` and to the list on the privacy page in the same change. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.

@@ -30,7 +30,7 @@ you. Your tip keeps Daybook free and helps it reach the next person." It is in `
 
 1. The **Action required** banner (identity or bank details): only you. Until it is cleared, payouts (and maybe payments)
    can be held.
-2. Settings, Business details: set the website to `https://jdsmith2004.github.io/daybook/` and the public business name
+2. Settings, Business details: set the website to `https://d3c9g6kent5bsr.cloudfront.net` and the public business name
    to **Daybook**. Then try the statement descriptor **DAYBOOK** again (it was refused while the website was a Ko-fi page);
    until then it says JEFFREY.
 3. Settings, Branding: upload `apps/mobile/assets/images/icon.png` as the icon, with the accent color `#6247EA`.

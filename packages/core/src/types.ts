@@ -2,6 +2,7 @@
    these at the time it is shown (points, levels, badges, runs, saves, step down), so nothing derived is ever stored. */
 import type { Talk } from './talk';
 import type { SunReview } from './sunday';
+import type { Supporter } from './supporter';
 
 export type DayKey = string; // 'YYYY-MM-DD', the logical day (it rolls over at settings.rollover o'clock)
 export type Clock = string; // 'HH:MM', 24-hour
@@ -175,6 +176,8 @@ export interface Settings {
   toldStart?: DayKey | null;
   /** the day the one tip ask on Today was answered (see support.ts). Optional, so older records need no change. */
   tipAsk?: DayKey | null;
+  /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
+  sup?: Supporter | null;
   u: number;
 }
 

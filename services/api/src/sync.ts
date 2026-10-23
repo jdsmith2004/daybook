@@ -11,13 +11,26 @@
    POST   /sync?restore=1                brings the copy back as new changes; days logged again since are left alone
    DELETE /sync?all=1                    close the account: remove everything for good, then delete the sign-in itself
 
+   Supporters (supporter.ts; core supporter.ts holds the rules):
+   GET    /sync?sup=1                    { sup }: this person's supporter record, or null
+   POST   /sync?claim=stripe { session } a web tip: the Checkout Session id the Payment Link sent back; gives { sup }
+   POST   /sync?claim=apple  { jws }     an Apple tip: the signed transaction from StoreKit; gives { sup }
+   POST   /sync/claim        { session } the one open door (no sign-in), for a web tip on a signed-out device: the tip is
+                                       checked and marked as used, and { sup } comes back for that device to keep
+
+   Saving records (POST /sync) needs a supporter, or an account from before tips (grandfathered); otherwise it answers
+   402 { need: 'support' } and saves nothing. Everything else stays open to every signed-in person, so nobody is ever cut
+   off from their own log: reading it (a new phone, a lapsed supporter getting their log back), bringing back an erased
+   log, erasing it, and closing the account.
+
    Who is asking comes only from the signed token that API Gateway checked (its `sub`). Every record is checked and cleaned
    with the same rules the apps use (@daybook/core), so nothing malformed is ever stored. Sizes are capped, and each person
    has a daily write allowance, so a broken client (or a stolen token) cannot run up a bill. */
-import { normRecord, WHY_FUTURE, WHY_LARGE } from '@daybook/core';
+import { normRecord, SUP_SYNC_WORDS, WHY_FUTURE, WHY_LARGE } from '@daybook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
 import { BadCursor, type Store } from './store';
+import { claimApple, claimStripe, maySync, PayError, resolveSup, type Pay } from './supporter';
 
 export const PAGE = 500;
 export const MAX_PUSH = 200;
@@ -31,6 +44,10 @@ export const DAILY_BYTES = 20_000_000;
 /** a change time this far ahead of the server clock is a broken clock, and would win every future change, so it is refused */
 export const MAX_SKEW = 24 * 3600_000;
 export const OVERLAP = 60_000;
+/** the largest body a tip claim may have (an Apple signed transaction is a few kilobytes) */
+export const MAX_CLAIM = 32_000;
+/** the open door's route, which API Gateway passes with no sign-in */
+export const OPEN_CLAIM = 'POST /sync/claim';
 
 type Res = APIGatewayProxyStructuredResultV2;
 const json = (statusCode: number, body: unknown): Res => ({
@@ -43,14 +60,53 @@ const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 /** deletes the person's sign-in (Cognito AdminDeleteUser, by user name). Injected, so the tests need no AWS. */
 export type DeleteUser = (username: string) => Promise<void>;
 
-export function makeHandler(store: Store, clock: () => number = Date.now, deleteUser: DeleteUser = async () => undefined) {
+const bodyOf = (event: APIGatewayProxyEventV2WithJWTAuthorizer) =>
+  event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || '';
+function claimBody(event: APIGatewayProxyEventV2WithJWTAuthorizer): Record<string, unknown> | null {
+  const raw = bodyOf(event);
+  if (Buffer.byteLength(raw) > MAX_CLAIM) return null;
+  try {
+    const o = JSON.parse(raw);
+    return o && typeof o === 'object' ? o : null;
+  } catch {
+    return null;
+  }
+}
+async function paid(f: () => Promise<unknown>): Promise<Res> {
+  try {
+    return json(200, { sup: await f() });
+  } catch (e) {
+    if (e instanceof PayError) return json(e.status, { error: e.message });
+    throw e;
+  }
+}
+
+export function makeHandler(store: Store, clock: () => number = Date.now, deleteUser: DeleteUser = async () => undefined, pay: Pay = {}) {
   return async function handler(event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<Res> {
-    const user = event.requestContext?.authorizer?.jwt?.claims?.sub;
+    /* the open door: a web tip from a signed-out device. It never reads a sign-in, even if one is sent. */
+    if (event.routeKey === OPEN_CLAIM) {
+      const b = claimBody(event);
+      if (!b) return json(400, { error: 'Send { session }.' });
+      return paid(() => claimStripe(store, pay, '', '', b.session, clock()));
+    }
+    const claims = event.requestContext?.authorizer?.jwt?.claims;
+    const user = claims?.sub;
     if (typeof user !== 'string' || !user) return json(401, { error: 'Sign in first.' });
+    /* the access token names the user (username); in a pool that signs in with email it is the same as sub */
+    const username = typeof claims?.username === 'string' && claims.username ? claims.username : user;
     const method = event.requestContext.http.method;
     const q = event.queryStringParameters || {};
 
     if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
+
+    if (method === 'GET' && q.sup === '1') return json(200, { sup: await resolveSup(store, user, username, pay, clock()) });
+
+    if (method === 'POST' && (q.claim === 'stripe' || q.claim === 'apple')) {
+      const b = claimBody(event);
+      if (!b) return json(400, { error: q.claim === 'stripe' ? 'Send { session }.' : 'Send { jws }.' });
+      if (q.claim === 'stripe') return paid(() => claimStripe(store, pay, user, username, b.session, clock()));
+      return paid(() => claimApple(store, pay, user, username, b.jws, clock()));
+    }
 
     if (method === 'POST' && q.restore === '1') {
       const left = await store.erased(user, clock());
@@ -76,7 +132,9 @@ export function makeHandler(store: Store, clock: () => number = Date.now, delete
     }
 
     if (method === 'POST') {
-      const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || '';
+      /* sync needs support (or an account from before tips); nothing is saved, and nothing already saved is touched */
+      if (!(await maySync(store, user, username, pay, clock()))) return json(402, { error: SUP_SYNC_WORDS.need, need: 'support' });
+      const raw = bodyOf(event);
       if (Buffer.byteLength(raw) > MAX_BODY) return json(413, { error: `Send at most ${MAX_BODY} bytes at a time.` });
       let body: unknown;
       try {
@@ -129,13 +187,13 @@ export function makeHandler(store: Store, clock: () => number = Date.now, delete
 
     if (method === 'DELETE') {
       const all = q.all === '1';
+      /* closing the account: the tips linked to it are let go first, so nothing is left that points to it */
+      if (all) await store.dropClaims(user);
       const n = await store.erase(user, clock(), all);
       if (all) {
         /* the log first (it can be done again), then the sign-in; if that fails, the app asks again and only it is left */
         try {
-          /* the access token names the user (username); in a pool that signs in with email it is the same as sub */
-          const name = event.requestContext.authorizer?.jwt?.claims?.username;
-          await deleteUser(typeof name === 'string' && name ? name : user);
+          await deleteUser(username);
         } catch {
           return json(502, { error: 'Your log was removed, but the account could not be closed. Try again.', erased: n });
         }

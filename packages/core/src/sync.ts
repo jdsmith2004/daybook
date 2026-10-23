@@ -11,6 +11,7 @@
    handler with an in-memory table. Checked by services/api/test/client.test.ts. */
 import { normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
 import { isKey } from './legacy/core.js';
+import { keepSup } from './supporter';
 import type { Settings, Snapshot } from './types';
 
 /** the records this device changed and has not sent yet: id -> the change time it had */
@@ -93,7 +94,9 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     if (here != null && here >= r.u) continue;
     const p = parseId(r.id)!;
     if (here == null && !r.data) continue; /* a deletion of something this device never had */
-    if (p.kind === 'settings') snap.settings = r.data ? (r.data as Snapshot['settings']) : null;
+    /* settings from the account keep the supporter record this device has, if it is the better one (a tip is never lost
+       to an older copy of the settings) */
+    if (p.kind === 'settings') snap.settings = r.data ? keepSup(r.data as Settings, snap.settings?.sup) : null;
     else if (p.kind === 'days') {
       if (r.data) snap.days[p.key] = r.data as Snapshot['days'][string];
       else delete snap.days[p.key];
@@ -214,9 +217,11 @@ export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<Pus
 
 /** what a device does when the sync API turns a request down: retry once soon (the gateway's own request ceiling, hit
     when many people sync at the same minute), pause until the app opens again (the person's daily allowance, or a body
-    too large: retrying cannot help), or show the error and try on the next round. ours: the answer carried the sync
-    function's own words. retried: this is already the retry. */
-export function syncFailure(status: number, ours: boolean, retried: boolean): 'retry' | 'pause' | 'error' {
+    too large: retrying cannot help), wait for a tip (402: the account is not a supporter yet, supporter.ts; the changes stay
+    marked to send), or show the error and try on the next round. ours: the answer carried the sync function's own words.
+    retried: this is already the retry. */
+export function syncFailure(status: number, ours: boolean, retried: boolean): 'retry' | 'pause' | 'need' | 'error' {
+  if (status === 402 && ours) return 'need';
   if (status === 429 && !ours) return retried ? 'error' : 'retry';
   if (status === 429 || status === 413) return 'pause';
   return 'error';
@@ -265,7 +270,8 @@ export function snapshotOf(recs: SyncRecord[]): Snapshot {
 }
 
 /** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
-    already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have */
+    already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have, and the better supporter
+    record */
 function keepEarned(win: Settings, lose: Settings): Settings {
   const out = JSON.parse(JSON.stringify(win)) as Settings;
   const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
@@ -279,7 +285,7 @@ function keepEarned(win: Settings, lose: Settings): Settings {
   out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };
   out.learn.notes = { ...lose.learn.notes, ...out.learn.notes };
   out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
-  return out;
+  return keepSup(out, lose.sup);
 }
 
 /** A device joining an account, when both may hold settings. The settings record holds what was earned and built (the

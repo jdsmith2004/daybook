@@ -31,6 +31,7 @@
             <li>With an account, your records are kept under your account and sent only to you, when you are signed in.</li>
             <li>No ads, no tracking, and nothing is ever sold or shared.</li>
             <li>Only if you say yes: a few anonymous counts once a day, never your words, your log or who you are.</li>
+            <li>If you leave a tip, Apple or Stripe handles the payment. Daybook keeps only a small supporter record, never your card details.</li>
             <li>You can delete everything, and your account, from inside the app.</li>
           </ul>
         </div>
@@ -45,7 +46,7 @@
         <p>
           Everything you put in Daybook (your log of urges and slips, check-ins, notes, your plan, lessons, reviews and settings) is stored on your device only,
           or in your browser's storage when you use Daybook on the web. Daybook does not receive any of it. (The anonymous counts below, if you turn them on,
-          and feedback you choose to send, are not part of your log.)
+          feedback you choose to send, and a tip you choose to leave, are not part of your log.)
         </p>
 
         <h2>With an account</h2>
@@ -61,6 +62,7 @@
             reviews, lesson progress (which lessons you finished, and when), and settings.
           </li>
           <li><strong>An account ID</strong>, a random number that your records are stored under.</li>
+          <li><strong>Your supporter record</strong>, if you tipped or had an account before tips opened sync (see <a href="#tips">Tips</a>).</li>
         </ul>
         <p>
           Your records are used for one thing: sending them back to you, on your devices, when you are signed in. They are not viewed, analyzed, sold, shared,
@@ -133,17 +135,43 @@
         </p>
         <p>On your phone, you can lock Daybook with Face ID, Touch ID or your passcode in Settings.</p>
 
-        <h2>Tips</h2>
+        <h2 id="tips">Tips and supporters</h2>
         <p>
-          Daybook is free. If you choose to leave a tip (on iPhone or the web), it is paid on a Stripe page in your browser, outside the app, and
-          <a href="https://stripe.com/privacy">Stripe's privacy policy</a> covers your payment. Daybook receives what Stripe gives a seller: the amount, and the
-          name and email you enter there, used only to keep records and to answer you. It is never connected to your Daybook log or account.
+          Daybook is free. A tip of $5 or more makes you a supporter, which opens sync and a safe copy of your log, the deeper stats and the extra flame looks.
+          Everything for hard moments stays free for everyone. On iPhone you can tip with Apple's in-app purchase or on the web tip page; on the web, on the web
+          tip page. Apple or Stripe handles the payment, under their own privacy policies (<a href="https://www.apple.com/legal/privacy/">Apple</a>,
+          <a href="https://stripe.com/privacy">Stripe</a>). Daybook never sees or keeps your card or bank details.
+        </p>
+        <p>What Daybook keeps about a tip:</p>
+        <ul>
+          <li>
+            <strong>Your supporter record</strong>: that it is a tip, the amount, the date, and where it came from (Apple, the web tip page, or an account from
+            before tips opened sync). It is kept on your device, in your settings, and, if you have an account, under your account, where it decides whether
+            your account can sync.
+          </li>
+          <li>
+            <strong>The payment's reference</strong> (Apple's purchase number, or Stripe's checkout number), with the account it opened and when, so the server
+            can check the payment with Apple or Stripe and one payment opens one account. Apple's signed receipt is checked and not kept.
+          </li>
+          <li>
+            When you are signed in, <strong>your account ID</strong> goes with the tip to Apple or Stripe, so the tip opens your account. Nothing else about you
+            or your log is sent.
+          </li>
+          <li>
+            For a tip on the web tip page, the owner can see in Stripe what Stripe gives a seller: the amount, and the name and email you enter there, used only
+            to keep records and to answer you. Apple gives the owner no name or email.
+          </li>
+        </ul>
+        <p>
+          Delete my account removes your supporter record and the references linked to your account. The supporter record on your device stays after Delete
+          everything, so a tip is never lost; deleting the app removes it.
         </p>
 
         <h2>Other companies</h2>
         <p>
-          Amazon Web Services hosts the website and the account service. Apple and Google distribute the app. If you have chosen in your phone's settings to
-          share crash reports with app developers, Apple or Google may send Daybook anonymous crash reports. No one else receives anything.
+          Amazon Web Services hosts the website and the account service. Apple and Google distribute the app. Apple and Stripe handle tip payments. If you have
+          chosen in your phone's settings to share crash reports with app developers, Apple or Google may send Daybook anonymous crash reports. No one else
+          receives anything.
         </p>
 
         <h2>Ratings</h2>

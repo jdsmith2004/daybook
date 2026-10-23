@@ -5,7 +5,12 @@
 
    The first time a device signs in, the account and the device may both hold a log. A new device (no days yet) simply takes
    the account's log. An account with nothing in it takes the device's. When both have a log, the person chooses: combine
-   them (the newer copy of each day and of the settings wins) or use the account's log on this device. */
+   them (the newer copy of each day and of the settings wins) or use the account's log on this device.
+
+   Sync needs support (core supporter.ts): an account that is not a supporter, and was not made before tips opened sync,
+   is turned down when it sends changes (402). Then the status is 'need': nothing is lost, the changes wait here (still
+   marked to send), lessons stay open, and sync starts again by itself once a tip is confirmed (tip.ts calls resume). This
+   provider also gives tip.ts what it needs (setTipHost): the signed-in account, the API, and the settings change path. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   accountHasLog,
@@ -20,6 +25,7 @@ import {
   type SyncRecord,
   type SyncTransport,
 } from '@daybook/core';
+import { changeSettings, keepSup, supActive, type Supporter } from '@daybook/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
@@ -28,6 +34,7 @@ import { router } from 'expo-router';
 import { accessToken, forgetSession, loadSession, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { useStore } from './store';
+import { keptSup, loadKept, setTipHost, syncTips, watchAppleTips } from './tip';
 
 const KEY = 'daybook.sync';
 const EVERY = 5 * 60_000;
@@ -47,6 +54,7 @@ export type SyncStatus =
   | { k: 'busy'; what: string }
   | { k: 'ask'; recs: SyncRecord[]; now: number } // first sign-in: both have a log
   | { k: 'on'; note?: string } // note: what the last round could not save, said plainly
+  | { k: 'need' } // signed in, but sync opens with a tip (supporter.ts); the log stays here
   | { k: 'expired' }
   | { k: 'error'; msg: string };
 
@@ -124,7 +132,7 @@ class HttpError extends Error {
 
 export function SyncProvider({ children, onErased }: { children: ReactNode; onErased: () => Promise<void> }) {
   const store = useStore();
-  const { ready, dirty, current, replace, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, erase } = store;
+  const { ready, dirty, current, replace, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, erase, apply, say, snap } = store;
   const [status, setStatus] = useState<SyncStatus>(syncOffered ? { k: 'out' } : { k: 'off' });
   const [session, setSession] = useState<Session | null>(null);
   const [kept, setKept] = useState<Kept | null>(null);
@@ -137,6 +145,10 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   const [erased, setErased] = useState<{ n: number; at: number } | null>(null);
   const again = useRef(false);
   const paused = useRef(false);
+  /* the account cannot sync yet (it needs a tip): rounds wait until tip.ts says the server agrees */
+  const need = useRef(false);
+  /* tip proofs on this device were sent once since the account was turned down */
+  const linked = useRef(false);
 
   const saveKept = useCallback(async (k: Kept | null) => {
     keptRef.current = k;
@@ -172,9 +184,23 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   /* the gateway's request ceiling was hit (many people syncing at once): one quiet retry, a few seconds on */
   const retried = useRef(false);
   const roundRef = useRef<() => Promise<void>>(async () => undefined);
+  const resumeRef = useRef<() => void>(() => undefined);
   const fail = useCallback((e: unknown) => {
     if (e instanceof SignInExpired) setStatus({ k: 'expired' });
-    else if (e instanceof HttpError) {
+    else if (e instanceof HttpError && syncFailure(e.status, e.ours, retried.current) === 'need') {
+      /* sync opens with a tip: the changes stay here, marked to send */
+      need.current = true;
+      setStatus({ k: 'need' });
+      /* a tip this device knows of (an Apple purchase, a web tip from before signing in) is sent once, and opens it */
+      if (!linked.current) {
+        linked.current = true;
+        syncTips()
+          .then((r) => {
+            if (supActive(r.server)) resumeRef.current();
+          })
+          .catch(() => undefined);
+      }
+    } else if (e instanceof HttpError) {
       const what = syncFailure(e.status, e.ours, retried.current);
       /* a retry is a sync round, which needs a device that has joined its account */
       if (what === 'retry' && keptRef.current) {
@@ -196,7 +222,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   const round = useCallback(async () => {
     const s = sessionRef.current;
     const k = keptRef.current;
-    if (!s || !k || paused.current) return;
+    if (!s || !k || paused.current || need.current) return;
     if (running.current) {
       again.current = true;
       return;
@@ -237,6 +263,16 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     }
   }, [transport, mergeFromAccount, current, ackPushed, restamp, saveKept, fail]);
   roundRef.current = round;
+  /* the server now says this account is a supporter */
+  resumeRef.current = () => {
+    if (!need.current) return;
+    need.current = false;
+    linked.current = false;
+    if (keptRef.current) {
+      setStatus({ k: 'on' });
+      roundRef.current();
+    } else if (sessionRef.current) join(sessionRef.current).catch(fail);
+  };
 
   /* at start: the kept sign-in, if any */
   useEffect(() => {
@@ -347,6 +383,10 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         const k = keptRef.current;
         sessionRef.current = s;
         setSession(s);
+        need.current = false;
+        linked.current = false;
+        /* the tips this device knows of, brought to the account (and the account's record, brought here) */
+        syncTips().catch(() => undefined);
         /* signed in again to the same account: carry on where it left off */
         if (k && k.sub === s.sub) {
           paused.current = false;
@@ -396,6 +436,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       await saveKept(null);
       sessionRef.current = null;
       setSession(null);
+      need.current = false;
       setStatus({ k: 'out' });
       if (remove) {
         await erase();
@@ -408,13 +449,17 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   );
 
   /** a call to the sync API outside a sync round, with the token renewed once if it was turned down */
-  const callApi = useCallback(async (method: string, query: string): Promise<{ status: number; body: Record<string, unknown> } | null> => {
+  const callApi = useCallback(async (method: string, query: string, body?: unknown): Promise<{ status: number; body: Record<string, unknown> } | null> => {
     const s = sessionRef.current;
     if (!s) return null;
     for (let tries = 0; tries < 2; tries++) {
       try {
         const token = await accessToken(s, tries > 0);
-        const r = await callWithin(SYNC_URL + query, { method, headers: { authorization: 'Bearer ' + token } });
+        const r = await callWithin(SYNC_URL + query, {
+          method,
+          headers: { authorization: 'Bearer ' + token, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
         if (r.status === 401 && tries === 0) continue;
         return { status: r.status, body: r.body };
       } catch {
@@ -461,6 +506,55 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     setStatus({ k: 'out' });
     return { ok: true, msg: 'Your account was deleted.' };
   }, [callApi, saveKept]);
+
+  /* tips (tip.ts): the signed-in account, the API, and the settings change path. A record is put on the settings only
+     when it is better than theirs, so this never loops and never takes a record away. */
+  const saveSup = useCallback(
+    (sup: Supporter) => {
+      const st = current().snap.settings;
+      if (!st) return;
+      const next = keepSup(st, sup);
+      if (next !== st) apply({ st: changeSettings(st, (x) => void (x.sup = next.sup)) });
+    },
+    [current, apply],
+  );
+  useEffect(() => {
+    setTipHost({
+      account: () => sessionRef.current?.sub || null,
+      api: (method, query, body) => callApi(method, query, body),
+      open: async (body) => {
+        if (!SYNC_URL) return null;
+        try {
+          const r = await callWithin(SYNC_URL + '/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+          return { status: r.status, body: r.body };
+        } catch {
+          return null;
+        }
+      },
+      save: saveSup,
+      resume: () => resumeRef.current(),
+      say,
+    });
+    return () => setTipHost(null);
+  }, [callApi, saveSup, say]);
+  /* Apple tips that arrive on their own, and at start every tip this device knows of (a web tip just paid, a restore) */
+  useEffect(() => watchAppleTips(), []);
+  useEffect(() => {
+    if (!ready || !loaded) return;
+    syncTips().catch(() => undefined);
+  }, [ready, loaded]);
+  /* settings that came back without the tip (a new setup, an account's log, an older backup) get it back */
+  useEffect(() => {
+    if (!ready || !snap.settings) return;
+    let live = true;
+    loadKept().then(() => {
+      const k = keptSup();
+      if (live && k) saveSup(k);
+    });
+    return () => {
+      live = false;
+    };
+  }, [ready, snap.settings, saveSup]);
 
   const value = useMemo<SyncValue>(
     () => ({

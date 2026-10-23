@@ -76,7 +76,8 @@
           "faceIDPermission": "Daybook uses Face ID to keep your log private."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true,

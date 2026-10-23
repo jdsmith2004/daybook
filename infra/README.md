@@ -92,6 +92,26 @@ It is off until its role exists:
 3. To read the counts: sign in to the app, open Stats in More, and copy the account id it shows. Add it as the
    repository secret `DAYBOOK_OWNER_SUB` and deploy again. Only that account can read them.
 
+## Tips: the Stripe key and the sync gate
+
+Tips (services/api `supporter.ts`) need nothing new in `infra/app` beyond what deploys make: one open route,
+`POST /sync/claim` (a web tip from a signed-out device, throttled low), and `/sync/*` sent to the API by CloudFront.
+Sync saves need a supporter or an account from before tips; reading, erasing and closing an account stay open to all.
+
+The Stripe restricted key (read only, Checkout Sessions only) is never in Terraform, its state, GitHub or the code. It
+lives in Parameter Store as the SecureString `/daybook/stripe-key`, which you put there by hand, and the sync function
+reads it when it first checks a web tip:
+
+1. Apply the bootstrap stack once more with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It lets the
+   sync function's role read that one parameter (and decrypt it only through Parameter Store), and look up when an
+   account was made (`cognito-idp:AdminGetUser`, for the grandfather rule).
+2. Put the key there: `read -rs STRIPE_KEY`, paste it, then
+   `aws ssm put-parameter --region us-east-2 --name /daybook/stripe-key --type SecureString --value "$STRIPE_KEY"` and
+   `unset STRIPE_KEY`. A standard parameter costs nothing.
+
+Until both are done, web tips answer "Web tips are not set up yet" and only synced data decides who is grandfathered.
+The full list of owner steps (App Store Connect, Stripe, AWS) is in docs/plan.md, "Payments: what the owner sets up".
+
 ## Signing in from a local web server
 
 Sign-up and sign-in are native screens in the app that call the Cognito API directly, so they work from any address. The

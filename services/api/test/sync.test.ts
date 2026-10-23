@@ -2,6 +2,7 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { MemoryStore } from '../src/store';
+import { supporters } from './helpers';
 import { DAILY_BYTES, makeHandler, MAX_PUSH, MAX_RECORD, MAX_SKEW, OVERLAP } from '../src/sync';
 
 let now = 1_000_000_000;
@@ -32,7 +33,7 @@ const day = (k: string, u: number, extra: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   now = 1_000_000_000;
-  store = new MemoryStore();
+  store = supporters(new MemoryStore());
   handler = makeHandler(store, () => now);
 });
 
@@ -200,7 +201,7 @@ describe('sync', () => {
   });
 
   it('reports a record that fails to save, and saves the rest', async () => {
-    const failing = new MemoryStore();
+    const failing = supporters(new MemoryStore());
     const put = failing.putIfNewer.bind(failing);
     failing.putIfNewer = async (u, r) => {
       if (r.id === 'days/2026-10-13') throw new Error('boom');

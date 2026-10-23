@@ -40,7 +40,7 @@ export default function Night() {
       <T v="title" style={s.c} accessibilityRole="header">
         Phone down. Good night.
       </T>
-      <T style={s.c}>{at ? `Phone away at ${fmtClock(at)}. ` : ''}Tomorrow morning I will ask whether it stayed away. Honest is better than perfect.</T>
+      <T style={s.c}>{at ? `Phone away at ${fmtClock(at)}. ` : ''}That counts. Rest well, and tomorrow is a fresh day.</T>
       {g ? (
         <T v="label" style={[s.c, { color: '#8CF0CE' }]}>
           +{g} points

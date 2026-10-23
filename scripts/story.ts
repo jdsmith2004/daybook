@@ -10,7 +10,6 @@
      { "slip": "23:10" }                 a slip at that time (add "trigger": "Bored" if you like)
      { "rode": "15:20" }                 an urge ridden out
      { "checkin": true }                 the evening check-in (every visit gets one after the picture unless "checkin": false)
-     { "morning": true }                 the morning stop ("Last night") done
      { "small": true }                   one small thing done after the day's slip
      { "sunrise": true, "keep": true }   the sunrise check for the latest slip that still waits for one (keep: the run's answer)
      { "settings": { "wk1": "..." } }    a change to the settings, as if made in the app
@@ -41,7 +40,6 @@ type Action = {
   rode?: string;
   trigger?: string;
   checkin?: boolean;
-  morning?: boolean;
   small?: boolean;
   sunrise?: boolean;
   keep?: boolean;
@@ -134,7 +132,6 @@ function apply(s: Store, k: string, acts: Action[], roll: number, tag: string) {
     }
     const x = dayOf(s, k);
     if (a.checkin) x.checkin = { m: 6, c: 6, e: 6, s: 4, h: 7, so: 'Y', ro: null, n: '', done: true, at: +at(k, '21:30', roll) };
-    if (a.morning) x.p = { ...PLAY, ...x.p, m: true };
     if (a.small) for (const e of x.events) if (e.outcome === 'slipped') e.recovered = true;
     const time = a.slip || a.rode;
     if (time)

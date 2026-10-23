@@ -17,7 +17,7 @@ const CHANNEL = 'reminders';
 /* the Android channels: the check-ins (and Talk it through) keep the first channel's id, so a phone that has it keeps its choice */
 /* the come-back notes are low: no sound, no pop-up, only in the list */
 const CHANNELS: { id: string; name: string; kinds: NudgeKind[]; low?: boolean }[] = [
-  { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'morning', 'wind'] },
+  { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'wind'] },
   { id: 'hard-hours', name: 'Hard hours', kinds: ['risk'] },
   { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
   { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'], low: true },

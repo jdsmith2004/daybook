@@ -473,9 +473,8 @@ export function PicLesson() {
 export function PicDay({ a }: { a: SetupAnswers }) {
   const so = isTime(a.so) ? (a.so as string) : null;
   const rows: [string, string, string, string, string][] = [
-    ['sunrise', 'sky', 'Morning', '2 quick questions', '1 min'],
     ['book', 'sun', 'Lesson', 'One short lesson', '1–5 min'],
-    ['pencil', 'mint', 'Check-in', 'How today went', '1 min'],
+    ['pencil', 'mint', 'Check-in', 'How today went, and how you slept', '1 min'],
     ['moon', 'violet', 'Wind-down', so ? 'Screens off at ' + fmtClock(so) : 'Screens off, phone away', 'Night'],
   ];
   return (

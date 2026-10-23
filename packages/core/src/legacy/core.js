@@ -105,8 +105,10 @@ const FAITH_IDS=['l29','l30','l31','l32'],FAITH_MODES=['mix','first','after'];
 const WORDS_MAX=10,WORDS_LEN=200;
 /* The daily routine: which parts of a day show up on Today. Settings keep the usual choice (settings.routine) and a single day can
    differ (p.ov). Anything switched off and not done simply drops out of that day's count. Doing a switched-off item still counts. */
+/* "Last night" (the morning questions) left the routine on October 23, 2026: Good night counts as the phone going away, and
+   sleep is asked in the check-in. A saved choice for it is still read and kept (the weeks with quests read it), but nothing shows it. */
+const ROUTINE_GONE=[{k:'morning',on:true}];
 const ROUTINE=[
- {k:'morning',name:'Last night',sub:'Two quick questions about sleep and screens, asked the next morning.',on:true},
  {k:'lesson',name:'Lesson',sub:'One short lesson a day, with one thing to try.',on:true},
  {k:'calm',name:'Calm move',sub:'Finish a tool or a 10-minute pause.',on:true},
  {k:'reach',name:'Reached out',sub:'Text, call, or talk to a person.',on:false},
@@ -114,16 +116,17 @@ const ROUTINE=[
  {k:'wind',name:'Wind-down',sub:'The checklist for the hour before screens go off.',on:true}
 ];
 const ROUTINE_KEYS=ROUTINE.map(r=>r.k);
+const ROUTINE_KEPT=ROUTINE_GONE.concat(ROUTINE);
 /* the lesson counts as a daily win from the day it was added; earlier days keep their old five-win rings */
 const LESSON_WIN_FROM='2026-10-12';
 function normRoutine(r){
  const o={};
- ROUTINE.forEach(x=>{o[x.k]=r&&typeof r[x.k]==='boolean'?r[x.k]:x.on});
+ ROUTINE_KEPT.forEach(x=>{o[x.k]=r&&typeof r[x.k]==='boolean'?r[x.k]:x.on});
  return o;
 }
 function normOv(v){
  const o={};
- if(v&&typeof v==='object')ROUTINE_KEYS.forEach(k=>{if(typeof v[k]==='boolean')o[k]=v[k]});
+ if(v&&typeof v==='object')ROUTINE_KEPT.forEach(({k})=>{if(typeof v[k]==='boolean')o[k]=v[k]});
  return o;
 }
 
@@ -743,6 +746,9 @@ function morningInfo(days,st,key){
  const m=!!(td&&td.p&&td.p.m),done=m||(so!=null&&h!=null);
  return {applies:true,prev,so,h,done,m,po:pd&&pd.p?pd.p.po:null};
 }
+/* the morning questions were retired on October 23, 2026 (MORNING_END): a day from then on has the win only when its morning
+   was answered on a copy of the app that still asks (p.m). Every morning answered before stays won, with its points. */
+const MORNING_END='2026-10-24';
 function winsOf(days,key,st){
  const d=days[key],c=d&&d.checkin,p=d&&d.p,mi=morningInfo(days,st,key);
  const w={
@@ -750,14 +756,14 @@ function winsOf(days,key,st){
   calm:!!((p&&p.c>0)||((d&&d.events)||[]).some(e=>e.outcome==='rode'&&e.paused===true)),
   reach:reachedOn(d),
   wind:!!(p&&p.wd),
-  morning:mi.applies&&mi.done,
+  morning:mi.applies&&mi.done&&(key<MORNING_END||!!(p&&p.m)),
   lesson:!!(p&&((p.ls&&p.ls.length)||(p.lv&&p.lv.length)))
  };
  /* na = "not part of this day": switched off and not done. Something done still counts even when it is switched off,
     so turning a part off never takes a win away. */
  const on=k=>routineOn(st,p,k);
  w.na={
-  morning:!mi.applies||(!on('morning')&&!w.morning),
+  morning:!mi.applies||((key>=MORNING_END||!on('morning'))&&!w.morning),
   lesson:key<LESSON_WIN_FROM||!on('lesson'),
   calm:!on('calm'),reach:!on('reach'),checkin:!on('checkin'),wind:!on('wind')
  };
@@ -983,7 +989,6 @@ function rhythm(days,st,tk,nowMs){
  /* a part of the routine that is switched off for today has no stop, unless it was already done */
  const show=(k,done)=>done||routineOn(st,dp,k);
  const lessonDone=!!(dp&&((dp.ls&&dp.ls.length)||(dp.lv&&dp.lv.length)));
- if(mi.applies&&show('morning',mi.done))stops.push({k:'morning',start:roll%1440,done:mi.done,title:'Last night',when:'Morning'});
  if(tk>=LESSON_WIN_FROM&&show('lesson',lessonDone))stops.push({k:'lesson',start:9*60,done:lessonDone,title:'Lesson',when:'Daytime'});
  const ciDone=!!(day&&day.checkin&&day.checkin.done),windDone=!!(dp&&(dp.wd||dp.po));
  if(show('checkin',ciDone))stops.push({k:'evening',start:18*60,done:ciDone,title:'Check-in',when:'Evening'});
@@ -3070,6 +3075,7 @@ export {
   WORDS_LEN,
   ROUTINE,
   ROUTINE_KEYS,
+  MORNING_END,
   LESSON_WIN_FROM,
   normRoutine,
   normOv,

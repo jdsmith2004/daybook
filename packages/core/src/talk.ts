@@ -537,7 +537,7 @@ export const TALK_MORNING_H = 6;
 /** how long a decide-later stays on Today, and how long a change plan's look back is offered once it opens */
 const WAIT_FOR = 36 * HOUR;
 const LOOK_FOR = 24 * HOUR;
-/** an eyes-open go-ahead is asked about for three days (on Today and at the morning stop), and then let go: no slip is
+/** an eyes-open go-ahead is asked about for three days (on Today), and then let go: no slip is
     ever written for one that was not answered */
 export const TALK_OPEN_FOR = 72 * HOUR;
 /** hard hours, as [start, end] times (ms) */
@@ -592,7 +592,7 @@ function dueOf(t: Talk, k: DayKey, days: Days, now: number, hard: TalkHard): Tal
   if (now < look) return 'plan';
   return now - look < LOOK_FOR && !inHard(now, hard) ? 'look' : null;
 }
-/** the talk-through Today (and the morning stop) should show, if one still matters, the latest first: waiting to
+/** the talk-through Today should show, if one still matters, the latest first: waiting to
     decide, time to decide, a wait that passed, a change plan before its look back, or "look back". `hard` is the person's hard hours
     (talkDueNow in talk-log.ts fills it in). */
 export function talkDue(days: Days, now: number, hard: TalkHard = []): { k: DayKey; talk: Talk; due: TalkDue } | null {

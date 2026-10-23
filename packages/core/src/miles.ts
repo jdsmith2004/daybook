@@ -11,8 +11,9 @@ import type { DayKey, Days, Reviews } from './types';
 
 /** a badge stays earned once it was seen earned, even if an old entry is changed later */
 export const badgeDone = (b: Badge, st: Settings | null) => b.done || !!(st && st.seen && st.seen.badges.indexOf(b.id) >= 0);
-/** the badges about weekly quests, which were retired: shown only to someone who earned them */
-export const RETIRED_BADGES = ['quest-1', 'quest-3'];
+/** the badges about things that were retired (weekly quests, and the morning questions on October 23, 2026): shown only to
+    someone who earned them */
+export const RETIRED_BADGES = ['quest-1', 'quest-3', 'morning-5'];
 export const shownBadges = <B extends Badge>(bs: B[], st: Settings | null) => bs.filter((b) => RETIRED_BADGES.indexOf(b.id) < 0 || badgeDone(b, st));
 
 /* ---------- what is new since last time: levels, badges, quests, a full ring (legacy checkNew, ensureSeen, reseat) ---------- */

@@ -24,7 +24,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 - Pattern: the hours and days that are hardest for the person, from their own log, with a heads-up before them.
 - Rekindle: after a slip, a short honest look back and one small quest that can keep the run.
 - Lessons: built on research about habits and urges, written plainly and with hope.
-- A personal plan, a morning check, an evening wind-down and a weekly review.
+- A personal plan, an evening check-in and wind-down, and a weekly review.
 - Graduation: a permanent award at 90 days with no slip.
 - Progress that holds: no-slip days in a recent window, and earned rewards that are never taken away.
 

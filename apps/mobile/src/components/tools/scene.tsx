@@ -23,6 +23,7 @@ import {
   urNight,
   urWon,
   addEvent,
+  phoneAway,
   withDay,
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
@@ -221,12 +222,12 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
       }
       const day = changeDay(days[tk], tk, (d) => {
         const q = d.p || blankP();
-        q.po = at;
         if (q.tl.indexOf('bed') < 0) q.tl.push('bed');
         q.c = Math.min(50, q.c + 1);
         d.p = q;
       });
-      days = withDay(days, tk, day);
+      /* Good night: the phone away, and screens off on time when it is before the screens-off time (core phoneAway) */
+      days = phoneAway(withDay(days, tk, day), tk, at, Date.now(), s.settings);
       const next = { ...s, days };
       gain = Math.max(0, gameCompute(days, s.settings, s.reviews, tk).pts - b0);
       return next;
@@ -258,7 +259,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
       {/* read at the top, not under the main button (the thumb rule) */}
       {night ? (
         <T v="small" tone="muted" style={s.c}>
-          Tomorrow morning Daybook asks one thing: did the phone stay away?
+          Good night puts the phone away for the night. That counts, and nothing is asked tomorrow.
         </T>
       ) : null}
       <Dock>

@@ -89,7 +89,7 @@ export interface MomentDev {
   account?: boolean;
 }
 
-const STOP_NAME: Record<string, string> = { morning: 'last night', lesson: 'a lesson', evening: 'the check-in', night: 'the wind-down' };
+const STOP_NAME: Record<string, string> = { lesson: 'a lesson', evening: 'the check-in', night: 'the wind-down' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 /** "a, b and c" */
 const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);

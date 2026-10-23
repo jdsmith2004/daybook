@@ -1,5 +1,7 @@
 /* The evening check-in: a one-minute full-screen moment, one question at a time, like the sunrise check. Four honest 0 to 10
-   numbers on a slider, low on the screen where the thumb is, whether you reached out, one optional line, then the day as it is saved and what comes next.
+   numbers on a slider, low on the screen where the thumb is, how you slept last night (optional, in hours, kept where the
+   retired morning questions kept it: checkin.h, which the Sunday sleep goal and the week read), whether you reached out,
+   one optional line, then the day as it is saved and what comes next.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
 import { checkinFormOf, checkinSaveText, fmtClock, gameCompute, rhythm, saveCheckin, stopStatus, type CheckinForm, type DayKey } from '@daybook/core';
@@ -42,7 +44,8 @@ const RATE: Record<Rated, { name: string; q: string; lo: string; hi: string }> =
   e: { name: 'Energy', q: 'How much energy did you have?', lo: 'drained', hi: 'full' },
   s: { name: 'Stress', q: 'How much stress did you feel?', lo: 'calm', hi: 'high' },
 };
-const STEPS = ['m', 'c', 'e', 's', 'ro', 'n'] as const;
+const STEPS = ['m', 'c', 'e', 's', 'h', 'ro', 'n'] as const;
+const hoursText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
 type Step = (typeof STEPS)[number] | 'end';
 
 export default function Checkin() {
@@ -143,6 +146,47 @@ export default function Checkin() {
       </>
     );
     footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
+  } else if (step === 'h') {
+    const v = form.h ?? null;
+    body = (
+      <>
+        <T v="eyebrow" tone="muted">
+          Sleep
+        </T>
+        <T v="title" style={s.c} accessibilityRole="header">
+          {k === tk ? 'How did you sleep last night?' : 'How did you sleep the night before?'}
+        </T>
+        <T style={s.c} tone="muted">
+          Hours of sleep. A guess is fine.
+        </T>
+        {/* the hours, big in the open middle; the slider that sets them sits under the thumb */}
+        <View style={s.middle}>
+          <SliderValue big value={v} show={hoursText} unit="hours" hint="Slide below to answer" />
+        </View>
+        <Dock>
+          <Slider
+            key={step}
+            label="Hours of sleep"
+            value={v}
+            min={3}
+            max={12}
+            step={0.5}
+            show={hoursText}
+            unit="hours"
+            readout={false}
+            onChange={(n) => set({ ...form, h: n })}
+          />
+          {v != null ? (
+            <Appear by={10} duration={240}>
+              <Button label="Next" onPress={next} />
+            </Appear>
+          ) : (
+            <View style={s.btnSpace} />
+          )}
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
   } else if (step === 'ro') {
     const pick = (v: 'Y' | 'N') => {
       set({ ...form, ro: v });
@@ -167,7 +211,7 @@ export default function Checkin() {
     );
     footer = <Link label="Skip this one" onPress={next} />;
   } else if (step === 'n') {
-    const any = [form.m, form.c, form.e, form.s, form.ro].some((v) => v != null) || !!form.n.trim();
+    const any = [form.m, form.c, form.e, form.s, form.h, form.ro].some((v) => v != null) || !!form.n.trim();
     body = (
       <>
         <T v="eyebrow" tone="muted">

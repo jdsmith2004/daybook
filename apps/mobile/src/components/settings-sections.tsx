@@ -113,9 +113,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const lock = useLockPref();
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
-    const turningOn = Object.entries(patch).some(
-      ([k, v]) => v === true && (k === 'morning' || k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'),
-    );
+    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'));
     if (turningOn && !(await allowReminders())) {
       say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
       return;
@@ -214,7 +212,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         'Schedule',
         'Screens-off time, start date, new day',
         <>
-          <Field label="Screens off" hint="The wind-down opens an hour before. The next morning, Daybook asks if it happened.">
+          <Field label="Screens off" hint="The wind-down opens an hour before. Tapping Good night before then counts as screens off on time.">
             <Stepper
               label="Each night by"
               text={so}
@@ -379,26 +377,13 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'remind',
         'Reminders',
-        remindersOffered
-          ? (rem.morning || rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times'
-          : 'Phone alarms that keep the rhythm',
+        remindersOffered ? (rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times' : 'Phone alarms that keep the rhythm',
         remindersOffered ? (
           <>
             <T v="small" tone="muted">
               Up to three a day, and none about something you already did. They are made on this phone, and the words never say what Daybook is for, because a
               reminder can show on a locked screen. One that stops helping goes quiet, and Today says so.
             </T>
-            <OnOff name="Last night’s questions" sub={'Each morning at ' + fmtClock(rem.morningAt)} on={rem.morning} onPick={(on) => setRem({ morning: on })} />
-            {rem.morning ? (
-              <Stepper
-                label="Morning reminder"
-                text={fmtClock(rem.morningAt)}
-                unset={false}
-                less="15 minutes earlier"
-                more="15 minutes later"
-                onStep={(d) => setRem({ morningAt: stepClock(rem.morningAt, d * 15) })}
-              />
-            ) : null}
             <OnOff name="Check in" sub={'Each evening at ' + fmtClock(rem.checkinAt)} on={rem.checkin} onPick={(on) => setRem({ checkin: on })} />
             {rem.checkin ? (
               <Stepper
@@ -448,10 +433,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
           </>
         ) : (
           <>
-            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Three a day are enough, and one on Sunday:</T>
-            <T>
-              • <B>When I wake up:</B> “Last night's questions.” Two taps.
-            </T>
+            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Two a day are enough, and one on Sunday:</T>
             <T>
               • <B>{minToClock(18 * 60)}:</B> “Check in.” Under a minute.
             </T>

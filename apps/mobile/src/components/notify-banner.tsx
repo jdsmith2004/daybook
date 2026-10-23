@@ -32,7 +32,7 @@ export function NotifyBanner() {
     if (ask.k === 'off') return openPhoneSettings();
     const ok = await allowReminders();
     if (!ok) return;
-    if (!(rem.checkin || rem.morning || rem.wind || rem.review)) {
+    if (!(rem.checkin || rem.wind || rem.review)) {
       setReminderPrefs({ ...rem, checkin: true, review: true });
       /* turned on fresh, so each starts every day (core nudges.ts) */
       for (const k of ['checkin', 'sunday'] as const) setNudgeLog((l) => nudgeResume(l, k));

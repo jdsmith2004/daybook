@@ -15,9 +15,10 @@ const slip = (days: Days, k: string, time = '23:00') => addEvent(days, k, 'slipp
 describe('a calm day', () => {
   it('the card is the day’s next stop, and the line under it names the rest', () => {
     const p = pickMoment({}, st, {}, '2026-10-20', at(20, 7));
-    expect(p.card).toMatchObject({ k: 'calm', h: 'Good morning', btn: 'Start', go: 'morning' });
+    /* the morning has no stop of its own any more: the day opens on its lesson */
+    expect(p.card).toMatchObject({ k: 'calm', h: LESSONS[0].title, btn: 'Start', go: 'lesson', v: LESSONS[0].id });
     expect(p.more).toBeNull();
-    expect(p.then).toBe('Then: a lesson from 9:00 AM, the check-in around 6 PM and the wind-down from 10:00 PM.');
+    expect(p.then).toBe('Then: the check-in around 6 PM and the wind-down from 10:00 PM.');
   });
   it('without an account, a lesson that waits behind one is never the card', () => {
     const s0 = normSettings({ ...st, routine: { ...st.routine, morning: false } });

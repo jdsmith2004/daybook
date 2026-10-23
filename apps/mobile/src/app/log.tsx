@@ -136,7 +136,8 @@ export default function Log() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, ci]);
   /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing. After an urge
-     ridden out at night it waits for the morning stop, which asks what helped (core winLater), so it is asked once. */
+     ridden out at night it waits for last night's card on Today the next morning, which asks what helped (core winLater), so
+     it is asked once. */
   const evNow = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim() && !winLater(st, date, evNow));
   useEffect(() => {

@@ -166,6 +166,16 @@ export const TALK_NEEDS: [TalkNeed, string, string, string, string][] = [
   ['close', 'Closeness', 'To feel wanted, or less alone', 'chat', 'closeness'],
   ['bored', 'Something to do', 'Bored, restless, nothing planned', 'dice', 'something to do'],
 ];
+/** the same needs, asked ahead of the hard hours ("What usually makes these hours hard?", the short plan from the hard
+    hours card): what makes them hard, then what is wanted. Nothing here assumes a slip is planned. [id, the words, a short line] */
+export const TALK_HARD_NEEDS: [TalkNeed, string, string][] = [
+  ['relief', 'Stress or pressure', 'I want relief'],
+  ['reward', 'A hard day, or a long run', 'I feel I have earned something'],
+  ['escape', 'A heavy feeling', 'Sad, lonely, ashamed or empty'],
+  ['rest', 'Being worn out', 'I want rest'],
+  ['close', 'Feeling alone', 'I want to feel close to someone'],
+  ['bored', 'Boredom', 'Restless, nothing planned'],
+];
 /** the need as it reads in "when I want ...": one of the list, or the person's own words */
 export const talkNeedWord = (n: TalkNeed | null, own?: string | null) => TALK_NEEDS.find((x) => x[0] === n)?.[4] || (own && own.trim()) || 'it';
 
@@ -245,6 +255,8 @@ export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   away: ['Put the device out of reach', 'put the device out of reach'],
   block: ['Block what I have in mind, now', 'keep it blocked'],
 };
+/** a move as it reads in the short plan for the hard hours, where nothing is in mind yet */
+export const talkMoveName = (k: TalkMove, prep = false) => (prep && k === 'block' ? 'Turn on a blocker before they start' : TALK_MOVES[k][0]);
 const NEED_MOVES: Record<TalkNeed, TalkMove[]> = {
   relief: ['walk', 'shower', 'breathe', 'write'],
   reward: ['treat', 'laugh', 'show'],
@@ -313,6 +325,10 @@ export function talkMomentTime(id: string, now: number): number | null {
   if (!m || m[2] == null) return null;
   return m[2] < 0 ? now - m[2] * 60000 : midnight(now) + m[2] * 60000;
 }
+/** the moment of a plan for the hard hours: when they start (stored as 'hard', with that time) */
+export const TALK_HARD_MOMENT = 'hard';
+/** the hard hours' start as a moment for the plan, when it is still ahead (at least 15 minutes from now), or null */
+export const talkHardMoment = (start: number, now: number): number | null => (start > now + 15 * 60000 ? start : null);
 export const talkMomentsNow = (now: number) => TALK_MOMENTS.filter((m) => m[2] == null || m[2] < 0 || midnight(now) + m[2] * 60000 > now + 15 * 60000);
 export function talkWaitTime(id: string, now: number): number {
   const w = TALK_WAITS.find((x) => x[0] === id);
@@ -338,10 +354,13 @@ export function talkMoveWords(t: Pick<Talk, 'm' | 'mx'>): string[] {
     .concat(t.mx || []);
 }
 
-/** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach." */
-export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx'>>): string {
+/** "11 PM", "10:30 PM" */
+const clockShort = (t: number) => talkClock(t).replace(':00 ', ' ');
+/** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach."
+    A plan for the hard hours starts at their time: "At 11 PM, when I want rest, I will ..." */
+export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx' | 'at'>>): string {
   const mo = TALK_MOMENTS.find((x) => x[0] === t.mo);
-  const lead = !mo || mo[0] === 'now' ? 'Right now' : mo[1];
+  const lead = t.mo === TALK_HARD_MOMENT && t.at ? 'At ' + clockShort(t.at) : !mo || mo[0] === 'now' ? 'Right now' : mo[1];
   const thens = t.m
     .map((id) => TALK_MOVES[id as TalkMove]?.[1])
     .filter(Boolean)
@@ -428,6 +447,9 @@ export interface Talk {
   f: string[];
   e: number | null;
   a: TalkAfter | null;
+  /** 1 when it is the short plan made ahead of the hard hours (the hard hours card): no slip was in mind, so it does not
+      count as a sign of when it gets hard (risk.ts). Only when it is one. */
+  pr?: 1;
 }
 
 const SIGNS = TALK_SIGNS.map((x) => x[0]);
@@ -489,6 +511,7 @@ export function normTalk(x: unknown): Talk | null {
   };
   withOwn(out, 'nx', out.n ? '' : talkOwn([v.nx], 1)[0] || '');
   withOwn(out, 'mx', talkOwn(v.mx));
+  if (v.pr === 1) out.pr = 1;
   return out;
 }
 /** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */
@@ -537,7 +560,7 @@ export const TALK_MORNING_H = 6;
 /** how long a decide-later stays on Today, and how long a change plan's look back is offered once it opens */
 const WAIT_FOR = 36 * HOUR;
 const LOOK_FOR = 24 * HOUR;
-/** an eyes-open go-ahead is asked about for three days (on Today and at the morning stop), and then let go: no slip is
+/** an eyes-open go-ahead is asked about for three days (on Today), and then let go: no slip is
     ever written for one that was not answered */
 export const TALK_OPEN_FOR = 72 * HOUR;
 /** hard hours, as [start, end] times (ms) */
@@ -592,7 +615,7 @@ function dueOf(t: Talk, k: DayKey, days: Days, now: number, hard: TalkHard): Tal
   if (now < look) return 'plan';
   return now - look < LOOK_FOR && !inHard(now, hard) ? 'look' : null;
 }
-/** the talk-through Today (and the morning stop) should show, if one still matters, the latest first: waiting to
+/** the talk-through Today should show, if one still matters, the latest first: waiting to
     decide, time to decide, a wait that passed, a change plan before its look back, or "look back". `hard` is the person's hard hours
     (talkDueNow in talk-log.ts fills it in). */
 export function talkDue(days: Days, now: number, hard: TalkHard = []): { k: DayKey; talk: Talk; due: TalkDue } | null {

@@ -3,8 +3,9 @@
    one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
-   is never locked); Your day as plain rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is
-   earned, and its celebration opens. */
+   is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
+   rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is earned, and its
+   celebration opens. */
 import {
   accountAsk,
   awayDue,
@@ -47,6 +48,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
+import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
@@ -220,6 +222,7 @@ export default function Today() {
       <Card>
         <LogLink />
       </Card>
+      <NightWinCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}

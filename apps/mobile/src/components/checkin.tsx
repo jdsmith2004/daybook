@@ -102,7 +102,8 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
     }
     let msg = '';
     update((s0) => {
-      const days = saveCheckin(s0.days, dkey, form);
+      /* sleep is set under Night and sleep on the day's page, so this keeps what is saved there */
+      const days = saveCheckin(s0.days, dkey, { ...form, h: undefined });
       msg = checkinSaveText(days, s0.settings!, dkey, tk);
       return { ...s0, days };
     });
@@ -145,8 +146,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
         </Pressable>
       ) : null}
       <T v="small" tone="muted">
-        Sleep and screens-off are not here on purpose: you answer those tomorrow morning, when you actually know. If something happened, log it first. A slip is
-        data, not a reset.
+        Sleep and screens-off are under Night and sleep. If something happened, log it first. A slip is data, not a reset.
       </T>
     </View>
   );

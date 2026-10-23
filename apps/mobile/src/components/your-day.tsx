@@ -1,9 +1,9 @@
 /* "Your day" on Today: the day as a path from morning to night (core: stopTiles in day.ts), one plain row per stop, in the
    color of its full-screen moment; a done one says what was done. The open stop is the moment card at the top of Today
    (moment-card.tsx), never a second tile with its own button here. Every stop opens its moment with one tap, at any time:
-   Last night (app/morning.tsx), the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change"
-   turns parts of today on or off, in a sheet. */
-import { pathNote, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+   the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change" turns parts of today on or off, in
+   a sheet. */
+import { ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
 import { router } from 'expo-router';
 import { Fragment, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -23,11 +23,11 @@ export function openStop(go: StopGo, id?: string) {
     if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
     return;
   }
-  router.push(go === 'morning' ? '/morning' : go === 'checkin' ? '/checkin' : '/wind');
+  router.push(go === 'checkin' ? '/checkin' : '/wind');
 }
-/** Next up names a stop by its key (morning, evening, night; the lesson opens itself) */
+/** Next up names a stop by its key (evening, night; the lesson opens itself) */
 export function openStopKey(k: string) {
-  openStop(k === 'morning' ? 'morning' : k === 'evening' ? 'checkin' : 'wind');
+  openStop(k === 'evening' ? 'checkin' : 'wind');
 }
 
 /** the colors of a stop, from the sky of its moment */
@@ -49,7 +49,6 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
   const c = useTheme();
   const st = snap.settings!;
   const r = stopTiles(snap.days, st, tk, now);
-  const note = pathNote(snap.days, st, tk);
   const changed = routineChanged(st, snap.days[tk]?.p);
   const [sheet, setSheet] = useState(false);
   const n = r.tiles.length;
@@ -79,9 +78,9 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
           <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
         </Pressable>
       </View>
-      {changed || note ? (
+      {changed ? (
         <T v="small" tone="muted">
-          {changed ? changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.' : note}
+          {changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.'}
         </T>
       ) : null}
       {n ? (

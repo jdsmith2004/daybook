@@ -528,7 +528,7 @@ function Phone({ sub: want }: { sub?: string }) {
             <UL
               items={[
                 'Charge the phone outside the bedroom and use a cheap alarm clock.',
-                'Set your screens-off time in Settings. The app asks about it the next morning.',
+                'Set your screens-off time in Settings. Tapping Good night before it counts as screens off on time.',
                 'Look for Downtime (iPhone) or Bedtime mode (Android) to schedule quiet hours. Menu names vary.',
                 'The CDC suggests the same bedtime and wake time every day, and turning devices off at least 30 minutes before bed.',
                 'Log out of accounts and delete bookmarks, so there is less to resist at 1 AM.',

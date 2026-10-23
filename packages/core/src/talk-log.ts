@@ -83,7 +83,7 @@ export function talkHardNear(days: Days, st: Settings, tk: DayKey): TalkHard {
   }
   return out;
 }
-/** talkDue with the person's hard hours: what Today and the morning stop show */
+/** talkDue with the person's hard hours: what Today shows */
 export function talkDueNow(days: Days, st: Settings | null, tk: DayKey, now: number) {
   /* the hard hours only move a change plan's look back, so they are worked out only when one is waiting */
   const waiting = talksOf(days).some((x) => x.talk.p === 'change' && !x.talk.a && now - x.talk.t < 4 * 24 * 3600000);

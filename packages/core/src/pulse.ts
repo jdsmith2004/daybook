@@ -11,8 +11,8 @@
    - Do people stay: one "active" count for each day the app was opened, in a band of days since it was first opened.
    - Where setup loses people: the furthest setup page reached, and setup finished (kept from the first page and sent
      once the person says yes, so someone who closed setup and came back later still counts).
-   - Which features are used: SOS, each tool, Talk it through, lessons, the check-in, the sunrise check, the morning
-     questions, the Rekindle steps.
+   - Which features are used: SOS, each tool, Talk it through, lessons, the check-in, the sunrise check, the Rekindle
+     steps. (The morning questions had a count until they were retired on October 23, 2026.)
    - Do people come back after a slip: the next time the app is opened on a later day, how soon, as a band.
 
    PULSE_KEYS is the whole list; anything else is dropped on the device and refused by the server (pulseClean). The
@@ -27,19 +27,7 @@ export const PULSE_ACTIVE = ['act_0', 'act_1', 'act_2_6', 'act_7_13', 'act_14_29
 /** how soon the app was opened again after a slip */
 export const PULSE_BACK = ['back_1', 'back_2_3', 'back_4_7', 'back_8'] as const;
 /** what was used, by name */
-export const PULSE_USE = [
-  'sos',
-  'talk_done',
-  'lesson_done',
-  'checkin',
-  'sunrise',
-  'morning',
-  'rk_small',
-  'rk_phone',
-  'urge_logged',
-  'slip_logged',
-  'feedback',
-] as const;
+export const PULSE_USE = ['sos', 'talk_done', 'lesson_done', 'checkin', 'sunrise', 'rk_small', 'rk_phone', 'urge_logged', 'slip_logged', 'feedback'] as const;
 const toolKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id);
 const setupKeys = () => OB_PAGES.map((p) => 'setup_' + p.id).concat('setup_done');
 let all: Set<string> | null = null;
@@ -71,7 +59,6 @@ export function pulseMeaning(k: string): string {
     lesson_done: 'Finished a lesson',
     checkin: 'Saved a check-in',
     sunrise: 'Finished the sunrise check',
-    morning: 'Answered the morning questions',
     rk_small: 'Did a Rekindle small thing',
     rk_phone: 'Put the phone away for a Rekindle night',
     urge_logged: 'Logged an urge',

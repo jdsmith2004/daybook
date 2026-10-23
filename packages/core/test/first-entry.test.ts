@@ -2,9 +2,9 @@
    a first stretch or a pattern. The tracking start moves to the first entry, and so do a Day 1 and a step-down start that
    came before it, with a note. Dates picked by hand stay put. */
 import { describe, expect, it } from 'vitest';
-import { normSettings, streaks } from '../src/legacy/core.js';
+import { normDay, normSettings, streaks } from '../src/legacy/core.js';
 import { firstLog, loggedDay, logStart, setDate, startFromLog } from '../src/actions';
-import { morningDone, phoneAway, setScreensOff } from '../src/day';
+import { phoneAway, setScreensOff } from '../src/day';
 import { keepHard } from '../src/risk';
 import { addEvent } from '../src/mutate';
 import { recordLesson } from '../src/lessons';
@@ -22,8 +22,11 @@ describe('the first log', () => {
   it('is an urge or slip logged, or a check-in answered, not a lesson or what the app keeps by itself', () => {
     expect(loggedDay(undefined)).toBe(false);
     expect(loggedDay(log()['2026-10-17'])).toBe(true);
-    expect(loggedDay(morningDone({}, '2026-10-16', 1)['2026-10-16'])).toBe(true);
+    /* the morning questions, answered before they were retired */
+    expect(loggedDay(normDay({ p: { m: true } }, '2026-10-16'))).toBe(true);
     expect(loggedDay(phoneAway({}, '2026-10-16', '22:40', 1)['2026-10-16'])).toBe(false);
+    /* Good night before the screens-off time is screens off on time, which the app keeps by itself */
+    expect(loggedDay(phoneAway({}, '2026-10-16', '22:40', 1, st)['2026-10-16'])).toBe(false);
     expect(loggedDay(recordLesson({}, '2026-10-16', LESSONS[0], 1).days['2026-10-16'])).toBe(false);
     /* last night's screens, answered the next morning, sit on the night before */
     expect(loggedDay(setScreensOff({}, '2026-10-16', 'Y', 1)['2026-10-16'])).toBe(false);
@@ -94,9 +97,13 @@ describe('the log starts with the first entry', () => {
     expect(setDate(normSettings({ start: '2026-10-17', day1: null }), 'day1', '2026-10-17').st.day1).toBe('2026-10-17');
     expect(normSettings({ start: '2026-10-17', day1: '2026-10-17' }).day1).toBe('2026-10-17');
   });
-  it('a morning answered on the first day counts that day, not the night before', () => {
-    let days = setScreensOff({}, '2026-10-16', 'Y', 1);
-    days = morningDone(days, '2026-10-17', 2);
+  it('a morning answered on the first day (before they were retired) counts that day, not the night before', () => {
+    const days = { ...setScreensOff({}, '2026-10-16', 'Y', 1), '2026-10-17': normDay({ p: { m: true } }, '2026-10-17') };
+    expect(startFromLog(days, st, tk)!.st.start).toBe('2026-10-17');
+  });
+  it('Good night on the first night does not start the log', () => {
+    const days = { ...phoneAway({}, '2026-10-16', '21:40', 1, st), ...log() };
+    expect(days['2026-10-16'].checkin?.so).toBe('Y');
     expect(startFromLog(days, st, tk)!.st.start).toBe('2026-10-17');
   });
 });

@@ -12,6 +12,7 @@
  *   notification-large.png       256, the flame badge on transparent (Android's large note icon)
  * and the pictures in a note (iPhone) into apps/mobile/assets/notify, 512 each:
  *   flame-bright.png, flame-warm.png, flame-steady.png, flame-ember.png, flame-asleep.png
+ * and into apps/mobile/public, for the web app on a Home Screen: apple-touch-icon.png (180), icon-192.png, icon-512.png
  * Run it again after the flame changes:  npm run icons  (Node runs the TypeScript file directly)
  */
 import { chromium } from 'playwright-core';
@@ -23,6 +24,7 @@ import { flameIconSvg, flameMaskSvg, flameNoteSvg, flameSvg } from '../packages/
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'apps/mobile/assets/images');
 const notify = join(root, 'apps/mobile/assets/notify');
+const pub = join(root, 'apps/mobile/public');
 const LEVEL = 13;
 const NIGHT = '#1B1550';
 
@@ -57,6 +59,10 @@ const jobs = [
   { file: 'android-icon-background.png', size: 1024, html: () => '', bg: NIGHT },
   { file: 'splash-icon.png', size: 1024, html: (s) => badge(s), bg: 'transparent' },
   { file: 'favicon.png', size: 48, html: (s) => badge(s), bg: 'transparent' },
+  /* the web app on a Home Screen (public/manifest.json and the apple-touch-icon in public/index.html), like icon.png */
+  { file: 'apple-touch-icon.png', size: 180, html: (s) => bleed(s), bg: NIGHT, dir: pub },
+  { file: 'icon-192.png', size: 192, html: (s) => bleed(s), bg: NIGHT, dir: pub },
+  { file: 'icon-512.png', size: 512, html: (s) => bleed(s), bg: NIGHT, dir: pub },
   { file: 'notification-icon.png', size: 96, html: (s) => sized(flameMaskSvg(), s), bg: 'transparent' },
   { file: 'notification-large.png', size: 256, html: (s) => badge(s), bg: 'transparent' },
   ...['bright', 'warm', 'steady', 'ember', 'asleep'].map((m) => ({

@@ -97,6 +97,9 @@ it('a request the sync API turns down: the gateway ceiling retries once, the all
   expect(core.syncFailure(429, true, false)).toBe('pause');
   expect(core.syncFailure(413, true, false)).toBe('pause');
   expect(core.syncFailure(500, false, false)).toBe('error');
+  /* the account needs a tip to sync: wait for one (only the sync function's own answer means that) */
+  expect(core.syncFailure(402, true, false)).toBe('need');
+  expect(core.syncFailure(402, false, false)).toBe('error');
 });
 
 it('the dirty list keeps another tab’s marks, and never one this copy already sent', () => {

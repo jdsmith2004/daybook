@@ -10,6 +10,7 @@ import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { Flames } from '@/components/rekindle';
+import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
@@ -139,7 +140,7 @@ export function CelebrateHost() {
       />
       {boom ? <Confetti key={boom.n} big={boom.big} /> : null}
       <View style={s.center} pointerEvents="box-none">
-        <Card it={cur} more={queue.length > 0} onClose={() => setCur(null)} />
+        <Card key={JSON.stringify(cur).slice(0, 120)} it={cur} more={queue.length > 0} onClose={() => setCur(null)} />
       </View>
     </View>
   );
@@ -178,6 +179,9 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
     title = it.title || 'Nice';
     sub = it.sub || '';
   }
+  /* the last of a new level or a new badge can carry a short tip ask (core tipMoment); the preview in Settings (from 0) never does */
+  const why = !more && !it.quiet ? (it.type === 'level' && it.from > 0 ? 'level' : it.type === 'badge' && it.b.id !== 'honest' ? 'badge' : null) : null;
+  const ask = useTipMoment(why || 'level', !why);
   const scale = useRef(new Animated.Value(0.85)).current;
   useEffect(() => {
     Animated.spring(scale, { toValue: 1, friction: 6, tension: 120, useNativeDriver: NATIVE }).start();
@@ -194,6 +198,7 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
           {sub}
         </T>
       ) : null}
+      {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : null}
       <View style={{ alignSelf: 'stretch', marginTop: 4 }}>
         <Button label={more ? 'Next' : 'Nice'} onPress={onClose} />
       </View>

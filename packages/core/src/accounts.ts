@@ -7,6 +7,7 @@
 import { changeSettings, type Change } from './actions';
 import { addDays, diffDays, eventsOf, isKey } from './legacy/core.js';
 import { lessonPath, type Lesson } from './lessons';
+import { SUPPORT_MIN } from './supporter';
 import type { DayKey, Days, Settings } from './types';
 
 /** lessons open without an account, at the start of the daily order */
@@ -49,14 +50,9 @@ export const accountLater = (st: Settings, tk: DayKey, now = Date.now()): Change
 
 /** the words on the account card. days: days since the start, so someone two months in is not told "a week in" */
 export function accountWords(why: AcctWhy, locked: number, days = 7): { h: string; p: string } {
-  const more = locked > 0 ? ` It also opens the other ${locked} lessons.` : '';
+  const open = locked > 0 ? `A free account opens the other ${locked} lessons.` : 'A free account keeps your lessons going on any device.';
+  const plus = ' With a tip of $' + SUPPORT_MIN + ' or more, it also keeps a safe copy of your progress and the same on your phone and the web.';
   return why === 'level'
-    ? {
-        h: 'You are on your way. Keep it safe.',
-        p: 'A free account keeps a copy of your progress, so a lost phone never costs you a day, and it syncs to the web.' + more,
-      }
-    : {
-        h: days < 14 ? 'A week in. Keep your progress safe.' : 'Keep what you have built safe.',
-        p: 'A free account keeps a copy of your log and your points, and keeps your phone and the web in step.' + more,
-      };
+    ? { h: 'You are on your way. Keep learning.', p: open + plus }
+    : { h: days < 14 ? 'A week in. Keep learning.' : 'Keep building on what you have.', p: open + plus };
 }

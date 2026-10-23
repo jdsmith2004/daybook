@@ -192,13 +192,13 @@ jobs:
         run: |
           # files with a hash in their name never change, so browsers may keep them. Old ones are left in place, so a tab
           # that is already open can still load them. The page itself goes last, and is always checked for a newer copy.
-          # the public pages (about, support, privacy, terms, testers, llms.txt, robots.txt, sitemap.xml) change in place too, so they are always checked for a newer copy,
+          # the public pages (about, support, privacy, terms, testers, tipped, llms.txt, robots.txt, sitemap.xml) change in place too, so they are always checked for a newer copy,
           # and so do the Home Screen app's manifest and icons
           aws s3 sync . "s3://$WEB_BUCKET" --exclude index.html --exclude metadata.json --exclude favicon.ico \
-            --exclude support.html --exclude privacy.html --exclude terms.html --exclude about.html --exclude testers.html --exclude llms.txt --exclude robots.txt --exclude sitemap.xml --exclude site.css --exclude site-icon.png \
+            --exclude support.html --exclude privacy.html --exclude terms.html --exclude about.html --exclude testers.html --exclude tipped.html --exclude tipped.js --exclude llms.txt --exclude robots.txt --exclude sitemap.xml --exclude site.css --exclude site-icon.png \
             --exclude manifest.json --exclude apple-touch-icon.png --exclude icon-192.png --exclude icon-512.png \
             --cache-control "public,max-age=31536000,immutable"
-          for f in metadata.json favicon.ico support.html privacy.html terms.html about.html testers.html llms.txt robots.txt sitemap.xml site.css site-icon.png manifest.json apple-touch-icon.png icon-192.png icon-512.png index.html; do
+          for f in metadata.json favicon.ico support.html privacy.html terms.html about.html testers.html tipped.html tipped.js llms.txt robots.txt sitemap.xml site.css site-icon.png manifest.json apple-touch-icon.png icon-192.png icon-512.png index.html; do
             if [ -f "$f" ]; then aws s3 cp "$f" "s3://$WEB_BUCKET/$f" --cache-control "no-cache"; fi
           done
           aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/" "/index.html" > /dev/null

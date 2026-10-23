@@ -1102,7 +1102,7 @@ export default function Setup() {
          records that choice and goes on. */
       body = (
         <>
-          <Head h="Your plan is ready. Keep it safe." />
+          <Head h="Your plan is ready. Make it yours." />
           <Middle>
             <FitArt min={0.5} drop={0.5}>
               <View style={s.orbWrap}>
@@ -1117,10 +1117,9 @@ export default function Setup() {
           </Middle>
           <View style={{ gap: 8 }}>
             {[
-              'Your plan, your log and every point you earn, kept safe',
               'Every lesson open, not just the first three',
-              'The same on a new phone, or on the web',
               'Free, and private to you. Nothing is shared or sold.',
+              'With a tip, a safe copy of your log and the same on every device',
             ].map((x) => (
               <View key={x} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                 <Icon name="check" size={18} color={c.mintText} />

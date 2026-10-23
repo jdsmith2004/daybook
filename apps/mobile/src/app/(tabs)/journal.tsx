@@ -1,6 +1,8 @@
 /* The Journal: what happened. Days (the month and every day), Your pattern (a few plain answers, each with the graph behind
    it: are slips getting further apart, when it happens, what sets it off, what is different on hard days, what helps),
-   Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. */
+   Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without a
+   tip, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a card
+   that opens the tip sheet (core supporter.ts, patPartOpen). */
 import {
   daysList,
   fmtDate,
@@ -28,7 +30,8 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Platform, Pressable, StyleSheet, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -41,6 +44,7 @@ import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
 import { TodaySoFar } from '@/components/today-log';
 import { SundayCard } from '@/components/sunday-card';
+import { UnlockCard, useLocked } from '@/components/support';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
@@ -195,6 +199,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const st = snap.settings!;
   const [range, setRange] = useState<PatRange>('90');
   const [ys, setYs] = useState<Partial<Record<PatGo, number>>>({});
+  const locked = useLocked('stats');
   const keys = patKeys(range, snap.days, st, tk);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
@@ -221,6 +226,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   }));
   const anyRating = series.some((x) => x.vals.some((v) => v != null));
   const at = (k: PatGo) => (e: { nativeEvent: { layout: { y: number } } }) => {
+    if (locked) return;
     const y = e.nativeEvent.layout.y;
     setYs((o) => (o[k] === y ? o : { ...o, [k]: y }));
   };
@@ -242,6 +248,24 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       ? 'You ride out ' + inTen(ride.now) + ' hard moments now, up from ' + inTen(ride.then) + '.'
       : 'You ride out about ' + inTen(ride.now) + ' hard moments lately.'
     : '';
+  const numbers = (
+    <Card>
+      <T v="h2">My numbers</T>
+      <View style={s.stats}>
+        {nums.map((x) => (
+          <View key={x.l} style={[s.stat, { backgroundColor: c.surface2 }]}>
+            <T v="small" tone="muted">
+              {x.l}
+            </T>
+            <Text style={[s.statB, { color: c.ink }]}>{x.b}</Text>
+            <T v="small" tone="muted">
+              {x.s}
+            </T>
+          </View>
+        ))}
+      </View>
+    </Card>
+  );
   return (
     <>
       <View style={s.chips} accessibilityLabel="Time range">
@@ -325,211 +349,219 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         </Block>
       </View>
 
-      <View onLayout={at('when')}>
-        <Block title="When does it happen?" count={when.timed ? when.timed + ' with a time' : ''}>
-          {when.timed ? (
-            <>
-              <Legend
-                items={(
-                  [
-                    ['rode', 'Rode it out'],
-                    ['slip', 'Slipped'],
-                  ] as ['rode' | 'slip' | 'win', string][]
-                ).concat(hard ? [['win', 'Your hard hours']] : [])}
-              />
-              <Clock hours={when.hours} hard={when.hard} />
-              {hard ? (
-                <>
-                  {when.hard.weekdays ? (
-                    <T>
-                      <Text style={{ fontFamily: font.bodyBold }}>
-                        {when.hard.same ? 'Hard hours: ' : 'Weekdays: '}
-                        {when.hard.weekdays.label}.
-                      </Text>{' '}
-                      {when.hard.weekdays.line}
+      {locked ? numbers : null}
+      <Deep locked={locked} onY={(y) => setYs((o) => (o.when === y ? o : { ...o, when: y, what: y, days: y }))}>
+        <View onLayout={at('when')}>
+          <Block title="When does it happen?" count={when.timed ? when.timed + ' with a time' : ''}>
+            {when.timed ? (
+              <>
+                <Legend
+                  items={(
+                    [
+                      ['rode', 'Rode it out'],
+                      ['slip', 'Slipped'],
+                    ] as ['rode' | 'slip' | 'win', string][]
+                  ).concat(hard ? [['win', 'Your hard hours']] : [])}
+                />
+                <Clock hours={when.hours} hard={when.hard} />
+                {hard ? (
+                  <>
+                    {when.hard.weekdays ? (
+                      <T>
+                        <Text style={{ fontFamily: font.bodyBold }}>
+                          {when.hard.same ? 'Hard hours: ' : 'Weekdays: '}
+                          {when.hard.weekdays.label}.
+                        </Text>{' '}
+                        {when.hard.weekdays.line}
+                      </T>
+                    ) : null}
+                    {when.hard.weekends ? (
+                      <T>
+                        <Text style={{ fontFamily: font.bodyBold }}>Weekends: {when.hard.weekends.label}.</Text> {when.hard.weekends.line}
+                      </T>
+                    ) : null}
+                    <T v="small" tone="muted">
+                      The same hard hours Today watches for, from the last 60 days.
                     </T>
-                  ) : null}
-                  {when.hard.weekends ? (
-                    <T>
-                      <Text style={{ fontFamily: font.bodyBold }}>Weekends: {when.hard.weekends.label}.</Text> {when.hard.weekends.line}
-                    </T>
-                  ) : null}
+                  </>
+                ) : (
                   <T v="small" tone="muted">
-                    The same hard hours Today watches for, from the last 60 days.
+                    Hard hours show up once one two-hour stretch holds two slips or six urges.
                   </T>
-                </>
-              ) : (
-                <T v="small" tone="muted">
-                  Hard hours show up once one two-hour stretch holds two slips or six urges.
+                )}
+                <T v="label" style={{ marginTop: 8 }}>
+                  Days of the week
                 </T>
-              )}
-              <T v="label" style={{ marginTop: 8 }}>
-                Days of the week
-              </T>
-              <WeekRow week={when.week} hard={when.day ? when.day.d : null} />
-              {when.day ? (
-                <T style={{ fontFamily: font.bodySemi }}>
-                  {when.day.name}s are the hardest: {when.day.n} of {when.day.slips ? plural(when.day.of, 'slip') : when.day.of + ' entries'}.
-                </T>
-              ) : null}
-              <NumbersTable
-                cap="Entries by hour"
-                head={['Hour', 'Rode it out', 'Slipped']}
-                rows={when.hours
-                  .filter((b) => b.rode + b.slipped)
-                  .map((b) => [fmtHour(b.h) + ' to ' + fmtHour((b.h + 1) % 24), String(b.rode), String(b.slipped)])}
-              />
-            </>
-          ) : (
-            <EmptyChart text="Your clock fills in after you log an entry with a time." />
-          )}
-        </Block>
-      </View>
+                <WeekRow week={when.week} hard={when.day ? when.day.d : null} />
+                {when.day ? (
+                  <T style={{ fontFamily: font.bodySemi }}>
+                    {when.day.name}s are the hardest: {when.day.n} of {when.day.slips ? plural(when.day.of, 'slip') : when.day.of + ' entries'}.
+                  </T>
+                ) : null}
+                <NumbersTable
+                  cap="Entries by hour"
+                  head={['Hour', 'Rode it out', 'Slipped']}
+                  rows={when.hours
+                    .filter((b) => b.rode + b.slipped)
+                    .map((b) => [fmtHour(b.h) + ' to ' + fmtHour((b.h + 1) % 24), String(b.rode), String(b.slipped)])}
+                />
+              </>
+            ) : (
+              <EmptyChart text="Your clock fills in after you log an entry with a time." />
+            )}
+          </Block>
+        </View>
 
-      <View onLayout={at('what')}>
-        <Block title="What sets it off?">
-          {trig.list.length ? (
-            <>
-              <Legend
-                items={[
-                  ['rode', 'Rode it out'],
-                  ['slip', 'Slipped'],
-                ]}
-              />
-              <HBars
-                items={trig.list.map((r) => ({
-                  label: r.t,
-                  segs: [
-                    [r.rode, 'rode'],
-                    [r.slipped, 'slip'],
-                  ] as [number, 'rode' | 'slip'][],
-                }))}
-              />
-              {patTriggerLines(trig.list).map((l) => (
-                <T key={l} style={{ fontFamily: font.bodySemi }}>
-                  {l}
-                </T>
-              ))}
-              {trig.none ? (
-                <T v="small" tone="muted">
-                  {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
-                </T>
-              ) : null}
-              <NumbersTable
-                cap="Entries by what set them off"
-                head={['Reason', 'Rode it out', 'Slipped']}
-                rows={trig.list.map((r) => [r.t, String(r.rode), String(r.slipped)])}
-              />
-            </>
-          ) : (
-            <EmptyChart text="Pick a reason when you log an entry, and this shows what sets it off." />
-          )}
-          {needs.length ? (
-            <>
-              <T v="label" style={{ marginTop: 8 }}>
-                What the pull was after
-              </T>
-              <HBars items={needs.map((x) => ({ label: x.name, segs: [[x.count, 'acc']] as [number, 'acc'][] }))} unit={(n) => (n === 1 ? 'time' : 'times')} />
-              <T v="small" tone="muted">
-                From Talk it through.
-              </T>
-            </>
-          ) : null}
-        </Block>
-      </View>
-
-      <View onLayout={at('days')}>
-        <Block title="What is different on hard days?">
-          {diffs.list.length ? (
-            <>
-              <Legend
-                items={[
-                  ['rode', 'Days with no slip'],
-                  ['slip', 'Slip days'],
-                ]}
-              />
-              <DiffDots list={diffs.list} />
-              {diffs.list.map((d) => (
-                <T key={d.k}>{d.line}</T>
-              ))}
-              <T v="small" tone="muted">
-                From {plural(diffs.cleanN, 'check-in day')} with no slip and {diffs.slipN} with one. Only differences big enough to mean something show here.
-              </T>
-            </>
-          ) : (
-            <T tone="muted">
-              {diffs.cleanN >= 3 && diffs.slipN >= 3
-                ? 'No big differences so far between your check-ins on slip days and on days with no slip.'
-                : 'This needs check-ins on at least three slip days and three days with no slip. It waits until it means something.'}
-            </T>
-          )}
-          {anyRating ? (
-            <>
-              <T v="label" style={{ marginTop: 8 }}>
-                Your check-ins over time
-              </T>
-              <FeelTiles keys={keys} series={series} />
-            </>
-          ) : null}
-        </Block>
-      </View>
-
-      <Block title="What helps you">
-        {works.length || ev.chose + ev.went ? (
-          <>
-            {works.length ? (
+        <View onLayout={at('what')}>
+          <Block title="What sets it off?">
+            {trig.list.length ? (
               <>
                 <Legend
                   items={[
-                    ['rode', 'It passed after'],
-                    ['slip', 'Still strong or slipped after'],
+                    ['rode', 'Rode it out'],
+                    ['slip', 'Slipped'],
                   ]}
                 />
                 <HBars
-                  items={works.map((x) => ({
-                    label: x.name,
+                  items={trig.list.map((r) => ({
+                    label: r.t,
                     segs: [
-                      [x.passed, 'rode'],
-                      [x.not, 'slip'],
+                      [r.rode, 'rode'],
+                      [r.slipped, 'slip'],
                     ] as [number, 'rode' | 'slip'][],
                   }))}
-                  unit={(n) => (n === 1 ? 'try' : 'tries')}
+                />
+                {patTriggerLines(trig.list).map((l) => (
+                  <T key={l} style={{ fontFamily: font.bodySemi }}>
+                    {l}
+                  </T>
+                ))}
+                {trig.none ? (
+                  <T v="small" tone="muted">
+                    {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
+                  </T>
+                ) : null}
+                <NumbersTable
+                  cap="Entries by what set them off"
+                  head={['Reason', 'Rode it out', 'Slipped']}
+                  rows={trig.list.map((r) => [r.t, String(r.rode), String(r.slipped)])}
+                />
+              </>
+            ) : (
+              <EmptyChart text="Pick a reason when you log an entry, and this shows what sets it off." />
+            )}
+            {needs.length ? (
+              <>
+                <T v="label" style={{ marginTop: 8 }}>
+                  What the pull was after
+                </T>
+                <HBars
+                  items={needs.map((x) => ({ label: x.name, segs: [[x.count, 'acc']] as [number, 'acc'][] }))}
+                  unit={(n) => (n === 1 ? 'time' : 'times')}
                 />
                 <T v="small" tone="muted">
-                  SOS tools over the last four months: after each one, did the urge pass? SOS uses this to choose what to suggest.
+                  From Talk it through.
                 </T>
               </>
             ) : null}
-            {ev.chose + ev.went ? (
-              <T style={{ fontFamily: font.bodySemi }}>
-                You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
-              </T>
-            ) : null}
-          </>
-        ) : (
-          <EmptyChart text="After a few SOS uses or talk-throughs, this shows what helps you most." />
-        )}
-      </Block>
-
-      <Card>
-        <T v="h2">My numbers</T>
-        <View style={s.stats}>
-          {nums.map((x) => (
-            <View key={x.l} style={[s.stat, { backgroundColor: c.surface2 }]}>
-              <T v="small" tone="muted">
-                {x.l}
-              </T>
-              <Text style={[s.statB, { color: c.ink }]}>{x.b}</Text>
-              <T v="small" tone="muted">
-                {x.s}
-              </T>
-            </View>
-          ))}
+          </Block>
         </View>
-      </Card>
+
+        <View onLayout={at('days')}>
+          <Block title="What is different on hard days?">
+            {diffs.list.length ? (
+              <>
+                <Legend
+                  items={[
+                    ['rode', 'Days with no slip'],
+                    ['slip', 'Slip days'],
+                  ]}
+                />
+                <DiffDots list={diffs.list} />
+                {diffs.list.map((d) => (
+                  <T key={d.k}>{d.line}</T>
+                ))}
+                <T v="small" tone="muted">
+                  From {plural(diffs.cleanN, 'check-in day')} with no slip and {diffs.slipN} with one. Only differences big enough to mean something show here.
+                </T>
+              </>
+            ) : (
+              <T tone="muted">
+                {diffs.cleanN >= 3 && diffs.slipN >= 3
+                  ? 'No big differences so far between your check-ins on slip days and on days with no slip.'
+                  : 'This needs check-ins on at least three slip days and three days with no slip. It waits until it means something.'}
+              </T>
+            )}
+            {anyRating ? (
+              <>
+                <T v="label" style={{ marginTop: 8 }}>
+                  Your check-ins over time
+                </T>
+                <FeelTiles keys={keys} series={series} />
+              </>
+            ) : null}
+          </Block>
+        </View>
+
+        <Block title="What helps you">
+          {works.length || ev.chose + ev.went ? (
+            <>
+              {works.length ? (
+                <>
+                  <Legend
+                    items={[
+                      ['rode', 'It passed after'],
+                      ['slip', 'Still strong or slipped after'],
+                    ]}
+                  />
+                  <HBars
+                    items={works.map((x) => ({
+                      label: x.name,
+                      segs: [
+                        [x.passed, 'rode'],
+                        [x.not, 'slip'],
+                      ] as [number, 'rode' | 'slip'][],
+                    }))}
+                    unit={(n) => (n === 1 ? 'try' : 'tries')}
+                  />
+                  <T v="small" tone="muted">
+                    SOS tools over the last four months: after each one, did the urge pass? SOS uses this to choose what to suggest.
+                  </T>
+                </>
+              ) : null}
+              {ev.chose + ev.went ? (
+                <T style={{ fontFamily: font.bodySemi }}>
+                  You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
+                </T>
+              ) : null}
+            </>
+          ) : (
+            <EmptyChart text="After a few SOS uses or talk-throughs, this shows what helps you most." />
+          )}
+        </Block>
+      </Deep>
+
+      {locked ? null : numbers}
     </>
   );
 }
+
+/** the deeper part of the pattern: as it is for a supporter; otherwise its first part, faded behind a card that opens it */
+function Deep({ locked, onY, children }: { locked: boolean; onY: (y: number) => void; children: React.ReactNode }) {
+  const c = useTheme();
+  if (!locked) return <>{children}</>;
+  return (
+    <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 14 }}>
+      <View style={s.peek} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View style={[{ gap: 14, opacity: 0.55 }, PEEK_BLUR]}>{children}</View>
+        <LinearGradient colors={[c.bg + '00', c.bg]} style={s.peekFade} />
+      </View>
+      <UnlockCard extra="stats" />
+    </View>
+  );
+}
+/* a soft blur on the web; a phone shows the fade alone */
+const PEEK_BLUR = (Platform.OS === 'web' ? { filter: 'blur(3px)' } : null) as ViewStyle | null;
 
 function Block({ title, count, sub, children }: { title: string; count?: string; sub?: string; children: React.ReactNode }) {
   return (
@@ -573,4 +605,6 @@ const s = StyleSheet.create({
   stat: { flexGrow: 1, flexBasis: '45%', gap: 2, padding: 12, borderRadius: 16 },
   statB: { fontFamily: font.display, fontSize: 26 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  peek: { maxHeight: 250, overflow: 'hidden' },
+  peekFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 150 },
 });

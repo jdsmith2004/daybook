@@ -153,10 +153,30 @@ resource "aws_iam_role_policy" "sync" {
         Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-sync:*"]
       },
       {
-        # closing an account from the app; the Lambda takes the user name only from the token API Gateway checked
+        # closing an account from the app; the Lambda takes the user name only from the token API Gateway checked.
+        # AdminGetUser: when the account was made, for keeping sync on accounts from before tips (services/api supporter.ts)
         Effect   = "Allow"
-        Action   = ["cognito-idp:AdminDeleteUser"]
+        Action   = ["cognito-idp:AdminDeleteUser", "cognito-idp:AdminGetUser"]
         Resource = ["arn:${local.arn}:cognito-idp:${var.region}:${local.account}:userpool/*"]
+      },
+      {
+        # the Stripe restricted key (read only, Checkout Sessions only), which the owner puts in Parameter Store by hand;
+        # it is never in Terraform, its state, GitHub or the code (docs/plan.md, "Payments")
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = ["arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key"]
+      },
+      {
+        # decrypting that one parameter, and only through Parameter Store
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = ["arn:${local.arn}:kms:${var.region}:${local.account}:key/*"]
+        Condition = {
+          StringEquals = {
+            "kms:ViaService"                      = "ssm.${var.region}.amazonaws.com"
+            "kms:EncryptionContext:PARAMETER_ARN" = "arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key"
+          }
+        }
       }
     ]
   })

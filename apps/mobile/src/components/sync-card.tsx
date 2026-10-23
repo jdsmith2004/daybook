@@ -1,12 +1,13 @@
 /* Sync between devices, in Settings: sign in, see when it last synced, sync now, sign out, or delete the account. The first
    time a device joins an account that already has a log, the question of what to keep is asked here. */
-import { fmtDate, keyOfDate } from '@daybook/core';
+import { fmtDate, keyOfDate, supActive, SUPPORT_MIN, SUP_SYNC_WORDS } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
+import { UnlockCard, useLocked } from '@/components/support';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { CognitoError } from '@daybook/core';
@@ -14,6 +15,7 @@ import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
+import { syncTips, tipError } from '@/lib/tip';
 import { useTheme } from '@/lib/theme';
 
 /** after "Delete everything": the account keeps a copy for a week, and this brings it back */
@@ -50,6 +52,26 @@ export function ErasedNote() {
   );
 }
 
+/** when sync needs a tip: looks for one already paid (an Apple purchase on this Apple Account, a web tip). Sync starts by
+    itself once the account has one (tip.ts). */
+function FindTip() {
+  const { say } = useStore();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      kind="ghost"
+      label={busy ? SUP_SYNC_WORDS.checking : SUP_SYNC_WORDS.check}
+      disabled={busy}
+      onPress={async () => {
+        setBusy(true);
+        const r = await syncTips(true).catch(() => null);
+        setBusy(false);
+        if (!r || !supActive(r.server)) say(tipError() && tipError() !== 'No tip was found.' ? tipError() : SUP_SYNC_WORDS.none);
+      }}
+    />
+  );
+}
+
 /** "Stay signed in on this browser" (the web only; a phone keeps the sign-in in its keychain) */
 export function TrustChoice() {
   const [on, setOn] = useState(getTrust);
@@ -76,18 +98,21 @@ export function SyncBody() {
   /* changes that would be lost by removing the log now (sync.signOutNow) */
   const [lose, setLose] = useState(0);
   const st = sync.status;
+  const locked = useLocked('sync', st.k !== 'out');
   if (st.k === 'off') return null;
 
   if (st.k === 'out')
     return (
       <>
         <T v="small" tone="muted">
-          A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your
-          sign-in can read it. Until you sign in, your log stays on this device only.
+          {locked
+            ? 'A free account opens every lesson. It is private to you: only your sign-in can read it. Until you sign in, your log stays on this device only.'
+            : 'A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your sign-in can read it. Until you sign in, your log stays on this device only.'}
         </T>
         <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
         <LinkText label="What is kept, and who can see it" onPress={() => router.push('/privacy')} />
         <TrustChoice />
+        {locked ? <UnlockCard extra="sync" /> : null}
       </>
     );
 
@@ -125,13 +150,15 @@ export function SyncBody() {
     );
 
   const line =
-    st.k === 'expired'
-      ? 'Sign in again to keep syncing. Your log is still here.'
-      : st.k === 'error'
-        ? st.msg
-        : syncedAgo(sync.at, now) +
-          (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '') +
-          (st.k === 'on' && st.note ? '. ' + st.note : '');
+    st.k === 'need'
+      ? SUP_SYNC_WORDS.need
+      : st.k === 'expired'
+        ? 'Sign in again to keep syncing. Your log is still here.'
+        : st.k === 'error'
+          ? st.msg
+          : syncedAgo(sync.at, now) +
+            (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '') +
+            (st.k === 'on' && st.note ? '. ' + st.note : '');
   return (
     <>
       {sync.email ? (
@@ -140,12 +167,14 @@ export function SyncBody() {
         </T>
       ) : null}
       <ErasedNote />
-      {st.k === 'on' ? <ConfirmEmail /> : null}
+      {st.k === 'on' || st.k === 'need' ? <ConfirmEmail /> : null}
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
       {st.k === 'expired' ? (
         <Button label="Sign in again" onPress={() => sync.signInNow()} />
+      ) : st.k === 'need' ? (
+        <FindTip />
       ) : (
         <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />
       )}

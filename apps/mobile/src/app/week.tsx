@@ -8,6 +8,7 @@ import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { Dock, SceneFrame } from '@/components/scene';
+import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
@@ -17,6 +18,8 @@ export default function Week() {
   const c = useTheme();
   const { snap, tk, apply } = useStore();
   const st = snap.settings;
+  /* finishing the first week is a moment of earned value: it can carry a short tip ask (core tipMoment) */
+  const ask = useTipMoment('week');
   useEffect(() => {
     if (st && firstWeekDue(st, tk)) apply({ st: firstWeekSeen(st, tk) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -41,6 +44,7 @@ export default function Week() {
       {w.be ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{w.be}</T> : null}
       <Dock>
         <T style={s.c}>{w.next}</T>
+        {ask ? <MomentAsk why="week" onGo={close} center /> : null}
         <Button label="Keep going" onPress={close} />
       </Dock>
     </SceneFrame>

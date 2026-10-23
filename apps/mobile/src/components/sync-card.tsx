@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
+import { UnlockCard, useLocked } from '@/components/support';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { CognitoError } from '@daybook/core';
@@ -76,18 +77,21 @@ export function SyncBody() {
   /* changes that would be lost by removing the log now (sync.signOutNow) */
   const [lose, setLose] = useState(0);
   const st = sync.status;
+  const locked = useLocked('sync', st.k !== 'out');
   if (st.k === 'off') return null;
 
   if (st.k === 'out')
     return (
       <>
         <T v="small" tone="muted">
-          A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your
-          sign-in can read it. Until you sign in, your log stays on this device only.
+          {locked
+            ? 'A free account opens every lesson. It is private to you: only your sign-in can read it. Until you sign in, your log stays on this device only.'
+            : 'A free account keeps a copy of your log safe and the same on your phone and on the web, and opens every lesson. It is private to you: only your sign-in can read it. Until you sign in, your log stays on this device only.'}
         </T>
         <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
         <LinkText label="What is kept, and who can see it" onPress={() => router.push('/privacy')} />
         <TrustChoice />
+        {locked ? <UnlockCard extra="sync" /> : null}
       </>
     );
 

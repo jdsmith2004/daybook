@@ -176,6 +176,8 @@ export interface Settings {
   toldStart?: DayKey | null;
   /** the day the one tip ask on Today was answered (see support.ts). Optional, so older records need no change. */
   tipAsk?: DayKey | null;
+  /** the day a moment of earned value last carried a tip ask (see support.ts). Optional. */
+  tipMo?: DayKey | null;
   /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
   sup?: Supporter | null;
   u: number;

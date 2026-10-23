@@ -1,22 +1,37 @@
-/* The tip jar in the app (support.ts decides when, and holds the words): the small Support button at the top of Today, the
-   one ask on Today, and the quiet row on More. The link opens in the browser; nothing in Daybook changes after a tip,
-   because money never opens anything. The tip link is on the web and on iPhone: the App Store allows a link out to pay on
-   the US storefront (Review Guidelines 3.1.1(a)), and Daybook is offered in the United States only (docs/launch.md). It
-   stays hidden on Android until Google Play's rules for it are checked (docs/plan.md, "Tips"). */
-import { SUPPORT_URL, tipAnswered, TIP_WORDS } from '@daybook/core';
-import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+/* The tip jar in the app (core support.ts decides when, and holds the words): the small Support button at the top of Today,
+   the card on Today, the row on More, and the card on a locked page. Every one opens the tip sheet (app/tip.tsx), where a
+   tip of $5 or more makes the person a supporter (core supporter.ts). Once they are, the asks stop and the row on More
+   says thank you. On iPhone the tip is Apple's in-app purchase first, with the web tip page as a second way (allowed on
+   the US storefront, Guidelines 3.1.1(a) and 3.1.3; Daybook is offered in the United States only, docs/launch.md). On
+   Android nothing about tips shows and nothing is locked, until Google Play's rules for it are checked (docs/plan.md). */
+import { extraLocked, isSupporter, SUPPORT_URL, tipAnswered, tipMoment, tipMomentShown, TIP_WORDS, urLastAt, type Extra, type TipMoment } from '@daybook/core';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { LinkCard } from '@/components/link-card';
 import { SHOTS_ANDROID } from '@/shots/boot';
 import { Button, Card, Icon, T } from '@/components/ui';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
+import { tipWays } from '@/lib/tip';
 import { font, useTheme } from '@/lib/theme';
 
-/** the tip link on this platform, or '' where none is offered */
-export const TIP_URL = Platform.OS === 'android' || SHOTS_ANDROID ? '' : SUPPORT_URL;
-export const openTip = () => (TIP_URL ? Linking.openURL(TIP_URL).catch(() => undefined) : undefined);
+/** whether a tip can be paid on this device. Off on Android (see above). */
+export const TIP_ON = Platform.OS !== 'android' && !SHOTS_ANDROID && !!SUPPORT_URL && tipWays().length > 0;
+/** the tip link's switch for the rules in core (tipAsk, tipButton): '' where no tip is offered */
+export const TIP_URL = TIP_ON ? SUPPORT_URL : '';
+/** opens the tip sheet */
+export const openTip = () => (TIP_ON ? router.push('/tip') : undefined);
 
+/** whether an extra shows as locked here (core extraLocked) */
+export function useLocked(extra: Extra, signedIn?: boolean): boolean {
+  const { snap } = useStore();
+  return extraLocked(snap.settings, extra, { canTip: TIP_ON, signedIn });
+}
+
+/** the card on Today, at a good moment (core tipAsk) */
 export function TipCard() {
   const c = useTheme();
   const { snap, tk, apply } = useStore();
@@ -40,17 +55,16 @@ export function TipCard() {
         />
         <Button kind="ghost" label={TIP_WORDS.no} onPress={done} />
       </View>
-      <T v="small" tone="muted">
-        {TIP_WORDS.foot}
-      </T>
     </Card>
   );
 }
 
-/** the quiet row on More; nothing when no link is set */
+/** the row on More: an ask, or a thank-you for a supporter; nothing where no tip is offered */
 export function TipRow() {
-  if (!TIP_URL) return null;
-  return <LinkCard icon="heart" tone="sun" title={TIP_WORDS.row.title} sub={TIP_WORDS.row.sub} onPress={openTip} />;
+  const { snap } = useStore();
+  if (!TIP_ON) return null;
+  const w = isSupporter(snap.settings) ? TIP_WORDS.rowThanks : TIP_WORDS.row;
+  return <LinkCard icon="heart" tone="sun" title={w.title} sub={w.sub} onPress={openTip} />;
 }
 
 /** the small Support button beside Today's title */
@@ -58,8 +72,8 @@ export function TipTop() {
   const c = useTheme();
   return (
     <Pressable
-      accessibilityRole="link"
-      accessibilityLabel="Support Daybook. Daybook is free; this opens a page to leave a tip."
+      accessibilityRole="button"
+      accessibilityLabel="Support Daybook. Opens the tips, and what a tip unlocks."
       onPress={openTip}
       hitSlop={6}
       style={({ pressed }) => [s.top, { backgroundColor: c.sun, opacity: pressed ? 0.85 : 1 }]}>
@@ -69,7 +83,65 @@ export function TipTop() {
   );
 }
 
+/** whether a moment of earned value carries a tip ask (core tipMoment). Decided once, when the moment opens; an ask shown
+    is kept (tipMomentShown), so no other ask comes for a week. */
+export function useTipMoment(why: TipMoment, quiet = false): boolean {
+  const { snap, tk, now, apply } = useStore();
+  const sos = useSos();
+  const [ask] = useState(
+    () => TIP_ON && !!snap.settings && tipMoment(snap.days, snap.settings, tk, new Date(now).getHours(), TIP_URL, { now, sos: urLastAt(sos.mem) }, quiet),
+  );
+  useEffect(() => {
+    if (ask && snap.settings) apply(tipMomentShown(snap.settings, tk));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask]);
+  return ask;
+}
+
+/** the short ask under a moment of earned value: one line, and a button to the tips. onGo closes the moment first. */
+export function MomentAsk({ why, onGo, center }: { why: TipMoment; onGo: () => void; center?: boolean }) {
+  const c = useTheme();
+  return (
+    <View style={[s.moment, { backgroundColor: c.sunSoft }]}>
+      <T v="small" style={center ? { textAlign: 'center' } : undefined}>
+        {TIP_WORDS.moment[why]}
+      </T>
+      <Button
+        kind="ghost"
+        icon="heart"
+        label={TIP_WORDS.moment.go}
+        onPress={() => {
+          onGo();
+          setTimeout(openTip, 350);
+        }}
+      />
+    </View>
+  );
+}
+
+/** the card on a locked page: what the extra is, and the way to open it */
+export function UnlockCard({ extra }: { extra: 'stats' | 'sync' }) {
+  const c = useTheme();
+  const w = TIP_WORDS.lock[extra];
+  return (
+    <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <View style={[s.lock, { backgroundColor: c.sun }]}>
+          <Icon name="lock" size={18} color={c.onSun} />
+        </View>
+        <T v="h2" style={{ flex: 1 }}>
+          {w.h}
+        </T>
+      </View>
+      <T v="small">{w.p}</T>
+      <Button label={TIP_WORDS.lock.btn} onPress={openTip} />
+    </Card>
+  );
+}
+
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, marginTop: 2 },
   topT: { fontFamily: font.bodyBold, fontSize: 14 },
+  moment: { alignSelf: 'stretch', gap: 8, padding: 12, borderRadius: 18 },
+  lock: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });

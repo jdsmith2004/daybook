@@ -140,6 +140,24 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   );
   return withDay(days, tk, day);
 }
+/* ---------- lessons first ---------- */
+/** the day's stops (legacy rhythm), with today's lesson always the open one until it is done (docs/plan.md, "Lessons
+    first", C1): the lesson is Next up all day, and a check-in or wind-down that has started meanwhile still says "Open
+    now". The legacy rhythm itself stays as it was (the golden tests read it). */
+export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): ReturnType<typeof rhythm> {
+  const r = rhythm(days, st, tk, nowMs);
+  const ls = r.stops.find((x) => x.k === 'lesson');
+  if (!ls || ls.done || r.cur === 'lesson') return r;
+  const stops = r.stops.map((x) =>
+    x.k === 'lesson'
+      ? { ...x, state: x.started ? ('now' as const) : ('next' as const) }
+      : x.k === r.cur && x.state === 'next'
+        ? { ...x, state: 'later' as const }
+        : x,
+  );
+  return { ...r, stops, cur: 'lesson' };
+}
+
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
@@ -170,7 +188,7 @@ export interface StopTile {
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): { tiles: StopTile[]; cur: string | null; done: number } {
-  const r = rhythm(days, st, tk, nowMs);
+  const r = dayRhythm(days, st, tk, nowMs);
   const p = days[tk]?.p;
   const ls = lessonStop(days, st, tk);
   const tiles = r.stops.map((s): StopTile => {
@@ -340,11 +358,12 @@ export interface NextUp {
   when?: string;
   pips?: ('on' | 'now' | '')[];
 }
-/** the part of the day that is open now, or the next one to open (legacy nextUp). Without an account (`account` false),
+/** the part of the day that is open now, or the next one to open (legacy nextUp), today's lesson first until it is done
+    (dayRhythm). Without an account (`account` false),
     a lesson that waits behind one is never offered: Next up gives a re-read of a finished lesson instead, so Today never
     turns into a sign-up page (and never on the morning after a slip). */
 export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): NextUp {
-  const r = rhythm(days, st, tk, nowMs);
+  const r = dayRhythm(days, st, tk, nowMs);
   const n = r.stops.length;
   const done = r.stops.filter((s) => s.done).length;
   const s = r.stops.find((x) => x.k === r.cur);

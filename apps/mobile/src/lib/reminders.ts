@@ -2,7 +2,7 @@
    Core nudges.ts plans them (today and tomorrow, then a few come-back notes) from the log and the choices in Settings;
    this schedules that plan, one notification at a time, and makes it again each time the app opens. The words are plain on
    purpose, because a notification can show on a locked screen: nothing in them says what Daybook is for. Tapping one opens
-   Today (or the screen it is for). On Android each kind has its own channel, so one can be quieted without the others.
+   Today (or the screen it is for: the lesson reminder opens today's lesson). On Android each kind has its own channel, so one can be quieted without the others.
    On iPhone each note carries its flame picture (core Nudge.pic, apps/mobile/assets/notify); Android shows the fixed small
    and large icons from app.json, because a local note there cannot carry a picture of its own. */
 import type { Nudge, NudgeKind, NudgePic } from '@daybook/core';
@@ -18,6 +18,7 @@ const CHANNEL = 'reminders';
 /* the come-back notes are low: no sound, no pop-up, only in the list */
 const CHANNELS: { id: string; name: string; kinds: NudgeKind[]; low?: boolean }[] = [
   { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'wind'] },
+  { id: 'lessons', name: 'Lessons', kinds: ['lesson'] },
   { id: 'hard-hours', name: 'Hard hours', kinds: ['risk'] },
   { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
   { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'], low: true },

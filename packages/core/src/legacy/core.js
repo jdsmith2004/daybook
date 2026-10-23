@@ -373,6 +373,8 @@ function normP(p){
  const tt=normTalks(p.tt);if(tt.length)q.tt=tt;
  const fe=Array.isArray(p.fe)?p.fe.filter(x=>Array.isArray(x)&&typeof x[0]==='string'&&typeof x[1]==='number').map(x=>[x[0].slice(0,24),x[1]]).slice(0,50):[];if(fe.length)q.fe=fe;
  if(Number.isInteger(p.hw)&&p.hw>=0&&p.hw<24)q.hw=p.hw;
+ /* lt: when the day's last lesson was finished or read again (ms), for the lesson reminder (nudges.ts) */
+ if(typeof p.lt==='number'&&isFinite(p.lt)&&p.lt>0)q.lt=p.lt;
  /* o: the app was opened that day (away.ts). It keeps the day as present, and is not something done. */
  if(p.o===true)q.o=true;
  return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe?null:q;

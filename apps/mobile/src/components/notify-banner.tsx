@@ -1,8 +1,9 @@
 /* The ask on Today when notifications are off (core notify.ts; docs/plan.md, "Notifications, second pass"): a strip at the
    very top, above the flame, full width, in the sun color with a bell and an X, like Duolingo's. The one place Daybook nags,
    by the owner's choice: it comes back each day until notifications are on or "Stop asking on this phone" is chosen in
-   Settings. It is never a modal and never blocks anything. "Turn on" asks the phone, and when nothing is on yet turns on the
-   check-in at the time setup remembered (6 PM if none) and the Sunday review; "Open settings" opens the phone's page for
+   Settings. It is never a modal and never blocks anything. "Turn on" asks the phone; the lesson reminder is on by default
+   (core nudges.ts, "Lessons first"), and when nothing at all is on it is turned back on (the check-in and the wind-down
+   stay a choice in Settings); "Open settings" opens the phone's page for
    Daybook when the phone has said no. The X hides it until tomorrow. */
 import { notifyAsk, notifyQuiet, nudgeResume } from '@daybook/core';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -32,10 +33,10 @@ export function NotifyBanner() {
     if (ask.k === 'off') return openPhoneSettings();
     const ok = await allowReminders();
     if (!ok) return;
-    if (!(rem.checkin || rem.wind || rem.review)) {
-      setReminderPrefs({ ...rem, checkin: true, review: true });
-      /* turned on fresh, so each starts every day (core nudges.ts) */
-      for (const k of ['checkin', 'sunday'] as const) setNudgeLog((l) => nudgeResume(l, k));
+    if (!(rem.lesson || rem.checkin || rem.wind || rem.review)) {
+      setReminderPrefs({ ...rem, lesson: true });
+      /* turned on fresh, so it starts every day (core nudges.ts) */
+      setNudgeLog((l) => nudgeResume(l, 'lesson'));
     }
     say('Reminders are on. One short note a day.');
   };

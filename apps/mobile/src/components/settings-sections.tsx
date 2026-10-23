@@ -32,6 +32,8 @@ import {
   notifyCanAsk,
   notifyNever,
   nudgeResume,
+  lessonAt,
+  lessonLast,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -58,6 +60,7 @@ import {
   setThemePref,
   useLockPref,
   useNotifyMem,
+  useNudgeLog,
   useReminderPrefs,
   useSoundPref,
   useThemePref,
@@ -96,13 +99,14 @@ const Chips = ({ children, label }: { children: ReactNode; label?: string }) => 
 
 /** every settings section, as collapsible rows. `open` opens one ("s-count"), and `onOpenLayout` tells where it is. */
 export function SettingsSections({ open: asked, onOpenLayout }: { open?: string; onOpenLayout?: (y: number) => void }) {
-  const { snap, tk, apply, replace, erase, say, dirty, hooks, current } = useStore();
+  const { snap, tk, now, apply, replace, erase, say, dirty, hooks, current } = useStore();
   const sos = useSos();
   const sync = useSync();
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
   const theme = useThemePref();
   const sound = useSoundPref();
   const rem = useReminderPrefs();
+  const nlog = useNudgeLog();
   const notifyEnv = useNotifyEnv();
   const notifyMem = useNotifyMem();
   /* Android: whether notes can come at their exact time (the heads-up before hard hours needs it) */
@@ -113,7 +117,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const lock = useLockPref();
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
-    const turningOn = Object.entries(patch).some(([k, v]) => v === true && (k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'));
+    const turningOn = Object.entries(patch).some(
+      ([k, v]) => v === true && (k === 'lesson' || k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'),
+    );
     if (turningOn && !(await allowReminders())) {
       say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
       return;
@@ -170,6 +176,13 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
   const [h, m] = st.screensOff.split(':').map(Number);
   const wind = minToClock((h * 60 + m - 60 + 1440) % 1440);
   const unsynced = Object.keys(dirty).length;
+  /* the lesson reminder's time is not set by hand: it follows the last lesson (core lessonAt) */
+  const la = lessonAt(snap.days, nlog, tk, now);
+  const lessonSub =
+    'Once a day, around ' +
+    fmtClock(la.at) +
+    (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.') +
+    ' Never once today’s is done.';
 
   return (
     <>
@@ -377,13 +390,16 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'remind',
         'Reminders',
-        remindersOffered ? (rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times' : 'Phone alarms that keep the rhythm',
+        remindersOffered
+          ? (rem.lesson || rem.checkin || rem.wind ? 'On' : 'Off') + ' · a gentle nudge at the right times'
+          : 'Phone alarms that keep the rhythm',
         remindersOffered ? (
           <>
             <T v="small" tone="muted">
               Up to three a day, and none about something you already did. They are made on this phone, and the words never say what Daybook is for, because a
               reminder can show on a locked screen. One that stops helping goes quiet, and Today says so.
             </T>
+            <OnOff name="Today’s lesson" sub={lessonSub} on={rem.lesson} onPick={(on) => setRem({ lesson: on })} />
             <OnOff name="Check in" sub={'Each evening at ' + fmtClock(rem.checkinAt)} on={rem.checkin} onPick={(on) => setRem({ checkin: on })} />
             {rem.checkin ? (
               <Stepper
@@ -433,7 +449,10 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
           </>
         ) : (
           <>
-            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. Two a day are enough, and one on Sunday:</T>
+            <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. The lesson matters most; the others help if you like:</T>
+            <T>
+              • <B>{fmtClock(lessonLast(snap.days, tk) || '12:00')}:</B> “Lesson.” A few minutes, once a day.
+            </T>
             <T>
               • <B>{minToClock(18 * 60)}:</B> “Check in.” Under a minute.
             </T>

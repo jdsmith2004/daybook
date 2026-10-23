@@ -74,6 +74,8 @@ export interface Play {
   fe?: [string, number][];
   /** a hard hour held this day (risk.ts): the hour it started */
   hw?: number;
+  /** when the day's last lesson was finished or read again (ms): the lesson reminder comes about then, a day later (nudges.ts) */
+  lt?: number;
   /** the app was opened this day (away.ts): the person was here. It earns nothing and does not start the log. */
   o?: true;
 }

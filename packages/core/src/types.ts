@@ -178,6 +178,8 @@ export interface Settings {
   tipAsk?: DayKey | null;
   /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
   sup?: Supporter | null;
+  /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
+  likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
   u: number;
 }
 

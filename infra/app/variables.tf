@@ -59,3 +59,39 @@ variable "owner_sub" {
   type        = string
   default     = ""
 }
+
+variable "apple_sign_in" {
+  description = "true: Sign in with Apple (services/api apple-sign-in.ts). Needs the daybook-app-apple-auth role and the sync role's new rights, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
+  type        = bool
+  default     = false
+}
+
+variable "apple_auth_zip" {
+  description = "The built Sign in with Apple trigger (npm run build -w @daybook/api)."
+  type        = string
+  default     = "../../services/api/dist/apple-auth.zip"
+}
+
+variable "apple_bundle_id" {
+  description = "The iPhone app's bundle id: Apple's identity tokens from the app are for it."
+  type        = string
+  default     = "com.jdsmith2004.daybook"
+}
+
+variable "apple_services_id" {
+  description = "The Services ID for Sign in with Apple on the web (Apple Developer, Identifiers). Empty: the web has no Apple button. Not secret."
+  type        = string
+  default     = ""
+}
+
+variable "apple_team_id" {
+  description = "The Apple Developer Team ID, for revoking Apple's tokens when an account is closed. Not secret."
+  type        = string
+  default     = ""
+}
+
+variable "apple_key_id" {
+  description = "The Key ID of the Sign in with Apple key. Not secret; the key itself (.p8) is only ever in Parameter Store at /daybook/apple-key, put there by the owner."
+  type        = string
+  default     = ""
+}

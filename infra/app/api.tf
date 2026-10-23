@@ -24,7 +24,15 @@ resource "aws_lambda_function" "sync" {
       TABLE        = aws_dynamodb_table.records.name
       USER_POOL_ID = aws_cognito_user_pool.users.id
       # the name of the parameter that holds the Stripe restricted key, never the key (services/api/src/secrets.ts)
-      STRIPE_KEY_PARAM                    = "/daybook/stripe-key"
+      STRIPE_KEY_PARAM = "/daybook/stripe-key"
+      # Sign in with Apple (services/api apple-sign-in.ts): off until apple_sign_in. None of these is secret; the key (.p8)
+      # is read from the parameter, which only the owner writes
+      CLIENT_ID                           = var.apple_sign_in ? aws_cognito_user_pool_client.app.id : ""
+      APPLE_BUNDLE_ID                     = var.apple_sign_in ? var.apple_bundle_id : ""
+      APPLE_SERVICES_ID                   = var.apple_sign_in ? var.apple_services_id : ""
+      APPLE_TEAM_ID                       = var.apple_team_id
+      APPLE_KEY_ID                        = var.apple_key_id
+      APPLE_KEY_PARAM                     = "/daybook/apple-key"
       NODE_OPTIONS                        = "--enable-source-maps"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
     }
@@ -87,6 +95,15 @@ resource "aws_apigatewayv2_route" "claim_open" {
   target    = "integrations/${aws_apigatewayv2_integration.sync.id}"
 }
 
+/* the second open door: Sign in with Apple (services/api/src/apple-sign-in.ts). Apple's signed token is the only proof;
+   the function never reads a sign-in on it */
+resource "aws_apigatewayv2_route" "apple_open" {
+  count     = var.apple_sign_in ? 1 : 0
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "POST /sync/apple"
+  target    = "integrations/${aws_apigatewayv2_integration.sync.id}"
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
@@ -112,7 +129,16 @@ resource "aws_apigatewayv2_stage" "default" {
     throttling_burst_limit = 10
     throttling_rate_limit  = 5
   }
-  depends_on = [aws_apigatewayv2_route.pulse_open, aws_apigatewayv2_route.claim_open]
+  # Sign in with Apple's door: a person signs in now and then
+  dynamic "route_settings" {
+    for_each = var.apple_sign_in ? ["POST /sync/apple"] : []
+    content {
+      route_key              = route_settings.value
+      throttling_burst_limit = 10
+      throttling_rate_limit  = 5
+    }
+  }
+  depends_on = [aws_apigatewayv2_route.pulse_open, aws_apigatewayv2_route.claim_open, aws_apigatewayv2_route.apple_open]
 }
 
 resource "aws_lambda_permission" "api" {
@@ -129,4 +155,13 @@ resource "aws_lambda_permission" "api_claim" {
   function_name = aws_lambda_function.sync.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/POST/sync/claim"
+}
+
+resource "aws_lambda_permission" "api_apple" {
+  count         = var.apple_sign_in ? 1 : 0
+  statement_id  = "api-gateway-apple"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sync.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/POST/sync/apple"
 }

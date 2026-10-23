@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Bundles the Lambdas, each into one file, and zips them: services/api/dist/sync.zip (the sync API) and dist/signup.zip
-   (the sign-up trigger, src/signup.ts) and dist/pulse.zip (the opt-in counts and feedback, src/pulse.ts), which Terraform
-   uploads.
+   (the sign-up trigger, src/signup.ts) and dist/pulse.zip (the opt-in counts and feedback, src/pulse.ts) and
+   dist/apple-auth.zip (the Sign in with Apple trigger, src/apple-auth.ts), which Terraform uploads.
    The AWS SDK is left out because the Lambda Node.js runtime already has it. */
 import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
@@ -17,6 +17,7 @@ for (const [name, entry] of [
   ['sync', 'src/index.ts'],
   ['signup', 'src/signup.ts'],
   ['pulse', 'src/pulse-index.ts'],
+  ['apple-auth', 'src/apple-auth.ts'],
 ]) {
   const out = join(dist, name);
   mkdirSync(out, { recursive: true });

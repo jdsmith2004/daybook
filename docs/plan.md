@@ -2369,3 +2369,98 @@ Stripe Dashboard (dashboard.stripe.com, live mode):
 7. Developers > API keys: stop here and ask me. I create the restricted key (named daybook-sync, with only "Checkout
    Sessions: Read") myself and copy it into AWS. Do not reveal or copy it.
 ```
+
+## Sign in with Apple: what the owner sets up (October 23, 2026)
+
+The code is on the `apple-sign-in` branch. On iPhone, Apple's own sheet (one Face ID tap, no browser page); on the web,
+Apple's popup, once there is a Services ID. Android has no Apple button. It costs nothing to run.
+
+How it works, in short. Cognito's own Apple provider only works through Cognito's web sign-in page (a browser hop), and
+it would keep the Apple key in Terraform state, so Daybook does it itself:
+
+- The app gets an identity token from Apple and sends it to the sync API (`POST /sync/apple`, an open door with a low
+  request ceiling). The server checks Apple's signature, that it is for Daybook, in time, and with the app's one-time
+  nonce (`services/api/src/apple-id.ts`).
+- The account for an Apple ID is the one marked with it (`preferred_username` = `apple.<Apple's id>`). Only the server
+  sets that mark; the app may change only the email. The first time, the server makes the account, or joins Apple to the
+  email account that has Apple's email when that email is confirmed. Then Apple and the password open the same
+  account: the same log, tips and grandfather rule. An email that is not confirmed is never joined (anyone could have
+  made that account with that address); the app says to sign in with the password and confirm the email in Settings.
+  Settings also has "Add Sign in with Apple" for a signed-in account, which covers Hide My Email.
+- The server signs the account in with Cognito's custom sign-in. A small trigger Lambda (`apple-auth.ts`) checks Apple's
+  token again and that it is this account's Apple ID, so the server cannot make a sign-in without a fresh Apple token.
+  After that it is an ordinary Cognito sign-in: renewal, sync, tips and sign-out are unchanged.
+- An account made with Apple is new, so it is never grandfathered; it syncs once it has a tip, like any new account.
+- Closing an Apple account asks Apple once more (Apple's rule: its tokens must be revoked). The server trades that fresh
+  code for a token with the Sign in with Apple key and revokes it, then closes the account as before. Nothing from Apple
+  is ever stored. If the key is not in Parameter Store, the account is still closed and the function's log says
+  `apple revoke on close: no-key`.
+- When the app opens on iPhone, it asks Apple whether the person still allows Daybook. If they turned it off in Settings
+  (Apple ID, Sign in with Apple), the app signs out and the log stays on the phone.
+
+### Apple Developer
+
+Paste this into Claude in Chrome, signed in at developer.apple.com:
+
+```text
+Help me set up Sign in with Apple for my iPhone app Daybook in the Apple Developer account
+(developer.apple.com/account, Certificates, Identifiers & Profiles). Do the clicking, and stop to ask me before you accept
+any agreement or terms. Never download, open, copy or read out a private key: when a key is made I click Download myself.
+Tell me what you did at each step and anything that did not match.
+
+1. Membership details: tell me my Team ID (10 characters).
+2. Identifiers > App IDs > com.jdsmith2004.daybook: turn on "Sign in with Apple" (Enable as a primary App ID) and save.
+   If it asks to confirm a change to the app's capabilities, ask me first. Tell me if it was already on.
+3. Identifiers > + > Services IDs: description "Daybook web", identifier com.jdsmith2004.daybook.web. Register it, then
+   open it, turn on Sign in with Apple and Configure: primary App ID Daybook (com.jdsmith2004.daybook), domain
+   d3c9g6kent5bsr.cloudfront.net, return URL https://d3c9g6kent5bsr.cloudfront.net/auth. Save, and tell me what it shows.
+4. Keys > +: name "Daybook Sign in with Apple", check Sign in with Apple, Configure with the primary App ID Daybook, save,
+   Continue, Register. STOP on the Download page and tell me. I download the .p8 myself (it can only be downloaded once).
+   Tell me the Key ID shown there.
+5. Services > Sign in with Apple for Email Communication: just tell me what is listed. Change nothing.
+
+At the end, give me: the Team ID, the Key ID, and the Services ID. None of them is secret.
+```
+
+Step 3 is only for the web; skip it to start with iPhone only. Step 5 matters only if Hide My Email people should get
+Cognito's emails (a password reset); they never need one to sign in with Apple.
+
+### AWS
+
+1. **Apply the bootstrap stack** from your own computer: `cd infra/bootstrap && terraform apply`. In plain words it:
+   - makes a role `daybook-app-apple-auth` for the trigger, which may only write its own logs;
+   - lets the sync function find an account by its Apple ID or email (`ListUsers`), make one (`AdminCreateUser`,
+     `AdminSetUserPassword` with a password nobody knows), join Apple to an account (`AdminUpdateUserAttributes`), sign it
+     in (`AdminInitiateAuth`, `AdminRespondToAuthChallenge`), and read one more parameter, `/daybook/apple-key`;
+   - lets the deploy role read the new role and hand it to its Lambda, nothing more. No identity provider is made, so
+     the deploy role needs no `CreateIdentityProvider`.
+2. **Put the key in Parameter Store** yourself (it never goes through Claude, Terraform or git):
+
+   ```sh
+   aws ssm put-parameter --profile daybook --region us-east-2 --name /daybook/apple-key --type SecureString --value file://$HOME/Downloads/AuthKey_XXXXXXXXXX.p8
+   ```
+
+   Then delete the downloaded file, or keep it somewhere safe offline; Apple will not let you download it again.
+
+### GitHub (repository variables, none secret)
+
+Set `APPLE_TEAM_ID`, `APPLE_KEY_ID` and, for the web, `APPLE_SERVICES_ID`. Then, only after the bootstrap apply,
+`APPLE_SIGN_IN` = `true`. The next deploy makes the trigger, turns on the custom sign-in and opens `POST /sync/apple`.
+Its summary prints `EXPO_PUBLIC_APPLE=on` for phone builds. (Every deploy from this branch on also limits what a
+signed-in app may change on its own account to the email, whether Apple is on or not.)
+
+### The iPhone build and review
+
+1. expo-apple-authentication is a new native module, so it rides in the same new build as the tips. Add
+   `EXPO_PUBLIC_APPLE=on` to the EAS production environment variables first (without it the build hides the button).
+   EAS turns on the Sign in with Apple capability for the app identifier if step 2 above did not already.
+2. Nothing new for App Review: Sign in with Apple is not required for Daybook (it has no other outside sign-in), and
+   offering it next to email is fine. Closing an account already revokes Apple's tokens, which review checks.
+
+### What Claude does after (by effort)
+
+1. **Medium.** On TestFlight: sign in with Apple, then with the password on a second phone (confirmed email: the same
+   log), Hide My Email with "Add Sign in with Apple", close an Apple account and check the log line says `revoked`.
+2. **Low.** The web, once the Services ID is set: the button on the account sheet, in Chrome and in Safari.
+3. **Later, if wanted.** Apple's server-to-server notices (a person stops using Apple with Daybook, or deletes their
+   Apple ID) could sign out every device at once; today each iPhone notices when it opens.

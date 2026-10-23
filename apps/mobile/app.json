@@ -11,6 +11,7 @@
     "ios": {
       "bundleIdentifier": "com.jdsmith2004.daybook",
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -35,6 +36,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-audio",
         {

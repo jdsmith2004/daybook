@@ -4,7 +4,8 @@
  *   2. a role GitHub Actions can take on to deploy, with no stored AWS keys (OpenID Connect), only from a workflow running
  *      on this repo's main branch
  *   3. the sync function's role, with exactly what it may do (the Daybook table, its own logs, deleting a user who closes their
- *      account), the sign-up trigger's role (its own logs, nothing else), and the pulse function's role (its own table of
+ *      account, making and signing in an account for Sign in with Apple), the sign-up trigger's role (its own logs, nothing
+ *      else), the Sign in with Apple trigger's role (its own logs, nothing else), and the pulse function's role (its own table of
  *      opt-in totals and feedback, nothing else). They are made here, not by the deploys: a deploy cannot make or change any role, so it can never give itself, or
  *      an outside account, a way into the table
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
@@ -160,21 +161,32 @@ resource "aws_iam_role_policy" "sync" {
         Resource = ["arn:${local.arn}:cognito-idp:${var.region}:${local.account}:userpool/*"]
       },
       {
-        # the Stripe restricted key (read only, Checkout Sessions only), which the owner puts in Parameter Store by hand;
-        # it is never in Terraform, its state, GitHub or the code (docs/plan.md, "Payments")
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameter"]
-        Resource = ["arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key"]
+        # Sign in with Apple (services/api apple-sign-in.ts), only after Apple's signed token is checked: find the account
+        # joined to an Apple ID or with Apple's email (ListUsers), make one with a password nobody knows, join Apple to an
+        # account (its preferred_username), and sign it in with the custom sign-in, whose trigger checks Apple's token again
+        Effect = "Allow"
+        Action = ["cognito-idp:ListUsers", "cognito-idp:AdminCreateUser", "cognito-idp:AdminSetUserPassword", "cognito-idp:AdminUpdateUserAttributes",
+        "cognito-idp:AdminInitiateAuth", "cognito-idp:AdminRespondToAuthChallenge"]
+        Resource = ["arn:${local.arn}:cognito-idp:${var.region}:${local.account}:userpool/*"]
       },
       {
-        # decrypting that one parameter, and only through Parameter Store
+        # the Stripe restricted key (read only, Checkout Sessions only), and the Sign in with Apple key (.p8, used only to
+        # revoke Apple's tokens when an account is closed), which the owner puts in Parameter Store by hand; they are never
+        # in Terraform, its state, GitHub or the code (docs/plan.md, "Payments" and "Sign in with Apple")
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = ["arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key", "arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/apple-key"]
+      },
+      {
+        # decrypting those two parameters, and only through Parameter Store
         Effect   = "Allow"
         Action   = ["kms:Decrypt"]
         Resource = ["arn:${local.arn}:kms:${var.region}:${local.account}:key/*"]
         Condition = {
           StringEquals = {
-            "kms:ViaService"                      = "ssm.${var.region}.amazonaws.com"
-            "kms:EncryptionContext:PARAMETER_ARN" = "arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key"
+            "kms:ViaService" = "ssm.${var.region}.amazonaws.com"
+            "kms:EncryptionContext:PARAMETER_ARN" = ["arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/stripe-key",
+            "arn:${local.arn}:ssm:${var.region}:${local.account}:parameter/daybook/apple-key"]
           }
         }
       }
@@ -209,6 +221,37 @@ resource "aws_iam_role_policy" "signup" {
       Effect   = "Allow"
       Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
       Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-signup:*"]
+    }]
+  })
+}
+
+/* ---------- 3b2. the Sign in with Apple trigger's role ----------
+   Cognito calls this function for the one-step Apple sign-in (services/api/src/apple-auth.ts). It checks Apple's token with
+   Apple's public keys (fetched over the internet) and reads and stores nothing, so all it may do is write its own logs. */
+resource "aws_iam_role" "apple_auth" {
+  name                 = "daybook-app-apple-auth"
+  description          = "The Daybook Sign in with Apple trigger Lambda. Made by the bootstrap stack; deploys may pass it to the Lambda but never change it."
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+      Condition = { StringEquals = { "aws:SourceAccount" = local.account } }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "apple_auth" {
+  name = "daybook-apple-auth"
+  role = aws_iam_role.apple_auth.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+      Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-apple-auth:*"]
     }]
   })
 }
@@ -308,13 +351,13 @@ resource "aws_iam_role_policy" "deploy" {
         Sid      = "ReadTheSyncRole"
         Effect   = "Allow"
         Action   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies"]
-        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn]
+        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn]
       },
       {
         Sid       = "PassTheSyncRoleToLambdaOnly"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
-        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn]
+        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn]
         Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } }
       },
       {
@@ -327,7 +370,7 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = ["*"]
       },
       {
-        # API Gateway may call the sync function, and Cognito the sign-up trigger; nothing else may be let in
+        # API Gateway may call the sync function, and Cognito the sign-up and Apple triggers; nothing else may be let in
         Sid       = "OnlyApiGatewayMayCallIt"
         Effect    = "Deny"
         Action    = ["lambda:AddPermission"]

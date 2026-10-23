@@ -49,6 +49,14 @@ need, without letting the screen turn into a list of features.
   owes anything, never asks in the hours after an SOS or a slip, and stops for good once the person is a supporter.
   People who had an account before this keep sync. The tip jar is never removed or hidden on a platform without asking
   the owner first. Later the owner may sell products in the app instead; ask before building toward that.
+- **Think like a business, too (the owner, October 23, 2026).** Daybook exists to improve lives and to make money, by
+  charging the people who get the most from it and by a good pricing model. Care stays free because that is how Daybook
+  reaches the most people, and that rule guides what is locked; it is never said in the ask. Never tell a person they do
+  not need to pay, that the free version is enough, or anything else that talks them out of it: an ask sells what they
+  get, concretely. Charge for value, not access (sync, deeper insight into their own pattern, the flame's looks). Ask at
+  moments of earned value (a level, a milestone, the first week), make the middle tip the obvious choice, keep paying to
+  one tap, and make the free side feel generous, since generous treatment is what brings tips and good ratings. When
+  building any feature, ask whether it helps the person and whether it helps Daybook earn or grow, and say so in plans.
 - **Never link to the code.** The owner worked and paid for this codebase and does not want it handed to anyone to copy
   (the owner, October 23, 2026, and upset that a "See the code" link was put on the website). No page, app screen, store
   listing or message ever links to the repository, says the code is public, or invites people to read it. Privacy is

@@ -1,6 +1,7 @@
 /* Every setting, as collapsible sections (the More tab and the Settings page both show them): sync, my daily routine, the
    schedule, how days are counted, look and feel, SOS, reminders, and saving, backing up and deleting. Ported from the legacy viewSettings. */
 import {
+  SUP_SYNC_WORDS,
   daysCsv,
   eventsCsv,
   fmtClock,
@@ -194,7 +195,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             signedIn
               ? sync.status.k === 'expired'
                 ? 'Sign in again to keep syncing'
-                : 'On' + (sync.email ? ' · ' + sync.email : '')
+                : sync.status.k === 'need'
+                  ? SUP_SYNC_WORDS.short
+                  : 'On' + (sync.email ? ' · ' + sync.email : '')
               : 'Off · your log stays on this device',
             <SyncBody />,
           )}
@@ -498,9 +501,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         BACKUP_FILES ? 'Spreadsheet and backup files' : 'Spreadsheets, or delete everything',
         <>
           <T v="small" tone="muted">
-            {signedIn
+            {signedIn && sync.status.k !== 'need'
               ? 'Your log is saved on this device and in your account.'
-              : 'Your log is saved on this device only. A free account keeps a safe copy.' + (STORAGE_LINE ? ' ' + STORAGE_LINE : '')}
+              : 'Your log is saved on this device only. Supporters with an account get a safe copy.' + (STORAGE_LINE ? ' ' + STORAGE_LINE : '')}
           </T>
           <Button kind="ghost" label="Save days as a spreadsheet (CSV)" onPress={() => save('days')} />
           <Button kind="ghost" label="Save every entry with its time (CSV)" onPress={() => save('events')} />

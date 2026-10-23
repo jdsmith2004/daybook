@@ -21,8 +21,10 @@ resource "aws_lambda_function" "sync" {
   timeout          = 15
   environment {
     variables = {
-      TABLE                               = aws_dynamodb_table.records.name
-      USER_POOL_ID                        = aws_cognito_user_pool.users.id
+      TABLE        = aws_dynamodb_table.records.name
+      USER_POOL_ID = aws_cognito_user_pool.users.id
+      # the name of the parameter that holds the Stripe restricted key, never the key (services/api/src/secrets.ts)
+      STRIPE_KEY_PARAM                    = "/daybook/stripe-key"
       NODE_OPTIONS                        = "--enable-source-maps"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
     }
@@ -77,6 +79,14 @@ resource "aws_apigatewayv2_route" "sync" {
   authorizer_id      = aws_apigatewayv2_authorizer.jwt.id
 }
 
+/* the one open door to the sync function: a web tip from a signed-out device (services/api/src/sync.ts). The function
+   handles this route on its own, never reads a sign-in on it, and can only check a Stripe payment there */
+resource "aws_apigatewayv2_route" "claim_open" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "POST /sync/claim"
+  target    = "integrations/${aws_apigatewayv2_integration.sync.id}"
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
@@ -96,7 +106,13 @@ resource "aws_apigatewayv2_stage" "default" {
       throttling_rate_limit  = 10
     }
   }
-  depends_on = [aws_apigatewayv2_route.pulse_open]
+  # the open tip door gets a low ceiling too: a person claims a tip once
+  route_settings {
+    route_key              = "POST /sync/claim"
+    throttling_burst_limit = 10
+    throttling_rate_limit  = 5
+  }
+  depends_on = [aws_apigatewayv2_route.pulse_open, aws_apigatewayv2_route.claim_open]
 }
 
 resource "aws_lambda_permission" "api" {
@@ -105,4 +121,12 @@ resource "aws_lambda_permission" "api" {
   function_name = aws_lambda_function.sync.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/*/sync"
+}
+
+resource "aws_lambda_permission" "api_claim" {
+  statement_id  = "api-gateway-claim"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sync.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/POST/sync/claim"
 }

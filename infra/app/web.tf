@@ -115,6 +115,19 @@ resource "aws_cloudfront_distribution" "web" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
   }
 
+  # and below it: /sync/claim, a web tip from a signed-out device
+  ordered_cache_behavior {
+    path_pattern               = "/sync/*"
+    target_origin_id           = "api"
+    viewer_protocol_policy     = "https-only"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    cache_policy_id            = data.aws_cloudfront_cache_policy.none.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.api.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
+  }
+
   # the pulse (opt-in counts and feedback), the same way, when it is on
   dynamic "ordered_cache_behavior" {
     for_each = var.pulse ? ["/pulse", "/pulse/*"] : []

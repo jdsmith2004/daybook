@@ -1,5 +1,6 @@
 /* Reviews, backups, and the records that sync moves. */
 import { isKey, mergeOpts, normDay, normSettings } from './legacy/core.js';
+import { keepSup } from './supporter';
 import { normSun } from './sunday';
 import type { Day, DayKey, Days, Review, Reviews, Settings, Snapshot } from './types';
 
@@ -82,6 +83,8 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
     const mine = here.settings ? here.settings.opts : b.settings.opts;
     settings = { ...normSettings(b.settings), u: now };
     settings.opts = mergeOpts(mine, settings.opts);
+    /* an older backup never takes away a tip */
+    settings = keepSup(settings, here.settings?.sup);
   }
   return { snap: { settings, days, reviews }, restored };
 }

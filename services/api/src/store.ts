@@ -2,10 +2,16 @@
    token, never from the request), the sort key is the record id. Each record keeps two times: u, when the person changed it
    (from their device, which decides which change wins), and s, when the server saved it. A local index on s answers "what
    changed since", so a device whose clock is off never misses a change. Items whose sort key starts with # are the server's
-   own bookkeeping (the daily write allowance); they have no s, so they never show up in a pull.
+   own bookkeeping (the daily write allowance, the erased copy, and #sup, the person's supporter record); they have no s, so
+   they never show up in a pull.
+
+   Tips that were checked are kept in one more partition, CLAIMS ("#claims", which no account id can ever be): one item per
+   Stripe Checkout Session or Apple purchase, with the account it opened support on, so one payment opens one account.
+   Closing an account removes its claims too (dropClaims), so nothing is left that points to it.
    MemoryStore does the same in memory, for the tests. */
 import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { normSup, type Supporter } from '@daybook/core';
 
 export interface StoredRecord {
   id: string;
@@ -20,6 +26,20 @@ export interface Page {
   items: StoredRecord[];
   cursor: string | null;
 }
+
+/** a checked tip: the account it opened support on ('' for a tip checked on a signed-out device, not linked to an account
+    yet), when, from where, and how much */
+export interface ClaimRow {
+  sub: string;
+  at: number;
+  src: 'apple' | 'stripe';
+  cents?: number;
+  env?: string;
+}
+
+/** the partition that holds the checked tips */
+export const CLAIMS = '#claims';
+const SUP = '#sup';
 
 /** a cursor that did not come from this service */
 export class BadCursor extends Error {}
@@ -38,6 +58,17 @@ export interface Store {
   erased(user: string, now: number): Promise<{ n: number; at: number | null }>;
   /** brings the kept copies back as new changes. A record logged again since the erase is left as it is. */
   restore(user: string, now: number): Promise<number>;
+  /** the person's supporter record, and the claims (CLAIMS keys) it came from */
+  getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null>;
+  /** saves the person's supporter record, and adds `ref` to its claims */
+  putSup(user: string, sup: Supporter, ref?: string): Promise<void>;
+  /** whether the person has any synced record (settings, a day, a review), deleted ones included */
+  hasData(user: string): Promise<boolean>;
+  getClaim(key: string): Promise<ClaimRow | null>;
+  /** saves a claim only if it is still as it was read (`was`, null: not there yet); false when it changed meanwhile */
+  putClaim(key: string, row: ClaimRow, was: ClaimRow | null): Promise<boolean>;
+  /** removes the claims linked to this person (when the account is closed); how many */
+  dropClaims(user: string): Promise<number>;
 }
 
 /** how long an erased log can be brought back */
@@ -235,6 +266,97 @@ export class DynamoStore implements Store {
     await this.batch(copies.map((c) => ({ DeleteRequest: { Key: { pk: user, sk: c.sk } } })));
     return n;
   }
+
+  async getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null> {
+    const q = await this.db.send(
+      new QueryCommand({
+        TableName: this.table,
+        KeyConditionExpression: 'pk = :p AND sk = :k',
+        ExpressionAttributeValues: { ':p': user, ':k': SUP },
+      }),
+    );
+    const i = q.Items?.[0];
+    if (!i) return null;
+    let sup: Supporter | null = null;
+    try {
+      sup = normSup(JSON.parse(String(i.d)));
+    } catch {
+      sup = null;
+    }
+    if (!sup) return null;
+    const refs = i.refs instanceof Set ? [...i.refs].map(String) : Array.isArray(i.refs) ? i.refs.map(String) : [];
+    return { sup, refs };
+  }
+
+  async putSup(user: string, sup: Supporter, ref?: string): Promise<void> {
+    await this.db.send(
+      new UpdateCommand({
+        TableName: this.table,
+        Key: { pk: user, sk: SUP },
+        UpdateExpression: 'SET d = :d' + (ref ? ' ADD refs :r' : ''),
+        ExpressionAttributeValues: ref ? { ':d': JSON.stringify(sup), ':r': new Set([ref]) } : { ':d': JSON.stringify(sup) },
+      }),
+    );
+  }
+
+  async hasData(user: string): Promise<boolean> {
+    /* record ids are settings, days/... and reviews/...; the server's own items start with # and sort before them */
+    const q = await this.db.send(
+      new QueryCommand({
+        TableName: this.table,
+        KeyConditionExpression: 'pk = :p AND sk >= :a',
+        ExpressionAttributeValues: { ':p': user, ':a': 'a' },
+        ProjectionExpression: 'sk',
+        Limit: 1,
+      }),
+    );
+    return !!q.Items?.length;
+  }
+
+  async getClaim(key: string): Promise<ClaimRow | null> {
+    const q = await this.db.send(
+      new QueryCommand({
+        TableName: this.table,
+        KeyConditionExpression: 'pk = :p AND sk = :k',
+        ExpressionAttributeValues: { ':p': CLAIMS, ':k': key },
+      }),
+    );
+    const i = q.Items?.[0];
+    if (!i) return null;
+    const row: ClaimRow = { sub: String(i.sub ?? ''), at: Number(i.at) || 0, src: i.src === 'apple' ? 'apple' : 'stripe' };
+    if (typeof i.cents === 'number') row.cents = i.cents;
+    if (typeof i.env === 'string') row.env = i.env;
+    return row;
+  }
+
+  async putClaim(key: string, row: ClaimRow, was: ClaimRow | null): Promise<boolean> {
+    try {
+      await this.db.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: { pk: CLAIMS, sk: key, ...row },
+          ConditionExpression: was ? '#s = :w' : 'attribute_not_exists(pk)',
+          ExpressionAttributeNames: was ? { '#s': 'sub' } : undefined,
+          ExpressionAttributeValues: was ? { ':w': was.sub } : undefined,
+        }),
+      );
+      return true;
+    } catch (e) {
+      if (e instanceof ConditionalCheckFailedException) return false;
+      throw e;
+    }
+  }
+
+  async dropClaims(user: string): Promise<number> {
+    const mine = await this.getSup(user);
+    const gone: string[] = [];
+    for (const key of mine?.refs || []) {
+      const c = await this.getClaim(key);
+      if (c && c.sub === user) gone.push(key);
+    }
+    await this.batch(gone.map((sk) => ({ DeleteRequest: { Key: { pk: CLAIMS, sk } } })));
+    return gone.length;
+  }
 }
 
 export class MemoryStore implements Store {
@@ -284,6 +406,7 @@ export class MemoryStore implements Store {
     if (all) {
       this.rows.delete(user);
       this.erasedCopies.delete(user);
+      this.sups.delete(user);
       return n;
     }
     let kept = this.erasedCopies.get(user);
@@ -312,6 +435,47 @@ export class MemoryStore implements Store {
       n++;
     }
     this.erasedCopies.delete(user);
+    return n;
+  }
+
+  sups = new Map<string, { sup: Supporter; refs: Set<string> }>();
+  claims = new Map<string, ClaimRow>();
+
+  async getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null> {
+    const x = this.sups.get(user);
+    return x ? { sup: { ...x.sup }, refs: [...x.refs] } : null;
+  }
+
+  async putSup(user: string, sup: Supporter, ref?: string): Promise<void> {
+    const refs = this.sups.get(user)?.refs || new Set<string>();
+    if (ref) refs.add(ref);
+    this.sups.set(user, { sup: { ...sup }, refs });
+  }
+
+  async hasData(user: string): Promise<boolean> {
+    return (this.rows.get(user)?.size || 0) > 0;
+  }
+
+  async getClaim(key: string): Promise<ClaimRow | null> {
+    const c = this.claims.get(key);
+    return c ? { ...c } : null;
+  }
+
+  async putClaim(key: string, row: ClaimRow, was: ClaimRow | null): Promise<boolean> {
+    const cur = this.claims.get(key);
+    if (was ? !cur || cur.sub !== was.sub : cur) return false;
+    this.claims.set(key, { ...row });
+    return true;
+  }
+
+  async dropClaims(user: string): Promise<number> {
+    let n = 0;
+    for (const key of this.sups.get(user)?.refs || []) {
+      if (this.claims.get(key)?.sub === user) {
+        this.claims.delete(key);
+        n++;
+      }
+    }
     return n;
   }
 }

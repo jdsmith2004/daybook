@@ -31,6 +31,8 @@ for (const [name, entry] of [
     minify: true,
     sourcemap: 'linked',
     legalComments: 'none',
+    /* Apple's library (sync) is CommonJS and requires Node's own modules; an ES module has no require, so give it one */
+    banner: { js: "import { createRequire as __daybookRequire } from 'node:module'; const require = __daybookRequire(import.meta.url);" },
   });
   /* the same bytes every time for the same code (fixed file times), so Terraform only updates a Lambda when its code changed */
   for (const f of ['index.mjs', 'index.mjs.map']) utimesSync(join(out, f), 946684800, 946684800);

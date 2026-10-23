@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { MemoryStore } from '../src/store';
 import { makeHandler } from '../src/sync';
+import { supporters, TIP } from './helpers';
 
 let serverNow = 2_000_000_000_000;
 let store: MemoryStore;
@@ -69,7 +70,7 @@ const addRode = (s: Snapshot, k: string, at: number): Snapshot => ({ ...s, days:
 
 beforeEach(() => {
   serverNow = 2_000_000_000_000;
-  store = new MemoryStore();
+  store = supporters(new MemoryStore());
   handler = makeHandler(store, () => serverNow);
 });
 
@@ -354,5 +355,38 @@ describe('the first sign-in on a device', () => {
     const snap = core.snapshotOf(p.records);
     expect(snap.settings?.goal).toBe('account');
     expect(Object.keys(snap.days)).toEqual(['2026-10-10']);
+  });
+});
+
+describe('a person who is not a supporter yet', () => {
+  it('their changes wait on the device, marked to send, and go once a tip is confirmed', async () => {
+    const a = new Device(transport('carol'));
+    a.change((s) => ({ ...s, settings: st(100, 'mine') }), 100);
+    a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    await expect(a.sync()).rejects.toThrow(/tip of \$5 or more/);
+    /* nothing was lost, and nothing reached the account */
+    expect(Object.keys(a.dirty).sort()).toEqual(['days/2026-10-10', 'settings']);
+    expect(a.snap.days['2026-10-10'].events.length).toBe(1);
+    expect(await store.hasData('carol')).toBe(false);
+    /* a tip is confirmed (supporter.test.ts checks how) */
+    await store.putSup('carol', TIP);
+    serverNow += 1000;
+    const r = await a.sync();
+    expect(r.saved).toBe(2);
+    expect(a.dirty).toEqual({});
+    const b = new Device(transport('carol'));
+    await b.sync();
+    expect(b.snap.settings?.goal).toBe('mine');
+  });
+
+  it('support that ended still lets them bring their log to a new phone', async () => {
+    const a = new Device(transport('dave'));
+    await store.putSup('dave', { since: 1, kind: 'monthly', until: serverNow + 1000, src: 'stripe' });
+    a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    await a.sync();
+    serverNow += 5000;
+    const b = new Device(transport('dave'));
+    await b.sync().catch(() => undefined);
+    expect(b.snap.days['2026-10-10'].events.length).toBe(1);
   });
 });

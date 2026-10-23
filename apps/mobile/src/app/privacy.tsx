@@ -15,14 +15,19 @@ export default function Privacy() {
       <T>Everything stays on this device. Nothing about your log leaves it.</T>
       <SheetH title="With an account" />
       <T>
-        Your log, your check-ins, your plan and your settings are copied to Daybook's server, so they are safe if you lose your phone and the same on every
-        device you sign in on. Your voice note never leaves the phone.
+        With sync (for supporters, and for accounts made before tips), your log, your check-ins, your plan and your settings are copied to Daybook's server, so
+        they are safe if you lose your phone and the same on every device you sign in on. Your voice note never leaves the phone.
       </T>
       <T>
         Your records are stored under your own account and can only be read with your sign-in. Daybook does not sell, share or show them to anyone, and there
         are no ads or trackers.
       </T>
       <T>Your email is used to sign you in and to reset your password, and for nothing else.</T>
+      <SheetH title="Tips" />
+      <T>
+        Apple or Stripe handles the payment. Daybook keeps only a supporter record (that it is a tip, the amount, the date and where it came from) and the
+        payment's reference, never your card details.
+      </T>
       <SheetH title="Removing it" />
       <T>
         Delete everything (in Settings) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in Settings ›

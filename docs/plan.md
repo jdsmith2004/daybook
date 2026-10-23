@@ -2217,3 +2217,155 @@ like someone about to slip. Decided by the session on the owner's word ("you cho
    notification. Not copied: Duolingo's guilt (a sad owl, "streak at risk"). The words stay warm, and never say what
    Daybook is for on a locked screen.
 3. **Medium.** The week's lesson days as a ring of seven on Today, near the flame; each lesson visibly feeds the flame.
+
+## Payments: what the owner sets up (October 23, 2026)
+
+The code for tips is on the `payments` branch: Apple's in-app purchase on iPhone (`apps/mobile/src/lib/tip.ts` and
+`tip-store.ts`, with expo-iap), the web tip page with Stripe Payment Links, and the server that checks both and decides
+about sync (`services/api/src/supporter.ts`, `apple.ts`, `stripe.ts`). Nothing new costs money to run: Apple keeps 15% of
+each tip once the Small Business Program applies (30% before), Stripe keeps its fee per payment (2.9% + 30¢ for a US
+card), and the AWS parts (one Parameter Store value, a few more Lambda calls) are free or fractions of a cent.
+
+How it works, in short: a tip of $5 or more makes a supporter (core `supporter.ts`). The three Apple products are
+non-consumable, so a tip comes back on a new phone (Restore) and is never charged twice; a second tip later would be a
+new product (a consumable "tip again", or monthly support as a subscription, which the record already allows). The
+server keeps its own supporter record per account and lets an account save to sync only with one. Accounts that hold
+synced data when the server first looks at them, or were made before October 24, 2026 (midnight in Chicago), are
+grandfathered for good. Reading, erasing and closing an account stay open to everyone, and nothing is ever deleted
+because someone is not a supporter.
+
+People who tipped with the old Stripe link before today: if they had an account, they are grandfathered and keep sync,
+and their device extras open once the app looks at the account (it does at every start). If they had no account, they
+can be given their supporter record by hand: find the payment in Stripe (Payments, search their email), open it, copy
+the Checkout Session id (it starts with `cs_live_`, on the payment's page under its Checkout summary or its events), and
+send them `https://d3c9g6kent5bsr.cloudfront.net/tipped.html?session_id=<that id>` to open in the browser they use
+Daybook in (or ask them to write, and do it with them). The server checks that it is paid, $5 or more, and not used
+before.
+
+### App Store Connect
+
+1. **Paid Apps agreement.** Business (Agreements, Tax, and Banking), Paid Apps: read and accept it. In-app purchases
+   cannot be sold until it is active.
+2. **Banking and tax.** In the same place: add the bank account the money goes to, and the US tax form (W-9). Apple
+   checks them; the agreement shows "Active" when done (a day or two).
+3. **Small Business Program (15% instead of 30%).** Once the agreement is active, enroll at
+   https://developer.apple.com/app-store/small-business-program/ (sign in, Enroll). It applies from the start of the next
+   fiscal month after approval.
+4. **The three products.** Apps, Daybook, Monetization, In-App Purchases, the + button, type **Non-Consumable**, once for
+   each. The Product ID must match exactly (core `APPLE_TIPS`):
+
+   | Reference name | Product ID             | Price  | Display name | Description                                                      |
+   | -------------- | ---------------------- | ------ | ------------ | ---------------------------------------------------------------- |
+   | Kind tip       | `daybook.tip.kind`     | $5.00  | Kind tip     | A $5 tip that makes you a Daybook supporter. Thank you.          |
+   | Generous tip   | `daybook.tip.generous` | $10.00 | Generous tip | A $10 tip that makes you a Daybook supporter. Thank you.         |
+   | Amazing tip    | `daybook.tip.amazing`  | $20.00 | Amazing tip  | A $20 tip that makes you a Daybook supporter. Thank you so much. |
+
+   For each: availability, the same countries as the app (the United States); Family Sharing off; tax category, the
+   default. If $5.00 is not offered, take the closest price ($4.99): Apple tips are checked by product, not by price, so
+   any of the three makes a supporter.
+
+5. **Review screenshot and notes.** Each product needs one screenshot of where it is bought in the app (the tip sheet on
+   an iPhone, from the new build) and a note for review: "A one-time tip. Daybook is free; a tip makes the person a
+   supporter, which opens sync between devices, deeper stats and extra flame looks. Everything for care stays free."
+   The first in-app purchases go to review together with an app version, so add all three to the next version's page
+   (In-App Purchases and Subscriptions, Select) before submitting it.
+6. **A sandbox tester** (to try it on a phone before review): Users and Access, Sandbox, Testers, +. On the iPhone,
+   Settings, Developer (or App Store), Sandbox Account. TestFlight purchases are free and use the sandbox too.
+
+### Stripe
+
+1. **Apple Pay and Google Pay.** Settings, Payments, Payment methods: turn on Apple Pay and Google Pay (cards stay on).
+   Payment Links run on Stripe's own pages, so no domain needs to be registered.
+2. **Business website.** Settings, Business, Public details: website `https://d3c9g6kent5bsr.cloudfront.net`.
+3. **Three Payment Links.** Payment Links, New, for each tip: a new product (Kind tip $5.00, Generous tip $10.00, Amazing
+   tip $20.00, one-time, USD), quantity not adjustable, no address. Under **After payment**, choose "Don't show
+   confirmation page" (redirect) and enter exactly
+   `https://d3c9g6kent5bsr.cloudfront.net/tipped.html?session_id={CHECKOUT_SESSION_ID}`.
+   The app adds `client_reference_id=<account id>` to the link when the person is signed in; Payment Links take it from
+   the address on their own, so there is nothing to switch on. Give the old link (the one in `SUPPORT_URL`) the same
+   After payment redirect too.
+4. **Send the three links** (they look like `https://buy.stripe.com/...` and are public) to Claude, or put them in
+   `TIP_LINKS` in `packages/core/src/supporter.ts`. Until then, the old link stands in for the Kind tip, and the other
+   two are not offered on the web page.
+5. **The restricted key.** Developers, API keys, Create restricted key. Name it `daybook-sync`. Permissions: **Checkout
+   Sessions: Read**, and every other one None. Create it and put it straight into AWS (below). Never paste it into a
+   chat, an email, GitHub, or a file in the repository.
+
+### AWS
+
+1. **Let the sync function read the key** (and see when an account was made, for the grandfather rule): from your own
+   computer, `cd infra/bootstrap && terraform apply`. It adds to the sync function's role `ssm:GetParameter` on
+   `/daybook/stripe-key` only, decrypting that one parameter only through Parameter Store, and
+   `cognito-idp:AdminGetUser`.
+2. **Put the key in Parameter Store** as a SecureString (a standard parameter with the AWS managed key costs nothing):
+
+   ```sh
+   export AWS_PROFILE=daybook
+   read -rs STRIPE_KEY     # paste the rk_live_... key and press Enter; it is not shown and not kept in history
+   aws ssm put-parameter --region us-east-2 --name /daybook/stripe-key --type SecureString --value "$STRIPE_KEY"
+   unset STRIPE_KEY
+   ```
+
+   To change it later, run the same with `--overwrite`. The function reads it again within a few minutes of a new start,
+   or at once after the next deploy.
+
+3. **Deploy.** Merge `payments` to `main` with `[deploy]` once the new iPhone build is approved (below), so a new account
+   on iPhone is never told that sync needs a tip before the app can take one. The web gets the tip page in the same
+   deploy. Until the key is in Parameter Store, web tips answer "Web tips are not set up yet"; Apple tips work without
+   it. (An older iPhone build that is not a supporter shows the same words when its sync is turned down; it loses
+   nothing.)
+
+### The iPhone build and review
+
+1. expo-iap is a new native module, so a new build is needed: `cd apps/mobile && npx eas-cli@latest build -p ios
+--profile production`, then `npx eas-cli@latest submit -p ios`. The In-App Purchase capability is on for the app's
+   identifier by default, and EAS keeps the provisioning profile in step.
+2. In App Store Connect, add the three in-app purchases to the new version, with the screenshots and notes above, and
+   submit it for review.
+
+### What Claude does after (by effort)
+
+1. **Low.** Put the three Payment Link addresses in `TIP_LINKS` (core `supporter.ts`).
+2. **Medium.** Once the build is on TestFlight: a sandbox purchase on a phone end to end (buy, restore on a second phone,
+   sync opens), and a web tip from the web app and from the iPhone's second way.
+3. **High, later, only if the owner wants it.** Refunds: App Store Server Notifications and a Stripe webhook could turn a
+   refunded tip's record off. Today a refund leaves the record as it is.
+
+### Prompt for Claude in Chrome
+
+Paste this into Claude in Chrome, signed in to App Store Connect and the Stripe Dashboard in the same browser:
+
+```text
+Help me set up tips for my iPhone app Daybook in App Store Connect and Stripe. Do the clicking, and stop to ask me before
+you: agree to or accept any agreement or terms; enter, change or confirm any bank, tax or identity details; create,
+reveal, copy or display any secret or restricted API key. Never type, copy or read out a secret key yourself: when a key
+is created I copy it myself, straight into AWS. Tell me what you did at each step and anything that did not match.
+
+App Store Connect (appstoreconnect.apple.com):
+1. Open Business (Agreements, Tax, and Banking). Tell me the status of the Paid Apps agreement, banking and tax. If
+   something needs my signature or details, stop and show me where.
+2. Open Apps > Daybook > Monetization > In-App Purchases. Create three, each of type Non-Consumable:
+   - Reference name "Kind tip", Product ID daybook.tip.kind, price $5.00 (or $4.99 if $5.00 is not offered), display
+     name "Kind tip", description "A $5 tip that makes you a Daybook supporter. Thank you."
+   - Reference name "Generous tip", Product ID daybook.tip.generous, price $10.00, display name "Generous tip",
+     description "A $10 tip that makes you a Daybook supporter. Thank you."
+   - Reference name "Amazing tip", Product ID daybook.tip.amazing, price $20.00, display name "Amazing tip",
+     description "A $20 tip that makes you a Daybook supporter. Thank you so much."
+   For each: availability United States only, Family Sharing off, review notes: "A one-time tip. Daybook is free; a tip
+   makes the person a supporter, which opens sync between devices, deeper stats and extra flame looks. Everything for
+   care stays free." Leave the review screenshot for me, and tell me which ones still need it.
+3. Open https://developer.apple.com/app-store/small-business-program/ and tell me whether I can enroll yet. Do not
+   submit the enrollment; show me the page.
+
+Stripe Dashboard (dashboard.stripe.com, live mode):
+4. Settings > Payments > Payment methods: turn on Apple Pay and Google Pay if they are off. Tell me what was on before.
+5. Settings > Business > Public details: set the website to https://d3c9g6kent5bsr.cloudfront.net. Ask me before saving
+   if anything else on that page would change.
+6. Create three Payment Links, each with a new one-time product in USD: "Kind tip" $5.00, "Generous tip" $10.00,
+   "Amazing tip" $20.00. Quantity not adjustable, no address collection. After payment: do not show a confirmation page;
+   redirect to https://d3c9g6kent5bsr.cloudfront.net/tipped.html?session_id={CHECKOUT_SESSION_ID} exactly. Then open my
+   existing Payment Link https://buy.stripe.com/fZudRb2Rn3QafC3gWCeUU00 and set the same redirect. Give me the three new
+   link addresses (they are public).
+7. Developers > API keys: stop here and ask me. I create the restricted key (named daybook-sync, with only "Checkout
+   Sessions: Read") myself and copy it into AWS. Do not reveal or copy it.
+```

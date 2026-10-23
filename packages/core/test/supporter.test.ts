@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { isSupporter, supActive, supBest, tipEnough, type Supporter } from '../src/supporter';
+import * as core from '../src/index';
+import {
+  appleTier,
+  APPLE_TIPS,
+  isSupporter,
+  keepSup,
+  normSup,
+  STRIPE_SESSION_RE,
+  supActive,
+  supBest,
+  tipEnough,
+  tipLink,
+  TIP_TIER_IDS,
+  type Supporter,
+} from '../src/supporter';
 
 const tip: Supporter = { since: 1, kind: 'tip', until: null, src: 'apple', cents: 500 };
 const month: Supporter = { since: 1, kind: 'monthly', until: 1000, src: 'stripe' };
@@ -27,5 +41,80 @@ describe('supporter', () => {
     expect(supBest(month, { ...month, until: 2000 })?.until).toBe(2000);
     expect(supBest(null, month)).toBe(month);
     expect(supBest(undefined, null)).toBe(null);
+  });
+  it('a malformed record is not a supporter', () => {
+    expect(supActive('yes' as never)).toBe(false);
+    expect(supActive({ kind: 'tip', src: 'apple' } as never)).toBe(false);
+    expect(supActive({ since: 1, kind: 'tip', until: null, src: 'paypal' } as never)).toBe(false);
+    /* monthly support always has an end */
+    expect(normSup({ since: 1, kind: 'monthly', until: null, src: 'stripe' })).toBeNull();
+    /* a tip has none, whatever was written */
+    expect(normSup({ since: 1, kind: 'tip', until: 5, src: 'apple' })?.until).toBeNull();
+    expect(normSup({ ...tip, cents: -3, ref: 'x y' })).toEqual({ since: 1, kind: 'tip', until: null, src: 'apple' });
+    expect(normSup({ ...tip, ref: 'cs_test_abc' })?.ref).toBe('cs_test_abc');
+  });
+});
+
+describe('keeping a tip when settings are replaced', () => {
+  const st = (u: number, sup?: Supporter | null) => ({ ...core.normSettings({ start: '2026-10-01', u }), u, ...(sup === undefined ? {} : { sup }) });
+
+  it('keepSup takes the better record, and leaves settings alone when there is nothing better', () => {
+    const a = st(1);
+    expect(keepSup(a, null)).toBe(a);
+    expect(keepSup(a, tip).sup).toEqual(tip);
+    const b = st(1, tip);
+    expect(keepSup(b, month)).toBe(b);
+    expect(keepSup(null, tip)).toBeNull();
+  });
+
+  it('newer settings from the account without the record do not take it away', () => {
+    const snap = { settings: st(100, tip), days: {}, reviews: {} };
+    const m = core.mergeRemote(snap, {}, [{ id: 'settings', u: 200, data: st(200) }]);
+    expect(m.snap.settings?.u).toBe(200);
+    expect(m.snap.settings?.sup).toEqual(tip);
+  });
+
+  it('a device joining an account keeps the record from either side', () => {
+    const here = { settings: st(100, tip), days: {}, reviews: {} };
+    const recs = [
+      { id: 'settings' as const, u: 50, data: st(50) },
+      { id: 'days/2026-10-02' as const, u: 50, data: core.normDay({ events: [{ id: 'e', time: '22:00', outcome: 'rode' }] }, '2026-10-02') },
+    ];
+    /* the account's log has more days, so its settings win, with this device's tip on them */
+    const j = core.joinRecords(here, recs);
+    expect(j.mine).toBeNull();
+    expect((j.recs.find((r) => r.id === 'settings')!.data as { sup?: Supporter }).sup).toEqual(tip);
+  });
+
+  it('an older backup does not take it away', () => {
+    const here = { settings: st(100, tip), days: {}, reviews: {} };
+    const r = core.restoreBackup(here, { settings: st(10), days: {}, reviews: {} }, 500).snap;
+    expect(r.settings?.sup).toEqual(tip);
+  });
+});
+
+describe('paying a tip', () => {
+  it('three Apple products, one per tip', () => {
+    expect(TIP_TIER_IDS.map((t) => APPLE_TIPS[t])).toEqual(['daybook.tip.kind', 'daybook.tip.generous', 'daybook.tip.amazing']);
+    expect(appleTier('daybook.tip.amazing')).toBe('amazing');
+    expect(appleTier('daybook.tip')).toBeNull();
+  });
+
+  it('the web tip page carries the account id, and only a real one', () => {
+    const links = { kind: 'https://buy.stripe.com/k', generous: 'https://buy.stripe.com/g', amazing: '' };
+    const id = 'aaaaaaaa-1111-4111-8111-111111111111';
+    expect(tipLink('generous', id, links)).toBe('https://buy.stripe.com/g?client_reference_id=' + id);
+    expect(tipLink('generous', null, links)).toBe('https://buy.stripe.com/g');
+    expect(tipLink('generous', 'x&y=1', links)).toBe('https://buy.stripe.com/g');
+    expect(tipLink('amazing', id, links)).toBe('');
+    /* until the owner makes the three links, the old tip page stands in for the Kind tip */
+    expect(tipLink('kind', null, { kind: '', generous: '', amazing: '' })).toBe(core.SUPPORT_URL);
+    expect(tipLink('generous', null, { kind: '', generous: '', amazing: '' })).toBe('');
+  });
+
+  it('knows a Checkout Session id', () => {
+    expect(STRIPE_SESSION_RE.test('cs_live_a1B2c3D4e5F6g7H8')).toBe(true);
+    expect(STRIPE_SESSION_RE.test('cs_live_../x')).toBe(false);
+    expect(STRIPE_SESSION_RE.test('{CHECKOUT_SESSION_ID}')).toBe(false);
   });
 });

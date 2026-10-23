@@ -2,7 +2,7 @@
    6-digit code from the email (it goes on by itself once all six digits are in), and the person is signed in. Also: choosing a
    password for an account made with a temporary one, and "Forgot password". Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
-import { CognitoError, emailOk, PASSWORD_MIN, passwordOk } from '@daybook/core';
+import { CognitoError, emailOk, PASSWORD_MIN, passwordOk, SUP_SYNC_WORDS } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -129,8 +129,8 @@ export default function Account() {
       : p.why === 'lesson'
         ? 'The first three lessons are open to everyone. A free account opens all of them.'
         : p.why === 'setup'
-          ? 'Your plan is built. A free account keeps it, your log and your progress safe, and the same on every device you use. It is private to you.'
-          : 'A free account keeps a copy of your progress safe and the same on every device you use. It is private to you.';
+          ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan, your log and your progress safe, and the same on every device you use. It is private to you.'
+          : 'A free account opens every lesson, and for supporters it keeps a copy of your progress safe and the same on every device you use. It is private to you.';
 
   let body;
   const failed = sync.status.k === 'error' || sync.status.k === 'expired';
@@ -159,7 +159,7 @@ export default function Account() {
           <T tone="muted" style={{ textAlign: 'center' }}>
             {sync.status.k === 'busy'
               ? sync.status.what
-              : 'Your log is kept safe, and every lesson is open.' +
+              : (sync.status.k === 'need' ? 'Every lesson is open. ' + SUP_SYNC_WORDS.need : 'Your log is kept safe, and every lesson is open.') +
                 (mode === 'new' ? ' Confirm your email in Settings any time, so a forgotten password can be reset.' : '')}
           </T>
           {sync.status.k === 'busy' ? <ActivityIndicator color={c.accent} /> : <Button label={p.then ? 'Open the lesson' : 'Done'} onPress={leave} />}

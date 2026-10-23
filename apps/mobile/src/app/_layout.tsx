@@ -23,7 +23,7 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { useKeepPulse } from '@/lib/pulse';
-import { SyncProvider } from '@/lib/sync';
+import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -36,6 +36,8 @@ function Reminders() {
   const prefs = useReminderPrefs();
   const log = useNudgeLog();
   const { ready, snap, tk } = useStore();
+  /* without an account, the lessons after the first three wait behind one, so they are not reminded of */
+  const account = useAccount();
   const live = useRef(snap);
   live.current = snap;
   const [openAt, setOpenAt] = useState(() => Date.now());
@@ -56,8 +58,8 @@ function Reminders() {
     return () => sub.remove();
   }, [ready, log.ready]);
   const plan = useMemo(
-    () => (ready && log.ready ? nudgePlan(snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed) : null),
-    [ready, snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed],
+    () => (ready && log.ready ? nudgePlan(snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed, account) : null),
+    [ready, snap.days, snap.settings, snap.reviews, prefs, log, tk, openAt, allowed, account],
   );
   const key = plan ? nudgeKey(plan) : null;
   useEffect(() => {

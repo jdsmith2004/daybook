@@ -8,7 +8,7 @@ import type { Days, NudgeLog, NudgePrefs } from '../src/index';
 const tk = '2026-10-14';
 const at = (s: string) => new Date(s).getTime();
 const st = core.normSettings({ ...core.defaultSettings('2026-09-01'), day1: '2026-09-02', screensOff: '22:30' });
-const ci: NudgePrefs = { ...core.NUDGE_DEFAULTS, checkin: true, risk: false };
+const ci: NudgePrefs = { ...core.NUDGE_DEFAULTS, lesson: false, checkin: true, risk: false };
 const log0 = core.nudgeLogNew();
 const plan = (days: Days, prefs: NudgePrefs, now: number, log: NudgeLog = log0, k = tk, allowed = true) =>
   core.nudgePlan(days, st, {}, prefs, log, k, now, allowed);
@@ -27,8 +27,8 @@ const slip = (days: Days, k: string, time: string) => core.addEvent(days, k, 'sl
 
 describe('the plan', () => {
   it('is empty with nothing turned on, or before setup', () => {
-    expect(routine(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00')))).toEqual([]);
-    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00'), log0, tk, false)).toEqual([]);
+    expect(routine(plan({}, { ...core.NUDGE_DEFAULTS, lesson: false, risk: false }, at('2026-10-14T09:00')))).toEqual([]);
+    expect(plan({}, { ...core.NUDGE_DEFAULTS, lesson: false, risk: false }, at('2026-10-14T09:00'), log0, tk, false)).toEqual([]);
     expect(core.nudgePlan({}, null, {}, ci, log0, tk, at('2026-10-14T09:00'), true)).toEqual([]);
   });
 
@@ -58,7 +58,7 @@ describe('the plan', () => {
 
   it('the come-back notes are for anyone the phone lets Daybook notify, even with only the heads-up on', () => {
     expect(plan({}, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(5);
-    expect(plan({}, { ...core.NUDGE_DEFAULTS, risk: false }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(5);
+    expect(plan({}, { ...core.NUDGE_DEFAULTS, lesson: false, risk: false }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(5);
     expect(plan({}, ci, at('2026-10-14T09:00'), log0, tk, false).some((n) => n.k === 'back')).toBe(false);
   });
 
@@ -95,10 +95,19 @@ describe('the plan', () => {
   it('keeps at most three a day, an hour apart, the heads-up first; a saved morning reminder is read and ignored', () => {
     let d: Days = {};
     for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
-    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, morningAt: '08:00', checkin: true, wind: true, risk: true, checkinAt: '18:00' };
+    const all: NudgePrefs = {
+      ...core.NUDGE_DEFAULTS,
+      lesson: false,
+      morning: true,
+      morningAt: '08:00',
+      checkin: true,
+      wind: true,
+      risk: true,
+      checkinAt: '18:00',
+    };
     const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
     expect(today.map((n) => n.k)).toEqual(['risk', 'wind']);
-    expect(core.nudgesOn({ ...core.NUDGE_DEFAULTS, risk: false, morning: true })).toBe(false);
+    expect(core.nudgesOn({ ...core.NUDGE_DEFAULTS, lesson: false, risk: false, morning: true })).toBe(false);
     expect(today.find((n) => n.k === 'risk')!.at).toBe(at('2026-10-14T17:30'));
   });
 
@@ -117,7 +126,7 @@ describe('the plan', () => {
     }
     for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
     expect(core.weekFeel(d, tk)).toBe('heavy');
-    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, checkin: true, wind: true, risk: true, checkinAt: '15:00' };
+    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, lesson: false, morning: true, checkin: true, wind: true, risk: true, checkinAt: '15:00' };
     const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
     expect(today.find((n) => n.k === 'checkin')).toMatchObject({ body: 'A short check-in is enough tonight. Nothing to get right.', pic: 'flame-warm' });
     expect(today.map((n) => n.k)).toEqual(['checkin', 'risk', 'wind']);
@@ -284,7 +293,7 @@ describe('learning from what happened', () => {
     expect(x.plan).toEqual([ci]);
     expect(x.wait).toEqual([]);
     /* a step it had reached stays in the log, harmless: nothing reads it */
-    expect(core.nudgeCard({}, st, { ...core.NUDGE_DEFAULTS, morning: true }, x, tk)).toBeNull();
+    expect(core.nudgeCard({}, st, { ...core.NUDGE_DEFAULTS, lesson: false, morning: true }, x, tk)).toBeNull();
   });
 });
 
@@ -358,4 +367,125 @@ it('the setup asks when to check in only where the device can notify, right afte
   expect(core.obPages({}).some((p) => p.id === 'remind')).toBe(false);
   const ids = core.obPages({}, { notify: true }).map((p) => p.id);
   expect(ids.indexOf('remind')).toBe(ids.indexOf('review') + 1);
+});
+
+describe('the lesson reminder (Lessons first, C2)', () => {
+  const ls: NudgePrefs = { ...core.NUDGE_DEFAULTS, risk: false };
+  /* the app is usually open around 7 PM */
+  const opens = Array.from({ length: 10 }, (_, i) => at(core.addDays(tk, -i - 1) + 'T19:20'));
+  const logO: NudgeLog = { ...log0, opens };
+  const lessonsOf = (p: core.Nudge[]) => routine(p).filter((n) => n.k === 'lesson');
+  const finish = (days: Days, k: string, id: string, when: string) => core.recordLesson(days, k, core.lessonById(id)!, at(when)).days;
+  const hm = (t: number) => new Date(t).toTimeString().slice(0, 5);
+
+  it('is the one routine reminder on by default', () => {
+    expect(core.NUDGE_DEFAULTS.lesson).toBe(true);
+    expect(core.NUDGE_DEFAULTS.checkin).toBe(false);
+    expect(core.NUDGE_DEFAULTS.wind).toBe(false);
+    expect(core.nudgesOn({ ...core.NUDGE_DEFAULTS, risk: false })).toBe(true);
+    expect(core.NUDGE_LEARNED).toContain('lesson');
+    expect(core.NUDGE_PREF.lesson).toBe('lesson');
+  });
+
+  it('with no lesson finished yet, comes at the hour the app is usually open, and opens the next lesson', () => {
+    const p = lessonsOf(plan({}, ls, at('2026-10-14T09:00'), logO));
+    expect(p.map((n) => [n.id, hm(n.at), n.url])).toEqual([
+      ['lesson-2026-10-14', '19:00', '/lesson/l1'],
+      ['lesson-2026-10-15', '19:00', '/lesson/l1'],
+    ]);
+    expect(p[0].body).toBe(core.wordsOf(core.pickWords('lesson', logO, tk), st));
+    expect(core.NUDGE_WORDS.pick.lesson).toContain(p[0].body);
+    expect(core.lessonAt({}, logO, tk, at('2026-10-14T09:00'))).toEqual({ at: '19:00', from: 'usual' });
+  });
+
+  it('comes at the time the last lesson was finished, a day later', () => {
+    const d = finish({}, '2026-10-13', 'l1', '2026-10-13T12:40');
+    expect(d['2026-10-13'].p!.lt).toBe(at('2026-10-13T12:40'));
+    expect(core.lessonAt(d, logO, tk, at('2026-10-14T09:00'))).toEqual({ at: '12:40', from: 'last' });
+    const p = lessonsOf(plan(d, ls, at('2026-10-14T09:00'), logO));
+    expect(p.map((n) => [n.d, hm(n.at), n.url])).toEqual([
+      [tk, '12:40', '/lesson/l2'],
+      ['2026-10-15', '12:40', '/lesson/l2'],
+    ]);
+    /* a re-read counts as the day's lesson and moves the time too */
+    const again = finish(d, tk, 'l1', '2026-10-14T08:15');
+    expect(again[tk].p!.lv).toEqual(['l1']);
+    expect(core.lessonAt(again, logO, '2026-10-15', at('2026-10-14T09:00')).at).toBe('08:15');
+  });
+
+  it('never at night on its own: a lesson finished late falls back to the usual hour', () => {
+    const late = finish({}, '2026-10-13', 'l1', '2026-10-13T23:10');
+    expect(core.lessonAt(late, logO, tk, at('2026-10-14T09:00'))).toEqual({ at: '19:00', from: 'usual' });
+    const early = finish({}, '2026-10-13', 'l1', '2026-10-13T06:30');
+    expect(core.lessonLast(early, tk)).toBeNull();
+    const ten = finish({}, '2026-10-13', 'l1', '2026-10-13T21:59');
+    expect(core.lessonLast(ten, tk)).toBe('21:59');
+    /* the usual hour is daytime only */
+    expect(core.usualHour({ opens: [at('2026-10-13T23:30')] }, at('2026-10-14T01:00'))).toBe(18);
+  });
+
+  it('is skipped once today’s lesson is done, and when there is no new lesson to do', () => {
+    const d = finish({}, tk, 'l1', '2026-10-14T10:00');
+    expect(lessonsOf(plan(d, ls, at('2026-10-14T10:05'), logO)).map((n) => [n.d, hm(n.at), n.url])).toEqual([['2026-10-15', '10:00', '/lesson/l2']]);
+    /* without an account, the lessons after the first three wait behind one: no reminder for a re-read */
+    let three: Days = {};
+    for (let i = 0; i < 3; i++)
+      three = finish(three, core.addDays(tk, -3 + i), core.firstUndone(core.lessonsDone(three))!.id, core.addDays(tk, -3 + i) + 'T12:00');
+    expect(core.lessonDue(three, st, tk, false)).toBeNull();
+    expect(lessonsOf(core.nudgePlan(three, st, {}, ls, logO, tk, at('2026-10-14T09:00'), true, false))).toEqual([]);
+    expect(core.lessonDue(three, st, tk, true)).toBe(core.firstUndone(core.lessonsDone(three))!.id);
+    /* a day with the lesson switched off in the routine */
+    const off = core.routineDay({}, st, tk, 'lesson', false);
+    expect(lessonsOf(plan(off, ls, at('2026-10-14T09:00'), logO)).map((n) => n.d)).toEqual(['2026-10-15']);
+    /* turned off */
+    expect(lessonsOf(plan({}, { ...ls, lesson: false }, at('2026-10-14T09:00'), logO))).toEqual([]);
+  });
+
+  it('shares one note with the check-in reminder within the same hour, at the check-in time', () => {
+    const d = finish({}, '2026-10-13', 'l1', '2026-10-13T18:40');
+    const p = routine(plan(d, { ...ls, checkin: true, checkinAt: '18:00' }, at('2026-10-14T09:00'), logO)).filter((n) => n.d === tk);
+    expect(p.map((n) => [n.k, hm(n.at), n.also, n.body, n.url, n.w])).toEqual([
+      ['lesson', '18:00', 'checkin', core.NUDGE_WORDS.lessonCi, '/lesson/l2', undefined],
+    ]);
+    /* two hours apart: two notes */
+    const two = routine(plan(d, { ...ls, checkin: true, checkinAt: '20:45' }, at('2026-10-14T09:00'), logO)).filter((n) => n.d === tk);
+    expect(two.map((n) => [n.k, hm(n.at)])).toEqual([
+      ['lesson', '18:40'],
+      ['checkin', '20:45'],
+    ]);
+    /* checked in already: only the lesson, on its own words */
+    const c = checkedIn(d, tk, '2026-10-14T08:00');
+    const one = routine(plan(c, { ...ls, checkin: true, checkinAt: '18:00' }, at('2026-10-14T09:00'), logO)).filter((n) => n.d === tk);
+    expect(one.map((n) => [n.k, hm(n.at), n.also])).toEqual([['lesson', '18:40', undefined]]);
+  });
+
+  it('a shared note helped when either was done that day', () => {
+    const d = finish({}, '2026-10-13', 'l1', '2026-10-13T18:40');
+    const p = plan(d, { ...ls, checkin: true, checkinAt: '18:00' }, at('2026-10-14T09:00'), logO);
+    const kept = core.nudgeKeep(logO, p, at('2026-10-14T09:00'));
+    const c = checkedIn(d, tk, '2026-10-14T21:00');
+    expect(core.nudgeLearn(kept, c, st, {}, at('2026-10-15T08:00'), true).miss.lesson || 0).toBe(0);
+    expect(core.nudgeLearn(kept, d, st, {}, at('2026-10-15T08:00'), true).miss.lesson).toBe(1);
+  });
+
+  it('after a slip, never more: the first note of the day says it kindly, and opens Today', () => {
+    const d = slip({}, '2026-10-13', '22:30');
+    const p = lessonsOf(plan(d, ls, at('2026-10-14T09:00'), logO));
+    expect(p[0].body).toBe(core.NUDGE_WORDS.after);
+    expect(p[0].url).toBe('/');
+  });
+
+  it('steps down when ignored, and is named on Today when paused', () => {
+    const x = { ...logO, lv: { lesson: 2 } };
+    expect(lessonsOf(plan({}, ls, at('2026-10-14T09:00'), x))).toEqual([]);
+    const card = core.nudgeCard({}, st, ls, x, tk);
+    expect(card && card.k === 'paused' && card.kind).toBe('lesson');
+    expect(card!.p).toMatch(/^The lesson reminder /);
+  });
+
+  it('the finished time is kept safely in the day record', () => {
+    expect(core.normDay({ d: tk, events: [], p: { ls: ['l1'], lt: at('2026-10-14T12:00') } }, tk).p!.lt).toBe(at('2026-10-14T12:00'));
+    expect(core.normDay({ d: tk, events: [], p: { ls: ['l1'], lt: 'noon' } }, tk).p!.lt).toBeUndefined();
+    expect(core.normDay({ d: tk, events: [], p: { ls: ['l1'], lt: -5 } }, tk).p!.lt).toBeUndefined();
+  });
 });

@@ -2,11 +2,11 @@
    recall question, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
    read the global Store; here the log and the settings are passed in. The lesson content itself (LESSONS, LUNITS, SRC,
    LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
-import { diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
+import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
-import type { DayKey, Days, Settings } from './types';
+import type { DayKey, Days, Play, Settings } from './types';
 
 /* ---------- the shapes ---------- */
 export type Block = ['p', string] | ['q', string] | ['l', string[]] | ['plan'] | ['rbox'] | ['mylog'] | ['words'];
@@ -351,7 +351,8 @@ export function srcNote(L: Lesson): string {
 }
 
 /* ---------- saving ---------- */
-/** a lesson finished: counted once by id on today's record (p.ls); one read again counts as today's lesson (p.lv) */
+/** a lesson finished: counted once by id on today's record (p.ls); one read again counts as today's lesson (p.lv). The time
+    is kept too (p.lt), so the lesson reminder can come about then, a day later (nudges.ts). */
 export function recordLesson(days: Days, tk: DayKey, L: Lesson, now = Date.now()): { days: Days; again: boolean } {
   const done = lessonsDone(days);
   if (done.has(L.id)) {
@@ -364,6 +365,7 @@ export function recordLesson(days: Days, tk: DayKey, L: Lesson, now = Date.now()
         const p = d.p || blankP();
         if (!p.lv) p.lv = [];
         if (p.lv.indexOf(L.id) < 0) p.lv.push(L.id);
+        p.lt = now;
         d.p = p;
       },
       now,
@@ -377,6 +379,7 @@ export function recordLesson(days: Days, tk: DayKey, L: Lesson, now = Date.now()
       const p = d.p || blankP();
       if (!p.ls) p.ls = [];
       if (p.ls.indexOf(L.id) < 0) p.ls.push(L.id);
+      p.lt = now;
       d.p = p;
     },
     now,
@@ -395,6 +398,28 @@ export const lessonPracticed = (st: Settings, id: string, now = Date.now()): Set
         now,
       );
 export const setLearn = (st: Settings, fn: (l: Settings['learn']) => void, now = Date.now()): Settings => changeSettings(st, (s) => fn(s.learn), now);
+
+/** a lesson was finished or read again on this day (the day's lesson stop is done) */
+export const lessonDoneOn = (p: Play | null | undefined) => !!p && ((p.ls && p.ls.length > 0) || (p.lv && p.lv.length > 0));
+
+/* ---------- the week's lesson days: the ring of seven on Today ---------- */
+export interface LessonWeek {
+  /** Monday to Sunday: a lesson done that day, and which one is today */
+  days: { k: DayKey; on: boolean; today: boolean }[];
+  /** days of this week with a lesson done, 0 to 7 */
+  n: number;
+}
+/** this week's lesson days (Monday to Sunday, like the Sunday review). It only fills: a day with a lesson stays lit for the
+    week, a slip never touches it, and a day without one is just not lit yet. A new week starts a new ring. */
+export function lessonWeek(days: Days, tk: DayKey): LessonWeek {
+  const [y, m, d] = tk.split('-').map(Number);
+  const mon = addDays(tk, -((new Date(y, m - 1, d).getDay() + 6) % 7));
+  const out = Array.from({ length: 7 }, (_, i) => {
+    const k = addDays(mon, i);
+    return { k, on: k <= tk && lessonDoneOn(days[k]?.p), today: k === tk };
+  });
+  return { days: out, n: out.filter((x) => x.on).length };
+}
 
 /* the day's lesson stop on Today */
 export function lessonStop(days: Days, st: Settings, tk: DayKey) {

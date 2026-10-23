@@ -5,8 +5,10 @@
    the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it and it says
    hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while the
    app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
-   to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it). */
-import { CHEERS, emblemScene, heroNumber, type GameState, type Snapshot } from '@daybook/core';
+   to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
+   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek). It only fills, and a slip never
+   touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen feeding the flame. */
+import { CHEERS, emblemScene, heroNumber, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -80,6 +82,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   const lvl = g.level;
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
   const h = heroNumber(snap.days, snap.settings!, tk, now);
+  const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
   const light = sc.ink === 'light';
   const ink = light ? '#FFFFFF' : '#1F1A4A';
   const soft = light ? '#DCD3FF' : '#3D3670';
@@ -109,8 +112,11 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   };
   /* the flame grows in front of you: what was last seen here, and the bar from there to now, once any celebration that
      came with it is closed */
-  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts });
+  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts, ring: week.n });
   const bar = useRef(new Animated.Value(lvl.frac)).current;
+  /* the ring's day, lit with the bloom: the ring shows what was seen until then */
+  const [ringSeen, setRingSeen] = useState(week.n);
+  const ringPop = useRef(new Animated.Value(1)).current;
   const busy = useCelebrating();
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
@@ -118,13 +124,14 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
-      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts };
+      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts, ring: week.n };
+      if (week.n < was.ring || (week.n > was.ring && g.pts <= was.pts)) setRingSeen(week.n);
       if (g.pts > was.pts && !dueRef.current) {
         bar.setValue(lvl.n > was.n ? 0 : was.frac);
         dueRef.current = true;
         setDue(true);
       } else if (!dueRef.current) bar.setValue(lvl.frac);
-    }, [g.pts, lvl.n, lvl.frac, bar]),
+    }, [g.pts, lvl.n, lvl.frac, bar, week.n]),
   );
   useEffect(() => {
     if (!due || busy) return;
@@ -134,8 +141,18 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
     else Animated.timing(bar, { toValue: lvl.frac, duration: 1100, delay: 350, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     setPulse((p) => p + 1);
     setGrew(true);
+    setRingSeen(week.n);
+    if (!reduce && week.n > ringSeen)
+      Animated.sequence([
+        Animated.delay(350),
+        Animated.timing(ringPop, { toValue: 1.18, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+        Animated.timing(ringPop, { toValue: 1, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]).start();
     AccessibilityInfo.announceForAccessibility('Your flame grew.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [due, busy, reduce, bar, lvl.frac]);
+  /* the ring shows the days seen here so far: a new lesson day lights with the bloom */
+  const shown = ringSeen >= week.n ? week : { ...week, n: ringSeen };
   useEffect(() => {
     if (!grew) return;
     const t = setTimeout(() => setGrew(false), 2800);
@@ -182,6 +199,27 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
             <Path d="M0 56 Q120 35 240 53 T390 49 V70 H0z" fill={sc.ground} />
           </Svg>
         ) : null}
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Opens Learn.`}
+        onPress={() => {
+          buzz('tap');
+          router.navigate('/learn');
+        }}
+        style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
+        <Animated.View style={{ transform: [{ scale: ringPop }] }}>
+          <WeekRing
+            week={shown}
+            lit={c.sun}
+            dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
+            now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
+            ink={ink}
+          />
+        </Animated.View>
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.ringT, { color: soft }]}>
+          LESSON DAYS
+        </Text>
       </Pressable>
       <View style={s.flame} pointerEvents="box-none">
         <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
@@ -244,6 +282,44 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   );
 }
 
+/* ---------- the week's lesson days: seven arcs, Monday at the top, going round ---------- */
+const RING = 44;
+const RING_W = 5;
+function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
+  const p = (a: number) => [cx + r * Math.cos(((a - 90) * Math.PI) / 180), cy + r * Math.sin(((a - 90) * Math.PI) / 180)];
+  const [x0, y0] = p(a0);
+  const [x1, y1] = p(a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+/** the week's days, n of them lit (the first n lit days; a newer one waits for the bloom) */
+function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string; dim: string; now: string; ink: string }) {
+  const r = (RING - RING_W) / 2;
+  const step = 360 / 7;
+  let left = week.n;
+  return (
+    <View style={{ width: RING, height: RING, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
+        {week.days.map((d, i) => {
+          const on = d.on && left-- > 0;
+          return (
+            <Path
+              key={d.k}
+              d={arc(RING / 2, RING / 2, r, i * step + 5, (i + 1) * step - 5)}
+              stroke={on ? lit : d.today ? now : dim}
+              strokeWidth={RING_W}
+              strokeLinecap="round"
+              fill="none"
+            />
+          );
+        })}
+      </Svg>
+      <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
+        {week.n}
+      </Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   card: { padding: 0, gap: 0 },
   sky: { height: SCENE_H, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
@@ -272,4 +348,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
   },
   under: { padding: 14 },
+  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'center', gap: 3 },
+  ringN: { fontFamily: font.display, fontSize: 16, lineHeight: 19 },
+  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, letterSpacing: 1 },
 });

@@ -8,8 +8,13 @@
 
    On the device the record lives in Settings.sup. For sync, the server keeps its own record and decides; the device
    copy only shows and hides the extras. */
-import { SITE_URL, SUPPORT_URL } from './support';
 import type { Settings } from './types';
+
+/** where a tip goes (the old single tip page). Empty: nothing about tips shows. */
+export const SUPPORT_URL: string = 'https://buy.stripe.com/fZudRb2Rn3QafC3gWCeUU00';
+/** the public pages next to the web app (apps/mobile/public): help, the privacy policy and the terms, which the App
+    Store links to as well */
+export const SITE_URL = 'https://d3c9g6kent5bsr.cloudfront.net';
 
 /** the smallest tip, in US dollars, that makes a supporter */
 export const SUPPORT_MIN = 5;
@@ -152,3 +157,39 @@ export const SUP_SYNC_WORDS = {
   checking: 'Looking for your tip…',
   none: 'No tip was found for this account yet. If you tipped on the web, open the page Stripe sent you back to, or write to us.',
 };
+
+/** whether the extra flame looks exist yet. Only the twelve forms of the flame exist now, and they are earned, never
+    bought, so nothing about looks is offered or locked until there are looks to choose. */
+export const LOOKS_READY = false;
+
+/** what a tip opens, as the tip sheet lists it. Only what exists is listed: a tip never promises something not built. */
+export interface Perk {
+  id: Extra;
+  icon: string;
+  name: string;
+  sub: string;
+}
+export function supPerks(): Perk[] {
+  const all: Perk[] = [
+    { id: 'sync', icon: 'shield', name: 'Sync and a safe copy', sub: 'Your log the same on your phone and the web, kept safe if a phone is lost.' },
+    { id: 'stats', icon: 'chart', name: 'Your whole pattern', sub: 'When it happens, what sets it off, and what helps you most.' },
+    { id: 'looks', icon: 'sparkle', name: 'New flame looks', sub: 'New colors for your flame.' },
+  ];
+  return all.filter((p) => p.id !== 'looks' || LOOKS_READY);
+}
+
+/** whether an extra shows as locked on this device. canTip: a tip can be paid here (on Android, until Google Play's rules
+    are checked, nothing is locked, because nothing can be paid). Sync shows its lock only while signed out: a signed-in
+    account may be grandfathered, and the server decides that, not the device. */
+export function extraLocked(st: Settings | null | undefined, extra: Extra, o: { canTip: boolean; signedIn?: boolean; now?: number }): boolean {
+  if (!o.canTip || !st) return false;
+  if (extra === 'looks' && !LOOKS_READY) return false;
+  if (extra === 'sync' && o.signedIn) return false;
+  return !extraOpen(st, extra, o.now);
+}
+
+/** the parts of Journal, Pattern. The pattern in one look, whether slips are getting further apart, and My numbers stay
+    free; the rest (when, what sets it off, hard days, what helps) is the deeper part a tip opens. */
+export type PatPart = 'look' | 'apart' | 'when' | 'what' | 'days' | 'helps' | 'numbers';
+export const PAT_FREE: PatPart[] = ['look', 'apart', 'numbers'];
+export const patPartOpen = (part: PatPart, locked: boolean): boolean => !locked || PAT_FREE.includes(part);

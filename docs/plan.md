@@ -2207,5 +2207,13 @@ like someone about to slip. Decided by the session on the owner's word ("you cho
 ### C. Lessons first (medium, after A)
 
 1. **Medium.** Today's lesson is always Next up until it is done.
-2. **Medium.** A lesson notification ("Today's lesson is ready."), at a time the person picks, in place of the morning one.
+2. **Medium.** A lesson reminder in place of the morning one, copied from Duolingo's strategy (researched October 23,
+   2026: Duolingo reminds once a day at about the time of the last lesson, a day later; picks the wording with a bandit
+   that demotes what was sent lately; and stops when reminders are ignored). nudges.ts already has the bandit wordings,
+   skip-when-done, at most three a day, the step-down when ignored, and the come-back notes that stop on their own. New:
+   the lesson reminder is the one reminder on by default once notifications are allowed (check-in and wind-down stay
+   opt-in); it comes at the time the last lesson was finished, a day later (else the hour the app is usually open, never
+   at night); it is skipped once today's lesson is done; with the check-in still open too, the two share one
+   notification. Not copied: Duolingo's guilt (a sad owl, "streak at risk"). The words stay warm, and never say what
+   Daybook is for on a locked screen.
 3. **Medium.** The week's lesson days as a ring of seven on Today, near the flame; each lesson visibly feeds the flame.

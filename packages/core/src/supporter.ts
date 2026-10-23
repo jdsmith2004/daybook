@@ -121,9 +121,9 @@ export function appleTier(productId: unknown): TipTierId | null {
     made; the old tip page (SUPPORT_URL) stands in for the Kind tip until then. Each link sends the person back to TIPPED_URL
     with the Checkout Session id once they have paid. */
 export const TIP_LINKS: Record<TipTierId, string> = {
-  kind: '',
-  generous: '',
-  amazing: '',
+  kind: 'https://buy.stripe.com/9B6bJ39fL0DY2PhgWCeUU01',
+  generous: 'https://buy.stripe.com/5kQaEZdw13QaexZbCieUU02',
+  amazing: 'https://buy.stripe.com/aFa4gBgIdcmGdtV9uaeUU03',
 };
 /** the page a Payment Link sends the person back to after paying; Stripe fills in {CHECKOUT_SESSION_ID} */
 export const TIPPED_PAGE = SITE_URL + '/tipped.html';

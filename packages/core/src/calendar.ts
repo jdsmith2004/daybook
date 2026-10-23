@@ -181,7 +181,11 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     const L = LESSONS as unknown as { id: string; title: string }[];
     const read = p.ls.map((id) => L.find((l) => l.id === id)?.title).filter((x): x is string => !!x);
     if (read.length) more.push({ ic: 'book', t: 'Read: ' + read.join(', ') });
-    if (p.tt && p.tt.length) more.push({ ic: 'chat', t: p.tt.length === 1 ? 'Talked it through first' : 'Talked it through ' + p.tt.length + ' times' });
+    /* a short plan made ahead of the hard hours had no slip in mind: it reads as a plan */
+    const talks = (p.tt || []).filter((t) => !t.pr).length;
+    const plans = (p.tt || []).length - talks;
+    if (talks) more.push({ ic: 'chat', t: talks === 1 ? 'Talked it through first' : 'Talked it through ' + talks + ' times' });
+    if (plans) more.push({ ic: 'compass', t: 'Made a plan for the hard hours' });
     if (p.hw != null) more.push({ ic: 'shield', t: 'Held your hard hours' });
     if (p.po) more.push({ ic: 'phone', t: 'Phone away at night' });
     if (p.wd) more.push({ ic: 'moon', t: 'Wound down before bed' });

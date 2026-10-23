@@ -1,8 +1,9 @@
 /* The month calendar in Journal, and the summary of one day. */
 import { describe, expect, it } from 'vitest';
-import { normDay, normSettings } from '../src/legacy/core.js';
+import { blankP, normDay, normSettings } from '../src/legacy/core.js';
 import { calMonth, calNeighbors, daySummary } from '../src/calendar';
 import { addEvent } from '../src/mutate';
+import { newTalk } from '../src/talk';
 import type { Days } from '../src/types';
 
 const st = normSettings({ start: '2026-09-20', day1: '2026-09-27' });
@@ -66,6 +67,15 @@ describe('one day, at a glance', () => {
     expect(x.ci).toMatchObject({ m: 6, h: 7.5, so: 'Y', n: 'Good day.' });
     expect(x.more.map((m) => m.t)).toEqual(['Tools: Breathe', 'Read: Urges are waves', 'Held your hard hours', 'Phone away at night']);
     expect(x.pts).toBeGreaterThan(0);
+  });
+  it('reads a plan made ahead of the hard hours as a plan', () => {
+    const k = '2026-10-06';
+    const base = blankP();
+    const talk = (id: string, pr?: 1) => ({ ...newTalk(1), id, p: 'change' as const, ...(pr ? { pr } : {}) });
+    const one = { ...d, [k]: { ...normDay({}, k), p: { ...base, tt: [talk('a', 1)] } } };
+    expect(daySummary(one, st, k, TK).more.map((m) => m.t)).toEqual(['Made a plan for the hard hours']);
+    const both = { ...d, [k]: { ...normDay({}, k), p: { ...base, tt: [talk('a', 1), talk('b')] } } };
+    expect(daySummary(both, st, k, TK).more.map((m) => m.t)).toEqual(['Talked it through first', 'Made a plan for the hard hours']);
   });
   it('is kind about slips, and plain about empty days', () => {
     expect(daySummary(d, st, '2026-10-02', TK).head).toBe('2 slips, logged honestly');

@@ -22,7 +22,7 @@ import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
 import { comebackNow, rkComebackSay, rkEnded, rkOpen, safeName, sunriseDue, tellStartDue } from './rekindle';
-import { firstPattern, riskDay } from './risk';
+import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
@@ -113,9 +113,9 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       : m(
           'hard-now',
           hardEb,
-          'These are your hardest hours.',
-          'SOS is one tap. Two minutes of talking it through helps too.',
-          'Talk it through',
+          'You are in your hard hours.',
+          'SOS is one tap. A short plan helps too.',
+          riskPlanLabel(hard.win.start),
           'talk',
           'your hard hours',
         );
@@ -160,13 +160,13 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   }
   if (hard && hard.phase === 'soon')
     hard.talked
-      ? m('hard-soon', hardEb, 'You are ready.', 'You talked it through. If it gets hard anyway, SOS is one tap.', null, null, 'your hard hours')
+      ? m('hard-soon', hardEb, 'You are ready.', 'You made your plan. If it gets hard anyway, SOS is one tap.', null, null, 'your hard hours')
       : m(
           'hard-soon',
           hardEb,
-          'Your hard hours start soon.',
-          'Two minutes now, while it is quiet, makes them easier.',
-          'Talk it through',
+          'Your hard hours start at ' + riskStartLabel(hard.win.start) + '.',
+          'A short plan now, while it is quiet, makes them easier.',
+          riskPlanLabel(hard.win.start),
           'talk',
           'a plan for your hard hours',
         );

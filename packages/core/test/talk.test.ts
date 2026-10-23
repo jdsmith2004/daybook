@@ -29,6 +29,12 @@ import {
   talkLookAt,
   talkReading,
   talkUntilLine,
+  TALK_HARD_MOMENT,
+  TALK_HARD_NEEDS,
+  TALK_MOVES,
+  TALK_NEEDS,
+  talkHardMoment,
+  talkMoveName,
   type Talk,
   type TalkSign,
 } from '../src/talk';
@@ -421,5 +427,35 @@ describe('the words', () => {
     expect(talkUntilLine({ m: [], mx: ['I will play guitar.'] })).toBe('Until then: I will play guitar.');
     expect(talkUntilLine({ m: [], mx: ['Call Sam'] })).toBe('Until then: call Sam.');
     expect(talkUntilLine({ m: [] })).toBe('Until then: something kind for yourself.');
+  });
+});
+
+describe('the short plan for the hard hours', () => {
+  it('asks what makes the hours hard for every need, with no slip in mind', () => {
+    expect(TALK_HARD_NEEDS.map((x) => x[0])).toEqual(TALK_NEEDS.map((x) => x[0]));
+    expect(TALK_HARD_NEEDS.map((x) => x[1] + ' ' + x[2]).join(' ')).not.toMatch(/slip|porn|watch/i);
+  });
+  it('starts at the hard hours while they are still ahead', () => {
+    const start = at('2026-10-17T23:00:00');
+    expect(talkHardMoment(start, at('2026-10-17T21:30:00'))).toBe(start);
+    expect(talkHardMoment(start, at('2026-10-17T22:50:00'))).toBeNull();
+    expect(talkHardMoment(start, at('2026-10-17T23:20:00'))).toBeNull();
+  });
+  it('reads the plan from their start', () => {
+    const t = { n: 'rest' as const, m: ['bed' as const], mo: TALK_HARD_MOMENT, at: at('2026-10-17T23:00:00') };
+    expect(talkPlanLine(t)).toBe('At 11 PM, when I want rest, I will go to bed early with the phone outside the room.');
+    expect(talkPlanLine({ ...t, at: at('2026-10-17T22:30:00') })).toMatch(/^At 10:30 PM, /);
+  });
+  it('names the blocker as getting ready, not as something in mind', () => {
+    expect(talkMoveName('block', true)).toBe('Turn on a blocker before they start');
+    expect(talkMoveName('block')).toBe(TALK_MOVES.block[0]);
+    expect(talkMoveName('walk', true)).toBe('Walk it off');
+  });
+  it('keeps its mark when saved, and only when it is one', () => {
+    expect(normTalk({ ...base(), pr: 1 })!.pr).toBe(1);
+    expect('pr' in normTalk({ ...base(), pr: true })!).toBe(false);
+    expect('pr' in normTalk(base())!).toBe(false);
+    const d = saveTalk({}, k, { ...base(), p: 'change', pr: 1, mo: TALK_HARD_MOMENT, at: T0 + 3600000 }, 1);
+    expect(normDay(d[k], k).p!.tt![0]).toMatchObject({ pr: 1, mo: 'hard', at: T0 + 3600000 });
   });
 });

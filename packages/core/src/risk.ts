@@ -1,15 +1,18 @@
 /* Hard hours: Daybook learns when a slip is most likely, from the person's own log, and steps in before it. The calm
    hours before a hard hour are when a plan works best (calm-you guesses the pull low; see Talk it through, talk.ts),
-   so Today puts "Talk it through" at the top from two hours before, and a phone can give a heads-up.
+   so from two hours before, Today puts a card at the top with today's lesson (while it is not done) and "Make a plan
+   for tonight" (a short Talk it through that assumes no slip), and a phone can give a heads-up.
 
    What it learns from, over the last 60 days: slips (they count three times), urges logged or ridden out in SOS, and
-   talk-throughs (planning shows up before slipping does). It looks for the two-hour window that holds the most, on
+   talk-throughs (planning shows up before slipping does; not the short plans made ahead of the hard hours). It looks for the two-hour window that holds the most, on
    weekdays and weekends separately when there is enough to go on, and otherwise on all days. A window counts once it
    holds a score of 6 (two slips, or six urges) and at least a quarter of everything.
 
    Getting through a hard hour with no slip is recorded on that day (p.hw, the hour it started) as a calm move. It is
    never taken away, so "hard hours held" only ever goes up. */
-import { addDays, blankP, eventsOf } from './legacy/core.js';
+import { lessonOpen } from './accounts';
+import { addDays, blankP, diffDays, eventsOf, LESSONS } from './legacy/core.js';
+import { firstUndone, lessonNo, lessonsDone, lessonStop, reviewPick, type Lesson } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { talksOf } from './talk';
 import type { DayKey, Days, Settings } from './types';
@@ -48,6 +51,10 @@ export function riskAt(k: DayKey, hour: number, roll: number, min = 0): number {
   return d.getTime();
 }
 const fmtH = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
+/** when the hard hours start, as it is said: "11 PM" */
+export const riskStartLabel = fmtH;
+/** the hard hours card's plan button: "Make a plan for tonight" (or "for today", for hard hours in the daytime) */
+export const riskPlanLabel = (start: number) => 'Make a plan for ' + (start >= 17 || start < 5 ? 'tonight' : 'today');
 /** "9 to 11 PM", "11 PM to 1 AM" */
 export function riskLabel(start: number): string {
   const end = (start + 2) % 24;
@@ -70,7 +77,8 @@ function signals(days: Days, tk: DayKey): Signal[] {
     out.push({ h: +e.time.slice(0, 2), w: slip ? SLIP_W : 1, slip, weekend: isWeekend(e.key) });
   }
   for (const { k, talk } of talksOf(days)) {
-    if (k < from || k > tk) continue;
+    /* a plan made ahead of the hard hours says nothing about when it gets hard */
+    if (k < from || k > tk || talk.pr) continue;
     const d = new Date(talk.t);
     out.push({ h: d.getHours(), w: 1, slip: false, weekend: isWeekend(k) });
   }
@@ -154,6 +162,19 @@ export function riskDay(days: Days, st: Settings, k: DayKey, now: number): RiskD
     .filter((t) => t >= a - 6 * HOUR && t < b)
     .pop();
   return { win, a, b, phase, held: phase === 'after' && !slipIn, talked: talk ?? null, kept: days[k]?.p?.hw != null };
+}
+
+/** today's lesson while it is not done yet, for the hard hours card, which offers it first: the next one on the path,
+    or a re-read when every lesson is finished or the next one waits behind an account (the same one Next up opens).
+    Null once a lesson was finished or read again today. */
+export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true): { L: Lesson; n: number; again: boolean } | null {
+  if (lessonStop(days, st, tk).kind === 'read') return null;
+  const done = lessonsDone(days);
+  const nl = firstUndone(done);
+  if (nl && lessonOpen(nl, done, account)) return { L: nl, n: lessonNo(nl), again: false };
+  const read = (LESSONS as Lesson[]).filter((L) => lessonOpen(L, done, account));
+  const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+  return { L: R, n: lessonNo(R), again: true };
 }
 
 /** hard hours held on today or yesterday that are not recorded yet (the latest first) */

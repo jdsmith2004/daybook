@@ -26,7 +26,7 @@ export default function Wind() {
     let gain = 0;
     update((s0) => {
       const b0 = gameCompute(s0.days, s0.settings!, s0.reviews, tk).pts;
-      const days = phoneAway(s0.days, tk, at);
+      const days = phoneAway(s0.days, tk, at, Date.now(), s0.settings);
       gain = Math.max(0, gameCompute(days, s0.settings!, s0.reviews, tk).pts - b0);
       return { ...s0, days };
     });
@@ -59,14 +59,14 @@ export default function Wind() {
         ))}
         {p && p.po ? (
           <>
-            <T style={s.c}>Phone away at {fmtClock(p.po)}. See you in the morning.</T>
+            <T style={s.c}>Phone away at {fmtClock(p.po)}. Good night.</T>
             <Button label="Done" onPress={close} />
           </>
         ) : (
           <>
             <Button label="Putting my phone away" icon="moon" onPress={away} />
             <T v="small" tone="muted" style={s.c}>
-              Tap this just before you do. Tomorrow morning the app asks whether it stayed away.
+              Tap this just before you do. Before {fmtClock(st.screensOff)}, it counts as screens off on time too.
             </T>
           </>
         )}

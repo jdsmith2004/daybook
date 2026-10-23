@@ -13,7 +13,7 @@ import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 /** the full-screen moments (app/_layout.tsx), where answers sit low */
-const MOMENT = /^\/(sos|tool|log|sunrise|morning|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup|graduated)(\/|$)/;
+const MOMENT = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup|graduated)(\/|$)/;
 /** where a message from the screen before is left behind */
 const HUSH = /^\/(sos|log)(\/|$)/;
 

@@ -92,12 +92,13 @@ describe('the plan', () => {
     expect(core.NUDGE_WORDS.tender.join(' ')).not.toMatch(/lesson/i);
   });
 
-  it('keeps at most three a day, an hour apart, the heads-up first', () => {
+  it('keeps at most three a day, an hour apart, the heads-up first; a saved morning reminder is read and ignored', () => {
     let d: Days = {};
     for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
-    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, checkin: true, wind: true, risk: true, checkinAt: '18:00' };
+    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, morning: true, morningAt: '08:00', checkin: true, wind: true, risk: true, checkinAt: '18:00' };
     const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
-    expect(today.map((n) => n.k)).toEqual(['morning', 'risk', 'wind']);
+    expect(today.map((n) => n.k)).toEqual(['risk', 'wind']);
+    expect(core.nudgesOn({ ...core.NUDGE_DEFAULTS, risk: false, morning: true })).toBe(false);
     expect(today.find((n) => n.k === 'risk')!.at).toBe(at('2026-10-14T17:30'));
   });
 
@@ -275,6 +276,16 @@ describe('learning from what happened', () => {
     expect(core.normNudgeLog(null)).toMatchObject({ plan: [], wait: [], lv: {}, taps: [], bk: null });
     expect(core.normNudgeLog({ taps: ['a', 3], opens: [1, 'x'] })).toMatchObject({ taps: ['a'], opens: [1] });
   });
+
+  it('a morning reminder planned before it was retired is let go', () => {
+    const ci = { id: 'checkin-2026-10-14', k: 'checkin', d: tk, at: 1 };
+    const mo = { id: 'morning-2026-10-14', k: 'morning', d: tk, at: 1 };
+    const x = core.normNudgeLog({ plan: [mo, ci], wait: [mo, null], lv: { morning: 2 } });
+    expect(x.plan).toEqual([ci]);
+    expect(x.wait).toEqual([]);
+    /* a step it had reached stays in the log, harmless: nothing reads it */
+    expect(core.nudgeCard({}, st, { ...core.NUDGE_DEFAULTS, morning: true }, x, tk)).toBeNull();
+  });
 });
 
 describe('words that learn', () => {
@@ -301,9 +312,7 @@ describe('words that learn', () => {
   it('yesterday’s wording loses to a fresh one, and to an equal one sent longer ago', () => {
     const y = core.addDays(tk, -1);
     expect(core.pickWords('checkin', { w: { 'checkin.0': rec(1, 0, y), 'checkin.1': rec(1, 0, y), 'checkin.2': rec(0, 0, null) } }, tk)).toBe('checkin.2');
-    expect(core.pickWords('morning', { w: { 'morning.0': rec(3, 1, y), 'morning.1': rec(3, 1, '2026-09-20'), 'morning.2': rec(3, 1, y) } }, tk)).toBe(
-      'morning.1',
-    );
+    expect(core.pickWords('wind', { w: { 'wind.0': rec(3, 1, y), 'wind.1': rec(3, 1, '2026-09-20'), 'wind.2': rec(3, 1, y) } }, tk)).toBe('wind.1');
   });
 
   it('a wording that helped 5 of 6 keeps winning over one that helped 1 of 6', () => {

@@ -130,7 +130,6 @@ function Shell() {
             'tool/[id]',
             'log',
             'sunrise',
-            'morning',
             'checkin',
             'talk',
             'review',

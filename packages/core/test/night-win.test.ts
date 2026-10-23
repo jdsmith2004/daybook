@@ -1,4 +1,4 @@
-/* The morning after a night SOS that was ridden out: one line at the morning stop, what helped, and the note for next time
+/* The morning after a night SOS that was ridden out: one line on a card on Today, what helped, and the note for next time
    asked there once (the end of the check-in does not ask it at night). */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
@@ -77,29 +77,26 @@ describe('last night’s win', () => {
     expect(core.winNote({ mins: 12 }, 'nope')).toBe('It passed in 12 minutes. It will pass again.');
   });
 
-  it('is said on the morning stop’s tile, before the two questions', () => {
+  it('has its own card on Today, not a morning stop (the morning stop was retired)', () => {
     const now = new Date(2026, 10, 11, 7, 30).getTime();
-    const t = core.stopTiles(day(D, [sos()]), st, M, now).tiles.find((x) => x.k === 'morning')!;
-    expect(t.body).toMatch(/^Last night you rode one out at 1:30 AM\. Then two quick questions/);
-    const plain = core.stopTiles({}, st, M, now).tiles.find((x) => x.k === 'morning')!;
-    expect(plain.body).toMatch(/^Two quick questions about last night/);
+    expect(core.stopTiles(day(D, [sos()]), st, M, now).tiles.map((x) => x.k)).toEqual(['lesson', 'evening', 'night']);
   });
 });
 
 describe('the note waits for the morning (asked once)', () => {
-  it('after an SOS ridden out at night, when the morning stop will show', () => {
+  it('after an SOS ridden out at night: the card on Today asks it the next morning', () => {
     expect(core.winLater(st, D, sos())).toBe(true);
     expect(core.winLater(st, D, sos({ time: '22:30' }))).toBe(true);
   });
 
-  it('not after one in the day, a slip, an entry that was not SOS, or when there is no morning stop', () => {
+  it('not after one in the day, a slip, or an entry that was not SOS', () => {
     expect(core.winLater(st, D, sos({ time: '15:00' }))).toBe(false);
     expect(core.winLater(st, D, sos({ outcome: 'slipped' }))).toBe(false);
     expect(core.winLater(st, D, { outcome: 'rode', time: '01:30' })).toBe(false);
     expect(core.winLater(st, D, null)).toBe(false);
-    expect(core.winLater({ ...st, routine: { ...st.routine, morning: false } }, D, sos())).toBe(false);
-    /* the very first morning has no stop: before 5 AM on the first day */
-    expect(core.winLater(st, st.start, sos({ time: '04:30' }))).toBe(false);
+    /* the card does not hang on the old morning stop: a routine saved with it off, or the very first morning, still waits */
+    expect(core.winLater({ ...st, routine: { ...st.routine, morning: false } }, D, sos())).toBe(true);
+    expect(core.winLater(st, st.start, sos({ time: '04:30' }))).toBe(true);
     expect(core.winLater(st, st.start, sos({ time: '23:00' }))).toBe(true);
   });
 });

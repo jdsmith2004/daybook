@@ -15,8 +15,7 @@ export const POINTS_LIST: [string, string][] = [
   ['+10', 'saving the evening check-in'],
   ['+10', 'reaching out to someone'],
   ['+10', 'finishing the wind-down'],
-  ['+5', 'answering the morning questions'],
-  ['+5', 'screens off on time (answered honestly)'],
+  ['+5', 'screens off on time (Good night before your screens-off time)'],
   ['+5', 'each calm move from the tools, or a pause you end early (up to 3 a day)'],
   ['+10', 'each lesson you finish (once per lesson)'],
   ['+5', 'putting your phone away at night'],
@@ -32,7 +31,7 @@ export const POINTS_LIST: [string, string][] = [
 export const POINTS_SHORT: [string, string][] = [
   ['+5', 'each honest log, slips included'],
   ['+10', 'each urge you ride out, and more for pausing first'],
-  ['+5–10', 'each part of your day: morning questions, a lesson, the check-in, the wind-down'],
+  ['+10–15', 'each part of your day: a lesson, the check-in, the wind-down'],
   ['+10–20', 'the comeback after a slip: a small step, the sunrise check, Rekindle'],
   ['+20', 'each weekly review you write'],
 ];

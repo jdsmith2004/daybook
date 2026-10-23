@@ -13,7 +13,7 @@ export function keepRootState(get: () => State | undefined) {
 export const SHEETS = ['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'privacy', 'account', 'counts', 'feedback', 'stats'];
 
 /** the full-screen moments: closing one goes back past all of them at once */
-const SCENE = /^(sos|tool\/\[id\]|log|sunrise|morning|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
+const SCENE = /^(sos|tool\/\[id\]|log|sunrise|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
 
 /** leave a full-screen moment (legacy closeScene): every full-screen moment on top closes, and the person is back where they
     started it (a tab, or a page like My plan). Opened directly (a web link), it goes to Today. SOS opened from inside the

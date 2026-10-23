@@ -1,9 +1,11 @@
 /* The morning after a night SOS that was ridden out. The slip path has its sunrise check; a win at night had nothing, and its
    note for next time was asked at the end of the check-in, at 1:30 AM, while the urge was still fresh and the person should be
-   going to sleep. Now the morning stop opens with one line ("Last night you rode one out at 1:30 AM."), and that is where
-   "What helped?" and the note for next time are asked, once. The check-in does not ask it at night (winLater). Nothing new is
-   stored: the line is read from the entry SOS saved, and the note is the plan's own note (settings.note). */
-import { addDays, eventsOf, fmtClock, fmtDate, isTime, routineOn, UR_STR_NAME, urMinText } from './legacy/core.js';
+   going to sleep. So the next time Today opens that day, a one-line card says it ("Last night you rode one out at 1:30 AM."),
+   and that is where "What helped?" and the note for next time are asked, once (apps/mobile components/night-win.tsx; the
+   morning stop that asked it before was retired on October 23, 2026). The check-in does not ask it at night (winLater).
+   Nothing new is stored in the log: the line is read from the entry SOS saved, and the note is the plan's own note
+   (settings.note). */
+import { addDays, eventsOf, fmtClock, fmtDate, isTime, UR_STR_NAME, urMinText } from './legacy/core.js';
 import { urNight, urTool } from './sos';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Settings } from './types';
@@ -17,13 +19,11 @@ export function winMorning(k: DayKey, time: string | null | undefined, roll = 4)
   return h < 5 && h >= roll ? k : addDays(k, 1);
 }
 
-/** an SOS ridden out at night, on day k: its note for next time waits for the morning stop, which asks what helped. Only when
-    that stop will show (the morning is part of the routine, and it is not the very first morning); otherwise the end of the
-    check-in asks, as before. */
+/** an SOS ridden out at night, on day k: its note for next time waits for the card on Today the next morning, which asks
+    what helped; otherwise the end of the check-in asks, as before. */
 export function winLater(st: Settings | null, k: DayKey, ev: Pick<Partial<DayEvent>, 'outcome' | 'time' | 'm'> | null): boolean {
   if (!st || !ev || ev.outcome !== 'rode' || typeof ev.m !== 'number') return false;
-  const m = winMorning(k, ev.time, st.rollover ?? 4);
-  return !!m && addDays(m, -1) >= st.start && routineOn(st, null, 'morning');
+  return !!winMorning(k, ev.time, st.rollover ?? 4);
 }
 
 export interface NightWin {
@@ -55,7 +55,7 @@ const minOf = (t: string | null, roll: number) => {
   return +t.slice(0, 2) < roll ? m + 1440 : m;
 };
 
-/** last night's win, for the morning stop on day tk: an SOS ridden out between 10 PM and 5 AM, and no slip in those hours (a slip
+/** last night's win, for the card on Today on day tk: an SOS ridden out between 10 PM and 5 AM, and no slip in those hours (a slip
     has the sunrise check). null when there is none. */
 export function nightWin(days: Days, st: Settings, tk: DayKey): NightWin | null {
   const roll = st.rollover ?? 4;

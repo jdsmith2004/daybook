@@ -112,7 +112,7 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   > • Your pattern: the hours and moments that are hardest for you, from your own log.
   > • Lessons built on good research, written plainly.
   > • Your own plan: why you are doing this, and what you will do when an urge comes.
-  > • An evening wind-down, a morning check, and a weekly review.
+  > • An evening check-in and wind-down, and a weekly review.
   > • Graduation: a permanent award at 90 days with no slip.
   >
   > Private by design

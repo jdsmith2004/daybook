@@ -12,7 +12,7 @@ export function changeDay(prev: Day | undefined | null, key: DayKey, fn: (d: Day
   fn(cur);
   const u = nextU(prev, now);
   const out = normDay(cur, key);
-  /* a check-in with nothing in it (for example after un-answering the one morning question) is dropped */
+  /* a check-in with nothing in it (for example after un-answering screens-off on a day's page) is dropped */
   const c = out.checkin;
   if (c && !c.done && c.m == null && c.c == null && c.e == null && c.s == null && c.h == null && !c.so && !c.ro && !c.n) out.checkin = null;
   out.u = u;

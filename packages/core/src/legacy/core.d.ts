@@ -373,6 +373,8 @@ export interface MorningInfo {
 export function morningInfo(days: Days, st: Settings, key: DayKey): MorningInfo;
 export const ROUTINE: { k: string; name: string; sub: string; on: boolean }[];
 export const ROUTINE_KEYS: string[];
+/** the first day with no morning questions: a morning win from then on needs an answer from an older copy of the app (p.m) */
+export const MORNING_END: DayKey;
 export function normRoutine(r: unknown): Record<string, boolean>;
 export function routineOn(st: Settings | null, p: Play | null | undefined, k: string): boolean;
 export function fmtLeft(mins: number): string;

@@ -136,7 +136,7 @@ export default function Setup() {
      drops out of the list and the setup moves on by itself */
   const env = {
     notify: remindersOffered && !(f.redo && rem.checkin),
-    account: !f.redo && sync.status.k !== 'off' && sync.status.k !== 'on',
+    account: !f.redo && sync.status.k === 'out',
   };
   const [breathed, setBreathed] = useState(false);
   /* the hold finished: the flame in the plan lights, and the setup moves on a moment later */

@@ -37,8 +37,8 @@ describe('checking an Apple identity token', () => {
     expect(await checkAppleToken(appleToken(), NONCE, opts)).toEqual({ sub: '001234.abc', email: 'sam@example.com', emailVerified: true, relay: false });
   });
 
-  it('takes the nonce as it was given to Apple too, and a Hide My Email address', async () => {
-    const a = await checkAppleToken(appleToken({ nonce: NONCE, email: 'x@privaterelay.appleid.com', is_private_email: true }), NONCE, opts);
+  it('takes a Hide My Email address', async () => {
+    const a = await checkAppleToken(appleToken({ email: 'x@privaterelay.appleid.com', is_private_email: true }), NONCE, opts);
     expect(a.relay).toBe(true);
   });
 
@@ -51,6 +51,8 @@ describe('checking an Apple identity token', () => {
     ['another issuer', () => [appleToken({ iss: 'https://evil.example' }), NONCE]],
     ['run out', () => [appleToken({ exp: NOW / 1000 - 120 }), NONCE]],
     ['a different nonce', () => [appleToken(), 'another-nonce-that-is-long']],
+    ['the nonce in the token sent back (a replay)', () => [appleToken(), hashed]],
+    ['a nonce given to Apple unhashed', () => [appleToken({ nonce: NONCE }), NONCE]],
     ['no nonce', () => [appleToken(), undefined]],
     ['signed by someone else', () => [appleToken({}, {}, generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey), NONCE]],
     ['an unknown key', () => [appleToken({}, { kid: 'nope' }), NONCE]],

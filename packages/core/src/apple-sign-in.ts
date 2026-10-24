@@ -59,7 +59,8 @@ export function appleClient(syncUrl: string, fetchFn: Fetch = fetch as unknown a
     }
     /* a server without Sign in with Apple yet: the web app's page comes back (the CDN answers unknown paths with it), or
        API Gateway's own "Not Found" */
-    if (!j || typeof j !== 'object' || j.code === 'AppleOff' || (!res.ok && j.message === 'Not Found')) throw new CognitoError('AppleOff', APPLE_WORDS.off);
+    if ((!j && res.ok) || (j && (j.code === 'AppleOff' || (!res.ok && j.message === 'Not Found')))) throw new CognitoError('AppleOff', APPLE_WORDS.off);
+    if (!j || typeof j !== 'object') throw new CognitoError('Network', cognitoWords('Network'));
     if (!res.ok) throw new CognitoError(String(j.code || 'Apple' + res.status), typeof j.error === 'string' ? j.error : cognitoWords('Error'));
     return j;
   }

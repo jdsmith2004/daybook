@@ -46,6 +46,11 @@ describe('appleClient', () => {
     await expect(off.signIn({ token: 't', nonce: 'n' })).rejects.toMatchObject({ code: 'AppleOff', message: APPLE_WORDS.off });
   });
 
+  it('does not say "not ready yet" when the door is there but the CDN gives back an error page', async () => {
+    const down = appleClient('https://day.example/sync', async () => ({ ok: false, status: 502, text: async () => '<html>502 Bad Gateway</html>' }));
+    await expect(down.signIn({ token: 't', nonce: 'n' })).rejects.toMatchObject({ code: 'Network' });
+  });
+
   it('says so when the internet is not there', async () => {
     const c = appleClient('https://day.example/sync', async () => {
       throw new Error('offline');

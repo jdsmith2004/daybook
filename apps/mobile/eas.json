@@ -10,7 +10,8 @@
         "EXPO_PUBLIC_CHANNEL": "preview",
         "EXPO_PUBLIC_SYNC_URL": "https://d3c9g6kent5bsr.cloudfront.net/sync",
         "EXPO_PUBLIC_AUTH_DOMAIN": "https://daybook-7fe2f7ee.auth.us-east-2.amazoncognito.com",
-        "EXPO_PUBLIC_CLIENT_ID": "8r1b7795qak2dkgs5741caj36"
+        "EXPO_PUBLIC_CLIENT_ID": "8r1b7795qak2dkgs5741caj36",
+        "EXPO_PUBLIC_APPLE": "on"
       }
     },
     "production": {
@@ -19,7 +20,8 @@
         "EXPO_PUBLIC_CHANNEL": "production",
         "EXPO_PUBLIC_SYNC_URL": "https://d3c9g6kent5bsr.cloudfront.net/sync",
         "EXPO_PUBLIC_AUTH_DOMAIN": "https://daybook-7fe2f7ee.auth.us-east-2.amazoncognito.com",
-        "EXPO_PUBLIC_CLIENT_ID": "8r1b7795qak2dkgs5741caj36"
+        "EXPO_PUBLIC_CLIENT_ID": "8r1b7795qak2dkgs5741caj36",
+        "EXPO_PUBLIC_APPLE": "on"
       }
     }
   },

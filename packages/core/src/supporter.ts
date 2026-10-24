@@ -67,19 +67,30 @@ export const supActive = (sup: Supporter | null | undefined, now = Date.now()): 
   return !!s && (s.until == null || s.until > now);
 };
 
-/** whether the person on this device is a supporter now */
-export const isSupporter = (st: Settings | null | undefined, now = Date.now()): boolean => supActive(st?.sup, now);
+/** whether a record is a paid tip that is active now (not a grandfathered account) */
+export const supPaid = (sup: Supporter | null | undefined, now = Date.now()): boolean => {
+  const s = normSup(sup);
+  return !!s && s.src !== 'grandfather' && supActive(s, now);
+};
 
-/** whether an extra is open. Every extra opens with support; none opens any other way. */
-export const extraOpen = (st: Settings | null | undefined, _extra: Extra, now = Date.now()): boolean => isSupporter(st, now);
+/** whether the person on this device is a supporter now: a tip, not a grandfathered account (which keeps sync only, and
+    is still asked, and thanked, like anyone who has not tipped) */
+export const isSupporter = (st: Settings | null | undefined, now = Date.now()): boolean => supPaid(st?.sup, now);
+
+/** whether an extra is open. Every extra opens with support; sync also opens for an account from before tips, and
+    nothing opens any other way. */
+export const extraOpen = (st: Settings | null | undefined, extra: Extra, now = Date.now()): boolean =>
+  isSupporter(st, now) || (extra === 'sync' && supActive(st?.sup, now));
 
 /** whether a payment of this many cents is enough to make a supporter */
 export const tipEnough = (cents: number): boolean => Number.isFinite(cents) && cents >= SUPPORT_MIN * 100;
 
-/** the better of two records: one with no end wins, else the later end. Used to merge the server's and the device's. */
+/** the better of two records: one with no end wins (a tip over a grandfathered account), else the later end. Used to merge
+    the server's and the device's. */
 export function supBest(a: Supporter | null | undefined, b: Supporter | null | undefined): Supporter | null {
   if (!a) return b ?? null;
   if (!b) return a;
+  if (a.until == null && b.until == null) return a.src === 'grandfather' && b.src !== 'grandfather' ? b : a;
   if (a.until == null) return a;
   if (b.until == null) return b;
   return b.until > a.until ? b : a;
@@ -156,6 +167,9 @@ export const SUP_SYNC_WORDS = {
   check: 'I already tipped',
   checking: 'Looking for your tip…',
   none: 'No tip was found for this account yet. If you tipped on the web, open the page Stripe sent you back to, or write to us.',
+  /* where no tip can be paid (Android, until Google Play's billing is in): nothing about tips, and nothing to pay elsewhere */
+  needNoTip: 'Sync and the safe copy are not open for this account yet. Your log stays safe on this device.',
+  shortNoTip: 'Signed in · sync is not open yet',
 };
 
 /** whether the extra flame looks exist yet. Only the twelve forms of the flame exist now, and they are earned, never

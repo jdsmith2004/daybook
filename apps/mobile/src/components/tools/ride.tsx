@@ -1,7 +1,7 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
 import { CU_BODY, CU_CHG, CU_D, CU_FEEL, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import Svg, { Path } from 'react-native-svg';
@@ -9,7 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Appear } from '@/components/appear';
-import { Button, Card, Chip, T } from '@/components/ui';
+import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { along, blobPath, envelope, MorphShape, plainPath, Shape, SQUIGGLE, squigglePath, useClock, WavyLine, type Along } from '@/components/shapes';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { breathAt, useBreathSeconds, type Steps } from '@/lib/breath';
@@ -30,6 +30,9 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
   const [body, setBody] = useState<string | null>(null);
   const [feel, setFeel] = useState<string | null>(null);
   const [chg, setChg] = useState<string | null>(null);
+  /* each answer to "Right now it is" leaves a mark on the wave where the dot was, so the person sees their own urge's
+     shape as they go (urge surfing: rate it as it changes, and watch it rise and fall) */
+  const [marks, setMarks] = useState<WaveMark[]>([]);
   const [w0, setW0] = useState<number | null>(null);
   useEffect(() => {
     if (step === 4 && w0 == null) setW0(Date.now());
@@ -122,6 +125,11 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
     );
   const p = Math.min(1, (sec * 1000) / CU_MS);
   const line = cuLine(body, feel);
+  const mark = (k: string) => {
+    buzz('tap');
+    setChg(k);
+    setMarks((m) => m.filter((x) => Math.abs(x.p - p) > 0.04).concat([{ p, k }]));
+  };
   return (
     <Stage key={'s' + step} dir={dir}>
       <T v="eyebrow" tone="muted">
@@ -130,36 +138,78 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
       <T v="title" style={s.c} accessibilityRole="header">
         Now just watch it.
       </T>
-      <Wave start={w0} color={c.accent} track={c.muted} />
-      <T v="label">{p < 1 ? fmtMS(CU_MS - sec * 1000) : 'Watched'}</T>
-      <T style={s.c}>{(line ? line + ' ' : '') + 'Breathe slowly and follow the dot. You are not trying to make the urge go away.'}</T>
+      <Middle>
+        <Text style={[s.time, { color: c.ink }]} accessibilityLabel={p < 1 ? fmtMS(CU_MS - sec * 1000) + ' left' : 'Watched'}>
+          {p < 1 ? fmtMS(CU_MS - sec * 1000) : '0:00'}
+        </Text>
+        <Wave start={w0} color={c.accent} track={c.muted} marks={marks} />
+        <T v="label" style={[s.c, { color: c.accentText }]} accessibilityLiveRegion="polite">
+          {wavePhase(p)}
+        </T>
+      </Middle>
       <Dock>
-        <T v="label">Right now it is</T>
-        <View style={s.row}>
+        <T style={[s.c, s.say]} accessibilityLiveRegion="polite">
+          {chg ? CU_SAY[chg] : (line ? line + ' ' : '') + 'Breathe slowly. You are not trying to make it go away.'}
+        </T>
+        <T v="label" style={s.c}>
+          Right now it is
+        </T>
+        <View style={s.three}>
           {CU_CHG.map(([k, label]) => (
-            <Chip key={k} label={label} on={chg === k} onPress={() => setChg(chg === k ? null : k)} />
+            <ChangeButton key={k} k={k} label={label} on={chg === k} onPress={() => mark(k)} />
           ))}
         </View>
-        {chg ? (
-          <T style={s.c} accessibilityLiveRegion="polite">
-            {CU_SAY[chg]}
-          </T>
-        ) : null}
         <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
       </Dock>
     </Stage>
   );
 }
 
-/* the 90-second wave: the shape of an urge, which builds, peaks a little before the middle, and falls back. The whole
-   wave is there at once as a plain, quiet line, so its shape is plain to see; the part already watched turns into the
-   squiggle (the same one as the timer rings, components/shapes SQUIGGLE), easing in from flat and crawling, behind a dot
-   that glides along the front on a smooth clock. */
-function Wave({ start, color, track }: { start: number | null; color: string; track: string }) {
+/** where the wave is, in a few words: an urge builds, tops out (the peak is about halfway along the line), and falls on
+    its own */
+function wavePhase(p: number): string {
+  if (p >= 1) return 'It came, and it went by.';
+  if (p < 0.4) return 'It is building. Let it.';
+  if (p < 0.6) return 'This is the top. It goes no higher.';
+  return 'It is falling. Let it pass.';
+}
+
+/** a mark on the wave: how far along it was (0 to 1) and the answer then (bigger, same, smaller) */
+type WaveMark = { p: number; k: string };
+const MARK_ICON: Record<string, string> = { bigger: 'up', smaller: 'down' };
+
+/** one of the three big answers to "Right now it is" */
+function ChangeButton({ k, label, on, onPress }: { k: string; label: string; on: boolean; onPress: () => void }) {
+  const c = useTheme();
+  const [soft, ink] = k === 'bigger' ? [c.coralSoft, c.coralText] : k === 'smaller' ? [c.mintSoft, c.mintText] : [c.surface2, c.ink];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        s.chg,
+        { backgroundColor: on ? soft : c.surface, borderColor: on ? ink : 'transparent', transform: [{ translateY: pressed ? 2 : 0 }] },
+      ]}>
+      {MARK_ICON[k] ? <Icon name={MARK_ICON[k]} size={26} color={ink} /> : <View style={[s.flat, { backgroundColor: ink }]} />}
+      <Text style={[s.chgT, { color: on ? ink : c.ink }]} numberOfLines={2}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/* the 90-second wave: the shape of an urge, which builds, peaks a little before the middle, and falls back. It is drawn
+   zoomed in, wider than the screen, and the view glides along with the dot, so the line is big and always moving. The
+   part still to come is a plain, quiet line; the part already watched turns into the squiggle (the same one as the timer
+   rings, components/shapes SQUIGGLE), easing in from flat and crawling, behind a dot that glides along the front on a
+   smooth clock. The person's own answers ("Right now it is") sit on it as marks where the dot was. */
+function Wave({ start, color, track, marks }: { start: number | null; color: string; track: string; marks: WaveMark[] }) {
+  const c = useTheme();
   const reduce = useReducedMotion();
   const [w, setW] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
-  /* a smooth clock for the dot and the crawl (useClock runs about 30 times a second) */
+  /* a smooth clock for the dot, the crawl and the view (useClock runs about 30 times a second) */
   const sec = useClock(start != null);
   const p = start == null ? 0 : Math.min(1, (Date.now() - start) / CU_MS);
   useEffect(() => {
@@ -173,47 +223,65 @@ function Wave({ start, color, track }: { start: number | null; color: string; tr
     a.start();
     return () => a.stop();
   }, [reduce, pulse]);
-  const k = w / WV_W;
-  const h = WV_H * k;
-  const L = useMemo(() => along(CU_BASE.map(([x, y]) => [x * k, y * k] as [number, number])), [k]);
+  /* the whole wave is WV_ZOOM screens wide; up and down it fills the height given */
+  const full = w * WV_ZOOM;
+  const L = useMemo(
+    () =>
+      along(CU_BASE.map(([x, y]) => [WV_PAD + ((x - 10) / 240) * (full - 2 * WV_PAD), WV_PAD + ((y - 10) / 86) * (WV_TALL - 2 * WV_PAD)] as [number, number])),
+    [full],
+  );
   const head = p * L.len;
   const phase = reduce ? 0 : sec * SQUIGGLE.speed * Math.PI * 2;
-  const done = squigglePath(L, 0, head, SQUIGGLE.amp * envelope(p), SQUIGGLE.wavelength, phase);
+  const done = squigglePath(L, 0, head, SQUIGGLE.amp * 1.4 * envelope(p), SQUIGGLE.wavelength, phase);
   const rest = plainPath(L, p > 0 ? Math.min(L.len, head + SQUIGGLE.stroke + 4) : 0, L.len);
-  const at = L.pts.length ? pointOn(L, head) : [0, 0];
-  const [x, y] = at;
+  const [x, y] = L.pts.length ? pointOn(L, head) : [0, 0];
+  /* the view keeps the dot a little left of the middle, so more of what is coming shows */
+  const view = Math.max(0, Math.min(full - w, x - w * 0.42));
   return (
     <View
-      style={s.wave}
-      onLayout={(e) => setW(Math.min(360, e.nativeEvent.layout.width))}
+      style={[s.wave, { height: WV_TALL }]}
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants">
       {w ? (
-        <View style={{ width: w, height: h }}>
-          <Svg width={w} height={h}>
+        <View style={{ width: full, height: WV_TALL, transform: [{ translateX: -view }] }}>
+          <Svg width={full} height={WV_TALL}>
             {rest ? (
-              <Path d={rest} stroke={track} strokeOpacity={0.3} strokeWidth={SQUIGGLE.stroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <Path d={rest} stroke={track} strokeOpacity={0.3} strokeWidth={SQUIGGLE.stroke * 1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             ) : null}
-            {done ? <Path d={done} stroke={color} strokeWidth={SQUIGGLE.stroke} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            {done ? <Path d={done} stroke={color} strokeWidth={SQUIGGLE.stroke * 1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
           </Svg>
+          {marks.map((m) => {
+            const [mx, my] = pointOn(L, m.p * L.len);
+            const ink = m.k === 'bigger' ? c.coralText : m.k === 'smaller' ? c.mintText : c.muted;
+            return (
+              <View key={m.p} style={[s.mark, { left: mx - 15, top: my - 48, backgroundColor: c.surface, borderColor: ink }]}>
+                {MARK_ICON[m.k] ? <Icon name={MARK_ICON[m.k]} size={18} color={ink} /> : <View style={[s.flatS, { backgroundColor: ink }]} />}
+              </View>
+            );
+          })}
           <Animated.View
             style={[
               s.glow,
               {
-                left: x - 22,
-                top: y - 22,
+                left: x - 34,
+                top: y - 34,
                 backgroundColor: color,
-                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.28] }),
+                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.3] }),
                 transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.1] }) }],
               },
             ]}
           />
-          <View style={[s.dot, { left: x - 8, top: y - 8, backgroundColor: color, borderColor: '#FFFFFF' }]} />
+          <View style={[s.dot, { left: x - 13, top: y - 13, backgroundColor: color, borderColor: '#FFFFFF' }]} />
         </View>
       ) : null}
     </View>
   );
 }
+/* how much wider than the screen the wave is drawn, how tall, and the room left around it for the dot's glow */
+const WV_ZOOM = 2.6;
+const WV_TALL = 210;
+const WV_PAD = 34;
 /* the point at length s along a path */
 function pointOn(L: Along, s: number): [number, number] {
   let j = 1;
@@ -223,9 +291,7 @@ function pointOn(L: Along, s: number): [number, number] {
   const f = Math.max(0, Math.min(1, (s - L.at[j - 1]) / (L.at[j] - L.at[j - 1] || 1)));
   return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
 }
-/* CU_D is four cubic curves from (10,96) to (250,96), drawn in a 260 by 116 box; room is left for the dot's glow */
-const WV_W = 260;
-const WV_H = 116;
+/* CU_D is four cubic curves from (10,96) to (250,96), drawn in a 260 by 116 box */
 /* points along CU_D, close together, with no wiggle: the squiggle is added as it is drawn */
 const CU_BASE: [number, number][] = (() => {
   const segs: number[][] = [
@@ -516,7 +582,16 @@ const s = StyleSheet.create({
   calm: { fontFamily: font.display, fontSize: 24, lineHeight: 30, textAlign: 'center' },
   thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
   breath: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  wave: { alignSelf: 'stretch', alignItems: 'center' },
-  glow: { position: 'absolute', width: 44, height: 44, borderRadius: 22 },
-  dot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
+  wave: { alignSelf: 'stretch', overflow: 'hidden', marginHorizontal: -16 },
+  glow: { position: 'absolute', width: 68, height: 68, borderRadius: 34 },
+  dot: { position: 'absolute', width: 26, height: 26, borderRadius: 13, borderWidth: 4 },
+  mark: { position: 'absolute', width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  flatS: { width: 12, height: 3, borderRadius: 2 },
+  time: { fontFamily: font.displayBold, fontSize: 64, lineHeight: 70, fontVariant: ['tabular-nums'], textAlign: 'center' },
+  /* room for the longest line, so the buttons below never move when it changes */
+  say: { minHeight: 63 },
+  three: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
+  chg: { flex: 1, minHeight: 84, borderRadius: 20, borderWidth: 2, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 6 },
+  chgT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 19, textAlign: 'center' },
+  flat: { width: 22, height: 3.5, borderRadius: 2, marginVertical: 11 },
 });

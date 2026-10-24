@@ -71,6 +71,9 @@ describe.each(logs)('$name', (fx) => {
   });
 });
 
+/* the tag the two tools that help most carry for someone with no record of their own */
+const BEST = { breathe: 'A strong first pick', ground: 'A strong first pick' };
+
 describe('SOS memory and rounds', () => {
   it('never repeats a line you saw lately, while there is another', () => {
     let mem: core.UrMem = {};
@@ -92,18 +95,22 @@ describe('SOS memory and rounds', () => {
 
   it('learns what you pick: a tool you keep passing over gives way to the one you choose', () => {
     const st = core.normSettings({ start: '2026-10-01' });
-    /* a stressful afternoon, nothing in the log yet: Move leads */
+    /* a stressful afternoon, nothing in the log yet: Breathe leads, then 5-4-3-2-1 (the two that help most) */
     const now = new Date(2026, 9, 15, 15, 0).getTime();
     const sc = { ...core.newUrge(now, 0), trigger: 'stress', explore: false };
     const top = (mem: core.UrMem, s: Settings = st) => core.urPickSug({ ...sc }, {}, s, '2026-10-15', now, mem, () => 0.99).top.id;
-    expect(top({})).toBe('move');
+    expect(top({})).toBe('breathe');
     let mem: core.UrMem = {};
-    mem = core.urNote(mem, 'move', 'thought');
+    mem = core.urNote(mem, 'breathe', 'thought');
     expect(top(mem)).toBe('ground');
-    mem = core.urNote(mem, 'ground', 'thought');
-    expect(mem.pick).toEqual({ thought: 2 });
-    expect(mem.pass).toEqual({ move: 1, ground: 1 });
+    /* keep passing over the suggestion for Name the thought, and it comes first within a few rounds */
+    let n = 1;
+    while (top(mem) !== 'thought' && n < 8) {
+      mem = core.urNote(mem, top(mem), 'thought');
+      n++;
+    }
     expect(top(mem)).toBe('thought');
+    expect(n).toBeLessThanOrEqual(6);
     expect(
       core.urSuggestion(
         core.urPickSug({ ...sc }, {}, st, '2026-10-15', now, mem, () => 0.99),
@@ -115,7 +122,7 @@ describe('SOS memory and rounds', () => {
       ).cap,
     ).toBe('You often pick this one.');
     /* picking it is not liking it: the tag waits for picks that ended in It passed */
-    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual(BEST);
   });
 
   it('"You like this" counts only picks that ended in It passed, or a Yes', () => {
@@ -123,13 +130,13 @@ describe('SOS memory and rounds', () => {
     /* the pause, picked and stopped twice: no tag */
     let mem: core.UrMem = core.urNote(core.urNote({}, 'move', 'pause'), 'move', 'pause');
     mem = core.urWon(mem, { rounds: [['pause', 's']], mine: ['pause'] });
-    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual(BEST);
     /* a suggested tool that passed is not a pick of your own */
     mem = core.urWon(mem, { rounds: [['move', 'p']], mine: ['pause'] });
     expect(mem.won).toBeUndefined();
     /* picked yourself and passed, twice */
     mem = core.urWon(mem, { rounds: [['pause', 'p']], mine: ['pause'] });
-    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({});
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual(BEST);
     mem = core.urWon(mem, {
       rounds: [
         ['pause', 's'],
@@ -138,9 +145,11 @@ describe('SOS memory and rounds', () => {
       mine: ['pause'],
     });
     expect(mem.won).toEqual({ pause: 2 });
-    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({ pause: 'You like this' });
+    expect(core.urTags({}, st, '2026-10-15', mem)).toEqual({ ...BEST, pause: 'You like this' });
     /* a Yes to "Would you use it again?" is enough by itself */
-    expect(core.urTags({}, core.rateUrTool(st, 'reasons', 1), '2026-10-15', {})).toEqual({ reasons: 'You like this' });
+    expect(core.urTags({}, core.rateUrTool(st, 'reasons', 1), '2026-10-15', {})).toEqual({ ...BEST, reasons: 'You like this' });
+    /* the two that help most lose their tag after a Not really */
+    expect(core.urTags({}, core.rateUrTool(st, 'ground', -1), '2026-10-15', {})).toEqual({ breathe: BEST.breathe });
   });
 
   it('your own record wins the suggestion, and says why in your numbers', () => {
@@ -162,10 +171,10 @@ describe('SOS memory and rounds', () => {
     expect(core.urPickSug({ ...sc }, days, core.setUrOff(st, 'breathe', true), tk, now, {}, () => 0.99).top.id).not.toBe('breathe');
     /* once used in this SOS, the next round moves on */
     expect(core.urPickSug({ ...sc, used: ['breathe'], again: 1 }, days, st, tk, now, {}, () => 0.99).top.id).not.toBe('breathe');
-    /* one win is not a record yet: with no record, Breathe still waits for a second round (the first screen breathes) */
+    /* Breathe can be suggested from the first round, with a record or without one */
     const one = core.addEvent({}, core.addDays(tk, -1), 'rode', '20:30', { tr: [['breathe', 'p']] }).days;
-    expect(core.urRank(sc, one, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(true);
-    expect(core.urRank(sc, days, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(false);
+    expect(core.urRank(sc, one, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(false);
+    expect(core.urRank(sc, {}, st, tk, now, {}).find((x) => x.id === 'breathe')!.off).toBe(false);
     /* of two proven tools, the surer one comes first */
     let two: Days = {};
     for (let i = 1; i <= 6; i++) two = core.addEvent(two, core.addDays(tk, -i), 'rode', '20:30', { tr: [['move', i <= 3 ? 'p' : 's']] }).days;

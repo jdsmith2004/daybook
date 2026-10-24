@@ -8,7 +8,7 @@
    2. Rekindle: one big button to press and hold until the embers catch. No skip and no other choice. Once it is held:
       this is a slip, and you can recover from it, with what is still yours (level, points, urges ridden out) and, for a
       long run, words that honor it. The run question for a slip that ends a run of 7 days or more is not asked here: the
-      run is kept for now, this screen says so, and the sunrise check asks it the next morning (core rkAskOpen, srSteps).
+      run is kept for now, this screen says so, and the sunrise check asks it the next morning (core rkAskOpen).
    3. "Talk it through" (1 to 2 minutes: what you were after, and what you will do instead next time; talk.tsx, ?after=1)
       as the main button, and Close under it.
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 2.

@@ -7,7 +7,7 @@
    and the push all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth while it moves. */
 import { FEEL_QUADS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { useNextTool } from '@/lib/tools';
 import { StatusBar } from 'expo-status-bar';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -32,7 +32,7 @@ import { MorphShape, Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import type { ToolProps } from '@/components/tools/types';
-import { webDeps } from '@/lib/breath';
+import { breathAt, useBreathSeconds, webDeps, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
@@ -333,6 +333,26 @@ function FeelGrid({
   );
 }
 
+/* ---------- naming it: the feeling's shape breathes, so the word is said on a slow breath out ---------- */
+const NAME_BREATH: Steps = [
+  ['in', 4],
+  ['out', 6],
+];
+function BreathingShape({ kind, color }: { kind: ShapeKind; color: string }) {
+  const reduce = useReducedMotion();
+  const [t, , out] = breathAt(NAME_BREATH, useBreathSeconds(!reduce));
+  return (
+    <View style={s.breathe} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={{ transform: [{ scale: reduce ? 1 : 0.8 + 0.28 * t }] }}>
+        <Shape kind={kind} size={160} color={color} turn={6} />
+      </View>
+      <T v="label" style={{ color: nightInk.muted }}>
+        {reduce ? 'Breathe out slowly' : out ? 'Breathe out' : 'Breathe in'}
+      </T>
+    </View>
+  );
+}
+
 /* ---------- the four corners ---------- */
 const QUAD_COLOR: Record<string, string> = {
   red: 'hsl(351, 78%, 58%)',
@@ -343,6 +363,7 @@ const QUAD_COLOR: Record<string, string> = {
 
 /* ---------- the tool ---------- */
 export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
+  const nextTool = useNextTool();
   const { width: W } = useWindowDimensions();
   const { tk, update } = useStore();
   const [step, setStep] = useState<'quad' | 'grid' | 'named'>('quad');
@@ -377,14 +398,15 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
       <SceneFrame title="Name the feeling" sky="night" onBack={() => setStep('grid')} onClose={exit}>
         <Stage key={'named' + f.w} dir={1}>
           <T v="eyebrow" tone="muted" style={s.c}>
-            Right now
+            Name it to tame it
           </T>
           <T v="title" style={s.c} accessibilityRole="header">
             {f.w}
           </T>
           <T style={s.c}>{f.how}.</T>
           <Middle>
-            <Shape kind={feelKind(sel.r, sel.c)} size={170} color={FEEL_COLORS[sel.r][sel.c]} turn={6} />
+            <BreathingShape kind={feelKind(sel.r, sel.c)} color={FEEL_COLORS[sel.r][sel.c]} />
+            <T style={[s.c, s.say]}>{'On a slow breath out, say it to yourself: “I feel ' + f.w.toLowerCase() + '.”'}</T>
           </Middle>
           <Dock>
             <T v="small" tone="muted" style={s.c}>
@@ -393,10 +415,10 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
             {lead && tool ? (
               <>
                 <Button
-                  label={'Try ' + tool.name}
+                  label={'Next: ' + tool.name}
                   onPress={() => {
                     save(f.w);
-                    router.replace({ pathname: '/tool/[id]', params: { id: tool.id } });
+                    nextTool(tool.id);
                   }}
                 />
                 <View style={s.quiet}>
@@ -478,4 +500,6 @@ const s = StyleSheet.create({
   quad: { alignItems: 'center', justifyContent: 'center' },
   quadT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: INK, textAlign: 'center' },
   quiet: { alignItems: 'center' },
+  breathe: { alignItems: 'center', gap: 14 },
+  say: { maxWidth: 320, marginTop: 6 },
 });

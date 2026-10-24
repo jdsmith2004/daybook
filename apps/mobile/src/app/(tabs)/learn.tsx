@@ -26,6 +26,7 @@ import {
   type LessonMap,
   TOOL_IDS,
   TOOLS,
+  urTags,
   urTried,
   weekGame,
 } from '@daybook/core';
@@ -46,6 +47,7 @@ import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SetupFirst } from '@/components/welcome';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
 import { font, toneOf, useTheme } from '@/lib/theme';
@@ -392,6 +394,9 @@ function ToolsPane() {
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const wg = weekGame(snap.days, st, Math.max(0, g.week));
   const tried = urTried(snap.days);
+  const sos = useSos();
+  /* the same small tags as SOS: how a tool went for you, or, with no record yet, the two that help most */
+  const tags = urTags(snap.days, st, tk, sos.mem);
   const any = TOOLS.some((t) => tried[t.id]);
   const fresh = any && TOOLS.some((t) => !tried[t.id]);
   const pin = st.urPin || '';
@@ -408,7 +413,7 @@ function ToolsPane() {
           </T>
         </View>
         <TalkDoor />
-        <ToolGrid days={snap.days} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
+        <ToolGrid days={snap.days} tags={tags} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
         <T v="small">
           Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week:{' '}
           <Text style={{ fontFamily: font.bodyBold }}>{wg.tools}</Text> of {TOOL_IDS.length} tools tried

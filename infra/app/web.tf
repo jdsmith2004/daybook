@@ -34,7 +34,7 @@ resource "aws_cloudfront_response_headers_policy" "web" {
       override = true
       content_security_policy = join("; ", [
         "default-src 'self'",
-        "script-src 'self'",
+        "script-src 'self' https://appleid.cdn-apple.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob:",
         "font-src 'self' data:",

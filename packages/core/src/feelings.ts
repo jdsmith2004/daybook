@@ -171,7 +171,9 @@ const LEAD_WORD: Record<string, string> = {
 /** the tired family leads to bed at night, and to "What do I need?" by day */
 const LEAD_TIRED = ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy'];
 
-/** the tool a named feeling leads on to, with one line on why, or null when the feeling needs no fixing */
+/** the tool a named feeling leads on to, with one line on why. Every feeling has one: naming a feeling takes some of
+    its charge, but in an urge it helps most as the first step to doing something (labeling alone is mixed in the
+    research), so a pleasant feeling leads on too, to the two tools that help most (Breathe, 5-4-3-2-1). */
 export function feelLead(r: number, c: number, night: boolean): { tool: string; why: string } | null {
   const f = feelAt(r, c);
   if (!f) return null;
@@ -184,11 +186,17 @@ export function feelLead(r: number, c: number, night: boolean): { tool: string; 
   if (led === 'thought') return { tool: led, why: 'This feeling talks in thoughts. Catch one and name it too.' };
   if (led === 'move') return { tool: led, why: 'That charge wants out through the body. Two minutes is plenty.' };
   if (led === 'surprise') return { tool: led, why: 'The cure is a real change, not a better screen.' };
-  if (c >= 5) return null;
-  /* the rest of the unpleasant half: anger burns off through the body, fear and stress slow down with the breath,
-     and the low, heavy feelings point at an unmet need */
+  /* the pleasant half: high energy can tip over into an urge, so it comes back to the room; a calm one is kept with
+     the breath */
+  if (c >= 5)
+    return r < 5
+      ? { tool: 'ground', why: 'High energy can tip into an urge. Come back to the room first.' }
+      : { tool: 'breathe', why: 'A calm moment is worth keeping. A few slow breaths hold it.' };
+  /* the rest of the unpleasant half: anger burns off through the body, a racing mind comes back through the senses,
+     fear and stress slow down with the breath, and the low, heavy feelings point at an unmet need */
   if (r >= 5) return { tool: 'halt', why: 'Heavy feelings often sit on a plain unmet need. Find it.' };
   if (c <= 1) return { tool: 'move', why: 'Anger is charge in the body. Burn some off, then decide.' };
+  if (r <= 1) return { tool: 'ground', why: 'A racing mind settles through the senses. Come back to the room.' };
   return { tool: 'breathe', why: 'The body is sounding an alarm. A long breath out turns it down.' };
 }
 

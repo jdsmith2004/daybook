@@ -4,7 +4,7 @@
    web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and 3.1.3). A supporter sees
    a thank-you instead, with a quiet way to tip again. A tip that goes through ends in a short celebration. The payments
    side saves the record (Settings.sup); this page only shows it. */
-import { fmtDate, gameCompute, isSupporter, keyOfDate, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
+import { fmtDate, gameCompute, isSupporter, keyOfDate, supPaid, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -16,7 +16,7 @@ import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { buyTip, restoreTips, TIP_TIERS, tipPrice, tipWays, type TipTier, type TipVia } from '@/lib/tip';
+import { buyTip, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, type TipTier, type TipVia } from '@/lib/tip';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Tip() {
@@ -41,6 +41,7 @@ export default function Tip() {
     setBusy(tier);
     try {
       if (await buyTip(tier, via)) got();
+      else if (tipError()) say(tipError());
     } catch {
       say('The tip did not go through, and nothing was charged. Try again in a moment.');
     } finally {
@@ -51,7 +52,7 @@ export default function Tip() {
     if (busy) return;
     setBusy('restore');
     try {
-      if (await restoreTips()) got();
+      if (supPaid(await restoreTips())) got();
       else say(w.restoreNone);
     } catch {
       say('Could not check right now. Try again in a moment.');

@@ -25,7 +25,7 @@ import {
   type DayKey,
   type RateKey,
 } from '@daybook/core';
-import { useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -102,7 +102,7 @@ export default function Checkin() {
     };
   }, [k]);
 
-  if (!st) return null;
+  if (!st) return <Redirect href="/" />;
   /* the reminder offer (no reminder yet: the setup's "Not now", or none asked), at about the time this check-in was done */
   const remAt = clockNear(now);
   const offer =

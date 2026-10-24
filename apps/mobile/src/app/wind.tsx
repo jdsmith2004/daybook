@@ -4,7 +4,7 @@
    end in Goodnight too), the wind-down list, and the plan for a loud night with SOS. Opened from Wind-down in "Your day"
    and from Next up. */
 import { fmtClock, rhythm, windLine } from '@daybook/core';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
@@ -23,7 +23,7 @@ export default function Wind() {
   const [bed, setBed] = useState<Bed | null>(null);
   const [fold, setFold] = useState<'wind' | 'loud' | null>(null);
   const st = snap.settings;
-  if (!st) return null;
+  if (!st) return <Redirect href="/" />;
   if (bed) return <GoingToBed bed={bed} />;
   const p = snap.days[tk]?.p;
   const r = rhythm(snap.days, st, tk, now);

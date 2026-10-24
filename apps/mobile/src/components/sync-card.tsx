@@ -8,7 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppleButton } from '@/components/apple-button';
 import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
-import { UnlockCard, useLocked } from '@/components/support';
+import { SYNC_NEED, TIP_ON, UnlockCard, useLocked } from '@/components/support';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { CognitoError } from '@daybook/core';
@@ -153,7 +153,7 @@ export function SyncBody() {
 
   const line =
     st.k === 'need'
-      ? SUP_SYNC_WORDS.need
+      ? SYNC_NEED
       : st.k === 'expired'
         ? 'Sign in again to keep syncing. Your log is still here.'
         : st.k === 'error'
@@ -176,7 +176,7 @@ export function SyncBody() {
       </T>
       {st.k === 'expired' ? (
         <Button label="Sign in again" onPress={() => sync.signInNow()} />
-      ) : st.k === 'need' ? (
+      ) : st.k === 'need' && TIP_ON ? (
         <FindTip />
       ) : (
         <Button kind="ghost" icon="up" label="Sync now" onPress={sync.syncNow} />

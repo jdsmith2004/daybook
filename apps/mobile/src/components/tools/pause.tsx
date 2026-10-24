@@ -20,6 +20,7 @@ import {
   type Outcome,
 } from '@daybook/core';
 import { router } from 'expo-router';
+import { useNextTool } from '@/lib/tools';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -39,6 +40,7 @@ import { BEAT_BREATH, ToolTimer } from './timer';
 import type { ToolProps } from './types';
 
 export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
+  const nextTool = useNextTool();
   const { snap, update, say } = useStore();
   const c = useTheme();
   const sos = useSos();
@@ -212,7 +214,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
                 endEarly();
                 sos.setTimer(null);
                 if (sos.ur) sos.set({ ...sos.ur, used: sos.ur.used.concat('pause') });
-                router.replace({ pathname: '/tool/[id]', params: { id: 'message' } });
+                nextTool('message');
               }}
             />
           </View>
@@ -231,20 +233,8 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         <Dock>
           <View style={s.opts}>
             <BigOption tone="sun" icon="timer" title="Another 10 minutes" sub="Same wave, more time." onPress={start} />
-            <BigOption
-              tone="accent"
-              icon="wind"
-              title="Breathe"
-              sub="One slow minute."
-              onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'breathe' } })}
-            />
-            <BigOption
-              tone="accent"
-              icon="chat"
-              title="Reach a person"
-              sub="A short text is enough."
-              onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: 'message' } })}
-            />
+            <BigOption tone="accent" icon="wind" title="Breathe" sub="One slow minute." onPress={() => nextTool('breathe')} />
+            <BigOption tone="accent" icon="chat" title="Reach a person" sub="A short text is enough." onPress={() => nextTool('message')} />
           </View>
         </Dock>
         <Link

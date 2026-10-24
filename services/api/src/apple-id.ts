@@ -98,7 +98,8 @@ export async function checkAppleToken(token: unknown, nonce: unknown, o: CheckOp
   if (typeof body.exp !== 'number' || body.exp + SKEW < now) throw bad('That Apple sign-in ran out. Try again.');
   if (typeof body.iat === 'number' && body.iat - SKEW > now) throw bad();
   if (typeof nonce !== 'string' || nonce.length < 16 || nonce.length > 200) throw bad();
-  if (body.nonce !== nonce && body.nonce !== sha256(nonce)) throw bad();
+  /* both apps give Apple the nonce's hash and send the nonce itself here, so the token's own claim can never stand in for it */
+  if (body.nonce !== sha256(nonce)) throw bad();
   if (typeof body.sub !== 'string' || !body.sub || body.sub.length > 200) throw bad();
   const email = typeof body.email === 'string' && body.email.includes('@') ? body.email.trim().toLowerCase() : null;
   return { sub: body.sub, email, emailVerified: !!email && truthy(body.email_verified), relay: truthy(body.is_private_email) };

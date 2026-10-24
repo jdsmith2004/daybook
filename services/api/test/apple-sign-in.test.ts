@@ -94,6 +94,7 @@ beforeEach(() => {
       check,
       revoke: async (code, client) => (revoked.push({ code, client }), 'revoked'),
       clientIds: { ios: 'com.jdsmith2004.daybook', web: 'com.jdsmith2004.daybook.web' },
+      appleOf: async (u) => (u === 'joined' ? '001.apple' : null),
     },
   );
 });
@@ -213,6 +214,24 @@ describe('closing an Apple account', () => {
     await call(ev('DELETE', { user: 'me', query: { all: '1' } }));
     expect(revoked).toEqual([]);
     expect(deleted).toEqual(['me']);
+  });
+
+  it('sends an account joined to Apple back for a code when none came, and deletes nothing', async () => {
+    const r = await call(ev('DELETE', { user: 'joined', query: { all: '1' } }));
+    expect(r.status).toBe(409);
+    expect(r.body.code).toBe('NeedApple');
+    expect(deleted).toEqual([]);
+    /* with the code, it revokes and closes */
+    await call(ev('DELETE', { user: 'joined', query: { all: '1' }, body: { apple: { code: 'c3', client: 'ios' } } }));
+    expect(revoked).toEqual([{ code: 'c3', client: 'com.jdsmith2004.daybook' }]);
+    expect(deleted).toEqual(['joined']);
+  });
+
+  it('closes it anyway from a device that cannot ask Apple', async () => {
+    const r = await call(ev('DELETE', { user: 'joined', query: { all: '1' }, body: { apple: { skip: true } } }));
+    expect(r.status).toBe(200);
+    expect(revoked).toEqual([]);
+    expect(deleted).toEqual(['joined']);
   });
 
   it('never revokes on a plain erase', async () => {

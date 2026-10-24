@@ -2529,3 +2529,65 @@ signed-in app may change on its own account to the email, whether Apple is on or
 2. **Low.** The web, once the Services ID is set: the button on the account sheet, in Chrome and in Safari.
 3. **Later, if wanted.** Apple's server-to-server notices (a person stops using Apple with Daybook, or deletes their
    Apple ID) could sign out every device at once; today each iPhone notices when it opens.
+
+## The whole app, end to end (review of October 24, 2026)
+
+A read of onboarding, accounts and Sign in with Apple, payments, the tools, Today and notifications, before the iPhone
+build with tips and Apple goes to review. Setup, the lesson lock, care staying free, the Apple token check, account
+deletion, the server's check of Apple and Stripe tips, the ask timing and every notification link were found sound.
+
+Fixed in this pass:
+
+- A paid web tip that the server could not confirm for a passing reason (Stripe or the server down, or the Stripe key
+  not set yet) was dropped; it is now kept and tried again, and the tip sheet says what happened. A failed Apple
+  purchase (not a cancel) now says so instead of looking like a cancel.
+- Sign in with Apple on the website: the site's content rules blocked Apple's script, so every tap failed. Allowed.
+- Apple's nonce: only its hash is taken, so a captured token cannot be replayed with its own nonce.
+- A CDN error page no longer reads as "Sign in with Apple is not ready yet".
+- `EXPO_PUBLIC_APPLE=on` is in the EAS profiles, so the iPhone build shows the Apple button.
+- The setup's account page no longer comes back for a person who just made an account that waits for a tip.
+- A tool that hands on to another tool (Feel, Surprise, Halt, Pause) keeps the way back to the lesson that opened it.
+- The Talk it through reminder no longer puts the person's own plan words on the locked screen.
+- Reminders are scheduled one plan at a time, so an older plan cannot leave a stale note.
+- The check-in and the wind-down go to Today when there is no setup yet, instead of a blank screen.
+- The privacy page names Sign in with Apple; the public pages no longer promise flame looks or say a free account
+  syncs or that a tip unlocks nothing; the store listing, the privacy label (Purchases) and the review notes say what
+  a tip opens. The app version is 1.0.0 for the store.
+
+Decided and fixed the same day (the owner, October 24, 2026: "fix these"):
+
+1. **Older accounts keep sync only.** A grandfathered record opens sync and nothing else; those people see the whole
+   pattern's lock, are asked for a tip like anyone, and a tip they pay replaces the grandfathered record (core
+   `supPaid`, `supBest`).
+2. **Android: no tip ask.** Android cannot pay a tip (Google Play's billing is not in), so Android shows nothing about
+   tips: the sync card, the account card and setup say only that sync is not open yet, with no "I already tipped".
+   People who tipped on iPhone or the web sync on Android as anywhere. Play billing is later work, when wanted.
+3. **Closing an account joined to Apple always asks Apple.** With no code, the server answers 409 `NeedApple` and
+   deletes nothing; the app asks Apple and sends the code. A device that cannot ask Apple (Android) says so with
+   `{ apple: { skip: true } }`, and the account is closed with a line in the log.
+4. **The web tip link on iPhone shows only on the United States storefront** (StoreKit's storefront, `usStorefront`).
+
+Still open:
+
+- Smaller: granting notification permission or exact alarms does not reschedule at once; Delete while the sign-in has
+  expired says "Could not reach your account"; the "Close" link under Talk it through on the last slip screen only
+  closes the page; a refund leaves the supporter record (already accepted); an email typed by someone else can block
+  that person's Apple sign-in with words about a password they never had.
+
+## Tools: naming leads somewhere, a bigger wave, and the two that help most first (the owner, October 24, 2026)
+
+- **Name the feeling** no longer ends at the word. Naming a feeling takes some of its charge, but on its own the research
+  is mixed: in one trial with people in treatment, labeling alone raised craving more than reappraisal did, and urge
+  surfing guides tie the noticing to a next step. So the named page is "Name it to tame it": the feeling's shape breathes
+  (4 in, 6 out), the person says "I feel ..." on a slow breath out, and the main button is always the tool that fits
+  (core `feelLead` now gives every feeling one: the pleasant high-energy ones and a racing mind lead to 5-4-3-2-1, the calm
+  ones and stress to Breathe). "Done for now" stays as a quiet link.
+- **Get curious, Watch it**: the wave is drawn zoomed in (2.6 screens wide, 210 tall) and the view glides with the dot;
+  the time left is big (64 points); a line under the wave says where it is (building, the top, falling); "Right now it is"
+  is three big buttons, and each answer leaves a mark on the line where the dot was, so the person sees their own urge's
+  shape (urge surfing: rate it as it changes).
+- **Breathe and 5-4-3-2-1 first.** SOS lifts them for everyone (core `UR_BEST`: Breathe +2, 5-4-3-2-1 +3), Breathe can be
+  the suggestion from the first round, and both carry "A strong first pick" in SOS and on the Learn tab's tools until a
+  person's own record gives them another tag. In the golden fixtures' cases they went from about 12% of the first
+  suggestions to about 59%; Go to bed still leads late at night (now paired with one of them), and a person's own record,
+  a go-to, "Not for me" and passing over a suggestion still win over the lift.

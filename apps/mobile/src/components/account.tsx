@@ -7,6 +7,7 @@ import { STORAGE_LINE } from '@/components/home-screen';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
+import { TIP_ON } from '@/components/support';
 import { useSync } from '@/lib/sync';
 import { useTheme } from '@/lib/theme';
 
@@ -14,7 +15,7 @@ export function AccountCard({ why, locked }: { why: AcctWhy; locked: number }) {
   const c = useTheme();
   const sync = useSync();
   const { snap, tk, apply } = useStore();
-  const w = accountWords(why, locked, diffDays(tk, snap.settings!.start));
+  const w = accountWords(why, locked, diffDays(tk, snap.settings!.start), TIP_ON);
   return (
     <Card style={{ backgroundColor: c.skySoft, borderColor: c.skySoft }}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>

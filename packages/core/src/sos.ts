@@ -226,7 +226,7 @@ export function urRank(
     const rt = hb[id] && hb[id].n >= 2 ? hb[id] : null;
     const ra = S.all[id] || null;
     const r = rt || ra;
-    let s = (fit[id] || 0) + (sn[id] || 0);
+    let s = (fit[id] || 0) + (sn[id] || 0) + (UR_BEST[id] || 0);
     if (id === 'bed' && !night) s -= 20;
     s += urLift(r);
     if (id === pin) s += 40;
@@ -238,11 +238,16 @@ export function urRank(
     s += Math.min(5, pickOf(mem, id) * 1.25);
     const lk = urLikeOf(st, id);
     s += lk > 0 ? lk * 2 : lk * 3;
-    /* the first SOS screen already breathes, so Breathe waits for a second round, unless your own record says it works */
-    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message' || (id === 'breathe' && !sc.again && !urProven(ra)));
+    /* Reach a person is never the suggestion (it is in the list); Breathe can be, from the first round, as one of the two
+       that help most */
+    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message');
     return { id, score: s, r, rt, ra, tk: ctx, pin: id === pin, off };
   }).sort((a, b) => b.score - a.score || UR_PREF.indexOf(a.id) - UR_PREF.indexOf(b.id));
 }
+
+/** the two tools that help most people first (the owner, October 24, 2026): a slow breath with a long breath out, and
+    5-4-3-2-1. They get a lift for everyone, so they are suggested more often until a person's own record says otherwise. */
+export const UR_BEST: Record<string, number> = { breathe: 2, ground: 3 };
 
 /** a tool that has worked for you at least twice (the last four months) */
 const urProven = (r: Rec | null | undefined): r is Rec => !!r && r.w >= 2;
@@ -401,6 +406,7 @@ export function urTags(days: Days, st: Settings | null, tk: DayKey, mem: UrMem):
     else if (r && r.n >= 2 && r.w) out[t.id] = 'Worked ' + r.w + ' of ' + r.n;
     else if (r && r.l >= 2) out[t.id] = 'Helped ' + r.l + ' times';
     else if (urLikeOf(st, t.id) > 0 || wonOf(mem, t.id) >= 2) out[t.id] = 'You like this';
+    else if (UR_BEST[t.id] && urLikeOf(st, t.id) >= 0) out[t.id] = 'A strong first pick';
   });
   return out;
 }

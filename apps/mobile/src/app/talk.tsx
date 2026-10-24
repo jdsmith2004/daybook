@@ -14,6 +14,10 @@
    no slip in mind. No signs, no research, no paths: what usually makes these hours hard (the needs), what to do instead
    (the moves), and the moment (their start, while it is still ahead), saved as a change plan (marked pr, so it never
    counts as a sign of when it gets hard).
+   And ?after=1, "Talk it through" right after logging a slip (log.tsx), 1 to 2 minutes: the same short plan, in words for
+   after a slip. What you were really after (the needs), what you will do instead next time (the moves), and the moment,
+   saved as a change plan (marked pr too: it is a plan for next time, not a sign of a planned slip). Talked through in
+   the same minute as the slip, the slip does not settle the plan (core slipSince), so it waits on Today.
    Making a plan earns its points as always; they show on Today, not here. */
 import {
   gameCompute,
@@ -142,10 +146,12 @@ export default function TalkIt() {
   const { snap, tk, update, say } = useStore();
   const sos = useSos();
   const st = useCareSettings();
-  const params = useLocalSearchParams<{ decide?: string; look?: string; prep?: string }>();
+  const params = useLocalSearchParams<{ decide?: string; look?: string; prep?: string; after?: string }>();
   const [now] = useState(() => Date.now());
   /* the short plan for the hard hours: their start is the moment, while it is still ahead (it can be changed) */
-  const prep = params.prep === '1' && !params.look && !params.decide;
+  /* right after logging a slip: the same short plan, in words for after a slip */
+  const afterSlip = params.after === '1' && !params.look && !params.decide;
+  const prep = (params.prep === '1' || afterSlip) && !params.look && !params.decide;
   const hard = useMemo(() => {
     const r = prep && snap.settings ? riskDay(snap.days, snap.settings, tk, now) : null;
     return r ? { win: r.win, at: talkHardMoment(r.a, now) } : null;
@@ -170,7 +176,7 @@ export default function TalkIt() {
   const day = found ? found.k : tk;
   const [step, setStep] = useState<Step>(look ? 'lWent' : decide ? 'path' : prep ? 'need' : 'signs');
   /* the short plan's eyebrow, on each of its pages */
-  const prepEb = hard ? 'Your hard hours · ' + hard.win.label : 'A plan for your hard hours';
+  const prepEb = afterSlip ? 'After a slip' : hard ? 'Your hard hours · ' + hard.win.label : 'A plan for your hard hours';
   /* the moment starts on the hard hours' start, also when the log was still loading as this opened */
   const preset = useRef(false);
   useEffect(() => {
@@ -429,10 +435,10 @@ export default function TalkIt() {
           {prep ? prepEb : 'Talking it through'}
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          {prep ? 'What usually makes these hours hard?' : 'What are you really after tonight?'}
+          {afterSlip ? 'What were you really after?' : prep ? 'What usually makes these hours hard?' : 'What are you really after tonight?'}
         </T>
         {own === 'need' ? (
-          ownField(prep ? 'Like: being home alone' : 'Like: comfort, or control', (t) => set({ n: null, nx: t }))
+          ownField(prep && !afterSlip ? 'Like: being home alone' : 'Like: comfort, or control', (t) => set({ n: null, nx: t }))
         ) : (
           <Dock>
             <View style={s.list}>
@@ -441,8 +447,8 @@ export default function TalkIt() {
                   key={k}
                   icon={ic}
                   tone={NEED_TONE[k]}
-                  title={prep ? TALK_HARD_NEEDS.find((x) => x[0] === k)![1] : name}
-                  sub={prep ? TALK_HARD_NEEDS.find((x) => x[0] === k)![2] : sub}
+                  title={prep && !afterSlip ? TALK_HARD_NEEDS.find((x) => x[0] === k)![1] : name}
+                  sub={prep && !afterSlip ? TALK_HARD_NEEDS.find((x) => x[0] === k)![2] : sub}
                   on={talk.n === k}
                   onPress={() => {
                     /* one answer: picking it moves on (once, however many taps) */
@@ -563,12 +569,20 @@ export default function TalkIt() {
           {prep ? prepEb : 'Change the plan'}
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          {prep ? 'What will you do instead?' : talk.n ? 'Meet ' + needWord + ' another way.' : 'Meet that need another way.'}
+          {afterSlip
+            ? 'Next time, what will you do instead?'
+            : prep
+              ? 'What will you do instead?'
+              : talk.n
+                ? 'Meet ' + needWord + ' another way.'
+                : 'Meet that need another way.'}
         </T>
         <T style={s.c} tone="muted">
-          {prep
-            ? 'What you need is real. Pick how you will give it to yourself when it gets hard.'
-            : 'What you need is real. Pick how you will give it to yourself.'}
+          {afterSlip
+            ? 'What you needed is real. Pick how you will give it to yourself next time.'
+            : prep
+              ? 'What you need is real. Pick how you will give it to yourself when it gets hard.'
+              : 'What you need is real. Pick how you will give it to yourself.'}
         </T>
         {own === 'cMoves' ? (
           ownField('Like: play guitar for 20 minutes', (t) => set({ mx: addOwn(mx, t) }))
@@ -581,7 +595,7 @@ export default function TalkIt() {
                   multi
                   icon={MOVE_IC[k]}
                   tone={k === 'away' || k === 'block' ? 'accent' : 'mint'}
-                  title={talkMoveName(k, prep)}
+                  title={talkMoveName(k, prep && !afterSlip)}
                   sub={talkHeldTag(held, k) || undefined}
                   on={talk.m.indexOf(k) >= 0}
                   onPress={() => set({ m: toggle(talk.m, k) })}
@@ -605,7 +619,7 @@ export default function TalkIt() {
           {prep ? prepEb : 'Change the plan'}
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          When is the hard part?
+          {afterSlip ? 'When could it get hard next?' : 'When is the hard part?'}
         </T>
         <View style={s.middle}>
           {ready ? (
@@ -854,9 +868,11 @@ export default function TalkIt() {
           text={
             wait
               ? 'If you still want it then, come back and choose with your eyes open. No pressure either way.'
-              : prep
-                ? 'You saw the hard hours coming and got ready. That is the climb.'
-                : 'You saw it coming and chose. That is the climb.'
+              : afterSlip
+                ? 'You looked at the slip honestly and made a plan. That is how a comeback starts.'
+                : prep
+                  ? 'You saw the hard hours coming and got ready. That is the climb.'
+                  : 'You saw it coming and chose. That is the climb.'
           }
         />
         <Appear delay={420} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
@@ -1078,7 +1094,15 @@ export default function TalkIt() {
   const i = step === 'mind' ? flow.indexOf('mind') + ci : flow.indexOf(step);
   return (
     <SceneFrame
-      title={look ? 'Looking back' : prep ? (hard ? riskPlanLabel(hard.win.start).replace('Make a plan', 'A plan') : 'A plan for tonight') : 'Talk it through'}
+      title={
+        look
+          ? 'Looking back'
+          : prep && !afterSlip
+            ? hard
+              ? riskPlanLabel(hard.win.start).replace('Make a plan', 'A plan')
+              : 'A plan for tonight'
+            : 'Talk it through'
+      }
       sky="violet"
       dots={i < 0 ? null : { n: flow.length, i, label: 'Step ' + (i + 1) + ' of ' + flow.length }}
       onBack={step !== 'done' && step !== 'lEnd' && (hist.length || (step === 'mind' && ci > 0)) ? back : null}

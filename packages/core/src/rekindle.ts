@@ -51,6 +51,34 @@ export function rkStepFor(days: Days, date: DayKey): 'rk0' | 'rkl' {
 }
 /** minutes waited before a slip, rounded down to the steps that are asked about */
 export const rkWaitOf = (m: number): 0 | 5 | 10 | 20 => (m >= 20 ? 20 : m >= 10 ? 10 : m >= 5 ? 5 : 0);
+
+/* ---------- "Did you wait first?", the slip's first screen ---------- */
+/** the top of the slider: 30 means 30 minutes or more */
+export const RK_WAIT_MAX = 30;
+/** what a slip entry keeps for the minutes waited first: wm, the slider's whole minutes (0 to RK_WAIT_MAX), and wt, the
+    step the older rules count (the "Waited first" points, the Sunday story), so both stay in step */
+export function rkWaitFields(m: number): { wm: number; wt: 0 | 5 | 10 | 20 } {
+  const wm = Math.max(0, Math.min(RK_WAIT_MAX, Math.round(Number(m) || 0)));
+  return { wm, wt: rkWaitOf(wm) };
+}
+/** the big number in the middle: "0", "12", "30+" */
+export const rkWaitShow = (m: number) => (m >= RK_WAIT_MAX ? RK_WAIT_MAX + '+' : String(m));
+export const rkWaitUnit = (m: number) => (m === 1 ? 'minute' : 'minutes');
+/** the kind word under it. Any wait is the muscle growing; no wait is said plainly, with no blame. */
+export function rkWaitLine(m: number): string {
+  if (m <= 0) return 'You did not wait this time. Saying so honestly is how next time gets easier.';
+  if (m < 5) return plural(m, 'minute') + ' of waiting. That is the muscle that grows.';
+  if (m < RK_WAIT_MAX) return 'You held off for ' + m + ' minutes. That is the muscle that grows.';
+  return 'You held off for half an hour or more. That is real strength, and it counts.';
+}
+/** the words of the hold-to-rekindle screen: before the hold, and after it */
+export function rkHoldWords(lit: boolean, sp: boolean): { h: string; p: string } {
+  if (lit) return { h: 'This is a slip, and you can recover from it.', p: 'Your fire is burning again. A slip can burn it low. It cannot put it out.' };
+  return {
+    h: sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.',
+    p: 'It is down to embers, and embers hold the heat. Press and hold to breathe it back up.',
+  };
+}
 /** "Close for tonight" in the evening and at night */
 export const rkCloseWord = (hour: number) => (hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now');
 /** the safe person's name, or their first name when it is long */

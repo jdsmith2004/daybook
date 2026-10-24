@@ -1,10 +1,19 @@
-/* Quick check-in: one question at a time, one tap each. The first tap saves the entry; every question after it is optional,
-   and Back or Undo is always one tap away. After a slip comes Rekindle: the full one for the first slip in any 7 days,
-   the short one for any other. The full one: breathe the embers back up and see everything kept, say how it feels
-   right now, a few short cards on what just happened that fit that feeling (each with a moving picture and its
-   source; cards read before are one line), your own record of comebacks, then (when the slip ends a run of 7 days or
-   more) keep the run going or start fresh, then the quest. Care first, the count last: closing before that answer keeps
-   the run for now, and the sunrise check asks it the next morning. Ported from the legacy SCENES.checkin. */
+/* Quick check-in: one question at a time, one tap each. The first tap saves the entry, and Back or Undo is always one tap
+   away. After an urge ridden out: what set it off, what you did, then the closing screen (all optional).
+
+   After "I slipped" the slip is assumed, and saved at the current time. Three screens, one thing each:
+   1. "Did you wait first?": one slider from 0 to 30 minutes (0 is "I did not wait"), the minutes big in the middle and a
+      kind word for any answer. Next keeps them on the slip (core rkWaitFields: wm, with wt in step for the older rules).
+      "Change time" under Next logs one from earlier.
+   2. Rekindle: one big button to press and hold until the embers catch. No skip and no other choice. Once it is held:
+      this is a slip, and you can recover from it, with what is still yours (level, points, urges ridden out) and, for a
+      long run, words that honor it. The run question for a slip that ends a run of 7 days or more is not asked here: the
+      run is kept for now, this screen says so, and the sunrise check asks it the next morning (core rkAskOpen, srSteps).
+   3. "Talk it through" (1 to 2 minutes: what you were after, and what you will do instead next time; talk.tsx, ?after=1)
+      as the main button, and Close under it.
+   SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 2.
+   Rekindle's quest and points come from the log itself (core rkOf), so they go on exactly as before: one small thing
+   waits on Today, the sunrise check the next morning. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
   addOption,
@@ -20,20 +29,16 @@ import {
   OPT_MAX,
   patchEvent,
   removeEvent,
-  rkAsk,
+  rkAskOpen,
   rkEmbers,
-  rkChoice,
+  rkHoldWords,
   rkHonor,
-  rkKeep,
-  rkLightLine,
-  rkComebackLine,
-  rkComebacks,
-  RK_FEELS,
-  rkLearn,
-  rkQuest,
-  RK_SRC,
-  rkStepFor,
-  type RkFeel,
+  rkKeptForNow,
+  rkWaitFields,
+  rkWaitLine,
+  rkWaitShow,
+  rkWaitUnit,
+  RK_WAIT_MAX,
   UR_STR_NAME,
   urMinText,
   whenEntry,
@@ -47,17 +52,15 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { Answer } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { KnownLine, Sources } from '@/components/research';
-import { Embers, Flames, Missions, WaitPicker } from '@/components/rekindle';
-import { Comebacks, RkArtView } from '@/components/rk-art';
+import { EmberArt, HoldButton, useEmberHold } from '@/components/rekindle';
 import { Dock, SceneFrame } from '@/components/scene';
+import { Slider, SliderValue } from '@/components/slider';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
@@ -68,8 +71,8 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'rk0' | 'rkF' | 'rkK' | 'rkM' | 'rkC' | 'rkR' | 'rkl';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'rk0', 'rkF', 'rkK', 'rkM', 'rkC', 'rkR', 'rkl'];
+type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slWait' | 'slHold' | 'slNext';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'slWait', 'slHold', 'slNext'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
@@ -98,7 +101,10 @@ export default function Log() {
   const [whenOpen, setWhenOpen] = useState(false);
   const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
   const [from] = useState<'urge' | 'pause' | 'hero'>(() => (params.from === 'urge' || params.from === 'pause' ? params.from : 'hero'));
-  const [step, setStep] = useState<Step>(() => (handed && STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1'));
+  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves */
+  const [step, setStep] = useState<Step>(() =>
+    handed ? (params.outcome === 'slipped' ? 'slHold' : STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1') : 'q1',
+  );
   const [hist, setHist] = useState<Step[]>(() => (handed ? ['q1'] : []));
   const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));
   const [outcome, setOutcome] = useState<Outcome | null>(() => (handed ? (params.outcome as Outcome) : null));
@@ -110,31 +116,18 @@ export default function Log() {
   const [night] = useState(() => params.night === '1');
   const [full] = useState(() => params.full === '1');
   const [askNote, setAskNote] = useState<boolean | null>(null);
+  /* the minutes on the slider before Next keeps them (null: what the slip already has, or 0) */
+  const [wait, setWait] = useState<number | null>(null);
   const [lit, setLit] = useState(false);
-  const [rkSeen, setRkSeen] = useState(false);
-  /* the run question was reached in this sitting: its step stays (with the answer shown) for Back, after it is answered */
-  const [runAsked, setRunAsked] = useState(false);
-  /* how it feels right now (never stored), and which card of "What just happened" is showing */
-  const [feels, setFeels] = useState<RkFeel[]>([]);
-  const [ci, setCi] = useState(0);
-  const [dir, setDir] = useState(1);
-  const read = Array.isArray(sos.mem.rkSeen) ? (sos.mem.rkSeen as string[]) : [];
-  const [read0] = useState(read);
+  const hold = useEmberHold(lit, () => {
+    setLit(true);
+    AccessibilityInfo.announceForAccessibility(rkHoldWords(true, false).h);
+  });
   const [adding, setAdding] = useState(false);
   const [allOpts, setAllOpts] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
-  const cards = rkLearn(feels);
-  const fresh = cards.filter((x) => read0.indexOf(x.k) < 0);
-  const known = cards.filter((x) => read0.indexOf(x.k) >= 0);
-  const card = fresh[ci];
-  /* a card is "read" once it has been shown */
-  useEffect(() => {
-    if (step !== 'rkM' || !card || read.indexOf(card.k) >= 0) return;
-    sos.setMem((m) => ({ ...m, rkSeen: (Array.isArray(m.rkSeen) ? (m.rkSeen as string[]) : []).concat(card.k) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, ci]);
   /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing. After an urge
      ridden out at night it waits for last night's card on Today the next morning, which asks what helped (core winLater), so
      it is asked once. */
@@ -147,56 +140,29 @@ export default function Log() {
   const ask = askNote ?? askNow;
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
-  const hour = new Date(now).getHours();
-  /* keep the run going, or start fresh: asked at the end of the full Rekindle, when the slip ends a run of 7 days or more and
-     it is not answered yet (core rkAskOpen). Not answered, the run is kept for now. */
-  const rkOn = outcome === 'slipped' && step !== 'q1' && step !== 'trigger' && step !== 'rkl' && !!snap.settings;
-  const runAll = rkOn ? rkAsk(snap.days, snap.settings, tk, date) : null;
-  const runQ = runAll && runAll.open && (runAll.keep == null || runAsked) ? runAll : null;
-  const chooseRun = (keep: boolean) => {
-    if (!runQ) return;
-    update((s0) => {
-      const d = s0.settings ? rkKeep(s0.days, s0.settings, tk, runQ.k, runQ.evId, keep) : null;
-      return d ? { ...s0, days: d } : s0;
-    });
-    buzz('tap');
-    setRkSeen(true);
-    go('done');
-  };
 
   const go = (next: Step, back = false) => {
-    setDir(1);
-    if (next === 'rkM') setCi(0);
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
     setAdding(false);
   };
   const goBack = () => {
-    if (step === 'rkM' && ci > 0) {
-      setDir(-1);
-      setCi(ci - 1);
-      return;
-    }
-    setDir(-1);
     const h = hist.slice();
     const prev = h.pop();
     if (!prev) return;
     setHist(h);
     setStep(prev);
-    if (prev === 'rkM') setCi(Math.max(0, fresh.length - 1));
     setAdding(false);
   };
 
   /* the first answer: saves the entry (or changes it, when coming back) */
   const pick = (v: Outcome) => {
     let id = evId;
-    let days = snap.days;
-    let key = date;
     /* a new entry (not a change to one already saved) */
     const made = !(ev && id);
     if (ev && id) {
       if (outcome !== v)
-        days = update((s) => ({
+        update((s) => ({
           ...s,
           days: patchEvent(
             s.days,
@@ -206,23 +172,22 @@ export default function Log() {
               ? { outcome: 'rode', recovered: false, paused: full ? true : null, did: from === 'pause' ? didIds(['pause']) : null }
               : { outcome: 'slipped', paused: null, did: null },
           ),
-        })).days;
+        }));
     } else {
       setPts0(g.pts);
       const at = whenEntry(when, roll);
-      key = at.key;
-      days = update((s) => {
+      update((s) => {
         const r = addEvent(s.days, at.key, v, at.time);
         id = r.id;
         return { ...s, days: r.days };
-      }).days;
+      });
       setEvId(id);
       setDate(at.key);
     }
     setOutcome(v);
     if (made) count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
     buzz('save');
-    go(v === 'slipped' ? (rkSeen ? 'done' : rkStepFor(days, key)) : 'trigger');
+    go(v === 'slipped' ? 'slWait' : 'trigger');
   };
   const patch = (p: Partial<DayEvent>) => {
     if (!evId) return;
@@ -298,9 +263,12 @@ export default function Log() {
     </View>
   ) : null;
 
-  /* the progress dots of the full Rekindle: the embers, the feeling, the cards, the record, the run question, the quest */
-  const rkN = 2 + (known.length ? 1 : 0) + fresh.length + (runQ ? 1 : 0) + 2;
-  const rkDots = (i: number) => ({ n: rkN, i, label: i >= rkN - 1 ? 'All done' : 'Step ' + (i + 1) + ' of ' + rkN });
+  /* the progress dots of a slip: the wait (when it was asked here), the hold, what comes next */
+  const slSteps: Step[] = (handed ? [] : (['slWait'] as Step[])).concat('slHold', 'slNext');
+  const slDots = () => {
+    const i = Math.max(0, slSteps.indexOf(step));
+    return { n: slSteps.length, i, label: 'Step ' + (i + 1) + ' of ' + slSteps.length };
+  };
 
   /* ---------- the steps ---------- */
   let body: React.ReactNode;
@@ -418,19 +386,71 @@ export default function Log() {
       </>
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
-  } else if (step === 'rk0') {
-    const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
-    const honor = rkHonor(snap.days, st, tk, date);
-    sky = 'ember';
-    title = 'Rekindle';
-    dots = rkDots(0);
+  } else if (step === 'slWait') {
+    /* 1. did you wait first? The slider starts at 0 ("I did not wait"); Next keeps the minutes on the slip */
+    const v = wait ?? (typeof ev?.wm === 'number' ? ev.wm : 0);
+    sky = 'sun';
+    title = 'Log a slip';
+    dots = slDots();
     body = (
       <>
-        <Embers level={Math.max(1, e.level)} lit={lit} onLit={() => setLit(true)} />
+        {saved}
         <T v="title" style={s.h} accessibilityRole="header">
-          {e.h}
+          Did you wait first?
         </T>
-        <T style={s.center}>{e.p}</T>
+        <T tone="muted" style={s.center}>
+          Slide to how long you held off before it happened.
+        </T>
+        <View style={s.middle}>
+          <SliderValue big value={v} show={rkWaitShow} unit={rkWaitUnit(v)} />
+          <Appear key={v === 0 ? 'no' : v < 5 ? 'few' : v < RK_WAIT_MAX ? 'more' : 'max'} by={6} duration={220}>
+            <T style={[s.center, s.kind]}>{rkWaitLine(v)}</T>
+          </Appear>
+        </View>
+        <Dock>
+          <Slider
+            label="Minutes you waited first"
+            value={v}
+            min={0}
+            max={RK_WAIT_MAX}
+            step={1}
+            show={rkWaitShow}
+            unit="minutes"
+            lo="I did not wait"
+            hi="30 or more"
+            endsShowValue={false}
+            readout={false}
+            onChange={setWait}
+          />
+          <Button
+            label="Next"
+            onPress={() => {
+              patch(rkWaitFields(v));
+              buzz('tap');
+              go('slHold');
+            }}
+          />
+        </Dock>
+      </>
+    );
+    footer = <Link label="Change time" tone="muted" onPress={() => setWhenOpen(true)} />;
+  } else if (step === 'slHold') {
+    /* 2. press and hold to rekindle: the only way on. Once it is held, what is still yours, and the run kept for now */
+    const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
+    const w = rkHoldWords(lit, !!ev?.sp);
+    const honor = lit ? rkHonor(snap.days, st, tk, date) : null;
+    const open = lit ? rkAskOpen(snap.days, st, tk, date) : null;
+    const line = open ? rkKeptForNow(open, tk) : e.line;
+    sky = 'ember';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <EmberArt level={Math.max(1, e.level)} hold={hold} />
+        <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
+          {w.h}
+        </T>
+        <T style={s.center}>{w.p}</T>
         {e.kept.length ? (
           <View style={[s.keptBox, { borderColor: 'rgba(140,240,206,0.35)' }]} accessibilityLabel="What you kept">
             <T v="eyebrow" style={{ color: '#8CF0CE' }}>
@@ -446,254 +466,49 @@ export default function Log() {
             ))}
           </View>
         ) : null}
-        {lit && honor ? (
+        {honor ? (
           <Appear delay={350 + e.kept.length * 260} by={6}>
             <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T>
           </Appear>
         ) : null}
-        {e.line ? <LineNote b={e.line.b} rest={e.line.rest} night /> : null}
-        {lit ? (
-          <Dock>
+        {line ? <LineNote b={line.b} rest={line.rest} night /> : null}
+        <Dock>
+          {lit ? (
             <Appear delay={500 + e.kept.length * 260} by={10}>
-              <Button label="What just happened?" onPress={() => go('rkF')} />
+              <Button label="Next" onPress={() => go('slNext')} />
             </Appear>
-          </Dock>
-        ) : null}
-      </>
-    );
-    footer = <Link label={hour >= 18 || hour < 5 ? 'Close for tonight' : 'Close for now'} onPress={close} tone="muted" />;
-  } else if (step === 'rkF') {
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = rkDots(1);
-    body = (
-      <>
-        <T v="eyebrow" tone="muted">
-          What just happened
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          Right now, how do you feel?
-        </T>
-        <T tone="muted" style={s.center}>
-          Pick any. What comes next fits it.
-        </T>
-        <Dock>
-          <View style={s.list}>
-            {RK_FEELS.map(([k, words, sub, ic, tone]) => (
-              <Answer
-                key={k}
-                multi
-                icon={ic}
-                tone={tone}
-                title={words}
-                sub={sub}
-                on={feels.indexOf(k) >= 0}
-                onPress={() => setFeels(feels.indexOf(k) >= 0 ? feels.filter((x) => x !== k) : feels.concat(k))}
-              />
-            ))}
-          </View>
-          <Button label="Next" onPress={() => go(known.length ? 'rkK' : fresh.length ? 'rkM' : 'rkC')} />
+          ) : (
+            <HoldButton hold={hold} />
+          )}
         </Dock>
       </>
     );
-  } else if (step === 'rkK') {
+  } else if (step === 'slNext') {
+    /* 3. talk it through, or close */
     sky = 'sun';
     title = 'Rekindle';
-    dots = rkDots(2);
+    dots = slDots();
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          What just happened
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          You know these already
-        </T>
+        {saved}
         <View style={s.middle}>
-          {known.map((x, i) => (
-            <Appear key={x.k} delay={100 + i * 80} by={8} style={{ alignSelf: 'stretch' }}>
-              <KnownLine short={x.short} body={x.body} src={x.src} map={RK_SRC} art={<RkArtView k={x.k} />} />
-            </Appear>
-          ))}
-        </View>
-        <Dock>
-          <Button label="Next" onPress={() => go(fresh.length ? 'rkM' : 'rkC')} />
-        </Dock>
-      </>
-    );
-  } else if (step === 'rkM' && card) {
-    const last = ci >= fresh.length - 1;
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = rkDots(2 + (known.length ? 1 : 0) + ci);
-    body = (
-      <Appear key={card.k} x={36 * dir} by={0} duration={260} style={s.stage}>
-        <T v="eyebrow" tone="muted">
-          What just happened{fresh.length > 1 ? ' · ' + (ci + 1) + ' of ' + fresh.length : ''}
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          {card.title}
-        </T>
-        <RkArtView k={card.k} />
-        <T style={s.body}>{card.body}</T>
-        <Sources keys={card.src} map={RK_SRC} />
-        <Dock>
-          <Button
-            label="Next"
-            onPress={() => {
-              if (last) go('rkC');
-              else {
-                setDir(1);
-                setCi(ci + 1);
-              }
-            }}
-          />
-        </Dock>
-      </Appear>
-    );
-  } else if (step === 'rkC') {
-    const cb = rkComebacks(snap.days, st, date);
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = rkDots(rkN - (runQ ? 3 : 2));
-    body = (
-      <>
-        <T v="eyebrow" tone="muted">
-          Your record
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          {cb.before ? 'You have done this before.' : 'Your first comeback starts now.'}
-        </T>
-        <View style={s.middle}>
-          <Comebacks cb={cb} />
-          <Appear delay={300 + cb.runs.length * 90} by={8}>
-            <T style={[s.center, { fontFamily: font.bodySemi }]}>{rkComebackLine(cb)}</T>
-          </Appear>
-        </View>
-        <Dock>
-          <Button
-            label={runQ ? 'Next' : 'See my quest'}
-            onPress={() => {
-              if (runQ) {
-                setRunAsked(true);
-                go('rkR');
-                return;
-              }
-              setRkSeen(true);
-              go('done');
-            }}
-          />
-        </Dock>
-      </>
-    );
-  } else if (step === 'rkR' && runQ) {
-    /* the run question, at the end: both answers are good ones, each saying plainly what it means. "Decide in the morning"
-       goes on to the quest with the run kept for now, and the sunrise check asks again. */
-    const choice = rkChoice(snap.days, st, tk, runQ);
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = rkDots(rkN - 2);
-    body = (
-      <>
-        <T v="eyebrow" tone="muted">
-          Your run
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          {'Your ' + runQ.run + '-day run'}
-        </T>
-        <T style={s.center}>{choice.line}</T>
-        <View style={s.middle} accessible accessibilityLabel={runQ.run + ' days in a row'}>
-          <T v="big" style={s.runN}>
-            {String(runQ.run)}
+          <Flame level={Math.max(1, g.level.n)} size={110} />
+          <T v="title" style={s.h} accessibilityRole="header">
+            Learn from it while it is fresh.
           </T>
-          <T tone="muted">days in a row</T>
+          <T style={s.center}>Talk it through: what you were after, and what you will do instead next time. It takes 1 to 2 minutes.</T>
         </View>
         <Dock>
-          <BigOption
-            tone="sun"
-            icon="flame"
-            title="Keep it going"
-            sub={choice.keep}
-            selected={runQ.keep == null ? null : runQ.keep}
-            onPress={() => chooseRun(true)}
+          <Button
+            label="Talk it through"
+            onPress={() => {
+              buzz('tap');
+              router.replace({ pathname: '/talk', params: { after: '1' } });
+            }}
           />
-          <BigOption
-            tone="mint"
-            icon="sparkle"
-            title="Start fresh"
-            sub={choice.fresh}
-            selected={runQ.keep == null ? null : !runQ.keep}
-            onPress={() => chooseRun(false)}
-          />
-        </Dock>
-      </>
-    );
-    footer =
-      runQ.keep == null ? (
-        <Link
-          label="Decide in the morning"
-          onPress={() => {
-            setRkSeen(true);
-            go('done');
-          }}
-        />
-      ) : null;
-  } else if (step === 'rkl') {
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = null;
-    body = (
-      <>
-        {saved}
-        <Flame level={Math.max(1, g.level.n)} size={84} />
-        <T v="title" style={s.h} accessibilityRole="header">
-          Logged. Honest takes guts.
-        </T>
-        <T style={s.center}>{rkLightLine(snap.days, st, date, tk, now)}</T>
-        <Dock>
-          <WaitPicker cur={ev?.wt} onPick={(w) => patch({ wt: ev?.wt === w ? null : w })} />
-          <View style={{ width: '100%', gap: 6 }}>
-            <Chip
-              label={ev?.recovered ? '✓ One small thing done' : 'I did one small thing'}
-              on={!!ev?.recovered}
-              onPress={() => patch({ recovered: !ev?.recovered })}
-            />
-            <T v="small" tone="muted">
-              Water, step outside, or text someone. One small step keeps one slip from turning into two.
-            </T>
+          <View style={{ alignItems: 'center' }}>
+            <Link label="Close" tone="muted" onPress={close} />
           </View>
-          <Button label="Done" onPress={close} />
-          <Link label="Show me the full Rekindle" onPress={() => go('rk0')} />
-        </Dock>
-      </>
-    );
-  } else if (outcome === 'slipped') {
-    /* the closing screen after a slip is the Rekindle quest */
-    const q = rkQuest(snap.days, st, tk, date, ev, hour);
-    sky = 'sun';
-    title = 'Rekindle';
-    dots = rkSeen ? rkDots(rkN - 1) : null;
-    body = (
-      <>
-        {saved}
-        <Flames on={q.flames} big />
-        <T v="title" style={s.h} accessibilityRole="header">
-          {q.h}
-        </T>
-        <T style={s.center}>{q.p}</T>
-        {q.askWait ? <WaitPicker cur={ev?.wt} onPick={(w) => patch({ wt: ev?.wt === w ? null : w })} /> : null}
-        <Missions
-          list={q.missions}
-          onAction={(m, act) => {
-            if (act === 'small') {
-              patch({ recovered: true });
-              count('rk_small');
-            } else if (act === 'trace' || act === 'tell') router.push({ pathname: '/deeper', params: { k: date, kind: act } });
-          }}
-        />
-        <Prize b={q.prize.b} s={q.prize.s} />
-        {noteAndTime}
-        <Dock>
-          <Button label={q.done} onPress={close} />
         </Dock>
       </>
     );
@@ -778,38 +593,15 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo:
   );
 }
 
-function Prize({ b, s: sub }: { b: string; s: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.prize, { backgroundColor: c.surface }]}>
-      <View style={[s.badge, { backgroundColor: c.sun }]}>
-        <Icon name="flame" size={22} color={c.onSun} />
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <T v="label">{b}</T>
-        <T v="small" tone="muted">
-          {sub}
-        </T>
-      </View>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   h: { textAlign: 'center' },
   center: { textAlign: 'center' },
-  body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
-  stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
-  runN: { fontSize: 84, lineHeight: 92 },
+  kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
-  list: { alignSelf: 'stretch', gap: 9 },
   keptBox: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
   keptCk: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8CF0CE', alignItems: 'center', justifyContent: 'center' },
-  opts: { width: '100%', gap: 10 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   kept: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  prize: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, alignSelf: 'stretch' },
-  badge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

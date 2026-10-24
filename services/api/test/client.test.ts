@@ -135,6 +135,18 @@ describe('two devices of one person', () => {
     for (const d of [a, b]) expect(d.snap.days[k].events[0].keep).toBe(false);
   });
 
+  it('the minutes waited before a slip go across with it', async () => {
+    const k = '2026-10-16';
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, days: core.addEvent(s.days, k, 'slipped', '22:00', { id: 's2', ...core.rkWaitFields(12) }, 100).days }), 100);
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(b.snap.days[k].events[0].wm).toBe(12);
+    expect(b.snap.days[k].events[0].wt).toBe(10);
+  });
+
   it('a deleted day stays deleted, and an older copy does not bring it back', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

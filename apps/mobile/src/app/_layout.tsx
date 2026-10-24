@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
 import { Toast } from '@/components/toast';
+import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
@@ -102,6 +103,8 @@ function Shell() {
   const c = useTheme();
   const { ready, snap } = useStore();
   useKeepPulse(ready, snap.days);
+  /* the day's first open, for "How are you feeling today?" on Today (lib/day-open.ts) */
+  useWatchOpens(ready, snap.settings?.rollover ?? 4, !!snap.settings);
   const [fonts, fontError] = useFonts({
     Fredoka_600SemiBold,
     Fredoka_700Bold,

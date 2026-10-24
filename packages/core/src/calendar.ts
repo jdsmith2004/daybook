@@ -4,6 +4,7 @@
    happened (each entry with its time, what set it off and what helped), the check-in at a glance, and the rest of the
    day (tools used, lessons read, a talk-through, phone away, hard hours held). Checked by test/calendar.test.ts. */
 import { awayGapAt, awayGaps, awaySlipDay } from './away';
+import { dayFeelOf } from './day-feel';
 import { addDays, dayPoints, fmtDate, LESSONS, runLedger, sortedEvents, statusOf, sumDay } from './legacy/core.js';
 import { logStart } from './log-start';
 import { urSosLines, urTool } from './sos';
@@ -178,6 +179,8 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
   const p = d && d.p;
   const more: { ic: string; t: string }[] = [];
   if (p) {
+    const f = dayFeelOf(d);
+    if (f) more.push({ ic: 'sun', t: 'Felt ' + f.w.toLowerCase() + ' that day' });
     const tools = p.tl.map((id) => urTool(id)?.name).filter((x): x is string => !!x);
     if (tools.length) more.push({ ic: 'wind', t: 'Tools: ' + tools.join(', ') });
     const L = LESSONS as unknown as { id: string; title: string }[];

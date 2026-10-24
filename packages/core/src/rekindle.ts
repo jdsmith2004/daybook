@@ -495,7 +495,9 @@ export function sunriseDue(days: Days, st: Settings | null, tk: DayKey): Rekindl
     const r = rkOf(days, k, st);
     if (!r || r.m3) return null;
     if (i === 1) return r;
-    return runLedger(days, st, tk).kind[k] === 'open' ? r : null;
+    /* the run that still waits (L.open), not the ledger's mark on the slip day: kind[k] stays 'open' after a slip today
+       ends that run, which kept the sunrise check named on Today ("and one more") for a run that was already over */
+    return runLedger(days, st, tk).open?.k === k ? r : null;
   }
   return null;
 }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
-import { rkAsk, rkKeep } from '../src/rekindle';
+import { rkAsk, rkKeep, srDone, sunriseDue } from '../src/rekindle';
 import type { Days } from '../src/types';
 
 /* started October 7, Day 1 October 14; October 18 is a Sunday */
@@ -91,6 +91,34 @@ describe('a slip, and the day after', () => {
     for (const m of [...moments(d, st, {}, '2026-10-21', at(21, 23, 30)), ...moments(d, st, {}, '2026-10-22', at(22, 8))]) {
       expect(m.h + ' ' + m.p).not.toMatch(/n't|'s |failed|lost|reset to|start over/i);
     }
+  });
+});
+
+describe('"and one more" clears once the sunrise check is done that day (bug, October 24)', () => {
+  /* Day 1 October 1: a slip on Wednesday the 21st ends a 20-day run, which waits for the quest until Saturday night */
+  const s0 = normSettings({ start: '2026-10-01', day1: '2026-10-01' });
+  const d = slip({}, '2026-10-21');
+  it('a later slip ends the run: the earlier slip’s sunrise check is not named any more', () => {
+    /* another slip on Friday: the ledger still marks Wednesday "open", but no run waits now */
+    const again = slip(d, '2026-10-23', '12:00');
+    expect(sunriseDue(again, s0, '2026-10-23')).toBeNull();
+    const all = moments(again, s0, {}, '2026-10-23', at(23, 13));
+    expect(all.map((m) => m.k)).toEqual(['slip-day', 'calm']);
+    expect(all.map((m) => m.one).join(' ')).not.toMatch(/sunrise/);
+  });
+  it('while the run waits, behind another card: named once, and gone as soon as the check is done', () => {
+    const tk = '2026-10-22';
+    const before = pickMoment(d, s0, {}, tk, at(22, 9), { pause: true });
+    expect(before.more).toMatchObject({ k: 'run-ask', one: 'a question about your run' });
+    /* coming back marks the check (Today, srDone), and the question is answered in it */
+    const due = sunriseDue(d, s0, tk)!;
+    let done = srDone(d, due.k, due.ev.id, tk);
+    done = rkKeep(done, s0, tk, '2026-10-21', rkAsk(done, s0, tk, '2026-10-21')!.evId, true, 3)!;
+    for (const h of [9, 13, 20]) {
+      expect(pickMoment(done, s0, {}, tk, at(22, h), { pause: true }).more).toBeNull();
+      expect(kinds(done, tk, at(22, h), s0)).not.toContain('run-ask');
+    }
+    expect(sunriseDue(done, s0, tk)).toBeNull();
   });
 });
 

@@ -21,7 +21,9 @@
    Sign in with Apple (apple-sign-in.ts):
    POST   /sync/apple { token, nonce }   the second open door: Apple's identity token for Cognito tokens { tokens }
    POST   /sync?apple=link { token, nonce } join Apple to the signed-in account; gives { apple }
-   DELETE /sync?all=1 { apple: { code, client } } closing an Apple account: Apple's fresh code is traded and revoked first
+   DELETE /sync?all=1 { apple: { code, client } } closing an Apple account: Apple's fresh code is traded and revoked first;
+                  with no code, an account joined to Apple answers 409 { code: 'NeedApple' } and nothing is deleted, so the app
+                  asks Apple; { apple: { skip: true } } is a device that cannot ask Apple (Android), and closes it anyway
 
    Saving records (POST /sync) needs a supporter, or an account from before tips (grandfathered); otherwise it answers
    402 { need: 'support' } and saves nothing. Everything else stays open to every signed-in person, so nobody is ever cut
@@ -65,6 +67,8 @@ export interface AppleDeps {
   revoke?: RevokeApple;
   /** the client id Apple gave a code to: the bundle id on iPhone, the Services ID on the web */
   clientIds?: { ios: string; web: string };
+  /** the Apple ID an account signs in with, or null (an email account); read when an account is closed without Apple's code */
+  appleOf?: (username: string) => Promise<string | null>;
   /** a line for the function's log (never a token) */
   log?: (msg: string) => void;
 }
@@ -240,14 +244,19 @@ export function makeHandler(
     if (method === 'DELETE') {
       const all = q.all === '1';
       /* closing an account that signs in with Apple: Apple is told to forget Daybook first (Apple's rule). The account is
-         closed either way; a code that does not work only leaves a line in the log. */
+         closed either way once the app has tried; a code that does not work only leaves a line in the log. An account
+         joined to Apple that comes with no code (signed in here with the password) is sent back for one, so Apple is
+         asked whichever way the person signed in on this device. */
       if (all) {
-        const a = claimBody(event)?.apple as { code?: unknown; client?: unknown } | undefined;
-        if (a && typeof a === 'object' && apple.revoke && apple.clientIds) {
+        const raw = claimBody(event)?.apple;
+        const a = raw && typeof raw === 'object' ? (raw as { code?: unknown; client?: unknown; skip?: unknown }) : null;
+        if (a?.skip === true) apple.log?.('apple revoke on close: skipped (this device cannot ask Apple)');
+        else if (a && apple.revoke && apple.clientIds) {
           const id = a.client === 'web' ? apple.clientIds.web : apple.clientIds.ios;
           const r = id ? await apple.revoke(a.code, id) : 'no-key';
           apple.log?.('apple revoke on close: ' + r);
-        }
+        } else if (!a && apple.appleOf && (await apple.appleOf(username).catch(() => null)))
+          return json(409, { code: 'NeedApple', error: 'This account signs in with Apple too, so Apple is asked once more. Nothing was deleted.' });
       }
       /* closing the account: the tips linked to it are let go first, so nothing is left that points to it */
       if (all) await store.dropClaims(user);

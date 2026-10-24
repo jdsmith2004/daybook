@@ -145,6 +145,10 @@ export const handler = makeHandler(
           p8: ssmSecret(process.env.APPLE_KEY_PARAM || '/daybook/apple-key'),
         }),
         clientIds: { ios: appleIos, web: appleWeb },
+        async appleOf(username) {
+          const u = await cognito.send(new AdminGetUserCommand({ UserPoolId: pool, Username: username }));
+          return appleSubOf(attrs(u.UserAttributes));
+        },
         log: (m) => console.log(m),
       }
     : {},

@@ -513,18 +513,31 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   }, [callApi, round]);
 
   const deleteAccount = useCallback(async () => {
-    /* Apple's fresh code goes with the delete, and the server revokes it. Where Apple cannot be asked (Android), the account
-       is still closed; the person can stop Daybook in their Apple ID settings. */
-    let body: unknown;
-    if (sessionRef.current?.apple && (await appleOffered())) {
+    /* Apple's fresh code goes with the delete, and the server revokes it. An account signed in here with Apple asks Apple
+       first; one joined to Apple but signed in here with the password is sent back by the server (NeedApple) and asks
+       then. Where Apple cannot be asked (Android), the account is still closed; the person can stop Daybook in their Apple
+       ID settings. */
+    const askForCode = async (): Promise<{ body: unknown } | { msg: string }> => {
+      if (!(await appleOffered())) return { body: { apple: { skip: true } } };
       try {
         const a = await askApple();
-        body = { apple: { code: a.code, client: a.client } };
+        return { body: { apple: { code: a.code, client: a.client } } };
       } catch (e) {
-        return { ok: false, msg: e instanceof CognitoError && e.code !== 'AppleCancel' ? e.message : APPLE_WORDS.deleteNeedsApple + ' Nothing was deleted.' };
+        return { msg: e instanceof CognitoError && e.code !== 'AppleCancel' ? e.message : APPLE_WORDS.deleteNeedsApple + ' Nothing was deleted.' };
       }
+    };
+    let body: unknown;
+    if (sessionRef.current?.apple && (await appleOffered())) {
+      const c = await askForCode();
+      if ('msg' in c) return { ok: false, msg: c.msg };
+      body = c.body;
     }
-    const r = await callApi('DELETE', '?all=1', body);
+    let r = await callApi('DELETE', '?all=1', body);
+    if (r && r.status === 409 && r.body.code === 'NeedApple') {
+      const c = await askForCode();
+      if ('msg' in c) return { ok: false, msg: c.msg };
+      r = await callApi('DELETE', '?all=1', c.body);
+    }
     if (!r) return { ok: false, msg: 'Could not reach your account. Nothing was deleted.' };
     /* the log is gone, the sign-in is not yet: asking again finishes it */
     if (r.status !== 200) return { ok: false, msg: String(r.body.error || 'Could not reach your account. Nothing was deleted.') };

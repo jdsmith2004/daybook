@@ -1,6 +1,7 @@
 /* Accounts. Daybook works fully without one: SOS, logging, Rekindle, the plan, the tools and Today never check for an
    account. An account adds sync and a copy kept safe, and opens every lesson: without one, the first LEARN_FREE lessons in the
-   daily order are open, and any lesson already finished stays open.
+   daily order are open, and any lesson already finished stays open. This sits on top of the path's own order (lessons.ts
+   lessonGate: one lesson opens at a time), which holds with an account or without.
 
    Daybook asks at good moments only (after the first level-up, or after the first week) and never in a hard one (not on a day
    with a slip, or the day after). "Not now" waits ACCT_WAIT days. Checked by test/accounts.test.ts. */

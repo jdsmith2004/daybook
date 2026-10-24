@@ -226,6 +226,8 @@ export function playbookText(
   lessons: { id: string; title: string; key: string; np: string }[],
   index: (id: string) => number,
   checks: { t: string; q: string[] }[],
+  /** the number a person sees for checkpoint n, and the order they come in (lessons.ts lcheckNo: the path's order) */
+  checkNo: (n: number) => number = (n) => n,
 ) {
   const notes = (st.learn && st.learn.notes) || {};
   const picks = (st.learn && st.learn.picks) || {};
@@ -259,12 +261,13 @@ export function playbookText(
   }
   const wrote = checks
     .map((C, k) => ({ n: k + 1, C, a: (st.learn.wr && st.learn.wr['c' + (k + 1)] && st.learn.wr['c' + (k + 1)].a) || ['', '', ''] }))
-    .filter((x) => x.a.some((t) => t.trim()));
+    .filter((x) => x.a.some((t) => t.trim()))
+    .sort((a, b) => checkNo(a.n) - checkNo(b.n));
   if (wrote.length) {
     o.push('');
     o.push('What I wrote');
     wrote.forEach((x) => {
-      o.push('Checkpoint ' + x.n + ': ' + x.C.t);
+      o.push('Checkpoint ' + checkNo(x.n) + ': ' + x.C.t);
       x.C.q.forEach((q, i) => {
         if (x.a[i] && x.a[i].trim()) o.push('- ' + q + '\n  ' + x.a[i].replace(/\r?\n/g, '\n  '));
       });

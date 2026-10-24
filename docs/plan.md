@@ -8,10 +8,48 @@ questions removed (coming back counts as the sunrise check; a morning-only card 
 more: your sunrise check" line fixed; the next stop in Your day grows into a card with its own button; Log a slip is three
 screens (did you wait first, hold to rekindle, talk it through or close). The SOS button in the tab bar stays, by the owner's choice.
 
-Waiting on the owner: lesson order. Three designs were drawn. Recommended: "Your road", the map built from the order the person
-walked it, Up next big, the rest grayed but open, done lessons keep their number for good (numbers move once when it ships).
-Fallback: Up next first, the rest folded (no renumbering). Fix the checkpoint pairing (it follows LESSONS, not the path) in the
-same round, keeping saved writing with its lessons.
+**Lesson order: the owner decided (October 24, 2026): lessons open one at a time, in path order.** Nothing finished ever
+shows after Up next on the Learn map (done lessons past Up next "make the app feel poorly thought out"), and lessons need
+no lock (the owner: "lessons don't need a lock"). **Done** (helps the person: the next step is always the one lesson, and
+the map reads as a road walked; helps Daybook: the account rule on top of it is unchanged).
+
+- **The rule** (core `lessons.ts`: `lessonWalk`, `lessonGate`, `nextAfter`). Up next and every lesson behind it open in
+  full (reading again is always allowed); a lesson further on opens as its key idea. The account rule stays on top
+  (`accounts.ts lessonOpen`). Today, the lesson reminder, the hard-hours card and the map all read Up next from the walk.
+  No rate limit: two in a row is fine.
+- **The map** keeps its look: done stones with a check, Up next bright and raised with the pin, its ring now filling as its
+  section does. Every stone after Up next is quiet (flat, a soft gray-tinted version of its section's color, its number,
+  no lock), and a land still wholly ahead has its picture drawn quiet. A quiet stone's card says "Opens after lesson N"
+  with a button to Up next. When Up next moves on, a few sparks fly from the new stone once (they only fade under Reduce
+  Motion). The free-account line above the map lost its lock icon too (a shield now).
+- **Links to a lesson further on** (help pages, My plan, the review's "Why it matters", nudges, the hard-hours card,
+  tools) open a one-card key idea in `lesson/[id].tsx`: the title, the question it answers and its key (`L.key`, the same
+  line its Done card shows; every lesson has one, so no new field was needed), the tools it points to (practice `go`, care,
+  never locked), and "This is lesson N on your path. It opens as you go." It saves nothing and earns nothing. Help pages
+  say "The key idea, for now" under such a lesson.
+- **Lessons read before this rule** stay finished with their points (`lessonsEarly` reads them from the order lessons
+  were finished). On the map they are quiet stones until the path reaches them; then Up next is that lesson as usual, and
+  it opens as a welcome back: the flame, "You read this one on <date>.", the key idea, its own recall question
+  (`lessonBackRecall`, plain "Quick recall"; once answered, the next lesson does not ask it again that day while the
+  app stays open: `lessonRecallOf`'s `asked`), then "Keep going"
+  (`lessonReach`: a marker in `settings.learn.back`, no points, no lesson day, kept through a sync join) and a quiet
+  "Read it all again" (the full lesson; finishing it also moves the path on, and earns the usual read-again points).
+  Keep going opens the new Up next.
+- **Checkpoints follow the path** (`lcheckPair`, `lcheckOrder`, `lcheckNo`). Each checkpoint keeps its two lessons and
+  its record (`wr.c1` to `wr.c16`), so writing is never re-labeled; the pairs were always two lessons of one section,
+  side by side on the path. What changed: one comes after its later lesson is reached, in path order (the faith
+  section's two come before Skills for the moment), and the number shown is its place on the path (Learn, the checkpoint
+  screen, My plan, the copied playbook). The checkpoint screen said "lessons 2n-1 and 2n"; it now gives their path
+  numbers.
+- **Golden fixtures** `random-11` and `random-23` were edited by hand: both logs read a lesson early, so Today's lesson
+  line now names that lesson's welcome back.
+- **Screenshot mode** froze on `/lesson/<id>?at=practiced`: the studio read `?at=` as the demo clock, and a word is not a
+  date. Only a date sets the clock now. The real app never had the problem.
+
+Chosen on the owner's behalf: the history list under the map ("In the order you finished them") still lists lessons read
+early, as a record; the count above the map counts the road walked. If a lesson is ever added in the middle of the path,
+everything finished after it becomes "read early" and gets a welcome back, by this same rule. **Not tested:** iPhone and
+Android (web only); the sparks with full motion on a phone; a sync between two devices with welcome backs passed.
 
 ## Setup as a story: three acts, three payoffs (the owner, October 22, 2026)
 

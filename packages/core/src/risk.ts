@@ -12,7 +12,7 @@
    never taken away, so "hard hours held" only ever goes up. */
 import { lessonOpen } from './accounts';
 import { addDays, blankP, diffDays, eventsOf, LESSONS } from './legacy/core.js';
-import { firstUndone, lessonNo, lessonsDone, lessonStop, reviewPick, type Lesson } from './lessons';
+import { lessonNo, lessonStop, lessonWalk, reviewPick, type Lesson } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { talksOf } from './talk';
 import type { DayKey, Days, Settings } from './types';
@@ -169,10 +169,10 @@ export function riskDay(days: Days, st: Settings, k: DayKey, now: number): RiskD
     Null once a lesson was finished or read again today. */
 export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true): { L: Lesson; n: number; again: boolean } | null {
   if (lessonStop(days, st, tk).kind === 'read') return null;
-  const done = lessonsDone(days);
-  const nl = firstUndone(done);
-  if (nl && lessonOpen(nl, done, account)) return { L: nl, n: lessonNo(nl), again: false };
-  const read = (LESSONS as Lesson[]).filter((L) => lessonOpen(L, done, account));
+  const w = lessonWalk(days, st);
+  const nl = w.next;
+  if (nl && lessonOpen(nl, w.done, account)) return { L: nl, n: lessonNo(nl), again: false };
+  const read = (LESSONS as Lesson[]).filter((L) => w.walked.has(L.id));
   const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
   return { L: R, n: lessonNo(R), again: true };
 }

@@ -1,5 +1,6 @@
 /* Learn: the short lessons, and the tools to try when it is calm. The lessons are a map (components/lesson-map): stepping
-   stones through a land for each section, in the order of the path. The page opens with the next lesson in view, and a
+   stones through a land for each section, in the order of the path, which opens one lesson at a time (core lessonWalk).
+   The page opens with the next lesson in view, and a
    card floats at the top to say which section is on screen (a tap brings the next lesson back). Under the map: the lessons
    in the order they were finished, and what was learned. Ported from the legacy viewLearn, lessonsBody and toolsBody. */
 import {
@@ -7,6 +8,8 @@ import {
   changeSettings,
   gameCompute,
   lcheckDue,
+  lcheckNo,
+  lcheckPair,
   LCHECKS,
   type Lesson,
   LESSONS,
@@ -16,6 +19,7 @@ import {
   lessonsDone,
   lessonsLocked,
   lessonTimeline,
+  lessonWalk,
   LEARN_FREE,
   lfDate,
   LUNITS,
@@ -56,14 +60,14 @@ export default function Learn() {
   const { snap } = useStore();
   const inset = useSafeAreaInsets();
   const scroll = useRef<ScrollViewInstance>(null);
-  const done = useMemo(() => lessonsDone(snap.days), [snap.days]);
-  const doneKey = [...done].sort().join(' ');
+  const walk = useMemo(() => lessonWalk(snap.days, snap.settings), [snap.days, snap.settings]);
+  const walkKey = [...walk.walked].join(' ') + '|' + (walk.next ? walk.next.id : '');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const m = useMemo(() => lessonMap(done), [doneKey]);
+  const m = useMemo(() => lessonMap(walk), [walkKey]);
   /* where the map is on the page (its top, and its scale), how far the page has scrolled, and how tall the screen is */
   const geo = useRef({ pane: -1, map: -1, k: 1, y: 0, h: 700 });
   const [view, setView] = useState<{ focus: number; win: [number, number]; hide: number }>({ focus: -1, win: [0, 2], hide: -1 });
-  const due = snap.settings ? lcheckDue(snap.days, snap.settings) : 0;
+  const due = snap.settings ? lcheckDue(snap.days, snap.settings, walk) : 0;
   const top = () => inset.top + 16 + geo.current.pane + geo.current.map;
   const look = () => {
     const g = geo.current;
@@ -149,7 +153,7 @@ export default function Learn() {
         <T tone="muted">
           {pane === 'tools'
             ? 'Try the tools when it is calm, so you know what works when it is not.'
-            : `${done.size} of ${LESSONS.length} done. One short lesson a day is plenty.`}
+            : `${walk.walked.size} of ${LESSONS.length} done. One short lesson a day is plenty.`}
         </T>
       }>
       <Segments
@@ -217,7 +221,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
           onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })}
           style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
           <Icon name="pencil" size={16} color={c.violetText} />
-          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {due} is ready: write it out</Text>
+          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due)} is ready: write it out</Text>
           <Icon name="next" size={16} color={c.violetText} />
         </Pressable>
       ) : null}
@@ -236,11 +240,12 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
   const [past, setPast] = useState(false);
   const done = lessonsDone(snap.days);
   const n = done.size;
-  const tl = lessonTimeline(snap.days);
+  const tl = lessonTimeline(snap.days, st);
   const dates = useMemo(() => Object.fromEntries(tl.past.map((x) => [x.L.id, lfDate(x.k, tk)])), [tl.past, tk]);
   const todays = snap.days[tk]?.p?.ls;
   const today = useMemo(() => new Set(todays || []), [todays]);
   const due = lcheckDue(snap.days, st);
+  const pair = due ? lcheckPair(due) : null;
   const account = useAccount();
   const sync = useSync();
   const open = (L: Lesson) => lessonOpen(L, done, account);
@@ -259,8 +264,8 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
             <View style={{ flex: 1, gap: 2 }}>
               <T v="h2">Write it out</T>
               <T v="small">
-                Checkpoint {due}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {lessonNo(LESSONS[2 * due - 2])} and{' '}
-                {lessonNo(LESSONS[2 * due - 1])}. 3 to 5 minutes, no points, only you see it.
+                Checkpoint {lcheckNo(due)}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {pair ? lessonNo(pair.a) : ''} and{' '}
+                {pair ? lessonNo(pair.b) : ''}. 3 to 5 minutes, no points, only you see it.
               </T>
             </View>
           </View>
@@ -270,7 +275,7 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
 
       {!account && waiting ? (
         <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
-          <Icon name="lock" size={18} color={c.accentText} />
+          <Icon name="shield" size={18} color={c.accentText} />
           <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
             {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
           </T>

@@ -25,7 +25,7 @@ import {
   type RhythmStop,
 } from './legacy/core.js';
 import { lessonOpen } from './accounts';
-import { firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
+import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
@@ -455,15 +455,16 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
     pips: r.stops.map((x) => (x.done ? 'on' : x.k === s.k ? 'now' : '')),
   };
   if (s.k === 'lesson') {
-    const doneIds = lessonsDone(days);
-    const nl = firstUndone(doneIds);
-    if (nl && lessonOpen(nl, doneIds, account)) {
+    const w = lessonWalk(days, st);
+    const nl = w.next;
+    if (nl && lessonOpen(nl, w.done, account)) {
       o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;
     } else {
-      const read = LESSONS.filter((L) => lessonOpen(L, doneIds, account));
+      /* a re-read is one behind Up next on the path (one read early waits for the path to reach it) */
+      const read = LESSONS.filter((L) => w.walked.has(L.id));
       const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
       o.t = 'Read again: ' + R.title;
       o.s = 'A quick re-read';

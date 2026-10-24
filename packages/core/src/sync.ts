@@ -271,7 +271,7 @@ export function snapshotOf(recs: SyncRecord[]): Snapshot {
 
 /** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
     already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have, and the better supporter
-    record */
+    record, and the welcome backs passed on the lesson path */
 function keepEarned(win: Settings, lose: Settings): Settings {
   const out = JSON.parse(JSON.stringify(win)) as Settings;
   const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
@@ -285,6 +285,8 @@ function keepEarned(win: Settings, lose: Settings): Settings {
   out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };
   out.learn.notes = { ...lose.learn.notes, ...out.learn.notes };
   out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
+  const back = { ...(lose.learn.back || {}), ...(out.learn.back || {}) };
+  if (Object.keys(back).length) out.learn.back = back;
   return keepSup(out, lose.sup);
 }
 

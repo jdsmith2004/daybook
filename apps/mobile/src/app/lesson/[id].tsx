@@ -2,12 +2,18 @@
    Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Put it to work (core
    practice.ts) offers ready-made lines that go on the plan with one tap, right here, with Undo; a tool or page it opens comes
    back to the same step, as it was. Nothing on a card, and nothing on the practice step, can finish the lesson or send the
-   person away without a way back. Ported from the legacy SCENES.lesson. */
+   person away without a way back. Ported from the legacy SCENES.lesson.
+   Lessons open one at a time, in the order of the path (core lessonGate). A link to a lesson the path has not reached (a
+   help page, My plan, the review, a nudge, a tool) opens its key idea instead: one card, with the tools it points to, that
+   writes nothing and earns nothing. A lesson read before that rule, once the path reaches it, opens as a short welcome
+   back: the key idea, its own recall question (not asked again by the next lesson that day), then Keep going (core lessonReach: no points, nothing
+   counted twice) or Read it all again (?at=all, the full lesson). */
 import {
   type Block,
   type Card,
   changeSettings,
   gameCompute,
+  fmtDate,
   type Go,
   type Guess,
   guessFeedback,
@@ -15,7 +21,9 @@ import {
   type Lesson,
   lessonById,
   lessonFamily,
+  lessonGate,
   lessonHasQuick,
+  lessonKeyIdea,
   lessonLog,
   lessonNo,
   itemAdd,
@@ -25,10 +33,14 @@ import {
   lessonPairOf,
   lessonPractice,
   lessonPracticed,
+  lessonReach,
+  lessonBackRecall,
   lessonRecallOf,
   LESSONS,
-  lessonsDone,
   lessonSeq,
+  lessonStats,
+  lessonWalk,
+  type LessonWalk,
   lfmt,
   LNOTE_LEN,
   LUNITS,
@@ -69,6 +81,9 @@ import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
+/** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
+    not ask the same question again that day */
+const ASKED: Record<string, string> = {};
 interface Sheet {
   t: 'src';
   i?: number | null;
@@ -123,10 +138,16 @@ export default function LessonScreen() {
     );
   const t = toneOf(c, LUNITS[L.u].tone);
   const n = lessonNo(L);
-  const done = lessonsDone(snap.days);
+  const w = lessonWalk(snap.days, st);
+  const done = w.done;
+  /* one lesson opens at a time: further on, the key idea; read early and reached now, the welcome back. "Read it all
+     again" (?at=all) opens a finished one in full. */
+  const gate = lessonGate(L, w);
+  const back = gate === 'back';
+  if (gate !== 'open' && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
-  const next = nextAfter(L, done);
+  const next = nextAfter(L, w);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
   /* the comment under a picked answer can land below the card's edge on a short phone: bring it into view */
@@ -142,7 +163,8 @@ export default function LessonScreen() {
       const r = recordLesson(s0.days, tk, L);
       a = r.again;
       g = Math.max(0, gameCompute(r.days, s0.settings!, s0.reviews, tk).rawPts - b0);
-      return { ...s0, days: r.days };
+      /* read in full on its welcome back: the path moves past it, as Keep going does */
+      return { ...s0, days: r.days, settings: back ? lessonReach(s0.settings!, L.id) : s0.settings };
     });
     setGain(g);
     setAgain(a);
@@ -211,13 +233,7 @@ export default function LessonScreen() {
   const open = (k: number, g: Go) => {
     setWent((x) => ({ ...x, [k]: true }));
     practiced();
-    if (g.a === 'scene') router.push({ pathname: '/tool/[id]', params: { id: g.v!, lr: '1' } });
-    else if (g.a === 'talk') router.push('/talk');
-    else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
-    else if (g.a === 'growth') router.push('/growth');
-    else if (g.a === 'week') router.push('/review');
-    else if (g.a === 'tab' && g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
-    else if (g.a === 'tab' && g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
+    goTo(g);
   };
 
   /* ---------- the card ---------- */
@@ -232,7 +248,8 @@ export default function LessonScreen() {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      const P = lessonRecallOf(L, done);
+      /* the lesson before asked its own question on its welcome back today: not again */
+      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)));
       setRcOf(P ? P.id : null);
       setRc(null);
       setRcTried([]);
@@ -549,7 +566,7 @@ export default function LessonScreen() {
   } else {
     const a = lessonPractice(L);
     const pair = lessonPairOf(L);
-    const due = pair && done.has(pair.a.id) && !lcheckWritten(st, pair.n);
+    const due = pair && w.walked.has(pair.a.id) && !lcheckWritten(st, pair.n);
     prog = <Prog total={1} i={0} all />;
     body = (
       <>
@@ -617,6 +634,181 @@ export default function LessonScreen() {
       </ScrollView>
       {foot ? <View style={s.foot}>{foot}</View> : null}
     </Frame>
+  );
+}
+
+/** where a tool or page from a lesson goes; it comes back to the lesson. Tools are care, so they open from any lesson,
+    reached or not. */
+function goTo(g: Go) {
+  if (g.a === 'scene') router.push({ pathname: '/tool/[id]', params: { id: g.v!, lr: '1' } });
+  else if (g.a === 'talk') router.push('/talk');
+  else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
+  else if (g.a === 'growth') router.push('/growth');
+  else if (g.a === 'week') router.push('/review');
+  else if (g.a === 'tab' && g.v === 'settings') router.push({ pathname: '/settings', params: { open: g.open || '' } });
+  else if (g.a === 'tab' && g.v === 'plan') router.push({ pathname: '/plan', params: { pane: g.open || '' } });
+}
+
+/* ---------- a lesson the path has not reached, and one read early ---------- */
+/** 'key': a lesson further on the path, opened from a link. Its key idea on one card, the tools it points to, and where it
+    sits on the path; nothing is saved. 'back': a lesson read early, now Up next. A short welcome back: when it was read,
+    the flame, the key idea, its own recall question, then Keep going or Read it all again. */
+function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'back' }) {
+  const { snap, tk, apply } = useStore();
+  const account = useAccount();
+  const c = useTheme();
+  const inset = useSafeAreaInsets();
+  const st = snap.settings!;
+  const [rc, setRc] = useState<number | null>(null);
+  const [rcTried, setRcTried] = useState<number[]>([]);
+  const [went, setWent] = useState<Record<number, boolean>>({});
+  const scroll = useRef<ScrollViewInstance>(null);
+  const fit = useFitRoom();
+  const t = toneOf(c, LUNITS[L.u].tone);
+  const n = lessonNo(L);
+  const k = lessonKeyIdea(L);
+  const first = lessonStats(snap.days).first[L.id];
+  const read = first
+    ? 'You read this one on ' + fmtDate(first, first.slice(0, 4) === tk.slice(0, 4) ? { month: 'long', day: 'numeric' } : { dateStyle: 'long' }) + '.'
+    : '';
+  const again = () => router.replace({ pathname: '/lesson/[id]', params: { id: L.id, at: 'all' } });
+  const keyBox = (
+    <View style={[s.key, { backgroundColor: t.soft }]}>
+      {k.ask ? (
+        <>
+          <Text style={[s.eye2, { color: t.text }]}>THIS LESSON ANSWERS</Text>
+          <T>{k.ask}</T>
+          <Text style={[s.eye2, { color: t.text, marginTop: 6 }]}>THE KEY IDEA</Text>
+        </>
+      ) : (
+        <Text style={[s.eye2, { color: t.text }]}>THE KEY IDEA</Text>
+      )}
+      <Text style={[s.keyP, { color: c.ink }]}>{k.key}</Text>
+    </View>
+  );
+  let body: ReactNode;
+  let foot: ReactNode;
+  if (gate === 'key') {
+    const go = (lessonPractice(L) || { go: [] as Go[] }).go || [];
+    const nx = w.next;
+    body = (
+      <>
+        <Eyebrow icon="compass" label={'Lesson ' + n + ' · ' + LUNITS[L.u].name} t={t} />
+        <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
+          {L.title}
+        </T>
+        {keyBox}
+        <T style={s.p}>
+          {read ? read + ' ' : ''}This is lesson {n} on your path. It opens as you go.
+        </T>
+        {go.length ? (
+          <Dock>
+            <Text style={[s.eye2, { color: t.text }]}>TRY IT NOW</Text>
+            {go.map((g, j) => (
+              <GoRow
+                key={j}
+                label={g.t}
+                ic={g.ic}
+                went={!!went[j]}
+                onPress={() => {
+                  setWent((x) => ({ ...x, [j]: true }));
+                  goTo(g);
+                }}
+              />
+            ))}
+          </Dock>
+        ) : null}
+      </>
+    );
+    foot = (
+      <View style={s.footCol}>
+        <Next label="Done" noIcon onPress={close} />
+        {read ? (
+          <Quiet label="Read it all again" onPress={again} />
+        ) : nx ? (
+          <Quiet label={'Up next: lesson ' + lessonNo(nx)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
+        ) : null}
+      </View>
+    );
+  } else {
+    const P = lessonBackRecall(L);
+    const r = P ? P.rc! : null;
+    const keep = () => {
+      apply((cur) => ({ st: lessonReach(cur, L.id) }));
+      buzz('save');
+      const nx = nextAfter(L, w);
+      if (nx && lessonOpen(nx, w.done, account)) router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } });
+      else close();
+    };
+    body = (
+      <>
+        {/* the flame stays beside the words, never dropped for room */}
+        <View style={s.backHead}>
+          <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 64 : 78} alive />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Eyebrow icon="sparkle" label="Welcome back" t={t} />
+            <T style={[s.h, s.hsm]} accessibilityRole="header">
+              {L.title}
+            </T>
+          </View>
+        </View>
+        {read ? <T style={s.p}>{read}</T> : null}
+        {keyBox}
+        {r && P ? (
+          <Dock>
+            <Text style={[s.eye2, { color: t.text }]}>QUICK RECALL</Text>
+            <T style={[s.p, { fontFamily: font.bodySemi }]}>{r.q}</T>
+            <Opts
+              list={r.c}
+              best={r.a}
+              pk={rc}
+              tried={rcTried}
+              t={t}
+              onPick={(j) => {
+                setRc(j);
+                setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+                ASKED[L.id] = tk;
+                buzz('tap');
+                setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);
+              }}
+            />
+            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
+          </Dock>
+        ) : null}
+      </>
+    );
+    foot = (
+      <View style={s.footCol}>
+        <Next label="Keep going" onPress={keep} />
+        <Quiet label="Read it all again" onPress={again} />
+      </View>
+    );
+  }
+  return (
+    <Frame title={'Lesson ' + n + ' of ' + LESSONS.length} onClose={close} c={c} inset={inset}>
+      <ScrollView
+        ref={scroll}
+        onLayout={fit.onLayout}
+        onContentSizeChange={fit.onContentSizeChange}
+        style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
+        contentContainerStyle={s.cardIn}>
+        <FitProvider value={fit.ctx}>
+          <Appear key={gate} by={10} style={s.cardBody}>
+            {body}
+          </Appear>
+        </FitProvider>
+      </ScrollView>
+      {foot}
+    </Frame>
+  );
+}
+/** a quiet link under the main button, for something the X does not do */
+function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={s.quiet}>
+      <Text style={[s.linkT, { color: c.accentText }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -1152,6 +1344,9 @@ const s = StyleSheet.create({
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
   linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   foot: { flexDirection: 'row', gap: 10 },
+  backHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  footCol: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
+  quiet: { width: '100%', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   next: {
     flex: 1,
     minHeight: 60,

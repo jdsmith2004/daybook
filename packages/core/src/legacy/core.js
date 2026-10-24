@@ -265,16 +265,20 @@ function normLearn(l){
  const fm=(l&&FAITH_MODES.indexOf(l.faith)>=0)?l.faith:'after',fs=!!(l&&l.faithSet);
  /* len: the length last chosen (q = Quick, f = Full). prac: lessons whose practice was done (a marker, no points). picks: the answer chosen on a
     "your turn" card that is kept for the playbook. wr: the checkpoint writing, three answers per checkpoint. */
- const o=(l&&typeof l==='object')?l:{},prac={},picks={},wr={};
+ const o=(l&&typeof l==='object')?l:{},prac={},picks={},wr={},back={};
  LESSON_IDS.forEach(id=>{
   if(o.prac&&o.prac[id])prac[id]=1;
+  if(o.back&&o.back[id])back[id]=1;
   const v=o.picks&&o.picks[id];if(typeof v==='string'&&v.trim())picks[id]=v.slice(0,200);
  });
  for(let n=1;n<=16;n++){
   const w=o.wr&&o.wr['c'+n];
   if(w&&Array.isArray(w.a)){const a=[0,1,2].map(i=>String(w.a[i]==null?'':w.a[i]).slice(0,1500));if(a.some(x=>x.trim()))wr['c'+n]={a,u:Number(w.u)||0}}
  }
- return {notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f')?o.len:'',prac,picks,wr};
+ /* back: welcome backs passed on the path (lessons.ts lessonReach), kept only when there is one */
+ const out={notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f')?o.len:'',prac,picks,wr};
+ if(Object.keys(back).length)out.back=back;
+ return out;
 }
 function normSettings(s){
  const d=defaultSettings(isKey(s&&s.start)?s.start:keyOfDate(new Date()));

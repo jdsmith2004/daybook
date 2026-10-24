@@ -6,7 +6,7 @@
    Lessons open one at a time, in the order of the path (core lessonGate). A link to a lesson the path has not reached (a
    help page, My plan, the review, a nudge, a tool) opens its key idea instead: one card, with the tools it points to, that
    writes nothing and earns nothing. A lesson read before that rule, once the path reaches it, opens as a short welcome
-   back: the key idea, the recall question it would open with, then Keep going (core lessonReach: no points, nothing
+   back: the key idea, its own recall question (not asked again by the next lesson that day), then Keep going (core lessonReach: no points, nothing
    counted twice) or Read it all again (?at=all, the full lesson). */
 import {
   type Block,
@@ -34,6 +34,7 @@ import {
   lessonPractice,
   lessonPracticed,
   lessonReach,
+  lessonBackRecall,
   lessonRecallOf,
   LESSONS,
   lessonSeq,
@@ -80,6 +81,9 @@ import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
+/** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
+    not ask the same question again that day */
+const ASKED: Record<string, string> = {};
 interface Sheet {
   t: 'src';
   i?: number | null;
@@ -244,7 +248,8 @@ export default function LessonScreen() {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      const P = lessonRecallOf(L, done);
+      /* the lesson before asked its own question on its welcome back today: not again */
+      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)));
       setRcOf(P ? P.id : null);
       setRc(null);
       setRcTried([]);
@@ -647,7 +652,7 @@ function goTo(g: Go) {
 /* ---------- a lesson the path has not reached, and one read early ---------- */
 /** 'key': a lesson further on the path, opened from a link. Its key idea on one card, the tools it points to, and where it
     sits on the path; nothing is saved. 'back': a lesson read early, now Up next. A short welcome back: when it was read,
-    the flame, the key idea, the recall question it would open with, then Keep going or Read it all again. */
+    the flame, the key idea, its own recall question, then Keep going or Read it all again. */
 function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'back' }) {
   const { snap, tk, apply } = useStore();
   const account = useAccount();
@@ -726,7 +731,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       </View>
     );
   } else {
-    const P = lessonRecallOf(L, w.done, true);
+    const P = lessonBackRecall(L);
     const r = P ? P.rc! : null;
     const keep = () => {
       apply((cur) => ({ st: lessonReach(cur, L.id) }));
@@ -751,7 +756,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {keyBox}
         {r && P ? (
           <Dock>
-            <Text style={[s.eye2, { color: t.text }]}>{'QUICK RECALL · LESSON ' + lessonNo(P)}</Text>
+            <Text style={[s.eye2, { color: t.text }]}>QUICK RECALL</Text>
             <T style={[s.p, { fontFamily: font.bodySemi }]}>{r.q}</T>
             <Opts
               list={r.c}
@@ -762,6 +767,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
               onPick={(j) => {
                 setRc(j);
                 setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+                ASKED[L.id] = tk;
                 buzz('tap');
                 setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);
               }}

@@ -29,8 +29,9 @@ the map reads as a road walked; helps Daybook: the account rule on top of it is 
   say "The key idea, for now" under such a lesson.
 - **Lessons read before this rule** stay finished with their points (`lessonsEarly` reads them from the order lessons
   were finished). On the map they are quiet stones until the path reaches them; then Up next is that lesson as usual, and
-  it opens as a welcome back: the flame, "You read this one on <date>.", the key idea, the recall question it would open
-  with (`lessonRecallOf(L, done, true)`: about the lesson before it, as when it opens normally), then "Keep going"
+  it opens as a welcome back: the flame, "You read this one on <date>.", the key idea, its own recall question
+  (`lessonBackRecall`, plain "Quick recall"; once answered, the next lesson does not ask it again that day while the
+  app stays open: `lessonRecallOf`'s `asked`), then "Keep going"
   (`lessonReach`: a marker in `settings.learn.back`, no points, no lesson day, kept through a sync join) and a quiet
   "Read it all again" (the full lesson; finishing it also moves the path on, and earns the usual read-again points).
   Keep going opens the new Up next.

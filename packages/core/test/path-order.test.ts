@@ -106,10 +106,17 @@ describe('lessons read early (before this rule)', () => {
     expect(core.lessonStop(d, st0(), k)).toMatchObject({ kind: 'next', L: L9, n: 9 });
     expect(core.lessonDue(d, st0(), k, true)).toBe(L9.id);
     expect(core.riskLesson(d, st0(), k, true)).toMatchObject({ L: L9, again: false });
-    /* the recall question is the one lesson 9 would open with: about lesson 8 */
-    expect(core.lessonRecallOf(L9, w.done, true)).toBe(path[7]);
-    expect(core.lessonRecallOf(L9, w.done)).toBeNull();
+    /* the welcome back asks lesson 9's own question; lesson 10 then skips it when it was answered there today */
+    expect(core.lessonBackRecall(L9)).toBe(L9);
     expect(core.nextAfter(L9, w)).toBe(path[9]);
+    const st2 = core.lessonReach(st0(), L9.id);
+    const w2 = core.lessonWalk(d, st2);
+    expect(w2.next).toBe(path[9]);
+    expect(core.lessonRecallOf(path[9], w2.done)).toBe(L9);
+    expect(core.lessonRecallOf(path[9], w2.done, new Set([L9.id]))).toBeNull();
+  });
+  it('every lesson has its own recall question, for its welcome back', () => {
+    path.forEach((L) => expect(core.lessonBackRecall(L)).toBe(L));
   });
   it('"Keep going" moves the path on, with no new points, no lesson day and the same level', () => {
     let d = days;

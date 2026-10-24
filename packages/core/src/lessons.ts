@@ -321,13 +321,15 @@ export const lessonCards = (L: Lesson, len: 'q' | 'f' | null) => {
   return len === 'q' && lessonHasQuick(L) ? all.filter((c) => c.q === 1) : all;
 };
 /** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new.
-    back: on a welcome back, where this one was read early, the same question is asked. */
-export function lessonRecallOf(L: Lesson, done: Set<string>, back = false): Lesson | null {
+    asked: lessons whose own question was already answered today (on their welcome back), so it is not asked twice. */
+export function lessonRecallOf(L: Lesson, done: Set<string>, asked: Set<string> = new Set()): Lesson | null {
   const path = lessonPath();
   const i = path.indexOf(L);
   const P = i > 0 ? path[i - 1] : null;
-  return P && P.rc && done.has(P.id) && (back || !done.has(L.id)) ? P : null;
+  return P && P.rc && done.has(P.id) && !done.has(L.id) && !asked.has(P.id) ? P : null;
 }
+/** the recall question on a welcome back: the lesson's own, about the lesson being welcomed back to */
+export const lessonBackRecall = (L: Lesson): Lesson | null => (L.rc ? L : null);
 export type SeqItem = { t: 'rc' } | { t: 'card'; c: Card; ci: number } | { t: 'done' };
 export function lessonSeq(L: Lesson, rcOf: string | null, len: 'q' | 'f' | null): SeqItem[] {
   const out: SeqItem[] = [];

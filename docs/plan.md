@@ -2529,3 +2529,45 @@ signed-in app may change on its own account to the email, whether Apple is on or
 2. **Low.** The web, once the Services ID is set: the button on the account sheet, in Chrome and in Safari.
 3. **Later, if wanted.** Apple's server-to-server notices (a person stops using Apple with Daybook, or deletes their
    Apple ID) could sign out every device at once; today each iPhone notices when it opens.
+
+## The whole app, end to end (review of October 24, 2026)
+
+A read of onboarding, accounts and Sign in with Apple, payments, the tools, Today and notifications, before the iPhone
+build with tips and Apple goes to review. Setup, the lesson lock, care staying free, the Apple token check, account
+deletion, the server's check of Apple and Stripe tips, the ask timing and every notification link were found sound.
+
+Fixed in this pass:
+
+- A paid web tip that the server could not confirm for a passing reason (Stripe or the server down, or the Stripe key
+  not set yet) was dropped; it is now kept and tried again, and the tip sheet says what happened. A failed Apple
+  purchase (not a cancel) now says so instead of looking like a cancel.
+- Sign in with Apple on the website: the site's content rules blocked Apple's script, so every tap failed. Allowed.
+- Apple's nonce: only its hash is taken, so a captured token cannot be replayed with its own nonce.
+- A CDN error page no longer reads as "Sign in with Apple is not ready yet".
+- `EXPO_PUBLIC_APPLE=on` is in the EAS profiles, so the iPhone build shows the Apple button.
+- The setup's account page no longer comes back for a person who just made an account that waits for a tip.
+- A tool that hands on to another tool (Feel, Surprise, Halt, Pause) keeps the way back to the lesson that opened it.
+- The Talk it through reminder no longer puts the person's own plan words on the locked screen.
+- Reminders are scheduled one plan at a time, so an older plan cannot leave a stale note.
+- The check-in and the wind-down go to Today when there is no setup yet, instead of a blank screen.
+- The privacy page names Sign in with Apple; the public pages no longer promise flame looks or say a free account
+  syncs or that a tip unlocks nothing; the store listing, the privacy label (Purchases) and the review notes say what
+  a tip opens. The app version is 1.0.0 for the store.
+
+For the owner to decide (not changed):
+
+1. **Older accounts get every extra, not only sync** (high). A grandfathered record counts as a full supporter, so those
+   people also get the whole pattern and are never asked for a tip again, and the tip sheet calls them supporters. The
+   promise was sync only. Suggested: count `src: 'grandfather'` only for sync.
+2. **Android sync waits for a tip that Android cannot pay** (medium, before Android ships). The server refuses sync to a
+   new Android account, and the app says "open when you support Daybook". Decide Android's rule (Play billing, or sync
+   free on Android) before the Play release.
+3. **Closing an account joined to Apple from a password sign-in skips Apple's revoke** (high, Apple's rule 5.1.1(v)).
+   The app asks Apple only when this sign-in was made with Apple. Suggested: the server answers "needs Apple" when the
+   account has an Apple ID and no code came, and the app then asks Apple.
+4. **The link out to the web tip page checks no storefront** (low while Daybook is US only). Add
+   `getStorefront() === 'USA'` before offering it if more countries are added.
+5. Smaller: granting notification permission or exact alarms does not reschedule at once; Delete while the sign-in has
+   expired says "Could not reach your account"; the "Close" link under Talk it through on the last slip screen only
+   closes the page; a refund leaves the supporter record (already accepted); an email typed by someone else can block
+   that person's Apple sign-in with words about a password they never had.

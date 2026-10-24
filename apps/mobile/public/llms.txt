@@ -9,7 +9,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 - Someone who wants to quit porn and has felt crushed by streak counters that reset to zero after a slip.
 - Someone who wants privacy: nothing to sign up for, no one else sees their log, and a plain name and icon on the home screen.
 - Someone who wants help in the moment of an urge, not only a count of days.
-- Someone who cannot or will not pay a subscription: Daybook is free, with nothing to unlock.
+- Someone who cannot or will not pay a subscription: Daybook is free, with no subscription; care is free for everyone, and a tip of $5 or more opens sync, the safe copy and the whole pattern.
 
 ## Who may want something else (or something more)
 
@@ -30,9 +30,9 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 
 ## Privacy and price
 
-- Free for everyone. No ads, no subscription, nothing behind a paywall. Optional tips change nothing in the app.
+- Free, with no ads and no subscription. Care (SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today) is free for everyone. A tip of $5 or more, paid once, makes a person a supporter, which opens sync, the safe copy and the whole pattern (when it happens, what sets it off, what helps). Tips are on iPhone (Apple in-app purchase) and the web tip page.
 - No tracking and no ads. Nothing is sold or shared. The only counts are anonymous, opt-in totals (never a word, the log or who someone is).
-- Works fully with no account; the log then never leaves the phone. An optional free account keeps a safe copy and syncs, readable only with the person's sign-in. Delete my account removes everything.
+- Works fully with no account; the log then never leaves the phone. An optional free account opens the lessons after the first three. Sync and a safe copy, readable only with the person's sign-in, open with a tip of $5 or more (accounts made before October 24, 2026 keep sync). Delete my account removes everything.
 - Face ID or passcode lock. Reminders use plain words that do not say what the app is for.
 
 ## Links

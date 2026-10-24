@@ -1,8 +1,10 @@
 /* The lesson map on Learn: the lessons as stepping stones on one path, a land for each section, top to bottom in the order
    of the path. Each land has its picture (section-art) on a little hill beside the stones and a small stand of trees; the
    next lesson's name sits beside its stone, so the picture and the trees move out of its way. The map is laid out on a
-   phone-wide page, MAP_W across; the app scales it to the screen. */
-import { firstUndone, lessonSections, type Lesson } from './lessons';
+   phone-wide page, MAP_W across; the app scales it to the screen. Lessons open one at a time, in the order of the path
+   (lessons.ts lessonWalk): the stones behind Up next are done, Up next is the one bright stone, and every stone after it
+   waits, quiet, also one read early (nothing finished ever shows past Up next). */
+import { lessonSections, walkOf, type Lesson, type LessonWalk } from './lessons';
 
 export const MAP_W = 390;
 /** room above a land's first stone (its hills and signpost), between stones, below its last stone, above the first land,
@@ -34,6 +36,8 @@ export interface MapLand {
   right: boolean;
   stones: MapStone[];
   done: number;
+  /** every stone of this land is still ahead: its picture is drawn quiet */
+  ahead: boolean;
   /** the center of the picture, and the foot of the trees */
   pic: { x: number; y: number };
   tree: { x: number; y: number };
@@ -48,15 +52,16 @@ export interface LessonMap {
   road: [number, number][];
   /** how far along the road has been walked: the index of the next stone (the trophy once every lesson is done) */
   walked: number;
-  /** the stretches of road walked, as [from, to] places on the road: between two finished lessons, and from a finished
-      lesson to the next one. Lessons done out of order make their own stretches further along. */
+  /** the stretches of road walked, as [from, to] places on the road: from the start to Up next (one stretch, or none) */
   gold: [number, number][];
   /** the stretches still ahead */
   plain: [number, number][];
 }
 
-export function lessonMap(done: Set<string>): LessonMap {
-  const nx = firstUndone(done);
+/** the map for a walk (lessonWalk), or for a set of finished lessons with nothing read early (walkOf) */
+export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
+  const w = walk instanceof Set ? walkOf(walk) : walk;
+  const nx = w.next;
   let y = TOP;
   let next: MapStone | null = null;
   const lands = lessonSections().map(({ u, lessons }, k): MapLand => {
@@ -69,7 +74,7 @@ export function lessonMap(done: Set<string>): LessonMap {
         j,
         x: base + (right ? 1 : -1) * SWAY[j % SWAY.length],
         y: top + HEAD + j * STEP,
-        state: done.has(L.id) ? 'done' : L === nx ? 'next' : 'todo',
+        state: w.walked.has(L.id) ? 'done' : L === nx ? 'next' : 'todo',
       };
       if (s.state === 'next') next = s;
       return s;
@@ -84,7 +89,8 @@ export function lessonMap(done: Set<string>): LessonMap {
     /* the trees stand on the same side, beside a stone the picture does not cover and away from the next lesson's name */
     const t = (low ? [0, 1] : [3, 4, 2]).find((a) => a < stones.length && (!n || a !== n.j))!;
     const tree = { x: right ? 334 : 60, y: stones[t].y + 34 };
-    return { u, k, top, bottom: y, right, stones, done: stones.filter((s) => s.state === 'done').length, pic, tree };
+    const fin = stones.filter((s) => s.state === 'done').length;
+    return { u, k, top, bottom: y, right, stones, done: fin, ahead: !fin && !n, pic, tree };
   });
   const height = y + END_ROOM;
   const end = { x: MAP_W / 2, y: height - 90 };

@@ -145,6 +145,9 @@ export interface Settings {
     prac: Record<string, 1>;
     picks: Record<string, string>;
     wr: Record<string, { a: string[]; u: number }>;
+    /** lessons read before the path reached them whose welcome back was passed ("Keep going", lessons.ts lessonReach).
+        A marker only: no points. Left out when empty. */
+    back?: Record<string, 1>;
   };
   words: string[];
   menu: string[];

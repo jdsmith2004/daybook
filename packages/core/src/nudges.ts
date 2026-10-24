@@ -28,7 +28,7 @@
 import { moodOf } from './day';
 import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, LESSON_WIN_FROM, routineOn } from './legacy/core.js';
-import { firstUndone, lessonDoneOn, lessonsDone } from './lessons';
+import { lessonDoneOn, lessonWalk } from './lessons';
 import { rkActive, rkCard, rkOpen } from './rekindle';
 import { riskAt, riskWindow } from './risk';
 import { isSunday, sunDue } from './sunday';
@@ -332,9 +332,9 @@ export function lessonAt(days: Days, log: Pick<NudgeLog, 'opens'>, k: DayKey, no
     the lessons after the first three wait behind one); else null, and no reminder (a re-read is never pushed) */
 export function lessonDue(days: Days, st: Settings, k: DayKey, account = true): string | null {
   if (k < LESSON_WIN_FROM || !routineOn(st, days[k]?.p, 'lesson') || lessonDoneOn(days[k]?.p)) return null;
-  const done = lessonsDone(days);
-  const nl = firstUndone(done);
-  return nl && lessonOpen(nl, done, account) ? nl.id : null;
+  const w = lessonWalk(days, st);
+  const nl = w.next;
+  return nl && lessonOpen(nl, w.done, account) ? nl.id : null;
 }
 
 /** how the last three check-ins (in the last week) felt: heavy when mood (motivation, on a day saved before mood was asked)

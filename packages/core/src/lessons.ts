@@ -1,5 +1,6 @@
-/* Lessons: the one order they are offered in (a section at a time), which are done, the cards of a Quick or Full read, the
-   recall question, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
+/* Lessons: the one order they are offered in (a section at a time), which are done, the path walked in that order (one
+   lesson opens at a time: lessonWalk, lessonGate, the welcome back for a lesson read early), the cards of a Quick or Full
+   read, the recall question, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
    read the global Store; here the log and the settings are passed in. The lesson content itself (LESSONS, LUNITS, SRC,
    LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
 import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
@@ -154,11 +155,101 @@ export function lessonSections(): { u: number; lessons: Lesson[] }[] {
 /** the number a person sees for a lesson: its place on the path (so Up next after lesson 2 is lesson 3). lessonIndex
     stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
 export const lessonNo = (L: Lesson) => lessonPath().indexOf(L) + 1;
+/** the first lesson on the path not finished. Up next is lessonWalk().next, which also stops at a lesson read early. */
 export const firstUndone = (done: Set<string>) => lessonPath().find((l) => !done.has(l.id)) || null;
-/** what comes after this lesson: the first unfinished lesson on the path, counting this one as finished. It is the same
-    Up next as Today and the map, also after a lesson done out of order (from a check-in, a help page or a review). */
-export function nextAfter(L: Lesson, done: Set<string>): Lesson | null {
-  return lessonPath().find((x) => x !== L && !done.has(x.id)) || null;
+
+/* ---------- the path, walked in order (the owner, October 24, 2026) ----------
+   Lessons open one at a time, in the order of the path: Up next, and every lesson behind it (reading one again is always
+   allowed). A lesson further on opens as its key idea only (lessonGate), and nothing finished ever shows past Up next.
+   Before this, any lesson could be opened from a help page, a check-in or a review. A lesson finished that way stays
+   finished, with its points; the path walks up to it like any other lesson, and there it opens as a short welcome back
+   (passed with lessonReach, which earns nothing and counts nothing twice). */
+
+/** lessons finished before the path reached them: at the moment each was first finished, some lesson before it on the
+    path was not finished yet. Read from the record, in the order lessons were finished (by day, then within the day). */
+export function lessonsEarly(days: Days): Set<string> {
+  const path = lessonPath();
+  const fin = new Set<string>();
+  const early = new Set<string>();
+  lessonsInOrder(days).forEach(({ L }) => {
+    const i = path.indexOf(L);
+    for (let j = 0; j < i; j++)
+      if (!fin.has(path[j].id)) {
+        early.add(L.id);
+        break;
+      }
+    fin.add(L.id);
+  });
+  return early;
+}
+/** the welcome backs already passed ("Keep going"), by lesson id (settings.learn.back) */
+export const lessonsReached = (st: Settings | null | undefined): Set<string> => new Set(Object.keys((st && st.learn && st.learn.back) || {}));
+export interface LessonWalk {
+  /** finished, by id (lessonsDone) */
+  done: Set<string>;
+  /** finished before the path reached them (lessonsEarly) */
+  early: Set<string>;
+  /** early ones whose welcome back was passed */
+  reached: Set<string>;
+  /** every lesson behind Up next on the path: all are finished, and they open in full */
+  walked: Set<string>;
+  /** Up next: the first lesson on the path not finished, or finished early and not reached yet. null at the end. */
+  next: Lesson | null;
+  /** Up next was read early: it opens as a welcome back */
+  back: boolean;
+}
+const stopsAt = (L: Lesson, done: Set<string>, early: Set<string>, reached: Set<string>) => !done.has(L.id) || (early.has(L.id) && !reached.has(L.id));
+/** where the person is on the path */
+export function lessonWalk(days: Days, st: Settings | null | undefined): LessonWalk {
+  const done = lessonsDone(days);
+  const early = lessonsEarly(days);
+  const reached = lessonsReached(st);
+  const path = lessonPath();
+  const at = path.findIndex((L) => stopsAt(L, done, early, reached));
+  const next = at < 0 ? null : path[at];
+  const walked = new Set((at < 0 ? path : path.slice(0, at)).map((L) => L.id));
+  return { done, early, reached, walked, next, back: !!next && done.has(next.id) };
+}
+/** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */
+export function walkOf(done: Set<string>): LessonWalk {
+  const next = firstUndone(done);
+  const path = lessonPath();
+  const walked = new Set((next ? path.slice(0, path.indexOf(next)) : path).map((L) => L.id));
+  return { done, early: new Set(), reached: new Set(), walked, next, back: false };
+}
+/** how a lesson opens: in full when it is Up next or behind it ('open'); as a welcome back when Up next was read early
+    ('back'); else as its key idea, until the path reaches it ('key'). The account rule (accounts.ts lessonOpen) sits on
+    top of 'open'. */
+export type LessonGate = 'open' | 'back' | 'key';
+export function lessonGate(L: Lesson, w: LessonWalk): LessonGate {
+  if (w.walked.has(L.id)) return 'open';
+  if (w.next === L) return w.back ? 'back' : 'open';
+  return 'key';
+}
+/** what comes after this lesson: Up next, counting this one as reached. The same Up next as Today and the map. */
+export function nextAfter(L: Lesson, w: LessonWalk): Lesson | null {
+  if (w.next !== L) return w.next;
+  const path = lessonPath();
+  return path.slice(path.indexOf(L) + 1).find((x) => stopsAt(x, w.done, w.early, w.reached)) || null;
+}
+/** "Keep going" on a welcome back: the path moves past a lesson read early. A plain marker in the settings: no points,
+    no lesson day, nothing counted twice. */
+export const lessonReach = (st: Settings, id: string, now = Date.now()): Settings =>
+  st.learn && st.learn.back && st.learn.back[id]
+    ? st
+    : changeSettings(
+        st,
+        (s) => {
+          (s.learn.back || (s.learn.back = {}))[id] = 1;
+        },
+        now,
+      );
+/** what a lesson shows before it opens (the key idea card) and on its welcome back: the question it answers, when it
+    has one, and the one thing to keep (L.key, the same line its Done card shows). The tag stands in, should a key be
+    missing. */
+export function lessonKeyIdea(L: Lesson): { ask: string; key: string } {
+  const key = (L.key || '').trim() || L.tag;
+  return { ask: (L.ask || '').trim(), key };
 }
 /** when each lesson was first finished, last opened, how many days it was read again, and which was touched most recently */
 export function lessonStats(days: Days) {
@@ -204,15 +295,15 @@ export function lessonsInOrder(days: Days): { L: Lesson; k: DayKey }[] {
 }
 /** Learn as one timeline: what is finished, in the order it was finished; the lesson up next; and what is still to come,
     a section at a time, each with how many of its lessons are done */
-export function lessonTimeline(days: Days) {
-  const done = lessonsDone(days);
-  const next = firstUndone(done);
+export function lessonTimeline(days: Days, st: Settings | null = null) {
+  const w = lessonWalk(days, st);
+  const next = w.next;
   const coming = lessonSections()
     .map((x) => ({
       u: x.u,
       n: x.lessons.length,
-      done: x.lessons.filter((L) => done.has(L.id)).length,
-      left: x.lessons.filter((L) => !done.has(L.id) && L !== next),
+      done: x.lessons.filter((L) => w.walked.has(L.id)).length,
+      left: x.lessons.filter((L) => !w.walked.has(L.id) && L !== next),
     }))
     .filter((x) => x.left.length);
   return { past: lessonsInOrder(days), next, coming };
@@ -229,12 +320,13 @@ export const lessonCards = (L: Lesson, len: 'q' | 'f' | null) => {
   const all = lessonCore(L);
   return len === 'q' && lessonHasQuick(L) ? all.filter((c) => c.q === 1) : all;
 };
-/** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new */
-export function lessonRecallOf(L: Lesson, done: Set<string>): Lesson | null {
+/** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new.
+    back: on a welcome back, where this one was read early, the same question is asked. */
+export function lessonRecallOf(L: Lesson, done: Set<string>, back = false): Lesson | null {
   const path = lessonPath();
   const i = path.indexOf(L);
   const P = i > 0 ? path[i - 1] : null;
-  return P && P.rc && done.has(P.id) && !done.has(L.id) ? P : null;
+  return P && P.rc && done.has(P.id) && (back || !done.has(L.id)) ? P : null;
 }
 export type SeqItem = { t: 'rc' } | { t: 'card'; c: Card; ci: number } | { t: 'done' };
 export function lessonSeq(L: Lesson, rcOf: string | null, len: 'q' | 'f' | null): SeqItem[] {
@@ -263,18 +355,46 @@ export function guessFeedback(g: Guess, v: number): string {
 }
 export const lxPct = (g: Guess, x: number) => Math.max(0, Math.min(100, ((x - g.min) / (g.max - g.min)) * 100));
 
-/* ---------- checkpoints: a longer piece of writing after every second lesson ---------- */
+/* ---------- checkpoints: a longer piece of writing after every second lesson ----------
+   Checkpoint n (LCHECKS[n - 1], its writing saved as settings.learn.wr['c' + n]) was written for two lessons: LESSONS
+   2n - 2 and 2n - 1, always two lessons of one section, next to each other on the path. That pairing never changes, so
+   writing stays with the lessons it is about. What follows the path is when a checkpoint comes (after the later of its two
+   lessons is reached) and the number the person sees (lcheckNo: its place in the path's order of checkpoints). */
+/** checkpoint n's two lessons, earlier and later on the path */
+export function lcheckPair(n: number): { n: number; a: Lesson; b: Lesson } | null {
+  const x = LESSONS[2 * n - 2];
+  const y = LESSONS[2 * n - 1];
+  if (!Number.isInteger(n) || n < 1 || n > LCHECK_N || !x || !y) return null;
+  const path = lessonPath();
+  return path.indexOf(x) < path.indexOf(y) ? { n, a: x, b: y } : { n, a: y, b: x };
+}
+let CHECKS: number[] | null = null;
+/** the checkpoints (by n) in the order the path reaches them */
+export function lcheckOrder(): number[] {
+  if (!CHECKS) {
+    const path = lessonPath();
+    CHECKS = Array.from({ length: LCHECK_N }, (_, i) => i + 1)
+      .filter((n) => lcheckPair(n))
+      .sort((p, q) => path.indexOf(lcheckPair(p)!.b) - path.indexOf(lcheckPair(q)!.b) || p - q);
+  }
+  return CHECKS;
+}
+/** the number a person sees for checkpoint n: its place on the path */
+export const lcheckNo = (n: number) => lcheckOrder().indexOf(n) + 1;
+/** the checkpoint that comes right after this lesson, when this is the later of its two */
 export function lessonPairOf(L: Lesson) {
-  const i = lessonIndex(L);
-  return i % 2 === 1 && (i + 1) / 2 <= LCHECK_N ? { n: (i + 1) / 2, a: LESSONS[i - 1], b: L } : null;
+  for (let n = 1; n <= LCHECK_N; n++) {
+    const p = lcheckPair(n);
+    if (p && p.b === L) return p;
+  }
+  return null;
 }
 export const lcheckWritten = (st: Settings, n: number) => !!(st.learn && st.learn.wr && st.learn.wr['c' + n]);
-export function lcheckDue(days: Days, st: Settings): number {
-  const done = lessonsDone(days);
-  for (let n = 1; n <= LCHECK_N; n++) {
-    const a = LESSONS[2 * n - 2];
-    const b = LESSONS[2 * n - 1];
-    if (a && b && done.has(a.id) && done.has(b.id) && !lcheckWritten(st, n)) return n;
+/** the first checkpoint on the path whose two lessons are both reached and that is not written yet (0: none) */
+export function lcheckDue(days: Days, st: Settings, w: LessonWalk = lessonWalk(days, st)): number {
+  for (const n of lcheckOrder()) {
+    const p = lcheckPair(n)!;
+    if (w.walked.has(p.a.id) && w.walked.has(p.b.id) && !lcheckWritten(st, n)) return n;
   }
   return 0;
 }
@@ -423,9 +543,8 @@ export function lessonWeek(days: Days, tk: DayKey): LessonWeek {
 
 /* the day's lesson stop on Today */
 export function lessonStop(days: Days, st: Settings, tk: DayKey) {
-  const done = lessonsDone(days);
   const p = days[tk]?.p;
-  const nl = firstUndone(done);
+  const nl = lessonWalk(days, st).next;
   const readIds = [...((p && p.ls) || []), ...((p && p.lv) || [])];
   const readL =
     readIds

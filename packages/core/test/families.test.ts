@@ -124,11 +124,12 @@ describe('families', () => {
       ['l33', '2026-10-02'],
       ['l1', '2026-10-02'],
     ]);
-    expect(tl.next?.id).toBe('l3');
-    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 2 });
-    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l4']);
-    expect(tl.coming[1]).toMatchObject({ u: 8, done: 1 });
-    expect(tl.coming.flatMap((x) => x.left).length + tl.past.length + 1).toBe(core.LESSONS.length);
+    /* l2 and l33 were finished before the path reached them: Up next is l2, as a welcome back, and l33 waits */
+    expect(tl.next?.id).toBe('l2');
+    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 1 });
+    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l4']);
+    expect(tl.coming[1]).toMatchObject({ u: 8, done: 0 });
+    expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.LESSONS.length);
   });
 
   it('recall asks about the lesson before this one on the path', () => {

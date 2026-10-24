@@ -32,41 +32,39 @@ describe('the lesson map', () => {
     expect(m.end.y).toBeGreaterThan(m.lands[m.lands.length - 1].bottom);
     expect(m.height).toBeGreaterThan(m.end.y);
   });
-  it('marks the first lesson not done as next, also when lessons were done out of order', () => {
+  it('marks the first lesson not done as next, and nothing finished shows past it', () => {
+    /* lesson 6 was read before this rule (from a help page): it waits, like every stone after Up next */
     const done = new Set([path[0].id, path[1].id, path[5].id]);
     const m = core.lessonMap(done);
     expect(m.next?.L.id).toBe(path[2].id);
     const all = m.lands.flatMap((l) => l.stones);
     expect(all.filter((s) => s.state === 'next')).toHaveLength(1);
-    expect(all.filter((s) => s.state === 'done').map((s) => s.L.id)).toEqual([path[0].id, path[1].id, path[5].id]);
+    expect(all.filter((s) => s.state === 'done').map((s) => s.L.id)).toEqual([path[0].id, path[1].id]);
     expect(m.walked).toBe(2);
   });
-  it('the road walked lights up between finished lessons, also ones done out of order', () => {
+  it('the road walked lights up from the start to Up next, in one stretch', () => {
     const N = path.length;
     expect(core.lessonMap(doneUpTo(5)).gold).toEqual([[0, 5]]);
     expect(core.lessonMap(doneUpTo(5)).plain).toEqual([[5, N]]);
-    /* lessons 1 and 2 in order, then 6 and 7 from a check-in or a help page, and 30 on its own */
     const m = core.lessonMap(new Set([path[0].id, path[1].id, path[5].id, path[6].id, path[29].id]));
     expect(m.next?.L.id).toBe(path[2].id);
-    expect(m.gold).toEqual([
-      [0, 2],
-      [5, 6],
-    ]);
-    expect(m.plain).toEqual([
-      [2, 5],
-      [6, N],
-    ]);
+    expect(m.gold).toEqual([[0, 2]]);
+    expect(m.plain).toEqual([[2, N]]);
     expect(core.lessonMap(new Set()).gold).toEqual([]);
+  });
+  it('the lands still ahead are marked, so their pictures are drawn quiet', () => {
+    const m = core.lessonMap(doneUpTo(5));
+    expect(m.lands.map((l) => l.ahead)).toEqual(m.lands.map((_, i) => i > 1));
+    expect(core.lessonMap(new Set()).lands.map((l) => l.ahead)).toEqual(m.lands.map((_, i) => i > 0));
   });
   it('after any lesson, Next is the same Up next as the map and Today', () => {
     const done = new Set([path[0].id, path[1].id]);
-    expect(core.nextAfter(path[2], done)?.id).toBe(path[3].id);
-    /* a lesson done out of order points back to the first one not done */
-    expect(core.nextAfter(path[25], done)?.id).toBe(path[2].id);
-    expect(core.nextAfter(path[25], done)?.id).toBe(core.lessonMap(new Set([...done, path[25].id])).next?.L.id);
+    const w = core.walkOf(done);
+    expect(core.nextAfter(path[2], w)?.id).toBe(path[3].id);
     /* reading a finished lesson again */
-    expect(core.nextAfter(path[0], done)?.id).toBe(path[2].id);
-    expect(core.nextAfter(path[path.length - 1], doneUpTo(path.length - 1))).toBeNull();
+    expect(core.nextAfter(path[0], w)?.id).toBe(path[2].id);
+    expect(core.nextAfter(path[0], w)?.id).toBe(core.lessonMap(w).next?.L.id);
+    expect(core.nextAfter(path[path.length - 1], core.walkOf(doneUpTo(path.length - 1)))).toBeNull();
   });
   it('with every lesson done, nothing is next and the whole road is walked', () => {
     const m = core.lessonMap(doneUpTo(path.length));

@@ -1,6 +1,8 @@
 /* A checkpoint: after every second lesson, a longer piece of writing about that pair. Three prompts, one box each, saved as it is
-   typed (settings.learn.wr). It earns no points: it is for the person, not for a score. Ported from the legacy SCENES.lwrite. */
-import { LCHECKS, LESSONS, LUNITS, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
+   typed (settings.learn.wr). It earns no points: it is for the person, not for a score. The route's n is the checkpoint's
+   own record (c1 to c16, always about the same two lessons); the number shown is its place on the path (core lcheckNo).
+   Ported from the legacy SCENES.lwrite. */
+import { LCHECKS, lcheckNo, lcheckPair, lessonNo, LUNITS, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -25,8 +27,9 @@ export default function Lwrite() {
   const st = snap.settings;
   if (!st) return <Redirect href="/" />;
   const C = LCHECKS[n - 1];
-  const A = LESSONS[2 * n - 2];
-  const B = LESSONS[2 * n - 1];
+  const pair = lcheckPair(n);
+  const A = pair && pair.a;
+  const B = pair && pair.b;
   const t = toneOf(c, B ? LUNITS[B.u].tone : 'accent');
   const total = C ? C.q.length : 0;
   const fin = i === total;
@@ -42,7 +45,7 @@ export default function Lwrite() {
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted">
-            {C && A && B ? 'Checkpoint ' + n + ' · lessons ' + (2 * n - 1) + ' and ' + 2 * n : 'Checkpoint'}
+            {C && A && B ? 'Checkpoint ' + lcheckNo(n) + ' · lessons ' + lessonNo(A) + ' and ' + lessonNo(B) : 'Checkpoint'}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
             <Icon name="x" color={c.ink} />

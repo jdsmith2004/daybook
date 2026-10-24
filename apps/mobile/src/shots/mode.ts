@@ -40,7 +40,10 @@ if (typeof window !== 'undefined') {
   const q = new URLSearchParams(window.location.search);
   const theme = q.get('theme') === 'dark' ? 'dark' : 'light';
   const RealDate = Date;
-  const at = new RealDate(q.get('at') || DEMO.at).getTime();
+  /* only a date sets the clock: ?at= is also a screen's own word (a lesson's ?at=practiced or ?at=all), and a clock
+     that is not a number froze the page */
+  const asked = new RealDate(q.get('at') || '').getTime();
+  const at = Number.isFinite(asked) ? asked : new RealDate(DEMO.at).getTime();
   Object.defineProperty(window, 'localStorage', { value: new Mem(demoStorage(at, theme)), configurable: true });
   Object.defineProperty(window, 'sessionStorage', { value: new Mem({}), configurable: true });
 

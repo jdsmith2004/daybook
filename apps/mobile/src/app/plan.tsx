@@ -10,6 +10,7 @@ import {
   computeMetrics,
   HELP_STEPS,
   LCHECKS,
+  lcheckNo,
   lessonNo,
   LESSONS,
   lessonsDone,
@@ -623,10 +624,13 @@ function Learned() {
   const notes = (st.learn && st.learn.notes) || {};
   const picks = (st.learn && st.learn.picks) || {};
   const mine = LESSONS.filter((L) => done.has(L.id));
-  const wrote = LCHECKS.map((C, k) => ({ n: k + 1, C, a: lwriteOf(st, k + 1) })).filter((x) => x.a.some((t) => t.trim()));
+  /* each checkpoint's writing under its own record, shown in the path's order and with the number the path gives it */
+  const wrote = LCHECKS.map((C, k) => ({ n: k + 1, C, a: lwriteOf(st, k + 1) }))
+    .filter((x) => x.a.some((t) => t.trim()))
+    .sort((a, b) => lcheckNo(a.n) - lcheckNo(b.n));
   const toLearn = () => router.navigate('/learn');
   const copy = () => {
-    const text = playbookText(st, done, LESSONS, (id) => LESSONS.findIndex((L) => L.id === id), LCHECKS);
+    const text = playbookText(st, done, LESSONS, (id) => LESSONS.findIndex((L) => L.id === id), LCHECKS, lcheckNo);
     Clipboard.setStringAsync(text)
       .then(() => say('Copied.'))
       .catch(() => say('Could not copy. Press and hold the text to copy it.'));
@@ -663,7 +667,7 @@ function Learned() {
           wrote.map((x) => (
             <View key={x.n} style={{ gap: 6 }}>
               <T v="label">
-                Checkpoint {x.n}: {x.C.t}
+                Checkpoint {lcheckNo(x.n)}: {x.C.t}
               </T>
               {x.C.q.map((q, i) => (x.a[i] && x.a[i].trim() ? <Note key={i} label={q} text={x.a[i]} /> : null))}
             </View>

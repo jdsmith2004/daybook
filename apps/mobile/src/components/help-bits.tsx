@@ -1,6 +1,6 @@
 /* The pieces the Get help pages are made of: a card with a title, a list, a phone number with Copy, a link that leaves the app,
    a quiet note, and a lesson that goes with the page. Ported from the legacy hcard, hitem, numRow, ext, P, UL, OL, note and relLesson. */
-import { lessonById, lessonNo, lessonsDone, lmin } from '@daybook/core';
+import { lessonById, lessonGate, lessonNo, lessonWalk, lmin } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
@@ -146,12 +146,14 @@ export function RelLesson({ id }: { id: string }) {
   const { snap } = useStore();
   const L = lessonById(id);
   if (!L) return null;
-  const d = lessonsDone(snap.days).has(id);
+  /* a lesson the path has not reached yet opens as its key idea (lesson/[id]) */
+  const w = lessonWalk(snap.days, snap.settings);
+  const g = lessonGate(L, w);
   return (
     <LinkCard
       icon="book"
       title={`Lesson ${lessonNo(L)}: ${L.title}`}
-      sub={d ? 'Done · read it again' : lmin(L)}
+      sub={g === 'key' ? 'The key idea, for now' : w.walked.has(id) ? 'Done · read it again' : lmin(L) + ' · up next'}
       onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })}
     />
   );

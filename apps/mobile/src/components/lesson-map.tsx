@@ -1,11 +1,15 @@
 /* The lessons as a map (core lesson-map): stepping stones on one path through a land for each section, top to bottom. Each
    land has its own sky and hills, its picture on a little hill (core section-art), trees, and flowers by day; in dark mode
-   it is a warm evening, with stars and fireflies. Lessons are often done out of order (from Today, a check-in, a help page or
-   a review), so a finished lesson is a stone in its land's color with a check wherever it is, the road glows gold between
-   any two finished lessons, and a lesson finished today wears a small Today tag. The next one (the first not done, the
-   same as on Today) is bigger, with a pin over it and its name beside it; the rest wait in white with their number. Tap any stone for its card, with Start (or Read it again, or the account a locked lesson needs). A
-   signpost starts each land, and a trophy ends the path. Only the lands near the screen are drawn, to keep it light. The
-   pin's bob and the next stone's ring are still under Reduce Motion. */
+   it is a warm evening, with stars and fireflies. Lessons open one at a time, in the order of the path (core lessonWalk):
+   the lessons behind Up next are stones in their land's color with a check, on a road that glows gold, and one finished
+   today wears a small Today tag. Up next (the same as on Today) is the one bright, raised stone, with a ring around it that
+   fills as its section does, a pin over it and its name beside it. Every stone after it is quiet: the same shape, flat,
+   in a soft gray-tinted version of its section's color, with its number and nothing else (no lock), and a land still
+   wholly ahead has its picture drawn quiet too, so the bright part of the map is the road walked and Up next. Tap any
+   stone for its card: Start, Read it again, the account Up next needs, or for a quiet one, the lesson it opens after.
+   When Up next moves on, a few sparks fly from the new stone, once (they only fade under Reduce Motion). A signpost starts
+   each land, and a trophy ends the path. Only the lands near the screen are drawn, to keep it light. The pin's bob and
+   the ring's breathing are still under Reduce Motion. */
 import {
   LUNITS,
   lmin,
@@ -20,6 +24,7 @@ import {
   type MapStone,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -130,8 +135,10 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
     x +=
       `<path transform="translate(${right ? 20 : 300} ${l.top + 92}) scale(.7)" d="${CLOUD}" fill="#fff" opacity=".85"/>` +
       `<path transform="translate(${right ? 24 : 318} ${l.top + 318}) scale(.46)" d="${CLOUD}" fill="#fff" opacity=".7"/>`;
-  x += `<ellipse cx="${l.pic.x}" cy="${l.pic.y + 56}" rx="74" ry="20" fill="${land.hill}"/><circle cx="${l.pic.x}" cy="${l.pic.y}" r="84" fill="url(#${id}g)"/>`;
-  x += `<g transform="translate(${l.pic.x - 66} ${l.pic.y - 66}) scale(1.1)">${sectionArtInner(l.u, id + 'a')}</g>`;
+  x += `<ellipse cx="${l.pic.x}" cy="${l.pic.y + 56}" rx="74" ry="20" fill="${land.hill}"/>`;
+  /* a land still wholly ahead keeps its picture, drawn quiet */
+  x += l.ahead ? `<g opacity="${o.dark ? 0.32 : 0.4}">` : `<circle cx="${l.pic.x}" cy="${l.pic.y}" r="84" fill="url(#${id}g)"/><g>`;
+  x += `<g transform="translate(${l.pic.x - 66} ${l.pic.y - 66}) scale(1.1)">${sectionArtInner(l.u, id + 'a')}</g></g>`;
   x += tree(l.tree.x, l.tree.y, crown, o.dark ? mix(land.hill, '#000000', 0.3) : '#C49A70');
   const fx = right ? l.pic.x - 64 : l.pic.x + 34;
   const ex = right ? 26 : 336;
@@ -166,7 +173,6 @@ export const Stone = memo(function Stone({
   k,
   t,
   dark,
-  locked,
   open,
   label,
   onPress,
@@ -177,19 +183,18 @@ export const Stone = memo(function Stone({
   k: number;
   t: Tone;
   dark: boolean;
-  locked: boolean;
   open: boolean;
   label: string;
   onPress: () => void;
 }) {
   const c = useTheme();
   const next = s.state === 'next';
-  const filled = s.state !== 'todo';
+  const quiet = s.state === 'todo';
   const w = (next ? 80 : 64) * k;
   const h = (next ? 74 : 58) * k;
   const r = (next ? 28 : 22) * k;
   const rot = s.j % 2 ? 6 : -6;
-  const edge = dark ? t.soft : mix(t.soft, t.ic, 0.3);
+  const q = quietOf(t, dark);
   return (
     <Pressable
       accessibilityRole="button"
@@ -204,37 +209,37 @@ export const Stone = memo(function Stone({
             s_.stone,
             {
               borderRadius: r,
-              backgroundColor: filled ? t.ic : c.surface,
-              borderWidth: filled ? 0 : 2.5,
-              borderColor: edge,
+              backgroundColor: quiet ? q.face : t.ic,
               transform: [{ translateY: pressed ? 2 : 0 }],
             },
+            /* a quiet stone lies flat: no shadow, no shine, no lip */
+            quiet ? s_.flat : null,
             open ? { borderWidth: 3, borderColor: c.ink } : null,
           ]}>
-          <View style={[StyleSheet.absoluteFill, { borderRadius: r, overflow: 'hidden' }]} pointerEvents="none">
-            {filled ? (
+          {quiet ? null : (
+            <View style={[StyleSheet.absoluteFill, { borderRadius: r, overflow: 'hidden' }]} pointerEvents="none">
               <LinearGradient colors={[mix(t.ic, '#ffffff', 0.22), t.ic]} start={{ x: 0.3, y: 0 }} end={{ x: 0.7, y: 1 }} style={StyleSheet.absoluteFill} />
-            ) : null}
-            <View style={[s_.band, { bottom: 0, height: 6 * k, backgroundColor: filled ? 'rgba(0,0,0,0.14)' : dark ? 'rgba(0,0,0,0.25)' : edge }]} />
-            <View style={[s_.band, { top: 0, height: 3 * k, backgroundColor: 'rgba(255,255,255,0.3)' }]} />
-          </View>
+              <View style={[s_.band, { bottom: 0, height: 6 * k, backgroundColor: 'rgba(0,0,0,0.14)' }]} />
+              <View style={[s_.band, { top: 0, height: 3 * k, backgroundColor: 'rgba(255,255,255,0.3)' }]} />
+            </View>
+          )}
           <View style={{ transform: [{ rotate: -rot + 'deg' }], alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
             {s.state === 'done' ? (
               <SvgXml xml={CHECK(t.ink)} width={28 * k} height={28 * k} />
             ) : (
-              <Text style={{ fontFamily: font.display, fontSize: (next ? 30 : 23) * k, color: next ? t.ink : t.text }}>{lessonNo(s.L)}</Text>
+              <Text style={{ fontFamily: font.display, fontSize: (next ? 30 : 22) * k, color: next ? t.ink : q.ink }}>{lessonNo(s.L)}</Text>
             )}
           </View>
-          {locked ? (
-            <View style={[s_.lock, { backgroundColor: c.surface, borderColor: edge, transform: [{ rotate: -rot + 'deg' }] }]} pointerEvents="none">
-              <Icon name="lock" size={12} color={t.text} />
-            </View>
-          ) : null}
         </View>
       )}
     </Pressable>
   );
 });
+/** a quiet stone (not reached yet): its section's color, grayed and soft, and its number a little deeper than the face */
+export function quietOf(t: Tone, dark: boolean) {
+  const face = dark ? mix(mix(t.ic, '#6E6A86', 0.62), '#1A1640', 0.38) : mix(mix(t.ic, '#C9C6D6', 0.66), '#FFFFFF', 0.28);
+  return { face, ink: dark ? mix(face, '#FFFFFF', 0.42) : mix(face, '#3A3556', 0.45) };
+}
 
 /* ---------- the pin over the next stone, and its ring ---------- */
 export function Pin({ x, y, k, color, edge }: { x: number; y: number; k: number; color: string; edge: string }) {
@@ -266,7 +271,9 @@ export function Pin({ x, y, k, color, edge }: { x: number; y: number; k: number;
     </Animated.View>
   );
 }
-export function Ring({ x, y, k, color }: { x: number; y: number; k: number; color: string }) {
+/** the ring around Up next: a soft track, filled as far as its section is done (frac, 0 to 1), breathing gently */
+export function Ring({ x, y, k, color, frac }: { x: number; y: number; k: number; color: string; frac: number }) {
+  const c = useTheme();
   const still = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -281,6 +288,16 @@ export function Ring({ x, y, k, color }: { x: number; y: number; k: number; colo
     return () => a.stop();
   }, [still, v]);
   const d = 108 * k;
+  const rr = 50;
+  const circ = 2 * Math.PI * rr;
+  const f = Math.max(0, Math.min(1, frac));
+  const track = c.scheme === 'dark' ? 'rgba(255,255,255,0.22)' : rgba(color, 0.22);
+  const xml =
+    `<svg viewBox="0 0 112 112"><circle cx="56" cy="56" r="${rr}" fill="none" stroke="${track}" stroke-width="7"/>` +
+    (f > 0
+      ? `<circle cx="56" cy="56" r="${rr}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(circ * f).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 56 56)"/>`
+      : '') +
+    '</svg>';
   return (
     <Animated.View
       pointerEvents="none"
@@ -290,14 +307,66 @@ export function Ring({ x, y, k, color }: { x: number; y: number; k: number; colo
         top: y - d / 2,
         width: d,
         height: d,
-        borderRadius: d / 2,
-        borderWidth: 5 * k,
-        borderColor: rgba(color, 0.32),
         zIndex: 2,
-        opacity: v.interpolate({ inputRange: [0, 1], outputRange: [1, 0.45] }),
-        transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) }],
-      }}
-    />
+        opacity: v.interpolate({ inputRange: [0, 1], outputRange: [1, 0.7] }),
+        transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }],
+      }}>
+      <SvgXml xml={xml} width={d} height={d} />
+    </Animated.View>
+  );
+}
+
+/* ---------- the sparks when Up next moves on ---------- */
+const SPARKS = [
+  [0, -1, 9],
+  [0.78, -0.62, 7],
+  [1, 0.1, 8],
+  [0.62, 0.8, 6],
+  [-0.1, 1, 8],
+  [-0.8, 0.6, 7],
+  [-1, -0.15, 9],
+  [-0.6, -0.82, 6],
+];
+/** a few sparks fly out from the stone just opened and fade, once. Under Reduce Motion they appear in place and fade. */
+export function Spark({ x, y, k, color }: { x: number; y: number; k: number; color: string }) {
+  const still = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    v.setValue(0);
+    const a = Animated.timing(v, { toValue: 1, duration: still ? 1400 : 1100, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE });
+    a.start();
+    return () => a.stop();
+  }, [still, v]);
+  const reach = 64 * k;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: x, top: y, zIndex: 6 }} accessible={false} importantForAccessibility="no-hide-descendants">
+      {SPARKS.map(([dx, dy, r], i) => {
+        const size = r * 2.4 * k;
+        const xml = `<svg viewBox="-10 -10 20 20"><path d="M0 -10Q1.5 -1.5 10 0Q1.5 1.5 0 10Q-1.5 1.5 -10 0Q-1.5 -1.5 0 -10Z" fill="${i % 2 ? '#FFC832' : color}"/></svg>`;
+        const at = (m: number) => (still ? m * 0.8 : m);
+        return (
+          <Animated.View
+            key={i}
+            style={{
+              position: 'absolute',
+              left: -size / 2,
+              top: -size / 2,
+              width: size,
+              height: size,
+              opacity: v.interpolate({ inputRange: [0, 0.15, 0.6, 1], outputRange: [still ? 1 : 0, 1, 0.9, 0] }),
+              transform: still
+                ? [{ translateX: at(dx * reach) }, { translateY: at(dy * reach) }]
+                : [
+                    { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [dx * reach * 0.35, dx * reach] }) },
+                    { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [dy * reach * 0.35, dy * reach] }) },
+                    { scale: v.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.4, 1.15, 0.7] }) },
+                  ],
+            }}>
+            <SvgXml xml={xml} width={size} height={size} />
+          </Animated.View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -355,8 +424,10 @@ export function StoneCard({
   t,
   when,
   locked,
+  ahead,
   waiting,
   onStart,
+  onNext,
   onSignIn,
   onClose,
 }: {
@@ -367,19 +438,28 @@ export function StoneCard({
   t: Tone;
   /** done on this day (or not done) */
   when: string | null;
+  /** Up next waits behind a free account */
   locked: boolean;
+  /** a quiet stone, not reached yet: Up next, to go to first */
+  ahead: Lesson | null;
   waiting: number;
   onStart: () => void;
+  onNext: () => void;
   onSignIn: () => void;
   onClose: () => void;
 }) {
   const c = useTheme();
+  const dark = c.scheme === 'dark';
   const no = lessonNo(L);
-  const ink = t.ink;
-  const deep = mix(t.ic, '#000000', c.scheme === 'dark' ? 0.35 : 0.25);
+  const q = quietOf(t, dark);
+  /* a quiet stone's card is quiet too: its soft face, with dark words */
+  const bg = ahead ? (dark ? mix(q.face, '#000000', 0.18) : mix(q.face, '#FFFFFF', 0.35)) : t.ic;
+  const ink = ahead ? (dark ? '#FFFFFF' : c.ink) : t.ink;
+  const deep = mix(ahead ? q.face : t.ic, '#000000', dark ? 0.35 : 0.25);
+  const btn = ahead ? (dark ? '#FFFFFF' : c.ink) : dark ? t.ic : t.text;
   return (
-    <View style={[s_.card, { top, backgroundColor: t.ic, shadowColor: '#2A2350' }]} accessibilityViewIsModal={false}>
-      <View style={[s_.point, { left: x - 16 - 11, backgroundColor: t.ic }]} />
+    <View style={[s_.card, { top, backgroundColor: bg, shadowColor: '#2A2350' }]} accessibilityViewIsModal={false}>
+      <View style={[s_.point, { left: x - 16 - 11, backgroundColor: bg }]} />
       <View style={s_.cardTop}>
         <Text style={[s_.cardEye, { color: ink }]}>
           LESSON {no} · {lmin(L).toUpperCase()}
@@ -393,16 +473,17 @@ export function StoneCard({
         {L.title}
       </Text>
       <Text style={[s_.cardP, { color: ink }]}>{L.tag}</Text>
-      {locked ? (
+      {ahead ? <Text style={[s_.cardP, { color: ink, marginTop: 6, fontFamily: font.bodyBold }]}>Opens after lesson {no - 1}.</Text> : null}
+      {locked && !ahead ? (
         <Text style={[s_.cardP, { color: ink, marginTop: 6 }]}>A free account opens the other {waiting} lessons, and keeps your progress safe.</Text>
       ) : null}
       <Pressable
         accessibilityRole="button"
-        onPress={locked ? onSignIn : onStart}
+        onPress={ahead ? onNext : locked ? onSignIn : onStart}
         style={({ pressed }) => [s_.go, { backgroundColor: c.surface, shadowColor: deep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
-        <Icon name={locked ? 'lock' : when ? 'book' : 'play'} size={18} color={c.scheme === 'dark' ? t.ic : t.text} />
-        <Text style={[s_.goT, { color: c.scheme === 'dark' ? t.ic : t.text }]}>
-          {locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
+        <Icon name={ahead ? 'next' : locked ? 'shield' : when ? 'book' : 'play'} size={18} color={btn} />
+        <Text style={[s_.goT, { color: btn }]}>
+          {ahead ? `Up next: lesson ${lessonNo(ahead)}` : locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
         </Text>
       </Pressable>
     </View>
@@ -480,7 +561,7 @@ const s_ = StyleSheet.create({
     elevation: 4,
   },
   band: { position: 'absolute', left: 0, right: 0 },
-  lock: { position: 'absolute', right: -8, top: -8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  flat: { shadowOpacity: 0, elevation: 0 },
   board: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -603,7 +684,7 @@ export function LessonMapView({
   onSignIn,
 }: {
   m: LessonMap;
-  /** whether a lesson can be opened now (or needs an account) */
+  /** whether a lesson can be opened now, by the account rule (Up next can wait behind a free account) */
   open: (L: Lesson) => boolean;
   /** the day each finished lesson was finished, by lesson id */
   dates: Record<string, string>;
@@ -638,6 +719,27 @@ export function LessonMapView({
   const all = m.lands.flatMap((l) => l.stones);
   const pick = all.find((s) => s.L.id === sel) || null;
   const nx = m.next;
+  const nxLand = nx ? m.lands.find((l) => l.stones.includes(nx))! : null;
+  /* when Up next moves on (a lesson finished here or anywhere else), a few sparks fly from the new stone, once, the next
+     time the map is on screen */
+  const focused = useIsFocused();
+  const seen = useRef<number | null>(null);
+  const [spark, setSpark] = useState<string | null>(null);
+  const at = nx ? all.indexOf(nx) : all.length;
+  useEffect(() => {
+    if (!focused || !w) return;
+    const was = seen.current;
+    seen.current = at;
+    if (was == null || at <= was || !nx) return;
+    const id = nx.L.id;
+    const a = setTimeout(() => setSpark(id), 420);
+    const b = setTimeout(() => setSpark(null), 2000);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focused, at, w > 0]);
   const label = (s: MapStone) => {
     const no = lessonNo(s.L);
     const st =
@@ -646,10 +748,10 @@ export function LessonMapView({
           ? 'Done today'
           : 'Done' + (dates[s.L.id] ? ', ' + dates[s.L.id] : '')
         : s.state === 'next'
-          ? 'Up next'
-          : open(s.L)
-            ? 'Not started'
-            : 'Opens with a free account';
+          ? open(s.L)
+            ? 'Up next'
+            : 'Up next, opens with a free account'
+          : 'Opens after lesson ' + (no - 1);
     return `Lesson ${no}: ${s.L.title}. ${st}.`;
   };
   return (
@@ -682,7 +784,7 @@ export function LessonMapView({
             <Signpost key={'s' + l.k} l={l} gone={l.k === hide} at={l.right ? { right: w - X(MAP_W - 16) } : { left: X(16) }} y={Y(l.top + 22)} k={k} />
           ))
         : null}
-      {w && nx ? <Ring x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(m.lands.find((l) => l.stones.includes(nx))!.u)).ic} /> : null}
+      {w && nx && nxLand ? <Ring x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(nxLand.u)).ic} frac={nxLand.done / nxLand.stones.length} /> : null}
       {w
         ? m.lands.map((l) => {
             const t = toneOf(c, toneName(l.u));
@@ -695,7 +797,6 @@ export function LessonMapView({
                 k={k}
                 t={t}
                 dark={dark}
-                locked={!open(s.L)}
                 open={sel === s.L.id}
                 label={label(s)}
                 onPress={() => onSel(sel === s.L.id ? null : s.L.id)}
@@ -719,6 +820,7 @@ export function LessonMapView({
         <Pin x={nx ? X(nx.x) : X(m.end.x)} y={nx ? Y(nx.y) - 4 * k : Y(m.end.y) + 6 * k} k={k} color={c.accent} edge={dark ? '#1A1250' : '#FFFFFF'} />
       ) : null}
       {w ? <Trophy x={X(m.end.x)} y={Y(m.end.y)} k={k} all={!nx} total={all.length} /> : null}
+      {w && nx && nxLand && spark === nx.L.id ? <Spark key={spark} x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(nxLand.u)).ic} /> : null}
       {w && pick ? (
         <StoneCard
           L={pick.L}
@@ -727,8 +829,10 @@ export function LessonMapView({
           t={toneOf(c, toneName(pick.L.u))}
           when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}
+          ahead={pick.state === 'todo' ? nx && nx.L : null}
           waiting={waiting}
           onStart={() => onStart(pick.L.id)}
+          onNext={() => nx && onStart(nx.L.id)}
           onSignIn={onSignIn}
           onClose={() => onSel(null)}
         />

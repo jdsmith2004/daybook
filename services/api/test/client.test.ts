@@ -93,6 +93,21 @@ describe('two devices of one person', () => {
     expect(again.saved).toBe(0);
   });
 
+  it('the day’s feeling (How are you feeling today?) goes to the other device with the day', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, settings: st(serverNow - 5000) }), serverNow - 5000);
+    a.change(
+      (s) => ({ ...s, days: core.withDay(s.days, '2026-10-10', core.dayFeelSet(s.days['2026-10-10'], '2026-10-10', 4, serverNow - 4000)) }),
+      serverNow - 4000,
+    );
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(core.dayFeelOf(b.snap.days['2026-10-10'])).toEqual({ n: 4, w: 'Good', at: serverNow - 5000 });
+    expect(core.dayFeelDue(b.snap.days, b.snap.settings, '2026-10-10')).toBe(false);
+  });
+
   it('the later change wins, on each record', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

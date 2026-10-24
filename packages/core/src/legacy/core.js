@@ -377,7 +377,9 @@ function normP(p){
  if(typeof p.lt==='number'&&isFinite(p.lt)&&p.lt>0)q.lt=p.lt;
  /* o: the app was opened that day (away.ts). It keeps the day as present, and is not something done. */
  if(p.o===true)q.o=true;
- return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe?null:q;
+ /* df: the answer to "How are you feeling today?" (day-feel.ts): a step from 1 to 5, and when (ms) */
+ if(Array.isArray(p.df)&&[1,2,3,4,5].includes(p.df[0])&&typeof p.df[1]==='number'&&isFinite(p.df[1])&&p.df[1]>=0)q.df=[p.df[0],p.df[1]];
+ return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe&&!q.df?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}
 /* a day counts as active when something was done, not when only the routine was edited */

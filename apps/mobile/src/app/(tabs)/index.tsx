@@ -10,6 +10,7 @@ import {
   accountAsk,
   awayDue,
   awayStart,
+  dayFeelDue,
   markOpen,
   tipAsk,
   tipQuiet,
@@ -37,7 +38,7 @@ import {
   shouldAutoStep,
   standRow,
 } from '@daybook/core';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState, Pressable, StyleSheet, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
@@ -56,6 +57,7 @@ import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
+import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop } from '@/lib/nav';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
@@ -119,6 +121,38 @@ export default function Today() {
     router.push('/back');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, due?.from, askAgain, tk]);
+
+  /* How are you feeling today? (core day-feel.ts, lib/day-open.ts): on the day's first open only, and only over Today:
+     once Today is the screen in front, with no sheet on it and nothing else about to open (Welcome back, graduation).
+     Never after a slip (one logged today, or a Rekindle open), and never in an open that used SOS or a pause. It opens
+     once: after that, or when this open cannot ask, it waits for tomorrow. */
+  const firstOpen = useFirstOpen();
+  const focused = useIsFocused();
+  const focusRef = useRef(focused);
+  focusRef.current = focused;
+  const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
+  const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
+  const backNow = !!due && askAgain;
+  useEffect(() => {
+    if (!firstOpen || !ready) return;
+    if (firstOpen.k < tk || sosUsed) {
+      spendFirstOpen();
+      return;
+    }
+    /* wait for the log to settle (a slip or an answer from another device comes in with sync) */
+    if (firstOpen.k !== tk || syncing || !st) return;
+    if (!dayFeelDue(snap.days, st, tk)) {
+      spendFirstOpen();
+      return;
+    }
+    if (!focused || backNow || gradNow) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      spendFirstOpen();
+      router.push('/today-feel');
+    }, 700);
+    return () => clearTimeout(t);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {

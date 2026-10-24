@@ -79,6 +79,8 @@ export interface Play {
   lt?: number;
   /** the app was opened this day (away.ts): the person was here. It earns nothing and does not start the log. */
   o?: true;
+  /** How are you feeling today? (day-feel.ts): the step from 1 (Rough) to 5 (Great), and when it was answered (ms). It earns nothing and does not start the log. */
+  df?: [1 | 2 | 3 | 4 | 5, number];
 }
 
 export interface Day {

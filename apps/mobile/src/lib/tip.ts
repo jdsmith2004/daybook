@@ -18,7 +18,7 @@ import { normSup, STRIPE_SESSION_RE, supActive, supBest, TIPPED_APP, TIPPED_PAGE
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { buyApple, finishTip, iapAvailable, loadPrices, ownedTips, storePrice, watchTips, type StoreTip } from './tip-store';
+import { appleTipError, buyApple, finishTip, iapAvailable, loadPrices, ownedTips, storePrice, watchTips, type StoreTip } from './tip-store';
 
 /** the three tips, as on the tip sheet */
 export type TipTier = TipTierId;
@@ -111,16 +111,22 @@ async function keep(rec: unknown): Promise<Supporter | null> {
 let lastError = '';
 /** what the server said when a tip could not be confirmed, in its words ('' when nothing went wrong, or it was cancelled) */
 export const tipError = (): string => lastError;
+/* the last web tip could not be confirmed for a reason that can pass (no connection, or the server or Stripe was down or
+   not set up yet): it was paid, so it is kept and tried again rather than dropped */
+let retryLater = false;
+const KEPT_WORDS = 'Your tip went through. Daybook could not confirm it yet, so it is kept, and Daybook tries again.';
 
 /** sends a web tip's Checkout Session id to the server; the record it gives back, or null */
 async function claimStripe(id: string): Promise<Supporter | null> {
   if (!STRIPE_SESSION_RE.test(id) || !host) return null;
   const signedIn = !!host.account();
   const r = signedIn ? await host.api('POST', '?claim=stripe', { session: id }) : await host.open({ session: id });
-  if (!r) {
-    lastError = 'Could not reach Daybook to confirm your tip. It is kept, and Daybook tries again.';
+  retryLater = !r || r.status >= 500;
+  if (retryLater) {
+    lastError = KEPT_WORDS;
     return null;
   }
+  if (!r) return null;
   if (r.status !== 200) {
     lastError = typeof r.body.error === 'string' ? r.body.error : 'Your tip could not be confirmed.';
     return null;
@@ -179,6 +185,7 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
     buying.add(tier);
     try {
       const t = await buyApple(tier, account);
+      if (!t) lastError = appleTipError();
       return t ? await tookApple(t) : null;
     } finally {
       buying.delete(tier);
@@ -196,7 +203,7 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
   const sup = await claimStripe(id);
   if (!sup) {
     /* paid, but not confirmed yet (no connection): kept, and tried again at the next start */
-    if (!lastError.startsWith('Could not reach')) return null;
+    if (!retryLater) return null;
     await AsyncStorage.setItem(PENDING, id).catch(() => undefined);
     return null;
   }
@@ -248,7 +255,7 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
     const id = await pendingId();
     if (id) {
       const sup = await claimStripe(id);
-      if (sup || !lastError.startsWith('Could not reach')) await clearPending();
+      if (sup || !retryLater) await clearPending();
       if (sup) {
         await keep(sup);
         host?.say('Thank you for supporting Daybook.');

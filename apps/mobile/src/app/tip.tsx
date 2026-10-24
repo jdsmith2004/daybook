@@ -16,7 +16,7 @@ import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { buyTip, restoreTips, TIP_TIERS, tipPrice, tipWays, type TipTier, type TipVia } from '@/lib/tip';
+import { buyTip, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, type TipTier, type TipVia } from '@/lib/tip';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Tip() {
@@ -41,6 +41,7 @@ export default function Tip() {
     setBusy(tier);
     try {
       if (await buyTip(tier, via)) got();
+      else if (tipError()) say(tipError());
     } catch {
       say('The tip did not go through, and nothing was charged. Try again in a moment.');
     } finally {

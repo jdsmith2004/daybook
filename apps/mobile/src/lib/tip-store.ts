@@ -78,10 +78,20 @@ export async function finishTip(t: StoreTip): Promise<void> {
   }
 }
 
-/** Buys a tip. Resolves to the tip once Apple has taken the payment; null when it was cancelled, failed, or is waiting
-    (Ask to Buy: it arrives later through watchTips). `account`: the signed-in account id, put on the purchase so the server
-    can tell whose it is. */
+/* why the last purchase failed, in words for the person: '' when it went through, was cancelled or is waiting */
+let storeError = '';
+export const appleTipError = (): string => storeError;
+/* a cancel, or a payment waiting for a parent (Ask to Buy), is not a failure */
+const QUIET_CODES: string[] = [IAP.ErrorCode.UserCancelled, IAP.ErrorCode.DeferredPayment, IAP.ErrorCode.Pending];
+const failed = (code?: string) => {
+  if (!code || !QUIET_CODES.includes(code)) storeError = 'Apple could not take the tip, and nothing was charged. Try again in a moment.';
+};
+
+/** Buys a tip. Resolves to the tip once Apple has taken the payment; null when it was cancelled, failed (appleTipError says
+    so), or is waiting (Ask to Buy: it arrives later through watchTips). `account`: the signed-in account id, put on the
+    purchase so the server can tell whose it is. */
 export async function buyApple(tier: TipTierId, account: string | null): Promise<StoreTip | null> {
+  storeError = '';
   if (!(await connect())) return null;
   const sku = APPLE_TIPS[tier];
   return new Promise((resolve) => {
@@ -104,11 +114,20 @@ export async function buyApple(tier: TipTierId, account: string | null): Promise
         { dedupeTransactionIOS: false },
       ),
     );
-    subs.push(IAP.purchaseErrorListener((e) => (!e.productId || e.productId === sku) && finish(null)));
+    subs.push(
+      IAP.purchaseErrorListener((e) => {
+        if (e.productId && e.productId !== sku) return;
+        failed(e.code);
+        finish(null);
+      }),
+    );
     IAP.requestPurchase({
       request: { apple: { sku, ...(account && ACCOUNT_RE.test(account) ? { appAccountToken: account.toLowerCase() } : {}) } },
       type: 'in-app',
-    }).catch(() => finish(null));
+    }).catch((e: { code?: string }) => {
+      failed(e?.code);
+      finish(null);
+    });
   });
 }
 

@@ -1,5 +1,18 @@
 # What is planned next
 
+## The QA list of October 24, 2026 (the owner)
+
+Done: the "How are you feeling today?" prompt (once a day, Today only, never on a slip day); the evening check-in cut to mood,
+urges and stress with one Goodnight tap (saves, records phone down, the going-to-bed picture); the morning-after card and its
+questions removed (coming back counts as the sunrise check; a morning-only card asks a run question still open); the "and one
+more: your sunrise check" line fixed; the next stop in Your day grows into a card with its own button; Log a slip is three
+screens (did you wait first, hold to rekindle, talk it through or close). The SOS button in the tab bar stays, by the owner's choice.
+
+Waiting on the owner: lesson order. Three designs were drawn. Recommended: "Your road", the map built from the order the person
+walked it, Up next big, the rest grayed but open, done lessons keep their number for good (numbers move once when it ships).
+Fallback: Up next first, the rest folded (no renumbering). Fix the checkpoint pairing (it follows LESSONS, not the path) in the
+same round, keeping saved writing with its lessons.
+
 ## Setup as a story: three acts, three payoffs (the owner, October 22, 2026)
 
 **What the owner asked for:** setup has to be the best-built part of the app: better visuals, more excitement, better

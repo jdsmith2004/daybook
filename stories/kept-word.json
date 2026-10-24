@@ -44,10 +44,9 @@
     {
       "day": "2026-10-22",
       "open": "08:00",
-      "what": "the morning after: the run question left open, in the morning",
-      "after": [{ "sunrise": true, "keep": true }],
-      "expect": "run question from last night",
-      "absent": ["The morning after", "What came just before"]
+      "what": "the morning after: coming back is the sunrise check; with the small step and Good night done, the run is saved",
+      "expect": "Lesson \\d+ of \\d+",
+      "absent": ["The morning after", "What came just before", "run question"]
     },
     {
       "day": "2026-10-23",

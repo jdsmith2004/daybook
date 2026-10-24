@@ -24,7 +24,7 @@ import { addDays, diffDays, sumDay } from './legacy/core.js';
 import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
-import { nextUp, stopTiles, type StopGo } from './day';
+import { openTile, stopTiles, type StopGo } from './day';
 import { comebackNow, rkComebackSay, rkEnded, safeName, sunriseAsk, tellStartDue } from './rekindle';
 import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
@@ -238,22 +238,11 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 
   /* 10. a calm day */
   const d = stopTiles(days, st, tk, now);
-  const cur = d.tiles.find((x) => x.cur);
-  if (cur) {
-    const o = cur.go === 'lesson' ? nextUp(days, st, tk, now, dev.account !== false) : null;
-    /* without an account, a lesson that waits behind one is never the card: nextUp offers a re-read instead */
-    const swap = o && o.act === 'lesson' && o.v && o.v !== cur.id ? o : null;
-    m(
-      'calm',
-      cur.eyebrow,
-      swap ? (swap.t || '').replace(/^(Lesson \d+|Read again): /, '') : cur.head,
-      swap ? 'A quick re-read keeps one fresh.' : cur.body,
-      swap ? 'Read it again' : cur.btn,
-      cur.go,
-      'the day',
-      swap ? swap.v : cur.id,
-    );
-  } else if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
+  /* without an account, a lesson that waits behind one is never the card: a re-read instead (day.ts openTile, which Your
+     day uses for its open stop too, so both open the same thing) */
+  const cur = openTile(days, st, tk, now, dev.account !== false);
+  if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
+  else if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   else
     m(
       'done',

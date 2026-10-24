@@ -1,9 +1,11 @@
 /* Your day as tiles (each stop has its color, its line, and where it opens), Good night as the phone going away, and sleep
    in the evening check-in. The morning stop that asked about last night was retired on October 23, 2026. */
 import { describe, expect, it } from 'vitest';
-import { normSettings } from '../src/legacy/core.js';
-import { checkinFormOf, offOnTime, phoneAway, saveCheckin, stopTiles } from '../src/day';
+import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
+import { checkinFormOf, offOnTime, openTile, phoneAway, saveCheckin, stopTiles } from '../src/day';
 import { lessonStop, recordLesson } from '../src/lessons';
+import { moments } from '../src/moment';
+import { changeDay, withDay } from '../src/mutate';
 import type { Days } from '../src/types';
 
 const st = normSettings({ start: '2026-10-01', day1: '2026-10-08', screensOff: '22:30' });
@@ -105,5 +107,34 @@ describe('the stops as tiles', () => {
     const old = normSettings({ start: '2026-10-01', routine: { morning: true, lesson: true, calm: true, reach: false, checkin: true, wind: true } });
     expect(old.routine.morning).toBe(true);
     expect(stopTiles({}, old, tk, at(8, 0)).tiles.map((t) => t.k)).toEqual(['lesson', 'evening', 'night']);
+  });
+});
+
+describe('the stop that is next, grown in place in Your day', () => {
+  /* the calm-day card at the top of Today (moment.ts), which the grown stop must match */
+  const calm = (days: Days, account = true) => moments(days, st, {}, tk, at(9), { account }).find((m) => m.k === 'calm');
+  it('is the open stop, and opens the same thing as the card at the top of Today', () => {
+    const t = openTile({}, st, tk, at(9))!;
+    expect(t).toMatchObject({ k: 'lesson', cur: true, done: false, btn: 'Start', go: 'lesson', id: LESSONS[0].id });
+    expect(calm({})).toMatchObject({ h: t.head, btn: t.btn, go: t.go, v: t.id, eb: t.eyebrow });
+  });
+  it('without an account, a lesson that waits behind one becomes a re-read, in both places', () => {
+    const first3 = LESSONS.slice(0, 3).map((L) => L.id);
+    const done = withDay(
+      {},
+      '2026-10-17',
+      changeDay(undefined, '2026-10-17', (x) => void (x.p = { ...blankP(), ls: first3 }), 1),
+    );
+    const t = openTile(done, st, tk, at(9), false)!;
+    expect(t).toMatchObject({ btn: 'Read it again', body: 'A quick re-read keeps one fresh.' });
+    expect(first3).toContain(t.id);
+    expect(calm(done, false)).toMatchObject({ v: t.id, btn: 'Read it again' });
+    expect(openTile(done, st, tk, at(9), true)).toMatchObject({ id: LESSONS[3].id, btn: 'Start' });
+  });
+  it('the check-in once the lesson is done, and nothing when no part of the day is on', () => {
+    const d = recordLesson({}, tk, LESSONS[0], at(9)).days;
+    expect(openTile(d, st, tk, at(19))).toMatchObject({ k: 'evening', btn: 'Check in', sky: 'violet' });
+    const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });
+    expect(openTile({}, off, tk, at(19))).toBeNull();
   });
 });

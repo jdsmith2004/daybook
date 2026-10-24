@@ -467,6 +467,11 @@ left is the run's, when the slip's Rekindle closed before "keep it going or star
 a sunrise-check card says "Your run question from last night is waiting", in the morning only (rollover to noon), until
 it is answered; unanswered, the run is simply kept for now. The sunrise screen asks only that.
 
+**Changed (October 24, 2026): the next stop grows in Your day.** The owner asked for both: the card at the top of Today
+stays, and in Your day the stop that is next grows in place into a bigger card in its own colors, with a full-width
+button (its own word: Start for a lesson, Check in, Start the wind-down). The other stops stay slim rows. Both open the
+same thing (core `openTile`, which also turns a lesson behind an account into a re-read).
+
 Choices made on the owner's behalf, to revisit if they feel wrong:
 
 - The third flame is "the next urge ridden out, or a full day with no slip" (the open question above).

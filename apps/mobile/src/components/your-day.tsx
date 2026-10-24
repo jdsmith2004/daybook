@@ -1,9 +1,12 @@
 /* "Your day" on Today: the day as a path from morning to night (core: stopTiles in day.ts), one plain row per stop, in the
-   color of its full-screen moment; a done one says what was done. The open stop is the moment card at the top of Today
-   (moment-card.tsx), never a second tile with its own button here. Every stop opens its moment with one tap, at any time:
+   color of its full-screen moment; a done one says what was done. The stop that is next grows in place into a bigger card
+   in its colors, with a full-width button (the owner, October 24, 2026: keep the card at the top of Today, and make the
+   next stop plain to see here too); it opens the same thing as that card (core openTile). The other stops stay slim rows.
+   Every stop opens its moment with one tap, at any time:
    the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change" turns parts of today on or off, in
    a sheet. */
-import { ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Fragment, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +17,8 @@ import { OnOff } from '@/components/form';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { font, useTheme, type Palette } from '@/lib/theme';
+import { useAccount } from '@/lib/sync';
+import { font, nightInk, skies, useTheme, type Palette } from '@/lib/theme';
 
 /** open a stop's moment */
 export function openStop(go: StopGo, id?: string) {
@@ -49,6 +53,9 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
   const c = useTheme();
   const st = snap.settings!;
   const r = stopTiles(snap.days, st, tk, now);
+  const account = useAccount();
+  /* the stop that is next, as the card at the top opens it (a re-read in place of a lesson that waits behind an account) */
+  const open = openTile(snap.days, st, tk, now, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);
   const [sheet, setSheet] = useState(false);
   const n = r.tiles.length;
@@ -88,7 +95,7 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
           {r.tiles.map((t, i) => (
             <Fragment key={t.k}>
               {i ? <View style={[s.link, { backgroundColor: r.tiles[i - 1].done ? c.mint : c.line }]} /> : null}
-              <StopRow t={t} />
+              {open && open.k === t.k && !t.done ? <NextStop t={open} /> : <StopRow t={t} />}
             </Fragment>
           ))}
         </View>
@@ -126,6 +133,53 @@ function StopRow({ t }: { t: StopTile }) {
       </View>
       {t.right ? <Text style={[s.right, { color: t.state === 'due' ? c.accentText : c.muted }]}>{t.right}</Text> : null}
       <Icon name="next" size={16} color={c.muted} />
+    </Pressable>
+  );
+}
+
+/* ---------- the stop that is next: its row grown into a card in its own colors, with a full-width button ---------- */
+function NextStop({ t }: { t: StopTile }) {
+  const c = useTheme();
+  const L = lookOf(t.sky, c);
+  const night = t.sky === 'night';
+  const deep = c.scheme === 'dark' || night;
+  const [a, b] = skies[c.scheme][t.sky];
+  const eb = night ? '#FFE27A' : L.ink;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t.btn + ': ' + t.head + '. ' + t.eyebrow + '.'}
+      onPress={() => openStop(t.go, t.id)}
+      style={({ pressed }) => [
+        s.next,
+        {
+          shadowColor: night ? '#0B0828' : c.lip,
+          shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+          transform: [{ translateY: pressed ? 3 : 0 }],
+        },
+      ]}>
+      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+      <View style={s.nextTop}>
+        <View style={[s.ic, { backgroundColor: deep ? 'rgba(255,255,255,0.14)' : c.surface }]}>
+          <Icon name={t.ic} size={24} color={eb} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[s.nextEb, { color: eb }]} numberOfLines={1}>
+            {t.eyebrow.toUpperCase()}
+          </Text>
+          <Text style={[s.nextH, { color: deep ? nightInk.ink : c.ink }]} numberOfLines={2}>
+            {t.head}
+          </Text>
+        </View>
+      </View>
+      {t.body ? (
+        <Text style={[s.nextP, { color: deep ? nightInk.muted : c.muted }]} numberOfLines={2}>
+          {t.body}
+        </Text>
+      ) : null}
+      <View style={[s.nextBtn, { backgroundColor: L.btn }]}>
+        <Text style={[s.nextBtnT, { color: L.onBtn }]}>{t.btn}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -201,6 +255,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  next: { borderRadius: 20, padding: 14, gap: 10, marginVertical: 4, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  nextTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  nextEb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
+  nextH: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
+  nextP: { fontFamily: font.bodyMedium, fontSize: 14.5, lineHeight: 20 },
+  nextBtn: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  nextBtnT: { fontFamily: font.bodyBold, fontSize: 17 },
   right: { fontFamily: font.bodySemi, fontSize: 13.5, textAlign: 'right', maxWidth: 110 },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {

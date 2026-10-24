@@ -402,3 +402,22 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
   }
   return o;
 }
+
+/* ---------- the open stop, as Today shows it ---------- */
+/** the day's open stop (cur) and what opening it does, the same in the moment card and in Your day, where it grows into a
+    bigger card in its place (while it is not done). Without an account (`account` false), a lesson that waits behind one is never offered: it
+    becomes a re-read (nextUp), so Today never turns into a sign-up page. null when there is no open stop. */
+export function openTile(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): StopTile | null {
+  const cur = stopTiles(days, st, tk, nowMs).tiles.find((x) => x.cur);
+  if (!cur) return null;
+  const o = cur.go === 'lesson' ? nextUp(days, st, tk, nowMs, account) : null;
+  const swap = o && o.act === 'lesson' && o.v && o.v !== cur.id ? o : null;
+  if (!swap) return cur;
+  return {
+    ...cur,
+    head: (swap.t || '').replace(/^(Lesson \d+|Read again): /, ''),
+    body: 'A quick re-read keeps one fresh.',
+    btn: 'Read it again',
+    id: swap.v,
+  };
+}

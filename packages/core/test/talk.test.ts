@@ -203,6 +203,10 @@ describe('Today and looking back', () => {
     let early = saveTalk({}, k, base({ t: night, p: 'wait', mo: '30', at: night + 30 * 60000 }), night);
     early = addEvent(early, k, 'slipped', '14:00', {}, at('2026-10-17T14:01:00')).days;
     expect(talkDue(early, night + 40 * 60000)!.due).toBe('decide');
+    /* nor does the slip a talk-through came right after, logged in the same minute */
+    let after = addEvent({}, k, 'slipped', '23:00', {}, night - 30000).days;
+    after = saveTalk(after, k, base({ t: night + 20000, p: 'change', m: ['walk'], mo: 'now', at: null, pr: 1 }), night + 20000);
+    expect(talkDue(after, night + 60000)!.due).toBe('plan');
     let open = saveTalk({}, k, base({ t: night, p: 'open', e: 7 }), night);
     open = addEvent(open, '2026-10-18', 'slipped', '00:40', {}, at('2026-10-18T00:41:00')).days;
     expect(talkDue(open, at('2026-10-18T09:46:00'))!.due).toBe('look');

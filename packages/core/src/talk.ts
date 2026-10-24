@@ -588,11 +588,12 @@ export function talkLookAt(t: Pick<Talk, 't' | 'at'>, hard: TalkHard = []): numb
 }
 
 const p2 = (n: number) => String(n).padStart(2, '0');
-/** a slip in the log after the talk-through at t on log day k: later that day (or with no time), or on a later day */
+/** a slip in the log after the talk-through at t on log day k: later that day (or with no time), or on a later day. A slip
+    in the same minute is the one the talk-through came after (Talk it through right after logging a slip), not a new one. */
 export function slipSince(days: Days, k: DayKey, t: number): boolean {
   const d = new Date(t);
   const since = p2(d.getHours()) + ':' + p2(d.getMinutes());
-  return Object.keys(days).some((dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || e.time >= since)));
+  return Object.keys(days).some((dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || e.time > since)));
 }
 
 /** what one talk-through needs from Today at now, if anything. A decide-later or a changed plan is settled by a slip

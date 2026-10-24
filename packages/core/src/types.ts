@@ -38,8 +38,10 @@ export interface DayEvent {
   /** SOS: stopped partway */
   sp?: true;
   rk?: Rekindle;
-  /** minutes waited before a slip */
+  /** minutes waited before a slip, as the steps the older rules count (rkWaitOf) */
   wt?: 0 | 5 | 10 | 20 | null;
+  /** a slip: the exact minutes waited first, from the slip's "Did you wait first?" slider (0 to 30, where 30 is 30 or more) */
+  wm?: number;
   /** a slip that ends a run of RUN_ASK days or more: true keep the run going (Rekindle saves it), false start fresh, absent not answered yet */
   keep?: boolean;
 }

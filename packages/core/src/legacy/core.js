@@ -347,6 +347,8 @@ function normEvent(e){
  }
  /* how long the person waited before a slip, in minutes (0, 5, 10 or 20 and up). Waiting is a skill, so it is counted even when the urge won. */
  if([0,5,10,20].indexOf(e.wt)>=0)o.wt=e.wt;
+ /* on a slip: the exact minutes waited first, as the slip's "Did you wait first?" slider set them (wt keeps the step the older rules count) */
+ if(e.outcome==='slipped'&&Number.isInteger(e.wm)&&e.wm>=0&&e.wm<=240)o.wm=e.wm;
  /* keep or start fresh, on a slip that ends a run of RUN_ASK days or more: true keep the run going, false start fresh, absent not answered */
  if(e.outcome==='slipped'&&(e.keep===true||e.keep===false))o.keep=e.keep;
  return o;

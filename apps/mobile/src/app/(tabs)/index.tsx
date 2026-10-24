@@ -1,6 +1,6 @@
 /* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
-   moment (a pause, the hard hours, the morning after or the day of a slip, a talk-through, days away, the Sunday review, a
-   one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
+   moment (a pause, the hard hours, a run question left open or the day of a slip, a talk-through, days away, the Sunday
+   review, a one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
    is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
@@ -35,7 +35,9 @@ import {
   pickMoment,
   shouldAutoCount,
   shouldAutoStep,
+  srDone,
   standRow,
+  sunriseDue,
 } from '@daybook/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -96,6 +98,7 @@ export default function Today() {
   }, [ready, st, snap.days, tk, apply, syncing]);
 
   /* this day is marked as one the app was opened, and the first time, the quiet-day rule starts (core away.ts, back.ts).
+     The day after a slip, opening it is also the sunrise check (core sunriseDue): coming back is the comeback.
      With an account, only after this launch's first sync got through: a second device must not write a newer copy of
      today before it has the other device's entries for it. */
   const synced = sync.status.k === 'off' || sync.status.k === 'out' || (sync.status.k === 'on' && !!sync.at && sync.at >= LAUNCH);
@@ -104,6 +107,9 @@ export default function Today() {
     const on = awayStart(st, tk);
     if (on) apply({ st: on });
     if (!snap.days[tk]?.p?.o) update((s0) => ({ ...s0, days: markOpen(s0.days, tk) }));
+    /* coming back after a slip is the sunrise check: it lights the second flame, with nothing to answer (core srDone) */
+    const back = sunriseDue(snap.days, st, tk);
+    if (back) update((s0) => ({ ...s0, days: srDone(s0.days, back.k, back.ev.id, tk) }));
   }, [ready, st, snap.days, tk, apply, update, syncing, synced]);
 
   /* back after days away (core awayDue): Welcome back opens once, and once more the next day if it was closed unanswered;

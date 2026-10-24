@@ -458,6 +458,15 @@ flames light themselves (`rkLights`); from `RK_BACK_FROM` (2026-10-19) a waiting
 plus the third flame (core.js `rkThirdOf`, beside the old missions, which still save it). `npm run story` walks two
 made-up people through the web app.
 
+**Changed (October 24, 2026): no "morning after" card.** The owner: it asked "what came before the slip" with no context,
+and it sat on Today all day (seen at 5:27 PM). The card and its questions (what came before, last night's screens, the
+if-then plan) are gone. Coming back is now the sunrise check: Today marks it (`srDone`) the first time it opens on the
+day after a slip (or a later day while the run waits), so the second flame, the +15 points and saving a run by coming back
+all still work with nothing to answer. The rule for points did not change, so past days count the same. The one question
+left is the run's, when the slip's Rekindle closed before "keep it going or start fresh?" was answered (`sunriseAsk`):
+a sunrise-check card says "Your run question from last night is waiting", in the morning only (rollover to noon), until
+it is answered; unanswered, the run is simply kept for now. The sunrise screen asks only that.
+
 Choices made on the owner's behalf, to revisit if they feel wrong:
 
 - The third flame is "the next urge ridden out, or a full day with no slip" (the open question above).

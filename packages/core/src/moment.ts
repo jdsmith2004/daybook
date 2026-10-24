@@ -3,7 +3,11 @@
 
     1. a pause in progress (the slim banner)
     2. in the hard hours now: SOS forward, and talk it through
-    3. the morning after a slip, until the sunrise check is done
+    3. a run question left open: a slip's Rekindle closed before "keep it going or start fresh?" was answered, from the
+       day after the slip until it is answered or the window closes, in the morning only, until noon (the sunrise check
+       asks it; rekindle.ts sunriseAsk).
+       There is no "morning after" card any more (the owner, October 24, 2026): coming back is the sunrise check, and
+       Today marks it by itself (sunriseDue, srDone).
     4. the day of a slip, after it: one small thing
     5. a talk-through due: decide now, it passed, look back
     6. hard hours in the next two hours: the plan
@@ -21,7 +25,7 @@ import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { nextUp, stopTiles, type StopGo } from './day';
-import { comebackNow, rkComebackSay, rkEnded, rkOpen, safeName, sunriseDue, tellStartDue } from './rekindle';
+import { comebackNow, rkComebackSay, rkEnded, safeName, sunriseAsk, tellStartDue } from './rekindle';
 import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
@@ -32,7 +36,7 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 export type MomentKind =
   | 'pause'
   | 'hard-now'
-  | 'morning-after'
+  | 'run-ask'
   | 'slip-day'
   | 'talk'
   | 'comeback'
@@ -71,7 +75,7 @@ export interface MomentPick {
   card: Moment;
   /** the next moment, waiting behind the card (never the calm day: the card's "then" line names the rest of the day) */
   more: Moment | null;
-  /** "Then: a lesson, the check-in and the wind-down." The day's stops still to come, on a calm day and the morning after. */
+  /** "Then: a lesson, the check-in and the wind-down." The day's stops still to come, on a calm day and under the run question. */
   then: string;
 }
 
@@ -89,6 +93,8 @@ export interface MomentDev {
   account?: boolean;
 }
 
+/** the run question's card shows in the morning, until this hour */
+export const SUNRISE_UNTIL = 12;
 const STOP_NAME: Record<string, string> = { lesson: 'a lesson', evening: 'the check-in', night: 'the wind-down' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 /** "a, b and c" */
@@ -120,21 +126,20 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           'your hard hours',
         );
 
-  /* 3 and 4. after a slip: the sunrise check for every slip, in every mode (rekindle.ts sunriseDue) */
-  const sun = sunriseDue(days, st, tk);
-  if (sun) {
-    const op = rkOpen(days, st, tk, sun.k).op;
-    const kept = op ? 'Your ' + op.run + (op.run === 1 ? ' day is' : ' days are') + ' kept. ' : 'What you built stays yours. ';
+  /* 3. a run question left open, asked in the sunrise check: in the morning only (from the rollover to noon), never all day.
+     Unanswered, the run is simply kept for now, so a morning missed loses nothing. 4. the day of a slip */
+  const ask = sunriseAsk(days, st, tk);
+  const hour = new Date(now).getHours();
+  if (ask && hour >= (st.rollover ?? 4) && hour < SUNRISE_UNTIL)
     m(
-      'morning-after',
-      sun.first ? 'The morning after' : 'Your sunrise check',
-      sun.first ? 'You came back. That is the skill.' : 'Your sunrise check is ready.',
-      (sun.first ? 'Last night is in the log, honestly. ' : '') + kept + 'Two minutes, then the day goes on as usual.',
-      'Start my sunrise check',
+      'run-ask',
+      'Your sunrise check',
+      ask.k === addDays(tk, -1) ? 'Your run question from last night is waiting' : 'Your run question is still waiting',
+      'Keep your ' + ask.run + '-day run going, or start fresh? It is kept for now, and both answers are good ones.',
+      'Keep it going or start fresh',
       'sunrise',
-      'your sunrise check',
+      'a question about your run',
     );
-  }
   const today = days[tk];
   if (sumDay(today).slipped && (today?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered))
     m(
@@ -268,8 +273,8 @@ export function pickMoment(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const card = all[0];
   const second = all[1];
   const more = second && second.k !== 'calm' && second.k !== 'done' ? second : null;
-  /* the rest of the day is named only where it helps: on a calm day, and the morning after ("then the day goes on as usual") */
-  const then = card.k === 'calm' || card.k === 'morning-after' ? thenLine(days, st, tk, now, card.k === 'calm') : '';
+  /* the rest of the day is named only where it helps: on a calm day, and under the run question */
+  const then = card.k === 'calm' || card.k === 'run-ask' ? thenLine(days, st, tk, now, card.k === 'calm') : '';
   return { card, more, then };
 }
 

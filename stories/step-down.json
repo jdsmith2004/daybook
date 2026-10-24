@@ -25,7 +25,13 @@
   "never": ["Time to decide"],
   "visits": [
     { "day": "2026-10-19", "open": "22:20", "what": "the night of a slip, in the hard hours", "before": [{ "slip": "21:50" }], "expect": "Your hard hours" },
-    { "day": "2026-10-20", "open": "08:15", "what": "the morning after: the sunrise check, in step down too", "expect": "The morning after" },
+    {
+      "day": "2026-10-20",
+      "open": "08:15",
+      "what": "the day after a slip: no morning-after card, the day goes on",
+      "expect": "Lesson \\d+ of \\d+",
+      "absent": ["The morning after", "sunrise check"]
+    },
     {
       "day": "2026-10-21",
       "open": "12:30",

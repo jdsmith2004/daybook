@@ -16,7 +16,8 @@ function slip(o: { keep?: boolean; done?: boolean } = {}): Days {
   if (o.done) ev.rk = { at: K1, pl: '' };
   return { [K]: { ...core.normDay({ events: [ev], checkin: o.done ? { so: 'Y' } : null }, K), u: 1 } };
 }
-const sunSteps = (days: Days, tk = K1) => core.srSteps(days, core.rkActive(days, st, tk)!, tk, st);
+/** the question the sunrise check still has to ask the morning after (nothing else is asked there) */
+const sunAsk = (days: Days, tk = K1) => core.sunriseAsk(days, st, tk);
 
 describe('the question waits for the end of Rekindle', () => {
   it('is open and unanswered right after the slip, and the run is kept for now', () => {
@@ -36,11 +37,11 @@ describe('the question waits for the end of Rekindle', () => {
 });
 
 describe('answered at the end of Rekindle', () => {
-  it('keep: nothing more to ask, the sunrise check skips the question, and the quest saves the run', () => {
+  it('keep: nothing more to ask, the sunrise check has no question, and the quest saves the run', () => {
     const days = core.rkKeep(slip(), st, K, K, 's1', true, 10)!;
     expect(days[K].events[0].keep).toBe(true);
     expect(core.rkAskOpen(days, st, K, K)).toBeNull();
-    expect(sunSteps(days)).toEqual(['hi', 'so', 'before', 'plan']);
+    expect(sunAsk(days)).toBeNull();
     const done = {
       [K]: { ...days[K], events: [{ ...days[K].events[0], recovered: true, rk: { at: K1, pl: '' } }], checkin: { ...days[K].checkin!, so: 'Y' as const } },
     };
@@ -50,7 +51,7 @@ describe('answered at the end of Rekindle', () => {
   it('start fresh: nothing more to ask, the run ends at the slip, and the longest run stays', () => {
     const days = core.rkKeep(slip(), st, K, K, 's1', false, 10)!;
     expect(core.rkAskOpen(days, st, K, K)).toBeNull();
-    expect(sunSteps(days)).toEqual(['hi', 'so', 'before', 'plan']);
+    expect(sunAsk(days)).toBeNull();
     expect(L(days, K1)).toMatchObject({ cur: 1, longest: 7, open: null });
   });
 });
@@ -63,9 +64,9 @@ describe('closed before an answer', () => {
       rest: 'In the morning, your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.',
     });
     expect(core.rkKeptForNow({ k: K, run: 7 }, K1).rest).toBe('Your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.');
-    expect(sunSteps(days)).toEqual(['hi', 'run', 'so', 'before', 'plan']);
-    /* without the settings, the steps read as before (the golden fixtures) */
-    expect(core.srSteps(days, core.rkActive(days, st, K1)!, K1)).toEqual(['hi', 'so', 'before', 'plan']);
+    expect(sunAsk(days)).toMatchObject({ k: K, run: 7, keep: null, open: true });
+    /* not on the slip day itself: the Rekindle there just asked */
+    expect(sunAsk(days, K)).toBeNull();
   });
 
   it('then answered at sunrise: keep holds the wait, start fresh counts from the day after the slip', () => {

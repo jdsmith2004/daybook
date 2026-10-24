@@ -1,5 +1,5 @@
 /* Rekindle, checked against the legacy app: which Rekindle a slip gets, the card on Today, the short and full screens' words,
-   and the sunrise plans. The legacy screens are HTML, so the port's words are looked for in their text. */
+   and the sunrise check (now coming back, marked on the slip). The legacy screens are HTML, so the port's words are looked for in their text. */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,6 @@ describe('the Rekindle words match the legacy app', () => {
   it('choices and prompts', () => {
     expect(core.RK_WAIT).toEqual(w.RK_WAIT);
     expect(core.RT_Q).toEqual(w.RT_Q);
-    expect(core.SR_GENERIC).toEqual(w.SR_GENERIC);
   });
   it('the message to a safe person', () => {
     ['', 'Sam', 'Alexander Hamilton the Third'].forEach((n, i) => {
@@ -105,61 +104,32 @@ describe.each(logs)('$name', (fx) => {
         expect(R.quest[k].flames).toBe(`${q.flames.filter(Boolean).length} of ${q.flames.length} flames lit`);
       }
     });
-
-    it('offers the same sunrise plans', () => {
-      at();
-      for (const k of Object.keys(R.plan)) {
-        const ev = days[k].events.find((x) => x.id === R.ev[k])!;
-        expect(J(core.srPlanInfo(ev, st))).toEqual(R.plan[k]);
-      }
-    });
   });
 });
 
-describe('the sunrise check', () => {
+describe('the sunrise check: coming back, marked on the slip', () => {
   const T = '2026-10-15';
-  const setup = (plan?: Settings['plan']) => {
-    const st = core.normSettings({ start: '2026-09-20', day1: '2026-09-27', ...(plan ? { plan } : {}) });
-    const days: Days = {
-      '2026-10-14': core.normDay({ events: [{ id: 'a', time: '23:10', outcome: 'slipped', trigger: 'late', recovered: true }] }, '2026-10-14'),
-    };
-    return { st, days };
+  const st = core.normSettings({ start: '2026-09-20', day1: '2026-09-27' });
+  const days: Days = {
+    '2026-10-14': core.normDay({ events: [{ id: 'a', time: '23:10', outcome: 'slipped', trigger: 'late', recovered: true }] }, '2026-10-14'),
   };
 
-  it('saves the plan on the slip and puts it in My plan when that slot still has the starting words', () => {
-    const { st, days } = setup();
-    const r = core.srFinish(days, st, '2026-10-14', 'a', 'Charge my phone in another room and go to sleep.', T, 5000);
-    expect(r.toPlan).toBe(true);
-    expect(r.st.plan[0]).toEqual({ when: 'I am in bed late at night', then: 'Charge my phone in another room and go to sleep.' });
-    expect(r.days['2026-10-14'].events[0].rk).toEqual({ at: T, pl: 'Charge my phone in another room and go to sleep.' });
+  it('lights the second flame, with nothing asked and no plan', () => {
+    const d = core.srDone(days, '2026-10-14', 'a', T, 5000);
+    expect(d['2026-10-14'].events[0].rk).toEqual({ at: T, pl: '' });
+    expect(core.rkOf(d, '2026-10-14', st)?.m3).toBe(true);
+    expect(core.sunriseDue(d, st, T)).toBeNull();
   });
 
-  it('never writes over a plan the person wrote themselves', () => {
-    const own = setup().st.plan.map((x, i) => (i === 0 ? { when: x.when, then: 'Read a paper book.' } : x));
-    const { st, days } = setup(own);
-    const r = core.srFinish(days, st, '2026-10-14', 'a', 'Leave the room for 10 minutes. Then bed, no phone.', T, 5000);
-    expect(r.toPlan).toBe(false);
-    expect(r.st.plan[0].then).toBe('Read a paper book.');
-    expect(r.days['2026-10-14'].events[0].rk?.pl).toBe('Leave the room for 10 minutes. Then bed, no phone.');
-  });
-
-  it('a skipped plan still finishes the check', () => {
-    const { st, days } = setup();
-    const r = core.srFinish(days, st, '2026-10-14', 'a', '', T, 5000);
-    expect(r.days['2026-10-14'].events[0].rk).toEqual({ at: T, pl: '' });
-    expect(core.rkOf(r.days, '2026-10-14', st)?.m3).toBe(true);
-  });
-
-  it('asks about last night only when it is not answered and the phone was not put away', () => {
-    const { st, days } = setup();
-    const r = core.rkOf(days, '2026-10-14', st)!;
-    expect(core.srSteps(days, r)).toEqual(['hi', 'so', 'before', 'plan']);
-    days['2026-10-14'] = { ...days['2026-10-14'], checkin: core.normCheckin({ so: 'N' }) };
-    expect(core.srSteps(days, core.rkOf(days, '2026-10-14', st)!)).toEqual(['hi', 'before', 'plan']);
+  it('is marked once: the first day stays, and a plan from an older check stays on the slip', () => {
+    const d = core.srDone(days, '2026-10-14', 'a', T, 5000);
+    expect(core.srDone(d, '2026-10-14', 'a', '2026-10-16', 6000)).toBe(d);
+    const old = { ...days, '2026-10-14': core.normDay({ events: [{ ...days['2026-10-14'].events[0], rk: { dp: 'trace' } }] }, '2026-10-14') };
+    expect(core.srDone(old, '2026-10-14', 'a', T)['2026-10-14'].events[0].rk).toEqual({ dp: 'trace', at: T, pl: '' });
+    expect(core.srDone(days, '2026-10-14', 'nope', T)).toBe(days);
   });
 
   it('going deeper marks the fourth mission, with the trace-back answers', () => {
-    const { st, days } = setup();
     const next = core.rkDeep(days, st, '2026-10-14', 'trace', ['in bed', 'scrolling', 'x'.repeat(300)], 5000)!;
     const ev = next['2026-10-14'].events[0];
     expect(ev.rk?.dp).toBe('trace');
@@ -203,7 +173,7 @@ describe('the run waits for you (three days after the slip)', () => {
     expect(core.runLedger(days, st, core.addDays(K, 1)).open).toMatchObject({ k: K });
     days = core.patchEvent(days, K, id, { recovered: true });
     days = phone(days, core.addDays(K, 2));
-    days = core.srFinish(days, st, K, id, '', core.addDays(K, 2)).days;
+    days = core.srDone(days, K, id, core.addDays(K, 2));
     const L = core.runLedger(days, st, core.addDays(K, 2));
     expect(L.kind[K]).toBe('saved');
     expect(L.cur).toBe(12);
@@ -222,7 +192,7 @@ describe('the run waits for you (three days after the slip)', () => {
     let { days, id } = base();
     days = core.patchEvent(days, K, id, { recovered: true });
     days = phone(days, K);
-    days = core.srFinish(days, st, K, id, '', core.addDays(K, 1)).days;
+    days = core.srDone(days, K, id, core.addDays(K, 1));
     const K2 = core.addDays(K, 3);
     days = core.addEvent(days, K2, 'slipped', '23:00').days;
     expect(core.rkLightLine(days, st, K2, K2, Date.now())).toBe(

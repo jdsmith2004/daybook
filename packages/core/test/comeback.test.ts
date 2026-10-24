@@ -1,10 +1,10 @@
-/* The comeback, noticed (roadmap move 3): the sunrise check for every slip in every mode, three flames that light
+/* The comeback, noticed (roadmap move 3): the sunrise check (coming back) for every slip in every mode, three flames that light
    themselves from what the person does, a run saved by coming back (not by errands), and a comeback count that only
    goes up. Nothing earned before is taken away: the missions still save a run, and older slips keep their rule. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import { addDays, normDay, normSettings } from '../src/legacy/core.js';
-import { pickMoment } from '../src/moment';
+import { moments, pickMoment } from '../src/moment';
 import type { DayEvent, Days } from '../src/types';
 
 const st = normSettings({ start: '2026-10-25', day1: '2026-11-01' });
@@ -67,19 +67,28 @@ describe('a run is saved by coming back', () => {
   });
 });
 
-describe('the sunrise check, for every slip in every mode', () => {
+describe('the sunrise check is coming back, for every slip in every mode', () => {
   const step = normSettings({ start: '2026-10-25', day1: '2026-11-01', cleanMode: 'step', stepAt: '2026-11-01' });
-  it('stepping down, a second slip in a week: the morning after asks for it', () => {
+  it('stepping down, a second slip in a week: the day after, coming back marks it, and no card asks anything', () => {
     let d = withEv(base(K), addDays(K, -2), {});
     d = withEv(d, K, {});
-    expect(core.sunriseDue(d, step, addDays(K, 1))).toMatchObject({ k: K, first: true });
-    expect(pickMoment(d, step, {}, addDays(K, 1), at(addDays(K, 1), 8)).card).toMatchObject({ k: 'morning-after', h: 'You came back. That is the skill.' });
+    const due = core.sunriseDue(d, step, addDays(K, 1))!;
+    expect(due).toMatchObject({ k: K });
+    expect(moments(d, step, {}, addDays(K, 1), at(addDays(K, 1), 8)).map((m) => m.k)).not.toContain('run-ask');
+    const back = core.srDone(d, K, due.ev.id, addDays(K, 1));
+    expect(core.rkLights(back, step, addDays(K, 1), K).flames[1]).toEqual({ on: true, t: 'You came back to Daybook' });
   });
-  it('once done, it is not asked again, and the sunrise points are there for every slip', () => {
+  it('once marked, it is not marked again, and the sunrise points are there for every slip', () => {
     let d = withEv(base(K), addDays(K, -2), {});
     d = withEv(d, K, { rk: { at: addDays(K, 1), pl: '' } });
     expect(core.sunriseDue(d, step, addDays(K, 1))).toBeNull();
     expect(core.dayPoints(d, K, step).parts.some((p: { k: string; pts: number }) => p.k === 'sunrise' && p.pts === 15)).toBe(true);
+  });
+  it('points already earned by an older sunrise check are the same: the rule for points did not change', () => {
+    const d = withEv(base(K), K, { rk: { at: addDays(K, 1), pl: 'Put my phone in another room.' } });
+    const before = core.gameCompute(d, st, {}, addDays(K, 1)).pts;
+    expect(core.srDone(d, K, 'e' + K, addDays(K, 2))).toBe(d);
+    expect(core.gameCompute(d, st, {}, addDays(K, 1)).pts).toBe(before);
   });
   it('a slip that ended no run (two days ago) is not asked about after its morning', () => {
     const d = withEv(base(K), K, { time: '10:00' });
@@ -93,7 +102,7 @@ describe('the three flames, and the comeback count', () => {
     const d = slipAndSunrise(addDays(K, 2));
     const l = core.rkLights(d, st, addDays(K, 2), K);
     expect(l.flames.map((f) => f.on)).toEqual([true, true, true]);
-    expect(l.flames.map((f) => f.t)).toEqual(['You logged it honestly', 'You came back for the sunrise check', 'A day with no slip, Monday']);
+    expect(l.flames.map((f) => f.t)).toEqual(['You logged it honestly', 'You came back to Daybook', 'A day with no slip, Monday']);
     const l0 = core.rkLights(withEv(base(K), K, {}), st, K, K);
     expect(l0.flames.map((f) => f.on)).toEqual([true, false, false]);
   });

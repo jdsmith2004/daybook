@@ -20,7 +20,7 @@ export const POINTS_LIST: [string, string][] = [
   ['+10', 'each lesson you finish (once per lesson)'],
   ['+5', 'putting your phone away at night'],
   ['+5', 'reading a lesson again (up to 2 a day)'],
-  ['+15', 'the sunrise check the morning after a slip'],
+  ['+15', 'the sunrise check: coming back to Daybook the day after a slip'],
   ['+20', 'finishing all three Rekindle missions'],
   ['+5', 'waiting at least 5 minutes before a slip (up to 2 a day)'],
   ['+20', 'each weekly review you write'],
@@ -32,7 +32,7 @@ export const POINTS_SHORT: [string, string][] = [
   ['+5', 'each honest log, slips included'],
   ['+10', 'each urge you ride out, and more for pausing first'],
   ['+10–15', 'each part of your day: a lesson, the check-in, the wind-down'],
-  ['+10–20', 'the comeback after a slip: a small step, the sunrise check, Rekindle'],
+  ['+10–20', 'the comeback after a slip: a small step, coming back the next day, Rekindle'],
   ['+20', 'each weekly review you write'],
 ];
 

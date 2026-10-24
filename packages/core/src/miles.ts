@@ -138,13 +138,15 @@ export function winGain(before: Days, after: Days, st: Settings, keys: DayKey[])
   }
   return { pts, by, ev };
 }
+/* the sunrise check is coming back now (rekindle.ts srDone): Today marks it as it opens, so its word says what happened */
+const WHY: Record<string, string> = { ...(WIN_WHY as Record<string, string>), sunrise: 'You came back' };
 export function winWhy(by: Record<string, number>, quiet: boolean): string {
   if (quiet) return 'Logged. That took honesty.';
   const ks = Object.keys(by).sort((x, y) => by[y] - by[x]);
   return (
     ks
       .slice(0, 2)
-      .map((k) => (WIN_WHY as Record<string, string>)[k] || 'Nice work')
+      .map((k) => WHY[k] || 'Nice work')
       .join(' · ') || 'Nice work'
   );
 }

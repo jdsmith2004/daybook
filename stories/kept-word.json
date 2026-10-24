@@ -41,7 +41,14 @@
       "tap": ["I did one small thing"],
       "expect": "Logged\\. That took honesty"
     },
-    { "day": "2026-10-22", "open": "08:00", "what": "the morning after", "after": [{ "sunrise": true, "keep": true }], "expect": "The morning after" },
+    {
+      "day": "2026-10-22",
+      "open": "08:00",
+      "what": "the morning after: the run question left open, in the morning",
+      "after": [{ "sunrise": true, "keep": true }],
+      "expect": "run question from last night",
+      "absent": ["The morning after", "What came just before"]
+    },
     {
       "day": "2026-10-23",
       "open": "10:00",

@@ -1,9 +1,10 @@
-/* Today's one card (moment.ts), across scripted days of a made-up person: a calm day, the night of a slip and the morning
-   after, a Sunday, a pause, days away, and a day with nothing left to do. */
+/* Today's one card (moment.ts), across scripted days of a made-up person: a calm day, the night of a slip and the day
+   after (a run question left open, in the morning only), a Sunday, a pause, days away, and a day with nothing left to do. */
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
+import { rkAsk, rkKeep } from '../src/rekindle';
 import type { Days } from '../src/types';
 
 /* started October 7, Day 1 October 14; October 18 is a Sunday */
@@ -41,8 +42,10 @@ describe('a calm day', () => {
   });
 });
 
-describe('a slip, and the morning after', () => {
+describe('a slip, and the day after', () => {
   const d = slip({}, '2026-10-21');
+  /* Day 1 October 18: the slip ends a 3-day run, so there is no run question */
+  const short = normSettings({ ...st, day1: '2026-10-18' });
   it('the night of it: one small thing, and the card goes once it is done', () => {
     expect(pickMoment(d, st, {}, '2026-10-21', at(21, 23, 30)).card).toMatchObject({ k: 'slip-day', h: 'Logged. That took honesty.', go: 'small' });
     const done = withDay(
@@ -52,11 +55,37 @@ describe('a slip, and the morning after', () => {
     );
     expect(kinds(done, '2026-10-21', at(21, 23, 40))).not.toContain('slip-day');
   });
-  it('the morning after: the sunrise check, with the run kept and the day after it', () => {
+  it('no "morning after" card: the day after opens on its next stop, morning or evening', () => {
+    for (const h of [8, 17]) {
+      const p = pickMoment(d, short, {}, '2026-10-22', at(22, h, 27));
+      expect(p.card.k).toBe('calm');
+      expect(p.more).toBeNull();
+      expect(
+        moments(d, short, {}, '2026-10-22', at(22, h, 27))
+          .map((m) => m.eb + ' ' + m.h)
+          .join(' '),
+      ).not.toMatch(/morning after|sunrise/i);
+    }
+  });
+  it('a run question left open: a sunrise-check card in the morning only, saying why, and the day after it', () => {
     const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
-    expect(p.card).toMatchObject({ k: 'morning-after', eb: 'The morning after', h: 'You came back. That is the skill.', go: 'sunrise' });
-    expect(p.card.p).toBe('Last night is in the log, honestly. Your 7 days are kept. Two minutes, then the day goes on as usual.');
+    expect(p.card).toMatchObject({ k: 'run-ask', eb: 'Your sunrise check', h: 'Your run question from last night is waiting', go: 'sunrise' });
+    expect(p.card.p).toBe('Keep your 7-day run going, or start fresh? It is kept for now, and both answers are good ones.');
     expect(p.then).toMatch(/^Then: .*the wind-down\.$/);
+    /* not before the day starts, and not after noon: it never sits there all day */
+    expect(kinds(d, '2026-10-22', at(23, 2))).not.toContain('run-ask');
+    expect(kinds(d, '2026-10-22', at(22, 11, 59))).toContain('run-ask');
+    expect(kinds(d, '2026-10-22', at(22, 12))).not.toContain('run-ask');
+    expect(kinds(d, '2026-10-22', at(22, 17, 27))).not.toContain('run-ask');
+    /* a later morning, while the window is open */
+    expect(pickMoment(d, st, {}, '2026-10-23', at(23, 9)).card.h).toBe('Your run question is still waiting');
+  });
+  it('once answered, the card goes', () => {
+    for (const keep of [true, false]) {
+      const a = rkAsk(d, st, '2026-10-22', '2026-10-21')!;
+      const done = rkKeep(d, st, '2026-10-22', '2026-10-21', a.evId, keep, 2)!;
+      expect(kinds(done, '2026-10-22', at(22, 8))).not.toContain('run-ask');
+    }
   });
   it('never a word of shame and no contractions on the slip cards', () => {
     for (const m of [...moments(d, st, {}, '2026-10-21', at(21, 23, 30)), ...moments(d, st, {}, '2026-10-22', at(22, 8))]) {
@@ -75,10 +104,12 @@ describe('the order', () => {
     expect(kinds({}, '2026-10-20', at(20, 10))).not.toContain('sunday');
   });
   it('two at once: the second waits as "and one more"', () => {
-    const p = pickMoment(slip({}, '2026-10-17'), st, {}, '2026-10-18', at(18, 8));
-    expect(p.card.k).toBe('morning-after');
+    const p = pickMoment({}, st, {}, '2026-10-18', at(18, 8), { pause: true });
+    expect(p.card.k).toBe('pause');
     expect(p.more?.k).toBe('sunday');
     expect(p.more?.one).toBe('your Sunday review');
+    const q = pickMoment(slip({}, '2026-10-21'), st, {}, '2026-10-22', at(22, 8), { pause: true });
+    expect(q.more).toMatchObject({ k: 'run-ask', one: 'a question about your run' });
   });
   it('days away not known: the fill-in, once Welcome back was closed', () => {
     expect(pickMoment({}, st, {}, '2026-10-20', at(20, 10), { back: 5 }).card).toMatchObject({ k: 'away', h: '5 days not known yet', go: 'back' });

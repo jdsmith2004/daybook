@@ -1,6 +1,6 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
-   next stop, the morning after, the Sunday review, the first week, a first pattern, days away), the whole band one
+   next stop, a run question left open, the Sunday review, the first week, a first pattern, days away), the whole band one
    button, with the rest of the day named under it. The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through, a counting note,
    a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
@@ -62,7 +62,7 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
       return <CountNotes snap={snap} tk={tk} />;
     case 'nudge':
       return <NudgeCard snap={snap} tk={tk} />;
-    case 'morning-after':
+    case 'run-ask':
       return <Band m={m} sky="sun" onPress={() => router.push('/sunrise')} />;
     case 'slip-day':
       return <Tile m={m} sky="sun" then={then} onPress={() => didSmall(tk)} />;
@@ -84,9 +84,9 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
 }
 
 /* the moments that are one band under the flame (the rest of the day is named under it) */
-const BAND = new Set<Moment['k']>(['morning-after', 'calm', 'sunday', 'first-week', 'first-pattern', 'away']);
+const BAND = new Set<Moment['k']>(['run-ask', 'calm', 'sunday', 'first-week', 'first-pattern', 'away']);
 /* the band's button stays short; the longer action is said in its label for screen readers */
-const PILL: Partial<Record<string, string>> = { sunrise: 'Start', review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
+const PILL: Partial<Record<string, string>> = { sunrise: 'Choose', review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
 
 /* one band in the colors of its moment, the whole band one button */
 function Band({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {

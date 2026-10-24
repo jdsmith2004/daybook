@@ -226,8 +226,8 @@ synced. The words never say what Daybook is for, because a note can show on a lo
 - **The rhythm.** `opens` keeps 28 days of open times (capped at 200). `usualHour(log, now)`: the hour with most opens in
   the last 28 days, recent days weighing more, between 9 AM and 9 PM, else the hour the app is open now, else 6 PM. It
   times the come-back notes. The judging of a note (two hours to open) stays as it is.
-- **The mood.** `weekFeel(days, tk)`: `heavy` when the mean motivation of the last three check-ins is 3 or lower or the
-  mean stress is 7 or higher (0 to 10), `steady` otherwise. On a heavy day, the routine notes offer and do not ask: the
+- **The mood.** `weekFeel(days, tk)`: `heavy` when the mean mood (motivation, on days saved before October 24, 2026) of
+  the last three check-ins is 3 or lower or the mean stress is 7 or higher (0 to 10), `steady` otherwise. On a heavy day, the routine notes offer and do not ask: the
   check-in note becomes "A short check-in is enough tonight. Nothing to get right.", the morning and wind-down notes go
   passive (no sound), and the hard-hours heads-up stays as it is, because it is care. Never a number, never a word that
   says what Daybook is for. The kinder words after a slip (already there) win over the mood words.

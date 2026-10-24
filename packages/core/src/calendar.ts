@@ -132,6 +132,8 @@ export interface DaySummary {
   events: { id: string; outcome: DayEvent['outcome']; time: string; what: string; meta: string; sos: string[]; note: string }[];
   /** the check-in, when one was saved */
   ci: {
+    md: number | null;
+    u: number | null;
     m: number | null;
     c: number | null;
     e: number | null;
@@ -198,7 +200,7 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     slips: s.slipped,
     pts: d ? dayPoints(days, key, st).total : 0,
     events,
-    ci: c ? { m: c.m, c: c.c, e: c.e, s: c.s, h: c.h, so: c.so, ro: c.ro, n: (c.n || '').trim() } : null,
+    ci: c ? { md: c.md ?? null, u: c.u ?? null, m: c.m, c: c.c, e: c.e, s: c.s, h: c.h, so: c.so, ro: c.ro, n: (c.n || '').trim() } : null,
     more,
     po: (p && p.po) || null,
   };

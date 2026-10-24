@@ -28,6 +28,7 @@ import {
   weekStats,
   type RunLedger,
 } from './legacy/core.js';
+import { logRateKeys, rateKeys, ratingOf, type RateKey } from './day';
 import { logStart } from './log-start';
 import { urStats } from './sos';
 import { phaseLabel } from './view';
@@ -54,16 +55,9 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
         ? 'No slip so far'
         : (STATUS_TXT as Record<string, string>)[status] || '';
   const rate = c
-    ? (
-        [
-          ['Motivation', c.m],
-          ['Connection', c.c],
-          ['Energy', c.e],
-          ['Stress', c.s],
-        ] as [string, number | null][]
-      )
-        .filter((x) => x[1] != null)
-        .map((x) => `${x[0]} ${x[1]}`)
+    ? rateKeys(c)
+        .filter((k) => c[k] != null)
+        .map((k) => `${ratingOf(k).name} ${c[k]}`)
         .join(' · ')
     : '';
   const pts = d ? dayPoints(days, key, st).total : 0;
@@ -167,6 +161,19 @@ export function urWorks(days: Days, tk: DayKey) {
 }
 
 /* ---------- the week ---------- */
+/** the mean of one rating over the days lo to hi (as the legacy weekStats takes it), or null with none */
+function rateAvg(days: Days, lo: DayKey, hi: DayKey, f: RateKey): number | null {
+  let sum = 0;
+  let n = 0;
+  for (let k = lo; k <= hi; k = addDays(k, 1)) {
+    const v = days[k]?.checkin?.[f];
+    if (typeof v === 'number') {
+      sum += v;
+      n++;
+    }
+  }
+  return n ? sum / n : null;
+}
 /** one average tile: the number, and how it moved from last week */
 export function avgTile(cur: number | null, prev: number | null | undefined) {
   const d = cur != null && prev != null ? cur - prev : null;
@@ -188,17 +195,11 @@ export function weekView(days: Days, st: Settings, tk: DayKey, k: number) {
     w,
     range: rangeLabel(w.lo, w.hi) + (wk === cw ? ' · this week' : ''),
     keys,
-    avgs: (
-      [
-        ['Motivation', 'm'],
-        ['Connection', 'c'],
-        ['Energy', 'e'],
-        ['Stress', 's'],
-      ] as [string, 'm' | 'c' | 'e' | 's'][]
-    ).map(([l, f]) => ({
-      l,
+    /* the ratings the log holds (logRateKeys): mood, urges and stress, and the older ones on a log that has them */
+    avgs: logRateKeys(days).map((f) => ({
+      l: ratingOf(f).name,
       f,
-      ...avgTile(w[f], pw && pw[f]),
+      ...avgTile(rateAvg(days, w.lo, w.hi, f), pw && rateAvg(days, pw.lo, pw.hi, f)),
       vals: keys.map((x) => {
         const c = days[x] && days[x].checkin;
         return c && typeof c[f] === 'number' ? (c[f] as number) : null;

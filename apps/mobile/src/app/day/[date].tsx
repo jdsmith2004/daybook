@@ -3,7 +3,20 @@
    kept and any note), the check-in as small bars, and the rest of the day (tools, lessons, a talk-through, phone away).
    Editing is one tap away: an entry opens its own sheet, and Edit opens the check-in and that night's screens-off and
    sleep. ‹ and › step to the day before and after. Ported from the legacy sheetDay, and made to be read. */
-import { calNeighbors, daySummary, fmtClock, fmtDate, isKey, phaseLabel, setScreensOff, stepSleep, type CalKind } from '@daybook/core';
+import {
+  calNeighbors,
+  daySummary,
+  fmtClock,
+  fmtDate,
+  isKey,
+  phaseLabel,
+  rateKeys,
+  ratingOf,
+  setScreensOff,
+  stepSleep,
+  type CalKind,
+  type RateKey,
+} from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -192,15 +205,11 @@ function Step({ label, onPress, a11y }: { label: string; onPress: () => void; a1
   );
 }
 
-/* the check-in's four answers, as short bars out of 10 */
-function Bars({ ci }: { ci: { m: number | null; c: number | null; e: number | null; s: number | null } }) {
+/* the check-in's answers, as short bars out of 10: mood, urges and stress, and an older day's own ratings (core rateKeys) */
+function Bars({ ci }: { ci: Partial<Record<RateKey, number | null>> }) {
   const c = useTheme();
-  const rows: [string, number | null, string][] = [
-    ['Motivation', ci.m, c.mint],
-    ['Connection', ci.c, c.sky],
-    ['Energy', ci.e, c.sun],
-    ['Stress', ci.s, c.coral],
-  ];
+  const tint: Record<RateKey, string> = { md: c.mint, u: c.violet, m: c.mint, c: c.sky, e: c.sun, s: c.coral };
+  const rows: [string, number | null, string][] = rateKeys(ci).map((k) => [ratingOf(k).name, ci[k] ?? null, tint[k]]);
   return (
     <View style={{ gap: 8 }}>
       {rows

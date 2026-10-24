@@ -1,62 +1,52 @@
-/* The wind-down: a short full-screen moment under the night sky. The checklist for the hour before screens go off, as big
-   cards under the thumb, then "Putting my phone away", which leads to Good night (app/night.tsx). Opened from Wind-down in
-   "Your day" and from Next up. Ported from the wind-down stop that was inside Your day. */
-import { clockOf, fmtClock, gameCompute, phoneAway, rhythm, windLine, windToggle } from '@daybook/core';
+/* The wind-down: a short full-screen moment under the night sky, the same Goodnight screen the check-in ends with
+   (components/goodnight.tsx). "Tap this when you put your phone down": the big Goodnight button puts the phone away and
+   plays the going-to-bed moment. Above it, folded rows: today's check-in when it is still open (three quick numbers, which
+   end in Goodnight too), the wind-down list, and the plan for a loud night with SOS. Opened from Wind-down in "Your day"
+   and from Next up. */
+import { fmtClock, rhythm, windLine } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '@/components/text';
+import { useState } from 'react';
+import { StyleSheet } from 'react-native';
 
+import { GoingToBed, GoodnightButton, LoudFold, NightRow, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
 import { FitArt } from '@/components/fit';
 import { NightSky } from '@/components/night-sky';
-import { Dock, SceneFrame } from '@/components/scene';
-import { Button, Icon, T } from '@/components/ui';
-import { buzz } from '@/lib/feel';
+import { Dock, Middle, SceneFrame } from '@/components/scene';
+import { Button, T } from '@/components/ui';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font } from '@/lib/theme';
 
 export default function Wind() {
-  const { snap, tk, now, update } = useStore();
+  const { snap, tk, now } = useStore();
+  const goodnight = useGoodnight();
+  const [bed, setBed] = useState<Bed | null>(null);
+  const [fold, setFold] = useState<'wind' | 'loud' | null>(null);
   const st = snap.settings;
   if (!st) return null;
+  if (bed) return <GoingToBed bed={bed} />;
   const p = snap.days[tk]?.p;
   const r = rhythm(snap.days, st, tk, now);
-  const away = () => {
-    const at = clockOf(Date.now());
-    let gain = 0;
-    update((s0) => {
-      const b0 = gameCompute(s0.days, s0.settings!, s0.reviews, tk).pts;
-      const days = phoneAway(s0.days, tk, at, Date.now(), s0.settings);
-      gain = Math.max(0, gameCompute(days, s0.settings!, s0.reviews, tk).pts - b0);
-      return { ...s0, days };
-    });
-    buzz('save');
-    router.push({ pathname: '/night', params: { at, gain: String(gain) } });
-  };
+  const ci = r.stops.find((x) => x.k === 'evening' && !x.done);
+  const toggle = (f: 'wind' | 'loud') => setFold(fold === f ? null : f);
   return (
     <SceneFrame title="Wind-down" sky="night" onClose={close}>
-      {/* the sky gives way when the list is long, so the list, the button and Not yet all fit */}
-      <FitArt drop={0.6}>
-        <NightSky />
-      </FitArt>
       <T v="title" style={s.c} accessibilityRole="header">
         Time to wind down
       </T>
       <T style={s.c} tone="muted">
         {windLine(st, r.leftToOff, p)}
       </T>
+      {/* the night sky in the open middle; it gives way when a row opens, so the rows and Goodnight all fit */}
+      <Middle>
+        <FitArt drop={0.6}>
+          <NightSky />
+        </FitArt>
+      </Middle>
       <Dock>
-        {st.wind.map((t, i) => (
-          <WindItem
-            key={i}
-            label={t}
-            on={!!p && p.w.indexOf(i) >= 0}
-            onPress={() => {
-              update((s0) => ({ ...s0, days: windToggle(s0.days, s0.settings!, tk, i) }));
-              buzz('tap');
-            }}
-          />
-        ))}
+        {ci ? <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers, then Goodnight" onPress={() => router.replace('/checkin')} /> : null}
+        <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
+        <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
         {p && p.po ? (
           <>
             <T style={s.c}>Phone away at {fmtClock(p.po)}. Good night.</T>
@@ -64,10 +54,11 @@ export default function Wind() {
           </>
         ) : (
           <>
-            <Button label="Putting my phone away" icon="moon" onPress={away} />
+            <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
             <T v="small" tone="muted" style={s.c}>
-              Tap this just before you do. Before {fmtClock(st.screensOff)}, it counts as screens off on time too.
+              Before {fmtClock(st.screensOff)}, it counts as screens off on time too.
             </T>
+            <GoodnightButton onPress={() => setBed(goodnight(null))} />
           </>
         )}
       </Dock>
@@ -75,41 +66,7 @@ export default function Wind() {
   );
 }
 
-/* one thing on the list, as a big card with a round check */
-function WindItem({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: on }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.item,
-        { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent', shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] },
-      ]}>
-      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
-        {on ? <Icon name="check" size={16} color="#06352A" /> : null}
-      </View>
-      <Text style={[s.itemT, { color: c.ink }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 56,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 2,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  itemT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15.5, lineHeight: 20 },
+  tap: { fontFamily: font.bodySemi, marginTop: 4 },
 });

@@ -356,8 +356,10 @@ function normCheckin(c){
  const num=(v,lo,hi)=>typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi?v:null;
  const yn=v=>v==='Y'||v==='N'?v:null;
  return {m:num(c.m,0,10),c:num(c.c,0,10),e:num(c.e,0,10),s:num(c.s,0,10),h:num(c.h,0,24),so:yn(c.so),ro:yn(c.ro),
-  n:typeof c.n==='string'?c.n.slice(0,300):'',done:c.done===true,at:typeof c.at==='number'?c.at:0};
+  n:typeof c.n==='string'?c.n.slice(0,300):'',done:c.done===true,at:typeof c.at==='number'?c.at:0,...moodUrges(c)};
 }
+/* mood and urges (the three-number check-in, October 24, 2026), kept only when answered, so older days read as before */
+function moodUrges(c){const o={};['md','u'].forEach(k=>{if(typeof c[k]==='number'&&isFinite(c[k])&&c[k]>=0&&c[k]<=10)o[k]=c[k]});return o}
 /* p = the small "play" record for a day: wind-down ticks, a reached-out tap, calm-move count, morning check, tools used, lessons finished,
    lessons read again (lv), and which parts of the routine this day switched on or off (ov, only the ones that differ from Settings).
    pEmpty looks at what was DONE. A day that only has routine choices is kept, but it is not an active day. */
@@ -716,13 +718,13 @@ function eventsCsv(days,st){
  return rows.map(csvRow).join('\r\n')+'\r\n';
 }
 function daysCsv(days,st,today){
- const rows=[['Date','Phase','Day','Entries','Rode it out','Slipped','Entry times','Motivation','Connection','Energy','Stress','Sleep the night before (hours)','Screens off on time that night','Reached out','Calm moves','Wind-down done','Check-in saved','Note']];
+ const rows=[['Date','Phase','Day','Entries','Rode it out','Slipped','Entry times','Mood','Urges','Motivation','Connection','Energy','Stress','Sleep the night before (hours)','Screens off on time that night','Reached out','Calm moves','Wind-down done','Check-in saved','Note']];
  const ks=allKeys(days);let lo=st.start;if(ks.length&&ks[0]<lo)lo=ks[0];
  for(let k=lo;k<=today;k=addDays(k,1)){
   const d=days[k],ph=phaseOf(k,st),s=sumDay(d),c=(d&&d.checkin)||{},p=(d&&d.p)||null;
   rows.push([k,ph.p==='quitting'?'Quitting':ph.p==='tracking'?'Tracking':'Before start',ph.n||'',s.n,s.rode,s.slipped,
    sortedEvents(d,st.rollover).map(e=>e.time||'?').join('; '),
-   c.m==null?'':c.m,c.c==null?'':c.c,c.e==null?'':c.e,c.s==null?'':c.s,c.h==null?'':c.h,c.so||'',reachedOn(d)?'Y':(c.ro||''),p&&p.c?p.c:'',p&&p.wd?'Y':'',s.checked?'Y':'',c.n||'']);
+   c.md==null?'':c.md,c.u==null?'':c.u,c.m==null?'':c.m,c.c==null?'':c.c,c.e==null?'':c.e,c.s==null?'':c.s,c.h==null?'':c.h,c.so||'',reachedOn(d)?'Y':(c.ro||''),p&&p.c?p.c:'',p&&p.wd?'Y':'',s.checked?'Y':'',c.n||'']);
  }
  return rows.map(csvRow).join('\r\n')+'\r\n';
 }

@@ -73,7 +73,7 @@ describe('the stops as tiles', () => {
     ]);
     expect(r.tiles[0].cur).toBe(true);
     expect(r.tiles[0].right).toBe('From 9:00 AM');
-    expect(r.tiles[1].line).toBe('Four numbers about today');
+    expect(r.tiles[1].line).toBe('Three quick numbers, then good night');
     expect(r.tiles[2].line).toBe('Screens off at 10:30 PM');
   });
   it('in the evening, done stops say what was done, and the check-in is open', () => {

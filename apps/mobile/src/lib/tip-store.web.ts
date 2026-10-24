@@ -11,6 +11,8 @@ export interface StoreTip {
 }
 export const storePrice = (_tier: TipTierId): string | undefined => undefined;
 export const loadPrices = async (): Promise<void> => undefined;
+export const usStorefront = (): boolean => false;
+export const appleTipError = (): string => '';
 export const finishTip = async (_t: StoreTip): Promise<void> => undefined;
 export const buyApple = async (_tier: TipTierId, _account: string | null): Promise<StoreTip | null> => null;
 export const ownedTips = async (_ask = false): Promise<StoreTip[]> => [];

@@ -41,8 +41,15 @@ const prices: Partial<Record<TipTierId, string>> = {};
 export const storePrice = (tier: TipTierId): string | undefined => prices[tier];
 
 /** asks the App Store for the three products and their prices */
+/* the App Store country of this Apple Account (alpha-3, "USA"), or null until the store says */
+let storefront: string | null = null;
+/** whether this Apple Account is on the United States storefront, the only one where a link out to pay on the web is
+    allowed (Guidelines 3.1.1(a)); false until the store has said */
+export const usStorefront = (): boolean => storefront === 'USA';
+
 export async function loadPrices(): Promise<void> {
   if (!(await connect())) return;
+  if (!storefront) storefront = await IAP.getStorefront().catch(() => null);
   try {
     const list = (await IAP.fetchProducts({ skus: TIP_TIER_IDS.map((t) => APPLE_TIPS[t]), type: 'in-app' })) as IAP.Product[] | null;
     for (const p of list || []) {

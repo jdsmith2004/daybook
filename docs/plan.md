@@ -2573,3 +2573,21 @@ Still open:
   expired says "Could not reach your account"; the "Close" link under Talk it through on the last slip screen only
   closes the page; a refund leaves the supporter record (already accepted); an email typed by someone else can block
   that person's Apple sign-in with words about a password they never had.
+
+## Tools: naming leads somewhere, a bigger wave, and the two that help most first (the owner, October 24, 2026)
+
+- **Name the feeling** no longer ends at the word. Naming a feeling takes some of its charge, but on its own the research
+  is mixed: in one trial with people in treatment, labeling alone raised craving more than reappraisal did, and urge
+  surfing guides tie the noticing to a next step. So the named page is "Name it to tame it": the feeling's shape breathes
+  (4 in, 6 out), the person says "I feel ..." on a slow breath out, and the main button is always the tool that fits
+  (core `feelLead` now gives every feeling one: the pleasant high-energy ones and a racing mind lead to 5-4-3-2-1, the calm
+  ones and stress to Breathe). "Done for now" stays as a quiet link.
+- **Get curious, Watch it**: the wave is drawn zoomed in (2.6 screens wide, 210 tall) and the view glides with the dot;
+  the time left is big (64 points); a line under the wave says where it is (building, the top, falling); "Right now it is"
+  is three big buttons, and each answer leaves a mark on the line where the dot was, so the person sees their own urge's
+  shape (urge surfing: rate it as it changes).
+- **Breathe and 5-4-3-2-1 first.** SOS lifts them for everyone (core `UR_BEST`: Breathe +2, 5-4-3-2-1 +3), Breathe can be
+  the suggestion from the first round, and both carry "A strong first pick" in SOS and on the Learn tab's tools until a
+  person's own record gives them another tag. In the golden fixtures' cases they went from about 12% of the first
+  suggestions to about 59%; Go to bed still leads late at night (now paired with one of them), and a person's own record,
+  a go-to, "Not for me" and passing over a suggestion still win over the lift.

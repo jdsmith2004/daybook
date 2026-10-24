@@ -218,12 +218,13 @@ costs money or is unclear. Tell me what you did at each step and anything that d
    number) and its status. It must say Ready to Submit / Testing, and be the one I tested.
 3. Monetization → In-App Purchases: check the three tips exist exactly as in step 6 ("In-app
    purchases": daybook.tip.kind, daybook.tip.generous, daybook.tip.amazing; Non-Consumable; $5, $10,
-   $20; United States only; Family Sharing off). For each, tell me its status and whether it has a
+   $20; Family Sharing off). Set each one's availability to United States only (they were made with
+   all countries). For each, tell me its status and whether it has a
    review screenshot and review note. Create any that are missing, but STOP before saving a price.
    I upload docs/shots/tip-review.png myself if one is missing.
-4. The version page that says "Prepare for Submission" (1.0 if nothing was ever released; if a
-   version is already live, make a new one with the + next to iOS App, numbered as the build's
-   version). The version number must equal the build's version from step 2; if it does not, tell me.
+4. Version 1.0 is live, so the update is a new version: the + next to iOS App, numbered exactly as the new
+   build's version (1.1.0, from apps/mobile/app.json). If the newest build is still 0.1.0, STOP: the
+   new build has not reached TestFlight yet.
 5. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL,
    copyright, and What's New (only if the box is there). Screenshots: leave the ones there unless a
    size is missing; tell me what Media Manager shows.

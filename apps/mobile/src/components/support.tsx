@@ -4,7 +4,19 @@
    says thank you. On iPhone the tip is Apple's in-app purchase first, with the web tip page as a second way (allowed on
    the US storefront, Guidelines 3.1.1(a) and 3.1.3; Daybook is offered in the United States only, docs/launch.md). On
    Android nothing about tips shows and nothing is locked, until Google Play's rules for it are checked (docs/plan.md). */
-import { extraLocked, isSupporter, SUPPORT_URL, tipAnswered, tipMoment, tipMomentShown, TIP_WORDS, urLastAt, type Extra, type TipMoment } from '@daybook/core';
+import {
+  extraLocked,
+  isSupporter,
+  SUPPORT_URL,
+  SUP_SYNC_WORDS,
+  tipAnswered,
+  tipMoment,
+  tipMomentShown,
+  TIP_WORDS,
+  urLastAt,
+  type Extra,
+  type TipMoment,
+} from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -22,6 +34,9 @@ import { font, useTheme } from '@/lib/theme';
 export const TIP_ON = Platform.OS !== 'android' && !SHOTS_ANDROID && !!SUPPORT_URL && tipWays().length > 0;
 /** the tip link's switch for the rules in core (tipAsk, tipButton): '' where no tip is offered */
 export const TIP_URL = TIP_ON ? SUPPORT_URL : '';
+/** what the sync screens say while an account waits for a tip: where no tip can be paid, nothing about tips */
+export const SYNC_NEED = TIP_ON ? SUP_SYNC_WORDS.need : SUP_SYNC_WORDS.needNoTip;
+export const SYNC_NEED_SHORT = TIP_ON ? SUP_SYNC_WORDS.short : SUP_SYNC_WORDS.shortNoTip;
 /** opens the tip sheet */
 export const openTip = () => (TIP_ON ? router.push('/tip') : undefined);
 

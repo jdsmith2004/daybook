@@ -41,6 +41,9 @@ it('"Not now" waits a week', () => {
 it('someone well past a week is not told "a week in"', () => {
   expect(core.accountWords('week', 0, 8).h).toMatch(/^A week in/);
   expect(core.accountWords('week', 0, 61).h).not.toMatch(/week/i);
+  /* where no tip can be paid (Android), the card says nothing about tips */
+  expect(core.accountWords('week', 3, 8, false).p).not.toMatch(/tip/i);
+  expect(core.accountWords('week', 3, 8).p).toMatch(/tip/);
 });
 
 it('the words are warm, with no contractions', () => {

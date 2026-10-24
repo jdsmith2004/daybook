@@ -2554,20 +2554,22 @@ Fixed in this pass:
   syncs or that a tip unlocks nothing; the store listing, the privacy label (Purchases) and the review notes say what
   a tip opens. The app version is 1.0.0 for the store.
 
-For the owner to decide (not changed):
+Decided and fixed the same day (the owner, October 24, 2026: "fix these"):
 
-1. **Older accounts get every extra, not only sync** (high). A grandfathered record counts as a full supporter, so those
-   people also get the whole pattern and are never asked for a tip again, and the tip sheet calls them supporters. The
-   promise was sync only. Suggested: count `src: 'grandfather'` only for sync.
-2. **Android sync waits for a tip that Android cannot pay** (medium, before Android ships). The server refuses sync to a
-   new Android account, and the app says "open when you support Daybook". Decide Android's rule (Play billing, or sync
-   free on Android) before the Play release.
-3. **Closing an account joined to Apple from a password sign-in skips Apple's revoke** (high, Apple's rule 5.1.1(v)).
-   The app asks Apple only when this sign-in was made with Apple. Suggested: the server answers "needs Apple" when the
-   account has an Apple ID and no code came, and the app then asks Apple.
-4. **The link out to the web tip page checks no storefront** (low while Daybook is US only). Add
-   `getStorefront() === 'USA'` before offering it if more countries are added.
-5. Smaller: granting notification permission or exact alarms does not reschedule at once; Delete while the sign-in has
-   expired says "Could not reach your account"; the "Close" link under Talk it through on the last slip screen only
-   closes the page; a refund leaves the supporter record (already accepted); an email typed by someone else can block
-   that person's Apple sign-in with words about a password they never had.
+1. **Older accounts keep sync only.** A grandfathered record opens sync and nothing else; those people see the whole
+   pattern's lock, are asked for a tip like anyone, and a tip they pay replaces the grandfathered record (core
+   `supPaid`, `supBest`).
+2. **Android: no tip ask.** Android cannot pay a tip (Google Play's billing is not in), so Android shows nothing about
+   tips: the sync card, the account card and setup say only that sync is not open yet, with no "I already tipped".
+   People who tipped on iPhone or the web sync on Android as anywhere. Play billing is later work, when wanted.
+3. **Closing an account joined to Apple always asks Apple.** With no code, the server answers 409 `NeedApple` and
+   deletes nothing; the app asks Apple and sends the code. A device that cannot ask Apple (Android) says so with
+   `{ apple: { skip: true } }`, and the account is closed with a line in the log.
+4. **The web tip link on iPhone shows only on the United States storefront** (StoreKit's storefront, `usStorefront`).
+
+Still open:
+
+- Smaller: granting notification permission or exact alarms does not reschedule at once; Delete while the sign-in has
+  expired says "Could not reach your account"; the "Close" link under Talk it through on the last slip screen only
+  closes the page; a refund leaves the supporter record (already accepted); an email typed by someone else can block
+  that person's Apple sign-in with words about a password they never had.

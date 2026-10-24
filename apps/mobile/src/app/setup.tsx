@@ -81,6 +81,7 @@ import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
 import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicToday, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
 import { useClock } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
+import { TIP_ON } from '@/components/support';
 import { ToolShape } from '@/components/tool-grid';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
@@ -1119,7 +1120,7 @@ export default function Setup() {
             {[
               'Every lesson open, not just the first three',
               'Free, and private to you. Nothing is shared or sold.',
-              'With a tip, a safe copy of your log and the same on every device',
+              ...(TIP_ON ? ['With a tip, a safe copy of your log and the same on every device'] : []),
             ].map((x) => (
               <View key={x} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                 <Icon name="check" size={18} color={c.mintText} />

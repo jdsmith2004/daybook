@@ -49,10 +49,11 @@ export const accountLater = (st: Settings, tk: DayKey, now = Date.now()): Change
   st: changeSettings(st, (s) => void (s.acctNo = tk), now),
 });
 
-/** the words on the account card. days: days since the start, so someone two months in is not told "a week in" */
-export function accountWords(why: AcctWhy, locked: number, days = 7): { h: string; p: string } {
+/** the words on the account card. days: days since the start, so someone two months in is not told "a week in". canTip:
+    a tip can be paid here (not on Android), so the card says what a tip adds */
+export function accountWords(why: AcctWhy, locked: number, days = 7, canTip = true): { h: string; p: string } {
   const open = locked > 0 ? `A free account opens the other ${locked} lessons.` : 'A free account keeps your lessons going on any device.';
-  const plus = ' With a tip of $' + SUPPORT_MIN + ' or more, it also keeps a safe copy of your progress and the same on your phone and the web.';
+  const plus = canTip ? ' With a tip of $' + SUPPORT_MIN + ' or more, it also keeps a safe copy of your progress and the same on your phone and the web.' : '';
   return why === 'level'
     ? { h: 'You are on your way. Keep learning.', p: open + plus }
     : { h: days < 14 ? 'A week in. Keep learning.' : 'Keep building on what you have.', p: open + plus };

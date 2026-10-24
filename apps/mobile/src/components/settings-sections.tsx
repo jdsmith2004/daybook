@@ -1,7 +1,6 @@
 /* Every setting, as collapsible sections (the More tab and the Settings page both show them): sync, my daily routine, the
    schedule, how days are counted, look and feel, SOS, reminders, and saving, backing up and deleting. Ported from the legacy viewSettings. */
 import {
-  SUP_SYNC_WORDS,
   daysCsv,
   eventsCsv,
   fmtClock,
@@ -43,6 +42,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { DateStep } from '@/components/date-step';
+import { SYNC_NEED_SHORT } from '@/components/support';
 import { STORAGE_LINE } from '@/components/home-screen';
 import { Collapse, OnOff, Stepper } from '@/components/form';
 import { confirmUnlock, lockOffered } from '@/components/lock';
@@ -196,7 +196,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               ? sync.status.k === 'expired'
                 ? 'Sign in again to keep syncing'
                 : sync.status.k === 'need'
-                  ? SUP_SYNC_WORDS.short
+                  ? SYNC_NEED_SHORT
                   : 'On' + (sync.email ? ' · ' + sync.email : '')
               : 'Off · your log stays on this device',
             <SyncBody />,

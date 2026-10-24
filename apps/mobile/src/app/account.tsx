@@ -3,7 +3,7 @@
    password for an account made with a temporary one, and "Forgot password". Sign in with Apple, where it is offered, is one
    tap above all that (lib/apple.ts); it opens the same account as the email when that email is confirmed. Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
-import { CognitoError, emailOk, PASSWORD_MIN, passwordOk, SUP_SYNC_WORDS } from '@daybook/core';
+import { CognitoError, emailOk, PASSWORD_MIN, passwordOk } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -13,6 +13,7 @@ import { AppleButton } from '@/components/apple-button';
 import { Field } from '@/components/choices';
 import { Segments } from '@/components/form';
 import { closeSheet, SheetFrame } from '@/components/sheet';
+import { SYNC_NEED } from '@/components/support';
 import { SyncBody, TrustChoice } from '@/components/sync-card';
 import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
@@ -184,7 +185,7 @@ export default function Account() {
           <T tone="muted" style={{ textAlign: 'center' }}>
             {sync.status.k === 'busy'
               ? sync.status.what
-              : (sync.status.k === 'need' ? 'Every lesson is open. ' + SUP_SYNC_WORDS.need : 'Your log is kept safe, and every lesson is open.') +
+              : (sync.status.k === 'need' ? 'Every lesson is open. ' + SYNC_NEED : 'Your log is kept safe, and every lesson is open.') +
                 (mode === 'new' && !viaApple ? ' Confirm your email in Settings any time, so a forgotten password can be reset.' : '')}
           </T>
           {sync.status.k === 'busy' ? <ActivityIndicator color={c.accent} /> : <Button label={p.then ? 'Open the lesson' : 'Done'} onPress={leave} />}

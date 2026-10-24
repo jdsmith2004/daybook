@@ -14,11 +14,23 @@
    Checkout Session id, and the page hands it to the app (daybook://tipped). On the web, the tip page opens in the same tab
    and comes back to tipped.html, which keeps the id (PENDING) and opens Daybook again, where syncTips claims it. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { normSup, STRIPE_SESSION_RE, supActive, supBest, TIPPED_APP, TIPPED_PAGE, tipLink, TIP_USD, type Supporter, type TipTierId } from '@daybook/core';
+import {
+  normSup,
+  STRIPE_SESSION_RE,
+  supActive,
+  supBest,
+  supPaid,
+  TIPPED_APP,
+  TIPPED_PAGE,
+  tipLink,
+  TIP_USD,
+  type Supporter,
+  type TipTierId,
+} from '@daybook/core';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { appleTipError, buyApple, finishTip, iapAvailable, loadPrices, ownedTips, storePrice, watchTips, type StoreTip } from './tip-store';
+import { appleTipError, buyApple, finishTip, iapAvailable, loadPrices, ownedTips, storePrice, usStorefront, watchTips, type StoreTip } from './tip-store';
 
 /** the three tips, as on the tip sheet */
 export type TipTier = TipTierId;
@@ -31,10 +43,12 @@ export const TIP_TIERS: { id: TipTier; name: string; usd: number }[] = [
 /** how a tip is paid: Apple's in-app purchase (iPhone only) or the web tip page */
 export type TipVia = 'apple' | 'web';
 
-/** the ways this device can pay, best first. (Android is not shipped; the Play Store would not allow the web page for
-    this, so ask before shipping it there.) */
+/** the ways this device can pay, best first. On iPhone the web tip page is offered only on the United States storefront
+    (Guidelines 3.1.1(a)), and not until the store has said which one it is. (Android is not shipped; the Play Store would
+    not allow the web page for this, so ask before shipping it there.) */
 export function tipWays(): TipVia[] {
-  return iapAvailable ? ['apple', 'web'] : ['web'];
+  if (!iapAvailable) return ['web'];
+  return usStorefront() ? ['apple', 'web'] : ['apple'];
 }
 
 /** the price to show for a tier, as the store formats it (falls back to "$5.00") */
@@ -272,10 +286,10 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
     const owned = iapAvailable ? await ownedTips(ask) : [];
     for (const t of owned) {
       await keep(appleRecord(t));
-      if (host?.account() && !supActive(server)) server = (await claimApple(t).catch(() => null)) || server;
+      if (host?.account() && !supPaid(server)) server = (await claimApple(t).catch(() => null)) || server;
     }
     /* a web tip claimed while signed out, linked now */
-    if (host?.account() && !supActive(server) && kept?.src === 'stripe' && kept.ref) server = (await claimStripe(kept.ref)) || server;
+    if (host?.account() && !supPaid(server) && kept?.src === 'stripe' && kept.ref) server = (await claimStripe(kept.ref)) || server;
     if (server) await keep(server);
     if (ask && !kept) lastError = lastError || 'No tip was found.';
     return { sup: kept, server };

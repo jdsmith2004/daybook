@@ -131,8 +131,17 @@ describe('locks', () => {
     expect(extraLocked(st, 'sync', { canTip: true })).toBe(true);
     expect(extraLocked(sup, 'stats', { canTip: true })).toBe(false);
     expect(extraLocked(sup, 'sync', { canTip: true })).toBe(false);
-    /* a grandfathered account is a supporter record too */
-    expect(extraLocked({ start: '2026-10-01', sup: { ...tip, src: 'grandfather' } } as never, 'sync', { canTip: true })).toBe(false);
+  });
+  it('an account from before tips keeps sync only, and is not a supporter', () => {
+    const old = { start: '2026-10-01', sup: { since: 1, kind: 'tip', until: null, src: 'grandfather' } } as never;
+    expect(extraLocked(old, 'sync', { canTip: true })).toBe(false);
+    expect(extraLocked(old, 'stats', { canTip: true })).toBe(true);
+    expect(isSupporter(old)).toBe(false);
+    /* a tip after it replaces it */
+    const g: Supporter = { since: 1, kind: 'tip', until: null, src: 'grandfather' };
+    expect(supBest(g, tip)).toBe(tip);
+    expect(supBest(tip, g)).toBe(tip);
+    expect(isSupporter(keepSup(old, tip))).toBe(true);
   });
   it('where no tip can be paid (Android for now), nothing is locked', () => {
     expect(extraLocked(st, 'stats', { canTip: false })).toBe(false);

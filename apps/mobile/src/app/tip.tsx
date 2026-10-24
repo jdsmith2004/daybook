@@ -4,7 +4,7 @@
    web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and 3.1.3). A supporter sees
    a thank-you instead, with a quiet way to tip again. A tip that goes through ends in a short celebration. The payments
    side saves the record (Settings.sup); this page only shows it. */
-import { fmtDate, gameCompute, isSupporter, keyOfDate, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
+import { fmtDate, gameCompute, isSupporter, keyOfDate, supPaid, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -52,7 +52,7 @@ export default function Tip() {
     if (busy) return;
     setBusy('restore');
     try {
-      if (await restoreTips()) got();
+      if (supPaid(await restoreTips())) got();
       else say(w.restoreNone);
     } catch {
       say('Could not check right now. Try again in a moment.');

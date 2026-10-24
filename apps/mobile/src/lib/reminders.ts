@@ -79,8 +79,15 @@ async function attach(n: Nudge): Promise<Notifications.NotificationContentAttach
   }
 }
 
+/* each scheduling waits for the one before it, so an older plan can never add a note after a newer one cleared the schedule */
+let scheduling: Promise<void> = Promise.resolve();
 /** the plan from core nudgePlan, as the phone's schedule: everything Daybook scheduled is replaced by it (a one-off from Talk it through stays) */
-export async function scheduleNudges(plan: Nudge[]): Promise<void> {
+export function scheduleNudges(plan: Nudge[]): Promise<void> {
+  const run = scheduling.then(() => replaceSchedule(plan));
+  scheduling = run.catch(() => undefined);
+  return run;
+}
+async function replaceSchedule(plan: Nudge[]): Promise<void> {
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
     if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   if (!plan.length || !(await Notifications.getPermissionsAsync()).granted) return;

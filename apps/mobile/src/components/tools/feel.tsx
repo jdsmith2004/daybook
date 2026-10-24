@@ -7,7 +7,7 @@
    and the push all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth while it moves. */
 import { FEEL_QUADS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { useNextTool } from '@/lib/tools';
 import { StatusBar } from 'expo-status-bar';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -343,6 +343,7 @@ const QUAD_COLOR: Record<string, string> = {
 
 /* ---------- the tool ---------- */
 export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
+  const nextTool = useNextTool();
   const { width: W } = useWindowDimensions();
   const { tk, update } = useStore();
   const [step, setStep] = useState<'quad' | 'grid' | 'named'>('quad');
@@ -396,7 +397,7 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
                   label={'Try ' + tool.name}
                   onPress={() => {
                     save(f.w);
-                    router.replace({ pathname: '/tool/[id]', params: { id: tool.id } });
+                    nextTool(tool.id);
                   }}
                 />
                 <View style={s.quiet}>

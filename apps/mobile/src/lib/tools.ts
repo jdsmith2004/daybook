@@ -2,7 +2,7 @@
    Started from SOS, it goes on to "How is it now?" (or to Go to bed, the second half of a "then bed" pair). On its own,
    it closes with a short word and the points it earned. */
 import { blankP, changeDay, gameCompute, withDay } from '@daybook/core';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
@@ -54,6 +54,12 @@ export function useFinishTool(lr = false) {
     close();
     say(gain > 0 ? o.msg || 'Nice work.' : o.msg || 'Done.');
   };
+}
+
+/** a tool handing on to another: the new one keeps the way back, so one opened from a lesson still returns to the lesson */
+export function useNextTool() {
+  const { lr } = useLocalSearchParams<{ lr?: string }>();
+  return (id: string) => router.replace({ pathname: '/tool/[id]', params: lr === '1' ? { id, lr: '1' } : { id } });
 }
 
 /** the X on a tool: back to SOS's tool list when SOS started it (to pick another), otherwise close */

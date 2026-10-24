@@ -282,8 +282,7 @@ export default function TalkIt() {
     count('talk_done');
     const at = t.p === 'open' ? now + 3600000 : t.at;
     if (remind && remindersOffered && at) {
-      const body =
-        t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan: ' + talkMoveWords(t).join('. ') + '.';
+      const body = t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan is ready. One tap away.';
       /* a change plan's reminder comes at its moment, so it opens Today with the plan, not the look back */
       scheduleTalk(at, body, t.p === 'change' ? '/' : '/talk?' + (t.p === 'wait' ? 'decide=' : 'look=') + t.id).then(setReminded);
     }

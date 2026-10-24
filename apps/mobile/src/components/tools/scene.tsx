@@ -28,6 +28,7 @@ import {
 } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import { useNextTool } from '@/lib/tools';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -329,6 +330,7 @@ const SUR_KINDS: ShapeKind[] = ['cookie9', 'sunny', 'clover4', 'gem', 'puffy', '
 const SUR_SOFT = ['surface', 'sunSoft', 'mintSoft', 'coralSoft', 'accentSoft', 'skySoft', 'violetSoft', 'coralSoft', 'sunSoft', 'mintSoft'] as const;
 
 export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
+  const nextTool = useNextTool();
   const c = useTheme();
   const { snap } = useStore();
   const reduce = useReducedMotion();
@@ -451,12 +453,7 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
               {/* an idea that is one of the tools (a walk is Move, a text is Reach a person) opens it */}
               {pickTool ? (
                 <View style={{ flex: 1 }}>
-                  <Button
-                    label={'Open ' + pickTool.name}
-                    kind="ghost"
-                    icon={pickTool.ic}
-                    onPress={() => router.replace({ pathname: '/tool/[id]', params: { id: pickTool.id } })}
-                  />
+                  <Button label={'Open ' + pickTool.name} kind="ghost" icon={pickTool.ic} onPress={() => nextTool(pickTool.id)} />
                 </View>
               ) : null}
             </View>
@@ -488,6 +485,7 @@ const NEED_TONE: Record<string, readonly [keyof Palette, keyof Palette]> = {
 };
 
 export function Halt({ finish, now }: ToolProps & { now: number }) {
+  const nextTool = useNextTool();
   const c = useTheme();
   const [need, setNeed] = useState<string | null>(null);
   /* back to the five from a need slides in from the left; the first time it just appears */
@@ -550,12 +548,7 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
         </Shape>
       </Middle>
       <Dock>
-        <Button
-          label={d.label}
-          onPress={() =>
-            d.tool ? router.replace({ pathname: '/tool/[id]', params: { id: d.tool } }) : finish('halt', { msg: 'You met the need. That is real care.' })
-          }
-        />
+        <Button label={d.label} onPress={() => (d.tool ? nextTool(d.tool) : finish('halt', { msg: 'You met the need. That is real care.' }))} />
         <View style={s.quiet}>
           <Link
             label="Pick another need"

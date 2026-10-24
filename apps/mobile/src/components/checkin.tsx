@@ -1,7 +1,9 @@
-/* The evening check-in for one day: four honest 0 to 10 ratings, whether you reached out, and one line. Once saved it shows as a
-   summary with Edit. Used on a day in the Journal. On Today (`scene`), the form is the full-screen check-in (app/checkin.tsx)
-   instead, and this shows only its start button or the saved summary. Ported from the legacy checkinBlock. */
-import { checkinFormOf, checkinLine, checkinSaveText, saveCheckin, type CheckinForm, type DayKey } from '@daybook/core';
+/* The evening check-in for one day: three honest 0 to 10 ratings (mood, urges, stress), whether you reached out, and one
+   line. A day saved before October 24, 2026 keeps and shows its own ratings (motivation, connection, energy), and editing it
+   keeps them too (core rateKeys). Once saved it shows as a summary with Edit. Used on a day in the Journal. On Today
+   (`scene`), the form is the full-screen check-in (app/checkin.tsx) instead, and this shows only its start button or the
+   saved summary. Ported from the legacy checkinBlock. */
+import { checkinAnswered, checkinFormOf, checkinLine, checkinSaveText, rateKeys, ratingOf, saveCheckin, type CheckinForm, type DayKey } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -31,7 +33,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
     let on = true;
     loadDrafts().then((d) => {
       if (on && d[dkey]) {
-        setForm(d[dkey]);
+        setForm({ md: null, u: null, ...d[dkey] });
         setDrafted(true);
       }
     });
@@ -73,7 +75,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
             <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Edit</Text>
           </Pressable>
         </View>
-        <View style={s.tiles}>{[tile(saved!.m, 'Motivation'), tile(saved!.c, 'Connection'), tile(saved!.e, 'Energy'), tile(saved!.s, 'Stress')]}</View>
+        <View style={s.tiles}>{rateKeys(saved!).map((k) => tile(saved![k] ?? null, ratingOf(k).name))}</View>
         {line ? (
           <T v="small" tone="muted">
             {line}
@@ -88,7 +90,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
     return (
       <View style={{ gap: 10 }}>
         <T v="small" tone="muted">
-          Four quick numbers about today, and one line if you want. About a minute.
+          Three quick numbers about today, then Goodnight when the phone goes down. Under a minute.
         </T>
         <Button label={drafted ? 'Finish my check-in' : 'Check in'} icon="pencil" onPress={() => router.push({ pathname: '/checkin', params: { k: dkey } })} />
       </View>
@@ -96,7 +98,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
 
   const set = (k: keyof CheckinForm, v: unknown) => touch({ ...form, [k]: v } as CheckinForm);
   const save = () => {
-    if ([form.m, form.c, form.e, form.s, form.ro].every((v) => v == null) && !form.n.trim()) {
+    if (!checkinAnswered({ ...form, h: null })) {
       say('Answer at least one first.');
       return;
     }
@@ -125,10 +127,10 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
       <T v="small" tone="muted">
         Give each one an honest 0 to 10. Do not round up to feel better. Best after dinner or before your wind-down.
       </T>
-      <Rate label="Motivation" lo="none" hi="lots" value={form.m} onChange={(v) => set('m', v)} />
-      <Rate label="Emotional connection" lo="distant" hi="close" value={form.c} onChange={(v) => set('c', v)} />
-      <Rate label="Energy" lo="drained" hi="full" value={form.e} onChange={(v) => set('e', v)} />
-      <Rate label="Stress" lo="calm" hi="high" value={form.s} onChange={(v) => set('s', v)} />
+      {rateKeys(form).map((k) => {
+        const R = ratingOf(k);
+        return <Rate key={k} label={R.name} lo={R.lo} hi={R.hi} value={form[k] ?? null} onChange={(v) => set(k, v)} />;
+      })}
       <YesNo label="Reached out to someone today?" value={form.ro} onPick={(v) => set('ro', form.ro === v ? null : v)} />
       <KeepAbove style={{ gap: 14 }}>
         <Field
@@ -154,7 +156,7 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
 
 const s = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  tiles: { flexDirection: 'row', gap: 8 },
-  tile: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 14, gap: 2 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tile: { flexGrow: 1, flexBasis: '22%', alignItems: 'center', paddingVertical: 10, borderRadius: 14, gap: 2 },
   tileV: { fontFamily: font.display, fontSize: 22 },
 });

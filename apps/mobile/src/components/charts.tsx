@@ -163,7 +163,7 @@ export function DayColumns({
   );
 }
 
-/** the four ratings, each in its own small chart, 0 to 10 */
+/** the check-in's ratings, each in its own small chart, 0 to 10 */
 export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: string; name: string; vals: (number | null)[] }[] }) {
   const k = useChartColors();
   const [w, onLayout] = useWidth();

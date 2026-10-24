@@ -218,7 +218,7 @@ export function patNeeds(days: Days, keys: DayKey[]): { n: TalkNeed; name: strin
 
 /* ---------- what is different on hard days ---------- */
 export interface PatDiff {
-  k: 'm' | 'c' | 'e' | 's' | 'h' | 'so' | 'ro';
+  k: 'md' | 'u' | 'm' | 'c' | 'e' | 's' | 'h' | 'so' | 'ro';
   label: string;
   unit: 'ten' | 'h' | 'pct';
   clean: number;
@@ -227,7 +227,9 @@ export interface PatDiff {
 }
 const DIFFS: [PatDiff['k'], string, PatDiff['unit'], number][] = [
   ['h', 'Sleep the night before', 'h', 0.75],
+  ['u', 'Urges', 'ten', 1],
   ['s', 'Stress', 'ten', 1],
+  ['md', 'Mood', 'ten', 1],
   ['m', 'Motivation', 'ten', 1],
   ['e', 'Energy', 'ten', 1],
   ['c', 'Connection', 'ten', 1],
@@ -271,7 +273,7 @@ export function patDiffs(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN:
         ? 'You slept ' + (more ? 'more' : 'less') + ' before slip days: ' + r1(b) + ' hours, against ' + r1(a) + '.'
         : unit === 'pct'
           ? label + ': ' + Math.round(a * 100) + '% of days with no slip, ' + Math.round(b * 100) + '% of slip days.'
-          : label + ' was ' + (more ? 'higher' : 'lower') + ' on slip days: ' + r1(b) + ' out of 10, against ' + r1(a) + '.';
+          : label + (k === 'u' ? ' were ' : ' was ') + (more ? 'higher' : 'lower') + ' on slip days: ' + r1(b) + ' out of 10, against ' + r1(a) + '.';
     list.push({ k, label, unit, clean: a, slip: b, line });
   }
   return { list, cleanN: clean.length, slipN: slip.length };

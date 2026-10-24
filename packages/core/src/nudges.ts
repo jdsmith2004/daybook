@@ -14,7 +14,7 @@
      allows notifications, and is made again each time the app opens. So when the app goes quiet, the reminders stop on
      their own, the notes say Daybook is still here (each with something in it, never only "we miss you"), and then
      nothing comes until the person opens it. They come at the hour the app is usually open (the second pass).
-   - After a heavy few days (low motivation or high stress in the check-ins), the routine notes offer and do not ask.
+   - After a heavy few days (low mood or high stress in the check-ins), the routine notes offer and do not ask.
    - Words that learn: each routine kind has three wordings, and the phone keeps how often each one helped. The pick is a
      small version of Duolingo's bandit: the one that helps most wins, yesterday's loses unless it is clearly better, and a
      wording never sent gets its turn.
@@ -25,6 +25,7 @@
    by default, once a day at about the time the last lesson was finished, a day later (else the hour the app is usually
    open, never at night), skipped once today's lesson is done or when no new lesson is open, and sharing one note with the
    check-in reminder when that comes within the same hour. Not copied: the guilt. The words stay warm. */
+import { moodOf } from './day';
 import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, LESSON_WIN_FROM, routineOn } from './legacy/core.js';
 import { firstUndone, lessonDoneOn, lessonsDone } from './lessons';
@@ -336,7 +337,8 @@ export function lessonDue(days: Days, st: Settings, k: DayKey, account = true): 
   return nl && lessonOpen(nl, done, account) ? nl.id : null;
 }
 
-/** how the last three check-ins (in the last week) felt: heavy when motivation is 3 or lower or stress 7 or higher, on average */
+/** how the last three check-ins (in the last week) felt: heavy when mood (motivation, on a day saved before mood was asked)
+    is 3 or lower or stress 7 or higher, on average */
 export function weekFeel(days: Days, tk: DayKey): 'heavy' | 'steady' {
   const cs = [];
   for (let i = 0; i < 7 && cs.length < 3; i++) {
@@ -347,7 +349,7 @@ export function weekFeel(days: Days, tk: DayKey): 'heavy' | 'steady' {
     const v = xs.filter((x): x is number => typeof x === 'number');
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
   };
-  const m = mean(cs.map((c) => c.m));
+  const m = mean(cs.map((c) => moodOf(c)));
   const s = mean(cs.map((c) => c.s));
   return (m != null && m <= 3) || (s != null && s >= 7) ? 'heavy' : 'steady';
 }

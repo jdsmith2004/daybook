@@ -2,8 +2,9 @@
    from the legacy pathHtml, stopStatus, windLine, doSaveCheckin and the Today actions (night-so, night-sleep, wind, rt-day,
    save-checkin). The morning stop ("Last night") was retired on October 23, 2026 (docs/plan.md, "Lessons first"): Good
    night counts as the phone going away, and as screens off on time when it comes before the screens-off time (phoneAway),
-   and sleep is one optional question in the evening check-in, kept where the morning kept it (checkin.h). Checked by
-   test/day.test.ts. */
+   and sleep is one optional question in the evening check-in, kept where the morning kept it (checkin.h). Since October
+   24, 2026 the check-in is three quick numbers (mood, urges, stress) and then Goodnight, which saves it and puts the phone
+   away in one tap (sayGoodnight). Checked by test/day.test.ts, test/your-day.test.ts and test/checkin.test.ts. */
 import {
   addDays,
   blankP,
@@ -49,7 +50,61 @@ export function windLine(st: Settings, leftToOff: number, p: Play | null | undef
 }
 
 /* ---------- the evening check-in ---------- */
+/* Three quick numbers since October 24, 2026: mood (md), urges (u) and stress (s), then Goodnight (sayGoodnight). Sleep,
+   reached out and the one line wait under "More". Motivation (m), connection (c) and energy (e) were asked before: a day
+   that holds them keeps them through an edit, and still shows them (rateKeys). */
+export type RateKey = 'md' | 'u' | 'm' | 'c' | 'e' | 's';
+export interface Rating {
+  k: RateKey;
+  /** the short name, on tiles, bars and charts */
+  name: string;
+  /** the question, at the top of its step */
+  q: string;
+  lo: string;
+  hi: string;
+}
+/** every rating, in the order they show: the three asked now first, stress last, as before */
+export const RATINGS: Rating[] = [
+  { k: 'md', name: 'Mood', q: 'How did today feel?', lo: 'heavy', hi: 'good' },
+  { k: 'u', name: 'Urges', q: 'How strong were the urges today?', lo: 'none', hi: 'strong' },
+  { k: 'm', name: 'Motivation', q: 'How much motivation did you have today?', lo: 'none', hi: 'lots' },
+  { k: 'c', name: 'Connection', q: 'How close did you feel to people today?', lo: 'distant', hi: 'close' },
+  { k: 'e', name: 'Energy', q: 'How much energy did you have?', lo: 'drained', hi: 'full' },
+  { k: 's', name: 'Stress', q: 'How much stress did you feel?', lo: 'calm', hi: 'high' },
+];
+/** the three the check-in asks, in its order */
+export const ASKED: RateKey[] = ['md', 'u', 's'];
+const OLD: RateKey[] = ['m', 'c', 'e'];
+const ORDER: RateKey[] = RATINGS.map((r) => r.k);
+export const ratingOf = (k: RateKey) => RATINGS.find((r) => r.k === k)!;
+const rated = (c: Partial<Record<RateKey, number | null>> | null | undefined, k: RateKey) => !!c && typeof c[k] === 'number';
+/** the ratings to show for one check-in: the three asked now, with any older ones it holds. A day saved before October 24,
+    2026 (older ones and no mood or urges) shows its own four, as it always did. */
+export function rateKeys(c: Partial<Record<RateKey, number | null>> | null | undefined): RateKey[] {
+  const old = OLD.filter((k) => rated(c, k));
+  if (old.length && !rated(c, 'md') && !rated(c, 'u')) return ['m', 'c', 'e', 's'];
+  return ORDER.filter((k) => ASKED.indexOf(k) >= 0 || old.indexOf(k) >= 0);
+}
+/** the ratings to show across a log (the week's averages, the charts): each one the log holds, in order; stress always. A log
+    with no ratings yet shows the three asked now. */
+export function logRateKeys(days: Days): RateKey[] {
+  const has = new Set<RateKey>();
+  for (const k of Object.keys(days)) {
+    const c = days[k]?.checkin;
+    if (c) for (const r of ORDER) if (rated(c, r)) has.add(r);
+  }
+  if (!ORDER.some((r) => r !== 's' && has.has(r))) return ASKED.slice();
+  return ORDER.filter((r) => r === 's' || has.has(r));
+}
+/** the mood of one check-in, for the rules that ask how a day felt: mood, or motivation on a day saved before mood was asked */
+export const moodOf = (c: Partial<Checkin> | null | undefined): number | null =>
+  c && typeof c.md === 'number' ? c.md : c && typeof c.m === 'number' ? c.m : null;
+
 export interface CheckinForm {
+  /** mood and urges (a draft or a test from before they were asked has none) */
+  md?: number | null;
+  u?: number | null;
+  /* asked before October 24, 2026: kept as they were, so editing an older day loses nothing */
   m: number | null;
   c: number | null;
   e: number | null;
@@ -65,13 +120,18 @@ export function checkinFormOf(days: Days, key: DayKey): CheckinForm {
   const saved = d && d.checkin;
   const ro = reachedOn(d) ? 'Y' : null;
   return saved
-    ? { m: saved.m, c: saved.c, e: saved.e, s: saved.s, h: saved.h, ro: saved.ro || ro, n: saved.n || '' }
-    : { m: null, c: null, e: null, s: null, h: null, ro, n: '' };
+    ? { md: saved.md ?? null, u: saved.u ?? null, m: saved.m, c: saved.c, e: saved.e, s: saved.s, h: saved.h, ro: saved.ro || ro, n: saved.n || '' }
+    : { md: null, u: null, m: null, c: null, e: null, s: null, h: null, ro, n: '' };
+}
+/** something in the form is answered, so there is a check-in to save */
+export function checkinAnswered(f: CheckinForm): boolean {
+  return [f.md, f.u, f.m, f.c, f.e, f.s, f.h, f.ro].some((v) => v != null) || !!(f.n || '').trim();
 }
 /** hours of sleep as the check-in keeps them: half hours from 0 to 14 */
 export const sleepHours = (h: number) => Math.min(14, Math.max(0, Math.round(h * 2) / 2));
 const blankCheckin = (): Checkin => ({ m: null, c: null, e: null, s: null, h: null, so: null, ro: null, n: '', done: false, at: 0 });
-/** saving keeps screens-off (from Good night), and sleep unless the form answers it */
+/** saving keeps screens-off (from Good night), and sleep unless the form answers it. Mood and urges are kept only when
+    answered (normCheckin), so a day saved without them reads as before. */
 export function saveCheckin(days: Days, key: DayKey, f: CheckinForm, now = Date.now()): Days {
   const day = changeDay(
     days[key],
@@ -79,11 +139,21 @@ export function saveCheckin(days: Days, key: DayKey, f: CheckinForm, now = Date.
     (d) => {
       const o = d.checkin || ({} as Partial<Checkin>);
       const h = f.h === undefined ? (o.h == null ? null : o.h) : f.h == null ? null : sleepHours(f.h);
-      d.checkin = { m: f.m, c: f.c, e: f.e, s: f.s, h, so: o.so || null, ro: f.ro, n: (f.n || '').trim(), done: true, at: now };
+      const c: Checkin = { m: f.m, c: f.c, e: f.e, s: f.s, h, so: o.so || null, ro: f.ro, n: (f.n || '').trim(), done: true, at: now };
+      if (f.md != null) c.md = f.md;
+      if (f.u != null) c.u = f.u;
+      d.checkin = c;
     },
     now,
   );
   return withDay(days, key, day);
+}
+/** Goodnight, at the end of tonight's check-in: one tap saves the check-in (when anything in it is answered) and puts the
+    phone away at `at` (phoneAway: screens off on time too, when it comes before the screens-off time). Both stops of the
+    evening are then done. */
+export function sayGoodnight(days: Days, tk: DayKey, f: CheckinForm | null, at: string, now = Date.now(), st?: Settings | null): Days {
+  const saved = f && checkinAnswered(f) ? saveCheckin(days, tk, f, now) : days;
+  return phoneAway(saved, tk, at, now, st);
 }
 /** the word after saving the check-in */
 export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKey): string {
@@ -230,15 +300,17 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
     }
     if (s.k === 'evening') {
       const c = days[tk]?.checkin;
-      const said = c && c.done ? [c.m != null ? 'Motivation ' + c.m : '', c.s != null ? 'Stress ' + c.s : ''].filter(Boolean).join(' · ') : '';
+      /* the first number it holds (mood, or motivation on an older day) and stress */
+      const first = c && c.done ? rateKeys(c).find((k) => k !== 's' && c[k] != null) : undefined;
+      const said = c && c.done ? [first ? ratingOf(first).name + ' ' + c[first] : '', c.s != null ? 'Stress ' + c.s : ''].filter(Boolean).join(' · ') : '';
       return {
         ...base,
         sky: 'violet',
         ic: 'pencil',
         title: 'Check-in',
-        line: s.done ? said || 'Saved' : 'Four numbers about today',
+        line: s.done ? said || 'Saved' : 'Three quick numbers, then good night',
         head: 'How was today?',
-        body: 'Four honest numbers and one line. Then the day is logged.',
+        body: 'Three quick numbers, then good night. The day is logged.',
         chips: [HX_NEXT.evening.s || '', pts('evening')],
         btn: 'Check in',
         go: 'checkin',

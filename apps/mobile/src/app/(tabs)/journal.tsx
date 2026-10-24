@@ -21,7 +21,8 @@ import {
   patWeeks,
   patWhen,
   plural,
-  SERIES,
+  logRateKeys,
+  ratingOf,
   talkEvidence,
   urWorks,
   weekOf,
@@ -216,9 +217,10 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const works = urWorks(snap.days, tk);
   const ev = talkEvidence(snap.days);
   const nums = myNumbers(snap.days, st, tk, now);
-  const series = SERIES.map(([id, name]) => ({
+  /* the ratings this log holds: mood, urges and stress, and the older ones on a log that has them (core logRateKeys) */
+  const series = logRateKeys(snap.days).map((id) => ({
     id,
-    name,
+    name: ratingOf(id).name,
     vals: keys.map((k) => {
       const ci = snap.days[k]?.checkin;
       return ci && typeof ci[id] === 'number' ? (ci[id] as number) : null;

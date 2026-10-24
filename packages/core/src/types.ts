@@ -47,9 +47,13 @@ export interface DayEvent {
 }
 
 export interface Checkin {
-  m: number | null; // motivation 0-10
-  c: number | null; // connection
-  e: number | null; // energy
+  /* the check-in asks three numbers since October 24, 2026: mood (md), urges (u) and stress (s). Motivation, connection and
+     energy were asked before; days that hold them keep them and still show them. md and u are kept only when answered. */
+  md?: number | null; // mood 0-10: how today felt (10 good)
+  u?: number | null; // urges 0-10: how strong (10 strong)
+  m: number | null; // motivation 0-10 (asked before October 24, 2026)
+  c: number | null; // connection (asked before)
+  e: number | null; // energy (asked before)
   s: number | null; // stress
   h: number | null; // hours slept the night before
   so: 'Y' | 'N' | null; // screens off on time that night

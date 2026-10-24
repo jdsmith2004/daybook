@@ -11,7 +11,10 @@ export function loggedDay(d: Day | null | undefined): boolean {
   if (!d) return false;
   if ((d.events && d.events.length) || (d.p && d.p.m)) return true;
   const c = d.checkin;
-  return !!(c && (c.done || c.m != null || c.c != null || c.e != null || c.s != null || c.h != null || c.ro != null || (c.n || '').trim()));
+  return !!(
+    c &&
+    (c.done || c.md != null || c.u != null || c.m != null || c.c != null || c.e != null || c.s != null || c.h != null || c.ro != null || (c.n || '').trim())
+  );
 }
 /** the first day with something logged */
 export function firstLog(days: Days): DayKey | null {

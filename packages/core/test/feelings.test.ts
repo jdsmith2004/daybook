@@ -53,7 +53,7 @@ describe('the feelings grid', () => {
       for (let c = 0; c < FEEL_COLS; c++)
         for (const night of [false, true]) {
           const lead = feelLead(r, c, night);
-          if (c <= 4) expect(lead, `${r},${c}`).not.toBeNull();
+          expect(lead, `${r},${c}`).not.toBeNull();
           if (lead) {
             expect(ids.indexOf(lead.tool), lead.tool).toBeGreaterThanOrEqual(0);
             expect(lead.why).not.toMatch(/'/);
@@ -64,7 +64,9 @@ describe('the feelings grid', () => {
     expect(feelLead(5, 1, false)!.tool).toBe('thought'); // Ashamed
     expect(feelLead(7, 4, true)!.tool).toBe('bed'); // Tired, at night
     expect(feelLead(7, 4, false)!.tool).toBe('halt'); // Tired, by day
-    expect(feelLead(7, 7, false)).toBeNull(); // Calm
+    expect(feelLead(7, 7, false)!.tool).toBe('breathe'); // Calm
+    expect(feelLead(0, 2, false)!.tool).toBe('ground'); // Panicked
+    expect(feelLead(0, 6, false)!.tool).toBe('ground'); // Thrilled
   });
 
   it('writes a named feeling on the day, and stops at the cap', () => {

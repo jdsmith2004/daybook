@@ -91,7 +91,7 @@ export const feelKind = (r: number, c: number): ShapeKind => {
 function SelShape({ kind, size, color }: { kind: ShapeKind; size: number; color: string }) {
   const [k, setK] = useState<ShapeKind>('circle');
   useEffect(() => {
-    const t = setTimeout(() => setK(kind), 160);
+    const t = setTimeout(() => setK(kind), 250);
     return () => clearTimeout(t);
   }, [kind]);
   return <MorphShape kind={k} size={size} color={color} />;
@@ -104,6 +104,7 @@ const Bub = memo(function Bub({
   step,
   dia,
   isSel,
+  shaped,
   onPick,
   sx,
   sy,
@@ -114,6 +115,8 @@ const Bub = memo(function Bub({
   step: number;
   dia: number;
   isSel: boolean;
+  /** grown into its shape (the chosen one, once the field has woken) */
+  shaped: boolean;
   onPick: (r: number, c: number) => void;
   sx: DerivedValue<number>;
   sy: DerivedValue<number>;
@@ -155,7 +158,7 @@ const Bub = memo(function Bub({
         accessibilityState={{ selected: isSel }}
         onPress={() => onPick(r, c)}
         style={s.bub}>
-        {isSel ? (
+        {shaped ? (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <SelShape kind={feelKind(r, c)} size={dia} color={color} />
           </View>
@@ -211,10 +214,17 @@ function FeelGrid({
      with the finger, never a frame behind */
   const sx = useDerivedValue(() => clamp((cx - tx.value) / step - 0.5, 0, N - 1), webDeps(tx, cx, step));
   const sy = useDerivedValue(() => clamp((cy - ty.value) / step - 0.5, 0, N - 1), webDeps(ty, cy, step));
+  /* the field opens still: plain round bubbles in their rows. The first scroll (or tap) wakes it, and only then does the
+     bubble in the eye swell and press the others aside */
   const amt = useSharedValue(0);
-  useEffect(() => {
+  const woke = useSharedValue(false);
+  const [live, setLive] = useState(false);
+  const wake = () => {
+    if (woke.value) return;
+    woke.value = true;
     amt.value = reduce ? 1 : withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) });
-  }, [reduce, amt]);
+    setLive(true);
+  };
   /* the bar's first real layout can move the eye a little: slide the field the same way, so the centered bubble stays
      centered and the snap targets stay true */
   const cyAt = useRef(cy);
@@ -267,6 +277,7 @@ function FeelGrid({
   const pick = (r: number, cc: number) => {
     if (Date.now() - dragAt.current < 250) return;
     buzz('tap');
+    wake();
     const nx = cx - (cc + 0.5) * step;
     const ny = cy - (r + 0.5) * step;
     const glide = { duration: 320, easing: Easing.out(Easing.cubic) };
@@ -280,6 +291,10 @@ function FeelGrid({
         .onBegin(() => {
           'worklet';
           armed.value = false;
+        })
+        .onStart(() => {
+          'worklet';
+          if (!woke.value) runOnJS(wake)();
         })
         .onChange((e) => {
           'worklet';
@@ -329,6 +344,7 @@ function FeelGrid({
                   step={step}
                   dia={dia}
                   isSel={!!sel && sel.r === r && sel.c === cc}
+                  shaped={live && sel.r === r && sel.c === cc}
                   onPick={pick}
                   sx={sx}
                   sy={sy}

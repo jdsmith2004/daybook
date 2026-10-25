@@ -1,12 +1,13 @@
 /* The tip sheet: the one place a tip is offered (Today's Support button and card, the row on More, a locked page). The why
    at the top, what a tip unlocks in the middle, the three tips low where the thumb is, each with its price as the store
-   gives it (lib/tip.ts). On iPhone, Apple's in-app purchase is first, and a quiet link under the tips switches them to the
-   web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and 3.1.3). A supporter sees
-   a thank-you instead, with a quiet way to tip again. A tip that goes through ends in a short celebration. The payments
-   side saves the record (Settings.sup); this page only shows it. */
+   gives it (lib/tip.ts). On iPhone, Apple's in-app purchase is first, and a quiet link under the tips opens the choice of
+   the same three on the web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and
+   3.1.3); one pick opens it. Anything that goes wrong is said here, under the tips: on iPhone the toast sits under a
+   sheet, where no one would see it. A supporter sees a thank-you instead, with a quiet way to tip again. A tip that goes
+   through ends in a short celebration. The payments side saves the record (Settings.sup); this page only shows it. */
 import { fmtDate, gameCompute, isSupporter, keyOfDate, supPaid, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Link } from '@/components/choices';
@@ -20,11 +21,12 @@ import { buyTip, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, type TipTi
 import { font, useTheme } from '@/lib/theme';
 
 export default function Tip() {
-  const { snap, tk, say } = useStore();
+  const { snap, tk } = useStore();
   const st = snap.settings;
   const ways = tipWays();
-  const [via, setVia] = useState<TipVia>(ways[0] || 'web');
   const [busy, setBusy] = useState<TipTier | 'restore' | null>(null);
+  /* what went wrong, said under the tips */
+  const [msg, setMsg] = useState('');
   const [won, setWon] = useState(false);
   const [again, setAgain] = useState(false);
   const sup = isSupporter(st);
@@ -36,26 +38,43 @@ export default function Tip() {
     setAgain(false);
     setWon(true);
   };
-  const pay = async (tier: TipTier) => {
+  const tell = (m: string) => {
+    setMsg(m);
+    if (m) AccessibilityInfo.announceForAccessibility(m);
+  };
+  const pay = async (tier: TipTier, via: TipVia = ways[0] || 'web') => {
     if (busy) return;
     setBusy(tier);
+    tell('');
     try {
       if (await buyTip(tier, via)) got();
-      else if (tipError()) say(tipError());
+      else tell(tipError());
     } catch {
-      say('The tip did not go through, and nothing was charged. Try again in a moment.');
+      tell('The tip did not go through, and nothing was charged. Try again in a moment.');
     } finally {
       setBusy(null);
     }
   };
+  /* the web link (iPhone only): the three tips in the system's own choice sheet, and the pick opens the web tip page */
+  const onWeb = () => {
+    if (busy) return;
+    const names = TIP_TIERS.map((t) => t.name + ' · $' + t.usd.toFixed(2));
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: w.webTitle, message: w.webLine, options: [...names, w.cancel], cancelButtonIndex: names.length },
+      (i) => {
+        if (i < names.length) pay(TIP_TIERS[i].id, 'web');
+      },
+    );
+  };
   const restore = async () => {
     if (busy) return;
     setBusy('restore');
+    tell('');
     try {
       if (supPaid(await restoreTips())) got();
-      else say(w.restoreNone);
+      else tell(w.restoreNone);
     } catch {
-      say('Could not check right now. Try again in a moment.');
+      tell('Could not check right now. Try again in a moment.');
     } finally {
       setBusy(null);
     }
@@ -64,25 +83,16 @@ export default function Tip() {
   const tiers = (
     <View style={{ gap: 10 }}>
       {TIP_TIERS.map((t, i) => (
-        <TierRow
-          key={t.id}
-          n={i}
-          name={t.name}
-          price={tipPrice(t.id)}
-          web={via === 'web' && ways.length > 1}
-          busy={busy === t.id}
-          off={!!busy}
-          onPress={() => pay(t.id)}
-        />
+        <TierRow key={t.id} n={i} name={t.name} price={tipPrice(t.id)} busy={busy === t.id} off={!!busy} onPress={() => pay(t.id)} />
       ))}
+      {msg ? (
+        <T v="small" style={s.c}>
+          {msg}
+        </T>
+      ) : null}
       {ways.length > 1 ? (
         <View style={{ alignItems: 'center' }}>
-          {via === 'web' ? (
-            <T v="small" tone="muted" style={s.c}>
-              {w.onWeb}
-            </T>
-          ) : null}
-          <Link label={via === 'web' ? w.app : w.web} onPress={() => setVia(via === 'web' ? ways[0] : 'web')} />
+          <Link label={w.web} onPress={onWeb} />
         </View>
       ) : null}
     </View>
@@ -166,23 +176,7 @@ function Perks({ list, open }: { list: Perk[]; open?: boolean }) {
 }
 
 /** one tip: a heart that grows with the tip, its name, and its price in a pill */
-function TierRow({
-  n,
-  name,
-  price,
-  web,
-  busy,
-  off,
-  onPress,
-}: {
-  n: number;
-  name: string;
-  price: string;
-  web: boolean;
-  busy: boolean;
-  off: boolean;
-  onPress: () => void;
-}) {
+function TierRow({ n, name, price, busy, off, onPress }: { n: number; name: string; price: string; busy: boolean; off: boolean; onPress: () => void }) {
   const c = useTheme();
   const tone = [
     { bg: c.sunSoft, fg: c.sunText },
@@ -196,7 +190,7 @@ function TierRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${price}${pick ? ', ' + TIP_WORDS.sheet.badge : ''}${web ? ', on the web' : ''}`}
+      accessibilityLabel={`${name}, ${price}${pick ? ', ' + TIP_WORDS.sheet.badge : ''}`}
       accessibilityState={{ disabled: off, busy }}
       disabled={off}
       onPress={onPress}
@@ -224,7 +218,6 @@ function TierRow({
       </View>
       <View style={[s.pill, { backgroundColor: pillBg }]}>
         {busy ? <ActivityIndicator color={pillFg} size="small" /> : <Text style={[s.pillT, { color: pillFg }]}>{price}</Text>}
-        {web && !busy ? <Icon name="ext" size={14} color={pillFg} /> : null}
       </View>
     </Pressable>
   );

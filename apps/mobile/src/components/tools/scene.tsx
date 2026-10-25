@@ -440,8 +440,9 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
 }
 
 /* ---------- what do I need? ---------- */
-/* one question with five big choices low on the screen; then one page for the need picked: its shape big in the middle,
-   what helps, and one button that does it (core needDo) */
+/* one question with five big choices low on the screen. A need with a tool for it (lonely: Reach a person) opens that
+   tool at once; the others get one page: its shape big in the middle, what helps, and one button that does it (core
+   needDo) */
 const NEED_SHAPE: Record<string, ShapeKind> = { hungry: 'cookie9', angry: 'softBurst', lonely: 'cookie12', tired: 'cookie6', bored: 'clover4' };
 const NEED_TONE: Record<string, readonly [keyof Palette, keyof Palette]> = {
   hungry: ['sunSoft', 'sunText'],
@@ -475,8 +476,11 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
                   key={id}
                   accessibilityRole="button"
                   onPress={() => {
-                    setNeed(id);
                     buzz('tap');
+                    /* a need with a tool for it opens that tool straight away; the others say what helps */
+                    const tl = needDo(id, night).tool;
+                    if (tl) nextTool(tl);
+                    else setNeed(id);
                   }}
                   style={({ pressed }) => [s.mrow, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
                   <Shape kind={NEED_SHAPE[id] || 'cookie9'} size={40} color={c[bg] as string} turn={j * 17}>
@@ -531,10 +535,12 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
 }
 
 /* ---------- reach a person ---------- */
-/* the three texts at the top, each opening the messages app; "I sent it" docked where the thumb is. Writing your own and
+/* the three texts at the top, each one big button that opens the messages app (hold to copy); "I sent it" docked where
+   the thumb is. Writing your own and
    the free lines (988, the Crisis Text Line) open in place from quiet links, so the page stays short enough for the
    button to sit low. */
 export function Message({ finish }: ToolProps) {
+  const c = useTheme();
   const { say } = useStore();
   const st = useCareSettings();
   const nm = safeName(st);
@@ -571,15 +577,27 @@ export function Message({ finish }: ToolProps) {
         </Appear>
       ) : (
         <Appear key="texts" by={6} duration={240} style={s.list}>
+          {/* each text is one big button: a tap opens it in the messages app, ready to send; holding it copies it */}
           {list.map((m) => (
-            <Card key={m} style={{ alignSelf: 'stretch' }}>
-              <T selectable>{m}</T>
-              <View style={s.row}>
-                <Chip label={nm ? 'Text ' + nm : 'Send'} on={false} onPress={() => send(m)} />
-                <Chip label="Copy" on={false} onPress={() => copy(m, say)} />
+            <Pressable
+              key={m}
+              accessibilityRole="button"
+              accessibilityLabel={(nm ? 'Text ' + nm : 'Send') + ': ' + m}
+              accessibilityHint="Opens your messages app. Hold to copy instead."
+              accessibilityActions={[{ name: 'longpress', label: 'Copy' }]}
+              onAccessibilityAction={() => copy(m, say)}
+              onPress={() => send(m)}
+              onLongPress={() => copy(m, say)}
+              style={({ pressed }) => [s.text, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+              <T style={{ flex: 1 }}>{m}</T>
+              <View style={[s.send, { backgroundColor: c.skySoft }]}>
+                <Icon name="next" size={20} color={c.skyText} />
               </View>
-            </Card>
+            </Pressable>
           ))}
+          <T v="small" tone="muted" style={s.c}>
+            Tap one to send it. Hold to copy.
+          </T>
           {/* a text box and its buttons stay together near the top, where the keyboard does not cover them */}
           {writing ? (
             <View style={{ alignSelf: 'stretch', gap: 8 }}>
@@ -732,6 +750,22 @@ export function Reasons({ finish }: ToolProps) {
 }
 
 const s = StyleSheet.create({
+  text: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 64,
+    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 12,
+    borderRadius: 18,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   c: { textAlign: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },

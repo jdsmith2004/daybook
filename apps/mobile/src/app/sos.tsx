@@ -297,7 +297,7 @@ export default function Sos() {
           </T>
         ) : null}
         {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
-        <ToolGrid days={snap.days} tags={tags} fresh={false} onPick={(id) => pickTool(id)} />
+        <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={(id) => pickTool(id)} />
       </SceneFrame>
     );
   }

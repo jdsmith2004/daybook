@@ -1,6 +1,6 @@
 /* Every tool, in its four groups (the legacy toolCard and the Tools grid). Used by the Tools tab and by the second SOS screen,
    where each tool can carry a small tag ("Worked 3 of 4", core: urTags). */
-import { TOOL_GROUPS, TOOLS, urTried, type Days } from '@daybook/core';
+import { TOOL_GROUPS, TOOLS, UR_QUIET, urTried, type Days } from '@daybook/core';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
@@ -53,8 +53,21 @@ export function ToolShape({ id, ic, size, iconSize, color, ink }: { id: string; 
 }
 
 /** fresh: mark the tools not tried yet with "New" (Learn). SOS leaves it off: in the middle of an urge eleven badges are
-    noise, and its tags say what has worked instead. */
-export function ToolGrid({ days, onPick, tags, fresh = true }: { days: Days; onPick: (id: string) => void; tags?: Record<string, string>; fresh?: boolean }) {
+    noise, and its tags say what has worked instead. `night` (SOS only): Go to bed is in the list only late at night; Learn
+    leaves it out, so Go to bed is always there to practice. Surprise me is in neither (core UR_QUIET). */
+export function ToolGrid({
+  days,
+  onPick,
+  tags,
+  fresh = true,
+  night,
+}: {
+  days: Days;
+  onPick: (id: string) => void;
+  tags?: Record<string, string>;
+  fresh?: boolean;
+  night?: boolean;
+}) {
   const c = useTheme();
   const tried = urTried(days);
   const any = fresh && TOOLS.some((t) => tried[t.id]);
@@ -66,7 +79,7 @@ export function ToolGrid({ days, onPick, tags, fresh = true }: { days: Days; onP
             {name}
           </T>
           <View style={s.grid}>
-            {TOOLS.filter((t) => t.g === g).map((t) => {
+            {TOOLS.filter((t) => t.g === g && UR_QUIET.indexOf(t.id) < 0 && !(t.id === 'bed' && night === false)).map((t) => {
               const [soft, ink] = toolTone(c, t.tone);
               const isNew = any && !tried[t.id];
               const tag = tags?.[t.id];

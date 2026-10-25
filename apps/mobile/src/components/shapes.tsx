@@ -72,9 +72,17 @@ export function Shape({
     /* an outline sits inside the box: the shape drawn a little smaller, so the stroke is not cut off */
     return smoothPath(shapePoints(m3(kind), 120), size - outline, size / 2, size / 2, turn);
   }, [kind, size, turn, wobble, seed, outline]);
+  /* room past the box on every side, as MorphShape has: a turned or bulging shape reaches a little past its box, and on
+     iOS an SVG cuts off whatever falls outside it, flat */
+  const pad = Math.ceil(size * 0.2);
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }} {...SVG_HIDE}>
+      <Svg
+        width={size + 2 * pad}
+        height={size + 2 * pad}
+        viewBox={-pad + ' ' + -pad + ' ' + (size + 2 * pad) + ' ' + (size + 2 * pad)}
+        style={{ position: 'absolute', left: -pad, top: -pad }}
+        {...SVG_HIDE}>
         {outline ? <Path d={d} fill="none" stroke={color} strokeWidth={outline} strokeLinejoin="round" /> : <Path d={d} fill={color} />}
       </Svg>
       {/* in a View of its own, so on the web it paints over the shape and not under it */}

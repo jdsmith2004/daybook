@@ -313,6 +313,20 @@ export function rkHonor(days: Days, st: Settings, tk: DayKey, date: DayKey): str
   return `${run} days. That is huge, and it still counts.` + grad;
 }
 
+/** once the hold is done, the one line under the heading: what the slip did not take. A run waiting for the sunrise
+    check is kept for now; a long run is honored; otherwise the level, points and urges ridden out, by name. One line,
+    because right after a slip a full page is too much to read (the owner, October 25, 2026). */
+export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey): string {
+  const open = rkAskOpen(days, st, tk, date);
+  if (open) return 'Your ' + open.run + '-day run is kept for now, and everything you earned is still yours.';
+  const op = rkOpen(days, st, tk, date).op;
+  const run = op ? op.run : freshOf(days, st, tk, date)?.run || 0;
+  if (run >= RUN_ASK) return run + ' days still count, and everything you earned is still yours.';
+  const g = gameCompute(days, st, reviews, tk);
+  const rode = g.S.rode ? plural(g.S.rode as number, 'urge') + ' ridden out' : '';
+  return 'Level ' + g.level.n + ', ' + g.pts.toLocaleString('en-US') + ' points' + (rode ? ' and ' + rode : '') + ': all still yours.';
+}
+
 /* ---------- the short Rekindle ---------- */
 export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, nowMs: number): string {
   const counting = !!(st.day1 && date >= st.day1);

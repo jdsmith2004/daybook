@@ -4,9 +4,9 @@
    After "I slipped" the slip is saved at once, and the comeback starts (core slip.ts has the research). One tap a page,
    and the X closes it at any point with everything given so far kept:
    1. Rekindle: one big button to press and hold until the embers catch. Once it is held: this is a slip, and you can
-      recover from it, with what is still yours (level, points, urges ridden out) and, for a long run, words that honor
-      it. The run question for a slip that ends a run of 7 days or more is not asked here: the run is kept for now, this
-      screen says so, and the sunrise check asks it the next morning (core rkAskOpen).
+      recover from it, and one line on what it did not take (core rkLitLine: the run kept for now, a long run honored,
+      or what is still yours). The run question for a slip that ends a run of 7 days or more is not asked here: the
+      sunrise check asks it the next morning (core rkAskOpen).
    2. Before it happened: the four colors open the field of feelings (the one SOS uses), and the word comes back big,
       breathing in its own color, with what that feeling was asking for, what porn gave it instead, and the person's own
       pattern. It goes on the slip (fb), and sets its trigger when there is none, so the patterns learn from slips too.
@@ -32,11 +32,9 @@ import {
   OPT_MAX,
   patchEvent,
   removeEvent,
-  rkAskOpen,
   rkEmbers,
   rkHoldWords,
-  rkHonor,
-  rkKeptForNow,
+  rkLitLine,
   FEEL_TRIG,
   feelAt,
   feelFam,
@@ -89,7 +87,6 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
-import { LineNote } from '@/components/line-note';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -465,12 +462,10 @@ export default function Log() {
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
   } else if (step === 'slHold') {
-    /* 2. press and hold to rekindle: the only way on. Once it is held, what is still yours, and the run kept for now */
+    /* 1. press and hold to rekindle: the only way on. Once it is held, the flame, the heading and one line on what the slip
+       did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026) */
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
     const w = rkHoldWords(lit, !!ev?.sp);
-    const honor = lit ? rkHonor(snap.days, st, tk, date) : null;
-    const open = lit ? rkAskOpen(snap.days, st, tk, date) : null;
-    const line = open ? rkKeptForNow(open, tk) : e.line;
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
@@ -481,31 +476,16 @@ export default function Log() {
         <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
           {w.h}
         </T>
-        <T style={s.center}>{w.p}</T>
-        {e.kept.length ? (
-          <View style={[s.keptBox, { borderColor: 'rgba(140,240,206,0.35)' }]} accessibilityLabel="What you kept">
-            <T v="eyebrow" style={{ color: '#8CF0CE' }}>
-              Still yours
-            </T>
-            {e.kept.map((k, i) => (
-              <Appear key={k} delay={350 + i * 260} by={6} style={s.kept}>
-                <View style={s.keptCk}>
-                  <Icon name="check" size={15} color="#0B3B2E" />
-                </View>
-                <T>{k}</T>
-              </Appear>
-            ))}
-          </View>
-        ) : null}
-        {honor ? (
-          <Appear delay={350 + e.kept.length * 260} by={6}>
-            <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T>
+        {lit ? (
+          <Appear delay={350} by={6}>
+            <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T>
           </Appear>
-        ) : null}
-        {line ? <LineNote b={line.b} rest={line.rest} night /> : null}
+        ) : (
+          <T style={s.center}>{w.p}</T>
+        )}
         <Dock>
           {lit ? (
-            <Appear delay={500 + e.kept.length * 260} by={10}>
+            <Appear delay={600} by={10}>
               <Button label="Next" onPress={() => go('slBefore')} />
             </Appear>
           ) : (
@@ -552,6 +532,7 @@ export default function Log() {
   } else if (step === 'slFeel' && fb && fbPos && fam) {
     /* the word, breathing in its own color, and what it was asking for */
     const ask = SLIP_ASKS[fam];
+    const mine = slipBeforeLine(snap.days, evId, fam);
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
@@ -571,9 +552,11 @@ export default function Log() {
           <T v="small" style={{ lineHeight: 20 }}>
             {ask.t}
           </T>
-          <T v="small" tone="muted" style={{ lineHeight: 20, marginTop: 4 }}>
-            {slipBeforeLine(snap.days, evId, fam)}
-          </T>
+          {mine ? (
+            <T v="small" tone="muted" style={{ lineHeight: 20, marginTop: 4 }}>
+              {mine}
+            </T>
+          ) : null}
         </Appear>
         {SLIP_HELP_WORDS.indexOf(fb) >= 0 ? <HelpFoot /> : null}
         <Dock>
@@ -703,14 +686,13 @@ export default function Log() {
         <Finish
           level={Math.max(1, g.level.n)}
           title={line ? 'Your plan for next time' : 'You came back.'}
-          text={line ? '“' + line + '”' : 'Logged honestly, and looked at. That is how the next one gets easier.'}
+          text={
+            line
+              ? '“' + line + '”\nSay it once, out loud or in your head, so it comes back to you at the moment.'
+              : 'Logged honestly, and looked at. That is how the next one gets easier.'
+          }
           tone="sun"
         />
-        {line ? (
-          <T tone="muted" style={s.center}>
-            Say it once, out loud or in your head. Saying it is what makes it come back to you at the moment.
-          </T>
-        ) : null}
         {gain ? (
           <T v="label" tone="mintText" style={s.center}>
             {'+' + gain + ' points'}
@@ -809,10 +791,7 @@ const s = StyleSheet.create({
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
   word: { fontFamily: font.displayBold, fontSize: 44, lineHeight: 50, textAlign: 'center' },
   card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
-  keptBox: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
-  keptCk: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8CF0CE', alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  kept: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

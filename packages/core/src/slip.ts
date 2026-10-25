@@ -150,12 +150,13 @@ function slipsBut(days: Days, id: string | null): DayEvent[] {
 }
 
 /** the person's own pattern for the feeling before: "Stress or worry came before 3 of your last 4 slips." Counted over
-    the last six slips with a feeling named (this one too), once two or more have one; until then, how naming builds it. */
-export function slipBeforeLine(days: Days, id: string | null, fam: FeelFam): string {
+    the last six slips with a feeling named (this one too), once two or more have one; until then, nothing (the page
+    stays short). */
+export function slipBeforeLine(days: Days, id: string | null, fam: FeelFam): string | null {
   const named = slipsBut(days, id)
     .filter((e) => famOfWord(e.fb))
     .slice(-5);
-  if (!named.length) return 'Name it each time, and your log shows which feeling you are getting away from.';
+  if (!named.length) return null;
   const m = named.length + 1;
   const n = named.filter((e) => famOfWord(e.fb) === fam).length + 1;
   if (n === 1) return 'This is new: your last ' + (m - 1 === 1 ? 'slip' : m - 1 + ' slips') + ' came after something else.';

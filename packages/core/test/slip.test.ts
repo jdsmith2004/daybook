@@ -47,9 +47,9 @@ describe('the feeling before and after, on the slip', () => {
 });
 
 describe('the pattern lines', () => {
-  it('says how naming builds the pattern, then counts the family over the last slips', () => {
+  it('says nothing until there is a pattern, then counts the family over the last slips', () => {
     let days = slipOn({}, K, 's9', '22:10');
-    expect(core.slipBeforeLine(days, 's9', 'fear')).toMatch(/^Name it each time/);
+    expect(core.slipBeforeLine(days, 's9', 'fear')).toBeNull();
     days = slipOn(days, '2026-10-10', 'a', '21:00', { fb: 'Stressed' });
     expect(core.slipBeforeLine(days, 's9', 'fear')).toBe('Stress or worry came before both of your last 2 slips.');
     expect(core.slipBeforeLine(days, 's9', 'lonely')).toBe('This is new: your last slip came after something else.');
@@ -126,5 +126,16 @@ describe('the words', () => {
       /* like every care screen, the words never name the habit */
       expect(w).not.toMatch(/\bporn/i);
     }
+  });
+});
+
+describe('the line under Rekindle once it is held', () => {
+  it('is one plain line: what is still yours, with no contractions', () => {
+    const st = core.normSettings({ start: '2026-10-01', day1: '2026-10-01' });
+    const days = slipOn({}, K, 's1', '22:10');
+    const line = core.rkLitLine(days, st, {}, K, K);
+    expect(line).toMatch(/still yours\.$/);
+    expect(line.split('. ').length).toBe(1);
+    expect(line).not.toMatch(noContractions);
   });
 });

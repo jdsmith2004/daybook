@@ -120,11 +120,12 @@ const Bub = memo(function Bub({
 }) {
   const f = FEELINGS[r][c];
   const color = FEEL_COLORS[r][c];
-  /* the field around the focused bubble: it grows half again, and the growing takes room, so every other bubble is
-     pressed outward. The press rises from nothing at the focus (the ball itself does not slide), and past the near ring
-     it holds instead of fading: the bubbles are packed tight like hard balls, which cannot squeeze, so the whole pool
-     gives way together. A press that faded would push the near ring into the ring behind it. Because the press never
-     falls with distance, no two bubbles ever come closer than they sit at rest. */
+  /* the field around the focused bubble: it grows to 1.7 times, and the growing takes room, so every other bubble is
+     pressed outward. The press rises from nothing at the focus (the ball itself does not slide), is strongest on the
+     near rings, and eases down only slowly with distance: the bubbles are packed tight like hard balls, so the whole pool
+     gives way together. A press that fell off fast would push the near ring into the ring behind it; this one falls no
+     faster than the resting gap can take, so bubbles never touch (checked over every focus point, a twentieth of a step
+     apart). */
   const st = useAnimatedStyle(
     () => {
       const dx = (c - sx.value) * step;
@@ -132,9 +133,9 @@ const Bub = memo(function Bub({
       const d2 = dx * dx + dy * dy;
       const d = Math.sqrt(d2);
       const gs = 0.55 * step;
-      const k = 0.6 * step;
-      const push = (amt.value * 0.45 * step * d2) / (d2 + k * k);
-      const scale = 1 + amt.value * 0.5 * Math.exp(-d2 / (2 * gs * gs));
+      const k = 0.5 * step;
+      const push = ((amt.value * d2) / (d2 + k * k)) * step * (0.45 + 0.35 * Math.exp(-d / (3.5 * step)));
+      const scale = 1 + amt.value * 0.7 * Math.exp(-d2 / (2 * gs * gs));
       return { transform: [{ translateX: d > 1 ? (push * dx) / d : 0 }, { translateY: d > 1 ? (push * dy) / d : 0 }, { scale }] };
     },
     webDeps(r, c, step, sx, sy, amt),

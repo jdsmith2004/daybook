@@ -126,10 +126,13 @@ export function MorphShape({
   const [a, b, tt] = to != null ? [kind, to, t ?? 0] : [pair[0], pair[1], k];
   const pa = useMemo(() => shapePoints(m3(a), 120), [a]);
   const pb = useMemo(() => shapePoints(m3(b), 120), [b]);
-  const d = smoothPath(morphPoints(pa, pb, tt), size, size / 2, size / 2, turn);
+  /* the drawing gets room past the box on every side: a spring overshoots, and some shapes reach a little past their
+     box, and an SVG cuts off whatever falls outside it, flat */
+  const pad = Math.ceil(size * 0.2);
+  const d = smoothPath(morphPoints(pa, pb, tt), size, size / 2 + pad, size / 2 + pad, turn);
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }} {...SVG_HIDE}>
+      <Svg width={size + 2 * pad} height={size + 2 * pad} style={{ position: 'absolute', left: -pad, top: -pad }} {...SVG_HIDE}>
         <Path d={d} fill={color} />
       </Svg>
       {children != null ? <View style={{ alignItems: 'center', justifyContent: 'center' }}>{children}</View> : null}

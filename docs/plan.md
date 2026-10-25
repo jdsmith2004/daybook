@@ -1,5 +1,40 @@
 # What is planned next
 
+## Logging a slip, rebuilt from the ground up (the owner, October 25, 2026; on branch slip-redesign, not merged)
+
+The goal: after a slip, the person comes back stronger and is less likely to slip again. Three agents researched it
+(the studies, How We Feel, Apple's State of Mind and other quit apps, and the code a slip touches). What the research
+supports, most important first, and what the new flow does with it:
+
+1. **Answer "I already blew it" first.** Feeling like giving up after a first slip was the one reaction that predicted a
+   faster second one (Shiffman and others 1996, smokers, real-time logs); lower confidence after a slip predicts the
+   next (Gwaltney and others 2005). The flow opens on Rekindle's hold, with what is still theirs.
+2. **Never reset, never shame.** A broken streak makes people drop off even when behavior is the same (Silverman and
+   Barasch 2023); shame predicts relapse, guilt about the act does not (Randles and Tracy 2013); kindness after a
+   failure makes people try harder (Breines and Chen 2012). Every word is about the act, never the person.
+3. **Name the feeling from before it, precisely** (lesson 8: the habit as an exit from a feeling; Baker and others 2004,
+   Brand and others 2019). People better at telling feelings apart had lower daily odds of a lapse (Anand and others
+   2017, OR 0.73). The four colors and the field of feelings from SOS; the word comes back big, breathing in its color,
+   with what that feeling was asking for and what the habit gave it instead, and the person's own pattern.
+4. **Notice what it really gave.** How it feels a few minutes later, answered kindly and truly, with their own record
+   ("After 3 of your last 4 slips, you felt flat or empty"). Updating the reward value lowers the pull (Brewer and
+   others 2011; Taylor and others 2021). Still pulled toward it leads straight to SOS.
+5. **One if-then plan from the feeling,** read back once and asked about the next morning ("When I feel lonely late at
+   night, I will text someone."). If-then plans: d = 0.65 across 94 studies (Gollwitzer and Sheeran 2006). Late at
+   night, the moves that mean going out swap for ones that work at home.
+6. **Short, skippable, private.** One tap a page, every page can be closed, each answer saved as it is given. The care
+   screens never name the habit. Despair words (Hopeless, Despairing, Helpless) show the 988 line.
+
+Kept: the hold, Today's "one small thing now" card (the research's next-hour step), the sunrise check, points.
+Dropped: the "Did you wait first?" slider for slips logged from Today (SOS and the pause still measure the wait), and
+the hand-off to Talk it through after a slip (the plan is made inside the flow now).
+
+The data: two optional fields on a slip, `fb` (the feeling word before) and `fa` (how it felt after), and `fw` on the
+after-slip plan (a talk-through with pr 1). Older app versions drop these fields when they edit that day.
+
+Not yet (follow-ups): show the plan at the matching hour (a just-in-time reminder), read `fb` in the Journal's
+patterns and the Sunday story, and use `fa` at the next urge ("Last 4 times, afterward you felt flat").
+
 ## The QA list of October 24, 2026 (the owner)
 
 Done: the "How are you feeling today?" prompt (once a day, Today only, never on a slip day); the evening check-in cut to mood,

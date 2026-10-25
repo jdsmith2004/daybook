@@ -303,6 +303,7 @@ export function shouldAutoCount(days: Days, st: Settings, tk: DayKey, nowMs: num
 export function eventRow(e: DayEvent, st: Settings | null) {
   const op = st && st.opts;
   const meta: string[] = [];
+  if (e.outcome === 'slipped' && e.fb) meta.push('felt ' + e.fb.toLowerCase() + ' before');
   const tx = e.trigger ? trigText(e.trigger, op) : '';
   if (tx) meta.push(tx);
   if (e.outcome === 'rode' && e.paused === true) meta.push('paused 10 min');

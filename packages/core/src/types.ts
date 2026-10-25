@@ -44,6 +44,10 @@ export interface DayEvent {
   wm?: number;
   /** a slip that ends a run of RUN_ASK days or more: true keep the run going (Rekindle saves it), false start fresh, absent not answered yet */
   keep?: boolean;
+  /** a slip: the feeling named for before it, a word from the field of feelings (slip.ts) */
+  fb?: string;
+  /** a slip: how it felt afterwards (Rekindle's words, RK_FEELS) */
+  fa?: 'shame' | 'giveup' | 'angry' | 'flat' | 'pull' | 'okay';
 }
 
 export interface Checkin {

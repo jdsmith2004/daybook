@@ -1,17 +1,20 @@
 /* Quick check-in: one question at a time, one tap each. The first tap saves the entry, and Back or Undo is always one tap
    away. After an urge ridden out: what set it off, what you did, then the closing screen (all optional).
 
-   After "I slipped" the slip is assumed, and saved at the current time. Three screens, one thing each:
-   1. "Did you wait first?": one slider from 0 to 30 minutes (0 is "I did not wait"), the minutes big in the middle and a
-      kind word for any answer. Next keeps them on the slip (core rkWaitFields: wm, with wt in step for the older rules).
-      "Change time" under Next logs one from earlier.
-   2. Rekindle: one big button to press and hold until the embers catch. No skip and no other choice. Once it is held:
-      this is a slip, and you can recover from it, with what is still yours (level, points, urges ridden out) and, for a
-      long run, words that honor it. The run question for a slip that ends a run of 7 days or more is not asked here: the
-      run is kept for now, this screen says so, and the sunrise check asks it the next morning (core rkAskOpen).
-   3. "Talk it through" (1 to 2 minutes: what you were after, and what you will do instead next time; talk.tsx, ?after=1)
-      as the main button, and Close under it.
-   SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 2.
+   After "I slipped" the slip is saved at once, and the comeback starts (core slip.ts has the research). One tap a page,
+   and the X closes it at any point with everything given so far kept:
+   1. Rekindle: one big button to press and hold until the embers catch. Once it is held: this is a slip, and you can
+      recover from it, and one line on what it did not take (core rkLitLine: the run kept for now, a long run honored,
+      or what is still yours). The run question for a slip that ends a run of 7 days or more is not asked here: the
+      sunrise check asks it the next morning (core rkAskOpen).
+   2. Before it happened: the four colors open the field of feelings (the one SOS uses), and the word comes back big,
+      breathing in its own color, with what that feeling was asking for, what porn gave it instead, and the person's own
+      pattern. It goes on the slip (fb), and sets its trigger when there is none, so the patterns learn from slips too.
+   3. And now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
+      record of it (fa). Still pulled toward it leads to SOS.
+   4. Next time: when you feel that, what you will do instead. One tap saves the if-then plan as an after-slip
+      talk-through (pr 1, fw), which Today asks about the next morning. Then the finish, with the plan to say once.
+   SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
    Rekindle's quest and points come from the log itself (core rkOf), so they go on exactly as before: one small thing
    waits on Today, the sunrise check the next morning. Ported from the legacy SCENES.checkin. */
 import {
@@ -29,17 +32,32 @@ import {
   OPT_MAX,
   patchEvent,
   removeEvent,
-  rkAskOpen,
   rkEmbers,
   rkHoldWords,
-  rkHonor,
-  rkKeptForNow,
-  rkWaitFields,
-  rkWaitLine,
-  rkWaitShow,
-  rkWaitUnit,
-  RK_WAIT_MAX,
+  rkLitLine,
+  FEEL_TRIG,
+  feelAt,
+  feelFam,
+  feelPos,
+  famOfWord,
+  newTalk,
+  saveTalk,
+  SLIP_ASKS,
+  SLIP_HELP_WORDS,
+  SLIP_NEED,
+  SLIP_NOW,
+  SLIP_NOW_SAYS,
+  slipBeforeLine,
+  slipMoment,
+  slipMoves,
+  slipNowLine,
+  talkHeld,
+  talkHeldTag,
+  talkMoveName,
+  TALK_OWN_LEN,
+  talkPlanLine,
   UR_STR_NAME,
+  urNight,
   urMinText,
   whenEntry,
   whenFromEntry,
@@ -48,6 +66,9 @@ import {
   winLater,
   type DayEvent,
   type Outcome,
+  type RkFeel,
+  type Talk,
+  type TalkMove,
   type When,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -59,23 +80,59 @@ import { Appear } from '@/components/appear';
 import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { EmberArt, HoldButton, useEmberHold } from '@/components/rekindle';
-import { Dock, SceneFrame } from '@/components/scene';
-import { Slider, SliderValue } from '@/components/slider';
+import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
+import { ChoiceRows, FeelQuads, FeelShape } from '@/components/slip';
+import { HelpFoot } from '@/components/help-foot';
+import { OwnField } from '@/components/own';
+import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close } from '@/lib/nav';
-import { LineNote } from '@/components/line-note';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { font, useTheme, type Sky } from '@/lib/theme';
+import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slWait' | 'slHold' | 'slNext';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'slWait', 'slHold', 'slNext'];
+type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
+const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'slHold', 'slBefore', 'slFeel', 'slNow', 'slNowSay', 'slPlan', 'slDone'];
+/* the comeback's dots: each page counts as the step it belongs to */
+const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slBefore: 1, slFeel: 1, slNow: 2, slNowSay: 2, slPlan: 3, slDone: 4 };
+/* the icons and shapes of the feelings afterwards, and of the plan's moves */
+const NOW_SHAPE: Record<RkFeel, ShapeKind> = {
+  shame: 'cookie12',
+  giveup: 'cookie9',
+  angry: 'softBurst',
+  flat: 'cookie6',
+  pull: 'sunny',
+  okay: 'cookie4',
+};
+const MOVE_IC: Partial<Record<TalkMove, string>> = {
+  walk: 'bolt',
+  shower: 'wind',
+  breathe: 'wind',
+  write: 'pencil',
+  laugh: 'chat',
+  text: 'chat',
+  people: 'heart',
+  show: 'play',
+  bed: 'moon',
+  nap: 'moon',
+  call: 'phone',
+  fill: 'dice',
+  out: 'compass',
+  hands: 'sparkle',
+  away: 'phone',
+  kind: 'heart',
+  tell: 'chat',
+  move: 'bolt',
+  light: 'sun',
+};
+const MOVE_TONE = ['mint', 'sky', 'sun', 'violet'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
+  const c = useTheme();
   const { snap, tk, now, update, apply, say } = useStore();
   /* SOS and the 10-minute pause save the entry first, then hand it over here, at the step that comes next */
   const params = useLocalSearchParams<{
@@ -116,8 +173,10 @@ export default function Log() {
   const [night] = useState(() => params.night === '1');
   const [full] = useState(() => params.full === '1');
   const [askNote, setAskNote] = useState<boolean | null>(null);
-  /* the minutes on the slider before Next keeps them (null: what the slip already has, or 0) */
-  const [wait, setWait] = useState<number | null>(null);
+  /* the plan made after the slip, once one is picked (saved as a talk-through on today's log day) */
+  const [plan, setPlan] = useState<Talk | null>(null);
+  /* the plan in the person's own words is being typed */
+  const [ownPlan, setOwnPlan] = useState(false);
   const [lit, setLit] = useState(false);
   const hold = useEmberHold(lit, () => {
     setLit(true);
@@ -145,6 +204,7 @@ export default function Log() {
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
     setAdding(false);
+    setOwnPlan(false);
   };
   const goBack = () => {
     const h = hist.slice();
@@ -153,6 +213,7 @@ export default function Log() {
     setHist(h);
     setStep(prev);
     setAdding(false);
+    setOwnPlan(false);
   };
 
   /* the first answer: saves the entry (or changes it, when coming back) */
@@ -187,7 +248,7 @@ export default function Log() {
     setOutcome(v);
     if (made) count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
     buzz('save');
-    go(v === 'slipped' ? 'slWait' : 'trigger');
+    go(v === 'slipped' ? 'slHold' : 'trigger');
   };
   const patch = (p: Partial<DayEvent>) => {
     if (!evId) return;
@@ -263,11 +324,36 @@ export default function Log() {
     </View>
   ) : null;
 
-  /* the progress dots of a slip: the wait (when it was asked here), the hold, what comes next */
-  const slSteps: Step[] = (handed ? [] : (['slWait'] as Step[])).concat('slHold', 'slNext');
+  /* the progress dots of a slip: the hold, before it happened, now, next time (all four filled at the finish) */
   const slDots = () => {
-    const i = Math.max(0, slSteps.indexOf(step));
-    return { n: slSteps.length, i, label: 'Step ' + (i + 1) + ' of ' + slSteps.length };
+    const i = SL_DOT[step] ?? 0;
+    return { n: 4, i, label: i >= 4 ? 'All done' : 'Step ' + (i + 1) + ' of 4' };
+  };
+  /* the comeback's pages are night-colored late, like SOS */
+  const slNight = night || urNight(new Date(now).getHours());
+  /* the feeling named for before it, and its place in the field */
+  const fb = ev?.fb || null;
+  const fbPos = feelPos(fb);
+  const fam = famOfWord(fb);
+  /* saving the plan: a new pick replaces the one made a moment ago */
+  const savePlan = (m: TalkMove | null, own?: string) => {
+    if (!fb || !fam) return;
+    const t: Talk = {
+      ...(plan || newTalk(Date.now())),
+      p: 'change',
+      pr: 1,
+      n: SLIP_NEED[fam],
+      m: m ? [m] : [],
+      mx: own ? [own] : undefined,
+      mo: slipMoment(ev?.time),
+      at: null,
+      fw: fb,
+    };
+    if (!plan) count('talk_done');
+    setPlan(t);
+    update((s0) => ({ ...s0, days: saveTalk(s0.days, tk, t) }));
+    buzz('lit');
+    go('slDone');
   };
 
   /* ---------- the steps ---------- */
@@ -386,96 +472,32 @@ export default function Log() {
       </>
     );
     footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
-  } else if (step === 'slWait') {
-    /* 1. did you wait first? The slider starts at 0 ("I did not wait"); Next keeps the minutes on the slip */
-    const v = wait ?? (typeof ev?.wm === 'number' ? ev.wm : 0);
-    sky = 'sun';
-    title = 'Log a slip';
-    dots = slDots();
-    body = (
-      <>
-        {saved}
-        <T v="title" style={s.h} accessibilityRole="header">
-          Did you wait first?
-        </T>
-        <T tone="muted" style={s.center}>
-          Slide to how long you held off before it happened.
-        </T>
-        <View style={s.middle}>
-          <SliderValue big value={v} show={rkWaitShow} unit={rkWaitUnit(v)} />
-          <Appear key={v === 0 ? 'no' : v < 5 ? 'few' : v < RK_WAIT_MAX ? 'more' : 'max'} by={6} duration={220}>
-            <T style={[s.center, s.kind]}>{rkWaitLine(v)}</T>
-          </Appear>
-        </View>
-        <Dock>
-          <Slider
-            label="Minutes you waited first"
-            value={v}
-            min={0}
-            max={RK_WAIT_MAX}
-            step={1}
-            show={rkWaitShow}
-            unit="minutes"
-            lo="I did not wait"
-            hi="30 or more"
-            endsShowValue={false}
-            readout={false}
-            onChange={setWait}
-          />
-          <Button
-            label="Next"
-            onPress={() => {
-              patch(rkWaitFields(v));
-              buzz('tap');
-              go('slHold');
-            }}
-          />
-        </Dock>
-      </>
-    );
-    footer = <Link label="Change time" tone="muted" onPress={() => setWhenOpen(true)} />;
   } else if (step === 'slHold') {
-    /* 2. press and hold to rekindle: the only way on. Once it is held, what is still yours, and the run kept for now */
+    /* 1. press and hold to rekindle: the only way on. Once it is held, the flame, the heading and one line on what the slip
+       did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026) */
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
     const w = rkHoldWords(lit, !!ev?.sp);
-    const honor = lit ? rkHonor(snap.days, st, tk, date) : null;
-    const open = lit ? rkAskOpen(snap.days, st, tk, date) : null;
-    const line = open ? rkKeptForNow(open, tk) : e.line;
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
+        {lit ? null : saved}
         <EmberArt level={Math.max(1, e.level)} hold={hold} />
         <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
           {w.h}
         </T>
-        <T style={s.center}>{w.p}</T>
-        {e.kept.length ? (
-          <View style={[s.keptBox, { borderColor: 'rgba(140,240,206,0.35)' }]} accessibilityLabel="What you kept">
-            <T v="eyebrow" style={{ color: '#8CF0CE' }}>
-              Still yours
-            </T>
-            {e.kept.map((k, i) => (
-              <Appear key={k} delay={350 + i * 260} by={6} style={s.kept}>
-                <View style={s.keptCk}>
-                  <Icon name="check" size={15} color="#0B3B2E" />
-                </View>
-                <T>{k}</T>
-              </Appear>
-            ))}
-          </View>
-        ) : null}
-        {honor ? (
-          <Appear delay={350 + e.kept.length * 260} by={6}>
-            <T style={[s.center, { fontFamily: font.bodySemi }]}>{honor}</T>
+        {lit ? (
+          <Appear delay={350} by={6}>
+            <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T>
           </Appear>
-        ) : null}
-        {line ? <LineNote b={line.b} rest={line.rest} night /> : null}
+        ) : (
+          <T style={s.center}>{w.p}</T>
+        )}
         <Dock>
           {lit ? (
-            <Appear delay={500 + e.kept.length * 260} by={10}>
-              <Button label="Next" onPress={() => go('slNext')} />
+            <Appear delay={600} by={10}>
+              <Button label="Next" onPress={() => go('slBefore')} />
             </Appear>
           ) : (
             <HoldButton hold={hold} />
@@ -483,32 +505,229 @@ export default function Log() {
         </Dock>
       </>
     );
-  } else if (step === 'slNext') {
-    /* 3. talk it through, or close */
-    sky = 'sun';
+    /* when it happened can still be changed here, before anything else is asked */
+    if (!lit && ev) footer = <Link label="Change time" tone="muted" onPress={() => setWhenOpen(true)} />;
+  } else if (step === 'slBefore') {
+    /* 2. before it happened: the four colors, then the field, then the word */
+    sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
-        {saved}
-        <View style={s.middle}>
-          <Flame level={Math.max(1, g.level.n)} size={110} />
-          <T v="title" style={s.h} accessibilityRole="header">
-            Learn from it while it is fresh.
-          </T>
-          <T style={s.center}>Talk it through: what you were after, and what you will do instead next time. It takes 1 to 2 minutes.</T>
-        </View>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          Before it happened
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          What were you feeling?
+        </T>
+        <T tone="muted" style={s.center}>
+          Often the urge is a way out of a feeling. Tap the color closest to yours.
+        </T>
         <Dock>
-          <Button
-            label="Talk it through"
-            onPress={() => {
-              buzz('tap');
-              router.replace({ pathname: '/talk', params: { after: '1' } });
+          <FeelQuads
+            start={fbPos}
+            onPick={(r, c) => {
+              const w = feelAt(r, c)!.w;
+              const f = feelFam(r, c)!;
+              /* the feeling also names the slip's trigger, when it has none yet */
+              patch({ fb: w, ...(ev && !ev.trigger && FEEL_TRIG[f] ? { trigger: FEEL_TRIG[f] } : {}) });
+              buzz('save');
+              AccessibilityInfo.announceForAccessibility('You felt ' + w.toLowerCase() + '.');
+              go('slFeel');
             }}
           />
-          <View style={{ alignItems: 'center' }}>
-            <Link label="Close" tone="muted" onPress={close} />
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip" tone="muted" onPress={() => go('slNow')} />;
+  } else if (step === 'slFeel' && fb && fbPos && fam) {
+    /* the word, breathing in its own color, and what it was asking for */
+    const ask = SLIP_ASKS[fam];
+    const mine = slipBeforeLine(snap.days, evId, fam);
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          Before it happened, you felt
+        </T>
+        <Text style={[s.word, { color: slNight ? '#FFFFFF' : c.ink }]} accessibilityRole="header">
+          {fb}
+        </Text>
+        <View style={s.middle}>
+          <FeelShape r={fbPos.r} c={fbPos.c} />
+        </View>
+        <Appear delay={400} by={12} duration={360} style={[s.card, { backgroundColor: slNight ? 'rgba(255,255,255,0.10)' : c.surface }]}>
+          <T v="label">{ask.h}</T>
+          <T v="small" style={{ lineHeight: 20 }}>
+            {ask.t}
+          </T>
+          {mine ? (
+            <T v="small" tone="muted" style={{ lineHeight: 20, marginTop: 4 }}>
+              {mine}
+            </T>
+          ) : null}
+        </Appear>
+        {SLIP_HELP_WORDS.indexOf(fb) >= 0 ? <HelpFoot /> : null}
+        <Dock>
+          <Button label="Next" onPress={() => go('slNow')} />
+        </Dock>
+      </>
+    );
+    footer = <Link label="Pick another feeling" tone="muted" onPress={goBack} />;
+  } else if (step === 'slNow' || step === 'slFeel') {
+    /* 3. and now: how it feels a few minutes later */
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          Right now
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          How do you feel now?
+        </T>
+        <T tone="muted" style={s.center}>
+          A few minutes after. Honest is best.
+        </T>
+        <Dock>
+          <ChoiceRows
+            list={SLIP_NOW.map(([id, name, sub, icon, tone]) => ({ id, name, sub, icon, tone, shape: NOW_SHAPE[id] }))}
+            onPick={(id) => {
+              patch({ fa: id as RkFeel });
+              go('slNowSay');
+            }}
+          />
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip" tone="muted" onPress={() => go(fb ? 'slPlan' : 'slDone')} />;
+  } else if (step === 'slNowSay') {
+    /* the kind, true answer to how it feels, and their own record of it */
+    const fa = (ev?.fa || 'okay') as RkFeel;
+    const row = SLIP_NOW.find((x) => x[0] === fa)!;
+    const say = SLIP_NOW_SAYS[fa];
+    const tn = toneOf(c, row[4]);
+    const mine = slipNowLine(snap.days, evId, fa);
+    const next = () => go(fb ? 'slPlan' : 'slDone');
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          {row[1]}
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {say.h}
+        </T>
+        <T style={s.center}>{say.t}</T>
+        <Middle>
+          <Shape kind={NOW_SHAPE[fa]} size={150} color={slNight ? tn.ic : tn.soft}>
+            <View>
+              <Icon name={row[3]} size={60} color={slNight ? '#1C2030' : tn.text} />
+            </View>
+          </Shape>
+          {mine ? (
+            <Appear delay={350} by={6}>
+              <T v="small" tone="muted" style={s.center}>
+                {mine}
+              </T>
+            </Appear>
+          ) : null}
+        </Middle>
+        <Dock>
+          {fa === 'pull' ? (
+            <>
+              <Button label="Open SOS" onPress={() => router.replace('/sos')} />
+              <View style={{ alignItems: 'center' }}>
+                <Link label="Keep going here" tone="muted" onPress={next} />
+              </View>
+            </>
+          ) : (
+            <Button label="Next" onPress={next} />
+          )}
+        </Dock>
+      </>
+    );
+    footer = fa === 'pull' ? null : <Link label="Pick another" tone="muted" onPress={goBack} />;
+  } else if (step === 'slPlan' && fb && fam) {
+    /* 4. next time: when you feel that, what you will do instead */
+    const held = talkHeld(snap.days);
+    const moves = slipMoves(fam, slNight || slipMoment(ev?.time) === 'late', held);
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          Next time
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {'When you feel ' + fb.toLowerCase() + ', what will you do instead?'}
+        </T>
+        <T tone="muted" style={s.center}>
+          Pick one. It becomes your plan, and Daybook asks how it held tomorrow morning.
+        </T>
+        {ownPlan ? (
+          /* the box and its button stay near the top, where the keyboard does not cover them */
+          <View style={{ alignSelf: 'stretch' }}>
+            <OwnField
+              placeholder="Like: play guitar for 20 minutes"
+              max={TALK_OWN_LEN}
+              onSave={(t) => {
+                setOwnPlan(false);
+                savePlan(null, t);
+              }}
+              onCancel={() => setOwnPlan(false)}
+            />
           </View>
+        ) : (
+          <Dock>
+            <ChoiceRows
+              list={moves
+                .map((m, j) => ({
+                  id: m as string,
+                  name: talkMoveName(m),
+                  icon: MOVE_IC[m] || 'sparkle',
+                  tone: m === 'away' ? 'violet' : MOVE_TONE[j % MOVE_TONE.length],
+                  tag: talkHeldTag(held, m) || undefined,
+                }))
+                .concat({ id: 'own', name: 'Write my own', icon: 'pencil', tone: 'accent', tag: undefined })}
+              onPick={(m) => (m === 'own' ? setOwnPlan(true) : savePlan(m as TalkMove))}
+            />
+          </Dock>
+        )}
+      </>
+    );
+    footer = ownPlan ? null : <Link label="Skip" tone="muted" onPress={() => go('slDone')} />;
+  } else if (step === 'slDone' || step === 'slPlan') {
+    /* the finish: the flame, and the plan to say once */
+    const line = plan ? talkPlanLine(plan) : null;
+    sky = slNight ? 'night' : 'sun';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <Finish
+          level={Math.max(1, g.level.n)}
+          title={line ? 'Your plan for next time' : 'You came back.'}
+          text={
+            line
+              ? '“' + line + '”\nSay it once, out loud or in your head, so it comes back to you at the moment.'
+              : 'Logged honestly, and looked at. That is how the next one gets easier.'
+          }
+          tone="sun"
+        />
+        {gain ? (
+          <T v="label" tone="mintText" style={s.center}>
+            {'+' + gain + ' points'}
+          </T>
+        ) : null}
+        <Dock>
+          <Button label="Done" onPress={close} />
         </Dock>
       </>
     );
@@ -598,10 +817,9 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
-  keptBox: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
-  keptCk: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8CF0CE', alignItems: 'center', justifyContent: 'center' },
+  word: { fontFamily: font.displayBold, fontSize: 44, lineHeight: 50, textAlign: 'center' },
+  card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  kept: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

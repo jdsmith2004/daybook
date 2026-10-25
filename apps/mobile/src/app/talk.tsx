@@ -136,6 +136,10 @@ const MOVE_IC: Record<TalkMove, string> = {
   hands: 'sparkle',
   away: 'phone',
   block: 'shield',
+  kind: 'heart',
+  tell: 'chat',
+  move: 'bolt',
+  light: 'sun',
 };
 
 export default function TalkIt() {

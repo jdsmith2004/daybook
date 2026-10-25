@@ -233,7 +233,11 @@ export type TalkMove =
   | 'out'
   | 'hands'
   | 'away'
-  | 'block';
+  | 'block'
+  | 'kind'
+  | 'tell'
+  | 'move'
+  | 'light';
 /** another way to meet the need: [id, the words, how it reads after "I will"] */
 export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   walk: ['Walk it off', 'walk it off'],
@@ -254,6 +258,11 @@ export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   hands: ['Start something with my hands', 'start something with my hands'],
   away: ['Put the device out of reach', 'put the device out of reach'],
   block: ['Block what I have in mind, now', 'keep it blocked'],
+  /* the plan after a slip offers these too (slip.ts) */
+  kind: ['Talk to myself the way a friend would', 'talk to myself the way a friend would'],
+  tell: ['Tell one person I trust', 'tell one person I trust'],
+  move: ['Five minutes of hard exercise', 'do five minutes of hard exercise'],
+  light: ['Get outside, into some daylight', 'get outside into some daylight'],
 };
 /** a move as it reads in the short plan for the hard hours, where nothing is in mind yet */
 export const talkMoveName = (k: TalkMove, prep = false) => (prep && k === 'block' ? 'Turn on a blocker before they start' : TALK_MOVES[k][0]);

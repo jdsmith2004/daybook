@@ -54,6 +54,7 @@ import {
   talkHeld,
   talkHeldTag,
   talkMoveName,
+  TALK_OWN_LEN,
   talkPlanLine,
   UR_STR_NAME,
   urNight,
@@ -82,6 +83,7 @@ import { EmberArt, HoldButton, useEmberHold } from '@/components/rekindle';
 import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
 import { ChoiceRows, FeelQuads, FeelShape } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
+import { OwnField } from '@/components/own';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -121,6 +123,10 @@ const MOVE_IC: Partial<Record<TalkMove, string>> = {
   out: 'compass',
   hands: 'sparkle',
   away: 'phone',
+  kind: 'heart',
+  tell: 'chat',
+  move: 'bolt',
+  light: 'sun',
 };
 const MOVE_TONE = ['mint', 'sky', 'sun', 'violet'];
 const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
@@ -169,6 +175,8 @@ export default function Log() {
   const [askNote, setAskNote] = useState<boolean | null>(null);
   /* the plan made after the slip, once one is picked (saved as a talk-through on today's log day) */
   const [plan, setPlan] = useState<Talk | null>(null);
+  /* the plan in the person's own words is being typed */
+  const [ownPlan, setOwnPlan] = useState(false);
   const [lit, setLit] = useState(false);
   const hold = useEmberHold(lit, () => {
     setLit(true);
@@ -196,6 +204,7 @@ export default function Log() {
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
     setAdding(false);
+    setOwnPlan(false);
   };
   const goBack = () => {
     const h = hist.slice();
@@ -204,6 +213,7 @@ export default function Log() {
     setHist(h);
     setStep(prev);
     setAdding(false);
+    setOwnPlan(false);
   };
 
   /* the first answer: saves the entry (or changes it, when coming back) */
@@ -326,14 +336,15 @@ export default function Log() {
   const fbPos = feelPos(fb);
   const fam = famOfWord(fb);
   /* saving the plan: a new pick replaces the one made a moment ago */
-  const savePlan = (m: TalkMove) => {
+  const savePlan = (m: TalkMove | null, own?: string) => {
     if (!fb || !fam) return;
     const t: Talk = {
       ...(plan || newTalk(Date.now())),
       p: 'change',
       pr: 1,
       n: SLIP_NEED[fam],
-      m: [m],
+      m: m ? [m] : [],
+      mx: own ? [own] : undefined,
       mo: slipMoment(ev?.time),
       at: null,
       fw: fb,
@@ -660,21 +671,38 @@ export default function Log() {
         <T tone="muted" style={s.center}>
           Pick one. It becomes your plan, and Daybook asks how it held tomorrow morning.
         </T>
-        <Dock>
-          <ChoiceRows
-            list={moves.map((m, j) => ({
-              id: m,
-              name: talkMoveName(m),
-              icon: MOVE_IC[m] || 'sparkle',
-              tone: m === 'away' ? 'violet' : MOVE_TONE[j % MOVE_TONE.length],
-              tag: talkHeldTag(held, m) || undefined,
-            }))}
-            onPick={(m) => savePlan(m as TalkMove)}
-          />
-        </Dock>
+        {ownPlan ? (
+          /* the box and its button stay near the top, where the keyboard does not cover them */
+          <View style={{ alignSelf: 'stretch' }}>
+            <OwnField
+              placeholder="Like: play guitar for 20 minutes"
+              max={TALK_OWN_LEN}
+              onSave={(t) => {
+                setOwnPlan(false);
+                savePlan(null, t);
+              }}
+              onCancel={() => setOwnPlan(false)}
+            />
+          </View>
+        ) : (
+          <Dock>
+            <ChoiceRows
+              list={moves
+                .map((m, j) => ({
+                  id: m as string,
+                  name: talkMoveName(m),
+                  icon: MOVE_IC[m] || 'sparkle',
+                  tone: m === 'away' ? 'violet' : MOVE_TONE[j % MOVE_TONE.length],
+                  tag: talkHeldTag(held, m) || undefined,
+                }))
+                .concat({ id: 'own', name: 'Write my own', icon: 'pencil', tone: 'accent', tag: undefined })}
+              onPick={(m) => (m === 'own' ? setOwnPlan(true) : savePlan(m as TalkMove))}
+            />
+          </Dock>
+        )}
       </>
     );
-    footer = <Link label="Skip" tone="muted" onPress={() => go('slDone')} />;
+    footer = ownPlan ? null : <Link label="Skip" tone="muted" onPress={() => go('slDone')} />;
   } else if (step === 'slDone' || step === 'slPlan') {
     /* the finish: the flame, and the plan to say once */
     const line = plan ? talkPlanLine(plan) : null;

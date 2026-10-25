@@ -69,14 +69,32 @@ describe('the pattern lines', () => {
 });
 
 describe('the plan for next time', () => {
-  it('offers the family moves, early bed at night, the device out of reach, and what held first', () => {
-    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'people', 'away']);
-    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'bed', 'away']);
-    /* going out is swapped for something that works at home late at night */
-    expect(core.slipMoves('low', true)).toEqual(['text', 'shower', 'bed', 'away']);
-    expect(core.slipMoves('bored', true)).toEqual(['hands', 'show', 'bed', 'away']);
-    expect(core.slipMoves('tired', true)).toEqual(['bed', 'nap', 'shower', 'away']);
+  it('offers four moves that fit the feeling, early bed at night, the device out of reach, and what held first', () => {
+    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'people', 'out', 'away']);
+    expect(core.slipMoves('shame', false)).toEqual(['kind', 'tell', 'write', 'walk', 'away']);
+    expect(core.slipMoves('anger', false)[0]).toBe('move');
+    /* late at night, going out is swapped for something that works at home, and early bed is offered */
+    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'show', 'bed', 'away']);
+    expect(core.slipMoves('low', true)).toEqual(['text', 'kind', 'shower', 'bed', 'away']);
+    expect(core.slipMoves('tired', true)).toEqual(['bed', 'nap', 'shower', 'breathe', 'away']);
     expect(core.slipMoves('lonely', false, { people: { held: 2, n: 3 } })[0]).toBe('people');
+    /* every family's moves are real moves, with words */
+    const fams: core.FeelFam[] = ['lonely', 'shame', 'anger', 'fear', 'bored', 'tired', 'low', 'bright', 'calm'];
+    for (const f of fams) for (const night of [false, true]) for (const m of core.slipMoves(f, night)) expect(core.TALK_MOVES[m][0]).toBeTruthy();
+  });
+
+  it('takes a plan in the person own words', () => {
+    const t = {
+      ...core.newTalk(1000),
+      p: 'change' as const,
+      pr: 1 as const,
+      n: 'close' as const,
+      m: [] as core.TalkMove[],
+      mx: ['Play guitar for 20 minutes'],
+      mo: 'late',
+      fw: 'Lonely',
+    };
+    expect(core.talkPlanLine(core.normTalk(t)!)).toBe('When I feel lonely late at night, I will play guitar for 20 minutes.');
   });
 
   it('reads as an if-then plan from the feeling, and the moment from the time of the slip', () => {

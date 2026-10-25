@@ -104,29 +104,38 @@ export const SLIP_NEED: Record<FeelFam, TalkNeed> = {
   calm: 'bored',
 };
 
-/** the moves that meet each family's need, best first */
+/** the moves that meet each family's need, best first: four each, picked for what that feeling is asking for */
 const FAM_MOVES: Record<FeelFam, TalkMove[]> = {
-  lonely: ['text', 'call', 'people'],
-  shame: ['text', 'write', 'walk'],
-  anger: ['walk', 'shower', 'write'],
-  fear: ['breathe', 'walk', 'write'],
-  bored: ['fill', 'out', 'hands'],
-  tired: ['bed', 'nap', 'shower'],
-  low: ['people', 'walk', 'shower'],
-  bright: ['out', 'hands', 'laugh'],
-  calm: ['fill', 'walk', 'out'],
+  /* people, in the plainest ways to reach them */
+  lonely: ['text', 'call', 'people', 'out'],
+  /* the opposite of hiding: kindness, and one person who knows */
+  shame: ['kind', 'tell', 'write', 'walk'],
+  /* spend the charge through the body */
+  anger: ['move', 'walk', 'shower', 'write'],
+  /* turn the alarm down, then get it out of the head */
+  fear: ['breathe', 'walk', 'write', 'shower'],
+  /* something real to do */
+  bored: ['fill', 'hands', 'out', 'move'],
+  /* rest */
+  tired: ['bed', 'nap', 'shower', 'breathe'],
+  /* small, real lifts: a person, light, a walk, kindness */
+  low: ['people', 'light', 'walk', 'kind'],
+  /* somewhere good for the energy to go */
+  bright: ['out', 'hands', 'move', 'laugh'],
+  /* the habit talking on a calm day: fill the hour */
+  calm: ['fill', 'hands', 'out', 'walk'],
 };
 
 /* late at night, the moves that mean going out become ones that work at home at that hour */
-const NIGHT_SWAP: Partial<Record<TalkMove, TalkMove>> = { people: 'text', out: 'show', walk: 'shower', fill: 'hands' };
-/** the moves offered for the plan: the family's three (late at night, the ones that mean going out swap for ones that
+const NIGHT_SWAP: Partial<Record<TalkMove, TalkMove>> = { people: 'text', out: 'show', walk: 'shower', fill: 'hands', light: 'kind' };
+/** the moves offered for the plan: the family's four (late at night, the ones that mean going out swap for ones that
     work at home, and early bed takes the last place when it is not there), then the device out of reach. Moves whose
-    plan held before come first, the most held first (talkHeld). */
+    plan held before come first, the most held first (talkHeld). The plan page adds the person's own words after them. */
 export function slipMoves(fam: FeelFam, night: boolean, held: TalkHeld = {}): TalkMove[] {
   let base = FAM_MOVES[fam].slice();
   if (night) {
     base = [...new Set(base.map((m) => NIGHT_SWAP[m] || m))];
-    if (base.indexOf('bed') < 0) base = base.slice(0, 2).concat('bed');
+    if (base.indexOf('bed') < 0) base = base.slice(0, 3).concat('bed');
   }
   const all = base.concat('away');
   const h = (m: TalkMove) => held[m]?.held || 0;

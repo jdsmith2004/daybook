@@ -4,7 +4,7 @@
 
    Only iPhone takes Apple's purchase. Android is not shipped; there tipWays offers the web tip page alone, and this module
    is never called. */
-import { ACCOUNT_RE, appleTier, APPLE_TIPS, TIP_TIER_IDS, type TipTierId } from '@daybook/core';
+import { ACCOUNT_RE, appleTier, APPLE_TIPS, TIP_TIER_IDS, TIP_WORDS, type TipTierId } from '@daybook/core';
 import { requireOptionalNativeModule } from 'expo';
 import * as IAP from 'expo-iap';
 import { Platform } from 'react-native';
@@ -90,8 +90,14 @@ let storeError = '';
 export const appleTipError = (): string => storeError;
 /* a cancel, or a payment waiting for a parent (Ask to Buy), is not a failure */
 const QUIET_CODES: string[] = [IAP.ErrorCode.UserCancelled, IAP.ErrorCode.DeferredPayment, IAP.ErrorCode.Pending];
+/* the store does not have the tips for this build: they are not approved yet, or the Paid Apps Agreement is not active */
+const OFF_CODES: string[] = [IAP.ErrorCode.SkuNotFound, IAP.ErrorCode.ItemUnavailable];
 const failed = (code?: string) => {
-  if (!code || !QUIET_CODES.includes(code)) storeError = 'Apple could not take the tip, and nothing was charged. Try again in a moment.';
+  if (code && QUIET_CODES.includes(code)) return;
+  const w = TIP_WORDS.sheet;
+  if (code && OFF_CODES.includes(code)) storeError = usStorefront() ? w.appleOffWeb : w.appleOff;
+  else if (code === IAP.ErrorCode.IapNotAvailable) storeError = w.appleBlocked;
+  else storeError = w.appleFailed;
 };
 
 /** Buys a tip. Resolves to the tip once Apple has taken the payment; null when it was cancelled, failed (appleTipError says
@@ -99,7 +105,10 @@ const failed = (code?: string) => {
     purchase so the server can tell whose it is. */
 export async function buyApple(tier: TipTierId, account: string | null): Promise<StoreTip | null> {
   storeError = '';
-  if (!(await connect())) return null;
+  if (!(await connect())) {
+    failed();
+    return null;
+  }
   const sku = APPLE_TIPS[tier];
   return new Promise((resolve) => {
     let done = false;

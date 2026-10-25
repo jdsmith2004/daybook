@@ -132,8 +132,15 @@ export const TIP_WORDS = {
     /** the badge on the middle tip */
     badge: 'Our pick',
     web: 'Prefer to tip on the web? Apple Pay works there too.',
-    app: 'Tip in the app instead',
-    onWeb: 'The tip opens on the web page. Pick one above.',
+    /** the choice the web link opens (iPhone, United States storefront only) */
+    webTitle: 'Tip on the web',
+    webLine: 'A secure Stripe page opens. Apple Pay works there too.',
+    cancel: 'Cancel',
+    /** why an Apple tip did not go through, said on the sheet itself */
+    appleOff: 'Tips through Apple are not open yet, and nothing was charged.',
+    appleOffWeb: 'Tips through Apple are not open yet, and nothing was charged. You can tip on the web below.',
+    appleBlocked: 'Purchases are turned off on this iPhone (Screen Time, Content and Privacy), so nothing was charged.',
+    appleFailed: 'Apple could not take the tip, and nothing was charged. Try again in a moment.',
     restore: 'Restore a tip',
     restoreNone: 'No earlier tip was found. If you tipped on the web, sign in with that account first.',
     note: 'Paid once, yours for good.',

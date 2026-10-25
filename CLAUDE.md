@@ -81,8 +81,9 @@ need, without letting the screen turn into a list of features.
   plainly what you chose where the owner should know (a decision made on their behalf, a risk, something untested).
 - **Redesigning a part from the ground up (the owner, October 24, 2026, after the SOS redesign).** When the owner asks for
   a part to be rebuilt (a flow, its tools, its lessons), this is how it is done:
-  - **Start from the purpose, not from what is there.** One goal leads: the person's experience. For SOS that is getting
-    through this urge and getting better at it every time. The current screens, earlier decisions and
+  - **Start from the purpose, not from what is there.** One goal leads: the person's experience, built around helping
+    them get better and quit. For SOS that is getting through this urge and getting better at it every time; for logging
+    a slip it is coming back stronger and less likely to slip again. The current screens, earlier decisions and
     docs/design-standards.md are inputs, not limits; drop anything that does not serve the goal.
   - **Research a lot first.** Look for real studies on what works (and how strongly), write down what they support, and
     design from that. Science first, but something that clearly helps can stay even when the evidence is thin; cut the
@@ -90,7 +91,12 @@ need, without letting the screen turn into a list of features.
   - **Make it seamless enough to amaze.** Think of Apple's philosophy and of apps like How We Feel that pack a lot of
     information cleanly into a small space: it starts doing something on the first tap, one living thing in the middle,
     no clutter, no menus to read under stress, and every moment feels finished (motion, haptics, night colors).
-  - **Ask the real questions early,** each with the options and a recommendation, then build without stopping.
+  - **Split the work across agents, every time, without being asked (the owner, October 25, 2026).** Research (the
+    studies, how Apple, How We Feel and other apps do it), mapping the code and data a part touches, and other
+    self-contained pieces go to subagents running in parallel; the main session designs, builds and checks. When the
+    owner asks whether you know these standards, answer plainly, then go on.
+  - **Ask the real questions early,** each with the options and a recommendation, then build without stopping. When the
+    owner says to use your judgment, decide and say what you chose.
   - **Build it on a feature branch, look at it on the web and on the iOS simulator, and show the owner on the simulator**
     (a release build, so it runs at real speed). Never merge it before the owner has seen it; this overrides "merge when
     the tests pass" above.

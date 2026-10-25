@@ -1,9 +1,10 @@
 /* Name the feeling: the Mood Meter grid, Daybook style. A color picks the corner of feeling, then a pannable 10 by 10
    field of feeling bubbles, each colored by where it sits (energy down the rows, pleasantness across the columns).
    The middle of the screen is the eye of the field: whatever bubble slides under it swells into one of the Material
-   shapes and presses the whole field outward, near bubbles strongly and far ones a little, so dragging feels like
-   rolling a heavy ball through a pool of light ones. A throw glides and then settles with a bubble in the eye, its word
-   shows in the bar at the bottom, and naming it leads on to the tool that fits (core feelings.ts). The pan, the focus
+   shapes and presses the whole field outward, so dragging feels like rolling a heavy ball through a pool of packed
+   ones, with a soft bump under the thumb for each bubble it rolls onto. A throw glides and then settles with a knock and a
+   bubble in the eye, its word shows in the bar at the bottom, and naming it leads on to the tool that fits (core
+   feelings.ts). The pan, the focus
    and the push all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth while it moves. */
 import { FEEL_QUADS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -120,8 +121,10 @@ const Bub = memo(function Bub({
   const f = FEELINGS[r][c];
   const color = FEEL_COLORS[r][c];
   /* the field around the focused bubble: it grows half again, and the growing takes room, so every other bubble is
-     pressed outward: the near ring strongly, the far corners faintly, the whole field giving way at once. The press
-     rises from nothing at the focus (the ball itself does not slide), peaks on the near ring, then dies away slowly. */
+     pressed outward. The press rises from nothing at the focus (the ball itself does not slide), and past the near ring
+     it holds instead of fading: the bubbles are packed tight like hard balls, which cannot squeeze, so the whole pool
+     gives way together. A press that faded would push the near ring into the ring behind it. Because the press never
+     falls with distance, no two bubbles ever come closer than they sit at rest. */
   const st = useAnimatedStyle(
     () => {
       const dx = (c - sx.value) * step;
@@ -129,7 +132,8 @@ const Bub = memo(function Bub({
       const d2 = dx * dx + dy * dy;
       const d = Math.sqrt(d2);
       const gs = 0.55 * step;
-      const push = amt.value * 0.9 * step * (d / (d + 0.6 * step)) * Math.exp(-d / (2.2 * step));
+      const k = 0.6 * step;
+      const push = (amt.value * 0.45 * step * d2) / (d2 + k * k);
       const scale = 1 + amt.value * 0.5 * Math.exp(-d2 / (2 * gs * gs));
       return { transform: [{ translateX: d > 1 ? (push * dx) / d : 0 }, { translateY: d > 1 ? (push * dy) / d : 0 }, { scale }] };
     },
@@ -218,11 +222,33 @@ function FeelGrid({
     cyAt.current = cy;
     ty.value = clamp(ty.value + d, by0, by1);
   }, [cy, by0, by1, ty]);
-  /* the cell in the eye, kept on the JS side for the bar and the shape; it ticks like a picker wheel as the field slides */
+  /* the cell in the eye, kept on the JS side for the bar and the shape; the thumb feels a soft bump as each new bubble
+     rolls in, and a firmer knock when the field comes to rest */
   const onCell = (i: number) => {
     setSel({ r: Math.floor(i / N), c: i % N });
-    buzz('tick');
+    buzz('roll');
   };
+  const land = () => buzz('land');
+  /* where the field is settling to; the knock comes as it arrives within a hair of it, not at the end of the spring's
+     long invisible tail, and a new touch on the field takes it back */
+  const goX = useSharedValue(0);
+  const goY = useSharedValue(0);
+  const armed = useSharedValue(false);
+  const aim = (x: number, y: number) => {
+    'worklet';
+    goX.value = x;
+    goY.value = y;
+    armed.value = true;
+  };
+  useAnimatedReaction(
+    () => armed.value && Math.abs(tx.value - goX.value) + Math.abs(ty.value - goY.value) < 1.5,
+    (near) => {
+      if (!near) return;
+      armed.value = false;
+      runOnJS(land)();
+    },
+    webDeps(tx, ty, goX, goY, armed),
+  );
   useAnimatedReaction(
     () => Math.round(sy.value) * N + Math.round(sx.value),
     (cur, prev) => {
@@ -242,12 +268,17 @@ function FeelGrid({
     const nx = cx - (cc + 0.5) * step;
     const ny = cy - (r + 0.5) * step;
     const glide = { duration: 320, easing: Easing.out(Easing.cubic) };
+    if (Math.abs(tx.value - nx) + Math.abs(ty.value - ny) > 1.5) aim(nx, ny);
     tx.value = reduce ? nx : withTiming(nx, glide);
     ty.value = reduce ? ny : withTiming(ny, glide);
   };
   const pan = useMemo(
     () =>
       Gesture.Pan()
+        .onBegin(() => {
+          'worklet';
+          armed.value = false;
+        })
         .onChange((e) => {
           'worklet';
           tx.value = clamp(tx.value + e.changeX, bx0, bx1);
@@ -261,6 +292,7 @@ function FeelGrid({
           const py = clamp(ty.value + e.velocityY * 0.4, by0, by1);
           const gx = cx - (Math.round((cx - px) / step - 0.5) + 0.5) * step;
           const gy = cy - (Math.round((cy - py) / step - 0.5) + 0.5) * step;
+          aim(gx, gy);
           if (reduce) {
             tx.value = gx;
             ty.value = gy;

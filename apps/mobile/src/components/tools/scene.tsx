@@ -117,18 +117,20 @@ export function Move({ finish, level }: ToolProps) {
   /* the move and how to do it at the top, to be read; the timer in the middle; done at the bottom */
   return (
     <Stage key={'run' + (sit ? 's' : 'u')} dir={0}>
-      <PickRow
-        label="Where are you?"
-        list={[
-          { k: 'sit', label: 'In my seat' },
-          { k: 'up', label: 'On my feet' },
-        ]}
-        cur={sit ? 'sit' : 'up'}
-        onPick={(k) => {
-          sos.setMem((x) => ({ ...x, moveSit: k === 'sit' }));
-          setM0(Date.now());
-        }}
-      />
+      <View style={{ alignSelf: 'stretch' }}>
+        <PickRow
+          label="Where are you?"
+          list={[
+            { k: 'sit', label: 'In my seat' },
+            { k: 'up', label: 'On my feet' },
+          ]}
+          cur={sit ? 'sit' : 'up'}
+          onPick={(k) => {
+            sos.setMem((x) => ({ ...x, moveSit: k === 'sit' }));
+            setM0(Date.now());
+          }}
+        />
+      </View>
       <T v="eyebrow" tone="muted">
         {'Move ' + (i + 1) + ' of ' + list.length}
       </T>

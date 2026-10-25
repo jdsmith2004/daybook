@@ -1,5 +1,5 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
-import { CU_BODY, CU_CHG, CU_D, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
+import { CU_BODY, CU_CHG, CU_D, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, FWD_TOMORROW, THOUGHTS, thoughtIn } from '@daybook/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -10,7 +10,7 @@ import { AddTile, Field, Link, Tiles } from '@/components/choices';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Appear } from '@/components/appear';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
-import { along, blobPath, envelope, MorphShape, plainPath, Shape, SQUIGGLE, squigglePath, useClock, WavyLine, type Along } from '@/components/shapes';
+import { along, blobPath, envelope, MorphShape, plainPath, Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, WavyLine, type Along } from '@/components/shapes';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { breathAt, useBreathSeconds, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
@@ -526,6 +526,13 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
   /* your answers from last time are already picked */
   const [a, setA] = useState<string[]>(() => (mem.fwd?.a || []).slice());
   const [b, setB] = useState<string[]>(() => (mem.fwd?.b || []).slice());
+  /* the good moment to picture tomorrow morning, kept with the answers */
+  const [tm, setTm] = useState(() => (FWD_TOMORROW.some((x) => x[0] === mem.fwd?.c) ? (mem.fwd?.c as string) : FWD_TOMORROW[0][0]));
+  /* asked once: with answers from last time, it opens straight on the two hours */
+  useEffect(() => {
+    if (step === 0 && (a.length || b.length)) setStep(2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const toggle = (L: string[], set: (x: string[]) => void, v: string) => {
     set(L.indexOf(v) >= 0 ? L.filter((x) => x !== v) : L.concat(v));
     buzz('tap');
@@ -561,7 +568,7 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
           <Button
             label="Next"
             onPress={() => {
-              setMem((m) => ({ ...m, fwd: { a: a.slice(0, 7), b: b.slice(0, 7) } }));
+              setMem((m) => ({ ...m, fwd: { a: a.slice(0, 7), b: b.slice(0, 7), c: tm } }));
               setStep(2);
             }}
           />
@@ -571,34 +578,80 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
   const words = (list: [string, string][], ids: string[]) => list.filter((x) => ids.indexOf(x[0]) >= 0).map((x) => x[1].toLowerCase());
   const wa = words(FWD_A, a);
   const wb = words(FWD_B, b);
+  const tmText = (FWD_TOMORROW.find((x) => x[0] === tm) || FWD_TOMORROW[0])[1];
+  const nextTm = () => {
+    const i = FWD_TOMORROW.findIndex((x) => x[0] === tm);
+    const k = FWD_TOMORROW[(i + 1) % FWD_TOMORROW.length][0];
+    setTm(k);
+    setMem((m) => ({ ...m, fwd: { a: a.slice(0, 7), b: b.slice(0, 7), c: k } }));
+    buzz('tap');
+  };
+  /* one picture: the road splits at now into the two hours, in your own words, and under them one good moment to picture
+     tomorrow morning (core FWD_TOMORROW) */
   return (
     <Stage key={'s' + step} dir={dir}>
       <T v="title" style={s.c} accessibilityRole="header">
         Which hour do you want?
       </T>
       <Middle>
-        <View style={s.two}>
-          <Card style={{ flex: 1, backgroundColor: c.slipSoft, borderColor: c.slipSoft }}>
-            <T v="small" tone="slipText">
-              Giving in
+        <View style={{ alignSelf: 'stretch', alignItems: 'center' }}>
+          <View style={[s.now, { backgroundColor: c.surface }]}>
+            <T v="small" style={{ fontFamily: font.bodyBold }}>
+              Now
             </T>
-            <WavyLine width={60} p={1} ease={false} color={c.slip} track={c.slip} />
-            <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
-          </Card>
-          <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
-            <T v="small" tone="mintText">
-              Riding it out
-            </T>
-            <WavyLine width={60} p={1} ease={false} color={c.mint} track={c.mint} />
-            <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
-          </Card>
+          </View>
+          <Fork left={c.slip} right={c.mint} />
+          <View style={s.two}>
+            <Card style={{ flex: 1, backgroundColor: c.slipSoft, borderColor: c.slipSoft }}>
+              <T v="small" tone="slipText">
+                An hour after giving in
+              </T>
+              <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
+            </Card>
+            <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
+              <T v="small" tone="mintText">
+                An hour after riding it out
+              </T>
+              <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
+            </Card>
+          </View>
         </View>
-        <T style={s.c}>The urge only shows you the next few minutes. You get to pick the next hour.</T>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={'Tomorrow morning: ' + tmText + '. Tap for another one.'}
+          onPress={nextTm}
+          style={({ pressed }) => [s.tomorrow, { backgroundColor: c.sunSoft, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+          <T v="small" tone="sunText">
+            Tomorrow morning, picture it
+          </T>
+          <Text style={[s.tmT, { color: c.ink }]}>{tmText}</Text>
+          <T v="small" tone="muted">
+            Where are you? Who is there? Tap for another.
+          </T>
+        </Pressable>
       </Middle>
       <Dock>
         <Button label="Ride it out" onPress={() => finish('forward', { msg: 'You picked the better hour.' })} />
+        <View style={s.quiet}>
+          <Link label="Change my answers" onPress={() => setStep(0)} />
+        </View>
       </Dock>
     </Stage>
+  );
+}
+
+/** the road from now splitting in two, toward the two hours: a soft curve down to each card */
+function Fork({ left, right }: { left: string; right: string }) {
+  const [w, setW] = useState(0);
+  return (
+    <View style={{ alignSelf: 'stretch', height: 40 }} onLayout={(e) => setW(e.nativeEvent.layout.width)} {...SVG_HIDE}>
+      {w ? (
+        <Svg width={w} height={40}>
+          <Path d={`M${w / 2} 0 C ${w / 2} 22, ${w * 0.25} 16, ${w * 0.25} 40`} stroke={left} strokeWidth={5} strokeLinecap="round" fill="none" />
+          <Path d={`M${w / 2} 0 C ${w / 2} 22, ${w * 0.75} 16, ${w * 0.75} 40`} stroke={right} strokeWidth={5} strokeLinecap="round" fill="none" />
+        </Svg>
+      ) : null}
+    </View>
   );
 }
 
@@ -636,6 +689,9 @@ const s = StyleSheet.create({
   quiet: { alignItems: 'center' },
   calmWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   calm: { fontFamily: font.display, fontSize: 24, lineHeight: 30, textAlign: 'center' },
+  now: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999 },
+  tomorrow: { alignSelf: 'stretch', gap: 4, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 18 },
+  tmT: { fontFamily: font.display, fontSize: 21, lineHeight: 27 },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
   breath: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },

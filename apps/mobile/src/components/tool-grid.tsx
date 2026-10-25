@@ -21,11 +21,12 @@ export const toolTone = (c: Palette, t: string) =>
 
 /* each tool's own Material shape, picked for what the tool does, and turned a little as if placed by hand: sunny for
    breath, a steady arch to come back to the room, a flower to get curious, a cloud for a thought, an arrow forward, a
-   cookie to wait, a burst to move, a moon-like oval for bed, a very sunny surprise, a gem for a need, a heart for a person,
+   cookie to wait, a turned clover to stack, a burst to move, a moon-like oval for bed, a very sunny surprise, a gem for a need, a heart for a person,
    and a 12-sided cookie for your reasons */
 const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number }> = {
   breathe: { kind: 'sunny', turn: 8 },
   ground: { kind: 'arch', turn: 0 },
+  stack: { kind: 'clover4', turn: 18 },
   curious: { kind: 'flower', turn: -6 },
   thought: { kind: 'puffy', turn: -8 },
   feel: { kind: 'clover8', turn: -8 },

@@ -154,6 +154,13 @@ export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
   return forced ? { ...night, scheme: 'dark' } : { ...palettes[sys], scheme: sys };
 }
 
+/** the colors inside a scene with this sky, for a screen that builds its scene's insides itself (the colors it reads
+    before SceneFrame's NightContext is around them): a dark sky takes the night colors */
+export function useSkyTheme(sky: Sky): Palette & { scheme: 'light' | 'dark' } {
+  const c = useTheme();
+  return sky === 'night' || sky === 'ember' ? { ...night, scheme: 'dark' } : c;
+}
+
 /* Fredoka for numbers and headings, Instrument Sans for everything else (both loaded in the root layout) */
 export const font = {
   body: 'InstrumentSans_400Regular',

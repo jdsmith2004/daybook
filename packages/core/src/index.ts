@@ -8,6 +8,7 @@ export * from './actions';
 export * from './mutate';
 export * from './rekindle';
 export * from './sos';
+export * from './ride';
 export * from './talk';
 export * from './talk-log';
 export * from './feelings';

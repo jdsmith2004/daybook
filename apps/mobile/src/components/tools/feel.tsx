@@ -179,7 +179,7 @@ const clamp = (v: number, lo: number, hi: number) => {
 };
 
 /* ---------- the grid screen ---------- */
-function FeelGrid({
+export function FeelGrid({
   start,
   onBack,
   onClose,
@@ -388,7 +388,7 @@ const NAME_BREATH: Steps = [
   ['in', 4],
   ['out', 6],
 ];
-function BreathingShape({ kind, color }: { kind: ShapeKind; color: string }) {
+export function BreathingShape({ kind, color, ink = nightInk.muted }: { kind: ShapeKind; color: string; ink?: string }) {
   const reduce = useReducedMotion();
   const [t, , out] = breathAt(NAME_BREATH, useBreathSeconds(!reduce));
   return (
@@ -396,7 +396,7 @@ function BreathingShape({ kind, color }: { kind: ShapeKind; color: string }) {
       <View style={{ transform: [{ scale: reduce ? 1 : 0.8 + 0.28 * t }] }}>
         <Shape kind={kind} size={160} color={color} turn={6} />
       </View>
-      <T v="label" style={{ color: nightInk.muted }}>
+      <T v="label" style={{ color: ink }}>
         {reduce ? 'Breathe out slowly' : out ? 'Breathe out' : 'Breathe in'}
       </T>
     </View>
@@ -404,7 +404,7 @@ function BreathingShape({ kind, color }: { kind: ShapeKind; color: string }) {
 }
 
 /* ---------- the four corners ---------- */
-const QUAD_COLOR: Record<string, string> = {
+export const QUAD_COLOR: Record<string, string> = {
   red: 'hsl(351, 78%, 58%)',
   yellow: 'hsl(46, 93%, 57%)',
   blue: 'hsl(210, 85%, 66%)',

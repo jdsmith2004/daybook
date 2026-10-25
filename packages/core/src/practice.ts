@@ -379,6 +379,57 @@ export const PRACTICE: Record<string, PStep> = {
     ok: 'You looked at the real thing.',
   },
 
+  /* ---------- the science behind the SOS moves ---------- */
+  l42: {
+    h: 'Make the puzzle your first move.',
+    p: 'When a picture starts, a minute of shapes crowds it out. Add this to your urge plan, then try one game now, while it is calm.',
+    mins: 2,
+    items: [
+      plan('a picture of it starts in my head', 'Play Fit the shapes for one minute, eyes on the board. Then stand up and do the next thing.'),
+      line('menu', 'One minute of fitting shapes, eyes on the board'),
+    ],
+    go: [scene('Try Fit the shapes', 'stack', 'sparkle')],
+    ok: 'Your eyes and hands have a job ready.',
+  },
+  l43: {
+    h: 'Make the room your first move.',
+    p: 'Add a line, so the next urge already has a way back. In SOS, 5-4-3-2-1 is ready whenever you need it.',
+    mins: 1,
+    items: [
+      plan('an urge starts as a picture in my head', 'Look up and name 5 things I can see, then 4 things I can feel. Come back to the room.'),
+      line('menu', '5-4-3-2-1: name what I can see, feel, hear, smell and taste'),
+      line('words', 'That is a picture. This is the room. I am here.'),
+    ],
+    ok: 'Your way back is ready.',
+  },
+  l44: {
+    h: 'Write your hour after, both ways.',
+    p: 'Pick the lines that are true for you, or change the words. They will be ready when the next urge comes.',
+    mins: 1,
+    items: [
+      plan('an urge comes', 'Play it forward: picture the hour after giving in, then the hour after riding it out, and pick the hour I want.'),
+      line('words', 'An hour after giving in, I feel empty. An hour after riding it out, I feel proud. I pick proud.'),
+      line('note', 'Look past the next ten minutes. The hour after is coming either way. Pick the one you want.'),
+    ],
+    write: [
+      'Giving in: tired, ashamed, and more alone. Riding it out: calm, and more like myself.',
+      'Giving in: empty, and behind on things. Riding it out: proud, rested, and clear-headed.',
+    ],
+    ok: 'Your hour after is ready.',
+  },
+  l45: {
+    h: 'Write your line while it is calm.',
+    p: 'Pick a line, then change the words until it sounds like you. Your words in SOS reads it back to you in an urge. If you can, record it in your own voice too.',
+    mins: 2,
+    items: [
+      line('reason', 'I want to wake up clear, and be fully there for the people I love.'),
+      line('reason', 'I want to be calm and present in my own life, with nothing to hide.'),
+      line('note', 'It is me, on a calm day. You know what you want. This will pass, and I will be glad you waited.'),
+    ],
+    go: [{ t: 'Record it in your own voice', a: 'tab', v: 'plan', open: 'why', ic: 'mic' }],
+    ok: 'Calm you has a voice now.',
+  },
+
   /* ---------- Becoming someone new ---------- */
   l37: {
     h: 'Write who you are becoming.',

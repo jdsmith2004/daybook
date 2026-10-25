@@ -86,11 +86,12 @@ export const feelKind = (r: number, c: number): ShapeKind => {
   return pool[(r * 7 + c * 3) % pool.length];
 };
 
-/** the chosen bubble's shape: it starts as the circle it was and morphs out (MorphShape springs when `kind` changes) */
+/** the chosen bubble's shape: it starts as the circle it was and, after a short beat in the eye, morphs out (MorphShape
+    springs when `kind` changes). The beat keeps a bubble that only rolls through from flickering into its shape. */
 function SelShape({ kind, size, color }: { kind: ShapeKind; size: number; color: string }) {
   const [k, setK] = useState<ShapeKind>('circle');
   useEffect(() => {
-    const t = setTimeout(() => setK(kind), 30);
+    const t = setTimeout(() => setK(kind), 160);
     return () => clearTimeout(t);
   }, [kind]);
   return <MorphShape kind={k} size={size} color={color} />;

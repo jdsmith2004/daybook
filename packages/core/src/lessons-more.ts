@@ -1,6 +1,7 @@
-/* Lessons 33 to 41. Lessons 33 to 40 are the two newer units: "Why it is hard to stop" and "Becoming someone new".
+/* Lessons 33 to 45. Lessons 33 to 40 are the two newer units: "Why it is hard to stop" and "Becoming someone new".
    Lesson 41, "The picture and the real thing", is the science behind Talk it through and Rekindle, in "Seeing your
-   pattern". They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
+   pattern". Lessons 42 to 45 are the science behind the SOS moves that had no lesson of their own (Fit the shapes,
+   5-4-3-2-1, The hour after, Your words), in "Skills for the moment"; each move's Why it works opens its lesson. They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
    legacy/core.js adds them to LESSONS, LUNITS and SRC, so every rule that counts lessons sees all of them.
 
    Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), read together as
@@ -64,6 +65,80 @@ export const SRC_MORE: Record<string, [string, string]> = {
   allen17: [
     'Allen, Kannis-Dymand & Katsikitis (2017): problematic internet pornography use, the role of craving, desire thinking, and metacognition, Addictive Behaviors',
     'https://doi.org/10.1016/j.addbeh.2017.02.001',
+  ],
+  kavanagh05: [
+    'Kavanagh, Andrade & May (2005): imaginary relish and exquisite torture, the elaborated intrusion theory of desire, Psychological Review',
+    'https://doi.org/10.1037/0033-295X.112.2.446',
+  ],
+  skorka15: [
+    'Skorka-Brown, Andrade, Whalley & May (2015): playing Tetris decreases drug and other cravings in real world settings, Addictive Behaviors',
+    'https://doi.org/10.1016/j.addbeh.2015.07.020',
+  ],
+  skorka14: [
+    'Skorka-Brown, Andrade & May (2014): playing Tetris reduces the strength, frequency and vividness of naturally occurring cravings, Appetite',
+    'https://doi.org/10.1016/j.appet.2014.01.073',
+  ],
+  may10: [
+    'May, Andrade, Panabokke & Kavanagh (2010): visuospatial tasks suppress craving for cigarettes, Behaviour Research and Therapy',
+    'https://doi.org/10.1016/j.brat.2010.02.001',
+  ],
+  andrade12: [
+    'Andrade, Pears, May & Kavanagh (2012): use of a clay modeling task to reduce chocolate craving, Appetite',
+    'https://doi.org/10.1016/j.appet.2012.02.044',
+  ],
+  marino23: [
+    'Marino et al. (2023): desire thinking and craving as predictors of problematic Internet pornography use in women and men, Addictive Behaviors',
+    'https://doi.org/10.1016/j.addbeh.2022.107469',
+  ],
+  kemps07: [
+    'Kemps & Tiggemann (2007): modality-specific imagery reduces cravings for food, an application of the elaborated intrusion theory of desire, Journal of Experimental Psychology: Applied',
+    'https://doi.org/10.1037/1076-898X.13.2.95',
+  ],
+  kemps12: ['Kemps, Tiggemann & Bettany (2012): non-food odorants reduce chocolate cravings, Appetite', 'https://doi.org/10.1016/j.appet.2012.03.002'],
+  scott26: [
+    'Scott, Duncan & McCoy (2026): “Ground yourself,” using the five senses technique to cope with test anxiety among nursing students, Teaching and Learning in Nursing',
+    'https://www.sciencedirect.com/science/article/abs/pii/S1557308725002999',
+  ],
+  field09: [
+    'Field, Munafò & Franken (2009): the relationship between attentional bias and subjective craving, a meta-analysis of 68 data sets, Psychological Bulletin',
+    'https://doi.org/10.1037/a0015843',
+  ],
+  kemps15: [
+    'Kemps & Tiggemann (2015): a role for mental imagery in the experience and reduction of food cravings, Frontiers in Psychiatry',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC4284995/',
+  ],
+  kober10: [
+    'Kober, Mende-Siedlecki, Kross, Weber, Mischel, Hart & Ochsner (2010): prefrontal-striatal pathway underlies cognitive regulation of craving, Proceedings of the National Academy of Sciences',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC2930456/',
+  ],
+  lopez22: [
+    'Lopez, Ochsner & Kober (2022): brief training in regulation of craving reduces cigarette smoking, Journal of Substance Abuse Treatment',
+    'https://doi.org/10.1016/j.jsat.2022.108749',
+  ],
+  boswell18: [
+    'Boswell, Sun, Suzuki & Kober (2018): training in cognitive strategies reduces eating and improves food choice, Proceedings of the National Academy of Sciences',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC6275472/',
+  ],
+  stein16: [
+    'Stein et al. (2016): “Unstuck in time,” episodic future thinking reduces delay discounting and cigarette smoking, Psychopharmacology',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC9812225/',
+  ],
+  loewenstein05: ['Loewenstein (2005): hot-cold empathy gaps and medical decision making, Health Psychology', 'https://doi.org/10.1037/0278-6133.24.4.S49'],
+  loman18: [
+    'Loman, Müller, Oude Groote Beverborg, van Baaren & Buijzen (2018): self-persuasion in media messages, reducing alcohol consumption among students with open-ended questions, Journal of Experimental Psychology: Applied',
+    'https://doi.org/10.1037/xap0000162',
+  ],
+  magill18: [
+    'Magill et al. (2018): a meta-analysis of motivational interviewing process, technical, relational, and conditional process models of change, Journal of Consulting and Clinical Psychology',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC5958907/',
+  ],
+  wood09: [
+    'Wood, Perunovic & Lee (2009): positive self-statements, power for some, peril for others, Psychological Science',
+    'https://pubmed.ncbi.nlm.nih.gov/19493324/',
+  ],
+  dijkstra15: [
+    'Dijkstra & Menninga (2015): experimentally induced states of mind determine abstinent smokers’ level of craving in reaction to smoking cues, Addictive Behaviors Reports',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC5845922/',
   ],
 };
 /* two sources the first 32 lessons already use */
@@ -1232,6 +1307,606 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       scope:
         'Desire thinking has been studied across many habits, porn among them. The curiosity trial was with adults quitting smoking, and the noticing study with people who overeat: the same learning runs through every habit like this one. What it means for you: the picture pulls harder than the real thing, and every honest look narrows that gap.',
       src: src('caselli', 'brewer11', 'taylor21', 'sayette', 'tracy13', 'allen17'),
+    },
+    /* ---------- skills for the moment: the science behind the SOS moves that had no lesson of their own ---------- */
+    {
+      id: 'l42',
+      u: 3,
+      v: 2,
+      chk: 'October 25, 2026',
+      title: 'Crowd out the picture',
+      tag: 'An urge runs on pictures. Give your eyes and hands something else.',
+      ic: 'sparkle',
+      mins: 3,
+      ask: 'Why would a small puzzle help when an urge is strong?',
+      key: 'An urge grows by painting pictures in your head, and those pictures need room. A puzzle for the eyes and hands takes that room, so the picture fades and the pull drops. In a week-long study, three minutes of a block game lowered cravings by about 14 points out of 100, and it kept working all week.',
+      np: 'What my eyes and hands can do when an urge starts',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['chain', { n: ['One small thought', 'A whole picture', 'A strong pull'], i: ['bolt', 'dots', 'wave'] }],
+          h: 'Has an urge ever started as one small thought, and then grown into a picture you could not stop seeing?',
+          b: [
+            bP(
+              'That is how most urges grow. A thought pops up, and the mind starts painting it in. The brighter the picture, the stronger the pull. This lesson is about taking the paint away.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'In studies, which of these lowered cravings most?',
+          ask: 'Make your best guess.',
+          a: 2,
+          c: [
+            [
+              'Counting backward in your head',
+              'A good try, and it keeps the mind busy. But in the studies, number and word tasks did less. The pull runs on pictures, so a task for the eyes did more.',
+            ],
+            ['Telling yourself not to think about it', 'Fighting a picture keeps your eyes on it. Giving the mind something else to see works better.'],
+            [
+              'A few minutes of a block puzzle',
+              'Good guess. Fitting shapes takes the same space in the mind that the urge uses for its pictures, so the pictures fade and the pull drops with them.',
+            ],
+            [
+              'Sitting still and waiting it out',
+              'Urges do pass. But in one study, people who waited in front of a loading screen felt more pull afterward than people who spent those minutes on a block game.',
+            ],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['chain', { n: ['A picture grows', 'Shapes take the room', 'The pull fades'], i: ['dots', 'sparkle', 'leaf'] }],
+          h: 'Give your eyes and hands a job, and the picture has no room.',
+          b: [
+            bP(
+              'Your mind has a small screen for pictures, and it can only show so much at once. An urge needs that screen to paint what it wants. When you are busy fitting shapes onto a board, the screen is taken. The picture fades, and the pull fades with it. You are not fighting the urge. You are filling the space it needs.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'timer' }],
+          h: 'Three minutes of a block game lowered cravings in daily life.',
+          b: [
+            bP(
+              'For a week, 31 young adults got seven text messages a day asking about their cravings. Half of them played a block game for three minutes after each one. Their cravings dropped by about 14 points on a 100-point scale, for every kind they had: food, drinks, coffee, cigarettes, and activities, sexual urges among them. The drop held all week. An earlier lab study found the same: after a few minutes of the game, cravings were weaker and the pictures behind them were less vivid.',
+            ),
+          ],
+          so: 'It works in real life, on real urges, and it keeps working. Every game you play is a small, true win.',
+          fact: { s: 'Field study · 31 people · Skorka-Brown et al., 2015 · Lab study · Skorka-Brown et al., 2014', i: [1, 2] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'dots' }],
+          h: 'It works because an urge runs on pictures.',
+          b: [
+            bP(
+              'Researchers found that a craving draws its power from what the mind pictures: the taste, the feel, the moment. In smokers trying to quit, tasks for the eyes lowered craving, and tasks for the ears and for words did not do as much. Ten minutes of shaping clay with the hands lowered chocolate cravings, made the pictures fainter, and made the thoughts come less often. A study of 414 adults found the same start for this habit: picturing the scenes ahead of time went with a stronger craving.',
+            ),
+          ],
+          so: 'Painting pictures is how an urge grows. Anything that keeps your eyes and hands busy takes its brush away.',
+          fact: {
+            s: 'Theory · Kavanagh et al., 2005 · Experiments · May et al., 2010 · Experiments · Andrade et al., 2012 · Study · 414 adults · Marino et al., 2023',
+            i: [0, 3, 4, 5],
+          },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'sparkle' }],
+          h: 'When the picture starts, give your eyes and hands a puzzle.',
+          b: [
+            bL([
+              '**Catch it early:** the moment the mind starts painting, that is your cue.',
+              '**Play for about a minute:** drag shapes onto the board, and fill a row or a column to clear it. Plan where each one fits.',
+              '**Keep your eyes on the board:** if the picture comes back, look at the next shape.',
+              '**Then take the next step:** the pull is lower now. Use that space to stand up, move, or go to bed.',
+            ]),
+            bP('In SOS, Fit the shapes does this for you. Anything for the eyes and hands helps: in the studies, shaping clay worked too.'),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'It is late. An urge starts, and the picture keeps getting clearer. What is the best first move?',
+          ask: 'Pick the best move.',
+          a: 1,
+          c: [
+            ['Go over the picture in detail, to understand it', 'That paints it in further, and every detail makes the pull stronger.'],
+            ['Spend a minute fitting shapes, eyes on the board', 'Yes. The board takes the room the picture needs, so the pull fades.'],
+            ['Count backward from 100 in my head', 'It helps a little, but numbers and words leave the picture screen free. A task for the eyes does more.'],
+            [
+              'Scroll on my phone until it passes',
+              'Scrolling keeps the eyes busy, but it is full of cues that start new pictures. A puzzle with nothing in it is the safer job.',
+            ],
+          ],
+        },
+      ],
+      rc: {
+        q: 'An urge starts as a picture, and the picture keeps getting brighter. What does this lesson suggest?',
+        c: [
+          'Push the picture away with all my strength',
+          'Replay it, to see what I really want',
+          'Wait in the dark until it is gone',
+          'Give my eyes and hands a puzzle for a minute',
+        ],
+        a: 3,
+        r: 'Give the picture something to compete with. A puzzle for the eyes and hands crowds it out.',
+        cr: [
+          'Not quite. Fighting a picture keeps your eyes on it. Giving your eyes something else to see works better.',
+          'Not quite. Replaying paints the picture in further, and the pull grows with it.',
+          'Not quite. Urges do pass, but waiting with nothing to do leaves the picture room to grow.',
+          'Right. The puzzle takes the space the picture needs, and the pull fades with it.',
+        ],
+      },
+      scope:
+        'These studies measured cravings for food, drinks, cigarettes and everyday activities, sexual urges among them, in students and in adults quitting smoking, and the study of 414 adults tied picturing to craving for this habit itself. The finding is the same each time: when the eyes and hands are busy, the picture fades and the pull drops. In a week of daily life, a few minutes of a block game kept working every day. A minute of shapes is a real tool, and it is always in your pocket.',
+      src: src('kavanagh05', 'skorka15', 'skorka14', 'may10', 'andrade12', 'marino23'),
+    },
+    {
+      id: 'l43',
+      u: 3,
+      v: 2,
+      chk: 'October 25, 2026',
+      title: 'Come back to the room',
+      tag: 'An urge pulls you into a picture. Your senses bring you back.',
+      ic: 'compass',
+      mins: 3,
+      ask: 'When an urge pulls me into my head, how do I get back out?',
+      key: 'An urge runs on a picture in your head, and that picture uses the same space as real seeing, feeling and smelling. Fill that space with the room around you, and the picture has less to run on. In studies, tasks for the eyes and the nose turned cravings down by about a fifth to a quarter, every time people used them.',
+      np: 'The things around me that bring me back',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['chain', { n: ['An urge starts', 'A picture fills your head', 'The room comes back'], i: ['bolt', 'dots', 'leaf'] }],
+          h: 'When an urge hits, where are you, really?',
+          b: [
+            bP(
+              'Your body is in a room. Your mind is somewhere else, in a picture of what could happen next. This lesson is about the quickest way back, and it is already all around you.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'In studies, what turned a craving down the most?',
+          ask: 'Make your best guess.',
+          a: 1,
+          c: [
+            [
+              'Counting backward, or thinking in words',
+              'Word tasks helped a little. Tasks for the eyes and the nose helped more, because that is what a craving is made of.',
+            ],
+            [
+              'Giving my eyes and nose something real to do',
+              'Good guess. Tasks for the eyes and the nose turned cravings down most, because a craving is built from pictures and senses.',
+            ],
+            ['Telling myself firmly to stop', 'A firm “stop” still keeps your attention on the urge. Something real for your senses draws it away.'],
+            ['Nothing. You can only wait it out', 'Urges do pass. And in studies, a short task for the senses turned the craving down while it did.'],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['icon', { ic: 'compass' }],
+          h: 'Give your senses something real, and the picture fades.',
+          b: [
+            bP(
+              'When an urge is strong, your attention narrows onto it, and the picture in your head gets louder. That picture uses the same space in your mind as real seeing, feeling and smelling. Fill that space with what is actually around you, and there is less room for the picture. You are not fighting the urge. You are coming back to where you are.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'sun' }],
+          h: 'Tasks for the eyes and the nose turned cravings down.',
+          b: [
+            bP(
+              'Researchers who study cravings find they are built mostly from pictures and senses in the mind. In two experiments with 90 people each, picturing an ordinary scene or smell turned a craving down more than imagining sounds. In smokers going without, tasks for the eyes and hands beat counting backward. In another study, just smelling jasmine cut a craving more than smelling water. Across these studies, cravings dropped by about a fifth to a quarter, and the tasks kept working each time people used them.',
+            ),
+          ],
+          so: 'In 5-4-3-2-1, seeing and feeling come first. Real things around you take up the space the picture was using.',
+          fact: {
+            s: 'Experiments · 90 people each · Kemps & Tiggemann, 2007 · Experiments · May et al., 2010 · Study · 67 people · Kemps et al., 2012 · Review · Kemps & Tiggemann, 2015',
+            i: [0, 1, 2, 6],
+          },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'leaf' }],
+          h: 'Noticing what is here changes what you do next.',
+          b: [
+            bP(
+              'In a trial with 123 smokers, people taught to notice an urge as feelings in the body, without acting on it, smoked fewer cigarettes over the next week. Their urges were just as strong. What changed was what they did. And 5-4-3-2-1 itself has been tested: after 48 nursing students learned it before an exam, the share with high test anxiety fell from 23% to 4%.',
+            ),
+          ],
+          so: 'You do not have to make the urge disappear. Come back to the room, and let it pass by while you are somewhere real.',
+          fact: { s: 'Trial · 123 smokers · Bowen & Marlatt, 2009 · Study · 48 students · Scott et al., 2026', i: [3, 4] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'dots' }],
+          h: 'Count your way back: 5, 4, 3, 2, 1.',
+          b: [
+            bL([
+              '**5 things you can see.** Name them plainly: a lamp, a door, your own hand.',
+              '**4 things you can feel:** the chair, your clothes, the floor under your feet.',
+              '**3 you can hear, 2 you can smell, 1 you can taste.** A sip of water counts.',
+              '**If the picture comes back,** notice it, and return to the room. Coming back is the skill.',
+            ]),
+            bP('In SOS, 5-4-3-2-1 walks you through it, one tap for each thing you find.'),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'An urge hits while you are on the couch, and your mind is already running the picture. What is the best first move?',
+          ask: 'Pick the best move.',
+          a: 2,
+          c: [
+            [
+              'Close my eyes and try hard not to picture it',
+              'Closed eyes leave the picture with nothing to compete with. Open them, and give your eyes something real.',
+            ],
+            ['Keep watching the picture, to see if it fades', 'Watching the picture feeds it. Coming back to the room lets the urge pass you by.'],
+            ['Look around and name 5 things I can see', 'Yes. Real things for your eyes take up the space the picture was using.'],
+            ['Scroll on my phone until it passes', 'Scrolling keeps you in a screen, one tap from the habit. The room around you is the better place to look.'],
+          ],
+        },
+      ],
+      rc: {
+        q: 'You start 5-4-3-2-1 during an urge, and by the sounds the picture is back. What now?',
+        c: [
+          'Stop, since it did not work',
+          'Notice the picture, and go back to the room: 3 things I can hear',
+          'Look at the picture again, to see what it wants',
+          'Decide I am bad at this',
+        ],
+        a: 1,
+        r: 'Coming back is the skill. Notice the picture, and return to the room, as many times as it takes.',
+        cr: [
+          'Not quite. A picture coming back is normal. Returning to the room again is the practice.',
+          'Right. Noticing the picture and coming back is the move itself, and it works each time you use it.',
+          'Not quite. Going back to the picture turns the pull up. The room is where it loosens.',
+          'Not quite. Every mind drifts. Each return is a small win, not a test you failed.',
+        ],
+      },
+      scope:
+        '5-4-3-2-1 itself was tested in one small study, with nursing students before an exam and no comparison group, and they came out calmer. The strongest evidence sits right beside it: experiments where tasks for the eyes and the nose turned food and smoking cravings down, a trial where noticing urges helped smokers act on them less, and a review of 68 data sets where attention pulled toward a cue went with stronger craving. They all point the same way: an urge runs on attention and pictures, and the room around you is real, near, and always there to come back to.',
+      src: src('kemps07', 'may10', 'kemps12', 'bowen', 'scott26', 'field09', 'kemps15'),
+    },
+    {
+      id: 'l44',
+      u: 3,
+      v: 2,
+      chk: 'October 25, 2026',
+      title: 'Play it forward',
+      tag: 'The urge only shows you the next ten minutes. Look at the hour after.',
+      ic: 'compass',
+      mins: 3,
+      ask: 'What can I think about during an urge that makes it weaker?',
+      key: 'The urge talks only about right now. Play it forward: picture the hour after giving in, then the hour after riding it out, and pick the hour you want. In studies, thinking of what comes later cut craving by about a third, and practicing it cut real use for weeks.',
+      np: 'How I feel an hour after, both ways',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['chain', { n: ['The urge', 'Ten minutes', 'The hour after'], i: ['bolt', 'timer', 'compass'] }],
+          h: 'The urge tells you how the next ten minutes will feel. What does it never tell you?',
+          b: [bP('How you will feel an hour after. That hour is coming either way, and it is close enough to picture. This lesson is about looking at it.')],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'Smokers looked at pictures of cigarettes in a brain scanner. What lowered their craving by about a third?',
+          ask: 'Make your best guess.',
+          a: 1,
+          c: [
+            [
+              'Trying hard not to want it',
+              'A common first try. But fighting the want head on is tiring. What worked here was simpler: a change in what they thought about.',
+            ],
+            [
+              'Thinking about what comes later',
+              'Good guess. When they thought past the moment, to what smoking does over time, the craving dropped by about a third.',
+            ],
+            [
+              'Telling themselves to be strong',
+              'Pep talks can feel good, but this study tested something more specific: looking past the moment, to what comes later.',
+            ],
+            [
+              'Nothing. A craving cannot be changed',
+              'It can. The pictures stayed on the screen, and still the craving dropped when they thought about what comes later.',
+            ],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['chain', { n: ['Now: the pull', 'The hour after', 'The hour I want'], i: ['bolt', 'compass', 'sun'] }],
+          h: 'Look past the next ten minutes, to the hour after.',
+          b: [
+            bP(
+              'The urge shows only the first few minutes. When you play it forward, the whole picture comes back: how you feel an hour after giving in, and how you feel an hour after riding it out. Seen side by side, the pull loses its grip. You do not have to fight it. You just see more.',
+            ),
+            bP('And it is a skill. Each time you play it forward, it comes a little quicker and works a little better.'),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'chart' }],
+          h: 'Thinking of what comes later turns craving down.',
+          b: [
+            bP(
+              'In a brain-scan study, 21 smokers looked at pictures of cigarettes and rich foods. When they thought about what comes later, instead of how it would feel right now, craving dropped by about a third: 34% for cigarettes and 30% for food. The planning parts at the front of the brain grew more active, and the brain’s reward center grew quieter.',
+            ),
+            bP(
+              'The good side helps too. In another study, smokers who pictured good moments ahead of them, from tomorrow to a year away, took fewer puffs in an hour in the lab than smokers who recalled good moments from the day before.',
+            ),
+          ],
+          so: 'Your brain already has the brakes. Thinking of the hour after is how you press them.',
+          fact: { s: 'Brain-scan study · 21 smokers · Kober et al., 2010 · Trial · 42 smokers · Stein et al., 2016', i: [0, 3] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'star' }],
+          h: 'Practice turns it into a skill that lasts.',
+          b: [
+            bP(
+              'In two trials with 93 smokers, some practiced thinking of what comes later, 25 times in one short session, while looking at pictures of cigarettes. In the weeks after, they smoked 22% to 49% fewer cigarettes a day, and it held for up to a month. Smokers who did not practice stayed about the same.',
+            ),
+            bP(
+              'The same practice works on food. In a set of studies with 1,528 people, about 15 minutes of practice changed what people chose to eat, and in one study the people who practiced ate 93 to 121 fewer calories than people who did not.',
+            ),
+          ],
+          so: 'Every urge is a chance to practice. The more you play it forward, the stronger the skill gets.',
+          fact: { s: 'Trials · 93 smokers · Lopez et al., 2022 · Studies · 1,528 people · Boswell et al., 2018', i: [1, 2] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'compass' }],
+          h: 'When an urge comes, play the hour forward, both ways.',
+          b: [
+            bL([
+              '**The hour after giving in:** how do you really feel? Ashamed, tired, empty? Name it in your own words.',
+              '**The hour after riding it out:** proud, calm, clear-headed? Name that too.',
+              '**Side by side:** look at the two hours, and pick the one you want.',
+            ]),
+            bP(
+              'Do it the same way every time, so it becomes a habit of its own. In SOS, The hour after does this for you, and keeps your words for next time.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'It is 11 PM, and the urge says, “Just this once. It will feel great.” Which thought plays it forward?',
+          ask: 'Pick the best answer.',
+          a: 2,
+          c: [
+            ['“It will feel great for ten minutes”', 'That is the urge talking about right now. Play it past the ten minutes, to the hour after.'],
+            ['“I am weak for even wanting it”', 'Shame does not loosen the pull. Seeing the whole picture does.'],
+            [
+              '“An hour from now I would feel empty. If I ride it out, I feel proud.”',
+              'Yes. You looked at both hours, side by side. Now pick the one you want.',
+            ],
+            ['“I will think about it tomorrow”', 'The hour after is closer than tomorrow, and close enough to picture now. Bring it into this moment.'],
+          ],
+        },
+      ],
+      rc: {
+        q: 'An urge says only the next few minutes matter. What does this lesson suggest?',
+        c: [
+          'Fight the want with all my strength',
+          'Picture the hour after, both ways, and pick the hour I want',
+          'Wait for the urge to leave, and think about it then',
+          'Tell myself I have no willpower',
+        ],
+        a: 1,
+        r: 'Play it forward. The hour after, seen clearly, turns the pull down, and the skill grows each time.',
+        cr: [
+          'Not quite. Fighting head on is tiring. Looking past the moment, to the hour after, works better.',
+          'Right. Thinking of what comes later turns craving down, and practice makes the skill stronger.',
+          'Not quite. The moment of the urge is exactly when playing it forward helps most.',
+          'Not quite. This is a skill, not a trait. Everyone can practice it, and it grows with practice.',
+        ],
+      },
+      scope:
+        'These studies were with smokers and with people craving rich food, and the skill carries straight over to urges like this one: when you think of what comes later, the craving loses its grip, and each time you practice, the skill grows stronger.',
+      src: src('kober10', 'lopez22', 'boswell18', 'stein16'),
+    },
+    {
+      id: 'l45',
+      u: 3,
+      v: 2,
+      chk: 'October 25, 2026',
+      title: 'Words from a calm day',
+      tag: 'On a calm day you can see what matters. Write it down, so the hard moment can hear it.',
+      ic: 'pencil',
+      mins: 3,
+      ask: 'Why read my own reasons in the middle of an urge?',
+      key: 'In an urge, the calm view goes quiet, and the next ten minutes feel like everything. A line you wrote on a calm day carries that view across. Your own words move you more than anyone else’s. Keep it to one true line, and read it slowly, out loud if you can.',
+      np: 'One line from me, on a calm day',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['chain', { n: ['A calm morning', 'The urge at night', 'Your words'], i: ['sun', 'bolt', 'pencil'] }],
+          h: 'In the morning it is clear why you want this. At night, in an urge, where did that clear view go?',
+          b: [
+            bP(
+              'Many people know this. On a calm day your reasons feel obvious. In the hot moment they feel far away, as if someone else wrote them. This lesson is about carrying them across.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'In the middle of an urge, which words are most likely to help?',
+          ask: 'Make your best guess.',
+          a: 2,
+          c: [
+            [
+              'A strong speech from someone else',
+              'Good words from outside can help, but people tend to push back when they are told what to do. Reasons you came up with yourself land harder.',
+            ],
+            [
+              'A long list of great things about me, said again and again',
+              'A common idea, but a big pep talk can backfire. In studies, repeating large positive lines made some people feel worse, and heavy self-affirmation raised craving in some smokers.',
+            ],
+            [
+              'One line I wrote myself, on a calm day',
+              'Good guess. Reasons you chose while you could see clearly are the ones you find most convincing, and they reach you best when it is hard.',
+            ],
+            ['Nothing. Words cannot touch an urge', 'An urge is loud, but it still listens. A few true words, in your own voice, can tip the choice.'],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['icon', { ic: 'pencil' }],
+          h: 'Let calm you speak to the hard moment, in your own words.',
+          b: [
+            bP(
+              'On a calm day, you can see what you want from your life. In an urge, that view shrinks, and the next ten minutes feel like all there is. A line you wrote while calm is a message across that gap. Because the words are yours, the urge has less to argue with.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'sun' }],
+          h: 'When calm, people guess the pull will be weaker than it is.',
+          b: [
+            bP(
+              'Researchers call it the hot-cold empathy gap. In one study, 98 smokers said how much money it would take for them to wait five minutes for a cigarette. Those who answered while calm named a lower price than they asked for later, once the craving came. Those who answered while already craving did not guess low. The calm self underrated the hot moment.',
+            ),
+          ],
+          so: 'Calm you sees clearly but cannot feel the urge. In the urge, you feel it but cannot see clearly. Words written while calm let the clear view reach the hard moment.',
+          fact: { s: 'Experiment · 98 smokers · Sayette et al., 2008 · Review · Loewenstein, 2005', i: [0, 1] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '3,025', s: 'people in 36 studies of counseling' }],
+          h: 'Reasons you give yourself move you more.',
+          b: [
+            bP(
+              'People are moved more by reasons they come up with than by reasons they are handed. In two experiments with 253 students, an alcohol poster that asked a question, so people found their own reasons, led those who drank to drink less than a poster that simply told them. Counseling shows the same: across 36 studies with 3,025 people, the more of what a person said was in favor of change, the more they cut back later.',
+            ),
+          ],
+          so: 'That is why Daybook asks for your words, not ours. Your own reason is the one the urge has the hardest time arguing with.',
+          fact: { s: 'Experiments · 253 students · Loman et al., 2018 · Meta-analysis · 3,025 people · Magill et al., 2018', i: [2, 3] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'heart' }],
+          h: 'Write one true line on a calm day. Read it in the hard moment.',
+          b: [
+            bL([
+              '**Write it now, while calm:** one line about what you want, or who you want to be there for. Your words, not a slogan.',
+              '**Keep it small and true:** one sentence you believe beats a pep talk. If it sounds too big to believe, make it smaller.',
+              '**Read it slowly when the urge comes,** out loud if you can. Hearing it in your own voice brings calm you into the room.',
+            ]),
+            bP(
+              'Acceptance and commitment therapy, tested on this same habit, works the same way: name what matters to you, in your own words. In SOS, Your words does this for you: it shows your note or one of your reasons, with your voice note if you recorded one.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'An urge hits late at night. You open SOS, and your own line comes up. What is the best way to use it?',
+          ask: 'Pick the best answer.',
+          a: 1,
+          c: [
+            ['Skim it fast and move on', 'A quick glance does not give calm you time to speak. Read it slowly, out loud if you can.'],
+            ['Read it slowly, out loud if I can, and let it remind me what I want', 'Yes. Slow and out loud gives your calm self a voice in the hard moment.'],
+            [
+              'Argue with it: is it even true right now?',
+              'In an urge, almost nothing good feels true. That is the gap. You wrote it when you could see clearly. Trust that view.',
+            ],
+            ['Swap it for ten big promises', 'A pile of big promises is hard to believe in a hard moment, and can backfire. One true line is enough.'],
+          ],
+        },
+      ],
+      rc: {
+        q: 'You are writing the line SOS will show you in an urge. Which is best?',
+        c: [
+          '“I am perfect, and nothing can ever stop me.”',
+          '“I want to wake up clear, and be fully there for the people I love.”',
+          '“Never again, or I am a failure.”',
+          '“Quitting is good for people.”',
+        ],
+        a: 1,
+        r: 'One true line, in your own words, about what you want.',
+        cr: [
+          'Not quite. A line too big to believe can backfire in a hard moment. Make it smaller and truer.',
+          'Right. It is yours, it is true, and it names what you want. That is what reaches you in an urge.',
+          'Not quite. A threat brings shame, not help. Write what you want, not what you fear.',
+          'Not quite. It is true, but it is not yours. A reason about your own life moves you more.',
+        ],
+      },
+      scope:
+        'The empathy gap was measured in smokers, and the self-persuasion and counseling studies were mostly about drinking. The same gap, and the same pull of your own reasons, run through every habit like this one. What it means for you: on a calm day you know what matters, and one line in your own words carries that into the hard moment.',
+      src: src('sayette', 'loewenstein05', 'loman18', 'magill18', 'crosby', 'wood09', 'dijkstra15'),
     },
   ];
 }

@@ -1,14 +1,15 @@
-/* SOS: one short guided ride that starts on the first tap and keeps going until the urge passes. Nothing is asked first.
-   Each round is the same three slots (core ride.ts): breathe with the sun, then one move for the body or the eyes
-   (squeeze, stack the shapes, 5-4-3-2-1), then one for the mind in your own words (the hour after, say the thought fast,
-   your words). Each is picked from what has worked for you, runs by itself and flows into the next; Swap trades it for
-   another of its kind and Next skips it. When a round ends the next one starts, with moves not shown yet, because these
-   skills work like scrolling: the person keeps going until it passes. Nothing asks how it is going.
+/* SOS: one guided ride that starts on the first tap and keeps going until the urge passes. Nothing is asked first.
+   It always opens with the sun (three slow breaths), then the moves take turns (core ride.ts rideNext): squeeze, fit
+   the shapes, 5-4-3-2-1, name the feeling, the hour after, say the thought fast, your words. Every move comes round, and
+   the ones that work for you come round sooner: the heart says this one helps, Next passes it over, and What helped
+   most at the end counts too. A feeling named steers the next move. Each move runs by itself and flows into the next,
+   because these skills work like scrolling: the person keeps going until it passes. Nothing asks how it is going. The
+   book button under each move opens why it works, with its lesson.
    "It passed" in the corner ends it with a big celebration: the flame, confetti, how long it took, how many you have
    ridden out, which move helped most (one tap, and SOS leans on it next time), one line on why that move works with its
    lesson for later, and what set it off (one tap). More (next to it) holds the bigger moves (step away, text someone,
    talk it through, bed at night), every tool, and I slipped, which goes on to Rekindle (log.tsx). The X just closes.
-   With ?practice=1 it is one round, for a calm moment, and nothing is saved as an urge. */
+   With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
 import {
   addEvent,
   blankP,
@@ -19,19 +20,19 @@ import {
   optList,
   patchEvent,
   rateUrTool,
-  RIDE_SLOTS,
+  RIDE_MOVES,
   rideMark,
-  ridePlan,
+  rideNext,
   ridePracticeAsk,
   rideRecord,
-  rideSlotOf,
-  rideSwap,
   rideWeek,
   rideWhy,
   rkStepFor,
   urEntry,
   urFromYou,
+  urLikeOf,
   urNight,
+  urNote,
   urTags,
   urTool,
   urWon,
@@ -46,6 +47,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
+import { ScienceSheet } from '@/components/ride/science';
 import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
 import { Confetti } from '@/components/celebrate';
 import { Text } from '@/components/text';
@@ -67,10 +69,12 @@ interface Won {
   mins: number;
   moves: string[];
   gain: number;
+  /* the trigger already saved (from a feeling named in the ride) */
+  trig: string | null;
 }
 
 export default function Sos() {
-  const { snap, tk, now, update } = useStore();
+  const { snap, tk, now, update, apply } = useStore();
   /* late at night the screens go dark */
   const night = urNight(new Date(now).getHours());
   const sky = night ? 'night' : 'violet';
@@ -90,14 +94,13 @@ export default function Sos() {
     if (!snap.settings) setupKeep.shut = false;
   });
 
-  /* the ride: this round's moves, which one is showing, and which round it is (a new round follows each one) */
-  const [plan, setPlan] = useState<string[] | null>(null);
-  const [at, setAt] = useState(0);
-  const [round, setRound] = useState(0);
+  /* the ride: every move shown in this SOS, oldest first; the last one is showing */
+  const [seq, setSeq] = useState<string[]>([]);
   const [won, setWon] = useState<Won | null>(null);
   const [more, setMore] = useState(false);
-  /* every move shown in this SOS, done or skipped: another round picks others */
-  const shown = useRef<string[]>([]);
+  const [sci, setSci] = useState(false);
+  /* the move a feeling just named points to: it comes next */
+  const lead = useRef<string | null>(null);
 
   /* the ride only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
@@ -128,12 +131,11 @@ export default function Sos() {
   /* My reasons is a move only when there are words of your own (a note, a reason or a voice note) */
   const words = !!(snap.settings && urFromYou(st, 0)) || !!voice.uri;
   const can = useMemo(() => ({ words }), [words]);
+  /* the first move, once there is an urge: always the sun */
   useEffect(() => {
-    if (!ur || plan) return;
-    const p = ridePlan({ ...ur, used: ur.used.concat(shown.current) }, snap.days, st, tk, Date.now(), sos.mem, can);
-    setPlan(p);
-    setAt(0);
-  }, [ur, plan, round, snap.days, st, tk, sos.mem, can]);
+    if (!ur || seq.length) return;
+    setSeq([rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, [])]);
+  }, [ur, seq.length, snap.days, st, tk, sos.mem, can]);
 
   const tags = useMemo(() => urTags(snap.days, st, tk, sos.mem), [snap.days, st, tk, sos.mem]);
   const mark = useMemo(() => rideMark(snap.days), [snap.days]);
@@ -142,8 +144,8 @@ export default function Sos() {
   const title = practice ? 'Practice' : 'SOS';
 
   if (won) return <Passed won={won} night={night} level={level} />;
-  if (practice && plan && at >= plan.length) return <PracticeDone sky={sky} level={level} />;
-  if (!ur || !plan)
+  if (practice && seq.length > PRACTICE_N) return <PracticeDone sky={sky} level={level} />;
+  if (!ur || !seq.length)
     return (
       <SceneFrame title={title} sky={sky} onClose={close}>
         {null}
@@ -184,7 +186,14 @@ export default function Sos() {
       });
       return;
     }
-    setWon({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain });
+    setWon({
+      key: e.key,
+      id,
+      mins: e.mins,
+      moves: a.used.filter((x, i, l) => l.indexOf(x) === i),
+      gain,
+      trig: a.trigger && a.trigger !== 'none' ? a.trigger : null,
+    });
     sos.end();
   };
 
@@ -196,20 +205,26 @@ export default function Sos() {
     router.push({ pathname: '/tool/[id]', params: { id } });
   };
 
-  /* ---------- the ride: round after round of the same three slots, until it passes ---------- */
-  const id = plan[Math.min(at, plan.length - 1)];
-  if (shown.current.indexOf(id) < 0) shown.current.push(id);
+  /* ---------- the ride: one move after another, until it passes ---------- */
+  const id = seq[seq.length - 1];
   const Move = MOVES[id] || MOVES.breathe;
-  const slot = rideSlotOf(id);
-  const swappable = !!slot && RIDE_SLOTS[slot].filter((x) => x !== 'reasons' || can.words).length > 1;
+  const n = seq.length;
+  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote) */
   const next = (done: boolean) => {
-    if (done) setUr({ ...ur, used: ur.used.concat(id) });
+    const u = done ? { ...ur, used: ur.used.concat(id) } : ur;
+    if (done) setUr(u);
+    else if (!practice) sos.setMem((m) => urNote(m, id, null));
     buzz('tap');
-    if (at + 1 < plan.length) return setAt(at + 1);
-    /* the round is done: a practice ride ends here; an SOS starts the next round, with moves not shown yet */
-    if (practice) return setAt(at + 1);
-    setRound((r) => r + 1);
-    setPlan(null);
+    if (practice && n >= PRACTICE_N) return setSeq(seq.concat('end'));
+    const nx = rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
+    lead.current = null;
+    setSeq(seq.concat(nx));
+  };
+  /* the heart: this one helps. It comes round sooner, in this SOS and the next ones (sos.ts urRank) */
+  const liked = urLikeOf(st, id) > 0;
+  const like = () => {
+    apply({ st: rateUrTool(st, id, liked ? -1 : 1) });
+    buzz(liked ? 'tap' : 'save');
   };
   const top = practice ? null : (
     <View style={s.topR}>
@@ -242,41 +257,49 @@ export default function Sos() {
   ];
   return (
     <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
-      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more} color={moveTint(c, id)} />
-      <Stage key={round + '-' + at + '-' + id} dir={at || round ? 1 : 0}>
-        <Move on={front && !more} onDone={() => next(true)} />
+      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more && !sci} color={moveTint(c, id)} />
+      <Stage key={n + '-' + id} dir={n > 1 ? 1 : 0}>
+        <Move
+          on={front && !more && !sci}
+          onDone={() => next(true)}
+          onFeel={(f) => {
+            if (f.trig && !ur.trigger) setUr({ ...ur, trigger: f.trig });
+            lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
+          }}
+          onTool={pickTool}
+        />
       </Stage>
       <Dock>
         <View style={s.ctl}>
-          <Round
-            icon="swap"
-            label={swappable ? 'Swap for another ' + (slot === 'mind' ? 'mind' : 'body') + ' move' : 'Nothing to swap'}
-            disabled={!swappable}
-            onPress={() => {
-              setPlan(rideSwap(plan, at, can));
-              buzz('tap');
-            }}
-          />
-          <View
+          <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+          <Pressable
             style={s.mid}
-            accessible
-            accessibilityLabel={'Move ' + (at + 1) + ' of ' + plan.length + (round ? ', round ' + (round + 1) : '') + ': ' + moveName(id)}>
-            <View style={s.segs}>
-              {plan.map((x, j) => (
+            accessibilityRole="button"
+            accessibilityLabel={'Move ' + n + ': ' + moveName(id) + '. Why it works.'}
+            onPress={() => {
+              buzz('tap');
+              setSci(true);
+            }}>
+            <View style={s.dots}>
+              {seq.slice(-7).map((x, j, l) => (
                 <View
-                  key={j}
-                  style={[s.seg, { flexGrow: j === at ? 2.4 : 1, backgroundColor: j < at ? c.ink + '66' : j === at ? moveTint(c, x) : c.ink + '1F' }]}
+                  key={n - l.length + j}
+                  style={[s.dot, j === l.length - 1 ? { width: 22, backgroundColor: moveTint(c, x) } : { backgroundColor: c.ink + '40' }]}
                 />
               ))}
             </View>
-            <Text style={[s.segT, { color: c.muted }]} numberOfLines={1}>
+            <Text style={[s.segT, { color: c.ink }]} numberOfLines={1}>
               {moveName(id)}
-              {round ? ' · round ' + (round + 1) : ' · ' + (at + 1) + ' of ' + plan.length}
             </Text>
-          </View>
+            <View style={s.why}>
+              <Icon name="book" size={13} color={c.muted} />
+              <Text style={[s.whyT, { color: c.muted }]}>Why it works</Text>
+            </View>
+          </Pressable>
           <Round icon="next" label="Next move" onPress={() => next(false)} />
         </View>
       </Dock>
+      <ScienceSheet id={id} name={moveName(id)} open={sci} night={night} onClose={() => setSci(false)} />
       <More open={more} night={night} onClose={() => setMore(false)}>
         <Text style={[s.moreH, { color: c.ink }]}>Something bigger</Text>
         <View style={s.bigRow}>
@@ -345,7 +368,7 @@ function Passed({ won, night, level }: { won: Won; night: boolean; level: number
   const rec = rideRecord(snap.days, won.mins);
   const week = rideWeek(snap.days, tk);
   const [helped, setHelped] = useState<string | null>(null);
-  const [trig, setTrig] = useState<string | null>(null);
+  const [trig, setTrig] = useState<string | null>(won.trig);
   /* practice is offered once, after the first few rides */
   const [askPrac] = useState(() => ridePracticeAsk(snap.days, sos.mem));
   useEffect(() => {
@@ -503,7 +526,7 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
   };
   return (
     <SceneFrame title="Practice" sky={sky} onClose={close}>
-      <Finish level={level} size={130} title="Practice done." text="Run it while calm, and it runs itself when it counts. Same three moves, every time." />
+      <Finish level={level} size={130} title="Practice done." text="Run it while calm, and it runs itself when it counts. It always starts with the sun." />
       <Dock>
         <Button label="Done" onPress={done} />
       </Dock>
@@ -511,22 +534,24 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
   );
 }
 
-/** a round button at the side of the ride's controls */
-function Round({ icon, label, onPress, disabled }: { icon: string; label: string; onPress: () => void; disabled?: boolean }) {
+/** a round button at the side of the ride's controls; `on` fills it (the heart, once this move helps) */
+function Round({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
   const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+      accessibilityState={on === undefined ? undefined : { selected: on }}
       onPress={onPress}
       hitSlop={6}
-      style={({ pressed }) => [s.round, { backgroundColor: c.scBtn, opacity: disabled ? 0.35 : pressed ? 0.7 : 1 }]}>
-      <Icon name={icon} size={22} color={c.ink} />
+      style={({ pressed }) => [s.round, { backgroundColor: on ? c.coral : c.scBtn, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
+      <Icon name={icon} size={22} color={on ? '#FFFFFF' : c.ink} />
     </Pressable>
   );
 }
+
+/** a practice ride is this many moves */
+const PRACTICE_N = 3;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
@@ -535,9 +560,11 @@ const s = StyleSheet.create({
   ctl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   mid: { flex: 1, gap: 7, alignItems: 'center' },
-  segs: { flexDirection: 'row', gap: 5, alignSelf: 'stretch' },
-  seg: { flex: 1, height: 6, borderRadius: 3 },
-  segT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  dots: { flexDirection: 'row', gap: 5, alignItems: 'center', height: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  segT: { fontFamily: font.bodySemi, fontSize: 15 },
+  why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  whyT: { fontFamily: font.bodySemi, fontSize: 12.5 },
   bigRow: { flexDirection: 'row', gap: 8 },
   bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 18 },
   bigT: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center' },

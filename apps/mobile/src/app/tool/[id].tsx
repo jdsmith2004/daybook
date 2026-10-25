@@ -3,6 +3,7 @@ import { gameCompute, TOOLS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { hasScience, ScienceButton, ScienceSheet } from '@/components/ride/science';
 import { SceneFrame, Stage } from '@/components/scene';
 import { Breathe, Ground } from '@/components/tools/calm';
 import { Feel } from '@/components/tools/feel';
@@ -49,6 +50,7 @@ export default function Tool() {
     setStep0(i);
   };
   const [text, setText] = useState<string | null>(null);
+  const [sci, setSci] = useState(false);
   const tool = TOOLS.find((t) => t.id === id);
   const st = useCareSettings();
   if (!tool || !st) return <Redirect href="/" />;
@@ -118,6 +120,7 @@ export default function Tool() {
   return (
     <SceneFrame
       title={tool.id === 'bed' && p.combo ? 'Go to bed · step 2 of 2' : tool.name}
+      topRight={hasScience(tool.id) ? <ScienceButton onPress={() => setSci(true)} sky={sky} /> : null}
       sky={sky}
       dots={stepped ? { n: nSteps, i: step, label: `Step ${step + 1} of ${nSteps}` } : null}
       onBack={stepped && step > 0 ? () => setStep(step - 1) : tool.id === 'thought' && text ? () => setText(null) : null}
@@ -127,6 +130,7 @@ export default function Tool() {
       <Stage key={tool.id} dir={stepped ? 0 : dir}>
         {body}
       </Stage>
+      <ScienceSheet id={tool.id} name={tool.name} open={sci} night={sky === 'night'} onClose={() => setSci(false)} />
     </SceneFrame>
   );
 }

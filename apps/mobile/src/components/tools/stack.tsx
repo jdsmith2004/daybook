@@ -1,4 +1,4 @@
-/* Stack the shapes, on its own (from Tools, or from More in SOS): the ride's block game (components/ride/stack), then the
+/* Fit the shapes, on its own (from Tools, or from More in SOS): the ride's block puzzle (components/ride/stack), then the
    finish. */
 import { useState } from 'react';
 

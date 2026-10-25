@@ -1,4 +1,5 @@
-/* The ride (SOS as one guided routine): which move fills each slot, Swap, and the words and record after it. */
+/* The ride (SOS as one guided stream of moves): the sun first, then the moves take turns, the ones that work for you
+   sooner; Why it works; and the words and record after it. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Days, Settings } from '../src/types';
@@ -18,59 +19,70 @@ function rodeLog(list: { key: string; tr?: [string, 'p' | 's' | 'x'][]; m?: numb
   return days;
 }
 
-describe('ridePlan', () => {
-  it('is always breathe, then one body move, then one mind move', () => {
-    const plan = core.ridePlan(core.newUrge(now, 0), {}, st, tk, now, {}, can);
-    expect(plan).toHaveLength(3);
-    expect(plan[0]).toBe('breathe');
-    expect(core.RIDE_SLOTS.body).toContain(plan[1]);
-    expect(core.RIDE_SLOTS.mind).toContain(plan[2]);
+/** the moves of a ride n long, each one picked after the ones before */
+function ride(n: number, days: Days = {}, s: Settings = st, c = can): string[] {
+  const sc = core.newUrge(now, 0);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) out.push(core.rideNext(sc, days, s, tk, now, {}, c, out));
+  return out;
+}
+
+describe('rideNext', () => {
+  it('always opens with the sun', () => {
+    expect(ride(1)).toEqual(['breathe']);
   });
 
-  it('leaves My reasons out when there are no words of your own', () => {
+  it('never shows a move twice in a row, and every move comes round', () => {
+    const r = ride(24);
+    r.slice(1).forEach((x, i) => expect(x).not.toBe(r[i]));
+    core.RIDE_MOVES.forEach((id) => expect(r).toContain(id));
+  });
+
+  it('brings the moves that work for you round more often', () => {
+    const days = rodeLog(
+      ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'].map((key) => ({
+        key,
+        tr: [['stack', 'p']] as [string, 'p'][],
+      })),
+    );
+    const liked = core.rateUrTool(core.rateUrTool(st, 'stack', 1), 'stack', 1);
+    const n = (r: string[], id: string) => r.filter((x) => x === id).length;
+    const mine = ride(24, days, liked);
+    expect(n(mine, 'stack')).toBeGreaterThan(n(ride(24), 'stack'));
+    expect(mine.slice(0, 3)).toContain('stack');
+  });
+
+  it('puts your go-to among the first moves after the sun', () => {
+    const pin = core.normSettings({ urPin: 'thought' });
+    expect(ride(2, {}, pin)[1]).toBe('thought');
+  });
+
+  it('leaves Your words out when there are no words of your own', () => {
+    expect(ride(24, {}, st, { words: false })).not.toContain('reasons');
+  });
+
+  it('a feeling just named sends the ride to the move that fits it', () => {
     const sc = core.newUrge(now, 0);
-    for (let i = 0; i < 3; i++) {
-      const plan = core.ridePlan({ ...sc, used: ['forward', 'thought'] }, {}, st, tk, now, {}, { words: false });
-      expect(plan[2]).not.toBe('reasons');
-    }
+    expect(core.rideNext(sc, {}, st, tk, now, {}, can, ['breathe', 'feel'], 'move')).toBe('move');
   });
 
-  it('picks the body move that has worked for you', () => {
-    const days = rodeLog([
-      { key: '2026-10-18', tr: [['ground', 'p']] },
-      { key: '2026-10-19', tr: [['ground', 'p']] },
-      { key: '2026-10-20', tr: [['ground', 'p']] },
-    ]);
-    expect(core.ridePlan(core.newUrge(now, 0), days, st, tk, now, {}, can)[1]).toBe('ground');
-  });
-
-  it('uses other moves on a second ride in the same SOS', () => {
-    const sc = core.newUrge(now, 0);
-    const first = core.ridePlan(sc, {}, st, tk, now, {}, can);
-    const second = core.ridePlan({ ...sc, used: first, again: 1 }, {}, st, tk, now, {}, can);
-    expect(second[0]).toBe('breathe');
-    expect(second[1]).not.toBe(first[1]);
-    expect(second[2]).not.toBe(first[2]);
-  });
-
-  it('puts your go-to first in its slot', () => {
-    const pin = core.normSettings({ urPin: 'stack' });
-    expect(core.ridePlan(core.newUrge(now, 0), {}, pin, tk, now, {}, can)[1]).toBe('stack');
+  it('holds back a second move of the same kind', () => {
+    const r = ride(24);
+    const kinds = r.map((x) => core.RIDE_KIND[x]);
+    const same = kinds.slice(1).filter((k, i) => k === kinds[i]).length;
+    expect(same).toBeLessThan(6);
   });
 });
 
-describe('rideSwap', () => {
-  it('moves to the next move in the same slot, and round', () => {
-    const plan = ['breathe', 'move', 'forward'];
-    expect(core.rideSwap(plan, 1, can)).toEqual(['breathe', 'stack', 'forward']);
-    expect(core.rideSwap(['breathe', 'ground', 'forward'], 1, can)).toEqual(['breathe', 'move', 'forward']);
-    expect(core.rideSwap(plan, 2, can)).toEqual(['breathe', 'move', 'thought']);
-  });
-  it('keeps a slot with one move as it is', () => {
-    expect(core.rideSwap(['breathe', 'move', 'forward'], 0, can)).toEqual(['breathe', 'move', 'forward']);
-  });
-  it('skips My reasons without words', () => {
-    expect(core.rideSwap(['breathe', 'move', 'thought'], 2, { words: false })).toEqual(['breathe', 'move', 'forward']);
+describe('Why it works', () => {
+  it('every ride move has its line and a lesson, with its studies', () => {
+    core.RIDE_MOVES.forEach((id) => {
+      const s = core.rideScience(id);
+      expect(s && s.t).toBeTruthy();
+      expect(s!.lesson).toBeTruthy();
+      expect(s!.proofs.length).toBeGreaterThan(0);
+    });
+    expect(core.rideScience('nothing')).toBeNull();
   });
 });
 
@@ -82,9 +94,7 @@ describe('after the ride', () => {
   });
   it('every move in a slot has its line, and every lesson it names exists', () => {
     const ids = new Set((core.LESSONS as { id: string }[]).map((l) => l.id));
-    Object.values(core.RIDE_SLOTS)
-      .flat()
-      .forEach((id) => expect(core.RIDE_WHY[id]).toBeTruthy());
+    core.RIDE_MOVES.forEach((id) => expect(core.RIDE_WHY[id]).toBeTruthy());
     Object.values(core.RIDE_WHY).forEach((w) => (w.l ? expect(ids.has(w.l)).toBe(true) : null));
   });
   it('reads the record: how many, how long yours take, and whether this one was faster', () => {

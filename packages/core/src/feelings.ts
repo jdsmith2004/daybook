@@ -219,3 +219,93 @@ export function feelLog(prev: Day | undefined | null, tk: DayKey, w: string, at:
 
 /* a blank Play, matching legacy blankP (not imported: this module stays clear of core.js) */
 const blankPlay = () => ({ w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: [], lv: [], ov: {} });
+
+/* ---------- in SOS: what a named feeling is asking for ---------- */
+/* Naming a feeling in an urge does two things. The word itself turns the feeling down a little (affect labeling:
+   Lieberman and others 2007), and people who can tell their bad feelings apart act on them less (people who could name
+   their feelings more precisely drank less when they were upset: Kashdan and others 2010). So the ride's "Name it" move
+   ends with one short line on what this kind of feeling is really asking for, and what the urge offers instead. It is
+   not a lesson; it is the thing a good friend would say. */
+export type FeelFam = 'lonely' | 'shame' | 'anger' | 'fear' | 'bored' | 'tired' | 'low' | 'bright' | 'calm';
+const FAM_WORDS: Record<Exclude<FeelFam, 'bright' | 'calm'>, string[]> = {
+  lonely: ['Lonely', 'Hurt', 'Heartbroken'],
+  shame: ['Ashamed', 'Guilty', 'Humiliated', 'Embarrassed'],
+  anger: ['Enraged', 'Furious', 'Outraged', 'Fuming', 'Angry', 'Resentful', 'Frustrated', 'Fed up', 'Irritated', 'Annoyed', 'Edgy'],
+  fear: [
+    'Panicked',
+    'Terrified',
+    'Frantic',
+    'Overwhelmed',
+    'Frightened',
+    'Jittery',
+    'Stressed',
+    'Anxious',
+    'Nervous',
+    'Tense',
+    'Worried',
+    'Unsettled',
+    'Uneasy',
+  ],
+  bored: ['Bored', 'Meh', 'Restless'],
+  tired: ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy'],
+  low: ['Miserable', 'Sad', 'Discouraged', 'Gloomy', 'Disappointed', 'Crushed', 'Defeated', 'Helpless', 'Numb', 'Despairing', 'Hopeless', 'Empty'],
+};
+/** the family a feeling belongs to */
+export function feelFam(r: number, c: number): FeelFam | null {
+  const f = feelAt(r, c);
+  if (!f) return null;
+  const k = (Object.keys(FAM_WORDS) as (keyof typeof FAM_WORDS)[]).find((x) => FAM_WORDS[x].indexOf(f.w) >= 0);
+  if (k) return k;
+  return c >= 5 ? (r < 5 ? 'bright' : 'calm') : r >= 5 ? 'low' : 'fear';
+}
+/** what each family is asking for: a short heading and one or two lines */
+export const FEEL_ASKS: Record<FeelFam, { h: string; t: string }> = {
+  lonely: {
+    h: 'This one is asking for people.',
+    t: 'A screen gives the look of closeness with none of the warmth, so the ache comes back stronger. One real message answers what the urge was asking for.',
+  },
+  shame: {
+    h: 'Shame says hide.',
+    t: 'Hiding is where the habit grows. The urge offers a minute of not feeling it, and leaves more of it after. Being kind to yourself here is not letting yourself off; it is what helps people do better.',
+  },
+  anger: {
+    h: 'Anger is energy looking for a way out.',
+    t: 'The urge looks like a release, but it leaves the anger right where it was. Your body is the fastest way to spend it.',
+  },
+  fear: {
+    h: 'Your brain is looking for an off switch.',
+    t: 'The urge works for minutes, then the worry is still there, plus one more thing. A long breath out is an off switch that leaves nothing behind.',
+  },
+  bored: {
+    h: 'Boredom is asking for something real.',
+    t: 'To move, to make, to see someone. The urge is the easiest answer to boredom, not the one that fixes it.',
+  },
+  tired: {
+    h: 'A tired brain loses fights a rested one wins.',
+    t: 'You are not weaker than other people. Everyone is weaker at this hour. The kindest move is rest.',
+  },
+  low: {
+    h: 'A low mood makes the urge look like comfort.',
+    t: 'It is a short loan: the mood comes back lower. Something small and real lifts it more: a person, a walk, some light.',
+  },
+  bright: {
+    h: 'Good energy wants somewhere to go.',
+    t: 'High spirits can tip into an urge too. Spend the energy on something you will be glad of tomorrow.',
+  },
+  calm: {
+    h: 'The urge came even on a good day.',
+    t: 'That is worth knowing: it is a habit talking, not a need. Habits fade each time they are not fed.',
+  },
+};
+/** the urge's trigger, as the log names them, that a feeling family points to (null when none fits) */
+export const FEEL_TRIG: Record<FeelFam, string | null> = {
+  lonely: 'lonely',
+  low: 'lonely',
+  shame: 'stress',
+  anger: 'stress',
+  fear: 'stress',
+  bored: 'bored',
+  tired: 'tired',
+  bright: null,
+  calm: null,
+};

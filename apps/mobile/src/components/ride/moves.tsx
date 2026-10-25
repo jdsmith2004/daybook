@@ -3,8 +3,9 @@
    minute) and has one living thing in the middle to follow.
    - Breathe: the sun, three slow breaths (components/orb BreathSun).
    - Squeeze: four body parts, each squeezed hard for five seconds and let go for four. The shape clenches with you.
-   - Stack the shapes: a small falling-block game for the eyes and hands (stack.tsx).
+   - Fit the shapes: a small block puzzle for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.
+   - Name it: the feeling under the urge, on the feelings field, and what it is asking for (feel-move.tsx).
    - Later: the hour after, both ways, in your own words.
    - Say it fast: the loudest thought, said fast for 20 seconds, then let go.
    - Your words: your note or a reason, read slowly, and your voice note. */
@@ -19,6 +20,7 @@ import { BreathSun, useSeconds } from '@/components/orb';
 import { MorphShape, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
+import { FeelMove } from './feel-move';
 import { StackMove } from './stack';
 import { Button, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
@@ -33,6 +35,10 @@ export interface MoveProps {
   on: boolean;
   /** the move is done: the ride goes on to the next */
   onDone: () => void;
+  /** a feeling was named (Name it): the move it points to, and the trigger it stands for */
+  onFeel?: (f: { w: string; lead: string | null; trig: string | null }) => void;
+  /** open a tool over the ride (Name it, for a feeling whose tool is not a ride move) */
+  onTool?: (id: string) => void;
 }
 
 /** say a line to a screen reader on iOS (which has no live regions); Android and the web read the live region */
@@ -388,6 +394,7 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
   move: SqueezeMove,
   stack: StackMove,
   ground: GroundMove,
+  feel: FeelMove,
   forward: LaterMove,
   thought: SayMove,
   reasons: WordsMove,
@@ -397,8 +404,9 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
 export const MOVE_NAME: Record<string, string> = {
   breathe: 'Breathe',
   move: 'Squeeze',
-  stack: 'Stack the shapes',
+  stack: 'Fit the shapes',
   ground: '5-4-3-2-1',
+  feel: 'Name it',
   forward: 'The hour after',
   thought: 'Say it fast',
   reasons: 'Your words',
@@ -410,13 +418,14 @@ export const MOVE_ICON: Record<string, string> = {
   move: 'bolt',
   stack: 'sparkle',
   ground: 'dots',
+  feel: 'heart',
   forward: 'compass',
   thought: 'chat',
   reasons: 'star',
 };
 
 export const moveTint = (c: Palette, id: string) =>
-  ({ breathe: c.sun, move: c.coral, stack: c.sky, ground: c.mint, forward: c.mint, thought: c.violet, reasons: c.sun2 })[id] || c.accent;
+  ({ breathe: c.sun, move: c.coral, stack: c.sky, ground: c.mint, feel: c.coral, forward: c.mint, thought: c.violet, reasons: c.sun2 })[id] || c.accent;
 
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },

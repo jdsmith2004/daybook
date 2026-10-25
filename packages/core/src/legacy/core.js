@@ -97,7 +97,7 @@ function optList(kind,opts,o){
 const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward','stack'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
 /* l1 to l32 are here; l33 to l40 are in lessons-more.ts */
-const LESSON_IDS=Array.from({length:41},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
+const LESSON_IDS=Array.from({length:45},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -2849,7 +2849,7 @@ const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},
  {id:'ground',name:'5-4-3-2-1',desc:'Come back to the room',ic:'dots',tone:'mint',g:'calm'},
- {id:'stack',name:'Stack the shapes',desc:'Fit them, clear a row',ic:'sparkle',tone:'sky',g:'calm'},
+ {id:'stack',name:'Fit the shapes',desc:'Fill a line, watch it clear',ic:'sparkle',tone:'sky',g:'calm'},
  {id:'curious',name:'Get curious',desc:'Watch the wave',ic:'wave',tone:'accent',g:'ride'},
  {id:'pause',name:'10-minute pause',desc:'Let the wave pass',ic:'timer',tone:'sun',g:'ride'},
  {id:'thought',name:'Name the thought',desc:'A thought is not an order',ic:'sparkle',tone:'violet',g:'ride'},
@@ -2887,7 +2887,7 @@ const UR_DID={message:'reach'};
 const UR_META={
  breathe:{mins:'3 min',does:'Starts right away. A long breath out.'},
  ground:{mins:'About 2 min',does:'Brings you back to the room.'},
- stack:{mins:'About 1 min',does:'A block game for the eyes. The pictures in your head fade.'},
+ stack:{mins:'About 1 min',does:'A block puzzle for the eyes and hands. The pictures in your head fade.'},
  curious:{mins:'About 2 min',does:'Watch the wave rise and fall.'},
  halt:{mins:'About 1 min',does:'Finds what you actually need.'},
  surprise:{mins:'A few min',does:'One small thing, away from the screen.'},

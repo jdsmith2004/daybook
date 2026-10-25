@@ -1,90 +1,118 @@
-/* The ride: SOS as one short guided routine, the same shape every time, so it becomes a habit of its own. Breathe first
-   (the body slows down), then something for the body or the eyes (it crowds the urge out), then something for the mind
-   in your own words (the hour after, the thought for what it is, your reasons). Each slot is filled with the move that
-   has worked best for you (core sos.ts urRank), and any move can be swapped for another in its slot. Then "How is it
-   now?". When it passes, the ride shows what you did: how long it took, how many you have ridden out, and one line on
-   why the move that helped works, with its lesson for a calm moment.
+/* The ride: SOS as one guided stream of short moves that keeps going until the urge passes. The first move is always the
+   breath with the sun, so pressing SOS starts the same calm way every time. After that the moves take turns: each one
+   comes round again, and the ones that work best for you come round sooner (core sos.ts urRank: what has helped you, what
+   you said helps, what fits the hour and the feeling, your go-to). Two of a kind do not come one after the other, and a
+   feeling you name steers the next move toward what fits it. When it passes, the ride shows what you did: how long it
+   took, how many you have ridden out, and one line on why the move that helped works, with its lesson for a calm moment.
 
-   Why this shape (docs: the research note on the redesign): practicing one craving strategy over and over (Lopez,
-   Ochsner and Kober 2022) cut smoking for weeks; short, hard muscle work lowers craving a lot (Haasova and others 2013);
-   a visual game crowds out the pictures a craving runs on (May and others 2010; Skorka-Brown and others 2015); thinking
-   of what comes later lowers craving (Kober and others 2010); and each urge outlasted is the proof that builds the
-   confidence for the next (Marlatt; Bandura). */
+   Why this shape (docs: the research note on the redesign): practicing a craving strategy over and over (Lopez, Ochsner
+   and Kober 2022) cut smoking for weeks; short, hard muscle work lowers craving a lot (Haasova and others 2013); a visual
+   game crowds out the pictures a craving runs on (May and others 2010; Skorka-Brown and others 2015); thinking of what
+   comes later lowers craving (Kober and others 2010); naming a feeling takes some of its charge (Lieberman and others
+   2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
+import { lessonById } from './lessons';
 import { urEvidence, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
-export type RideSlot = 'calm' | 'body' | 'mind';
-/** the moves each slot can hold, in the order they are tried when nothing else says which */
-export const RIDE_SLOTS: Record<RideSlot, string[]> = {
-  calm: ['breathe'],
-  body: ['move', 'stack', 'ground'],
-  mind: ['forward', 'thought', 'reasons'],
+/** every move the ride can show, in the order they are tried when nothing else says which */
+export const RIDE_MOVES = ['breathe', 'move', 'stack', 'ground', 'feel', 'forward', 'thought', 'reasons'];
+/** the kind of each move: two of a kind are not shown one after the other */
+export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
+  breathe: 'calm',
+  move: 'body',
+  stack: 'eyes',
+  ground: 'eyes',
+  feel: 'mind',
+  forward: 'mind',
+  thought: 'mind',
+  reasons: 'mind',
 };
-export const RIDE_ORDER: RideSlot[] = ['calm', 'body', 'mind'];
-export const rideSlotOf = (id: string): RideSlot | null => (RIDE_ORDER.find((k) => RIDE_SLOTS[k].indexOf(id) >= 0) as RideSlot | undefined) ?? null;
+/** the first move of every SOS */
+export const RIDE_FIRST = 'breathe';
 
-/** the slot's name, as the ride shows it under the dots */
-export const RIDE_SLOT_NAME: Record<RideSlot, string> = { calm: 'Breathe', body: 'Body', mind: 'Mind' };
-
-/** what the ride can use: My reasons only when there are words of your own to show */
+/** what the ride can use: Your words only when there are words of your own to show */
 export interface RideCan {
   words: boolean;
 }
 
-/** the moves for this ride, one a slot. A second ride in the same SOS ("Still here") skips the moves already used, so it
-    is a different ride; Breathe stays first either way. */
-export function ridePlan(sc: UrState, days: Days, st: Settings | null, tk: DayKey, now: number, mem: UrMem, can: RideCan): string[] {
-  return RIDE_ORDER.map((k) => rideBest(k, sc, days, st, tk, now, mem, can, []));
-}
-
-function rideBest(k: RideSlot, sc: UrState, days: Days, st: Settings | null, tk: DayKey, now: number, mem: UrMem, can: RideCan, avoid: string[]): string {
-  const list = RIDE_SLOTS[k].filter((id) => urTool(id) && (id !== 'reasons' || can.words));
-  if (list.length === 1) return list[0];
+/** the moves this person can be shown, best for them first, each with how often it should come round (the best about
+    three times as often as the last). A move you asked not to see is left out, unless it is your go-to. */
+export function rideWeights(sc: UrState, days: Days, st: Settings | null, tk: DayKey, now: number, mem: UrMem, can: RideCan): { id: string; w: number }[] {
   const rank = urRank({ ...sc, used: [] }, days, st, tk, now, mem);
-  const used = sc.used || [];
-  const score = (id: string) => {
-    const r = rank.find((x) => x.id === id);
-    if (!r) return -99;
-    /* a move you asked not to see is last; your go-to is first; one used already in this SOS comes after the rest */
-    return r.score + (r.off && !r.pin ? -50 : 0) + (used.indexOf(id) >= 0 ? -30 : 0);
-  };
-  const open = list.filter((id) => avoid.indexOf(id) < 0);
-  const from = open.length ? open : list;
-  return from.slice().sort((a, b) => score(b) - score(a) || list.indexOf(a) - list.indexOf(b))[0];
+  const list = RIDE_MOVES.filter((id) => urTool(id) && (id !== 'reasons' || can.words))
+    .map((id) => ({ id, r: rank.find((x) => x.id === id) }))
+    .filter((x) => x.r && (!x.r.off || x.r.pin))
+    .sort((a, b) => b.r!.score - a.r!.score || RIDE_MOVES.indexOf(a.id) - RIDE_MOVES.indexOf(b.id));
+  const n = list.length;
+  return list.map((x, i) => ({ id: x.id, w: x.r!.pin ? 4 : n > 1 ? 3 - (2 * i) / (n - 1) : 3 }));
 }
 
-/** Swap: the next move in the same slot, after the one showing (round and round, skipping the others already in this
-    ride). A slot with one move keeps it. */
-export function rideSwap(plan: string[], i: number, can: RideCan): string[] {
-  const id = plan[i];
-  const k = rideSlotOf(id);
-  if (!k) return plan;
-  const list = RIDE_SLOTS[k].filter((x) => urTool(x) && (x !== 'reasons' || can.words));
-  if (list.length < 2) return plan;
-  const at = list.indexOf(id);
-  for (let j = 1; j <= list.length; j++) {
-    const next = list[(at + j) % list.length];
-    if (next === id) break;
-    if (plan.indexOf(next) < 0 || plan.indexOf(next) === i) return plan.map((x, n) => (n === i ? next : x));
-  }
-  return plan;
+/** the next move, after the ones already shown in this SOS (oldest first). The breath opens; then each move is due by
+    how long ago it was shown, times how well it works for you, so every move comes round and the best come round
+    sooner. A move is never shown twice in a row, the same kind is held back a turn, and `lead` (the move a feeling you
+    just named points to) comes next when it can. */
+export function rideNext(
+  sc: UrState,
+  days: Days,
+  st: Settings | null,
+  tk: DayKey,
+  now: number,
+  mem: UrMem,
+  can: RideCan,
+  shown: string[],
+  lead?: string | null,
+): string {
+  if (!shown.length) return RIDE_FIRST;
+  const ws = rideWeights(sc, days, st, tk, now, mem, can);
+  const last = shown[shown.length - 1];
+  const due = (id: string, w: number) => {
+    const at = shown.lastIndexOf(id);
+    /* a move not shown yet is due before most second turns; the breath opened the ride, so it comes back less */
+    const gap = at < 0 ? shown.length + 4 : shown.length - at;
+    let d = w * gap * (id === RIDE_FIRST ? 0.5 : 1);
+    if (RIDE_KIND[id] === RIDE_KIND[last]) d *= 0.6;
+    if (id === lead) d *= 3;
+    return d;
+  };
+  const open = ws.filter((x) => x.id !== last);
+  if (!open.length) return ws.length ? ws[0].id : RIDE_FIRST;
+  return open.slice().sort((a, b) => due(b.id, b.w) - due(a.id, a.w) || b.w - a.w)[0].id;
 }
 
 /** why a move works, in one line, and the lesson that says more (read later, when it is calm) */
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
   move: { t: 'Hard muscle work, even for a minute, lowers cravings in study after study. Your body burned off what the urge was building.', l: 'l15' },
-  stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l2' },
-  ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l2' },
-  forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.' },
+  stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l42' },
+  ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l43' },
+  feel: { t: 'Putting a word on a feeling turns its volume down, and the word points at what you really need.', l: 'l13' },
+  forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.', l: 'l44' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },
-  reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l1' },
+  reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l45' },
+  halt: { t: 'An urge often sits on a plain need: food, rest, a person, a break. Meet the need and the urge has less to push.', l: 'l4' },
   curious: { t: 'Watching an urge instead of obeying it is the whole skill. It rises, peaks and passes on its own.', l: 'l2' },
   pause: { t: 'Most urges fade if you wait. Ten minutes in another room gives one the time to pass.', l: 'l10' },
   message: { t: 'Telling someone takes the secret out of it, and the urge gets lighter.', l: 'l7' },
   bed: { t: 'Late at night, sleep is the strongest move there is.', l: 'l4' },
 };
+
+/** Why it works, for the button on every move and tool: the one line, and the lesson behind it in brief (its answer
+    and its studies), with the lesson itself to open for the whole story. Null for a tool with nothing to say. */
+export function rideScience(id: string): {
+  t: string;
+  lesson: { id: string; title: string; mins: number; ask: string; key: string } | null;
+  proofs: { h: string; s: string }[];
+} | null {
+  const w = RIDE_WHY[id];
+  if (!w) return null;
+  const L = w.l ? lessonById(w.l) : null;
+  return {
+    t: w.t,
+    lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,
+    proofs: L ? L.cards.filter((c) => c.e === 'proof' && c.fact).map((c) => ({ h: c.h, s: c.fact!.s })) : [],
+  };
+}
 
 /** the line after a ride: about the move that helped when you said which, else the last one done */
 export function rideWhy(helped: string | null, done: string[]): { id: string; t: string; l?: string } | null {

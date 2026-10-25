@@ -103,8 +103,9 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
 
-  > Support Daybook with a one-time tip and become a supporter: sync between your phone and the web, a safe copy of your
-  > log, and your whole pattern. Sign in with Apple, in one tap. Everything for hard moments stays free.
+  > SOS is now one guided ride that keeps going until the urge passes, with a new shape puzzle and the reason behind
+  > every move. After a slip, Daybook helps you name the feeling underneath, see what it really gave you, and make one
+  > plan for next time. Tips on iPhone open right away, and the web tip opens in one tap.
 
 - **Description:**
 
@@ -222,8 +223,8 @@ costs money or is unclear. Tell me what you did at each step and anything that d
    all countries). For each, tell me its status and whether it has a
    review screenshot and review note. Create any that are missing, but STOP before saving a price.
    I upload docs/shots/tip-review.png myself if one is missing.
-4. Version 1.0 is live, so the update is a new version: the + next to iOS App, numbered exactly as the new
-   build's version (1.1.0, from apps/mobile/app.json). If the newest build is still 0.1.0, STOP: the
+4. Version 1.1.0 is live, so the update is a new version: the + next to iOS App, numbered exactly as the new
+   build's version (1.2.0, from apps/mobile/app.json). If the newest build is still 1.1.0, STOP: the
    new build has not reached TestFlight yet.
 5. Fill in from step 6: promotional text, description, keywords, support URL, marketing URL,
    copyright, and What's New (only if the box is there). Screenshots: leave the ones there unless a

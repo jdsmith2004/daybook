@@ -76,12 +76,19 @@ export function Move({ finish, level }: ToolProps) {
      because it works anywhere. */
   const sit = sos.mem.moveSit !== false;
   const list = sit ? MOVES_SIT : MOVES;
-  const [pick, setPick] = useState<string | null>(null);
-  const [m0, setM0] = useState<number | null>(null);
+  /* it starts at once and walks through every move for the place you are in, one after the other, so the two minutes
+     keep changing and there is nothing to choose first (short bursts of squeezing and moving cut cravings: Ussher and
+     others 2006, and the review by Taylor, Ussher and Faulkner 2007) */
+  const [m0, setM0] = useState(() => Date.now());
   const [done, setDone] = useState(false);
-  const sec = useSeconds(m0, !!m0 && !done);
-  const left = m0 ? Math.max(0, MOVE_MS - sec * 1000) : MOVE_MS;
-  const over = !!m0 && !done && left <= 0;
+  const sec = useSeconds(m0, !done);
+  const left = Math.max(0, MOVE_MS - sec * 1000);
+  const over = !done && left <= 0;
+  const per = MOVE_MS / list.length;
+  const i = Math.min(list.length - 1, Math.floor((sec * 1000) / per));
+  useEffect(() => {
+    if (i > 0) buzz('tap');
+  }, [i]);
   useEffect(() => {
     if (!over) return;
     setDone(true);
@@ -106,62 +113,31 @@ export function Move({ finish, level }: ToolProps) {
         </Dock>
       </Stage>
     );
-  /* the pick: where you are first, then the moves for it as one list. A tap starts the move. */
-  if (!pick)
-    return (
-      <Stage key="pick" dir={0}>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Move for 2 minutes.
-        </T>
-        <T style={s.c}>Body first, decision later. Pick one move and keep it going.</T>
-        <Dock>
-          <PickRow
-            label="Where are you?"
-            list={[
-              { k: 'sit', label: 'In my seat' },
-              { k: 'up', label: 'On my feet' },
-            ]}
-            cur={sit ? 'sit' : 'up'}
-            onPick={(k) => sos.setMem((m) => ({ ...m, moveSit: k === 'sit' }))}
-          />
-          <Appear key={sit ? 'sit' : 'up'} by={6} duration={240} style={s.list}>
-            {list.map(([id, name, sub], j) => (
-              <Pressable
-                key={id}
-                accessibilityRole="button"
-                accessibilityLabel={name + '. ' + sub}
-                onPress={() => {
-                  setPick(id);
-                  setM0(Date.now());
-                  buzz('tap');
-                }}
-                style={({ pressed }) => [s.mrow, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-                <Shape kind={beatOf(sit, id).kind} size={30} color={c.coral} turn={j * 23} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[s.tileT, { color: c.ink }]}>{name}</Text>
-                  <Text style={[s.tileS, { color: c.muted }]}>{sub}</Text>
-                </View>
-                <Icon name="next" size={18} color={c.muted} />
-              </Pressable>
-            ))}
-          </Appear>
-          <T v="small" tone="muted" style={s.c}>
-            {sit ? 'Slow and small counts, and no one has to notice. Stop if anything hurts.' : 'A slow walk counts too. Stop if anything hurts.'}
-          </T>
-        </Dock>
-      </Stage>
-    );
-  const m = list.find((x) => x[0] === pick) || list[0];
-  /* the run: the move and how to do it at the top, to be read; the timer in the middle; done at the bottom */
+  const m = list[i];
+  /* the move and how to do it at the top, to be read; the timer in the middle; done at the bottom */
   return (
-    <Stage key="run" dir={1}>
+    <Stage key={'run' + (sit ? 's' : 'u')} dir={0}>
+      <PickRow
+        label="Where are you?"
+        list={[
+          { k: 'sit', label: 'In my seat' },
+          { k: 'up', label: 'On my feet' },
+        ]}
+        cur={sit ? 'sit' : 'up'}
+        onPick={(k) => {
+          sos.setMem((x) => ({ ...x, moveSit: k === 'sit' }));
+          setM0(Date.now());
+        }}
+      />
       <T v="eyebrow" tone="muted">
-        {sit ? 'In your seat' : 'On your feet'}
+        {'Move ' + (i + 1) + ' of ' + list.length}
       </T>
-      <T v="title" style={s.c} accessibilityRole="header">
-        {m[1]}
-      </T>
-      <T style={s.c}>{m[2]}.</T>
+      <Appear key={m[0]} by={8} duration={240} style={{ alignItems: 'center', gap: 6 }}>
+        <T v="title" style={s.c} accessibilityRole="header" accessibilityLiveRegion="polite">
+          {m[1]}
+        </T>
+        <T style={s.c}>{m[2]}.</T>
+      </Appear>
       <Middle>
         <ToolTimer
           p={1 - left / MOVE_MS}
@@ -174,19 +150,10 @@ export function Move({ finish, level }: ToolProps) {
         />
       </Middle>
       <Dock>
-        <T v="small" tone="muted" style={s.c}>
-          Keep going until the ring closes, or stop when you feel the shift.
-        </T>
         <Button label="I am done" onPress={() => setDone(true)} />
-        <View style={s.quiet}>
-          <Link
-            label="Change the move"
-            onPress={() => {
-              setPick(null);
-              setM0(null);
-            }}
-          />
-        </View>
+        <T v="small" tone="muted" style={s.c}>
+          {sit ? 'Slow and small counts, and no one has to notice. Stop if anything hurts.' : 'A slow walk counts too. Stop if anything hurts.'}
+        </T>
       </Dock>
     </Stage>
   );

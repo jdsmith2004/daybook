@@ -1,5 +1,5 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
-import { CU_BODY, CU_CHG, CU_D, CU_FEEL, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
+import { CU_BODY, CU_CHG, CU_D, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, THOUGHTS, thoughtIn } from '@daybook/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -28,16 +28,15 @@ type Stepped = { step: number; setStep: (i: number) => void; dir: -1 | 0 | 1 };
 export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
   const c = useTheme();
   const [body, setBody] = useState<string | null>(null);
-  const [feel, setFeel] = useState<string | null>(null);
   const [chg, setChg] = useState<string | null>(null);
   /* each answer to "Right now it is" leaves a mark on the wave where the dot was, so the person sees their own urge's
      shape as they go (urge surfing: rate it as it changes, and watch it rise and fall) */
   const [marks, setMarks] = useState<WaveMark[]>([]);
   const [w0, setW0] = useState<number | null>(null);
   useEffect(() => {
-    if (step === 4 && w0 == null) setW0(Date.now());
+    if (step === 2 && w0 == null) setW0(Date.now());
   }, [step, w0]);
-  const sec = useSeconds(w0, step === 4);
+  const sec = useSeconds(w0, step === 2);
   const next = (
     <Dock>
       <Button label="Next" onPress={() => setStep(step + 1)} />
@@ -52,30 +51,15 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
             Notice it
           </T>
           <T v="title" style={s.c} accessibilityRole="header">
-            An urge is here.
+            An urge is here. Let it be.
           </T>
-          <T style={s.c}>That is all you have to see right now. Drop your shoulders and unclench your jaw. Take one slow breath.</T>
+          <T style={s.c}>Drop your shoulders. Breathe with the shape. You do not have to fight it or obey it.</T>
         </Middle>
+        <OnByItself after={12} onGo={() => setStep(1)} />
         {next}
       </Stage>
     );
   if (step === 1)
-    return (
-      <Stage key={'s' + step} dir={dir}>
-        <Middle>
-          <Breath />
-          <T v="eyebrow" tone="muted">
-            Let it be
-          </T>
-          <T v="title" style={s.c} accessibilityRole="header">
-            Let it be here.
-          </T>
-          <T style={s.c}>You do not have to fight it or obey it. Give it a minute without doing anything about it.</T>
-        </Middle>
-        {next}
-      </Stage>
-    );
-  if (step === 2)
     return (
       <Stage key={'s' + step} dir={dir}>
         <T v="eyebrow" tone="muted">
@@ -92,39 +76,15 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
             onPick={(v) => {
               setBody(v);
               buzz('tap');
-              setStep(3);
+              setStep(2);
             }}
           />
         </Dock>
-        <Link label="Skip" onPress={() => setStep(3)} />
-      </Stage>
-    );
-  if (step === 3)
-    return (
-      <Stage key={'s' + step} dir={dir}>
-        <T v="eyebrow" tone="muted">
-          Name it
-        </T>
-        <T v="title" style={s.c} accessibilityRole="header">
-          What does it feel like?
-        </T>
-        <T style={s.c}>One word is enough.</T>
-        <Dock>
-          <Tiles
-            list={CU_FEEL}
-            cur={feel}
-            onPick={(v) => {
-              setFeel(v);
-              buzz('tap');
-              setStep(4);
-            }}
-          />
-        </Dock>
-        <Link label="Skip" onPress={() => setStep(4)} />
+        <Link label="Skip" onPress={() => setStep(2)} />
       </Stage>
     );
   const p = Math.min(1, (sec * 1000) / CU_MS);
-  const line = cuLine(body, feel);
+  const line = cuLine(body, null);
   const mark = (k: string) => {
     buzz('tap');
     setChg(k);
@@ -144,7 +104,7 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
         </Text>
         <Wave start={w0} color={c.accent} track={c.muted} marks={marks} />
         <T v="label" style={[s.c, { color: c.accentText }]} accessibilityLiveRegion="polite">
-          {wavePhase(p)}
+          {p >= 1 ? peakLine(marks) || wavePhase(p) : wavePhase(p)}
         </T>
       </Middle>
       <Dock>
@@ -159,7 +119,7 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
             <ChangeButton key={k} k={k} label={label} on={chg === k} onPress={() => mark(k)} />
           ))}
         </View>
-        <Button label="Done" onPress={() => finish('curious', { msg: 'You watched it. That is the skill.' })} />
+        <Button label="Done" onPress={() => finish('curious', { msg: peakLine(marks) || 'You watched it. That is the skill.' })} />
       </Dock>
     </Stage>
   );
@@ -172,6 +132,28 @@ function wavePhase(p: number): string {
   if (p < 0.4) return 'It is building. Let it.';
   if (p < 0.6) return 'This is the top. It goes no higher.';
   return 'It is falling. Let it pass.';
+}
+
+/** what the person's own marks showed: when it was at its biggest, and that it came down after (the point of watching:
+    it passes without being obeyed) */
+function peakLine(marks: WaveMark[]): string {
+  const ms = marks.slice().sort((a, b) => a.p - b.p);
+  const up = ms.filter((m) => m.k === 'bigger').pop();
+  const down = ms.find((m) => m.k === 'smaller' && (!up || m.p > up.p));
+  if (up && down) return 'It peaked at ' + fmtMS(up.p * CU_MS) + ', then came down on its own.';
+  if (down) return 'It got smaller at ' + fmtMS(down.p * CU_MS) + ', and you only watched.';
+  return '';
+}
+
+/** goes on to the next step by itself after `after` seconds (a step that only asks you to breathe and notice) */
+function OnByItself({ after, onGo }: { after: number; onGo: () => void }) {
+  const go = useRef(onGo);
+  go.current = onGo;
+  useEffect(() => {
+    const t = setTimeout(() => go.current(), after * 1000);
+    return () => clearTimeout(t);
+  }, [after]);
+  return null;
 }
 
 /** a mark on the wave: how far along it was (0 to 1) and the answer then (bigger, same, smaller) */
@@ -322,6 +304,8 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
   const [own, setOwn] = useState('');
   const reduce = useReducedMotion();
   const [gone, setGone] = useState(false);
+  /* saying it fast, over and over, for 20 seconds: when it started (null when not saying it) */
+  const [fast, setFast] = useState<number | null>(null);
   const drift = useRef(new Animated.Value(0)).current;
   /* the card floats up and away like a leaf on a stream, swaying a little as it fades; with Reduce Motion it only fades */
   const letGo = () => {
@@ -379,12 +363,42 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
         </Dock>
       </Stage>
     );
+  /* say it fast: said over and over, a thought turns into sounds and loses its pull (word repetition, Masuda and others,
+     2004). The words beat faster and fade while you say them; after 20 seconds the card floats away. */
+  if (fast != null)
+    return (
+      <Stage key="fast" dir={1}>
+        <T v="title" style={s.c} accessibilityRole="header">
+          Say it out loud, fast, again and again.
+        </T>
+        <T style={s.c}>In your head works too. A silly cartoon voice works even better.</T>
+        <Middle>
+          <FastWords
+            text={thoughtIn(text)}
+            start={fast}
+            onDone={() => {
+              setFast(null);
+              letGo();
+            }}
+          />
+        </Middle>
+        <Dock>
+          <Button
+            label="Let it go"
+            onPress={() => {
+              setFast(null);
+              letGo();
+            }}
+          />
+        </Dock>
+      </Stage>
+    );
   return (
-    <Stage key="card" dir={1}>
+    <Stage key="card" dir={fast == null && gone ? 0 : 1}>
       <T v="title" style={s.c} accessibilityRole="header">
         A thought is not an order.
       </T>
-      <T style={s.c}>It can be loud and still be wrong. Read the card once more, slowly. You can notice the thought and still choose what you do.</T>
+      <T style={s.c}>It can be loud and still be wrong.</T>
       <Middle>
         <View style={s.stay}>
           {gone ? (
@@ -432,14 +446,56 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
           <Button label="Done" onPress={() => finish('thought', { msg: 'A thought is not an order.' })} />
         ) : (
           <>
-            <Button label="Let it go" onPress={letGo} />
+            <Button
+              label="Say it fast, 20 seconds"
+              onPress={() => {
+                buzz('tap');
+                setFast(Date.now());
+              }}
+            />
             <View style={s.quiet}>
-              <Link label="Done" onPress={() => finish('thought', { msg: 'A thought is not an order.' })} />
+              <Link label="Just let it go" onPress={letGo} />
             </View>
           </>
         )}
       </Dock>
     </Stage>
+  );
+}
+
+const FAST_SEC = 20;
+/** the thought said over and over: it beats, slowly at first and faster and faster, and fades and spreads apart as it goes,
+    with a squiggle under it for the 20 seconds. Calls onDone at the end. */
+function FastWords({ text, start, onDone }: { text: string; start: number; onDone: () => void }) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  useClock(true);
+  const t = Math.min(FAST_SEC, (Date.now() - start) / 1000);
+  const f = t / FAST_SEC;
+  /* about one beat a second at the start, three a second at the end */
+  const beats = 0.9 * t + (1.95 * t * t) / (2 * FAST_SEC);
+  const n = Math.floor(beats);
+  const pop = reduce ? 0 : Math.max(0, 1 - (beats - n) * 4);
+  useEffect(() => {
+    if (n > 0) buzz('tap');
+  }, [n]);
+  const done = useRef(onDone);
+  done.current = onDone;
+  useEffect(() => {
+    if (t >= FAST_SEC) done.current();
+  }, [t]);
+  return (
+    <View style={{ alignItems: 'center', gap: 22, alignSelf: 'stretch' }}>
+      <Text
+        style={[s.fastT, { color: c.ink, opacity: 1 - 0.6 * f, letterSpacing: 5 * f, transform: [{ scale: 1 + 0.12 * pop }] }]}
+        accessibilityLabel={'Say it over and over: ' + text}>
+        {text}
+      </Text>
+      <WavyLine width={220} p={f} color={c.violet} track={c.line} />
+      <T v="small" tone="muted">
+        {Math.ceil(FAST_SEC - t)} seconds
+      </T>
+    </View>
   );
 }
 
@@ -580,6 +636,7 @@ const s = StyleSheet.create({
   quiet: { alignItems: 'center' },
   calmWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   calm: { fontFamily: font.display, fontSize: 24, lineHeight: 30, textAlign: 'center' },
+  fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
   breath: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   wave: { alignSelf: 'stretch', overflow: 'hidden', marginHorizontal: -16 },

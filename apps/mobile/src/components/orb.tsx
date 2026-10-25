@@ -1,14 +1,16 @@
-/* The breath on screen, with the words for each step and the time left. Orb is Breathe's particle breath; HorizonSun is the
+/* The breath on screen, with the words for each step and the time left. Orb is Breathe's particle breath; BreathSun is the
    sun on the first SOS screen. */
 import { breathPhase, PATTERNS, PH_TXT } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
-import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { BIG_MAX, Text } from '@/components/text';
 
 /** the words over the sun sit in a row of a set height above it, so they stay close to their size */
 const ON_ART = 1.1;
-import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+
+import { WavyRing } from '@/components/shapes';
 
 import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
@@ -236,37 +238,31 @@ function Dot({
   );
 }
 
-/* the SOS sun breathes calm: 4 in (it rises), 6 out (it sinks) */
+/* the SOS sun breathes calm: 4 in (it grows), 6 out (it shrinks) */
 const CALM: Steps = [
   ['in', 4],
   ['out', 6],
 ];
-/* how much of the sun shows when it is fully risen and when it is low, and how far it reaches down behind the sheet */
-const HI = 0.64;
-const LO = 0.3;
-const UNDER = 56;
-const ROW = 40;
-const GAP = 18;
-/* the gap between this screen's content and the sheet (the sheet's top margin): the horizon is the sheet's edge */
-const EDGE = 18;
-/* the screen's side margin: the light reaches past it to the edges of the screen */
-const SIDE = 16;
+const CALM_SEC = 10;
+/* how small the sun is on an empty breath, how far the ring sits outside the full sun, and the room for the words above */
+const SMALL = 0.84;
+const RING = 1.22;
+const WORDS = 96;
 
-/** the first SOS minute: a sun on the horizon (the top edge of the sheet below) that rises while you breathe in and sinks
-    while you breathe out, with the words for each step and the time left just above it. It measures the room it has and
-    fills it, so the words above and the sheet below never crowd it. After the minute it keeps going. It ticks only while
-    on (when the screen is in front). With `breaths`, it counts breaths instead of time ("Breath 2 of 3"), with a soft
-    buzz as each one starts, and tells onBreaths how many are done. */
-export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: number; onBreaths?: (n: number) => void }) {
+/** the first SOS screen: a round sun in the middle that grows while you breathe in and shrinks while you breathe out, the
+    words for each step above it, and around it Android's wavy progress line (the one squiggle, components/shapes), which
+    goes a third of the way round with each of three breaths and closes with one small swell when they are done. It
+    measures the room it has and fills it. It ticks only while on. It counts `breaths` breaths, with a soft buzz as each
+    one starts, and tells onBreaths how many are done; after that it keeps breathing. */
+export function BreathSun({ on, breaths, onBreaths }: { on: boolean; breaths: number; onBreaths?: (n: number) => void }) {
   const c = useTheme();
   const [r0] = useState(() => Date.now());
   const sec = useSeconds(r0, on);
-  const left = Math.max(0, 60 - sec);
   const ph = breathPhase('calm', sec);
   /* calm is two steps a breath: in, then out */
   const done = Math.floor(ph.idx / 2);
+  const over = done >= breaths;
   useEffect(() => {
-    if (!breaths) return;
     onBreaths?.(done);
     if (done < breaths) buzz('tap');
     else if (done === breaths) buzz('lit');
@@ -276,7 +272,7 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
   const clock = useBreathClock(sec, on);
   /* a screen reader hears each turn of the breath: the words are a live region (Android and the web), and iOS, which has
      no live regions, is told each one */
-  const say = PH_TXT[ph.k] + (breaths && done < breaths ? '. Breath ' + (done + 1) + ' of ' + breaths : breaths ? '. Well done' : '');
+  const say = over ? 'Well done. Three slow breaths' : PH_TXT[ph.k] + '. Breath ' + (done + 1) + ' of ' + breaths;
   useEffect(() => {
     if (Platform.OS !== 'ios' || !on) return;
     AccessibilityInfo.isScreenReaderEnabled()
@@ -284,111 +280,83 @@ export function HorizonSun({ on, breaths, onBreaths }: { on: boolean; breaths?: 
       .catch(() => undefined);
   }, [say, on]);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  /* the biggest sun that fits under the words, leaving room for the line above it */
-  const d = box ? Math.max(0, Math.min(box.w * 0.8, 330, (box.h + EDGE - ROW - GAP) / HI)) : 0;
-  const sun = d >= 72;
-  const H = box ? box.h + UNDER : 0;
-  const W = box ? box.w + SIDE * 2 : 0;
-  /* the glow around the sun, as wide as it can be without being cut off at the top of its room */
-  const glow = box ? Math.min(d * 1.9, 2 * (box.h + EDGE - HI * d + d / 2) + 24) : 0;
-  /* 1 is fully risen, 0 is low on the horizon; with Reduce Motion it stays half risen */
-  const lift = useAnimatedStyle(
-    () => {
-      const v = still ? 0.5 : breathAt(CALM, clock.value)[0];
-      return { transform: [{ translateY: (HI - LO) * d * (1 - v) }] };
-    },
-    webDeps(still, d),
-  );
-  const shine = useAnimatedStyle(() => {
-    const v = still ? 0.5 : breathAt(CALM, clock.value - 0.25)[0];
-    return { opacity: 0.55 + 0.45 * v };
+  /* the ring, as big as fits under the words, and the sun inside it */
+  const ring = box ? Math.max(0, Math.min(box.w * 0.86, 330, box.h - WORDS - 8)) : 0;
+  const d = ring / RING;
+  const glow = d * 1.7;
+  /* the ring fills smoothly over the breaths, and swells once when it closes */
+  const p = Math.min(1, sec / (breaths * CALM_SEC));
+  const swell = useSharedValue(1);
+  useEffect(() => {
+    if (!over || still) return;
+    swell.value = withSequence(withTiming(1.07, { duration: 260 }), withSpring(1, { damping: 7, stiffness: 160 }));
+  }, [over, still, swell]);
+  const grow = useAnimatedStyle(() => {
+    const v = still ? 0.5 : breathAt(CALM, clock.value)[0];
+    return { transform: [{ scale: SMALL + (1 - SMALL) * v }] };
+  }, webDeps(still));
+  const ringGrow = useAnimatedStyle(() => {
+    const v = still ? 0.5 : breathAt(CALM, clock.value)[0];
+    return { transform: [{ scale: swell.value * (0.97 + 0.03 * v) }] };
   }, webDeps(still));
   return (
-    <View style={s.hz} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-      {box && sun ? (
-        <View
-          style={[s.hzSky, { height: H, bottom: -UNDER, left: -SIDE, right: -SIDE }]}
-          pointerEvents="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants">
-          {/* the warm light low along the horizon */}
-          <Svg width={W} height={H} style={StyleSheet.absoluteFill}>
-            <Defs>
-              <RadialGradient id="hz" cx="50%" cy="100%" rx="62%" ry="60%">
-                <Stop offset="0" stopColor="#FFC43C" stopOpacity={0.34} />
-                <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Rect x={0} y={0} width={W} height={H} fill="url(#hz)" />
-          </Svg>
-          {/* the sun with its glow, moving up and down together */}
-          <Reanimated.View
-            style={[
-              {
-                position: 'absolute',
-                left: (W - glow) / 2,
-                top: box.h + EDGE - HI * d - (glow - d) / 2,
-                width: glow,
-                height: glow,
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-              lift,
-            ]}>
-            <Reanimated.View style={[StyleSheet.absoluteFill, shine]}>
-              <Svg width={glow} height={glow}>
-                <Defs>
-                  <RadialGradient id="hzGlow" cx="50%" cy="50%" r="50%">
-                    <Stop offset="0.5" stopColor="#FFC43C" stopOpacity={0.42} />
-                    <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
-                  </RadialGradient>
-                </Defs>
-                <Circle cx={glow / 2} cy={glow / 2} r={glow / 2} fill="url(#hzGlow)" />
-              </Svg>
-            </Reanimated.View>
+    <View style={s.bs} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      {/* the words for this breath, above the sun */}
+      <View
+        style={s.bsWords}
+        accessible={Platform.OS !== 'web'}
+        accessibilityLabel={Platform.OS !== 'web' ? say : undefined}
+        accessibilityLiveRegion="polite"
+        aria-live="polite">
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.bsPhase, { color: c.ink }]} accessibilityRole="header">
+          {over ? 'Well done' : PH_TXT[ph.k]}
+        </Text>
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.bsCount, { color: c.muted }]}>
+          {over ? 'Three slow breaths' : done + 1 + ' of ' + breaths}
+        </Text>
+      </View>
+      {box && d >= 72 ? (
+        <View style={s.bsMid} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Reanimated.View style={[s.bsAt, { width: glow, height: glow }, grow]}>
+            <Svg width={glow} height={glow} style={StyleSheet.absoluteFill}>
+              <Defs>
+                <RadialGradient id="bsGlow" cx="50%" cy="50%" r="50%">
+                  <Stop offset="0.5" stopColor="#FFC43C" stopOpacity={0.4} />
+                  <Stop offset="1" stopColor="#FFC43C" stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={glow / 2} cy={glow / 2} r={glow / 2} fill="url(#bsGlow)" />
+            </Svg>
             <View style={[s.orb, { width: d, height: d, borderRadius: d / 2, shadowColor: '#FFB43A' }]}>
               <Svg width={d} height={d}>
                 <Defs>
-                  <RadialGradient id="hzCore" cx="44%" cy="34%" r="66%">
+                  <RadialGradient id="bsCore" cx="44%" cy="34%" r="66%">
                     <Stop offset="0" stopColor="#FFF6CF" />
                     <Stop offset="0.42" stopColor="#FFDA6B" />
                     <Stop offset="1" stopColor="#FFB23E" />
                   </RadialGradient>
                 </Defs>
-                <Circle cx={d / 2} cy={d / 2} r={d / 2} fill="url(#hzCore)" />
+                <Circle cx={d / 2} cy={d / 2} r={d / 2} fill="url(#bsCore)" />
               </Svg>
             </View>
           </Reanimated.View>
+          <Reanimated.View style={[s.bsAt, { width: ring, height: ring }, ringGrow]}>
+            <WavyRing size={ring} p={p} color={c.accent} track={c.accent + '33'} stroke={6} />
+          </Reanimated.View>
         </View>
       ) : null}
-      {/* the words for this breath, just above the sun at its highest */}
-      <View
-        style={[s.ph, box && sun ? { position: 'absolute', left: 0, right: 0, top: Math.max(0, box.h + EDGE - HI * d - GAP - ROW) } : null]}
-        accessible={Platform.OS !== 'web'}
-        accessibilityLabel={Platform.OS !== 'web' ? say : undefined}
-        accessibilityLiveRegion="polite"
-        aria-live="polite">
-        <Text maxFontSizeMultiplier={ON_ART} style={[s.phase, { color: c.ink }]}>
-          {PH_TXT[ph.k]}
-        </Text>
-        <Text
-          maxFontSizeMultiplier={ON_ART}
-          style={[s.pill, { color: c.ink, backgroundColor: c.scBtn }]}
-          accessibilityElementsHidden={!breaths}
-          importantForAccessibility={breaths ? 'auto' : 'no'}>
-          {breaths ? (done < breaths ? 'Breath ' + (done + 1) + ' of ' + breaths : 'Well done') : left > 0 ? fmtMS(left * 1000) : 'Keep going'}
-        </Text>
-      </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  ph: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: ROW },
-  /* the sun's room: whatever is left between the words and the sheet. What is inside is placed by hand, so it never
-     pushes the screen taller. */
-  hz: { flexGrow: 1, alignSelf: 'stretch', minHeight: ROW, justifyContent: 'flex-end' },
-  hzSky: { position: 'absolute', overflow: 'hidden' },
+  /* the sun's room: the words at the top, the sun and its ring centered in what is left */
+  bs: { flexGrow: 1, alignSelf: 'stretch', minHeight: WORDS },
+  bsWords: { height: WORDS, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  bsPhase: { fontFamily: font.displayBold, fontSize: 42, lineHeight: 50 },
+  bsCount: { fontFamily: font.bodySemi, fontSize: 15, fontVariant: ['tabular-nums'] },
+  bsMid: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  bsAt: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   pill: {
     minWidth: 52,
     paddingHorizontal: 10,

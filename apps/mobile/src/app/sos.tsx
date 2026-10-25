@@ -1,11 +1,11 @@
 /* SOS: help on the first tap, when an urge is happening right now. Nothing is asked first.
-   The first screen is only for breathing and coming back to yourself: who you are becoming, one line to do now, your record and
-   your own words, kept small, and a sun to take three slow breaths with. Below it: how strong it is (optional) and Next, which
-   is big and solid, and works at any time.
+   The first screen is only the sun: the words to breathe by, a round sun that grows and shrinks with three slow breaths
+   while a wavy ring goes round it, one small line for the body, and Next, which is big and solid, and works at any time.
    The second screen is the tools: every one of them, with how each went for you, and the one suggested for this moment as the
-   main button, with Not for me (stop suggesting it), It passed and Talk it through under it. The suggestion learns from what
+   main button, with Not for me (stop suggesting it), It passed and Talk it through under it, and your own words (a reason
+   or your note, and your voice note) above the tools. The suggestion learns from what
    you pick (core: urRank).
-   A tool started here comes back to "How is it now?", which also asks whether you would use that tool again; the answer saves
+   A tool started here comes back to "How is it now?", with your record (urges ridden out), which also asks whether you would use that tool again; the answer saves
    the entry and goes on to the check-in, and Still strong goes back to the tools. Late at night the screens go dark, and Go to
    bed only ever comes paired with a tool for the thoughts. */
 import {
@@ -16,8 +16,6 @@ import {
   setUrOff,
   storyIfLine,
   sunPlanNow,
-  UR_STR,
-  UR_STR_ADJ,
   urAnswer,
   urDoLine,
   urEntry,
@@ -33,7 +31,6 @@ import {
   urTags,
   urTool,
   urWon,
-  type Strength,
   type Tool,
 } from '@daybook/core';
 import { Redirect, router, useFocusEffect } from 'expo-router';
@@ -43,8 +40,8 @@ import { Text } from '@/components/text';
 
 import { BigOption } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { HorizonSun } from '@/components/orb';
-import { Dock, SceneFrame } from '@/components/scene';
+import { BreathSun } from '@/components/orb';
+import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { ToolGrid, ToolShape, toolTone } from '@/components/tool-grid';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
@@ -192,6 +189,10 @@ export default function Sos() {
   };
 
   const sky = night ? 'night' : 'violet';
+  /* your own words (the note written on a calm day, or one of your reasons) and your voice note, with the tools. Before
+     setup there are none of your own yet, so none are shown, not the starting ones. */
+  const fy = snap.settings ? urFromYou(st, pick) : null;
+  const mine = !!fy || !!voice.uri;
   if (!ur)
     return (
       <SceneFrame title="SOS" sky={sky} onClose={close}>
@@ -295,6 +296,7 @@ export default function Sos() {
             {lead}
           </T>
         ) : null}
+        {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
         <ToolGrid days={snap.days} tags={tags} fresh={false} onPick={(id) => pickTool(id)} />
       </SceneFrame>
     );
@@ -304,6 +306,7 @@ export default function Sos() {
     const t = urTool(ur.used[ur.used.length - 1] || '');
     const r = t ? ur.rate?.[t.id] || 0 : 0;
     const off = !!t && urOffOf(st).indexOf(t.id) >= 0;
+    const rec = urEvidence(snap.days);
     return (
       <SceneFrame title="SOS" sky={sky} onClose={close}>
         <Flame level={level} size={80} />
@@ -317,9 +320,18 @@ export default function Sos() {
               {/[?!]$/.test(t.name) ? ' ' : '. '}
             </>
           ) : null}
-          {ur.strength ? 'It started out ' + UR_STR_ADJ[ur.strength] + '. ' : ''}Tap what is true now.
+          Tap what is true now.
         </T>
         {ur.cx?.kn ? <Know text={ur.cx.kn.t} /> : null}
+        {rec.n ? (
+          <View
+            style={s.rec}
+            accessible
+            accessibilityLabel={`Your record: ${rec.n} ${rec.n === 1 ? 'urge' : 'urges'} ridden out${rec.med ? `. Most pass in ${rec.med} minutes` : ''}.`}>
+            <RecChip icon="wave" b={String(rec.n)} rest={' ' + (rec.n === 1 ? 'urge' : 'urges') + ' ridden out'} />
+            {rec.med ? <RecChip icon="timer" pre="Most pass in " b={rec.med + ' min'} /> : null}
+          </View>
+        ) : null}
         {/* the answers sit low, where the thumb is (CLAUDE.md): the question about the tool, then the three answers lowest,
             as the main thing to tap */}
         <Dock>
@@ -363,148 +375,48 @@ export default function Sos() {
     );
   }
 
-  /* the first screen */
-  /* before setup the person has no words of their own yet: none are shown, not the starting ones */
-  const fy = snap.settings ? urFromYou(st, pick) : null;
-  /* before setup there is no "who I am becoming" yet: one line says the setup can wait */
-  const be = snap.settings ? String(st.becoming || '').trim() : 'Setup can wait. This comes first.';
-  const mine = !!fy || !!voice.uri;
-  const rec = urEvidence(snap.days);
-  const lines = String(ur.cx?.do || '')
-    .replace(/([.!?])\s+/g, '$1\n')
-    .split('\n');
-  /* on a short screen, or when your own words need the room, the extra lines step aside so the sun keeps its place */
-  const H = win.height;
-  const small = H <= 680;
-  const tight = (mine || !!be) && H <= 900;
-  const quiet = small || tight;
-
-  const sheet = (
-    <>
-      <View style={{ gap: 8 }} accessibilityRole="radiogroup" accessibilityLabel="How strong is it? Optional">
-        <Lab text="How strong is it?" aside="Optional" />
-        <Seg
-          value={ur.strength}
-          onPick={(v) => {
-            sos.set({ ...ur, strength: ur.strength === v ? null : v, explore: null });
-            buzz('tap');
-          }}
-        />
-      </View>
-      {/* Next: big, solid and easy to hit at any time, even before the three breaths are done */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Next. Pick what will help."
-        onPress={() => {
-          sos.set({ ...ur, step: 'tools', sug: null });
-          buzz('tap');
-        }}
-        hitSlop={8}
-        style={({ pressed }) => [
-          s.next,
-          {
-            backgroundColor: c.accent,
-            shadowColor: c.accentDeep,
-            shadowOffset: { width: 0, height: pressed ? 1 : 5 },
-            transform: [{ translateY: pressed ? 4 : 0 }],
-          },
-        ]}>
-        <Text style={[s.nextT, { color: c.accentInk }]}>Next</Text>
-        <Icon name="next" size={24} color={c.accentInk} />
-      </Pressable>
-      {/* for a time and a place already decided: talk it through, without the tools first (the sun keeps breathing) */}
-      <TalkLink onPress={talk} />
-    </>
-  );
-
+  /* the first screen: only the sun. The words to breathe by, the sun with its ring, one small line for the body, and Next.
+     Your own words and your record wait on the next screens, where there is room for them. */
   return (
-    <SceneFrame title="SOS" sky={sky} onClose={close} sheet={sheet}>
-      <View style={s.sky}>
-        <View style={[s.words, { gap: small ? 10 : 16 }]}>
-          {be ? (
-            <T v="small" style={s.be} accessibilityLabel={snap.settings ? `Who I am becoming: ${be}` : be}>
-              {be}
-            </T>
-          ) : null}
-          <T v="title" style={[s.c, s.h, small && { fontSize: 23 }]} accessibilityRole="header">
-            {lines.join('\n')}
+    <SceneFrame title="SOS" sky={sky} onClose={close}>
+      <Stage dir={0}>
+        <BreathSun on={front} breaths={3} />
+        {ur.cx?.do ? (
+          <T tone="muted" style={[s.c, s.body]}>
+            {String(ur.cx.do)}
           </T>
-          {rec.n ? (
-            <View
-              style={s.rec}
-              accessible
-              accessibilityLabel={`Your record: ${rec.n} ${rec.n === 1 ? 'urge' : 'urges'} ridden out${rec.med ? `. Most pass in ${rec.med} minutes` : ''}.`}>
-              <RecChip icon="wave" b={String(rec.n)} rest={' ' + (rec.n === 1 ? 'urge' : 'urges') + ' ridden out'} />
-              {rec.med ? <RecChip icon="timer" pre="Most pass in " b={rec.med + ' min'} /> : null}
+        ) : null}
+        {/* Next: big, solid and easy to hit at any time, even before the three breaths are done */}
+        <Dock>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Next. Pick what will help."
+            onPress={() => {
+              sos.set({ ...ur, step: 'tools', sug: null });
+              buzz('tap');
+            }}
+            hitSlop={8}
+            style={({ pressed }) => [
+              s.next,
+              {
+                backgroundColor: c.accent,
+                shadowColor: c.accentDeep,
+                shadowOffset: { width: 0, height: pressed ? 1 : 5 },
+                transform: [{ translateY: pressed ? 4 : 0 }],
+              },
+            ]}>
+            <Text style={[s.nextT, { color: c.accentInk }]}>Next</Text>
+            <View style={[s.nextI, { backgroundColor: c.accentInk }]}>
+              <Icon name="next" size={24} color={c.accent} />
             </View>
-          ) : quiet ? null : (
-            <View style={s.rec}>
-              <RecChip icon="wave" rest="Urges rise, peak, and pass" />
-            </View>
-          )}
-          {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
-        </View>
-        <HorizonSun on={front} breaths={3} />
-      </View>
+          </Pressable>
+        </Dock>
+      </Stage>
     </SceneFrame>
   );
 }
 
 /* ---------- the parts ---------- */
-/* its own component, so it reads the sheet's colors (the sheet is night-dark even in a light theme) */
-function TalkLink({ onPress }: { onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={6} style={s.plan}>
-      <Text style={[s.planT, { color: c.accentText }]}>Already decided? Talk it through</Text>
-    </Pressable>
-  );
-}
-
-function Lab({ text, aside }: { text: string; aside?: string }) {
-  const c = useTheme();
-  return (
-    <View style={s.lab}>
-      <Text style={[s.labT, { color: c.muted }]}>{text.toUpperCase()}</Text>
-      {aside ? <Text style={[s.labA, { color: c.muted }]}>{aside}</Text> : null}
-    </View>
-  );
-}
-
-/* A little / Strong / Very strong. Tapping the one that is on turns it off. */
-function Seg({ value, onPick }: { value: Strength | null; onPick: (v: Strength) => void }) {
-  const c = useTheme();
-  return (
-    <View style={[s.seg, { backgroundColor: c.accentSoft }]}>
-      {UR_STR.map(([v, label]) => {
-        const on = value === v;
-        return (
-          <Pressable
-            key={v}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: on }}
-            onPress={() => onPick(v)}
-            style={[
-              s.segB,
-              on && {
-                backgroundColor: c.surface,
-                borderColor: c.accent,
-                shadowColor: c.lip,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
-              },
-            ]}>
-            <Text style={[s.segT, { color: on ? c.ink : c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 /* the one next step: a big button with the tool, how long it takes and what it does */
 function Go({ tool, title, sub, label, onPress }: { tool: Tool; title: string; sub: string; label?: string; onPress: () => void }) {
   const c = useTheme();
@@ -581,48 +493,35 @@ function Know({ text }: { text: string }) {
 }
 
 const s = StyleSheet.create({
+  /* Next is a pill with the arrow in a round light dot at its end (Android's style) */
   next: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     minHeight: 66,
-    borderRadius: 20,
+    paddingLeft: 28,
+    paddingRight: 9,
+    borderRadius: 33,
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 3,
   },
   nextT: { fontFamily: font.bodyBold, fontSize: 21 },
+  nextI: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  body: { maxWidth: 340, fontSize: 16.5, lineHeight: 23 },
   c: { textAlign: 'center' },
-  h: { fontSize: 28, lineHeight: 33, maxWidth: 420 },
   opts: { alignSelf: 'stretch', gap: 10 },
-  sky: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 8 },
-  words: { alignItems: 'center', paddingTop: 8 },
   rec: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingLeft: 9, paddingRight: 12, borderRadius: 999 },
-  be: { fontFamily: font.display, fontSize: 15, lineHeight: 20, textAlign: 'center', maxWidth: 360, opacity: 0.82 },
   note: { gap: 3, maxWidth: 340, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 11, borderRadius: 18 },
   noteCap: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1, opacity: 0.78 },
   noteQ: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
   lab: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
   labT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
-  labA: { fontFamily: font.bodyMedium, fontSize: 13 },
   labL: { fontFamily: font.bodySemi, fontSize: 14, textDecorationLine: 'underline' },
   undo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
   rate: { alignSelf: 'stretch', gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18 },
   rateRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  seg: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 17 },
-  segB: {
-    flex: 1,
-    minHeight: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  segT: { fontFamily: font.bodySemi, fontSize: 15 },
   go: {
     flexDirection: 'row',
     alignItems: 'center',

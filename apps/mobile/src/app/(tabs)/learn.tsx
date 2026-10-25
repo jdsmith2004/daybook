@@ -41,6 +41,7 @@ import { Collapse, Segments } from '@/components/form';
 import { LessonMapView, MapChip } from '@/components/lesson-map';
 import { Screen } from '@/components/screen';
 import { TalkDoor } from '@/components/talk-card';
+import { PracticeDoor } from '@/components/ride/practice-door';
 import { ToolGrid } from '@/components/tool-grid';
 import { LinkCard } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
@@ -412,6 +413,7 @@ function ToolsPane() {
             tap one
           </T>
         </View>
+        <PracticeDoor />
         <TalkDoor />
         <ToolGrid days={snap.days} tags={tags} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
         <T v="small">

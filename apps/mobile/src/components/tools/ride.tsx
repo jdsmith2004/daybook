@@ -466,7 +466,7 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
 const FAST_SEC = 20;
 /** the thought said over and over: it beats, slowly at first and faster and faster, and fades and spreads apart as it goes,
     with a squiggle under it for the 20 seconds. Calls onDone at the end. */
-function FastWords({ text, start, onDone }: { text: string; start: number; onDone: () => void }) {
+export function FastWords({ text, start, onDone }: { text: string; start: number; onDone: () => void }) {
   const c = useTheme();
   const reduce = useReducedMotion();
   useClock(true);
@@ -641,7 +641,7 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
 }
 
 /** the road from now splitting in two, toward the two hours: a soft curve down to each card */
-function Fork({ left, right }: { left: string; right: string }) {
+export function Fork({ left, right }: { left: string; right: string }) {
   const [w, setW] = useState(0);
   return (
     <View style={{ alignSelf: 'stretch', height: 40 }} onLayout={(e) => setW(e.nativeEvent.layout.width)} {...SVG_HIDE}>

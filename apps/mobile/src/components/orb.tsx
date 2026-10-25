@@ -327,7 +327,7 @@ export function BreathSun({ on, breaths, onBreaths }: { on: boolean; breaths: nu
               </Defs>
               <Circle cx={glow / 2} cy={glow / 2} r={glow / 2} fill="url(#bsGlow)" />
             </Svg>
-            <View style={[s.orb, { width: d, height: d, borderRadius: d / 2, shadowColor: '#FFB43A' }]}>
+            <View style={[s.orb, { width: d, height: d, borderRadius: d / 2, shadowColor: '#FFB43A', backgroundColor: '#FFB23E' }]}>
               <Svg width={d} height={d}>
                 <Defs>
                   <RadialGradient id="bsCore" cx="44%" cy="34%" r="66%">

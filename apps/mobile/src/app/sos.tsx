@@ -1,89 +1,117 @@
-/* SOS: help on the first tap, when an urge is happening right now. Nothing is asked first.
-   The first screen is only the sun: the words to breathe by, a round sun that grows and shrinks with three slow breaths
-   while a wavy ring goes round it, one small line for the body, and Next, which is big and solid, and works at any time.
-   The second screen is the tools: every one of them, with how each went for you, and the one suggested for this moment as the
-   main button, with Not for me (stop suggesting it), It passed and Talk it through under it, and your own words (a reason
-   or your note, and your voice note) above the tools. The suggestion learns from what
-   you pick (core: urRank).
-   A tool started here comes back to "How is it now?", with your record (urges ridden out), which also asks whether you would use that tool again; the answer saves
-   the entry and goes on to the check-in, and Still strong goes back to the tools. Late at night the screens go dark, and Go to
-   bed only ever comes paired with a tool for the thoughts. */
+/* SOS: one short guided ride, the same shape every time, that starts on the first tap. Nothing is asked first.
+   The ride is three moves (core ride.ts): breathe with the sun, then one for the body or the eyes (squeeze, catch the
+   shapes, 5-4-3-2-1), then one for the mind in your own words (the hour after, say the thought fast, your words). Each
+   is picked from what has worked for you, runs by itself and flows into the next; Swap trades it for another of its kind
+   and Next skips it. A line across the top shows the minutes going by, and where yours usually pass. "It passed" is in
+   the corner the whole time.
+   After the three moves, "How is it now?": It passed, Still here (another round, with different moves) or I slipped,
+   and under them the bigger moves (step away for ten minutes, text someone, talk it through, bed at night, every tool).
+   It passed shows what you did: how long it took, how many you have ridden out, which move helped most (one tap, and SOS
+   leans on it next time), one line on why that move works with its lesson for later, and what set it off (one tap).
+   I slipped goes on to Rekindle (log.tsx), as before.
+   With ?practice=1 it is a practice ride for a calm moment: the same three moves, nothing saved as an urge. */
 import {
   addEvent,
+  blankP,
+  changeDay,
   gameCompute,
+  LESSONS,
+  newUrge,
+  optList,
+  patchEvent,
   rateUrTool,
+  RIDE_SLOTS,
+  rideMark,
+  ridePlan,
+  ridePracticeAsk,
+  rideRecord,
+  rideSlotOf,
+  rideSwap,
+  rideWeek,
+  rideWhy,
   rkStepFor,
-  setUrOff,
-  storyIfLine,
-  sunPlanNow,
-  urAnswer,
-  urDoLine,
   urEntry,
   urEvidence,
   urFromYou,
-  urPlanNow,
-  urKnow,
   urNight,
-  urNote,
-  urOffOf,
-  urPickSug,
-  urSuggestion,
   urTags,
   urTool,
   urWon,
-  type Tool,
+  withDay,
+  type UrState,
 } from '@daybook/core';
-import { Redirect, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Text } from '@/components/text';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
+import { Appear } from '@/components/appear';
 import { BigOption } from '@/components/choices';
-import { Flame } from '@/components/flame';
-import { BreathSun } from '@/components/orb';
-import { Dock, SceneFrame, Stage } from '@/components/scene';
-import { ToolGrid, ToolShape, toolTone } from '@/components/tool-grid';
-import { Button, Chip, Icon, T } from '@/components/ui';
-import { SosVoice } from '@/components/voice-note';
+import { RideBar } from '@/components/ride/bar';
+import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
+import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
+import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
+import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
+import { Text } from '@/components/text';
+import { ToolGrid } from '@/components/tool-grid';
+import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font, useSkyTheme, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
 
+/** what the end of a ride that passed shows: the entry it saved, how long it took, the moves done, the points it earned */
+interface Won {
+  key: string;
+  id: string;
+  mins: number;
+  moves: string[];
+  gain: number;
+}
+
 export default function Sos() {
-  const c = useTheme();
-  const { snap, tk, now, update, apply } = useStore();
+  const { snap, tk, now, update } = useStore();
+  /* late at night the screens go dark */
+  const night = urNight(new Date(now).getHours());
+  const sky = night ? 'night' : 'violet';
+  const c = useSkyTheme(sky);
   const sos = useSos();
-  const win = useWindowDimensions();
   const st = useCareSettings();
-  useEffect(() => count('sos'), []);
-  const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
-  const ur = sos.ur;
-  /* the small tag on each tool: how it went for you */
-  const tags = useMemo(() => (st ? urTags(snap.days, st, tk, sos.mem) : {}), [snap.days, st, tk, sos.mem]);
   const voice = useVoice();
-  /* before setup, help comes first and the setup comes right after: once SOS (or anything it opens) closes, the setup opens
-     again, even if its X was used before (components/welcome.tsx) */
+  const { practice: pq } = useLocalSearchParams<{ practice?: string }>();
+  const [practice] = useState(() => pq === '1');
+  /* a practice ride is not counted as an SOS */
+  useEffect(() => {
+    if (!practice) count('sos');
+  }, [practice]);
+  const g = useMemo(() => gameCompute(snap.days, st, snap.reviews, tk), [snap, st, tk]);
+  /* before setup, help comes first and the setup comes right after (components/welcome.tsx) */
   useState(() => {
     if (!snap.settings) setupKeep.shut = false;
   });
-  /* which reason "From you" shows, when there is no note: picked once, so it stays put while you read it */
-  const [pick] = useState(() => Math.random());
 
-  /* the breathing sun only runs while SOS is in front (not under a tool) */
+  /* the ride: its moves, which one is showing, and which round (Still here starts another) */
+  const [plan, setPlan] = useState<string[] | null>(null);
+  const [at, setAt] = useState(0);
+  const [round, setRound] = useState(0);
+  const [won, setWon] = useState<Won | null>(null);
+  const [allTools, setAllTools] = useState(false);
+  /* the moves already written into the entry's rounds */
+  const logged = useRef(0);
+  /* every move shown in this SOS, done or skipped: another round picks others */
+  const shown = useRef<string[]>([]);
+
+  /* the ride only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
-  /* the tool just set to Not for me (for Undo) */
-  const [offed, setOffed] = useState<string | null>(null);
-  /* SOS opened first (a notification or a bookmark) stays under what it hands on to (Go to bed, the pause): once that
-     ends the SOS and closes, SOS comes back into view with nothing open, so it closes too, to Today */
+  /* SOS opened first (a notification or a bookmark) stays under what it hands on to: once that ends the SOS and closes,
+     SOS comes back into view with nothing open, so it closes too */
   const began = useRef(false);
-  const open = useRef(ur);
-  open.current = ur;
-  if (ur) began.current = true;
+  const open = useRef(false);
+  open.current = practice || !!sos.ur || !!won;
+  if (sos.ur) began.current = true;
   useFocusEffect(
     useCallback(() => {
       setFront(true);
@@ -91,456 +119,500 @@ export default function Sos() {
       return () => setFront(false);
     }, []),
   );
-
-  /* a new SOS each time the screen opens. Leaving it (Close, the system Back, or on to the check-in) ends it: the screen
-     unmounts only when it is dismissed, not when a tool is pushed on top of it, so the cleanup is the right place. */
+  /* a new SOS each time the screen opens, ended when it is dismissed (a practice ride is never an SOS) */
   useEffect(() => {
-    if (!sos.ur) sos.begin(g ? g.pts : 0);
+    if (practice) return;
+    if (!sos.ur) sos.begin(g.pts);
     return () => sos.end();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [pu, setPu] = useState<UrState>(() => newUrge(Date.now(), 0));
+  const ur = practice ? pu : sos.ur;
+  const setUr = practice ? setPu : sos.set;
 
-  /* picked once per screen, like the legacy urCx: the line to do now (and whether to try something new), then, after a tool,
-     one thing worth knowing. Each is kept with the SOS so it does not change while you read it. */
-  /* the line stays put for the whole first screen: changing how strong it is must not swap the words and move everything
-     (strength changes only what the next screen suggests) */
-  const key = ur ? (ur.again ? 'a' + ur.again : 'first') : '';
-  useLayoutEffect(() => {
-    if (!ur || !st) return;
-    if ((ur.step === 'now' || ur.step === 'tools') && (ur.cx?.k !== key || ur.explore == null)) {
-      let mem = sos.mem;
-      let cx = ur.cx;
-      if (cx?.k !== key) {
-        const r = urDoLine(ur, Date.now(), mem, Math.random);
-        mem = r.mem;
-        cx = { ...(cx || {}), k: key, do: r.text, seen: true };
-      }
-      const probe = { ...ur, cx };
-      urPickSug(probe, snap.days, st, tk, Date.now(), mem, Math.random);
-      sos.set({ ...ur, cx, explore: probe.explore });
-      if (mem !== sos.mem) sos.setMem(mem);
-    } else if (ur.step === 'after' && (ur.cx?.kk !== String(ur.used.length) || !ur.cx?.kn)) {
-      const r = urKnow(ur, snap.days, tk, Date.now(), sos.mem, Math.random);
-      sos.set({ ...ur, cx: { ...(ur.cx || {}), kk: String(ur.used.length), kn: r.know } });
-      sos.setMem(r.mem);
-    }
-  }, [ur, key, st, snap.days, tk, sos]);
+  /* My reasons is a move only when there are words of your own (a note, a reason or a voice note) */
+  const words = !!(snap.settings && urFromYou(st, 0)) || !!voice.uri;
+  const can = useMemo(() => ({ words }), [words]);
+  useEffect(() => {
+    if (!ur || plan) return;
+    const p = ridePlan({ ...ur, used: ur.used.concat(shown.current) }, snap.days, st, tk, Date.now(), sos.mem, can);
+    /* a second round skips the breath: straight to new moves */
+    setPlan(round ? p.slice(1) : p);
+    setAt(0);
+  }, [ur, plan, round, snap.days, st, tk, sos.mem, can]);
 
-  if (!st || !g) return <Redirect href="/" />;
-  const night = urNight(new Date(now).getHours());
+  const tags = useMemo(() => urTags(snap.days, st, tk, sos.mem), [snap.days, st, tk, sos.mem]);
+  const mark = useMemo(() => rideMark(snap.days), [snap.days]);
+
   const level = Math.max(1, g.level.n);
-  /* the one suggestion. explore is settled above, so rand is not used here */
-  const pk = ur && ur.step === 'tools' ? urPickSug({ ...ur }, snap.days, st, tk, now, sos.mem, () => 1) : null;
+  const title = practice ? 'Practice' : 'SOS';
 
-  const pickTool = (id: string, combo = false) => {
-    if (!ur || !urTool(id)) return;
-    const sug = ur.step === 'tools' && pk ? pk.top.id : ur.sug;
-    sos.setMem((m) => urNote(m, sug, id));
-    /* a tool chosen over the suggestion is yours: if its round passes, it counts toward "You like this" (core urWon) */
-    sos.set({ ...ur, sug, mine: sug && id !== sug ? (ur.mine || []).concat(id) : ur.mine });
-    sos.setCombo(combo && id !== 'bed' ? 'bed' : null);
-    buzz('tap');
-    router.push({ pathname: '/tool/[id]', params: { id } });
-  };
+  if (won) return <Passed won={won} night={night} />;
+  if (practice && plan && at >= plan.length) return <PracticeDone sky={sky} level={level} />;
+  if (!ur || !plan)
+    return (
+      <SceneFrame title={title} sky={sky} onClose={close}>
+        {null}
+      </SceneFrame>
+    );
 
-  /* the answer to "How is it now?" (and "It passed"): Still strong goes on to the next tool; the others save the entry */
+  /* the answer to "How is it now?" (or It passed, any time): the moves since the last answer go into the entry's rounds */
   const save = (v: 'rode' | 'slipped' | 'again') => {
-    if (!ur) return;
-    const a = urAnswer(ur, v);
+    const fresh = ur.used.slice(logged.current);
+    logged.current = ur.used.length;
+    const code = v === 'rode' ? 'p' : v === 'again' ? 's' : 'x';
+    const a: UrState = { ...ur, rounds: ur.rounds.concat(fresh.map((id) => [id, code] as [string, 'p' | 's' | 'x'])).slice(0, 8) };
     if (v === 'again') {
-      sos.set({ ...a, step: 'tools' });
-      setOffed(null);
+      setUr({ ...a, again: (ur.again || 0) + 1, step: 'now' });
+      setRound((r) => r + 1);
+      setPlan(null);
+      setAllTools(false);
       buzz('tap');
       return;
     }
     const e = urEntry(a, v, st, Date.now());
     let id = '';
+    let gain = 0;
     const days = update((s) => {
       const r = addEvent(s.days, e.key, v, e.time, e.fields);
       id = r.id;
+      if (s.settings) gain = gameCompute(r.days, s.settings, s.reviews, tk).pts - gameCompute(s.days, s.settings, s.reviews, tk).pts;
       return { ...s, days: r.days };
     }).days;
     sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
-    const step = v === 'slipped' ? rkStepFor(days, e.key) : !e.trig ? 'trigger' : v === 'rode' && !e.did.length ? 'did' : 'done';
-    const kl = ur.cx?.kn?.l || '';
+    count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+    if (v === 'slipped') {
+      sos.end();
+      buzz('save');
+      router.replace({
+        pathname: '/log',
+        params: {
+          date: e.key,
+          evId: id,
+          outcome: v,
+          step: rkStepFor(days, e.key),
+          from: 'urge',
+          pts0: String(a.p0),
+          m: String(e.mins),
+          night: night ? '1' : '',
+        },
+      });
+      return;
+    }
+    buzz('lit');
+    setWon({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain });
     sos.end();
-    buzz('save');
-    router.replace({
-      pathname: '/log',
-      params: {
-        date: e.key,
-        evId: id,
-        outcome: v,
-        step,
-        from: 'urge',
-        pts0: String(a.p0),
-        st: a.strength || '',
-        m: String(e.mins),
-        night: night ? '1' : '',
-        kl,
-      },
-    });
   };
 
-  /* Talk it through opens on top of SOS, so its X comes back here (to the tools), and the urge is still open to log */
-  const talk = () => {
+  /* a bigger move, or any tool: it opens over SOS, and comes back to "How is it now?" when it is done */
+  const pickTool = (id: string) => {
+    if (!urTool(id)) return;
+    setUr({ ...ur, step: 'after' });
     buzz('tap');
-    router.push('/talk');
+    router.push({ pathname: '/tool/[id]', params: { id } });
   };
 
-  const sky = night ? 'night' : 'violet';
-  /* your own words (the note written on a calm day, or one of your reasons) and your voice note, with the tools. Before
-     setup there are none of your own yet, so none are shown, not the starting ones. */
-  const fy = snap.settings ? urFromYou(st, pick) : null;
-  const mine = !!fy || !!voice.uri;
-  if (!ur)
-    return (
-      <SceneFrame title="SOS" sky={sky} onClose={close}>
-        {null}
-      </SceneFrame>
-    );
-
-  /* "Would you use this again?": tapping the answer that is on takes it back */
-  const rate = (id: string, v: 1 | -1) => {
-    if (!ur) return;
-    const prev = ur.rate?.[id] || 0;
-    const next = prev === v ? 0 : v;
-    const r = { ...(ur.rate || {}) };
-    if (next) r[id] = next;
-    else delete r[id];
-    apply({ st: rateUrTool(st, id, next - prev) });
-    sos.set({ ...ur, rate: r });
-    buzz('tap');
-  };
-  const notForMe = (id: string, on: boolean) => {
-    apply({ st: setUrOff(st, id, on) });
-    setOffed(on ? id : null);
-    buzz('tap');
-  };
-
-  /* the second screen: every tool, and the one suggested for this moment */
-  if (ur.step === 'tools') {
-    const sug = pk ? urSuggestion(pk, ur.strength, snap.days, now, st, sos.mem) : null;
-    const was = offed ? urTool(offed) : null;
-    /* the if-then plan made on Sunday, when there is one, comes first: it was decided while calm. Else, late at night, the
-       line of the urge plan for bed or late at night (core urPlanNow). Before setup there is no plan of the person's own. */
-    const plan = sunPlanNow(snap.reviews, tk);
-    const own = !plan?.it && snap.settings ? urPlanNow(st, new Date(now).getHours()) : null;
-    const lead = ur.again
-      ? String(ur.cx?.do || '')
-      : plan?.it
-        ? 'Your plan: ' + storyIfLine(plan.it)
-        : own
-          ? 'Your plan: ' + own
-          : 'Pick one, or start the one below.';
-    return (
-      <SceneFrame
-        title="SOS"
-        sky={sky}
-        onBack={() => {
-          sos.set({ ...ur, step: 'now' });
-          setOffed(null);
-        }}
-        onClose={close}
-        pinSheet
-        sheet={
-          <>
-            {sug ? (
-              <View style={{ gap: 8 }}>
-                <View style={s.lab}>
-                  <Text style={[s.labT, { color: c.muted }]}>SUGGESTED FOR YOU</Text>
-                  {pk && pk.mode !== 'pin' ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={'Not for me. Stop suggesting ' + sug.tool.name}
-                      hitSlop={10}
-                      onPress={() => notForMe(sug.tool.id, true)}>
-                      <Text style={[s.labL, { color: c.accentText }]}>Not for me</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-                <Go
-                  tool={sug.tool}
-                  title={sug.title}
-                  sub={sug.sub}
-                  label={sug.combo ? sug.label : undefined}
-                  onPress={() => pickTool(sug.tool.id, !!sug.combo)}
-                />
-                {was ? (
-                  <View style={s.undo} accessibilityLiveRegion="polite">
-                    <T v="small" tone="muted" style={{ flex: 1 }}>
-                      {was.name} will not be suggested again. It stays in the list.
-                    </T>
-                    <Pressable accessibilityRole="button" hitSlop={10} onPress={() => notForMe(was.id, false)}>
-                      <Text style={[s.labL, { color: c.accentText }]}>Undo</Text>
-                    </Pressable>
-                  </View>
-                ) : sug.cap && win.height > 680 ? (
-                  <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
-                    {sug.cap}
-                  </T>
-                ) : null}
-              </View>
-            ) : null}
-            <View style={s.alt}>
-              <Alt icon="check" label="It passed" onPress={() => save('rode')} />
-              <Alt icon="chat" label="Talk it through" onPress={talk} />
-            </View>
-          </>
-        }>
-        <T v="title" style={s.c} accessibilityRole="header">
-          {ur.again ? 'Try something different' : 'What will help right now?'}
-        </T>
-        {lead ? (
-          <T tone="muted" style={[s.c, { maxWidth: 360 }]}>
-            {lead}
-          </T>
-        ) : null}
-        {mine ? <FromYou cap={fy?.cap || 'From you'} text={fy?.t || ''} /> : null}
-        <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={(id) => pickTool(id)} />
-      </SceneFrame>
-    );
-  }
-
-  if (ur.step === 'after') {
-    const t = urTool(ur.used[ur.used.length - 1] || '');
-    const r = t ? ur.rate?.[t.id] || 0 : 0;
-    const off = !!t && urOffOf(st).indexOf(t.id) >= 0;
+  /* ---------- how is it now? ---------- */
+  if (!practice && (ur.step === 'after' || ur.step === 'tools' || at >= plan.length)) {
+    const did = ur.used.slice(logged.current).filter((x, i, l) => l.indexOf(x) === i);
     const rec = urEvidence(snap.days);
+    const big: [string, string, string][] = [
+      ['pause', 'timer', 'Step away 10 min'],
+      ['message', 'chat', 'Text someone'],
+      night ? ['bed', 'moon', 'Go to bed'] : ['talk', 'ask', 'Talk it through'],
+    ];
     return (
-      <SceneFrame title="SOS" sky={sky} onClose={close}>
-        <Flame level={level} size={80} />
-        <T v="title" style={s.c} accessibilityRole="header">
-          How is it now?
-        </T>
-        <T style={s.c}>
-          {t ? (
-            <>
-              You tried <Text style={{ fontFamily: font.bodyBold }}>{t.name}</Text>
-              {/[?!]$/.test(t.name) ? ' ' : '. '}
-            </>
-          ) : null}
-          Tap what is true now.
-        </T>
-        {ur.cx?.kn ? <Know text={ur.cx.kn.t} /> : null}
-        {rec.n ? (
-          <View
-            style={s.rec}
-            accessible
-            accessibilityLabel={`Your record: ${rec.n} ${rec.n === 1 ? 'urge' : 'urges'} ridden out${rec.med ? `. Most pass in ${rec.med} minutes` : ''}.`}>
-            <RecChip icon="wave" b={String(rec.n)} rest={' ' + (rec.n === 1 ? 'urge' : 'urges') + ' ridden out'} />
-            {rec.med ? <RecChip icon="timer" pre="Most pass in " b={rec.med + ' min'} /> : null}
-          </View>
-        ) : null}
-        {/* the answers sit low, where the thumb is (CLAUDE.md): the question about the tool, then the three answers lowest,
-            as the main thing to tap */}
-        <Dock>
-          {t ? (
-            <View style={[s.rate, { backgroundColor: c.scBtn }]} accessibilityRole="radiogroup" accessibilityLabel={'Would you use ' + t.name + ' again?'}>
-              <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
-                Would you use {t.name} again?
-              </T>
-              <View style={s.rateRow}>
-                <Chip role="radio" label="Yes" on={r === 1} onPress={() => rate(t.id, 1)} />
-                <Chip role="radio" label="Not really" on={r === -1} onPress={() => rate(t.id, -1)} />
-              </View>
-              {r === 1 ? (
-                <T v="small" tone="muted" style={s.c}>
-                  Good to know. SOS will offer it more.
-                </T>
-              ) : r === -1 ? (
-                off ? (
-                  <T v="small" tone="muted" style={s.c}>
-                    It will not be suggested again. It stays in the list.
-                  </T>
-                ) : st.urPin === t.id ? (
-                  <T v="small" tone="muted" style={s.c}>
-                    Good to know. It is still your go-to in Settings.
-                  </T>
-                ) : (
-                  <Pressable accessibilityRole="button" onPress={() => notForMe(t.id, true)} style={s.plan}>
-                    <Text style={[s.planT, { color: c.accentText }]}>Stop suggesting {t.name}</Text>
-                  </Pressable>
-                )
-              ) : null}
+      <SceneFrame title={title} sky={sky} onClose={close}>
+        <RideBar t0={ur.t0} mark={mark} on={front} color={c.accent} />
+        <Stage key={'check' + round} dir={1}>
+          <T v="title" style={s.c} accessibilityRole="header">
+            How is it now?
+          </T>
+          {did.length ? (
+            <View style={s.did} accessible accessibilityLabel={'You did: ' + did.map(moveName).join(', ')}>
+              {did.map((x) => (
+                <View key={x} style={[s.didP, { backgroundColor: c.scBtn }]}>
+                  <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={15} color={moveTint(c, x)} />
+                  <Text style={[s.didT, { color: c.ink }]}>{moveName(x)}</Text>
+                </View>
+              ))}
             </View>
           ) : null}
-          <View style={s.opts}>
+          <Middle>
+            <View style={s.rec} accessible accessibilityLabel={rec.n ? rec.n + ' urges ridden out before this one.' : 'Urges rise, peak and pass.'}>
+              {rec.n ? (
+                <>
+                  <Text style={[s.recN, { color: c.ink }]}>{rec.n}</Text>
+                  <T tone="muted" style={s.c}>
+                    {rec.n === 1 ? 'urge' : 'urges'} ridden out before this one{rec.med ? '. Yours usually pass in about ' + rec.med + ' min.' : '.'}
+                  </T>
+                </>
+              ) : (
+                <T tone="muted" style={s.c}>
+                  Urges rise, peak and pass. Each one you wait out makes the next one easier.
+                </T>
+              )}
+            </View>
+          </Middle>
+          <Dock>
             <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => save('rode')} />
-            <BigOption tone="sun" icon="timer" title="Still strong" sub="Try something different." onPress={() => save('again')} />
+            <BigOption tone="sun" icon="timer" title="Still here" sub="Another round, with different moves." onPress={() => save('again')} />
             <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => save('slipped')} />
-          </View>
-        </Dock>
+            <T v="small" tone="muted" style={[s.c, { marginTop: 6 }]}>
+              Or something bigger
+            </T>
+            <View style={s.bigRow}>
+              {big.map(([id, ic, label]) => (
+                <Pressable
+                  key={id}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    if (id !== 'talk') return pickTool(id);
+                    buzz('tap');
+                    router.push('/talk');
+                  }}
+                  style={({ pressed }) => [s.bigB, { backgroundColor: c.scBtn, opacity: pressed ? 0.8 : 1 }]}>
+                  <Icon name={ic} size={20} color={c.accentText} />
+                  <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable accessibilityRole="button" accessibilityState={{ expanded: allTools }} onPress={() => setAllTools(!allTools)} style={s.all} hitSlop={8}>
+              <Text style={[s.allT, { color: c.accentText }]}>{allTools ? 'Hide the tools' : 'Every tool'}</Text>
+            </Pressable>
+            {allTools ? <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={pickTool} /> : null}
+          </Dock>
+        </Stage>
       </SceneFrame>
     );
   }
 
-  /* the first screen: only the sun. The words to breathe by, the sun with its ring, one small line for the body, and Next.
-     Your own words and your record wait on the next screens, where there is room for them. */
+  /* ---------- the ride ---------- */
+  const id = plan[Math.min(at, plan.length - 1)];
+  if (shown.current.indexOf(id) < 0) shown.current.push(id);
+  const Move = MOVES[id] || MOVES.breathe;
+  const slot = rideSlotOf(id);
+  const swappable = !!slot && RIDE_SLOTS[slot].filter((x) => x !== 'reasons' || can.words).length > 1;
+  const next = (done: boolean) => {
+    if (done) setUr({ ...ur, used: ur.used.concat(id) });
+    setAt((x) => x + 1);
+    buzz(at + 1 >= plan.length ? 'save' : 'tap');
+  };
+  const passedPill = practice ? null : (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="It passed. Save it."
+      onPress={() => save('rode')}
+      hitSlop={6}
+      style={({ pressed }) => [s.passed, { backgroundColor: c.mint, opacity: pressed ? 0.85 : 1 }]}>
+      <Icon name="check" size={16} color={night ? '#0B3B2E' : '#FFFFFF'} />
+      <Text style={[s.passedT, { color: night ? '#0B3B2E' : '#FFFFFF' }]}>It passed</Text>
+    </Pressable>
+  );
   return (
-    <SceneFrame title="SOS" sky={sky} onClose={close}>
-      <Stage dir={0}>
-        <BreathSun on={front} breaths={3} />
-        {ur.cx?.do ? (
-          <T tone="muted" style={[s.c, s.body]}>
-            {String(ur.cx.do)}
-          </T>
-        ) : null}
-        {/* Next: big, solid and easy to hit at any time, even before the three breaths are done */}
-        <Dock>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Next. Pick what will help."
+    <SceneFrame title={title} sky={sky} onClose={close} topRight={passedPill}>
+      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front} color={moveTint(c, id)} />
+      <Stage key={round + '-' + at + '-' + id} dir={at || round ? 1 : 0}>
+        <Move on={front} onDone={() => next(true)} />
+      </Stage>
+      <Dock>
+        <View style={s.ctl}>
+          <Round
+            icon="swap"
+            label={swappable ? 'Swap for another ' + (slot === 'mind' ? 'mind' : 'body') + ' move' : 'Nothing to swap'}
+            disabled={!swappable}
             onPress={() => {
-              sos.set({ ...ur, step: 'tools', sug: null });
+              setPlan(rideSwap(plan, at, can));
               buzz('tap');
             }}
-            hitSlop={8}
-            style={({ pressed }) => [
-              s.next,
-              {
-                backgroundColor: c.accent,
-                shadowColor: c.accentDeep,
-                shadowOffset: { width: 0, height: pressed ? 1 : 5 },
-                transform: [{ translateY: pressed ? 4 : 0 }],
-              },
-            ]}>
-            <Text style={[s.nextT, { color: c.accentInk }]}>Next</Text>
-            <View style={[s.nextI, { backgroundColor: c.accentInk }]}>
-              <Icon name="next" size={24} color={c.accent} />
+          />
+          <View style={s.mid} accessible accessibilityLabel={'Move ' + (at + 1) + ' of ' + plan.length + ': ' + moveName(id)}>
+            <View style={s.segs}>
+              {plan.map((x, j) => (
+                <View
+                  key={j}
+                  style={[s.seg, { flexGrow: j === at ? 2.4 : 1, backgroundColor: j < at ? c.ink + '66' : j === at ? moveTint(c, x) : c.ink + '1F' }]}
+                />
+              ))}
             </View>
-          </Pressable>
-        </Dock>
-      </Stage>
+            <Text style={[s.segT, { color: c.muted }]} numberOfLines={1}>
+              {moveName(id)} · {at + 1} of {plan.length}
+            </Text>
+          </View>
+          <Round icon="next" label={at + 1 >= plan.length ? 'Done with the moves' : 'Next move'} onPress={() => next(false)} />
+        </View>
+      </Dock>
     </SceneFrame>
   );
 }
 
-/* ---------- the parts ---------- */
-/* the one next step: a big button with the tool, how long it takes and what it does */
-function Go({ tool, title, sub, label, onPress }: { tool: Tool; title: string; sub: string; label?: string; onPress: () => void }) {
+const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
+
+/* ---------- the end of a ride that passed ---------- */
+function Passed({ won, night }: { won: Won; night: boolean }) {
+  const c = useSkyTheme(night ? 'night' : 'mint');
+  const { snap, tk, update, apply } = useStore();
+  const st = useCareSettings();
+  const sos = useSos();
+  const rec = rideRecord(snap.days, won.mins);
+  const week = rideWeek(snap.days, tk);
+  const [helped, setHelped] = useState<string | null>(null);
+  const [trig, setTrig] = useState<string | null>(null);
+  /* practice is offered once, after the first few rides */
+  const [askPrac] = useState(() => ridePracticeAsk(snap.days, sos.mem));
+  useEffect(() => {
+    if (askPrac) sos.setMem((m) => ({ ...m, pracAsk: 1 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const why = rideWhy(helped, won.moves);
+  const lesson = why?.l ? (LESSONS as { id: string; title: string }[]).find((l) => l.id === why.l) : null;
+  const trigs = (optList('trig', st.opts, { time: null, sel: trig, all: false }).list as [string, string][]).slice(0, 7);
+  const mins = won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
+  const pickHelped = (x: string) => {
+    const nx = helped === x ? null : x;
+    let s0 = st;
+    if (helped) s0 = rateUrTool(s0, helped, -1);
+    if (nx) s0 = rateUrTool(s0, nx, 1);
+    apply({ st: s0 });
+    setHelped(nx);
+    buzz('tap');
+  };
+  const pickTrig = (v: string) => {
+    const nx = trig === v ? null : v;
+    setTrig(nx);
+    update((s) => ({ ...s, days: patchEvent(s.days, won.key, won.id, { trigger: nx && nx !== 'none' ? nx : null }) }));
+    buzz('tap');
+  };
+  const chips: string[] = ['Ride ' + rec.n];
+  if (rec.faster && rec.med) chips.push('Faster than your usual ' + rec.med + ' min');
+  if (week > 1) chips.push(week + ' this week');
+  if (won.gain > 0) chips.push('+' + won.gain + ' points');
+  return (
+    <SceneFrame title="SOS" sky={night ? 'night' : 'mint'} onClose={close}>
+      <WonHero mins={won.mins} />
+      <View style={s.wonWords}>
+        <T v="title" style={s.c} accessibilityRole="header">
+          Ridden out.
+        </T>
+        <T style={s.c}>It passed in {mins}. You stayed with it, and it went.</T>
+      </View>
+      <Appear delay={420} style={s.chips}>
+        {chips.map((t) => (
+          <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
+            <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
+          </View>
+        ))}
+      </Appear>
+      <Appear delay={560} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+        {won.moves.length ? (
+          <>
+            <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
+            <View style={s.wrap} accessibilityRole="radiogroup">
+              {won.moves.map((x) => {
+                const on = helped === x;
+                return (
+                  <Pressable
+                    key={x}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: on }}
+                    onPress={() => pickHelped(x)}
+                    style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
+                    <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
+                    <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{moveName(x)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+        {why ? (
+          <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
+            <T v="small" style={{ lineHeight: 20 }}>
+              {why.t}
+            </T>
+            {lesson ? (
+              <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
+                <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
+              </Pressable>
+            ) : null}
+          </Appear>
+        ) : null}
+        {won.moves.length || why ? <View style={[s.rule, { backgroundColor: c.line }]} /> : null}
+        <Text style={[s.q, { color: c.ink }]}>
+          What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
+        </Text>
+        <View style={s.wrap}>
+          {trigs.map(([v, label]) => {
+            const on = trig === v;
+            return (
+              <Pressable
+                key={v}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={() => pickTrig(v)}
+                style={[s.pick, { backgroundColor: on ? c.ink : c.bg }]}>
+                <Text style={[s.pickT, { color: on ? c.surface : c.ink }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Appear>
+      {askPrac ? (
+        <T v="small" tone="muted" style={s.c}>
+          Tip: run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
+        </T>
+      ) : null}
+      <Dock>
+        <Button label="Done" onPress={close} />
+      </Dock>
+    </SceneFrame>
+  );
+}
+
+/** where each shape of the burst around the ring lands: x, y from the middle, its kind, its turn */
+const BURST: [number, number, ShapeKind, number][] = [
+  [-112, -30, 'cookie4', 12],
+  [-84, 62, 'heart', -10],
+  [-30, -98, 'sunny', 0],
+  [44, -96, 'clover4', 20],
+  [110, -18, 'gem', 10],
+  [92, 66, 'softBurst', 4],
+];
+
+/** the top of "Ridden out": the time line closed into a ring, with the minutes it took in the middle */
+function WonHero({ mins }: { mins: number }) {
   const c = useTheme();
-  const ink = toolTone(c, tool.tone)[1];
+  const reduce = useReducedMotion();
+  /* a few shapes spring out from behind the ring and settle around it, once */
+  const fly = useRef(BURST.map(() => new Animated.Value(reduce ? 1 : 0))).current;
+  useEffect(() => {
+    if (reduce) return;
+    Animated.stagger(
+      50,
+      fly.map((v) => Animated.spring(v, { toValue: 1, ...SPRING.default, delay: 120, useNativeDriver: NATIVE })),
+    ).start();
+  }, [reduce, fly]);
+  const tints = [c.mint, c.sun, c.sky, c.coral, c.violet, c.sun2];
+  return (
+    <Appear by={0} duration={360} style={s.hero}>
+      {BURST.map((b, i) => (
+        <Animated.View
+          key={i}
+          pointerEvents="none"
+          style={[
+            s.burst,
+            {
+              opacity: fly[i],
+              transform: [
+                { translateX: fly[i].interpolate({ inputRange: [0, 1], outputRange: [0, b[0]] }) },
+                { translateY: fly[i].interpolate({ inputRange: [0, 1], outputRange: [0, b[1]] }) },
+                { rotate: fly[i].interpolate({ inputRange: [0, 1], outputRange: ['-90deg', b[3] + 'deg'] }) },
+              ],
+            },
+          ]}>
+          <Shape kind={b[2]} size={22} color={tints[i % tints.length]} />
+        </Animated.View>
+      ))}
+      <WavyRing size={150} p={1} color={c.mint} track={c.mint + '33'} stroke={6}>
+        <View style={{ alignItems: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Text style={[s.heroN, { color: c.ink }]}>{mins < 1 ? '<1' : mins}</Text>
+          <Text style={[s.heroU, { color: c.muted }]}>{mins <= 1 ? 'minute' : 'minutes'}</Text>
+        </View>
+      </WavyRing>
+    </Appear>
+  );
+}
+
+/* ---------- the end of a practice ride ---------- */
+function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }) {
+  const { tk, update } = useStore();
+  const sos = useSos();
+  const done = () => {
+    /* a practice ride is a calm move on today's log, like a tool */
+    update((s) => {
+      if (!s.settings) return s;
+      const day = changeDay(s.days[tk], tk, (d) => {
+        const p = d.p || blankP();
+        p.c = Math.min(50, p.c + 1);
+        if (p.tl.indexOf('breathe') < 0) p.tl.push('breathe');
+        d.p = p;
+      });
+      return { ...s, days: withDay(s.days, tk, day) };
+    });
+    sos.setMem((m) => ({ ...m, prac: (typeof m.prac === 'number' ? m.prac : 0) + 1 }));
+    buzz('save');
+    close();
+  };
+  return (
+    <SceneFrame title="Practice" sky={sky} onClose={close}>
+      <Finish level={level} size={130} title="Practice done." text="Run it while calm, and it runs itself when it counts. Same three moves, every time." />
+      <Dock>
+        <Button label="Done" onPress={done} />
+      </Dock>
+    </SceneFrame>
+  );
+}
+
+/** a round button at the side of the ride's controls */
+function Round({ icon, label, onPress, disabled }: { icon: string; label: string; onPress: () => void; disabled?: boolean }) {
+  const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
-        s.go,
-        {
-          backgroundColor: c.accent,
-          shadowColor: c.accentDeep,
-          shadowOffset: { width: 0, height: pressed ? 1 : 5 },
-          transform: [{ translateY: pressed ? 4 : 0 }],
-        },
-      ]}>
-      <ToolShape id={tool.id} ic={tool.ic} size={54} iconSize={26} color={c.surface} ink={ink} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[s.gt, { color: c.accentInk }]}>{title}</Text>
-        {sub ? <Text style={[s.gs, { color: c.accentInk }]}>{sub}</Text> : null}
-      </View>
-      <Icon name="next" size={22} color={c.accentInk} />
+      hitSlop={6}
+      style={({ pressed }) => [s.round, { backgroundColor: c.scBtn, opacity: disabled ? 0.35 : pressed ? 0.7 : 1 }]}>
+      <Icon name={icon} size={22} color={c.ink} />
     </Pressable>
-  );
-}
-
-function Alt({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
-  const c = useTheme();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.altB, { backgroundColor: c.accentSoft, opacity: pressed ? 0.8 : 1 }]}>
-      <Icon name={icon} size={18} color={c.accentText} />
-      <Text style={[s.altT, { color: c.accentText }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function RecChip({ icon, pre, b, rest }: { icon: string; pre?: string; b?: string; rest?: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.chip, { backgroundColor: c.scBtn }]}>
-      <Icon name={icon} size={16} color={c.ink} />
-      <T v="small" style={{ fontFamily: font.bodyMedium }}>
-        {pre}
-        {b ? <Text style={{ fontFamily: font.bodyBold }}>{b}</Text> : null}
-        {rest}
-      </T>
-    </View>
-  );
-}
-
-/* your own words: the note written on a calm day, or one of your reasons, and your voice note if you recorded one */
-function FromYou({ cap, text }: { cap: string; text: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.note, { backgroundColor: c.scBtn }]}>
-      <T v="small" style={s.noteCap}>
-        {cap.toUpperCase()}
-      </T>
-      {text ? <T style={s.noteQ}>{text}</T> : null}
-      <SosVoice />
-    </View>
-  );
-}
-
-function Know({ text }: { text: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.know, { backgroundColor: c.scBtn }]}>
-      <T style={{ fontSize: 14.5, lineHeight: 20, textAlign: 'center' }}>{text}</T>
-    </View>
   );
 }
 
 const s = StyleSheet.create({
-  /* Next is a pill with the arrow in a round light dot at its end (Android's style) */
-  next: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 66,
-    paddingLeft: 28,
-    paddingRight: 9,
-    borderRadius: 33,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-  },
-  nextT: { fontFamily: font.bodyBold, fontSize: 21 },
-  nextI: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  body: { maxWidth: 340, fontSize: 16.5, lineHeight: 23 },
   c: { textAlign: 'center' },
-  opts: { alignSelf: 'stretch', gap: 10 },
-  rec: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingLeft: 9, paddingRight: 12, borderRadius: 999 },
-  note: { gap: 3, maxWidth: 340, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 11, borderRadius: 18 },
-  noteCap: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1, opacity: 0.78 },
-  noteQ: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
-  lab: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
-  labT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
-  labL: { fontFamily: font.bodySemi, fontSize: 14, textDecorationLine: 'underline' },
-  undo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
-  rate: { alignSelf: 'stretch', gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18 },
-  rateRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  go: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    minHeight: 74,
-    paddingVertical: 12,
-    paddingLeft: 12,
-    paddingRight: 14,
-    borderRadius: 22,
+  passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
+  passedT: { fontFamily: font.bodyBold, fontSize: 14 },
+  ctl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  mid: { flex: 1, gap: 7, alignItems: 'center' },
+  segs: { flexDirection: 'row', gap: 5, alignSelf: 'stretch' },
+  seg: { flex: 1, height: 6, borderRadius: 3 },
+  segT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  did: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
+  didP: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 9, paddingRight: 11, minHeight: 30, borderRadius: 15 },
+  didT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  bigRow: { flexDirection: 'row', gap: 8 },
+  bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 18 },
+  bigT: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center' },
+  all: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
+  allT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
+  chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
+  chipT: { fontFamily: font.bodyBold, fontSize: 13.5 },
+  card: {
+    alignSelf: 'stretch',
+    gap: 10,
+    padding: 16,
+    borderRadius: 24,
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 1,
     shadowRadius: 0,
-    elevation: 3,
+    elevation: 2,
   },
-  gt: { fontFamily: font.display, fontSize: 21, lineHeight: 25 },
-  gs: { fontFamily: font.body, fontSize: 14, lineHeight: 18, marginTop: 3, opacity: 0.88 },
-  alt: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  plan: { alignSelf: 'center', minHeight: 36, justifyContent: 'center', paddingHorizontal: 8 },
-  planT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline', textAlign: 'center' },
-  altB: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10, borderRadius: 14 },
-  altT: { fontFamily: font.bodySemi, fontSize: 15 },
-  know: { alignSelf: 'center', maxWidth: 400, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16 },
+  q: { fontFamily: font.display, fontSize: 18, lineHeight: 23 },
+  opt: { fontFamily: font.body, fontSize: 13 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 13, borderRadius: 19 },
+  pickT: { fontFamily: font.bodySemi, fontSize: 14.5 },
+  lesson: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  rule: { height: 1, marginVertical: 2 },
+  rec: { alignItems: 'center', gap: 2, maxWidth: 300 },
+  recN: { fontFamily: font.displayBold, fontSize: 56, lineHeight: 62, fontVariant: ['tabular-nums'] },
+  hero: { alignItems: 'center', justifyContent: 'center', paddingTop: 6, height: 190, alignSelf: 'stretch' },
+  burst: { position: 'absolute', left: '50%', top: '50%', marginLeft: -11, marginTop: -11 },
+  heroN: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 52, fontVariant: ['tabular-nums'] },
+  heroU: { fontFamily: font.bodySemi, fontSize: 14 },
+  wonWords: { alignItems: 'center', gap: 4 },
 });

@@ -205,15 +205,17 @@ describe('SOS memory and rounds', () => {
     expect(top()).toBe('move');
     st = core.setUrOff(st, 'move', true);
     expect(core.urOffOf(st)).toEqual(['move']);
-    expect(top()).toBe('surprise');
+    expect(top()).toBe('ground');
     expect(core.urRank(sc, {}, st, '2026-10-15', now, {}).find((x) => x.id === 'move')!.off).toBe(true);
+    /* Surprise me is never suggested on its own (core UR_QUIET), even for boredom */
+    expect(core.urRank(sc, {}, st, '2026-10-15', now, {}).find((x) => x.id === 'surprise')!.off).toBe(true);
     /* it can still be your go-to, and it can come back */
     expect(core.urPickSug({ ...sc }, {}, { ...st, urPin: 'move' }, '2026-10-15', now, {}, () => 0.99).top.id).toBe('move');
     st = core.setUrOff(st, 'move', false);
     expect(top()).toBe('move');
     st = core.rateUrTool(core.rateUrTool(st, 'move', -1), 'move', -1);
     expect(core.urLikeOf(st, 'move')).toBe(-2);
-    expect(top()).toBe('surprise');
+    expect(top()).toBe('ground');
     for (let i = 0; i < 5; i++) st = core.rateUrTool(st, 'curious', 1);
     expect(core.urLikeOf(st, 'curious')).toBe(3);
     expect(top()).toBe('curious');

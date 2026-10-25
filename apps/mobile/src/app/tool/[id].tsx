@@ -71,7 +71,7 @@ export default function Tool() {
   /* late at night, a tool from SOS goes dark too */
   const sky: Sky = sos.ur && urNight(new Date(now).getHours()) ? 'night' : SKY[tool.id] || 'sky';
   const stepped = tool.id === 'curious' || tool.id === 'forward';
-  const nSteps = tool.id === 'curious' ? 5 : 3;
+  const nSteps = 3;
   let body: React.ReactNode;
   switch (tool.id) {
     case 'breathe':

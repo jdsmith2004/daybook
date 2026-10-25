@@ -27,7 +27,7 @@ import { StyleSheet, View } from 'react-native';
 import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { useSeconds } from '@/components/orb';
-import { Button, Card, Chip, T } from '@/components/ui';
+import { Button, Card, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
@@ -47,7 +47,6 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
   const st = useCareSettings();
   const t = sos.timer;
   const [idea, setIdea] = useState(() => pickIdea(st, null, Math.random));
-  const [guide, setGuide] = useState(false);
   const [again, setAgain] = useState(false);
   const sec = useSeconds(t ? t.start : null, !!t);
   const nowMs = t ? t.start + sec * 1000 : openedAt;
@@ -89,6 +88,13 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     setAgain(false);
     buzz('tap');
   };
+  /* from SOS the ten minutes start at once: the urge is already here, so there is nothing to read first */
+  useEffect(() => {
+    if (sos.ur && !t) start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* the one thing that helps most while waiting: a different room (in bed, out of it) */
+  const room = trigFits('late', clockOf(nowMs)) ? 'If you are in bed, get up and leave the room.' : 'If you can, step into another room.';
   const endEarly = () => {
     if (!t) return;
     credit({ ...t, early: true, dur: Math.max(1000, Date.now() - t.start) });
@@ -163,8 +169,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         <Dock>
           <Button label="Start the 10 minutes" onPress={start} />
           <T v="small" tone="muted" style={s.c}>
-            {(trigFits('late', clockOf(Date.now())) ? 'If you are in bed, get up and leave the room.' : 'If you can, step into another room.') +
-              ' The timer keeps counting if you close the app. Open Daybook again to see how it went.'}
+            {room + ' The timer keeps counting if you close the app.'}
           </T>
         </Dock>
       </Stage>
@@ -177,14 +182,15 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         <T v="title" style={s.c} accessibilityRole="header">
           Let the wave pass.
         </T>
+        <T style={s.c}>{room}</T>
         <Middle>
           {/* Move's timer: the squiggle ring fills as the ten minutes pass, and a soft shape inside breathes slowly by
-              itself (4 in, 6 out); the breathing guide adds the words */}
+              itself (4 in, 6 out) */}
           <ToolTimer
             p={1 - left / t.dur}
             left={left}
             sec={el}
-            beat={guide ? { ...BEAT_BREATH, words: ['Breathe in', 'Breathe out'] } : BEAT_BREATH}
+            beat={BEAT_BREATH}
             label="Waiting it out"
             color={c.scheme === 'dark' ? c.sun : c.accent}
             ink={c.accentText}
@@ -200,14 +206,9 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
             </T>
             <Link label="Another idea" onPress={() => setIdea(pickIdea(st, idea, Math.random))} />
           </Card>
+          {/* ten minutes is a guide: the pause can end whenever the urge eases, or hand on to a person */}
           <View style={s.row}>
-            <Chip label="Breathing guide" on={guide} onPress={() => setGuide(!guide)} />
-            <Chip label="End the pause" on={false} onPress={endEarly} />
-          </View>
-          <T v="small" tone="muted" style={s.c}>
-            Ten minutes is a guide. End the pause whenever the urge eases.
-          </T>
-          <View style={{ alignSelf: 'center' }}>
+            <Link label="End the pause" onPress={endEarly} />
             <Link
               label="Want a person right now?"
               onPress={() => {
@@ -283,6 +284,6 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, justifyContent: 'center' },
   opts: { alignSelf: 'stretch', gap: 10 },
 });

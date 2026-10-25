@@ -47,7 +47,8 @@ export interface UrMem {
   off?: Record<string, number>;
   rv?: Record<string, number>;
   rev?: number;
-  fwd?: { a: string[]; b: string[] };
+  /** Play it forward: how an hour after giving in and after riding it out usually feels, and the good thing to picture tomorrow */
+  fwd?: { a: string[]; b: string[]; c?: string };
   bedPlan?: string;
   /** the tools you chose yourself over the one suggested, counted up to 4: SOS leans toward what you pick */
   pick?: Record<string, number>;
@@ -239,11 +240,25 @@ export function urRank(
     const lk = urLikeOf(st, id);
     s += lk > 0 ? lk * 2 : lk * 3;
     /* Reach a person is never the suggestion (it is in the list); Breathe can be, from the first round, as one of the two
-       that help most */
-    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message');
+       that help most. Surprise me is not a tool of its own any more (the owner, October 24, 2026): its ideas are the
+       pause's "While you wait, try", and it opens only from What do I need? (bored). */
+    const off = id !== pin && (hide.indexOf(id) >= 0 || id === 'message' || UR_QUIET.indexOf(id) >= 0);
     return { id, score: s, r, rt, ra, tk: ctx, pin: id === pin, off };
   }).sort((a, b) => b.score - a.score || UR_PREF.indexOf(a.id) - UR_PREF.indexOf(b.id));
 }
+
+/** Play it forward: one good, specific moment to picture tomorrow morning. Picturing a real moment ahead makes later
+    rewards weigh more against the one right now (episodic future thinking: Stein and others 2016, with smokers). */
+export const FWD_TOMORROW: [string, string][] = [
+  ['clear', 'Waking up clear-headed'],
+  ['word', 'Knowing I kept my word to myself'],
+  ['eyes', 'Looking someone in the eye'],
+  ['rested', 'A full night of sleep behind me'],
+  ['early', 'Starting the day on time, not behind'],
+];
+
+/** tools kept for the pages that open them, but never suggested and not in the tool lists */
+export const UR_QUIET = ['surprise'];
 
 /** the two tools that help most people first (the owner, October 24, 2026): a slow breath with a long breath out, and
     5-4-3-2-1. They get a lift for everyone, so they are suggested more often until a person's own record says otherwise. */

@@ -355,6 +355,9 @@ function normEvent(e){
  if(e.outcome==='slipped'&&Number.isInteger(e.wm)&&e.wm>=0&&e.wm<=240)o.wm=e.wm;
  /* keep or start fresh, on a slip that ends a run of RUN_ASK days or more: true keep the run going, false start fresh, absent not answered */
  if(e.outcome==='slipped'&&(e.keep===true||e.keep===false))o.keep=e.keep;
+ /* on a slip (slip.ts): the feeling named for before it (fb, a word from the field of feelings) and how it felt afterwards (fa) */
+ if(e.outcome==='slipped'&&typeof e.fb==='string'&&/^[A-Za-z][A-Za-z ]{0,23}$/.test(e.fb))o.fb=e.fb;
+ if(e.outcome==='slipped'&&['shame','giveup','angry','flat','pull','okay'].indexOf(e.fa)>=0)o.fa=e.fa;
  return o;
 }
 function normCheckin(c){

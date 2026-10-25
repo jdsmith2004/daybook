@@ -188,9 +188,11 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     if (read.length) more.push({ ic: 'book', t: 'Read: ' + read.join(', ') });
     /* a short plan made ahead of the hard hours had no slip in mind: it reads as a plan */
     const talks = (p.tt || []).filter((t) => !t.pr).length;
-    const plans = (p.tt || []).length - talks;
+    const after = (p.tt || []).filter((t) => t.pr && t.fw).length;
+    const plans = (p.tt || []).length - talks - after;
     if (talks) more.push({ ic: 'chat', t: talks === 1 ? 'Talked it through first' : 'Talked it through ' + talks + ' times' });
     if (plans) more.push({ ic: 'compass', t: 'Made a plan for the hard hours' });
+    if (after) more.push({ ic: 'compass', t: 'Made a plan for next time' });
     if (p.hw != null) more.push({ ic: 'shield', t: 'Held your hard hours' });
     if (p.po) more.push({ ic: 'phone', t: 'Phone away at night' });
     if (p.wd) more.push({ ic: 'moon', t: 'Wound down before bed' });

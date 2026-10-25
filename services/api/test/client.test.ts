@@ -162,6 +162,22 @@ describe('two devices of one person', () => {
     expect(b.snap.days[k].events[0].wt).toBe(10);
   });
 
+  it('the feelings named after a slip, and the plan made from them, go across with it', async () => {
+    const k = '2026-10-17';
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    const plan = { ...core.newTalk(150), p: 'change' as const, pr: 1 as const, n: 'close' as const, m: ['text'] as core.TalkMove[], mo: 'late', fw: 'Lonely' };
+    a.change(
+      (s) => ({ ...s, days: core.saveTalk(core.addEvent(s.days, k, 'slipped', '22:00', { id: 's3', fb: 'Lonely', fa: 'flat' }, 100).days, k, plan, 150) }),
+      150,
+    );
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(b.snap.days[k].events[0]).toMatchObject({ fb: 'Lonely', fa: 'flat' });
+    expect(core.talksOf(b.snap.days)[0].talk.fw).toBe('Lonely');
+  });
+
   it('a deleted day stays deleted, and an older copy does not bring it back', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

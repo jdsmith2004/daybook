@@ -358,7 +358,7 @@ export function talkMoveWords(t: Pick<Talk, 'm' | 'mx'>): string[] {
 const clockShort = (t: number) => talkClock(t).replace(':00 ', ' ');
 /** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach."
     A plan for the hard hours starts at their time: "At 11 PM, when I want rest, I will ..." */
-export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx' | 'at'>>): string {
+export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx' | 'at' | 'fw'>>): string {
   const mo = TALK_MOMENTS.find((x) => x[0] === t.mo);
   const lead = t.mo === TALK_HARD_MOMENT && t.at ? 'At ' + clockShort(t.at) : !mo || mo[0] === 'now' ? 'Right now' : mo[1];
   const thens = t.m
@@ -366,6 +366,9 @@ export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk
     .filter(Boolean)
     .concat((t.mx || []).map(ownThen));
   const then = thens.length > 1 ? thens.slice(0, -1).join(', ') + ' and ' + thens[thens.length - 1] : thens[0] || 'do what I planned';
+  /* a plan made after a slip is an if-then plan from the feeling: "When I feel lonely late at night, I will ..." */
+  if (t.fw)
+    return 'When I feel ' + t.fw.toLowerCase() + (t.mo === 'late' ? ' late at night' : t.mo === 'evening' ? ' in the evening' : '') + ', I will ' + then + '.';
   return lead + ', when I want ' + talkNeedWord(t.n, t.nx) + ', I will ' + then + '.';
 }
 
@@ -450,6 +453,8 @@ export interface Talk {
   /** 1 when it is the short plan made ahead of the hard hours (the hard hours card): no slip was in mind, so it does not
       count as a sign of when it gets hard (risk.ts). Only when it is one. */
   pr?: 1;
+  /** after a slip: the feeling named for before it, the plan's "when I feel ..." (slip.ts). Only when there is one. */
+  fw?: string;
 }
 
 const SIGNS = TALK_SIGNS.map((x) => x[0]);
@@ -512,6 +517,7 @@ export function normTalk(x: unknown): Talk | null {
   withOwn(out, 'nx', out.n ? '' : talkOwn([v.nx], 1)[0] || '');
   withOwn(out, 'mx', talkOwn(v.mx));
   if (v.pr === 1) out.pr = 1;
+  if (typeof v.fw === 'string' && /^[A-Za-z][A-Za-z ]{0,23}$/.test(v.fw)) out.fw = v.fw;
   return out;
 }
 /** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */

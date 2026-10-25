@@ -22,12 +22,11 @@ describe('today’s lesson is Next up until it is done', () => {
     }
   });
 
-  it('a check-in or wind-down that has opened meanwhile still says it is open', () => {
+  it('Bedtime, once the evening has started, waits next behind the lesson', () => {
     const d = core.stopTiles({}, st, tk, at(tk + 'T19:00'));
     expect(d.tiles.map((x) => [x.k, x.state, x.cur])).toEqual([
       ['lesson', 'now', true],
-      ['evening', 'now', false],
-      ['night', 'later', false],
+      ['night', 'next', false],
     ]);
     expect(core.dayRhythm({}, st, tk, at(tk + 'T08:00')).stops.map((x) => x.state)).toEqual(['next', 'later', 'later']);
     /* the legacy rhythm itself is unchanged */

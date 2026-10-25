@@ -70,33 +70,31 @@ describe('the stops as tiles', () => {
     expect(r.cur).toBe('lesson');
     expect(r.tiles.map((t) => [t.k, t.sky, t.go])).toEqual([
       ['lesson', 'sky', 'lesson'],
-      ['evening', 'violet', 'checkin'],
-      ['night', 'night', 'wind'],
+      ['night', 'night', 'bed'],
     ]);
     expect(r.tiles[0].cur).toBe(true);
     expect(r.tiles[0].right).toBe('From 9:00 AM');
-    expect(r.tiles[1].line).toBe('Three quick numbers, then good night');
-    expect(r.tiles[2].line).toBe('Screens off at 10:30 PM');
+    expect(r.tiles[1].line).toBe('Screens off at 10:30 PM');
   });
-  it('in the evening, done stops say what was done, and the check-in is open', () => {
+  it('in the evening, done stops say what was done, and Bedtime is the open stop, waiting for its hour', () => {
     let d: Days = {};
     const L = lessonStop(d, st, tk).L;
     d = recordLesson(d, tk, L, 5).days;
     const r = stopTiles(d, st, tk, at(19, 10));
-    expect(r.cur).toBe('evening');
+    expect(r.cur).toBe('night');
     expect(r.done).toBe(1);
     expect(r.tiles[0].line).toBe('Read: ' + L.title);
     expect(r.tiles[0].id).toBe(L.id);
-    expect(r.tiles[1].eyebrow).toBe('Evening · open now');
-    expect(r.tiles[1].btn).toBe('Check in');
-    expect(r.tiles[2].eyebrow).toBe('Up next · from 9:30 PM');
+    expect(r.tiles[1].cur).toBe(true);
+    expect(r.tiles[1].eyebrow).toBe('Up next · from 9:30 PM');
+    expect(r.tiles[1].btn).toBe('Bedtime');
+    expect(stopTiles(d, st, tk, at(21, 40)).tiles[1].eyebrow).toBe('Bedtime · open now');
   });
   it('a saved check-in and a phone put away say so', () => {
     let d = saveCheckin({}, tk, { ...checkinFormOf({}, tk), m: 7, s: 3 }, 1);
     d = phoneAway(d, tk, '22:41', 2);
     const r = stopTiles(d, st, tk, at(22, 45));
-    expect(r.tiles.find((t) => t.k === 'evening')!.line).toBe('Motivation 7 · Stress 3');
-    expect(r.tiles.find((t) => t.k === 'night')!.line).toBe('Phone away at 10:41 PM');
+    expect(r.tiles.find((t) => t.k === 'night')!.line).toBe('Phone away at 10:41 PM · Motivation 7 · Stress 3');
   });
   it('a lesson still to come keeps the capitals of its time', () => {
     const r = stopTiles({}, st, tk, at(8, 40));
@@ -106,7 +104,7 @@ describe('the stops as tiles', () => {
   it('a routine saved with the morning stop still on reads fine, and has no morning stop', () => {
     const old = normSettings({ start: '2026-10-01', routine: { morning: true, lesson: true, calm: true, reach: false, checkin: true, wind: true } });
     expect(old.routine.morning).toBe(true);
-    expect(stopTiles({}, old, tk, at(8, 0)).tiles.map((t) => t.k)).toEqual(['lesson', 'evening', 'night']);
+    expect(stopTiles({}, old, tk, at(8, 0)).tiles.map((t) => t.k)).toEqual(['lesson', 'night']);
   });
 });
 
@@ -131,9 +129,9 @@ describe('the stop that is next, grown in place in Your day', () => {
     expect(calm(done, false)).toMatchObject({ v: t.id, btn: 'Read it again' });
     expect(openTile(done, st, tk, at(9), true)).toMatchObject({ id: LESSONS[3].id, btn: 'Start' });
   });
-  it('the check-in once the lesson is done, and nothing when no part of the day is on', () => {
+  it('Bedtime once the lesson is done, and nothing when no part of the day is on', () => {
     const d = recordLesson({}, tk, LESSONS[0], at(9)).days;
-    expect(openTile(d, st, tk, at(19))).toMatchObject({ k: 'evening', btn: 'Check in', sky: 'violet' });
+    expect(openTile(d, st, tk, at(19))).toMatchObject({ k: 'night', btn: 'Bedtime', sky: 'night', go: 'bed' });
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });
     expect(openTile({}, off, tk, at(19))).toBeNull();
   });

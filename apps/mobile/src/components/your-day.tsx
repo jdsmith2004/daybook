@@ -3,7 +3,7 @@
    in its colors, with a full-width button (the owner, October 24, 2026: keep the card at the top of Today, and make the
    next stop plain to see here too); it opens the same thing as that card (core openTile). The other stops stay slim rows.
    Every stop opens its moment with one tap, at any time:
-   the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change" turns parts of today on or off, in
+   the lesson and Bedtime (app/bedtime.tsx). "Change" turns parts of today on or off, in
    a sheet. */
 import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,11 +27,12 @@ export function openStop(go: StopGo, id?: string) {
     if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
     return;
   }
-  router.push(go === 'checkin' ? '/checkin' : '/wind');
+  /* the check-in and the wind-down are Bedtime now */
+  router.push('/bedtime');
 }
-/** Next up names a stop by its key (evening, night; the lesson opens itself) */
-export function openStopKey(k: string) {
-  openStop(k === 'evening' ? 'checkin' : 'wind');
+/** Next up names a stop by its key (evening, night: both are Bedtime; the lesson opens itself) */
+export function openStopKey(_k: string) {
+  openStop('bed');
 }
 
 /** the colors of a stop, from the sky of its moment */

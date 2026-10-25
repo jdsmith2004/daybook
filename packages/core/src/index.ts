@@ -19,6 +19,7 @@ export * from './practice';
 export * from './lesson-map';
 export * from './section-art';
 export * from './day';
+export * from './bedtime';
 export * from './plan';
 export * from './miles';
 export * from './journal';

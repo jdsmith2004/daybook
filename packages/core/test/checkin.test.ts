@@ -80,11 +80,11 @@ describe('what shows', () => {
     expect(moodOf({ m: 9 })).toBe(9);
     expect(moodOf(null)).toBeNull();
   });
-  it('the check-in stop says the mood and stress once saved', () => {
-    const d = saveCheckin({}, tk, { ...blank(), md: 7, u: 2, s: 3 }, 1);
-    expect(stopTiles(d, st, tk, at(21)).tiles.find((t) => t.k === 'evening')!.line).toBe('Mood 7 · Stress 3');
-    const u = saveCheckin({}, tk, { ...blank(), u: 2 }, 1);
-    expect(stopTiles(u, st, tk, at(21)).tiles.find((t) => t.k === 'evening')!.line).toBe('Urges 2');
+  it('the Bedtime stop says the mood and stress once saved and the phone is away', () => {
+    const d = sayGoodnight({}, tk, { ...blank(), md: 7, u: 2, s: 3 }, '21:00', 1, st);
+    expect(stopTiles(d, st, tk, at(21)).tiles.find((t) => t.k === 'night')!.line).toBe('Phone away at 9:00 PM · Mood 7 · Stress 3');
+    const u = sayGoodnight({}, tk, { ...blank(), u: 2 }, '21:00', 1, st);
+    expect(stopTiles(u, st, tk, at(21)).tiles.find((t) => t.k === 'night')!.line).toBe('Phone away at 9:00 PM · Urges 2');
   });
   it('the Journal row and the week say mood and urges', () => {
     const d = saveCheckin({}, tk, { ...blank(), md: 7, u: 2, s: 3 }, 1);
@@ -129,12 +129,12 @@ describe('what shows', () => {
 });
 
 describe('Goodnight', () => {
-  it('saves the check-in and puts the phone away in one tap: both evening stops are done', () => {
+  it('saves the check-in and puts the phone away in one tap: Bedtime is done', () => {
     const d = sayGoodnight({}, tk, { ...blank(), md: 6, u: 1, s: 2, h: 7 }, '22:10', 5, st);
     expect(d[tk].checkin).toMatchObject({ md: 6, u: 1, s: 2, h: 7, so: 'Y', done: true });
     expect(d[tk].p?.po).toBe('22:10');
     const tiles = stopTiles(d, st, tk, at(22, 12)).tiles;
-    expect(tiles.find((t) => t.k === 'evening')!.done).toBe(true);
+    expect(tiles.map((t) => t.k)).toEqual(['lesson', 'night']);
     expect(tiles.find((t) => t.k === 'night')!.done).toBe(true);
   });
   it('with nothing answered, it is only the phone away, and the check-in stays open', () => {

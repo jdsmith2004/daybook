@@ -425,8 +425,8 @@ function dayList(
   };
   const lid = prefs.lesson && onStep(lv('lesson'), k, st) ? lessonDue(days, st, k, account) : null;
   if (lid) add('lesson', atOf(k, lessonAt(days, log, k, now).at, roll), '/lesson/' + lid);
-  if (prefs.checkin && onStep(lv('checkin'), k, st)) add('checkin', atOf(k, backup ? ciBackupAt(st, prefs) : prefs.checkinAt, roll), '/checkin');
-  if (prefs.wind && st.screensOff && onStep(lv('wind'), k, st)) add('wind', atOf(k, clockOf(minOf(st.screensOff) - 60), roll), '/wind');
+  if (prefs.checkin && onStep(lv('checkin'), k, st)) add('checkin', atOf(k, backup ? ciBackupAt(st, prefs) : prefs.checkinAt, roll), '/bedtime');
+  if (prefs.wind && st.screensOff && onStep(lv('wind'), k, st)) add('wind', atOf(k, clockOf(minOf(st.screensOff) - 60), roll), '/bedtime');
   if (prefs.review && isSunday(k) && onStep(lv('sunday'), k, st, true) && sunDue(reviews, st, k))
     add('sunday', atOf(k, NUDGE_SUNDAY_AT, roll), '/review', true);
   if (prefs.risk && onStep(lv('risk'), k, st)) {

@@ -79,7 +79,7 @@ describe('last night’s win', () => {
 
   it('has its own card on Today, not a morning stop (the morning stop was retired)', () => {
     const now = new Date(2026, 10, 11, 7, 30).getTime();
-    expect(core.stopTiles(day(D, [sos()]), st, M, now).tiles.map((x) => x.k)).toEqual(['lesson', 'evening', 'night']);
+    expect(core.stopTiles(day(D, [sos()]), st, M, now).tiles.map((x) => x.k)).toEqual(['lesson', 'night']);
   });
 });
 

@@ -1,5 +1,41 @@
 # What is planned next
 
+## Bedtime from the ground up (the owner, October 25, 2026)
+
+The owner: "There's so many things to fill out... do a full redesign and think about everything very, very carefully",
+and asked about locking the phone down at bedtime with Screen Time. One goal leads: the person gets the phone down and gets
+to sleep safely, with as little as possible to do, and has one thing ready if the thoughts get loud in bed.
+
+**What was there:** two stops at night (Check-in from 6 PM, Wind-down from an hour before screens-off) and three entry
+screens that looked alike (checkin, wind, night). Worst case: four sliders, a Yes/No, a line, up to ten ticks and a plan pick,
+across up to six screens.
+
+**What the research says** (the full notes with sources are in the session notes, bedtime-research.md):
+the phone in the bedroom at night, even unused, goes with less and worse sleep (Carter 2016 meta-analysis); half an hour
+without it before bed helped sleep and mood in a pilot trial (He 2020); night and sleep are the most named triggers for this
+habit (Henry 2025, EMA); tired people have weaker brakes (sleep and self-control meta-analysis, 2021), so the plan is made by
+day and only read at night (Sayette and Loewenstein); a self-nudge with an easy "close" cut app opens by a third (Grüning 2023,
+PNAS); stimulus control (get up after about 20 minutes awake) and slow, exhale-led breathing stay as the loud-night moves.
+
+**The owner's picks:**
+
+1. **No lock.** The Screen Time lock (FamilyControls, ManagedSettings, DeviceActivity, a shield) was looked at: it needs
+   Apple's Family Controls (Distribution) approval (free, days to weeks), breaks App Store builds until then, cannot be
+   tested on the Simulator, and has no Android or web version. Not built. The findings are kept in the notes for later.
+2. **One screen + Goodnight.** Bedtime is one stop and one screen (app/bedtime.tsx): the flame breathing slowly in the
+   middle (in for four, out for six), mood, urges and stress as three one-tap rows (mood starts from today's feeling), the
+   plan for a loud night in one line (a tap shows the next, SOS beside it), and Goodnight. "Save for now" logs the day early
+   in the evening. One line about the day is a quiet link. The check-in of a day before today is the same rows on one screen.
+3. **Sleep is worked out.** Nothing is asked at night: the first open of the next day keeps last night's sleep, from
+   Goodnight to that open, as a guess (checkin.h with hg; core bedtime.ts guessSleep), and a morning line on Today says it
+   ("Phone down at 11:10 PM. About 7.5 hours of sleep.") with a half-hour fix and the nights the phone went down this week.
+   The privacy page says how.
+4. **Goodnight counts as the wind-down.** On time, Goodnight is the wind-down win (p.wd); the list is shown to read, in the
+   hour before screens-off. Days already earned keep what they earned.
+
+SOS "Go to bed" lost its three checkboxes (one line to read) and ends in the same Good night, which offers to log today. The
+reminders open Bedtime. The legacy rhythm (and the golden fixtures) are unchanged: only the tiles merge the two stops.
+
 ## The QA list of October 24, 2026 (the owner)
 
 Done: the "How are you feeling today?" prompt (once a day, Today only, never on a slip day); the evening check-in cut to mood,

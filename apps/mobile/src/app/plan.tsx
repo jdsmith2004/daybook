@@ -582,7 +582,7 @@ function Lists({ fresh, add, place }: { fresh?: string; add?: string; place: Pla
       <ListCard
         k="wind"
         title="Wind-down"
-        sub="The steps for the hour before screens go off."
+        sub="The steps for the hour before screens go off. Bedtime shows them; Goodnight on time counts as all of them."
         icon="moon"
         tone="sky"
         numbered

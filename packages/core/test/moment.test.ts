@@ -19,7 +19,7 @@ describe('a calm day', () => {
     /* the morning has no stop of its own any more: the day opens on its lesson */
     expect(p.card).toMatchObject({ k: 'calm', h: LESSONS[0].title, btn: 'Start', go: 'lesson', v: LESSONS[0].id });
     expect(p.more).toBeNull();
-    expect(p.then).toBe('Then: the check-in around 6 PM and the wind-down from 10:00 PM.');
+    expect(p.then).toBe('Then: bedtime from 10:00 PM.');
   });
   it('without an account, a lesson that waits behind one is never the card', () => {
     const s0 = normSettings({ ...st, routine: { ...st.routine, morning: false } });
@@ -71,7 +71,7 @@ describe('a slip, and the day after', () => {
     const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
     expect(p.card).toMatchObject({ k: 'run-ask', eb: 'Your sunrise check', h: 'Your run question from last night is waiting', go: 'sunrise' });
     expect(p.card.p).toBe('Keep your 7-day run going, or start fresh? It is kept for now, and both answers are good ones.');
-    expect(p.then).toMatch(/^Then: .*the wind-down\.$/);
+    expect(p.then).toMatch(/^Then: .*bedtime\.$/);
     /* not before the day starts, and not after noon: it never sits there all day */
     expect(kinds(d, '2026-10-22', at(23, 2))).not.toContain('run-ask');
     expect(kinds(d, '2026-10-22', at(22, 11, 59))).toContain('run-ask');

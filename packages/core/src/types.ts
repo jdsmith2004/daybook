@@ -56,6 +56,8 @@ export interface Checkin {
   e: number | null; // energy (asked before)
   s: number | null; // stress
   h: number | null; // hours slept the night before
+  /** the hours were worked out by Daybook (phone down to the first open, bedtime.ts guessSleep), not said by the person */
+  hg?: true;
   so: 'Y' | 'N' | null; // screens off on time that night
   ro: 'Y' | 'N' | null; // reached out
   n: string;

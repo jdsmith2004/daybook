@@ -131,7 +131,7 @@ describe('the plan', () => {
     expect(today.find((n) => n.k === 'checkin')).toMatchObject({ body: 'A short check-in is enough tonight. Nothing to get right.', pic: 'flame-warm' });
     expect(today.map((n) => n.k)).toEqual(['checkin', 'risk', 'wind']);
     /* a tap opens the thing the note is about, not just Today */
-    expect(today.map((n) => n.url)).toEqual(['/checkin', '/talk?prep=1', '/wind']);
+    expect(today.map((n) => n.url)).toEqual(['/bedtime', '/talk?prep=1', '/bedtime']);
     expect(today.find((n) => n.k === 'wind')!.quiet).toBe(true);
     expect(today.find((n) => n.k === 'risk')).toMatchObject({ body: core.wordsOf(core.pickWords('risk', log0, tk), st), pic: 'flame-bright' });
     expect(today.find((n) => n.k === 'risk')!.quiet).toBeUndefined();

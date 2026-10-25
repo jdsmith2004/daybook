@@ -169,11 +169,8 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
   const st = useCareSettings();
   const night = urNight(new Date(now).getHours());
   const plans = bedPlans(st);
-  const [tick, setTick] = useState<string[]>([]);
   const [plan, setPlan] = useState(() => (plans.some((x) => x[0] === sos.mem.bedPlan) ? (sos.mem.bedPlan as string) : 'breath'));
   const go = () => {
-    const p = plans.find((x) => x[0] === plan);
-    const planText = p ? p[1] + '. ' + p[2] : '';
     if (!night) return finish('bed', { msg: 'Ready for tonight.' });
     /* bed, at night: the phone is marked as put away, and the night screen closes things. From SOS it saves the urge as ridden out. */
     let gain = 0;
@@ -205,7 +202,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
     sos.end();
     buzz('save');
     router.dismissAll();
-    router.push({ pathname: '/night', params: { at, gain: String(gain), plan: planText } });
+    router.push({ pathname: '/night', params: { at, gain: String(gain) } });
   };
   const cur = plans.find((x) => x[0] === plan) || plans[0];
   return (
@@ -222,8 +219,8 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
       <T style={s.c}>
         {night
           ? combo
-            ? 'Three things, then a plan for the thoughts.'
-            : 'Urges are louder when you are tired. Three things, then a plan for the thoughts.'
+            ? 'Phone away, then a plan for the thoughts.'
+            : 'Urges are louder when you are tired. Phone away, then a plan for the thoughts.'
           : 'Late at night this is often the strongest tool. Walk through it now so it is easy later.'}
       </T>
       {/* read at the top, not under the main button (the thumb rule) */}
@@ -233,31 +230,16 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         </T>
       ) : null}
       <Dock>
-        <View style={{ alignSelf: 'stretch', gap: 8 }}>
-          {BED.map(([id, t, sub]) => {
-            const on = tick.indexOf(id) >= 0;
-            return (
-              <Pressable
-                key={id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                onPress={() => {
-                  setTick(on ? tick.filter((x) => x !== id) : tick.concat(id));
-                  buzz('tap');
-                }}
-                style={[s.check, { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent' }]}>
-                <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
-                  {on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <T v="label">{t}</T>
-                  <T v="small" tone="muted">
-                    {sub}
-                  </T>
-                </View>
-              </Pressable>
-            );
-          })}
+        {/* the three things to do, as one line to read: nothing to tick at this hour */}
+        <View style={[s.bedThree, { backgroundColor: c.surface }]} accessible accessibilityLabel={BED.map((x) => x[1]).join('. ')}>
+          {BED.map(([id, t]) => (
+            <View key={id} style={s.bedOne}>
+              <Icon name={id === 'phone' ? 'plug' : id === 'alarm' ? 'timer' : 'moon'} size={20} color={c.violetText} />
+              <T v="small" style={s.c}>
+                {id === 'phone' ? 'Phone out of reach' : t}
+              </T>
+            </View>
+          ))}
         </View>
         {/* one plan for the thoughts, picked from a few chips, with the picked one's words under them */}
         <T v="label" style={{ alignSelf: 'flex-start', marginTop: 6 }}>
@@ -803,8 +785,8 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   planLine: { alignSelf: 'stretch', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 },
-  check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
-  box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  bedThree: { alignSelf: 'stretch', flexDirection: 'row', gap: 6, padding: 12, borderRadius: 18 },
+  bedOne: { flex: 1, alignItems: 'center', gap: 6 },
   surIn: { alignItems: 'center', gap: 6 },
   surT: { fontFamily: font.display, textAlign: 'center' },
   btnSpace: { height: 160 },

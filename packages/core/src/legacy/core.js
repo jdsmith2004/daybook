@@ -362,7 +362,7 @@ function normCheckin(c){
  const num=(v,lo,hi)=>typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi?v:null;
  const yn=v=>v==='Y'||v==='N'?v:null;
  return {m:num(c.m,0,10),c:num(c.c,0,10),e:num(c.e,0,10),s:num(c.s,0,10),h:num(c.h,0,24),so:yn(c.so),ro:yn(c.ro),
-  n:typeof c.n==='string'?c.n.slice(0,300):'',done:c.done===true,at:typeof c.at==='number'?c.at:0,...moodUrges(c)};
+  n:typeof c.n==='string'?c.n.slice(0,300):'',done:c.done===true,at:typeof c.at==='number'?c.at:0,...moodUrges(c),...(c.hg===true&&typeof c.h==='number'?{hg:true}:{})};
 }
 /* mood and urges (the three-number check-in, October 24, 2026), kept only when answered, so older days read as before */
 function moodUrges(c){const o={};['md','u'].forEach(k=>{if(typeof c[k]==='number'&&isFinite(c[k])&&c[k]>=0&&c[k]<=10)o[k]=c[k]});return o}

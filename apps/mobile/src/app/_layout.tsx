@@ -129,7 +129,7 @@ function Shell() {
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />
-          {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, the evening check-in, going deeper, the wind-down, good night, a lesson */}
+          {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, Bedtime and the check-in of a day before, going deeper, good night, a lesson */}
           {[
             'sos',
             'tool/[id]',
@@ -139,6 +139,7 @@ function Shell() {
             'talk',
             'review',
             'deeper',
+            'bedtime',
             'wind',
             'night',
             'lesson/[id]',

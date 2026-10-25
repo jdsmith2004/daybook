@@ -456,7 +456,7 @@ function ToolsPane() {
           sub={`${st.reasons.length} saved · add, reorder, reword`}
           onPress={() => router.push('/reasons')}
         />
-        <LinkCard icon="moon" title="Tonight's wind-down" sub="A short checklist for the last hour" onPress={() => router.navigate('/')} />
+        <LinkCard icon="moon" title="Bedtime" sub="Three taps for today, then Goodnight" onPress={() => router.push('/bedtime')} />
         <LinkCard icon="life" title="Need a person or a plan?" sub="Free help, scripts, phone setup" onPress={() => router.push('/help')} />
       </View>
       <View style={{ height: 1, backgroundColor: c.line, opacity: 0 }} />

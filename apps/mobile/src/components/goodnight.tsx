@@ -1,26 +1,27 @@
-/* Goodnight: the end of the evening, under the night sky. One big button low on the screen ("Tap this when you put your
-   phone down") saves tonight's check-in and puts the phone away in one tap (core sayGoodnight), and then the going-to-bed
-   moment plays: the light in a small house goes out, the moon comes up, the stars come in, and a few slow z's drift up.
-   Above the button, folded rows keep the rest in reach without crowding it: the wind-down list, and the plan for a loud
-   night (the one picked in SOS "Go to bed", or slow breathing) with a way into SOS. Used by the end of the check-in
-   (app/checkin.tsx), the wind-down (app/wind.tsx) and Good night after SOS "Go to bed" (app/night.tsx). With Reduce
-   Motion on, the moment is still: the light is out, the moon is up, and nothing moves. */
-import { bedPlans, checkinAnswered, checkinSaveText, clockOf, fmtClock, gameCompute, sayGoodnight, windToggle, type CheckinForm } from '@daybook/core';
+/* Goodnight: the end of the evening, under the night sky (Bedtime, app/bedtime.tsx, and Good night after SOS "Go to bed",
+   app/night.tsx). One big button low on the screen saves how today went, puts the phone away, and on time is the wind-down
+   too (core goodnight), and then the going-to-bed moment plays: the light in a small house goes out, the moon comes up, the
+   stars come in, and a few slow z's drift up. The plan for a loud night is one line (PlanLine): a tap shows the next one,
+   and SOS is beside it. The flame in the middle of Bedtime breathes slowly, in for four and out for six (SleepyFlame).
+   With Reduce Motion on, everything is still. */
+import { bedPlans, checkinAnswered, checkinSaveText, clockOf, fmtClock, gameCompute, goodnight, type CheckinForm } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, Ellipse, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';
 import { FitArt } from '@/components/fit';
 import { Dock, SceneFrame } from '@/components/scene';
+import { Flame } from '@/components/flame';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
-import { font, MAX_WIDTH, nightInk, useTheme } from '@/lib/theme';
+import { font, MAX_WIDTH, nightInk } from '@/lib/theme';
 
 /** what Goodnight did: the phone-away time, the points it earned, and the words after saving the check-in (none when there
     was nothing to save) */
@@ -30,7 +31,8 @@ export interface Bed {
   msg: string;
 }
 
-/** Goodnight in one tap: saves the check-in when anything in it is answered, puts the phone away now, and says what it earned */
+/** Goodnight in one tap: saves the day when anything in it is answered, puts the phone away now (on time, the wind-down too),
+    and says what it earned */
 export function useGoodnight() {
   const { tk, update } = useStore();
   return (form: CheckinForm | null): Bed => {
@@ -40,7 +42,7 @@ export function useGoodnight() {
     update((s0) => {
       if (!s0.settings) return s0;
       const b0 = gameCompute(s0.days, s0.settings, s0.reviews, tk).pts;
-      const days = sayGoodnight(s0.days, tk, form, at, Date.now(), s0.settings);
+      const days = goodnight(s0.days, s0.settings, tk, form, at, Date.now());
       if (form && checkinAnswered(form)) msg = checkinSaveText(days, s0.settings, tk, tk);
       gain = Math.max(0, gameCompute(days, s0.settings, s0.reviews, tk).pts - b0);
       return { ...s0, days };
@@ -65,58 +67,7 @@ export function GoodnightButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-/** a row that opens in place: a title and one line, and what it holds under it once opened */
-export function Fold({
-  icon,
-  title,
-  sub,
-  open,
-  onToggle,
-  children,
-}: {
-  icon: string;
-  title: string;
-  sub?: string;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <View style={s.fold}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={title + (sub ? '. ' + sub : '')}
-        onPress={() => {
-          buzz('tap');
-          onToggle();
-        }}
-        style={({ pressed }) => [s.foldHead, pressed && { opacity: 0.75 }]}>
-        <View style={s.foldIc}>
-          <Icon name={icon} size={18} color={nightInk.ink} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <T v="label">{title}</T>
-          {sub ? (
-            <T v="small" tone="muted">
-              {sub}
-            </T>
-          ) : null}
-        </View>
-        <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
-          <Icon name="down" size={18} color={nightInk.muted} />
-        </View>
-      </Pressable>
-      {open ? (
-        <Appear by={6} duration={220} style={s.foldBody}>
-          {children}
-        </Appear>
-      ) : null}
-    </View>
-  );
-}
-
-/** a row like a fold that opens another screen instead (today's check-in, from the wind-down) */
+/** a row that opens another screen (logging today, from Good night after SOS) */
 export function NightRow({ icon, title, sub, onPress }: { icon: string; title: string; sub?: string; onPress: () => void }) {
   return (
     <View style={s.fold}>
@@ -145,80 +96,110 @@ export function NightRow({ icon, title, sub, onPress }: { icon: string; title: s
   );
 }
 
-/** the wind-down list as a folded row: how many are done, and the list itself once opened */
-export function WindFold({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const { snap, tk, update } = useStore();
-  const st = snap.settings;
-  if (!st || !st.wind.length) return null;
-  const p = snap.days[tk]?.p;
-  const n = st.wind.filter((_, i) => !!p && p.w.indexOf(i) >= 0).length;
-  return (
-    <Fold
-      icon="check"
-      title="Wind-down list"
-      sub={n >= st.wind.length ? 'All ' + n + ' done' : n + ' of ' + st.wind.length + ' done'}
-      open={open}
-      onToggle={onToggle}>
-      {st.wind.map((t, i) => (
-        <WindItem
-          key={i}
-          label={t}
-          on={!!p && p.w.indexOf(i) >= 0}
-          onPress={() => {
-            update((s0) => ({ ...s0, days: windToggle(s0.days, s0.settings!, tk, i) }));
-            buzz('tap');
-          }}
-        />
-      ))}
-    </Fold>
-  );
-}
-
-/** the plan for a loud night as a folded row: the picked one first (`plan`, from SOS "Go to bed"), then the others, and SOS */
-export function LoudFold({ open, onToggle, plan }: { open: boolean; onToggle: () => void; plan?: string }) {
+/** the plan for a loud night, in one line: which one, and its few words. A tap shows the next plan (and remembers it, as SOS
+    "Go to bed" does), and the round button beside it opens SOS. */
+export function PlanLine({ still = false }: { still?: boolean }) {
   const { snap } = useStore();
+  const sos = useSos();
   const plans = bedPlans(snap.settings);
+  const i = Math.max(
+    0,
+    plans.findIndex((p) => p[0] === sos.mem.bedPlan),
+  );
+  const p = plans[i];
+  const next = () => {
+    buzz('tap');
+    sos.setMem((m) => ({ ...m, bedPlan: plans[(i + 1) % plans.length][0] }));
+  };
   return (
-    <Fold icon="shield" title="If the thoughts get loud" sub={plan ? plan.split('. ')[0] : 'A plan for tonight, ready'} open={open} onToggle={onToggle}>
-      {plan ? <T v="label">{plan}</T> : null}
-      {plans
-        .filter((p) => !plan || !plan.startsWith(p[1]))
-        .map((p) => (
-          <View key={p[0]} style={{ gap: 1 }}>
-            <T v="label">{p[1]}</T>
-            <T v="small" tone="muted">
-              {p[2]}
-            </T>
-          </View>
-        ))}
-      <Button kind="ghost" icon="life" label="Urge right now? Open SOS" onPress={() => router.push('/sos')} />
-    </Fold>
+    <View style={s.plan}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={'If the thoughts get loud: ' + p[1] + '. ' + p[2]}
+        accessibilityHint={still ? undefined : 'Shows another plan'}
+        disabled={still}
+        onPress={next}
+        style={({ pressed }) => [s.planText, pressed && { opacity: 0.75 }]}>
+        <View style={s.foldIc}>
+          <Icon name="shield" size={18} color={nightInk.ink} />
+        </View>
+        <Appear key={p[0]} by={4} duration={220} style={{ flex: 1, minWidth: 0 }}>
+          <T v="small" tone="muted">
+            If the thoughts get loud
+          </T>
+          <T v="label">{p[1]}</T>
+          <T v="small" tone="muted">
+            {p[2]}
+          </T>
+        </Appear>
+        {still ? null : <Icon name="swap" size={16} color={nightInk.muted} />}
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Urge right now? Open SOS"
+        onPress={() => {
+          buzz('tap');
+          router.push('/sos');
+        }}
+        style={({ pressed }) => [s.sos, pressed && { opacity: 0.75 }]}>
+        <Icon name="life" size={20} color={MOON_INK} />
+        <Text style={s.sosT}>SOS</Text>
+      </Pressable>
+    </View>
   );
 }
 
-/** one thing on the wind-down list, as a big card with a round check */
-function WindItem({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  const c = useTheme();
+/* the flame breathes: in for four seconds as it grows and glows, out for six as it settles */
+const IN = 4000;
+const OUT = 6000;
+/** the flame in the middle of Bedtime, on a soft halo that breathes slowly, with a quiet line inviting the breath */
+export function SleepyFlame({ level, size = 132, words = true }: { level: number; size?: number; words?: boolean }) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(0.5);
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: IN, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 0, duration: OUT, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    a.start();
+    return () => a.stop();
+  }, [reduce, v]);
+  const ring = size * 1.4;
   return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: on }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.item,
-        { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent', shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] },
-      ]}>
-      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
-        {on ? <Icon name="check" size={16} color="#06352A" /> : null}
+    <View style={{ alignItems: 'center', gap: 10 }}>
+      <View style={{ width: ring, height: ring, alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.View
+          style={[
+            s.breath,
+            {
+              width: ring,
+              height: ring,
+              borderRadius: ring / 2,
+              opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.8] }),
+              transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }) }],
+            },
+          ]}
+        />
+        <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1.04] }) }] }}>
+          <Flame level={level} size={size} alive label="Your flame" />
+        </Animated.View>
       </View>
-      <Text style={[s.itemT, { color: c.ink }]}>{label}</Text>
-    </Pressable>
+      {words ? (
+        <Appear delay={1200} duration={900}>
+          <T v="small" tone="muted" style={s.c}>
+            Breathe with it: in as it grows, out as it settles.
+          </T>
+        </Appear>
+      ) : null}
+    </View>
   );
 }
 
-/** after Goodnight: the going-to-bed moment, then the words, the plan for a loud night, and Done */
-export function GoingToBed({ bed, plan, extra }: { bed: Bed; plan?: string; extra?: ReactNode }) {
-  const [loud, setLoud] = useState(false);
+/** after Goodnight: the going-to-bed moment, then the words, tonight's plan for a loud night with SOS, and Done */
+export function GoingToBed({ bed, extra }: { bed: Bed; extra?: ReactNode }) {
   return (
     <SceneFrame title="Good night" sky="night" onClose={close}>
       {/* the moment and its words fill the open middle; the plan and Done sit low, under the thumb */}
@@ -246,7 +227,7 @@ export function GoingToBed({ bed, plan, extra }: { bed: Bed; plan?: string; extr
         </Appear>
       </View>
       <Dock>
-        <LoudFold open={loud} onToggle={() => setLoud(!loud)} plan={plan} />
+        <PlanLine still />
         {extra}
         <Button label="Done" onPress={close} />
       </Dock>
@@ -463,22 +444,21 @@ const s = StyleSheet.create({
   fold: { alignSelf: 'stretch', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
   foldHead: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, paddingVertical: 8 },
   foldIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-  foldBody: { gap: 10, paddingHorizontal: 14, paddingBottom: 14 },
-  item: {
+  plan: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  planText: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    minHeight: 52,
+    minHeight: 64,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 2,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 3 },
+    paddingVertical: 10,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
-  box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  itemT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15.5, lineHeight: 20 },
+  sos: { width: 64, borderRadius: 18, alignItems: 'center', justifyContent: 'center', gap: 2, backgroundColor: '#FFE27A' },
+  sosT: { fontFamily: font.bodySemi, fontSize: 12, color: MOON_INK },
+  breath: { position: 'absolute', backgroundColor: 'rgba(255,214,107,0.16)' },
   art: { position: 'absolute', width: W, height: H },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   moonAt: { position: 'absolute', left: 36, top: 14, width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },

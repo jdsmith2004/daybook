@@ -228,7 +228,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         'Schedule',
         'Screens-off time, start date, new day',
         <>
-          <Field label="Screens off" hint="The wind-down opens an hour before. Tapping Good night before then counts as screens off on time.">
+          <Field label="Screens off" hint="Bedtime opens an hour before. Goodnight before then counts as screens off on time, and as the wind-down.">
             <Stepper
               label="Each night by"
               text={so}

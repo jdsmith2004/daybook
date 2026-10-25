@@ -12,6 +12,8 @@ import {
   awayStart,
   dayFeelDue,
   markOpen,
+  guessSleep,
+  nightWin,
   tipAsk,
   tipQuiet,
   pulseAsk,
@@ -51,7 +53,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { PulseCard } from '@/components/pulse';
 import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
-import { NightWinCard } from '@/components/night-win';
+import { LastNightCard, NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { Hero } from '@/components/hero';
 import { Screen } from '@/components/screen';
@@ -108,7 +110,8 @@ export default function Today() {
     if (!ready || !st || syncing || !synced) return;
     const on = awayStart(st, tk);
     if (on) apply({ st: on });
-    if (!snap.days[tk]?.p?.o) update((s0) => ({ ...s0, days: markOpen(s0.days, tk) }));
+    /* the first open of the day is also when last night's sleep is worked out: from Goodnight to now (core guessSleep) */
+    if (!snap.days[tk]?.p?.o) update((s0) => ({ ...s0, days: guessSleep(markOpen(s0.days, tk), st, tk, Date.now()) }));
     /* coming back after a slip is the sunrise check: it lights the second flame, with nothing to answer (core srDone) */
     const back = sunriseDue(snap.days, st, tk);
     if (back) update((s0) => ({ ...s0, days: srDone(s0.days, back.k, back.ev.id, tk) }));
@@ -263,6 +266,7 @@ export default function Today() {
         <LogLink />
       </Card>
       <NightWinCard snap={snap} tk={tk} />
+      {st && nightWin(snap.days, st, tk) ? null : <LastNightCard snap={snap} tk={tk} now={now} />}
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}

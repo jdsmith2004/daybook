@@ -67,7 +67,7 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
     case 'slip-day':
       return <Tile m={m} sky="sun" then={then} onPress={() => didSmall(tk)} />;
     case 'calm': {
-      const sky = ({ lesson: 'sky', checkin: 'violet', wind: 'night' } as const)[m.go as 'lesson'] || 'violet';
+      const sky = ({ lesson: 'sky', checkin: 'night', wind: 'night', bed: 'night' } as const)[m.go as 'lesson'] || 'violet';
       return <Band m={m} sky={sky} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
     }
     case 'sunday':

@@ -142,6 +142,8 @@ export function saveCheckin(days: Days, key: DayKey, f: CheckinForm, now = Date.
       const c: Checkin = { m: f.m, c: f.c, e: f.e, s: f.s, h, so: o.so || null, ro: f.ro, n: (f.n || '').trim(), done: true, at: now };
       if (f.md != null) c.md = f.md;
       if (f.u != null) c.u = f.u;
+      /* hours Daybook worked out stay marked as a guess until the person changes them */
+      if (o.hg && h === o.h) c.hg = true;
       d.checkin = c;
     },
     now,
@@ -205,6 +207,7 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
     (d) => {
       const c = d.checkin || (d.checkin = blankCheckin());
       c.h = Math.min(14, Math.max(0, Math.round(((c.h == null ? 7 : c.h) + dd) * 2) / 2));
+      delete c.hg;
     },
     now,
   );
@@ -231,7 +234,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'bed';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -255,81 +258,109 @@ export interface StopTile {
   /** the lesson to open */
   id?: string;
 }
-const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
+const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Bedtime' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): { tiles: StopTile[]; cur: string | null; done: number } {
   const r = dayRhythm(days, st, tk, nowMs);
-  const p = days[tk]?.p;
   const ls = lessonStop(days, st, tk);
-  const tiles = r.stops.map((s): StopTile => {
-    const status = stopStatus(s, r.windMin);
-    const eyebrow =
-      s.state === 'now'
-        ? NAME[s.k] + ' · open now'
-        : s.state === 'due'
-          ? NAME[s.k] + ' · still open'
-          : s.state === 'done'
-            ? NAME[s.k] + ' · done'
-            : 'Up next · ' + low(status);
-    const base = { k: s.k, state: s.state, done: !!s.done, cur: s.k === r.cur, right: s.done ? '' : status, eyebrow };
-    const pts = (k: string) => '+' + HX_NEXT[k].pts + ' points';
-    if (s.k === 'lesson') {
-      const L = ls.L;
-      const tile = { ...base, sky: 'sky' as const, ic: 'book', title: 'Lesson', go: 'lesson' as const, id: L.id };
-      if (ls.kind === 'read')
-        return { ...tile, line: 'Read: ' + L.title, head: L.title, body: L.key, chips: [lmin(L)], btn: 'Open it again', eyebrow: 'Lesson · done' };
-      if (ls.kind === 'next')
+  /* the lesson here; the check-in and the wind-down are one stop now, Bedtime (withBed below) */
+  const tiles = r.stops
+    .filter((s) => s.k === 'lesson')
+    .map((s): StopTile => {
+      const status = stopStatus(s, r.windMin);
+      const eyebrow =
+        s.state === 'now'
+          ? NAME[s.k] + ' · open now'
+          : s.state === 'due'
+            ? NAME[s.k] + ' · still open'
+            : s.state === 'done'
+              ? NAME[s.k] + ' · done'
+              : 'Up next · ' + low(status);
+      const base = { k: s.k, state: s.state, done: !!s.done, cur: s.k === r.cur, right: s.done ? '' : status, eyebrow };
+      const pts = (k: string) => '+' + HX_NEXT[k].pts + ' points';
+      {
+        const L = ls.L;
+        const tile = { ...base, sky: 'sky' as const, ic: 'book', title: 'Lesson', go: 'lesson' as const, id: L.id };
+        if (ls.kind === 'read')
+          return { ...tile, line: 'Read: ' + L.title, head: L.title, body: L.key, chips: [lmin(L)], btn: 'Open it again', eyebrow: 'Lesson · done' };
+        if (ls.kind === 'next')
+          return {
+            ...tile,
+            line: L.title + ' · ' + lmin(L),
+            eyebrow: 'Lesson ' + ls.n + ' of ' + ls.total + (s.state === 'now' ? ' · open now' : s.state === 'due' ? ' · still open' : ' · ' + low(status)),
+            head: L.title,
+            body: L.tag,
+            chips: [lmin(L), pts('lesson')],
+            btn: 'Start',
+          };
         return {
           ...tile,
-          line: L.title + ' · ' + lmin(L),
-          eyebrow: 'Lesson ' + ls.n + ' of ' + ls.total + (s.state === 'now' ? ' · open now' : s.state === 'due' ? ' · still open' : ' · ' + low(status)),
+          line: 'Read again: ' + L.title,
+          eyebrow: 'Read again' + (s.state === 'next' || s.state === 'later' ? ' · ' + low(status) : ''),
           head: L.title,
-          body: L.tag,
-          chips: [lmin(L), pts('lesson')],
-          btn: 'Start',
+          body: 'You have finished every lesson. A quick re-read keeps one fresh.',
+          chips: [lmin(L), '+5 points'],
+          btn: 'Read it again',
         };
-      return {
-        ...tile,
-        line: 'Read again: ' + L.title,
-        eyebrow: 'Read again' + (s.state === 'next' || s.state === 'later' ? ' · ' + low(status) : ''),
-        head: L.title,
-        body: 'You have finished every lesson. A quick re-read keeps one fresh.',
-        chips: [lmin(L), '+5 points'],
-        btn: 'Read it again',
-      };
-    }
-    if (s.k === 'evening') {
-      const c = days[tk]?.checkin;
-      /* the first number it holds (mood, or motivation on an older day) and stress */
-      const first = c && c.done ? rateKeys(c).find((k) => k !== 's' && c[k] != null) : undefined;
-      const said = c && c.done ? [first ? ratingOf(first).name + ' ' + c[first] : '', c.s != null ? 'Stress ' + c.s : ''].filter(Boolean).join(' · ') : '';
-      return {
-        ...base,
-        sky: 'violet',
-        ic: 'pencil',
-        title: 'Check-in',
-        line: s.done ? said || 'Saved' : 'Three quick numbers, then good night',
-        head: 'How was today?',
-        body: 'Three quick numbers, then good night. The day is logged.',
-        chips: [HX_NEXT.evening.s || '', pts('evening')],
-        btn: 'Check in',
-        go: 'checkin',
-      };
-    }
-    return {
-      ...base,
+      }
+    });
+  return withBed(tiles, r, days, st, tk);
+}
+
+/* ---------- Bedtime: the evening's one stop ---------- */
+/* Since October 25, 2026 the check-in and the wind-down are one stop, Bedtime (bedtime.ts): one screen with three taps for
+   the day, then Goodnight. The rhythm underneath keeps its two stops (the golden tests read it): Bedtime is done once the
+   phone went away (or the wind-down was done), or, with the wind-down switched off for the day, once the day is logged. It
+   is the open stop from the evening on, waiting ("from 10 PM") until an hour before screens-off. */
+const BED_NAME = 'Bedtime';
+function withBed(
+  tiles: StopTile[],
+  r: ReturnType<typeof rhythm>,
+  days: Days,
+  st: Settings,
+  tk: DayKey,
+): { tiles: StopTile[]; cur: string | null; done: number } {
+  const ev = r.stops.find((x) => x.k === 'evening');
+  const ni = r.stops.find((x) => x.k === 'night');
+  const out = tiles.slice();
+  if (ev || ni) {
+    const p = days[tk]?.p;
+    const c = days[tk]?.checkin;
+    const logged = !!(c && c.done);
+    const done = ni ? !!ni.done : !!(logged || (p && p.po));
+    const waits = !!ni && ni.state === 'later' && !!ev && !ev.done && ev.state !== 'later';
+    const state: RhythmStop['state'] = done ? 'done' : waits ? 'next' : (ni || ev)!.state;
+    const right = done ? '' : state === 'now' ? 'Open now' : state === 'due' ? 'Still open' : ni ? 'From ' + minToClock(r.windMin) : 'Around 6 PM';
+    /* the first number the day holds (mood, or motivation on an older day) and stress */
+    const first = logged ? rateKeys(c).find((k) => k !== 's' && c![k] != null) : undefined;
+    const said = logged ? [first ? ratingOf(first).name + ' ' + c![first] : '', c!.s != null ? 'Stress ' + c!.s : ''].filter(Boolean).join(' · ') : '';
+    const away = p && p.po ? 'Phone away at ' + fmtClock(p.po) : '';
+    out.push({
+      k: 'night',
+      state,
+      done,
+      cur: !done && (r.cur === 'evening' || r.cur === 'night'),
       sky: 'night',
       ic: 'moon',
-      title: 'Wind-down',
-      line: s.done ? (p && p.po ? 'Phone away at ' + fmtClock(p.po) : 'Wound down') : 'Screens off at ' + fmtClock(st.screensOff),
-      head: 'Time to wind down',
-      body: windLine(st, r.leftToOff, p),
-      chips: [HX_NEXT.night.s || '', pts('night')],
-      btn: 'Start the wind-down',
-      go: 'wind',
-    };
-  });
-  return { tiles, cur: r.cur, done: tiles.filter((t) => t.done).length };
+      title: BED_NAME,
+      line: done
+        ? [away, said].filter(Boolean).join(' · ') || 'Good night'
+        : logged
+          ? 'Day logged · Goodnight when the phone goes down'
+          : 'Screens off at ' + fmtClock(st.screensOff),
+      right,
+      eyebrow:
+        state === 'now' ? 'Bedtime · open now' : state === 'due' ? 'Bedtime · still open' : state === 'done' ? 'Bedtime · done' : 'Up next · ' + low(right),
+      head: state === 'now' || state === 'due' ? 'Time for bed' : 'Bedtime',
+      body: logged ? 'Today is logged. Goodnight when the phone goes down.' : 'Three taps for today, then Goodnight. ' + windLine(st, r.leftToOff, p),
+      chips: ['About a minute', '+' + (HX_NEXT.evening.pts + HX_NEXT.night.pts) + ' points'],
+      btn: 'Bedtime',
+      go: 'bed',
+    });
+  }
+  /* the open stop: the lesson's, or Bedtime's (the rhythm's cur is one of its two) */
+  const cur = out.find((t) => t.cur);
+  return { tiles: out, cur: cur ? cur.k : null, done: out.filter((t) => t.done).length };
 }
 
 /* ---------- the wind-down ---------- */

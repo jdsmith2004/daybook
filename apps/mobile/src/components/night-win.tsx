@@ -2,7 +2,7 @@
    ("Last night you rode one out at 1:30 AM."), with the optional note for next time: what helped starts a note that SOS
    shows first next time (core night-win.ts; the morning stop that asked it before was retired on October 23, 2026). The
    card stays that day until its X closes it (kept on this device), and goes by itself the next day. */
-import { changeSettings, nightWin, winNote, type Snapshot } from '@daybook/core';
+import { changeSettings, hoursText, lastNight, nightWin, setSleep, winNote, type Snapshot } from '@daybook/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -134,4 +134,76 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 12, borderRadius: 999 },
   pillT: { fontFamily: font.bodySemi, fontSize: 14 },
+  fix: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  step: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  sign: { fontFamily: font.display, fontSize: 20, lineHeight: 22 },
+  hrs: { fontFamily: font.display, fontSize: 17, minWidth: 44, textAlign: 'center' },
 });
+
+/* ---------- the morning line ----------
+   The morning after a Goodnight (and no night win to say instead): one quiet card on Today, until noon, with when the phone
+   went down, last night's sleep worked out from phone down to the first open (core bedtime.ts lastNight), and the nights the
+   phone went down this week. The hours have a one-tap fix, half an hour at a time; the X closes it for the day (this device). */
+export function LastNightCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
+  const c = useTheme();
+  const sos = useSos();
+  const { update } = useStore();
+  const st = snap.settings;
+  const l = st ? lastNight(snap.days, st, tk, now) : null;
+  if (!l || sos.mem.lastNight === tk) return null;
+  const shut = () => {
+    buzz('tap');
+    sos.setMem((m) => ({ ...m, lastNight: tk }));
+  };
+  const step = (d: number) => {
+    buzz('tick');
+    update((s0) => ({ ...s0, days: setSleep(s0.days, tk, Math.min(14, Math.max(0, (l.h ?? 7) + d))) }));
+  };
+  return (
+    <View style={[s.card, { backgroundColor: c.violetSoft }]} accessibilityRole="summary">
+      <View style={s.top}>
+        <View style={[s.ic, { backgroundColor: c.surface }]}>
+          <Icon name="moon" size={20} color={c.violetText} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[s.line, { color: c.ink }]}>{l.line}</Text>
+          <T v="small" tone="muted">
+            {[l.sleep, l.run].filter(Boolean).join(' ') || 'Rest counts. Sleep is part of the plan.'}
+          </T>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          hitSlop={10}
+          onPress={shut}
+          style={({ pressed }) => [s.x, { opacity: pressed ? 0.6 : 1 }]}>
+          <Icon name="x" size={18} color={c.muted} />
+        </Pressable>
+      </View>
+      {l.h != null ? (
+        <View style={[s.fix, { marginLeft: 46 }]} accessibilityLabel={'Sleep last night, ' + hoursText(l.h) + ' hours'}>
+          <T v="small" tone="muted">
+            {l.guessed ? 'Not quite?' : 'Sleep last night'}
+          </T>
+          <StepBtn sign="−" label="Half an hour less" onPress={() => step(-0.5)} />
+          <Text style={[s.hrs, { color: c.ink }]}>{hoursText(l.h)} h</Text>
+          <StepBtn sign="+" label="Half an hour more" onPress={() => step(0.5)} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function StepBtn({ sign, label, onPress }: { sign: string; label: string; onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [s.step, { backgroundColor: c.surface, opacity: pressed ? 0.75 : 1 }]}>
+      <Text style={[s.sign, { color: c.violetText }]}>{sign}</Text>
+    </Pressable>
+  );
+}

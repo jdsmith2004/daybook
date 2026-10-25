@@ -18,7 +18,7 @@ export type RideSlot = 'calm' | 'body' | 'mind';
 /** the moves each slot can hold, in the order they are tried when nothing else says which */
 export const RIDE_SLOTS: Record<RideSlot, string[]> = {
   calm: ['breathe'],
-  body: ['move', 'catch', 'ground'],
+  body: ['move', 'stack', 'ground'],
   mind: ['forward', 'thought', 'reasons'],
 };
 export const RIDE_ORDER: RideSlot[] = ['calm', 'body', 'mind'];
@@ -75,7 +75,7 @@ export function rideSwap(plan: string[], i: number, can: RideCan): string[] {
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
   move: { t: 'Hard muscle work, even for a minute, lowers cravings in study after study. Your body burned off what the urge was building.', l: 'l15' },
-  catch: { t: 'Urges run on pictures in your head. A game for the eyes takes up the same room, so the pictures fade.', l: 'l2' },
+  stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l2' },
   ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l2' },
   forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },

@@ -9,7 +9,7 @@ import { Feel } from '@/components/tools/feel';
 import { Pause } from '@/components/tools/pause';
 import { Curious, Forward, Thought } from '@/components/tools/ride';
 import { Bed, Halt, Message, Move, Reasons, Surprise } from '@/components/tools/scene';
-import { CatchTool } from '@/components/tools/catch';
+import { StackTool } from '@/components/tools/stack';
 import type { ToolProps } from '@/components/tools/types';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -21,7 +21,7 @@ import type { Sky } from '@/lib/theme';
 const SKY: Record<string, Sky> = {
   breathe: 'sky',
   ground: 'mint',
-  catch: 'sky',
+  stack: 'sky',
   curious: 'violet',
   pause: 'sun',
   thought: 'violet',
@@ -82,8 +82,8 @@ export default function Tool() {
     case 'ground':
       body = <Ground {...p} />;
       break;
-    case 'catch':
-      body = <CatchTool {...p} />;
+    case 'stack':
+      body = <StackTool {...p} />;
       break;
     case 'curious':
       body = <Curious {...p} step={step} setStep={setStep} dir={dir} />;

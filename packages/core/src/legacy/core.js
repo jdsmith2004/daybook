@@ -94,7 +94,7 @@ function optList(kind,opts,o){
  const mine=((opts&&opts[kind])||[]).filter(x=>!x.off||sel.indexOf(x.id)>=0).map(x=>[x.id,x.t]);
  return {list:shown.concat(mine,end,kind==='trig'&&o.notSure?[['none','Not sure']]:[]),hidden:head.length-shown.length};
 }
-const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward','catch'];
+const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward','stack'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
 /* l1 to l32 are here; l33 to l40 are in lessons-more.ts */
 const LESSON_IDS=Array.from({length:41},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
@@ -2849,7 +2849,7 @@ const TOOL_GROUPS=[['calm','Calm your body'],['ride','Ride the wave'],['scene','
 const TOOLS=[
  {id:'breathe',name:'Breathe',desc:'Slow it down',ic:'wind',tone:'sky',g:'calm'},
  {id:'ground',name:'5-4-3-2-1',desc:'Come back to the room',ic:'dots',tone:'mint',g:'calm'},
- {id:'catch',name:'Catch the shapes',desc:'Busy eyes, quiet urge',ic:'sparkle',tone:'sky',g:'calm'},
+ {id:'stack',name:'Stack the shapes',desc:'Fit them, clear a row',ic:'sparkle',tone:'sky',g:'calm'},
  {id:'curious',name:'Get curious',desc:'Watch the wave',ic:'wave',tone:'accent',g:'ride'},
  {id:'pause',name:'10-minute pause',desc:'Let the wave pass',ic:'timer',tone:'sun',g:'ride'},
  {id:'thought',name:'Name the thought',desc:'A thought is not an order',ic:'sparkle',tone:'violet',g:'ride'},
@@ -2887,7 +2887,7 @@ const UR_DID={message:'reach'};
 const UR_META={
  breathe:{mins:'3 min',does:'Starts right away. A long breath out.'},
  ground:{mins:'About 2 min',does:'Brings you back to the room.'},
- catch:{mins:'1 min',does:'A game for the eyes. The pictures in your head fade.'},
+ stack:{mins:'About 1 min',does:'A block game for the eyes. The pictures in your head fade.'},
  curious:{mins:'About 2 min',does:'Watch the wave rise and fall.'},
  halt:{mins:'About 1 min',does:'Finds what you actually need.'},
  surprise:{mins:'A few min',does:'One small thing, away from the screen.'},
@@ -2901,16 +2901,16 @@ const UR_META={
  forward:{mins:'About 1 min',does:'Picture the next hour both ways.'}
 };
 const UR_FIT={
- late:  {breathe:6,catch:4,ground:4,curious:6,halt:4,surprise:2,message:3,reasons:5,pause:5,move:3,bed:9,thought:5,feel:4,forward:6},
- lonely:{breathe:4,catch:3,ground:3,curious:5,halt:6,surprise:3,message:9,reasons:6,pause:2,move:3,bed:2,thought:5,feel:6,forward:5},
- bored: {breathe:3,catch:7,ground:4,curious:5,halt:4,surprise:8,message:3,reasons:4,pause:3,move:8,bed:1,thought:4,feel:4,forward:4},
- stress:{breathe:9,catch:5,ground:8,curious:6,halt:5,surprise:4,message:5,reasons:4,pause:3,move:8,bed:2,thought:5,feel:5,forward:4},
- tired: {breathe:5,catch:3,ground:3,curious:4,halt:7,surprise:3,message:2,reasons:4,pause:4,move:3,bed:9,thought:4,feel:4,forward:5},
- scroll:{breathe:4,catch:7,ground:6,curious:5,halt:4,surprise:7,message:3,reasons:4,pause:4,move:7,bed:5,thought:6,feel:5,forward:6},
- other: {breathe:6,catch:5,ground:5,curious:7,halt:6,surprise:4,message:3,reasons:5,pause:3,move:5,bed:3,thought:7,feel:6,forward:6}
+ late:  {breathe:6,stack:4,ground:4,curious:6,halt:4,surprise:2,message:3,reasons:5,pause:5,move:3,bed:9,thought:5,feel:4,forward:6},
+ lonely:{breathe:4,stack:3,ground:3,curious:5,halt:6,surprise:3,message:9,reasons:6,pause:2,move:3,bed:2,thought:5,feel:6,forward:5},
+ bored: {breathe:3,stack:7,ground:4,curious:5,halt:4,surprise:8,message:3,reasons:4,pause:3,move:8,bed:1,thought:4,feel:4,forward:4},
+ stress:{breathe:9,stack:5,ground:8,curious:6,halt:5,surprise:4,message:5,reasons:4,pause:3,move:8,bed:2,thought:5,feel:5,forward:4},
+ tired: {breathe:5,stack:3,ground:3,curious:4,halt:7,surprise:3,message:2,reasons:4,pause:4,move:3,bed:9,thought:4,feel:4,forward:5},
+ scroll:{breathe:4,stack:7,ground:6,curious:5,halt:4,surprise:7,message:3,reasons:4,pause:4,move:7,bed:5,thought:6,feel:5,forward:6},
+ other: {breathe:6,stack:5,ground:5,curious:7,halt:6,surprise:4,message:3,reasons:5,pause:3,move:5,bed:3,thought:7,feel:6,forward:6}
 };
 const UR_STRN={low:{pause:-3,halt:1,reasons:1,curious:1,forward:1,thought:1,feel:1},mid:{pause:-1},high:{breathe:2,ground:2,move:2,pause:2,curious:-2,surprise:-1,reasons:-1,forward:-1,thought:-1,feel:-1}};
-const UR_PREF=['breathe','move','ground','catch','thought','halt','feel','reasons','curious','forward','message','surprise','pause','bed'];
+const UR_PREF=['breathe','move','ground','stack','thought','halt','feel','reasons','curious','forward','message','surprise','pause','bed'];
 const UR_TRIG_PH={late:'late at night',lonely:'you felt lonely or low',bored:'you were bored',stress:'you were stressed',tired:'you were tired',scroll:'after scrolling'};
 const urRate=r=>r&&r.n?(r.w+1)/(r.n+2):.5;
 const urLift=r=>!r?0:(urRate(r)-.5)*12*Math.min(1,r.n/3)+Math.min(3,r.l*.5)*Math.max(0,1-r.n/3);
@@ -2952,7 +2952,7 @@ const UR_LPREF={
 };
 const UR_TR_T={p:'it passed',s:'still strong',x:'slipped'};
 function urMinText(m){return m<1?'under a minute':m===1?'1 minute':m+' minutes'}
-const DONE_MSG={ground:'You came back to the room.',catch:'Eyes busy, urge quieter.',reasons:'Good to remember.',surprise:'Small things add up.',curious:'You watched it. That is the skill.',
+const DONE_MSG={ground:'You came back to the room.',stack:'Eyes busy, urge quieter.',reasons:'Good to remember.',surprise:'Small things add up.',curious:'You watched it. That is the skill.',
  move:'Body first. Nice work.',forward:'You picked the better hour.',thought:'A thought is not an order.',bed:'Ready for tonight.'};
 const CU_BODY=[['chest','Chest'],['stomach','Stomach'],['groin','Groin'],['throat','Throat or jaw'],['hands','Hands or arms'],['head','Head'],['all','All over'],['unsure','Not sure']];
 const CU_FEEL=[['tight','Tight'],['hot','Hot'],['buzzy','Buzzy'],['heavy','Heavy'],['hollow','Hollow'],['restless','Restless'],['else','Something else']];

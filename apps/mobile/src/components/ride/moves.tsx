@@ -3,22 +3,23 @@
    minute) and has one living thing in the middle to follow.
    - Breathe: the sun, three slow breaths (components/orb BreathSun).
    - Squeeze: four body parts, each squeezed hard for five seconds and let go for four. The shape clenches with you.
-   - Catch the shapes: shapes drift down; tap the ones that match, even turned. A game for the eyes.
+   - Stack the shapes: a small falling-block game for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.
    - Later: the hour after, both ways, in your own words.
    - Say it fast: the loudest thought, said fast for 20 seconds, then let go.
    - Your words: your note or a reason, read slowly, and your voice note. */
 import { FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, urFromYou, type UrMem } from '@daybook/core';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Appear } from '@/components/appear';
 import { Tiles } from '@/components/choices';
 import { BreathSun, useSeconds } from '@/components/orb';
-import { MorphShape, Shape, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
+import { MorphShape, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
+import { StackMove } from './stack';
 import { Button, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
@@ -117,119 +118,6 @@ export function SqueezeMove({ on, onDone }: MoveProps) {
         </WavyRing>
       </View>
       <Steps n={PARTS.length} i={all ? PARTS.length : i} color={c.coral} track={c.coral + '33'} />
-    </View>
-  );
-}
-
-/* ---------- catch the shapes ---------- */
-const CATCH_SEC = 50;
-/** a new shape this often, in seconds */
-const EVERY = 0.75;
-/** the target changes this often, so the eyes keep working */
-const SWITCH = 17;
-const TARGETS: ShapeKind[] = ['heart', 'clover4', 'triangle'];
-const OTHERS: ShapeKind[] = ['cookie6', 'gem', 'pill', 'sunny', 'arch', 'cookie4', 'pentagon'];
-const BIT = 64;
-
-/** a steady random number for shape i and a salt */
-const rnd = (i: number, k: number) => {
-  const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-export function CatchMove({ on, onDone }: MoveProps) {
-  const c = useTheme();
-  const sec = useClock(on);
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  const [got, setGot] = useState<Record<number, number>>({});
-  const [miss, setMiss] = useState<Record<number, number>>({});
-  const t = Math.min(CATCH_SEC, sec);
-  const over = sec >= CATCH_SEC;
-  const targetAt = (s0: number) => TARGETS[Math.floor(s0 / SWITCH) % TARGETS.length];
-  const target = targetAt(t);
-  const n = Object.keys(got).length;
-  useDoneAfter(over, 900, onDone);
-  /* the target changes: a buzz and a word, so the eyes notice */
-  const ti = Math.floor(t / SWITCH);
-  useEffect(() => {
-    if (ti > 0 && !over) buzz('land');
-  }, [ti, over]);
-  /* any color but the mint a caught shape turns */
-  const tint = (i: number) => [c.sky, c.violet, c.coral, c.sun2][Math.floor(rnd(i, 3) * 4)];
-  /* the shapes on screen now: born every EVERY seconds, falling faster as it goes on */
-  const items = useMemo(() => {
-    if (!box) return [];
-    const out: { i: number; kind: ShapeKind; x: number; y: number; turn: number; born: number }[] = [];
-    const first = Math.max(0, Math.floor((t - 6) / EVERY));
-    const last = Math.floor(t / EVERY);
-    for (let i = first; i <= last; i++) {
-      const born = i * EVERY;
-      if (born > CATCH_SEC - 2) break;
-      const fall = 5.2 - 1.6 * Math.min(1, born / CATCH_SEC);
-      const f = (t - born) / fall;
-      if (f < 0 || f > 1.05) continue;
-      const k = rnd(i, 1) < 0.38 ? targetAt(born) : OTHERS[Math.floor(rnd(i, 2) * OTHERS.length)];
-      const x = 6 + rnd(i, 4) * Math.max(0, box.w - BIT - 12);
-      out.push({ i, kind: k, x, y: -BIT + f * (box.h + BIT), turn: (rnd(i, 5) - 0.5) * 300 + (t - born) * (rnd(i, 6) - 0.5) * 60, born });
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [box, t]);
-  const tap = (it: (typeof items)[number]) => {
-    if (got[it.i] != null || over) return;
-    if (it.kind === target) {
-      setGot((g) => ({ ...g, [it.i]: t }));
-      buzz('tap');
-    } else {
-      setMiss((m) => ({ ...m, [it.i]: t }));
-      buzz('tick');
-    }
-  };
-  useSay(over ? n + ' caught' : '', on);
-  return (
-    <View style={s.move}>
-      <View style={s.catchTop} accessible accessibilityLabel={over ? n + ' caught. Nice.' : 'Tap every shape like this one, even when it is turned.'}>
-        <Appear key={target} by={0} duration={200}>
-          <MorphShape kind={target} size={46} color={c.ink} />
-        </Appear>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.head, s.left, { color: c.ink }]}>{over ? n + ' caught' : 'Catch every one of these'}</Text>
-          <T v="small" tone="muted">
-            {over ? 'Your eyes were busy. Notice how the urge feels now.' : 'Even when it is turned. ' + n + ' so far.'}
-          </T>
-        </View>
-      </View>
-      <View style={s.field} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-        {items.map((it) => {
-          const g = got[it.i];
-          const m = miss[it.i];
-          const pop = g != null ? Math.min(1, (t - g) / 0.3) : 0;
-          if (pop >= 1) return null;
-          const wob = m != null && t - m < 0.35 ? Math.sin((t - m) * 60) * 6 : 0;
-          return (
-            <Pressable
-              key={it.i}
-              onPressIn={() => tap(it)}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              hitSlop={10}
-              style={[
-                s.bit,
-                {
-                  left: it.x + wob,
-                  top: it.y,
-                  opacity: 1 - pop,
-                  transform: [{ rotate: it.turn + 'deg' }, { scale: 1 + 0.5 * pop }],
-                },
-              ]}>
-              <Shape kind={it.kind} size={BIT} color={g != null ? c.mint : tint(it.i)} />
-            </Pressable>
-          );
-        })}
-      </View>
-      <View style={s.line}>
-        <WavyLine width={220} p={t / CATCH_SEC} color={c.sky} track={c.sky + '33'} />
-      </View>
     </View>
   );
 }
@@ -498,7 +386,7 @@ function Steps({ n, i, color, track }: { n: number; i: number; color: string; tr
 export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
   breathe: BreatheMove,
   move: SqueezeMove,
-  catch: CatchMove,
+  stack: StackMove,
   ground: GroundMove,
   forward: LaterMove,
   thought: SayMove,
@@ -509,7 +397,7 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
 export const MOVE_NAME: Record<string, string> = {
   breathe: 'Breathe',
   move: 'Squeeze',
-  catch: 'Catch the shapes',
+  stack: 'Stack the shapes',
   ground: '5-4-3-2-1',
   forward: 'The hour after',
   thought: 'Say it fast',
@@ -520,7 +408,7 @@ export const MOVE_NAME: Record<string, string> = {
 export const MOVE_ICON: Record<string, string> = {
   breathe: 'wind',
   move: 'bolt',
-  catch: 'sparkle',
+  stack: 'sparkle',
   ground: 'dots',
   forward: 'compass',
   thought: 'chat',
@@ -528,7 +416,7 @@ export const MOVE_ICON: Record<string, string> = {
 };
 
 export const moveTint = (c: Palette, id: string) =>
-  ({ breathe: c.sun, move: c.coral, catch: c.sky, ground: c.mint, forward: c.mint, thought: c.violet, reasons: c.sun2 })[id] || c.accent;
+  ({ breathe: c.sun, move: c.coral, stack: c.sky, ground: c.mint, forward: c.mint, thought: c.violet, reasons: c.sun2 })[id] || c.accent;
 
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
@@ -541,9 +429,6 @@ const s = StyleSheet.create({
   big: { fontFamily: font.displayBold, fontSize: 84, lineHeight: 92, fontVariant: ['tabular-nums'] },
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'center', width: 160 },
   step: { flex: 1, height: 6, borderRadius: 3 },
-  catchTop: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, minHeight: 64 },
-  field: { flexGrow: 1, minHeight: 300, alignSelf: 'stretch', overflow: 'hidden', borderRadius: 28 },
-  bit: { position: 'absolute', width: BIT, height: BIT },
   line: { alignItems: 'center' },
   now: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999 },
   two: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },

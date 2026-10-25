@@ -54,15 +54,15 @@ describe('ridePlan', () => {
   });
 
   it('puts your go-to first in its slot', () => {
-    const pin = core.normSettings({ urPin: 'catch' });
-    expect(core.ridePlan(core.newUrge(now, 0), {}, pin, tk, now, {}, can)[1]).toBe('catch');
+    const pin = core.normSettings({ urPin: 'stack' });
+    expect(core.ridePlan(core.newUrge(now, 0), {}, pin, tk, now, {}, can)[1]).toBe('stack');
   });
 });
 
 describe('rideSwap', () => {
   it('moves to the next move in the same slot, and round', () => {
     const plan = ['breathe', 'move', 'forward'];
-    expect(core.rideSwap(plan, 1, can)).toEqual(['breathe', 'catch', 'forward']);
+    expect(core.rideSwap(plan, 1, can)).toEqual(['breathe', 'stack', 'forward']);
     expect(core.rideSwap(['breathe', 'ground', 'forward'], 1, can)).toEqual(['breathe', 'move', 'forward']);
     expect(core.rideSwap(plan, 2, can)).toEqual(['breathe', 'move', 'thought']);
   });

@@ -1,15 +1,14 @@
-/* SOS: one short guided ride, the same shape every time, that starts on the first tap. Nothing is asked first.
-   The ride is three moves (core ride.ts): breathe with the sun, then one for the body or the eyes (squeeze, catch the
-   shapes, 5-4-3-2-1), then one for the mind in your own words (the hour after, say the thought fast, your words). Each
-   is picked from what has worked for you, runs by itself and flows into the next; Swap trades it for another of its kind
-   and Next skips it. A line across the top shows the minutes going by, and where yours usually pass. "It passed" is in
-   the corner the whole time.
-   After the three moves, "How is it now?": It passed, Still here (another round, with different moves) or I slipped,
-   and under them the bigger moves (step away for ten minutes, text someone, talk it through, bed at night, every tool).
-   It passed shows what you did: how long it took, how many you have ridden out, which move helped most (one tap, and SOS
-   leans on it next time), one line on why that move works with its lesson for later, and what set it off (one tap).
-   I slipped goes on to Rekindle (log.tsx), as before.
-   With ?practice=1 it is a practice ride for a calm moment: the same three moves, nothing saved as an urge. */
+/* SOS: one short guided ride that starts on the first tap and keeps going until the urge passes. Nothing is asked first.
+   Each round is the same three slots (core ride.ts): breathe with the sun, then one move for the body or the eyes
+   (squeeze, stack the shapes, 5-4-3-2-1), then one for the mind in your own words (the hour after, say the thought fast,
+   your words). Each is picked from what has worked for you, runs by itself and flows into the next; Swap trades it for
+   another of its kind and Next skips it. When a round ends the next one starts, with moves not shown yet, because these
+   skills work like scrolling: the person keeps going until it passes. Nothing asks how it is going.
+   "It passed" in the corner ends it with a big celebration: the flame, confetti, how long it took, how many you have
+   ridden out, which move helped most (one tap, and SOS leans on it next time), one line on why that move works with its
+   lesson for later, and what set it off (one tap). More (next to it) holds the bigger moves (step away, text someone,
+   talk it through, bed at night), every tool, and I slipped, which goes on to Rekindle (log.tsx). The X just closes.
+   With ?practice=1 it is one round, for a calm moment, and nothing is saved as an urge. */
 import {
   addEvent,
   blankP,
@@ -31,7 +30,6 @@ import {
   rideWhy,
   rkStepFor,
   urEntry,
-  urEvidence,
   urFromYou,
   urNight,
   urTags,
@@ -41,16 +39,15 @@ import {
   type UrState,
 } from '@daybook/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { BigOption } from '@/components/choices';
 import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
-import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
-import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
-import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
+import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
+import { Confetti } from '@/components/celebrate';
 import { Text } from '@/components/text';
 import { ToolGrid } from '@/components/tool-grid';
 import { Button, Icon, T } from '@/components/ui';
@@ -60,7 +57,7 @@ import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { font, useSkyTheme, useTheme } from '@/lib/theme';
+import { font, NightContext, useSkyTheme, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
 
 /** what the end of a ride that passed shows: the entry it saved, how long it took, the moves done, the points it earned */
@@ -93,14 +90,12 @@ export default function Sos() {
     if (!snap.settings) setupKeep.shut = false;
   });
 
-  /* the ride: its moves, which one is showing, and which round (Still here starts another) */
+  /* the ride: this round's moves, which one is showing, and which round it is (a new round follows each one) */
   const [plan, setPlan] = useState<string[] | null>(null);
   const [at, setAt] = useState(0);
   const [round, setRound] = useState(0);
   const [won, setWon] = useState<Won | null>(null);
-  const [allTools, setAllTools] = useState(false);
-  /* the moves already written into the entry's rounds */
-  const logged = useRef(0);
+  const [more, setMore] = useState(false);
   /* every move shown in this SOS, done or skipped: another round picks others */
   const shown = useRef<string[]>([]);
 
@@ -136,8 +131,7 @@ export default function Sos() {
   useEffect(() => {
     if (!ur || plan) return;
     const p = ridePlan({ ...ur, used: ur.used.concat(shown.current) }, snap.days, st, tk, Date.now(), sos.mem, can);
-    /* a second round skips the breath: straight to new moves */
-    setPlan(round ? p.slice(1) : p);
+    setPlan(p);
     setAt(0);
   }, [ur, plan, round, snap.days, st, tk, sos.mem, can]);
 
@@ -147,7 +141,7 @@ export default function Sos() {
   const level = Math.max(1, g.level.n);
   const title = practice ? 'Practice' : 'SOS';
 
-  if (won) return <Passed won={won} night={night} />;
+  if (won) return <Passed won={won} night={night} level={level} />;
   if (practice && plan && at >= plan.length) return <PracticeDone sky={sky} level={level} />;
   if (!ur || !plan)
     return (
@@ -156,20 +150,10 @@ export default function Sos() {
       </SceneFrame>
     );
 
-  /* the answer to "How is it now?" (or It passed, any time): the moves since the last answer go into the entry's rounds */
-  const save = (v: 'rode' | 'slipped' | 'again') => {
-    const fresh = ur.used.slice(logged.current);
-    logged.current = ur.used.length;
-    const code = v === 'rode' ? 'p' : v === 'again' ? 's' : 'x';
-    const a: UrState = { ...ur, rounds: ur.rounds.concat(fresh.map((id) => [id, code] as [string, 'p' | 's' | 'x'])).slice(0, 8) };
-    if (v === 'again') {
-      setUr({ ...a, again: (ur.again || 0) + 1, step: 'now' });
-      setRound((r) => r + 1);
-      setPlan(null);
-      setAllTools(false);
-      buzz('tap');
-      return;
-    }
+  /* It passed (in the corner, any time), or I slipped (under More): every move done goes into the entry's rounds */
+  const save = (v: 'rode' | 'slipped') => {
+    const code = v === 'rode' ? 'p' : 'x';
+    const a: UrState = { ...ur, rounds: ur.rounds.concat(ur.used.map((id) => [id, code] as [string, 'p' | 's' | 'x'])).slice(0, 8) };
     const e = urEntry(a, v, st, Date.now());
     let id = '';
     let gain = 0;
@@ -181,6 +165,7 @@ export default function Sos() {
     }).days;
     sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+    setMore(false);
     if (v === 'slipped') {
       sos.end();
       buzz('save');
@@ -199,95 +184,19 @@ export default function Sos() {
       });
       return;
     }
-    buzz('lit');
     setWon({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain });
     sos.end();
   };
 
-  /* a bigger move, or any tool: it opens over SOS, and comes back to "How is it now?" when it is done */
+  /* any tool, from More: it opens over SOS, and the ride goes on where it was when the tool is done */
   const pickTool = (id: string) => {
     if (!urTool(id)) return;
-    setUr({ ...ur, step: 'after' });
+    setMore(false);
     buzz('tap');
     router.push({ pathname: '/tool/[id]', params: { id } });
   };
 
-  /* ---------- how is it now? ---------- */
-  if (!practice && (ur.step === 'after' || ur.step === 'tools' || at >= plan.length)) {
-    const did = ur.used.slice(logged.current).filter((x, i, l) => l.indexOf(x) === i);
-    const rec = urEvidence(snap.days);
-    const big: [string, string, string][] = [
-      ['pause', 'timer', 'Step away 10 min'],
-      ['message', 'chat', 'Text someone'],
-      night ? ['bed', 'moon', 'Go to bed'] : ['talk', 'ask', 'Talk it through'],
-    ];
-    return (
-      <SceneFrame title={title} sky={sky} onClose={close}>
-        <RideBar t0={ur.t0} mark={mark} on={front} color={c.accent} />
-        <Stage key={'check' + round} dir={1}>
-          <T v="title" style={s.c} accessibilityRole="header">
-            How is it now?
-          </T>
-          {did.length ? (
-            <View style={s.did} accessible accessibilityLabel={'You did: ' + did.map(moveName).join(', ')}>
-              {did.map((x) => (
-                <View key={x} style={[s.didP, { backgroundColor: c.scBtn }]}>
-                  <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={15} color={moveTint(c, x)} />
-                  <Text style={[s.didT, { color: c.ink }]}>{moveName(x)}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          <Middle>
-            <View style={s.rec} accessible accessibilityLabel={rec.n ? rec.n + ' urges ridden out before this one.' : 'Urges rise, peak and pass.'}>
-              {rec.n ? (
-                <>
-                  <Text style={[s.recN, { color: c.ink }]}>{rec.n}</Text>
-                  <T tone="muted" style={s.c}>
-                    {rec.n === 1 ? 'urge' : 'urges'} ridden out before this one{rec.med ? '. Yours usually pass in about ' + rec.med + ' min.' : '.'}
-                  </T>
-                </>
-              ) : (
-                <T tone="muted" style={s.c}>
-                  Urges rise, peak and pass. Each one you wait out makes the next one easier.
-                </T>
-              )}
-            </View>
-          </Middle>
-          <Dock>
-            <BigOption tone="mint" icon="wave" title="It passed" sub="I rode it out." onPress={() => save('rode')} />
-            <BigOption tone="sun" icon="timer" title="Still here" sub="Another round, with different moves." onPress={() => save('again')} />
-            <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => save('slipped')} />
-            <T v="small" tone="muted" style={[s.c, { marginTop: 6 }]}>
-              Or something bigger
-            </T>
-            <View style={s.bigRow}>
-              {big.map(([id, ic, label]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    if (id !== 'talk') return pickTool(id);
-                    buzz('tap');
-                    router.push('/talk');
-                  }}
-                  style={({ pressed }) => [s.bigB, { backgroundColor: c.scBtn, opacity: pressed ? 0.8 : 1 }]}>
-                  <Icon name={ic} size={20} color={c.accentText} />
-                  <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable accessibilityRole="button" accessibilityState={{ expanded: allTools }} onPress={() => setAllTools(!allTools)} style={s.all} hitSlop={8}>
-              <Text style={[s.allT, { color: c.accentText }]}>{allTools ? 'Hide the tools' : 'Every tool'}</Text>
-            </Pressable>
-            {allTools ? <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={pickTool} /> : null}
-          </Dock>
-        </Stage>
-      </SceneFrame>
-    );
-  }
-
-  /* ---------- the ride ---------- */
+  /* ---------- the ride: round after round of the same three slots, until it passes ---------- */
   const id = plan[Math.min(at, plan.length - 1)];
   if (shown.current.indexOf(id) < 0) shown.current.push(id);
   const Move = MOVES[id] || MOVES.breathe;
@@ -295,25 +204,47 @@ export default function Sos() {
   const swappable = !!slot && RIDE_SLOTS[slot].filter((x) => x !== 'reasons' || can.words).length > 1;
   const next = (done: boolean) => {
     if (done) setUr({ ...ur, used: ur.used.concat(id) });
-    setAt((x) => x + 1);
-    buzz(at + 1 >= plan.length ? 'save' : 'tap');
+    buzz('tap');
+    if (at + 1 < plan.length) return setAt(at + 1);
+    /* the round is done: a practice ride ends here; an SOS starts the next round, with moves not shown yet */
+    if (practice) return setAt(at + 1);
+    setRound((r) => r + 1);
+    setPlan(null);
   };
-  const passedPill = practice ? null : (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="It passed. Save it."
-      onPress={() => save('rode')}
-      hitSlop={6}
-      style={({ pressed }) => [s.passed, { backgroundColor: c.mint, opacity: pressed ? 0.85 : 1 }]}>
-      <Icon name="check" size={16} color={night ? '#0B3B2E' : '#FFFFFF'} />
-      <Text style={[s.passedT, { color: night ? '#0B3B2E' : '#FFFFFF' }]}>It passed</Text>
-    </Pressable>
+  const top = practice ? null : (
+    <View style={s.topR}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="More: other tools, someone to talk to, or I slipped"
+        onPress={() => {
+          setMore(true);
+          buzz('tap');
+        }}
+        hitSlop={6}
+        style={({ pressed }) => [s.moreB, { backgroundColor: c.scBtn, opacity: pressed ? 0.7 : 1 }]}>
+        <Icon name="more" size={20} color={c.ink} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="It passed. Save it."
+        onPress={() => save('rode')}
+        hitSlop={6}
+        style={({ pressed }) => [s.passed, { backgroundColor: c.mint, opacity: pressed ? 0.85 : 1 }]}>
+        <Icon name="check" size={16} color={night ? '#0B3B2E' : '#FFFFFF'} />
+        <Text style={[s.passedT, { color: night ? '#0B3B2E' : '#FFFFFF' }]}>It passed</Text>
+      </Pressable>
+    </View>
   );
+  const big: [string, string, string][] = [
+    ['pause', 'timer', 'Step away 10 min'],
+    ['message', 'chat', 'Text someone'],
+    night ? ['bed', 'moon', 'Go to bed'] : ['talk', 'ask', 'Talk it through'],
+  ];
   return (
-    <SceneFrame title={title} sky={sky} onClose={close} topRight={passedPill}>
-      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front} color={moveTint(c, id)} />
+    <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
+      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more} color={moveTint(c, id)} />
       <Stage key={round + '-' + at + '-' + id} dir={at || round ? 1 : 0}>
-        <Move on={front} onDone={() => next(true)} />
+        <Move on={front && !more} onDone={() => next(true)} />
       </Stage>
       <Dock>
         <View style={s.ctl}>
@@ -326,7 +257,10 @@ export default function Sos() {
               buzz('tap');
             }}
           />
-          <View style={s.mid} accessible accessibilityLabel={'Move ' + (at + 1) + ' of ' + plan.length + ': ' + moveName(id)}>
+          <View
+            style={s.mid}
+            accessible
+            accessibilityLabel={'Move ' + (at + 1) + ' of ' + plan.length + (round ? ', round ' + (round + 1) : '') + ': ' + moveName(id)}>
             <View style={s.segs}>
               {plan.map((x, j) => (
                 <View
@@ -336,20 +270,74 @@ export default function Sos() {
               ))}
             </View>
             <Text style={[s.segT, { color: c.muted }]} numberOfLines={1}>
-              {moveName(id)} · {at + 1} of {plan.length}
+              {moveName(id)}
+              {round ? ' · round ' + (round + 1) : ' · ' + (at + 1) + ' of ' + plan.length}
             </Text>
           </View>
-          <Round icon="next" label={at + 1 >= plan.length ? 'Done with the moves' : 'Next move'} onPress={() => next(false)} />
+          <Round icon="next" label="Next move" onPress={() => next(false)} />
         </View>
       </Dock>
+      <More open={more} night={night} onClose={() => setMore(false)}>
+        <Text style={[s.moreH, { color: c.ink }]}>Something bigger</Text>
+        <View style={s.bigRow}>
+          {big.map(([bid, ic, label]) => (
+            <Pressable
+              key={bid}
+              accessibilityRole="button"
+              onPress={() => {
+                if (bid !== 'talk') return pickTool(bid);
+                setMore(false);
+                buzz('tap');
+                router.push('/talk');
+              }}
+              style={({ pressed }) => [s.bigB, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
+              <Icon name={ic} size={20} color={c.accentText} />
+              <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[s.moreH, { color: c.ink }]}>Every tool</Text>
+        <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={pickTool} />
+        <Pressable accessibilityRole="button" onPress={() => save('slipped')} style={s.slip} hitSlop={8}>
+          <Icon name="leaf" size={16} color={c.slipText} />
+          <Text style={[s.slipT, { color: c.slipText }]}>I slipped. A slip is data, not a reset.</Text>
+        </Pressable>
+      </More>
     </SceneFrame>
+  );
+}
+
+/** More: a sheet over the ride, with the bigger moves, every tool and I slipped. It slides up from the bottom; the ride
+    pauses under it. */
+function More({ open, night, onClose, children }: { open: boolean; night: boolean; onClose: () => void; children: ReactNode }) {
+  const c = useSkyTheme(night ? 'night' : 'violet');
+  const inset = useSafeAreaInsets();
+  return (
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+      <NightContext.Provider value={night}>
+        <View style={s.moreWrap}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onClose} />
+          <View style={[s.moreSheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 16 }]}>
+            <View style={s.moreTop}>
+              <View style={[s.grab, { backgroundColor: c.line }]} />
+              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} hitSlop={8} style={[s.moreX, { backgroundColor: c.bg }]}>
+                <Icon name="x" size={18} color={c.ink} />
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {children}
+            </ScrollView>
+          </View>
+        </View>
+      </NightContext.Provider>
+    </Modal>
   );
 }
 
 const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
 
 /* ---------- the end of a ride that passed ---------- */
-function Passed({ won, night }: { won: Won; night: boolean }) {
+function Passed({ won, night, level }: { won: Won; night: boolean; level: number }) {
   const c = useSkyTheme(night ? 'night' : 'mint');
   const { snap, tk, update, apply } = useStore();
   const st = useCareSettings();
@@ -362,6 +350,24 @@ function Passed({ won, night }: { won: Won; night: boolean }) {
   const [askPrac] = useState(() => ridePracticeAsk(snap.days, sos.mem));
   useEffect(() => {
     if (askPrac) sos.setMem((m) => ({ ...m, pracAsk: 1 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* the celebration: the flame pops in with its burst, confetti bursts out, a run of buzzes, and then a shower falls.
+     With celebrations off it is the same page, quietly. */
+  const cel = st.celebrate !== false;
+  const [rain, setRain] = useState(false);
+  useEffect(() => {
+    if (!cel) return void buzz('save');
+    buzz('lit');
+    const t = [
+      setTimeout(() => buzz('land'), 170),
+      setTimeout(() => buzz('land'), 340),
+      setTimeout(() => {
+        buzz('lit');
+        setRain(true);
+      }, 760),
+    ];
+    return () => t.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const why = rideWhy(helped, won.moves);
@@ -388,138 +394,90 @@ function Passed({ won, night }: { won: Won; night: boolean }) {
   if (week > 1) chips.push(week + ' this week');
   if (won.gain > 0) chips.push('+' + won.gain + ' points');
   return (
-    <SceneFrame title="SOS" sky={night ? 'night' : 'mint'} onClose={close}>
-      <WonHero mins={won.mins} />
-      <View style={s.wonWords}>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Ridden out.
-        </T>
-        <T style={s.c}>It passed in {mins}. You stayed with it, and it went.</T>
-      </View>
-      <Appear delay={420} style={s.chips}>
-        {chips.map((t) => (
-          <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
-            <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
-          </View>
-        ))}
-      </Appear>
-      <Appear delay={560} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-        {won.moves.length ? (
-          <>
-            <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
-            <View style={s.wrap} accessibilityRole="radiogroup">
-              {won.moves.map((x) => {
-                const on = helped === x;
-                return (
-                  <Pressable
-                    key={x}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: on }}
-                    onPress={() => pickHelped(x)}
-                    style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
-                    <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
-                    <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{moveName(x)}</Text>
-                  </Pressable>
-                );
-              })}
+    <View style={{ flex: 1 }}>
+      <SceneFrame title="SOS" sky={night ? 'night' : 'mint'} onClose={close}>
+        <Finish
+          level={level}
+          size={170}
+          tone="mint"
+          alive
+          always
+          title="You rode it out."
+          text={'It passed in ' + mins + '. Every one you ride out makes the next one easier.'}
+        />
+        <Appear delay={650} style={s.chips}>
+          {chips.map((t) => (
+            <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
+              <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
             </View>
-          </>
+          ))}
+        </Appear>
+        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+          {won.moves.length ? (
+            <>
+              <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
+              <View style={s.wrap} accessibilityRole="radiogroup">
+                {won.moves.map((x) => {
+                  const on = helped === x;
+                  return (
+                    <Pressable
+                      key={x}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: on }}
+                      onPress={() => pickHelped(x)}
+                      style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
+                      <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
+                      <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{moveName(x)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+          {why ? (
+            <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
+              <T v="small" style={{ lineHeight: 20 }}>
+                {why.t}
+              </T>
+              {lesson ? (
+                <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
+                  <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
+                </Pressable>
+              ) : null}
+            </Appear>
+          ) : null}
+          {won.moves.length || why ? <View style={[s.rule, { backgroundColor: c.line }]} /> : null}
+          <Text style={[s.q, { color: c.ink }]}>
+            What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
+          </Text>
+          <View style={s.wrap}>
+            {trigs.map(([v, label]) => {
+              const on = trig === v;
+              return (
+                <Pressable
+                  key={v}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  onPress={() => pickTrig(v)}
+                  style={[s.pick, { backgroundColor: on ? c.ink : c.bg }]}>
+                  <Text style={[s.pickT, { color: on ? c.surface : c.ink }]}>{label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Appear>
+        {askPrac ? (
+          <T v="small" tone="muted" style={s.c}>
+            Tip: run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
+          </T>
         ) : null}
-        {why ? (
-          <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
-            <T v="small" style={{ lineHeight: 20 }}>
-              {why.t}
-            </T>
-            {lesson ? (
-              <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
-                <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
-              </Pressable>
-            ) : null}
-          </Appear>
-        ) : null}
-        {won.moves.length || why ? <View style={[s.rule, { backgroundColor: c.line }]} /> : null}
-        <Text style={[s.q, { color: c.ink }]}>
-          What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
-        </Text>
-        <View style={s.wrap}>
-          {trigs.map(([v, label]) => {
-            const on = trig === v;
-            return (
-              <Pressable
-                key={v}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                onPress={() => pickTrig(v)}
-                style={[s.pick, { backgroundColor: on ? c.ink : c.bg }]}>
-                <Text style={[s.pickT, { color: on ? c.surface : c.ink }]}>{label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </Appear>
-      {askPrac ? (
-        <T v="small" tone="muted" style={s.c}>
-          Tip: run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
-        </T>
-      ) : null}
-      <Dock>
-        <Button label="Done" onPress={close} />
-      </Dock>
-    </SceneFrame>
-  );
-}
-
-/** where each shape of the burst around the ring lands: x, y from the middle, its kind, its turn */
-const BURST: [number, number, ShapeKind, number][] = [
-  [-112, -30, 'cookie4', 12],
-  [-84, 62, 'heart', -10],
-  [-30, -98, 'sunny', 0],
-  [44, -96, 'clover4', 20],
-  [110, -18, 'gem', 10],
-  [92, 66, 'softBurst', 4],
-];
-
-/** the top of "Ridden out": the time line closed into a ring, with the minutes it took in the middle */
-function WonHero({ mins }: { mins: number }) {
-  const c = useTheme();
-  const reduce = useReducedMotion();
-  /* a few shapes spring out from behind the ring and settle around it, once */
-  const fly = useRef(BURST.map(() => new Animated.Value(reduce ? 1 : 0))).current;
-  useEffect(() => {
-    if (reduce) return;
-    Animated.stagger(
-      50,
-      fly.map((v) => Animated.spring(v, { toValue: 1, ...SPRING.default, delay: 120, useNativeDriver: NATIVE })),
-    ).start();
-  }, [reduce, fly]);
-  const tints = [c.mint, c.sun, c.sky, c.coral, c.violet, c.sun2];
-  return (
-    <Appear by={0} duration={360} style={s.hero}>
-      {BURST.map((b, i) => (
-        <Animated.View
-          key={i}
-          pointerEvents="none"
-          style={[
-            s.burst,
-            {
-              opacity: fly[i],
-              transform: [
-                { translateX: fly[i].interpolate({ inputRange: [0, 1], outputRange: [0, b[0]] }) },
-                { translateY: fly[i].interpolate({ inputRange: [0, 1], outputRange: [0, b[1]] }) },
-                { rotate: fly[i].interpolate({ inputRange: [0, 1], outputRange: ['-90deg', b[3] + 'deg'] }) },
-              ],
-            },
-          ]}>
-          <Shape kind={b[2]} size={22} color={tints[i % tints.length]} />
-        </Animated.View>
-      ))}
-      <WavyRing size={150} p={1} color={c.mint} track={c.mint + '33'} stroke={6}>
-        <View style={{ alignItems: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Text style={[s.heroN, { color: c.ink }]}>{mins < 1 ? '<1' : mins}</Text>
-          <Text style={[s.heroU, { color: c.muted }]}>{mins <= 1 ? 'minute' : 'minutes'}</Text>
-        </View>
-      </WavyRing>
-    </Appear>
+        <Dock>
+          <Button label="Done" onPress={close} />
+        </Dock>
+      </SceneFrame>
+      {cel ? <Confetti big /> : null}
+      {cel && rain ? <Confetti big rain /> : null}
+    </View>
   );
 }
 
@@ -580,14 +538,9 @@ const s = StyleSheet.create({
   segs: { flexDirection: 'row', gap: 5, alignSelf: 'stretch' },
   seg: { flex: 1, height: 6, borderRadius: 3 },
   segT: { fontFamily: font.bodySemi, fontSize: 13.5 },
-  did: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  didP: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 9, paddingRight: 11, minHeight: 30, borderRadius: 15 },
-  didT: { fontFamily: font.bodySemi, fontSize: 13.5 },
   bigRow: { flexDirection: 'row', gap: 8 },
   bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 18 },
   bigT: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center' },
-  all: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
-  allT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
   chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13.5 },
@@ -608,11 +561,14 @@ const s = StyleSheet.create({
   pickT: { fontFamily: font.bodySemi, fontSize: 14.5 },
   lesson: { fontFamily: font.bodySemi, fontSize: 13.5 },
   rule: { height: 1, marginVertical: 2 },
-  rec: { alignItems: 'center', gap: 2, maxWidth: 300 },
-  recN: { fontFamily: font.displayBold, fontSize: 56, lineHeight: 62, fontVariant: ['tabular-nums'] },
-  hero: { alignItems: 'center', justifyContent: 'center', paddingTop: 6, height: 190, alignSelf: 'stretch' },
-  burst: { position: 'absolute', left: '50%', top: '50%', marginLeft: -11, marginTop: -11 },
-  heroN: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 52, fontVariant: ['tabular-nums'] },
-  heroU: { fontFamily: font.bodySemi, fontSize: 14 },
-  wonWords: { alignItems: 'center', gap: 4 },
+  topR: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  moreB: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  moreWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,10,40,0.38)' },
+  moreSheet: { maxHeight: '86%', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 18, paddingTop: 10 },
+  moreTop: { height: 40, alignItems: 'center', justifyContent: 'center' },
+  grab: { width: 40, height: 5, borderRadius: 3 },
+  moreX: { position: 'absolute', right: 0, top: 2, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  moreH: { fontFamily: font.display, fontSize: 18, lineHeight: 23, marginTop: 4 },
+  slip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, marginTop: 6 },
+  slipT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
 });

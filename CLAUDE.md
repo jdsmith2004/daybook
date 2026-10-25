@@ -79,6 +79,21 @@ need, without letting the screen turn into a list of features.
   the owner decides, do it that way and stay focused on the task. Push back only when there is a real disagreement with
   what the owner asked, and not in every report. Choices you made yourself are not pushback: stand behind them, and say
   plainly what you chose where the owner should know (a decision made on their behalf, a risk, something untested).
+- **Redesigning a part from the ground up (the owner, October 24, 2026, after the SOS redesign).** When the owner asks for
+  a part to be rebuilt (a flow, its tools, its lessons), this is how it is done:
+  - **Start from the purpose, not from what is there.** One goal leads: the person's experience. For SOS that is getting
+    through this urge and getting better at it every time. The current screens, earlier decisions and
+    docs/design-standards.md are inputs, not limits; drop anything that does not serve the goal.
+  - **Research a lot first.** Look for real studies on what works (and how strongly), write down what they support, and
+    design from that. Science first, but something that clearly helps can stay even when the evidence is thin; cut the
+    parts that do not help.
+  - **Make it seamless enough to amaze.** Think of Apple's philosophy and of apps like How We Feel that pack a lot of
+    information cleanly into a small space: it starts doing something on the first tap, one living thing in the middle,
+    no clutter, no menus to read under stress, and every moment feels finished (motion, haptics, night colors).
+  - **Ask the real questions early,** each with the options and a recommendation, then build without stopping.
+  - **Build it on a feature branch, look at it on the web and on the iOS simulator, and show the owner on the simulator**
+    (a release build, so it runs at real speed). Never merge it before the owner has seen it; this overrides "merge when
+    the tests pass" above.
 - **Deploy to AWS when it is worth it, not on every push.** The repository is private (the owner, October 23, 2026),
   so there is no GitHub Pages preview; the AWS site is the only site. It deploys only when the last commit of a push has
   `[deploy]` in its message (or the owner presses Actions, Deploy, Run workflow). Use your judgment: add `[deploy]` once

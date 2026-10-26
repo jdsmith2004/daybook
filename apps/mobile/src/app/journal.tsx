@@ -384,10 +384,13 @@ function WritePage({
     const t = setTimeout(() => input.current?.focus(), 420);
     return () => clearTimeout(t);
   }, [fresh]);
+  /* Done sits big at the bottom, where the thumb is; while the keyboard covers the bottom, it moves up into the top bar.
+     iOS says the keyboard is coming before it moves, so the two swap as it rises; Android only says so after. */
   const [typing, setTyping] = useState(false);
   useEffect(() => {
-    const a = Keyboard.addListener('keyboardDidShow', () => setTyping(true));
-    const b = Keyboard.addListener('keyboardDidHide', () => setTyping(false));
+    const ios = Platform.OS === 'ios';
+    const a = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true));
+    const b = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false));
     return () => {
       a.remove();
       b.remove();
@@ -432,20 +435,28 @@ function WritePage({
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Back to the journal" onPress={done} style={s.round} hitSlop={6}>
-              <Icon name="back" color={JN.ink} />
-            </Pressable>
+            <View style={s.topBack}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Back to the journal" onPress={done} style={s.round} hitSlop={6}>
+                <Icon name="back" color={JN.ink} />
+              </Pressable>
+            </View>
             <Text style={s.when} numberOfLines={1}>
               {jnDayLabel(e.d, tk) + '  ·  ' + entryTime(e.at)}
             </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Done"
-              onPress={done}
-              hitSlop={6}
-              style={({ pressed }) => [s.doneBtn, { backgroundColor: look.color, opacity: pressed ? 0.85 : 1 }]}>
-              <Text style={s.doneT}>Done</Text>
-            </Pressable>
+            <View style={s.topDone}>
+              {typing ? (
+                <Appear by={0} duration={180}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Done"
+                    onPress={done}
+                    hitSlop={6}
+                    style={({ pressed }) => [s.doneBtn, { backgroundColor: look.color, opacity: pressed ? 0.85 : 1 }]}>
+                    <Text style={s.doneT}>Done</Text>
+                  </Pressable>
+                </Appear>
+              ) : null}
+            </View>
           </View>
           {/* the feeling, its shape breathing in its color; a tap on it names it again */}
           <Pressable
@@ -480,15 +491,26 @@ function WritePage({
             accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
             style={s.input}
           />
-          {/* a new entry does not offer to be thrown away; an entry read back again does, quietly, at the bottom */}
-          {!typing && !fresh ? (
-            <View style={[s.foot, { paddingBottom: Math.max(inset.bottom, 14) }]}>
-              <Pressable accessibilityRole="button" onPress={remove} hitSlop={8}>
-                <Text style={[s.del, sure && s.delSure]}>{sure ? 'Tap again to delete' : 'Delete entry'}</Text>
-              </Pressable>
-            </View>
+          {typing ? (
+            <View style={{ height: 8 }} />
           ) : (
-            <View style={{ height: typing ? 8 : Math.max(inset.bottom, 14) }} />
+            <View style={[s.foot, { paddingBottom: Math.max(inset.bottom, 12) }]}>
+              <Appear by={12} duration={260}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Done"
+                  onPress={done}
+                  style={({ pressed }) => [s.doneBig, { backgroundColor: look.color, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+                  <Text style={s.doneBigT}>Done</Text>
+                </Pressable>
+              </Appear>
+              {/* a new entry does not offer to be thrown away; an entry read back again does, quietly, under Done */}
+              {!fresh ? (
+                <Pressable accessibilityRole="button" onPress={remove} hitSlop={8} style={s.delBtn}>
+                  <Text style={[s.del, sure && s.delSure]}>{sure ? 'Tap again to delete' : 'Delete entry'}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -548,7 +570,13 @@ const s = StyleSheet.create({
     color: JN.page,
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
-  foot: { alignItems: 'flex-start', paddingTop: 8 },
+  /* the same width on both sides, so the date stays in the middle */
+  topBack: { width: 78, alignItems: 'flex-start' },
+  topDone: { width: 78, alignItems: 'flex-end' },
+  foot: { paddingTop: 10, gap: 4 },
+  doneBig: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  doneBigT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22, color: '#1C2030' },
+  delBtn: { alignSelf: 'center', paddingVertical: 10 },
   del: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: JN.faint },
   delSure: { color: '#FF9A8D' },
 });

@@ -47,10 +47,12 @@ class Device {
     const ids: core.RecordId[] = [];
     if (next.settings !== before.settings) ids.push('settings');
     for (const k of new Set([...Object.keys(before.days), ...Object.keys(next.days)])) if (before.days[k] !== next.days[k]) ids.push(`days/${k}`);
+    const [ja, jb] = [before.journal || {}, next.journal || {}];
+    for (const k of new Set([...Object.keys(ja), ...Object.keys(jb)])) if (ja[k] !== jb[k]) ids.push(`journal/${k}`);
     this.snap = next;
     for (const id of ids) {
       const r = core.recordOf(next, id);
-      this.dirty[id] = (r && r.u) || at;
+      this.dirty[id] = (r && 'u' in r && r.u) || at;
     }
   }
   async sync() {
@@ -291,10 +293,46 @@ describe('two people', () => {
     const e = new Device(transport('eve'));
     a.change((s) => ({ ...s, settings: st(100, 'alice goal') }), 100);
     a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    a.change((s) => ({ ...s, journal: core.jnStart(s.journal || {}, '2026-10-10', 'Hopeful', 120).jn }), 120);
     await a.sync();
     serverNow += 1000;
     await e.sync();
-    expect(e.snap).toEqual({ settings: null, days: {}, reviews: {} });
+    expect(e.snap).toEqual({ settings: null, days: {}, reviews: {}, journal: {} });
+  });
+});
+
+describe('the journal', () => {
+  it('two devices writing on the same day keep both entries, an edit wins by its time, and a deletion reaches the other', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    let ia = '';
+    let ib = '';
+    a.change((s) => {
+      const r = core.jnStart(s.journal || {}, '2026-10-10', 'Calm', 200);
+      ia = r.id;
+      return { ...s, journal: core.jnEdit(r.jn, r.id, { t: 'A quiet morning.' }, 201) };
+    }, 201);
+    b.change((s) => {
+      const r = core.jnStart(s.journal || {}, '2026-10-10', 'Proud', 210);
+      ib = r.id;
+      return { ...s, journal: r.jn };
+    }, 210);
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    expect(Object.keys(a.snap.journal!).sort()).toEqual([ia, ib].sort());
+    expect(b.snap.journal![ia].t).toBe('A quiet morning.');
+    b.change((s) => ({ ...s, journal: core.jnEdit(s.journal!, ia, { t: 'A quiet morning, and a long walk.' }, serverNow) }), serverNow);
+    a.change((s) => ({ ...s, journal: core.jnRemove(s.journal!, ib) }), serverNow + 1);
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(a.snap.journal![ia].t).toBe('A quiet morning, and a long walk.');
+    expect(Object.keys(b.snap.journal!)).toEqual([ia]);
   });
 });
 

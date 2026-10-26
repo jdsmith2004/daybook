@@ -75,7 +75,7 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
     case 'first-week':
       return <Band m={m} sky="sky" onPress={() => router.push('/week')} />;
     case 'first-pattern':
-      return <Band m={m} sky="violet" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'patterns' } })} />;
+      return <Band m={m} sky="violet" onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'patterns' } })} />;
     case 'away':
       return <Band m={m} sky="sky" onPress={() => router.push('/back')} />;
     default:

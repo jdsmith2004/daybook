@@ -2626,3 +2626,45 @@ Still open:
   person's own record gives them another tag. In the golden fixtures' cases they went from about 12% of the first
   suggestions to about 59%; Go to bed still leads late at night (now paired with one of them), and a person's own record,
   a go-to, "Not for me" and passing over a suggestion still win over the lift.
+
+## The journal: pull Today down, feelings first (the owner, October 26, 2026)
+
+The owner asked for a journal reached by pulling Today down (like refreshing a page), where every entry starts with the
+How We Feel picker before the writing, designed to Apple and How We Feel standards. Decided with the owner: the pull lands
+on the journal with the four colors low and ready; the tab that was called Journal is now **Pattern**; entries sync like
+the log; the page offers one open question to start from, never one aimed at the feeling just named ("you feel lonely, do
+you wish someone loved you?" reads as pointed).
+
+**Built** (core `journal-entries.ts`, `app/journal.tsx`, `components/journal.tsx`, `components/pull-door.tsx`):
+
+- **The pull.** On iOS the page's own bounce is the pull; on Android and the web the touch is followed at the top with the
+  same give (screen.tsx `usePull`). As the page comes down the four Mood Meter colors grow in the gap above it, one after
+  another; past 72 points they swell, the phone ticks, and the words say "Let go for your journal". Short of it, the page
+  springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
+  it too; More has a Journal row for good.
+- **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with
+  the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. Entries
+  are cards, newest first by day (Today, Yesterday, the date), each lit from its corner by its feeling's color, with the
+  feeling's shape and word, the time and the first lines. Low at the bottom: "How are you feeling?" with the Mood Meter in
+  small (four breathing bubbles in their square). Before the first entry: the four colors as scattered shapes, what the
+  journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
+- **An entry** starts in the field of feelings, grown out of the bubble tapped. The word named, the entry exists (naming
+  is the part that helps most). The page: the feeling breathing in its color with its word and line (tap to change it),
+  one open question for the time of day (a tap shows another), and the page to write on, ready with the keyboard. It saves
+  as it is written; Done (in the feeling's color) goes back to the list, where the entry rises in at the top. An entry read
+  back shows the question it answered, and Delete entry asks twice.
+- **Data.** Each entry is its own record, `journal/<id>`, so two devices writing on the same day never overwrite each
+  other and a long entry (up to 20,000 characters) never pushes a day past a record's size. Backups carry them; the
+  privacy page says what is kept. The sync server cleans records with core, so it needs the deploy that carries this.
+
+**The research behind it** (a research agent, October 26): naming a feeling calms it (Lieberman et al. 2007; Torre and
+Lieberman 2018), and precise names for hard feelings go with less drinking and fewer lapses (Kashdan et al. 2010;
+Emery et al. 2022; Anand et al. 2017). Expressive writing helps a little (Frattaroli 2006, r = .075), two minutes on two
+days was enough in Burton and King 2008, writing about a best possible self helps with less distress (King 2001), and
+self-compassion after a failure raises the drive to do better (Breines and Chen 2012). The risk is rumination (Gortner et
+al. 2006), which is why the questions lean toward what went right, what helped and what is ahead. Pull-down gestures are
+hard to discover (Clear's review), hence the first-time line and the More row.
+
+**For later, the owner's call:** whether writing in the journal feeds the flame (points for an entry, as for an honest
+log); a tab layout with the journal as a tab of its own (the owner is open to it); "on this day" (a hopeful entry from a
+month ago brought back); a Face ID lock for the journal; a slip's comeback offering a short structured entry.

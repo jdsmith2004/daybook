@@ -1,4 +1,4 @@
-/* The Journal: what happened. Days (the month and every day), Your pattern (a few plain answers, each with the graph behind
+/* Pattern (the tab was called Journal until the journal itself came, October 2026): what happened. Days (the month and every day), Your pattern (a few plain answers, each with the graph behind
    it: are slips getting further apart, when it happens, what sets it off, what is different on hard days, what helps),
    Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without a
    tip, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a card
@@ -56,10 +56,10 @@ import { font, useTheme } from '@/lib/theme';
 type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
 
-export default function Journal() {
+export default function Pattern() {
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'patterns' || params.pane === 'weeks' ? params.pane : 'days');
-  /* a link to a section (Today's "Month ›" opens Days) moves to it, even when Journal is already open on another one */
+  /* a link to a section (Today's "Month ›" opens Days) moves to it, even when Pattern is already open on another one */
   useEffect(() => {
     if (params.pane === 'days' || params.pane === 'patterns' || params.pane === 'weeks') setPane(params.pane);
   }, [params.pane]);
@@ -69,7 +69,7 @@ export default function Journal() {
   const scroll = useRef<ScrollViewInstance>(null);
   const inset = useSafeAreaInsets();
   const [paneY, setPaneY] = useState(0);
-  if (!st) return <SetupFirst title="Journal" line="Everything you log shows up here by itself: urges ridden out, slips, and how each day went." />;
+  if (!st) return <SetupFirst title="Pattern" line="Everything you log shows up here by itself: urges ridden out, slips, and how each day went." />;
   const sub =
     pane === 'days'
       ? 'Everything you log shows up here by itself. Tap a day to add or fix something.'
@@ -78,9 +78,9 @@ export default function Journal() {
         : 'Your Sunday reviews, and each week in numbers.';
   const cw = Math.max(0, weekOf(tk, st));
   return (
-    <Screen eyebrow="My Daybook" title="Journal" sub={<T tone="muted">{sub}</T>} scrollRef={scroll}>
+    <Screen eyebrow="My Daybook" title="Pattern" sub={<T tone="muted">{sub}</T>} scrollRef={scroll}>
       <Segments
-        label="Journal sections"
+        label="Pattern sections"
         list={[
           ['days', 'Days'],
           ['patterns', 'Pattern'],

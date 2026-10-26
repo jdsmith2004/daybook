@@ -150,6 +150,8 @@ function Shell() {
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}
+          {/* the journal comes down over Today like a shade, and moves itself (app/journal.tsx), so Today stays under it */}
+          <Stack.Screen name="journal" options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }} />
           {/* the sheets: one thing, over everything */}
           {SHEETS.map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

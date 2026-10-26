@@ -293,7 +293,7 @@ export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
   const f = formWord(form);
-  /* today's entries (the rest is in Journal, Days) and the week's goal, set on Sunday, while it can still be counted */
+  /* today's entries (the rest is in Pattern, Days) and the week's goal, set on Sunday, while it can still be counted */
   const n = sumDay(days[tk]).n;
   const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk);
   const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';

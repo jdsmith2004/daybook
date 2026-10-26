@@ -47,7 +47,7 @@ function MiniNav({ hot, k = 1 }: { hot?: boolean; k?: number }) {
   return (
     <View style={[s.nav, { backgroundColor: c.surface, borderTopColor: c.line, paddingVertical: 4 * k }]}>
       {tab('sun', 'Today', !hot)}
-      {tab('calendar', 'Journal', false)}
+      {tab('calendar', 'Pattern', false)}
       <View style={{ flex: 1, alignItems: 'center', gap: 1 * k }}>
         <View
           style={[

@@ -1,4 +1,4 @@
-/* The week's goal from Sunday, in Journal, Days (core: sunday.ts). The review itself is Today's card on Sunday and Monday
+/* The week's goal from Sunday, in Pattern, Days (core: sunday.ts). The review itself is Today's card on Sunday and Monday
    (core moment.ts), and Today's standing row keeps one line of the goal ("2 of 5 nights this week"). Here: on Sunday the
    goal for the week ahead, and through the week how it is going when the log can count it. With it, whatever extras the
    person chose on Sunday: their if-then plan, a word on one of the harder days, and their note to themselves from

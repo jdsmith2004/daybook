@@ -59,6 +59,29 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   for (let x = riskToKeep(days, sn, tk, at), n = 0; x && n < 4; x = riskToKeep(days, sn, tk, at), n++) days = keepHard(days, x.k, x.r.win.start, at);
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
+  /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */
+  const jn: [number, string, string, string][] = [
+    [
+      -1,
+      '21:40',
+      'Proud',
+      'Got through the late hours without opening the laptop. Called my brother instead and we talked for an hour. I forgot how much I like hearing him laugh.',
+    ],
+    [-1, '08:10', 'Hopeful', 'Slept well for the third night in a row. Mornings feel clearer than they used to.'],
+    [-2, '22:30', 'Restless', 'Could not settle tonight. Went for a walk around the block and it passed. Writing it down helps me see it was only a wave.'],
+    [-4, '19:05', 'Grateful', ''],
+    [-6, '23:15', 'Lonely', 'Quiet weekend. Texted Sam to get coffee on Sunday. Small step, but I took it.'],
+    [-9, '07:50', 'Calm', 'First morning run in weeks. Legs heavy, head light.'],
+  ];
+  /* ?jn=0 shows the journal before its first entry */
+  const noJn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('jn') === '0';
+  if (!noJn)
+    jn.forEach(([n, time, w, t], i) => {
+      const d = day(DEMO.day, n);
+      const at = new Date(`${d}T${time}:00`).getTime();
+      const id = 'demo' + (i + 1);
+      out['daybook:journal/' + id] = JSON.stringify({ id, d, at, w, t, u: at });
+    });
   if (theme !== 'auto') out['daybook.theme'] = theme;
   return out;
 }

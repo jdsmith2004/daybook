@@ -230,7 +230,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={h.say + ' Opens your days.'}
-          onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })}
+          onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
           style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
             {h.eb.toUpperCase()}

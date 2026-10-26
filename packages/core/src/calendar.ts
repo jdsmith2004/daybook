@@ -1,4 +1,4 @@
-/* The month calendar in Journal, and the summary of one day. The calendar colors each day by how it went: no slip, a
+/* The month calendar in Pattern, and the summary of one day. The calendar colors each day by how it went: no slip, a
    slip (one slip in the gentle count, or a slip that kept the run, has its own mark), a day that was only logged, or
    nothing logged. The months go back to where the log starts. A tap on a day opens its summary: how it went, what
    happened (each entry with its time, what set it off and what helped), the check-in at a glance, and the rest of the

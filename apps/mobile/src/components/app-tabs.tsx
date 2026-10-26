@@ -26,8 +26,8 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <TabButton icon="sun">Today</TabButton>
           </TabTrigger>
-          <TabTrigger name="journal" href="/journal" asChild>
-            <TabButton icon="calendar">Journal</TabButton>
+          <TabTrigger name="pattern" href="/pattern" asChild>
+            <TabButton icon="calendar">Pattern</TabButton>
           </TabTrigger>
           <SosTab />
           <TabTrigger name="learn" href="/learn" asChild>

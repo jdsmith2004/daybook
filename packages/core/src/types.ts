@@ -1,5 +1,6 @@
 /* The data model. One settings record, one record per day, one per weekly review. Every rule in Daybook is worked out from
    these at the time it is shown (points, levels, badges, runs, saves, step down), so nothing derived is ever stored. */
+import type { Journal } from './journal-entries';
 import type { Talk } from './talk';
 import type { SunReview } from './sunday';
 import type { Supporter } from './supporter';
@@ -205,4 +206,6 @@ export interface Snapshot {
   settings: Settings | null;
   days: Days;
   reviews: Reviews;
+  /** the journal's entries (journal-entries.ts). Optional, so a snapshot from before the journal needs no change. */
+  journal?: Journal;
 }

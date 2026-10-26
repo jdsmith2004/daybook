@@ -75,13 +75,14 @@ export function sheetOnTop(): boolean {
 /** the tab showing under the pages (kept by the tab bar) */
 let lastTab = 'index';
 export function keepTab(path: string) {
-  const m = /^\/(journal|learn|more)?$/.exec(path);
+  const m = /^\/(pattern|learn|more)?$/.exec(path);
   if (m) lastTab = m[1] || 'index';
 }
 
 /** what a Back button on a page should say: the page underneath it */
 const NAMES: Record<string, string> = {
   index: 'Today',
+  pattern: 'Pattern',
   journal: 'Journal',
   learn: 'Learn',
   more: 'More',

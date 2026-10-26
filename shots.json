@@ -29,7 +29,7 @@
     },
     {
       "name": "pattern",
-      "screen": "/journal?pane=patterns",
+      "screen": "/pattern?pane=patterns",
       "caption": "Learn your pattern",
       "sub": "Your log shows the hours and moments that are hardest for you.",
       "bg": "cream",

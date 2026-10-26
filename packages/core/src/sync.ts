@@ -11,6 +11,7 @@
    handler with an in-memory table. Checked by services/api/test/client.test.ts. */
 import { normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
 import { isKey } from './legacy/core.js';
+import type { JEntry } from './journal-entries';
 import { keepSup } from './supporter';
 import type { Settings, Snapshot } from './types';
 
@@ -47,6 +48,7 @@ export function recordOf(s: Snapshot, id: RecordId) {
   if (!p) return null;
   if (p.kind === 'settings') return s.settings;
   if (p.kind === 'days') return s.days[p.key] ?? null;
+  if (p.kind === 'journal') return s.journal?.[p.key] ?? null;
   return s.reviews[p.key] ?? null;
 }
 
@@ -80,7 +82,8 @@ function localU(s: Snapshot, dirty: Dirty, id: RecordId): number | null {
     deletion from the account (another device deleted everything) removes the record here. The ids that changed come back,
     with the dirty list minus the records the account's newer copy replaced. */
 export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { snap: Snapshot; changed: RecordId[]; dirty: Dirty } {
-  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews } };
+  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews }, journal: { ...(s.journal || {}) } };
+  const jn = snap.journal!;
   const d: Dirty = { ...dirty };
   const changed = new Set<RecordId>();
   /* the newest copy of each id, if the account sent one twice */
@@ -100,6 +103,9 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     else if (p.kind === 'days') {
       if (r.data) snap.days[p.key] = r.data as Snapshot['days'][string];
       else delete snap.days[p.key];
+    } else if (p.kind === 'journal') {
+      if (r.data) jn[p.key] = r.data as JEntry;
+      else delete jn[p.key];
     } else if (r.data) snap.reviews[p.key] = r.data as Snapshot['reviews'][string];
     else delete snap.reviews[p.key];
     delete d[r.id];
@@ -168,7 +174,8 @@ export const CLOCK_OK = 5 * 60_000;
 /** the log with these records given a new change time (records the account turned down for a clock that was ahead, once
     the clock is right again), and the dirty list with that time, so they are sent again and win as the change made now */
 export function restampRecords(s: Snapshot, dirty: Dirty, ids: string[], u: number): { snap: Snapshot; dirty: Dirty } {
-  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews } };
+  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews }, journal: { ...(s.journal || {}) } };
+  const jn = snap.journal!;
   const d: Dirty = { ...dirty };
   for (const id of ids) {
     const p = parseId(id);
@@ -177,6 +184,8 @@ export function restampRecords(s: Snapshot, dirty: Dirty, ids: string[], u: numb
       if (snap.settings) snap.settings = { ...snap.settings, u };
     } else if (p.kind === 'days') {
       if (snap.days[p.key]) snap.days[p.key] = { ...snap.days[p.key], u };
+    } else if (p.kind === 'journal') {
+      if (jn[p.key]) jn[p.key] = { ...jn[p.key], u };
     } else if (snap.reviews[p.key]) snap.reviews[p.key] = { ...snap.reviews[p.key], u };
     d[id] = u;
   }
@@ -257,9 +266,10 @@ export function allDirty(s: Snapshot, dirty: Dirty = {}): Dirty {
   return d;
 }
 
-/** what a device has, for the first-sign-in question: does it hold a real log (days or reviews), and does the account */
+/** what a device has, for the first-sign-in question: does it hold a real log (days, reviews or journal entries), and does
+    the account */
 export function hasLog(s: Snapshot) {
-  return Object.keys(s.days).length > 0 || Object.keys(s.reviews).length > 0;
+  return Object.keys(s.days).length > 0 || Object.keys(s.reviews).length > 0 || Object.keys(s.journal || {}).length > 0;
 }
 export function accountHasLog(recs: SyncRecord[]) {
   return recs.some((r) => r.data != null && r.id !== 'settings');

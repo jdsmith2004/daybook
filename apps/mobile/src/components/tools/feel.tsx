@@ -194,6 +194,7 @@ const clamp = (v: number, lo: number, hi: number) => {
 export function FeelGrid({
   start,
   from,
+  title = 'Name the feeling',
   onBack,
   onClose,
   onNext,
@@ -202,6 +203,8 @@ export function FeelGrid({
   start: { r: number; c: number };
   /** the tapped bubble the field grows out of; with none, the field is simply there */
   from?: FeelFrom;
+  /** the words in the top bar */
+  title?: string;
   onBack: () => void;
   onClose: () => void;
   onNext: (r: number, c: number) => void;
@@ -402,7 +405,7 @@ export function FeelGrid({
             <Icon name="back" color={nightInk.ink} />
           </Pressable>
           <T v="eyebrow" style={{ color: nightInk.muted }} accessibilityRole="header">
-            Name the feeling
+            {title}
           </T>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.round, { backgroundColor: nightInk.btn }]}>
@@ -466,7 +469,7 @@ export function BreathingShape({ kind, color, ink = nightInk.muted }: { kind: Sh
 /* ---------- the four corners ---------- */
 /* each corner's bubble: light where the light falls at the top, deeper below, and a twin a shade darker that shows
    through as its rim */
-const QUAD: Record<string, { top: string; bottom: string; twin: string }> = {
+export const QUAD: Record<string, { top: string; bottom: string; twin: string }> = {
   red: { top: 'hsl(12, 90%, 63%)', bottom: 'hsl(346, 80%, 54%)', twin: 'hsla(352, 72%, 45%, 0.85)' },
   yellow: { top: 'hsl(52, 96%, 70%)', bottom: 'hsl(40, 94%, 56%)', twin: 'hsla(44, 68%, 48%, 0.85)' },
   blue: { top: 'hsl(205, 92%, 77%)', bottom: 'hsl(236, 86%, 68%)', twin: 'hsla(228, 58%, 55%, 0.85)' },

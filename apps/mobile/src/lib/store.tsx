@@ -1,4 +1,4 @@
-/* The log, kept on this device first. Every record (the settings, each day, each weekly review) is its own entry in storage,
+/* The log, kept on this device first. Every record (the settings, each day, each weekly review, each journal entry) is its own entry in storage,
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -11,6 +11,8 @@ import {
   type SyncRecord,
   isKey,
   isReviewKey,
+  isJnId,
+  normJEntry,
   savedRuns,
   winGain,
   winWhy,
@@ -33,7 +35,7 @@ import { useNow } from './now';
 
 const P = 'daybook:';
 const DIRTY = P + 'dirty';
-const empty = (): Snapshot => ({ settings: null, days: {}, reviews: {} });
+const empty = (): Snapshot => ({ settings: null, days: {}, reviews: {}, journal: {} });
 
 async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }> {
   const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P));
@@ -53,6 +55,10 @@ async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }
     else if (id === 'settings') snap.settings = normSettings(v);
     else if (id.startsWith('days/') && isKey(id.slice(5))) snap.days[id.slice(5)] = normDay(v, id.slice(5));
     else if (id.startsWith('reviews/') && isReviewKey(id.slice(8))) snap.reviews[id.slice(8)] = normReview(v, id.slice(8));
+    else if (id.startsWith('journal/') && isJnId(id.slice(8))) {
+      const e = normJEntry(v, id.slice(8));
+      if (e) snap.journal![e.id] = e;
+    }
   }
   return { snap, dirty };
 }
@@ -60,6 +66,7 @@ async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }
 function recordOf(snap: Snapshot, id: RecordId) {
   if (id === 'settings') return snap.settings;
   if (id.startsWith('days/')) return snap.days[id.slice(5)] ?? null;
+  if (id.startsWith('journal/')) return snap.journal?.[id.slice(8)] ?? null;
   return snap.reviews[id.slice(8)] ?? null;
 }
 
@@ -306,6 +313,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (next.settings !== cur.settings) ids.push('settings');
       for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)])) if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
       for (const k of new Set([...Object.keys(cur.reviews), ...Object.keys(next.reviews)])) if (cur.reviews[k] !== next.reviews[k]) ids.push(`reviews/${k}`);
+      const [ja, jb] = [cur.journal || {}, next.journal || {}];
+      if (ja !== jb) for (const k of new Set([...Object.keys(ja), ...Object.keys(jb)])) if (ja[k] !== jb[k]) ids.push(`journal/${k}`);
       snapRef.current = next;
       setSnap(next);
       if (ids.length) persist(next, ids).catch(() => say('Could not save that change on this device.'));
@@ -397,6 +406,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (next.settings) ids.push('settings');
       Object.keys(next.days).forEach((k) => ids.push(`days/${k}`));
       Object.keys(next.reviews).forEach((k) => ids.push(`reviews/${k}`));
+      Object.keys(next.journal || {}).forEach((k) => ids.push(`journal/${k}`));
       snapRef.current = next;
       setSnap(next);
       savedSeen.current = null;

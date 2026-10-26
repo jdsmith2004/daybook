@@ -2639,7 +2639,7 @@ you wish someone loved you?" reads as pointed).
 
 - **The pull.** On iOS the page's own bounce is the pull; on Android and the web the touch is followed at the top with the
   same give (screen.tsx `usePull`). As the page comes down the four Mood Meter colors grow in the gap above it, one after
-  another; past 72 points they swell, the phone ticks, and the words say "Let go for your journal". Short of it, the page
+  another; past 64 points they swell, the phone ticks, and the words say "Let go for your journal". Short of it, the page
   springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
   it too; More has a Journal row for good.
 - **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with

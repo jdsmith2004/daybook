@@ -259,8 +259,8 @@ function ListPage({
       {/* the bottom fades into the sky behind the colors, so cards slide under them softly */}
       <LinearGradient
         pointerEvents="none"
-        colors={[JN.bottom + '00', JN.bottom + 'E6', JN.bottom]}
-        locations={[0, 0.45, 1]}
+        colors={[JN.bottom + '00', JN.bottom, JN.bottom]}
+        locations={[0, 0.34, 1]}
         style={[s.fade, { height: dockH + 36 }]}
       />
       <GestureDetector gesture={push}>

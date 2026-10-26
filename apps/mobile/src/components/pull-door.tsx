@@ -17,7 +17,7 @@ import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 /** how far the page comes down before letting go opens the journal */
-export const PULL_ARM = 72;
+export const PULL_ARM = 64;
 /** how tall the door is: the colors and the line under them */
 export const DOOR_H = 62;
 

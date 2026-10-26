@@ -12,8 +12,17 @@
     {
       "name": "sos",
       "screen": "/sos",
-      "caption": "Help the moment an urge hits",
-      "sub": "Breathe first, then a tool that fits the moment.",
+      "caption": "One guided ride through every urge",
+      "sub": "It keeps going until the urge passes, with the reason behind every move.",
+      "bg": "dawn",
+      "theme": "light",
+      "sizes": ["ios69", "ios63", "play-phone"]
+    },
+    {
+      "name": "slip",
+      "screen": "/log?date=2026-09-12&evId=slip&outcome=slipped&step=slFeel",
+      "caption": "After a slip, come back stronger",
+      "sub": "Name the feeling underneath it, then make one plan for next time.",
       "bg": "dawn",
       "theme": "light",
       "sizes": ["ios69", "ios63", "play-phone"]

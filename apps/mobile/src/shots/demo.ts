@@ -1,5 +1,5 @@
 /* The made-up log the screenshot studio shows (dev only): someone about two months in. They started on August 11, set a quit
-   date a week later, rode out an urge every few days, slipped once in September and kept going, checked in every evening and
+   date a week later, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in every evening and
    did a lesson now and then. Every value is fixed, so every shot is the same each time. Nothing here is anyone's real data. */
 import { defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, type Days } from '@daybook/core';
 
@@ -42,7 +42,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     if (d >= DEMO.day) break;
     const events = [];
     if (i % 3 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
-    if (d === '2026-09-12') events.push(ev('23:50', 'slipped', 'Lonely'));
+    /* the one slip, with the feeling named before it and after it (the studio opens its comeback pages on it) */
+    if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'Lonely'), id: 'slip', fb: 'Lonely', fa: 'flat' });
     o['daybook:days/' + d] = {
       d,
       events,

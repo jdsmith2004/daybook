@@ -96,6 +96,8 @@ import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
 type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
 const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'slHold', 'slBefore', 'slFeel', 'slNow', 'slNowSay', 'slPlan', 'slDone'];
+/* the screenshot studio (EXPO_PUBLIC_SHOTS=1, dev only) can open a slip's comeback on any of its pages */
+const SHOTS = process.env.EXPO_PUBLIC_SHOTS === '1';
 /* the comeback's dots: each page counts as the step it belongs to */
 const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slBefore: 1, slFeel: 1, slNow: 2, slNowSay: 2, slPlan: 3, slDone: 4 };
 /* the icons and shapes of the feelings afterwards, and of the plan's moves */
@@ -160,7 +162,15 @@ export default function Log() {
   const [from] = useState<'urge' | 'pause' | 'hero'>(() => (params.from === 'urge' || params.from === 'pause' ? params.from : 'hero'));
   /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves */
   const [step, setStep] = useState<Step>(() =>
-    handed ? (params.outcome === 'slipped' ? 'slHold' : STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1') : 'q1',
+    handed
+      ? params.outcome === 'slipped'
+        ? SHOTS && /^sl/.test(params.step || '') && STEPS.indexOf(params.step as Step) >= 0
+          ? (params.step as Step)
+          : 'slHold'
+        : STEPS.indexOf(params.step as Step) >= 0
+          ? (params.step as Step)
+          : 'q1'
+      : 'q1',
   );
   const [hist, setHist] = useState<Step[]>(() => (handed ? ['q1'] : []));
   const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));

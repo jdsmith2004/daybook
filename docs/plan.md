@@ -2643,12 +2643,14 @@ you wish someone loved you?" reads as pointed).
   springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
   it too; More has a Journal row for good.
 - **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with
-  the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. Entries
-  are quiet cards, newest first by day (Today, Yesterday, the date): the feeling's small shape and word, the time, and up
-  to three lines (a feeling with nothing written is the row alone). Low at the bottom: the app's own New entry button.
-  The owner turned down a first version with color-washed cards and a small Mood Meter in the dock (October 26): cleaner
-  cards, and the four colors the same as everywhere else. Before the first entry: the four colors as scattered shapes, what the
-  journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
+  the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. The
+  list is a constellation, newest first by day: every entry is a star on one thin dotted line, the feeling's own shape
+  glowing in its color, with the word in that color, the time, and up to three lines in a book face (Newsreader), straight
+  on the sky with no boxes. Days are small pills on the line. Low at the bottom, a bar floats: "New entry" and "Check in
+  with how you feel", with a rounded accent square and a pencil. The owner turned down color-washed cards with a small
+  Mood Meter, then plain cards with a plain button (October 26); from three drawn directions (constellation, diary pages,
+  a month sky) he picked the constellation, with the pages direction's floating bar. Before the first entry: the four
+  colors as scattered shapes, what the journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
 - **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
   slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists (naming
   is the part that helps most). The page: the feeling breathing in its color with its word and line (tap to change it),

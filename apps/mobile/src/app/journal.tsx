@@ -30,12 +30,12 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { EntryCard, entryLook, entryTime, FeelBadge, JN, takeJournalStart, withAlpha } from '@/components/journal';
+import { DayMark, EntryStar, entryLook, entryTime, FeelBadge, JN, NewEntry, takeJournalStart, withAlpha } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
 import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
-import { Button, Icon, InkContext, T } from '@/components/ui';
+import { Icon, InkContext, T } from '@/components/ui';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
@@ -261,13 +261,11 @@ function ListPage({
       <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.list, { paddingBottom: dockH + 20 }]} showsVerticalScrollIndicator={false}>
         <View style={s.col}>
           {groups.length ? (
-            groups.map((g) => (
-              <View key={g.k} style={s.group}>
-                <Text style={s.day} accessibilityRole="header">
-                  {g.label}
-                </Text>
+            groups.map((g, gi) => (
+              <View key={g.k}>
+                <DayMark label={g.label} first={gi === 0} />
                 {g.items.map((e) => {
-                  const card = <EntryCard e={e} onPress={() => onOpen(e.id)} />;
+                  const card = <EntryStar e={e} onPress={() => onOpen(e.id)} />;
                   /* the entry just written lands at the top, rising into place */
                   return e.id === fresh ? (
                     <Appear key={e.id} by={18} delay={140} duration={460}>
@@ -284,7 +282,7 @@ function ListPage({
           )}
         </View>
       </ScrollView>
-      {/* the bottom fades into the sky behind the button, so cards slide under it softly */}
+      {/* the bottom fades into the sky behind the bar, so the entries slide under it softly */}
       <LinearGradient
         pointerEvents="none"
         colors={[JN.bottom + '00', JN.bottom, JN.bottom]}
@@ -294,7 +292,7 @@ function ListPage({
       <GestureDetector gesture={push}>
         <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
           <View style={s.col}>
-            <Button label="New entry" icon="plus" onPress={onNew} />
+            <NewEntry onPress={onNew} />
           </View>
           {/* the edge of the shade: a push up here takes the journal back up */}
           <View style={s.grab} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
@@ -559,8 +557,6 @@ const s = StyleSheet.create({
   sub: { fontFamily: font.bodyMedium, fontSize: 14, lineHeight: 19, color: JN.muted },
   round: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: JN.btn },
   list: { paddingHorizontal: 16, paddingTop: 10 },
-  group: { gap: 10, marginBottom: 22 },
-  day: { fontFamily: font.bodyBold, fontSize: 12, lineHeight: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: JN.muted, marginLeft: 4 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
   grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.26)', marginTop: 12 },
@@ -589,10 +585,10 @@ const s = StyleSheet.create({
     marginTop: 10,
     paddingTop: 6,
     paddingBottom: 12,
-    fontFamily: font.body,
-    fontSize: 18,
-    lineHeight: 28,
-    color: JN.ink,
+    fontFamily: font.serif,
+    fontSize: 19.5,
+    lineHeight: 29,
+    color: JN.page,
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
   foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, minHeight: 36 },

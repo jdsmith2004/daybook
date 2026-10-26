@@ -161,7 +161,8 @@ export function useSkyTheme(sky: Sky): Palette & { scheme: 'light' | 'dark' } {
   return sky === 'night' || sky === 'ember' ? { ...night, scheme: 'dark' } : c;
 }
 
-/* Fredoka for numbers and headings, Instrument Sans for everything else (both loaded in the root layout) */
+/* Fredoka for numbers and headings, Instrument Sans for everything else, and Newsreader, a book face, for what is
+   written in the journal (all loaded in the root layout) */
 export const font = {
   body: 'InstrumentSans_400Regular',
   bodyMedium: 'InstrumentSans_500Medium',
@@ -169,6 +170,7 @@ export const font = {
   bodyBold: 'InstrumentSans_700Bold',
   display: 'Fredoka_600SemiBold',
   displayBold: 'Fredoka_700Bold',
+  serif: 'Newsreader_400Regular',
 };
 
 export const MAX_WIDTH = 560;

@@ -1,4 +1,4 @@
-/* Name the feeling: a 10 by 10 grid of feelings, arranged the way the Mood Meter arranges them (energy down the rows,
+/* Name the feeling: a 12 by 12 grid of feelings, a 6 by 6 corner for each color, arranged the way the Mood Meter arranges them (energy down the rows,
    pleasantness across the columns), with Daybook's own words. Naming a feeling takes some of its charge away ("name it
    to tame it"), and the feeling named points at the tool that fits it. The words and lines are Daybook's; the grid idea
    is the Mood Meter's (Yale RULER), reached through the How We Feel app. */
@@ -12,7 +12,10 @@ export interface Feeling {
   how: string;
 }
 
-/** 10 rows by 10 columns. Row 0 is the highest energy, row 9 the lowest. Column 0 is the most unpleasant, column 9 the most pleasant. */
+/** 12 rows by 12 columns. Row 0 is the highest energy, row 11 the lowest. Column 0 is the most unpleasant, column 11 the
+    most pleasant. Each corner is 6 by 6; its strongest feeling sits in the grid's corner and its mildest next to the
+    middle. (The grid was 10 by 10 until October 2026: each corner then gained the row and the column nearest the
+    middle, so every older word kept its place in its corner.) */
 export const FEELINGS: Feeling[][] = [
   [
     { w: 'Enraged', how: 'Anger so strong it takes over the body' },
@@ -20,6 +23,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Panicked', how: 'Fear so sudden the mind races blindly' },
     { w: 'Terrified', how: 'Deep fear, with a pounding heart' },
     { w: 'Frantic', how: 'Rushing and scrambling, unable to slow down' },
+    { w: 'Shocked', how: 'Jolted by something sudden and hard to take in' },
+    { w: 'Surprised', how: 'Caught off guard by something unexpected' },
     { w: 'Pumped', how: 'Charged up and ready to go' },
     { w: 'Thrilled', how: 'A jolt of joy that lifts everything' },
     { w: 'Elated', how: 'Floating high on good news' },
@@ -32,6 +37,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Overwhelmed', how: 'Too much at once, with nowhere to start' },
     { w: 'Frightened', how: 'Sensing danger and wanting to get away' },
     { w: 'Jittery', how: 'Shaky energy that cannot settle' },
+    { w: 'Wired', how: 'Switched on and buzzing, unable to power down' },
+    { w: 'Energized', how: 'Fresh fuel in the tank and ready to use it' },
     { w: 'Excited', how: 'Looking ahead to something with a buzz' },
     { w: 'Lively', how: 'Bright, quick and full of spark' },
     { w: 'Joyful', how: 'Gladness that shows in the face and voice' },
@@ -44,6 +51,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Stressed', how: 'Pressure building faster than it can ease' },
     { w: 'Anxious', how: 'A worried mind running ahead to what might go wrong' },
     { w: 'Nervous', how: 'Butterflies and a tight stomach about what is next' },
+    { w: 'Keyed up', how: 'Wound tight, waiting for something to happen' },
+    { w: 'Eager', how: 'Keen to get started' },
     { w: 'Motivated', how: 'A clear push to start and keep going' },
     { w: 'Cheerful', how: 'A bright mood and easy smiles' },
     { w: 'Happy', how: 'Everything feels good and light' },
@@ -56,6 +65,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Tense', how: 'Muscles held tight, braced for something' },
     { w: 'Worried', how: 'Thoughts circling around a possible problem' },
     { w: 'Restless', how: 'An itch to move or change something, unsure what' },
+    { w: 'Antsy', how: 'Fidgety and unable to sit still' },
+    { w: 'Curious', how: 'Wanting to know more and look closer' },
     { w: 'Hopeful', how: 'Sensing that better days are on the way' },
     { w: 'Optimistic', how: 'Expecting that things can work out well' },
     { w: 'Confident', how: 'Trusting in the ability to handle what comes' },
@@ -68,6 +79,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Edgy', how: 'On guard, with a short fuse' },
     { w: 'Unsettled', how: 'Something feels off and is hard to name' },
     { w: 'Uneasy', how: 'A quiet sense that all is not quite right' },
+    { w: 'Impatient', how: 'Wanting it over and done with, now' },
+    { w: 'Alert', how: 'Awake, sharp and paying attention' },
     { w: 'Pleased', how: 'Quiet satisfaction with how things are going' },
     { w: 'Glad', how: 'Happy that something went the right way' },
     { w: 'Amused', how: 'Lightness from something funny or odd' },
@@ -75,11 +88,41 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Loved', how: 'Cared for and held dear by others' },
   ],
   [
+    { w: 'Bitter', how: 'An old sting that keeps its sour taste' },
+    { w: 'Peeved', how: 'Put out by something small that went wrong' },
+    { w: 'Strained', how: 'Stretched thin by too many demands' },
+    { w: 'Concerned', how: 'Keeping a careful eye on something that matters' },
+    { w: 'Apprehensive', how: 'A quiet dread about what is coming' },
+    { w: 'Unsure', how: 'Pulled two ways, with no clear answer' },
+    { w: 'Focused', how: 'Attention gathered on one thing at a time' },
+    { w: 'Friendly', how: 'Open and warm toward the people around' },
+    { w: 'Warm', how: 'A soft glow of good feeling inside' },
+    { w: 'Accepted', how: 'Welcomed in, with nothing to prove' },
+    { w: 'Connected', how: 'Close to others and part of something' },
+    { w: 'Free', how: 'Light, unburdened, and pulled by nothing' },
+  ],
+  [
+    { w: 'Rejected', how: 'Pushed away by someone who matters' },
+    { w: 'Left out', how: 'On the outside while others are together' },
+    { w: 'Insecure', how: 'Unsure of being good enough' },
+    { w: 'Awkward', how: 'Out of step and unsure how to act' },
+    { w: 'Lost', how: 'Unsure which way to go from here' },
+    { w: 'Disconnected', how: 'Cut off, as if watching life through a window' },
+    { w: 'Present', how: 'Right here, right now, and not somewhere else' },
+    { w: 'Thoughtful', how: 'Quietly turning something over in the mind' },
+    { w: 'Reassured', how: 'Worry eased by knowing it will be all right' },
+    { w: 'Accepting', how: 'Letting things be as they are' },
+    { w: 'Gentle', how: 'Soft and kind, inside and out' },
+    { w: 'Clear', how: 'Clear-headed, with nothing clouding the mind' },
+  ],
+  [
     { w: 'Humiliated', how: 'Feeling small after being exposed' },
     { w: 'Ashamed', how: 'Wanting to hide from what happened' },
     { w: 'Guilty', how: 'A heavy weight about something done or left undone' },
     { w: 'Embarrassed', how: 'Hot cheeks and a wish to be unseen' },
     { w: 'Meh', how: 'Flat, with no strong pull either way' },
+    { w: 'Indifferent', how: 'Nothing much matters either way' },
+    { w: 'Settled', how: 'Things have found their place' },
     { w: 'OK', how: 'Fine and steady, neither up nor down' },
     { w: 'Steady', how: 'Even and balanced, with solid ground underfoot' },
     { w: 'Relieved', how: 'A weight lifted and a long breath out' },
@@ -92,6 +135,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Lonely', how: 'Wanting closeness and not finding it' },
     { w: 'Disappointed', how: 'Hoping for more than what came' },
     { w: 'Bored', how: 'Nothing holds interest and time drags' },
+    { w: 'Unmotivated', how: 'Knowing what to do, with no pull to do it' },
+    { w: 'Unhurried', how: 'Taking time, with nowhere to rush to' },
     { w: 'Comfortable', how: 'At ease in the moment, with nothing pressing' },
     { w: 'Easygoing', how: 'Taking things as they come' },
     { w: 'Secure', how: 'Safe and grounded, with nothing to defend' },
@@ -104,6 +149,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Discouraged', how: 'Losing faith that the effort will pay off' },
     { w: 'Gloomy', how: 'A gray mood hanging over everything' },
     { w: 'Tired', how: 'Body and mind asking for rest' },
+    { w: 'Sluggish', how: 'Moving slowly, like wading through mud' },
+    { w: 'Quiet', how: 'Few words needed, and little noise inside' },
     { w: 'Mellow', how: 'Soft, unhurried and easy about everything' },
     { w: 'Relaxed', how: 'Shoulders low and breath slow' },
     { w: 'Calm', how: 'A quiet inside, like still water' },
@@ -116,6 +163,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Helpless', how: 'Seeing no way to change what is happening' },
     { w: 'Numb', how: 'Feelings muted, as if behind glass' },
     { w: 'Drained', how: 'Energy poured out with little left over' },
+    { w: 'Foggy', how: 'Thoughts slow and hard to hold on to' },
+    { w: 'Unwinding', how: 'Letting the day loosen its grip' },
     { w: 'Cozy', how: 'Warm, sheltered and snug' },
     { w: 'Soothed', how: 'Tension melting away bit by bit' },
     { w: 'Rested', how: 'Body refreshed after real stillness' },
@@ -128,6 +177,8 @@ export const FEELINGS: Feeling[][] = [
     { w: 'Empty', how: 'A hollow space where feeling should be' },
     { w: 'Exhausted', how: 'Nothing left in body or mind' },
     { w: 'Worn out', how: 'Used up from carrying too much for too long' },
+    { w: 'Spent', how: 'Used up after giving a lot' },
+    { w: 'Slow', how: 'In no rush, moving at an easy pace' },
     { w: 'Sleepy', how: 'Heavy eyelids and a pull toward rest' },
     { w: 'Dreamy', how: 'Drifting, with a soft and wandering mind' },
     { w: 'Restful', how: 'Slow and quiet, with nothing asked' },
@@ -136,15 +187,17 @@ export const FEELINGS: Feeling[][] = [
   ],
 ];
 
-export const FEEL_ROWS = 10;
-export const FEEL_COLS = 10;
+export const FEEL_ROWS = 12;
+export const FEEL_COLS = 12;
+/** where the grid splits: rows above it are high energy, columns from it on are pleasant */
+export const FEEL_MID = 6;
 
 /** the four corners of the first screen: which part of the grid, its name, and the cell the grid opens centered on */
 export const FEEL_QUADS: { id: string; name: string; r: number; c: number }[] = [
   { id: 'red', name: 'High energy, unpleasant', r: 2, c: 2 },
-  { id: 'yellow', name: 'High energy, pleasant', r: 2, c: 7 },
-  { id: 'blue', name: 'Low energy, unpleasant', r: 7, c: 2 },
-  { id: 'green', name: 'Low energy, pleasant', r: 7, c: 7 },
+  { id: 'yellow', name: 'High energy, pleasant', r: 2, c: 9 },
+  { id: 'blue', name: 'Low energy, unpleasant', r: 9, c: 2 },
+  { id: 'green', name: 'Low energy, pleasant', r: 9, c: 9 },
 ];
 
 export const feelAt = (r: number, c: number): Feeling | null => (FEELINGS[r] && FEELINGS[r][c]) || null;
@@ -155,21 +208,30 @@ const LEAD_WORD: Record<string, string> = {
   Heartbroken: 'message',
   Hurt: 'message',
   Lonely: 'message',
+  Rejected: 'message',
+  'Left out': 'message',
+  Disconnected: 'message',
   /* the shame family: shame talks in thoughts, and a thought is not an order */
   Humiliated: 'thought',
   Ashamed: 'thought',
   Guilty: 'thought',
   Embarrassed: 'thought',
+  Insecure: 'thought',
+  Awkward: 'thought',
   /* charge with no aim: move the body first */
   Restless: 'move',
   Jittery: 'move',
   Edgy: 'move',
+  Antsy: 'move',
+  Wired: 'move',
   /* nothing holds: a real change of scene */
   Bored: 'surprise',
   Meh: 'surprise',
+  Indifferent: 'surprise',
+  Unmotivated: 'surprise',
 };
 /** the tired family leads to bed at night, and to "What do I need?" by day */
-const LEAD_TIRED = ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy'];
+const LEAD_TIRED = ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy', 'Sluggish', 'Foggy', 'Spent'];
 
 /** the tool a named feeling leads on to, with one line on why. Every feeling has one: naming a feeling takes some of
     its charge, but in an urge it helps most as the first step to doing something (labeling alone is mixed in the
@@ -188,13 +250,13 @@ export function feelLead(r: number, c: number, night: boolean): { tool: string; 
   if (led === 'surprise') return { tool: led, why: 'The cure is a real change, not a better screen.' };
   /* the pleasant half: high energy can tip over into an urge, so it comes back to the room; a calm one is kept with
      the breath */
-  if (c >= 5)
-    return r < 5
+  if (c >= FEEL_MID)
+    return r < FEEL_MID
       ? { tool: 'ground', why: 'High energy can tip into an urge. Come back to the room first.' }
       : { tool: 'breathe', why: 'A calm moment is worth keeping. A few slow breaths hold it.' };
   /* the rest of the unpleasant half: anger burns off through the body, a racing mind comes back through the senses,
      fear and stress slow down with the breath, and the low, heavy feelings point at an unmet need */
-  if (r >= 5) return { tool: 'halt', why: 'Heavy feelings often sit on a plain unmet need. Find it.' };
+  if (r >= FEEL_MID) return { tool: 'halt', why: 'Heavy feelings often sit on a plain unmet need. Find it.' };
   if (c <= 1) return { tool: 'move', why: 'Anger is charge in the body. Burn some off, then decide.' };
   if (r <= 1) return { tool: 'ground', why: 'A racing mind settles through the senses. Come back to the room.' };
   return { tool: 'breathe', why: 'The body is sounding an alarm. A long breath out turns it down.' };
@@ -228,9 +290,24 @@ const blankPlay = () => ({ w: [], wd: false, r: false, c: 0, m: false, tl: [], p
    not a lesson; it is the thing a good friend would say. */
 export type FeelFam = 'lonely' | 'shame' | 'anger' | 'fear' | 'bored' | 'tired' | 'low' | 'bright' | 'calm';
 const FAM_WORDS: Record<Exclude<FeelFam, 'bright' | 'calm'>, string[]> = {
-  lonely: ['Lonely', 'Hurt', 'Heartbroken'],
-  shame: ['Ashamed', 'Guilty', 'Humiliated', 'Embarrassed'],
-  anger: ['Enraged', 'Furious', 'Outraged', 'Fuming', 'Angry', 'Resentful', 'Frustrated', 'Fed up', 'Irritated', 'Annoyed', 'Edgy'],
+  lonely: ['Lonely', 'Hurt', 'Heartbroken', 'Rejected', 'Left out', 'Disconnected'],
+  shame: ['Ashamed', 'Guilty', 'Humiliated', 'Embarrassed', 'Insecure', 'Awkward'],
+  anger: [
+    'Enraged',
+    'Furious',
+    'Outraged',
+    'Fuming',
+    'Angry',
+    'Resentful',
+    'Frustrated',
+    'Fed up',
+    'Irritated',
+    'Annoyed',
+    'Edgy',
+    'Bitter',
+    'Peeved',
+    'Impatient',
+  ],
   fear: [
     'Panicked',
     'Terrified',
@@ -245,10 +322,17 @@ const FAM_WORDS: Record<Exclude<FeelFam, 'bright' | 'calm'>, string[]> = {
     'Worried',
     'Unsettled',
     'Uneasy',
+    'Shocked',
+    'Wired',
+    'Keyed up',
+    'Strained',
+    'Concerned',
+    'Apprehensive',
+    'Unsure',
   ],
-  bored: ['Bored', 'Meh', 'Restless'],
-  tired: ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy'],
-  low: ['Miserable', 'Sad', 'Discouraged', 'Gloomy', 'Disappointed', 'Crushed', 'Defeated', 'Helpless', 'Numb', 'Despairing', 'Hopeless', 'Empty'],
+  bored: ['Bored', 'Meh', 'Restless', 'Antsy', 'Indifferent', 'Unmotivated'],
+  tired: ['Tired', 'Drained', 'Exhausted', 'Worn out', 'Sleepy', 'Sluggish', 'Foggy', 'Spent'],
+  low: ['Miserable', 'Sad', 'Discouraged', 'Gloomy', 'Disappointed', 'Crushed', 'Defeated', 'Helpless', 'Numb', 'Despairing', 'Hopeless', 'Empty', 'Lost'],
 };
 /** the family a feeling belongs to */
 export function feelFam(r: number, c: number): FeelFam | null {
@@ -256,7 +340,7 @@ export function feelFam(r: number, c: number): FeelFam | null {
   if (!f) return null;
   const k = (Object.keys(FAM_WORDS) as (keyof typeof FAM_WORDS)[]).find((x) => FAM_WORDS[x].indexOf(f.w) >= 0);
   if (k) return k;
-  return c >= 5 ? (r < 5 ? 'bright' : 'calm') : r >= 5 ? 'low' : 'fear';
+  return c >= FEEL_MID ? (r < FEEL_MID ? 'bright' : 'calm') : r >= FEEL_MID ? 'low' : 'fear';
 }
 /** what each family is asking for: a short heading and one or two lines */
 export const FEEL_ASKS: Record<FeelFam, { h: string; t: string }> = {

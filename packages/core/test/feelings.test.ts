@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { FEEL_COLS, FEEL_DAY_MAX, FEEL_QUADS, FEEL_ROWS, FEELINGS, feelAt, feelLead, feelLog, TOOLS } from '../src/index';
+import { FEEL_COLS, FEEL_DAY_MAX, FEEL_MID, FEEL_QUADS, FEEL_ROWS, FEELINGS, feelAt, feelFam, feelLead, feelLog, feelPos, TOOLS } from '../src/index';
 
 describe('the feelings grid', () => {
-  it('is 10 by 10, every word distinct, every line plain', () => {
+  it('is 12 by 12, every word distinct, every line plain', () => {
     expect(FEELINGS.length).toBe(FEEL_ROWS);
     const words = new Set<string>();
     for (const row of FEELINGS) {
@@ -18,7 +18,7 @@ describe('the feelings grid', () => {
         expect(f.how).not.toMatch(/'|\byou\b|\byour\b/i);
       }
     }
-    expect(words.size).toBe(100);
+    expect(words.size).toBe(144);
   });
 
   it('keeps the words the app leans on, in the right quadrant', () => {
@@ -29,13 +29,13 @@ describe('the feelings grid', () => {
     for (const w of ['Ashamed', 'Guilty', 'Lonely', 'Bored', 'Numb', 'Empty', 'Hopeless', 'Tired']) {
       const p = at(w)!;
       expect(p, w).not.toBeNull();
-      expect(p[0], w).toBeGreaterThanOrEqual(5);
-      expect(p[1], w).toBeLessThanOrEqual(4);
+      expect(p[0], w).toBeGreaterThanOrEqual(FEEL_MID);
+      expect(p[1], w).toBeLessThan(FEEL_MID);
     }
     for (const w of ['Restless', 'Stressed', 'Anxious', 'Frustrated', 'Overwhelmed']) {
       const p = at(w)!;
-      expect(p[0], w).toBeLessThanOrEqual(4);
-      expect(p[1], w).toBeLessThanOrEqual(4);
+      expect(p[0], w).toBeLessThan(FEEL_MID);
+      expect(p[1], w).toBeLessThan(FEEL_MID);
     }
     for (const w of ['Hopeful', 'Proud', 'Calm', 'Relieved', 'Grateful', 'Strong']) {
       expect(at(w), w).not.toBeNull();
@@ -60,13 +60,51 @@ describe('the feelings grid', () => {
           }
         }
     /* the ones that matter most for this app */
-    expect(feelLead(6, 2, false)!.tool).toBe('message'); // Lonely
-    expect(feelLead(5, 1, false)!.tool).toBe('thought'); // Ashamed
-    expect(feelLead(7, 4, true)!.tool).toBe('bed'); // Tired, at night
-    expect(feelLead(7, 4, false)!.tool).toBe('halt'); // Tired, by day
-    expect(feelLead(7, 7, false)!.tool).toBe('breathe'); // Calm
-    expect(feelLead(0, 2, false)!.tool).toBe('ground'); // Panicked
-    expect(feelLead(0, 6, false)!.tool).toBe('ground'); // Thrilled
+    const lead = (w: string, night = false) => {
+      const p = feelPos(w)!;
+      return feelLead(p.r, p.c, night)!.tool;
+    };
+    expect(lead('Lonely')).toBe('message');
+    expect(lead('Ashamed')).toBe('thought');
+    expect(lead('Tired', true)).toBe('bed');
+    expect(lead('Tired')).toBe('halt');
+    expect(lead('Calm')).toBe('breathe');
+    expect(lead('Panicked')).toBe('ground');
+    expect(lead('Thrilled')).toBe('ground');
+    /* the words added in the 12 by 12 grid lead where their family does */
+    expect(lead('Rejected')).toBe('message');
+    expect(lead('Left out')).toBe('message');
+    expect(lead('Insecure')).toBe('thought');
+    expect(lead('Antsy')).toBe('move');
+    expect(lead('Spent', true)).toBe('bed');
+    expect(lead('Indifferent')).toBe('surprise');
+    expect(lead('Free')).toBe('ground');
+    expect(lead('Slow')).toBe('breathe');
+  });
+
+  it('keeps every word of the old 10 by 10 grid, in the same corner', () => {
+    /* the words logged before the grid grew must still be found, in the corner they were named in */
+    const old: [string, boolean, boolean][] = [
+      ['Enraged', true, false],
+      ['Ecstatic', true, true],
+      ['Despairing', false, false],
+      ['Serene', false, true],
+      ['Uneasy', true, false],
+      ['Loved', true, true],
+      ['Meh', false, false],
+      ['OK', false, true],
+    ];
+    for (const [w, high, pleasant] of old) {
+      const p = feelPos(w)!;
+      expect(p, w).not.toBeNull();
+      expect(p.r < FEEL_MID, w).toBe(high);
+      expect(p.c >= FEEL_MID, w).toBe(pleasant);
+    }
+    /* the corners hold the strongest feelings, and every new word has its family */
+    expect(feelAt(0, 0)!.w).toBe('Enraged');
+    expect(feelAt(11, 11)!.w).toBe('Serene');
+    const p = feelPos('Bitter')!;
+    expect(feelFam(p.r, p.c)).toBe('anger');
   });
 
   it('writes a named feeling on the day, and stops at the cap', () => {

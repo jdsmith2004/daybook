@@ -1,12 +1,12 @@
-/* Name the feeling: the Mood Meter grid, Daybook style. A color picks the corner of feeling, then a pannable 10 by 10
-   field of feeling bubbles, each colored by where it sits (energy down the rows, pleasantness across the columns).
-   The middle of the screen is the eye of the field: whatever bubble slides under it swells into one of the Material
-   shapes and presses the whole field outward, so dragging feels like rolling a heavy ball through a pool of packed
+/* Name the feeling: the Mood Meter grid, Daybook style. A color picks the corner of feeling, then a pannable 12 by 12
+   field of feeling bubbles (6 by 6 for each color), each colored by where it sits (energy down the rows, pleasantness
+   across the columns). The middle of the screen is the eye of the field: whatever bubble slides under it swells into its
+   own shape, from its color's family (lib/m3-shapes: stars, suns, drops and flowers), and presses the whole field outward, so dragging feels like rolling a heavy ball through a pool of packed
    ones, with a soft bump under the thumb for each bubble it rolls onto. A throw glides and then settles with a knock and a
    bubble in the eye, its word shows in the bar at the bottom, and naming it leads on to the tool that fits (core
    feelings.ts). The pan, the focus
    and the push all run on the UI thread (Reanimated and the gesture handler), so the field stays smooth while it moves. */
-import { FEEL_QUADS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
+import { FEEL_MID, FEEL_QUADS, FEEL_ROWS, FEELINGS, feelAt, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNextTool } from '@/lib/tools';
 import { StatusBar } from 'expo-status-bar';
@@ -20,6 +20,7 @@ import Reanimated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withRepeat,
   withSpring,
   withTiming,
   type DerivedValue,
@@ -39,7 +40,9 @@ import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
-const N = 10;
+const N = FEEL_ROWS;
+/** cells per side of one color's corner */
+const Q = FEEL_MID;
 
 /* ---------- the colors of the field ---------- */
 /* Each corner of the grid has its own small color field (the four corners of that quadrant, blended), so red runs warm
@@ -59,11 +62,11 @@ const mixHue = (a: number, b: number, t: number) => {
   if (d < -180) d += 360;
   return (a + d * t + 360) % 360;
 };
-const cornerOf = (r: number, c: number) => (r < 5 ? (c < 5 ? 'red' : 'yellow') : c < 5 ? 'blue' : 'green');
+const cornerOf = (r: number, c: number) => (r < Q ? (c < Q ? 'red' : 'yellow') : c < Q ? 'blue' : 'green');
 function cellColor(r: number, c: number) {
   const f = FIELD[cornerOf(r, c)];
-  const u = (c % 5) / 4;
-  const v = (r % 5) / 4;
+  const u = (c % Q) / (Q - 1);
+  const v = (r % Q) / (Q - 1);
   const h = mixHue(mixHue(f.tl[0], f.tr[0], u), mixHue(f.bl[0], f.br[0], u), v);
   const s = mix(mix(f.tl[1], f.tr[1], u), mix(f.bl[1], f.br[1], u), v);
   const l = mix(mix(f.tl[2], f.tr[2], u), mix(f.bl[2], f.br[2], u), v);
@@ -73,17 +76,16 @@ export const FEEL_COLORS = Array.from({ length: N }, (_, r) => Array.from({ leng
 /** the one dark ink every bubble's word is written in */
 const INK = '#1C2030';
 
-/* the shape a chosen bubble grows into: jagged-soft for the charged corner, sunny for the bright one, soft and round for
-   the heavy and the calm ones. Fixed per cell, so a feeling always has the same shape. */
-const SEL_POOL: Record<string, ShapeKind[]> = {
-  red: ['softBoom', 'burst', 'cookie4', 'clamShell', 'diamond'],
-  yellow: ['sunny', 'verySunny', 'softBurst', 'flower', 'cookie7'],
-  blue: ['puffy', 'ghostish', 'oval', 'bun', 'clamShell'],
-  green: ['clover4', 'cookie6', 'flower', 'puffy', 'bun'],
-};
+/* the shape a chosen bubble grows into, one of its color's family: sharp stars for the charged corner, suns for the
+   bright one, soft drops and puffs for the heavy one, flowers for the calm one. Every feeling has its own, fixed, so a
+   feeling always has the same shape. Counted from the grid's corner (the strongest feeling) toward the middle: across
+   sets how many points, down sets how deep they cut. */
+const FAMILY = { red: 'spike', yellow: 'sun', blue: 'soft', green: 'petal' } as const;
 export const feelKind = (r: number, c: number): ShapeKind => {
-  const pool = SEL_POOL[cornerOf(r, c)];
-  return pool[(r * 7 + c * 3) % pool.length];
+  const k = cornerOf(r, c);
+  const down = r < Q ? r : N - 1 - r;
+  const across = c < Q ? c : N - 1 - c;
+  return `feel:${FAMILY[k]}:${across}:${down}`;
 };
 
 /** the chosen bubble's shape: it starts as the circle it was and, after a short beat in the eye, morphs out (MorphShape
@@ -410,6 +412,136 @@ export const QUAD_COLOR: Record<string, string> = {
   blue: 'hsl(210, 85%, 66%)',
   green: 'hsl(150, 62%, 55%)',
 };
+/* the lighter edge of each corner's bubble, where the light falls on it */
+const QUAD_LIGHT: Record<string, string> = {
+  red: 'hsl(8, 88%, 68%)',
+  yellow: 'hsl(52, 98%, 72%)',
+  blue: 'hsl(200, 92%, 78%)',
+  green: 'hsl(120, 66%, 74%)',
+};
+/* a drifting circle's color: its corner's color lifted toward a pastel, so it glows on the night sky instead of
+   muddying it */
+const hsla = (c: HSL, a: number) => `hsla(${c[0]}, ${Math.min(100, c[1] + 8)}%, ${Math.min(84, c[2] + 14)}%, ${a})`;
+
+/* the little circles drifting behind each bubble, in the colors of its own corner of the field: each its own size, its
+   own orbit and its own speed. The periods divide a minute, so the one clock loops without a jump. */
+const MOTES: { size: number; orbit: number; secs: number; dir: 1 | -1; at: number; tint: 'tl' | 'tr' | 'bl' | 'br'; alpha: number }[] = [
+  { size: 0.46, orbit: 0.4, secs: 20, dir: 1, at: 0, tint: 'tl', alpha: 0.3 },
+  { size: 0.3, orbit: 0.5, secs: 15, dir: -1, at: 1.7, tint: 'br', alpha: 0.38 },
+  { size: 0.22, orbit: 0.56, secs: 12, dir: 1, at: 3.4, tint: 'tr', alpha: 0.45 },
+  { size: 0.36, orbit: 0.45, secs: 30, dir: -1, at: 4.6, tint: 'bl', alpha: 0.28 },
+  { size: 0.15, orbit: 0.6, secs: 10, dir: 1, at: 5.6, tint: 'tl', alpha: 0.55 },
+];
+
+function Mote({
+  m,
+  qi,
+  cx,
+  cy,
+  d,
+  clock,
+  color,
+}: {
+  m: (typeof MOTES)[number];
+  qi: number;
+  cx: number;
+  cy: number;
+  d: number;
+  clock: SharedValue<number>;
+  color: string;
+}) {
+  const size = m.size * d;
+  const st = useAnimatedStyle(
+    () => {
+      const a = m.at + qi * 1.3 + m.dir * 2 * Math.PI * clock.value * (60 / m.secs);
+      /* the orbit swells and narrows a little as it goes round, so the path is never a plain circle */
+      const o = m.orbit * d * (1 + 0.08 * Math.sin(a * 2 + qi));
+      return { transform: [{ translateX: cx + o * Math.cos(a) - size / 2 }, { translateY: cy + o * Math.sin(a) - size / 2 }] };
+    },
+    webDeps(clock, cx, cy, d, qi),
+  );
+  return (
+    <Reanimated.View
+      pointerEvents="none"
+      style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size, borderRadius: size / 2, backgroundColor: color }, st]}
+    />
+  );
+}
+
+function QuadBubble({ q, qi, d, clock, onPick }: { q: (typeof FEEL_QUADS)[number]; qi: number; d: number; clock: SharedValue<number>; onPick: () => void }) {
+  /* a slow, small breath, each bubble on its own beat */
+  const st = useAnimatedStyle(() => ({ transform: [{ scale: 1 + 0.014 * Math.sin(2 * Math.PI * clock.value * 10 + qi * 1.7) }] }), webDeps(clock, qi));
+  const [a, b] = q.name.split(', ');
+  return (
+    <Reanimated.View style={st}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={q.name}
+        onPress={() => {
+          buzz('tap');
+          onPick();
+        }}
+        style={({ pressed }) => [s.quad, { width: d, height: d, borderRadius: d / 2, transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
+        <LinearGradient
+          colors={[QUAD_LIGHT[q.id], QUAD_COLOR[q.id]]}
+          start={{ x: 0.15, y: 0.05 }}
+          end={{ x: 0.75, y: 0.95 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: d / 2 }]}
+        />
+        <Text style={s.quadT}>{a}</Text>
+        <Text style={s.quadT}>{b.charAt(0).toUpperCase() + b.slice(1)}</Text>
+      </Pressable>
+    </Reanimated.View>
+  );
+}
+
+/** the four colors that open the field: big bubbles low where the thumb is, each with little circles of its own colors
+    drifting slowly behind it. Used by Name the feeling, the SOS ride and the slip. */
+export function QuadBubbles({ d, gap = 10, onPick }: { d: number; gap?: number; onPick: (q: (typeof FEEL_QUADS)[number]) => void }) {
+  const reduce = useReducedMotion();
+  const clock = useSharedValue(0.1);
+  useEffect(() => {
+    if (reduce) return;
+    clock.value = withRepeat(withTiming(1.1, { duration: 60000, easing: Easing.linear }), -1, false);
+  }, [reduce, clock]);
+  const w = d * 2 + gap;
+  const centers = [
+    [d / 2, d / 2],
+    [d + gap + d / 2, d / 2],
+    [d / 2, d + gap + d / 2],
+    [d + gap + d / 2, d + gap + d / 2],
+  ];
+  return (
+    <View style={{ width: w, height: w, alignSelf: 'center' }}>
+      {/* a soft glow under each bubble, then every drifting circle, all behind the four bubbles */}
+      {FEEL_QUADS.map((q, qi) => (
+        <View
+          key={q.id + 'glow'}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: centers[qi][0] - d * 0.62,
+            top: centers[qi][1] - d * 0.62,
+            width: d * 1.24,
+            height: d * 1.24,
+            borderRadius: d * 0.62,
+            backgroundColor: hsla(FIELD[q.id].tl, 0.14),
+          }}
+        />
+      ))}
+      {FEEL_QUADS.map((q, qi) =>
+        MOTES.map((m, mi) => (
+          <Mote key={q.id + mi} m={m} qi={qi} cx={centers[qi][0]} cy={centers[qi][1]} d={d} clock={clock} color={hsla(FIELD[q.id][m.tint], m.alpha)} />
+        )),
+      )}
+      <View style={[s.quads, { width: w, gap, rowGap: gap }]}>
+        {FEEL_QUADS.map((q, qi) => (
+          <QuadBubble key={q.id} q={q} qi={qi} d={d} clock={clock} onPick={() => onPick(q)} />
+        ))}
+      </View>
+    </View>
+  );
+}
 
 /* ---------- the tool ---------- */
 export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
@@ -495,27 +627,14 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
         </T>
         <T style={s.c}>Tap the color that is closest. The exact word comes next.</T>
         <Dock>
-          <View style={[s.quads, { width: d * 2 + 10, alignSelf: 'center' }]}>
-            {FEEL_QUADS.map((q) => (
-              <Pressable
-                key={q.id}
-                accessibilityRole="button"
-                accessibilityLabel={q.name}
-                onPress={() => {
-                  buzz('tap');
-                  setFrom(q);
-                  setSel(null);
-                  setStep('grid');
-                }}
-                style={({ pressed }) => [
-                  s.quad,
-                  { width: d, height: d, borderRadius: d / 2, backgroundColor: QUAD_COLOR[q.id], transform: [{ scale: pressed ? 0.96 : 1 }] },
-                ]}>
-                <Text style={s.quadT}>{q.name.split(', ')[0]}</Text>
-                <Text style={s.quadT}>{q.name.split(', ')[1][0].toUpperCase() + q.name.split(', ')[1].slice(1)}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <QuadBubbles
+            d={d}
+            onPick={(q) => {
+              setFrom(q);
+              setSel(null);
+              setStep('grid');
+            }}
+          />
         </Dock>
       </Stage>
     </SceneFrame>

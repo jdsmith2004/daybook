@@ -42,7 +42,7 @@ describe('the feeling before and after, on the slip', () => {
     expect(core.famOfWord('Stressed')).toBe('fear');
     expect(core.famOfWord('Calm')).toBe('calm');
     expect(core.famOfWord('Nope')).toBeNull();
-    expect(core.feelPos('Ecstatic')).toEqual({ r: 0, c: 9 });
+    expect(core.feelPos('Ecstatic')).toEqual({ r: 0, c: 11 });
   });
 });
 

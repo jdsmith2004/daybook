@@ -5,12 +5,12 @@
    ride: the move that fits it comes next, and the urge's trigger is set from it (core ride.ts rideNext, sos.ts urRank). */
 import { FEEL_ASKS, FEEL_QUADS, FEEL_TRIG, feelAt, feelFam, feelLead, feelLog, TOOLS, urNight, withDay } from '@daybook/core';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Appear } from '@/components/appear';
 import { Text } from '@/components/text';
-import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QUAD_COLOR } from '@/components/tools/feel';
+import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles } from '@/components/tools/feel';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
@@ -81,26 +81,13 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
         </T>
       </View>
       <View style={s.mid}>
-        <View style={[s.quads, { width: d * 2 + 10 }]}>
-          {FEEL_QUADS.map((q) => (
-            <Pressable
-              key={q.id}
-              accessibilityRole="button"
-              accessibilityLabel={q.name}
-              onPress={() => {
-                buzz('tap');
-                setFrom(q);
-                setGrid(true);
-              }}
-              style={({ pressed }) => [
-                s.quad,
-                { width: d, height: d, borderRadius: d / 2, backgroundColor: QUAD_COLOR[q.id], transform: [{ scale: pressed ? 0.95 : 1 }] },
-              ]}>
-              <Text style={s.quadT}>{q.name.split(', ')[0]}</Text>
-              <Text style={s.quadT}>{q.name.split(', ')[1][0].toUpperCase() + q.name.split(', ')[1].slice(1)}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <QuadBubbles
+          d={d}
+          onPick={(q) => {
+            setFrom(q);
+            setGrid(true);
+          }}
+        />
       </View>
       <Modal visible={grid} animationType="fade" onRequestClose={() => setGrid(false)}>
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -132,9 +119,6 @@ const s = StyleSheet.create({
   word: { fontFamily: font.displayBold, fontSize: 40, lineHeight: 46, textAlign: 'center' },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
-  quads: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, rowGap: 10 },
-  quad: { alignItems: 'center', justifyContent: 'center' },
-  quadT: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: '#1C2030', textAlign: 'center' },
   card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
   askH: { fontFamily: font.display, fontSize: 19, lineHeight: 24 },
   dock: { gap: 8 },

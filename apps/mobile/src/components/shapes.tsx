@@ -7,15 +7,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { morphPoints, shapePath, shapePoints, smoothPath, type M3Shape } from '@/lib/m3-shapes';
+import { morphPoints, shapePath, shapePoints, smoothPath, type AnyShape, type FeelShape, type M3Shape } from '@/lib/m3-shapes';
 import { SPRING, useReducedMotion } from '@/lib/motion';
 
-export type { M3Shape } from '@/lib/m3-shapes';
+export type { FeelShape, M3Shape } from '@/lib/m3-shapes';
 /** a Material shape, or one of the older names (cookie is the 9-sided cookie, scallop the 12-sided one, clover the 4-leaf
     clover, tri the triangle, pent the pentagon), or blob: a loose, uneven round shape (with wobble and seed) */
-export type ShapeKind = M3Shape | 'cookie' | 'scallop' | 'clover' | 'tri' | 'pent' | 'blob';
+export type ShapeKind = M3Shape | FeelShape | 'cookie' | 'scallop' | 'clover' | 'tri' | 'pent' | 'blob';
 const ALIAS: Record<string, M3Shape> = { cookie: 'cookie9', scallop: 'cookie12', clover: 'clover4', tri: 'triangle', pent: 'pentagon' };
-const m3 = (k: ShapeKind): M3Shape => (ALIAS[k] || k) as M3Shape;
+const m3 = (k: ShapeKind): AnyShape => (ALIAS[k] || k) as AnyShape;
 
 const TAU = Math.PI * 2;
 /** hides a drawing from screen readers: on the web the SVG gets aria-hidden (the native props would land on the page as
@@ -132,8 +132,9 @@ export function MorphShape({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, to, reduce]);
   const [a, b, tt] = to != null ? [kind, to, t ?? 0] : [pair[0], pair[1], k];
-  const pa = useMemo(() => shapePoints(m3(a), 120), [a]);
-  const pb = useMemo(() => shapePoints(m3(b), 120), [b]);
+  /* enough points that the sharp tips of the spiky feeling shapes stay sharp */
+  const pa = useMemo(() => shapePoints(m3(a), 192), [a]);
+  const pb = useMemo(() => shapePoints(m3(b), 192), [b]);
   /* the drawing gets room past the box on every side: a spring overshoots, and some shapes reach a little past their
      box, and an SVG cuts off whatever falls outside it, flat */
   const pad = Math.ceil(size * 0.2);

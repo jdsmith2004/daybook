@@ -2,14 +2,14 @@
    open the field of feelings, the feeling named big and breathing in its own color, and the one column of choices
    (docs/design-standards.md: a small shape in the choice's color, the name, a line on it, and a chevron; a tap starts
    it). */
-import { FEEL_QUADS } from '@daybook/core';
+import { FEEL_MID } from '@daybook/core';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
-import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QUAD_COLOR } from '@/components/tools/feel';
+import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles } from '@/components/tools/feel';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, toneOf, useTheme } from '@/lib/theme';
@@ -22,30 +22,15 @@ export function FeelQuads({ onPick, start }: { onPick: (r: number, c: number) =>
   const d = Math.min((Math.min(W, 430) - 32 - 12) / 2, 150);
   return (
     <>
-      <View style={[s.quads, { width: d * 2 + 12 }]}>
-        {FEEL_QUADS.map((q) => {
-          const [a, b] = q.name.split(', ');
-          return (
-            <Pressable
-              key={q.id}
-              accessibilityRole="button"
-              accessibilityLabel={q.name}
-              onPress={() => {
-                buzz('tap');
-                /* the field opens on the word picked before, when it is in this color */
-                const near = start && start.r < 5 === q.r < 5 && start.c < 5 === q.c < 5;
-                setFrom(near ? start : { r: q.r, c: q.c });
-              }}
-              style={({ pressed }) => [
-                s.quad,
-                { width: d, height: d, borderRadius: d / 2, backgroundColor: QUAD_COLOR[q.id], transform: [{ scale: pressed ? 0.95 : 1 }] },
-              ]}>
-              <Text style={s.quadT}>{a}</Text>
-              <Text style={s.quadT}>{b.charAt(0).toUpperCase() + b.slice(1)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <QuadBubbles
+        d={d}
+        gap={12}
+        onPick={(q) => {
+          /* the field opens on the word picked before, when it is in this color */
+          const near = start && start.r < FEEL_MID === q.r < FEEL_MID && start.c < FEEL_MID === q.c < FEEL_MID;
+          setFrom(near ? start : { r: q.r, c: q.c });
+        }}
+      />
       <Modal visible={!!from} animationType="fade" onRequestClose={() => setFrom(null)}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           {from ? (
@@ -119,9 +104,6 @@ export function ChoiceRows({ list, onPick }: { list: ChoiceRow[]; onPick: (id: s
 }
 
 const s = StyleSheet.create({
-  quads: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, alignSelf: 'center' },
-  quad: { alignItems: 'center', justifyContent: 'center' },
-  quadT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: '#1C2030', textAlign: 'center' },
   list: { alignSelf: 'stretch', gap: 8 },
   row: {
     flexDirection: 'row',

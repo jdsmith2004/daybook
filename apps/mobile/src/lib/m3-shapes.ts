@@ -492,6 +492,67 @@ const BUILD = {
 export type M3Shape = keyof typeof BUILD;
 export const M3_SHAPES = Object.keys(BUILD) as M3Shape[];
 
+/* ---------- the feeling shapes: a family for each corner of the feelings grid ---------- */
+/* Built with the same rounded-polygon geometry as the Material shapes, so they share their soft, careful corners. Each
+   family has 36 members, one for every feeling in its corner, set by two numbers from 0 to 5: `a` (how many points) and
+   `b` (how deep they cut; 0 is the strongest feeling, in the grid's corner).
+   spike: the charged corner. Sharp stars and bursts, every other point short on some, deepest at the top.
+   sun: the bright corner. Suns with many rounded rays, straight in the corner and turning like a pinwheel nearer the
+   middle.
+   soft: the heavy corner. Round puffs with a few gentle lobes, sagging into drops at the lowest energy.
+   petal: the calm corner. Flowers and clovers, with round petals and narrow notches between, the petals swirling more
+   the nearer they sit to the middle. */
+export type FeelFamily = 'spike' | 'sun' | 'soft' | 'petal';
+export type FeelShape = `feel:${FeelFamily}:${number}:${number}`;
+export type AnyShape = M3Shape | FeelShape;
+
+/** points around the middle, out and in by turns, each with its own rounding; `outs` lets the outer points vary, and
+    `twist` (0 to about 0.6) slides each inner point round, so the points lean like a pinwheel */
+function radial(n: number, outs: number[], inner: number, rOut: Round, rIn: Round, twist = 0): Cubic[] {
+  const vs: Pt[] = [];
+  const rs: Round[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2;
+    const o = outs[i % outs.length];
+    const ai = a + (Math.PI / n) * (1 + twist);
+    vs.push([o * Math.cos(a), o * Math.sin(a)], [inner * Math.cos(ai), inner * Math.sin(ai)]);
+    rs.push(rOut, rIn);
+  }
+  return polygon(vs, rs);
+}
+
+function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
+  if (fam === 'spike') {
+    const n = [4, 5, 6, 7, 8, 9][a];
+    /* some counts take uneven points, long and short by turns, which reads as jagged rather than neat */
+    const outs = [[1], [1], [1, 0.74], [1], [1, 0.8], [1, 0.82, 0.91]][a];
+    /* the body stays full enough to hold the word written on it; the points do the shouting */
+    return radial(n, outs, 0.52 + 0.03 * b, rd(0.015 + 0.008 * b), rd(0.02 + 0.012 * b));
+  }
+  if (fam === 'sun') {
+    const n = [8, 10, 12, 14, 16, 18][a];
+    return radial(n, [1], 0.6 + 0.03 * b, rd(0.035 + 0.01 * b, 0.3), rd(0.07), 0.1 * b);
+  }
+  if (fam === 'soft') {
+    const n = [3, 4, 5, 6, 7, 8][a];
+    const lobes = radial(n, [1], 0.7 + 0.025 * b, rd(0.36, 0.4), rd(0.36, 0.4));
+    /* the lowest feelings sag: wider below and narrower above, like a drop that is about to fall */
+    const sag = 0.36 - 0.06 * b;
+    return xf(lobes, (p) => [p[0] * (1 + sag * p[1]), p[1]]);
+  }
+  const n = [4, 5, 6, 7, 8, 10][a];
+  return radial(n, [1], 0.46 + 0.03 * b, rd(0.42, 0.3), rd(0.03), 0.12 * b);
+}
+
+function raw(kind: AnyShape): Cubic[] {
+  if (kind.startsWith('feel:')) {
+    const [, fam, a, b] = kind.split(':');
+    const cl = (v: string) => Math.max(0, Math.min(5, Number(v) | 0));
+    return buildFeel(fam as FeelFamily, cl(a), cl(b));
+  }
+  return BUILD[kind as M3Shape]();
+}
+
 const at = (q: Cubic, t: number): Pt => {
   const u = 1 - t;
   return [
@@ -501,16 +562,16 @@ const at = (q: Cubic, t: number): Pt => {
 };
 
 /* each shape once, fitted into the unit square like Compose's normalized(): its longer side is 1, and it is centered */
-const cache = new Map<M3Shape, Cubic[]>();
-function unit(kind: M3Shape): Cubic[] {
+const cache = new Map<AnyShape, Cubic[]>();
+function unit(kind: AnyShape): Cubic[] {
   const hit = cache.get(kind);
   if (hit) return hit;
-  const raw = BUILD[kind]();
+  const cs = raw(kind);
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
-  raw.forEach((q) => {
+  cs.forEach((q) => {
     for (let k = 0; k <= 8; k++) {
       const p = at(q, k / 8);
       x0 = Math.min(x0, p[0]);
@@ -522,14 +583,14 @@ function unit(kind: M3Shape): Cubic[] {
   const s = 1 / Math.max(x1 - x0, y1 - y0);
   const cx = (x0 + x1) / 2;
   const cy = (y0 + y1) / 2;
-  const out = xf(raw, (p) => [(p[0] - cx) * s + 0.5, (p[1] - cy) * s + 0.5]);
+  const out = xf(cs, (p) => [(p[0] - cx) * s + 0.5, (p[1] - cy) * s + 0.5]);
   cache.set(kind, out);
   return out;
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 /** the shape as an SVG path filling a box `size` wide, turned `deg` degrees around its middle */
-export function shapePath(kind: M3Shape, size: number, deg = 0): string {
+export function shapePath(kind: AnyShape, size: number, deg = 0): string {
   const t = turn(deg);
   const map = (p: Pt) => {
     const q = t([p[0] - 0.5, p[1] - 0.5]);
@@ -543,7 +604,7 @@ export function shapePath(kind: M3Shape, size: number, deg = 0): string {
 
 /** n points evenly spaced around the shape's outline, in the unit square, starting at the top and going clockwise, so
     two shapes line up point for point and can be blended into each other */
-export function shapePoints(kind: M3Shape, n = 96): Pt[] {
+export function shapePoints(kind: AnyShape, n = 96): Pt[] {
   const fine: Pt[] = [];
   unit(kind).forEach((q) => {
     for (let k = 0; k < 16; k++) fine.push(at(q, k / 16));

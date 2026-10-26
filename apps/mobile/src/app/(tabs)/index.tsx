@@ -41,8 +41,8 @@ import {
   sunriseDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { AppState, Pressable, StyleSheet, type ScrollViewInstance } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
@@ -61,6 +61,7 @@ import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop } from '@/lib/nav';
+import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -136,6 +137,8 @@ export default function Today() {
   const focused = useIsFocused();
   const focusRef = useRef(focused);
   focusRef.current = focused;
+  /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
+  const [askFeel, setAskFeel] = useState(false);
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = !!due && askAgain;
@@ -155,7 +158,7 @@ export default function Today() {
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       spendFirstOpen();
-      router.push('/today-feel');
+      setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
   }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow]);
@@ -249,27 +252,30 @@ export default function Today() {
     </>
   );
   return (
-    <Screen
-      scrollRef={scroll}
-      eyebrow="My Daybook"
-      title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
-      sub={sub}
-      action={tipButton(snap.days, tk, TIP_URL, st, now) ? <TipTop /> : undefined}>
-      <NotifyBanner />
-      <Hero g={g} snap={snap} tk={tk} now={now}>
-        <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
-        {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
-      </Hero>
-      <Card>
-        <LogLink />
-      </Card>
-      <NightWinCard snap={snap} tk={tk} />
-      <YourDay snap={snap} tk={tk} now={now} />
-      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
-      {tip ? <TipCard /> : null}
-      {counts ? <PulseCard /> : null}
-      <HomeScreenCard />
-    </Screen>
+    <View style={{ flex: 1 }}>
+      <Screen
+        scrollRef={scroll}
+        eyebrow="My Daybook"
+        title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
+        sub={sub}
+        action={tipButton(snap.days, tk, TIP_URL, st, now) ? <TipTop /> : undefined}>
+        <NotifyBanner />
+        <Hero g={g} snap={snap} tk={tk} now={now}>
+          <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+          {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
+        </Hero>
+        <Card>
+          <LogLink />
+        </Card>
+        <NightWinCard snap={snap} tk={tk} />
+        <YourDay snap={snap} tk={tk} now={now} />
+        {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
+        {tip ? <TipCard /> : null}
+        {counts ? <PulseCard /> : null}
+        <HomeScreenCard />
+      </Screen>
+      {askFeel ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+    </View>
   );
 }
 

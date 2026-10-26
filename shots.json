@@ -28,15 +28,6 @@
       "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
-      "name": "feel",
-      "screen": "/today-feel",
-      "caption": "Start each day with one tap",
-      "sub": "How are you feeling today? Your answer goes in your log.",
-      "bg": "day",
-      "theme": "light",
-      "sizes": ["ios69", "ios63", "play-phone"]
-    },
-    {
       "name": "grow",
       "screen": "/miles",
       "caption": "Watch your flame grow",

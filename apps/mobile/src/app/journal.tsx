@@ -3,11 +3,11 @@
    up the same way: the X, a push up from its bottom edge, or Back. It is always the night sky, in either theme, like the
    field of feelings it opens into, so a private page feels like a quiet room.
 
-   The list is every entry, newest first, by day: a constellation of the feelings' shapes on one dotted line
-   (components/journal.tsx). Low at the bottom, where the thumb is, New entry opens the same four colors as everywhere
+   The list is every entry, newest first, by day, on the same plain dark page as the writing: a line for each, the
+   feeling's word with a small dot in its color (components/journal.tsx). Low at the bottom, where the thumb is, New entry opens the same four colors as everywhere
    else in the app (QuadBubbles), and the field of feelings grows out of the one tapped (How We Feel's way in). The word
-   named, the page to write on is kept bare: the feeling's shape and word in its color, one tiny line to start from
-   ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
+   named, the page to write on is kept bare: the word, one tiny line to start from ("Explore why you might be feeling
+   hopeful", with the word in its color), and the page. It saves quietly as it is written; Done
    goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
    that helps most. */
 import { feelAt, jnDayLabel, jnDays, jnEdit, jnGroups, jnList, jnRemove, jnStart, type FEEL_QUADS } from '@daybook/core';
@@ -33,11 +33,10 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { DayMark, EntryStar, entryLook, entryTime, JN, NewEntry, takeJournalStart } from '@/components/journal';
+import { DayMark, entryLook, EntryRow, entryTime, JN, NewEntry, takeJournalStart } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
-import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
-import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
+import { FEEL_COLORS, FeelGrid, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon, InkContext, T } from '@/components/ui';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
@@ -182,7 +181,7 @@ function Journal() {
           <StatusBar style="light" />
           <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
           <Reanimated.View style={[s.shade, { top: -EXTRA, height: H + EXTRA }, shade]}>
-            <LinearGradient colors={[JN.top, JN.top, JN.bottom]} locations={[0, 0.12, 1]} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: JN.paper }]} />
             <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
               {step.k === 'list' ? (
                 <ListPage
@@ -282,7 +281,7 @@ function ListPage({
               <View key={g.k}>
                 <DayMark label={g.label} first={gi === 0} />
                 {g.items.map((e) => {
-                  const card = <EntryStar e={e} onPress={() => onOpen(e.id)} />;
+                  const card = <EntryRow e={e} onPress={() => onOpen(e.id)} />;
                   /* the entry just written lands at the top, rising into place */
                   return e.id === fresh ? (
                     <Appear key={e.id} by={18} delay={140} duration={460}>
@@ -300,12 +299,7 @@ function ListPage({
         </View>
       </ScrollView>
       {/* the bottom fades into the sky behind the bar, so the entries slide under it softly */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[JN.bottom + '00', JN.bottom, JN.bottom]}
-        locations={[0, 0.45, 1]}
-        style={[s.fade, { height: dockH + 36 }]}
-      />
+      <LinearGradient pointerEvents="none" colors={[JN.paper + '00', JN.paper, JN.paper]} locations={[0, 0.45, 1]} style={[s.fade, { height: dockH + 36 }]} />
       <GestureDetector gesture={push}>
         <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
           <View style={s.col}>
@@ -319,25 +313,23 @@ function ListPage({
   );
 }
 
-/** before the first entry: the four colors' shapes, loose like scattered pages, and what the journal is */
+/** before the first entry: the four colors as four small dots, and what the journal is */
 function Empty() {
   const account = useAccount();
   /* one gentle feeling from each corner, near the middle of the field */
-  const picks: [number, number, number, number, number][] = [
-    [4, 4, -40, -24, -10],
-    [3, 8, 38, -32, 12],
-    [7, 3, -32, 34, 8],
-    [8, 9, 40, 26, -14],
+  const picks: [number, number][] = [
+    [4, 4],
+    [3, 8],
+    [7, 3],
+    [8, 9],
   ];
   return (
     <View style={s.empty}>
       <View style={s.art} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {picks.map(([r, c, x, yy, turn], i) => (
-          <View key={i} style={[s.artBit, { transform: [{ translateX: x }, { translateY: yy }] }]}>
-            <Appear by={10} delay={160 + i * 90} duration={520}>
-              <Shape kind={feelKind(r, c)} size={54} color={FEEL_COLORS[r][c]} turn={turn} />
-            </Appear>
-          </View>
+        {picks.map(([r, c], i) => (
+          <Appear key={i} by={6} delay={160 + i * 90} duration={420}>
+            <View style={[s.artDot, { backgroundColor: FEEL_COLORS[r][c] }]} />
+          </Appear>
         ))}
       </View>
       <Text style={s.emptyH}>Start with how you feel</Text>
@@ -460,8 +452,6 @@ function WritePage({
   const word = e.w.toLowerCase();
   return (
     <View style={{ flex: 1 }}>
-      {/* a calm, plain dark page, like Journal's: the feeling's color is only in its word in the nudge */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.paper]} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
@@ -608,16 +598,14 @@ const s = StyleSheet.create({
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
   grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.26)', marginTop: 12 },
   empty: { alignItems: 'center', paddingTop: 34, paddingHorizontal: 12, gap: 10 },
-  art: { width: 160, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  artBit: { position: 'absolute' },
+  art: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  artDot: { width: 12, height: 12, borderRadius: 6 },
   emptyH: { fontFamily: font.display, fontSize: 24, lineHeight: 30, color: JN.ink, textAlign: 'center' },
   emptyT: { fontFamily: font.body, fontSize: 15.5, lineHeight: 22.5, color: JN.muted, textAlign: 'center', maxWidth: 330 },
   priv: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   privT: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.muted },
   nudge: { fontFamily: font.body, fontSize: 14.5, lineHeight: 20, color: 'rgba(235, 235, 245, 0.6)' },
   nudgeW: { fontFamily: font.bodySemi },
-  /* the page to write on: a plain dark, a little warmer than black, the way Journal's is */
-  paper: { backgroundColor: '#16142A' },
   check: { backgroundColor: JN.accent, borderColor: JN.accent },
   rule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255, 255, 255, 0.16)', marginTop: 18 },
   wrap: { flex: 1, paddingHorizontal: 24, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },

@@ -9,7 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
-import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles } from '@/components/tools/feel';
+import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, toneOf, useTheme } from '@/lib/theme';
@@ -19,15 +19,17 @@ import { font, toneOf, useTheme } from '@/lib/theme';
 export function FeelQuads({ onPick, start }: { onPick: (r: number, c: number) => void; start?: { r: number; c: number } | null }) {
   const { width: W } = useWindowDimensions();
   const [from, setFrom] = useState<{ r: number; c: number } | null>(null);
+  const [at, setAt] = useState<FeelFrom | undefined>(undefined);
   const d = Math.min((Math.min(W, 430) - 32 - 12) / 2, 150);
   return (
     <>
       <QuadBubbles
         d={d}
         gap={12}
-        onPick={(q) => {
+        onPick={(q, p) => {
           /* the field opens on the word picked before, when it is in this color */
           const near = start && start.r < FEEL_MID === q.r < FEEL_MID && start.c < FEEL_MID === q.c < FEEL_MID;
+          setAt(p);
           setFrom(near ? start : { r: q.r, c: q.c });
         }}
       />
@@ -36,6 +38,7 @@ export function FeelQuads({ onPick, start }: { onPick: (r: number, c: number) =>
           {from ? (
             <FeelGrid
               start={from}
+              from={at}
               onBack={() => setFrom(null)}
               onClose={() => setFrom(null)}
               onNext={(r, c) => {

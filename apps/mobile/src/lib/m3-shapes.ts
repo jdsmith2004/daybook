@@ -494,15 +494,15 @@ export const M3_SHAPES = Object.keys(BUILD) as M3Shape[];
 
 /* ---------- the feeling shapes: a family for each corner of the feelings grid ---------- */
 /* Built with the same rounded-polygon geometry as the Material shapes, so they share their soft, careful corners. Each
-   family has 36 members, one for every feeling in its corner, set by two numbers from 0 to 5: `a` (how many points) and
-   `b` (how deep they cut; 0 is the strongest feeling, in the grid's corner).
-   spike: the charged corner. Sharp stars and bursts, every other point short on some, deepest at the top.
-   sun: the bright corner. Suns with many rounded rays, straight in the corner and turning like a pinwheel nearer the
-   middle.
-   soft: the heavy corner. Round puffs with a few gentle lobes, sagging into drops at the lowest energy.
-   petal: the calm corner. Flowers and clovers, with round petals and narrow notches between, the petals swirling more
-   the nearer they sit to the middle. */
-export type FeelFamily = 'spike' | 'sun' | 'soft' | 'petal';
+   family has 36 members, one for every feeling in its corner, set by two numbers from 0 to 5: `a` (counted across, from
+   the grid's edge) and `b` (counted down, from the grid's edge). All of them are flat and simple, calm enough to read the
+   word on.
+   edge: the charged corner. Plain polygons (diamonds, squares, pentagons, hexagons) whose sides cave in further the
+   nearer the feeling sits to the grid's edge, into pointed stars and crosses.
+   burst: the bright corner. Rounded bursts with a few soft rays, leaning like a pinwheel nearer the middle.
+   block: the heavy corner. Rounded blocks with bites taken out of their sides, some with a domed top.
+   cloud: the calm corner. Clouds, scallops and cushions with round lobes, some resting on a flatter base. */
+export type FeelFamily = 'edge' | 'burst' | 'block' | 'cloud';
 export type FeelShape = `feel:${FeelFamily}:${number}:${number}`;
 export type AnyShape = M3Shape | FeelShape;
 
@@ -521,27 +521,66 @@ function radial(n: number, outs: number[], inner: number, rOut: Round, rIn: Roun
   return polygon(vs, rs);
 }
 
+/** a w by h block with a rounded bite out of each side named in `bites` (top, right, bottom, left); `dome` rounds the
+    top corners right over. The side bites sit off the middle, the right one high and the left one low like a puzzle
+    piece, so a long word written across the middle is never cut into. */
+function block(w: number, h: number, bites: boolean[], dome: boolean): Cubic[] {
+  const [x, y] = [w / 2, h / 2];
+  const [dy, dx] = [h * 0.22, w * 0.12];
+  const nw = Math.min(w, h) * 0.2;
+  const [ns, at] = [h * 0.13, h * 0.25];
+  const vs: Pt[] = [];
+  const rs: Round[] = [];
+  const corner = (p: Pt, top: boolean) => {
+    vs.push(p);
+    rs.push(rd(top && dome ? Math.min(w, h) * 0.48 : 0.16));
+  };
+  const bite = (a: Pt, mid: Pt, b: Pt, r: number) => {
+    vs.push(a, mid, b);
+    rs.push(rd(0.05), rd(r), rd(0.05));
+  };
+  corner([-x, -y], true);
+  if (bites[0]) bite([-nw, -y], [0, -y + dy], [nw, -y], nw * 0.9);
+  corner([x, -y], true);
+  if (bites[1]) bite([x, -at - ns], [x - dx, -at], [x, -at + ns], ns * 0.9);
+  corner([x, y], false);
+  if (bites[2]) bite([nw, y], [0, y - dy], [-nw, y], nw * 0.9);
+  corner([-x, y], false);
+  if (bites[3]) bite([-x, at + ns], [-x + dx, at], [-x, at - ns], ns * 0.9);
+  return polygon(vs, rs);
+}
+
 function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
-  if (fam === 'spike') {
-    const n = [4, 5, 6, 7, 8, 9][a];
-    /* some counts take uneven points, long and short by turns, which reads as jagged rather than neat */
-    const outs = [[1], [1], [1, 0.74], [1], [1, 0.8], [1, 0.82, 0.91]][a];
-    /* the body stays full enough to hold the word written on it; the points do the shouting */
-    return radial(n, outs, 0.52 + 0.03 * b, rd(0.015 + 0.008 * b), rd(0.02 + 0.012 * b));
+  if (fam === 'edge') {
+    /* diamond, square, pentagon, hexagon, and two with points long and short by turns */
+    const n = [4, 4, 5, 6, 6, 8][a];
+    const outs = [[1], [1], [1], [1], [1, 0.82], [1, 0.86]][a];
+    const flat = Math.cos(Math.PI / n) * Math.min(...outs);
+    /* the body stays full enough to hold the word written on it: the deepest cave still leaves 0.62 of the way out */
+    const inner = flat + (0.62 - flat) * ((5 - b) / 5);
+    const shape = radial(n, outs, inner, rd(0.05), rd(0.04));
+    return a === 1 ? xf(shape, turn(45)) : shape;
   }
-  if (fam === 'sun') {
-    const n = [8, 10, 12, 14, 16, 18][a];
-    return radial(n, [1], 0.6 + 0.03 * b, rd(0.035 + 0.01 * b, 0.3), rd(0.07), 0.1 * b);
+  if (fam === 'burst') {
+    const n = [5, 6, 7, 8, 10, 12][a];
+    return radial(n, [1], 0.64 + 0.045 * b, rd(0.12, 0.2), rd(0.07), 0.1 * b);
   }
-  if (fam === 'soft') {
-    const n = [3, 4, 5, 6, 7, 8][a];
-    const lobes = radial(n, [1], 0.7 + 0.025 * b, rd(0.36, 0.4), rd(0.36, 0.4));
-    /* the lowest feelings sag: wider below and narrower above, like a drop that is about to fall */
-    const sag = 0.36 - 0.06 * b;
-    return xf(lobes, (p) => [p[0] * (1 + sag * p[1]), p[1]]);
+  if (fam === 'block') {
+    const bites = [
+      [true, false, false, false],
+      [true, false, true, false],
+      [false, true, false, true],
+      [true, true, true, true],
+      [false, false, true, false],
+      [true, true, false, true],
+    ][a];
+    const h = [2, 1.75, 1.55][b % 3];
+    return block(2, h, bites, b >= 3);
   }
-  const n = [4, 5, 6, 7, 8, 10][a];
-  return radial(n, [1], 0.46 + 0.03 * b, rd(0.42, 0.3), rd(0.03), 0.12 * b);
+  const n = [3, 4, 5, 6, 8, 10][a];
+  const lobes = radial(n, [1], 0.9 - 0.025 * b, rd(0.5, 0.3), rd(0.08));
+  /* every other one rests on a flatter base, like a cloud sitting low */
+  return b % 2 ? xf(lobes, (p) => [p[0], p[1] > 0 ? p[1] * 0.72 : p[1]]) : lobes;
 }
 
 function raw(kind: AnyShape): Cubic[] {

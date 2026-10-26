@@ -10,7 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Appear } from '@/components/appear';
 import { Text } from '@/components/text';
-import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles } from '@/components/tools/feel';
+import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
@@ -27,6 +27,7 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
   const { tk, now, update } = useStore();
   const [from, setFrom] = useState(FEEL_QUADS[0]);
   const [grid, setGrid] = useState(false);
+  const [at, setAt] = useState<FeelFrom | undefined>(undefined);
   const [sel, setSel] = useState<{ r: number; c: number } | null>(null);
   const night = urNight(new Date(now).getHours());
 
@@ -83,8 +84,9 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
       <View style={s.mid}>
         <QuadBubbles
           d={d}
-          onPick={(q) => {
+          onPick={(q, p) => {
             setFrom(q);
+            setAt(p);
             setGrid(true);
           }}
         />
@@ -93,6 +95,7 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <FeelGrid
             start={{ r: from.r, c: from.c }}
+            from={at}
             onBack={() => setGrid(false)}
             onClose={() => setGrid(false)}
             onNext={(r, cc) => {

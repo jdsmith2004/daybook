@@ -2646,7 +2646,10 @@ you wish someone loved you?" reads as pointed).
   the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. The
   list is a constellation, newest first by day: every entry is a star on one thin dotted line, the feeling's own shape
   glowing in its color, with the word in that color, the time, and up to three lines in a book face (Newsreader), straight
-  on the sky with no boxes. Days are small pills on the line. Low at the bottom, a bar floats: "New entry" and "Check in
+  on the sky with no boxes. A feeling named with nothing written is a small star with its word and time on one line,
+  closer to its neighbors, so it reads as a check-in rather than a heading missing its page (the owner, October 26: it did
+  not look good when nothing was written; a plain grouped iOS list was tried the same day and turned down for the
+  constellation). Days are small pills on the line. Low at the bottom, a bar floats: "New entry" and "Check in
   with how you feel", with a rounded accent square and a pencil. The owner turned down color-washed cards with a small
   Mood Meter, then plain cards with a plain button (October 26); from three drawn directions (constellation, diary pages,
   a month sky) he picked the constellation, with the pages direction's floating bar. Before the first entry: the four

@@ -494,11 +494,11 @@ export const M3_SHAPES = Object.keys(BUILD) as M3Shape[];
 
 /* ---------- the feeling shapes: a wild shape for every feeling ---------- */
 /* Every one of the 144 feelings has a shape of its own, and no two are alike. Each corner of the grid has its own
-   family, and each family has six kinds (`a`, counted across from the grid's edge), each drawn six ways (`b`, counted
-   down from the grid's edge), with a fixed bit of chance (seeded by the feeling's place, so it never changes) that
-   makes every spike, drip and lobe its own.
+   family, and each family has six kinds, scattered over its corner, each drawn six ways, with a fixed bit of chance
+   (seeded by the feeling's place, so it never changes) that makes every spike, drip and lobe its own.
    jag: the charged corner. Comic bursts, pointed stars, buzzsaws, crosses, crumpled rocks and double bursts.
-   ray: the bright corner. Suns, flowers, pinwheels, sparkles, hearts and crowns, and happy round blobs.
+   ray: the bright corner. Soft and friendly: round suns, flowers, pinwheels, twinkles, hearts and crowns, and happy
+   round blobs.
    drip: the heavy corner. Melting drops, raindrops, blocks with bites, puddles, bitten moons and rain clouds.
    bloom: the calm corner. Clouds, leaves and clovers, pebbles, soft cushions, flowers, and beans, mushrooms and
    caterpillars.
@@ -712,11 +712,11 @@ function jag(a: number, b: number, rnd: () => number): Cubic[] {
 /* the bright corner: rays, petals, sparkles and happy things */
 function ray(a: number, b: number, rnd: () => number): Cubic[] {
   if (a === 0) {
-    /* a sun: slim rays, long and short by turns */
-    const k = [10, 12, 14, 16, 18, 22][b];
+    /* a sun: plump, round-tipped rays, long and short by turns, like a child draws it */
+    const k = [8, 9, 10, 11, 12, 14][b];
     return drawn((t) => {
       const [f, i] = near(t, k);
-      return 0.62 + 0.38 * (i % 2 ? 0.62 : 1) * Math.cos(Math.PI * f) ** 6;
+      return 0.74 + 0.26 * (i % 2 && k % 2 === 0 ? 0.7 : 1) * Math.cos(Math.PI * f) ** 2;
     });
   }
   if (a === 1) {
@@ -725,24 +725,20 @@ function ray(a: number, b: number, rnd: () => number): Cubic[] {
     return drawn((t) => 0.55 + 0.45 * Math.abs(Math.cos((k * (t + Math.PI / 2)) / 2)) ** 0.5, { swirl: b % 2 ? 0.25 : 0 });
   }
   if (a === 2) {
-    /* a pinwheel with curved blades */
+    /* a pinwheel: round petals swept round in a spin */
     const k = [3, 4, 5, 6, 4, 5][b];
     const dir = b < 3 ? 1 : -1;
-    return drawn(
-      (t) => {
-        const x = (dir * k * t) / TAU;
-        return 0.5 + 0.5 * (1 - (x - Math.floor(x))) ** 1.6;
-      },
-      { swirl: 0.55 * dir, body: 0.6 },
-    );
+    return drawn((t) => 0.62 + 0.38 * (0.5 + 0.5 * Math.cos(k * (t + Math.PI / 2))), { swirl: 0.42 * dir, body: 0.62 });
   }
   if (a === 3) {
-    /* a sparkle: a star with sides drawn in, some with a smaller one turned behind it */
-    const m = [4, 4, 5, 6, 8, 4][b];
-    const n = 0.55 + 0.05 * (b % 3);
-    const big = superformula(m, n, n, n);
-    const two = b % 2 === 1;
-    return drawn((t) => Math.max(big(t + Math.PI / 2), two ? 0.62 * big(t + Math.PI / 2 + Math.PI / m) : 0), { body: 0.52 });
+    /* a twinkle: a soft star with plump, rounded points, some with a smaller one peeking from behind */
+    const m = [4, 5, 6, 4, 5, 7][b];
+    const two = b >= 3;
+    return drawn((t) => {
+      const [f] = near(t, m);
+      const [g] = near(t + Math.PI / m, m);
+      return Math.max(0.58 + 0.42 * Math.cos(Math.PI * f) ** 3, two ? 0.58 + 0.2 * Math.cos(Math.PI * g) ** 3 : 0);
+    });
   }
   if (a === 4) {
     if (b === 0) {
@@ -953,9 +949,31 @@ function bloom(a: number, b: number, rnd: () => number): Cubic[] {
 }
 
 const FAMILIES = { jag, ray, drip, bloom };
+/* where each kind sits in a corner: the six kinds are scattered over the 6 by 6 like a sudoku row, so every row and
+   every column of a corner holds each kind once and no two side by side are the same kind. The order is shuffled by a
+   fixed seed for each family, so the flowers of one corner do not line up with the clovers of another. */
+function shuffled(rnd: () => number) {
+  const out = [0, 1, 2, 3, 4, 5];
+  for (let i = 5; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+const SCATTER = Object.fromEntries(
+  (['jag', 'ray', 'drip', 'bloom'] as const).map((fam, fi) => {
+    const rnd = chance(fi * 7919 + 31);
+    return [fam, { kind: shuffled(rnd), across: shuffled(rnd), down: shuffled(rnd) }];
+  }),
+) as Record<FeelFamily, { kind: number[]; across: number[]; down: number[] }>;
+
+/** the feeling at `a` across and `b` down in its corner: which kind it is comes from the scatter, and which of that
+    kind's six it is comes from its row (each kind sits once in each row, so each of the six is used once) */
 function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
-  const rnd = chance(Object.keys(FAMILIES).indexOf(fam) * 1009 + a * 97 + b * 13 + 7);
-  return FAMILIES[fam](a, b, rnd);
+  const sc = SCATTER[fam];
+  const kind = sc.kind[(sc.across[a] + sc.down[b]) % 6];
+  const rnd = chance(Object.keys(FAMILIES).indexOf(fam) * 1009 + kind * 97 + b * 13 + 7);
+  return FAMILIES[fam](kind, b, rnd);
 }
 
 function raw(kind: AnyShape): Cubic[] {

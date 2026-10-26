@@ -2631,24 +2631,26 @@ Still open:
 
 The owner asked for a journal reached by pulling Today down (like refreshing a page), where every entry starts with the
 How We Feel picker before the writing, designed to Apple and How We Feel standards. Decided with the owner: the pull lands
-on the journal with the four colors low and ready; the tab that was called Journal is now **Pattern**; entries sync like
+on the journal; the tab that was called Journal is now **Pattern**; entries sync like
 the log; the page offers one open question to start from, never one aimed at the feeling just named ("you feel lonely, do
 you wish someone loved you?" reads as pointed).
 
 **Built** (core `journal-entries.ts`, `app/journal.tsx`, `components/journal.tsx`, `components/pull-door.tsx`):
 
 - **The pull.** On iOS the page's own bounce is the pull; on Android and the web the touch is followed at the top with the
-  same give (screen.tsx `usePull`). As the page comes down the four Mood Meter colors grow in the gap above it, one after
-  another; past 64 points they swell, the phone ticks, and the words say "Let go for your journal". Short of it, the page
+  same give (screen.tsx `usePull`). As the page comes down a round pencil grows in the gap above it; past 64 points it
+  fills with the accent color and swells, the phone ticks, and the words say "Let go for your journal". Short of it, the page
   springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
   it too; More has a Journal row for good.
 - **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with
   the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. Entries
-  are cards, newest first by day (Today, Yesterday, the date), each lit from its corner by its feeling's color, with the
-  feeling's shape and word, the time and the first lines. Low at the bottom: "How are you feeling?" with the Mood Meter in
-  small (four breathing bubbles in their square). Before the first entry: the four colors as scattered shapes, what the
+  are quiet cards, newest first by day (Today, Yesterday, the date): the feeling's small shape and word, the time, and up
+  to three lines (a feeling with nothing written is the row alone). Low at the bottom: the app's own New entry button.
+  The owner turned down a first version with color-washed cards and a small Mood Meter in the dock (October 26): cleaner
+  cards, and the four colors the same as everywhere else. Before the first entry: the four colors as scattered shapes, what the
   journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
-- **An entry** starts in the field of feelings, grown out of the bubble tapped. The word named, the entry exists (naming
+- **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
+  slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists (naming
   is the part that helps most). The page: the feeling breathing in its color with its word and line (tap to change it),
   one open question for the time of day (a tap shows another), and the page to write on, ready with the keyboard. It saves
   as it is written; Done (in the feeling's color) goes back to the list, where the entry rises in at the top. An entry read

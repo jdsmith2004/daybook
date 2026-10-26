@@ -1,17 +1,15 @@
-/* The journal's pieces (app/journal.tsx; core journal-entries.ts): the four colors in the Mood Meter's own square, small,
-   that start an entry; an entry as a card in the list, lit by its feeling's color; the feeling at the top of an entry,
-   breathing slowly; and how far down the journal was already pulled when it opens, so it carries on from the thumb. */
-import { FEEL_QUADS, jnPos, type JEntry } from '@daybook/core';
-import { LinearGradient } from 'expo-linear-gradient';
-import { memo, useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, View, type HostInstance } from 'react-native';
-import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
+/* The journal's pieces (app/journal.tsx; core journal-entries.ts): an entry as a quiet card in the list; the feeling at
+   the top of an entry, breathing slowly; and how far down the journal was already pulled when it opens, so it carries on
+   from the thumb. An entry starts with the app's own four colors (QuadBubbles in tools/feel.tsx). */
+import { jnPos, type JEntry } from '@daybook/core';
+import { memo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
-import { FEEL_COLORS, feelKind, QUAD, type FeelFrom } from '@/components/tools/feel';
+import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
-import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, nightInk } from '@/lib/theme';
 
@@ -32,10 +30,7 @@ export function takeJournalStart() {
 export const JN = {
   top: '#2A2275',
   bottom: '#120E38',
-  card: 'rgba(255, 255, 255, 0.06)',
-  /** the panel low on the list that holds the colors: solid, so the cards slide under it */
-  dock: '#231D5C',
-  edge: 'rgba(255, 255, 255, 0.09)',
+  card: 'rgba(255, 255, 255, 0.07)',
   ink: nightInk.ink,
   muted: nightInk.muted,
   faint: 'rgba(207, 200, 242, 0.62)',
@@ -50,64 +45,6 @@ export function entryLook(e: Pick<JEntry, 'w'>) {
   const p = jnPos(e);
   return p ? { color: FEEL_COLORS[p.r][p.c], kind: feelKind(p.r, p.c), pos: p } : { color: 'hsl(250, 80%, 76%)', kind: 'circle' as const, pos: null };
 }
-
-/* ---------- the four colors ---------- */
-/** the Mood Meter's square in small: energy up and down, pleasant to the right, each color a bubble that breathes a little
-    on its own beat. A tap starts an entry in that corner of the field, which grows out of the bubble tapped. */
-export function FeelMeter({ d = 46, gap = 8, onPick }: { d?: number; gap?: number; onPick: (q: (typeof FEEL_QUADS)[number], at?: FeelFrom) => void }) {
-  const reduce = useReducedMotion();
-  const clock = useSharedValue(0.1);
-  useEffect(() => {
-    if (reduce) return;
-    clock.value = withRepeat(withTiming(1.1, { duration: 60000, easing: Easing.linear }), -1, false);
-  }, [reduce, clock]);
-  return (
-    <View style={[s.meter, { width: d * 2 + gap, gap, rowGap: gap }]}>
-      {FEEL_QUADS.map((q, qi) => (
-        <Orb key={q.id} q={q} qi={qi} d={d} clock={clock} onPick={(at) => onPick(q, at)} />
-      ))}
-    </View>
-  );
-}
-
-const Orb = memo(function Orb({
-  q,
-  qi,
-  d,
-  clock,
-  onPick,
-}: {
-  q: (typeof FEEL_QUADS)[number];
-  qi: number;
-  d: number;
-  clock: SharedValue<number>;
-  onPick: (at?: FeelFrom) => void;
-}) {
-  /* the same slow, uneven breathing as the big bubbles (feel.tsx), each a little out of step with the others */
-  const st = useAnimatedStyle(() => ({ transform: [{ scale: 1 + 0.035 * Math.sin(2 * Math.PI * clock.value * 10 + qi * 1.7) }] }), webDeps(clock, qi));
-  const ref = useRef<HostInstance | null>(null);
-  return (
-    <View ref={ref} collapsable={false} style={{ width: d, height: d }}>
-      <Reanimated.View style={st}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={'New entry: ' + q.name}
-          hitSlop={4}
-          onPress={() => {
-            buzz('tap');
-            const el = ref.current;
-            if (!el) return onPick();
-            el.measureInWindow((x, y, w, h) => onPick(w ? { x: x + w / 2, y: y + h / 2 } : undefined));
-          }}
-          style={({ pressed }) => [{ width: d, height: d, borderRadius: d / 2, overflow: 'hidden', transform: [{ scale: pressed ? 0.9 : 1 }] }]}>
-          <LinearGradient colors={[QUAD[q.id].top, QUAD[q.id].bottom]} start={{ x: 0.3, y: 0 }} end={{ x: 0.7, y: 1 }} style={StyleSheet.absoluteFill} />
-          {/* the light catching its top, so it reads as a bubble, not a dot */}
-          <View style={[s.shine, { width: d * 0.42, height: d * 0.2, borderRadius: d, top: d * 0.14, left: d * 0.2 }]} />
-        </Pressable>
-      </Reanimated.View>
-    </View>
-  );
-});
 
 /* ---------- the feeling at the top of an entry ---------- */
 const SLOW: Steps = [
@@ -142,61 +79,38 @@ export function FeelBadge({ e, size = 76 }: { e: Pick<JEntry, 'w'>; size?: numbe
 /** the time an entry was started, like 9:41 PM */
 export const entryTime = (at: number) => new Date(at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-/** one entry: its feeling's shape and word, the time, and the first lines of what was written (or what the feeling is,
-    when only the feeling was named). The card is lit from its corner by the feeling's color. */
-export const EntryCard = memo(function EntryCard({ e, how, onPress }: { e: JEntry; how: string; onPress: () => void }) {
+/** one entry, quietly: the feeling's small shape and word, the time, and the first lines of what was written. A feeling
+    named with nothing written is the row alone. */
+export const EntryCard = memo(function EntryCard({ e, onPress }: { e: JEntry; onPress: () => void }) {
   const look = entryLook(e);
   const text = e.t.trim();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${e.w}, ${entryTime(e.at)}. ${text ? text.slice(0, 160) : how}`}
+      accessibilityLabel={`${e.w}, ${entryTime(e.at)}.${text ? ' ' + text.slice(0, 160) : ''}`}
       accessibilityHint="Opens the entry"
       onPress={onPress}
-      style={({ pressed }) => [s.card, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-      <LinearGradient
-        pointerEvents="none"
-        colors={[withAlpha(look.color, 0.3), withAlpha(look.color, 0.06), withAlpha(look.color, 0)]}
-        locations={[0, 0.45, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      style={({ pressed }) => [s.card, { opacity: pressed ? 0.75 : 1 }]}>
       <View style={s.cardTop}>
-        <Shape kind={look.kind} size={34} color={look.color} />
+        <Shape kind={look.kind} size={16} color={look.color} />
         <Text style={s.cardW} numberOfLines={1}>
           {e.w}
         </Text>
         <Text style={s.cardT}>{entryTime(e.at)}</Text>
       </View>
       {text ? (
-        <Text style={s.cardBody} numberOfLines={4}>
+        <Text style={s.cardBody} numberOfLines={3}>
           {text}
         </Text>
-      ) : (
-        <Text style={[s.cardBody, { color: JN.faint }]} numberOfLines={2}>
-          {how}.
-        </Text>
-      )}
+      ) : null}
     </Pressable>
   );
 });
 
 const s = StyleSheet.create({
-  meter: { flexDirection: 'row', flexWrap: 'wrap' },
-  shine: { position: 'absolute', backgroundColor: 'rgba(255, 255, 255, 0.38)', transform: [{ rotate: '-18deg' }] },
-  card: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: JN.edge,
-    backgroundColor: JN.card,
-    padding: 16,
-    paddingTop: 14,
-    gap: 10,
-    overflow: 'hidden',
-  },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardW: { flex: 1, fontFamily: font.display, fontSize: 20, lineHeight: 25, color: JN.ink },
-  cardT: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.muted },
-  cardBody: { fontFamily: font.body, fontSize: 15.5, lineHeight: 22.5, color: JN.ink },
+  card: { borderRadius: 20, backgroundColor: JN.card, paddingHorizontal: 18, paddingVertical: 16, gap: 8 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  cardW: { flex: 1, fontFamily: font.bodySemi, fontSize: 16, lineHeight: 21, color: JN.ink },
+  cardT: { fontFamily: font.body, fontSize: 13, lineHeight: 18, color: JN.muted },
+  cardBody: { fontFamily: font.body, fontSize: 15, lineHeight: 22, color: 'rgba(247, 243, 255, 0.82)' },
 });

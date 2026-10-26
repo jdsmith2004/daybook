@@ -3,9 +3,9 @@
    up the same way: the X, a push up from its bottom edge, or Back. It is always the night sky, in either theme, like the
    field of feelings it opens into, so a private page feels like a quiet room.
 
-   The list is every entry, newest first, by day, each card lit by its feeling's color. Low at the bottom, where the thumb
-   is, sit the four colors of the Mood Meter in small: a tap on one starts an entry, and the field of feelings grows out of
-   it (How We Feel's way in). The word named, the page to write on opens with the feeling at the top, breathing in its
+   The list is every entry, newest first, by day, each a quiet card with its feeling's small shape. Low at the bottom,
+   where the thumb is, New entry opens the same four colors as everywhere else in the app (QuadBubbles), and the field of
+   feelings grows out of the one tapped (How We Feel's way in). The word named, the page to write on opens with the feeling at the top, breathing in its
    color, and one open question to start from (a tap shows another). It saves as it is written; Done goes back to the list,
    where the new entry lands at the top. The feeling alone is an entry too: naming it is the part that helps most. */
 import { feelAt, jnDayLabel, jnDays, jnEdit, jnGroups, jnList, jnPrompt, jnRemove, jnStart, type FEEL_QUADS } from '@daybook/core';
@@ -30,18 +30,19 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { EntryCard, entryLook, entryTime, FeelBadge, FeelMeter, JN, takeJournalStart, withAlpha } from '@/components/journal';
+import { EntryCard, entryLook, entryTime, FeelBadge, JN, takeJournalStart, withAlpha } from '@/components/journal';
+import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
-import { FEEL_COLORS, FeelGrid, feelKind, type FeelFrom } from '@/components/tools/feel';
-import { Icon } from '@/components/ui';
+import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
+import { Button, Icon, InkContext, T } from '@/components/ui';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useAccount } from '@/lib/sync';
 import { useStore } from '@/lib/store';
-import { font, MAX_WIDTH } from '@/lib/theme';
+import { font, MAX_WIDTH, NightContext, nightInk } from '@/lib/theme';
 
 /** room above the shade, so its spring can overshoot a little without showing a gap at the top */
 const EXTRA = 80;
@@ -53,6 +54,8 @@ const PUSH = 90;
 
 type Step =
   | { k: 'list'; fresh?: string }
+  /** the four colors, the same step as everywhere else a feeling is named */
+  | { k: 'quad' }
   /** naming the feeling: for a new entry (id null), or for this entry again */
   | { k: 'grid'; start: { r: number; c: number }; from?: FeelFrom; id: string | null; fresh?: boolean }
   | { k: 'write'; id: string; fresh: boolean };
@@ -72,7 +75,7 @@ export default function JournalScreen() {
 }
 
 function Journal() {
-  const { height: H } = useWindowDimensions();
+  const { height: H, width: W } = useWindowDimensions();
   const reduce = useReducedMotion();
   const sos = useSos();
   const { snap, tk, update } = useStore();
@@ -153,9 +156,11 @@ function Journal() {
   back.current =
     step.k === 'list'
       ? close
-      : step.k === 'grid'
-        ? () => setStep(step.id ? { k: 'write', id: step.id, fresh: !!step.fresh } : { k: 'list' })
-        : () => setStep({ k: 'list' });
+      : step.k === 'quad'
+        ? () => setStep({ k: 'list' })
+        : step.k === 'grid'
+          ? () => setStep(step.id ? { k: 'write', id: step.id, fresh: !!step.fresh } : { k: 'quad' })
+          : () => setStep({ k: 'list' });
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -166,30 +171,55 @@ function Journal() {
   }, []);
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <StatusBar style="light" />
-      <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
-      <Reanimated.View style={[s.shade, { top: -EXTRA, height: H + EXTRA }, shade]}>
-        <LinearGradient colors={[JN.top, JN.top, JN.bottom]} locations={[0, 0.12, 1]} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
-          {step.k === 'list' ? (
-            <ListPage key="list" fresh={step.fresh} push={push} onClose={close} onNew={startEntry} onOpen={(id) => setStep({ k: 'write', id, fresh: false })} />
-          ) : step.k === 'grid' ? (
-            <FeelGrid key="grid" title="How are you feeling?" start={step.start} from={step.from} onBack={back.current} onClose={back.current} onNext={named} />
-          ) : snap.journal?.[step.id] ? (
-            <WritePage
-              key={'write' + step.id}
-              id={step.id}
-              fresh={step.fresh}
-              onDone={(fresh) => setStep({ k: 'list', fresh: fresh || undefined })}
-              onFeel={(r, c) => setStep({ k: 'grid', start: { r, c }, id: step.id, fresh: step.fresh })}
-            />
-          ) : null}
+    <NightContext.Provider value={true}>
+      <InkContext.Provider value={NIGHT_INK}>
+        <View style={StyleSheet.absoluteFill}>
+          <StatusBar style="light" />
+          <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
+          <Reanimated.View style={[s.shade, { top: -EXTRA, height: H + EXTRA }, shade]}>
+            <LinearGradient colors={[JN.top, JN.top, JN.bottom]} locations={[0, 0.12, 1]} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
+              {step.k === 'list' ? (
+                <ListPage
+                  key="list"
+                  fresh={step.fresh}
+                  push={push}
+                  onClose={close}
+                  onNew={() => setStep({ k: 'quad' })}
+                  onOpen={(id) => setStep({ k: 'write', id, fresh: false })}
+                />
+              ) : step.k === 'quad' ? (
+                <SceneFrame key="quad" title="Journal" sky="night" onClose={back.current}>
+                  <Stage dir={0}>
+                    <T v="title" style={s.c} accessibilityRole="header">
+                      How are you feeling?
+                    </T>
+                    <T style={s.c}>Tap the color that is closest. The exact word comes next.</T>
+                    <Dock>
+                      <QuadBubbles d={Math.min(W - 96, 330) / 2} onPick={startEntry} />
+                    </Dock>
+                  </Stage>
+                </SceneFrame>
+              ) : step.k === 'grid' ? (
+                <FeelGrid key="grid" start={step.start} from={step.from} onBack={back.current} onClose={back.current} onNext={named} />
+              ) : snap.journal?.[step.id] ? (
+                <WritePage
+                  key={'write' + step.id}
+                  id={step.id}
+                  fresh={step.fresh}
+                  onDone={(fresh) => setStep({ k: 'list', fresh: fresh || undefined })}
+                  onFeel={(r, c) => setStep({ k: 'grid', start: { r, c }, id: step.id, fresh: step.fresh })}
+                />
+              ) : null}
+            </View>
+          </Reanimated.View>
         </View>
-      </Reanimated.View>
-    </View>
+      </InkContext.Provider>
+    </NightContext.Provider>
   );
 }
+
+const NIGHT_INK = { ink: nightInk.ink, muted: nightInk.muted };
 
 /* ---------- the list ---------- */
 function ListPage({
@@ -202,7 +232,7 @@ function ListPage({
   fresh?: string;
   push: ReturnType<typeof Gesture.Pan>;
   onClose: () => void;
-  onNew: (q: (typeof FEEL_QUADS)[number], at?: FeelFrom) => void;
+  onNew: () => void;
   onOpen: (id: string) => void;
 }) {
   const inset = useSafeAreaInsets();
@@ -237,9 +267,7 @@ function ListPage({
                   {g.label}
                 </Text>
                 {g.items.map((e) => {
-                  const p = entryLook(e).pos;
-                  const how = (p && feelAt(p.r, p.c)?.how) || 'A feeling, named';
-                  const card = <EntryCard e={e} how={how} onPress={() => onOpen(e.id)} />;
+                  const card = <EntryCard e={e} onPress={() => onOpen(e.id)} />;
                   /* the entry just written lands at the top, rising into place */
                   return e.id === fresh ? (
                     <Appear key={e.id} by={18} delay={140} duration={460}>
@@ -256,21 +284,17 @@ function ListPage({
           )}
         </View>
       </ScrollView>
-      {/* the bottom fades into the sky behind the colors, so cards slide under them softly */}
+      {/* the bottom fades into the sky behind the button, so cards slide under it softly */}
       <LinearGradient
         pointerEvents="none"
         colors={[JN.bottom + '00', JN.bottom, JN.bottom]}
-        locations={[0, 0.34, 1]}
+        locations={[0, 0.45, 1]}
         style={[s.fade, { height: dockH + 36 }]}
       />
       <GestureDetector gesture={push}>
         <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
-          <View style={[s.col, s.ask]}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={s.askH}>How are you feeling?</Text>
-              <Text style={s.askT}>Tap the closest color to start.</Text>
-            </View>
-            <FeelMeter d={42} gap={7} onPick={onNew} />
+          <View style={s.col}>
+            <Button label="New entry" icon="plus" onPress={onNew} />
           </View>
           {/* the edge of the shade: a push up here takes the journal back up */}
           <View style={s.grab} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
@@ -515,6 +539,7 @@ function WritePage({
 }
 
 const s = StyleSheet.create({
+  c: { textAlign: 'center' },
   dim: { backgroundColor: '#0B0920' },
   shade: {
     position: 'absolute',
@@ -538,23 +563,6 @@ const s = StyleSheet.create({
   day: { fontFamily: font.bodyBold, fontSize: 12, lineHeight: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: JN.muted, marginLeft: 4 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
-  ask: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    padding: 16,
-    paddingLeft: 20,
-    borderRadius: 30,
-    backgroundColor: JN.dock,
-    borderWidth: 1,
-    borderColor: JN.edge,
-    shadowColor: '#000000',
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -2 },
-  },
-  askH: { fontFamily: font.display, fontSize: 19, lineHeight: 24, color: JN.ink },
-  askT: { fontFamily: font.body, fontSize: 14, lineHeight: 19, color: JN.muted },
   grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.26)', marginTop: 12 },
   empty: { alignItems: 'center', paddingTop: 34, paddingHorizontal: 12, gap: 10 },
   art: { width: 160, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },

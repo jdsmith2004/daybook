@@ -16,6 +16,7 @@ import {
   jnPrompts,
   jnRemove,
   jnStart,
+  jnTimeline,
   normJEntry,
   type Journal,
 } from '../src/journal-entries';
@@ -179,5 +180,57 @@ describe('sync and backups', () => {
     expect(Object.keys(out.journal!).sort()).toEqual([a.id, since.id].sort());
     /* a backup from before the journal has none, and that is fine */
     expect(readBackup(JSON.stringify({ app: 'daybook', v: 1, days: {}, reviews: {}, settings: null })).journal).toEqual({});
+  });
+});
+
+describe('every feeling, by day', () => {
+  const ev = (o: Record<string, unknown>) => ({
+    id: 'e1',
+    time: null,
+    outcome: 'rode',
+    trigger: null,
+    paused: null,
+    did: null,
+    recovered: false,
+    note: '',
+    ...o,
+  });
+  const day = (d: string, o: Record<string, unknown>) => ({ d, events: [], checkin: null, p: null, u: 1, ...o }) as never;
+
+  it('puts the journal, Name the feeling, the ride and a slip together, in the order they came', () => {
+    const { jn } = jnStart({}, '2026-10-26', 'Grateful', at(26, 21, 40));
+    const days = {
+      '2026-10-26': day('2026-10-26', {
+        events: [ev({ time: '18:10' })],
+        p: {
+          fe: [
+            ['Restless', at(26, 18, 15)],
+            ['Anxious', at(26, 9, 0)],
+          ],
+        },
+      }),
+      '2026-10-23': day('2026-10-23', { events: [ev({ time: '23:50', outcome: 'slipped', fb: 'Lonely' })] }),
+    };
+    const t = jnTimeline(jn, days, '2026-10-26');
+    expect(t.map((g) => g.k)).toEqual(['2026-10-26', '2026-10-23']);
+    expect(t[0].label).toBe('Today');
+    expect(t[0].feels.map((f) => [f.w, f.from])).toEqual([
+      ['Anxious', 'named'],
+      ['Restless', 'urge'],
+      ['Grateful', 'journal'],
+    ]);
+    expect(t[0].entries).toHaveLength(1);
+    expect(t[1].feels).toEqual([{ w: 'Lonely', at: at(23, 23, 50), from: 'slip' }]);
+  });
+
+  it('keeps a slip after midnight on the night it belongs to, and leaves out days with no feeling and days to come', () => {
+    const days = {
+      '2026-10-24': day('2026-10-24', { events: [ev({ time: '01:30', outcome: 'slipped', fb: 'Tired' })] }),
+      '2026-10-25': day('2026-10-25', { events: [ev({ time: '20:00' })] }),
+      '2026-10-27': day('2026-10-27', { p: { fe: [['Calm', at(27, 9)]] } }),
+    };
+    const t = jnTimeline({}, days, '2026-10-26');
+    expect(t.map((g) => g.k)).toEqual(['2026-10-24']);
+    expect(t[0].feels[0].at).toBe(at(25, 1, 30));
   });
 });

@@ -10,7 +10,7 @@
    ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
    goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
    that helps most. */
-import { feelAt, jnDayLabel, jnDays, jnEdit, jnGroups, jnList, jnRemove, jnStart, type FEEL_QUADS } from '@daybook/core';
+import { addDays, feelAt, fmtDate, jnDayLabel, jnEdit, jnRemove, jnStart, jnTimeline, type FEEL_QUADS, type JFeel } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -33,7 +33,7 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { DayMark, EntryStar, entryLook, entryTime, JN, NewEntry, takeJournalStart } from '@/components/journal';
+import { dayColors, DayLight, entryLook, entryTime, JN, Light, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
@@ -182,7 +182,7 @@ function Journal() {
           <StatusBar style="light" />
           <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
           <Reanimated.View style={[s.shade, { top: -EXTRA, height: H + EXTRA }, shade]}>
-            <LinearGradient colors={[JN.top, JN.top, JN.bottom]} locations={[0, 0.12, 1]} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: JN.paper }]} />
             <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
               {step.k === 'list' ? (
                 <ListPage
@@ -194,7 +194,7 @@ function Journal() {
                   onOpen={(id) => setStep({ k: 'write', id, fresh: false })}
                 />
               ) : step.k === 'quad' ? (
-                <SceneFrame key="quad" title="Journal" sky="night" onClose={back.current}>
+                <SceneFrame key="quad" title="Journal" sky="paper" onClose={back.current}>
                   <Stage dir={0}>
                     <T v="title" style={s.c} accessibilityRole="header">
                       How are you feeling?
@@ -206,7 +206,7 @@ function Journal() {
                   </Stage>
                 </SceneFrame>
               ) : step.k === 'grid' ? (
-                <FeelGrid key="grid" start={step.start} from={step.from} onBack={back.current} onClose={back.current} onNext={named} />
+                <FeelGrid key="grid" sky="paper" start={step.start} from={step.from} onBack={back.current} onClose={back.current} onNext={named} />
               ) : snap.journal?.[step.id] ? (
                 <WritePage
                   key={'write' + step.id}
@@ -239,6 +239,15 @@ function Journal() {
 const NIGHT_INK = { ink: nightInk.ink, muted: nightInk.muted };
 
 /* ---------- the list ---------- */
+/** what the list shows: everything, or only the days with words, or with a feeling from an urge or a slip */
+const FILTERS = [
+  { id: 'all', label: 'Everything' },
+  { id: 'written', label: 'Written' },
+  { id: 'urge', label: 'Urges' },
+  { id: 'slip', label: 'Slips' },
+] as const;
+type Filter = (typeof FILTERS)[number]['id'];
+
 function ListPage({
   fresh,
   push,
@@ -254,58 +263,123 @@ function ListPage({
 }) {
   const inset = useSafeAreaInsets();
   const { snap, tk } = useStore();
-  const groups = useMemo(() => jnGroups(snap.journal, tk), [snap.journal, tk]);
-  const n = useMemo(() => jnList(snap.journal).length, [snap.journal]);
-  const days = useMemo(() => jnDays(snap.journal), [snap.journal]);
+  const all = useMemo(() => jnTimeline(snap.journal, snap.days, tk), [snap.journal, snap.days, tk]);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [menu, setMenu] = useState(false);
+  const shown = useMemo(
+    () => (filter === 'all' ? all : all.filter((g) => (filter === 'written' ? g.entries.some((e) => e.t.trim()) : g.feels.some((f) => f.from === filter)))),
+    [all, filter],
+  );
+  /* the week across the top: the last seven days, today last */
+  const week = useMemo(() => {
+    const byK = new Map(all.map((g) => [g.k, g]));
+    return Array.from({ length: 7 }, (_, i) => {
+      const k = addDays(tk, i - 6);
+      const g = byK.get(k);
+      return { k, short: fmtDate(k, { weekday: 'short' }), colors: g ? dayColors(g) : [], today: k === tk };
+    });
+  }, [all, tk]);
+  const named = week.reduce((n, d) => n + (all.find((g) => g.k === d.k)?.feels.length || 0), 0);
+  /* a tap on a day in the week goes to it in the list */
+  const list = useRef<ScrollViewInstance | null>(null);
+  const ys = useRef<Record<string, number>>({});
+  const [on, setOn] = useState<string | null>(tk);
+  const [headH, setHeadH] = useState(110);
   const [dockH, setDockH] = useState(140);
+  const goTo = (k: string) => {
+    if (filter !== 'all') setFilter('all');
+    setOn(k);
+    const y = ys.current[k];
+    if (y != null) list.current?.scrollTo({ y: Math.max(0, y - 6), animated: true });
+  };
   return (
     <View style={{ flex: 1 }}>
-      <View style={[s.head, { paddingTop: inset.top + 10 }]}>
-        <View style={s.headRow}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={s.title} accessibilityRole="header" maxFontSizeMultiplier={1.25}>
-              Journal
-            </Text>
-            <Text style={s.sub}>
-              {n ? `${n} ${n === 1 ? 'entry' : 'entries'} · ${days} ${days === 1 ? 'day' : 'days'} written` : 'A few honest lines, just for you.'}
-            </Text>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.round} hitSlop={6}>
-            <Icon name="x" color={JN.ink} />
-          </Pressable>
-        </View>
-      </View>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.list, { paddingBottom: dockH + 20 }]} showsVerticalScrollIndicator={false}>
+      {/* the list runs the whole height, under the title, so each day's light reaches up under it with no edge */}
+      <ScrollView
+        ref={list}
+        style={StyleSheet.absoluteFill}
+        contentContainerStyle={[s.list, { paddingTop: headH, paddingBottom: dockH + 20 }]}
+        showsVerticalScrollIndicator={false}>
         <View style={s.col}>
-          {groups.length ? (
-            groups.map((g, gi) => (
-              <View key={g.k}>
-                <DayMark label={g.label} first={gi === 0} />
-                {g.items.map((e) => {
-                  const card = <EntryStar e={e} onPress={() => onOpen(e.id)} />;
-                  /* the entry just written lands at the top, rising into place */
-                  return e.id === fresh ? (
-                    <Appear key={e.id} by={18} delay={140} duration={460}>
-                      {card}
+          {all.length ? <WeekLights week={week} on={on} onPick={goTo} /> : null}
+          {shown.length ? (
+            shown.map((g) => {
+              const day = <DayLight g={g} onOpen={onOpen} />;
+              return (
+                <View key={g.k} onLayout={(e) => (ys.current[g.k] = e.nativeEvent.layout.y)}>
+                  {/* the entry just written lands at the top, rising into place */}
+                  {g.entries.some((e) => e.id === fresh) ? (
+                    <Appear by={18} delay={140} duration={460}>
+                      {day}
                     </Appear>
                   ) : (
-                    <View key={e.id}>{card}</View>
-                  );
-                })}
-              </View>
-            ))
+                    day
+                  )}
+                </View>
+              );
+            })
+          ) : all.length ? (
+            <Text style={s.none}>Nothing here yet.</Text>
           ) : (
             <Empty />
           )}
         </View>
       </ScrollView>
-      {/* the bottom fades into the sky behind the bar, so the entries slide under it softly */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[JN.bottom + '00', JN.bottom, JN.bottom]}
-        locations={[0, 0.45, 1]}
-        style={[s.fade, { height: dockH + 36 }]}
-      />
+      {/* the title floats over the list, on a soft fade rather than a line */}
+      <View pointerEvents="box-none" style={s.headWrap} onLayout={(e) => setHeadH(e.nativeEvent.layout.height + 4)}>
+        <LinearGradient pointerEvents="none" colors={[JN.paper, JN.paper + 'D9', JN.paper + '00']} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+        <View style={[s.head, { paddingTop: inset.top + 10 }]}>
+          <View style={s.headRow}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={s.title} accessibilityRole="header" maxFontSizeMultiplier={1.25}>
+                Journal
+              </Text>
+              <View style={s.subRow}>
+                <Text style={s.sub}>{all.length ? `${named} ${named === 1 ? 'feeling' : 'feelings'} this week` : 'A few honest lines, just for you.'}</Text>
+                {all.length ? (
+                  /* the filter, small and quiet: the end of this line */
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={'Showing ' + FILTERS.find((f) => f.id === filter)!.label.toLowerCase() + '. Change what shows'}
+                    onPress={() => setMenu((m) => !m)}
+                    hitSlop={10}
+                    style={s.filt}>
+                    <Text style={s.sub}>{'  ·  ' + FILTERS.find((f) => f.id === filter)!.label}</Text>
+                    <Icon name="down" size={11} color={JN.quiet} />
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.round} hitSlop={6}>
+              <Icon name="x" color={JN.ink} />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+      {menu ? (
+        <>
+          <Pressable accessibilityLabel="Close the filter" style={StyleSheet.absoluteFill} onPress={() => setMenu(false)} />
+          <Appear by={-6} duration={180} style={[s.menu, { top: headH - 8 }]}>
+            {FILTERS.map((f) => (
+              <Pressable
+                key={f.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: f.id === filter }}
+                onPress={() => {
+                  buzz('tap');
+                  setFilter(f.id);
+                  setMenu(false);
+                }}
+                style={({ pressed }) => [s.menuRow, pressed && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}>
+                <Text style={[s.menuT, f.id === filter && { color: JN.ink }]}>{f.label}</Text>
+                {f.id === filter ? <Icon name="check" size={15} color={JN.accent} /> : null}
+              </Pressable>
+            ))}
+          </Appear>
+        </>
+      ) : null}
+      {/* the bottom fades into the page behind the bar, so the days slide under it softly */}
+      <LinearGradient pointerEvents="none" colors={[JN.paper + '00', JN.paper, JN.paper]} locations={[0, 0.45, 1]} style={[s.fade, { height: dockH + 36 }]} />
       <GestureDetector gesture={push}>
         <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
           <View style={s.col}>
@@ -368,9 +442,16 @@ function WritePage({
   backRef: { current: (() => void) | null };
 }) {
   const inset = useSafeAreaInsets();
+  const { width: W } = useWindowDimensions();
   const { snap, tk, update } = useStore();
   const e = snap.journal![id];
   const look = entryLook(e);
+  /* what else was felt that day, named somewhere else in the app (a slip, an urge, Name the feeling), so reading a day
+     back has the whole of it */
+  const also = useMemo(
+    () => (fresh ? [] : (jnTimeline({}, { [e.d]: snap.days[e.d] }, tk)[0]?.feels || []).filter((f) => f.from !== 'journal')),
+    [fresh, e.d, snap.days, tk],
+  );
   const f = look.pos ? feelAt(look.pos.r, look.pos.c) : null;
   const [text, setText] = useState(e.t);
   /* a page opened with nothing on it has the small nudge under the feeling; one opened to read back does not */
@@ -460,8 +541,10 @@ function WritePage({
   const word = e.w.toLowerCase();
   return (
     <View style={{ flex: 1 }}>
-      {/* a calm, plain dark page, like Journal's: the feeling's color is only in its word in the nudge */}
+      {/* a calm, plain dark page, like Journal's, with the feeling's own light coming down softly from the top: the same
+          light the day has in the list */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.paper]} />
+      <Light colors={[look.color]} w={W * 1.9} h={610} strength={0.42} style={{ left: -W * 0.4, top: -250 }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
@@ -540,6 +623,7 @@ function WritePage({
               accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
               style={s.input}
             />
+            {also.length ? <Text style={s.also}>{alsoLine(also)}</Text> : null}
             <Pressable
               accessible={false}
               importantForAccessibility="no"
@@ -574,6 +658,11 @@ function WritePage({
   );
 }
 
+/** where a feeling named elsewhere came from, said plainly */
+const FROM: Record<JFeel['from'], string> = { journal: '', urge: 'during an urge', slip: 'before a slip', named: 'in Name the feeling' };
+/** "Also that day: lonely before a slip, at 11:50 PM." */
+const alsoLine = (fs: JFeel[]) => 'Also that day: ' + fs.map((f) => `${f.w.toLowerCase()} ${FROM[f.from]}, at ${entryTime(f.at)}`).join('; ') + '.';
+
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   dim: { backgroundColor: '#0B0920' },
@@ -589,10 +678,31 @@ const s = StyleSheet.create({
     elevation: 12,
   },
   col: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
-  head: { paddingHorizontal: 16, paddingBottom: 6 },
+  headWrap: { position: 'absolute', top: 0, left: 0, right: 0, paddingBottom: 26 },
+  head: { paddingHorizontal: 16 },
+  subRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  filt: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  menu: {
+    position: 'absolute',
+    left: 16,
+    width: 190,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: '#24213D',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 11 },
+  menuT: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, color: 'rgba(235, 235, 245, 0.7)' },
+  none: { fontFamily: font.body, fontSize: 15, lineHeight: 21, color: JN.quiet, textAlign: 'center', marginTop: 40 },
   headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   title: { fontFamily: font.display, fontSize: 32, lineHeight: 38, color: JN.ink },
-  sub: { fontFamily: font.bodyMedium, fontSize: 14, lineHeight: 19, color: JN.muted },
+  sub: { fontFamily: font.bodyMedium, fontSize: 14, lineHeight: 19, color: JN.quiet },
   round: {
     width: 44,
     height: 44,
@@ -603,7 +713,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.18)',
   },
-  list: { paddingHorizontal: 16, paddingTop: 10 },
+  list: { paddingHorizontal: 20 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
   grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.26)', marginTop: 12 },
@@ -644,4 +754,5 @@ const s = StyleSheet.create({
   delBtn: { alignSelf: 'center', paddingVertical: 10 },
   del: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: JN.faint },
   delSure: { color: '#FF9A8D' },
+  also: { fontFamily: font.body, fontSize: 13.5, lineHeight: 19, color: JN.quiet, marginTop: 6 },
 });

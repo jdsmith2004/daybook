@@ -197,6 +197,7 @@ export function FeelGrid({
   onBack,
   onClose,
   onNext,
+  sky = 'night',
 }: {
   /** the cell the field opens with in the eye */
   start: { r: number; c: number };
@@ -205,6 +206,8 @@ export function FeelGrid({
   onBack: () => void;
   onClose: () => void;
   onNext: (r: number, c: number) => void;
+  /** the color behind the field (the journal's is its plain dark page); the field itself is the same everywhere */
+  sky?: 'night' | 'paper';
 }) {
   const { width: W, height: H } = useWindowDimensions();
   const inset = useSafeAreaInsets();
@@ -363,7 +366,7 @@ export function FeelGrid({
     webDeps(grow, ox, oy, cx, cy, W, H),
   );
   const rise = useAnimatedStyle(() => ({ opacity: grow.value, transform: [{ translateY: 40 * (1 - grow.value) }] }), webDeps(grow));
-  const [skyA, skyB] = skies[c.scheme].night;
+  const [skyA, skyB] = skies[c.scheme][sky];
   const f = feelAt(sel.r, sel.c)!;
   return (
     <View style={{ flex: 1, backgroundColor: skyB, overflow: 'hidden' }}>

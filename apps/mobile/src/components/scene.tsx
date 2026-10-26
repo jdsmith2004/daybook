@@ -53,7 +53,7 @@ export function SceneFrame({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const dark = sky === 'night' || sky === 'ember';
+  const dark = sky === 'night' || sky === 'ember' || sky === 'paper';
   const ink = dark ? nightInk.ink : c.ink;
   const btn = dark ? nightInk.btn : c.scBtn;
   const [a, b] = skies[c.scheme][sky];

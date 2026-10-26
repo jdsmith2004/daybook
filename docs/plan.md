@@ -2643,21 +2643,27 @@ you wish someone loved you?" reads as pointed).
   springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
   it too; More has a Journal row for good.
 - **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with
-  the X, a push up from its bottom edge, or Back. Always the night sky, like the field of feelings it opens into. The
-  list is a constellation, newest first by day: every entry is a star on one thin dotted line, the feeling's own shape
-  glowing in its color, with the word in that color, the time, and up to three lines in a book face (Newsreader), straight
-  on the sky with no boxes. A feeling named with nothing written is a small star with its word and time on one line,
-  closer to its neighbors, so it reads as a check-in rather than a heading missing its page (the owner, October 26: it did
-  not look good when nothing was written; a plain grouped iOS list was tried the same day and turned down for the
-  constellation). Days are small pills on the line. Low at the bottom, a bar floats: "New entry" and "Check in
-  with how you feel", with a rounded accent square and a pencil. The owner turned down color-washed cards with a small
-  Mood Meter, then plain cards with a plain button (October 26); from three drawn directions (constellation, diary pages,
-  a month sky) he picked the constellation, with the pages direction's floating bar. Before the first entry: the four
-  colors as scattered shapes, what the journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
+  the X, a push up from its bottom edge, or Back. One plain dark page (#16142A) in either theme. Each day is lit softly
+  from behind by the colors of every feeling named that day, wherever it was named: the journal, Name the feeling, the
+  ride, and the feeling named for before a slip (core `jnTimeline`; a word from Name the feeling within an hour of an
+  urge ridden out counts as the ride's). The day's feelings in order are its title ("Restless then Grateful"), in the
+  plain sans, with what was written under them; a day with only feelings is a smaller line with a smaller light. Across
+  the top, the last seven days as seven little lights, each mixed from that day's colors; a tap goes to that day. The
+  list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of
+  the line under Journal ("· Everything"): everything, written, urges, slips. Low at the bottom, a bar floats: "New
+  entry" and "Check in with how you feel", with a round accent pencil. The owner's path there (October 26): color-washed
+  cards, then plain cards, then a constellation of shapes on a dotted line, then a plain grouped list were all turned
+  down; from ten drawn directions he picked "soft light", then from ten of those "the day's light", and put it together
+  with the week of lights and the plain sans. Before the first feeling: the four colors as scattered shapes, what the
+  journal is and that it is private.
+- **The feeling flow** inside the journal (the four bubbles and the field of feelings) sits on the same dark page; only
+  its background changed. The owner, October 26: the moving bubbles and the field's scrolling are not to be changed,
+  ever.
 - **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
   slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists
   (naming is the part that helps most). The page is plain and dark like Apple's Journal (the owner, October 26, with a
-  picture of Journal: no feeling color everywhere, no shape): round glass Back and a small date at the top; the feeling's
+  picture of Journal: no feeling color everywhere, no shape), with the feeling's own light coming down softly from the
+  top, the same light the day has in the list: round glass Back and a small date at the top; the feeling's
   word; one line, "Explore why you might be feeling _stressed_", where the word in its color is the only color on the
   page; a hairline; then the page in Instrument Sans 18 on 27, cursor in the accent, a dark keyboard, "Start anywhere…".
   Done is a full-width accent button low where the thumb is, and moves up into the top bar as a round check while the

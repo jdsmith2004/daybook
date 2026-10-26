@@ -12,7 +12,7 @@ import { addDays, fmtDate, isKey } from './legacy/core.js';
 import { nextU } from './actions';
 import { makeId } from './mutate';
 import { feelPos } from './slip';
-import type { DayKey } from './types';
+import type { DayKey, Days } from './types';
 
 export interface JEntry {
   id: string;
@@ -107,6 +107,71 @@ export function jnDayLabel(k: DayKey, tk: DayKey): string {
 
 /** how many days have an entry: a count that only grows, never a run that can break */
 export const jnDays = (jn: Journal | undefined): number => new Set(Object.values(jn || {}).map((e) => e.d)).size;
+
+/* ---------- every feeling, wherever it was named ----------
+   The journal shows each day by its feelings, and not only the ones named here: a feeling named in Name the feeling or in
+   the ride (p.fe), and the one named for before a slip (the event's fb), so the whole day is in one place. The ride and
+   Name the feeling keep their words in the same list, so one named within an hour of an urge ridden out is counted as
+   the ride's. */
+export type JFeelFrom = 'journal' | 'urge' | 'slip' | 'named';
+export interface JFeel {
+  w: string;
+  /** when, in ms */
+  at: number;
+  from: JFeelFrom;
+  /** the entry, for a feeling named in the journal */
+  id?: string;
+}
+export interface JDay {
+  k: DayKey;
+  label: string;
+  /** every feeling named that day, in the order they came */
+  feels: JFeel[];
+  /** the day's journal entries, newest first */
+  entries: JEntry[];
+}
+
+/** a clock time on a log day, in ms: a time before the day's rollover (4 AM) belongs to the night after it */
+function onDay(k: DayKey, clock: string | null, rollover = 4): number {
+  const [y, m, d] = k.split('-').map(Number);
+  const [h, mi] = clock && /^\d{1,2}:\d{2}$/.test(clock) ? clock.split(':').map(Number) : [12, 0];
+  return new Date(y, m - 1, d + (h < rollover ? 1 : 0), h, mi).getTime();
+}
+const minOfDay = (ms: number) => {
+  const t = new Date(ms);
+  return t.getHours() * 60 + t.getMinutes();
+};
+
+/** the days with any feeling named, newest first, each with its feelings in order and its journal entries */
+export function jnTimeline(jn: Journal | undefined, days: Days | undefined, tk: DayKey): JDay[] {
+  const by = new Map<DayKey, JDay>();
+  const day = (k: DayKey) => {
+    let g = by.get(k);
+    if (!g) by.set(k, (g = { k, label: jnDayLabel(k, tk), feels: [], entries: [] }));
+    return g;
+  };
+  for (const e of jnList(jn)) {
+    const g = day(e.d);
+    g.entries.push(e);
+    g.feels.push({ w: e.w, at: e.at, from: 'journal', id: e.id });
+  }
+  for (const [k, d] of Object.entries(days || {})) {
+    if (!d || !isKey(k) || k > tk) continue;
+    const rode = (d.events || []).filter((ev) => ev.outcome === 'rode' && ev.time).map((ev) => minOfDay(onDay(k, ev.time)));
+    for (const [w, at] of (d.p && d.p.fe) || []) {
+      if (!isWord(w) || typeof at !== 'number') continue;
+      const m = minOfDay(at);
+      const urge = rode.some((r) => Math.min(Math.abs(r - m), 1440 - Math.abs(r - m)) <= 60);
+      day(k).feels.push({ w, at, from: urge ? 'urge' : 'named' });
+    }
+    for (const ev of d.events || []) {
+      if (ev.outcome === 'slipped' && ev.fb && isWord(ev.fb)) day(k).feels.push({ w: ev.fb, at: onDay(k, ev.time), from: 'slip' });
+    }
+  }
+  const out = [...by.values()].sort((a, b) => (a.k < b.k ? 1 : -1));
+  for (const g of out) g.feels.sort((a, b) => a.at - b.at);
+  return out;
+}
 
 /** where the entry's feeling sits in the field, for its color and shape; null for a word the field no longer has */
 export const jnPos = (e: Pick<JEntry, 'w'>) => feelPos(e.w);

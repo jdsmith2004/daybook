@@ -45,12 +45,17 @@ const N = FEEL_ROWS;
 const Q = FEEL_MID;
 
 /* ---------- the colors of the field ---------- */
-/* One color field over the whole grid, with no seams: the four corners of the grid set it (red, yellow, blue, green),
-   and every bubble blends between them by where it sits. The blend runs slowly inside each color and quickly across the
-   middle, so each corner reads as its own color while the meeting rows pass through orange, magenta, violet and
-   lime on the way. The mild middle of the grid is a little lighter, the way the Mood Meter reads. */
+/* Each corner of the grid keeps its own color family, so the four are never mixed up: reds and roses, ambers and
+   lemons, blues and skies, greens and mints. Inside a corner the color shades smoothly between that corner's own four
+   tones (the four corners of the quadrant, blended), deepest at the grid's outer corner, where the feelings are
+   strongest, and lightest toward the mild middle of the grid, the way the Mood Meter reads. */
 type HSL = [number, number, number];
-const CORNER: { tl: HSL; tr: HSL; bl: HSL; br: HSL } = { tl: [350, 80, 56], tr: [50, 94, 58], bl: [232, 82, 67], br: [152, 64, 54] };
+const FIELD: Record<string, { tl: HSL; tr: HSL; bl: HSL; br: HSL }> = {
+  red: { tl: [350, 82, 50], tr: [10, 88, 58], bl: [336, 80, 57], br: [4, 86, 68] },
+  yellow: { tl: [36, 96, 55], tr: [52, 98, 55], bl: [44, 94, 70], br: [57, 92, 60] },
+  blue: { tl: [240, 74, 70], tr: [206, 90, 75], bl: [230, 78, 58], br: [212, 86, 63] },
+  green: { tl: [122, 58, 72], tr: [96, 60, 60], bl: [158, 66, 48], br: [148, 74, 42] },
+};
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const mixHue = (a: number, b: number, t: number) => {
   let d = b - a;
@@ -58,29 +63,26 @@ const mixHue = (a: number, b: number, t: number) => {
   if (d < -180) d += 360;
   return (a + d * t + 360) % 360;
 };
-/** 0 to 1 along the grid, eased so it moves slowly near the edges and quickly through the middle */
-const ease = (i: number, k: number) => 0.5 + (0.5 * Math.tanh((i / (N - 1) - 0.5) * k)) / Math.tanh(0.5 * k);
 const cornerOf = (r: number, c: number) => (r < Q ? (c < Q ? 'red' : 'yellow') : c < Q ? 'blue' : 'green');
 function cellColor(r: number, c: number) {
-  const f = CORNER;
-  const u = ease(c, 7);
-  const v = ease(r, 16);
+  const f = FIELD[cornerOf(r, c)];
+  const u = (c % Q) / (Q - 1);
+  const v = (r % Q) / (Q - 1);
   const h = mixHue(mixHue(f.tl[0], f.tr[0], u), mixHue(f.bl[0], f.br[0], u), v);
   const s = mix(mix(f.tl[1], f.tr[1], u), mix(f.bl[1], f.br[1], u), v);
-  /* lighter toward the middle of the grid, where the feelings are mildest */
-  const mild = (1 - Math.abs(2 * (c / (N - 1)) - 1)) * (1 - Math.abs(2 * (r / (N - 1)) - 1));
-  const l = mix(mix(f.tl[2], f.tr[2], u), mix(f.bl[2], f.br[2], u), v) + 9 * mild;
+  const l = mix(mix(f.tl[2], f.tr[2], u), mix(f.bl[2], f.br[2], u), v);
   return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
 }
 export const FEEL_COLORS = Array.from({ length: N }, (_, r) => Array.from({ length: N }, (_, c) => cellColor(r, c)));
 /** the one dark ink every bubble's word is written in */
 const INK = '#1C2030';
 
-/* the shape a chosen bubble grows into, one of its color's family, all flat and simple: sharp polygons and stars for the
-   charged corner, soft bursts for the bright one, blocks with bites out of them for the heavy one, clouds for the calm
-   one. Every feeling has its own, fixed, so a feeling always has the same shape. Counted from the grid's edge (the
-   strongest feeling) toward the middle. */
-const FAMILY = { red: 'edge', yellow: 'burst', blue: 'block', green: 'cloud' } as const;
+/* the shape a chosen bubble grows into, from its color's family (lib/m3-shapes), and every one of them different: bursts,
+   buzzsaws and crosses for the charged corner; suns, sparkles, hearts and crowns for the bright one; drips, bitten
+   moons and rain clouds for the heavy one; clouds, clovers, pebbles and mushrooms for the calm one. Each feeling's is
+   fixed, so a feeling always has the same shape. Counted from the grid's edge (the strongest feeling) toward the
+   middle. */
+const FAMILY = { red: 'jag', yellow: 'ray', blue: 'drip', green: 'bloom' } as const;
 export const feelKind = (r: number, c: number): ShapeKind => {
   const k = cornerOf(r, c);
   const down = r < Q ? r : N - 1 - r;

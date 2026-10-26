@@ -492,33 +492,122 @@ const BUILD = {
 export type M3Shape = keyof typeof BUILD;
 export const M3_SHAPES = Object.keys(BUILD) as M3Shape[];
 
-/* ---------- the feeling shapes: a family for each corner of the feelings grid ---------- */
-/* Built with the same rounded-polygon geometry as the Material shapes, so they share their soft, careful corners. Each
-   family has 36 members, one for every feeling in its corner, set by two numbers from 0 to 5: `a` (counted across, from
-   the grid's edge) and `b` (counted down, from the grid's edge). All of them are flat and simple, calm enough to read the
-   word on.
-   edge: the charged corner. Plain polygons (diamonds, squares, pentagons, hexagons) whose sides cave in further the
-   nearer the feeling sits to the grid's edge, into pointed stars and crosses.
-   burst: the bright corner. Rounded bursts with a few soft rays, leaning like a pinwheel nearer the middle.
-   block: the heavy corner. Rounded blocks with bites taken out of their sides, some with a domed top.
-   cloud: the calm corner. Clouds, scallops and cushions with round lobes, some resting on a flatter base. */
-export type FeelFamily = 'edge' | 'burst' | 'block' | 'cloud';
+/* ---------- the feeling shapes: a wild shape for every feeling ---------- */
+/* Every one of the 144 feelings has a shape of its own, and no two are alike. Each corner of the grid has its own
+   family, and each family has six kinds (`a`, counted across from the grid's edge), each drawn six ways (`b`, counted
+   down from the grid's edge), with a fixed bit of chance (seeded by the feeling's place, so it never changes) that
+   makes every spike, drip and lobe its own.
+   jag: the charged corner. Comic bursts, pointed stars, buzzsaws, crosses, crumpled rocks and double bursts.
+   ray: the bright corner. Suns, flowers, pinwheels, sparkles, hearts and crowns, and happy round blobs.
+   drip: the heavy corner. Melting drops, raindrops, blocks with bites, puddles, bitten moons and rain clouds.
+   bloom: the calm corner. Clouds, leaves and clovers, pebbles, soft cushions, flowers, and beans, mushrooms and
+   caterpillars.
+   Most are drawn as a reach (how far the shape goes from its middle in every direction), which can then lean, sag and
+   swirl. Every shape keeps a body at least half as wide as its reach, so the word written on it still fits. */
+export type FeelFamily = 'jag' | 'ray' | 'drip' | 'bloom';
 export type FeelShape = `feel:${FeelFamily}:${number}:${number}`;
 export type AnyShape = M3Shape | FeelShape;
 
-/** points around the middle, out and in by turns, each with its own rounding; `outs` lets the outer points vary, and
-    `twist` (0 to about 0.6) slides each inner point round, so the points lean like a pinwheel */
-function radial(n: number, outs: number[], inner: number, rOut: Round, rIn: Round, twist = 0): Cubic[] {
-  const vs: Pt[] = [];
-  const rs: Round[] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (2 * Math.PI * i) / n - Math.PI / 2;
-    const o = outs[i % outs.length];
-    const ai = a + (Math.PI / n) * (1 + twist);
-    vs.push([o * Math.cos(a), o * Math.sin(a)], [inner * Math.cos(ai), inner * Math.sin(ai)]);
-    rs.push(rOut, rIn);
-  }
-  return polygon(vs, rs);
+const TAU = 2 * Math.PI;
+/** how far the shape reaches from its middle at angle t (0 points right, and t turns clockwise on the screen) */
+type Reach = (t: number) => number;
+
+/** a fixed bit of chance: the same seed always gives the same numbers, from 0 to 1 */
+function chance(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let z = s;
+    z = Math.imul(z ^ (z >>> 15), z | 1);
+    z ^= z + Math.imul(z ^ (z >>> 7), z | 61);
+    return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** where a ray from the middle at angle t leaves a circle (centered cx, cy, radius r), or 0 if it misses */
+function outOf(t: number, cx: number, cy: number, r: number) {
+  const b = Math.cos(t) * cx + Math.sin(t) * cy;
+  const disc = b * b - (cx * cx + cy * cy - r * r);
+  return disc < 0 ? 0 : Math.max(0, b + Math.sqrt(disc));
+}
+/** where that ray first goes into a circle that does not hold the middle (a bite), or Infinity if it misses */
+function into(t: number, cx: number, cy: number, r: number) {
+  const b = Math.cos(t) * cx + Math.sin(t) * cy;
+  const disc = b * b - (cx * cx + cy * cy - r * r);
+  if (disc < 0) return Infinity;
+  const near = b - Math.sqrt(disc);
+  return near > 0 ? near : Infinity;
+}
+/** circles run together into one shape */
+const blobs =
+  (cs: [number, number, number][]): Reach =>
+  (t) =>
+    Math.max(...cs.map((c) => outOf(t, c[0], c[1], c[2])));
+/** a closed outline around the middle, as a reach */
+function outline(vs: Pt[]): Reach {
+  return (t) => {
+    const [dx, dy] = [Math.cos(t), Math.sin(t)];
+    let best = 0;
+    vs.forEach((p, i) => {
+      const q = vs[(i + 1) % vs.length];
+      const [ex, ey] = [q[0] - p[0], q[1] - p[1]];
+      const den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-9) return;
+      const u = (p[0] * ey - p[1] * ex) / den;
+      const v = (p[0] * dy - p[1] * dx) / den;
+      if (v >= 0 && v <= 1 && u > best) best = u;
+    });
+    return best;
+  };
+}
+/** Gielis's superformula: one rule that draws stars, flowers, polygons and blobs */
+const superformula =
+  (m: number, n1: number, n2: number, n3: number): Reach =>
+  (t) =>
+    (Math.abs(Math.cos((m * t) / 4)) ** n2 + Math.abs(Math.sin((m * t) / 4)) ** n3) ** (-1 / n1);
+/** how near angle t is to the nearest of k points round the shape (the first one at the top): 0 on a point, 0.5
+    halfway between, with the point's number */
+function near(t: number, k: number): [number, number] {
+  const x = (k * (t + Math.PI / 2)) / TAU;
+  const i = Math.round(x);
+  return [Math.abs(x - i), ((i % k) + k) % k];
+}
+/** the gap between two angles, -pi to pi */
+const gap = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+type Lean = {
+  /** the least the shape may reach, as a share of its most (a smaller body is lifted to this) */
+  body?: number;
+  /** turns the tips round against the body, like a pinwheel (radians at the tips) */
+  swirl?: number;
+  /** wider below and narrower above */
+  sag?: number;
+  /** squashed flat (below 1) */
+  squash?: number;
+  /** turned round, in radians */
+  turn?: number;
+  /** a flatter base: anything below this share of the reach is pressed up */
+  base?: number;
+};
+/** a reach drawn as a closed outline, leaning the ways asked */
+function drawn(reach: Reach, o: Lean = {}): Cubic[] {
+  const n = 240;
+  const at = (i: number) => (i / n) * TAU - Math.PI / 2;
+  let rs = Array.from({ length: n }, (_, i) => reach(at(i) + (o.turn || 0)));
+  const hi = Math.max(...rs);
+  const lo = Math.min(...rs);
+  const body = o.body ?? 0.5;
+  if (lo < body * hi) rs = rs.map((r) => hi * (body + ((1 - body) * (r - lo)) / (hi - lo)));
+  const pts = rs.map((r, i): Pt => {
+    const t = at(i) + ((o.swirl || 0) * (r / hi - body)) / (1 - body);
+    let x = r * Math.cos(t);
+    let y = r * Math.sin(t);
+    if (o.sag) x *= 1 + (o.sag * y) / hi;
+    if (o.squash) y *= o.squash;
+    if (o.base !== undefined && y > o.base * hi) y = o.base * hi + (y - o.base * hi) * 0.2;
+    return [x, y];
+  });
+  return pts.map((p, i) => line(p, pts[(i + 1) % n]));
 }
 
 /** a w by h block with a rounded bite out of each side named in `bites` (top, right, bottom, left); `dome` rounds the
@@ -550,22 +639,166 @@ function block(w: number, h: number, bites: boolean[], dome: boolean): Cubic[] {
   return polygon(vs, rs);
 }
 
-function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
-  if (fam === 'edge') {
-    /* diamond, square, pentagon, hexagon, and two with points long and short by turns */
-    const n = [4, 4, 5, 6, 6, 8][a];
-    const outs = [[1], [1], [1], [1], [1, 0.82], [1, 0.86]][a];
-    const flat = Math.cos(Math.PI / n) * Math.min(...outs);
-    /* the body stays full enough to hold the word written on it: the deepest cave still leaves 0.62 of the way out */
-    const inner = flat + (0.62 - flat) * ((5 - b) / 5);
-    const shape = radial(n, outs, inner, rd(0.05), rd(0.04));
-    return a === 1 ? xf(shape, turn(45)) : shape;
+/* the charged corner: sharp, loud, uneven */
+function jag(a: number, b: number, rnd: () => number): Cubic[] {
+  if (a === 0) {
+    /* a comic burst: spikes of every length, bunched and spread unevenly */
+    const k = 9 + b;
+    const len = Array.from({ length: k }, () => 0.45 + 0.55 * rnd());
+    const ph = rnd() * TAU;
+    return drawn((t) => {
+      const [f, i] = near(t + 0.18 * Math.sin(3 * t + ph), k);
+      return 0.5 + 0.5 * len[i] * Math.max(0, 1 - 2 * f) ** 1.2;
+    });
   }
-  if (fam === 'burst') {
-    const n = [5, 6, 7, 8, 10, 12][a];
-    return radial(n, [1], 0.64 + 0.045 * b, rd(0.12, 0.2), rd(0.07), 0.1 * b);
+  if (a === 1) {
+    /* a pointed star whose sides curve in, from three points to nine */
+    const m = [3, 4, 5, 6, 7, 9][b];
+    const n = 0.28 + 0.05 * b;
+    return drawn(superformula(m, n, n + 0.15, n + 0.15), { body: 0.56, turn: Math.PI / 2 + rnd() * 0.2 });
   }
-  if (fam === 'block') {
+  if (a === 2) {
+    /* a buzzsaw, its teeth all leaning one way */
+    const k = [6, 7, 8, 9, 10, 12][b];
+    const dir = b % 2 ? 1 : -1;
+    return drawn(
+      (t) => {
+        const x = (dir * k * t) / TAU;
+        return 1 - 0.34 * (x - Math.floor(x));
+      },
+      { swirl: 0.12 * dir },
+    );
+  }
+  if (a === 3) {
+    /* crosses and asterisks with square-cut arms, some cut on a slant */
+    const m = [4, 4, 3, 5, 6, 8][b];
+    const w = [0.42, 0.42, 0.44, 0.38, 0.32, 0.26][b];
+    const rot = (b === 1 ? Math.PI / 4 : 0) + rnd() * 0.25 - Math.PI / 2;
+    const vs: Pt[] = [];
+    for (let i = 0; i < m; i++) {
+      const f = rot + (i * TAU) / m;
+      const [dx, dy, nx, ny] = [Math.cos(f), Math.sin(f), -Math.sin(f), Math.cos(f)];
+      const slant = b % 2 ? 0.22 : 0;
+      vs.push([dx * (1 - slant) - nx * w, dy * (1 - slant) - ny * w], [dx + nx * w, dy + ny * w]);
+      const g = f + Math.PI / m;
+      const d = w / Math.sin(Math.PI / m);
+      vs.push([d * Math.cos(g), d * Math.sin(g)]);
+    }
+    return drawn(outline(vs), { body: 0.42 });
+  }
+  if (a === 4) {
+    /* a crumpled rock: creases of three sizes, each rock folded its own way */
+    const ks = [2 + Math.floor(rnd() * 3), 5 + Math.floor(rnd() * 4), 11 + Math.floor(rnd() * 6)];
+    const ph = ks.map(() => rnd() * TAU);
+    return drawn(
+      (t) => 1 - 0.3 * Math.abs(Math.sin(ks[0] * t + ph[0])) - 0.16 * Math.abs(Math.sin(ks[1] * t + ph[1])) - 0.08 * Math.abs(Math.sin(ks[2] * t + ph[2])),
+      { squash: 0.8 + 0.2 * rnd(), turn: rnd() * TAU },
+    );
+  }
+  /* a double burst: a big star with a smaller one of another count showing between its points */
+  const k1 = [5, 6, 7, 8, 4, 6][b];
+  const k2 = k1 + 1 + (b % 3);
+  const off = rnd() * TAU;
+  return drawn(
+    (t) => {
+      const [f1] = near(t, k1);
+      const [f2] = near(t + off, k2);
+      return Math.max(0.45 + 0.55 * Math.max(0, 1 - 2 * f1) ** 1.4, 0.45 + 0.3 * Math.max(0, 1 - 2 * f2) ** 1.4);
+    },
+    { swirl: b % 2 ? -0.3 : 0 },
+  );
+}
+
+/* the bright corner: rays, petals, sparkles and happy things */
+function ray(a: number, b: number, rnd: () => number): Cubic[] {
+  if (a === 0) {
+    /* a sun: slim rays, long and short by turns */
+    const k = [10, 12, 14, 16, 18, 22][b];
+    return drawn((t) => {
+      const [f, i] = near(t, k);
+      return 0.62 + 0.38 * (i % 2 ? 0.62 : 1) * Math.cos(Math.PI * f) ** 6;
+    });
+  }
+  if (a === 1) {
+    /* a flower with fat round petals */
+    const k = [4, 5, 6, 7, 8, 9][b];
+    return drawn((t) => 0.55 + 0.45 * Math.abs(Math.cos((k * (t + Math.PI / 2)) / 2)) ** 0.5, { swirl: b % 2 ? 0.25 : 0 });
+  }
+  if (a === 2) {
+    /* a pinwheel with curved blades */
+    const k = [3, 4, 5, 6, 4, 5][b];
+    const dir = b < 3 ? 1 : -1;
+    return drawn(
+      (t) => {
+        const x = (dir * k * t) / TAU;
+        return 0.5 + 0.5 * (1 - (x - Math.floor(x))) ** 1.6;
+      },
+      { swirl: 0.55 * dir, body: 0.6 },
+    );
+  }
+  if (a === 3) {
+    /* a sparkle: a star with sides drawn in, some with a smaller one turned behind it */
+    const m = [4, 4, 5, 6, 8, 4][b];
+    const n = 0.55 + 0.05 * (b % 3);
+    const big = superformula(m, n, n, n);
+    const two = b % 2 === 1;
+    return drawn((t) => Math.max(big(t + Math.PI / 2), two ? 0.62 * big(t + Math.PI / 2 + Math.PI / m) : 0), { body: 0.52 });
+  }
+  if (a === 4) {
+    if (b === 0) {
+      /* a heart */
+      const vs: Pt[] = Array.from({ length: 120 }, (_, i) => {
+        const s = (i / 120) * TAU;
+        return [(16 * Math.sin(s) ** 3) / 17, (-(13 * Math.cos(s) - 5 * Math.cos(2 * s) - 2 * Math.cos(3 * s) - Math.cos(4 * s)) - 2) / 17];
+      });
+      return drawn(outline(vs), { body: 0.4 });
+    }
+    if (b === 1) {
+      /* a crown */
+      return drawn(
+        outline([
+          [-1, 0.6],
+          [-1, -0.75],
+          [-0.5, -0.1],
+          [0, -0.9],
+          [0.5, -0.1],
+          [1, -0.75],
+          [1, 0.6],
+        ]),
+        { body: 0.4 },
+      );
+    }
+    if (b === 2) return drawn((t) => 1 - 0.08 * Math.abs(Math.sin(11 * t)));
+    if (b === 3) return drawn((t) => 0.72 / Math.hypot(0.72 * Math.cos(t), Math.sin(t)) + 0.3 * Math.abs(Math.cos(t)) ** 14, { turn: 0.6 });
+    /* a flame, flickering at the top; and a fat rounded star */
+    if (b === 4) return drawn((t) => 0.72 + 0.45 * Math.max(0, -Math.sin(t)) ** 5 + 0.06 * Math.sin(5 * t), { swirl: 0.15 });
+    return drawn(superformula(5, 2, 7, 7), { turn: Math.PI / 2 });
+  }
+  /* a happy blob: the superformula with chance in it, so each one is a round, odd thing of its own */
+  const m = [3, 4, 5, 6, 7, 8][b];
+  const n2 = 1 + rnd() * 6;
+  return drawn(superformula(m, 1 + rnd() * 3, n2, n2 * (0.6 + rnd() * 0.8)), { body: 0.55, turn: rnd() * TAU });
+}
+
+/* the heavy corner: things that droop, sag, melt and are bitten */
+function drip(a: number, b: number, rnd: () => number): Cubic[] {
+  /* drops hanging from the lower half: [angle, width, length] */
+  const drops = (n: number) =>
+    Array.from({ length: n }, (_, i) => [Math.PI / 2 + (i - (n - 1) / 2) * 0.6 + (rnd() - 0.5) * 0.3, 0.1 + 0.08 * rnd(), 0.3 + 0.45 * rnd()]);
+  const hang = (t: number, ds: number[][]) => ds.reduce((sum, d) => sum + d[2] * Math.exp(-((gap(t, d[0]) / d[1]) ** 2)), 0);
+  if (a === 0) {
+    /* melting: a round blob with drops running off its lower edge */
+    const ds = drops(1 + (b % 4));
+    return drawn((t) => 1 + hang(t, ds), { squash: 0.9 + 0.1 * rnd() });
+  }
+  if (a === 1) {
+    /* raindrops, pointing every which way; the last points both ways */
+    const dir = [-Math.PI / 2, Math.PI / 2, -Math.PI / 4, (-3 * Math.PI) / 4, Math.PI, 0][b];
+    const p = 5 + 2 * (b % 3);
+    return drawn((t) => 0.8 + 0.65 * Math.max(0, Math.cos(t - dir)) ** p + (b === 5 ? 0.65 * Math.max(0, -Math.cos(t - dir)) ** p : 0));
+  }
+  if (a === 2) {
+    /* a block with bites out of it */
     const bites = [
       [true, false, false, false],
       [true, false, true, false],
@@ -573,14 +806,156 @@ function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
       [true, true, true, true],
       [false, false, true, false],
       [true, true, false, true],
-    ][a];
-    const h = [2, 1.75, 1.55][b % 3];
-    return block(2, h, bites, b >= 3);
+    ][b];
+    return block(2, [2, 1.7, 1.5][b % 3], bites, b % 2 === 1);
   }
-  const n = [3, 4, 5, 6, 8, 10][a];
-  const lobes = radial(n, [1], 0.9 - 0.025 * b, rd(0.5, 0.3), rd(0.08));
-  /* every other one rests on a flatter base, like a cloud sitting low */
-  return b % 2 ? xf(lobes, (p) => [p[0], p[1] > 0 ? p[1] * 0.72 : p[1]]) : lobes;
+  if (a === 3) {
+    /* a puddle: wide, low and wobbly, heavier below */
+    const hs = [2, 3, 4, 5].map((k) => [k, 0.06 + 0.07 * rnd(), rnd() * TAU]);
+    return drawn((t) => 1 + hs.reduce((sum, h) => sum + h[1] * Math.sin(h[0] * t + h[2]), 0), { squash: 0.62, sag: 0.3 });
+  }
+  if (a === 4) {
+    /* a bitten moon: a round with one or two bites out of it */
+    const bites = Array.from({ length: 1 + (b % 2) }, () => {
+      const g = rnd() * TAU;
+      const d = 1.05 + 0.2 * rnd();
+      return [d * Math.cos(g), d * Math.sin(g), 0.45 + 0.25 * rnd()];
+    });
+    return drawn((t) => Math.min(1, ...bites.map((c) => into(t, c[0], c[1], c[2]))), { body: 0.45 });
+  }
+  if (b < 3) {
+    /* a rain cloud, dripping */
+    const cloud = blobs([
+      [-0.55, 0, 0.5],
+      [0, -0.25, 0.6],
+      [0.55, 0, 0.5],
+    ]);
+    const ds = drops(2 + b);
+    return drawn((t) => cloud(t) + hang(t, ds), { body: 0.4 });
+  }
+  /* a wilted flower: its petals hang and droop */
+  const k = [5, 6, 7][b - 3];
+  return drawn((t) => 0.55 + 0.45 * Math.abs(Math.cos((k * (t + Math.PI / 2)) / 2)) ** 0.6, { sag: 0.45, swirl: 0.35 });
+}
+
+/* the calm corner: soft, round, growing things */
+function bloom(a: number, b: number, rnd: () => number): Cubic[] {
+  if (a === 0) {
+    /* a cloud: round lobes of every size along the top, resting on a flat base */
+    const n = 3 + (b % 4);
+    const cs = Array.from({ length: n }, (_, i): [number, number, number] => {
+      const x = -0.75 + (1.5 * i) / (n - 1);
+      return [x, -0.1 - 0.3 * (1 - Math.abs(x)) * (0.6 + 0.4 * rnd()), 0.32 + 0.22 * rnd()];
+    });
+    return drawn(blobs([...cs, [0, 0.12, 0.62]]), { base: 0.35, body: 0.4 });
+  }
+  if (a === 1) {
+    if (b === 0)
+      /* a leaf, tilted */
+      return drawn((t) => Math.min(outOf(t, -0.62, 0, 1), outOf(t, 0.62, 0, 1)), { turn: 0.7, body: 0.35 });
+    /* a three leaf clover and a four leaf one */
+    if (b === 1) return drawn((t) => Math.abs(Math.cos(1.5 * (t + Math.PI / 2))) ** 0.35, { body: 0.4 });
+    if (b === 2) return drawn((t) => Math.abs(Math.cos(2 * (t + Math.PI / 4))) ** 0.35, { body: 0.4 });
+    /* a ginkgo fan with a notch at the top */
+    if (b === 3) return drawn((t) => 0.55 + 0.45 * Math.max(0, -Math.sin(t)) ** 0.5 - 0.3 * Math.exp(-(((t + Math.PI / 2) / 0.1) ** 2)), { body: 0.45 });
+    /* a round leaf with slits cut into it */
+    if (b === 4) {
+      const cuts = [0.3, 1.6, 2.6, 4.2, 5.3].map((g) => g + rnd() * 0.3);
+      return drawn((t) => 1 - cuts.reduce((sum, g) => sum + 0.5 * Math.exp(-((gap(t, g) / 0.06) ** 2)), 0));
+    }
+    /* a sprout: two leaves on a short stem */
+    return drawn(
+      blobs([
+        [-0.45, -0.25, 0.52],
+        [0.45, -0.25, 0.52],
+        [0, 0.45, 0.25],
+      ]),
+      { body: 0.4 },
+    );
+  }
+  if (a === 2) {
+    /* a pebble: worn smooth, each its own */
+    const hs = [2, 3, 4].map((k) => [k, 0.05 + 0.1 * rnd(), rnd() * TAU]);
+    return drawn((t) => 1 + hs.reduce((sum, h) => sum + h[1] * Math.sin(h[0] * t + h[2]), 0), { squash: 0.7 + 0.25 * rnd(), turn: rnd() * TAU });
+  }
+  if (a === 3) {
+    /* a cushion: a soft square, its edge gently waved */
+    const n = [4, 5, 3, 6, 4, 8][b];
+    const k = [8, 10, 12, 6, 16, 14][b];
+    return drawn((t) => (Math.abs(Math.cos(t)) ** n + Math.abs(Math.sin(t)) ** n) ** (-1 / n) * (1 + 0.05 * Math.sin(k * t)), {
+      squash: 0.75 + 0.05 * b,
+      turn: b % 2 ? Math.PI / 4 : 0,
+    });
+  }
+  if (a === 4) {
+    /* a flower: round petals, a little swirled */
+    const k = [5, 6, 7, 8, 10, 12][b];
+    return drawn((t) => 0.7 + 0.3 * Math.abs(Math.cos((k * (t + Math.PI / 2)) / 2)) ** 0.4, { swirl: 0.25 * ((b % 3) - 1) });
+  }
+  if (b === 0)
+    /* a bean */
+    return drawn((t) => Math.min(1, into(t, 0, -1.3, 0.6)), { squash: 0.8, body: 0.4 });
+  /* a peanut */
+  if (b === 1)
+    return drawn(
+      blobs([
+        [-0.5, 0, 0.55],
+        [0.5, 0, 0.55],
+        [0, 0, 0.42],
+      ]),
+      { turn: 0.4, body: 0.4 },
+    );
+  if (b === 2)
+    /* a mushroom: a round cap on a short stem */
+    return drawn(
+      (t) =>
+        Math.max(
+          Math.min(outOf(t, 0, -0.1, 0.85), Math.sin(t) > 0 ? 0.2 / Math.sin(t) : Infinity),
+          outline([
+            [-0.28, 0],
+            [0.28, 0],
+            [0.24, 0.85],
+            [-0.24, 0.85],
+          ])(t),
+        ),
+      { body: 0.25 },
+    );
+  if (b === 3)
+    /* a caterpillar, humped in the middle */
+    return drawn(
+      blobs([
+        [-0.62, 0.1, 0.4],
+        [0, -0.08, 0.5],
+        [0.62, 0.1, 0.4],
+      ]),
+      { body: 0.3 },
+    );
+  if (b === 4) return drawn((t) => 0.78 / Math.hypot(0.78 * Math.cos(t), Math.sin(t)), { sag: 0.25 });
+  /* a round tree on its trunk */
+  return drawn(
+    (t) =>
+      Math.max(
+        blobs([
+          [-0.42, -0.2, 0.45],
+          [0.42, -0.2, 0.45],
+          [0, -0.55, 0.5],
+          [0, 0.05, 0.45],
+        ])(t),
+        outline([
+          [-0.13, 0],
+          [0.13, 0],
+          [0.13, 0.9],
+          [-0.13, 0.9],
+        ])(t),
+      ),
+    { body: 0.25 },
+  );
+}
+
+const FAMILIES = { jag, ray, drip, bloom };
+function buildFeel(fam: FeelFamily, a: number, b: number): Cubic[] {
+  const rnd = chance(Object.keys(FAMILIES).indexOf(fam) * 1009 + a * 97 + b * 13 + 7);
+  return FAMILIES[fam](a, b, rnd);
 }
 
 function raw(kind: AnyShape): Cubic[] {

@@ -239,6 +239,9 @@ function Journal() {
 const NIGHT_INK = { ink: nightInk.ink, muted: nightInk.muted };
 
 /* ---------- the list ---------- */
+/** the soft edge under the title: the title sits on the page's own color, and the list fades out under it over this many points */
+const HEAD_FADE = 28;
+
 /** what the list shows: everything, or only the days with words, or with a feeling from an urge or a slip */
 const FILTERS = [
   { id: 'all', label: 'Everything' },
@@ -346,7 +349,8 @@ function ListPage({
       </ScrollView>
       {/* the title floats over the list, on a soft fade rather than a line */}
       <View pointerEvents="box-none" style={s.headWrap} onLayout={(e) => setHeadH(e.nativeEvent.layout.height + 4)}>
-        <LinearGradient pointerEvents="none" colors={[JN.paper, JN.paper + 'D9', JN.paper + '00']} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { bottom: HEAD_FADE, backgroundColor: JN.paper }]} />
+        <LinearGradient pointerEvents="none" colors={[JN.paper, JN.paper + '00']} style={[s.headFade, { height: HEAD_FADE }]} />
         <View style={[s.head, { paddingTop: inset.top + 10 }]}>
           <View style={s.headRow}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -697,7 +701,8 @@ const s = StyleSheet.create({
     elevation: 12,
   },
   col: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
-  headWrap: { position: 'absolute', top: 0, left: 0, right: 0, paddingBottom: 26 },
+  headWrap: { position: 'absolute', top: 0, left: 0, right: 0, paddingBottom: HEAD_FADE + 4 },
+  headFade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   head: { paddingHorizontal: 16 },
   subRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   filt: { flexDirection: 'row', alignItems: 'center', gap: 3 },

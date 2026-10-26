@@ -100,16 +100,20 @@ export function Light({ colors, w, h, strength = 0.42, style }: { colors: string
   );
 }
 
+/** the most feelings a day shows in its title: a busy day shows its last few, after a quiet "…" */
+const TITLE_MAX = 3;
+
 /* ---------- the page's light ----------
-   Every day's feelings are soft round glows on one canvas behind the whole list, wide enough that each day's light runs
-   into the next, so the page reads as one sky changing down the week rather than a glow per day. It is drawn at a
-   quarter of its size and scaled up: the glows are soft anyway, and a long journal then costs a sixteenth of the memory. */
+   Every day's feelings are soft glows on one canvas behind the whole list: wide, low ovals that start just above the
+   day's name (not up over the week), tall enough that each day's light runs into the next, so the page reads as one
+   sky changing down the week rather than a glow per day. It is drawn at a quarter of its size and scaled up: the glows
+   are soft anyway, and a long journal then costs a sixteenth of the memory. */
 /** where each of a day's colors glows: across the width, and how far below the day's top, in points */
 const FIELD_SPOTS: [number, number][] = [
-  [0.1, 24],
-  [0.55, 40],
-  [0.3, 80],
-  [0.7, 4],
+  [0.14, 80],
+  [0.64, 92],
+  [0.38, 118],
+  [0.82, 74],
 ];
 const LOW = 4;
 /** how far the light reaches above the first day and below the last */
@@ -134,9 +138,10 @@ export function LightField({ days, width, height }: { days: { y: number; colors:
         <Defs>
           {cols.map((c, i) => (
             <RadialGradient key={i} id={id + i} cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={c} stopOpacity={0.42} />
-              <Stop offset="0.45" stopColor={c} stopOpacity={0.2} />
-              <Stop offset="0.8" stopColor={c} stopOpacity={0.05} />
+              <Stop offset="0" stopColor={c} stopOpacity={0.34} />
+              <Stop offset="0.3" stopColor={c} stopOpacity={0.25} />
+              <Stop offset="0.6" stopColor={c} stopOpacity={0.11} />
+              <Stop offset="0.85" stopColor={c} stopOpacity={0.03} />
               <Stop offset="1" stopColor={c} stopOpacity={0} />
             </RadialGradient>
           ))}
@@ -145,13 +150,14 @@ export function LightField({ days, width, height }: { days: { y: number; colors:
           d.colors
             .slice(0, FIELD_SPOTS.length)
             .map((c, i) => (
-              <Circle
+              <Ellipse
                 key={di + '-' + i}
                 cx={(FIELD_SPOTS[i][0] * width) / LOW}
                 cy={(FIELD_PAD + d.y + FIELD_SPOTS[i][1]) / LOW}
-                r={(width * (d.quiet ? 0.38 : 0.52)) / LOW}
+                rx={(width * (d.quiet ? 0.36 : 0.44)) / LOW}
+                ry={(d.quiet ? 96 : 130) / LOW}
                 fill={`url(#${id + cols.indexOf(c)})`}
-                opacity={d.quiet ? 0.8 : 1}
+                opacity={d.quiet ? 0.9 : 1}
               />
             )),
         )}
@@ -189,8 +195,8 @@ function WeekOrb({ colors }: { colors: string[] }) {
   );
 }
 
-/** a day's colors, in the order its feelings came, each once */
-export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.map((f) => feelColor(f.w)))];
+/** a day's colors: the feelings its title shows (its last few), in order, each once, so the light and the week match the words */
+export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.slice(-TITLE_MAX).map((f) => feelColor(f.w)))];
 
 /* ---------- the week ---------- */
 /** the last seven days as seven little lights, each mixed from that day's feelings; a day with none is a faint ring. A
@@ -225,9 +231,6 @@ export function WeekLights({
 }
 
 /* ---------- a day ---------- */
-/** the most feelings a day shows in its title: a busy day shows its last few, after a quiet "…" */
-const TITLE_MAX = 3;
-
 /** one day (its light is the page's, LightField): its name, its feelings in order as its title, and the newest thing written under them
     (the day's other entries a tap away). A day with only feelings is a smaller line with a smaller light. A tap on the
     feelings opens the day's newest entry, and a tap on what was written opens that entry. */

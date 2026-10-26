@@ -11,6 +11,7 @@ import {
   awayDue,
   awayStart,
   dayFeelDue,
+  dayFeelOf,
   markOpen,
   tipAsk,
   tipQuiet,
@@ -61,6 +62,7 @@ import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop } from '@/lib/nav';
+import { useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
@@ -139,6 +141,12 @@ export default function Today() {
   focusRef.current = focused;
   /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
   const [askFeel, setAskFeel] = useState(false);
+  /* it waits while a celebration is up; one that comes after it was answered simply ends it */
+  const celebrating = useCelebrating();
+  const feltToday = !!dayFeelOf(snap.days[tk]);
+  useEffect(() => {
+    if (celebrating && askFeel && feltToday) setAskFeel(false);
+  }, [celebrating, askFeel, feltToday]);
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = !!due && askAgain;
@@ -274,7 +282,7 @@ export default function Today() {
         {counts ? <PulseCard /> : null}
         <HomeScreenCard />
       </Screen>
-      {askFeel ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+      {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
     </View>
   );
 }

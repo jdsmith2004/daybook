@@ -10,7 +10,7 @@
    ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
    goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
    that helps most. */
-import { addDays, feelAt, fmtDate, jnDayLabel, jnEdit, jnRemove, jnStart, jnTimeline, type FEEL_QUADS, type JFeel } from '@daybook/core';
+import { addDays, feelAt, fmtDate, jnDayLabel, jnEdit, jnLogs, jnRemove, jnStart, jnTimeline, type FEEL_QUADS, type JFeel, type JLog } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -33,7 +33,7 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { dayColors, DayLight, entryLook, entryTime, JN, Light, LightField, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
+import { dayColors, DayLogs, entryLook, entryTime, JN, Light, LightField, logColors, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
@@ -242,7 +242,7 @@ const NIGHT_INK = { ink: nightInk.ink, muted: nightInk.muted };
 /** the soft edge under the title: the title sits on the page's own color, and the list fades out under it over this many points */
 const HEAD_FADE = 28;
 
-/** what the list shows: everything, or only the days with words, or with a feeling from an urge or a slip */
+/** what the list shows: everything, or only the logs with words, or with a feeling from an urge or a slip */
 const FILTERS = [
   { id: 'all', label: 'Everything' },
   { id: 'written', label: 'Written' },
@@ -270,11 +270,15 @@ function ListPage({
   const [filter, setFilter] = useState<Filter>('all');
   const [menu, setMenu] = useState(false);
   const [on, setOn] = useState<string>(tk);
-  const shown = useMemo(
-    () =>
-      all.filter((g) => g.k <= on && (filter === 'all' || (filter === 'written' ? g.entries.some((e) => e.t.trim()) : g.feels.some((f) => f.from === filter)))),
-    [all, filter, on],
-  );
+  const shown = useMemo(() => {
+    const keep = (l: JLog) => filter === 'all' || (filter === 'written' ? !!l.entry : l.feels.some((f) => f.from === filter));
+    return all
+      .filter((g) => g.k <= on)
+      .flatMap((g) => {
+        const logs = jnLogs(g).filter(keep);
+        return logs.length ? [{ g, logs }] : [];
+      });
+  }, [all, filter, on]);
   /* the week across the top: the last seven days, today last */
   const week = useMemo(() => {
     const byK = new Map(all.map((g) => [g.k, g]));
@@ -286,13 +290,22 @@ function ListPage({
   }, [all, tk]);
   /* a tap on a day in the week goes to it in the list */
   const list = useRef<ScrollViewInstance | null>(null);
-  /* where each day sits, for the light behind them; kept as state so the light follows the layout */
+  /* where each day sits, and each log inside its day, for the light behind them; kept as state so the light follows the layout */
   const [lay, setLay] = useState<Record<string, number>>({});
+  const [logLay, setLogLay] = useState<Record<string, [number, number]>>({});
+  const onLay = useCallback((key: string, y: number, h: number) => {
+    setLogLay((l) => (l[key] && l[key][0] === y && l[key][1] === h ? l : { ...l, [key]: [y, h] }));
+  }, []);
   const [colH, setColH] = useState(0);
   const { width: W } = useWindowDimensions();
   const field = useMemo(
-    () => shown.filter((g) => lay[g.k] != null).map((g) => ({ y: lay[g.k], colors: dayColors(g), quiet: !g.entries.some((e) => e.t.trim()) })),
-    [shown, lay],
+    () =>
+      shown.flatMap(({ g, logs }) =>
+        lay[g.k] == null
+          ? []
+          : logs.flatMap((l) => (logLay[l.key] ? [{ y: lay[g.k] + logLay[l.key][0], h: logLay[l.key][1], colors: logColors(l), quiet: !l.entry }] : [])),
+      ),
+    [shown, lay, logLay],
   );
   const [headH, setHeadH] = useState(110);
   const [dockH, setDockH] = useState(140);
@@ -315,13 +328,13 @@ function ListPage({
           {/* the page's light, behind everything, reaching from the day above to the day below */}
           {field.length ? (
             <View pointerEvents="none" style={[s.field, { left: -20, width: W }]}>
-              <LightField days={field} width={W} height={colH} />
+              <LightField logs={field} width={W} height={colH} />
             </View>
           ) : null}
           {all.length ? <WeekLights week={week} on={on} onPick={goTo} /> : null}
           {shown.length ? (
-            shown.map((g) => {
-              const day = <DayLight g={g} onOpen={onOpen} />;
+            shown.map(({ g, logs }) => {
+              const day = <DayLogs g={g} logs={logs} onOpen={onOpen} onLay={onLay} />;
               return (
                 <View
                   key={g.k}

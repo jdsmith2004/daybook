@@ -2646,12 +2646,18 @@ you wish someone loved you?" reads as pointed).
   the X, a push up from its bottom edge, or Back. One plain dark page (#16142A) in either theme. Each day is lit softly
   from behind by the colors of every feeling named that day, wherever it was named: the journal, Name the feeling, the
   ride, and the feeling named for before a slip (core `jnTimeline`; a word from Name the feeling within an hour of an
-  urge ridden out counts as the ride's). The day's feelings in order are its title ("Restless then Grateful"), in the
-  plain sans, with what was written under them; a day with only feelings is a smaller line with a smaller light. A
-  busy day shows its last three feelings after a quiet "…" and its newest entry, the rest a tap away; its light and its
-  light in the week come from those same three, so the colors always match the words. The lights are one soft field
-  behind the list (wide, low ovals that start just above each day and run into the next), never up over the week. Across
-  the top, the last seven days as seven little lights, each mixed from that day's colors; a tap goes to that day. The
+  urge ridden out counts as the ride's). A day's name shows once, over its logs, newest first (core `jnLogs`): each
+  entry with words is a log of its own, its feeling as its title over what was written; the feelings named on their own
+  between entries read in order as a smaller title ("Restless then Grateful"), in the plain sans, up to three to a log
+  and within three hours, so a busy day starts another log rather than hiding any (the owner, October 26: nothing a
+  tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Logs in a day sit close
+  and days sit far apart (Day One's day heading over separate rows; its users asked for less weight between same-day
+  entries). The light is one soft field behind the list: four lanes running down the page, each one gradient from the
+  first log to the last that takes a color from every log, so the colors always run into each other with no dark gap
+  (two colors never meet through clear, which turns grey); each lane is feathered sideways into the next, and the light
+  fades out over the right half so a dark margin stays at the right with no edge. It starts just above the first log,
+  never over the week. A log's light is its own feelings, so the colors match the words. Across the top, the last seven
+  days as seven little lights, each mixed from that day's last three feelings; a tap goes to that day. The
   list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of
   the line under Journal ("· Everything"): everything, written, urges, slips. Low at the bottom, a bar floats: "New
   entry" and "Check in with how you feel", with a round accent pencil. The owner's path there (October 26): color-washed

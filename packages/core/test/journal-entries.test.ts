@@ -16,6 +16,7 @@ import {
   jnPrompts,
   jnRemove,
   jnStart,
+  jnLogs,
   jnTimeline,
   normJEntry,
   type Journal,
@@ -221,6 +222,37 @@ describe('every feeling, by day', () => {
     ]);
     expect(t[0].entries).toHaveLength(1);
     expect(t[1].feels).toEqual([{ w: 'Lonely', at: at(23, 23, 50), from: 'slip' }]);
+  });
+
+  it('splits a day into logs, newest first: each entry with words alone, and feelings on their own three to a log', () => {
+    let jn: Journal = {};
+    const add = (w: string, t: number, words = '') => {
+      const r = jnStart(jn, '2026-10-26', w, t);
+      jn = words ? jnEdit(r.jn, r.id, { t: words }) : r.jn;
+      return r.id;
+    };
+    add('Gloomy', at(26, 7));
+    const wrote = add('Hopeful', at(26, 9), 'A good walk.');
+    const bare = add('Calm', at(26, 12));
+    const days = {
+      '2026-10-26': day('2026-10-26', {
+        p: {
+          fe: [
+            ['Lonely', at(26, 8)],
+            ['Edgy', at(26, 13)],
+            ['Tired', at(26, 14)],
+            ['Proud', at(26, 15)],
+          ],
+        },
+      }),
+    };
+    const logs = jnLogs(jnTimeline(jn, days, '2026-10-26')[0]);
+    expect(logs.map((l) => l.feels.map((f) => f.w))).toEqual([['Proud'], ['Calm', 'Edgy', 'Tired'], ['Hopeful'], ['Gloomy', 'Lonely']]);
+    expect(logs[2].entry?.id).toBe(wrote);
+    /* a log of feelings opens its own entry, when one of them came from the journal */
+    expect(logs[1].open).toBe(bare);
+    expect(logs[0].open).toBeUndefined();
+    expect(new Set(logs.map((l) => l.key)).size).toBe(4);
   });
 
   it('keeps a slip after midnight on the night it belongs to, and leaves out days with no feeling and days to come', () => {

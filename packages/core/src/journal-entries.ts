@@ -173,6 +173,48 @@ export function jnTimeline(jn: Journal | undefined, days: Days | undefined, tk: 
   return out;
 }
 
+/** one log in a day: an entry with words, under the feeling it was written with, or a few feelings named on their own */
+export interface JLog {
+  key: string;
+  /** its feelings, in the order they came */
+  feels: JFeel[];
+  /** the entry, when something was written */
+  entry?: JEntry;
+  /** the entry a tap opens: this one, or the newest feeling-only entry among its feelings */
+  open?: string;
+}
+/** the longest quiet stretch inside one log of feelings: three hours */
+const JN_LOG_GAP = 3 * 3600_000;
+/** a day's logs, newest first (the owner, October 26, 2026: each entry is its own log, and a day of many feelings starts
+    another log rather than hiding them). Each entry with words is a log of its own; the feelings named on their own
+    between them run together, up to `max` to a log (so a title never runs past three words) and within three hours of
+    each other. */
+export function jnLogs(g: Pick<JDay, 'feels' | 'entries'>, max = 3): JLog[] {
+  const byId = new Map(g.entries.map((e) => [e.id, e]));
+  const out: JLog[] = [];
+  let run: JFeel[] = [];
+  const flush = () => {
+    if (!run.length) return;
+    const ids = run.filter((f) => f.id).map((f) => f.id!);
+    out.push({ key: run[0].from + run[0].at, feels: run, open: ids[ids.length - 1] });
+    run = [];
+  };
+  for (const f of g.feels) {
+    const e = f.id ? byId.get(f.id) : undefined;
+    if (e && e.t.trim()) {
+      flush();
+      out.push({ key: e.id, feels: [f], entry: e, open: e.id });
+    } else {
+      /* a long quiet stretch starts a new log too, so a morning and an evening are not run together */
+      if (run.length && f.at - run[run.length - 1].at > JN_LOG_GAP) flush();
+      run.push(f);
+      if (run.length >= max) flush();
+    }
+  }
+  flush();
+  return out.reverse();
+}
+
 /** where the entry's feeling sits in the field, for its color and shape; null for a word the field no longer has */
 export const jnPos = (e: Pick<JEntry, 'w'>) => feelPos(e.w);
 

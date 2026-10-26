@@ -1,15 +1,16 @@
 /* The journal's pieces (app/journal.tsx; core journal-entries.ts). The list is the day's light: one plain dark page, and
-   each day lit softly from behind by the colors of every feeling named in it, wherever it was named (the journal, Name
-   the feeling, the ride, a slip). The day's feelings read in order as its title ("Restless then Grateful"), with what
-   was written under them, and a day with only a feeling is a smaller line with a smaller light. Across the top, the week
+   each log lit softly from behind by the colors of its feelings, wherever they were named (the journal, Name the
+   feeling, the ride, a slip). Each entry with words is a log of its own, its feeling as its title over what was written;
+   feelings named on their own between entries read in order as a smaller title ("Restless then Grateful"), up to three
+   to a log. A day's name shows once, over its logs. Across the top, the week
    as seven little lights. New entry is a bar floating low, where the thumb is. Also here: how far down the journal was
    already pulled when it opens, so it carries on from the thumb. An entry starts with the app's own four colors
    (QuadBubbles in tools/feel.tsx). */
-import { feelPos, jnPos, type JDay, type JEntry } from '@daybook/core';
-import { memo, useId, useState } from 'react';
+import { feelPos, jnPos, type JDay, type JEntry, type JFeel, type JLog } from '@daybook/core';
+import { memo, useId } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, Mask, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { SVG_HIDE } from '@/components/shapes';
 import { Text } from '@/components/text';
@@ -100,67 +101,76 @@ export function Light({ colors, w, h, strength = 0.42, style }: { colors: string
   );
 }
 
-/** the most feelings a day shows in its title: a busy day shows its last few, after a quiet "…" */
-const TITLE_MAX = 3;
+/** the most feelings a day's light in the week mixes: its last few */
+const WEEK_MAX = 3;
 
 /* ---------- the page's light ----------
-   Every day's feelings are soft glows on one canvas behind the whole list: wide, low ovals that start just above the
-   day's name (not up over the week), tall enough that each day's light runs into the next, so the page reads as one
-   sky changing down the week rather than a glow per day. It is drawn at a quarter of its size and scaled up: the glows
-   are soft anyway, and a long journal then costs a sixteenth of the memory. */
-/** where each of a day's colors glows: across the width, and how far below the day's top, in points */
-const FIELD_SPOTS: [number, number][] = [
-  [0.14, 80],
-  [0.64, 92],
-  [0.38, 118],
-  [0.82, 74],
-];
+   Every log's feelings light one canvas behind the whole list, as four soft lanes running down the page side by side.
+   Each lane is one gradient from the top log to the bottom one, taking a color from every log it passes, so the colors
+   always run into each other with no dark gap between logs, and never fade through clear (two colors meeting through
+   clear turn grey). Each lane is feathered sideways into its neighbors, and the light fades out before the right edge,
+   so the page keeps a little dark margin there. It starts just above the first log, under the week. It is drawn at a
+   quarter of its size and scaled up: it is soft anyway, and a long journal then costs a sixteenth of the memory. */
+/** the lanes' middles, across the width; a log's first color takes the left lane, its next the one after */
+const LANES = [0.06, 0.28, 0.5, 0.7];
+/** how far up and down each lane takes a log's color from its middle, as a share of the log's height, so the colors do not sit in rows */
+const LANE_SHIFT = [-0.18, 0.12, -0.06, 0.2];
+/** how wide a lane's light is, as a share of the width (it fades like a bell over about this far each side) */
+const LANE_W = 0.2;
+/** where the light starts to fade on the right, and where it is gone: a long, eased fade, so the dark margin has no edge */
+const RIGHT_FROM = 0.5;
+const RIGHT_END = 0.94;
 const LOW = 4;
-/** how far the light reaches above the first day and below the last */
-const FIELD_PAD = 260;
-export function LightField({ days, width, height }: { days: { y: number; colors: string[]; quiet: boolean }[]; width: number; height: number }) {
+/** a lane's light across the width: a bell around its middle, gone before the right edge */
+const across = (mid: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (RIGHT_END - x) / (RIGHT_END - RIGHT_FROM)));
+  return Math.exp(-(((x - mid) / LANE_W) ** 2)) * t * t * (3 - 2 * t);
+};
+const ACROSS = Array.from({ length: 26 }, (_, i) => i / 25);
+export function LightField({ logs, width, height }: { logs: { y: number; h: number; colors: string[]; quiet: boolean }[]; width: number; height: number }) {
   const id = 'f' + useId().replace(/[^a-zA-Z0-9]/g, '');
-  const cols = [...new Set(days.flatMap((d) => d.colors))];
   const w = width / LOW;
-  const h = (height + FIELD_PAD * 2) / LOW;
+  const h = height / LOW;
+  if (!logs.length || !height) return null;
+  const at = (y: number) => Math.min(1, Math.max(0, y / height));
+  const first = logs[0];
+  const last = logs[logs.length - 1];
   return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        width: w,
-        height: h,
-        left: (width - w) / 2,
-        top: -FIELD_PAD + (height + FIELD_PAD * 2 - h) / 2,
-        transform: [{ scale: LOW }],
-      }}>
+    <View pointerEvents="none" style={{ position: 'absolute', width: w, height: h, left: (width - w) / 2, top: (height - h) / 2, transform: [{ scale: LOW }] }}>
       <Svg width={w} height={h} {...SVG_HIDE}>
         <Defs>
-          {cols.map((c, i) => (
-            <RadialGradient key={i} id={id + i} cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={c} stopOpacity={0.34} />
-              <Stop offset="0.3" stopColor={c} stopOpacity={0.25} />
-              <Stop offset="0.6" stopColor={c} stopOpacity={0.11} />
-              <Stop offset="0.85" stopColor={c} stopOpacity={0.03} />
-              <Stop offset="1" stopColor={c} stopOpacity={0} />
-            </RadialGradient>
+          {LANES.map((mid, li) => {
+            const col = (l: (typeof logs)[number]) => l.colors[li % l.colors.length];
+            /* it comes up from the dark just above the first log, and goes back to it under the last */
+            const stops = [
+              { y: first.y - 40, c: col(first), o: 0 },
+              ...logs.map((l) => ({ y: l.y + l.h * (0.5 + LANE_SHIFT[li]), c: col(l), o: l.quiet ? 0.2 : 0.3 })),
+              { y: last.y + last.h + 160, c: col(last), o: 0 },
+            ];
+            return (
+              <LinearGradient key={'v' + li} id={id + 'v' + li} x1="0" y1="0" x2="0" y2="1">
+                {stops.map((p, i) => (
+                  <Stop key={i} offset={at(p.y)} stopColor={p.c} stopOpacity={p.o} />
+                ))}
+              </LinearGradient>
+            );
+          })}
+          {LANES.map((mid, li) => (
+            <LinearGradient key={'h' + li} id={id + 'h' + li} x1="0" y1="0" x2="1" y2="0">
+              {ACROSS.map((x) => (
+                <Stop key={x} offset={x} stopColor="#FFFFFF" stopOpacity={across(mid, x)} />
+              ))}
+            </LinearGradient>
+          ))}
+          {LANES.map((mid, li) => (
+            <Mask key={'m' + li} id={id + 'm' + li} x="0" y="0" width={w} height={h} maskUnits="userSpaceOnUse">
+              <Rect width={w} height={h} fill={`url(#${id}h${li})`} />
+            </Mask>
           ))}
         </Defs>
-        {days.flatMap((d, di) =>
-          d.colors
-            .slice(0, FIELD_SPOTS.length)
-            .map((c, i) => (
-              <Ellipse
-                key={di + '-' + i}
-                cx={(FIELD_SPOTS[i][0] * width) / LOW}
-                cy={(FIELD_PAD + d.y + FIELD_SPOTS[i][1]) / LOW}
-                rx={(width * (d.quiet ? 0.36 : 0.44)) / LOW}
-                ry={(d.quiet ? 96 : 130) / LOW}
-                fill={`url(#${id + cols.indexOf(c)})`}
-                opacity={d.quiet ? 0.9 : 1}
-              />
-            )),
-        )}
+        {LANES.map((mid, li) => (
+          <Rect key={li} width={w} height={h} fill={`url(#${id}v${li})`} mask={`url(#${id}m${li})`} />
+        ))}
       </Svg>
     </View>
   );
@@ -195,8 +205,10 @@ function WeekOrb({ colors }: { colors: string[] }) {
   );
 }
 
-/** a day's colors: the feelings its title shows (its last few), in order, each once, so the light and the week match the words */
-export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.slice(-TITLE_MAX).map((f) => feelColor(f.w)))];
+/** a day's colors in the week: its last few feelings, in order, each once, so it matches the day's newest log */
+export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.slice(-WEEK_MAX).map((f) => feelColor(f.w)))];
+/** a log's colors: its feelings', in order, each once, so its light matches its title */
+export const logColors = (l: Pick<JLog, 'feels'>) => [...new Set(l.feels.map((f) => feelColor(f.w)))];
 
 /* ---------- the week ---------- */
 /** the last seven days as seven little lights, each mixed from that day's feelings; a day with none is a faint ring. A
@@ -231,20 +243,11 @@ export function WeekLights({
 }
 
 /* ---------- a day ---------- */
-/** one day (its light is the page's, LightField): its name, its feelings in order as its title, and the newest thing written under them
-    (the day's other entries a tap away). A day with only feelings is a smaller line with a smaller light. A tap on the
-    feelings opens the day's newest entry, and a tap on what was written opens that entry. */
-export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen: (id: string) => void }) {
-  const written = g.entries.filter((e) => e.t.trim());
-  const quiet = !written.length;
-  const [all, setAll] = useState(false);
-  const open = g.entries[0];
-  const words = g.feels.map((f) => f.w);
-  const shown = g.feels.slice(-TITLE_MAX);
-  const title = (
+/** a log's feelings in order, as its title: "Restless then Grateful" */
+function LogTitle({ feels, quiet }: { feels: JFeel[]; quiet: boolean }) {
+  return (
     <Text style={[s.seq, quiet && s.seqQuiet]}>
-      {g.feels.length > TITLE_MAX ? <Text style={s.then}>{'…  '}</Text> : null}
-      {shown.map((f, i) => (
+      {feels.map((f, i) => (
         <Text key={i}>
           {i ? <Text style={s.then}>{'  then  '}</Text> : null}
           <Text style={{ color: feelColor(f.w) }}>{f.w}</Text>
@@ -252,44 +255,66 @@ export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen:
       ))}
     </Text>
   );
-  const more = written.length - 1;
+}
+
+/** one day: its name once, then each of its logs, newest first (core jnLogs). An entry with words is a log of its own,
+    its feeling over what was written; the feelings named on their own are a smaller line between them. When a day has
+    more than one log, each says its time, small, at the right. A tap opens the log's entry. The light behind them is the
+    page's (LightField), so each log reports where it sits. */
+export const DayLogs = memo(function DayLogs({
+  g,
+  logs,
+  onOpen,
+  onLay,
+}: {
+  g: JDay;
+  logs: JLog[];
+  onOpen: (id: string) => void;
+  onLay: (key: string, y: number, h: number) => void;
+}) {
+  const many = logs.length > 1;
   return (
-    <View style={[s.day, quiet && s.dayQuiet]}>
+    <View style={s.day}>
       <Text style={s.dayName} accessibilityRole="header">
         {g.label}
       </Text>
-      {open ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={'Felt ' + words.join(', then ')}
-          accessibilityHint="Opens the entry"
-          onPress={() => onOpen(open.id)}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-          {title}
-        </Pressable>
-      ) : (
-        <View accessible accessibilityLabel={'Felt ' + words.join(', then ')}>
-          {title}
-        </View>
-      )}
-      {(all ? written : written.slice(0, 1)).map((e) => (
-        <Pressable
-          key={e.id}
-          accessibilityRole="button"
-          accessibilityLabel={`${e.w}, ${entryTime(e.at)}. ${e.t.trim().slice(0, 160)}`}
-          accessibilityHint="Opens the entry"
-          onPress={() => onOpen(e.id)}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-          <Text style={s.text} numberOfLines={3}>
-            {e.t.trim()}
-          </Text>
-        </Pressable>
-      ))}
-      {more > 0 ? (
-        <Pressable accessibilityRole="button" onPress={() => setAll((v) => !v)} hitSlop={8} style={s.moreBtn}>
-          <Text style={s.more}>{all ? 'Show less' : `${more} more ${more === 1 ? 'entry' : 'entries'}`}</Text>
-        </Pressable>
-      ) : null}
+      {logs.map((l) => {
+        const quiet = !l.entry;
+        const words = 'Felt ' + l.feels.map((f) => f.w).join(', then ') + (many ? ', ' + entryTime(l.feels[0].at) : '');
+        const body = (
+          <>
+            <View style={s.logHead}>
+              <View style={{ flex: 1 }}>
+                <LogTitle feels={l.feels} quiet={quiet} />
+              </View>
+              {many ? <Text style={s.time}>{entryTime(l.feels[0].at)}</Text> : null}
+            </View>
+            {l.entry ? (
+              <Text style={s.text} numberOfLines={3}>
+                {l.entry.t.trim()}
+              </Text>
+            ) : null}
+          </>
+        );
+        return (
+          <View key={l.key} style={[s.log, quiet && s.logQuiet]} onLayout={(e) => onLay(l.key, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+            {l.open ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={l.entry ? words + '. ' + l.entry.t.trim().slice(0, 160) : words}
+                accessibilityHint="Opens the entry"
+                onPress={() => onOpen(l.open!)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                {body}
+              </Pressable>
+            ) : (
+              <View accessible accessibilityLabel={words}>
+                {body}
+              </View>
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 });
@@ -335,17 +360,17 @@ const s = StyleSheet.create({
   wT: { fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 16, color: JN.quiet },
   wToday: { fontFamily: font.bodyBold, color: JN.ink },
   wDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: JN.ink, marginTop: -2 },
-  day: { paddingTop: 16, paddingBottom: 32 },
-  dayQuiet: { paddingTop: 8, paddingBottom: 16 },
-  light: { left: -150, top: -100 },
-  lightQuiet: { left: -110, top: -62 },
-  dayName: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet, marginBottom: 3 },
+  /* a day's logs sit close and the days far apart, so the days read as groups with no line between them */
+  day: { paddingTop: 14, paddingBottom: 30 },
+  dayName: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet, marginBottom: 2 },
+  log: { paddingVertical: 9 },
+  logQuiet: { paddingVertical: 6 },
+  logHead: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
+  time: { fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 16, color: JN.quiet },
   seq: { fontFamily: font.bodySemi, fontSize: 19, lineHeight: 26 },
   seqQuiet: { fontSize: 16, lineHeight: 22 },
   then: { fontFamily: font.body, fontSize: 13, color: 'rgba(235, 235, 245, 0.45)' },
   text: { fontFamily: font.body, fontSize: 15.5, lineHeight: 23, color: JN.page, marginTop: 6 },
-  moreBtn: { alignSelf: 'flex-start', paddingTop: 8 },
-  more: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet },
   bar: {
     height: 74,
     borderRadius: 37,

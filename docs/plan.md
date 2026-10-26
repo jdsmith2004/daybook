@@ -2657,8 +2657,10 @@ you wish someone loved you?" reads as pointed).
   with the week of lights and the plain sans. Before the first feeling: the four colors as scattered shapes, what the
   journal is and that it is private.
 - **The feeling flow** inside the journal (the four bubbles and the field of feelings) sits on the same dark page; only
-  its background changed. The owner, October 26: the moving bubbles and the field's scrolling are not to be changed,
-  ever.
+  its background changed. The owner, October 26: the moving bubbles and the field's scrolling are not to be changed
+  unless he asks; he asked the same day for each bubble to have two see-through twins wandering behind it instead of
+  one (everywhere the four bubbles are used). A tap on a day in the week starts the list at that day, with the week
+  still on top; today shows them all.
 - **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
   slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists
   (naming is the part that helps most). The page is plain and dark like Apple's Journal (the owner, October 26, with a

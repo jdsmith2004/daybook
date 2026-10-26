@@ -33,7 +33,7 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { dayColors, DayLight, entryLook, entryTime, JN, Light, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
+import { dayColors, DayLight, entryLook, entryTime, JN, Light, LightField, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
@@ -266,9 +266,11 @@ function ListPage({
   const all = useMemo(() => jnTimeline(snap.journal, snap.days, tk), [snap.journal, snap.days, tk]);
   const [filter, setFilter] = useState<Filter>('all');
   const [menu, setMenu] = useState(false);
+  const [on, setOn] = useState<string>(tk);
   const shown = useMemo(
-    () => (filter === 'all' ? all : all.filter((g) => (filter === 'written' ? g.entries.some((e) => e.t.trim()) : g.feels.some((f) => f.from === filter)))),
-    [all, filter],
+    () =>
+      all.filter((g) => g.k <= on && (filter === 'all' || (filter === 'written' ? g.entries.some((e) => e.t.trim()) : g.feels.some((f) => f.from === filter)))),
+    [all, filter, on],
   );
   /* the week across the top: the last seven days, today last */
   const week = useMemo(() => {
@@ -279,18 +281,24 @@ function ListPage({
       return { k, short: fmtDate(k, { weekday: 'short' }), colors: g ? dayColors(g) : [], today: k === tk };
     });
   }, [all, tk]);
-  const named = week.reduce((n, d) => n + (all.find((g) => g.k === d.k)?.feels.length || 0), 0);
   /* a tap on a day in the week goes to it in the list */
   const list = useRef<ScrollViewInstance | null>(null);
-  const ys = useRef<Record<string, number>>({});
-  const [on, setOn] = useState<string | null>(tk);
+  /* where each day sits, for the light behind them; kept as state so the light follows the layout */
+  const [lay, setLay] = useState<Record<string, number>>({});
+  const [colH, setColH] = useState(0);
+  const { width: W } = useWindowDimensions();
+  const field = useMemo(
+    () => shown.filter((g) => lay[g.k] != null).map((g) => ({ y: lay[g.k], colors: dayColors(g), quiet: !g.entries.some((e) => e.t.trim()) })),
+    [shown, lay],
+  );
   const [headH, setHeadH] = useState(110);
   const [dockH, setDockH] = useState(140);
+  /* a tap on a day in the week starts the list at that day, with the week still on top (today shows them all again) */
   const goTo = (k: string) => {
+    buzz('tap');
     if (filter !== 'all') setFilter('all');
     setOn(k);
-    const y = ys.current[k];
-    if (y != null) list.current?.scrollTo({ y: Math.max(0, y - 6), animated: true });
+    list.current?.scrollTo({ y: 0, animated: true });
   };
   return (
     <View style={{ flex: 1 }}>
@@ -300,13 +308,24 @@ function ListPage({
         style={StyleSheet.absoluteFill}
         contentContainerStyle={[s.list, { paddingTop: headH, paddingBottom: dockH + 20 }]}
         showsVerticalScrollIndicator={false}>
-        <View style={s.col}>
+        <View style={s.col} onLayout={(e) => setColH(e.nativeEvent.layout.height)}>
+          {/* the page's light, behind everything, reaching from the day above to the day below */}
+          {field.length ? (
+            <View pointerEvents="none" style={[s.field, { left: -20, width: W }]}>
+              <LightField days={field} width={W} height={colH} />
+            </View>
+          ) : null}
           {all.length ? <WeekLights week={week} on={on} onPick={goTo} /> : null}
           {shown.length ? (
             shown.map((g) => {
               const day = <DayLight g={g} onOpen={onOpen} />;
               return (
-                <View key={g.k} onLayout={(e) => (ys.current[g.k] = e.nativeEvent.layout.y)}>
+                <View
+                  key={g.k}
+                  onLayout={(e) => {
+                    const y = e.nativeEvent.layout.y;
+                    setLay((l) => (l[g.k] === y ? l : { ...l, [g.k]: y }));
+                  }}>
                   {/* the entry just written lands at the top, rising into place */}
                   {g.entries.some((e) => e.id === fresh) ? (
                     <Appear by={18} delay={140} duration={460}>
@@ -335,7 +354,7 @@ function ListPage({
                 Journal
               </Text>
               <View style={s.subRow}>
-                <Text style={s.sub}>{all.length ? `${named} ${named === 1 ? 'feeling' : 'feelings'} this week` : 'A few honest lines, just for you.'}</Text>
+                <Text style={s.sub}>{all.length ? 'This week' : 'A few honest lines, just for you.'}</Text>
                 {all.length ? (
                   /* the filter, small and quiet: the end of this line */
                   <Pressable
@@ -699,6 +718,7 @@ const s = StyleSheet.create({
   },
   menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 11 },
   menuT: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, color: 'rgba(235, 235, 245, 0.7)' },
+  field: { position: 'absolute', top: 0, bottom: 0 },
   none: { fontFamily: font.body, fontSize: 15, lineHeight: 21, color: JN.quiet, textAlign: 'center', marginTop: 40 },
   headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   title: { fontFamily: font.display, fontSize: 32, lineHeight: 38, color: JN.ink },

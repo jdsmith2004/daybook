@@ -9,7 +9,7 @@ import { feelPos, jnPos, type JDay, type JEntry } from '@daybook/core';
 import { memo, useId, useState } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
 import { SVG_HIDE } from '@/components/shapes';
 import { Text } from '@/components/text';
@@ -100,6 +100,95 @@ export function Light({ colors, w, h, strength = 0.42, style }: { colors: string
   );
 }
 
+/* ---------- the page's light ----------
+   Every day's feelings are soft round glows on one canvas behind the whole list, wide enough that each day's light runs
+   into the next, so the page reads as one sky changing down the week rather than a glow per day. It is drawn at a
+   quarter of its size and scaled up: the glows are soft anyway, and a long journal then costs a sixteenth of the memory. */
+/** where each of a day's colors glows: across the width, and how far below the day's top, in points */
+const FIELD_SPOTS: [number, number][] = [
+  [0.1, 24],
+  [0.55, 40],
+  [0.3, 80],
+  [0.7, 4],
+];
+const LOW = 4;
+/** how far the light reaches above the first day and below the last */
+const FIELD_PAD = 260;
+export function LightField({ days, width, height }: { days: { y: number; colors: string[]; quiet: boolean }[]; width: number; height: number }) {
+  const id = 'f' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const cols = [...new Set(days.flatMap((d) => d.colors))];
+  const w = width / LOW;
+  const h = (height + FIELD_PAD * 2) / LOW;
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: w,
+        height: h,
+        left: (width - w) / 2,
+        top: -FIELD_PAD + (height + FIELD_PAD * 2 - h) / 2,
+        transform: [{ scale: LOW }],
+      }}>
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Defs>
+          {cols.map((c, i) => (
+            <RadialGradient key={i} id={id + i} cx="50%" cy="50%" r="50%">
+              <Stop offset="0" stopColor={c} stopOpacity={0.42} />
+              <Stop offset="0.45" stopColor={c} stopOpacity={0.2} />
+              <Stop offset="0.8" stopColor={c} stopOpacity={0.05} />
+              <Stop offset="1" stopColor={c} stopOpacity={0} />
+            </RadialGradient>
+          ))}
+        </Defs>
+        {days.flatMap((d, di) =>
+          d.colors
+            .slice(0, FIELD_SPOTS.length)
+            .map((c, i) => (
+              <Circle
+                key={di + '-' + i}
+                cx={(FIELD_SPOTS[i][0] * width) / LOW}
+                cy={(FIELD_PAD + d.y + FIELD_SPOTS[i][1]) / LOW}
+                r={(width * (d.quiet ? 0.38 : 0.52)) / LOW}
+                fill={`url(#${id + cols.indexOf(c)})`}
+                opacity={d.quiet ? 0.8 : 1}
+              />
+            )),
+        )}
+      </Svg>
+    </View>
+  );
+}
+
+/** one day in the week: a small soft light, its colors side by side and run together, muted like a light seen through
+    frosted glass */
+const ORB_SPOTS: [number, number][] = [
+  [0.45, 0.47],
+  [0.56, 0.53],
+  [0.5, 0.58],
+  [0.57, 0.43],
+];
+function WeekOrb({ colors }: { colors: string[] }) {
+  const id = 'o' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const S = 60;
+  return (
+    <Svg pointerEvents="none" width={S} height={S} style={{ position: 'absolute', left: -13, top: -13 }} {...SVG_HIDE}>
+      <Defs>
+        {colors.slice(0, 4).map((c, i) => (
+          <RadialGradient key={i} id={id + i} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={c} stopOpacity={0.62} />
+            <Stop offset="0.5" stopColor={c} stopOpacity={0.3} />
+            <Stop offset="1" stopColor={c} stopOpacity={0} />
+          </RadialGradient>
+        ))}
+      </Defs>
+      {colors.slice(0, 4).map((c, i) => (
+        <Circle key={i} cx={ORB_SPOTS[i][0] * S} cy={ORB_SPOTS[i][1] * S} r={S * 0.36} fill={`url(#${id + i})`} />
+      ))}
+    </Svg>
+  );
+}
+
 /** a day's colors, in the order its feelings came, each once */
 export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.map((f) => feelColor(f.w)))];
 
@@ -126,9 +215,7 @@ export function WeekLights({
           onPress={() => onPick(d.k)}
           hitSlop={4}
           style={({ pressed }) => [s.wd, { opacity: pressed ? 0.6 : 1 }]}>
-          <View style={s.wl}>
-            {d.colors.length ? <Light colors={d.colors} w={70} h={70} strength={0.95} style={{ left: -18, top: -18 }} /> : <View style={s.wEmpty} />}
-          </View>
+          <View style={s.wl}>{d.colors.length ? <WeekOrb colors={d.colors} /> : <View style={s.wEmpty} />}</View>
           <Text style={[s.wT, d.today && s.wToday]}>{d.short}</Text>
           <View style={[s.wDot, { opacity: d.k === on ? 1 : 0 }]} />
         </Pressable>
@@ -141,17 +228,13 @@ export function WeekLights({
 /** the most feelings a day shows in its title: a busy day shows its last few, after a quiet "…" */
 const TITLE_MAX = 3;
 
-/** one day: its light behind it, its name, its feelings in order as its title, and the newest thing written under them
+/** one day (its light is the page's, LightField): its name, its feelings in order as its title, and the newest thing written under them
     (the day's other entries a tap away). A day with only feelings is a smaller line with a smaller light. A tap on the
     feelings opens the day's newest entry, and a tap on what was written opens that entry. */
 export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen: (id: string) => void }) {
   const written = g.entries.filter((e) => e.t.trim());
   const quiet = !written.length;
   const [all, setAll] = useState(false);
-  /* one smooth light, from the day's last feeling and its first: more colors than two turn it into patches */
-  const last = feelColor(g.feels[g.feels.length - 1].w);
-  const first = feelColor(g.feels[0].w);
-  const colors = first === last ? [last] : [last, first];
   const open = g.entries[0];
   const words = g.feels.map((f) => f.w);
   const shown = g.feels.slice(-TITLE_MAX);
@@ -169,7 +252,6 @@ export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen:
   const more = written.length - 1;
   return (
     <View style={[s.day, quiet && s.dayQuiet]}>
-      <Light colors={colors} w={quiet ? 320 : 460} h={quiet ? 170 : 280} strength={quiet ? 0.28 : 0.36} style={quiet ? s.lightQuiet : s.light} />
       <Text style={s.dayName} accessibilityRole="header">
         {g.label}
       </Text>

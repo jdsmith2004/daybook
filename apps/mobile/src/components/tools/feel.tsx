@@ -469,11 +469,11 @@ export function BreathingShape({ kind, color, ink = nightInk.muted }: { kind: Sh
 /* ---------- the four corners ---------- */
 /* each corner's bubble: light where the light falls at the top, deeper below, and a twin a shade darker that shows
    through as its rim */
-const QUAD: Record<string, { top: string; bottom: string; twin: string }> = {
-  red: { top: 'hsl(12, 90%, 63%)', bottom: 'hsl(346, 80%, 54%)', twin: 'hsla(352, 72%, 45%, 0.85)' },
-  yellow: { top: 'hsl(52, 96%, 70%)', bottom: 'hsl(40, 94%, 56%)', twin: 'hsla(44, 68%, 48%, 0.85)' },
-  blue: { top: 'hsl(205, 92%, 77%)', bottom: 'hsl(236, 86%, 68%)', twin: 'hsla(228, 58%, 55%, 0.85)' },
-  green: { top: 'hsl(136, 80%, 72%)', bottom: 'hsl(152, 68%, 52%)', twin: 'hsla(148, 56%, 43%, 0.85)' },
+const QUAD: Record<string, { top: string; bottom: string; twin: string; twin2: string }> = {
+  red: { top: 'hsl(12, 90%, 63%)', bottom: 'hsl(346, 80%, 54%)', twin: 'hsla(352, 72%, 45%, 0.85)', twin2: 'hsla(4, 80%, 58%, 0.5)' },
+  yellow: { top: 'hsl(52, 96%, 70%)', bottom: 'hsl(40, 94%, 56%)', twin: 'hsla(44, 68%, 48%, 0.85)', twin2: 'hsla(50, 85%, 62%, 0.5)' },
+  blue: { top: 'hsl(205, 92%, 77%)', bottom: 'hsl(236, 86%, 68%)', twin: 'hsla(228, 58%, 55%, 0.85)', twin2: 'hsla(214, 80%, 68%, 0.5)' },
+  green: { top: 'hsl(136, 80%, 72%)', bottom: 'hsl(152, 68%, 52%)', twin: 'hsla(148, 56%, 43%, 0.85)', twin2: 'hsla(140, 65%, 58%, 0.5)' },
 };
 /** where a bubble sat on the screen when it was tapped (its middle), so the field can grow out of it */
 export type FeelFrom = { x: number; y: number };
@@ -491,9 +491,10 @@ function QuadBubble({
   clock: SharedValue<number>;
   onPick: (at?: FeelFrom) => void;
 }) {
-  /* the twin wanders slowly round just behind the bubble on a looping path of its own, so the rim it shows keeps
-     shifting like a jelly that never quite settles; the bubble breathes a little on its own beat. Every rate is a whole
-     number of turns a minute, so the one clock loops without a jump. */
+  /* two twins wander slowly round just behind the bubble, each on a looping path of its own and mostly on opposite
+     sides, so the rims they show keep shifting like a jelly that never quite settles (the owner asked for two, October
+     26); the bubble breathes a little on its own beat. Every rate is a whole number of turns a minute, so the one clock
+     loops without a jump. */
   const twin = useAnimatedStyle(
     () => {
       const t = 2 * Math.PI * clock.value;
@@ -508,11 +509,26 @@ function QuadBubble({
     },
     webDeps(clock, qi, d),
   );
+  const twin2 = useAnimatedStyle(
+    () => {
+      const t = 2 * Math.PI * clock.value;
+      const o = d * (0.045 + 0.015 * Math.sin(t * 4 + qi * 1.1));
+      return {
+        transform: [
+          { translateX: o * Math.cos(t * 6 + qi * 1.6 + Math.PI) },
+          { translateY: o * Math.sin(t * 8 + qi * 2.1 + Math.PI) },
+          { scale: 1.03 + 0.015 * Math.sin(t * 5 + qi * 0.8) },
+        ],
+      };
+    },
+    webDeps(clock, qi, d),
+  );
   const st = useAnimatedStyle(() => ({ transform: [{ scale: 1 + 0.012 * Math.sin(2 * Math.PI * clock.value * 10 + qi * 1.7) }] }), webDeps(clock, qi));
   const ref = useRef<HostInstance | null>(null);
   const [a, b] = q.name.split(', ');
   return (
     <View ref={ref} style={{ width: d, height: d }}>
+      <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: d / 2, backgroundColor: QUAD[q.id].twin2 }, twin2]} />
       <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: d / 2, backgroundColor: QUAD[q.id].twin }, twin]} />
       <Reanimated.View style={st}>
         <Pressable
@@ -539,7 +555,7 @@ function QuadBubble({
   );
 }
 
-/** the four colors that open the field: big bubbles low where the thumb is, each with a see-through twin wandering
+/** the four colors that open the field: big bubbles low where the thumb is, each with two see-through twins wandering
     just behind it. Used by Name the feeling, the SOS ride and the slip. */
 export function QuadBubbles({ d, gap = 10, onPick }: { d: number; gap?: number; onPick: (q: (typeof FEEL_QUADS)[number], at?: FeelFrom) => void }) {
   const reduce = useReducedMotion();

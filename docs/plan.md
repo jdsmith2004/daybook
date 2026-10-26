@@ -2653,15 +2653,16 @@ you wish someone loved you?" reads as pointed).
   colors as scattered shapes, what the journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
 - **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
   slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists
-  (naming is the part that helps most). The page is kept bare (the owner, October 26: simpler, nicer to look at and to
-  use): the day and time small in the middle of the top bar, Back and Done (in the feeling's color); the feeling's shape
-  breathing beside its word in its color (tap to change it); one tiny line in italics, "Explore why you might be feeling
-  _hopeful_", the word in its color (the owner's wording; it replaced a big question with a shuffle button); then the
-  page, Newsreader 20 on 31, with the cursor in the feeling's color and "Start anywhere…" as the placeholder. It saves
-  quietly as it is written, with nothing on the page saying so (Notes, Journal). Done goes back to the list, where the
-  entry rises in at the top. An entry read back has no nudge and no keyboard until tapped, and Delete entry asks twice.
-  Research (two agents, October 26): the text is the design (iA), one action and silent saving (Notes, Bear), one
-  personal accent such as the cursor color (Bear, iA), counts and prompts that pile up feel like a test ("Still").
+  (naming is the part that helps most). The page is plain and dark like Apple's Journal (the owner, October 26, with a
+  picture of Journal: no feeling color everywhere, no shape): round glass Back and a small date at the top; the feeling's
+  word; one line, "Explore why you might be feeling _stressed_", where the word in its color is the only color on the
+  page; a hairline; then the page in Instrument Sans 18 on 27, cursor in the accent, a dark keyboard, "Start anywhere…".
+  Done is a full-width accent button low where the thumb is, and moves up into the top bar as a round check while the
+  keyboard is up. A tap off the words or a swipe down puts the keyboard away. Back on a new entry goes back into the
+  field of feelings on its word (with nothing written, the entry is let go, so another word starts afresh); on an entry
+  read back it goes to the list. It saves quietly as it is written. An entry read back has no nudge and no keyboard until
+  tapped, and Delete entry, under Done, asks twice. Research (two agents, October 26): the text is the design (iA), one
+  action and silent saving (Notes, Bear), counts and prompts that pile up feel like a test ("Still").
 - **Data.** Each entry is its own record, `journal/<id>`, so two devices writing on the same day never overwrite each
   other and a long entry (up to 20,000 characters) never pushes a day past a record's size. Backups carry them; the
   privacy page says what is kept. The sync server cleans records with core, so it needs the deploy that carries this.

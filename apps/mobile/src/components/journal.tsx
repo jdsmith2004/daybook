@@ -1,8 +1,7 @@
 /* The journal's pieces (app/journal.tsx; core journal-entries.ts). The list is a constellation: every entry is a star on
    one thin dotted line through time, the feeling's own shape glowing in its color, with the word, the time and the first
    lines written beside it in a book face, straight on the sky, with no boxes. New entry is a bar floating low, where the
-   thumb is. Also here: the feeling at the top of an entry, breathing slowly, and how far down the
-   journal was already pulled when it opens, so it carries on from the thumb. An entry starts with the app's own four
+   thumb is. Also here: how far down the journal was already pulled when it opens, so it carries on from the thumb. An entry starts with the app's own four
    colors (QuadBubbles in tools/feel.tsx). */
 import { jnPos, type JEntry } from '@daybook/core';
 import { memo } from 'react';
@@ -14,9 +13,8 @@ import { Shape, SVG_HIDE } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { Icon } from '@/components/ui';
-import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
+import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
 import { font, nightInk } from '@/lib/theme';
 
 /* ---------- opening it ---------- */
@@ -53,42 +51,10 @@ export const JN = {
   btn: nightInk.btn,
 };
 
-/** a color with some see-through, from the hsl() strings the field uses */
-export const withAlpha = (hsl: string, a: number) => hsl.replace(/^hsl\((.*)\)$/, `hsla($1, ${a})`);
-
 /** an entry's color and shape, from where its feeling sits in the field (a word the field no longer has is a soft violet) */
 export function entryLook(e: Pick<JEntry, 'w'>) {
   const p = jnPos(e);
   return p ? { color: FEEL_COLORS[p.r][p.c], kind: feelKind(p.r, p.c), pos: p } : { color: 'hsl(250, 80%, 76%)', kind: 'circle' as const, pos: null };
-}
-
-/* ---------- the feeling at the top of an entry ---------- */
-const SLOW: Steps = [
-  ['in', 4],
-  ['out', 6],
-];
-/** the entry's feeling, its shape breathing slowly in its own color (still with Reduce Motion) */
-export function FeelBadge({ e, size = 76 }: { e: Pick<JEntry, 'w'>; size?: number }) {
-  const reduce = useReducedMotion();
-  const t = useBreathClock(0, !reduce);
-  const look = entryLook(e);
-  const st = useAnimatedStyle(
-    () => {
-      const [b] = breathAt(SLOW, t.value);
-      return { transform: [{ scale: reduce ? 1 : 0.92 + 0.12 * b }, { rotate: reduce ? '0deg' : `${6 * b - 3}deg` }] };
-    },
-    webDeps(t, reduce),
-  );
-  return (
-    <View
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants">
-      <Reanimated.View style={st}>
-        <Shape kind={look.kind} size={size} color={look.color} />
-      </Reanimated.View>
-    </View>
-  );
 }
 
 /* ---------- the constellation ---------- */

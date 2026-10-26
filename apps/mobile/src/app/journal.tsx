@@ -25,6 +25,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  type ScrollViewInstance,
   type TextInputInstance,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -32,7 +33,7 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { DayMark, EntryStar, entryLook, entryTime, FeelBadge, JN, NewEntry, takeJournalStart, withAlpha } from '@/components/journal';
+import { DayMark, EntryStar, entryLook, entryTime, JN, NewEntry, takeJournalStart } from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
@@ -155,6 +156,8 @@ function Journal() {
     setStep({ k: 'write', id, fresh: true });
   };
   const back = useRef<() => void>(close);
+  /* the page being written on sets this, so Android's Back does what its own back arrow does */
+  const writeBack = useRef<(() => void) | null>(null);
   back.current =
     step.k === 'list'
       ? close
@@ -162,7 +165,7 @@ function Journal() {
         ? () => setStep({ k: 'list' })
         : step.k === 'grid'
           ? () => setStep(step.id ? { k: 'write', id: step.id, fresh: !!step.fresh } : { k: 'quad' })
-          : () => setStep({ k: 'list' });
+          : () => (writeBack.current ? writeBack.current() : setStep({ k: 'list' }));
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -211,6 +214,18 @@ function Journal() {
                   fresh={step.fresh}
                   onDone={(fresh) => setStep({ k: 'list', fresh: fresh || undefined })}
                   onFeel={(r, c) => setStep({ k: 'grid', start: { r, c }, id: step.id, fresh: step.fresh })}
+                  onBack={(r, c, blank) => {
+                    /* an entry read back goes back to the list; a new one goes back to the feelings, on its word. One
+                       with nothing written yet is taken back too, so naming another feeling starts afresh */
+                    const id = step.id;
+                    if (!step.fresh) return setStep({ k: 'list' });
+                    if (blank) {
+                      update((s0) => ({ ...s0, journal: jnRemove(s0.journal || {}, id) }));
+                      return setStep({ k: 'grid', start: { r, c }, id: null });
+                    }
+                    setStep({ k: 'grid', start: { r, c }, id, fresh: true });
+                  }}
+                  backRef={writeBack}
                 />
               ) : null}
             </View>
@@ -341,11 +356,16 @@ function WritePage({
   fresh,
   onDone,
   onFeel,
+  onBack,
+  backRef,
 }: {
   id: string;
   fresh: boolean;
   onDone: (fresh: string | null) => void;
   onFeel: (r: number, c: number) => void;
+  /** the back arrow: where it goes is up to the journal; `blank` when nothing is written */
+  onBack: (r: number, c: number, blank: boolean) => void;
+  backRef: { current: (() => void) | null };
 }) {
   const inset = useSafeAreaInsets();
   const { snap, tk, update } = useStore();
@@ -379,6 +399,8 @@ function WritePage({
 
   /* a new entry opens ready to write; an old one waits for a tap, so reading it back does not raise the keyboard */
   const input = useRef<TextInputInstance | null>(null);
+  const page = useRef<ScrollViewInstance | null>(null);
+  const caret = useRef(e.t.length);
   useEffect(() => {
     if (!fresh) return;
     const t = setTimeout(() => input.current?.focus(), 420);
@@ -403,6 +425,19 @@ function WritePage({
     if (fresh) buzz('save');
     onDone(fresh ? id : null);
   };
+  const goBack = () => {
+    flush();
+    Keyboard.dismiss();
+    if (!look.pos) return onDone(null);
+    onBack(look.pos.r, look.pos.c, !latest.current.trim());
+  };
+  backRef.current = goBack;
+  useEffect(
+    () => () => {
+      backRef.current = null;
+    },
+    [backRef],
+  );
   const [sure, setSure] = useState(false);
   useEffect(() => {
     if (!sure) return;
@@ -425,18 +460,18 @@ function WritePage({
   const word = e.w.toLowerCase();
   return (
     <View style={{ flex: 1 }}>
-      {/* the feeling's color glows down faintly from the top of the page */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[withAlpha(look.color, 0.14), withAlpha(look.color, 0.04), withAlpha(look.color, 0)]}
-        locations={[0, 0.5, 1]}
-        style={[s.glow, { height: inset.top + 340 }]}
-      />
+      {/* a calm, plain dark page, like Journal's: the feeling's color is only in its word in the nudge */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.paper]} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
             <View style={s.topBack}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Back to the journal" onPress={done} style={s.round} hitSlop={6}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={fresh ? 'Back to the feelings' : 'Back to the journal'}
+                onPress={goBack}
+                style={s.round}
+                hitSlop={6}>
                 <Icon name="back" color={JN.ink} />
               </Pressable>
             </View>
@@ -451,46 +486,67 @@ function WritePage({
                     accessibilityLabel="Done"
                     onPress={done}
                     hitSlop={6}
-                    style={({ pressed }) => [s.doneBtn, { backgroundColor: look.color, opacity: pressed ? 0.85 : 1 }]}>
-                    <Text style={s.doneT}>Done</Text>
+                    style={({ pressed }) => [s.round, s.check, { opacity: pressed ? 0.85 : 1 }]}>
+                    <Icon name="check" size={22} color={JN.accentInk} />
                   </Pressable>
                 </Appear>
               ) : null}
             </View>
           </View>
-          {/* the feeling, its shape breathing in its color; a tap on it names it again */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Feeling: ${e.w}.${f ? ' ' + f.how + '.' : ''}`}
-            accessibilityHint="Opens the feelings to change it"
-            onPress={() => look.pos && onFeel(look.pos.r, look.pos.c)}
-            style={({ pressed }) => [s.feel, { opacity: pressed ? 0.75 : 1 }]}>
-            <FeelBadge e={e} size={44} />
-            <View style={{ flex: 1, gap: 3 }}>
-              <Text style={[s.word, { color: look.color }]} maxFontSizeMultiplier={1.25} numberOfLines={1}>
-                {e.w}
-              </Text>
-              {blank ? (
-                <Text style={s.nudge}>
-                  Explore why you might be feeling <Text style={[s.nudge, s.nudgeW, { color: look.color }]}>{word}</Text>
+          {/* a tap anywhere off the words, or a swipe down, puts the keyboard away; a tap below them starts writing */}
+          <ScrollView
+            ref={page}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            showsVerticalScrollIndicator={false}>
+            {/* the feeling's word, and the nudge with the word in its color; a tap on it names it again */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Feeling: ${e.w}.${f ? ' ' + f.how + '.' : ''}`}
+              accessibilityHint="Opens the feelings to change it"
+              onPress={() => look.pos && onFeel(look.pos.r, look.pos.c)}
+              style={({ pressed }) => [s.feel, { opacity: pressed ? 0.75 : 1 }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={s.word} maxFontSizeMultiplier={1.25} numberOfLines={1}>
+                  {e.w}
                 </Text>
-              ) : null}
-            </View>
-          </Pressable>
-          <TextInput
-            ref={input}
-            value={text}
-            onChangeText={onChange}
-            multiline
-            scrollEnabled
-            textAlignVertical="top"
-            placeholder="Start anywhere…"
-            placeholderTextColor="rgba(207, 200, 242, 0.42)"
-            selectionColor={look.color}
-            cursorColor={look.color}
-            accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
-            style={s.input}
-          />
+                {blank ? (
+                  <Text style={s.nudge}>
+                    Explore why you might be feeling <Text style={[s.nudge, s.nudgeW, { color: look.color }]}>{word}</Text>
+                  </Text>
+                ) : null}
+              </View>
+            </Pressable>
+            <View style={s.rule} />
+            <TextInput
+              ref={input}
+              value={text}
+              onChangeText={onChange}
+              multiline
+              scrollEnabled={false}
+              onSelectionChange={(ev) => (caret.current = ev.nativeEvent.selection.end)}
+              onContentSizeChange={() => {
+                /* writing at the end keeps the newest line in sight as the page grows */
+                if (caret.current >= latest.current.length) page.current?.scrollToEnd({ animated: true });
+              }}
+              textAlignVertical="top"
+              placeholder="Start anywhere…"
+              placeholderTextColor="rgba(235, 235, 245, 0.3)"
+              keyboardAppearance="dark"
+              selectionColor={JN.accent}
+              cursorColor={JN.accent}
+              accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
+              style={s.input}
+            />
+            <Pressable
+              accessible={false}
+              importantForAccessibility="no"
+              style={{ flexGrow: 1, minHeight: 80 }}
+              onPress={() => (typing ? Keyboard.dismiss() : input.current?.focus())}
+            />
+          </ScrollView>
           {typing ? (
             <View style={{ height: 8 }} />
           ) : (
@@ -500,7 +556,7 @@ function WritePage({
                   accessibilityRole="button"
                   accessibilityLabel="Done"
                   onPress={done}
-                  style={({ pressed }) => [s.doneBig, { backgroundColor: look.color, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+                  style={({ pressed }) => [s.doneBig, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
                   <Text style={s.doneBigT}>Done</Text>
                 </Pressable>
               </Appear>
@@ -537,7 +593,16 @@ const s = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   title: { fontFamily: font.display, fontSize: 32, lineHeight: 38, color: JN.ink },
   sub: { fontFamily: font.bodyMedium, fontSize: 14, lineHeight: 19, color: JN.muted },
-  round: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: JN.btn },
+  round: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+  },
   list: { paddingHorizontal: 16, paddingTop: 10 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
@@ -549,33 +614,33 @@ const s = StyleSheet.create({
   emptyT: { fontFamily: font.body, fontSize: 15.5, lineHeight: 22.5, color: JN.muted, textAlign: 'center', maxWidth: 330 },
   priv: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   privT: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.muted },
-  nudge: { fontFamily: font.serifItalic, fontSize: 15, lineHeight: 20, color: JN.muted },
-  nudgeW: { fontFamily: font.serifItalic },
-  glow: { position: 'absolute', top: 0, left: 0, right: 0 },
+  nudge: { fontFamily: font.body, fontSize: 14.5, lineHeight: 20, color: 'rgba(235, 235, 245, 0.6)' },
+  nudgeW: { fontFamily: font.bodySemi },
+  /* the page to write on: a plain dark, a little warmer than black, the way Journal's is */
+  paper: { backgroundColor: '#16142A' },
+  check: { backgroundColor: JN.accent, borderColor: JN.accent },
+  rule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255, 255, 255, 0.16)', marginTop: 18 },
   wrap: { flex: 1, paddingHorizontal: 24, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: -4 },
-  doneBtn: { height: 36, paddingHorizontal: 18, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  doneT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 19, color: '#1C2030' },
-  feel: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 26 },
-  word: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
-  when: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: JN.faint },
+  feel: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22 },
+  word: { fontFamily: font.display, fontSize: 26, lineHeight: 31, color: JN.ink },
+  when: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: 'rgba(235, 235, 245, 0.45)' },
   input: {
-    flex: 1,
-    marginTop: 22,
+    marginTop: 14,
     paddingTop: 4,
     paddingBottom: 12,
-    fontFamily: font.serif,
-    fontSize: 20,
-    lineHeight: 31,
-    color: JN.page,
+    fontFamily: font.body,
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#F4F2F8',
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
   /* the same width on both sides, so the date stays in the middle */
   topBack: { width: 78, alignItems: 'flex-start' },
   topDone: { width: 78, alignItems: 'flex-end' },
   foot: { paddingTop: 10, gap: 4 },
-  doneBig: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  doneBigT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22, color: '#1C2030' },
+  doneBig: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: JN.accent },
+  doneBigT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22, color: JN.accentInk },
   delBtn: { alignSelf: 'center', paddingVertical: 10 },
   del: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: JN.faint },
   delSure: { color: '#FF9A8D' },

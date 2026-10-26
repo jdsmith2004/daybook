@@ -20,7 +20,7 @@ export const sameIds = (svg: string) => svg.replace(/\bem\d+/g, 'emX');
 
 /* ---------- the flame in its own sky (the top of Today) ---------- */
 /** the flame for the top of Today: the same drawing with its round frame softened away, so it melts into a card painted in
-    its own sky. sky: top to bottom. ground: the color of its hills, when it has hills. ink: the words on the picture,
+    its own sky. sky: top to bottom. ground: the color of the ground in front, when it has hills. ink: the words on the picture,
     light on a dark sky or hills and dark on a bright one. stars: a night sky. The full suns have no sky of their own;
     they shine in a clear day sky. */
 export interface EmblemScene {
@@ -29,6 +29,9 @@ export interface EmblemScene {
   /** where each sky color sits, top (0) to bottom (1) of the drawing, so the card's sky can line up with it */
   at: [number, number, number];
   ground: string | null;
+  /** the drawing's own hills and ground, carried on far past its edges (in the drawing's units, 120 to its width), for
+      the card to draw behind it: the picture's hills fade into the same hills, so there is one landscape, not two */
+  land: string | null;
   ink: 'light' | 'dark';
   stars: boolean;
 }
@@ -43,6 +46,15 @@ export function luminance(hex: string): number {
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
+/** a drawing's hills (flame-art's hill) and the flat ground in front of them, each run on to far left and right and down */
+function landOf(xml: string): string | null {
+  const parts: string[] = [];
+  for (const m of xml.matchAll(/<path d="M-2 ([\d.]+)(C[^"]*?)122 ([\d.]+)V122H-2Z" fill="(#[0-9A-Fa-f]{6})"\/>/g))
+    parts.push(`<path d="M-1000 ${m[1]}H-2${m[2]}122 ${m[3]}H1120V400H-1000Z" fill="${m[4]}"/>`);
+  for (const m of xml.matchAll(/<rect x="-2" y="([\d.]+)" width="124" height="[\d.]+" fill="(#[0-9A-Fa-f]{6})"\/>/g))
+    if (Number(m[1]) >= 90) parts.push(`<rect x="-1000" y="${m[1]}" width="2120" height="400" fill="${m[2]}"/>`);
+  return parts.length ? parts.join('') : null;
+}
 export function emblemScene(level: number, classes = false): EmblemScene {
   let xml = emblemXml(level, false, classes);
   const sk = /id="em\d+sk"[^>]*>((?:<stop[^>]*\/>)+)/.exec(xml);
@@ -51,7 +63,6 @@ export function emblemScene(level: number, classes = false): EmblemScene {
   const own = stops.length === 3 && offs.length === 3;
   const sky: [string, string, string] = own ? [stops[0], stops[1], stops[2]] : DAY_SKY;
   const at: [number, number, number] = own ? [offs[0], offs[1], offs[2]] : [0, 0.6, 1];
-  const g = /<path d="M-2 1\d\d[^"]*" fill="(#[0-9A-Fa-f]{6})"/.exec(xml);
   const cp = /clip-path="url\(#(em\d+)cp\)"/.exec(xml);
   if (cp) {
     const id = cp[1];
@@ -64,8 +75,10 @@ export function emblemScene(level: number, classes = false): EmblemScene {
       )
       .replace(/<circle cx="60" cy="60" r="5\d(?:\.\d+)?" fill="none"[^>]*\/>/g, '');
   }
-  const ground = g ? g[1] : null;
-  return { xml, sky, at, ground, ink: luminance(ground || sky[2]) > 0.28 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
+  const land = landOf(xml);
+  /* the words sit on the frontmost ground, and take whichever ink reads best on it (dark ink is #14112E) */
+  const ground = land ? [...land.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].pop()![1] : null;
+  return { xml, sky, at, ground, land, ink: luminance(ground || sky[2]) > 0.19 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
 }
 
 /* ---------- the flame in layers, so only the figure moves ---------- */

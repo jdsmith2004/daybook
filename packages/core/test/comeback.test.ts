@@ -115,6 +115,18 @@ describe('the three flames, and the comeback count', () => {
     expect(c).toMatchObject({ k: K, saved: true, n: 1 });
     expect(core.comebackNow(d, st, addDays(K, 3))).toBeNull();
   });
+  it("the comeback always has a button: the day's next step, or Nice once the day is done; pressed, it is put away", () => {
+    const d = slipAndSunrise(addDays(K, 3));
+    const day = addDays(K, 2);
+    const all = core.moments(d, st, {}, day, at(day, 9));
+    const cb = all.find((x) => x.k === 'comeback')!;
+    const next = core.openTile(d, st, day, at(day, 9));
+    expect(cb.btn).toBe(next ? next.btn : 'Nice');
+    if (next) expect([cb.go, cb.nx]).toEqual([next.go, next.head]);
+    expect(core.moments(d, st, {}, day, at(day, 9), { comebackSeen: K }).some((x) => x.k === 'comeback')).toBe(false);
+    /* no moment that only takes room: everything but the ones with their own choices has a button */
+    for (const x of all) if (x.k === 'comeback' || x.k === 'calm') expect(x.btn).toBeTruthy();
+  });
   it('the count only goes up', () => {
     let d = slipAndSunrise('2026-11-20');
     const one = core.rkComebackCount(d, st, '2026-11-20');

@@ -14,7 +14,8 @@
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, the comeback
-       noticed (all three flames lit), a paused reminder, the first pattern
+       noticed (all three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first
+       pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well."
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
@@ -67,6 +68,8 @@ export interface Moment {
   go: MomentGo | null;
   /** what the button opens: the lesson id, the Sunday, the talk-through id */
   v?: string;
+  /** a moment that celebrates and then leads on: the step its button opens ("Wanting is not liking") */
+  nx?: string;
   /** the name used in "and one more", when this moment waits behind another */
   one: string;
 }
@@ -91,6 +94,8 @@ export interface MomentDev {
   patternDay?: DayKey | null;
   /** signed in: lessons after the first three are open (nextUp) */
   account?: boolean;
+  /** the slip whose comeback was celebrated and put away (its button pressed): it is not the card again */
+  comebackSeen?: DayKey | null;
 }
 
 /** the run question's card shows in the morning, until this hour */
@@ -103,8 +108,8 @@ const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).jo
 /** every moment that applies now, in order. The calm day (or done) is always last. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
   const out: Moment[] = [];
-  const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string) =>
-    out.push({ k, eb, h, p, btn, go, one, ...(v ? { v } : {}) });
+  const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string, nx?: string) =>
+    out.push({ k, eb, h, p, btn, go, one, ...(v ? { v } : {}), ...(nx ? { nx } : {}) });
 
   /* 1. a pause in progress */
   if (dev.pause) m('pause', 'A pause', 'Your pause', 'One tap back to it.', 'Resume', 'pause', 'your pause');
@@ -220,17 +225,23 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   const ended = rkEnded(days, st, tk);
   if (ended)
     m('run-ended', 'What you built', 'Your ' + ended.run + (ended.run === 1 ? ' day is kept' : ' days are kept'), ended.text, null, null, 'what you built');
+  /* the comeback celebrates, then leads on (the owner, October 25, 2026: a finish always has an action, never a card that
+     only takes room): its button is the day's next step, or "Nice" once the day is done, and either puts it away */
   const cb = comebackNow(days, st, tk);
-  if (cb)
+  if (cb && dev.comebackSeen !== cb.k) {
+    const nx = openTile(days, st, tk, now, dev.account !== false);
     m(
       'comeback',
       'Your comeback',
       cb.saved ? 'Run saved. You came back.' : 'All three lit. You came back.',
       cb.flames.map((f) => f.t).join('. ') + '. ' + rkComebackSay(cb.n),
-      null,
-      null,
+      nx ? nx.btn : 'Nice',
+      nx ? nx.go : null,
       'your comeback',
+      nx ? nx.id : undefined,
+      nx ? nx.head : undefined,
     );
+  }
   if (dev.nudge && dev.nudge.k === 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   const pat = firstPattern(days, st, tk);
   if (pat && (!dev.patternDay || dev.patternDay === tk))

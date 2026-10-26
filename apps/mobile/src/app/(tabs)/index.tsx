@@ -226,6 +226,7 @@ export default function Today() {
     nudge,
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
+    comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
   });
   const ask = accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });

@@ -2,7 +2,7 @@
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
    next stop, a run question left open, the Sunday review, the first week, a first pattern, days away), the whole band one
    button, with the rest of the day named under it. The day of a slip keeps its full card, with its words of care; the
-   comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through, a counting note,
+   comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (the hard hours, a talk-through, a counting note,
    a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
 import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
@@ -16,11 +16,12 @@ import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
 import { CountNotes } from '@/components/today';
-import { Lights } from '@/components/rekindle';
+import { Flames } from '@/components/rekindle';
 import { PauseBanner, RunKeptCard, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
 import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
+import { useSos } from '@/lib/sos';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
 export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Snapshot; tk: string; now: number }) {
@@ -171,19 +172,46 @@ function Tile({ m, sky, then, onPress }: { m: Moment; sky: StopTile['sky']; then
   );
 }
 
-/* all three flames lit after a slip: the comeback, noticed, once (core comebackNow). Nothing to do, so no button. */
+/* all three flames lit after a slip: the comeback, celebrated once (core comebackNow), and then it leads on. Its button
+   is the day's next step ("Next: Wanting is not liking"), or "Nice" when the day is done; either puts it away. */
 function Comeback({ m, snap, tk }: { m: Moment; snap: Snapshot; tk: string }) {
   const c = useTheme();
+  const sos = useSos();
   const cb = comebackNow(snap.days, snap.settings!, tk);
   if (!cb) return null;
+  const go = () => {
+    sos.setMem((x) => ({ ...x, cbSeen: cb.k }));
+    if (m.go === 'lesson' || m.go === 'checkin' || m.go === 'wind') openStop(m.go, m.v);
+    else buzz('tap');
+  };
   return (
     <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
-      <Text style={[s.eb, { color: c.sunText }]}>{m.eb.toUpperCase()}</Text>
-      <T v="h2" accessibilityRole="header">
-        {m.h}
-      </T>
-      <Lights list={cb.flames} />
-      <T tone="muted">{rkComebackSay(cb.n)}</T>
+      <View style={{ alignItems: 'center', gap: 6 }}>
+        <Flames on={cb.flames.map((f) => f.on)} />
+        <T v="h2" accessibilityRole="header" style={{ textAlign: 'center' }}>
+          {m.h}
+        </T>
+        <T tone="muted" style={{ textAlign: 'center' }}>
+          {rkComebackSay(cb.n)}
+        </T>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={m.nx ? m.btn + ': ' + m.nx : m.btn || 'Nice'}
+        onPress={go}
+        style={({ pressed }) => [
+          s.btn,
+          {
+            backgroundColor: c.sun,
+            shadowColor: 'rgba(0,0,0,0.28)',
+            transform: [{ translateY: pressed ? 3 : 0 }],
+            shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+          },
+        ]}>
+        <Text style={[s.btnT, { color: c.onSun }]} numberOfLines={1}>
+          {m.nx ? 'Next: ' + m.nx + ' ›' : m.btn || 'Nice'}
+        </Text>
+      </Pressable>
     </Card>
   );
 }

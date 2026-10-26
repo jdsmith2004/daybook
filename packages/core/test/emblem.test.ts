@@ -27,7 +27,15 @@ describe('the flame in its own sky', () => {
     const day = emblemScene(40);
     expect(day.stars).toBe(false);
     expect(day.ink).toBe('dark');
-    expect(day.ground).toBe('#3DAA84');
+    expect(day.ground).toBe('#2E8E6E');
+    /* the card's ground is the drawing's own hills, run on past its edges, so the hills are drawn once */
+    expect(day.land).toMatch(/^<path d="M-1000 96H-2C/);
+    expect(day.land).toContain('fill="#2E8E6E"');
+    expect(night.land).toMatch(/^<path d="M-1000 /);
+    /* every drawing with hills gives them to the card, the sunrise too */
+    for (let l = 1; l <= 60; l++) expect(!!emblemScene(l).land, `level ${l}`).toBe(/<path d="M-2 [\d.]+C[^"]*V122H-2Z"/.test(emblemScene(l).xml));
+    expect(emblemScene(33).land).toBeTruthy();
+    expect(emblemScene(33).ink).toBe('light');
     /* the full suns shine in a clear day sky */
     expect(emblemScene(46).sky).toEqual(['#3FA2FF', '#86CCFF', '#CFEBFF']);
   });

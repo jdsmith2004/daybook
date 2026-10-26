@@ -2652,11 +2652,16 @@ you wish someone loved you?" reads as pointed).
   a month sky) he picked the constellation, with the pages direction's floating bar. Before the first entry: the four
   colors as scattered shapes, what the journal is ("Two minutes is enough, and a feeling on its own counts too") and that it is private.
 - **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
-  slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists (naming
-  is the part that helps most). The page: the feeling breathing in its color with its word and line (tap to change it),
-  one open question for the time of day (a tap shows another), and the page to write on, ready with the keyboard. It saves
-  as it is written; Done (in the feeling's color) goes back to the list, where the entry rises in at the top. An entry read
-  back shows the question it answered, and Delete entry asks twice.
+  slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists
+  (naming is the part that helps most). The page is kept bare (the owner, October 26: simpler, nicer to look at and to
+  use): the day and time small in the middle of the top bar, Back and Done (in the feeling's color); the feeling's shape
+  breathing beside its word in its color (tap to change it); one tiny line in italics, "Explore why you might be feeling
+  _hopeful_", the word in its color (the owner's wording; it replaced a big question with a shuffle button); then the
+  page, Newsreader 20 on 31, with the cursor in the feeling's color and "Start anywhere…" as the placeholder. It saves
+  quietly as it is written, with nothing on the page saying so (Notes, Journal). Done goes back to the list, where the
+  entry rises in at the top. An entry read back has no nudge and no keyboard until tapped, and Delete entry asks twice.
+  Research (two agents, October 26): the text is the design (iA), one action and silent saving (Notes, Bear), one
+  personal accent such as the cursor color (Bear, iA), counts and prompts that pile up feel like a test ("Still").
 - **Data.** Each entry is its own record, `journal/<id>`, so two devices writing on the same day never overwrite each
   other and a long entry (up to 20,000 characters) never pushes a day past a record's size. Backups carry them; the
   privacy page says what is kept. The sync server cleans records with core, so it needs the deploy that carries this.

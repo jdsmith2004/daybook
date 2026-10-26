@@ -3,12 +3,14 @@
    up the same way: the X, a push up from its bottom edge, or Back. It is always the night sky, in either theme, like the
    field of feelings it opens into, so a private page feels like a quiet room.
 
-   The list is every entry, newest first, by day, each a quiet card with its feeling's small shape. Low at the bottom,
-   where the thumb is, New entry opens the same four colors as everywhere else in the app (QuadBubbles), and the field of
-   feelings grows out of the one tapped (How We Feel's way in). The word named, the page to write on opens with the feeling at the top, breathing in its
-   color, and one open question to start from (a tap shows another). It saves as it is written; Done goes back to the list,
-   where the new entry lands at the top. The feeling alone is an entry too: naming it is the part that helps most. */
-import { feelAt, jnDayLabel, jnDays, jnEdit, jnGroups, jnList, jnPrompt, jnRemove, jnStart, type FEEL_QUADS } from '@daybook/core';
+   The list is every entry, newest first, by day: a constellation of the feelings' shapes on one dotted line
+   (components/journal.tsx). Low at the bottom, where the thumb is, New entry opens the same four colors as everywhere
+   else in the app (QuadBubbles), and the field of feelings grows out of the one tapped (How We Feel's way in). The word
+   named, the page to write on is kept bare: the feeling's shape and word in its color, one tiny line to start from
+   ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
+   goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
+   that helps most. */
+import { feelAt, jnDayLabel, jnDays, jnEdit, jnGroups, jnList, jnRemove, jnStart, type FEEL_QUADS } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -351,40 +353,28 @@ function WritePage({
   const look = entryLook(e);
   const f = look.pos ? feelAt(look.pos.r, look.pos.c) : null;
   const [text, setText] = useState(e.t);
-  /* the question: the one this entry answered, or one for its time of day; a tap shows the next */
-  const [n, setN] = useState(0);
-  const hour = new Date(e.at).getHours();
-  /* a page opened with nothing on it offers a question, and a tap shows another; one opened with writing on it shows the
-     question that writing answered, if it had one, and nothing to change it */
+  /* a page opened with nothing on it has the small nudge under the feeling; one opened to read back does not */
   const [blank] = useState(!e.t.trim());
-  const prompt = !blank ? e.q || null : n === 0 && e.q ? e.q : jnPrompt(id, hour, n);
-  /* the question kept with the entry is the one showing when the writing started */
-  const asked = useRef<string | null>(e.q ?? null);
   const latest = useRef(text);
-  /* "Saved" shows once the first words are kept, and stays: it is never more than a moment behind, so it does not flicker */
-  const [saved, setSaved] = useState(false);
+  /* it saves quietly as it is written, a moment after each pause, and when the page closes; nothing on the page says so,
+     the way Notes and Journal do it */
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const flush = useCallback(() => {
     clearTimeout(timer.current);
     const t = latest.current;
-    const q = t.trim() ? asked.current : null;
     update((s0) => {
       const cur = s0.journal?.[id];
-      if (!cur || (cur.t === t && (cur.q ?? null) === q)) return s0;
-      return { ...s0, journal: jnEdit(s0.journal || {}, id, { t, q }) };
+      if (!cur || cur.t === t) return s0;
+      return { ...s0, journal: jnEdit(s0.journal || {}, id, { t }) };
     });
   }, [id, update]);
   /* whatever is on the page is saved when it closes, however it closes */
   useEffect(() => () => flush(), [flush]);
   const onChange = (t: string) => {
-    if (!latest.current.trim() && t.trim() && blank) asked.current = prompt;
     latest.current = t;
     setText(t);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      flush();
-      setSaved(true);
-    }, 600);
+    timer.current = setTimeout(flush, 600);
   };
 
   /* a new entry opens ready to write; an old one waits for a tap, so reading it back does not raise the keyboard */
@@ -429,75 +419,53 @@ function WritePage({
     onDone(null);
   };
 
+  const word = e.w.toLowerCase();
   return (
     <View style={{ flex: 1 }}>
-      {/* the feeling's color glows down from the top of the page */}
+      {/* the feeling's color glows down faintly from the top of the page */}
       <LinearGradient
         pointerEvents="none"
-        colors={[withAlpha(look.color, 0.16), withAlpha(look.color, 0.05), withAlpha(look.color, 0)]}
+        colors={[withAlpha(look.color, 0.14), withAlpha(look.color, 0.04), withAlpha(look.color, 0)]}
         locations={[0, 0.5, 1]}
-        style={[s.glow, { height: inset.top + 380 }]}
+        style={[s.glow, { height: inset.top + 340 }]}
       />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={[s.wrap, { paddingTop: inset.top + 10 }]}>
+        <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
             <Pressable accessibilityRole="button" accessibilityLabel="Back to the journal" onPress={done} style={s.round} hitSlop={6}>
               <Icon name="back" color={JN.ink} />
             </Pressable>
+            <Text style={s.when} numberOfLines={1}>
+              {jnDayLabel(e.d, tk) + '  ·  ' + entryTime(e.at)}
+            </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Done"
               onPress={done}
+              hitSlop={6}
               style={({ pressed }) => [s.doneBtn, { backgroundColor: look.color, opacity: pressed ? 0.85 : 1 }]}>
               <Text style={s.doneT}>Done</Text>
             </Pressable>
           </View>
+          {/* the feeling, its shape breathing in its color; a tap on it names it again */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Feeling: ${e.w}. ${f ? f.how + '.' : ''}`}
+            accessibilityLabel={`Feeling: ${e.w}.${f ? ' ' + f.how + '.' : ''}`}
             accessibilityHint="Opens the feelings to change it"
             onPress={() => look.pos && onFeel(look.pos.r, look.pos.c)}
-            style={({ pressed }) => [s.feel, { opacity: pressed ? 0.8 : 1 }]}>
-            <FeelBadge e={e} size={62} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <View style={s.wordRow}>
-                <Text style={s.word} maxFontSizeMultiplier={1.25} numberOfLines={1}>
-                  {e.w}
-                </Text>
-                <Icon name="pencil" size={15} color={JN.faint} />
-              </View>
-              {f ? (
-                <Text style={s.how} numberOfLines={2}>
-                  {f.how}
+            style={({ pressed }) => [s.feel, { opacity: pressed ? 0.75 : 1 }]}>
+            <FeelBadge e={e} size={44} />
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={[s.word, { color: look.color }]} maxFontSizeMultiplier={1.25} numberOfLines={1}>
+                {e.w}
+              </Text>
+              {blank ? (
+                <Text style={s.nudge}>
+                  Explore why you might be feeling <Text style={[s.nudge, s.nudgeW, { color: look.color }]}>{word}</Text>
                 </Text>
               ) : null}
-              <Text style={s.when}>{jnDayLabel(e.d, tk) + ', ' + entryTime(e.at)}</Text>
             </View>
           </Pressable>
-          {blank && prompt ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={prompt}
-              accessibilityHint="Shows another question"
-              onPress={() => {
-                buzz('tick');
-                setN((x) => x + 1);
-              }}
-              style={({ pressed }) => [s.prompt, { opacity: pressed ? 0.7 : 1 }]}>
-              <Appear key={prompt} by={0} x={8} duration={240} style={{ flex: 1 }}>
-                <Text style={s.promptT}>{prompt}</Text>
-              </Appear>
-              <View style={s.shuffle}>
-                <Icon name="swap" size={16} color={JN.muted} />
-              </View>
-            </Pressable>
-          ) : prompt ? (
-            <View style={s.prompt}>
-              <Text style={[s.promptT, { color: JN.muted }]}>{prompt}</Text>
-            </View>
-          ) : (
-            <View style={{ height: 10 }} />
-          )}
           <TextInput
             ref={input}
             value={text}
@@ -505,31 +473,23 @@ function WritePage({
             multiline
             scrollEnabled
             textAlignVertical="top"
-            placeholder="Write anything. Two minutes is enough."
-            placeholderTextColor={JN.faint}
+            placeholder="Start anywhere…"
+            placeholderTextColor="rgba(207, 200, 242, 0.42)"
             selectionColor={look.color}
             cursorColor={look.color}
-            accessibilityLabel={prompt ? 'Your entry. ' + prompt : 'Your entry'}
+            accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
             style={s.input}
           />
-          <View style={[s.foot, { paddingBottom: typing ? 10 : Math.max(inset.bottom, 14) }]}>
-            {/* a new entry does not offer to be thrown away; an entry read back again does */}
-            {!typing && !fresh ? (
+          {/* a new entry does not offer to be thrown away; an entry read back again does, quietly, at the bottom */}
+          {!typing && !fresh ? (
+            <View style={[s.foot, { paddingBottom: Math.max(inset.bottom, 14) }]}>
               <Pressable accessibilityRole="button" onPress={remove} hitSlop={8}>
                 <Text style={[s.del, sure && s.delSure]}>{sure ? 'Tap again to delete' : 'Delete entry'}</Text>
               </Pressable>
-            ) : (
-              <View />
-            )}
-            <View style={s.saved} accessibilityLiveRegion="polite">
-              {saved ? (
-                <Appear by={0} duration={300} style={s.saved}>
-                  <Icon name="check" size={14} color={JN.muted} />
-                  <Text style={s.savedT}>Saved</Text>
-                </Appear>
-              ) : null}
             </View>
-          </View>
+          ) : (
+            <View style={{ height: typing ? 8 : Math.max(inset.bottom, 14) }} />
+          )}
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -567,33 +527,28 @@ const s = StyleSheet.create({
   emptyT: { fontFamily: font.body, fontSize: 15.5, lineHeight: 22.5, color: JN.muted, textAlign: 'center', maxWidth: 330 },
   priv: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   privT: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.muted },
+  nudge: { fontFamily: font.serifItalic, fontSize: 15, lineHeight: 20, color: JN.muted },
+  nudgeW: { fontFamily: font.serifItalic },
   glow: { position: 'absolute', top: 0, left: 0, right: 0 },
-  wrap: { flex: 1, paddingHorizontal: 20, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
-  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: -4 },
-  doneBtn: { height: 40, paddingHorizontal: 20, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  doneT: { fontFamily: font.bodySemi, fontSize: 16, lineHeight: 20, color: '#1C2030' },
-  feel: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 18 },
-  wordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  word: { fontFamily: font.display, fontSize: 30, lineHeight: 36, color: JN.ink, flexShrink: 1 },
-  how: { fontFamily: font.body, fontSize: 14, lineHeight: 19, color: JN.muted },
-  when: { fontFamily: font.bodyMedium, fontSize: 12.5, lineHeight: 17, color: JN.faint, marginTop: 2 },
-  prompt: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 24, paddingVertical: 4 },
-  promptT: { fontFamily: font.display, fontSize: 21, lineHeight: 27, color: JN.ink },
-  shuffle: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: JN.btn, marginTop: -1 },
+  wrap: { flex: 1, paddingHorizontal: 24, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: -4 },
+  doneBtn: { height: 36, paddingHorizontal: 18, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  doneT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 19, color: '#1C2030' },
+  feel: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 26 },
+  word: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
+  when: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: JN.faint },
   input: {
     flex: 1,
-    marginTop: 10,
-    paddingTop: 6,
+    marginTop: 22,
+    paddingTop: 4,
     paddingBottom: 12,
     fontFamily: font.serif,
-    fontSize: 19.5,
-    lineHeight: 29,
+    fontSize: 20,
+    lineHeight: 31,
     color: JN.page,
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
-  foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, minHeight: 36 },
+  foot: { alignItems: 'flex-start', paddingTop: 8 },
   del: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, color: JN.faint },
   delSure: { color: '#FF9A8D' },
-  saved: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 60, justifyContent: 'flex-end' },
-  savedT: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.muted },
 });

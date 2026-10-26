@@ -61,5 +61,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   if (theme !== 'auto') out['daybook.theme'] = theme;
+  /* the app was already opened today, so "How are you feeling today?" does not cover the shot (lib/day-open.ts) */
+  out['daybook.dayOpen'] = tk;
   return out;
 }

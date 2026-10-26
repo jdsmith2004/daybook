@@ -6,7 +6,7 @@
    already pulled when it opens, so it carries on from the thumb. An entry starts with the app's own four colors
    (QuadBubbles in tools/feel.tsx). */
 import { feelPos, jnPos, type JDay, type JEntry } from '@daybook/core';
-import { memo, useId } from 'react';
+import { memo, useId, useState } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
@@ -138,18 +138,27 @@ export function WeekLights({
 }
 
 /* ---------- a day ---------- */
-/** one day: its light behind it, its name, its feelings in order as its title, and what was written under them. A day
-    with only feelings is a smaller line with a smaller light. A tap on the feelings opens the day's newest entry, and a
-    tap on what was written opens that entry. */
+/** the most feelings a day shows in its title: a busy day shows its last few, after a quiet "…" */
+const TITLE_MAX = 3;
+
+/** one day: its light behind it, its name, its feelings in order as its title, and the newest thing written under them
+    (the day's other entries a tap away). A day with only feelings is a smaller line with a smaller light. A tap on the
+    feelings opens the day's newest entry, and a tap on what was written opens that entry. */
 export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen: (id: string) => void }) {
   const written = g.entries.filter((e) => e.t.trim());
   const quiet = !written.length;
-  const colors = dayColors(g);
+  const [all, setAll] = useState(false);
+  /* one smooth light, from the day's last feeling and its first: more colors than two turn it into patches */
+  const last = feelColor(g.feels[g.feels.length - 1].w);
+  const first = feelColor(g.feels[0].w);
+  const colors = first === last ? [last] : [last, first];
   const open = g.entries[0];
   const words = g.feels.map((f) => f.w);
+  const shown = g.feels.slice(-TITLE_MAX);
   const title = (
     <Text style={[s.seq, quiet && s.seqQuiet]}>
-      {g.feels.map((f, i) => (
+      {g.feels.length > TITLE_MAX ? <Text style={s.then}>{'…  '}</Text> : null}
+      {shown.map((f, i) => (
         <Text key={i}>
           {i ? <Text style={s.then}>{'  then  '}</Text> : null}
           <Text style={{ color: feelColor(f.w) }}>{f.w}</Text>
@@ -157,9 +166,10 @@ export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen:
       ))}
     </Text>
   );
+  const more = written.length - 1;
   return (
     <View style={[s.day, quiet && s.dayQuiet]}>
-      <Light colors={colors} w={quiet ? 320 : 480} h={quiet ? 170 : 300} strength={quiet ? 0.32 : 0.46} style={quiet ? s.lightQuiet : s.light} />
+      <Light colors={colors} w={quiet ? 320 : 460} h={quiet ? 170 : 280} strength={quiet ? 0.28 : 0.36} style={quiet ? s.lightQuiet : s.light} />
       <Text style={s.dayName} accessibilityRole="header">
         {g.label}
       </Text>
@@ -177,7 +187,7 @@ export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen:
           {title}
         </View>
       )}
-      {written.map((e) => (
+      {(all ? written : written.slice(0, 1)).map((e) => (
         <Pressable
           key={e.id}
           accessibilityRole="button"
@@ -190,6 +200,11 @@ export const DayLight = memo(function DayLight({ g, onOpen }: { g: JDay; onOpen:
           </Text>
         </Pressable>
       ))}
+      {more > 0 ? (
+        <Pressable accessibilityRole="button" onPress={() => setAll((v) => !v)} hitSlop={8} style={s.moreBtn}>
+          <Text style={s.more}>{all ? 'Show less' : `${more} more ${more === 1 ? 'entry' : 'entries'}`}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 });
@@ -235,15 +250,17 @@ const s = StyleSheet.create({
   wT: { fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 16, color: JN.quiet },
   wToday: { fontFamily: font.bodyBold, color: JN.ink },
   wDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: JN.ink, marginTop: -2 },
-  day: { paddingTop: 14, paddingBottom: 24 },
+  day: { paddingTop: 16, paddingBottom: 32 },
   dayQuiet: { paddingTop: 8, paddingBottom: 16 },
-  light: { left: -150, top: -110 },
+  light: { left: -150, top: -100 },
   lightQuiet: { left: -110, top: -62 },
   dayName: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet, marginBottom: 3 },
   seq: { fontFamily: font.bodySemi, fontSize: 19, lineHeight: 26 },
   seqQuiet: { fontSize: 16, lineHeight: 22 },
   then: { fontFamily: font.body, fontSize: 13, color: 'rgba(235, 235, 245, 0.45)' },
   text: { fontFamily: font.body, fontSize: 15.5, lineHeight: 23, color: JN.page, marginTop: 6 },
+  moreBtn: { alignSelf: 'flex-start', paddingTop: 8 },
+  more: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet },
   bar: {
     height: 74,
     borderRadius: 37,

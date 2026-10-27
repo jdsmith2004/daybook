@@ -1,10 +1,11 @@
 /* A short message after an action: a line of words, or what the action earned ("+15 points", and why). After a slip it is
    said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. It sits at the top, over the
    title, where things are read and never tapped, so it never covers the answers or buttons low on the screen. A message from before SOS
-   or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off. */
+   or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off.
+   A message that offers Undo is the one toast that is touched, so it sits low, where the thumb is, above the tab bar. */
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,7 +19,7 @@ const MOMENT = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|l
 const HUSH = /^\/(sos|log)(\/|$)/;
 
 export function Toast() {
-  const { toast } = useStore();
+  const { toast, hush } = useStore();
   const c = useTheme();
   const inset = useSafeAreaInsets();
   const path = usePathname();
@@ -47,6 +48,31 @@ export function Toast() {
       </View>
     );
   }
+  if (toast.undo) {
+    const undo = toast.undo;
+    return (
+      <View pointerEvents="box-none" style={[s.wrap, { bottom: inset.bottom + 96 }]}>
+        <View accessibilityLiveRegion="polite" role="status" style={[s.toast, s.win, { backgroundColor: c.ink }]}>
+          <T v="label" style={{ color: c.bg, flexShrink: 1 }}>
+            {toast.text}
+          </T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={'Undo. ' + toast.text}
+            hitSlop={12}
+            onPress={() => {
+              hush();
+              undo();
+            }}
+            style={({ pressed }) => [s.undo, { borderColor: c.bg, opacity: pressed ? 0.7 : 1 }]}>
+            <T v="label" style={{ color: c.bg }}>
+              Undo
+            </T>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
   return (
     <View pointerEvents="none" style={[s.wrap, at]}>
       <View accessibilityLiveRegion="polite" role="status" style={[s.toast, { backgroundColor: c.ink }]}>
@@ -62,4 +88,5 @@ const s = StyleSheet.create({
   wrap: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   toast: { maxWidth: 420, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 16 },
   win: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  undo: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5 },
 });

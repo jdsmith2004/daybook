@@ -22,6 +22,8 @@ import type { DayKey, Days, Settings } from './types';
 export const SITE_PAGES = { support: SITE_URL + '/support.html', privacy: SITE_URL + '/privacy.html', terms: SITE_URL + '/terms.html' };
 /** where people write for help (the owner's choice, October 19, 2026) */
 export const SUPPORT_EMAIL = 'jeffreydsmith.cs@gmail.com';
+/** the last words of a message about something that went wrong, so a person always has somewhere to go */
+export const STUCK_LINE = 'If it keeps happening, write to ' + SUPPORT_EMAIL + '.';
 /** days since the start before Today first asks */
 export const TIP_FIRST = 7;
 /** days after the card was answered before Today asks again */

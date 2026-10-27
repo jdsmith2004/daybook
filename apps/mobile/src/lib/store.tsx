@@ -95,11 +95,22 @@ interface StoreValue {
   replaceFromAccount: (snap: Snapshot) => Promise<void>;
   /** what is showing at the bottom: a line of words, or the points an action earned */
   toast: Toast | null;
-  say: (msg: string) => void;
+  /** a short message; with undo, it stays a little longer and carries an Undo the person can tap (built once, the
+      premium pass of October 26, 2026) */
+  say: (msg: string, undo?: () => void) => void;
+  /** hides the message now (after its Undo was tapped) */
+  hush: () => void;
   /** the celebration host tells the store whether a full-screen moment is open, and takes what was earned */
   hooks: { current: Hooks };
 }
-export type Toast = { text: string } | { pts: number; why: string; quiet: boolean };
+export type Toast = { text: string; undo?: () => void } | { pts: number; why: string; quiet: boolean };
+
+/** how long a message stays: long enough to read (a long line gets longer), longer still when it offers Undo */
+export function toastMs(t: Toast): number {
+  if ('pts' in t) return 3800;
+  if (t.undo) return 8000;
+  return Math.min(7000, Math.max(3200, 1800 + t.text.length * 45));
+}
 export interface Hooks {
   inScene: () => boolean;
   /** newly earned things to celebrate; gives back true when they were shown (or said) */
@@ -150,7 +161,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const show = useCallback((t: Toast) => {
     setToast(t);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 'pts' in t ? 3800 : 3200);
+    toastTimer.current = setTimeout(() => setToast(null), toastMs(t));
   }, []);
 
   /* After each action (legacy afterAction): a run that was just saved, anything newly earned (a level, a badge), and then
@@ -165,12 +176,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 0);
   }, []);
   const say = useCallback(
-    (msg: string) => {
-      noteRef.current = msg;
-      schedule();
+    (msg: string, undo?: () => void) => {
+      /* an offer to undo is shown on its own, after what the change itself would say */
+      if (undo) setTimeout(() => show({ text: msg, undo }), 0);
+      else {
+        noteRef.current = msg;
+        schedule();
+      }
     },
-    [schedule],
+    [schedule, show],
   );
+  const hush = useCallback(() => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(null);
+  }, []);
 
   /* the dirty list as it goes to storage: this copy's own, with any marks another copy of Daybook (a second browser tab)
      left there (core mergeDirty). Read just before the write, so the two copies do not wipe out each other's marks. */
@@ -429,9 +448,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       replaceFromAccount,
       toast,
       say,
+      hush,
       hooks,
     }),
-    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, toast, say],
+    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, toast, say, hush],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

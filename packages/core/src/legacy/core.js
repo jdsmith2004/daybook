@@ -255,7 +255,11 @@ function normSeen(s){
  /* lad = which ladder the saved level counts on (3 = the 30-level ladder, 4 = the 60-level one in levels.ts). A level saved on
     an older ladder is moved over here, to the level that keeps at least its points, so nothing shown ever goes down. */
  const lad=Math.max(0,Math.min(99,parseInt(s.lad,10)||0));
- return {badges:arr(s.badges),quests:arr(s.quests),level:moveSeenLevel(parseInt(s.level,10)||1,lad),full:isKey(s.full)?s.full:null,lad:Math.max(lad,LADDER_V)};
+ const o={badges:arr(s.badges),quests:arr(s.quests),level:moveSeenLevel(parseInt(s.level,10)||1,lad),full:isKey(s.full)?s.full:null,lad:Math.max(lad,LADDER_V)};
+ /* the most points ever shown, kept when a change would lower them (miles.ts keepPoints): points are never taken away */
+ const pts=parseInt(s.pts,10);
+ if(pts>0)o.pts=pts;
+ return o;
 }
 function normLearn(l){
  const src=(l&&typeof l==='object'&&l.notes&&typeof l.notes==='object')?l.notes:{},notes={};
@@ -989,7 +993,7 @@ function gameCompute(days,st,reviews,today){
  const tot=totalPoints(days,st,reviews,today),S=gameStats(days,st,reviews,today);
  /* a level you reached is yours to keep: fixing an old answer or deleting a mistaken entry can lower the raw points,
     but never below the floor of the highest level already seen */
- const floor=st.seen?LEVELS[Math.max(1,Math.min(LEVELS.length,st.seen.level))-1][0]:0;
+ const floor=st.seen?Math.max(LEVELS[Math.max(1,Math.min(LEVELS.length,st.seen.level))-1][0],st.seen.pts||0):0;
  const pts=Math.max(tot.pts,floor),lvl=levelOf(pts);
  S.level=lvl.n;
  const badges=BADGES.map(b=>{const raw=b.now(S);return {id:b.id,name:b.name,desc:b.desc,icon:b.icon,tone:b.tone,goal:b.goal,now:Math.min(raw,b.goal),done:raw>=b.goal}});

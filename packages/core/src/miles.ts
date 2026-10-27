@@ -118,6 +118,19 @@ const dpMap = (days: Days, key: DayKey, st: Settings) => {
   return o;
 };
 /** the points gained between two logs, on the days that changed (and the day after each: the morning questions count there) */
+/** Points are never taken away (CLAUDE.md). Before a change that lowers them (an entry deleted, a ride changed to a
+    slip), the points shown until now are kept as a floor (seen.pts), so the total and the level hold. Gives back the
+    settings with that floor, or null when the points did not go down. A take-back (Undo right after a mistaken log) does
+    not call this: those points were never really earned. */
+export function keepPoints(before: Days, after: Days, st: Settings, reviews: Reviews, tk: DayKey): Settings | null {
+  const was = gameCompute(before, st, reviews, tk).pts;
+  if (was <= (st.seen?.pts || 0)) return null;
+  if (gameCompute(after, st, reviews, tk).pts >= was) return null;
+  return changeSettings(st, (s) => {
+    s.seen = { ...(s.seen || { badges: [], quests: [], level: 1, full: null, lad: LADDER_V }), pts: was };
+  });
+}
+
 export function winGain(before: Days, after: Days, st: Settings, keys: DayKey[]) {
   const by: Record<string, number> = {};
   let pts = 0;

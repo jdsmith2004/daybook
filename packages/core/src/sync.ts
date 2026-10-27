@@ -334,6 +334,8 @@ function keepEarned(win: Settings, lose: Settings): Settings {
     const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
     s.badges = [...new Set([...s.badges, ...lose.seen.badges])];
     s.level = Math.max(s.level, lose.seen.level);
+    const pts = Math.max(s.pts || 0, lose.seen.pts || 0);
+    if (pts) s.pts = pts;
     out.seen = s;
   }
   out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };

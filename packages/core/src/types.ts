@@ -160,7 +160,9 @@ export interface Settings {
   menu: string[];
   wind: string[];
   celebrate: boolean;
-  seen: { badges: string[]; quests: string[]; level: number; full: DayKey | null; lad: number } | null;
+  /** what was already celebrated, and the floors that keep earned things earned. pts: the most points ever shown, kept
+      when a change would lower them (miles.ts keepPoints) */
+  seen: { badges: string[]; quests: string[]; level: number; full: DayKey | null; lad: number; pts?: number } | null;
   opts: { trig: { id: string; t: string; off?: true }[]; did: { id: string; t: string; off?: true }[] };
   cleanMode: CountMode;
   /** switch for me: Daybook moves between step down and counting days as the log changes (false: leave it) */

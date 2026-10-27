@@ -14,6 +14,7 @@ import {
   savedRuns,
   winGain,
   winWhy,
+  keepPoints,
   type CelItem,
   logicalKey,
   mergeDirty,
@@ -26,12 +27,15 @@ import {
   type RecordId,
   type Settings,
   type Snapshot,
+  STUCK_LINE,
 } from '@daybook/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useNow } from './now';
 
 const P = 'daybook:';
+/** said when a change could not be written to the phone's storage */
+export const SAVE_FAILED = 'That change shows here but could not be saved on this phone. Try again in a moment. ' + STUCK_LINE;
 const DIRTY = P + 'dirty';
 const empty = (): Snapshot => ({ settings: null, days: {}, reviews: {} });
 
@@ -65,6 +69,10 @@ function recordOf(snap: Snapshot, id: RecordId) {
 
 interface StoreValue {
   ready: boolean;
+  /** the log could not be read at launch: nothing is shown or saved until a retry works, so a fresh start never writes
+      over the real log */
+  loadFailed: boolean;
+  retryLoad: () => void;
   snap: Snapshot;
   settings: Settings | null;
   /** today, as the log counts it (it rolls over at the new-day hour) */
@@ -76,7 +84,7 @@ interface StoreValue {
   apply: (c: Change | ((st: Settings) => Change)) => void;
   /** change anything: the function gets the whole log and gives back a new one (from the @daybook/core change functions).
       Only the records that changed are saved. Returns the new log. */
-  update: (fn: (s: Snapshot) => Snapshot) => Snapshot;
+  update: (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean }) => Snapshot;
   /** replace everything (a restored backup, or a first start) */
   replace: (snap: Snapshot, changed: RecordId[]) => Promise<void>;
   /** erase everything on this device */
@@ -122,6 +130,10 @@ const Ctx = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadTry, setLoadTry] = useState(0);
+  /* nothing is written until the log has been read, so a failed read can never be followed by a save over it */
+  const loaded = useRef(false);
   const [snap, setSnap] = useState<Snapshot>(empty);
   const [dirty, setDirty] = useState<Record<string, number>>({});
   const [toast, setToast] = useState<Toast | null>(null);
@@ -153,10 +165,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         seenRef.current = { ...d };
         setSnap(s);
         setDirty(d);
+        loaded.current = true;
+        setLoadFailed(false);
       })
-      .catch(() => undefined)
+      .catch(() => setLoadFailed(true))
       .finally(() => setReady(true));
-  }, []);
+  }, [loadTry]);
+  const retryLoad = useCallback(() => setLoadTry((n) => n + 1), []);
 
   const show = useCallback((t: Toast) => {
     setToast(t);
@@ -214,6 +229,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /* writes the changed records, and marks them not synced yet (in the same write, so a record is never saved unmarked) */
   const persist = useCallback(
     async (next: Snapshot, ids: RecordId[]) => {
+      if (!loaded.current) throw new Error('The log is not open yet.');
       const d = { ...dirtyRef.current };
       const sets: [string, string][] = [];
       const dels: string[] = [];
@@ -238,9 +254,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const next = { ...snapRef.current, settings: st };
       snapRef.current = next;
       setSnap(next);
-      persist(next, ['settings']).catch(() => undefined);
+      persist(next, ['settings']).catch(() => say(SAVE_FAILED));
     },
-    [persist],
+    [persist, say],
   );
   flushRef.current = () => {
     const note = noteRef.current;
@@ -309,7 +325,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const next = { ...cur, settings: ch.st };
       snapRef.current = next;
       setSnap(next);
-      persist(next, ['settings']).catch(() => say('Could not save that change on this device.'));
+      persist(next, ['settings']).catch(() => say(SAVE_FAILED));
       if (ch.toast) say(ch.toast);
       else schedule();
     },
@@ -317,17 +333,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const update = useCallback(
-    (fn: (s: Snapshot) => Snapshot) => {
+    (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean }) => {
       const cur = snapRef.current;
-      const next = fn(cur);
+      let next = fn(cur);
       if (next === cur) return cur;
+      /* points are never taken away: a change that removes or changes an entry keeps the points shown until now as a
+         floor (core keepPoints). takeBack: the Undo right after a mistaken log, whose points were never really earned. */
+      if (!opts?.takeBack && next.settings && next.settings === cur.settings) {
+        const lowered = Object.keys(cur.days).some((k) => {
+          const a = cur.days[k]?.events || [];
+          const b = next.days[k]?.events || [];
+          return a.length > 0 && b.length <= a.length && next.days[k] !== cur.days[k] && JSON.stringify(a) !== JSON.stringify(b);
+        });
+        const kept = lowered ? keepPoints(cur.days, next.days, next.settings, next.reviews, logicalKey(Date.now(), next.settings.rollover)) : null;
+        if (kept) next = { ...next, settings: kept };
+      }
       const ids: RecordId[] = [];
       if (next.settings !== cur.settings) ids.push('settings');
       for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)])) if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
       for (const k of new Set([...Object.keys(cur.reviews), ...Object.keys(next.reviews)])) if (cur.reviews[k] !== next.reviews[k]) ids.push(`reviews/${k}`);
       snapRef.current = next;
       setSnap(next);
-      if (ids.length) persist(next, ids).catch(() => say('Could not save that change on this device.'));
+      if (ids.length) persist(next, ids).catch(() => say(SAVE_FAILED));
       /* what this change earned (legacy winNote): the points gained on the changed days; a slip logged is said quietly */
       const keys = ids.filter((x) => x.startsWith('days/')).map((x) => x.slice(5));
       if (keys.length && next.settings) {
@@ -431,6 +458,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo<StoreValue>(
     () => ({
       ready,
+      loadFailed,
+      retryLoad,
       snap,
       settings: snap.settings,
       tk,
@@ -451,7 +480,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       hush,
       hooks,
     }),
-    [ready, snap, tk, now, dirty, apply, update, replace, erase, current, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, toast, say, hush],
+    [
+      ready,
+      snap,
+      tk,
+      now,
+      dirty,
+      apply,
+      update,
+      replace,
+      erase,
+      current,
+      mergeFromAccount,
+      ackPushed,
+      markAllDirty,
+      restamp,
+      replaceFromAccount,
+      toast,
+      say,
+      hush,
+    ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

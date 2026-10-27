@@ -6,7 +6,7 @@ import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/6
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan } from '@daybook/core';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { CelebrateHost } from '@/components/celebrate';
 import { LockGate } from '@/components/lock';
+import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
 import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
@@ -99,9 +100,25 @@ function WebChrome({ bg }: { bg: string }) {
   return null;
 }
 
+/* a screen that broke shows this instead of a blank page, wherever it happened (SOS included): the log is safe on the
+   phone, and Try again draws the screen again */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <Oops
+      title="Something broke on this screen"
+      lines={[
+        'It was Daybook, not you. Your log is safe on this phone.',
+        'Try again, and if it happens again, closing and reopening Daybook usually clears it.',
+      ]}
+      onRetry={() => retry().catch(() => undefined)}
+      subject="Daybook: a screen broke"
+    />
+  );
+}
+
 function Shell() {
   const c = useTheme();
-  const { ready, snap } = useStore();
+  const { ready, snap, loadFailed, retryLoad } = useStore();
   useKeepPulse(ready, snap.days);
   /* the day's first open, for "How are you feeling today?" on Today (lib/day-open.ts) */
   useWatchOpens(ready, snap.settings?.rollover ?? 4, !!snap.settings);
@@ -120,6 +137,18 @@ function Shell() {
   const base = c.scheme === 'dark' ? DarkTheme : DefaultTheme;
   const nav = { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.ink, primary: c.accent, border: c.line } };
   if (!go) return null;
+  if (loadFailed)
+    return (
+      <Oops
+        title="Your log could not be opened"
+        lines={[
+          'The phone did not let Daybook read its storage just now. Nothing was changed, and nothing will be saved until it opens.',
+          'Try again. If it still does not open, close Daybook fully and reopen it.',
+        ]}
+        onRetry={retryLoad}
+        subject="Daybook: my log does not open"
+      />
+    );
   return (
     <ThemeProvider value={nav}>
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />

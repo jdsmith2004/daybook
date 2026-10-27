@@ -17,6 +17,7 @@ import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { setupKeep } from '@/lib/setup-keep';
 import { HelpLine } from '@/components/help-line';
+import { restoredWords, WORDS } from '@/lib/words';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 
@@ -48,7 +49,7 @@ export function Welcome() {
       try {
         b = readBackup(text);
       } catch {
-        say('That file is not a Daybook backup.');
+        say(WORDS.notBackup);
         return;
       }
       const { snap: next, restored } = restoreBackup(current().snap, b);
@@ -57,7 +58,7 @@ export function Welcome() {
         next,
         toRecords(next).map((r) => r.id as RecordId),
       );
-      say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
+      say(restoredWords(restored));
     } catch {
       say(SAVE_FAILED);
     } finally {

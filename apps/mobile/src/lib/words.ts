@@ -14,7 +14,12 @@ export const WORDS = {
   copyFailed: 'Could not copy. Press and hold the text to copy it.',
   countsOn: 'Counts are on. Thank you. That helps the next person.',
   countsOff: 'Counts are off. Nothing is sent.',
+  /** a file picked to restore that is not a backup */
+  notBackup: 'That file is not a Daybook backup. Nothing was changed.',
 } as const;
+
+/** said after a backup is restored */
+export const restoredWords = (n: number) => `Restored ${n} day${n === 1 ? '' : 's'}.`;
 
 /** copies words and says so (or says how to copy them by hand); true when it worked */
 export function copyText(text: string, say: (m: string) => void, ok: string = WORDS.copied): Promise<boolean> {

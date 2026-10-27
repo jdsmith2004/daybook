@@ -95,11 +95,11 @@ import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
-import { useStore } from '@/lib/store';
+import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Sky, type Tone } from '@/lib/theme';
-import { WORDS } from '@/lib/words';
+import { restoredWords, WORDS } from '@/lib/words';
 
 type Flow = SetupFlow;
 
@@ -259,14 +259,21 @@ export default function Setup() {
     try {
       const text = await pickBackupText();
       if (text == null) return;
-      const { snap: next, restored } = restoreBackup(current().snap, readBackup(text));
+      let b;
+      try {
+        b = readBackup(text);
+      } catch {
+        say(WORDS.notBackup);
+        return;
+      }
+      const { snap: next, restored } = restoreBackup(current().snap, b);
       await replace(
         next,
         toRecords(next).map((r) => r.id as RecordId),
       );
-      say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
+      say(restoredWords(restored));
     } catch {
-      say('That file is not a Daybook backup.');
+      say(SAVE_FAILED);
     }
   };
 

@@ -129,9 +129,9 @@ except the Undo right after a mistaken log; the toast carries Undo; the X goes o
 - "Use my account's log here" keeps this phone's own log for 7 days on the phone (Settings, Sync, Bring this phone's log
   back). On the web this uses the browser's storage, so a very large log may not fit; the choice still goes ahead.
 
-**Left for later:** the slip from the pause tool (tools/pause.tsx) still closes on Undo instead of reopening SOS; Today
-itself has no Try again for sync (Settings, the welcome page and the account sheet do); the setup's backup restore (owner
-builds only) still has its own words.
+**Finished too (October 26):** Undo on a slip from the pause tool on its own opens SOS with its tools; Today shows a quiet
+strip with Try again (or Sign in) when sync has not worked for more than a day, and nothing for a short time offline;
+the setup's backup restore uses the shared words, like Settings and the welcome page.
 
 ## Logging a slip, rebuilt from the ground up (the owner, October 25, 2026; on branch slip-redesign, not merged)
 

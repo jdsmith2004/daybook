@@ -69,6 +69,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
+import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
 
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
@@ -263,6 +264,7 @@ export default function Today() {
       }}
       action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
       <NotifyBanner />
+      <SyncStrip />
       <Hero g={g} snap={snap} tk={tk} now={now}>
         <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
         {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}

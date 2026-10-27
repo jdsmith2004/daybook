@@ -76,7 +76,7 @@ import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
-import { WORDS } from '@/lib/words';
+import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
 type Sec = 'sync' | 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'lock' | 'data';
@@ -156,7 +156,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       try {
         b = readBackup(text);
       } catch {
-        say('That file is not a Daybook backup.');
+        say(WORDS.notBackup);
         return;
       }
       const { snap: next, restored } = restoreBackup(current().snap, b);
@@ -164,7 +164,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         next,
         toRecords(next).map((r) => r.id as RecordId),
       );
-      say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
+      say(restoredWords(restored));
     } catch {
       say(SAVE_FAILED);
     } finally {

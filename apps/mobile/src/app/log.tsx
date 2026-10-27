@@ -287,6 +287,12 @@ export default function Log() {
       say('Removed. Nothing was saved. SOS is open again.');
       return;
     }
+    /* the same from the pause tool on its own: the urge is still there, so the person lands in SOS with every tool */
+    if (from === 'pause' && outcome === 'slipped') {
+      router.replace('/sos');
+      say('Removed. Nothing was saved. SOS is open, with all its tools.');
+      return;
+    }
     closeAll();
     say('Removed. Nothing was saved.');
   };

@@ -7,10 +7,13 @@
    When it may ask: after the setup, once a day on the day's first open (dayOpenNext, which the app keeps on the device),
    and never after a slip: not on a day with a slip logged, and not while a Rekindle is open (the quest, the sunrise check
    and the days its run waits to be saved). The app also keeps it off SOS and every full-screen moment: it opens only over
-   Today. Checked by test/day-feel.test.ts. */
+   Today. It never opens by itself in the person's hard hours (risk.ts, and the two hours before them, when Today shows the
+   hard hours card), or once the wind-down has started (an hour before screens-off, until the new day): at 11 PM with an
+   urge, a question about the day is in the way (dayFeelQuiet). Checked by test/day-feel.test.ts. */
 import { sumDay } from './legacy/core.js';
 import { changeDay } from './mutate';
 import { rkActive, sunriseDue } from './rekindle';
+import { riskDay } from './risk';
 import type { Day, DayKey, Days, Settings } from './types';
 
 export type DayFeelStep = 1 | 2 | 3 | 4 | 5;
@@ -58,6 +61,24 @@ export function dayFeelDue(days: Days, st: Settings | null, tk: DayKey): boolean
   if (sumDay(days[tk]).slipped) return false;
   if (rkActive(days, st, tk) || sunriseDue(days, st, tk)) return false;
   return true;
+}
+
+/** whether now is a time the question stays closed, even on the day's first open: the hard hours of today's log day (and
+    the two hours before them), or from the start of the wind-down (an hour before screens-off) until the new day starts.
+    The day's question is not asked at all then; the next day asks again, as usual. */
+export function dayFeelQuiet(days: Days, st: Settings | null, tk: DayKey, now: number): boolean {
+  if (!st) return true;
+  const m = /^(\d\d):(\d\d)$/.exec(String(st.screensOff || ''));
+  if (m) {
+    const roll = (st.rollover ?? 4) * 60;
+    const rel = (x: number) => (((x - roll) % 1440) + 1440) % 1440;
+    const d = new Date(now);
+    const wind = (+m[1] * 60 + +m[2] - 60 + 1440) % 1440;
+    /* a screens-off set early in the log day (a night shift) would make nearly the whole day quiet: only an evening one counts */
+    if (rel(wind) >= 10 * 60 && rel(d.getHours() * 60 + d.getMinutes()) >= rel(wind)) return true;
+  }
+  const r = riskDay(days, st, tk, now);
+  return !!r && (r.phase === 'soon' || r.phase === 'during');
 }
 
 /** the first open of a day, kept on the device: `last` is the day the app was last opened. Gives the day to keep, and the

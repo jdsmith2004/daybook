@@ -48,10 +48,31 @@ CLAUDE.md's thumb-zone and words rules still come first; these add to them.
 ## Flow between tools
 
 - **The X goes one step back.** A tool opened from SOS closes back to SOS's tool list (to pick another), never to the
-  start of SOS or to Today. A tool opened on its own closes to where it was opened.
+  start of SOS or to Today: `useToolExit` sets the SOS step to `tools`, and SOS opens its More sheet. A tool opened on
+  its own closes to where it was opened.
 - **Lead on.** When a tool's result is another tool (an idea that is a walk, a need that is "lonely"), offer that tool
   as a button. From SOS there is always a quiet way back to the tools.
-- **Every finish** goes through `useFinishTool`, so it counts, and from SOS goes on to "How is it now?".
+- **Every finish** goes through `useFinishTool`, so it counts, and from SOS goes back to SOS, which asks one quiet
+  question: "How is it now?" (step `after`). Two big choices sit low: **Better** opens its own page with It passed as the
+  main button (and Keep going under it, back to the ride); **Still strong** marks the round and opens the tool list.
+  Nothing else is asked: the ride itself never stops to ask how it is going.
+- **Doors between the care tools.** SOS, Already happened and Planning a slip? lead to each other: SOS's More holds Talk
+  it through at every hour (and Go to bed at night, as a second row); every Talk it through page has the SOS pill in its
+  top bar (`SosPill`, as the setup has), which goes back to an SOS that is still open under it.
+
+## Endings
+
+- **One ending for each kind of moment.** An urge ridden out ends on the same celebration wherever it is logged: the
+  ride's It passed, the 10-minute pause's It passed (from SOS or on its own) and Already happened, I rode it out all use
+  `RodeOut` (`components/rode-out.tsx`): the flame with its burst, confetti, how long it took, how many have been ridden
+  out, what helped (the moves of an SOS, or what you did) and what set it off, each one tap or none.
+- **A slip always reaches the comeback.** I slipped in SOS, the pause, Already happened and an eyes-open go-ahead in Talk
+  it through all go on to Rekindle (`app/log.tsx`), so every one ends warm, with the flame and a plan for next time. A slip
+  that is already saved (the go-ahead's look back) starts at the feeling before it, with no hold.
+- **Done is always in reach.** On an ending with a long card, Done is pinned at the bottom (`SceneFrame`'s `pin`) while
+  the card scrolls, on the smallest phone too. Confetti is clipped to the screen, so the page never scrolls sideways.
+- **A long run is never "down to embers".** After a slip, the words lead with what is permanent ("Your 39 days are yours
+  for good."), and the quest is a way to keep counting, never a rescue. Nothing about a run says "for now".
 
 ## Checking
 

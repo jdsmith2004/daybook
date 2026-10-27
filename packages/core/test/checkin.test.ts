@@ -80,9 +80,9 @@ describe('what shows', () => {
     expect(moodOf({ m: 9 })).toBe(9);
     expect(moodOf(null)).toBeNull();
   });
-  it('the check-in stop says the mood and stress once saved', () => {
+  it('the check-in stop says the mood, the urges and stress once saved', () => {
     const d = saveCheckin({}, tk, { ...blank(), md: 7, u: 2, s: 3 }, 1);
-    expect(stopTiles(d, st, tk, at(21)).tiles.find((t) => t.k === 'evening')!.line).toBe('Mood 7 · Stress 3');
+    expect(stopTiles(d, st, tk, at(21)).tiles.find((t) => t.k === 'evening')!.line).toBe('Mood 7 · Urges 2 · Stress 3');
     const u = saveCheckin({}, tk, { ...blank(), u: 2 }, 1);
     expect(stopTiles(u, st, tk, at(21)).tiles.find((t) => t.k === 'evening')!.line).toBe('Urges 2');
   });

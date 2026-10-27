@@ -2,7 +2,7 @@
    hours as Today), what sets it off, what is different on hard days, and the sentences at the top. */
 import { isDayHours } from '../src/view';
 import { describe, expect, it } from 'vitest';
-import { normSettings } from '../src/legacy/core.js';
+import { computeMetrics, normSettings } from '../src/legacy/core.js';
 import { addEvent } from '../src/mutate';
 import { inTen, patDiffs, patGaps, patInsights, patKeys, patNowLine, patRideOut, patTriggerLines, patTriggers, patWeeks, patWhen } from '../src/pattern';
 import { riskWindow } from '../src/risk';
@@ -30,12 +30,21 @@ describe('further apart', () => {
     for (const k of ['2026-08-05', '2026-08-07', '2026-08-10', '2026-08-16', '2026-08-26', '2026-09-12']) d = ev(d, k, 'slipped', '22:00');
     const g = patGaps(d, st, '2026-09-20');
     expect(g.runs).toEqual([4, 1, 2, 5, 9, 16]);
-    expect(g.now).toBe(7);
+    /* today counts while it has no slip, as the run does */
+    expect(g.now).toBe(8);
     expect(g.slips).toBe(6);
     expect(g.trend).toBe('apart');
-    expect(patNowLine(g, '2026-09-20', '2026-09-12')).toBe('Now: 7 clean days since your last slip, and counting.');
-    expect(patNowLine({ ...g, now: 0 }, '2026-09-13', '2026-09-12')).toBe('Your last slip was yesterday. Today is day 1 of the next stretch.');
+    expect(patNowLine(g, '2026-09-20', '2026-09-12')).toBe('Now: 8 clean days since your last slip, and counting.');
+    expect(patNowLine({ ...g, now: 1 }, '2026-09-13', '2026-09-12')).toBe('Your last slip was yesterday. Today is day 1 of the next stretch.');
     expect(patNowLine({ ...g, now: 0 }, '2026-09-12', '2026-09-12')).toBe('Your last slip was today. The next stretch starts now.');
+  });
+  it('the stretch going now and the run agree: both count today while it has no slip', () => {
+    const d = ev({}, '2026-10-10', 'slipped', '23:30');
+    const s2 = normSettings({ start: '2026-09-20', day1: '2026-09-27' });
+    expect(patGaps(d, s2, '2026-10-27').now).toBe(17);
+    expect((computeMetrics(d, s2, '2026-10-27') as { cur: number }).cur).toBe(17);
+    /* a slip today: the stretch is closed, and the next starts */
+    expect(patGaps(ev(d, '2026-10-27', 'slipped', '08:00'), s2, '2026-10-27').now).toBe(0);
   });
   it('says so gently when they come closer, and nothing without enough', () => {
     let d: Days = {};

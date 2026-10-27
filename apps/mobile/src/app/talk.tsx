@@ -9,7 +9,10 @@
      you expect it to give, come back afterwards). Going ahead is saved the moment it is chosen, so it waits for a look
      back even when the screen is closed.
    Two more ways in: ?decide=<id> (a "decide later" time has come: the paths again) and ?look=<id> (looking back: did
-   it hold, or how was it really, with your own numbers over time). Going ahead goes in the log as an honest slip.
+   it hold, or how was it really, with your own numbers over time). Going ahead goes in the log as an honest slip, and
+   the look back goes on into Rekindle's comeback at the feeling before it (log.tsx), so it ends warm: the flame and a
+   plan for next time, the same as a slip logged from Already happened.
+   The SOS pill sits in the top bar on every page: someone talking it through can be in the middle of an urge.
    And ?prep=1, "Make a plan for tonight" from the hard hours card: a short plan for someone who may be doing well, with
    no slip in mind. No signs, no research, no paths: what usually makes these hours hard (the needs), what to do instead
    (the moves), and the moment (their start, while it is still ahead), saved as a change plan (marked pr, so it never
@@ -59,6 +62,7 @@ import {
   talkWhys,
   riskDay,
   riskPlanLabel,
+  slipAfterTalk,
   type Talk,
   type TalkArt,
   type TalkCard,
@@ -67,7 +71,7 @@ import {
   type TalkPath,
   type TalkSign,
 } from '@daybook/core';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -77,6 +81,7 @@ import { Appear } from '@/components/appear';
 import { Link } from '@/components/choices';
 import { OwnChip, OwnField } from '@/components/own';
 import { SafeTextButton } from '@/components/safe-text';
+import { SosPill } from '@/components/sos-pill';
 import { KnownLine, Sources } from '@/components/research';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
@@ -297,8 +302,13 @@ export default function TalkIt() {
     setDir(1);
     setStep('done');
   };
+  /* the slip a go-ahead looked back on, and the points before it: the comeback goes on from it */
+  const [slipped, setSlipped] = useState<{ k: string; id: string; pts0: number } | null>(null);
   const finishLook = (a: typeof after) => {
-    update((s0) => ({ ...s0, days: lookBack(s0.days, talk.id, a, tk) }));
+    const pts0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
+    const days = update((s0) => ({ ...s0, days: lookBack(s0.days, talk.id, a, tk) })).days;
+    const sl = a.went ? slipAfterTalk(days, day, talk.t, tk) : null;
+    setSlipped(sl ? { ...sl, pts0 } : null);
     buzz(a.went ? 'save' : 'lit');
     if (!a.went) play('chime');
     setHist([]);
@@ -1038,11 +1048,24 @@ export default function TalkIt() {
             <T style={s.c}>{talkEvidenceLine(ev)}</T>
           </Appear>
           <Appear delay={460} by={8} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-            <T>It is in your log as a slip: data, not a reset. Nothing you built is gone.</T>
+            <T>It is in your log as a slip: data, not a reset. Nothing you built is gone. Next: what you felt before it, and a plan for next time.</T>
           </Appear>
         </View>
         <Dock>
-          <Button label="Done" onPress={closeAll} />
+          {slipped ? (
+            <Button
+              label="Next"
+              onPress={() =>
+                /* on into Rekindle at the feeling before it: the slip is saved already, so there is nothing to hold */
+                router.replace({
+                  pathname: '/log',
+                  params: { date: slipped.k, evId: slipped.id, outcome: 'slipped', step: 'slBefore', from: 'talk', pts0: String(slipped.pts0) },
+                })
+              }
+            />
+          ) : (
+            <Button label="Done" onPress={closeAll} />
+          )}
         </Dock>
       </>
     ) : (
@@ -1087,6 +1110,7 @@ export default function TalkIt() {
       dots={i < 0 ? null : { n: flow.length, i, label: 'Step ' + (i + 1) + ' of ' + flow.length }}
       onBack={step !== 'done' && step !== 'lEnd' && (hist.length || (step === 'mind' && ci > 0)) ? back : null}
       onClose={close}
+      topRight={<SosPill />}
       footer={foot}>
       {step === 'mind' ? (
         body

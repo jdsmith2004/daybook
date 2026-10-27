@@ -1,5 +1,6 @@
 /* The 10-minute pause. The timer is kept on this device, so it keeps counting when the app is closed. At the end: how is the urge
-   now? Ported from the legacy SCENES.pause, creditPause and the pause part of ciPick. */
+   now? It passed ends on the one celebration every urge ridden out gets (rode-out.tsx); Still strong, from SOS, opens SOS's
+   tools again; I slipped goes on to Rekindle. Ported from the legacy SCENES.pause, creditPause and the pause part of ciPick. */
 import {
   addEvent,
   blankP,
@@ -13,8 +14,8 @@ import {
   rkStepFor,
   rkWaitOf,
   trigFits,
-  urAnswer,
   urEntry,
+  urMark,
   urWon,
   withDay,
   type Outcome,
@@ -30,6 +31,7 @@ import { useSeconds } from '@/components/orb';
 import { Button, Card, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
+import { count } from '@/lib/pulse';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
@@ -39,7 +41,7 @@ import { useTheme } from '@/lib/theme';
 import { BEAT_BREATH, ToolTimer } from './timer';
 import type { ToolProps } from './types';
 
-export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
+export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }) {
   const nextTool = useNextTool();
   const { snap, update, say } = useStore();
   const c = useTheme();
@@ -107,28 +109,34 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     if (sos.ur) {
       /* started from SOS: the pause is one more round, and SOS carries on (the entry keeps SOS's start time) */
       sos.setTimer(null);
-      const u = { ...sos.ur, used: sos.ur.used.concat('pause'), roundDone: false };
+      const u = { ...sos.ur, used: sos.ur.used.concat('pause') };
       if (v === 'again') {
-        sos.set(urAnswer(u, 'again'));
+        /* still strong: SOS opens its tools again, as after any tool */
+        sos.set({ ...urMark(u, 's'), step: 'tools' });
         router.back();
         return;
       }
-      const a = urAnswer(u, v);
+      const a = urMark(u, v === 'rode' ? 'p' : 'x');
       const e = urEntry(a, v, st, Date.now(), v === 'rode' && full ? { paused: true } : {});
       let id = '';
-      let days = snap.days;
-      days = update((s) => {
+      let gain = 0;
+      const days = update((s) => {
         const r = addEvent(s.days, e.key, v, e.time, e.fields);
         id = r.id;
+        if (s.settings) gain = gameCompute(r.days, s.settings, s.reviews, e.key).pts - gameCompute(s.days, s.settings, s.reviews, e.key).pts;
         return { ...s, days: r.days };
       }).days;
       sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
-      const step = v === 'slipped' ? rkStepFor(days, e.key) : !e.trig ? 'trigger' : v === 'rode' && !e.did.length ? 'did' : 'done';
+      count(v === 'rode' ? 'urge_logged' : 'slip_logged');
       sos.end();
+      if (v === 'rode' && won) {
+        won({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain: Math.max(0, gain) + (t.gain || 0), sos: true });
+        return;
+      }
       router.dismissAll();
       router.push({
         pathname: '/log',
-        params: { date: e.key, evId: id, outcome: v, step, from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) },
+        params: { date: e.key, evId: id, outcome: v, step: rkStepFor(days, e.key), from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) },
       });
       return;
     }
@@ -142,6 +150,7 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
     const did = v === 'rode' ? didIds(['pause']) : [];
     const waited = Math.round((Date.now() - t.start) / 60000);
     let id = '';
+    let pts1 = pts0;
     const days = update((s) => {
       const r = addEvent(s.days, key, v, time, {
         paused: v === 'rode' && full ? true : null,
@@ -149,11 +158,16 @@ export function Pause({ level, now: openedAt }: ToolProps & { now: number }) {
         ...(v === 'slipped' ? { wt: rkWaitOf(waited) } : {}),
       });
       id = r.id;
+      if (s.settings) pts1 = gameCompute(r.days, s.settings, s.reviews, key).pts;
       return { ...s, days: r.days };
     }).days;
     sos.setTimer(null);
-    const step = v === 'slipped' ? rkStepFor(days, key) : 'trigger';
-    router.replace({ pathname: '/log', params: { date: key, evId: id, outcome: v, step, from: 'pause', pts0: String(pts0) } });
+    count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+    if (v === 'rode' && won) {
+      won({ key, id, mins: Math.max(0, waited), moves: [], gain: Math.max(0, pts1 - pts0) + (t.gain || 0) });
+      return;
+    }
+    router.replace({ pathname: '/log', params: { date: key, evId: id, outcome: v, step: rkStepFor(days, key), from: 'pause', pts0: String(pts0) } });
   };
 
   if (mode === 'ready')

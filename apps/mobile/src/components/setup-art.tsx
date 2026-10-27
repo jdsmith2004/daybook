@@ -245,11 +245,11 @@ export function PicDial({ i }: { i: number }) {
       {ring(60, m / 60, c.accent)}
       {m > 60 ? ring(46, (m - 60) / 60, c.violet) : null}
       {m > 120 ? ring(32, (m - 120) / 60, c.coral) : null}
-      <SvgText x={70} y={lab[1] ? 72 : 80} fontSize={lab[1] ? 20 : 34} fontWeight="700" fill={c.ink} textAnchor="middle">
+      <SvgText x={70} y={lab[1] ? 72 : 80} fontSize={lab[1] ? 20 : 34} fontFamily={font.displayBold} fill={c.ink} textAnchor="middle">
         {lab[0]}
       </SvgText>
       {lab[1] ? (
-        <SvgText x={70} y={92} fontSize={10} fontWeight="700" fill={c.muted} textAnchor="middle" letterSpacing={1}>
+        <SvgText x={70} y={92} fontSize={10} fontFamily={font.bodyBold} fill={c.muted} textAnchor="middle" letterSpacing={1}>
           {lab[1]}
         </SvgText>
       ) : null}
@@ -286,8 +286,8 @@ export function PicPeople() {
 export function PicTries({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
+    fontFamily: font.bodyBold,
     fontSize: 10,
-    fontWeight: '700' as const,
     fill: c.muted,
     textAnchor: 'middle' as const,
   };
@@ -333,8 +333,8 @@ export function PicTries({ width = 320 }: { width?: number }) {
 export function PicCurve({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
+    fontFamily: font.bodyBold,
     fontSize: 10,
-    fontWeight: '700' as const,
     fill: c.muted,
     textAnchor: 'middle' as const,
   };
@@ -375,10 +375,10 @@ export function PicSlip({ width = 300 }: { width?: number }) {
         <Circle cx={160} cy={124} r={5} fill={c.muted} />
         <Circle cx={160} cy={56} r={5} fill={c.mint} />
         <Rect x={138} y={2} width={44} height={18} rx={9} fill={c.slip} />
-        <SvgText x={160} y={15} fontSize={10} fontWeight="700" fill="#fff" textAnchor="middle">
+        <SvgText x={160} y={15} fontSize={10} fontFamily={font.bodyBold} fill="#fff" textAnchor="middle">
           SLIP
         </SvgText>
-        <SvgText x={160} y={143} fontSize={10} fontWeight="700" fill={c.muted} textAnchor="middle">
+        <SvgText x={160} y={143} fontSize={10} fontFamily={font.bodyBold} fill={c.muted} textAnchor="middle">
           BACK TO 0
         </SvgText>
       </Svg>

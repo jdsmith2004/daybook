@@ -56,6 +56,8 @@ import { font, toneOf, useTheme } from '@/lib/theme';
 type Pane = 'lessons' | 'tools';
 /** where the next lesson sits on the screen when the page opens: a little above the middle, so its card opens low */
 const AIM = 0.45;
+/** room kept under a stone's opened card: the SOS button rises about 30 points above the tab bar, and a little air */
+const CLEAR = 44;
 
 export default function Learn() {
   const params = useLocalSearchParams<{ pane?: string }>();
@@ -121,6 +123,17 @@ export default function Learn() {
     const t = setTimeout(() => setPlaced(true), 900);
     return () => clearTimeout(t);
   }, [placed]);
+  /* a stone's card opened low on the map: scroll it up until its bottom edge clears the tab bar (and the SOS button that rises
+     above it) */
+  const reveal = (bottom: number) => {
+    const g = geo.current;
+    if (g.map < 0 || g.pane < 0) return;
+    const need = top() + bottom + CLEAR - (g.y + g.h);
+    if (need > 2) {
+      scroll.current?.scrollTo({ y: g.y + need, animated: true });
+      g.y += need;
+    }
+  };
   const walked = useRef(m.walked);
   useEffect(() => {
     if (walked.current === m.walked) return;
@@ -188,6 +201,7 @@ export default function Learn() {
         ) : (
           <LessonsPane
             m={m}
+            onCard={reveal}
             win={view.win}
             hide={view.hide}
             onGeom={(g) => {
@@ -235,7 +249,19 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
 const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
 
 /* ---------- lessons ---------- */
-function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, number]; hide: number; onGeom: (g: { y: number; k: number }) => void }) {
+function LessonsPane({
+  m,
+  win,
+  hide,
+  onGeom,
+  onCard,
+}: {
+  m: LessonMap;
+  win: [number, number];
+  hide: number;
+  onGeom: (g: { y: number; k: number }) => void;
+  onCard: (bottom: number) => void;
+}) {
   const c = useTheme();
   const { snap, tk } = useStore();
   const st = snap.settings!;
@@ -301,6 +327,7 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
           hide={hide}
           sel={sel}
           onSel={setSel}
+          onCard={onCard}
           onGeom={(g) => {
             at.current.k = g.k;
             tell();

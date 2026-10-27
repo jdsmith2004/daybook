@@ -7,6 +7,7 @@
 (function () {
   var FROM_APP = 'daybook.tip.app';
   var PENDING = 'daybook.tipped';
+  var HEARD = 'daybook.tipped.heard';
   var q = new URLSearchParams(location.search);
   var go = q.get('go');
   var id = q.get('session_id');
@@ -51,12 +52,27 @@
     location.replace(to);
     return;
   }
+  var web = './tipped?session_id=' + encodeURIComponent(id);
+  back.href = web;
+  /* the Daybook tab that opened this one answers within a moment (apps/mobile/src/lib/tip.ts): then this tab closes, so the
+     person is back in the Daybook they left; with no answer (that tab was closed), Daybook opens here */
+  var done = false;
+  function open() {
+    if (done) return;
+    done = true;
+    location.replace(web);
+  }
+  window.addEventListener('storage', function (e) {
+    if (e.key !== HEARD || e.newValue !== id || done) return;
+    done = true;
+    say('Thank you for supporting Daybook.', 'Your tip went through. Daybook has it in the other tab.');
+    window.close();
+  });
   try {
     localStorage.setItem(PENDING, id);
   } catch (e) {
-    /* the address below carries it too */
+    open();
+    return;
   }
-  var web = './tipped?session_id=' + encodeURIComponent(id);
-  back.href = web;
-  location.replace(web);
+  setTimeout(open, 1500);
 })();

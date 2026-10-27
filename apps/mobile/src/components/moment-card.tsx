@@ -4,7 +4,7 @@
    button, with the rest of the day named under it. The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames; the moments with their own choices (the hard hours, a talk-through, a counting note,
    a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
-   two overlap. */
+   two overlap. On a short phone (compact) the line naming the rest of the day is left out, so SOS fits above the tab bar. */
 import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -23,11 +23,11 @@ import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
-export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Snapshot; tk: string; now: number }) {
+export function MomentCard({ pick, snap, tk, now, compact }: { pick: MomentPick; snap: Snapshot; tk: string; now: number; compact?: boolean }) {
   return (
     <View style={{ gap: 8 }}>
       <TheCard m={pick.card} then={pick.then} snap={snap} tk={tk} now={now} />
-      {pick.then && BAND.has(pick.card.k) ? (
+      {pick.then && BAND.has(pick.card.k) && !compact ? (
         <T v="small" tone="muted" style={s.thenLine}>
           {pick.then}
         </T>

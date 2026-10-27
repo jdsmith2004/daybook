@@ -11,8 +11,9 @@
 
    The web tip: on a phone it opens in an auth session (expo-web-browser), first at the site's tipped.html, which notes that
    the app opened it and goes on to the Stripe page; after paying, Stripe sends the person back to tipped.html with the
-   Checkout Session id, and the page hands it to the app (daybook://tipped). On the web, the tip page opens in the same tab
-   and comes back to tipped.html, which keeps the id (PENDING) and opens Daybook again, where syncTips claims it. */
+   Checkout Session id, and the page hands it to the app (daybook://tipped). On the web, the tip page opens in a new tab (so
+   the person stays in Daybook) and comes back to tipped.html, which keeps the id (PENDING) and opens Daybook in that tab,
+   where syncTips claims it; the first tab hears of the id through the storage event and claims it too. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   normSup,
@@ -100,6 +101,8 @@ export function setTipHost(h: TipHost | null) {
 const KEPT = 'daybook.sup';
 /** the web tip's Checkout Session id, between Stripe sending the person back and Daybook claiming it (tipped.js) */
 const PENDING = 'daybook.tipped';
+/** the Daybook tab's answer to the tip tab: it heard the id (public/tipped.js reads the same name) */
+const HEARD = 'daybook.tipped.heard';
 let kept: Supporter | null = null;
 let keptRead: Promise<void> | null = null;
 const listeners = new Set<(s: Supporter) => void>();
@@ -215,6 +218,52 @@ const buying = new Set<TipTier>();
 let lastWords = '';
 export const tipWords = (): string => lastWords;
 
+/** the Daybook tab that opened the web tip page: resolves to the record when the tip comes back (the other tab keeps its id in
+    the browser's storage), or to null when the person returns here without one. A tip that finishes after that is still
+    claimed: the storage listener stays, and syncTips thanks the person on screen. */
+let webWatch = false;
+function waitForWebTip(): Promise<Supporter | null> {
+  const onStore = (e: StorageEvent) => {
+    if (!(e.key === PENDING && e.newValue)) return;
+    try {
+      /* tells the tip tab (public/tipped.js) that this tab has the id, so it can close instead of opening a second Daybook */
+      window.localStorage.setItem(HEARD, e.newValue);
+    } catch {
+      /* the tip tab opens Daybook itself */
+    }
+    syncTips().catch(() => undefined);
+  };
+  if (!webWatch) {
+    webWatch = true;
+    window.addEventListener('storage', onStore);
+  }
+  return new Promise((done) => {
+    let over = false;
+    const away = Date.now();
+    const finish = (sup: Supporter | null) => {
+      if (over) return;
+      over = true;
+      window.removeEventListener('storage', heard);
+      document.removeEventListener('visibilitychange', back);
+      window.removeEventListener('focus', back);
+      done(sup);
+    };
+    const heard = (e: StorageEvent) => {
+      if (e.key === PENDING && e.newValue)
+        syncTips()
+          .then((r) => finish(r.sup))
+          .catch(() => finish(null));
+    };
+    /* back on this tab without a tip (the other tab was closed, or is still open): the button is free again, quietly */
+    const back = () => {
+      if (document.visibilityState === 'visible' && Date.now() - away > 1500) setTimeout(() => finish(null), 1200);
+    };
+    window.addEventListener('storage', heard);
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('focus', back);
+  });
+}
+
 /** pays a tip. Resolves to the new supporter record once the payment is confirmed, or null when it was cancelled or failed
     (tipError says why, when there is something to say). */
 export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | null> {
@@ -248,9 +297,21 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
   const link = tipLink(tier, account);
   if (!link) return null;
   if (Platform.OS === 'web') {
-    /* the tip page opens in this tab and comes back to tipped.html, then to Daybook, which claims it (syncTips) */
-    window.location.assign(link);
-    return new Promise((done) => setTimeout(() => done(null), 15_000));
+    /* the tip page opens in a new tab, so the person never leaves Daybook; the tab comes back to tipped.html, which keeps the
+       id and opens Daybook there, and this tab hears of the id (the browser's storage event) and claims it too (syncTips). A
+       browser that blocks the new tab gets the old way: the tip page in this tab. */
+    const tab = window.open(link, '_blank');
+    if (!tab) {
+      window.location.assign(link);
+      return new Promise((done) => setTimeout(() => done(null), 15_000));
+    }
+    try {
+      /* the tip page gets no handle back to Daybook */
+      tab.opener = null;
+    } catch {
+      /* already closed off */
+    }
+    return waitForWebTip();
   }
   const id = await webOnPhone(link);
   if (!id) {

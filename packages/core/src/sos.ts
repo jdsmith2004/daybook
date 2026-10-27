@@ -65,7 +65,9 @@ export interface UrMem {
 export interface UrState {
   t0: number;
   p0: number;
-  step: 'now' | 'tools' | 'after' | 'stop';
+  /** where SOS is: the ride ('now'); back from a tool's X, so the tool list opens ('tools'); back from a finished tool, so
+      SOS asks "How is it now?" ('after') */
+  step: 'now' | 'tools' | 'after';
   strength: Strength | null;
   trigger: string | null;
   used: string[];
@@ -73,7 +75,8 @@ export interface UrState {
   skip: string[];
   again: number;
   explore: boolean | null;
-  roundDone: boolean;
+  /** how many of `used` are in `rounds` already (urMark) */
+  marked?: number;
   sug: string | null;
   comboFrom?: string | null;
   /** the tools picked in this SOS over the one suggested (for urWon) */
@@ -96,7 +99,6 @@ export function newUrge(now: number, pts: number): UrState {
     skip: [],
     again: 0,
     explore: null,
-    roundDone: false,
     sug: null,
     cx: null,
   };
@@ -495,21 +497,12 @@ export function urEntry(sc: UrState, v: 'rode' | 'slipped', st: Settings, now: n
   return { key, time, fields, trig, did, mins, last: { t: now, tool: v === 'rode' ? lastTool : null, out: v } };
 }
 
-/** the answer to "How is it now?": the round is kept, and "Still strong" goes back for another tool */
-export function urAnswer(sc: UrState, v: 'rode' | 'slipped' | 'again'): UrState {
-  const out = { ...sc, rounds: sc.rounds.slice() };
-  const last = sc.used[sc.used.length - 1] || null;
-  if (last && !sc.roundDone) {
-    out.rounds.push([last, v === 'rode' ? 'p' : v === 'again' ? 's' : 'x']);
-    out.roundDone = true;
-  }
-  if (v === 'again') {
-    out.again = (sc.again || 0) + 1;
-    out.explore = null;
-    out.step = 'now';
-    out.cx = null;
-  }
-  return out;
+/** the moves and tools done since the last answer go into the entry's rounds, each with what came after it: it passed (p),
+    still strong (s, "How is it now?" after a tool) or a slip (x). Each one is marked once. */
+export function urMark(sc: UrState, code: 'p' | 's' | 'x'): UrState {
+  const from = Math.max(0, Math.min(sc.marked ?? 0, sc.used.length));
+  const fresh = sc.used.slice(from).map((id) => [id, code] as [string, 'p' | 's' | 'x']);
+  return { ...sc, rounds: (sc.rounds || []).concat(fresh).slice(0, 8), marked: sc.used.length, ...(code === 's' ? { again: (sc.again || 0) + 1 } : {}) };
 }
 
 /* ---------- after SOS: a lesson that fits, offered when your head is clear ---------- */

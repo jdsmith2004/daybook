@@ -122,12 +122,12 @@ describe('the three flames, and the comeback count', () => {
     expect(core.rkComebackCount(d, st, '2026-11-20')).toBe(one + 1);
     expect(core.rkComebackSay(1)).toBe('You are someone who comes back: 1 comeback.');
   });
-  it('the sunrise check ends with the flames, and says the run waits until the third lights', () => {
+  it('the sunrise check ends with the flames, and says the count goes on once the third lights', () => {
     const d = slipAndSunrise(addDays(K, 1));
     const r = core.rkOf(d, K, st)!;
     const e = core.srEnd(d, st, addDays(K, 1), K, r, 7);
     expect(e.h).toBe('You came back. That is the skill.');
-    expect(e.sub).toMatch(/^One more flame lights itself: the next urge you ride out, or a day with no slip, by \w+ night\. Your 7-day run waits for you\.$/);
+    expect(e.sub).toMatch(/^One more flame lights itself: the next urge you ride out, or a day with no slip, by \w+ night\. Then the count goes on from 7\.$/);
     expect(e.lights!.map((f) => f.on)).toEqual([true, true, false]);
     const done = core.srEnd(slipAndSunrise(addDays(K, 2)), st, addDays(K, 2), K, r, 7);
     expect(done.h).toBe('Run saved.');

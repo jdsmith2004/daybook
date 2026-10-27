@@ -398,7 +398,8 @@ export function FeelGrid({
           </Reanimated.View>
         </View>
       </GestureDetector>
-      <LinearGradient colors={[skyA, skyA + '00']} style={[s.fade, { height: head + 24 }]} pointerEvents="none" />
+      {/* solid under the bar (Back, the title, Close), then a soft edge: a bubble never shows through the words */}
+      <LinearGradient colors={[skyA, skyA, skyA + '00']} locations={[0, head / (head + 40), 1]} style={[s.fade, { height: head + 40 }]} pointerEvents="none" />
       <View style={[s.top, { paddingTop: inset.top + 10 }]}>
         <View style={s.topL}>
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.round, { backgroundColor: nightInk.btn }]}>

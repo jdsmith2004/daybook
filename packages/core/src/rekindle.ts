@@ -71,12 +71,16 @@ export function rkWaitLine(m: number): string {
   if (m < RK_WAIT_MAX) return 'You held off for ' + m + ' minutes. That is the muscle that grows.';
   return 'You held off for half an hour or more. That is real strength, and it counts.';
 }
-/** the words of the hold-to-rekindle screen: before the hold, and after it */
-export function rkHoldWords(lit: boolean, sp: boolean): { h: string; p: string } {
+/** the words of the hold-to-rekindle screen: before the hold, and after it. `run` is the run the slip came after (rkRunBefore):
+    a long one (RUN_ASK days or more) is never "down to embers", since what it built holds its heat. */
+export function rkHoldWords(lit: boolean, sp: boolean, run = 0): { h: string; p: string } {
   if (lit) return { h: 'This is a slip, and you can recover from it.', p: 'Your fire is burning again. A slip can burn it low. It cannot put it out.' };
   return {
     h: sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.',
-    p: 'It is down to embers, and embers hold the heat. Press and hold to breathe it back up.',
+    p:
+      run >= RUN_ASK
+        ? 'Your ' + run + ' days built a fire that holds its heat. Press and hold to breathe it back up.'
+        : 'It is down to embers, and embers hold the heat. Press and hold to breathe it back up.',
   };
 }
 /** "Close for tonight" in the evening and at night */
@@ -130,11 +134,25 @@ export function entryLabel(ev: Pick<DayEvent, 'outcome' | 'time' | 'sp'>): strin
   return w + (ev.time ? ' at ' + fmtClock(ev.time) : '');
 }
 
-/* ---------- the run that waits for you ---------- */
-/** the last day a slip's quest can still save the run, as a weekday: "until Wednesday night" (RK_DAYS after the slip) */
+/* ---------- the run after a slip: its days stay the person's, and the count can go on ---------- */
+/** the last day of a slip's quest, as a weekday: "until Wednesday night" (RK_DAYS after the slip) */
 export const rkUntil = (k: DayKey) => fmtDate(addDays(k, RK_DAYS), { weekday: 'long' });
 /** "a, b and c" */
 const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);
+/** a long run after its slip, in words that lead with what is permanent: the days are the person's for good, and the quest
+    is a way to keep counting, never a rescue (the owner, October 27, 2026). Never "for now". */
+export function rkRunWords(run: number, k: DayKey): { b: string; rest: string } {
+  const how = rkBack(k) ? 'Ride out one urge or have one day with no slip by ' : 'Finish the Rekindle quest by ';
+  return { b: 'Your ' + run + ' days are yours for good.', rest: how + rkUntil(k) + ' night, and the count goes on from ' + run + '.' };
+}
+/** the run a slip on day k came after, in days: the one it asks about (rkAsk), or the count the day before. 0 when nothing
+    is being counted. */
+export function rkRunBefore(days: Days, st: Settings, tk: DayKey, k: DayKey): number {
+  const a = rkAsk(days, st, tk, k);
+  if (a) return a.run;
+  if (!st.day1 || k <= st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return 0;
+  return runLedger(days, st, addDays(k, -1)).cur;
+}
 export function rkOpen(days: Days, st: Settings, tk: DayKey, k: DayKey) {
   const L = runLedger(days, st, tk);
   return { L, op: L.open && L.open.k === k ? L.open : null, saved: L.kind[k] === 'saved' };
@@ -191,19 +209,22 @@ export function rkAskNow(days: Days, st: Settings | null, tk: DayKey): RkAsk | n
 }
 /** the run question, still to answer. Care comes first (the owner, October 21): the slip's Rekindle asks it at its end, after
     the embers, the feeling and the record, and when it is closed before an answer, the sunrise check asks it the next morning.
-    No answer is "kept for now": the run waits for the quest exactly as a kept run does (runLedger), so closing loses nothing,
-    and nothing extra is stored. null when there is nothing to ask (answered, a short run, the window closed, the run saved). */
+    No answer counts as keeping it: the run goes on with the quest exactly as a kept run does (runLedger), so closing loses
+    nothing, and nothing extra is stored. null when there is nothing to ask (answered, a short run, the window closed, the run saved). */
 export function rkAskOpen(days: Days, st: Settings | null, tk: DayKey, k: DayKey): RkAsk | null {
   const a = rkAsk(days, st, tk, k);
   return a && a.open && a.keep == null ? a : null;
 }
-/** Today's card while the question waits for the sunrise check: kept for now, and when it is asked, instead of asking at night */
+/** Today's card while the question waits for the sunrise check: the days are the person's for good, and when it is asked,
+    instead of asking at night */
 export function rkKeptForNow(a: Pick<RkAsk, 'k' | 'run'>, tk: DayKey): { b: string; rest: string } {
   return {
-    b: 'Your ' + a.run + '-day run is kept for now.',
+    b: 'Your ' + a.run + ' days are yours for good.',
     rest:
       (tk <= a.k ? 'In the morning, your sunrise check asks' : 'Your sunrise check asks') +
-      ' whether to keep it going or start fresh. Nothing is lost by waiting.',
+      ' whether to keep counting from ' +
+      a.run +
+      ' or start fresh. Nothing is lost by waiting.',
   };
 }
 /** gives or changes the answer on the slip entry evId: keep the run going (true) or start fresh (false). Only while the save
@@ -249,8 +270,7 @@ export function rkChoice(days: Days, st: Settings, tk: DayKey, a: Pick<RkAsk, 'k
   const longest = a.run >= runLedger(days, st, a.k < tk ? a.k : tk).longest;
   return {
     line: 'Both are good answers. The slip stays in your log either way, and your points, level and badges stay yours.',
-    keep:
-      'Finish the Rekindle quest by ' + a.until + ' night and your run goes on from ' + a.run + '. The slip day stays in it, marked as the day you came back.',
+    keep: rkRunWords(a.run, a.k).rest + ' The slip day stays in it, marked as the day you came back.',
     fresh:
       'A new run ' +
       (tk <= a.k ? 'starts tomorrow' : 'counts from ' + fmtDate(addDays(a.k, 1), { weekday: 'long' })) +
@@ -281,7 +301,12 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     g.S.rode ? [plural(g.S.rode as number, 'urge') + ' ridden out'] : [],
   );
   const h = lit ? 'Still burning. Still yours.' : sp ? 'You stopped partway. Your fire is still lit.' : 'Your fire did not go out.';
-  const p = lit ? 'A slip can burn it low. It cannot put it out. Nothing was taken away.' : 'It is down to embers. Embers hold the heat.';
+  const long = !lit && rkRunBefore(days, st, tk, date) >= RUN_ASK;
+  const p = lit
+    ? 'A slip can burn it low. It cannot put it out. Nothing was taken away.'
+    : long
+      ? 'What your run built holds its heat.'
+      : 'It is down to embers. Embers hold the heat.';
   const op = lit ? rkOpen(days, st, tk, date).op : null;
   const fresh = lit && !op ? freshOf(days, st, tk, date) : null;
   const short = lit && !op && !fresh ? shortRun(days, st, tk, date) : 0;
@@ -291,7 +316,7 @@ export function rkEmbers(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     p,
     kept: lit ? kept : [],
     line: op
-      ? { b: 'Your ' + op.run + '-day run waits for you.', rest: 'The Rekindle quest saves it, any time until ' + rkUntil(date) + ' night.' }
+      ? rkRunWords(op.run, date)
       : fresh
         ? rkFresh(days, st, tk, fresh)
         : short
@@ -313,12 +338,12 @@ export function rkHonor(days: Days, st: Settings, tk: DayKey, date: DayKey): str
   return `${run} days. That is huge, and it still counts.` + grad;
 }
 
-/** once the hold is done, the one line under the heading: what the slip did not take. A run waiting for the sunrise
-    check is kept for now; a long run is honored; otherwise the level, points and urges ridden out, by name. One line,
+/** once the hold is done, the one line under the heading: what the slip did not take. A long run's days are the
+    person's for good, whether or not the sunrise check has asked about it yet; otherwise the level, points and urges ridden out, by name. One line,
     because right after a slip a full page is too much to read (the owner, October 25, 2026). */
 export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey): string {
   const open = rkAskOpen(days, st, tk, date);
-  if (open) return 'Your ' + open.run + '-day run is kept for now, and everything you earned is still yours.';
+  if (open) return 'Your ' + open.run + ' days are yours for good, and so is everything you earned.';
   const op = rkOpen(days, st, tk, date).op;
   const run = op ? op.run : freshOf(days, st, tk, date)?.run || 0;
   if (run >= RUN_ASK) return run + ' days still count, and everything you earned is still yours.';
@@ -340,9 +365,12 @@ export function rkLightLine(days: Days, st: Settings, date: DayKey, tk: DayKey, 
     );
   }
   if (counting) {
-    /* a second slip on the day a run can still be saved: say so */
+    /* a second slip on the day a long run's count can still go on: say so, leading with what is permanent */
     const { op } = rkOpen(days, st, tk, date);
-    if (op) return 'Your ' + op.run + '-day run can still be saved. Finish the Rekindle quest by ' + rkUntil(op.k) + ' night.';
+    if (op) {
+      const w = rkRunWords(op.run, op.k);
+      return w.b + ' ' + w.rest;
+    }
     if (dayKind(date, days[date], st, tk, undefined, days) === 'one') return 'With gentle counting, today still counts. Nothing you earned is gone.';
     /* a run that ends here (a second slip within a week cannot be saved): what was built is kept, and said so */
     const before = runLedger(days, st, addDays(date, -1)).cur;
@@ -458,12 +486,12 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
       r,
       flames: l.flames.map((f) => f.on),
       lights: l.flames,
-      h: op ? 'Your ' + op.run + '-day run waits for you' : 'Your comeback starts now',
+      h: op ? 'Your ' + op.run + ' days are yours for good' : 'Your comeback starts now',
       p: 'Three flames light themselves from what you do: this honest log, opening Daybook tomorrow, and the next urge you ride out or a day with no slip.',
       askWait: st.cleanMode === 'step',
       missions: rkMissions(r, st, { where: 'scene', deep: false, hour, until: u }).filter((m) => m.key === 'm1'),
       prize: op
-        ? { b: 'All three lit by ' + u + ' night: your run is saved', s: 'Coming back is what saves it.' }
+        ? { b: 'All three lit by ' + u + ' night: the count goes on from ' + op.run, s: 'Coming back is what keeps it counting.' }
         : { b: 'You are someone who comes back', s: 'Every comeback counts, and the count only goes up.' },
       done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
     };
@@ -472,14 +500,14 @@ export function rkQuest(days: Days, st: Settings, tk: DayKey, date: DayKey, ev: 
     r,
     lights: null as RkLight[] | null,
     flames: [r.m1, r.m2, r.m3].concat(deep ? [r.m4] : []),
-    h: op ? 'Save your ' + op.run + '-day run' : 'Your Rekindle quest',
+    h: op ? 'Keep counting from ' + op.run : 'Your Rekindle quest',
     p: op
-      ? (deep ? 'Four' : 'Three') + ' steps, any time until ' + u + ' night. Your run waits for you.'
+      ? (deep ? 'Four' : 'Three') + ' steps, any time until ' + u + ' night, and the count goes on.'
       : 'Three small missions, any time until ' + u + ' night. Each one lights a flame.',
     askWait: st.cleanMode === 'step',
     missions: rkMissions(r, st, { where: 'scene', deep, hour, until: u }),
     prize: op
-      ? { b: 'Finish them all: your run is saved', s: 'Plus the Rekindled badge and 20 bonus points.' }
+      ? { b: 'Finish them all: the count goes on', s: 'Plus the Rekindled badge and 20 bonus points.' }
       : { b: 'Light all three: Rekindled', s: 'A new badge and 20 bonus points.' },
     done: rkCloseWord(hour) === 'Close for tonight' ? 'Done for tonight' : 'Done',
   };
@@ -615,9 +643,13 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       ...base,
       kind: 'day',
       icon: 'flame',
-      h: op ? 'Save your ' + op.run + '-day run' : 'Rekindle quest',
+      h: op ? 'Keep counting from ' + op.run : 'Rekindle quest',
       p: plural(flames.length - lit, 'step') + ' left · until ' + u + ' night',
-      why: op ? 'Your run waits for you. The slip stays in your log either way.' : fresh ? 'You chose to start fresh. ' + rkFresh(days, st, tk, fresh).b : null,
+      why: op
+        ? 'What you built is yours for good. The slip stays in your log either way.'
+        : fresh
+          ? 'You chose to start fresh. ' + rkFresh(days, st, tk, fresh).b
+          : null,
       missions: rkMissions(r, st, { where: 'today', deep: !!(op && op.deep), hour, until: u }),
       care: slipCare(st),
     };
@@ -628,9 +660,9 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       kind: 'sun',
       line: false,
       icon: 'sunrise',
-      h: tk === addDays(r.k, 1) ? 'The morning after' : op ? 'Your ' + op.run + '-day run is waiting' : 'Your sunrise check',
+      h: tk === addDays(r.k, 1) ? 'The morning after' : op ? 'Keep counting from ' + op.run : 'Your sunrise check',
       p: op
-        ? 'Your ' + op.run + '-day run waits until ' + u + ' night. The sunrise check is the next step.'
+        ? 'The count can go on from ' + op.run + ' until ' + u + ' night. The sunrise check is the next step.'
         : 'Your sunrise check is ready. About two minutes.',
       sunrise: true,
       missions: op && (!r.m1 || !r.m2 || (op.deep && !r.m4)) ? rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }) : [],
@@ -641,8 +673,8 @@ export function rkCard(days: Days, st: Settings, tk: DayKey, r: RekindleState & 
       ...base,
       kind: 'almost',
       icon: 'flame',
-      h: 'Your ' + op.run + '-day run is waiting',
-      p: plural(flames.length - lit, 'step') + ' left · it waits until ' + u + ' night.',
+      h: 'Keep counting from ' + op.run,
+      p: plural(flames.length - lit, 'step') + ' left · until ' + u + ' night.',
       missions: rkMissions(r, st, { where: 'today', deep: op.deep, left: true, hour, until: u }),
     };
   }
@@ -764,9 +796,9 @@ export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: Rekind
       : op
         ? 'One more flame lights itself: the next urge you ride out, or a day with no slip, by ' +
           rkUntil(k) +
-          ' night. Your ' +
+          ' night. Then the count goes on from ' +
           op.run +
-          '-day run waits for you.'
+          '.'
         : rkComebackSay(rkComebackCount(days, st, tk)) + (run0 ? ' Your longest run stays.' : '');
     return { h, sub, flames: l.flames.map((f) => f.on), lights: l.flames, celebrate: saved || l.lit === 3, op, saved };
   }
@@ -789,9 +821,9 @@ export function srEnd(days: Days, st: Settings, tk: DayKey, k: DayKey, r: Rekind
     : op
       ? (honest ? 'Thank you for being honest. ' : '') +
         (left.length ? 'Left to do: ' + andList(left) + ', any time until ' + rkUntil(k) + ' night. ' : '') +
-        'Your ' +
+        'Then the count goes on from ' +
         op.run +
-        '-day run waits for you.'
+        '.'
       : run0
         ? 'Every flame you lit still counts, and your longest run stays.'
         : n === 3

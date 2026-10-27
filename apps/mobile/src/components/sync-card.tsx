@@ -21,6 +21,11 @@ import { syncedAgo, useSync } from '@/lib/sync';
 import { syncTips, tipError } from '@/lib/tip';
 import { useTheme } from '@/lib/theme';
 
+/** words written for a phone, said for the place the log is kept: on the web it is this browser, not this phone */
+import { here } from '@/lib/here';
+
+export { here };
+
 /** after "Delete everything": the account keeps a copy for a week, and this brings it back */
 export function ErasedNote() {
   const c = useTheme();
@@ -216,7 +221,7 @@ export function SyncBody() {
       : st.k === 'expired'
         ? 'Sign in again to keep syncing. Your log is still here.'
         : st.k === 'error'
-          ? st.msg + (sync.at ? ' ' + syncedAgo(sync.at, now) + '.' : '')
+          ? here(st.msg) + (sync.at ? ' ' + syncedAgo(sync.at, now) + '.' : '')
           : syncedAgo(sync.at, now) +
             (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '') +
             (st.k === 'on' && st.note ? '. ' + st.note : '');
@@ -234,7 +239,7 @@ export function SyncBody() {
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
-      {st.k === 'error' || st.k === 'expired' ? <HelpLine lead="Your log is safe on this phone." subject="Daybook: sync" /> : null}
+      {st.k === 'error' || st.k === 'expired' ? <HelpLine lead={here('Your log is safe on this phone.')} subject="Daybook: sync" /> : null}
       {st.k === 'expired' ? (
         <Button label="Sign in again" onPress={() => sync.signInNow({ why: 'in', email: sync.email })} />
       ) : st.k === 'need' && TIP_ON ? (
@@ -260,7 +265,7 @@ export function SyncBody() {
             label="Sign out, keep the log on this device"
             onPress={async () => {
               await sync.signOutNow(false);
-              say('You are signed out. Your log is still on this phone.');
+              say(here('You are signed out. Your log is still on this phone.'));
             }}
           />
           <Button
@@ -269,7 +274,7 @@ export function SyncBody() {
             onPress={async () => {
               const r = await sync.signOutNow(true, !!lose);
               setLose(r.waiting);
-              if (!r.waiting) say('You are signed out, and the log is removed from this phone. Your account keeps it.');
+              if (!r.waiting) say(here('You are signed out, and the log is removed from this phone. Your account keeps it.'));
             }}
           />
           <Button
@@ -295,8 +300,8 @@ export function SyncBody() {
               setAsk(null);
               setDelMsg('');
               const r = await sync.deleteAccount();
-              if (r.ok) say(r.msg + ' Your log on this phone is unchanged.');
-              else setDelMsg(r.msg);
+              if (r.ok) say(here(r.msg + ' Your log on this phone is unchanged.'));
+              else setDelMsg(here(r.msg));
             }}
           />
           <Button kind="ghost" label="Keep my account" onPress={() => setAsk(null)} />

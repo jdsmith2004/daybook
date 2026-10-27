@@ -1,18 +1,26 @@
 /* Celebrations: a new level (or a new form of the flame), a new badge, a full ring, a run saved. They wait their turn:
    they show only on the main tabs, never on top of a page, a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
    quiet line instead. Anything that arrives right after a slip comes in quietly: no confetti, no buzz. Ported from the legacy
-   celebrate, celNext and confetti. */
-import { celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
+   celebrate, celNext and confetti.
+   One at a time: everything that is waiting when the person comes back to the tabs shows as one sheet (the UX audit of
+   October 27, 2026: after the first lesson and check-in, four sheets came in a row). The biggest win leads it (a new
+   form, a level, a run saved, then a badge), with the rest as rows under it, and one button. A tip ask can ride on it
+   (core tipMoment), but never on the day the person came back, nor in the hours after an SOS or a slip
+   (lib/quiet-asks.ts). A mistaken log taken back with Undo takes its waiting celebration with it (lib/store.tsx). A level
+   reached on the day of a slip waits for the next day (core checkNew), and then says it was earned then. */
+import { addDays, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Flames } from '@/components/rekindle';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -70,7 +78,8 @@ export function CelebrateHost() {
   const { snap, hooks } = useStore();
   const path = usePathname();
   const [queue, setQueue] = useState<CelItem[]>([]);
-  const [cur, setCur] = useState<CelItem | null>(null);
+  /* the sheet that is open: everything that was waiting, as one */
+  const [cur, setCur] = useState<CelItem[] | null>(null);
   const [boom, setBoom] = useState<{ n: number; big: boolean } | null>(null);
   const pathRef = useRef(path);
   pathRef.current = path;
@@ -89,6 +98,15 @@ export function CelebrateHost() {
           return;
         }
         setQueue((q) => q.concat(items));
+      },
+      onTakeBack: (badges, level) => {
+        const keep = (it: CelItem) => !(it.type === 'badge' && badges.indexOf(it.b.id) >= 0) && !(level && it.type === 'level');
+        setQueue((q) => q.filter(keep));
+        setCur((g) => {
+          if (!g) return g;
+          const left = g.filter(keep);
+          return left.length ? left : null;
+        });
       },
     };
   }, [hooks]);
@@ -114,13 +132,14 @@ export function CelebrateHost() {
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;
-    const [it, ...rest] = queue;
-    setQueue(rest);
-    setCur(it);
-    const quiet = !!it.quiet || (it.type === 'badge' && it.b.id === 'honest');
+    const group = lead(queue);
+    setQueue([]);
+    setCur(group);
+    const quiet = group.some((it) => !!it.quiet || (it.type === 'badge' && it.b.id === 'honest'));
+    const big = group.some((it) => it.type === 'level');
     if (!quiet) {
-      setBoom({ n: Date.now(), big: it.type === 'level' });
-      buzz(it.type === 'level' ? 'lit' : 'save');
+      setBoom({ n: Date.now(), big });
+      buzz(big ? 'lit' : 'save');
     } else setBoom(null);
   }, [cur, blocked, queue]);
 
@@ -140,33 +159,58 @@ export function CelebrateHost() {
       />
       {boom ? <Confetti key={boom.n} big={boom.big} /> : null}
       <View style={s.center} pointerEvents="box-none">
-        <Card key={JSON.stringify(cur).slice(0, 120)} it={cur} more={queue.length > 0} onClose={() => setCur(null)} />
+        <Card key={JSON.stringify(cur).slice(0, 120)} group={cur} more={queue.length > 0} onClose={() => setCur(null)} />
       </View>
     </View>
   );
 }
 
-function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () => void }) {
+/** the order a sheet leads with: a new form, a level, a run saved, a full ring, then the badges in the order they came */
+const RANK: Record<CelItem['type'], number> = { level: 0, saved: 1, perfect: 2, badge: 3, quest: 4, more: 5 };
+function lead(items: CelItem[]): CelItem[] {
+  return items
+    .filter((it) => it.type !== 'quest')
+    .map((it, i) => ({ it, i, r: RANK[it.type] - (it.type === 'level' && it.evolve ? 0.5 : 0) }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((x) => x.it);
+}
+/** the rows under the lead, at most this many; the rest are counted in one line */
+const ROWS = 3;
+
+function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClose: () => void }) {
   const c = useTheme();
   const { snap, tk } = useStore();
+  const quietAsks = useQuietAsks();
+  const it = group[0];
+  const rest = group.slice(1).filter((x) => x.type !== 'more');
+  const extra = group.slice(1).reduce((n, x) => n + (x.type === 'more' ? Number(/\d+/.exec(x.title || '')?.[0] || 0) : 0), 0) + Math.max(0, rest.length - ROWS);
   let art: React.ReactNode = null;
   let eyebrow = '';
   let title = '';
   let sub = '';
   if (it.type === 'level') {
     const L = it.level;
-    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} /> : <Flame level={L.n} size={150} />;
+    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} /> : <FlameMedallion level={L.n} size={150} />;
     eyebrow = it.evolve ? 'New form' : 'Level up';
     title = 'Level ' + L.n + ': ' + L.name;
-    sub = (it.evolve ? L.meaning : L.step) + ' ' + (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
+    /* a level reached on the day of a slip waits for the next day (core checkNew): it says it was earned then */
+    const held =
+      !!snap.settings &&
+      (snap.days[addDays(tk, -1)]?.events || []).some((e) => e.outcome === 'slipped') &&
+      gameCompute(snap.days, snap.settings, snap.reviews, addDays(tk, -1)).level.n >= L.n;
+    sub =
+      (held ? 'Earned yesterday. Every honest log feeds the flame. ' : '') +
+      (it.evolve ? L.meaning : L.step) +
+      ' ' +
+      (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
   } else if (it.type === 'badge') {
     art = <BadgeArt icon={it.b.icon} tone={it.b.tone} size={104} earned />;
-    eyebrow = it.b.id === 'honest' ? 'Honesty' : 'New badge';
+    eyebrow = it.b.id === 'honest' ? 'Honesty' : rest.length ? 'New badges' : 'New badge';
     title = it.b.name;
     sub = it.b.desc;
   } else if (it.type === 'perfect') {
     const lvl = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
-    art = <Flame level={Math.max(1, lvl)} size={150} />;
+    art = <FlameMedallion level={Math.max(1, lvl)} size={150} />;
     eyebrow = 'Full ring';
     title = 'All ' + it.n + ' wins today';
     sub = 'That is a full day of looking after yourself. Rest well.';
@@ -179,8 +223,17 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
     title = it.title || 'Nice';
     sub = it.sub || '';
   }
-  /* the last of a new level or a new badge can carry a short tip ask (core tipMoment); the preview in Settings (from 0) never does */
-  const why = !more && !it.quiet ? (it.type === 'level' && it.from > 0 ? 'level' : it.type === 'badge' && it.b.id !== 'honest' ? 'badge' : null) : null;
+  /* a new level or a new badge can carry a short tip ask (core tipMoment); the preview in Settings (from 0) never does,
+     nor a sheet after a slip, on the day the person came back, or in the hours after an SOS */
+  const quiet = group.some((x) => !!x.quiet);
+  const why =
+    !more && !quiet && !quietAsks
+      ? group.some((x) => x.type === 'level' && x.from > 0)
+        ? 'level'
+        : group.some((x) => x.type === 'badge' && x.b.id !== 'honest')
+          ? 'badge'
+          : null
+      : null;
   const ask = useTipMoment(why || 'level', !why);
   const scale = useRef(new Animated.Value(0.85)).current;
   useEffect(() => {
@@ -198,11 +251,53 @@ function Card({ it, more, onClose }: { it: CelItem; more: boolean; onClose: () =
           {sub}
         </T>
       ) : null}
+      {rest.length ? (
+        <View style={[s.rows, { borderColor: c.line }]} accessibilityLabel={'And: ' + rest.map(celTitle).join(', ')}>
+          {rest.slice(0, ROWS).map((x, i) => (
+            <Row key={i} it={x} />
+          ))}
+        </View>
+      ) : null}
+      {extra > 0 ? (
+        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          {'And ' + extra + ' more in Milestones.'}
+        </T>
+      ) : null}
       {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : null}
       <View style={{ alignSelf: 'stretch', marginTop: 4 }}>
         <Button label={more ? 'Next' : 'Nice'} onPress={onClose} />
       </View>
     </Animated.View>
+  );
+}
+
+/** one more win in the same sheet: a small picture and its name */
+function Row({ it }: { it: CelItem }) {
+  const c = useTheme();
+  const art =
+    it.type === 'badge' ? (
+      <BadgeArt icon={it.b.icon} tone={it.b.tone} size={40} earned />
+    ) : it.type === 'level' ? (
+      <Flame level={it.level.n} size={40} />
+    ) : (
+      <View style={[s.rowIc, { backgroundColor: c.sunSoft }]}>
+        <Icon name={it.type === 'saved' ? 'flame' : 'star'} size={20} color={c.sunText} />
+      </View>
+    );
+  const name = it.type === 'badge' ? it.b.name : celTitle(it);
+  const desc = it.type === 'badge' ? it.b.desc : it.type === 'level' ? it.level.step : '';
+  return (
+    <View style={s.row}>
+      {art}
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={[s.rowT, { color: c.ink }]}>{name}</Text>
+        {desc ? (
+          <Text style={[s.rowS, { color: c.muted }]} numberOfLines={2}>
+            {desc}
+          </Text>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -222,7 +317,7 @@ function Evolve({ from, to }: { from: number; to: number }) {
             transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }],
           },
         ]}>
-        <Flame level={from} size={150} />
+        <FlameMedallion level={from} size={150} />
       </Animated.View>
       <Animated.View
         pointerEvents="none"
@@ -237,7 +332,7 @@ function Evolve({ from, to }: { from: number; to: number }) {
         ]}
       />
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }]}>
-        <Flame level={to} size={150} alive />
+        <FlameMedallion level={to} size={150} />
       </Animated.View>
     </View>
   );
@@ -352,5 +447,10 @@ const s = StyleSheet.create({
     elevation: 12,
   },
   eye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2, marginTop: 6 },
+  rows: { alignSelf: 'stretch', gap: 10, marginTop: 6, paddingTop: 12, borderTopWidth: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  rowT: { fontFamily: font.bodyBold, fontSize: 15.5, lineHeight: 20 },
+  rowS: { fontFamily: font.body, fontSize: 13.5, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 32, textAlign: 'center' },
 });

@@ -3,7 +3,7 @@
 
     1. a pause in progress (the slim banner)
     2. in the hard hours now: SOS forward, and talk it through
-    3. a run question left open: a slip's Rekindle closed before "keep it going or start fresh?" was answered, from the
+    3. a run question left open: a slip's Rekindle closed before "keep counting or start fresh?" was answered, from the
        day after the slip until it is answered or the window closes, in the morning only, until noon (the sunrise check
        asks it; rekindle.ts sunriseAsk).
        There is no "morning after" card any more (the owner, October 24, 2026): coming back is the sunrise check, and
@@ -127,7 +127,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
         );
 
   /* 3. a run question left open, asked in the sunrise check: in the morning only (from the rollover to noon), never all day.
-     Unanswered, the run is simply kept for now, so a morning missed loses nothing. 4. the day of a slip */
+     Unanswered, the run simply goes on counting, so a morning missed loses nothing. 4. the day of a slip */
   const ask = sunriseAsk(days, st, tk);
   const hour = new Date(now).getHours();
   if (ask && hour >= (st.rollover ?? 4) && hour < SUNRISE_UNTIL)
@@ -135,8 +135,8 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       'run-ask',
       'Your sunrise check',
       ask.k === addDays(tk, -1) ? 'Your run question from last night is waiting' : 'Your run question is still waiting',
-      'Keep your ' + ask.run + '-day run going, or start fresh? It is kept for now, and both answers are good ones.',
-      'Keep it going or start fresh',
+      'Your ' + ask.run + ' days are yours for good. Keep counting from ' + ask.run + ', or start fresh? Both answers are good ones.',
+      'Keep counting or start fresh',
       'sunrise',
       'a question about your run',
     );

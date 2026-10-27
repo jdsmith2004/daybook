@@ -48,7 +48,8 @@ describe('a lesson on setup day, and the first log three days later', () => {
     const moved = startFromLog(days, sd, tk)!.st;
     const g = patGaps(days, moved, tk);
     expect(g.runs).toEqual([1, 2, 0]);
-    expect(g.now).toBe(1);
+    /* the day after the last slip, and today: today counts while it has no slip, as the run does */
+    expect(g.now).toBe(2);
     expect(logStart(days, moved)).toBe('2026-10-11');
     expect(calMonth(days, moved, tk, '2026-10').days.find((d) => d.k === '2026-10-09')!.kind).toBe('before');
   });

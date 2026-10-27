@@ -36,6 +36,7 @@ export function Slider({
   hint = 'Slide or tap the line',
   readout = true,
   endsShowValue = true,
+  compact,
 }: {
   label: string;
   value: number | null;
@@ -56,6 +57,8 @@ export function Slider({
   readout?: boolean;
   /** false when the values are words (the setup's "3 to 5 times"): the ends then show only `lo` and `hi` */
   endsShowValue?: boolean;
+  /** a slider inside a row that opens (the check-in's sleep): the number and its hint take less room */
+  compact?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -147,7 +150,7 @@ export function Slider({
 
   return (
     <View style={s.wrap}>
-      {readout ? <SliderValue value={v} show={show} unit={unit} hint={hint} /> : null}
+      {readout ? <SliderValue value={v} show={show} unit={unit} hint={hint} compact={compact} /> : null}
       <View
         accessible
         accessibilityRole="adjustable"
@@ -235,6 +238,7 @@ export function SliderValue({
   hint = 'Slide or tap the line',
   big,
   words,
+  compact,
 }: {
   value: number | null;
   show?: (v: number) => string;
@@ -245,6 +249,8 @@ export function SliderValue({
   big?: boolean;
   /** with `big`: the value is a few words ("3 to 5 times a week"), so the type is smaller and wraps */
   words?: boolean;
+  /** smaller: one line of about 40 points (the number, or the hint before there is one) */
+  compact?: boolean;
 }) {
   const c = useTheme();
   const reduce = useReducedMotion();
@@ -264,10 +270,11 @@ export function SliderValue({
     ],
   };
   return (
-    <View style={big ? s.readBig : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={big ? s.readBig : compact ? s.readCompact : s.read} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {value != null ? (
         <Animated.View style={[s.readRow, words && s.readWords, lift]}>
-          <AnimatedText style={[big ? (words ? (SHORT ? s.wordsShort : s.words) : SHORT ? s.hugeShort : s.huge) : s.big, { color: c.ink }]}>
+          <AnimatedText
+            style={[big ? (words ? (SHORT ? s.wordsShort : s.words) : SHORT ? s.hugeShort : s.huge) : compact ? s.bigCompact : s.big, { color: c.ink }]}>
             {show(value)}
           </AnimatedText>
           {unit ? <AnimatedText style={[s.unit, { color: c.muted }]}>{unit}</AnimatedText> : null}
@@ -277,7 +284,7 @@ export function SliderValue({
           <Icon name="down" size={30} color={c.muted} />
         </View>
       ) : (
-        <T v="label" tone="muted" style={s.hint}>
+        <T v="label" tone="muted" style={compact ? s.hintCompact : s.hint}>
           {hint}
         </T>
       )}
@@ -296,6 +303,7 @@ const WEB_DRAG = Platform.OS === 'web' ? ({ touchAction: 'pan-y', cursor: 'point
 const s = StyleSheet.create({
   wrap: { alignSelf: 'stretch', gap: 4, userSelect: 'none' },
   read: { minHeight: 64, alignItems: 'center', justifyContent: 'flex-end' },
+  readCompact: { minHeight: 40, alignItems: 'center', justifyContent: 'flex-end' },
   readBig: { alignItems: 'center', justifyContent: 'center', gap: 2 },
   /* before the first touch: a quiet ring pointing down at the slider */
   wait: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
@@ -308,8 +316,10 @@ const s = StyleSheet.create({
   readWords: { justifyContent: 'center', paddingHorizontal: 8 },
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
+  bigCompact: { fontFamily: font.displayBold, fontSize: 36, lineHeight: 42, fontVariant: ['tabular-nums'] },
   unit: { fontFamily: font.bodySemi, fontSize: 16 },
   hint: { paddingBottom: 12 },
+  hintCompact: { paddingBottom: 2 },
   hit: { height: 60, justifyContent: 'center' },
   track: { position: 'absolute', left: KNOB / 2 - CAP, right: KNOB / 2 - CAP, height: 16, borderRadius: 8, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 8 },

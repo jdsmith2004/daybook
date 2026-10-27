@@ -1,4 +1,4 @@
-/* The sunrise check, now one question: keep the run going or start fresh, when the slip's Rekindle was closed before that
+/* The sunrise check, now one question: keep counting or start fresh, when the slip's Rekindle was closed before that
    answer (core sunriseAsk). Today's card opens it from the day after the slip until it is answered. Coming back is the
    check itself: Today marks it as it opens (core srDone), so nothing else is asked here (the owner, October 24, 2026: no
    "what came before the slip", no questions out of the blue). A welcome, the question, and what it means. */
@@ -16,6 +16,7 @@ import {
   rkAsk,
   rkMissions,
   rkOf,
+  rkRunWords,
   rkUntil,
   srDone,
   srEnd,
@@ -109,14 +110,8 @@ export default function Sunrise() {
         </T>
         {/* who the person said they are becoming: one slip does not change it */}
         {String(st.becoming || '').trim() ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{'Still true: ' + String(st.becoming).trim()}</T> : null}
-        <LineNote
-          b={`Your ${run0}-day run is kept for now.`}
-          rest={
-            comeback
-              ? `Coming back saves it: the next urge you ride out, or a day with no slip, by ${rkUntil(k)} night.`
-              : `The Rekindle quest saves it, any time until ${rkUntil(k)} night.`
-          }
-        />
+        {/* what is permanent first: the days are the person's for good, and the quest is a way to keep counting */}
+        <LineNote {...rkRunWords(run0, k)} />
         <Flames on={comeback ? rkLights(snap.days, st, tk, k).flames.map((f) => f.on) : [r.m1, r.m2, r.m3]} big />
         {cb.before ? (
           <>
@@ -130,7 +125,7 @@ export default function Sunrise() {
       </>
     );
   } else if (step === 'run') {
-    /* keep the run going, or start fresh. Until now the run was kept for now; both answers are good ones. */
+    /* keep counting, or start fresh. Until now the run went on counting; both answers are good ones. */
     const a = rkAsk(snap.days, st, tk, k);
     const choice = a && a.open ? rkChoice(snap.days, st, tk, a) : null;
     body =
@@ -140,7 +135,7 @@ export default function Sunrise() {
             Your run
           </T>
           <T v="title" style={s.c} accessibilityRole="header">
-            {'Keep your ' + a.run + '-day run going, or start fresh?'}
+            {'Keep counting from ' + a.run + ', or start fresh?'}
           </T>
           <T style={s.c}>{choice.line}</T>
           <View style={s.middle} accessible accessibilityLabel={a.run + ' days in a row'}>
@@ -150,7 +145,7 @@ export default function Sunrise() {
             <T tone="muted">days in a row</T>
           </View>
           <Dock>
-            <BigOption tone="sun" icon="flame" title="Keep it going" sub={choice.keep} selected={a.keep == null ? null : a.keep} onPress={() => answer(true)} />
+            <BigOption tone="sun" icon="flame" title="Keep counting" sub={choice.keep} selected={a.keep == null ? null : a.keep} onPress={() => answer(true)} />
             <BigOption
               tone="mint"
               icon="sparkle"
@@ -164,7 +159,7 @@ export default function Sunrise() {
       ) : (
         <>
           <T v="title" style={s.c} accessibilityRole="header">
-            {a && a.saved ? 'Your run is saved.' : 'Nothing to decide here now.'}
+            {a && a.saved ? 'Your run goes on.' : 'Nothing to decide here now.'}
           </T>
           <Dock>
             <Button label="Next" onPress={() => answer(null)} />

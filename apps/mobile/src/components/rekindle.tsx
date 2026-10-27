@@ -192,7 +192,7 @@ export function useEmberHold(lit: boolean, onLit: () => void): EmberHold {
   return { h, lit, label, light, start, stop, tap };
 }
 
-/** the flame, down to embers, glowing up as it is held; sparks fly when it catches */
+/** the flame, low after a slip, glowing up as it is held; sparks fly when it catches */
 export function EmberArt({ level, hold }: { level: number; hold: EmberHold }) {
   const reduce = useReducedMotion();
   const { h, lit } = hold;
@@ -200,7 +200,11 @@ export function EmberArt({ level, hold }: { level: number; hold: EmberHold }) {
   const scale = h.interpolate({ inputRange: [0, 1], outputRange: [reduce ? 1 : 0.9, 1] });
   const dim = h.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] });
   return (
-    <View style={s.ember} accessible accessibilityRole="image" accessibilityLabel={lit ? 'Your flame, burning again' : 'Your flame, down to embers'}>
+    <View
+      style={s.ember}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={lit ? 'Your flame, burning again' : 'Your flame, waiting to be breathed back up'}>
       <Animated.View style={[s.glow, { opacity: glow }]} />
       {lit ? <Sparks /> : null}
       <Animated.View style={{ transform: [{ scale }] }}>

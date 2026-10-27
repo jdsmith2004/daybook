@@ -1,6 +1,8 @@
 /* A short message after an action: a line of words, or what the action earned ("+15 points", and why). After a slip it is
-   said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. It sits at the top, over the
-   title, where things are read and never tapped, so it never covers the answers or buttons low on the screen. A message from before SOS
+   said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. In a full-screen moment it sits
+   at the top, over the title, where things are read and never tapped, so it never covers the answers or buttons low on the
+   screen. On the four tabs the very top holds the date and the Support button and the bottom holds the care buttons, so it sits
+   just under the title row, over the quiet line there (the identity line on Today), where nothing is tapped. A message from before SOS
    or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off.
    A message that offers Undo is the one toast that is touched, so it sits low, where the thumb is, just above the tab bar
    and a sheet's main button, never on them. */
@@ -16,6 +18,8 @@ import { font, useTheme } from '@/lib/theme';
 
 /** the full-screen moments (app/_layout.tsx), where answers sit low */
 const MOMENT = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup|graduated)(\/|$)/;
+/** the tabs: their top is the date and the Support button, so a message sits just under that row */
+const TABS = /^\/(pattern|learn|more)?\/?$/;
 /** where a message from the screen before is left behind */
 const HUSH = /^\/(sos|log)(\/|$)/;
 
@@ -31,7 +35,7 @@ export function Toast() {
     if (HUSH.test(path)) setLeft(shown.current);
   }, [path]);
   if (!toast || toast === left) return null;
-  const at = { top: inset.top + (MOMENT.test(path) ? 62 : 10) };
+  const at = TABS.test(path) ? { top: inset.top + 72 } : { top: inset.top + (MOMENT.test(path) ? 62 : 10) };
   if ('pts' in toast) {
     const bg = toast.quiet ? c.ink : c.sun;
     const fg = toast.quiet ? c.bg : c.onSun;

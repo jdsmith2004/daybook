@@ -9,6 +9,7 @@ import { Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { Dock, Middle } from '@/components/scene';
 import { Shape, type ShapeKind } from '@/components/shapes';
+import { SosPill } from '@/components/sos-pill';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Text } from '@/components/text';
 import { buzz } from '@/lib/feel';
@@ -39,6 +40,9 @@ export default function TodayFeel() {
 
   return (
     <SheetFrame title={DAY_FEEL_Q} sub="One tap. It goes in today’s log.">
+      <View style={s.sos}>
+        <SosPill label="SOS. Help with an urge right now. This question waits." />
+      </View>
       <Middle>
         <Flame level={level} size={132} alive label="Your flame" />
       </Middle>
@@ -75,6 +79,7 @@ export default function TodayFeel() {
 }
 
 const s = StyleSheet.create({
+  sos: { alignItems: 'flex-end' },
   row: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
   opt: {
     flex: 1,

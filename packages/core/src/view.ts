@@ -2,6 +2,7 @@
    Here they are pure: the screen passes in the log, the settings, today's key and the time, and gets back what to show.
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
 import { awayGapAt } from './away';
+import { rkRunWords } from './rekindle';
 import {
   addDays,
   DID_T,
@@ -128,9 +129,7 @@ export function runChips(v: CleanView) {
     main,
     longest: v.longest > 0 ? plural(v.longest, 'day') : null,
     next: v.next && !v.open ? plural(v.next, 'day') : null,
-    line: v.open
-      ? 'Your run waits for you. The Rekindle quest saves it, any time until ' + fmtDateShort(addDays(v.open.k, RK_DAYS), { weekday: 'long' }) + ' night.'
-      : null,
+    line: v.open ? Object.values(rkRunWords(v.open.run, v.open.k)).join(' ') : null,
   };
 }
 

@@ -20,7 +20,7 @@ import {
   STEPS,
 } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -39,6 +39,17 @@ export default function Miles() {
   const { snap, tk } = useStore();
   const st = snap.settings;
   const [how, setHow] = useState(false);
+  /* the page frame, your level, who you are becoming and graduation show at once; the twelve flame forms (SVG) and the badges
+     (more than forty small drawings) come right after, in two steps, so the page is never blank while they draw */
+  const [fill, setFill] = useState(0);
+  useEffect(() => {
+    const a = setTimeout(() => setFill(1), 30);
+    const b = setTimeout(() => setFill(2), 260);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, []);
   if (!st) return <Redirect href="/" />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const lvl = g.level;
@@ -134,86 +145,92 @@ export default function Miles() {
           {GRAD_ABOUT}
         </T>
       )}
-      <Card>
-        <View style={s.between}>
-          <T v="h2">Growth path</T>
+      {fill >= 1 ? (
+        <Card>
+          <View style={s.between}>
+            <T v="h2">Growth path</T>
+            <T v="small" tone="muted">
+              Form {lvl.stage + 1} of {STAGES.length}
+            </T>
+          </View>
           <T v="small" tone="muted">
-            Form {lvl.stage + 1} of {STAGES.length}
+            Your flame grows a little with every level and turns into something new every fifth one. Tap a form to see how it grows.
           </T>
-        </View>
-        <T v="small" tone="muted">
-          Your flame grows a little with every level and turns into something new every fifth one. Tap a form to see how it grows.
-        </T>
-        {STAGES.map((sg, i) => {
-          const state = stageState(i, lvl);
-          const a = i * STEPS + 1;
-          const b = i * STEPS + STEPS;
-          const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
-          return (
-            <Pressable
-              key={i}
-              accessibilityRole="button"
-              accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
-              onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
-              style={[s.gp, { backgroundColor: state === 'now' ? c.sunSoft : c.surface2, borderColor: state === 'now' ? c.sun : 'transparent' }]}>
-              <Flame level={stageLevel(i, lvl)} size={56} locked={state === 'later'} label="" />
-              <View style={{ flex: 1 }}>
-                <T v="label">{sg.name}</T>
-                <T v="small" tone="muted">
-                  Levels {a} to {b}
-                </T>
-              </View>
-              {state === 'done' ? (
-                <View style={s.row}>
-                  <Icon name="check" size={16} color={c.mintText} />
-                  <T v="small" tone="mintText">
-                    Reached
-                  </T>
-                </View>
-              ) : (
-                <T v="small" tone={state === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-                  {state === 'now' ? 'Level ' + lvl.n : stagePts(i) + ' pts'}
-                </T>
-              )}
-            </Pressable>
-          );
-        })}
-      </Card>
-      <Collapse title="How points work" open={how} onToggle={() => setHow(!how)}>
-        <PointsList />
-      </Collapse>
-      <Card>
-        <View style={s.between}>
-          <T v="h2">Badges</T>
-          <T v="small" tone="muted">
-            {earned.length} of {shown.length}
-          </T>
-        </View>
-        <View style={s.badges}>
-          {earned.concat(todo).map((b) => {
-            const d = badgeDone(b, st);
+          {STAGES.map((sg, i) => {
+            const state = stageState(i, lvl);
+            const a = i * STEPS + 1;
+            const b = i * STEPS + STEPS;
+            const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
             return (
               <Pressable
-                key={b.id}
+                key={i}
                 accessibilityRole="button"
-                accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
-                onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
-                style={s.badge}>
-                <BadgeArt icon={b.icon} tone={b.tone} size={64} earned={d} />
-                <T v="small" style={{ fontFamily: font.bodyBold, textAlign: 'center' }} numberOfLines={2}>
-                  {b.name}
-                </T>
-                <T v="small" tone="muted">
-                  {d ? 'Earned' : b.now + ' of ' + b.goal}
-                </T>
+                accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
+                onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
+                style={[s.gp, { backgroundColor: state === 'now' ? c.sunSoft : c.surface2, borderColor: state === 'now' ? c.sun : 'transparent' }]}>
+                <Flame level={stageLevel(i, lvl)} size={56} locked={state === 'later'} label="" />
+                <View style={{ flex: 1 }}>
+                  <T v="label">{sg.name}</T>
+                  <T v="small" tone="muted">
+                    Levels {a} to {b}
+                  </T>
+                </View>
+                {state === 'done' ? (
+                  <View style={s.row}>
+                    <Icon name="check" size={16} color={c.mintText} />
+                    <T v="small" tone="mintText">
+                      Reached
+                    </T>
+                  </View>
+                ) : (
+                  <T v="small" tone={state === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+                    {state === 'now' ? 'Level ' + lvl.n : stagePts(i) + ' pts'}
+                  </T>
+                )}
               </Pressable>
             );
           })}
-        </View>
-        <T v="small" tone="muted">
-          Badges are never taken away. A slip does not undo any of them.
-        </T>
-      </Card>
+        </Card>
+      ) : null}
+      {fill >= 1 ? (
+        <Collapse title="How points work" open={how} onToggle={() => setHow(!how)}>
+          <PointsList />
+        </Collapse>
+      ) : null}
+      {fill >= 2 ? (
+        <Card>
+          <View style={s.between}>
+            <T v="h2">Badges</T>
+            <T v="small" tone="muted">
+              {earned.length} of {shown.length}
+            </T>
+          </View>
+          <View style={s.badges}>
+            {earned.concat(todo).map((b) => {
+              const d = badgeDone(b, st);
+              return (
+                <Pressable
+                  key={b.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
+                  onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
+                  style={s.badge}>
+                  <BadgeArt icon={b.icon} tone={b.tone} size={64} earned={d} />
+                  <T v="small" style={{ fontFamily: font.bodyBold, textAlign: 'center' }} numberOfLines={2}>
+                    {b.name}
+                  </T>
+                  <T v="small" tone="muted">
+                    {d ? 'Earned' : b.now + ' of ' + b.goal}
+                  </T>
+                </Pressable>
+              );
+            })}
+          </View>
+          <T v="small" tone="muted">
+            Badges are never taken away. A slip does not undo any of them.
+          </T>
+        </Card>
+      ) : null}
     </Screen>
   );
 }

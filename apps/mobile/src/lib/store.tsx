@@ -18,6 +18,9 @@ import {
   winGain,
   winWhy,
   keepPoints,
+  freshSeen,
+  unseeTakenBack,
+  type FreshSeen,
   type CelItem,
   logicalKey,
   mergeDirty,
@@ -141,10 +144,15 @@ export interface Hooks {
   inScene: () => boolean;
   /** newly earned things to celebrate; gives back true when they were shown (or said) */
   onCelebrate: (items: CelItem[]) => void;
+  /** a mistaken log was taken back (Undo): its badges (and the level it reached) are no longer earned, so any celebration
+      of them still waiting is dropped */
+  onTakeBack?: (badges: string[], level: boolean) => void;
 }
 type Win = { t: number; pts: number; by: Record<string, number>; ev: boolean; quiet: boolean };
 
 const Ctx = createContext<StoreValue | null>(null);
+/** how long what a change marked seen can still be taken back by an Undo (the Undo is offered for a few seconds) */
+const FRESH_MS = 10 * 60_000;
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -160,6 +168,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const noteRef = useRef<string | null>(null);
   const flushT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedSeen = useRef<string[] | null>(null);
+  /* what each change marked seen in the last minutes (badges, a level), so an Undo right after a mistaken log can take
+     back what that log alone made new (core unseeTakenBack) */
+  const freshRef = useRef<{ t: number; f: FreshSeen }[]>([]);
   const snapRef = useRef(snap);
   const dirtyRef = useRef(dirty);
   /* the latest change time this copy has had for each record id, so writing the dirty list keeps marks only another copy
@@ -303,7 +314,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const items: CelItem[] = [];
       if (was && sv.saved.some((k) => was.indexOf(k) < 0)) items.push({ type: 'saved', run: sv.cur });
       const r = checkNew(cur.days, st, cur.reviews, tkNow, quiet);
-      if (r.st) commitSettings(r.st);
+      if (r.st) {
+        freshRef.current = freshRef.current.filter((x) => now - x.t < FRESH_MS).concat({ t: now, f: freshSeen(st, r.st) });
+        commitSettings(r.st);
+      }
       /* weekly quests are retired: one finished in the last week before that is marked seen (its points stay), never celebrated */
       const earned = r.items.filter((it) => it.type !== 'quest');
       if (earned.length) fired = true;
@@ -365,6 +379,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
         const kept = lowered ? keepPoints(cur.days, next.days, next.settings, next.reviews, logicalKey(Date.now(), next.settings.rollover)) : null;
         if (kept) next = { ...next, settings: kept };
+      }
+      /* the Undo of a mistaken log: what it alone made new (the Honest log badge, a level) is no longer earned, so it is
+         taken back off the seen list and its waiting celebration is dropped. Never a badge earned from a real log. */
+      if (opts?.takeBack && next.settings) {
+        const t = Date.now();
+        const recent = freshRef.current.filter((x) => t - x.t < FRESH_MS);
+        const f: FreshSeen = {
+          badges: [...new Set(recent.flatMap((x) => x.f.badges))],
+          level: recent.reduce<number | null>((a, x) => (x.f.level == null ? a : a == null ? x.f.level : Math.min(a, x.f.level)), null),
+        };
+        const back =
+          f.badges.length || f.level != null ? unseeTakenBack(next.days, next.settings, next.reviews, logicalKey(t, next.settings.rollover), f) : null;
+        if (back) {
+          next = { ...next, settings: back.st };
+          freshRef.current = recent.map((x) => ({
+            t: x.t,
+            f: { badges: x.f.badges.filter((id) => back.badges.indexOf(id) < 0), level: back.level ? null : x.f.level },
+          }));
+          hooks.current.onTakeBack?.(back.badges, back.level);
+        }
       }
       const ids: RecordId[] = [];
       if (next.settings !== cur.settings) ids.push('settings');

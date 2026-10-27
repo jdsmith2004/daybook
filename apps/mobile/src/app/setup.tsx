@@ -37,6 +37,7 @@ import {
   obSave,
   obSosLine,
   obWave,
+  emblemLayers,
   obSrc,
   obSug,
   obThenOpts,
@@ -63,7 +64,7 @@ import {
   type LikeAnswer,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -680,7 +681,9 @@ export default function Setup() {
                 }}
                 onPress={() => pick('so', x, true)}>
                 {a.so === x ? <Icon name="check" size={18} color={t.text} /> : null}
-                <Text style={[s.optT, { color: c.ink, flex: 0 }]}>{fmtClock(x)}</Text>
+                <Text style={[s.optT, s.noWrap, { color: c.ink }]} numberOfLines={1}>
+                  {fmtClock(x)}
+                </Text>
               </Opt>
             ))}
           </View>
@@ -907,54 +910,57 @@ export default function Setup() {
         const T0 = OB_THEN[tp];
         const th = a.thenT === tp ? a.then : null;
         const rs = obReasonList(a);
-        const planRows = 5 + (th ? 1 : 0) + (obBecoming(a) ? 1 : 0);
+        const planRows = 4 + (th ? 1 : 0) + (obBecoming(a) ? 1 : 0);
         body = (
           <>
             <Head h="Here is your plan." />
             <Middle>
-              {/* the plan builds itself: the rows come in one by one, top to bottom, the unlit flame first */}
-              <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-                {[
-                  <View key="d" style={[s.planRow, { borderTopWidth: 0 }]}>
-                    <PlanFlame lit={lit} />
-                    <View>
-                      <T v="small" tone="muted">
+              {/* the flame first, big and alive, with Day 1 beside it; then the plan builds itself, row by row, top to bottom */}
+              <FitArt min={0.9}>
+                <Appear by={12} delay={PLAN_AT} duration={320}>
+                  <View style={s.day1}>
+                    <PlanFlame lit={lit} size={SHORT ? 92 : 124} />
+                    <View style={{ gap: 2 }}>
+                      <T v="label" tone="muted">
                         Day 1
                       </T>
-                      <Text
-                        style={{
-                          fontFamily: font.display,
-                          fontSize: 22,
-                          color: c.ink,
-                        }}>
+                      <Text style={{ fontFamily: font.display, fontSize: SHORT ? 24 : 28, lineHeight: SHORT ? 30 : 34, color: c.ink }}>
                         {obDate(obDay1(g, null, tk))}
                       </Text>
                     </View>
+                  </View>
+                </Appear>
+              </FitArt>
+              <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+                {[
+                  <PlanRow key="g" icon="flag" l="Goal" v={g.t} first />,
+                  <View key="sp" style={[s.planRow, { borderTopColor: c.line, gap: 10 }]}>
+                    <PlanBit icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
+                    <PlanBit icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
                   </View>,
-                  <PlanRow key="g" icon="flag" l="Goal" v={g.t} />,
-                  <PlanRow key="s" icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />,
                   th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
                   <PlanRow key="w" icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />,
-                  <PlanRow key="p" icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />,
                   obBecoming(a) ? <PlanRow key="b" icon="star" l="Who I am becoming" v={obBecoming(a)} /> : null,
                 ]
                   .filter(Boolean)
                   .map((row, j) => (
-                    <Appear key={j} by={12} delay={PLAN_AT + j * PLAN_STEP} duration={320}>
+                    <Appear key={j} by={12} delay={PLAN_AT + (j + 1) * PLAN_STEP} duration={320}>
                       {row}
                     </Appear>
                   ))}
               </View>
             </Middle>
-            <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
-              <Text style={[s.pledge, { color: c.ink }]}>I will log honestly, slips included.</Text>
-            </Appear>
+            {SHORT ? null : (
+              <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
+                <Text style={[s.pledge, { color: c.ink }]}>{PLEDGE}</Text>
+              </Appear>
+            )}
           </>
         );
         foot = (
           <View key="h">
             <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
-              <Hold onDone={commit} />
+              <Hold onDone={commit} pledge={SHORT ? PLEDGE : undefined} />
             </Appear>
           </View>
         );
@@ -1087,7 +1093,7 @@ export default function Setup() {
                   setRemAt(x);
                   buzz('tap');
                 }}>
-                <Text style={[s.optT, { color: c.ink, flex: 0 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Text style={[s.optT, s.noWrap, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {fmtClock(x)}
                 </Text>
               </Opt>
@@ -1630,10 +1636,13 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
 }
 /* the plan builds itself: rows come in about 90 ms apart, after a short wait (ms) */
 const PLAN_AT = 200;
+const PLEDGE = 'I will log honestly, slips included.';
 const PLAN_STEP = 90;
-/** the flame in the Day 1 row: it shows unlit (the locked look) until the hold is done, then pops alive on a spring with a bloom of
-    light. With Reduce Motion on it is simply lit at once. */
-function PlanFlame({ lit }: { lit: boolean }) {
+/** the flame on the review page: big and alive from the first moment, drawn the way the end of setup draws it (the figure fills
+    a round window, never a small spark in a big sky). It is a quiet flame until the hold is done; then it pops on a spring and
+    one slow bloom of light goes through it. With Reduce Motion on it is still. */
+function PlanFlame({ lit, size }: { lit: boolean; size: number }) {
+  const c = useTheme();
   const reduce = useReducedMotion();
   const pop = useRef(new Animated.Value(1)).current;
   const first = useRef(true);
@@ -1643,12 +1652,19 @@ function PlanFlame({ lit }: { lit: boolean }) {
       return;
     }
     if (!lit || reduce) return pop.setValue(1);
-    pop.setValue(0.6);
+    pop.setValue(0.82);
     Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
   }, [lit, reduce, pop]);
+  const zoom = 3.2;
+  const big = size * zoom;
+  const at = useMemo(() => emblemLayers(1, false)?.at ?? { x: 0.5, y: 0.5 }, []);
   return (
     <Animated.View style={{ transform: [{ scale: pop }] }}>
-      <Flame level={1} size={48} alive={lit} locked={!lit} pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame, not lit yet'} />
+      <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', borderWidth: 4, borderColor: c.sun }}>
+        <View style={{ position: 'absolute', left: size / 2 - at.x * big, top: size / 2 - at.y * big }}>
+          <Flame level={1} size={big} alive pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame'} />
+        </View>
+      </View>
     </Animated.View>
   );
 }
@@ -1682,16 +1698,35 @@ function LevelBar() {
     </View>
   );
 }
-function PlanRow({ icon, l, v }: { icon: string; l: string; v: string }) {
+/** one half of a row that holds two short things side by side (the goal and the screens-off time) */
+function PlanBit({ icon, l, v }: { icon: string; l: string; v: string }) {
   const c = useTheme();
   return (
-    <View style={[s.planRow, { borderTopColor: c.line }]}>
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <Icon name={icon} size={20} color={c.accentText} />
       <View style={{ flex: 1 }}>
         <T v="small" tone="muted">
           {l}
         </T>
-        <T v="label">{v}</T>
+        <T v="label" style={SHORT ? s.planVal : undefined}>
+          {v}
+        </T>
+      </View>
+    </View>
+  );
+}
+function PlanRow({ icon, l, v, first }: { icon: string; l: string; v: string; first?: boolean }) {
+  const c = useTheme();
+  return (
+    <View style={[s.planRow, { borderTopColor: c.line }, first && { borderTopWidth: 0 }]}>
+      <Icon name={icon} size={20} color={c.accentText} />
+      <View style={{ flex: 1 }}>
+        <T v="small" tone="muted">
+          {l}
+        </T>
+        <T v="label" style={SHORT ? s.planVal : undefined}>
+          {v}
+        </T>
       </View>
     </View>
   );
@@ -1754,18 +1789,19 @@ function Compare({ g, yr, t }: { g: number; yr: number; t: Tone }) {
   );
   return (
     <View style={{ gap: 8 }} accessible accessibilityLabel={`You guessed ${g} hours. Your pace is about ${yr} hours.`}>
-      {row('You guessed', g, g + (g >= 800 ? '+' : ''), c.line, HOURS_BARS)}
+      {row('You guessed', g, g + (g >= 800 ? '+' : ''), c.muted, HOURS_BARS)}
       {row('Your pace', yr, yr.toLocaleString('en-US'), t.ic, HOURS_BARS + 350)}
     </View>
   );
 }
 /** hold to commit: a short hold, so the plan feels like a promise. A tap, then a second tap, also works. The fill grows as you
     hold; with Reduce Motion on it shows full at once, and the hold still takes the same time. */
-function Hold({ onDone }: { onDone: () => void }) {
+function Hold({ onDone, pledge }: { onDone: () => void; pledge?: string }) {
   const c = useTheme();
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   const [label, setLabel] = useState('Hold to commit');
+  const [wide, setWide] = useState(0);
   const done = useRef(false);
   const tap2 = useRef(0);
   const held = useRef(false);
@@ -1785,7 +1821,7 @@ function Hold({ onDone }: { onDone: () => void }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Hold to commit"
-      accessibilityHint="Press and hold, or tap twice"
+      accessibilityHint={(pledge ? pledge + ' ' : '') + 'Press and hold, or tap twice'}
       accessibilityActions={[{ name: 'activate' }]}
       onAccessibilityAction={finish}
       onPressIn={() => {
@@ -1831,23 +1867,34 @@ function Hold({ onDone }: { onDone: () => void }) {
         tap2.current = Date.now() + 4000;
         setLabel('Keep holding, or tap again');
       }}
+      onLayout={(e) => setWide(e.nativeEvent.layout.width)}
       style={[s.hold, { backgroundColor: c.accentSoft, borderColor: c.accent }]}>
+      <Text style={[s.holdT, { color: c.ink }]} accessibilityLiveRegion="polite">
+        {label}
+      </Text>
+      {pledge ? <Text style={[s.holdP, { color: c.ink }]}>{pledge}</Text> : null}
+      {/* the words show twice: in the button's own ink on the pale button, and in the fill's ink on the fill (cut to the fill's edge), so they read all the way across */}
       <Animated.View
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         style={{
           position: 'absolute',
           left: 0,
           top: 0,
           bottom: 0,
+          overflow: 'hidden',
           backgroundColor: c.accent,
           width: v.interpolate({
             inputRange: [0, 1],
             outputRange: ['0%', '100%'],
           }),
-        }}
-      />
-      <Text style={[s.holdT, { color: c.ink }]} accessibilityLiveRegion="polite">
-        {label}
-      </Text>
+        }}>
+        <View style={{ width: Math.max(0, wide - 4), flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={[s.holdT, { color: c.accentInk }]}>{label}</Text>
+          {pledge ? <Text style={[s.holdP, { color: c.accentInk }]}>{pledge}</Text> : null}
+        </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -2021,6 +2068,8 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
+  /* a time that sits beside an icon: its own width, never squeezed into two lines (flex: 0 gave the web a width of zero) */
+  noWrap: { flexGrow: 0, flexBasis: 'auto' },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
   tile: {
     flexDirection: 'row',
@@ -2075,19 +2124,21 @@ const s = StyleSheet.create({
     borderWidth: 2,
     maxWidth: '100%',
   },
+  planVal: { fontSize: 15, lineHeight: 20 },
+  day1: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   plan: { alignSelf: 'stretch', borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 14 },
   planRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: SHORT ? 5 : 10,
     borderTopWidth: 1,
   },
   pledge: {
     fontFamily: font.display,
-    fontSize: 20,
+    fontSize: SHORT ? 18 : 20,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: SHORT ? 0 : 4,
   },
   ch: {
     flexDirection: 'row',
@@ -2115,4 +2166,5 @@ const s = StyleSheet.create({
     ...(Platform.OS === 'web' ? { userSelect: 'none' } : {}),
   },
   holdT: { fontFamily: font.bodySemi, fontSize: 19 },
+  holdP: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
 });

@@ -14,7 +14,7 @@ import { Field } from '@/components/choices';
 import { Segments } from '@/components/form';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { SYNC_NEED } from '@/components/support';
-import { SyncBody, TrustChoice } from '@/components/sync-card';
+import { here, SyncBody, TrustChoice } from '@/components/sync-card';
 import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
 import { apple, appleOffered, askApple } from '@/lib/apple';
@@ -56,6 +56,11 @@ export default function Account() {
       live = false;
     };
   }, []);
+  /* a new step starts clean: an error or a note from the step before does not follow the person to it */
+  useEffect(() => {
+    setErr('');
+    setNote('');
+  }, [step]);
   if (sync.status.k === 'off') return <Redirect href="/" />;
 
   const run = async (f: () => Promise<void>) => {
@@ -66,7 +71,7 @@ export default function Account() {
     try {
       await f();
     } catch (e) {
-      setErr(e instanceof CognitoError ? e.message : 'Could not reach your account. Check the connection and try again. Your log is safe on this phone.');
+      setErr(here(e instanceof CognitoError ? e.message : 'Could not reach your account. Check the connection and try again. Your log is safe on this phone.'));
       buzz('tap');
     } finally {
       setBusy(false);
@@ -187,9 +192,9 @@ export default function Account() {
         <View style={{ gap: 14, paddingVertical: 8 }}>
           <T v="h2">{mode === 'new' ? 'Your account is made.' : 'You are signed in.'}</T>
           <T tone="danger" accessibilityLiveRegion="polite">
-            {sync.status.k === 'error' ? sync.status.msg : 'Sign in again to keep syncing.'}
+            {sync.status.k === 'error' ? here(sync.status.msg) : 'Sign in again to keep syncing.'}
           </T>
-          <T tone="muted">Your log is safe on this device. Daybook tries again each time it opens.</T>
+          <T tone="muted">Your log is safe in this {Platform.OS === 'web' ? 'browser' : 'device'}. Daybook tries again each time it opens.</T>
           {busy ? <ActivityIndicator color={c.accent} /> : <Button label="Try again" onPress={retry} />}
           {p.then ? <LinkText label="Open the lesson" onPress={leave} /> : null}
         </View>
@@ -232,7 +237,7 @@ export default function Account() {
         {busy ? <ActivityIndicator color={c.accent} /> : null}
         <View style={s.links}>
           <LinkText label="Send the code again" onPress={() => run(async () => (await cognito.resend(email), setNote('A new code is on its way.')))} />
-          <LinkText label="Use a different email" onPress={() => (setStep('start'), setErr(''))} />
+          <LinkText label="Use a different email" onPress={() => (setStep('start'), setErr(''), setNote(''))} />
         </View>
         <T v="small" tone="muted">
           It can take a minute to arrive. Check the spam folder too.
@@ -278,7 +283,7 @@ export default function Account() {
             })
           }
         />
-        <LinkText label="Back to sign in" onPress={() => setStep('start')} />
+        <LinkText label="Back to sign in" onPress={() => (setStep('start'), setErr(''), setNote(''))} />
       </>
     );
   else if (step === 'reset')

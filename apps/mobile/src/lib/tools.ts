@@ -1,6 +1,6 @@
 /* Finishing a tool (legacy finishTool): it counts as a calm move on today's log, and the tool is remembered as tried.
-   Started from SOS, it goes on to "How is it now?" (or to Go to bed, the second half of a "then bed" pair). On its own,
-   it closes with a short word and the points it earned. */
+   Started from SOS, it goes back to SOS, which asks "How is it now?" (step 'after', app/sos.tsx), or on to Go to bed, the
+   second half of a "then bed" pair. On its own, it closes with a short word and the points it earned. */
 import { blankP, changeDay, gameCompute, withDay } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -42,7 +42,7 @@ export function useFinishTool(lr = false) {
         router.replace({ pathname: '/tool/[id]', params: { id: 'bed', combo: '1' } });
         return;
       }
-      sos.set({ ...ur, step: 'after', used: ur.used.concat(id), roundDone: false });
+      sos.set({ ...ur, step: 'after', used: ur.used.concat(id) });
       router.back();
       return;
     }
@@ -62,7 +62,8 @@ export function useNextTool() {
   return (id: string) => router.replace({ pathname: '/tool/[id]', params: lr === '1' ? { id, lr: '1' } : { id } });
 }
 
-/** the X on a tool: back to SOS's tool list when SOS started it (to pick another), otherwise close */
+/** the X on a tool: back to SOS's tool list when SOS started it (step 'tools': SOS opens the list, to pick another),
+    otherwise close */
 export function useToolExit(lr = false) {
   const sos = useSos();
   return () => {

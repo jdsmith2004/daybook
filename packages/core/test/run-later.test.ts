@@ -20,13 +20,16 @@ function slip(o: { keep?: boolean; done?: boolean } = {}): Days {
 const sunAsk = (days: Days, tk = K1) => core.sunriseAsk(days, st, tk);
 
 describe('the question waits for the end of Rekindle', () => {
-  it('is open and unanswered right after the slip, and the run is kept for now', () => {
+  it('is open and unanswered right after the slip, and the run goes on counting', () => {
     const days = slip();
     expect(core.rkAskOpen(days, st, K, K)).toMatchObject({ k: K, run: 7, keep: null, open: true, evId: 's1' });
-    /* kept for now: the run waits for the quest exactly as a kept run does */
+    /* unanswered: the run goes on with the quest exactly as a kept run does */
     expect(L(days, K).open).toEqual(L(slip({ keep: true }), K).open);
     expect(L(days, K1).cur).toBe(L(slip({ keep: true }), K1).cur);
-    expect(core.rkEmbers(days, st, {}, K, K, true, false).line?.b).toBe('Your 7-day run waits for you.');
+    expect(core.rkEmbers(days, st, {}, K, K, true, false).line).toEqual({
+      b: 'Your 7 days are yours for good.',
+      rest: 'Ride out one urge or have one day with no slip by Wednesday night, and the count goes on from 7.',
+    });
   });
 
   it('is not asked of a short run, or once the window closed', () => {
@@ -57,13 +60,15 @@ describe('answered at the end of Rekindle', () => {
 });
 
 describe('closed before an answer', () => {
-  it('Today says kept for now, and the sunrise check asks the next morning', () => {
+  it('Today says the days are yours for good, and the sunrise check asks the next morning', () => {
     const days = slip();
     expect(core.rkKeptForNow({ k: K, run: 7 }, K)).toEqual({
-      b: 'Your 7-day run is kept for now.',
-      rest: 'In the morning, your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.',
+      b: 'Your 7 days are yours for good.',
+      rest: 'In the morning, your sunrise check asks whether to keep counting from 7 or start fresh. Nothing is lost by waiting.',
     });
-    expect(core.rkKeptForNow({ k: K, run: 7 }, K1).rest).toBe('Your sunrise check asks whether to keep it going or start fresh. Nothing is lost by waiting.');
+    expect(core.rkKeptForNow({ k: K, run: 7 }, K1).rest).toBe(
+      'Your sunrise check asks whether to keep counting from 7 or start fresh. Nothing is lost by waiting.',
+    );
     expect(sunAsk(days)).toMatchObject({ k: K, run: 7, keep: null, open: true });
     /* not on the slip day itself: the Rekindle there just asked */
     expect(sunAsk(days, K)).toBeNull();

@@ -1,0 +1,161 @@
+/* The flame drawn big, the same size for every form (the owner, October 27, 2026: the growth shows in the form, not the
+   size). The early forms are drawn small inside their picture (a new person's Spark is a dot in a ring), so here the
+   whole drawing is brought in close around the figure until it is as big as a campfire, and the figure sits in the same
+   place every time. The picture's own sky and stars are left out: it sits in a sky that is painted around it (the top of
+   Today, the round sky at the end of a lesson), whose stars stay small however close the figure is drawn. It moves like
+   the flame everywhere else (components/flame.tsx: a fire flickers, the rising flame floats, the suns breathe), each tap
+   sends one bloom through it, and it is still under Reduce Motion. */
+import { emblemLayers, formOfLevel, gradOf, type EmblemLayers } from '@daybook/core';
+import { memo, useEffect, useMemo, useRef } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
+
+import { GradCap } from '@/components/grad';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useStore } from '@/lib/store';
+
+/* the same motion as components/flame.tsx, for each kind of form */
+const MOTION: [number, number, number, number, number][] = [
+  [0.035, 1100, 0.25, 1.6, 0.006],
+  [0.03, 1500, 0.25, 1.2, 0.02],
+  [0.03, 3200, 0.25, 0, 0.012],
+  [0.03, 2400, 0.35, 0, 0.012],
+];
+const kindOf = (form: number) => (form <= 4 ? 0 : form === 5 ? 1 : form <= 9 ? 2 : 3);
+const RING =
+  '<svg viewBox="0 0 100 100"><defs><radialGradient id="bigRing" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
+  '<stop offset=".5" stop-color="#FFE9A8" stop-opacity="0"/><stop offset=".78" stop-color="#FFE9A8" stop-opacity=".6"/>' +
+  '<stop offset="1" stop-color="#FFE9A8" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#bigRing)"/></svg>';
+
+/** the campfire's flame, as a share of the drawing: the size every early form is brought up to */
+const FULL_K = 0.48;
+/** where the figure's middle sits in the box when it is brought in close (as a share of its height) */
+const MID_Y = 0.55;
+
+/** the layers without the picture's own sky and stars, and how close to draw it: [zoom, shift x, shift y] as shares of the box */
+export function bigLayers(level: number): { layers: EmblemLayers; zoom: number; dx: number; dy: number } | null {
+  const l = emblemLayers(level, true);
+  if (!l) return null;
+  /* the spark, the kindling and the campfire are drawn smaller than the rest: closer, up to the campfire's size */
+  const k = Number(/scale\(([\d.]+)\)/.exec(l.fig)?.[1] || 0);
+  const zoom = formOfLevel(level) <= 2 && k > 0 ? Math.min(3.2, Math.max(1, FULL_K / k)) : 1;
+  /* the lines of light around the figure (its rays, a ring) keep a fine line however close it is drawn; the twigs and
+     logs it stands on grow with it */
+  const fine = (x: string) =>
+    zoom > 1
+      ? x.replace(/(stroke="#FF(?:F3B0|E27A)"[^>]*?stroke-width=")([\d.]+)"/g, (_, a: string, w: string) => a + ((Number(w) / zoom) * 1.5).toFixed(2) + '"')
+      : x;
+  const clean = (x: string) =>
+    fine(
+      x
+        .replace(/<rect x="0" y="0" width="120" height="120" fill="url\(#em\w+sk\)"\/>/, '')
+        .replace(/<circle cx="[\d.]+" cy="[\d.]+" r="[\d.]+" fill="#fff" opacity="[\d.]+"\/>/g, ''),
+    );
+  const layers = { ...l, back: clean(l.back), front: clean(l.front) };
+  return zoom > 1 ? { layers, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, zoom, dx: 0, dy: 0 };
+}
+
+export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }: { level: number; size: number; pulse?: number; label?: string }) {
+  const still = useReducedMotion();
+  const { snap } = useStore();
+  const grad = !!gradOf(snap.settings);
+  const b = useMemo(() => bigLayers(level), [level]);
+  const breath = useRef(new Animated.Value(0)).current;
+  const bloom = useRef(new Animated.Value(0)).current;
+  const ring = useRef(new Animated.Value(0)).current;
+  const [grow, ms, dim, sway, float] = MOTION[kindOf(formOfLevel(level))];
+  useEffect(() => {
+    if (still) {
+      breath.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(breath, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [breath, ms, still]);
+  useEffect(() => {
+    if (!pulse || still) return;
+    bloom.setValue(0);
+    ring.setValue(0);
+    const a = Animated.parallel([
+      Animated.sequence([
+        Animated.timing(bloom, { toValue: 1, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+        Animated.timing(bloom, { toValue: 0, duration: 1300, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+      Animated.timing(ring, { toValue: 1, duration: 1700, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+    ]);
+    a.start();
+    return () => a.stop();
+  }, [pulse, bloom, ring, still]);
+  const name = (label ?? `Your flame, level ${level}`) + (grad ? ', wearing a graduation cap' : '');
+  if (!b) return <View style={{ width: size, height: size }} accessibilityLabel={name} />;
+  const { layers, zoom, dx, dy } = b;
+  const origin = `${(layers.at.x * 100).toFixed(1)}% ${(layers.at.y * 100).toFixed(1)}%`;
+  /* the whole drawing, brought in close around the figure and moved so the figure sits in the same place for every form */
+  const place = { transformOrigin: origin, transform: [{ translateX: dx * size }, { translateY: dy * size }, { scale: zoom }] };
+  const fig = {
+    transformOrigin: origin,
+    transform: [
+      { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [0, -float * size] }) },
+      { rotate: breath.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', sway + 'deg', -sway * 0.6 + 'deg'] }) },
+      {
+        scale: Animated.add(
+          breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }),
+          bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
+        ),
+      },
+    ],
+  };
+  const glow = {
+    transformOrigin: origin,
+    opacity: Animated.add(
+      breath.interpolate({ inputRange: [0, 1], outputRange: [1 - dim, 1] }),
+      bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.4] }),
+    ),
+    transform: [
+      {
+        scale: Animated.add(
+          breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
+          bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.32] }),
+        ),
+      },
+    ],
+  };
+  const r = (size * 0.4) / zoom;
+  return (
+    <View style={{ width: size, height: size }} accessible accessibilityRole="image" accessibilityLabel={name}>
+      <View style={[StyleSheet.absoluteFill, place]} pointerEvents="none">
+        <SvgXml xml={layers.back} width={size} height={size} style={StyleSheet.absoluteFill} />
+        {layers.glow ? (
+          <Animated.View style={[StyleSheet.absoluteFill, glow]}>
+            <SvgXml xml={layers.glow} width={size} height={size} />
+          </Animated.View>
+        ) : null}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: layers.at.x * size - r,
+            top: layers.at.y * size - r,
+            opacity: ring.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 1, 0] }),
+            transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.8] }) }],
+          }}>
+          <SvgXml xml={RING} width={r * 2} height={r * 2} />
+        </Animated.View>
+        <Animated.View style={[StyleSheet.absoluteFill, fig]}>
+          <SvgXml xml={layers.fig} width={size} height={size} />
+        </Animated.View>
+        <SvgXml xml={layers.front} width={size} height={size} style={StyleSheet.absoluteFill} />
+      </View>
+      {grad ? (
+        <View pointerEvents="none" style={{ position: 'absolute', right: -size * 0.04, top: -size * 0.06, transform: [{ rotate: '14deg' }] }}>
+          <GradCap size={size * 0.42} />
+        </View>
+      ) : null}
+    </View>
+  );
+});

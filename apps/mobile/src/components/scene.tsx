@@ -27,6 +27,7 @@ export function SceneFrame({
   bare,
   topRight,
   footer,
+  pin,
   sheet,
   pinSheet,
   children,
@@ -45,6 +46,9 @@ export function SceneFrame({
   /** something small next to Close in the top bar (the setup's SOS pill) */
   topRight?: ReactNode;
   footer?: ReactNode;
+  /** the main button, and any quiet link under it, held at the bottom of the screen while the card above scrolls: a card
+      that can grow (a row that opens) never pushes the button out of reach */
+  pin?: ReactNode;
   /** a sheet along the bottom edge, below the card (the SOS screens) */
   sheet?: ReactNode;
   /** the sheet stays put at the bottom while the card above it scrolls (a long list over the main button) */
@@ -72,7 +76,10 @@ export function SceneFrame({
         ref={scroll}
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
-        contentContainerStyle={[s.scroll, { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : inset.bottom + (SHORT ? 10 : 24) }]}
+        contentContainerStyle={[
+          s.scroll,
+          { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : pin ? 12 : inset.bottom + (SHORT ? 10 : 24) },
+        ]}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
@@ -114,6 +121,11 @@ export function SceneFrame({
         </FitProvider>
         {sheet && !pinSheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
+      {pin ? (
+        <View style={[s.pinned, { paddingBottom: inset.bottom + (SHORT ? 10 : 24) }]}>
+          <View style={s.pinCol}>{pin}</View>
+        </View>
+      ) : null}
       {sheet && pinSheet ? (
         <View style={s.pinned}>
           <Sheet bottom={inset.bottom}>{sheet}</Sheet>
@@ -221,6 +233,7 @@ export function Finish({
   alive,
   size = 150,
   always,
+  least,
   zoom,
 }: {
   level: number;
@@ -232,6 +245,8 @@ export function Finish({
   size?: number;
   /** the flame and its burst shrink to fit a short phone, never step aside (the end of the setup) */
   always?: boolean;
+  /** with always: the smallest the flame gets, as a share of its size (a celebration keeps it big and lets the rest scroll) */
+  least?: number;
   /** the flame drawn this many times bigger, centered on the figure and cut to a round window of `size`, so the figure
       itself fills most of it (the end of the setup: the flame big, never a small spark in a big sky) */
   zoom?: number;
@@ -261,7 +276,7 @@ export function Finish({
   const big = zoom ? size * zoom : size;
   return (
     <View style={s.middle}>
-      <FitArt drop={always ? undefined : 0.4} min={always ? 0.5 : undefined}>
+      <FitArt drop={always ? undefined : 0.4} min={always ? (least ?? 0.5) : undefined}>
         <View style={s.finArt}>
           {BURST.map((b, i) => {
             const f = fly[i];
@@ -341,6 +356,7 @@ function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
 const s = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center' },
   pinned: { paddingHorizontal: 16, alignItems: 'center' },
+  pinCol: { width: '100%', maxWidth: MAX_WIDTH, gap: 10, paddingTop: 6 },
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   topR: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -1,44 +1,43 @@
-/* Quick check-in: one question at a time, one tap each. The first tap saves the entry, and Back or Undo is always one tap
-   away. After an urge ridden out: what set it off, what you did, then the closing screen (all optional).
+/* Quick check-in (Already happened): one tap saves the entry, and Undo is always one tap away. An urge ridden out ends on
+   the one celebration every urge ridden out gets (components/rode-out.tsx), with what helped and what set it off asked
+   inside it (one tap each, or none), the same as SOS and the pause.
 
    After "I slipped" the slip is saved at once, and the comeback starts (core slip.ts has the research). One tap a page,
    and the X closes it at any point with everything given so far kept:
    1. Rekindle: one big button to press and hold until the embers catch. Once it is held: this is a slip, and you can
-      recover from it, and one line on what it did not take (core rkLitLine: the run kept for now, a long run honored,
-      or what is still yours). The run question for a slip that ends a run of 7 days or more is not asked here: the
-      sunrise check asks it the next morning (core rkAskOpen).
+      recover from it, and one line on what it did not take (core rkLitLine: a long run's days are yours for good, or
+      what is still yours). A long run is never "down to embers" (rkHoldWords). The run question for a slip that ends
+      a run of 7 days or more is not asked here: the sunrise check asks it the next morning (core rkAskOpen).
    2. Before it happened: the four colors open the field of feelings (the one SOS uses), and the word comes back big,
       breathing in its own color, with what that feeling was asking for, what porn gave it instead, and the person's own
-      pattern. It goes on the slip (fb), and sets its trigger when there is none, so the patterns learn from slips too.
+      pattern. It goes on the slip (fb), and sets its trigger when there is none and the feeling plainly is one (core
+      feelTrigOf), so the patterns learn from slips too.
    3. And now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
       record of it (fa). Still pulled toward it leads to SOS.
    4. Next time: when you feel that, what you will do instead. One tap saves the if-then plan as an after-slip
       talk-through (pr 1, fw), which Today asks about the next morning. Then the finish, with the plan to say once.
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
+   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slBefore): the
+   slip is saved already, so there is nothing to hold, and the look back ends warm, with the flame and a plan.
    Rekindle's quest and points come from the log itself (core rkOf), so they go on exactly as before: one small thing
    waits on Today, the sunrise check the next morning. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
-  addOption,
-  changeSettings,
   clockOf,
   didIds,
-  didToggle,
   entryLabel,
-  eventsOf,
   gameCompute,
   moveEvent,
-  optList,
-  OPT_MAX,
   patchEvent,
   removeEvent,
   rkEmbers,
   rkHoldWords,
   rkLitLine,
-  FEEL_TRIG,
+  rkRunBefore,
   feelAt,
   feelFam,
   feelPos,
+  feelTrigOf,
   famOfWord,
   newTalk,
   saveTalk,
@@ -56,14 +55,11 @@ import {
   talkMoveName,
   TALK_OWN_LEN,
   talkPlanLine,
-  UR_STR_NAME,
   urNight,
-  urMinText,
   whenEntry,
   whenFromEntry,
   whenLabel,
   whenStart,
-  winLater,
   type DayEvent,
   type Outcome,
   type RkFeel,
@@ -72,31 +68,30 @@ import {
   type When,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
-import { AddOwn, AddTile, BigOption, Field, Link, Tiles } from '@/components/choices';
+import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { EmberArt, HoldButton, useEmberHold } from '@/components/rekindle';
 import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
 import { ChoiceRows, FeelQuads, FeelShape } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
 import { OwnField } from '@/components/own';
+import { RodeOut } from '@/components/rode-out';
 import { Shape, type ShapeKind } from '@/components/shapes';
-import { Button, Chip, Icon, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close, closeAll } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { WORDS } from '@/lib/words';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
-const STEPS: Step[] = ['q1', 'trigger', 'did', 'done', 'slHold', 'slBefore', 'slFeel', 'slNow', 'slNowSay', 'slPlan', 'slDone'];
+type Step = 'q1' | 'won' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
 /* the comeback's dots: each page counts as the step it belongs to */
 const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slBefore: 1, slFeel: 1, slNow: 2, slNowSay: 2, slPlan: 3, slDone: 4 };
 /* the icons and shapes of the feelings afterwards, and of the plan's moves */
@@ -130,12 +125,11 @@ const MOVE_IC: Partial<Record<TalkMove, string>> = {
   light: 'sun',
 };
 const MOVE_TONE = ['mint', 'sky', 'sun', 'violet'];
-const CI_STEP: Record<string, number> = { q1: 0, trigger: 1, did: 2, done: 3 };
 
 export default function Log() {
   const c = useTheme();
-  const { snap, tk, now, update, apply, say } = useStore();
-  /* SOS and the 10-minute pause save the entry first, then hand it over here, at the step that comes next */
+  const { snap, tk, now, update, say } = useStore();
+  /* SOS, the 10-minute pause and Talk it through save the entry first, then hand it over here, at the step that comes next */
   const params = useLocalSearchParams<{
     date?: string;
     evId?: string;
@@ -158,22 +152,20 @@ export default function Log() {
   const [when, setWhen] = useState<When>(() => whenStart(date, Date.now(), roll));
   const [whenOpen, setWhenOpen] = useState(false);
   const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
-  const [from] = useState<'urge' | 'pause' | 'hero'>(() => (params.from === 'urge' || params.from === 'pause' ? params.from : 'hero'));
-  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves */
-  const [step, setStep] = useState<Step>(() =>
-    handed ? (params.outcome === 'slipped' ? 'slHold' : STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : 'q1') : 'q1',
+  const [from] = useState<'urge' | 'pause' | 'talk' | 'hero'>(() =>
+    params.from === 'urge' || params.from === 'pause' || params.from === 'talk' ? params.from : 'hero',
   );
-  const [hist, setHist] = useState<Step[]>(() => (handed ? ['q1'] : []));
+  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves. One from a look back starts
+     at the feeling before it (the slip was saved when it was looked back on). An urge ridden out is the celebration. */
+  const [step, setStep] = useState<Step>(() =>
+    handed ? (params.outcome === 'slipped' ? (from === 'talk' && params.step === 'slBefore' ? 'slBefore' : 'slHold') : 'won') : 'q1',
+  );
+  const [hist, setHist] = useState<Step[]>(() => (handed && step !== 'slBefore' ? ['q1'] : []));
   const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));
   const [outcome, setOutcome] = useState<Outcome | null>(() => (handed ? (params.outcome as Outcome) : null));
   const [pts0, setPts0] = useState(() => (handed ? Number(params.pts0) || 0 : 0));
-  /* what SOS kept: how strong it was at the start, and how long it took */
-  const [sosInfo] = useState(() =>
-    from === 'urge' && handed && params.m != null && params.m !== '' ? { st: params.st || null, m: Number(params.m) || 0 } : null,
-  );
   const [night] = useState(() => params.night === '1');
   const [full] = useState(() => params.full === '1');
-  const [askNote, setAskNote] = useState<boolean | null>(null);
   /* the plan made after the slip, once one is picked (saved as a talk-through on today's log day) */
   const [plan, setPlan] = useState<Talk | null>(null);
   /* the plan in the person's own words is being typed */
@@ -183,28 +175,15 @@ export default function Log() {
     setLit(true);
     AccessibilityInfo.announceForAccessibility(rkHoldWords(true, false).h);
   });
-  const [adding, setAdding] = useState(false);
-  const [allOpts, setAllOpts] = useState(false);
-  const [noteOpen, setNoteOpen] = useState(false);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
-  /* the SOS note box is decided once, the first time the closing screen shows, so it does not vanish while typing. After an urge
-     ridden out at night it waits for last night's card on Today the next morning, which asks what helped (core winLater), so
-     it is asked once. */
-  const evNow = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
-  const askNow = !!(sosInfo && outcome === 'rode' && !String(st?.note || '').trim() && !winLater(st, date, evNow));
-  useEffect(() => {
-    if (step === 'done' && askNote == null) setAskNote(askNow);
-  }, [step, askNote, askNow]);
   if (!st || !g) return <Redirect href="/" />;
-  const ask = askNote ?? askNow;
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
 
   const go = (next: Step, back = false) => {
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
-    setAdding(false);
     setOwnPlan(false);
   };
   const goBack = () => {
@@ -213,7 +192,6 @@ export default function Log() {
     if (!prev) return;
     setHist(h);
     setStep(prev);
-    setAdding(false);
     setOwnPlan(false);
   };
 
@@ -249,27 +227,11 @@ export default function Log() {
     setOutcome(v);
     if (made) count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
     buzz('save');
-    go(v === 'slipped' ? 'slHold' : 'trigger');
+    go(v === 'slipped' ? 'slHold' : 'won');
   };
   const patch = (p: Partial<DayEvent>) => {
     if (!evId) return;
     update((s) => ({ ...s, days: patchEvent(s.days, date, evId, p) }));
-  };
-  const nextAfterTrigger = () => go(outcome === 'rode' ? 'did' : 'done');
-  const saveOwn = (kind: 'trig' | 'did', text: string) => {
-    const r = addOption(st, kind, text);
-    if (!r.id) {
-      say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : WORDS.needWords);
-      return;
-    }
-    const id = r.id;
-    update((s) => {
-      const days = evId ? patchEvent(s.days, date, evId, kind === 'did' ? { did: didIds((ev?.did || []).concat(id)) } : { trigger: id }) : s.days;
-      return { ...s, settings: r.st, days };
-    });
-    setAdding(false);
-    buzz('tap');
-    if (kind === 'trig') nextAfterTrigger();
   };
   const undo = () => {
     /* a mistaken log taken back: its points go with it (they were never really earned) */
@@ -318,28 +280,8 @@ export default function Log() {
     />
   );
 
-  /* ---------- the parts every closing screen shares ---------- */
+  /* ---------- the saved entry, with Undo, on the first page of the comeback ---------- */
   const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} /> : null;
-  const noteAndTime = ev ? (
-    <View style={{ width: '100%', gap: 10 }}>
-      <View style={s.row}>
-        <Chip label={ev.note ? 'Edit note' : ask && step === 'done' ? 'Entry note' : 'Add a note'} on={noteOpen} onPress={() => setNoteOpen(!noteOpen)} />
-        <Chip label="Change time" on={false} onPress={() => setWhenOpen(true)} />
-      </View>
-      {noteOpen ? (
-        <Field
-          label="Note on this entry"
-          hideLabel
-          multiline
-          maxLength={500}
-          defaultValue={ev.note}
-          placeholder="What would make this easier next time?"
-          onChangeText={(t) => patch({ note: t })}
-        />
-      ) : null}
-    </View>
-  ) : null;
-
   /* the progress dots of a slip: the hold, before it happened, now, next time (all four filled at the finish) */
   const slDots = () => {
     const i = SL_DOT[step] ?? 0;
@@ -377,7 +319,21 @@ export default function Log() {
   let footer: React.ReactNode = null;
   let sky: Sky = 'sky';
   let title = from === 'urge' ? 'SOS' : 'Quick check-in';
-  let dots: { n: number; i: number; label: string } | null = { n: 3, i: CI_STEP[step] ?? 3, label: 'Question ' + ((CI_STEP[step] ?? 0) + 1) + ' of 3' };
+  let dots: { n: number; i: number; label: string } | null = null;
+
+  /* an urge ridden out: the one celebration, with what helped and what set it off inside it */
+  if (step === 'won' && ev && outcome === 'rode') {
+    const mins = from === 'urge' && params.m != null && params.m !== '' ? Number(params.m) || 0 : null;
+    return (
+      <RodeOut
+        won={{ key: date, id: ev.id, mins, moves: [], gain }}
+        night={night || urNight(new Date(now).getHours())}
+        level={Math.max(1, g.level.n)}
+        title={title}
+        onUndo={undo}
+      />
+    );
+  }
 
   if (step === 'q1') {
     const pause = from === 'pause' || from === 'urge';
@@ -423,76 +379,11 @@ export default function Log() {
         </Dock>
       </>
     );
-  } else if (step === 'trigger') {
-    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
-    const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;
-    body = (
-      <>
-        {saved}
-        <T v="title" style={s.h} accessibilityRole="header">
-          What set it off?
-        </T>
-        <T tone="muted" style={s.center}>
-          Optional. Tap one, or skip.
-        </T>
-        {adding ? (
-          <AddOwn kind="trig" onSave={(t) => saveOwn('trig', t)} onCancel={() => setAdding(false)} />
-        ) : (
-          <Dock>
-            <Tiles
-              list={L.list}
-              cur={ev?.trigger || null}
-              onPick={(v) => {
-                patch({ trigger: v === 'none' ? null : v });
-                buzz('tap');
-                nextAfterTrigger();
-              }}
-              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
-            />
-          </Dock>
-        )}
-        {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
-      </>
-    );
-    footer = <Link label={outcome === 'slipped' ? 'Skip' : 'Skip the rest'} onPress={() => go('done')} />;
-  } else if (step === 'did') {
-    const cur = didIds(ev?.did);
-    const L = optList('did', st.opts, { sel: cur, all: allOpts });
-    const full = st.opts.did.filter((x) => !x.off).length >= OPT_MAX;
-    body = (
-      <>
-        {saved}
-        <T v="title" style={s.h} accessibilityRole="header">
-          What did you do?
-        </T>
-        <T tone="muted" style={s.center}>
-          Optional. Tap everything that applies.
-        </T>
-        {adding ? (
-          <AddOwn kind="did" onSave={(t) => saveOwn('did', t)} onCancel={() => setAdding(false)} />
-        ) : (
-          <Dock>
-            <Tiles
-              list={L.list}
-              cur={cur}
-              onPick={(v) => {
-                const next = didToggle(ev?.did, v);
-                patch({ did: next.length ? next : null });
-                buzz('tap');
-              }}
-              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
-            />
-          </Dock>
-        )}
-        {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
-      </>
-    );
-    footer = cur.length ? <Button label="Done" onPress={() => go('done')} /> : <Link label="Skip" onPress={() => go('done')} />;
   } else if (step === 'slHold') {
     /* 1. press and hold to rekindle: the only way on. Once it is held, the flame, the heading and one line on what the slip
        did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026) */
     const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
-    const w = rkHoldWords(lit, !!ev?.sp);
+    const w = rkHoldWords(lit, !!ev?.sp, rkRunBefore(snap.days, st, tk, date));
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
@@ -545,8 +436,10 @@ export default function Log() {
             onPick={(r, c) => {
               const w = feelAt(r, c)!.w;
               const f = feelFam(r, c)!;
-              /* the feeling also names the slip's trigger, when it has none yet */
-              patch({ fb: w, ...(ev && !ev.trigger && FEEL_TRIG[f] ? { trigger: FEEL_TRIG[f] } : {}) });
+              /* the feeling also names the slip's trigger, when it has none yet and the feeling plainly is one (core
+                 feelTrigOf: being ashamed is never filed as stress) */
+              const tr = feelTrigOf(f);
+              patch({ fb: w, ...(ev && !ev.trigger && tr ? { trigger: tr } : {}) });
               buzz('save');
               AccessibilityInfo.announceForAccessibility('You felt ' + w.toLowerCase() + '.');
               go('slFeel');
@@ -744,53 +637,6 @@ export default function Log() {
         ) : null}
         <Dock>
           <Button label="Done" onPress={closeAll} />
-        </Dock>
-      </>
-    );
-  } else {
-    /* after an urge passes in SOS: how it went, and (only while there is no note yet) a line to read next time */
-    const mt = sosInfo ? urMinText(sosInfo.m) : '';
-    const rodeN = sosInfo ? eventsOf(snap.days).filter((e) => e.outcome === 'rode').length : 0;
-    const head = sosInfo ? 'It passed. You rode it out.' : 'Saved. That counts.';
-    sky = 'mint';
-    dots = { n: 3, i: 3, label: 'All done' };
-    body = (
-      <>
-        <Flame level={Math.max(1, g.level.n)} size={96} />
-        <T v="title" style={s.h} accessibilityRole="header">
-          {head}
-        </T>
-        <T style={s.center}>
-          {ev ? entryLabel(ev) : ''}
-          {gain ? <T v="label" tone="mintText">{`  +${gain} points`}</T> : null}
-        </T>
-        {sosInfo ? (
-          <>
-            <T style={s.center}>{(sosInfo.st && UR_STR_NAME[sosInfo.st] ? UR_STR_NAME[sosInfo.st] + ' at the start. ' : '') + 'Passed in ' + mt + '.'}</T>
-            <T style={s.center}>{'That makes ' + rodeN + ' urge' + (rodeN === 1 ? '' : 's') + ' ridden out.'}</T>
-          </>
-        ) : null}
-        {ask ? (
-          <View style={{ alignSelf: 'stretch', gap: 6 }}>
-            <Field
-              label="A note for your next hard moment"
-              multiline
-              maxLength={600}
-              defaultValue={st.note || ''}
-              placeholder={'Like: It passed in ' + (mt || 'a few minutes') + '. It will pass again.'}
-              onChangeText={(t) => apply({ st: changeSettings(st, (x) => void (x.note = t)) })}
-            />
-            <T v="small" tone="muted">
-              SOS shows it to you first next time. You can change it in My plan.
-            </T>
-          </View>
-        ) : null}
-        {noteAndTime}
-        <Dock>
-          <Button label="Done" onPress={closeAll} />
-          <View style={{ alignItems: 'center' }}>
-            <Link label="Undo this entry" onPress={undo} />
-          </View>
         </Dock>
       </>
     );

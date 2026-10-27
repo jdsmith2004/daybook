@@ -152,7 +152,8 @@ describe('the line under Rekindle once it is held', () => {
     const st = core.normSettings({ start: '2026-10-01', day1: '2026-10-01' });
     const days = slipOn({}, K, 's1', '22:10');
     const line = core.rkLitLine(days, st, {}, K, K);
-    expect(line).toMatch(/still yours\.$/);
+    expect(line).toBe('Your 19 days are yours for good, and so is everything you earned.');
+    expect(line).not.toMatch(/for now/);
     expect(line.split('. ').length).toBe(1);
     expect(line).not.toMatch(noContractions);
   });

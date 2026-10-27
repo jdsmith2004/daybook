@@ -15,8 +15,8 @@
       once, and asked about the next morning (Gollwitzer and Sheeran 2006, d = 0.65). It is saved as an after-slip
       talk-through (talk.ts, pr 1, with the feeling word as fw), so Today and the look back work as they always have.
    The feeling before (fb) and after (fa) are kept on the slip itself (normEvent), on the device like the rest of the log. */
-import { eventsOf } from './legacy/core.js';
-import { FEELINGS, feelFam, type FeelFam } from './feelings';
+import { addDays, clockOf, eventsOf } from './legacy/core.js';
+import { FEEL_TRIG, FEELINGS, feelFam, type FeelFam } from './feelings';
 import { RK_FEELS, type RkFeel } from './rekindle-learn';
 import type { TalkHeld, TalkMove, TalkNeed } from './talk';
 import type { Clock, DayEvent, DayKey, Days } from './types';
@@ -232,3 +232,23 @@ export const SLIP_NOW_SAYS: Record<RkFeel, { h: string; t: string }> = {
 
 /** words that ask for more than a plan: the feeling page shows the free line to talk to someone */
 export const SLIP_HELP_WORDS = ['Despairing', 'Hopeless', 'Helpless'];
+
+/** the trigger a feeling named before an urge or a slip points to, only when it plainly is one: lonely, bored and tired, and
+    fear or anger as stress. Shame and a low mood point to no trigger (feeling ashamed is not being stressed), so a slip's
+    trigger is never set to something the person did not say. */
+const TRIG_FAMS: FeelFam[] = ['lonely', 'bored', 'tired', 'fear', 'anger'];
+export function feelTrigOf(fam: FeelFam | null | undefined): string | null {
+  return fam && TRIG_FAMS.indexOf(fam) >= 0 ? FEEL_TRIG[fam] : null;
+}
+
+/** the slip a look back on an eyes-open go-ahead (Talk it through) points to: the first slip logged from the talk-through's
+    moment on, from its day k to tk, as talk-log.ts lookBack finds it (it writes one when none was logged). null when there
+    is none. */
+export function slipAfterTalk(days: Days, k: DayKey, t: number, tk: DayKey): { k: DayKey; id: string } | null {
+  const since = clockOf(t);
+  for (let d = k, n = 0; d <= tk && n < 9; d = addDays(d, 1), n++) {
+    const e = (days[d]?.events || []).find((x) => x.outcome === 'slipped' && (d !== k || !x.time || x.time >= since));
+    if (e) return { k: d, id: e.id };
+  }
+  return null;
+}

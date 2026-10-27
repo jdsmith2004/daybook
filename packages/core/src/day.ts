@@ -28,6 +28,7 @@ import { lessonOpen } from './accounts';
 import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
+import { rkRunWords } from './rekindle';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
 
 /** the short status on the right of a stop */
@@ -162,10 +163,7 @@ export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKe
   const runs = !!st.day1 && key === tk && st.cleanMode !== 'step';
   if (s.slipped)
     return (
-      'Saved. A slip is data, not a reset.' +
-      (runs && sk.open && sk.open.k === tk
-        ? ' Your run waits for you. The Rekindle quest saves it, any time until ' + fmtDate(addDays(tk, RK_DAYS), { weekday: 'long' }) + ' night.'
-        : '')
+      'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' ' + Object.values(rkRunWords(sk.open.run, sk.open.k)).join(' ') : '')
     );
   /* what holds, not a run that can drop to zero: the same measure Today shows */
   const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;
@@ -300,9 +298,14 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
     }
     if (s.k === 'evening') {
       const c = days[tk]?.checkin;
-      /* the first number it holds (mood, or motivation on an older day) and stress */
-      const first = c && c.done ? rateKeys(c).find((k) => k !== 's' && c[k] != null) : undefined;
-      const said = c && c.done ? [first ? ratingOf(first).name + ' ' + c[first] : '', c.s != null ? 'Stress ' + c.s : ''].filter(Boolean).join(' · ') : '';
+      /* the first number it holds (mood, or motivation on an older day), the urges, and stress */
+      const first = c && c.done ? rateKeys(c).find((k) => k !== 's' && k !== 'u' && c[k] != null) : undefined;
+      const said =
+        c && c.done
+          ? [first ? ratingOf(first).name + ' ' + c[first] : '', c.u != null ? 'Urges ' + c.u : '', c.s != null ? 'Stress ' + c.s : '']
+              .filter(Boolean)
+              .join(' · ')
+          : '';
       return {
         ...base,
         sky: 'violet',

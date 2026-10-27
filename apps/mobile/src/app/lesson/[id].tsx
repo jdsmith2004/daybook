@@ -67,7 +67,7 @@ import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { Dock } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
 import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
@@ -356,8 +356,10 @@ export default function LessonScreen() {
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       body = (
         <View style={{ alignItems: 'center', gap: 12 }}>
-          <FitArt drop={0.45}>
-            <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={92} />
+          {/* the flame, drawn big in its own sky, every form the same size (the owner, October 27, 2026); on a short phone
+              it shrinks a little before the words do, and never steps aside */}
+          <FitArt min={0.62}>
+            <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={136} />
           </FitArt>
           <T style={[s.h, { textAlign: 'center' }]} accessibilityRole="header">
             {again ? 'Lesson ' + n + ', again' : 'Lesson ' + n + ' done'}
@@ -742,7 +744,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       <>
         {/* the flame stays beside the words, never dropped for room */}
         <View style={s.backHead}>
-          <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 64 : 78} alive />
+          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 64 : 78} />
           <View style={{ flex: 1, gap: 6 }}>
             <Eyebrow icon="sparkle" label="Welcome back" t={t} />
             <T style={[s.h, s.hsm]} accessibilityRole="header">

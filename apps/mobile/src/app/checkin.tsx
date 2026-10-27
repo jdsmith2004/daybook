@@ -169,6 +169,7 @@ export default function Checkin() {
   const i = step === 'end' ? STEPS.length : STEPS.indexOf(step);
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
+  let pin: React.ReactNode = null;
 
   if (step === 'md' || step === 'u' || step === 's') {
     const R = ratingOf(step);
@@ -236,8 +237,6 @@ export default function Checkin() {
           {more}
           <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
           <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
-          <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
-          <GoodnightButton onPress={sayGoodnight} />
         </Dock>
       </>
     ) : (
@@ -258,7 +257,19 @@ export default function Checkin() {
         </Dock>
       </>
     );
-    footer = tonight && any ? <Link label="Save for now, and say goodnight later" onPress={save} /> : null;
+    /* Goodnight is pinned to the bottom of the screen, so a row that opens above it never pushes it out of reach */
+    if (tonight)
+      pin = (
+        <>
+          <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
+          <GoodnightButton onPress={sayGoodnight} />
+          {any ? (
+            <View style={s.saveLink}>
+              <Link label="Save for now, and say goodnight later" onPress={save} />
+            </View>
+          ) : null}
+        </>
+      );
   } else {
     const g = gameCompute(snap.days, st, snap.reviews, tk);
     const gain = Math.max(0, g.pts - pts0);
@@ -317,7 +328,8 @@ export default function Checkin() {
       dots={{ n: STEPS.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + STEPS.length }}
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}
-      footer={footer}>
+      footer={footer}
+      pin={pin}>
       <Appear key={step} x={step === 'md' && !hist.length ? 0 : 36 * dir} by={0} duration={280} style={s.stage}>
         {body}
       </Appear>
@@ -358,6 +370,7 @@ function More({
         step={0.5}
         show={hoursText}
         unit="hours"
+        compact
         hint="A guess is fine"
         onChange={(n) => set({ ...form, h: n })}
       />
@@ -395,6 +408,7 @@ const s = StyleSheet.create({
   tap: { fontFamily: font.bodySemi, marginTop: 4 },
   pts: { fontFamily: font.display, fontSize: 18 },
   offer: { alignItems: 'center' },
+  saveLink: { alignItems: 'center' },
   moreOpen: { alignSelf: 'stretch', gap: 12 },
   /* keeps the slider in the same place before and after Next shows */
   btnSpace: { height: 52 },

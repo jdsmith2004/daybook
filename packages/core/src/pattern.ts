@@ -33,7 +33,8 @@ export function patKeys(range: PatRange, days: Days, st: Settings, tk: DayKey): 
 export interface PatGaps {
   /** clean days before each slip day, oldest first (the last 10) */
   runs: number[];
-  /** clean days since the last slip day (or since the start), still going */
+  /** clean days since the last slip day (or since the start), still going. Today counts while it has no slip, the way the
+      run does (Current run in Days and My numbers), so the two never disagree on one page. */
   now: number;
   /** slip days in all */
   slips: number;
@@ -50,7 +51,7 @@ export function patGaps(days: Days, st: Settings, tk: DayKey): PatGaps {
     if (sumDay(days[k]).slipped > 0) {
       runs.push(run);
       run = 0;
-    } else if (k < tk || sumDay(days[k]).n || days[k]?.checkin?.done) run++;
+    } else run++;
   }
   const avg = (l: number[]) => Math.round((l.reduce((a, b) => a + b, 0) / l.length) * 10) / 10;
   let trend: PatGaps['trend'] = null;
@@ -308,7 +309,7 @@ export function patInsights(g: PatGaps, ride: { then: number; now: number } | nu
 export function patNowLine(g: PatGaps, tk: DayKey, last: DayKey | null): string {
   if (!g.slips) return 'No slip logged yet. Every day here counts.';
   const ago = last ? diffDays(tk, last) : 0;
-  if (ago === 0) return 'Your last slip was today. The next stretch starts now.';
-  if (!g.now) return 'Your last slip was yesterday. Today is day 1 of the next stretch.';
+  if (ago === 0 || !g.now) return 'Your last slip was today. The next stretch starts now.';
+  if (ago === 1) return 'Your last slip was yesterday. Today is day 1 of the next stretch.';
   return 'Now: ' + plural(g.now, 'clean day') + ' since your last slip, and counting.';
 }

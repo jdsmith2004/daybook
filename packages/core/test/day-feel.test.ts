@@ -2,7 +2,7 @@
    the day, for sync and backups), when it may ask, and the first open of the day. */
 import { describe, expect, it } from 'vitest';
 import { daySummary } from '../src/calendar';
-import { DAY_FEEL, DAY_FEEL_Q, dayFeelDue, dayFeelOf, dayFeelSet, dayOpenNext } from '../src/day-feel';
+import { DAY_FEEL, DAY_FEEL_Q, dayFeelDue, dayFeelOf, dayFeelQuiet, dayFeelSet, dayOpenNext } from '../src/day-feel';
 import { normRecord } from '../src/data';
 import { dayPoints, gameCompute, normDay, normSettings } from '../src/legacy/core.js';
 import { loggedDay } from '../src/log-start';
@@ -105,6 +105,34 @@ describe('when it may ask', () => {
     /* a slip long past, with its Rekindle closed, no longer holds it back */
     const old = addEvent({}, '2026-10-08', 'slipped', '23:00', {}, 1).days;
     expect(dayFeelDue(old, st, '2026-10-20')).toBe(true);
+  });
+});
+
+describe('the hours it stays closed', () => {
+  /* screens off at 11 PM (the starting setting), so the wind-down starts at 10 PM; the new day at 4 AM */
+  const s2 = normSettings({ start: '2026-10-07', day1: '2026-10-14', screensOff: '23:00', rollover: 4 });
+  it('asks in the day, and not once the wind-down has started, until the new day', () => {
+    expect(dayFeelQuiet({}, s2, '2026-10-20', at(20, 8))).toBe(false);
+    expect(dayFeelQuiet({}, s2, '2026-10-20', at(20, 21, 59))).toBe(false);
+    expect(dayFeelQuiet({}, s2, '2026-10-20', at(20, 22))).toBe(true);
+    expect(dayFeelQuiet({}, s2, '2026-10-20', at(20, 23, 30))).toBe(true);
+    /* after midnight, still the same log day */
+    expect(dayFeelQuiet({}, s2, '2026-10-20', at(21, 2))).toBe(true);
+    /* the new day */
+    expect(dayFeelQuiet({}, s2, '2026-10-21', at(21, 7))).toBe(false);
+  });
+  it('a screens-off early in the log day (a night shift) does not quiet the whole day', () => {
+    const shift = normSettings({ start: '2026-10-07', day1: '2026-10-14', screensOff: '08:00', rollover: 4 });
+    expect(dayFeelQuiet({}, shift, '2026-10-20', at(20, 15))).toBe(false);
+  });
+  it('not in the hard hours, nor in the two hours before them', () => {
+    /* slips at 3 PM on the weekdays before: hard hours 3 to 5 PM (October 20, 2026 is a Tuesday) */
+    let d: Days = {};
+    for (const k of ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15']) d = addEvent(d, k, 'slipped', '15:10', {}, 1).days;
+    expect(dayFeelQuiet(d, s2, '2026-10-20', at(20, 11))).toBe(false);
+    expect(dayFeelQuiet(d, s2, '2026-10-20', at(20, 13, 30))).toBe(true);
+    expect(dayFeelQuiet(d, s2, '2026-10-20', at(20, 16))).toBe(true);
+    expect(dayFeelQuiet(d, s2, '2026-10-20', at(20, 17, 30))).toBe(false);
   });
 });
 

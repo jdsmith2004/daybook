@@ -1,13 +1,14 @@
 /* Welcome back (core away.ts, back.ts): after days away, one question: how many slips while away. The question at the
    top; the number big in the open middle; the slider and Save low, by the thumb. Nothing is set until the slider is
    touched, and nothing is lost whatever the answer: each slip takes one day, never more. Today opens this; the X leaves
-   the gap unanswered, Today asks once more the next day, then keeps a quiet row. */
-import { answerAwaySlips, awayDue, awaySpan } from '@daybook/core';
-import { useState } from 'react';
+   the gap unanswered, Today asks once more the next day, then keeps a quiet row. After the answer, the person's own flame,
+   drawn big (flame-medallion.tsx). */
+import { answerAwaySlips, awayDue, awaySpan, gameCompute } from '@daybook/core';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, T } from '@/components/ui';
@@ -22,6 +23,8 @@ export default function Back() {
   const [gap] = useState(() => (st ? awayDue(snap.days, st, tk) : null));
   const [n, setN] = useState<number | null>(null);
   const [saved, setSaved] = useState<number | null>(null);
+  /* the person's own flame, as big as on Today: everything built is still here */
+  const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [snap, st, tk]);
 
   if (!st || !gap || saved != null) {
     const words =
@@ -33,7 +36,7 @@ export default function Back() {
     return (
       <SceneFrame title="Welcome back" sky="mint" onClose={close}>
         <View style={s.mid}>
-          <Flame level={2} size={110} />
+          <FlameMedallion level={level} size={150} />
         </View>
         <T v="title" style={s.c} accessibilityRole="header">
           {words.h}

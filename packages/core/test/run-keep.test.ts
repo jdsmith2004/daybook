@@ -166,9 +166,12 @@ describe('the words follow the answer', () => {
 
   it('keep, and no answer yet, read as today', () => {
     for (const days of [slip(K), slip(K, { keep: true })]) {
-      expect(words(days, K)).toContain('Your 7-day run waits for you.');
+      expect(words(days, K)).toContain('Your 7 days are yours for good.');
+      const r = core.rkActive(days, st, K)!;
+      const rk = [core.rkEmbers(days, st, {}, K, K, true, false).line, core.rkQuest(days, st, K, K, days[K].events[0], 21), core.rkCard(days, st, K, r, 21)];
+      expect(JSON.stringify(rk)).not.toMatch(/for now|run waits|saves it|can still be saved|Save your/);
       /* from RK_BACK_FROM on, coming back saves the run: no errands to finish */
-      expect(core.rkQuest(days, st, K, K, days[K].events[0], 21).h).toBe('Your 7-day run waits for you');
+      expect(core.rkQuest(days, st, K, K, days[K].events[0], 21).h).toBe('Your 7 days are yours for good');
     }
   });
 
@@ -199,7 +202,9 @@ describe('the two answers, in words', () => {
   it('say plainly what each one means: a kept run has the slip day in it, a fresh run counts only days with no slip', () => {
     const w = core.rkChoice(slip(K), st, K, core.rkAsk(slip(K), st, K, K)!);
     expect(w.line).toBe('Both are good answers. The slip stays in your log either way, and your points, level and badges stay yours.');
-    expect(w.keep).toBe('Finish the Rekindle quest by Wednesday night and your run goes on from 7. The slip day stays in it, marked as the day you came back.');
+    expect(w.keep).toBe(
+      'Ride out one urge or have one day with no slip by Wednesday night, and the count goes on from 7. The slip day stays in it, marked as the day you came back.',
+    );
     expect(w.fresh).toBe('A new run starts tomorrow and counts only days with no slip. Your 7 days stay on record as your longest run.');
     /* asked again on Today a day later (the app closed in the middle): the fresh run counts from the day after the slip */
     expect(core.rkChoice(slip(K), st, core.addDays(K, 1), { k: K, run: 7, until: 'Wednesday' }).fresh).toBe(

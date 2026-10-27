@@ -226,16 +226,24 @@ describe('SOS memory and rounds', () => {
     expect(core.urLikeOf(odd, 'curious')).toBe(3);
   });
 
-  it('keeps each round: the tool and what happened next', () => {
+  it('keeps each round: the moves and tools, and what happened next, each marked once', () => {
     let sc = { ...core.newUrge(1000, 0), used: ['breathe'] };
-    sc = core.urAnswer(sc, 'again');
+    sc = core.urMark(sc, 's');
     expect(sc.rounds).toEqual([['breathe', 's']]);
     expect(sc.again).toBe(1);
-    sc = core.urAnswer({ ...sc, used: ['breathe', 'move'], roundDone: false }, 'rode');
+    sc = core.urMark({ ...sc, used: ['breathe', 'move', 'ground'] }, 'p');
     expect(sc.rounds).toEqual([
       ['breathe', 's'],
       ['move', 'p'],
+      ['ground', 'p'],
     ]);
+    expect(sc.again).toBe(1);
+    /* nothing new since the last answer: nothing is added */
+    expect(core.urMark(sc, 'x').rounds).toHaveLength(3);
+    /* at most eight rounds are kept */
+    const many = core.urMark({ ...core.newUrge(1000, 0), used: Array.from({ length: 12 }, (_, i) => 'm' + i) }, 'p');
+    expect(many.rounds).toHaveLength(8);
+    expect(many.marked).toBe(12);
   });
 
   it('saves the entry with how long it took, and how long you waited before a slip', () => {

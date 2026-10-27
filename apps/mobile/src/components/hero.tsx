@@ -7,8 +7,11 @@
    app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
    to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
    In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek). It only fills, and a slip never
-   touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen feeding the flame. */
-import { CHEERS, emblemScene, heroNumber, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
+   touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen feeding the flame.
+   Every form is drawn the same size (big-flame.tsx): the growth shows in the form. On a short phone the sky is shorter
+   (lib/today-size.ts), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
+   that hold, one quiet line under the sky says the slip is logged and the days stay (core heroSlipLine). */
+import { CHEERS, emblemScene, heroNumber, heroSlipLine, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,23 +22,31 @@ import { Text } from '@/components/text';
 const ON_ART = 1.15;
 import Svg, { Path } from 'react-native-svg';
 
+import { BigFlame } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
-import { GradFlame } from '@/components/grad';
 import { Card, Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { SKY_MAX, useTodaySize } from '@/lib/today-size';
 
-const SCENE_H = 262;
-const FLAME = 206;
+/** the flame's drawing, as a share of the sky's height, and how far down it starts */
+const FLAME_OF = 206 / SKY_MAX;
 const FLAME_TOP = 2;
 
 export function Hero({ g, snap, tk, now, children }: { g: GameState; snap: Snapshot; tk: string; now: number; children?: React.ReactNode }) {
+  const c = useTheme();
+  const line = heroSlipLine(snap.days, snap.settings!, tk, now);
   return (
     <Card style={s.card}>
       <Sky g={g} snap={snap} tk={tk} now={now} />
-      {children ? <View style={s.under}>{children}</View> : null}
+      {children || line ? (
+        <View style={s.under}>
+          {line ? <Text style={[s.slipLine, { color: c.muted }]}>{line}</Text> : null}
+          {children}
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -81,6 +92,8 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   const reduce = useReducedMotion();
   const lvl = g.level;
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
+  const SCENE_H = useTodaySize().sky;
+  const FLAME = Math.round(SCENE_H * FLAME_OF);
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
   const light = sc.ink === 'light';
@@ -159,7 +172,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
     return () => clearTimeout(t);
   }, [grew]);
   return (
-    <View style={s.sky}>
+    <View style={[s.sky, { height: SCENE_H }]}>
       {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
       <LinearGradient
         colors={sc.sky}
@@ -223,7 +236,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
       </Pressable>
       <View style={s.flame} pointerEvents="box-none">
         <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
-          <GradFlame level={lvl.n} size={FLAME} soft pulse={pulse} />
+          <BigFlame level={lvl.n} size={FLAME} pulse={pulse} />
         </Pressable>
       </View>
       {h ? (
@@ -322,7 +335,7 @@ function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string;
 
 const s = StyleSheet.create({
   card: { padding: 0, gap: 0 },
-  sky: { height: SCENE_H, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
+  sky: { borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   hills: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   flame: { position: 'absolute', top: FLAME_TOP, left: 0, right: 0, alignItems: 'center' },
@@ -348,6 +361,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
   },
   under: { padding: 14 },
+  slipLine: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, textAlign: 'center', marginTop: -2, marginBottom: 10 },
   ring: { position: 'absolute', top: 12, left: 12, alignItems: 'center', gap: 3 },
   ringN: { fontFamily: font.display, fontSize: 16, lineHeight: 19 },
   ringT: { fontFamily: font.bodyBold, fontSize: 9.5, letterSpacing: 1 },

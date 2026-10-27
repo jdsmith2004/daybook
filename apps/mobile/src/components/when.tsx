@@ -1,7 +1,8 @@
 /* When it happened (core: when.ts). A pill shows the day and time an entry is logged for ("Today · 9:47 PM"); a tap opens a
    sheet from the bottom to change it: quick picks (Just now, 1 hour ago, Last night), the days of the last two weeks in a
    strip, and a wheel for the hour, the minute and AM or PM, like a phone's own clock. The moment picked big at the top
-   says what will be saved. A time after midnight is kept with the day before, and the sheet says so. */
+   says what will be saved. A time after midnight is kept with the day before, and the sheet says so. Days before the person
+   started Daybook are not offered: the log begins on their first day. */
 import { addDays, whenClock, whenDayWord, whenDays, whenFiledUnder, whenFuture, whenLabel, whenQuick, whenSame, type DayKey, type When } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useStore } from '@/lib/store';
 import { font, MAX_WIDTH, useTheme } from '@/lib/theme';
 
 /** the day and time an entry is logged for, as a pill; a tap changes it */
@@ -65,17 +67,19 @@ export function WhenSheet({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
+  /* the first day the log can hold: the day the person started */
+  const from = useStore().snap.settings?.start || '';
   const [w, setW] = useState<When>(value);
   /* each time it opens, it starts from the moment shown */
   useEffect(() => {
     if (open) setW(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-  const days = whenDays(now, 14);
+  const days = whenDays(now, 14).filter((d, i) => i === 0 || !from || d >= from || d === value.day);
   if (days.indexOf(value.day) < 0) days.push(value.day);
   const future = whenFuture(w, now);
   const under = whenFiledUnder(w, roll);
-  const quick = whenQuick(now, roll);
+  const quick = whenQuick(now, roll).filter((q) => q.id === 'now' || !from || q.w.day >= from);
   const set = (x: When) => setW(x);
 
   return (

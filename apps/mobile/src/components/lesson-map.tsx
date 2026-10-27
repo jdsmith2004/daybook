@@ -430,6 +430,7 @@ export function StoneCard({
   onNext,
   onSignIn,
   onClose,
+  onHeight,
 }: {
   L: Lesson;
   /** the stone's center, to point at it */
@@ -447,6 +448,8 @@ export function StoneCard({
   onNext: () => void;
   onSignIn: () => void;
   onClose: () => void;
+  /** how tall the card came out, so the page can scroll it fully into view */
+  onHeight?: (h: number) => void;
 }) {
   const c = useTheme();
   const dark = c.scheme === 'dark';
@@ -458,7 +461,10 @@ export function StoneCard({
   const deep = mix(ahead ? q.face : t.ic, '#000000', dark ? 0.35 : 0.25);
   const btn = ahead ? (dark ? '#FFFFFF' : c.ink) : dark ? t.ic : t.text;
   return (
-    <View style={[s_.card, { top, backgroundColor: bg, shadowColor: '#2A2350' }]} accessibilityViewIsModal={false}>
+    <View
+      style={[s_.card, { top, backgroundColor: bg, shadowColor: '#2A2350' }]}
+      accessibilityViewIsModal={false}
+      onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}>
       <View style={[s_.point, { left: x - 16 - 11, backgroundColor: bg }]} />
       <View style={s_.cardTop}>
         <Text style={[s_.cardEye, { color: ink }]}>
@@ -682,6 +688,7 @@ export function LessonMapView({
   onGeom,
   onStart,
   onSignIn,
+  onCard,
 }: {
   m: LessonMap;
   /** whether a lesson can be opened now, by the account rule (Up next can wait behind a free account) */
@@ -701,6 +708,8 @@ export function LessonMapView({
   onGeom: (g: { y: number; k: number }) => void;
   onStart: (id: string) => void;
   onSignIn: () => void;
+  /** an opened card's bottom edge, in the map's own pixels (from the map's top), so the page can bring it above the tab bar */
+  onCard?: (bottom: number) => void;
 }) {
   const c = useTheme();
   const dark = c.scheme === 'dark';
@@ -720,6 +729,7 @@ export function LessonMapView({
   const pick = all.find((s) => s.L.id === sel) || null;
   const nx = m.next;
   const nxLand = nx ? m.lands.find((l) => l.stones.includes(nx))! : null;
+  const cardTop = pick ? Y(pick.y) + (pick.state === 'next' ? 37 : 29) * k + 14 : 0;
   /* when Up next moves on (a lesson finished here or anywhere else), a few sparks fly from the new stone, once, the next
      time the map is on screen */
   const focused = useIsFocused();
@@ -825,7 +835,8 @@ export function LessonMapView({
         <StoneCard
           L={pick.L}
           x={X(pick.x)}
-          top={Y(pick.y) + (pick.state === 'next' ? 37 : 29) * k + 14}
+          top={cardTop}
+          onHeight={(h) => onCard?.(cardTop + h)}
           t={toneOf(c, toneName(pick.L.u))}
           when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}

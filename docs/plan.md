@@ -2,6 +2,15 @@
 
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
+**Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below
+is fixed on `main`, with these left as they are:
+
+- 20, Goodnight at 8:32 PM ticking the wind-down: intended (core `offOnTime`, tested).
+- 14, the night of a slip: the "After a slip" card still puts the SOS card below the fold. The round SOS tab stays in reach.
+- 8, the lesson end: the flame shrinks to about 84 px on a 390x844 page to keep the answer and the button in reach.
+
+Not checked, as before: the iPhone build and haptics, a real sign-in and sync, and a real Stripe payment.
+
 **What the owner asked for:** walk the web app as five people (a new person through setup, the first Today and lesson;
 an urge in SOS that passes and one that does not; Planning a slip; Already happened on day 3 and after a 40-day run;
 someone back after two weeks, with and without an account), plus More, the plan, badges and levels and the account ask.

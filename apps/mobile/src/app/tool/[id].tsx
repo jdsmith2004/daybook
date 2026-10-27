@@ -1,9 +1,11 @@
-/* One tool, full screen. Started from SOS, Close goes back to SOS and Done goes on to "How is it now?"; on its own, it closes. */
+/* One tool, full screen. Started from SOS, Close goes back to SOS's tools and Done goes back to SOS, which asks "How is it
+   now?"; on its own, it closes. An urge ridden out here (the pause's It passed) ends on the one celebration (rode-out.tsx). */
 import { gameCompute, TOOLS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { hasScience, ScienceButton, ScienceSheet } from '@/components/ride/science';
+import { RodeOut, type Rode } from '@/components/rode-out';
 import { SceneFrame, Stage } from '@/components/scene';
 import { Breathe, Ground } from '@/components/tools/calm';
 import { Feel } from '@/components/tools/feel';
@@ -51,10 +53,13 @@ export default function Tool() {
   };
   const [text, setText] = useState<string | null>(null);
   const [sci, setSci] = useState(false);
+  /* an urge ridden out in this tool, and whether SOS was dark when it passed */
+  const [won, setWon] = useState<{ w: Rode; night: boolean } | null>(null);
   const tool = TOOLS.find((t) => t.id === id);
   const st = useCareSettings();
   if (!tool || !st) return <Redirect href="/" />;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
+  if (won) return <RodeOut won={won.w} night={won.night} level={level} title={won.w.sos ? 'SOS' : tool.name} />;
   /* a pause that is running (or done) on its own closes everything on X, like the legacy sceneExit: the timer keeps going,
      and Today shows it. Started from SOS, the X stops the pause and goes back to the tool list, like every other tool. */
   const exitHere =
@@ -69,7 +74,14 @@ export default function Tool() {
             close();
           }
       : exit;
-  const p: ToolProps = { finish, exit: exitHere, sos: !!sos.ur, combo: combo === '1', level };
+  const p: ToolProps = {
+    finish,
+    exit: exitHere,
+    sos: !!sos.ur,
+    combo: combo === '1',
+    level,
+    won: (w) => setWon({ w, night: urNight(new Date().getHours()) }),
+  };
   /* Name the feeling draws its own frames (the grid screen pans full screen, which the scene's scroll view cannot hold) */
   if (tool.id === 'feel') return <Feel {...p} now={now} />;
   /* late at night, a tool from SOS goes dark too */

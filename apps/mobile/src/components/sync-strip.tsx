@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { here } from '@/lib/here';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
@@ -19,7 +20,9 @@ export function SyncStrip() {
   const k = sync.status.k;
   if (k !== 'error' && k !== 'expired') return null;
   if (sync.at && now - sync.at < QUIET_MS) return null;
-  const text = k === 'expired' ? 'Sign in again to keep syncing. Your log is safe on this phone.' : 'Not syncing right now. Your log is safe on this phone.';
+  const text = here(
+    k === 'expired' ? 'Sign in again to keep syncing. Your log is safe on this phone.' : 'Not syncing right now. Your log is safe on this phone.',
+  );
   return (
     <View style={[s.wrap, { backgroundColor: c.surface2 }]} accessibilityRole="summary" accessibilityLiveRegion="polite">
       <Icon name="up" size={20} color={c.ink} />

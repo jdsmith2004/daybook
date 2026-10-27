@@ -82,7 +82,7 @@ export const TALK_CARDS: TalkCard[] = [
   {
     k: 'gap',
     for: ['plan', 'anyway', 'owed'],
-    title: 'Calm you guesses low.',
+    title: 'When calm, you guess low.',
     body: 'In a study of smokers, people who were not craving guessed that a craving later would pull less. When it came, it pulled harder than they had guessed. Right now you are not in the craving, so this is the best moment to decide.',
     short: 'Before a craving, you guess its pull low. It will be stronger, so decide now.',
     src: ['sayette'],

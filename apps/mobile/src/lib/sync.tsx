@@ -36,6 +36,7 @@ import { APPLE_WORDS, CognitoError } from '@daybook/core';
 import { apple, appleOffered, appleRevoked, askApple } from './apple';
 import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
+import { here } from './here';
 import { useStore } from './store';
 import { keptSup, loadKept, setTipHost, syncTips, watchAppleTips } from './tip';
 
@@ -142,6 +143,10 @@ async function callWithin(url: string, init: RequestInit): Promise<{ status: num
 /** what a person reads when the sync API turns a round down: the API's own words only where they were written for people
     (a day's allowance is used up), and a fixed, calm sentence for everything else, never a raw server message */
 function syncWords(e: HttpError): string {
+  return here(syncWordsAt(e));
+}
+
+function syncWordsAt(e: HttpError): string {
   if (e.status === 429)
     return e.ours ? e.message + ' Your changes are kept on this phone.' : 'Your account is busy right now. Your changes are kept here and will sync later.';
   if (e.status === 413) return 'That change is too large to sync. It is kept on this phone.';
@@ -244,7 +249,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       /* too much today, or too large: stop trying until the app is opened again */
       if (what === 'pause') paused.current = true;
       setStatus({ k: 'error', msg: syncWords(e) });
-    } else setStatus({ k: 'error', msg: 'Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.' });
+    } else setStatus({ k: 'error', msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.') });
   }, []);
 
   /** one round: pull, merge, push */
@@ -284,7 +289,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
             restamped = true;
             again.current = true;
           } else if (r.clock.length)
-            note = changes(r.clock.length) + ' not saved to your account yet, because this phone’s clock is ahead. Check its date and time.';
+            note = here(changes(r.clock.length) + ' not saved to your account yet, because this phone’s clock is ahead. Check its date and time.');
           else if (r.refused.length)
             note = changes(r.refused.length) + ' too large to save to your account. This device keeps ' + (r.refused.length === 1 ? 'it.' : 'them.');
         }
@@ -579,10 +584,10 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     }
     /* no answer (no connection, or it timed out): the delete may have finished on the server, so the words do not promise
        either way, and the account stays here so asking again finishes it */
-    if (!r) return { ok: false, msg: 'Could not reach your account, so the delete may not have finished. Nothing on this phone changed. Try again.' };
+    if (!r) return { ok: false, msg: here('Could not reach your account, so the delete may not have finished. Nothing on this phone changed. Try again.') };
     if (r.status === 401) {
       setStatus({ k: 'expired' });
-      return { ok: false, msg: 'Your sign-in ran out. Sign in again first, then delete. Nothing was deleted, and your log is still on this phone.' };
+      return { ok: false, msg: here('Your sign-in ran out. Sign in again first, then delete. Nothing was deleted, and your log is still on this phone.') };
     }
     /* the log is gone, the sign-in is not yet: the server's own words say so, and asking again finishes it */
     if (r.status !== 200)
@@ -591,7 +596,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         msg:
           typeof r.body.error === 'string' && r.status !== 400
             ? r.body.error
-            : 'Your account did not answer, so the delete may not have finished. Nothing on this phone changed. Try again.',
+            : here('Your account did not answer, so the delete may not have finished. Nothing on this phone changed. Try again.'),
       };
     await saveKept(null);
     await forgetSession();

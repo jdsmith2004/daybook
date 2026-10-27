@@ -70,7 +70,7 @@ describe('a slip, and the day after', () => {
   it('a run question left open: a sunrise-check card in the morning only, saying why, and the day after it', () => {
     const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
     expect(p.card).toMatchObject({ k: 'run-ask', eb: 'Your sunrise check', h: 'Your run question from last night is waiting', go: 'sunrise' });
-    expect(p.card.p).toBe('Keep your 7-day run going, or start fresh? It is kept for now, and both answers are good ones.');
+    expect(p.card.p).toBe('Your 7 days are yours for good. Keep counting from 7, or start fresh? Both answers are good ones.');
     expect(p.then).toMatch(/^Then: .*the wind-down\.$/);
     /* not before the day starts, and not after noon: it never sits there all day */
     expect(kinds(d, '2026-10-22', at(23, 2))).not.toContain('run-ask');

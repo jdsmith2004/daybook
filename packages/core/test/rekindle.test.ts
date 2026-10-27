@@ -200,12 +200,12 @@ describe('the run waits for you (three days after the slip)', () => {
     );
     expect(core.rkEnded(days, st, core.addDays(K2, 1))).toMatchObject({ run: 12, why: 'again' });
   });
-  it('the words lead with saving, and give the day the quest closes', () => {
+  it('the words lead with counting on, never a rescue, and give the day the quest closes', () => {
     const { days, id } = base();
     const ev = days[K].events.find((e) => e.id === id)!;
     const q = core.rkQuest(days, st, K, K, ev, 22);
-    expect(q.h).toBe('Save your 9-day run');
-    expect(q.p).toBe('Three steps, any time until Tuesday night. Your run waits for you.');
+    expect(q.h).toBe('Keep counting from 9');
+    expect(q.p).toBe('Three steps, any time until Tuesday night, and the count goes on.');
   });
   it('the record of clean days counts from Day 1, like the run', () => {
     const st2 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, u: 1 });

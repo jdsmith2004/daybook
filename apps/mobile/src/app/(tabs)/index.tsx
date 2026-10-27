@@ -4,7 +4,9 @@
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
    is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
-   rows; then the asks, one at a time. Pulling the page down past its top opens the journal (app/journal.tsx), and until
+   rows; then the asks, one at a time, and none on the day the person came back or in the hours after an SOS or a slip
+   (lib/quiet-asks.ts). A plan talked through waits quietly under SOS until its moment has passed (core talkPlanNow). On
+   a short phone Today goes compact (lib/today-size.ts), so SOS and its two buttons fit above the tab bar. Pulling the page down past its top opens the journal (app/journal.tsx), and until
    it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
    celebration opens. */
 import {
@@ -12,6 +14,7 @@ import {
   awayDue,
   awayStart,
   dayFeelDue,
+  dayFeelQuiet,
   markOpen,
   tipAsk,
   tipQuiet,
@@ -58,7 +61,7 @@ import { Hero } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
 import { PullHint } from '@/components/pull-door';
 import { Screen } from '@/components/screen';
-import { LogLink } from '@/components/today-log';
+import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
@@ -67,7 +70,9 @@ import { sheetOnTop } from '@/lib/nav';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
+import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
+import { useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -134,8 +139,9 @@ export default function Today() {
 
   /* How are you feeling today? (core day-feel.ts, lib/day-open.ts): on the day's first open only, and only over Today:
      once Today is the screen in front, with no sheet on it and nothing else about to open (Welcome back, graduation).
-     Never after a slip (one logged today, or a Rekindle open), and never in an open that used SOS or a pause. It opens
-     once: after that, or when this open cannot ask, it waits for tomorrow. */
+     Never after a slip (one logged today, or a Rekindle open), never in an open that used SOS or a pause, never in the
+     hard hours or once the wind-down has started (core dayFeelQuiet), and not on the day the person came back, when
+     enough has opened already. It opens once: after that, or when this open cannot ask, it waits for tomorrow. */
   const firstOpen = useFirstOpen();
   const focused = useIsFocused();
   const focusRef = useRef(focused);
@@ -143,9 +149,11 @@ export default function Today() {
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = !!due && askAgain;
+  const cameBack = useCameBack();
+  const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
   useEffect(() => {
     if (!firstOpen || !ready) return;
-    if (firstOpen.k < tk || sosUsed) {
+    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack) {
       spendFirstOpen();
       return;
     }
@@ -162,7 +170,7 @@ export default function Today() {
       router.push('/today-feel');
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -220,6 +228,8 @@ export default function Today() {
   const prefs = useReminderPrefs();
   const nlog = useNudgeLog();
   const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
+  const quiet = useQuietAsks();
+  const size = useTodaySize();
 
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
@@ -231,10 +241,11 @@ export default function Today() {
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
   });
-  const ask = accountAsk(snap.days, st, tk, g.level.n, account);
-  const tip = tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
+  /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
+  const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
+  const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* the counts ask, once, on a calm day, never beside another ask (core pulseAsk) */
-  const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
+  const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), quiet || tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
   /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
   const sub = (
@@ -244,7 +255,7 @@ export default function Today() {
           <Text style={[s.be, { color: c.muted }]}>{be}</Text>
         </Pressable>
       ) : null}
-      {sos.mem.jnSeen ? null : <PullHint onPress={() => router.push('/journal')} />}
+      {sos.mem.jnSeen || size.compact ? null : <PullHint onPress={() => router.push('/journal')} />}
       {early ? (
         <T v="small" tone="muted" style={{ marginTop: 4 }}>
           Still {fmtDate(tk, { weekday: 'long' })}’s log until {fmtClock(p2(st.rollover) + ':00')}
@@ -255,7 +266,7 @@ export default function Today() {
   return (
     <Screen
       scrollRef={scroll}
-      eyebrow="My Daybook"
+      eyebrow={size.compact ? undefined : 'My Daybook'}
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
       pullDown={(px) => {
@@ -266,11 +277,12 @@ export default function Today() {
       <NotifyBanner />
       <SyncStrip />
       <Hero g={g} snap={snap} tk={tk} now={now}>
-        <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+        <MomentCard pick={pick} snap={snap} tk={tk} now={now} compact={size.compact} />
         {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
       </Hero>
       <Card>
-        <LogLink />
+        <LogLink compact={size.compact} />
+        <WaitingPlan snap={snap} tk={tk} now={now} />
       </Card>
       <NightWinCard snap={snap} tk={tk} />
       <YourDay snap={snap} tk={tk} now={now} />

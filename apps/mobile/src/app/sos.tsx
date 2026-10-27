@@ -5,32 +5,31 @@
    most at the end counts too. A feeling named steers the next move. Each move runs by itself and flows into the next,
    because these skills work like scrolling: the person keeps going until it passes. Nothing asks how it is going. The
    book button under each move opens why it works, with its lesson.
-   "It passed" in the corner ends it with a big celebration: the flame, confetti, how long it took, how many you have
-   ridden out, which move helped most (one tap, and SOS leans on it next time), one line on why that move works with its
-   lesson for later, and what set it off (one tap). More (next to it) holds the bigger moves (step away, text someone,
-   talk it through, bed at night), every tool, and I slipped, which goes on to Rekindle (log.tsx). The X just closes.
-   With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
+   "It passed" in the corner ends it with the one celebration every urge ridden out gets (components/rode-out.tsx): the
+   flame, confetti, how long it took, how many you have ridden out, which move helped most (one tap, and SOS leans on it
+   next time), one line on why that move works with its lesson for later, and what set it off (one tap). More (next to it)
+   holds the bigger moves (step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
+   goes on to Rekindle (log.tsx). A tool picked there runs over SOS; when it is done, SOS asks one quiet question, "How is
+   it now?": Better leads on to It passed, Still strong opens the tools again. The X on a tool comes back to the tools.
+   The X here just closes. With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
 import {
   addEvent,
   blankP,
   changeDay,
+  famOfWord,
+  feelTrigOf,
   gameCompute,
-  LESSONS,
   newUrge,
-  optList,
-  patchEvent,
   rateUrTool,
   RIDE_MOVES,
   rideMark,
   rideNext,
-  ridePracticeAsk,
-  rideRecord,
-  rideWeek,
-  rideWhy,
   rkStepFor,
   urEntry,
+  urEvidence,
   urFromYou,
   urLikeOf,
+  urMark,
   urNight,
   urNote,
   urTags,
@@ -44,12 +43,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Appear } from '@/components/appear';
+import { BigOption, Link } from '@/components/choices';
 import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
 import { ScienceSheet } from '@/components/ride/science';
-import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
-import { Confetti } from '@/components/celebrate';
+import { RodeOut, type Rode } from '@/components/rode-out';
+import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
+import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { ToolGrid } from '@/components/tool-grid';
 import { Button, Icon, T } from '@/components/ui';
@@ -61,17 +61,6 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, NightContext, useSkyTheme, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
-
-/** what the end of a ride that passed shows: the entry it saved, how long it took, the moves done, the points it earned */
-interface Won {
-  key: string;
-  id: string;
-  mins: number;
-  moves: string[];
-  gain: number;
-  /* the trigger already saved (from a feeling named in the ride) */
-  trig: string | null;
-}
 
 export default function Sos() {
   const { snap, tk, now, update, apply } = useStore();
@@ -96,9 +85,11 @@ export default function Sos() {
 
   /* the ride: every move shown in this SOS, oldest first; the last one is showing */
   const [seq, setSeq] = useState<string[]>([]);
-  const [won, setWon] = useState<Won | null>(null);
+  const [won, setWon] = useState<Rode | null>(null);
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
+  /* "How is it now?" after a tool, answered Better: It passed is the next step */
+  const [better, setBetter] = useState(false);
   /* the move a feeling just named points to: it comes next */
   const lead = useRef<string | null>(null);
 
@@ -137,13 +128,21 @@ export default function Sos() {
     setSeq([rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, [])]);
   }, [ur, seq.length, snap.days, st, tk, sos.mem, can]);
 
+  /* back from a tool's X: the tools open again, to pick another (docs/design-standards.md, "The X goes one step back") */
+  useEffect(() => {
+    if (!front || !ur || ur.step !== 'tools') return;
+    setUr({ ...ur, step: 'now' });
+    setMore(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [front, ur?.step]);
+
   const tags = useMemo(() => urTags(snap.days, st, tk, sos.mem), [snap.days, st, tk, sos.mem]);
   const mark = useMemo(() => rideMark(snap.days), [snap.days]);
 
   const level = Math.max(1, g.level.n);
   const title = practice ? 'Practice' : 'SOS';
 
-  if (won) return <Passed won={won} night={night} level={level} />;
+  if (won) return <RodeOut won={won} night={night} level={level} />;
   if (practice && seq.length > PRACTICE_N) return <PracticeDone sky={sky} level={level} />;
   if (!ur || !seq.length)
     return (
@@ -152,10 +151,10 @@ export default function Sos() {
       </SceneFrame>
     );
 
-  /* It passed (in the corner, any time), or I slipped (under More): every move done goes into the entry's rounds */
+  /* It passed (in the corner, any time), or I slipped (under More): every move done since the last answer goes into the
+     entry's rounds */
   const save = (v: 'rode' | 'slipped') => {
-    const code = v === 'rode' ? 'p' : 'x';
-    const a: UrState = { ...ur, rounds: ur.rounds.concat(ur.used.map((id) => [id, code] as [string, 'p' | 's' | 'x'])).slice(0, 8) };
+    const a: UrState = urMark(ur, v === 'rode' ? 'p' : 'x');
     const e = urEntry(a, v, st, Date.now());
     let id = '';
     let gain = 0;
@@ -186,14 +185,7 @@ export default function Sos() {
       });
       return;
     }
-    setWon({
-      key: e.key,
-      id,
-      mins: e.mins,
-      moves: a.used.filter((x, i, l) => l.indexOf(x) === i),
-      gain,
-      trig: a.trigger && a.trigger !== 'none' ? a.trigger : null,
-    });
+    setWon({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain, sos: true });
     sos.end();
   };
 
@@ -204,6 +196,92 @@ export default function Sos() {
     buzz('tap');
     router.push({ pathname: '/tool/[id]', params: { id } });
   };
+
+  /* ---------- after a tool: how is it now? ---------- */
+  if (!practice && ur.step === 'after') {
+    const last = ur.used[ur.used.length - 1] || '';
+    const rec = urEvidence(snap.days);
+    return (
+      <SceneFrame title={title} sky={sky} onClose={close}>
+        <RideBar t0={ur.t0} mark={mark} on={front && !more} color={c.mint} />
+        <Stage key={better ? 'better' : 'ask'} dir={better ? 1 : 0}>
+          {better ? (
+            <>
+              <T v="title" style={s.c} accessibilityRole="header">
+                That is the urge easing.
+              </T>
+              <T style={s.c}>When it has passed, say so. Each one you wait out makes the next one easier.</T>
+              <Middle>
+                <Shape kind="cookie12" size={150} color={c.mintSoft}>
+                  <View>
+                    <Icon name="wave" size={60} color={c.mintText} />
+                  </View>
+                </Shape>
+              </Middle>
+              <Dock>
+                <Button label="It passed" onPress={() => save('rode')} />
+                <View style={s.center}>
+                  <Link
+                    label="Keep going"
+                    tone="muted"
+                    onPress={() => {
+                      buzz('tap');
+                      setBetter(false);
+                      setUr({ ...ur, step: 'now' });
+                    }}
+                  />
+                </View>
+              </Dock>
+            </>
+          ) : (
+            <>
+              <T v="eyebrow" tone="muted" style={s.c}>
+                {moveName(last) + ', done'}
+              </T>
+              <T v="title" style={s.c} accessibilityRole="header">
+                How is it now?
+              </T>
+              <T tone="muted" style={s.c}>
+                {rec.n
+                  ? 'You have ridden out ' + rec.n + (rec.n === 1 ? ' urge' : ' urges') + (rec.med ? '. Yours usually pass in about ' + rec.med + ' min.' : '.')
+                  : 'Urges rise, peak and pass.'}
+              </T>
+              <Middle>
+                <Shape kind="cookie9" size={150} color={moveTint(c, last) + '33'}>
+                  <View>
+                    <Icon name={MOVE_ICON[last] || urTool(last)?.ic || 'check'} size={60} color={c.ink} />
+                  </View>
+                </Shape>
+              </Middle>
+              <Dock>
+                <BigOption
+                  tone="mint"
+                  icon="wave"
+                  title="Better"
+                  sub="It is easing."
+                  onPress={() => {
+                    buzz('tap');
+                    setBetter(true);
+                  }}
+                />
+                <BigOption
+                  tone="sun"
+                  icon="timer"
+                  title="Still strong"
+                  sub="Pick another tool."
+                  onPress={() => {
+                    buzz('tap');
+                    setUr({ ...urMark(ur, 's'), step: 'now' });
+                    setMore(true);
+                  }}
+                />
+              </Dock>
+            </>
+          )}
+        </Stage>
+      </SceneFrame>
+    );
+  }
 
   /* ---------- the ride: one move after another, until it passes ---------- */
   const id = seq[seq.length - 1];
@@ -250,10 +328,12 @@ export default function Sos() {
       </Pressable>
     </View>
   );
+  /* Talk it through at every hour (a slip that feels planned is most often planned at night), and Go to bed too at night */
   const big: [string, string, string][] = [
     ['pause', 'timer', 'Step away 10 min'],
     ['message', 'chat', 'Text someone'],
-    night ? ['bed', 'moon', 'Go to bed'] : ['talk', 'ask', 'Talk it through'],
+    ['talk', 'ask', 'Talk it through'],
+    ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
   ];
   return (
     <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
@@ -263,7 +343,9 @@ export default function Sos() {
           on={front && !more && !sci}
           onDone={() => next(true)}
           onFeel={(f) => {
-            if (f.trig && !ur.trigger) setUr({ ...ur, trigger: f.trig });
+            /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
+            const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
+            if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
             lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
           }}
           onTool={pickTool}
@@ -313,7 +395,7 @@ export default function Sos() {
                 buzz('tap');
                 router.push('/talk');
               }}
-              style={({ pressed }) => [s.bigB, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
+              style={({ pressed }) => [s.bigB, big.length > 3 && s.bigB2, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={ic} size={20} color={c.accentText} />
               <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
             </Pressable>
@@ -358,151 +440,6 @@ function More({ open, night, onClose, children }: { open: boolean; night: boolea
 }
 
 const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
-
-/* ---------- the end of a ride that passed ---------- */
-function Passed({ won, night, level }: { won: Won; night: boolean; level: number }) {
-  const c = useSkyTheme(night ? 'night' : 'mint');
-  const { snap, tk, update, apply } = useStore();
-  const st = useCareSettings();
-  const sos = useSos();
-  const rec = rideRecord(snap.days, won.mins);
-  const week = rideWeek(snap.days, tk);
-  const [helped, setHelped] = useState<string | null>(null);
-  const [trig, setTrig] = useState<string | null>(won.trig);
-  /* practice is offered once, after the first few rides */
-  const [askPrac] = useState(() => ridePracticeAsk(snap.days, sos.mem));
-  useEffect(() => {
-    if (askPrac) sos.setMem((m) => ({ ...m, pracAsk: 1 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  /* the celebration: the flame pops in with its burst, confetti bursts out, a run of buzzes, and then a shower falls.
-     With celebrations off it is the same page, quietly. */
-  const cel = st.celebrate !== false;
-  const [rain, setRain] = useState(false);
-  useEffect(() => {
-    if (!cel) return void buzz('save');
-    buzz('lit');
-    const t = [
-      setTimeout(() => buzz('land'), 170),
-      setTimeout(() => buzz('land'), 340),
-      setTimeout(() => {
-        buzz('lit');
-        setRain(true);
-      }, 760),
-    ];
-    return () => t.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const why = rideWhy(helped, won.moves);
-  const lesson = why?.l ? (LESSONS as { id: string; title: string }[]).find((l) => l.id === why.l) : null;
-  const trigs = (optList('trig', st.opts, { time: null, sel: trig, all: false }).list as [string, string][]).slice(0, 7);
-  const mins = won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
-  const pickHelped = (x: string) => {
-    const nx = helped === x ? null : x;
-    let s0 = st;
-    if (helped) s0 = rateUrTool(s0, helped, -1);
-    if (nx) s0 = rateUrTool(s0, nx, 1);
-    apply({ st: s0 });
-    setHelped(nx);
-    buzz('tap');
-  };
-  const pickTrig = (v: string) => {
-    const nx = trig === v ? null : v;
-    setTrig(nx);
-    update((s) => ({ ...s, days: patchEvent(s.days, won.key, won.id, { trigger: nx && nx !== 'none' ? nx : null }) }));
-    buzz('tap');
-  };
-  const chips: string[] = ['Ride ' + rec.n];
-  if (rec.faster && rec.med) chips.push('Faster than your usual ' + rec.med + ' min');
-  if (week > 1) chips.push(week + ' this week');
-  if (won.gain > 0) chips.push('+' + won.gain + ' points');
-  return (
-    <View style={{ flex: 1 }}>
-      <SceneFrame title="SOS" sky={night ? 'night' : 'mint'} onClose={close}>
-        <Finish
-          level={level}
-          size={170}
-          tone="mint"
-          alive
-          always
-          title="You rode it out."
-          text={'It passed in ' + mins + '. Every one you ride out makes the next one easier.'}
-        />
-        <Appear delay={650} style={s.chips}>
-          {chips.map((t) => (
-            <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
-              <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
-            </View>
-          ))}
-        </Appear>
-        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-          {won.moves.length ? (
-            <>
-              <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
-              <View style={s.wrap} accessibilityRole="radiogroup">
-                {won.moves.map((x) => {
-                  const on = helped === x;
-                  return (
-                    <Pressable
-                      key={x}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: on }}
-                      onPress={() => pickHelped(x)}
-                      style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
-                      <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
-                      <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{moveName(x)}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </>
-          ) : null}
-          {why ? (
-            <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
-              <T v="small" style={{ lineHeight: 20 }}>
-                {why.t}
-              </T>
-              {lesson ? (
-                <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
-                  <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
-                </Pressable>
-              ) : null}
-            </Appear>
-          ) : null}
-          {won.moves.length || why ? <View style={[s.rule, { backgroundColor: c.line }]} /> : null}
-          <Text style={[s.q, { color: c.ink }]}>
-            What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
-          </Text>
-          <View style={s.wrap}>
-            {trigs.map(([v, label]) => {
-              const on = trig === v;
-              return (
-                <Pressable
-                  key={v}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  onPress={() => pickTrig(v)}
-                  style={[s.pick, { backgroundColor: on ? c.ink : c.bg }]}>
-                  <Text style={[s.pickT, { color: on ? c.surface : c.ink }]}>{label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Appear>
-        {askPrac ? (
-          <T v="small" tone="muted" style={s.c}>
-            Tip: run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
-          </T>
-        ) : null}
-        <Dock>
-          <Button label="Done" onPress={closeAll} />
-        </Dock>
-      </SceneFrame>
-      {cel ? <Confetti big /> : null}
-      {cel && rain ? <Confetti big rain /> : null}
-    </View>
-  );
-}
 
 /* ---------- the end of a practice ride ---------- */
 function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }) {
@@ -565,29 +502,12 @@ const s = StyleSheet.create({
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 12.5 },
-  bigRow: { flexDirection: 'row', gap: 8 },
+  center: { alignItems: 'center' },
+  bigRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 18 },
+  /* four of them (at night): two rows of two */
+  bigB2: { flexBasis: '45%', flexDirection: 'row', minHeight: 56, gap: 8 },
   bigT: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
-  chipT: { fontFamily: font.bodyBold, fontSize: 13.5 },
-  card: {
-    alignSelf: 'stretch',
-    gap: 10,
-    padding: 16,
-    borderRadius: 24,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  q: { fontFamily: font.display, fontSize: 18, lineHeight: 23 },
-  opt: { fontFamily: font.body, fontSize: 13 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 13, borderRadius: 19 },
-  pickT: { fontFamily: font.bodySemi, fontSize: 14.5 },
-  lesson: { fontFamily: font.bodySemi, fontSize: 13.5 },
-  rule: { height: 1, marginVertical: 2 },
   topR: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moreB: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   moreWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,10,40,0.38)' },

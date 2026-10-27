@@ -1,7 +1,7 @@
 /* The one number on the flame's picture at the top of Today, for each way of counting. */
 import { describe, expect, it } from 'vitest';
 import { addDays, logicalKey, normDay, normSettings } from '../src/legacy/core.js';
-import { heroNumber, hoursSinceSlip } from '../src/hero';
+import { heroNumber, heroSlipLine, hoursSinceSlip } from '../src/hero';
 import { addEvent } from '../src/mutate';
 import type { DayEvent, Days } from '../src/types';
 
@@ -99,5 +99,67 @@ describe('the hours after a slip', () => {
     expect(hero(slip(K), g).eb).toBe('No slip');
     const h = hero(slip(K, { two: true, keep: false }), g);
     expect([h.eb, h.n]).toEqual(['Since your last slip', '12']);
+  });
+});
+
+describe('back after days away, the gap not answered yet', () => {
+  /* started September 20, Day 1 September 27, here every day through October 12, then away two weeks (as the walk) */
+  const ci = (d: Days, k: string): Days => ({ ...d, [k]: { ...normDay({ checkin: { m: 6, done: true } }, k), u: 1 } });
+  let present: Days = {};
+  for (let k = '2026-09-20'; k <= '2026-10-12'; k = addDays(k, 1)) present = ci(present, k);
+  const st = normSettings({ start: '2026-09-20', day1: '2026-09-27', awayFrom: '2026-09-20' });
+  const T = '2026-10-27';
+  const ms = new Date(2026, 9, 27, 9, 0).getTime();
+
+  it('keeps the measure as it stood before the days that are not known, never "Day 1 is today"', () => {
+    const h = heroNumber(present, st, T, ms)!;
+    expect([h.eb, h.n, h.unit]).toEqual(['Before you were away', '7', 'of 7 days with no slip']);
+    expect(h.say).toBe('Before you were away: 7 of 7 days with no slip.');
+  });
+  it('once the gap is answered, the count goes on with every day known', () => {
+    const answered = normSettings({ ...st, away: [{ from: '2026-10-13', to: '2026-10-26', n: 0 }] });
+    const h = heroNumber(present, answered, T, ms)!;
+    expect([h.eb, h.n, h.unit]).toEqual(['Toward graduation', '30', 'of 90']);
+  });
+  it('a few days back, still unanswered: the higher of the two', () => {
+    let d = present;
+    for (const k of ['2026-10-24', '2026-10-25', '2026-10-26']) d = ci(d, k);
+    const h = heroNumber(d, st, T, ms)!;
+    expect([h.eb, h.n]).toEqual(['Before you were away', '7']);
+  });
+  it('a gap that ended more than a week ago is left to the usual count (of the days Daybook knows)', () => {
+    let d = present;
+    for (let k = '2026-10-27'; k <= '2026-11-09'; k = addDays(k, 1)) d = ci(d, k);
+    const h = heroNumber(d, st, '2026-11-10', new Date(2026, 10, 10, 9, 0).getTime())!;
+    expect([h.eb, h.n]).toEqual(['Toward graduation', '32']);
+  });
+});
+
+describe('the line under the number on the day of a slip', () => {
+  const st = normSettings({ start: '2026-10-01', day1: '2026-10-08' });
+  const K = '2026-10-20';
+  const slipAt = (time: string) => addEvent({}, K, 'slipped', time, {}, 1).days;
+  const ms = (h: number) => new Date(2026, 9, 20, h, 50).getTime();
+  it('a kept run of a week or more: the number holds, and the line says the slip is logged and the days stay', () => {
+    const h = heroNumber(slipAt('22:40'), st, K, ms(23))!;
+    expect([h.eb, h.n]).toEqual(['No slip', '7']);
+    expect(heroSlipLine(slipAt('22:40'), st, K, ms(23))).toBe('Tonight is logged. Your 7 days stay yours.');
+    expect(heroSlipLine(slipAt('09:10'), st, K, ms(9))).toBe('This morning is logged. Your 7 days stay yours.');
+    expect(heroSlipLine(slipAt('14:00'), st, K, ms(14))).toBe('Today is logged. Your 7 days stay yours.');
+    /* after midnight, the same log day: still tonight */
+    expect(heroSlipLine(slipAt('01:20'), st, K, new Date(2026, 9, 21, 1, 30).getTime())).toBe('Tonight is logged. Your 7 days stay yours.');
+  });
+  it('no line on a day with no slip, when the number is the hours since it, or stepping down', () => {
+    expect(heroSlipLine({}, st, K, ms(23))).toBeNull();
+    /* a run started fresh: the hours since the slip are the number */
+    const fresh: Days = { [K]: { ...normDay({ events: [{ id: 's1', time: '22:40', outcome: 'slipped', keep: false }] }, K), u: 1 } };
+    expect(heroNumber(fresh, st, K, ms(23))!.eb).toBe('Since your last slip');
+    expect(heroSlipLine(fresh, st, K, ms(23))).toBeNull();
+    expect(
+      heroSlipLine(slipAt('22:40'), normSettings({ start: '2026-10-01', day1: '2026-10-08', cleanMode: 'step', stepAt: '2026-10-08' }), K, ms(23)),
+    ).toBeNull();
+  });
+  it('has no contractions', () => {
+    expect(heroSlipLine(slipAt('22:40'), st, K, ms(23))).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d|s)\b/i);
   });
 });

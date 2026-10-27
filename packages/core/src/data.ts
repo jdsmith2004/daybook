@@ -1,5 +1,6 @@
 /* Reviews, backups, and the records that sync moves. */
 import { isKey, mergeOpts, normDay, normSettings } from './legacy/core.js';
+import { isJnId, normJEntry, type JEntry, type Journal } from './journal-entries';
 import { keepSup } from './supporter';
 import { normSun } from './sunday';
 import type { Day, DayKey, Days, Review, Reviews, Settings, Snapshot } from './types';
@@ -39,10 +40,12 @@ export interface BackupFile {
   settings: Settings | null;
   days: Days;
   reviews: Reviews;
+  /** the journal's entries; a backup from before the journal has none */
+  journal?: Journal;
 }
 
 export function makeBackup(s: Snapshot, now = new Date()): BackupFile {
-  return { app: 'daybook', v: 1, exportedAt: now.toISOString(), settings: s.settings, days: s.days, reviews: s.reviews };
+  return { app: 'daybook', v: 1, exportedAt: now.toISOString(), settings: s.settings, days: s.days, reviews: s.reviews, journal: s.journal || {} };
 }
 
 /** reads a backup file. Throws when it is not a Daybook backup. */
@@ -60,7 +63,12 @@ export function readBackup(text: string): Snapshot {
   Object.keys(o.reviews || {}).forEach((k) => {
     if (isReviewKey(k)) reviews[k] = normReview(o.reviews[k], k);
   });
-  return { settings: o.settings ? normSettings(o.settings) : null, days, reviews };
+  const journal: Journal = {};
+  Object.keys(o.journal && typeof o.journal === 'object' ? o.journal : {}).forEach((k) => {
+    const e = normJEntry(o.journal[k], k);
+    if (e) journal[k] = e;
+  });
+  return { settings: o.settings ? normSettings(o.settings) : null, days, reviews, journal };
 }
 
 /** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
@@ -102,6 +110,11 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
     /* a Sunday review keeps its picked answers too */
     reviews[k] = { ...b.reviews[k], k, u: now };
   });
+  /* the backup's entries come back beside the ones written since: an entry is only ever replaced by the same entry */
+  const journal: Journal = { ...(here.journal || {}) };
+  Object.keys(b.journal || {}).forEach((k) => {
+    journal[k] = { ...b.journal![k], u: now };
+  });
   let settings = here.settings;
   if (b.settings) {
     const mine = here.settings ? here.settings.opts : b.settings.opts;
@@ -110,25 +123,26 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
     /* an older backup never takes away a tip, or anything else earned here (a level, a badge, points, lessons marked) */
     settings = here.settings ? keepEarned(settings, here.settings) : settings;
   }
-  return { snap: { settings, days, reviews }, restored };
+  return { snap: { settings, days, reviews, journal }, restored };
 }
 
 /* ---------- sync records ----------
-   Everything is one of three kinds of record, each with its own id and a last-changed time (u, in ms):
+   Everything is one of four kinds of record, each with its own id and a last-changed time (u, in ms):
      settings             the one settings record
      days/YYYY-MM-DD      one day
      reviews/wN           one weekly review, by the person's own weeks (the older kind)
      reviews/sYYYY-MM-DD  one Sunday review, by its Sunday
+     journal/<id>         one journal entry (journal-entries.ts)
    Sync is last change wins, per record. That is the same rule the legacy app uses with its account database. */
 
-export type RecordId = 'settings' | `days/${string}` | `reviews/${string}`;
+export type RecordId = 'settings' | `days/${string}` | `reviews/${string}` | `journal/${string}`;
 export interface SyncRecord {
   id: RecordId;
   u: number;
-  data: Settings | Day | Review | null; // null: deleted
+  data: Settings | Day | Review | JEntry | null; // null: deleted
 }
 
-export function parseId(id: string): { kind: 'settings' } | { kind: 'days' | 'reviews'; key: string } | null {
+export function parseId(id: string): { kind: 'settings' } | { kind: 'days' | 'reviews' | 'journal'; key: string } | null {
   if (id === 'settings') return { kind: 'settings' };
   const i = id.indexOf('/');
   if (i < 0) return null;
@@ -136,6 +150,7 @@ export function parseId(id: string): { kind: 'settings' } | { kind: 'days' | 're
   const key = id.slice(i + 1);
   if (kind === 'days' && isKey(key)) return { kind, key };
   if (kind === 'reviews' && isReviewKey(key)) return { kind, key };
+  if (kind === 'journal' && isJnId(key)) return { kind, key };
   return null;
 }
 
@@ -149,6 +164,10 @@ export function normRecord(r: unknown): SyncRecord | null {
   if (o.data == null) return { id: o.id as RecordId, u: o.u, data: null };
   if (p.kind === 'settings') return { id: 'settings', u: o.u, data: { ...normSettings(o.data), u: o.u } };
   if (p.kind === 'days') return { id: o.id as RecordId, u: o.u, data: { ...normDay(o.data, p.key), u: o.u } };
+  if (p.kind === 'journal') {
+    const e = normJEntry(o.data, p.key);
+    return e ? { id: o.id as RecordId, u: o.u, data: { ...e, u: o.u } } : null;
+  }
   return { id: o.id as RecordId, u: o.u, data: { ...normReview(o.data, p.key), u: o.u } };
 }
 
@@ -157,12 +176,15 @@ export function toRecords(s: Snapshot): SyncRecord[] {
   if (s.settings) out.push({ id: 'settings', u: s.settings.u || 0, data: s.settings });
   Object.keys(s.days).forEach((k) => out.push({ id: `days/${k}`, u: s.days[k].u || 0, data: s.days[k] }));
   Object.keys(s.reviews).forEach((k) => out.push({ id: `reviews/${k}`, u: s.reviews[k].u || 0, data: s.reviews[k] }));
+  const jn = s.journal || {};
+  Object.keys(jn).forEach((k) => out.push({ id: `journal/${k}`, u: jn[k].u || 0, data: jn[k] }));
   return out;
 }
 
 /** applies records to a snapshot. A record only replaces what is here when it changed later. */
 export function applyRecords(s: Snapshot, recs: SyncRecord[]): { snap: Snapshot; changed: RecordId[] } {
-  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews } };
+  const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews }, journal: { ...(s.journal || {}) } };
+  const jn = snap.journal!;
   const changed: RecordId[] = [];
   for (const raw of recs) {
     const r = normRecord(raw);
@@ -179,6 +201,12 @@ export function applyRecords(s: Snapshot, recs: SyncRecord[]): { snap: Snapshot;
       if (cur ? (cur.u || 0) >= r.u : !r.data) continue;
       if (r.data) snap.days[p.key] = r.data as Day;
       else delete snap.days[p.key];
+      changed.push(r.id);
+    } else if (p.kind === 'journal') {
+      const cur = jn[p.key];
+      if (cur ? (cur.u || 0) >= r.u : !r.data) continue;
+      if (r.data) jn[p.key] = r.data as JEntry;
+      else delete jn[p.key];
       changed.push(r.id);
     } else {
       const cur = snap.reviews[p.key];

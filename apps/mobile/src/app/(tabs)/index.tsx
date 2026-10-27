@@ -4,7 +4,8 @@
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
    is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
-   rows; then the asks, one at a time. Graduation (graduate.ts) is recorded here the first time it is earned, and its
+   rows; then the asks, one at a time. Pulling the page down past its top opens the journal (app/journal.tsx), and until
+   it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
    celebration opens. */
 import {
   accountAsk,
@@ -54,6 +55,8 @@ import { MomentCard } from '@/components/moment-card';
 import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { Hero } from '@/components/hero';
+import { openJournalFrom } from '@/components/journal';
+import { PullHint } from '@/components/pull-door';
 import { Screen } from '@/components/screen';
 import { LogLink } from '@/components/today-log';
 import { Card, T } from '@/components/ui';
@@ -206,7 +209,7 @@ export default function Today() {
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
 
-  /* the first pattern is a calm-day moment for one day, then it lives in Journal, Pattern (kept on this device) */
+  /* the first pattern is a calm-day moment for one day, then it lives in Pattern (kept on this device) */
   const patDay = typeof sos.mem.firstPat === 'string' ? (sos.mem.firstPat as string) : null;
   const pat = !!st && !patDay && !!firstPattern(snap.days, st, tk);
   useEffect(() => {
@@ -240,6 +243,7 @@ export default function Today() {
           <Text style={[s.be, { color: c.muted }]}>{be}</Text>
         </Pressable>
       ) : null}
+      {sos.mem.jnSeen ? null : <PullHint onPress={() => router.push('/journal')} />}
       {early ? (
         <T v="small" tone="muted" style={{ marginTop: 4 }}>
           Still {fmtDate(tk, { weekday: 'long' })}’s log until {fmtClock(p2(st.rollover) + ':00')}
@@ -253,6 +257,10 @@ export default function Today() {
       eyebrow="My Daybook"
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
+      pullDown={(px) => {
+        openJournalFrom(px);
+        router.push('/journal');
+      }}
       action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
       <NotifyBanner />
       <Hero g={g} snap={snap} tk={tk} now={now}>

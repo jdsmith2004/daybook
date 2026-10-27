@@ -29,6 +29,15 @@ export function withDay(days: Days, key: DayKey, day: Day | null): Days {
   return next;
 }
 
+/** the mark a deleted entry leaves in its day (Day.gone): a short one-way code made from its id, so another device's copy
+    of the day does not bring the entry back, while nothing about the entry (not even when it was made, which its id holds)
+    stays in the account */
+export function goneMark(id: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 0x01000193);
+  return 'g' + (h >>> 0).toString(36);
+}
+
 let seq = 0;
 /** a new entry id, like the legacy newId: the time, and a little randomness */
 export function makeId(now = Date.now()): string {
@@ -50,7 +59,7 @@ export function addEvent(
     date,
     (d) => {
       /* an entry put back (Undo after a delete) is no longer marked deleted */
-      if (d.gone) d.gone = d.gone.filter((x) => x !== id);
+      if (d.gone) d.gone = d.gone.filter((x) => x !== goneMark(id));
       d.events.push({ id, time: time || null, outcome, trigger: null, paused: null, did: null, recovered: false, note: '', ...extra });
     },
     now,
@@ -79,7 +88,7 @@ export function removeEvent(days: Days, date: DayKey, id: string, now = Date.now
       if (!d.events.some((x) => x.id === id)) return;
       d.events = d.events.filter((x) => x.id !== id);
       /* remembered, so another device's copy of this day does not bring it back (sync.ts mergeDay) */
-      d.gone = [...(d.gone || []).filter((x) => x !== id), id];
+      d.gone = [...(d.gone || []).filter((x) => x !== goneMark(id)), goneMark(id)];
     },
     now,
   );

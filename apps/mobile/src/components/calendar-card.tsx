@@ -1,4 +1,4 @@
-/* The month calendar, first in Journal > Days (core: calendar.ts): each day colored by how it went, today ringed, the
+/* The month calendar, first in Pattern > Days (core: calendar.ts): each day colored by how it went, today ringed, the
    month's numbers in a few chips, and ‹ › to go back through the months to where the log starts. A tap on a day opens
    it (app/day/[date].tsx). */
 import { calLabel, calMonth, type CalKind, type Snapshot } from '@daybook/core';

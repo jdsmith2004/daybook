@@ -1,6 +1,6 @@
 /* One week by the person's own weeks, looked back on: the counts, the average ratings against last week, what the week
    shows, and the four answers of an older weekly review, when there is one (the Sunday review took its place, see
-   sunday.ts). Used in Journal > Weeks and on its own page. Ported from the legacy weekBody. */
+   sunday.ts). Used in Pattern > Weeks and on its own page. Ported from the legacy weekBody. */
 import { fmtDate, REVIEW_QS, setDay1, weekView } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';

@@ -1,4 +1,4 @@
-/* The month calendar in Journal, and the summary of one day. */
+/* The month calendar in Pattern, and the summary of one day. */
 import { describe, expect, it } from 'vitest';
 import { blankP, normDay, normSettings } from '../src/legacy/core.js';
 import { calMonth, calNeighbors, daySummary } from '../src/calendar';

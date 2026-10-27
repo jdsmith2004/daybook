@@ -108,7 +108,30 @@ Low (mechanical):
 28. One small spinner (`Busy`, the accent color) and an ellipsis on every "Sending…", "Loading…".
 29. The voice note and "Delete everything" confirms get the `dangerSoft` box, the question and "Keep it", like the rest.
 
-**Waiting on the owner:** the effort level to build at, and the five decisions above (1, 4, 8, 16, 23).
+**The owner's decisions (October 26):** build all of it at Opus high, medium and low items by Sonnet agents; a delete wins
+over the other phone's copy and sync goes entry by entry; Combine is the choice for most people; points never go down
+except the Undo right after a mistaken log; the toast carries Undo; the X goes one step back.
+
+**Built (October 26, 2026).** All 29. Choices made along the way, for the owner to know:
+
+- Sync joins a day entry by entry on the device instead of sending each entry as its own record: the same result (no
+  entry lost, a delete wins), with no change to the API or the stored records, so no account needed migrating and an
+  older app version keeps working. A deleted entry leaves a one-way mark in its day (`goneMark`), never its id, so
+  nothing about it (not even when it was made) stays in the account; the privacy page says so.
+- One corner is left as it was: if one phone deletes the last entry of a day while the other logged a new one that same
+  day before syncing, the delete wins and the new one goes with it (the owner's "a delete wins").
+- Points: the floor is written only when a change lowers them (`seen.pts`), not on every log, so settings are not sent
+  more often.
+- The Undo toast is the one toast that sits low (in thumb reach, just above a sheet's main button); every other toast stays
+  at the top.
+- A log that cannot be opened at launch shows a calm page with Try again and the support line, and nothing is saved until
+  it opens. That page has no SOS (it cannot read the log); it is a storage failure, which should be very rare.
+- "Use my account's log here" keeps this phone's own log for 7 days on the phone (Settings, Sync, Bring this phone's log
+  back). On the web this uses the browser's storage, so a very large log may not fit; the choice still goes ahead.
+
+**Left for later:** the slip from the pause tool (tools/pause.tsx) still closes on Undo instead of reopening SOS; Today
+itself has no Try again for sync (Settings, the welcome page and the account sheet do); the setup's backup restore (owner
+builds only) still has its own words.
 
 ## Logging a slip, rebuilt from the ground up (the owner, October 25, 2026; on branch slip-redesign, not merged)
 
@@ -2736,3 +2759,96 @@ Still open:
   person's own record gives them another tag. In the golden fixtures' cases they went from about 12% of the first
   suggestions to about 59%; Go to bed still leads late at night (now paired with one of them), and a person's own record,
   a go-to, "Not for me" and passing over a suggestion still win over the lift.
+
+## The journal: pull Today down, feelings first (the owner, October 26, 2026)
+
+The owner asked for a journal reached by pulling Today down (like refreshing a page), where every entry starts with the
+How We Feel picker before the writing, designed to Apple and How We Feel standards. Decided with the owner: the pull lands
+on the journal; the tab that was called Journal is now **Pattern**; entries sync like
+the log; the page offers one open question to start from, never one aimed at the feeling just named ("you feel lonely, do
+you wish someone loved you?" reads as pointed).
+
+**Built** (core `journal-entries.ts`, `app/journal.tsx`, `components/journal.tsx`, `components/pull-door.tsx`):
+
+- **The pull.** On iOS the page's own bounce is the pull; on Android and the web the touch is followed at the top with the
+  same give (screen.tsx `usePull`). As the page comes down a round pencil grows in the gap above it; past 64 points it
+  fills with the accent color and swells, the phone ticks, and the words say "Let go for your journal". Short of it, the page
+  springs back. Until the journal has been opened once, a line under Today's title says where it is, and a tap on it opens
+  it too; More has a Journal row for good.
+- **The journal** is a shade that comes down from the top, carrying on from where the thumb let go, and goes back up with
+  the X, a push up from its bottom edge, or Back. One plain dark page (#16142A) in either theme. Each day is lit softly
+  from behind by the colors of every feeling named that day, wherever it was named: the journal, Name the feeling, the
+  ride, and the feeling named for before a slip (core `jnTimeline`; a word from Name the feeling within an hour of an
+  urge ridden out counts as the ride's). A day's name shows once, over its logs, newest first (core `jnLogs`): each
+  entry with words is a log of its own, its feeling as its title over what was written; the feelings named on their own
+  between entries read in order as a title of their own ("Restless then Grateful"), the same size and room as an entry's
+  so they read as logs of their own and not as tags of the entry above, in the plain sans, up to three to a log
+  and within three hours, so a busy day starts another log rather than hiding any (the owner, October 26: nothing a
+  tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Each log is a dark card (the owner
+  picked it on October 26 from five looks shot on the simulator: see-through cards, rows with a chevron, one panel per
+  day, a pencil on each, dark cards), like Apple's Journal: a low dark fill and a hairline edge, so the light glows
+  around it and it reads as something to open (NN/g: a bounded card is the clearest sign a thing opens; plain text was
+  the owner's complaint, "these don't really look like entries I can open"). The whole card is the button, and it
+  lightens a little under the thumb. A journal feeling with nothing written yet says "Add a few words". Logs in a day sit close
+  and days sit far apart (Day One's day heading over separate rows; its users asked for less weight between same-day
+  entries). The same feeling named twice in a row reads once. The light is one soft field behind the list, "circles
+  over a wash" (the owner picked it on October 26 from six looks shot on the simulator, after the straight lanes alone
+  lost the loose randomness he liked): each feeling a soft round glow at its own steady random place, big enough to
+  reach the logs either side, over a faint wash of four lanes running down the page that take a color from every log,
+  so the circles keep the randomness and the wash fills any gap (two colors never meet through clear, which turns
+  grey). The light fades out over the right half so a dark margin stays at the right with no edge, starts just above
+  the first log, never over the week, and fades out under the last. A log's light is its own feelings, so the colors
+  match the words. The owner's screenshot the same evening found the light drifting: a log's glow landed on the log
+  above, Hopeful had no yellow, a two-line title's last color glowed at the end of its first line. So each glow now sits
+  on its own log, under its own word (from the title's real lines, so a title on two lines puts each color on its
+  line), with only a little steady randomness, round rather than a flat stripe, and reaching just to the middle of the
+  logs above and below, where it fades out: two logs meet halfway with no gap and neither one's color sits over the
+  other's words. Newest first all the way down stays (Day One and Journey sort the same way, and no journal found sorts
+  a day oldest first under newest-first days); a title reads in the order the feelings came, like a sentence. Coming back from an entry, the list is where it was (the day picked, the filter, how far down); after
+  a new entry, it is at the top, where the new one lands. Checked on the simulator with a made-up week of the edge cases:
+  nothing logged at all, one feeling and nothing written, eight feelings in a day, three written entries in one color, a
+  long entry, a day with nothing, a slip's feeling alone, feelings named in the journal with no words, three long words
+  in one title, and the same feeling twice in a row. Across the top, the last seven
+  days as seven little round lights (the day being shown sharp, the others soft), each the day's newest two colors, each keeping its own half (three run together
+  into a muddy grey; Spotify's Audio Aura keeps to a listener's top two moods the same way); a tap goes to that day. The
+  bottom of the list fades out just above the New entry bar and is gone behind it, so no line peeks out beside it. The
+  list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of
+  the line under Journal ("· Everything"): everything, written, urges, slips. Low at the bottom, a bar floats: "New
+  entry" and "Check in with how you feel", with a round accent pencil. The owner's path there (October 26): color-washed
+  cards, then plain cards, then a constellation of shapes on a dotted line, then a plain grouped list were all turned
+  down; from ten drawn directions he picked "soft light", then from ten of those "the day's light", and put it together
+  with the week of lights and the plain sans. Before the first feeling: the four colors as scattered shapes, what the
+  journal is and that it is private.
+- **The feeling flow** inside the journal (the four bubbles and the field of feelings) sits on the same dark page; only
+  its background changed. The owner, October 26: the moving bubbles and the field's scrolling are not to be changed
+  unless he asks; he asked the same day for each bubble to have two see-through twins wandering behind it instead of
+  one (everywhere the four bubbles are used). A tap on a day in the week starts the list at that day, with the week
+  still on top; today shows them all.
+- **An entry** starts with "How are you feeling?" and the same four big bubbles as Name the feeling, the ride and the
+  slip (`QuadBubbles`), then the field of feelings, grown out of the bubble tapped. The word named, the entry exists
+  (naming is the part that helps most). The page is plain and dark like Apple's Journal (the owner, October 26, with a
+  picture of Journal: no feeling color everywhere, no shape), with the feeling's own light coming down softly from the
+  top, the same light the day has in the list: round glass Back and a small date at the top; the feeling's
+  word; one line, "Explore why you might be feeling _stressed_", where the word in its color is the only color on the
+  page; a hairline; then the page in Instrument Sans 18 on 27, cursor in the accent, a dark keyboard, "Start anywhere…".
+  Done is a full-width accent button low where the thumb is, and moves up into the top bar as a round check while the
+  keyboard is up. A tap off the words or a swipe down puts the keyboard away. Back on a new entry goes back into the
+  field of feelings on its word (with nothing written, the entry is let go, so another word starts afresh); on an entry
+  read back it goes to the list. It saves quietly as it is written. An entry read back has no nudge and no keyboard until
+  tapped, and Delete entry, under Done, asks twice. Research (two agents, October 26): the text is the design (iA), one
+  action and silent saving (Notes, Bear), counts and prompts that pile up feel like a test ("Still").
+- **Data.** Each entry is its own record, `journal/<id>`, so two devices writing on the same day never overwrite each
+  other and a long entry (up to 20,000 characters) never pushes a day past a record's size. Backups carry them; the
+  privacy page says what is kept. The sync server cleans records with core, so it needs the deploy that carries this.
+
+**The research behind it** (a research agent, October 26): naming a feeling calms it (Lieberman et al. 2007; Torre and
+Lieberman 2018), and precise names for hard feelings go with less drinking and fewer lapses (Kashdan et al. 2010;
+Emery et al. 2022; Anand et al. 2017). Expressive writing helps a little (Frattaroli 2006, r = .075), two minutes on two
+days was enough in Burton and King 2008, writing about a best possible self helps with less distress (King 2001), and
+self-compassion after a failure raises the drive to do better (Breines and Chen 2012). The risk is rumination (Gortner et
+al. 2006), which is why the questions lean toward what went right, what helped and what is ahead. Pull-down gestures are
+hard to discover (Clear's review), hence the first-time line and the More row.
+
+**For later, the owner's call:** whether writing in the journal feeds the flame (points for an entry, as for an honest
+log); a tab layout with the journal as a tab of its own (the owner is open to it); "on this day" (a hopeful entry from a
+month ago brought back); a Face ID lock for the journal; a slip's comeback offering a short structured entry.

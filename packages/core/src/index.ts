@@ -22,6 +22,7 @@ export * from './day';
 export * from './plan';
 export * from './miles';
 export * from './journal';
+export * from './journal-entries';
 export * from './data';
 export * from './setup';
 export * from './emblem';

@@ -146,7 +146,7 @@ export function noticing(days: Days, st: Settings, tk: DayKey, from: DayKey) {
     ['Busiest stretch', bw ? bw.label : 'Needs 3 or more entries with a time'],
     [
       'First weekly review',
-      m.checkins >= 7 ? 'Ready. Open Weeks in Journal.' : 7 - m.checkins + ' more check-in' + (7 - m.checkins === 1 ? '' : 's') + ' until my first review.',
+      m.checkins >= 7 ? 'Ready. Open Weeks in Pattern.' : 7 - m.checkins + ' more check-in' + (7 - m.checkins === 1 ? '' : 's') + ' until my first review.',
     ],
   ] as [string, string][];
 }

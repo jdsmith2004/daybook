@@ -111,7 +111,8 @@ const dark: Palette = {
 export const palettes = { light, dark };
 
 /* the full-screen moments each have a soft sky; night is the same in both modes */
-export type Sky = 'sky' | 'mint' | 'sun' | 'coral' | 'violet' | 'night' | 'ember';
+/** `paper` is the journal's plain dark page, in either theme */
+export type Sky = 'sky' | 'mint' | 'sun' | 'coral' | 'violet' | 'night' | 'ember' | 'paper';
 export const skies: Record<'light' | 'dark', Record<Sky, [string, string]>> = {
   light: {
     sky: ['#CFEBFF', '#FFF0C2'],
@@ -121,6 +122,7 @@ export const skies: Record<'light' | 'dark', Record<Sky, [string, string]>> = {
     violet: ['#EBE5FF', '#FFE6F1'],
     night: ['#2A2275', '#120E38'],
     ember: ['#2A2275', '#120E38'],
+    paper: ['#16142A', '#16142A'],
   },
   dark: {
     sky: ['#1C2A78', '#3D2B7C'],
@@ -130,6 +132,7 @@ export const skies: Record<'light' | 'dark', Record<Sky, [string, string]>> = {
     violet: ['#37287F', '#5A2F86'],
     night: ['#2A2275', '#120E38'],
     ember: ['#2A2275', '#120E38'],
+    paper: ['#16142A', '#16142A'],
   },
 };
 /* on a night sky, the words are light */
@@ -158,10 +161,11 @@ export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
     before SceneFrame's NightContext is around them): a dark sky takes the night colors */
 export function useSkyTheme(sky: Sky): Palette & { scheme: 'light' | 'dark' } {
   const c = useTheme();
-  return sky === 'night' || sky === 'ember' ? { ...night, scheme: 'dark' } : c;
+  return sky === 'night' || sky === 'ember' || sky === 'paper' ? { ...night, scheme: 'dark' } : c;
 }
 
-/* Fredoka for numbers and headings, Instrument Sans for everything else (both loaded in the root layout) */
+/* Fredoka for numbers and headings, Instrument Sans for everything else, and Newsreader, a book face, for what is
+   written in the journal (all loaded in the root layout) */
 export const font = {
   body: 'InstrumentSans_400Regular',
   bodyMedium: 'InstrumentSans_500Medium',
@@ -169,6 +173,7 @@ export const font = {
   bodyBold: 'InstrumentSans_700Bold',
   display: 'Fredoka_600SemiBold',
   displayBold: 'Fredoka_700Bold',
+  serif: 'Newsreader_400Regular',
 };
 
 export const MAX_WIDTH = 560;

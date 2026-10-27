@@ -4,6 +4,7 @@ import { InstrumentSans_400Regular } from '@expo-google-fonts/instrument-sans/40
 import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500Medium';
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
+import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
 import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef, type ErrorBoundaryProps } from 'expo-router';
@@ -129,6 +130,7 @@ function Shell() {
     InstrumentSans_500Medium,
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
+    Newsreader_400Regular,
   });
   const go = ready && (fonts || !!fontError);
   useEffect(() => {
@@ -179,6 +181,8 @@ function Shell() {
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}
+          {/* the journal comes down over Today like a shade, and moves itself (app/journal.tsx), so Today stays under it */}
+          <Stack.Screen name="journal" options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }} />
           {/* the sheets: one thing, over everything */}
           {SHEETS.map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

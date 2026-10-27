@@ -27,6 +27,12 @@ export default function More() {
   return (
     <Screen eyebrow="My Daybook" title="More" sub={<T tone="muted">Your plan, your progress, help, and settings.</T>} scrollRef={scroll}>
       <View style={{ gap: 8 }}>
+        <LinkCard
+          icon="pencil"
+          title="Journal"
+          sub="How you feel, and a few lines on it. Pull Today down to open it there too."
+          onPress={() => router.push('/journal')}
+        />
         <LinkCard icon="shield" title="My plan" sub="Why I am doing this, my plans, my lists, and what I have learned" onPress={() => router.push('/plan')} />
         <LinkCard
           icon="trophy"

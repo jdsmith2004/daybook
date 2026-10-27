@@ -216,7 +216,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
             <Text style={[s.infoT, { color: c.muted }]}>?</Text>
           </View>
         </Pressable>
-        {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate({ pathname: '/journal', params: { pane: 'days' } })} /> : null}
+        {size === 'sm' ? <LinkText label="Month ›" onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })} /> : null}
       </View>
 
       {/* the stretch so far (on Today it is already on the flame's picture, at the top) */}

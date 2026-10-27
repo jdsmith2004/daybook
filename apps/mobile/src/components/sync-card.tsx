@@ -8,6 +8,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppleButton } from '@/components/apple-button';
 import { BigOption, Field } from '@/components/choices';
 import { Check } from '@/components/form';
+import { HelpLine } from '@/components/help-line';
 import { SYNC_NEED, TIP_ON, UnlockCard, useLocked } from '@/components/support';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
@@ -15,7 +16,7 @@ import { CognitoError } from '@daybook/core';
 import { appleOffered } from '@/lib/apple';
 import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
-import { useStore } from '@/lib/store';
+import { PREV_DAYS, useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
 import { syncTips, tipError } from '@/lib/tip';
 import { useTheme } from '@/lib/theme';
@@ -48,6 +49,41 @@ export function ErasedNote() {
           const ok = await sync.restoreErased();
           setBusy(false);
           say(ok ? 'Your log is back.' : 'Could not reach your account. Try again in a moment.');
+        }}
+      />
+    </View>
+  );
+}
+
+/** after "Use my account's log here": this phone's own log is kept for a week, and this brings it back (joined day by day
+    with what is here, nothing removed) */
+export function PrevNote() {
+  const c = useTheme();
+  const { prev, restorePrev, say } = useStore();
+  const [busy, setBusy] = useState(false);
+  if (!prev) return null;
+  const until = fmtDate(keyOfDate(new Date(prev.at + PREV_DAYS * 86400_000)), { weekday: 'long', month: 'long', day: 'numeric' });
+  return (
+    <View style={[s.confirm, { backgroundColor: c.sunSoft }]}>
+      <T v="label">This phone’s own log is kept until {until}.</T>
+      <T v="small">
+        It has {prev.n === 1 ? 'one day' : prev.n + ' days'} from before you chose your account’s log. Bringing it back adds every entry to your log, here and
+        in your account. Nothing you have now is removed.
+      </T>
+      <Button
+        label={busy ? 'Bringing it back…' : 'Bring this phone’s log back'}
+        disabled={busy}
+        onPress={async () => {
+          setBusy(true);
+          const n = await restorePrev().catch(() => -1);
+          setBusy(false);
+          say(
+            n < 0
+              ? 'Could not bring it back just now. It is still kept. Try again.'
+              : n === 1
+                ? 'One day is back in your log.'
+                : n + ' days are back in your log.',
+          );
         }}
       />
     </View>
@@ -95,8 +131,12 @@ export function TrustChoice() {
 export function SyncBody() {
   const c = useTheme();
   const sync = useSync();
-  const { now, say } = useStore();
+  const { now, say, snap } = useStore();
   const [ask, setAsk] = useState<null | 'out' | 'delete'>(null);
+  /* "Use my account's log here" asks once more, with what this phone would lose */
+  const [replace, setReplace] = useState(false);
+  /* a delete that did not go through stays on the card until it is tried again, not only in a toast */
+  const [delMsg, setDelMsg] = useState('');
   /* changes that would be lost by removing the log now (sync.signOutNow) */
   const [lose, setLose] = useState(0);
   const st = sync.status;
@@ -126,18 +166,36 @@ export function SyncBody() {
       </View>
     );
 
-  if (st.k === 'ask')
+  if (st.k === 'ask') {
+    const there = new Set(st.recs.filter((r) => r.data != null && r.id.startsWith('days/')).map((r) => r.id.slice(5)));
+    const here = Object.keys(snap.days);
+    const only = here.filter((k) => !there.has(k)).length;
+    const days = (n: number) => (n === 1 ? 'one day' : n + ' days');
+    if (replace)
+      return (
+        <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+          <T v="label">Replace this phone’s log with your account’s?</T>
+          <T v="small">
+            {only
+              ? `This phone has ${days(only)} your account does not. They leave the log here. A copy is kept on this phone for ${PREV_DAYS} days, so you can bring them back in Settings.`
+              : `Every day on this phone is in your account too. A copy of this phone’s log is kept for ${PREV_DAYS} days all the same.`}
+          </T>
+          <Button kind="danger" label="Yes, use my account’s log" onPress={() => sync.choose('account')} />
+          <Button kind="ghost" label="Combine them instead" onPress={() => sync.choose('combine')} />
+        </View>
+      );
     return (
       <>
         <T v="label">This device and your account both have a log.</T>
         <T v="small" tone="muted">
-          Choose what to keep on this device. Nothing changes in your account until you choose.
+          This phone: {days(here.length)}. Your account: {days(there.size)}. Choose what to keep on this device. Nothing changes in your account until you
+          choose.
         </T>
         <BigOption
           tone="accent"
           icon="plus"
-          title="Combine them"
-          sub="Keeps every day from both. Where both have the same day, the newer one is kept. Your plan and progress stay with the log that has more days."
+          title="Combine them (best for most people)"
+          sub="Keeps every entry from both. Your plan and progress stay with the log that has more days, and nothing you earned is lost."
           onPress={() => sync.choose('combine')}
         />
         <BigOption
@@ -145,11 +203,12 @@ export function SyncBody() {
           icon="down"
           title="Use my account’s log here"
           sub="This device’s log is replaced by your account’s."
-          onPress={() => sync.choose('account')}
+          onPress={() => setReplace(true)}
         />
-        <Button kind="ghost" label="Not now" onPress={() => sync.signOutNow(false)} />
+        <Button kind="ghost" label="Sign out and decide later" onPress={() => sync.signOutNow(false)} />
       </>
     );
+  }
 
   const line =
     st.k === 'need'
@@ -157,7 +216,7 @@ export function SyncBody() {
       : st.k === 'expired'
         ? 'Sign in again to keep syncing. Your log is still here.'
         : st.k === 'error'
-          ? st.msg
+          ? st.msg + (sync.at ? ' ' + syncedAgo(sync.at, now) + '.' : '')
           : syncedAgo(sync.at, now) +
             (sync.waiting ? ` · ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} waiting` : '') +
             (st.k === 'on' && st.note ? '. ' + st.note : '');
@@ -169,13 +228,15 @@ export function SyncBody() {
         </T>
       ) : null}
       <ErasedNote />
+      <PrevNote />
       {st.k === 'on' || st.k === 'need' ? <ConfirmEmail /> : null}
       {st.k === 'on' || st.k === 'need' ? <AddApple /> : null}
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
+      {st.k === 'error' || st.k === 'expired' ? <HelpLine lead="Your log is safe on this phone." subject="Daybook: sync" /> : null}
       {st.k === 'expired' ? (
-        <Button label="Sign in again" onPress={() => sync.signInNow()} />
+        <Button label="Sign in again" onPress={() => sync.signInNow({ why: 'in', email: sync.email })} />
       ) : st.k === 'need' && TIP_ON ? (
         <FindTip />
       ) : (
@@ -186,7 +247,7 @@ export function SyncBody() {
         <View style={[s.confirm, { backgroundColor: c.surface2 }]}>
           <T v="label">Sign out of sync on this device?</T>
           <T v="small" tone="muted">
-            Your account keeps your log either way.
+            Your account keeps your log either way. Lessons you have not finished wait behind an account again; the ones you finished stay open.
           </T>
           {lose ? (
             <T v="small" tone="danger" accessibilityLiveRegion="polite">
@@ -194,13 +255,21 @@ export function SyncBody() {
               {lose === 1 ? 'it' : 'them'}. Keep the log here, or try again when you are online.
             </T>
           ) : null}
-          <Button kind="ghost" label="Sign out, keep the log on this device" onPress={() => sync.signOutNow(false)} />
+          <Button
+            kind="ghost"
+            label="Sign out, keep the log on this device"
+            onPress={async () => {
+              await sync.signOutNow(false);
+              say('You are signed out. Your log is still on this phone.');
+            }}
+          />
           <Button
             kind="danger"
             label={lose ? 'Remove it anyway' : 'Sign out and remove it from this device'}
             onPress={async () => {
               const r = await sync.signOutNow(true, !!lose);
               setLose(r.waiting);
+              if (!r.waiting) say('You are signed out, and the log is removed from this phone. Your account keeps it.');
             }}
           />
           <Button
@@ -217,15 +286,17 @@ export function SyncBody() {
           <T v="label">Delete your account and everything in it?</T>
           <T v="small" tone="muted">
             Your log is removed from your account for good, and you cannot sign in with it again. The log on this device stays, unless you delete it in Save,
-            back up, delete.
+            back up, delete. Lessons you have not finished wait behind an account again; the ones you finished stay open.
           </T>
           <Button
             kind="danger"
             label="Yes, delete my account"
             onPress={async () => {
               setAsk(null);
+              setDelMsg('');
               const r = await sync.deleteAccount();
-              say(r.msg);
+              if (r.ok) say(r.msg + ' Your log on this phone is unchanged.');
+              else setDelMsg(r.msg);
             }}
           />
           <Button kind="ghost" label="Keep my account" onPress={() => setAsk(null)} />
@@ -236,6 +307,12 @@ export function SyncBody() {
           <Button kind="ghost" icon="trash" label="Delete my account…" onPress={() => setAsk('delete')} />
         </View>
       )}
+      {delMsg ? (
+        <View style={{ gap: 6 }} accessibilityLiveRegion="polite">
+          <T tone="danger">{delMsg}</T>
+          <HelpLine subject="Daybook: deleting my account" />
+        </View>
+      ) : null}
     </>
   );
 }
@@ -306,7 +383,7 @@ function ConfirmEmail() {
     try {
       await f(await sync.token());
     } catch (e) {
-      setErr(e instanceof CognitoError ? e.message : 'Something went wrong. Try again in a moment.');
+      setErr(e instanceof CognitoError ? e.message : 'Could not confirm your email just now. Try again in a moment.');
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,7 @@ import {
   LADDER_V,
   clearAcked,
   mergeRemote,
+  mergeDay,
   type SyncRecord,
   isKey,
   isReviewKey,
@@ -37,6 +38,11 @@ const P = 'daybook:';
 /** said when a change could not be written to the phone's storage */
 export const SAVE_FAILED = 'That change shows here but could not be saved on this phone. Try again in a moment. ' + STUCK_LINE;
 const DIRTY = P + 'dirty';
+/* this phone's own log, kept for PREV_DAYS after it was replaced by the account's (the first sign-in's "Use my account's
+   log here"), so that choice can be undone. Outside the P keys, so nothing that reads or clears the log touches it. */
+const PREV = 'daybook~prev:';
+const PREV_AT = 'daybook~prev';
+export const PREV_DAYS = 7;
 const empty = (): Snapshot => ({ settings: null, days: {}, reviews: {} });
 
 async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }> {
@@ -99,8 +105,13 @@ interface StoreValue {
   markAllDirty: () => Promise<void>;
   /** for sync: these records get the account's time and are sent again (they were stamped while the clock was ahead) */
   restamp: (ids: string[], u: number) => Promise<void>;
-  /** for sync: this device takes the account's log as it is */
+  /** for sync: this device takes the account's log as it is (a copy of this phone's own is kept for PREV_DAYS) */
   replaceFromAccount: (snap: Snapshot) => Promise<void>;
+  /** the copy of this phone's own log kept after it was replaced: how many days, and when; null when there is none */
+  prev: { n: number; at: number } | null;
+  /** brings the kept copy back into the log (joined day by day, nothing here is removed) and marks it to sync; how many
+      days came back */
+  restorePrev: () => Promise<number>;
   /** what is showing at the bottom: a line of words, or the points an action earned */
   toast: Toast | null;
   /** a short message; with undo, it stays a little longer and carries an Undo the person can tap (built once, the
@@ -435,10 +446,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [writeQuiet, saveDirty],
   );
+  const [prev, setPrev] = useState<{ n: number; at: number } | null>(null);
+  /* the kept copy: read once the log is open, and let go after PREV_DAYS */
+  useEffect(() => {
+    if (!ready || loadFailed) return;
+    (async () => {
+      const raw = await AsyncStorage.getItem(PREV_AT);
+      const v = raw ? (JSON.parse(raw) as { n: number; at: number }) : null;
+      if (v && Date.now() - v.at < PREV_DAYS * 86400_000) setPrev(v);
+      else if (v) {
+        const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(PREV));
+        await AsyncStorage.multiRemove([...keys, PREV_AT]);
+      }
+    })().catch(() => undefined);
+  }, [ready, loadFailed]);
   const replaceFromAccount = useCallback(
     async (next: Snapshot) => {
-      const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P) && k !== DIRTY);
-      if (keys.length) await AsyncStorage.multiRemove(keys);
+      const old = snapRef.current;
+      /* first a copy of this phone's own log, so the choice can be undone for a week. If the phone has no room for it,
+         the choice still goes ahead (the person made it, after seeing the counts). */
+      try {
+        const was = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(PREV));
+        if (was.length) await AsyncStorage.multiRemove(was);
+        const copy: [string, string][] = [];
+        if (old.settings) copy.push([PREV + 'settings', JSON.stringify(old.settings)]);
+        Object.keys(old.days).forEach((k) => copy.push([PREV + 'days/' + k, JSON.stringify(old.days[k])]));
+        Object.keys(old.reviews).forEach((k) => copy.push([PREV + 'reviews/' + k, JSON.stringify(old.reviews[k])]));
+        if (Object.keys(old.days).length || Object.keys(old.reviews).length) {
+          const meta = { n: Object.keys(old.days).length, at: Date.now() };
+          copy.push([PREV_AT, JSON.stringify(meta)]);
+          await AsyncStorage.multiSet(copy);
+          setPrev(meta);
+        }
+      } catch {
+        /* no room for the copy */
+      }
       const ids: RecordId[] = [];
       if (next.settings) ids.push('settings');
       Object.keys(next.days).forEach((k) => ids.push(`days/${k}`));
@@ -446,7 +488,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       snapRef.current = next;
       setSnap(next);
       savedSeen.current = null;
+      /* the account's records are written before anything here is removed, so a phone that stops halfway still has a log */
       await writeQuiet(next, ids);
+      const keep = new Set(ids.map((id) => P + id));
+      const stale = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P) && k !== DIRTY && !keep.has(k));
+      if (stale.length) await AsyncStorage.multiRemove(stale);
       /* this device now holds the account's log as it is: nothing here, in any tab, is waiting to be sent */
       dirtyRef.current = {};
       setDirty({});
@@ -454,6 +500,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [writeQuiet],
   );
+  const restorePrev = useCallback(async () => {
+    const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(PREV));
+    const pairs = keys.length ? await AsyncStorage.multiGet(keys) : [];
+    const cur = snapRef.current;
+    const next: Snapshot = { settings: cur.settings, days: { ...cur.days }, reviews: { ...cur.reviews } };
+    const ids: RecordId[] = [];
+    const now = Date.now();
+    let n = 0;
+    for (const [k, raw] of pairs) {
+      if (!raw) continue;
+      const id = k.slice(PREV.length);
+      let v: unknown;
+      try {
+        v = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      if (id.startsWith('days/') && isKey(id.slice(5))) {
+        const key = id.slice(5);
+        const day = normDay(v, key);
+        const j = next.days[key] ? mergeDay(next.days[key], day) : { ...day, u: now };
+        if (!j) continue;
+        next.days[key] = { ...j, u: Math.max(j.u, now) };
+        ids.push(`days/${key}`);
+        n++;
+      } else if (id.startsWith('reviews/') && isReviewKey(id.slice(8)) && !next.reviews[id.slice(8)]) {
+        next.reviews[id.slice(8)] = { ...normReview(v, id.slice(8)), u: now };
+        ids.push(`reviews/${id.slice(8)}`);
+      }
+    }
+    snapRef.current = next;
+    setSnap(next);
+    if (ids.length) await persist(next, ids);
+    await AsyncStorage.multiRemove([...keys, PREV_AT]);
+    setPrev(null);
+    return n;
+  }, [persist]);
 
   const value = useMemo<StoreValue>(
     () => ({
@@ -475,6 +558,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markAllDirty,
       restamp,
       replaceFromAccount,
+      prev,
+      restorePrev,
       toast,
       say,
       hush,

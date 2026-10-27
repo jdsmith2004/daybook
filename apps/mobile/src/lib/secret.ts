@@ -11,10 +11,14 @@ export function setTrust(_on: boolean) {}
 const opts = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
 export async function readSecret(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(KEY, opts);
-  } catch {
-    return null;
+  /* a read can fail for a moment (the phone just locked, or is waking): once more before the sign-in counts as gone */
+  for (let tries = 0; ; tries++) {
+    try {
+      return await SecureStore.getItemAsync(KEY, opts);
+    } catch {
+      if (tries >= 1) return null;
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
 }
 export async function writeSecret(v: string): Promise<void> {

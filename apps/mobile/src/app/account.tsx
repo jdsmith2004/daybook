@@ -19,6 +19,7 @@ import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
 import { apple, appleOffered, askApple } from '@/lib/apple';
 import { cognito, keepTokens, type Session } from '@/lib/auth';
+import { HelpLine } from '@/components/help-line';
 import { buzz } from '@/lib/feel';
 import { useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
@@ -28,10 +29,10 @@ type Step = 'start' | 'code' | 'newpw' | 'forgot' | 'reset' | 'done';
 export default function Account() {
   const c = useTheme();
   const sync = useSync();
-  const p = useLocalSearchParams<{ why?: string; then?: string }>();
+  const p = useLocalSearchParams<{ why?: string; then?: string; email?: string }>();
   const [mode, setMode] = useState<'new' | 'in'>(p.why === 'in' ? 'in' : 'new');
   const [step, setStep] = useState<Step>('start');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(p.email || '');
   /* a new account types the email twice: it is the way back in, and a typo there cannot be fixed later */
   const [email2, setEmail2] = useState('');
   const [pw, setPw] = useState('');
@@ -42,6 +43,9 @@ export default function Account() {
   const [note, setNote] = useState('');
   const chal = useRef('');
   const session = useRef<Session | null>(null);
+  /* the code (or the new password) was taken, and only the sign-in after it failed (no connection): trying again signs in
+     without using the code twice, which the account would turn down */
+  const codeTaken = useRef(false);
   const [appleOk, setAppleOk] = useState(false);
   /* signed in with Apple: the email is Apple's, already confirmed */
   const [viaApple, setViaApple] = useState(false);
@@ -62,7 +66,7 @@ export default function Account() {
     try {
       await f();
     } catch (e) {
-      setErr(e instanceof CognitoError ? e.message : 'Something went wrong. Try again in a moment.');
+      setErr(e instanceof CognitoError ? e.message : 'Could not reach your account. Check the connection and try again. Your log is safe on this phone.');
       buzz('tap');
     } finally {
       setBusy(false);
@@ -127,8 +131,15 @@ export default function Account() {
           try {
             await signIn();
             return;
-          } catch {
-            throw e;
+          } catch (e2) {
+            /* no connection is said as that; anything else: this email has an account, so the sheet turns to Sign in */
+            if (e2 instanceof CognitoError && e2.code === 'Network') throw e2;
+            setMode('in');
+            setPw('');
+            throw new CognitoError(
+              'UsernameExistsException',
+              'There is already an account with this email. Sign in with its password, or tap Forgot password.',
+            );
           }
         }
         if (r.confirmed) await signIn();
@@ -140,7 +151,15 @@ export default function Account() {
     });
   const confirm = (v: string) =>
     run(async () => {
-      await cognito.confirm(email, v);
+      if (!codeTaken.current) {
+        try {
+          await cognito.confirm(email, v);
+        } catch (e) {
+          /* already confirmed (the code went through before the connection dropped): sign in */
+          if (!(e instanceof CognitoError && e.code === 'NotAuthorizedException')) throw e;
+        }
+        codeTaken.current = true;
+      }
       await signIn();
     });
   const onCode = (v: string) => {
@@ -252,6 +271,7 @@ export default function Account() {
           onPress={() =>
             run(async () => {
               await cognito.forgot(email);
+              codeTaken.current = false;
               setCode('');
               setPw('');
               setStep('reset');
@@ -281,7 +301,8 @@ export default function Account() {
           disabled={busy || code.length !== 6 || !passwordOk(pw)}
           onPress={() =>
             run(async () => {
-              await cognito.reset(email, code, pw);
+              if (!codeTaken.current) await cognito.reset(email, code, pw);
+              codeTaken.current = true;
               await signIn();
             })
           }
@@ -359,9 +380,12 @@ export default function Account() {
       {body}
       {busy && step === 'start' ? <ActivityIndicator color={c.accent} /> : null}
       {err ? (
-        <T tone="danger" accessibilityLiveRegion="polite">
-          {err}
-        </T>
+        <>
+          <T tone="danger" accessibilityLiveRegion="polite">
+            {err}
+          </T>
+          <HelpLine subject="Daybook: signing in" />
+        </>
       ) : null}
       {note ? (
         <T tone="mintText" accessibilityLiveRegion="polite">

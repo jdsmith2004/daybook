@@ -48,10 +48,14 @@ export function cognitoWords(code: string): string {
       return 'This email was never confirmed, so the password cannot be reset. If you are still signed in on another device, confirm your email in Settings there, then try again.';
     case 'CodeDeliveryFailureException':
       return 'The email with your code could not be sent. Check the address and try again.';
+    case 'PasswordResetRequiredException':
+      return 'This account needs a new password first. Tap Forgot password to set one.';
+    case 'UserLambdaValidationException':
+      return 'Your account could not be made with that email. Check it, or write to us if it keeps happening.';
     case 'Network':
-      return 'Could not reach the internet. Check your connection and try again.';
+      return 'Could not reach the internet. Check your connection and try again. Your log is safe on this phone.';
     default:
-      return 'Something went wrong. Try again in a moment.';
+      return 'Your account did not answer this time. Try again in a moment. Your log is safe on this phone.';
   }
 }
 

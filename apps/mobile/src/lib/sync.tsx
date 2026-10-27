@@ -46,6 +46,8 @@ const AFTER_CHANGE = 3000;
 interface Kept {
   /** the account this device is joined to */
   sub: string;
+  /** its email, so "Sign in again" can fill it in when the sign-in has run out */
+  email?: string;
   /** the server time the last pull started */
   since: number;
   /** when the last round got through (this device's clock) */
@@ -69,7 +71,7 @@ interface SyncValue {
   /** changes here not sent yet */
   waiting: number;
   /** opens the account sheet (create an account or sign in), optionally with why and a lesson to open after */
-  signInNow: (o?: { why?: string; then?: string }) => void;
+  signInNow: (o?: { why?: string; then?: string; email?: string }) => void;
   /** after the account sheet signed in: carry on syncing with this session */
   startWith: (s: Session) => Promise<void>;
   syncNow: () => Promise<void>;
@@ -137,6 +139,16 @@ async function callWithin(url: string, init: RequestInit): Promise<{ status: num
   }
 }
 
+/** what a person reads when the sync API turns a round down: the API's own words only where they were written for people
+    (a day's allowance is used up), and a fixed, calm sentence for everything else, never a raw server message */
+function syncWords(e: HttpError): string {
+  if (e.status === 429)
+    return e.ours ? e.message + ' Your changes are kept on this phone.' : 'Your account is busy right now. Your changes are kept here and will sync later.';
+  if (e.status === 413) return 'That change is too large to sync. It is kept on this phone.';
+  if (e.status >= 500) return 'Your account did not answer this time. Your changes are kept on this phone and will sync later.';
+  return 'Sync did not work this time. Your changes are kept on this phone, and Daybook tries again each time it opens.';
+}
+
 class HttpError extends Error {
   constructor(
     public status: number,
@@ -202,6 +214,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
 
   /* the gateway's request ceiling was hit (many people syncing at once): one quiet retry, a few seconds on */
   const retried = useRef(false);
+  const checkErasedRef = useRef<() => Promise<void>>(async () => undefined);
   const roundRef = useRef<() => Promise<void>>(async () => undefined);
   const resumeRef = useRef<() => void>(() => undefined);
   const fail = useCallback((e: unknown) => {
@@ -230,11 +243,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       }
       /* too much today, or too large: stop trying until the app is opened again */
       if (what === 'pause') paused.current = true;
-      setStatus({
-        k: 'error',
-        msg: e.status === 429 && !e.ours ? 'Your account is busy right now. Your changes are kept here and will sync later.' : e.message,
-      });
-    } else setStatus({ k: 'error', msg: 'Could not reach your account. Your changes are kept here and will sync later.' });
+      setStatus({ k: 'error', msg: syncWords(e) });
+    } else setStatus({ k: 'error', msg: 'Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.' });
   }, []);
 
   /** one round: pull, merge, push */
@@ -254,7 +264,14 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         setStatus({ k: 'busy', what: 'Syncing…' });
         const t = transport(s);
         const p = await pullAll(t, k.since);
+        const had = Object.keys(current().snap.days).length;
         await mergeFromAccount(p.records);
+        /* another device deleted everything: this phone's log just went with it, so the person is told once, and where to
+           bring it back while the account keeps its copy */
+        if (had > 0 && Object.keys(current().snap.days).length === 0) {
+          say('Your log was deleted from another device. Your account keeps a copy for 7 days: Settings, Sync, Bring my log back.');
+          checkErasedRef.current();
+        }
         const pend = pendingRecords(current().snap, current().dirty);
         let note = '';
         if (pend.length) {
@@ -280,7 +297,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     } finally {
       running.current = false;
     }
-  }, [transport, mergeFromAccount, current, ackPushed, restamp, saveKept, fail]);
+  }, [transport, mergeFromAccount, current, ackPushed, restamp, saveKept, fail, say]);
   roundRef.current = round;
   /* the server now says this account is a supporter */
   resumeRef.current = () => {
@@ -332,6 +349,24 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  /* a sign-in that read as gone (the keychain cannot be read while the phone is locked) is looked for again when the
+     app comes back, before the person is asked to sign in */
+  useEffect(() => {
+    if (status.k !== 'expired') return;
+    const sub = AppState.addEventListener('change', async (st) => {
+      if (st !== 'active' || sessionRef.current) return;
+      const s = await liveSession();
+      const k = keptRef.current;
+      if (s && k && k.sub === s.sub) {
+        setSession(s);
+        sessionRef.current = s;
+        setStatus({ k: 'on' });
+        roundRef.current();
+      }
+    });
+    return () => sub.remove();
+  }, [status.k]);
 
   /* when the app comes back, and every few minutes while it is open */
   useEffect(() => {
@@ -385,15 +420,15 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       /* a new device takes the account's log, as long as the account has settings to take */
       if (there && !hasLog(here) && theirs.settings) await replaceFromAccount(theirs);
       else await combine(p.records);
-      await saveKept({ sub: s.sub, since: p.now, at: Date.now() });
+      await saveKept({ sub: s.sub, email: s.email, since: p.now, at: Date.now() });
       setStatus({ k: 'on' });
       await round();
     },
     [transport, current, replaceFromAccount, combine, saveKept, round],
   );
 
-  const signInNow = useCallback((o?: { why?: string; then?: string }) => {
-    router.push({ pathname: '/account', params: { why: o?.why || '', then: o?.then || '' } });
+  const signInNow = useCallback((o?: { why?: string; then?: string; email?: string }) => {
+    router.push({ pathname: '/account', params: { why: o?.why || '', then: o?.then || '', email: o?.email || '' } });
   }, []);
 
   const startWith = useCallback(
@@ -432,7 +467,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         setStatus({ k: 'busy', what: 'Joining your account…' });
         if (how === 'account') await replaceFromAccount(snapshotOf(recs));
         else await combine(recs);
-        await saveKept({ sub: s.sub, since: now, at: Date.now() });
+        await saveKept({ sub: s.sub, email: s.email, since: now, at: Date.now() });
         setStatus({ k: 'on' });
         await round();
       } catch (e) {
@@ -481,7 +516,9 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         });
         if (r.status === 401 && tries === 0) continue;
         return { status: r.status, body: r.body };
-      } catch {
+      } catch (e) {
+        /* the sign-in ran out: say so (as a 401), so the person is asked to sign in, not told the account is unreachable */
+        if (e instanceof SignInExpired) return { status: 401, body: {} };
         return null;
       }
     }
@@ -495,6 +532,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       setErased(n ? { n, at: Number(r.body.at) || Date.now() } : null);
     }
   }, [callApi]);
+
+  checkErasedRef.current = checkErased;
 
   const eraseAccount = useCallback(async () => {
     const r = await callApi('DELETE', '');
@@ -538,9 +577,22 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       if ('msg' in c) return { ok: false, msg: c.msg };
       r = await callApi('DELETE', '?all=1', c.body);
     }
-    if (!r) return { ok: false, msg: 'Could not reach your account. Nothing was deleted.' };
-    /* the log is gone, the sign-in is not yet: asking again finishes it */
-    if (r.status !== 200) return { ok: false, msg: String(r.body.error || 'Could not reach your account. Nothing was deleted.') };
+    /* no answer (no connection, or it timed out): the delete may have finished on the server, so the words do not promise
+       either way, and the account stays here so asking again finishes it */
+    if (!r) return { ok: false, msg: 'Could not reach your account, so the delete may not have finished. Nothing on this phone changed. Try again.' };
+    if (r.status === 401) {
+      setStatus({ k: 'expired' });
+      return { ok: false, msg: 'Your sign-in ran out. Sign in again first, then delete. Nothing was deleted, and your log is still on this phone.' };
+    }
+    /* the log is gone, the sign-in is not yet: the server's own words say so, and asking again finishes it */
+    if (r.status !== 200)
+      return {
+        ok: false,
+        msg:
+          typeof r.body.error === 'string' && r.status !== 400
+            ? r.body.error
+            : 'Your account did not answer, so the delete may not have finished. Nothing on this phone changed. Try again.',
+      };
     await saveKept(null);
     await forgetSession();
     sessionRef.current = null;
@@ -617,7 +669,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   const value = useMemo<SyncValue>(
     () => ({
       status,
-      email: session?.email || '',
+      email: session?.email || kept?.email || '',
       at: kept?.at || null,
       waiting,
       signInNow,

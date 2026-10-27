@@ -88,10 +88,11 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
+import { WORDS } from '@/lib/words';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
 type Step = 'q1' | 'trigger' | 'did' | 'done' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
@@ -258,7 +259,7 @@ export default function Log() {
   const saveOwn = (kind: 'trig' | 'did', text: string) => {
     const r = addOption(st, kind, text);
     if (!r.id) {
-      say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : 'Type a few words first.');
+      say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : WORDS.needWords);
       return;
     }
     const id = r.id;
@@ -277,7 +278,15 @@ export default function Log() {
         const { last: _last, ...rest } = m;
         return rest;
       });
-    close();
+    /* a slip from SOS that was a mis-tap: SOS had ended, so Undo opens a new one, with its tools, in the same place (the log
+       replaced SOS, so there is nothing under it to go back to). The urge itself is still there, so the person is not left
+       alone with it. Anything else closes. */
+    if (from === 'urge' && outcome === 'slipped') {
+      router.replace('/sos');
+      say('Removed. Nothing was saved. SOS is open again.');
+      return;
+    }
+    closeAll();
     say('Removed. Nothing was saved.');
   };
 
@@ -727,7 +736,7 @@ export default function Log() {
           </T>
         ) : null}
         <Dock>
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
         </Dock>
       </>
     );
@@ -771,7 +780,7 @@ export default function Log() {
         ) : null}
         {noteAndTime}
         <Dock>
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
           <View style={{ alignItems: 'center' }}>
             <Link label="Undo this entry" onPress={undo} />
           </View>

@@ -46,10 +46,11 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
+import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
 
 /** the reminder offered after a check-in: about the time it was done, but never at night (core nudges.ts: Daybook never
@@ -115,7 +116,7 @@ export default function Checkin() {
           if (ok) {
             setReminderPrefs({ ...prefs, checkin: true, checkinAt: remAt });
             say('Daybook will remind you at ' + fmtClock(remAt) + ', unless you have checked in already.');
-          } else say('Notifications are off for Daybook. You can turn them on in your phone’s settings.');
+          } else say(WORDS.notifyOff);
         }}
       />
     ) : null;
@@ -300,14 +301,13 @@ export default function Checkin() {
             </T>
           </Appear>
         ) : null}
+        <Dock>
+          {offer}
+          <Button label="Done" onPress={closeAll} />
+        </Dock>
       </>
     );
-    footer = (
-      <View style={[s.foot, { gap: 10 }]}>
-        {offer}
-        <Button label="Done" onPress={close} />
-      </View>
-    );
+    footer = null;
   }
 
   return (
@@ -394,7 +394,6 @@ const s = StyleSheet.create({
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
   tap: { fontFamily: font.bodySemi, marginTop: 4 },
   pts: { fontFamily: font.display, fontSize: 18 },
-  foot: { alignSelf: 'stretch' },
   offer: { alignItems: 'center' },
   moreOpen: { alignSelf: 'stretch', gap: 12 },
   /* keeps the slider in the same place before and after Next shows */

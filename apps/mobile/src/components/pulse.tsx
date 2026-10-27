@@ -12,6 +12,7 @@ import { buzz } from '@/lib/feel';
 import { answerPulse, pulseOffered, usePulse, useStatsSeen } from '@/lib/pulse';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 
 export function PulseCard() {
   const c = useTheme();
@@ -19,7 +20,7 @@ export function PulseCard() {
   const answer = (on: boolean) => {
     buzz('tap');
     answerPulse(on);
-    say(on ? 'Thank you. That helps the next person.' : 'Got it. Nothing is sent.');
+    say(on ? WORDS.countsOn : WORDS.countsOff);
   };
   return (
     <Card style={{ backgroundColor: c.skySoft, borderColor: c.skySoft }}>

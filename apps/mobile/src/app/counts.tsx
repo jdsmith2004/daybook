@@ -5,11 +5,12 @@ import { Linking, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { Dock } from '@/components/scene';
-import { SheetFrame, SheetH } from '@/components/sheet';
+import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { answerPulse, usePulse } from '@/lib/pulse';
 import { useStore } from '@/lib/store';
+import { WORDS } from '@/lib/words';
 
 const EXAMPLES = ['act_7_13', 'back_1', 'setup_done', 'sos', 'tool_breathe', 'lesson_done', 'checkin', 'slip_logged'];
 const NEVER = [
@@ -26,7 +27,7 @@ export default function Counts() {
   const set = (v: boolean) => {
     buzz('tap');
     answerPulse(v);
-    say(v ? 'Counts are on. Thank you.' : 'Counts are off. Nothing is sent.');
+    say(v ? WORDS.countsOn : WORDS.countsOff);
   };
   return (
     <SheetFrame title="Anonymous counts" sub={on ? 'On. Thank you for helping the next person.' : 'Off. Nothing is sent.'}>
@@ -70,8 +71,12 @@ export default function Counts() {
         <Link label="Read the privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
       </View>
       <Dock>
-        {on ? <Button kind="ghost" label="Turn counts off" onPress={() => set(false)} /> : <Button label="Send anonymous counts" onPress={() => set(true)} />}
-        {s && s.on === null ? (
+        {on ? <Button label="Done" onPress={closeSheet} /> : <Button label="Send anonymous counts" onPress={() => set(true)} />}
+        {on ? (
+          <View style={{ alignItems: 'center' }}>
+            <Link label="Turn counts off" tone="muted" onPress={() => set(false)} />
+          </View>
+        ) : s && s.on === null ? (
           <View style={{ alignItems: 'center' }}>
             <Link label="No thanks" onPress={() => set(false)} />
           </View>

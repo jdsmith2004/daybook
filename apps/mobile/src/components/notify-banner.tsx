@@ -16,6 +16,7 @@ import { setNotifyMem, setNudgeLog, setReminderPrefs, useNotifyMem, useReminderP
 import { allowReminders, openPhoneSettings } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 
 const bell = (ink: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10.2 20a2 2 0 0 0 3.6 0"/></svg>`;
@@ -31,8 +32,12 @@ export function NotifyBanner() {
 
   const yes = async () => {
     if (ask.k === 'off') return openPhoneSettings();
-    const ok = await allowReminders();
-    if (!ok) return;
+    /* the phone or the person said no (or could not answer): say so, since the strip would otherwise just stay */
+    const ok = await allowReminders().catch(() => false);
+    if (!ok) {
+      say(WORDS.remindersOff);
+      return;
+    }
     if (!(rem.lesson || rem.checkin || rem.wind || rem.review)) {
       setReminderPrefs({ ...rem, lesson: true });
       /* turned on fresh, so it starts every day (core nudges.ts) */

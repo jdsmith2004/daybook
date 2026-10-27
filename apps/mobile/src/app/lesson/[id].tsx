@@ -55,7 +55,6 @@ import {
   type Settings,
   srcNote,
 } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -75,8 +74,9 @@ import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
+import { copyText } from '@/lib/words';
 import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
 
@@ -213,13 +213,11 @@ export default function LessonScreen() {
     buzz('tap');
   };
   const copyLine = (k: number, text: string) => {
-    Clipboard.setStringAsync(text)
-      .then(() => {
-        setCopied((x) => ({ ...x, [k]: true }));
-        say('Copied. Paste it into a message.');
-        practiced();
-      })
-      .catch(() => say('Could not copy. Press and hold the words to copy them.'));
+    copyText(text, say, 'Copied. Paste it into a message.').then((ok) => {
+      if (!ok) return;
+      setCopied((x) => ({ ...x, [k]: true }));
+      practiced();
+    });
   };
   const write = (v: string) => {
     setWrote(v);
@@ -406,7 +404,7 @@ export default function LessonScreen() {
           ) : next ? (
             <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
           ) : (
-            <Next label="Done" noIcon onPress={close} />
+            <Next label="Done" noIcon onPress={closeAll} />
           )}
         </>
       );
@@ -552,7 +550,7 @@ export default function LessonScreen() {
     const acted = Object.keys(got).length > 0 || Object.keys(went).length > 0 || Object.keys(copied).length > 0 || !!(wrote && wrote.trim());
     foot = ed ? null : (
       <>
-        <Ghost label="Not now" onPress={() => toStage('practiced')} />
+        <Ghost label="Skip practice" onPress={() => toStage('practiced')} />
         <Next
           label="Done"
           noIcon
@@ -587,14 +585,14 @@ export default function LessonScreen() {
           <Route
             label="Back to Learn"
             onPress={() => {
-              close();
+              closeAll();
               router.navigate('/learn');
             }}
           />
           <Route
             label="Back to Today"
             onPress={() => {
-              close();
+              closeAll();
               router.navigate('/');
             }}
           />
@@ -604,7 +602,7 @@ export default function LessonScreen() {
     foot = next ? (
       <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
     ) : (
-      <Next label="Done" noIcon onPress={close} />
+      <Next label="Done" noIcon onPress={closeAll} />
     );
   }
 
@@ -722,7 +720,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     );
     foot = (
       <View style={s.footCol}>
-        <Next label="Done" noIcon onPress={close} />
+        <Next label="Done" noIcon onPress={closeAll} />
         {read ? (
           <Quiet label="Read it all again" onPress={again} />
         ) : nx ? (
@@ -738,7 +736,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       buzz('save');
       const nx = nextAfter(L, w);
       if (nx && lessonOpen(nx, w.done, account)) router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } });
-      else close();
+      else closeAll();
     };
     body = (
       <>
@@ -1038,7 +1036,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
                       The reason you picked most: <Text style={{ fontFamily: font.bodyBold }}>{lg.tt.t}</Text> ({lg.tt.n} time{lg.tt.n === 1 ? '' : 's'}).
                     </T>
                   ) : (
-                    <T>No reasons picked yet. Picking one on each entry makes this much clearer.</T>
+                    <T>No reasons yet. Picking one on each entry fills this in and makes the pattern much clearer.</T>
                   )}
                   {lg.bw ? (
                     <T>
@@ -1058,7 +1056,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
               {w.length ? (
                 w.map((x, j) => <T key={j}>{x}</T>)
               ) : (
-                <T>Nothing here yet. A verse, a prayer, or a line that steadies you works well. Add them in My plan, under Lists.</T>
+                <T>No words yet. A verse, a prayer, or a line that steadies you fills this. Add them in My plan, under Lists.</T>
               )}
             </View>
           );

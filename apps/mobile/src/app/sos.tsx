@@ -54,7 +54,7 @@ import { Text } from '@/components/text';
 import { ToolGrid } from '@/components/tool-grid';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
@@ -113,7 +113,7 @@ export default function Sos() {
   useFocusEffect(
     useCallback(() => {
       setFront(true);
-      if (began.current && !open.current) close();
+      if (began.current && !open.current) closeAll();
       return () => setFront(false);
     }, []),
   );
@@ -495,7 +495,7 @@ function Passed({ won, night, level }: { won: Won; night: boolean; level: number
           </T>
         ) : null}
         <Dock>
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
         </Dock>
       </SceneFrame>
       {cel ? <Confetti big /> : null}
@@ -522,7 +522,7 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
     });
     sos.setMem((m) => ({ ...m, prac: (typeof m.prac === 'number' ? m.prac : 0) + 1 }));
     buzz('save');
-    close();
+    closeAll();
   };
   return (
     <SceneFrame title="Practice" sky={sky} onClose={close}>

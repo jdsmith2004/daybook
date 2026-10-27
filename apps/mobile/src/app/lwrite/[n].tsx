@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LxCheck } from '@/components/lesson-art';
 import { Icon, T } from '@/components/ui';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -113,14 +113,14 @@ export default function Lwrite() {
                     <Route
                       label="Read it in My plan"
                       onPress={() => {
-                        close();
+                        closeAll();
                         router.push({ pathname: '/plan', params: { pane: 'learned' } });
                       }}
                     />
                     <Route
                       label="Back to Learn"
                       onPress={() => {
-                        close();
+                        closeAll();
                         router.navigate('/learn');
                       }}
                     />
@@ -138,7 +138,7 @@ export default function Lwrite() {
                   <Icon name="back" size={22} color={c.ink} />
                 </Pressable>
               ) : null}
-              {fin ? btn('Done', close, false) : btn(i === total - 1 ? 'Finish' : 'Next', () => setI(i + 1))}
+              {fin ? btn('Done', closeAll, false) : btn(i === total - 1 ? 'Finish' : 'Next', () => setI(i + 1))}
             </View>
           </>
         )}

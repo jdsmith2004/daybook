@@ -51,13 +51,14 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  kind?: 'primary' | 'ghost' | 'danger';
+  /** warm: the sun's yellow, for a page lit by fire (Rekindle) */
+  kind?: 'primary' | 'ghost' | 'danger' | 'warm';
   disabled?: boolean;
   icon?: string;
 }) {
   const c = useTheme();
-  const bg = kind === 'primary' ? c.accent : kind === 'danger' ? c.danger : 'transparent';
-  const fg = kind === 'primary' ? c.accentInk : kind === 'danger' ? '#FFFFFF' : c.accentText;
+  const bg = kind === 'primary' ? c.accent : kind === 'danger' ? c.danger : kind === 'warm' ? c.sun : 'transparent';
+  const fg = kind === 'primary' ? c.accentInk : kind === 'danger' ? '#FFFFFF' : kind === 'warm' ? c.onSun : c.accentText;
   return (
     <Pressable
       accessibilityRole="button"

@@ -264,6 +264,18 @@ export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   move: ['Five minutes of hard exercise', 'do five minutes of hard exercise'],
   light: ['Get outside, into some daylight', 'get outside into some daylight'],
 };
+/** after a slip, what was going on just before it, as the plan's "when" ("When it is late and I am in bed with my
+    phone, I will ..."): the built-in answers to "What set it off?" (legacy TRIGGERS), and the urge itself for the rest */
+export type TalkWhen = 'late' | 'lonely' | 'bored' | 'stress' | 'tired' | 'scroll' | 'urge';
+export const TALK_WHEN: Record<TalkWhen, string> = {
+  late: 'it is late and I am in bed with my phone',
+  lonely: 'I feel lonely or low',
+  bored: 'I am bored',
+  stress: 'I am stressed or anxious',
+  tired: 'I am tired',
+  scroll: 'I have been scrolling or gaming',
+  urge: 'the urge comes',
+};
 /** a move as it reads in the short plan for the hard hours, where nothing is in mind yet */
 export const talkMoveName = (k: TalkMove, prep = false) => (prep && k === 'block' ? 'Turn on a blocker before they start' : TALK_MOVES[k][0]);
 const NEED_MOVES: Record<TalkNeed, TalkMove[]> = {
@@ -367,7 +379,7 @@ export function talkMoveWords(t: Pick<Talk, 'm' | 'mx'>): string[] {
 const clockShort = (t: number) => talkClock(t).replace(':00 ', ' ');
 /** the change plan in one line: "This evening, when I want relief, I will walk it off and put the device out of reach."
     A plan for the hard hours starts at their time: "At 11 PM, when I want rest, I will ..." */
-export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx' | 'at' | 'fw'>>): string {
+export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk, 'nx' | 'mx' | 'at' | 'fw' | 'ft'>>): string {
   const mo = TALK_MOMENTS.find((x) => x[0] === t.mo);
   const lead = t.mo === TALK_HARD_MOMENT && t.at ? 'At ' + clockShort(t.at) : !mo || mo[0] === 'now' ? 'Right now' : mo[1];
   const thens = t.m
@@ -375,9 +387,11 @@ export function talkPlanLine(t: Pick<Talk, 'n' | 'm' | 'mo'> & Partial<Pick<Talk
     .filter(Boolean)
     .concat((t.mx || []).map(ownThen));
   const then = thens.length > 1 ? thens.slice(0, -1).join(', ') + ' and ' + thens[thens.length - 1] : thens[0] || 'do what I planned';
-  /* a plan made after a slip is an if-then plan from the feeling: "When I feel lonely late at night, I will ..." */
-  if (t.fw)
-    return 'When I feel ' + t.fw.toLowerCase() + (t.mo === 'late' ? ' late at night' : t.mo === 'evening' ? ' in the evening' : '') + ', I will ' + then + '.';
+  const at = t.mo === 'late' ? ' late at night' : t.mo === 'evening' ? ' in the evening' : '';
+  /* a plan made after a slip is an if-then plan from what was going on: "When I am bored in the evening, I will ..." */
+  if (t.ft) return 'When ' + TALK_WHEN[t.ft] + (t.ft === 'late' ? '' : at) + ', I will ' + then + '.';
+  /* (or, from before October 27, 2026, from the feeling: "When I feel lonely late at night, I will ...") */
+  if (t.fw) return 'When I feel ' + t.fw.toLowerCase() + at + ', I will ' + then + '.';
   return lead + ', when I want ' + talkNeedWord(t.n, t.nx) + ', I will ' + then + '.';
 }
 
@@ -464,6 +478,8 @@ export interface Talk {
   pr?: 1;
   /** after a slip: the feeling named for before it, the plan's "when I feel ..." (slip.ts). Only when there is one. */
   fw?: string;
+  /** after a slip: what was going on just before it, the plan's "when ..." (slip.ts). Only when there is one. */
+  ft?: TalkWhen;
 }
 
 const SIGNS = TALK_SIGNS.map((x) => x[0]);
@@ -527,6 +543,7 @@ export function normTalk(x: unknown): Talk | null {
   withOwn(out, 'mx', talkOwn(v.mx));
   if (v.pr === 1) out.pr = 1;
   if (typeof v.fw === 'string' && /^[A-Za-z][A-Za-z ]{0,23}$/.test(v.fw)) out.fw = v.fw;
+  if (typeof v.ft === 'string' && Object.prototype.hasOwnProperty.call(TALK_WHEN, v.ft)) out.ft = v.ft as TalkWhen;
   return out;
 }
 /** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */

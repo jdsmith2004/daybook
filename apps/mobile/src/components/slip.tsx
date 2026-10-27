@@ -1,63 +1,13 @@
-/* The pieces of the comeback after a slip (log.tsx; the rules and the research are in core slip.ts): the four colors that
-   open the field of feelings, the feeling named big and breathing in its own color, and the one column of choices
-   (docs/design-standards.md: a small shape in the choice's color, the name, a line on it, and a chevron; a tap starts
-   it). */
-import { FEEL_MID } from '@daybook/core';
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+/* The pieces of the comeback after a slip (log.tsx; the rules and the research are in core slip.ts): the one column of
+   choices (docs/design-standards.md: a small shape in the choice's color, the name, a line on it, and a chevron; a tap
+   starts it). */
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
-import { BreathingShape, FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, toneOf, useTheme } from '@/lib/theme';
-
-/** the four colors, big and low where the thumb is; one tap opens the whole field of feelings on that color, and the
-    word picked comes back through onPick */
-export function FeelQuads({ onPick, start }: { onPick: (r: number, c: number) => void; start?: { r: number; c: number } | null }) {
-  const { width: W } = useWindowDimensions();
-  const [from, setFrom] = useState<{ r: number; c: number } | null>(null);
-  const [at, setAt] = useState<FeelFrom | undefined>(undefined);
-  const d = Math.min((Math.min(W, 430) - 32 - 12) / 2, 150);
-  return (
-    <>
-      <QuadBubbles
-        d={d}
-        gap={12}
-        onPick={(q, p) => {
-          /* the field opens on the word picked before, when it is in this color */
-          const near = start && start.r < FEEL_MID === q.r < FEEL_MID && start.c < FEEL_MID === q.c < FEEL_MID;
-          setAt(p);
-          setFrom(near ? start : { r: q.r, c: q.c });
-        }}
-      />
-      <Modal visible={!!from} animationType="fade" onRequestClose={() => setFrom(null)}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          {from ? (
-            <FeelGrid
-              start={from}
-              from={at}
-              onBack={() => setFrom(null)}
-              onClose={() => setFrom(null)}
-              onNext={(r, c) => {
-                setFrom(null);
-                onPick(r, c);
-              }}
-            />
-          ) : null}
-        </GestureHandlerRootView>
-      </Modal>
-    </>
-  );
-}
-
-/** the feeling named: its shape in its own color, breathing slowly (still with Reduce Motion) */
-export function FeelShape({ r, c }: { r: number; c: number }) {
-  const t = useTheme();
-  return <BreathingShape kind={feelKind(r, c)} color={FEEL_COLORS[r][c]} ink={t.muted} />;
-}
 
 export interface ChoiceRow {
   id: string;

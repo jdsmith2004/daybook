@@ -1,15 +1,13 @@
 /* Rekindle's pieces: the comeback's three flames with what lit each (Lights), the flames (one per mission, each catching
-   with a pop when it is lit), the embers and the one big button you press and hold to rekindle them after a slip (sparks
-   fly when they catch), and the missions list. The "What just happened" pictures are in rk-art.tsx. */
+   with a pop when it is lit), and the missions list. The hold after a slip is in hearth.tsx, and the "What just
+   happened" pictures are in rk-art.tsx. */
 import { type Mission, type RkLight } from '@daybook/core';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import Svg, { Path } from 'react-native-svg';
 
-import { Flame } from '@/components/flame';
 import { Icon, T } from '@/components/ui';
-import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
@@ -80,160 +78,7 @@ function OneFlame({ lit, w }: { lit: boolean; w: number }) {
   );
 }
 
-/* ---------- sparks: a burst that rises and fades when the embers catch ---------- */
-const SPARKS = [
-  [-70, -150, 0],
-  [-38, -190, 80],
-  [-12, -170, 30],
-  [14, -200, 120],
-  [40, -160, 50],
-  [66, -185, 140],
-  [-56, -120, 180],
-  [58, -125, 200],
-  [-24, -140, 240],
-  [28, -132, 260],
-];
-function Sparks() {
-  const reduce = useReducedMotion();
-  const vals = useRef(SPARKS.map(() => new Animated.Value(0))).current;
-  useEffect(() => {
-    if (reduce) return;
-    const a = Animated.parallel(
-      vals.map((v, i) =>
-        Animated.timing(v, { toValue: 1, duration: 1300 + (i % 3) * 250, delay: SPARKS[i][2], easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
-      ),
-    );
-    a.start();
-    return () => a.stop();
-  }, [reduce, vals]);
-  if (reduce) return null;
-  return (
-    <View pointerEvents="none" style={s.sparks}>
-      {vals.map((v, i) => (
-        <Animated.View
-          key={i}
-          style={[
-            s.spark,
-            i % 2 ? s.sparkSmall : null,
-            {
-              opacity: v.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0, 1, 0.8, 0] }),
-              transform: [
-                { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, SPARKS[i][0]] }) },
-                { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, SPARKS[i][1]] }) },
-                { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1.2, 0.4] }) },
-              ],
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
-/* ---------- the embers: press and hold to rekindle the flame ----------
-   useEmberHold keeps the one hold, shared by the art (it glows brighter as the hold goes on) and the button (it fills from
-   the left, so how far along it is shows plainly). Let go early and it sinks back; a quick tap says to keep holding. A
-   screen reader (or switch control) completes it with the button's own action, and on the web a held Enter or Space key
-   works like a held finger. With Reduce Motion on, the fill still shows the hold, but the flame does not grow and no
-   sparks fly. */
-const HOLD_MS = 1400;
 const NATIVE = Platform.OS !== 'web';
-export interface EmberHold {
-  h: Animated.Value;
-  lit: boolean;
-  label: string;
-  light: () => void;
-  start: () => void;
-  stop: () => void;
-  tap: () => void;
-}
-export function useEmberHold(lit: boolean, onLit: () => void): EmberHold {
-  const reduce = useReducedMotion();
-  const h = useRef(new Animated.Value(lit ? 1 : 0)).current;
-  const [label, setLabel] = useState('Press and hold to rekindle');
-  const done = useRef(lit);
-  /* the press began here (a finger, or a held key); a press with no start is a screen reader's click on the web */
-  const held = useRef(false);
-  useEffect(() => {
-    if (!lit) return;
-    done.current = true;
-    if (reduce) h.setValue(1);
-    else Animated.timing(h, { toValue: 1, duration: 300, useNativeDriver: NATIVE }).start();
-  }, [lit, h, reduce]);
-  const light = () => {
-    if (done.current) return;
-    done.current = true;
-    h.stopAnimation();
-    h.setValue(1);
-    buzz('lit');
-    onLit();
-  };
-  const start = () => {
-    if (done.current) return;
-    held.current = true;
-    buzz('tap');
-    setLabel('Keep holding');
-    Animated.timing(h, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: NATIVE }).start(({ finished }) => {
-      if (finished) light();
-    });
-  };
-  const stop = () => {
-    if (done.current) return;
-    h.stopAnimation();
-    Animated.timing(h, { toValue: 0, duration: reduce ? 0 : 300, useNativeDriver: NATIVE }).start();
-  };
-  /* a quick tap (let go before the end) says what to do; it does not light it */
-  const tap = () => {
-    if (done.current) return;
-    if (!held.current) return light();
-    held.current = false;
-    setLabel('Hold it down until it fills');
-  };
-  return { h, lit, label, light, start, stop, tap };
-}
-
-/** the flame, down to embers, glowing up as it is held; sparks fly when it catches */
-export function EmberArt({ level, hold }: { level: number; hold: EmberHold }) {
-  const reduce = useReducedMotion();
-  const { h, lit } = hold;
-  const glow = h.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.9] });
-  const scale = h.interpolate({ inputRange: [0, 1], outputRange: [reduce ? 1 : 0.9, 1] });
-  const dim = h.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] });
-  return (
-    <View style={s.ember} accessible accessibilityRole="image" accessibilityLabel={lit ? 'Your flame, burning again' : 'Your flame, down to embers'}>
-      <Animated.View style={[s.glow, { opacity: glow }]} />
-      {lit ? <Sparks /> : null}
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Flame level={level} size={150} />
-        <Animated.View style={[StyleSheet.absoluteFill, s.dim, { opacity: dim }]} />
-      </Animated.View>
-    </View>
-  );
-}
-
-/** the one big button: press and hold until it fills */
-export function HoldButton({ hold }: { hold: EmberHold }) {
-  const c = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Rekindle"
-      accessibilityHint="Press and hold until it fills. With a screen reader, double tap."
-      accessibilityActions={[{ name: 'activate' }, { name: 'longpress' }]}
-      onAccessibilityAction={hold.light}
-      onPressIn={hold.start}
-      onPressOut={hold.stop}
-      onPress={hold.tap}
-      delayLongPress={HOLD_MS + 1000}
-      style={[s.hold, { backgroundColor: c.sun }]}>
-      <Animated.View style={[s.holdFill, { transform: [{ scaleX: hold.h }] }]} />
-      <View style={s.holdIn}>
-        <Icon name="flame" size={24} color={c.onSun} />
-        <Text style={[s.holdT, { color: c.onSun }]}>{hold.label}</Text>
-      </View>
-    </Pressable>
-  );
-}
 
 /* ---------- the missions ---------- */
 export function Missions({ list, onAction }: { list: Mission[]; onAction: (m: Mission, act: string) => void }) {

@@ -1,11 +1,11 @@
 /* The line at the bottom of More and the help pages: 988, any hour (US), with a Copy button. From the legacy helpFoot. */
-import * as Clipboard from 'expo-clipboard';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { copyText } from '@/lib/words';
 
 export function HelpFoot() {
   const c = useTheme();
@@ -22,11 +22,7 @@ export function HelpFoot() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Copy 988"
-        onPress={() =>
-          Clipboard.setStringAsync('988')
-            .then(() => say('Copied.'))
-            .catch(() => say('Could not copy. Press and hold the text to copy it.'))
-        }
+        onPress={() => copyText('988', say)}
         style={[s.chip, { borderColor: c.line, backgroundColor: c.surface }]}>
         <Icon name="copy" size={16} color={c.ink} />
         <Text style={{ fontFamily: font.bodySemi, color: c.ink }}>Copy</Text>

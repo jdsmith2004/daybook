@@ -3,8 +3,10 @@
    keyboard does not cover them. */
 import { FEEDBACK_LEN } from '@daybook/core';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 import { Field } from '@/components/choices';
+import { Busy, HelpLine } from '@/components/help-line';
 import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
@@ -62,8 +64,19 @@ export default function Feedback() {
         keyboardType="email-address"
         inputMode="email"
       />
-      <Button label={busy ? 'Sending' : 'Send'} disabled={!t.trim() || busy} onPress={send} />
-      {err ? <T tone="muted">{err}</T> : null}
+      <Button label={busy ? 'Sending…' : 'Send'} disabled={!t.trim() || busy} onPress={send} />
+      {busy ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Busy label="Sending" />
+          <T tone="muted">Your words are on their way…</T>
+        </View>
+      ) : null}
+      {err ? (
+        <>
+          <T tone="muted">{err}</T>
+          <HelpLine subject="Daybook feedback" />
+        </>
+      ) : null}
       <T v="small" tone="muted">
         Do not include anything you would not want read. Feedback is kept for 180 days.
       </T>

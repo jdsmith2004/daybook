@@ -16,10 +16,12 @@ import {
   lessonsDone,
   type ListKey,
   lwriteOf,
+  optionRestore,
   planAdd,
   planBlank,
   PLAN_MAX,
   planRemove,
+  planRestore,
   PLAN_THEN_LEN,
   PLAN_WHEN_LEN,
   playbookText,
@@ -32,7 +34,6 @@ import {
   toggleHelpStep,
   toggleSafety,
 } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
@@ -53,6 +54,7 @@ import { VoiceRecorder } from '@/components/voice-note';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { copyText } from '@/lib/words';
 
 type Pane = 'why' | 'plans' | 'lists' | 'learned';
 const PANES: Pane[] = ['why', 'plans', 'lists', 'learned'];
@@ -417,7 +419,8 @@ function UrgePlan() {
               const x = planRemove(st, r.i);
               if (x.ok) apply({ st: x.st });
               setOpen(null);
-              say('Removed from your urge plan.');
+              if (x.ok) say('Removed from your urge plan.', () => apply((cur) => ({ st: planRestore(cur, r.i, { when: r.when, then: r.then }) })));
+              else say('Removed from your urge plan.');
             }}
           />
         ) : (
@@ -552,15 +555,16 @@ function Lists({ fresh, add, place }: { fresh?: string; add?: string; place: Pla
               label="Remove"
               on={false}
               onPress={() => {
+                const at = st.opts[kind].findIndex((y) => y.id === o.id);
                 apply((cur) => ({ st: removeOption(cur, snap.days, kind, o.id) }));
-                say('Removed. Older entries keep it.');
+                say('Removed. Older entries keep it.', () => apply((cur) => ({ st: optionRestore(cur, kind, o, at) })));
               }}
             />
           </View>
         ))
       ) : (
         <T v="small" tone="muted">
-          Nothing added yet.
+          No answers of your own yet. The ones you add when you log show up here.
         </T>
       )}
     </View>
@@ -631,9 +635,7 @@ function Learned() {
   const toLearn = () => router.navigate('/learn');
   const copy = () => {
     const text = playbookText(st, done, LESSONS, (id) => LESSONS.findIndex((L) => L.id === id), LCHECKS, lcheckNo);
-    Clipboard.setStringAsync(text)
-      .then(() => say('Copied.'))
-      .catch(() => say('Could not copy. Press and hold the text to copy it.'));
+    copyText(text, say);
   };
   const Note = ({ label, text }: { label: string; text: string }) => (
     <View style={[s.note, { backgroundColor: c.surface2 }]}>
@@ -658,7 +660,7 @@ function Learned() {
             </View>
           ))
         ) : (
-          <T tone="muted">Finish a lesson and its one-line takeaway shows up here, with your note.</T>
+          <T tone="muted">No lessons finished yet. Each one leaves a one-line takeaway here, with your note.</T>
         )}
         <Chip label="Open Learn" on={false} onPress={toLearn} />
       </Sec>
@@ -673,7 +675,7 @@ function Learned() {
             </View>
           ))
         ) : (
-          <T tone="muted">After every second lesson there is a short piece of writing. What you write shows up here.</T>
+          <T tone="muted">No writing yet. After every second lesson there is a short piece of writing, and what you write shows up here.</T>
         )}
       </Sec>
       <Button kind="ghost" icon="copy" label="Copy my whole plan as text" onPress={copy} />

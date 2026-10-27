@@ -2,13 +2,13 @@
    number when one is saved in My plan (on this device only), or for you to pick who. On a computer, where there is no
    messages app to open, the words are copied instead. */
 import { safeName, smsLink } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { Linking, Platform } from 'react-native';
 
 import { Button } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
+import { copyText, WORDS } from '@/lib/words';
 
 const ua = () => (Platform.OS === 'web' && typeof navigator !== 'undefined' ? navigator.userAgent : '');
 /* an iPad asking for the desktop site says it is a Mac, but it has a touch screen */
@@ -21,10 +21,7 @@ export function useSendText() {
   const { snap, say } = useStore();
   const { phone } = useSos();
   const nm = safeName(snap.settings);
-  const copy = (body: string) =>
-    Clipboard.setStringAsync(body)
-      .then(() => say(nm ? 'Copied. Paste it in a message to ' + nm + '.' : 'Copied. Paste it in your messages.'))
-      .catch(() => say('Could not copy. Press and hold the text to copy it.'));
+  const copy = (body: string) => copyText(body, say, nm ? 'Copied. Paste it in a message to ' + nm + '.' : WORDS.copiedToSend);
   return (body: string) => {
     buzz('tap');
     if (!canText()) return copy(body);

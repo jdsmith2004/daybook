@@ -139,6 +139,16 @@ export function planRemove(st: Settings, i: number): ListResult {
     at: i,
   };
 }
+/** a removed line put back (Undo): a starting line goes back into its own place, any other at the place it had */
+export function planRestore(st: Settings, i: number, row: { when: string; then: string }): Settings {
+  if (planBlank(row)) return st;
+  if (i < (URGE_PLAN as unknown[]).length) {
+    if (!st.plan[i] || !planBlank(st.plan[i])) return st;
+    return changeSettings(st, (s) => void (s.plan[i] = { when: row.when, then: row.then }));
+  }
+  if (st.plan.length >= PLAN_MAX || planFind(st, row.when, row.then) >= 0) return st;
+  return changeSettings(st, (s) => void s.plan.splice(Math.min(i, s.plan.length), 0, { when: row.when, then: row.then }));
+}
 /** a line changed: both halves at once. An empty half leaves the old words. */
 export function planEdit(st: Settings, i: number, when: string, then: string): Settings {
   const r = st.plan[i];
@@ -147,6 +157,17 @@ export function planEdit(st: Settings, i: number, when: string, then: string): S
   const t = planClean(then, PLAN_THEN_LEN) || r.then;
   if (w === r.when && t === r.then) return st;
   return changeSettings(st, (s) => void (s.plan[i] = { when: w, then: t }));
+}
+
+/** one of my own answers (a trigger or what I did) put back after Remove (Undo): shown again if it was only hidden, else
+    put back at the place it had */
+export function optionRestore(st: Settings, kind: 'trig' | 'did', o: { id: string; t: string }, i: number): Settings {
+  return changeSettings(st, (s) => {
+    const list = (s.opts || (s.opts = { trig: [], did: [] }))[kind] || (s.opts[kind] = []);
+    const x = list.find((y) => y.id === o.id);
+    if (x) delete x.off;
+    else list.splice(Math.max(0, Math.min(i, list.length)), 0, { id: o.id, t: o.t });
+  });
 }
 
 /* ---------- My plan: why, the safety net, next steps, lists ---------- */
@@ -202,6 +223,13 @@ export function listRemove(st: Settings, k: ListKey, i: number): ListResult {
   if (k !== 'words' && rows.length <= 1) return { ok: false, toast: 'Keep at least one. Add a new one first, then remove this.' };
   rows.splice(i, 1);
   return { ok: true, st: putRows(st, k, rows), toast: 'Removed.', at: i };
+}
+/** a removed line put back at its place (Undo); a line that is already there, or a list that is full, is left alone */
+export function listInsert(st: Settings, k: ListKey, i: number, text: string): Settings {
+  const rows = rowsOf(st, k);
+  if (!text || rows.length >= LISTS[k].max || rows.some((x) => x.toLowerCase() === text.toLowerCase())) return st;
+  rows.splice(Math.max(0, Math.min(i, rows.length)), 0, text);
+  return putRows(st, k, rows);
 }
 /** a line moved up (d = -1) or down (d = 1) */
 export function listMove(st: Settings, k: ListKey, i: number, d: -1 | 1): Settings {

@@ -1,7 +1,6 @@
 /* Go deeper: the fourth mission when a run of 14 days or more can keep going. Trace the slip back to where it started, or
    tell one person. Ported from the legacy SCENES.rktrace and SCENES.rktell. */
 import { blankP, changeDay, rkDeep, rkOf, RT_Q, rkTellText, safeName, withDay } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -12,6 +11,7 @@ import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useCareSettings, useStore } from '@/lib/store';
+import { copyText, WORDS } from '@/lib/words';
 
 export default function Deeper() {
   const { snap, tk, update, say } = useStore();
@@ -49,15 +49,7 @@ export default function Deeper() {
         <Card style={{ alignSelf: 'stretch' }}>
           <T selectable>{text}</T>
           <View style={{ flexDirection: 'row' }}>
-            <Chip
-              label="Copy"
-              on={false}
-              onPress={() =>
-                Clipboard.setStringAsync(text)
-                  .then(() => say('Copied. Paste it in your messages.'))
-                  .catch(() => say('Could not copy. Press and hold the text to copy it.'))
-              }
-            />
+            <Chip label="Copy" on={false} onPress={() => copyText(text, say, WORDS.copiedToSend)} />
           </View>
         </Card>
         <Dock>
@@ -123,7 +115,7 @@ export default function Deeper() {
         label="Save"
         onPress={() => {
           const clean = vals.map((x) => String(x).replace(/\s+/g, ' ').trim().slice(0, 200));
-          if (!clean.some(Boolean)) return setMsg('Write a few words in one of the boxes first.');
+          if (!clean.some(Boolean)) return setMsg(WORDS.needWords);
           update((s) => ({ ...s, days: rkDeep(s.days, s.settings!, k, 'trace', clean) || s.days }));
           buzz('lit');
           close();

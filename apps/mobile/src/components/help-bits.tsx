@@ -1,7 +1,6 @@
 /* The pieces the Get help pages are made of: a card with a title, a list, a phone number with Copy, a link that leaves the app,
    a quiet note, and a lesson that goes with the page. Ported from the legacy hcard, hitem, numRow, ext, P, UL, OL, note and relLesson. */
 import { lessonById, lessonGate, lessonNo, lessonWalk, lmin } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
@@ -11,13 +10,11 @@ import { LinkCard } from '@/components/link-card';
 import { Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { copyText, WORDS } from '@/lib/words';
 
 export function useCopy() {
   const { say } = useStore();
-  return (text: string, ok = 'Copied.') =>
-    Clipboard.setStringAsync(text)
-      .then(() => say(ok))
-      .catch(() => say('Could not copy. Press and hold the text to copy it.'));
+  return (text: string, ok: string = WORDS.copied) => copyText(text, say, ok);
 }
 
 /** a small round button: Copy, or a link to somewhere in the app */

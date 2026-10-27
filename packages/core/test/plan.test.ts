@@ -83,3 +83,40 @@ describe('the lists as rows', () => {
     expect(gone.ok && gone.st.words).toEqual([]);
   });
 });
+
+describe('Undo for removals', () => {
+  it('puts a list line back at the place it had, once', () => {
+    const st = core.listEdit(core.listEdit(base, 'menu', 0, 'First'), 'menu', 1, 'Second');
+    const first = st.menu[0];
+    const gone = core.listRemove(st, 'menu', 0);
+    if (!gone.ok) throw new Error();
+    const back = core.listInsert(gone.st, 'menu', 0, first);
+    expect(back.menu).toEqual(st.menu);
+    expect(core.listInsert(back, 'menu', 0, first)).toBe(back);
+    expect(core.listInsert(gone.st, 'menu', 99, first).menu.at(-1)).toBe(first);
+  });
+  it('puts an urge plan line back: a starting line in its own place, a new one at its index', () => {
+    const added = core.planAdd(base, 'I am bored', 'Call a friend');
+    if (!added.ok) throw new Error();
+    const at = added.at;
+    const gone = core.planRemove(added.st, at);
+    if (!gone.ok) throw new Error();
+    expect(gone.st.plan.length).toBe(at);
+    expect(core.planRestore(gone.st, at, { when: 'I am bored', then: 'Call a friend' }).plan[at]).toEqual({ when: 'I am bored', then: 'Call a friend' });
+    const row = base.plan[0];
+    const blank = core.planRemove(base, 0);
+    if (!blank.ok) throw new Error();
+    expect(core.planBlank(blank.st.plan[0])).toBe(true);
+    expect(core.planRestore(blank.st, 0, row).plan[0]).toEqual(row);
+  });
+  it('shows an answer of my own again after Remove', () => {
+    const made = core.addOption(base, 'trig', 'Late night scrolling');
+    const id = made.id!;
+    const o = made.st.opts.trig.find((x) => x.id === id)!;
+    const gone = core.removeOption(made.st, {}, 'trig', id);
+    expect(gone.opts.trig.some((x) => x.id === id)).toBe(false);
+    expect(core.optionRestore(gone, 'trig', o, 0).opts.trig[0].t).toBe('Late night scrolling');
+    const hidden = core.changeSettings(made.st, (s) => void (s.opts.trig.find((x) => x.id === id)!.off = true));
+    expect(core.optionRestore(hidden, 'trig', o, 0).opts.trig.find((x) => x.id === id)!.off).toBeUndefined();
+  });
+});

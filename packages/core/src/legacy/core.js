@@ -403,7 +403,11 @@ function routineOn(st,p,k){
 }
 function normDay(d,key){
  const evs=((d&&d.events)||[]).map(normEvent).filter(Boolean);
- return {d:key,events:evs,checkin:normCheckin(d&&d.checkin),p:normP(d&&d.p),u:(d&&typeof d.u==='number')?d.u:0};
+ const out={d:key,events:evs,checkin:normCheckin(d&&d.checkin),p:normP(d&&d.p),u:(d&&typeof d.u==='number')?d.u:0};
+ /* the ids of deleted entries, for sync (types.ts Day.gone): kept only when there are some, the newest 100 */
+ const gone=d&&Array.isArray(d.gone)?d.gone.filter(x=>typeof x==='string'&&x).slice(-100):[];
+ if(gone.length)out.gone=gone;
+ return out;
 }
 
 /* ---------- one day ---------- */

@@ -100,6 +100,9 @@ export interface Day {
   p: Play | null;
   /** last change, in ms, for sync */
   u: number;
+  /** ids of entries deleted from this day, so when two devices changed the same day, sync joins them entry by entry and a
+      deleted entry is not brought back by the other device's copy (sync.ts mergeDay). Absent when nothing was deleted. */
+  gone?: string[];
 }
 
 export type Days = Record<DayKey, Day>;

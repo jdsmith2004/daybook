@@ -1,6 +1,9 @@
 /* Sync, the device side. The log lives on the device first; sync copies changes to the person's own account and back.
    The rule is the same everywhere: per record, the change made last wins (each record carries u, when it was changed).
 
+   One exception keeps every entry (the premium pass, October 26, 2026): when this device changed a day or the settings
+   that the account also changed, the two copies are joined instead (mergeDay, keepEarned), and the joined copy is sent.
+
    A device remembers which records it changed and has not sent yet ("dirty": record id -> the change time it had). A record
    deleted here (a day whose last entry was removed) is gone from the log but stays dirty, with the time it was deleted, so
    the deletion reaches the account and an older copy coming back from the account does not bring it back.
@@ -12,7 +15,7 @@
 import { normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
 import { isKey } from './legacy/core.js';
 import { keepSup } from './supporter';
-import type { Settings, Snapshot } from './types';
+import type { Day, Settings, Snapshot } from './types';
 
 /** the records this device changed and has not sent yet: id -> the change time it had */
 export type Dirty = Record<string, number>;
@@ -76,9 +79,38 @@ function localU(s: Snapshot, dirty: Dirty, id: RecordId): number | null {
   return dirty[id] != null ? dirty[id] : null;
 }
 
-/** merges records from the account into the log. A record replaces what is here only when it was changed later, and a
-    deletion from the account (another device deleted everything) removes the record here. The ids that changed come back,
-    with the dirty list minus the records the account's newer copy replaced. */
+/** Two copies of one day, both changed (two devices logged on the same day before syncing): joined entry by entry, so no
+    entry is lost. An entry in both is taken from the newer copy; an entry in one only is kept, unless the other copy
+    deleted it (Day.gone): a delete wins over an older copy. The check-in and the day's plan come from the newer copy, or
+    from the older one when the newer has none. The joined day gets a change time past both, so it wins everywhere.
+    Gives back null when nothing is left in it. */
+export function mergeDay(a: Day, b: Day): Day | null {
+  const [newer, older] = (b.u || 0) > (a.u || 0) ? [b, a] : [a, b];
+  const gone = [...new Set([...(older.gone || []), ...(newer.gone || [])])].slice(-100);
+  const out = new Set(gone);
+  const events: Day['events'] = [];
+  const seen = new Set<string>();
+  for (const e of [...newer.events, ...older.events]) {
+    if (seen.has(e.id) || out.has(e.id)) continue;
+    seen.add(e.id);
+    events.push(e);
+  }
+  const checkin = newer.checkin ?? older.checkin;
+  const p = newer.p ?? older.p;
+  if (!events.length && !checkin && !p) return null;
+  const day: Day = { d: newer.d, events, checkin, p, u: Math.max(a.u || 0, b.u || 0) + 1 };
+  if (gone.length) day.gone = gone;
+  return day;
+}
+
+const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
+const bodyOf = (d: Day) => ({ e: d.events, c: d.checkin, p: d.p, g: d.gone || [] });
+
+/** merges records from the account into the log. A record replaces what is here when it was changed later and this
+    device has nothing of its own waiting to send for it. When both changed it, a day is joined entry by entry (mergeDay)
+    and settings keep what each side earned (keepEarned); the joined record is marked to send, so the account gets it too.
+    A deletion from the account (another device deleted that day, or everything) removes the record here when it is the
+    newer change: a delete wins. The ids that changed come back, with the dirty list after the merge. */
 export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { snap: Snapshot; changed: RecordId[]; dirty: Dirty } {
   const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews } };
   const d: Dirty = { ...dirty };
@@ -90,9 +122,31 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     if (!cur || r.u > cur.u) best.set(r.id, r);
   }
   for (const r of best.values()) {
-    const here = localU(snap, d, r.id);
-    if (here != null && here >= r.u) continue;
     const p = parseId(r.id)!;
+    const mine = d[r.id] != null;
+    const here = localU(snap, d, r.id);
+    /* both sides changed it: join them, and send the joined copy */
+    if (mine && r.data && p.kind === 'days' && snap.days[p.key]) {
+      const local = snap.days[p.key];
+      const j = mergeDay(local, r.data as Day);
+      if (j && same(bodyOf(j), bodyOf(local)) && (local.u || 0) >= r.u) continue;
+      if (j) snap.days[p.key] = j;
+      else delete snap.days[p.key];
+      d[r.id] = j ? j.u : Math.max(local.u || 0, r.u) + 1;
+      changed.add(r.id);
+      continue;
+    }
+    if (mine && r.data && p.kind === 'settings' && snap.settings) {
+      const theirs = r.data as Settings;
+      const win = (r.u > (here ?? 0) ? keepEarned(theirs, snap.settings) : keepEarned(snap.settings, theirs)) as Settings;
+      if (same({ ...win, u: 0 }, { ...snap.settings, u: 0 }) && (here ?? 0) >= r.u) continue;
+      const u = Math.max(here ?? 0, r.u) + 1;
+      snap.settings = { ...win, u };
+      d[r.id] = u;
+      changed.add(r.id);
+      continue;
+    }
+    if (here != null && here >= r.u) continue;
     if (here == null && !r.data) continue; /* a deletion of something this device never had */
     /* settings from the account keep the supporter record this device has, if it is the better one (a tip is never lost
        to an older copy of the settings) */

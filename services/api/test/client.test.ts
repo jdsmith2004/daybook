@@ -199,6 +199,110 @@ describe('two devices of one person', () => {
     expect(a.snap.days['2026-10-10']).toBeUndefined();
   });
 
+  it('two devices log on the same day while apart: every entry is kept on both', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, settings: st(100) }), 100);
+    a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    await a.sync();
+    await b.sync();
+    /* apart: a logs an urge ridden out, b logs a slip, on the same day */
+    a.change((s) => addRode(s, '2026-10-10', 200), 200);
+    b.change((s) => ({ ...s, days: core.addEvent(s.days, '2026-10-10', 'slipped', '23:00', {}, 300).days }), 300);
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    for (const d of [a, b]) {
+      expect(d.snap.days['2026-10-10'].events.map((e) => e.outcome).sort()).toEqual(['rode', 'rode', 'slipped']);
+      expect(d.dirty).toEqual({});
+    }
+    /* and the newer of the two sends it the other way round too */
+    a.change((s) => addRode(s, '2026-10-10', serverNow + 100), serverNow + 100);
+    b.change((s) => addRode(s, '2026-10-10', serverNow + 50), serverNow + 50);
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    expect(a.snap.days['2026-10-10'].events.length).toBe(5);
+    expect(b.snap.days['2026-10-10']).toEqual(a.snap.days['2026-10-10']);
+  });
+
+  it('an entry deleted on one device stays deleted when the other logged that day too', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, settings: st(100) }), 100);
+    a.change((s) => addRode(s, '2026-10-10', 110), 110);
+    a.change((s) => addRode(s, '2026-10-10', 120), 120);
+    await a.sync();
+    await b.sync();
+    const gone = a.snap.days['2026-10-10'].events[0].id;
+    a.change((s) => ({ ...s, days: core.removeEvent(s.days, '2026-10-10', gone, 200) }), 200);
+    /* b, still holding the deleted entry, logs another one later the same day */
+    b.change((s) => addRode(s, '2026-10-10', 300), 300);
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    for (const d of [a, b]) {
+      const ids = d.snap.days['2026-10-10'].events.map((e) => e.id);
+      expect(ids).not.toContain(gone);
+      expect(ids.length).toBe(2);
+    }
+  });
+
+  it('an entry put back with Undo is no longer marked deleted', () => {
+    const days = core.addEvent({}, '2026-10-10', 'rode', '22:00', {}, 100).days;
+    const ev = days['2026-10-10'].events[0];
+    const two = core.addEvent(days, '2026-10-10', 'rode', '23:00', {}, 110).days;
+    const removed = core.removeEvent(two, '2026-10-10', ev.id, 120);
+    expect(removed['2026-10-10'].gone).toEqual([ev.id]);
+    const back = core.addEvent(removed, '2026-10-10', ev.outcome, ev.time, { ...ev }, 130).days;
+    expect(back['2026-10-10'].gone).toBeUndefined();
+    expect(core.normDay(JSON.parse(JSON.stringify(removed['2026-10-10'])), '2026-10-10').gone).toEqual([ev.id]);
+  });
+
+  it('what each device earned while apart is kept on both (badges, level, lesson marks)', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    a.change((s) => ({ ...s, settings: st(100) }), 100);
+    await a.sync();
+    await b.sync();
+    const earn = (s: Snapshot, u: number, badge: string, lesson: string): Snapshot => {
+      const x = JSON.parse(JSON.stringify(s.settings)) as core.Settings;
+      x.seen = {
+        badges: [...(x.seen?.badges || []), badge],
+        quests: x.seen?.quests || [],
+        level: Math.max(x.seen?.level || 1, badge === 'b2' ? 3 : 2),
+        full: null,
+        lad: core.LADDER_V,
+      };
+      x.learn.prac = { ...x.learn.prac, [lesson]: true } as typeof x.learn.prac;
+      x.u = u;
+      return { ...s, settings: x };
+    };
+    a.change((s) => earn(s, 200, 'b1', 'l1'), 200);
+    b.change((s) => earn(s, 300, 'b2', 'l2'), 300);
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    for (const d of [a, b]) {
+      expect(d.snap.settings?.seen?.badges.sort()).toEqual(['b1', 'b2']);
+      expect(d.snap.settings?.seen?.level).toBe(3);
+      expect(Object.keys(d.snap.settings?.learn.prac || {}).sort()).toEqual(['l1', 'l2']);
+      expect(d.dirty).toEqual({});
+    }
+  });
+
   it('erasing from one device clears the others, settings too', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

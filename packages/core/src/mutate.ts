@@ -49,6 +49,8 @@ export function addEvent(
     days[date],
     date,
     (d) => {
+      /* an entry put back (Undo after a delete) is no longer marked deleted */
+      if (d.gone) d.gone = d.gone.filter((x) => x !== id);
       d.events.push({ id, time: time || null, outcome, trigger: null, paused: null, did: null, recovered: false, note: '', ...extra });
     },
     now,
@@ -70,7 +72,17 @@ export function patchEvent(days: Days, date: DayKey, id: string, patch: Partial<
 }
 
 export function removeEvent(days: Days, date: DayKey, id: string, now = Date.now()): Days {
-  const day = changeDay(days[date], date, (d) => void (d.events = d.events.filter((x) => x.id !== id)), now);
+  const day = changeDay(
+    days[date],
+    date,
+    (d) => {
+      if (!d.events.some((x) => x.id === id)) return;
+      d.events = d.events.filter((x) => x.id !== id);
+      /* remembered, so another device's copy of this day does not bring it back (sync.ts mergeDay) */
+      d.gone = [...(d.gone || []).filter((x) => x !== id), id];
+    },
+    now,
+  );
   return withDay(days, date, day);
 }
 

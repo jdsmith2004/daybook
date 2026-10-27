@@ -10,10 +10,11 @@ import { FEEL_MID, FEEL_QUADS, FEEL_ROWS, FEELINGS, feelAt, feelLead, feelLog, T
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNextTool } from '@/lib/tools';
 import { StatusBar } from 'expo-status-bar';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View, type HostInstance } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
+  cancelAnimation,
   Easing,
   runOnJS,
   useAnimatedReaction,
@@ -132,23 +133,23 @@ const Bub = memo(function Bub({
 }) {
   const f = FEELINGS[r][c];
   const color = FEEL_COLORS[r][c];
-  /* the field around the focused bubble: it grows to 1.7 times, and the growing takes room, so every other bubble is
-     pressed outward. The press rises from nothing at the focus (the ball itself does not slide), is strongest on the
-     near rings, and eases down only slowly with distance: the bubbles are packed tight like hard balls, so the whole pool
-     gives way together. A press that fell off fast would push the near ring into the ring behind it; this one falls no
-     faster than the resting gap can take, so bubbles never touch (checked over every focus point, a twentieth of a step
-     apart). */
+  /* the field around the focus is a lens: the bubble in the eye grows to 1.7 times, and the growing takes room, so the
+     field is stretched outward from the eye, most near it and less and less further out, and each bubble is as big as
+     the stretch where it sits (a bubble pressed outward by R plus a tanh of its distance, sized by that curve's slope).
+     The stretch is one smooth hump, so a bubble rolling through the eye speeds up and slows down once, evenly, with no
+     stutter, and the far field shifts by about half a step together. Bubbles never touch (checked over every focus
+     point, a twentieth of a step apart: the tightest gap is a twenty-seventh of a step). */
   const st = useAnimatedStyle(
     () => {
       const dx = (c - sx.value) * step;
       const dy = (r - sy.value) * step;
-      const d2 = dx * dx + dy * dy;
-      const d = Math.sqrt(d2);
-      const gs = 0.55 * step;
-      const k = 0.5 * step;
-      const push = ((amt.value * d2) / (d2 + k * k)) * step * (0.45 + 0.35 * Math.exp(-d / (3.5 * step)));
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const lens = 0.8 * step;
+      const swell = 0.7 * amt.value;
+      const t = Math.tanh(d / lens);
+      const push = swell * lens * t;
       const g = grow.value;
-      const scale = (1 + amt.value * 0.7 * Math.exp(-d2 / (2 * gs * gs))) * (1 + 0.9 * (1 - g));
+      const scale = (1 + swell * (1 - t * t)) * (1 + 0.9 * (1 - g));
       return {
         opacity: g < 1 ? 0.35 + 0.65 * g : 1,
         transform: [{ translateX: d > 1 ? (push * dx) / d : 0 }, { translateY: d > 1 ? (push * dy) / d : 0 }, { scale }],
@@ -297,8 +298,10 @@ export function FeelGrid({
   const markDrag = () => {
     dragAt.current = Date.now();
   };
-  /* a tap does not grow the bubble where it is: it rolls the field over until that bubble rests in the eye */
-  const pick = (r: number, cc: number) => {
+  /* a tap does not grow the bubble where it is: it rolls the field over until that bubble rests in the eye. Every
+     bubble gets the same pick for good (through a ref), so a new bubble in the eye re-renders only the two that changed,
+     not all 144, and the JS side stays free while the field moves */
+  const pickNow = (r: number, cc: number) => {
     if (Date.now() - dragAt.current < 250) return;
     buzz('tap');
     wake();
@@ -309,46 +312,90 @@ export function FeelGrid({
     tx.value = reduce ? nx : withTiming(nx, glide);
     ty.value = reduce ? ny : withTiming(ny, glide);
   };
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .onBegin(() => {
-          'worklet';
-          armed.value = false;
-        })
-        .onStart(() => {
-          'worklet';
-          if (!woke.value) runOnJS(wake)();
-        })
-        .onChange((e) => {
-          'worklet';
-          tx.value = clamp(tx.value + e.changeX, bx0, bx1);
-          ty.value = clamp(ty.value + e.changeY, by0, by1);
-        })
-        .onEnd((e) => {
-          'worklet';
-          /* let the throw run out, then settle with whichever bubble the eye would land nearest snapped into it: the
-             field always comes to rest trying a feeling on */
-          const px = clamp(tx.value + e.velocityX * 0.4, bx0, bx1);
-          const py = clamp(ty.value + e.velocityY * 0.4, by0, by1);
-          const gx = cx - (Math.round((cx - px) / step - 0.5) + 0.5) * step;
-          const gy = cy - (Math.round((cy - py) / step - 0.5) + 0.5) * step;
-          aim(gx, gy);
-          if (reduce) {
-            tx.value = gx;
-            ty.value = gy;
-            return;
-          }
-          tx.value = withSpring(gx, { velocity: e.velocityX, damping: 30, stiffness: 120, mass: 1 });
-          ty.value = withSpring(gy, { velocity: e.velocityY, damping: 30, stiffness: 120, mass: 1 });
-        })
-        .onFinalize((e) => {
-          'worklet';
-          if (Math.abs(e.translationX) + Math.abs(e.translationY) > 10) runOnJS(markDrag)();
-        }),
+  const pickRef = useRef(pickNow);
+  pickRef.current = pickNow;
+  const pick = useCallback((r: number, cc: number) => pickRef.current(r, cc), []);
+  /* where the field was when the finger came down; the drag follows the finger exactly from there */
+  const x0 = useSharedValue(0);
+  const y0 = useSharedValue(0);
+  const pan = useMemo(() => {
+    /* past the last bubble the field gives a little and pulls back, the way a phone's own lists do, rather than
+       stopping dead under the finger */
+    const band = (v: number, lo: number, hi: number) => {
+      'worklet';
+      const give = (o: number) => (1 - 1 / ((o * 0.55) / step + 1)) * step;
+      return v < lo ? lo - give(lo - v) : v > hi ? hi + give(v - hi) : v;
+    };
+    /* the bubble the eye would rest on if a throw at this speed coasted out: about a third of a second of travel at
+       the speed it was let go */
+    const rest = (p: number, v: number, lo: number, hi: number, mid: number) => {
+      'worklet';
+      const end = clamp(p + v * 0.32, lo, hi);
+      return mid - (Math.round((mid - end) / step - 0.5) + 0.5) * step;
+    };
+    /* the coast: it starts at exactly the speed the finger let go at and only ever slows, the way a thrown list does,
+       and it ends on the bubble. Slowing evenly by a fixed share every moment (an exponential, cut off at its end):
+       its starting speed is the distance times A over the time, so the time is set from the speed. A throw that would
+       stop short or go backward (a slow let go, or the field pulled past its edge) settles on a soft spring instead,
+       which also carries the finger's speed. */
+    const A = 5;
+    const fall = (t: number) => {
+      'worklet';
+      return (1 - Math.exp(-A * t)) / (1 - Math.exp(-A));
+    };
+    const coast = (to: number, p: number, v: number) => {
+      'worklet';
+      const D = to - p;
+      if (Math.abs(D) < 0.5) return to;
+      if (v * D > 0 && Math.abs(v) > 120) {
+        const ms = Math.min(1800, Math.max(220, ((A / (1 - Math.exp(-A))) * D * 1000) / v));
+        return withTiming(to, { duration: ms, easing: fall });
+      }
+      return withSpring(to, { velocity: v, stiffness: 170, damping: 26, mass: 1 });
+    };
+    return Gesture.Pan()
+      .onBegin(() => {
+        'worklet';
+        /* a finger on a moving field stops it where it is, and that touch only stops it: it does not also pick the
+           bubble under it */
+        const moving = armed.value && Math.abs(tx.value - goX.value) + Math.abs(ty.value - goY.value) > 4;
+        armed.value = false;
+        cancelAnimation(tx);
+        cancelAnimation(ty);
+        x0.value = tx.value;
+        y0.value = ty.value;
+        if (moving) runOnJS(markDrag)();
+      })
+      .onStart(() => {
+        'worklet';
+        if (!woke.value) runOnJS(wake)();
+      })
+      .onUpdate((e) => {
+        'worklet';
+        tx.value = band(x0.value + e.translationX, bx0, bx1);
+        ty.value = band(y0.value + e.translationY, by0, by1);
+      })
+      .onEnd((e) => {
+        'worklet';
+        /* let the throw coast out, then settle with whichever bubble the eye would land nearest in it: the field always
+           comes to rest trying a feeling on */
+        const gx = rest(tx.value, e.velocityX, bx0, bx1, cx);
+        const gy = rest(ty.value, e.velocityY, by0, by1, cy);
+        aim(gx, gy);
+        if (reduce) {
+          tx.value = gx;
+          ty.value = gy;
+          return;
+        }
+        tx.value = coast(gx, tx.value, e.velocityX);
+        ty.value = coast(gy, ty.value, e.velocityY);
+      })
+      .onFinalize((e) => {
+        'worklet';
+        if (Math.abs(e.translationX) + Math.abs(e.translationY) > 10) runOnJS(markDrag)();
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bx0, bx1, by0, by1, cx, cy, step, reduce],
-  );
+  }, [bx0, bx1, by0, by1, cx, cy, step, reduce]);
   const canvas = useAnimatedStyle(() => ({ transform: [{ translateX: tx.value }, { translateY: ty.value }] }), webDeps(tx, ty));
   /* the growing, about the eye: at the start the eye sits on the tapped bubble and the field is a third of its size */
   const ox = from ? from.x : cx;

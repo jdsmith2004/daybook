@@ -259,8 +259,9 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
 }
 
 /** one day in the week: a small round soft light, muted like a light seen through frosted glass; with two colors, each
-    keeps its own half and they only meet in a narrow band in the middle, so they never run into a grey */
-function WeekOrb({ colors }: { colors: string[] }) {
+    keeps its own half and they only meet in a narrow band in the middle, so they never run into a grey. The day being
+    shown is sharp, the others soft. */
+function WeekOrb({ colors, sharp }: { colors: string[]; sharp: boolean }) {
   const id = 'o' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const S = 60;
   const cs = colors.slice(0, WEEK_MAX);
@@ -281,6 +282,8 @@ function WeekOrb({ colors }: { colors: string[] }) {
         </Mask>
       </Defs>
       <Circle cx={S / 2} cy={S / 2} r={S * 0.4} fill={`url(#${id}c)`} mask={`url(#${id}m)`} />
+      {/* the day being shown: a clear round light over its glow, so it reads as picked */}
+      {sharp ? <Circle cx={S / 2} cy={S / 2} r={14} fill={`url(#${id}c)`} opacity={0.92} /> : null}
     </Svg>
   );
 }
@@ -293,8 +296,8 @@ export type LogColor = { c: string; x: number; y: number };
 type TitleLine = { text: string; x: number; y: number; width: number; height: number };
 /** what goes between two feelings in a title */
 const THEN = '  then  ';
-/** the space above a log's title (s.log) */
-const LOG_PAD = 11;
+/** where a log's title starts inside its card, across and down (s.card) */
+const PAD = [16, 14];
 /** each word of a title: its color, and where it starts and ends in the title's text */
 const titleWords = (feels: Pick<JFeel, 'w'>[]) => {
   let n = 0;
@@ -314,7 +317,7 @@ function byColor(pts: { c: string; x: number; y: number }[]): LogColor[] {
 /** a log's colors: its feelings', in order, each once, so its light matches its title. Before the title is laid out,
     where each sits is a guess from its letters; once it is (titleColors), each sits under its own word, on its own line. */
 export const logColors = (l: Pick<JLog, 'feels'>): LogColor[] =>
-  byColor(titleWords(l.feels).map((w) => ({ c: w.c, x: ((w.from + w.to) / 2) * 9.5, y: LOG_PAD + 13 })));
+  byColor(titleWords(l.feels).map((w) => ({ c: w.c, x: PAD[0] + ((w.from + w.to) / 2) * 9.5, y: PAD[1] + 13 })));
 function titleColors(feels: JFeel[], lines: TitleLine[]): LogColor[] {
   const starts: number[] = [];
   let n = 0;
@@ -328,7 +331,7 @@ function titleColors(feels: JFeel[], lines: TitleLine[]): LogColor[] {
       while (i > 0 && starts[i] > w.from) i--;
       const ln = lines[i];
       const mid = Math.min(1, ((w.from + w.to) / 2 - starts[i]) / Math.max(1, ln.text.length));
-      return { c: w.c, x: ln.x + mid * ln.width, y: LOG_PAD + ln.y + ln.height / 2 };
+      return { c: w.c, x: PAD[0] + ln.x + mid * ln.width, y: PAD[1] + ln.y + ln.height / 2 };
     }),
   );
 }
@@ -356,7 +359,7 @@ export function WeekLights({
           onPress={() => onPick(d.k)}
           hitSlop={4}
           style={({ pressed }) => [s.wd, { opacity: pressed ? 0.6 : 1 }]}>
-          <View style={s.wl}>{d.colors.length ? <WeekOrb colors={d.colors} /> : <View style={s.wEmpty} />}</View>
+          <View style={s.wl}>{d.colors.length ? <WeekOrb colors={d.colors} sharp={d.k === on} /> : <View style={s.wEmpty} />}</View>
           <Text style={[s.wT, d.today && s.wToday]}>{d.short}</Text>
           <View style={[s.wDot, { opacity: d.k === on ? 1 : 0 }]} />
         </Pressable>
@@ -417,22 +420,25 @@ export const DayLogs = memo(function DayLogs({
               <Text style={s.text} numberOfLines={3}>
                 {l.entry.t.trim()}
               </Text>
+            ) : l.open ? (
+              <Text style={s.add}>Add a few words</Text>
             ) : null}
           </>
         );
         return (
-          <View key={l.key} style={s.log} onLayout={(e) => onLay(l.key, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+          /* the whole card is the button */
+          <View key={l.key} onLayout={(e) => onLay(l.key, e.nativeEvent.layout.y, e.nativeEvent.layout.height)} style={s.cardWrap}>
             {l.open ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={l.entry ? words + '. ' + l.entry.t.trim().slice(0, 160) : words}
                 accessibilityHint="Opens the entry"
                 onPress={() => onOpen(l.open!)}
-                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                style={({ pressed }) => [s.card, pressed && s.cardOn]}>
                 {body}
               </Pressable>
             ) : (
-              <View accessible accessibilityLabel={words}>
+              <View accessible accessibilityLabel={words} style={s.card}>
                 {body}
               </View>
             )}
@@ -487,8 +493,19 @@ const s = StyleSheet.create({
   /* a day's logs sit close and the days far apart, so the days read as groups with no line between them */
   day: { paddingTop: 14, paddingBottom: 30 },
   dayName: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet, marginBottom: 2 },
-  log: { paddingVertical: LOG_PAD },
-  logHead: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
+  /* a dark card for each log, like Apple's Journal: the light glows around it, and it reads as something to open */
+  cardWrap: { marginVertical: 5 },
+  cardOn: { backgroundColor: 'rgba(36, 33, 61, 0.8)' },
+  card: {
+    paddingHorizontal: PAD[0],
+    paddingVertical: PAD[1],
+    borderRadius: 20,
+    backgroundColor: 'rgba(16, 14, 34, 0.62)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  add: { fontFamily: font.body, fontSize: 14.5, lineHeight: 20, color: JN.faint, marginTop: 4 },
+  logHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   time: { fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 16, color: JN.quiet },
   seq: { fontFamily: font.bodySemi, fontSize: 19, lineHeight: 26 },
   then: { fontFamily: font.body, fontSize: 13, color: 'rgba(235, 235, 245, 0.45)' },

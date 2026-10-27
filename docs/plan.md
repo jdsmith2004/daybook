@@ -2651,7 +2651,12 @@ you wish someone loved you?" reads as pointed).
   between entries read in order as a title of their own ("Restless then Grateful"), the same size and room as an entry's
   so they read as logs of their own and not as tags of the entry above, in the plain sans, up to three to a log
   and within three hours, so a busy day starts another log rather than hiding any (the owner, October 26: nothing a
-  tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Logs in a day sit close
+  tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Each log is a dark card (the owner
+  picked it on October 26 from five looks shot on the simulator: see-through cards, rows with a chevron, one panel per
+  day, a pencil on each, dark cards), like Apple's Journal: a low dark fill and a hairline edge, so the light glows
+  around it and it reads as something to open (NN/g: a bounded card is the clearest sign a thing opens; plain text was
+  the owner's complaint, "these don't really look like entries I can open"). The whole card is the button, and it
+  lightens a little under the thumb. A journal feeling with nothing written yet says "Add a few words". Logs in a day sit close
   and days sit far apart (Day One's day heading over separate rows; its users asked for less weight between same-day
   entries). The same feeling named twice in a row reads once. The light is one soft field behind the list, "circles
   over a wash" (the owner picked it on October 26 from six looks shot on the simulator, after the straight lanes alone
@@ -2671,7 +2676,7 @@ you wish someone loved you?" reads as pointed).
   nothing logged at all, one feeling and nothing written, eight feelings in a day, three written entries in one color, a
   long entry, a day with nothing, a slip's feeling alone, feelings named in the journal with no words, three long words
   in one title, and the same feeling twice in a row. Across the top, the last seven
-  days as seven little round lights, each the day's newest two colors, each keeping its own half (three run together
+  days as seven little round lights (the day being shown sharp, the others soft), each the day's newest two colors, each keeping its own half (three run together
   into a muddy grey; Spotify's Audio Aura keeps to a listener's top two moods the same way); a tap goes to that day. The
   bottom of the list fades out just above the New entry bar and is gone behind it, so no line peeks out beside it. The
   list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of

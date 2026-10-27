@@ -2,7 +2,8 @@
    said quietly, with no yellow. Screen readers hear it too. Like the legacy toast and winPop. It sits at the top, over the
    title, where things are read and never tapped, so it never covers the answers or buttons low on the screen. A message from before SOS
    or the log opened stays behind: it never shows over someone saying they slipped. Its words wrap, never cut off.
-   A message that offers Undo is the one toast that is touched, so it sits low, where the thumb is, above the tab bar. */
+   A message that offers Undo is the one toast that is touched, so it sits low, where the thumb is, just above the tab bar
+   and a sheet's main button, never on them. */
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -51,7 +52,7 @@ export function Toast() {
   if (toast.undo) {
     const undo = toast.undo;
     return (
-      <View pointerEvents="box-none" style={[s.wrap, { bottom: inset.bottom + 96 }]}>
+      <View pointerEvents="box-none" style={[s.wrap, { bottom: inset.bottom + 150 }]}>
         <View accessibilityLiveRegion="polite" role="status" style={[s.toast, s.win, { backgroundColor: c.ink }]}>
           <T v="label" style={{ color: c.bg, flexShrink: 1 }}>
             {toast.text}

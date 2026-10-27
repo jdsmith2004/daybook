@@ -272,7 +272,8 @@ export default function Log() {
     if (kind === 'trig') nextAfterTrigger();
   };
   const undo = () => {
-    if (evId) update((s) => ({ ...s, days: removeEvent(s.days, date, evId) }));
+    /* a mistaken log taken back: its points go with it (they were never really earned) */
+    if (evId) update((s) => ({ ...s, days: removeEvent(s.days, date, evId) }), { takeBack: true });
     if (from === 'urge')
       sos.setMem((m) => {
         const { last: _last, ...rest } = m;

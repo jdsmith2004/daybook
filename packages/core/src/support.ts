@@ -154,8 +154,10 @@ export const TIP_WORDS = {
     approved: 'Thank you. Your tip was approved, and your extras are open.',
     storeDown: 'Could not reach the App Store just now. A tip you made is not lost. Try again in a moment.',
     restore: 'Restore a tip',
-    restoreNone:
-      'No earlier tip was found on this Apple Account. If you tipped on the web, sign in with that account. If a tip is missing, write to us with the email on your receipt and it will be opened by hand.',
+    restoreNone: 'No earlier tip was found on this Apple Account. If you tipped on the web, sign in with that account first.',
+    restoreNoneWeb: 'No earlier tip was found here. If you tipped while signed in, sign in with that account first.',
+    /** under a restore that found nothing: a missing tip is opened by hand */
+    restoreHelp: 'A tip that is missing can be opened by hand, with the email on your receipt.',
     note: 'Paid once, yours for good.',
     thanksTitle: 'Thank you',
     thanksLine: 'You are a supporter. This is open for you:',

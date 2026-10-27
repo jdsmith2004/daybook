@@ -61,7 +61,7 @@ import { Big, DaysRow, GoalDots, HelpList, RideWave, Rings, StoryBars, Teach, Tr
 import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
@@ -619,7 +619,7 @@ export default function Review() {
           {extra('xIt', 'compass', 'violet', 'Plan for your hardest moment', r?.it ? storyIfLine(r.it) : 'An if-then plan, made while you are calm', !!r?.it)}
           {extra('xHard', 'calendar', 'coral', 'See your harder days ahead', r?.hd ? 'Marked on Today' : 'From your log, with a heads-up', !!r?.hd)}
           {extra('xNote', 'pencil', 'sun', 'A note to future you', r?.nt ? '“' + r.nt + '”' : 'Shown to you from Wednesday on', !!r?.nt)}
-          <Button label="Done" onPress={close} />
+          <Button label="Done" onPress={closeAll} />
         </Dock>
       </>
     );

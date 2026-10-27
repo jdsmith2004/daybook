@@ -9,7 +9,7 @@ import { Field } from '@/components/choices';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { close } from '@/lib/nav';
+import { close, closeAll } from '@/lib/nav';
 import { useCareSettings, useStore } from '@/lib/store';
 import { copyText, WORDS } from '@/lib/words';
 
@@ -68,7 +68,7 @@ export default function Deeper() {
                 return { ...s, days: withDay(days, tk, day) };
               });
               buzz('lit');
-              close();
+              closeAll();
               say('You told someone. That takes real courage.');
             }}
           />
@@ -118,7 +118,7 @@ export default function Deeper() {
           if (!clean.some(Boolean)) return setMsg(WORDS.needWords);
           update((s) => ({ ...s, days: rkDeep(s.days, s.settings!, k, 'trace', clean) || s.days }));
           buzz('lit');
-          close();
+          closeAll();
           say('Traced it back. That is the deeper mission done.');
         }}
       />

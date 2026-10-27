@@ -88,8 +88,10 @@ export default function Tip() {
     tell('');
     try {
       if (supPaid(await restoreTips())) got();
-      /* "none" only when the store answered; a store that did not answer is said as that */ else
-        tell(tipError() && tipError() !== 'No tip was found.' ? tipError() : w.restoreNone);
+      else {
+        /* "none" only when the store answered; a store that did not answer is said as that */
+        tell(tipError() && tipError() !== 'No tip was found.' ? tipError() : ways.includes('apple') ? w.restoreNone : w.restoreNoneWeb);
+      }
     } catch {
       tell(w.storeDown);
     } finally {
@@ -109,7 +111,9 @@ export default function Tip() {
             {msg}
           </T>
           {/* a person to write to only when something went wrong, not after a cancel or a wait */}
-          {[w.cancelled, w.webClosed, w.already, w.waiting].includes(msg) ? null : <HelpLine subject="Daybook: a tip" center />}
+          {[w.cancelled, w.webClosed, w.already, w.waiting].includes(msg) ? null : (
+            <HelpLine lead={msg === w.restoreNone || msg === w.restoreNoneWeb ? w.restoreHelp : undefined} subject="Daybook: a tip" center />
+          )}
         </View>
       ) : null}
       {ways.length > 1 ? (

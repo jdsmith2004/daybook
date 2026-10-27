@@ -1,5 +1,115 @@
 # What is planned next
 
+## Premium experience: the unglamorous states, one journey, failures that build trust (October 26, 2026)
+
+**What the owner asked for:** check the whole app against three principles from a video on premium apps. (1) The
+person always knows what is happening (loading, saving, syncing, empty, offline), can undo a mistake, and is led
+through an error to a next step. (2) The app is one journey: errors, confirms, toasts, spinners, empty states, the X
+and the words match everywhere. (3) The scariest moments (a tip that fails, a restore that finds nothing, a sync
+failure, an expired sign-in, deleting the account) are designed so well that they build trust: a calm message, what
+happened, what is safe, and a way to reach a person (`SUPPORT_EMAIL`).
+
+**How it was found:** five read-only sweeps (system states, undo and confirms, payments, sync and accounts, shared UI),
+with the claims that could lose a log or a tip checked by hand in the code.
+
+**What already holds up:** there is not one system alert in the app (every confirm is the inline `dangerSoft` box with
+"Keep it"); every toast goes through one `say()`; every network call stops after 20 seconds; Cognito errors are in
+plain words; a tip is kept on the phone before the server answers; level and badges have a floor in `seen`; an erased
+account keeps a copy for 7 days; and the sweep found no contractions and no shame words.
+
+**Why it matters for Daybook as a business:** a tip that fails quietly or a restore that says "no tip found" is how a
+supporter becomes a one-star review; the same moment answered well is how they become the person who tips again.
+And a person who loses a week of honest logs to a sync quirk loses hope, which is the one thing the app protects.
+
+**The gaps, ranked.** Each is marked with the effort level it needs.
+
+High (sync, accounts, payments, anything that can lose what a person logged, earned or paid for):
+
+1. **Two phones, one day: entries vanish.** A day is one record and the newer copy replaces it whole
+   (`mergeRemote` in core `sync.ts`, `putIfNewer` in the API store). An urge logged offline on one phone and a slip on
+   the other the same day: one of them is gone from both, and nobody is told. Settings merge the same way, so lesson
+   marks and notes can go too; `keepEarned` runs only at the first join. Fix on the device side: when both sides
+   changed a day, join the events by id, keep the newer check-in, stamp it newer and send it back; run `keepEarned` on
+   every settings merge. **Owner decision:** an entry deleted on one phone that the other still has. Proposed: the day
+   keeps the ids of deleted entries, so a delete wins over an older copy.
+2. **The log fails to open at launch, and the app acts as if the person is new** (`store.tsx`, the first `load()`
+   swallows the error and marks the store ready, empty). Setup could then save over the real settings. Fix: a calm
+   "Your log could not be opened. It is safe on this phone." screen with Try again and the support line, and no writes
+   until it loads.
+3. **A paid web tip loses its proof.** `buyTip` keeps the Stripe id only when the error is "no connection";
+   `syncTips` clears it for any other failure (still processing, server busy). Fix: keep it until the server says yes
+   or a clear "not found", try again later, and tell the person their tip is safe.
+4. **"Use my account's log here" erases days that are only on this phone**, with no counts and no copy, and it deletes
+   before it writes (`replaceFromAccount`). Fix: show both counts ("This phone: 41 days. Your account: 6 days"), keep
+   this phone's log for 7 days with "Bring this phone's log back", write before deleting. **Owner decision:** make
+   "Combine" the highlighted choice.
+5. **Every tip outcome but success is silent.** Cancelled, waiting for Ask to Buy, store not answering, web sheet
+   closed, not confirmed: all return null and the buttons just come back; `tipError()` is never shown in the sheet,
+   and an Ask to Buy approved a day later opens the extras with no word. Fix: `buyTip` says which it was, and the sheet
+   says one calm line for each ("Nothing was charged." / "Waiting for approval. Nothing was charged yet." / "Your tip
+   is safe. Daybook is confirming it."), with the support line.
+6. **Restore purchases says "No earlier tip was found" when the store simply did not answer** (`ownedTips` returns
+   nothing on any error). Fix: "Could not reach the App Store. Your tip is not lost. Try again." apart from a real
+   none, and the real none offers "Write to us with the email on your receipt".
+7. **An expired sign-in makes the delete messages wrong**: "Could not reach your account. Nothing was deleted." when
+   the real problem is the sign-in, and a delete that timed out after the server finished also says "Nothing was
+   deleted". "Sign in again" opens Create account with an empty email. Fix: say "Sign in again first", open the Sign
+   in tab with the email filled, and say "may have partly happened, try again" when unsure.
+8. **Points can drop** when an entry is deleted or changed: level and badges have a floor, the points total does not.
+   CLAUDE.md says points are never taken away. **Owner decision:** keep a high-water mark of points, except the "Undo
+   this entry" just after a mistaken log, which is meant to take its points back.
+9. **Saving fails quietly or after a success message.** "Logged. That counts." shows, then "Could not save that change
+   on this device." with no next step; settings saves swallow the failure. Fix: one line that says it is on screen but
+   not saved yet, and what to do.
+10. **A delete on another phone wipes this phone with no word.** Fix: say once "Your log was deleted from another
+    device. Your account keeps a copy until [date]." with Bring it back.
+11. **Sign-in dead ends:** a code or password reset that worked, then a sign-in that failed on the network, leaves the
+    code used up and the person stuck; signing up with an email that has an account does not switch to Sign in. A
+    keychain read error shows as an expired session.
+12. **The raw server text reaches the screen** (`body.error` into the sync status), there is no Try again outside
+    Settings, and nothing tells offline apart from a server error.
+13. **Small money and data guards:** the tip double-tap guard is React state, not a ref (two web sheets can open);
+    Rode to Slipped on an entry throws away what the person did (`paused`, `did`); "Record again" deletes the old
+    voice note before the new one is kept, and recording has no try/catch; a restored backup (owner builds only) does
+    not run `keepEarned`.
+
+Medium (screens, words, small rules):
+
+14. **No way to reach a person.** `SUPPORT_EMAIL` is not used anywhere in the app. One shared line, "Still stuck? Write
+    to …", under every error above, plus the crash screen.
+15. **No crash screen.** A render error is a blank screen, even in SOS. Export an `ErrorBoundary` from the root layout:
+    "Something broke. Your log is safe." with Try again and the support line.
+16. **Undo, built once.** The toast cannot carry an action, so every Undo is hand-built and most deletes have none.
+    Proposed: an Undo on the toast (8 seconds, the one word "Undo") after deleting an entry, removing a list line or a
+    custom answer, and changing the counting mode or Day 1. **Owner decision:** the toast becomes tappable.
+17. **Sync and account words:** "Something went wrong." in three places; the Settings header says "On" while sync is
+    failing; the error state hides the last-synced time and the changes waiting; signing out or deleting does not say
+    the unfinished lessons go back behind an account, and signing out says nothing after.
+18. **Tip sheet details:** it shows $5.00 before the App Store answers and never updates to the real price; no "store
+    not answering" state; the return page (`tipped.html`) can stay on "Taking you back" forever; the small Support
+    button on Today ignores the quiet hours after an SOS.
+19. **Labels that mislead:** "Close for tonight" under Rekindle only closes (remove it); "Not now" in the lesson skips
+    the practice ("Skip practice"); "Not now" when signing out keeps the logs apart ("Keep them separate").
+20. **Permission failures are silent:** the microphone (no "Open settings") and reminders turned down ("Reminders stay
+    off. You can turn them on any time in Settings.").
+21. **SOS mis-tap:** Undo after "I slipped" from SOS cannot go back to the tools; let it reopen SOS.
+22. **Thumb zone:** the counting-mode screen has its choices mid-page; the check-in's Done is not in `Dock`.
+23. **The X:** `close()` and `closeAll()` are the same code, so an X in a chain goes to Today, not one step back as
+    `docs/design-standards.md` says. **Owner decision.**
+24. **Empty states:** one look (`EmptyChart`) and one shape ("No reasons yet." then what fills it) everywhere; Weeks
+    and the week page have none.
+
+Low (mechanical):
+
+25. One `copyText()` helper (the "Could not copy" line is pasted in 8 files).
+26. Shared words for repeated lines: notifications off (4 versions), the empty text box (4), counts on and off (2), the
+    restore line (3).
+27. Toast time grows with its length (long lines get the same 3.2 seconds now).
+28. One small spinner (`Busy`, the accent color) and an ellipsis on every "Sending…", "Loading…".
+29. The voice note and "Delete everything" confirms get the `dangerSoft` box, the question and "Keep it", like the rest.
+
+**Waiting on the owner:** the effort level to build at, and the five decisions above (1, 4, 8, 16, 23).
+
 ## Logging a slip, rebuilt from the ground up (the owner, October 25, 2026; on branch slip-redesign, not merged)
 
 The goal: after a slip, the person comes back stronger and is less likely to slip again. Three agents researched it

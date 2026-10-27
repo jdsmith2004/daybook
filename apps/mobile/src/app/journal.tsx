@@ -33,7 +33,20 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { dayColors, DayLogs, entryLook, entryTime, JN, Light, LightField, logColors, NewEntry, takeJournalStart, WeekLights } from '@/components/journal';
+import {
+  dayColors,
+  DayLogs,
+  entryLook,
+  entryTime,
+  JN,
+  Light,
+  LightField,
+  logColors,
+  NewEntry,
+  takeJournalStart,
+  WeekLights,
+  type LogColor,
+} from '@/components/journal';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
@@ -242,6 +255,8 @@ function Journal() {
 const NIGHT_INK = { ink: nightInk.ink, muted: nightInk.muted };
 
 /* ---------- the list ---------- */
+/** the soft edge over the New entry bar: the list fades out over this many points, and is gone behind the bar */
+const FOOT_FADE = 44;
 /** the soft edge under the title: the title sits on the page's own color, and the list fades out under it over this many points */
 const HEAD_FADE = 28;
 
@@ -308,6 +323,10 @@ function ListPage({
   const onLay = useCallback((key: string, y: number, h: number) => {
     setLogLay((l) => (l[key] && l[key][0] === y && l[key][1] === h ? l : { ...l, [key]: [y, h] }));
   }, []);
+  const [titles, setTitles] = useState<Record<string, LogColor[]>>({});
+  const onColors = useCallback((key: string, cs: LogColor[]) => {
+    setTitles((t) => (JSON.stringify(t[key]) === JSON.stringify(cs) ? t : { ...t, [key]: cs }));
+  }, []);
   const [colH, setColH] = useState(0);
   const { width: W } = useWindowDimensions();
   const field = useMemo(
@@ -316,10 +335,12 @@ function ListPage({
         lay[g.k] == null
           ? []
           : logs.flatMap((l) =>
-              logLay[l.key] ? [{ key: l.key, y: lay[g.k] + logLay[l.key][0], h: logLay[l.key][1], colors: logColors(l), quiet: !l.entry }] : [],
+              logLay[l.key]
+                ? [{ key: l.key, y: lay[g.k] + logLay[l.key][0], h: logLay[l.key][1], colors: titles[l.key] ?? logColors(l), quiet: !l.entry }]
+                : [],
             ),
       ),
-    [shown, lay, logLay],
+    [shown, lay, logLay, titles],
   );
   const [headH, setHeadH] = useState(110);
   const [dockH, setDockH] = useState(140);
@@ -351,7 +372,7 @@ function ListPage({
           {all.length ? <WeekLights week={week} on={on} onPick={goTo} /> : null}
           {shown.length ? (
             shown.map(({ g, logs }) => {
-              const day = <DayLogs g={g} logs={logs} onOpen={onOpen} onLay={onLay} />;
+              const day = <DayLogs g={g} logs={logs} onOpen={onOpen} onLay={onLay} onColors={onColors} />;
               return (
                 <View
                   key={g.k}
@@ -431,8 +452,9 @@ function ListPage({
           </Appear>
         </>
       ) : null}
-      {/* the bottom fades into the page behind the bar, so the days slide under it softly */}
-      <LinearGradient pointerEvents="none" colors={[JN.paper + '00', JN.paper, JN.paper]} locations={[0, 0.45, 1]} style={[s.fade, { height: dockH + 36 }]} />
+      {/* the bottom fades into the page just above the bar, so the days slide under it softly and none peeks out beside it */}
+      <LinearGradient pointerEvents="none" colors={[JN.paper + '00', JN.paper]} style={[s.fade, { bottom: dockH, height: FOOT_FADE }]} />
+      <View pointerEvents="none" style={[s.fade, { height: dockH, backgroundColor: JN.paper }]} />
       <GestureDetector gesture={push}>
         <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
           <View style={s.col}>

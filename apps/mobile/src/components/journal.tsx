@@ -101,8 +101,9 @@ export function Light({ colors, w, h, strength = 0.42, style }: { colors: string
   );
 }
 
-/** the most feelings a day's light in the week mixes: its last few */
-const WEEK_MAX = 3;
+/** the most colors a day's light in the week shows: its newest two, side by side. Three or more run together into a
+    muddy grey (the way Spotify's Audio Aura keeps to a listener's top two moods). */
+const WEEK_MAX = 2;
 
 /* ---------- the page's light ----------
    Every log's feelings light one canvas behind the whole list, in two layers (the owner picked this from six looks
@@ -122,7 +123,7 @@ const LANE_SHIFT = [-0.18, 0.12, -0.06, 0.2];
 /** how wide a lane's light is, as a share of the width (it fades like a bell over about this far each side) */
 const LANE_W = 0.2;
 /** how strong each layer is: the wash faint, the circles over it */
-const WASH = 0.55;
+const WASH = 0.6;
 const CIRCLES = 0.7;
 /** where the light starts to fade on the right, and where it is gone: a long, eased fade, so the dark margin has no edge */
 const RIGHT_FROM = 0.5;
@@ -147,18 +148,32 @@ function seeded(key: string) {
     return (h >>> 0) / 4294967296;
   };
 }
-type FieldLog = { key: string; y: number; h: number; colors: string[]; quiet: boolean };
-/** each log's circles: one per feeling (up to three), somewhere in the left two thirds, a little above or below the
-    log's middle, each as big as the way to the next log's middle (so it always meets its neighbors) */
-function circles(logs: FieldLog[], W: number) {
+type FieldLog = { key: string; y: number; h: number; colors: LogColor[]; quiet: boolean };
+/** where the list's text starts, so a glow can sit under its own word */
+const TEXT_LEFT = 20;
+/** each log's glows, one per color (up to three), kept to its own log: each sits on the log's own line, under where its
+    word is in the title, with a little steady randomness in where and
+    how big, so the page keeps its loose look. Each reaches up to the middle of the log above and down to the middle of
+    the log below and fades to nothing there, so two logs meet halfway with no gap, and neither one's color sits over
+    the other's words. */
+function glows(logs: FieldLog[], W: number) {
   const mids = logs.map((l) => l.y + l.h / 2);
   return logs.flatMap((l, i) => {
-    const d = Math.max(i ? mids[i] - mids[i - 1] : 0, i < logs.length - 1 ? mids[i + 1] - mids[i] : 0, l.h);
+    const up = i ? mids[i] - mids[i - 1] : l.h / 2 + 30;
+    const down = i < logs.length - 1 ? mids[i + 1] - mids[i] : l.h / 2 + 90;
+    /* centered between the two reaches, but never off its own words */
+    const cy = mids[i] + clamp((down - up) / 2, -l.h * 0.2, l.h * 0.2);
+    const ry = (up + down) / 2;
     const r = seeded(l.key);
-    return l.colors.slice(0, 3).map((c) => ({
-      x: (0.04 + r() * 0.56) * W,
-      y: mids[i] + (r() - 0.5) * l.h * 0.5,
-      r: clamp(d * 1.1, 0.3 * W, 0.6 * W),
+    const cs = l.colors.slice(0, 3);
+    /* a title on two lines: each color a little up or down, to its own line */
+    const line = cs.reduce((a, b) => a + b.y, 0) / cs.length;
+    return cs.map(({ c, x, y }) => ({
+      x: clamp(TEXT_LEFT + x, 0.12 * W, 0.58 * W) + (r() - 0.5) * 0.1 * W,
+      y: cy + (y - line) + (r() - 0.5) * l.h * 0.2,
+      /* round-ish, never a flat stripe: about as wide as it is tall, and a little wider when the log is alone */
+      rx: clamp(ry * (cs.length === 1 ? 1.5 : 1.25), 0.2 * W, 0.44 * W) * (0.88 + r() * 0.24),
+      ry: ry * (0.94 + r() * 0.14),
       c,
       o: l.quiet ? 0.85 : 1,
     }));
@@ -173,7 +188,7 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
   const at = (y: number) => Math.min(1, Math.max(0, y / H));
   const first = logs[0];
   const end = logs[logs.length - 1].y + logs[logs.length - 1].h;
-  const gl = circles(logs, width);
+  const gl = glows(logs, width);
   const cols = [...new Set(gl.map((g) => g.c))];
   return (
     <View pointerEvents="none" style={{ position: 'absolute', width: w, height: h, left: (width - w) / 2, top: (H - h) / 2, transform: [{ scale: LOW }] }}>
@@ -182,15 +197,15 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
           {cols.map((c, i) => (
             <RadialGradient key={'c' + i} id={id + 'c' + i} cx="50%" cy="50%" r="50%">
               <Stop offset="0" stopColor={c} stopOpacity={0.42} />
-              <Stop offset="0.45" stopColor={c} stopOpacity={0.2} />
-              <Stop offset="0.8" stopColor={c} stopOpacity={0.05} />
+              <Stop offset="0.5" stopColor={c} stopOpacity={0.26} />
+              <Stop offset="0.8" stopColor={c} stopOpacity={0.09} />
               <Stop offset="1" stopColor={c} stopOpacity={0} />
             </RadialGradient>
           ))}
           {LANES.map((mid, li) => (
             <LinearGradient key={'v' + li} id={id + 'v' + li} x1="0" y1="0" x2="0" y2="1">
               {logs.map((l, i) => (
-                <Stop key={i} offset={at(l.y + l.h * (0.5 + LANE_SHIFT[li]))} stopColor={l.colors[li % l.colors.length]} stopOpacity={l.quiet ? 0.2 : 0.3} />
+                <Stop key={i} offset={at(l.y + l.h * (0.5 + LANE_SHIFT[li]))} stopColor={l.colors[li % l.colors.length].c} stopOpacity={l.quiet ? 0.2 : 0.3} />
               ))}
             </LinearGradient>
           ))}
@@ -215,10 +230,10 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
             <Rect width={w} height={h} fill={`url(#${id}rg)`} />
           </Mask>
           <LinearGradient id={id + 'tg'} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset={at(first.y - 60)} stopColor="#FFFFFF" stopOpacity={0} />
-            <Stop offset={at(first.y + 10)} stopColor="#FFFFFF" stopOpacity={1} />
-            <Stop offset={at(end)} stopColor="#FFFFFF" stopOpacity={1} />
-            <Stop offset={at(end + BELOW - 20)} stopColor="#FFFFFF" stopOpacity={0} />
+            {/* eased in, so the light has no straight top edge */}
+            {[...[0, 0.25, 0.5, 0.75, 1].map((t) => [first.y - 52 + t * 56, ease(t)]), [end, 1], [end + BELOW - 20, 0]].map(([y, o], i) => (
+              <Stop key={i} offset={at(y)} stopColor="#FFFFFF" stopOpacity={o} />
+            ))}
           </LinearGradient>
           <Mask id={id + 't'} x="0" y="0" width={w} height={h} maskUnits="userSpaceOnUse">
             <Rect width={w} height={h} fill={`url(#${id}tg)`} />
@@ -233,7 +248,7 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
             </G>
             <G opacity={CIRCLES}>
               {gl.map((g, i) => (
-                <Circle key={i} cx={g.x / LOW} cy={g.y / LOW} r={g.r / LOW} fill={`url(#${id}c${cols.indexOf(g.c)})`} opacity={g.o} />
+                <Ellipse key={i} cx={g.x / LOW} cy={g.y / LOW} rx={g.rx / LOW} ry={g.ry / LOW} fill={`url(#${id}c${cols.indexOf(g.c)})`} opacity={g.o} />
               ))}
             </G>
           </G>
@@ -243,39 +258,80 @@ export function LightField({ logs, width, height }: { logs: FieldLog[]; width: n
   );
 }
 
-/** one day in the week: a small soft light, its colors side by side and run together, muted like a light seen through
-    frosted glass */
-const ORB_SPOTS: [number, number][] = [
-  [0.45, 0.47],
-  [0.56, 0.53],
-  [0.5, 0.58],
-  [0.57, 0.43],
-];
+/** one day in the week: a small round soft light, muted like a light seen through frosted glass; with two colors, each
+    keeps its own half and they only meet in a narrow band in the middle, so they never run into a grey */
 function WeekOrb({ colors }: { colors: string[] }) {
   const id = 'o' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const S = 60;
+  const cs = colors.slice(0, WEEK_MAX);
   return (
     <Svg pointerEvents="none" width={S} height={S} style={{ position: 'absolute', left: -13, top: -13 }} {...SVG_HIDE}>
       <Defs>
-        {colors.slice(0, 4).map((c, i) => (
-          <RadialGradient key={i} id={id + i} cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={c} stopOpacity={0.62} />
-            <Stop offset="0.5" stopColor={c} stopOpacity={0.3} />
-            <Stop offset="1" stopColor={c} stopOpacity={0} />
-          </RadialGradient>
-        ))}
+        <LinearGradient id={id + 'c'} x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0.3" stopColor={cs[0]} />
+          <Stop offset="0.7" stopColor={cs[cs.length - 1]} />
+        </LinearGradient>
+        <RadialGradient id={id + 'a'} cx="50%" cy="50%" r="50%">
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.62} />
+          <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity={0.3} />
+          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
+        </RadialGradient>
+        <Mask id={id + 'm'} x="0" y="0" width={S} height={S} maskUnits="userSpaceOnUse">
+          <Circle cx={S / 2} cy={S / 2} r={S * 0.4} fill={`url(#${id}a)`} />
+        </Mask>
       </Defs>
-      {colors.slice(0, 4).map((c, i) => (
-        <Circle key={i} cx={ORB_SPOTS[i][0] * S} cy={ORB_SPOTS[i][1] * S} r={S * 0.36} fill={`url(#${id + i})`} />
-      ))}
+      <Circle cx={S / 2} cy={S / 2} r={S * 0.4} fill={`url(#${id}c)`} mask={`url(#${id}m)`} />
     </Svg>
   );
 }
 
-/** a day's colors in the week: its last few feelings, in order, each once, so it matches the day's newest log */
-export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.slice(-WEEK_MAX).map((f) => feelColor(f.w)))];
-/** a log's colors: its feelings', in order, each once, so its light matches its title */
-export const logColors = (l: Pick<JLog, 'feels'>) => [...new Set(l.feels.map((f) => feelColor(f.w)))];
+/** a day's colors in the week: the two newest of its feelings' colors, oldest first, so it matches the day's newest log */
+export const dayColors = (g: Pick<JDay, 'feels'>) => [...new Set(g.feels.map((f) => feelColor(f.w)).reverse())].slice(0, WEEK_MAX).reverse();
+/** one of a log's colors, and where it sits in the log: the middle of that color's words in the title, in points from
+    the log's top left */
+export type LogColor = { c: string; x: number; y: number };
+type TitleLine = { text: string; x: number; y: number; width: number; height: number };
+/** what goes between two feelings in a title */
+const THEN = '  then  ';
+/** the space above a log's title (s.log) */
+const LOG_PAD = 11;
+/** each word of a title: its color, and where it starts and ends in the title's text */
+const titleWords = (feels: Pick<JFeel, 'w'>[]) => {
+  let n = 0;
+  return feels.map((f, i) => {
+    if (i) n += THEN.length;
+    const w = { c: feelColor(f.w), from: n, to: n + f.w.length };
+    n += f.w.length;
+    return w;
+  });
+};
+/** a color's place: the middle of all its words */
+function byColor(pts: { c: string; x: number; y: number }[]): LogColor[] {
+  const at = new Map<string, { x: number; y: number }[]>();
+  for (const p of pts) at.set(p.c, [...(at.get(p.c) ?? []), p]);
+  return [...at].map(([c, ps]) => ({ c, x: ps.reduce((a, p) => a + p.x, 0) / ps.length, y: ps.reduce((a, p) => a + p.y, 0) / ps.length }));
+}
+/** a log's colors: its feelings', in order, each once, so its light matches its title. Before the title is laid out,
+    where each sits is a guess from its letters; once it is (titleColors), each sits under its own word, on its own line. */
+export const logColors = (l: Pick<JLog, 'feels'>): LogColor[] =>
+  byColor(titleWords(l.feels).map((w) => ({ c: w.c, x: ((w.from + w.to) / 2) * 9.5, y: LOG_PAD + 13 })));
+function titleColors(feels: JFeel[], lines: TitleLine[]): LogColor[] {
+  const starts: number[] = [];
+  let n = 0;
+  for (const ln of lines) {
+    starts.push(n);
+    n += ln.text.length;
+  }
+  return byColor(
+    titleWords(feels).map((w) => {
+      let i = lines.length - 1;
+      while (i > 0 && starts[i] > w.from) i--;
+      const ln = lines[i];
+      const mid = Math.min(1, ((w.from + w.to) / 2 - starts[i]) / Math.max(1, ln.text.length));
+      return { c: w.c, x: ln.x + mid * ln.width, y: LOG_PAD + ln.y + ln.height / 2 };
+    }),
+  );
+}
 
 /* ---------- the week ---------- */
 /** the last seven days as seven little lights, each mixed from that day's feelings; a day with none is a faint ring. A
@@ -311,12 +367,12 @@ export function WeekLights({
 
 /* ---------- a day ---------- */
 /** a log's feelings in order, as its title: "Restless then Grateful" */
-function LogTitle({ feels, quiet }: { feels: JFeel[]; quiet: boolean }) {
+function LogTitle({ feels, onColors }: { feels: JFeel[]; onColors: (cs: LogColor[]) => void }) {
   return (
-    <Text style={[s.seq, quiet && s.seqQuiet]}>
+    <Text style={s.seq} onTextLayout={(e) => e.nativeEvent.lines.length && onColors(titleColors(feels, e.nativeEvent.lines))}>
       {feels.map((f, i) => (
         <Text key={i}>
-          {i ? <Text style={s.then}>{'  then  '}</Text> : null}
+          {i ? <Text style={s.then}>{THEN}</Text> : null}
           <Text style={{ color: feelColor(f.w) }}>{f.w}</Text>
         </Text>
       ))}
@@ -327,17 +383,19 @@ function LogTitle({ feels, quiet }: { feels: JFeel[]; quiet: boolean }) {
 /** one day: its name once, then each of its logs, newest first (core jnLogs). An entry with words is a log of its own,
     its feeling over what was written; the feelings named on their own are a smaller line between them. When a day has
     more than one log, each says its time, small, at the right. A tap opens the log's entry. The light behind them is the
-    page's (LightField), so each log reports where it sits. */
+    page's (LightField), so each log reports where it sits, and where each color's words are in its title. */
 export const DayLogs = memo(function DayLogs({
   g,
   logs,
   onOpen,
   onLay,
+  onColors,
 }: {
   g: JDay;
   logs: JLog[];
   onOpen: (id: string) => void;
   onLay: (key: string, y: number, h: number) => void;
+  onColors: (key: string, cs: LogColor[]) => void;
 }) {
   const many = logs.length > 1;
   return (
@@ -346,13 +404,12 @@ export const DayLogs = memo(function DayLogs({
         {g.label}
       </Text>
       {logs.map((l) => {
-        const quiet = !l.entry;
         const words = 'Felt ' + l.feels.map((f) => f.w).join(', then ') + (many ? ', ' + entryTime(l.feels[0].at) : '');
         const body = (
           <>
             <View style={s.logHead}>
               <View style={{ flex: 1 }}>
-                <LogTitle feels={l.feels} quiet={quiet} />
+                <LogTitle feels={l.feels} onColors={(cs) => onColors(l.key, cs)} />
               </View>
               {many ? <Text style={s.time}>{entryTime(l.feels[0].at)}</Text> : null}
             </View>
@@ -364,7 +421,7 @@ export const DayLogs = memo(function DayLogs({
           </>
         );
         return (
-          <View key={l.key} style={[s.log, quiet && s.logQuiet]} onLayout={(e) => onLay(l.key, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+          <View key={l.key} style={s.log} onLayout={(e) => onLay(l.key, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
             {l.open ? (
               <Pressable
                 accessibilityRole="button"
@@ -430,12 +487,10 @@ const s = StyleSheet.create({
   /* a day's logs sit close and the days far apart, so the days read as groups with no line between them */
   day: { paddingTop: 14, paddingBottom: 30 },
   dayName: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: JN.quiet, marginBottom: 2 },
-  log: { paddingVertical: 9 },
-  logQuiet: { paddingVertical: 6 },
+  log: { paddingVertical: LOG_PAD },
   logHead: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
   time: { fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 16, color: JN.quiet },
   seq: { fontFamily: font.bodySemi, fontSize: 19, lineHeight: 26 },
-  seqQuiet: { fontSize: 16, lineHeight: 22 },
   then: { fontFamily: font.body, fontSize: 13, color: 'rgba(235, 235, 245, 0.45)' },
   text: { fontFamily: font.body, fontSize: 15.5, lineHeight: 23, color: JN.page, marginTop: 6 },
   bar: {

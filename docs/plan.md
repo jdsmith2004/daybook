@@ -2648,7 +2648,8 @@ you wish someone loved you?" reads as pointed).
   ride, and the feeling named for before a slip (core `jnTimeline`; a word from Name the feeling within an hour of an
   urge ridden out counts as the ride's). A day's name shows once, over its logs, newest first (core `jnLogs`): each
   entry with words is a log of its own, its feeling as its title over what was written; the feelings named on their own
-  between entries read in order as a smaller title ("Restless then Grateful"), in the plain sans, up to three to a log
+  between entries read in order as a title of their own ("Restless then Grateful"), the same size and room as an entry's
+  so they read as logs of their own and not as tags of the entry above, in the plain sans, up to three to a log
   and within three hours, so a busy day starts another log rather than hiding any (the owner, October 26: nothing a
   tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Logs in a day sit close
   and days sit far apart (Day One's day heading over separate rows; its users asked for less weight between same-day
@@ -2659,12 +2660,20 @@ you wish someone loved you?" reads as pointed).
   so the circles keep the randomness and the wash fills any gap (two colors never meet through clear, which turns
   grey). The light fades out over the right half so a dark margin stays at the right with no edge, starts just above
   the first log, never over the week, and fades out under the last. A log's light is its own feelings, so the colors
-  match the words. Coming back from an entry, the list is where it was (the day picked, the filter, how far down); after
+  match the words. The owner's screenshot the same evening found the light drifting: a log's glow landed on the log
+  above, Hopeful had no yellow, a two-line title's last color glowed at the end of its first line. So each glow now sits
+  on its own log, under its own word (from the title's real lines, so a title on two lines puts each color on its
+  line), with only a little steady randomness, round rather than a flat stripe, and reaching just to the middle of the
+  logs above and below, where it fades out: two logs meet halfway with no gap and neither one's color sits over the
+  other's words. Newest first all the way down stays (Day One and Journey sort the same way, and no journal found sorts
+  a day oldest first under newest-first days); a title reads in the order the feelings came, like a sentence. Coming back from an entry, the list is where it was (the day picked, the filter, how far down); after
   a new entry, it is at the top, where the new one lands. Checked on the simulator with a made-up week of the edge cases:
   nothing logged at all, one feeling and nothing written, eight feelings in a day, three written entries in one color, a
   long entry, a day with nothing, a slip's feeling alone, feelings named in the journal with no words, three long words
   in one title, and the same feeling twice in a row. Across the top, the last seven
-  days as seven little lights, each mixed from that day's last three feelings; a tap goes to that day. The
+  days as seven little round lights, each the day's newest two colors, each keeping its own half (three run together
+  into a muddy grey; Spotify's Audio Aura keeps to a listener's top two moods the same way); a tap goes to that day. The
+  bottom of the list fades out just above the New entry bar and is gone behind it, so no line peeks out beside it. The
   list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of
   the line under Journal ("· Everything"): everything, written, urges, slips. Low at the bottom, a bar floats: "New
   entry" and "Check in with how you feel", with a round accent pencil. The owner's path there (October 26): color-washed

@@ -59,6 +59,7 @@ import { useSos } from '@/lib/sos';
 import { useAccount } from '@/lib/sync';
 import { useStore } from '@/lib/store';
 import { font, MAX_WIDTH, NightContext, nightInk } from '@/lib/theme';
+import { useWebGrow, useWebKeyboard } from '@/lib/web-keyboard';
 
 /** room above the shade, so its spring can overshoot a little without showing a gap at the top */
 const EXTRA = 80;
@@ -101,6 +102,9 @@ function Journal() {
   const place = useRef<Place>({ on: tk, filter: 'all', y: 0 });
 
   /* ---------- the shade ---------- */
+  /* the screen's full height. On the web the window reports only what the keyboard leaves visible, so the shade reaches
+     the bottom of the screen instead of being sized from the window; this is how far it goes back up */
+  const [full, setFull] = useState(H);
   const y = useSharedValue(reduce ? 0 : Math.min(0, start - H));
   const shown = useSharedValue(reduce ? 0 : 1);
   useEffect(() => {
@@ -117,8 +121,8 @@ function Journal() {
     closing.current = true;
     Keyboard.dismiss();
     if (reduce) shown.value = withTiming(0, { duration: 180 }, (f) => f && runOnJS(leave)());
-    else y.value = withTiming(-H - EXTRA, { duration: 320, easing: Easing.in(Easing.cubic) }, (f) => f && runOnJS(leave)());
-  }, [reduce, H, leave, shown, y]);
+    else y.value = withTiming(-full - EXTRA, { duration: 320, easing: Easing.in(Easing.cubic) }, (f) => f && runOnJS(leave)());
+  }, [reduce, full, leave, shown, y]);
   const shade = useAnimatedStyle(
     () => {
       /* rounded along its bottom edge while it moves, square once it rests, so no corner of Today peeks out */
@@ -128,7 +132,7 @@ function Journal() {
     webDeps(y, shown),
   );
   /* Today dims a little behind it as it comes down */
-  const dim = useAnimatedStyle(() => ({ opacity: shown.value * 0.4 * Math.max(0, Math.min(1, 1 + y.value / H)) }), webDeps(y, shown, H));
+  const dim = useAnimatedStyle(() => ({ opacity: shown.value * 0.4 * Math.max(0, Math.min(1, 1 + y.value / full)) }), webDeps(y, shown, full));
   /* a push up from the bottom edge takes it back up; a pull down only stretches it a little */
   const crossed = useRef(false);
   const tick = (over: boolean) => {
@@ -193,10 +197,10 @@ function Journal() {
   return (
     <NightContext.Provider value={true}>
       <InkContext.Provider value={NIGHT_INK}>
-        <View style={StyleSheet.absoluteFill}>
+        <View style={StyleSheet.absoluteFill} onLayout={(e) => setFull(e.nativeEvent.layout.height)}>
           <StatusBar style="light" />
           <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
-          <Reanimated.View style={[s.shade, { top: -EXTRA, height: H + EXTRA }, shade]}>
+          <Reanimated.View style={[s.shade, { top: -EXTRA, bottom: 0 }, shade]}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: JN.paper }]} />
             <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
               {step.k === 'list' ? (
@@ -563,17 +567,31 @@ function WritePage({
     return () => clearTimeout(t);
   }, [fresh]);
   /* Done sits big at the bottom, where the thumb is; while the keyboard covers the bottom, it moves up into the top bar.
-     iOS says the keyboard is coming before it moves, so the two swap as it rises; Android only says so after. */
-  const [typing, setTyping] = useState(false);
+     iOS says the keyboard is coming before it moves, so the two swap as it rises; Android only says so after. The web
+     says nothing, so there the page watches how much of itself the keyboard covers, and ends above it. */
+  const [kbUp, setKbUp] = useState(false);
   useEffect(() => {
     const ios = Platform.OS === 'ios';
-    const a = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true));
-    const b = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false));
+    const a = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setKbUp(true));
+    const b = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setKbUp(false));
     return () => {
       a.remove();
       b.remove();
     };
   }, []);
+  const webKb = useWebKeyboard();
+  const typing = kbUp || webKb > 0;
+  useWebGrow(input, text, W);
+  /* a tap below the words carries on at the end of them. iOS and Android put the caret there; the web leaves it at the start */
+  const writeOn = () => {
+    input.current?.focus();
+    if (Platform.OS !== 'web') return;
+    const el = input.current as unknown as HTMLTextAreaElement | null;
+    const n = latest.current.length;
+    el?.setSelectionRange?.(n, n);
+    caret.current = n;
+    page.current?.scrollToEnd({ animated: true });
+  };
 
   const done = () => {
     flush();
@@ -620,7 +638,7 @@ function WritePage({
           light the day has in the list */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, s.paper]} />
       <Light colors={[look.color]} w={W * 1.9} h={610} strength={0.42} style={{ left: -W * 0.4, top: -250 }} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, paddingBottom: webKb }}>
         <View style={[s.wrap, { paddingTop: inset.top + 8 }]}>
           <View style={s.bar}>
             <View style={s.topBack}>
@@ -703,7 +721,7 @@ function WritePage({
               accessible={false}
               importantForAccessibility="no"
               style={{ flexGrow: 1, minHeight: 80 }}
-              onPress={() => (typing ? Keyboard.dismiss() : input.current?.focus())}
+              onPress={() => (typing ? Keyboard.dismiss() : writeOn())}
             />
           </ScrollView>
           {typing ? (

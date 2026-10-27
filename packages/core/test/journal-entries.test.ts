@@ -255,6 +255,25 @@ describe('every feeling, by day', () => {
     expect(new Set(logs.map((l) => l.key)).size).toBe(4);
   });
 
+  it('reads a feeling named twice in a row once, still opening its entry and matching its filters', () => {
+    const { jn, id } = jnStart({}, '2026-10-26', 'Calm', at(26, 12, 30));
+    const days = {
+      '2026-10-26': day('2026-10-26', {
+        events: [ev({ time: '12:05' })],
+        p: {
+          fe: [
+            ['Calm', at(26, 12)],
+            ['Tired', at(26, 14)],
+          ],
+        },
+      }),
+    };
+    const logs = jnLogs(jnTimeline(jn, days, '2026-10-26')[0]);
+    expect(logs.map((l) => l.feels.map((f) => f.w))).toEqual([['Calm', 'Tired']]);
+    expect(logs[0].every.map((f) => f.from)).toEqual(['urge', 'journal', 'named']);
+    expect(logs[0].open).toBe(id);
+  });
+
   it('keeps a slip after midnight on the night it belongs to, and leaves out days with no feeling and days to come', () => {
     const days = {
       '2026-10-24': day('2026-10-24', { events: [ev({ time: '01:30', outcome: 'slipped', fb: 'Tired' })] }),

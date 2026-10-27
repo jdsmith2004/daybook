@@ -2652,11 +2652,18 @@ you wish someone loved you?" reads as pointed).
   and within three hours, so a busy day starts another log rather than hiding any (the owner, October 26: nothing a
   tap away, no "…"). With more than one log in a day, each says its time, small, at the right. Logs in a day sit close
   and days sit far apart (Day One's day heading over separate rows; its users asked for less weight between same-day
-  entries). The light is one soft field behind the list: four lanes running down the page, each one gradient from the
-  first log to the last that takes a color from every log, so the colors always run into each other with no dark gap
-  (two colors never meet through clear, which turns grey); each lane is feathered sideways into the next, and the light
-  fades out over the right half so a dark margin stays at the right with no edge. It starts just above the first log,
-  never over the week. A log's light is its own feelings, so the colors match the words. Across the top, the last seven
+  entries). The same feeling named twice in a row reads once. The light is one soft field behind the list, "circles
+  over a wash" (the owner picked it on October 26 from six looks shot on the simulator, after the straight lanes alone
+  lost the loose randomness he liked): each feeling a soft round glow at its own steady random place, big enough to
+  reach the logs either side, over a faint wash of four lanes running down the page that take a color from every log,
+  so the circles keep the randomness and the wash fills any gap (two colors never meet through clear, which turns
+  grey). The light fades out over the right half so a dark margin stays at the right with no edge, starts just above
+  the first log, never over the week, and fades out under the last. A log's light is its own feelings, so the colors
+  match the words. Coming back from an entry, the list is where it was (the day picked, the filter, how far down); after
+  a new entry, it is at the top, where the new one lands. Checked on the simulator with a made-up week of the edge cases:
+  nothing logged at all, one feeling and nothing written, eight feelings in a day, three written entries in one color, a
+  long entry, a day with nothing, a slip's feeling alone, feelings named in the journal with no words, three long words
+  in one title, and the same feeling twice in a row. Across the top, the last seven
   days as seven little lights, each mixed from that day's last three feelings; a tap goes to that day. The
   list runs up under the title, which floats on a soft fade, so the light has no hard edge. A small filter is the end of
   the line under Journal ("· Everything"): everything, written, urges, slips. Low at the bottom, a bar floats: "New

@@ -84,6 +84,8 @@ function Journal() {
   const { snap, tk, update } = useStore();
   const [start] = useState(takeJournalStart);
   const [step, setStep] = useState<Step>({ k: 'list' });
+  /* where the list was (the day picked, the filter, how far down), so coming back from an entry lands in the same place */
+  const place = useRef<Place>({ on: tk, filter: 'all', y: 0 });
 
   /* ---------- the shade ---------- */
   const y = useSharedValue(reduce ? 0 : Math.min(0, start - H));
@@ -187,6 +189,7 @@ function Journal() {
               {step.k === 'list' ? (
                 <ListPage
                   key="list"
+                  place={place}
                   fresh={step.fresh}
                   push={push}
                   onClose={close}
@@ -250,14 +253,17 @@ const FILTERS = [
   { id: 'slip', label: 'Slips' },
 ] as const;
 type Filter = (typeof FILTERS)[number]['id'];
+type Place = { on: string; filter: Filter; y: number };
 
 function ListPage({
+  place,
   fresh,
   push,
   onClose,
   onNew,
   onOpen,
 }: {
+  place: { current: Place };
   fresh?: string;
   push: ReturnType<typeof Gesture.Pan>;
   onClose: () => void;
@@ -267,11 +273,17 @@ function ListPage({
   const inset = useSafeAreaInsets();
   const { snap, tk } = useStore();
   const all = useMemo(() => jnTimeline(snap.journal, snap.days, tk), [snap.journal, snap.days, tk]);
-  const [filter, setFilter] = useState<Filter>('all');
+  /* back from an entry, the list is where it was; after a new one, at the top, where the new one lands */
+  const [init] = useState(() => (fresh ? (place.current = { on: tk, filter: 'all', y: 0 }) : place.current));
+  const [filter, setFilter] = useState<Filter>(init.filter);
   const [menu, setMenu] = useState(false);
-  const [on, setOn] = useState<string>(tk);
+  const [on, setOn] = useState<string>(init.on);
+  useEffect(() => {
+    place.current.on = on;
+    place.current.filter = filter;
+  }, [on, filter, place]);
   const shown = useMemo(() => {
-    const keep = (l: JLog) => filter === 'all' || (filter === 'written' ? !!l.entry : l.feels.some((f) => f.from === filter));
+    const keep = (l: JLog) => filter === 'all' || (filter === 'written' ? !!l.entry : l.every.some((f) => f.from === filter));
     return all
       .filter((g) => g.k <= on)
       .flatMap((g) => {
@@ -303,7 +315,9 @@ function ListPage({
       shown.flatMap(({ g, logs }) =>
         lay[g.k] == null
           ? []
-          : logs.flatMap((l) => (logLay[l.key] ? [{ y: lay[g.k] + logLay[l.key][0], h: logLay[l.key][1], colors: logColors(l), quiet: !l.entry }] : [])),
+          : logs.flatMap((l) =>
+              logLay[l.key] ? [{ key: l.key, y: lay[g.k] + logLay[l.key][0], h: logLay[l.key][1], colors: logColors(l), quiet: !l.entry }] : [],
+            ),
       ),
     [shown, lay, logLay],
   );
@@ -323,6 +337,9 @@ function ListPage({
         ref={list}
         style={StyleSheet.absoluteFill}
         contentContainerStyle={[s.list, { paddingTop: headH, paddingBottom: dockH + 20 }]}
+        contentOffset={{ x: 0, y: init.y }}
+        onScroll={(e) => (place.current.y = e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={64}
         showsVerticalScrollIndicator={false}>
         <View style={s.col} onLayout={(e) => setColH(e.nativeEvent.layout.height)}>
           {/* the page's light, behind everything, reaching from the day above to the day below */}

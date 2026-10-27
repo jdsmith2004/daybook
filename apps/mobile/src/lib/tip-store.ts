@@ -88,12 +88,21 @@ export async function finishTip(t: StoreTip): Promise<void> {
 /* why the last purchase failed, in words for the person: '' when it went through, was cancelled or is waiting */
 let storeError = '';
 export const appleTipError = (): string => storeError;
+/* a purchase that ended without a tip and without a failure: the person cancelled, or it waits for a parent (Ask to Buy) */
+let storeQuiet: 'cancelled' | 'waiting' | null = null;
+export const appleTipQuiet = () => storeQuiet;
+/* the last look for tips this Apple Account holds could not reach the App Store (so "none" would not be true) */
+let ownedFailed = false;
+export const ownedTipsFailed = () => ownedFailed;
 /* a cancel, or a payment waiting for a parent (Ask to Buy), is not a failure */
 const QUIET_CODES: string[] = [IAP.ErrorCode.UserCancelled, IAP.ErrorCode.DeferredPayment, IAP.ErrorCode.Pending];
 /* the store does not have the tips for this build: they are not approved yet, or the Paid Apps Agreement is not active */
 const OFF_CODES: string[] = [IAP.ErrorCode.SkuNotFound, IAP.ErrorCode.ItemUnavailable];
 const failed = (code?: string) => {
-  if (code && QUIET_CODES.includes(code)) return;
+  if (code && QUIET_CODES.includes(code)) {
+    storeQuiet = code === IAP.ErrorCode.UserCancelled ? 'cancelled' : 'waiting';
+    return;
+  }
   const w = TIP_WORDS.sheet;
   if (code && OFF_CODES.includes(code)) storeError = usStorefront() ? w.appleOffWeb : w.appleOff;
   else if (code === IAP.ErrorCode.IapNotAvailable) storeError = w.appleBlocked;
@@ -105,6 +114,7 @@ const failed = (code?: string) => {
     purchase so the server can tell whose it is. */
 export async function buyApple(tier: TipTierId, account: string | null): Promise<StoreTip | null> {
   storeError = '';
+  storeQuiet = null;
   if (!(await connect())) {
     failed();
     return null;
@@ -124,7 +134,10 @@ export async function buyApple(tier: TipTierId, account: string | null): Promise
       IAP.purchaseUpdatedListener(
         (p) => {
           if (p.productId !== sku) return;
-          if (p.purchaseState === 'pending') return finish(null);
+          if (p.purchaseState === 'pending') {
+            storeQuiet = 'waiting';
+            return finish(null);
+          }
           finish(toTip(p));
         },
         { dedupeTransactionIOS: false },
@@ -150,12 +163,17 @@ export async function buyApple(tier: TipTierId, account: string | null): Promise
 /** the tips this Apple Account holds. With `ask`, StoreKit first syncs with the App Store, which can ask the person to
     sign in to their Apple Account: only when they asked to restore. */
 export async function ownedTips(ask = false): Promise<StoreTip[]> {
-  if (!(await connect())) return [];
+  ownedFailed = false;
+  if (!(await connect())) {
+    ownedFailed = true;
+    return [];
+  }
   if (ask) await IAP.restorePurchases().catch(() => undefined);
   try {
     const list = await IAP.getAvailablePurchases({ onlyIncludeActiveItemsIOS: true });
     return list.map(toTip).filter((t): t is StoreTip => !!t);
   } catch {
+    ownedFailed = true;
     return [];
   }
 }

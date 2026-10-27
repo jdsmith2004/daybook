@@ -24,13 +24,27 @@ import {
   TIPPED_PAGE,
   tipLink,
   TIP_USD,
+  TIP_WORDS,
   type Supporter,
   type TipTierId,
 } from '@daybook/core';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { appleTipError, buyApple, finishTip, iapAvailable, loadPrices, ownedTips, storePrice, usStorefront, watchTips, type StoreTip } from './tip-store';
+import {
+  appleTipError,
+  appleTipQuiet,
+  buyApple,
+  finishTip,
+  iapAvailable,
+  loadPrices,
+  ownedTips,
+  ownedTipsFailed,
+  storePrice,
+  usStorefront,
+  watchTips,
+  type StoreTip,
+} from './tip-store';
 
 /** the three tips, as on the tip sheet */
 export type TipTier = TipTierId;
@@ -50,6 +64,9 @@ export function tipWays(): TipVia[] {
   if (!iapAvailable) return ['web'];
   return usStorefront() ? ['apple', 'web'] : ['apple'];
 }
+
+/** asks the store for its prices again (the tip sheet, as it opens); resolves once it has answered or failed */
+export const refreshPrices = (): Promise<void> => (iapAvailable ? loadPrices().catch(() => undefined) : Promise.resolve());
 
 /** the price to show for a tier, as the store formats it (falls back to "$5.00") */
 export function tipPrice(tier: TipTier): string {
@@ -128,21 +145,25 @@ export const tipError = (): string => lastError;
 /* the last web tip could not be confirmed for a reason that can pass (no connection, or the server or Stripe was down or
    not set up yet): it was paid, so it is kept and tried again rather than dropped */
 let retryLater = false;
-const KEPT_WORDS = 'Your tip went through. Daybook could not confirm it yet, so it is kept, and Daybook tries again.';
+const KEPT_WORDS = TIP_WORDS.sheet.unconfirmed;
 
 /** sends a web tip's Checkout Session id to the server; the record it gives back, or null */
 async function claimStripe(id: string): Promise<Supporter | null> {
   if (!STRIPE_SESSION_RE.test(id) || !host) return null;
   const signedIn = !!host.account();
   const r = signedIn ? await host.api('POST', '?claim=stripe', { session: id }) : await host.open({ session: id });
-  retryLater = !r || r.status >= 500;
-  if (retryLater) {
+  /* the proof of a paid tip is let go only when the server says it is not a tip at all (400) or Stripe has no such
+     payment (404). Anything else can pass: no connection, the server down, a payment still going through (409), or a
+     tip that belongs to an account not signed in here yet (403, 409). */
+  retryLater = !r || (r.status !== 200 && r.status !== 400 && r.status !== 404);
+  if (!r || r.status >= 500) {
     lastError = KEPT_WORDS;
     return null;
   }
-  if (!r) return null;
   if (r.status !== 200) {
-    lastError = typeof r.body.error === 'string' ? r.body.error : 'Your tip could not be confirmed.';
+    lastError =
+      (typeof r.body.error === 'string' ? r.body.error : 'Your tip could not be confirmed.') +
+      (retryLater ? ' Your tip is kept on this phone, and Daybook tries again.' : '');
     return null;
   }
   lastError = '';
@@ -189,18 +210,37 @@ async function webOnPhone(link: string): Promise<string | null> {
 /** the Apple tips being bought on screen right now */
 const buying = new Set<TipTier>();
 
+/** how the last tip on screen ended, when it did not simply go through, in words for the person: nothing charged, waiting
+    for approval, already owned, or paid and kept until it is confirmed. Every one says what is safe. */
+let lastWords = '';
+export const tipWords = (): string => lastWords;
+
 /** pays a tip. Resolves to the new supporter record once the payment is confirmed, or null when it was cancelled or failed
     (tipError says why, when there is something to say). */
 export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | null> {
   lastError = '';
+  lastWords = '';
+  const w = TIP_WORDS.sheet;
   const account = host?.account() || null;
   if (via === 'apple') {
     if (!iapAvailable) return null;
     buying.add(tier);
     try {
+      const before = kept?.ref;
       const t = await buyApple(tier, account);
-      if (!t) lastError = appleTipError();
-      return t ? await tookApple(t) : null;
+      if (!t) {
+        lastError = appleTipError();
+        const q = appleTipQuiet();
+        lastWords = lastError || (q === 'waiting' ? w.waiting : w.cancelled);
+        return null;
+      }
+      /* a tip this Apple Account already has comes back as the same purchase, and Apple charges nothing for it */
+      if (before && before === t.otid) {
+        lastWords = w.already;
+        await finishTip(t);
+        return null;
+      }
+      return await tookApple(t);
     } finally {
       buying.delete(tier);
     }
@@ -213,12 +253,15 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
     return new Promise((done) => setTimeout(() => done(null), 15_000));
   }
   const id = await webOnPhone(link);
-  if (!id) return null;
+  if (!id) {
+    lastWords = w.webClosed;
+    return null;
+  }
   const sup = await claimStripe(id);
   if (!sup) {
-    /* paid, but not confirmed yet (no connection): kept, and tried again at the next start */
-    if (!retryLater) return null;
-    await AsyncStorage.setItem(PENDING, id).catch(() => undefined);
+    /* paid, but not confirmed yet: kept, and tried again at the next start */
+    if (retryLater) await AsyncStorage.setItem(PENDING, id).catch(() => undefined);
+    lastWords = lastError || KEPT_WORDS;
     return null;
   }
   return keep(sup);
@@ -291,7 +334,7 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
     /* a web tip claimed while signed out, linked now */
     if (host?.account() && !supPaid(server) && kept?.src === 'stripe' && kept.ref) server = (await claimStripe(kept.ref)) || server;
     if (server) await keep(server);
-    if (ask && !kept) lastError = lastError || 'No tip was found.';
+    if (ask && !kept) lastError = lastError || (iapAvailable && ownedTipsFailed() ? TIP_WORDS.sheet.storeDown : 'No tip was found.');
     return { sup: kept, server };
   })();
   syncing = run;
@@ -306,7 +349,16 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
 export function watchAppleTips(): () => void {
   return watchTips((t) => {
     /* a tip being bought on screen right now is taken by buyTip */
-    if (!buying.has(t.tier)) tookApple(t).catch(() => undefined);
+    if (!buying.has(t.tier))
+      loadKept()
+        .then(async () => {
+          /* a tip that is new here (Ask to Buy approved, a purchase finished after the app closed) is thanked once; one
+             StoreKit hands over again at launch is not */
+          const was = kept?.ref;
+          const sup = await tookApple(t);
+          if (sup && was !== t.otid && sup.ref === t.otid) host?.say(TIP_WORDS.sheet.approved);
+        })
+        .catch(() => undefined);
   });
 }
 
@@ -320,4 +372,6 @@ export async function tippedWith(id: string): Promise<void> {
   if (!host) return;
   if (syncing) await syncing.catch(() => undefined);
   await syncTips();
+  /* not confirmed: said, with what is safe (the thank-you for a confirmed one is said by syncTips) */
+  if (lastError) host?.say(lastError);
 }

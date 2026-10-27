@@ -40,6 +40,11 @@
     app = false;
   }
   var back = document.getElementById('back');
+  /* if Daybook does not open (the hop to the app was blocked), the page says the tip is safe and how to go on */
+  setTimeout(function () {
+    say('Thank you for supporting Daybook.', 'Your tip went through, and it is safe. If Daybook did not open, tap Back to Daybook.');
+    document.getElementById('help').hidden = false;
+  }, 3000);
   if (app) {
     var to = 'daybook://tipped?session_id=' + encodeURIComponent(id);
     back.href = to;

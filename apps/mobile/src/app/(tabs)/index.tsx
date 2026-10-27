@@ -253,7 +253,7 @@ export default function Today() {
       eyebrow="My Daybook"
       title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
       sub={sub}
-      action={tipButton(snap.days, tk, TIP_URL, st, now) ? <TipTop /> : undefined}>
+      action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
       <NotifyBanner />
       <Hero g={g} snap={snap} tk={tk} now={now}>
         <MomentCard pick={pick} snap={snap} tk={tk} now={now} />

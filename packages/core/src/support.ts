@@ -94,9 +94,10 @@ function calm(days: Days, tk: DayKey): boolean {
   return !eventsOf(days).some((e) => e.outcome === 'slipped' && e.key >= from && e.key <= tk);
 }
 
-/** whether Today shows its small Support button at the top: until the person is a supporter, except in the days after a slip */
-export const tipButton = (days: Days, tk: DayKey, url = SUPPORT_URL, st: Settings | null = null, now = Date.now()): boolean =>
-  !!url && !isSupporter(st, now) && calm(days, tk);
+/** whether Today shows its small Support button at the top: until the person is a supporter, except in the days after a
+    slip and in the TIP_QUIET hours after an SOS (near), like every other ask */
+export const tipButton = (days: Days, tk: DayKey, url = SUPPORT_URL, st: Settings | null = null, now = Date.now(), near: TipNear | null = null): boolean =>
+  !!url && !isSupporter(st, now) && calm(days, tk) && !(near && st && tipQuiet(days, st, near));
 
 /** the card is answered ("See the tips" or "Not right now"): Today asks again TIP_EVERY days later, unless a tip comes first */
 export const tipAnswered = (st: Settings, tk: DayKey, now = Date.now()): Change => ({
@@ -143,8 +144,18 @@ export const TIP_WORDS = {
     appleOffWeb: 'Tips through Apple are not open yet, and nothing was charged. You can tip on the web below.',
     appleBlocked: 'Purchases are turned off on this iPhone (Screen Time, Content and Privacy), so nothing was charged.',
     appleFailed: 'Apple could not take the tip, and nothing was charged. Try again in a moment.',
+    /** how a tip that did not simply go through ended (the premium pass, October 26, 2026): what happened, and that
+        nothing was charged or that the tip is safe */
+    cancelled: 'No tip was made, and nothing was charged.',
+    waiting: 'Waiting for approval. Nothing is charged until it is approved, and the extras open on their own when it is.',
+    webClosed: 'The tip page closed before a tip was made, so nothing was charged.',
+    unconfirmed: 'Your tip went through. Daybook could not confirm it yet, so it is kept on this phone and Daybook tries again. You were not charged twice.',
+    already: 'You already have this tip, so nothing was charged. Thank you for wanting to give again.',
+    approved: 'Thank you. Your tip was approved, and your extras are open.',
+    storeDown: 'Could not reach the App Store just now. A tip you made is not lost. Try again in a moment.',
     restore: 'Restore a tip',
-    restoreNone: 'No earlier tip was found. If you tipped on the web, sign in with that account first.',
+    restoreNone:
+      'No earlier tip was found on this Apple Account. If you tipped on the web, sign in with that account. If a tip is missing, write to us with the email on your receipt and it will be opened by hand.',
     note: 'Paid once, yours for good.',
     thanksTitle: 'Thank you',
     thanksLine: 'You are a supporter. This is open for you:',

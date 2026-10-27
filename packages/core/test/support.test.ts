@@ -128,6 +128,10 @@ it('the words are warm, concrete about what $5 opens, and never shame or say any
 it('the Support button on Today hides in the days after a slip, and with no link', () => {
   expect(core.tipButton({}, tk, url)).toBe(true);
   expect(core.tipButton({}, tk, '')).toBe(false);
+  /* not in the hours after an SOS, like the other asks */
+  const at = Date.parse(tk + 'T12:00:00');
+  expect(core.tipButton({}, tk, url, week, at, { now: at, sos: at - 3600_000 })).toBe(false);
+  expect(core.tipButton({}, tk, url, week, at, { now: at, sos: at - (core.TIP_QUIET + 1) * 3600_000 })).toBe(true);
   expect(core.tipButton(core.addEvent({}, core.addDays(tk, 1 - core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(false);
   expect(core.tipButton(core.addEvent({}, core.addDays(tk, -core.TIP_CALM), 'slipped', '21:00').days, tk, url)).toBe(true);
 });

@@ -6,18 +6,19 @@
    sheet, where no one would see it. A supporter sees a thank-you instead, with a quiet way to tip again. A tip that goes
    through ends in a short celebration. The payments side saves the record (Settings.sup); this page only shows it. */
 import { fmtDate, gameCompute, isSupporter, keyOfDate, supPaid, supPerks, TIP_WORDS, type Perk } from '@daybook/core';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
+import { HelpLine } from '@/components/help-line';
 import { Dock, Finish } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { buyTip, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, type TipTier, type TipVia } from '@/lib/tip';
+import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, tipWords, type TipTier, type TipVia } from '@/lib/tip';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Tip() {
@@ -29,6 +30,17 @@ export default function Tip() {
   const [msg, setMsg] = useState('');
   const [won, setWon] = useState(false);
   const [again, setAgain] = useState(false);
+  /* one purchase at a time, even for two taps in the same moment (state alone lets both through before it updates) */
+  const lock = useRef(false);
+  /* the store's own prices, asked for as the sheet opens; until it answers, the pills wait instead of showing a guess */
+  const [priced, setPriced] = useState(false);
+  useEffect(() => {
+    let live = true;
+    refreshPrices().then(() => live && setPriced(true));
+    return () => {
+      live = false;
+    };
+  }, []);
   const sup = isSupporter(st);
   const level = st ? gameCompute(snap.days, st, snap.reviews, tk).level.n : 1;
   const w = TIP_WORDS.sheet;
@@ -43,15 +55,18 @@ export default function Tip() {
     if (m) AccessibilityInfo.announceForAccessibility(m);
   };
   const pay = async (tier: TipTier, via: TipVia = ways[0] || 'web') => {
-    if (busy) return;
+    if (busy || lock.current) return;
+    lock.current = true;
     setBusy(tier);
     tell('');
     try {
       if (await buyTip(tier, via)) got();
-      else tell(tipError());
+      else tell(tipWords() || tipError());
     } catch {
-      tell('The tip did not go through, and nothing was charged. Try again in a moment.');
+      /* a failure after the payment is possible, so this does not promise nothing was charged */
+      tell('The tip could not be finished. If it was charged, it is not lost: Restore a tip finds it.');
     } finally {
+      lock.current = false;
       setBusy(null);
     }
   };
@@ -67,15 +82,18 @@ export default function Tip() {
     );
   };
   const restore = async () => {
-    if (busy) return;
+    if (busy || lock.current) return;
+    lock.current = true;
     setBusy('restore');
     tell('');
     try {
       if (supPaid(await restoreTips())) got();
-      else tell(w.restoreNone);
+      /* "none" only when the store answered; a store that did not answer is said as that */ else
+        tell(tipError() && tipError() !== 'No tip was found.' ? tipError() : w.restoreNone);
     } catch {
-      tell('Could not check right now. Try again in a moment.');
+      tell(w.storeDown);
     } finally {
+      lock.current = false;
       setBusy(null);
     }
   };
@@ -83,12 +101,16 @@ export default function Tip() {
   const tiers = (
     <View style={{ gap: 10 }}>
       {TIP_TIERS.map((t, i) => (
-        <TierRow key={t.id} n={i} name={t.name} price={tipPrice(t.id)} busy={busy === t.id} off={!!busy} onPress={() => pay(t.id)} />
+        <TierRow key={t.id} n={i} name={t.name} price={priced ? tipPrice(t.id) : '…'} busy={busy === t.id} off={!!busy} onPress={() => pay(t.id)} />
       ))}
       {msg ? (
-        <T v="small" style={s.c}>
-          {msg}
-        </T>
+        <View style={{ gap: 4 }} accessibilityLiveRegion="polite">
+          <T v="small" style={s.c}>
+            {msg}
+          </T>
+          {/* a person to write to only when something went wrong, not after a cancel or a wait */}
+          {[w.cancelled, w.webClosed, w.already, w.waiting].includes(msg) ? null : <HelpLine subject="Daybook: a tip" center />}
+        </View>
       ) : null}
       {ways.length > 1 ? (
         <View style={{ alignItems: 'center' }}>

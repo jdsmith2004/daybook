@@ -21,6 +21,7 @@ import {
   patWeeks,
   patWhen,
   plural,
+  sunList,
   logRateKeys,
   ratingOf,
   talkEvidence,
@@ -98,6 +99,7 @@ export default function Journal() {
           ) : (
             <>
               <SundayList snap={snap} tk={tk} />
+              {sunList(snap.reviews).length ? null : <EmptyChart text="No reviews yet. Each Sunday review you finish is kept here." />}
               <T v="h2" style={{ marginTop: 6 }}>
                 Week by week
               </T>

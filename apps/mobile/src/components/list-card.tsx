@@ -1,6 +1,6 @@
 /* One of my lists (calm moves, the wind-down, words that steady me) as rows you can see: tap a row to reword, move or remove
    it, and "Add" puts a new one at the end. A row just added (from a lesson, or here) glows for a moment so it is easy to find. */
-import { listAdd, listEdit, listMove, listRemove, LISTS, type ListKey } from '@daybook/core';
+import { listAdd, listEdit, listInsert, listMove, listRemove, LISTS, type ListKey } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -87,7 +87,7 @@ export function ListCard({
         <View style={{ gap: 8 }}>
           {rows.length ? null : (
             <T tone="muted" style={{ paddingVertical: 4 }}>
-              Nothing here yet. Add the first one.
+              No {L.name} yet. Add the first one.
             </T>
           )}
           {rows.map((r, i) => (
@@ -111,11 +111,12 @@ export function ListCard({
               canDown={i < rows.length - 1}
               onRemove={() => {
                 const res = listRemove(snap.settings!, k, i);
-                say(res.toast);
                 if (res.ok) {
+                  const gone = r;
+                  say(res.toast, () => apply((cur) => ({ st: listInsert(cur, k, i, gone) })));
                   apply({ st: res.st });
                   setOpen(null);
-                }
+                } else say(res.toast);
               }}
             />
           ))}

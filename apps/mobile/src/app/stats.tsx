@@ -2,10 +2,11 @@
    owner's account (DAYBOOK_OWNER_SUB); anyone else sees their own account id, which is what the owner needs to set it up.
    Every number is a total for everyone, never one person's. */
 import { addDays, fmtDate, pulseMeaning, pulseSummary, type PulseSummary } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
+import { EmptyChart } from '@/components/charts';
+import { Busy } from '@/components/help-line';
 import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Bar, Button, Chip, T } from '@/components/ui';
@@ -13,6 +14,7 @@ import { fetchStats, pulseOffered, setStatsSeen, type StatsBody } from '@/lib/pu
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { useTheme } from '@/lib/theme';
+import { copyText } from '@/lib/words';
 
 const RANGES: [number, string][] = [
   [7, '7 days'],
@@ -73,15 +75,7 @@ export default function Stats() {
             <T v="label" selectable>
               {state.you}
             </T>
-            <Button
-              kind="ghost"
-              label="Copy the account id"
-              onPress={() =>
-                Clipboard.setStringAsync(state.you!)
-                  .then(() => say('Copied.'))
-                  .catch(() => undefined)
-              }
-            />
+            <Button kind="ghost" label="Copy the account id" onPress={() => copyText(state.you!, say)} />
           </>
         ) : null}
         <Dock>
@@ -98,7 +92,14 @@ export default function Stats() {
           <Chip key={n} role="radio" label={l} on={range === n} onPress={() => setRange(n)} />
         ))}
       </View>
-      {state.k === 'wait' || !sum ? <T tone="muted">Loading…</T> : <Summary s={sum} b={state.k === 'ok' ? state.b : null} bar={c.accent} />}
+      {state.k === 'wait' || !sum ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Busy label="Loading" />
+          <T tone="muted">Loading…</T>
+        </View>
+      ) : (
+        <Summary s={sum} b={state.k === 'ok' ? state.b : null} bar={c.accent} />
+      )}
       <Dock>
         <Button label="Done" onPress={closeSheet} />
       </Dock>
@@ -160,7 +161,7 @@ function Summary({ s, b, bar }: { s: PulseSummary; b: StatsBody | null; bar: str
         note="People who reached each page. The reminder, tip and account pages show only to some, so read them as at most."
       />
       <SheetH title="What gets used" />
-      {s.used.length ? <Rows rows={s.used} label={pulseMeaning} bar={bar} /> : <T tone="muted">Nothing yet.</T>}
+      {s.used.length ? <Rows rows={s.used} label={pulseMeaning} bar={bar} /> : <EmptyChart text="No counts yet. They fill in as people say yes to counts." />}
       <SheetH title="Feedback" aside={b ? String(b.feedback.length) : undefined} />
       {b && b.feedback.length ? (
         b.feedback.map((f) => (
@@ -172,7 +173,7 @@ function Summary({ s, b, bar }: { s: PulseSummary; b: StatsBody | null; bar: str
           </View>
         ))
       ) : (
-        <T tone="muted">None yet.</T>
+        <EmptyChart text="No feedback yet. It shows up here when someone writes." />
       )}
     </>
   );

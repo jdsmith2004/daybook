@@ -26,7 +26,6 @@ import {
   phoneAway,
   withDay,
 } from '@daybook/core';
-import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useNextTool } from '@/lib/tools';
 import { useEffect, useRef, useState } from 'react';
@@ -48,14 +47,12 @@ import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
+import { copyText, WORDS } from '@/lib/words';
 
 import { ToolTimer, type BeatOf } from './timer';
 import type { ToolProps } from './types';
 
-const copy = (text: string, say: (m: string) => void, ok = 'Copied. Paste it in your messages.') =>
-  Clipboard.setStringAsync(text)
-    .then(() => say(ok))
-    .catch(() => say('Could not copy. Press and hold the text to copy it.'));
+const copy = (text: string, say: (m: string) => void, ok: string = WORDS.copiedToSend) => copyText(text, say, ok);
 
 /* ---------- move ---------- */
 /* the beat a move keeps: a squeeze is held for five, then let go; rolls and turns go slow; on your feet it is a livelier,
@@ -605,8 +602,8 @@ export function Message({ finish }: ToolProps) {
             <View style={{ alignSelf: 'stretch', gap: 8 }}>
               <Field label="Your own words" multiline autoFocus maxLength={300} value={own} onChangeText={setOwn} placeholder="In your own words" />
               <View style={s.row}>
-                <Chip label="Send mine" on={false} onPress={() => (own.trim() ? send(own.trim()) : say('Write a few words first.'))} />
-                <Chip label="Copy mine" on={false} onPress={() => (own.trim() ? copy(own.trim(), say) : say('Write a few words first.'))} />
+                <Chip label="Send mine" on={false} onPress={() => (own.trim() ? send(own.trim()) : say(WORDS.needWords))} />
+                <Chip label="Copy mine" on={false} onPress={() => (own.trim() ? copy(own.trim(), say) : say(WORDS.needWords))} />
               </View>
             </View>
           ) : (

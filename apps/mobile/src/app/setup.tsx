@@ -99,6 +99,7 @@ import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Sky, type Tone } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 
 type Flow = SetupFlow;
 
@@ -1036,7 +1037,7 @@ export default function Setup() {
         } else {
           /* the time is kept, so turning them on later uses it */
           setReminderPrefs({ ...rem, checkinAt: remAt });
-          say('Notifications are off for Daybook. You can turn them on later in your phone’s settings.');
+          say(WORDS.notifyOff);
         }
         go(1);
       };

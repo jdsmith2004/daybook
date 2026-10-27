@@ -67,6 +67,7 @@ import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 
 type After = 'take' | 'goal' | 'done' | 'xIt' | 'xHard' | 'xNote';
 type Own = 'w' | 'c' | 'g' | 'iw' | 'it' | null;
@@ -535,7 +536,7 @@ export default function Review() {
                     if (ok) {
                       setReminderPrefs({ ...prefs, review: true });
                       say('Daybook will remind you on Sunday evenings.');
-                    } else say('Notifications are off for Daybook. You can turn them on in your phone’s settings.');
+                    } else say(WORDS.notifyOff);
                   }}
                 />
               </View>
@@ -737,7 +738,7 @@ export default function Review() {
                   if (ok) {
                     setReminderPrefs({ ...prefs, risk: true });
                     say('Daybook will give you a heads-up before your hard hours.');
-                  } else say('Notifications are off for Daybook. You can turn them on in your phone’s settings.');
+                  } else say(WORDS.notifyOff);
                 }}
               />
             </View>

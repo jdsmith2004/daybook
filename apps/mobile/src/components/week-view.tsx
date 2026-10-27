@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { Spark } from '@/components/charts';
+import { EmptyChart, Spark } from '@/components/charts';
 import { Card, Chip, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -61,6 +61,7 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
         {tile('Rode it out', w.rode)}
         {tile('Slipped', w.slipped, w.slipDays ? w.slipDays + ' day' + (w.slipDays === 1 ? '' : 's') : '')}
       </View>
+      {w.checkins + w.events ? null : <EmptyChart text="No entries this week yet. The check-ins and urges you log show up here." />}
       <Card>
         <View style={s.between}>
           <T v="h2">Average ratings</T>

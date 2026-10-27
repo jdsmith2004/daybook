@@ -5,7 +5,7 @@ import { Redirect, router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { DayColumns } from '@/components/charts';
+import { DayColumns, EmptyChart } from '@/components/charts';
 import { Flame } from '@/components/flame';
 import { PointsList } from '@/components/points-list';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
@@ -48,7 +48,12 @@ export default function Points() {
             {month.toLocaleString('en-US')} points in the last 30 days.
           </T>
         </>
-      ) : null}
+      ) : (
+        <>
+          <SheetH title="Points each day" />
+          <EmptyChart text="No points yet. Each honest, small step adds a column here." />
+        </>
+      )}
       <SheetH title="What earns points" />
       <PointsList />
       <Dock>

@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
+import { EmptyChart } from '@/components/charts';
 import { Flame } from '@/components/flame';
 import { Dock, SceneFrame } from '@/components/scene';
 import { MomentAsk, useTipMoment } from '@/components/support';
@@ -40,6 +41,7 @@ export default function Week() {
             <T tone="muted">{f.n === 1 ? f.one : f.many}</T>
           </View>
         ))}
+        {w.facts.length ? null : <EmptyChart text="No entries yet. Each urge or check-in you log adds a line here." />}
       </View>
       {w.be ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{w.be}</T> : null}
       <Dock>

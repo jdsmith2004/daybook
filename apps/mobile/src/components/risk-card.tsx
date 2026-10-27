@@ -19,6 +19,7 @@ import { useReminderPrefs } from '@/lib/prefs';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 
 const left = (ms: number) => {
   const m = Math.max(1, Math.round(ms / 60000));
@@ -130,11 +131,7 @@ export function RiskCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
             buzz('tap');
             const ok = await allowReminders();
             setAllowed(ok);
-            say(
-              ok
-                ? 'Daybook will give you a heads-up before your hard hours.'
-                : 'Notifications are off for Daybook. You can turn them on in your phone’s settings.',
-            );
+            say(ok ? 'Daybook will give you a heads-up before your hard hours.' : WORDS.notifyOff);
           }}
           style={s.link}>
           <Text style={[s.linkT, { color: c.violetText }]}>Get a heads-up on this phone next time</Text>

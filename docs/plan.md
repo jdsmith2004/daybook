@@ -1,5 +1,159 @@
 # What is planned next
 
+## Whole-app UX audit: five people walked start to finish (October 27, 2026)
+
+**What the owner asked for:** walk the web app as five people (a new person through setup, the first Today and lesson;
+an urge in SOS that passes and one that does not; Planning a slip; Already happened on day 3 and after a 40-day run;
+someone back after two weeks, with and without an account), plus More, the plan, badges and levels and the account ask.
+Look for bugs, for how SOS, Planning a slip and Already happened hand off to each other, for whether every screen
+serves the one goal, and for whether setup teaches what the person meets after it. Audit only: the owner picks what to fix.
+
+**How it was walked:** four walkers drove a web build of `main` at 5c8c7c7 (sync pointed at a dead address, so the
+account screens show but cannot finish) in Chromium at 390x844, 375x667, dark and Reduce Motion, with the clock set to
+the person's hour in America/Chicago. About 650 pictures. I judged the worst ones by eye and checked each claim below in
+the code. No page errors in any walk.
+
+**What holds up:** the SOS ride is strong (Breathe first, one move at a time, "It passed" always in reach, every tool
+one tap away). Rekindle after a slip is warm and complete (the hold, the feeling before, how it feels now, a plan for
+next time, "Still pulled toward it" leads straight back into SOS). Setup's second act teaches exactly what SOS does
+(the wave, then a real 30-second breath), and its slip page sets up Rekindle. Undo after a mistaken slip from SOS
+reopens SOS. Nothing in any walk shamed the person.
+
+**The handoff map, today** (a picture went to the owner in chat):
+
+```
+              Today: SOS · Already happened · Planning a slip?
+        (first open of the day: "How are you feeling today?" covers all three, at any hour)
+          │                        │                              │
+          ▼                        ▼                              ▼
+   SOS (the ride)  ──day only──▶  Planning a slip?             Already happened
+   ⋯ More: tools,                 three paths:                  rode it out → trigger → done → 3 pop-ups
+   I slipped ───────────────────────────────────────────────▶  slipped → Rekindle → plan for next time
+   It passed → celebration  ◀──  ✕ no way to SOS              "Still pulled toward it" → Open SOS
+          ▲                       go ahead → slip logged ──✕──▶ (never gets Rekindle: ends on a chart)
+          └────────────────────────────────────────────────── Undo a slip → SOS again
+```
+
+Dead ends: none trap a person. The gaps are missing doors (Planning a slip has no SOS; SOS at night has no Talk it
+through), two endings that skip the comeback, and three different "it passed" endings.
+
+**Does setup teach what comes after?** Mostly. It teaches the wave, a breath, the slip as data, the plan and the day's
+three stops. It never shows the two buttons under SOS (Already happened, Planning a slip?), the flame growing, or
+the morning after a slip, which are the parts a person meets first on a hard day. It is still concise for what it does
+(34 pages on the web, about 43 taps, a dozen of them one-tap answers, about 8 minutes): fix this by adding to existing
+pages, not by adding pages.
+
+### The findings, ranked by how much they hurt a real person
+
+Each is marked with the effort it needs. **Owner decision** marks a choice that is the owner's to make.
+
+**A. Hurts hope, or stands between a person and help**
+
+1. **At 11 PM with an urge, the first thing the app shows is "How are you feeling today?"** It opens on the first
+   open of every day, at any hour (`dayFeelDue` in core `day-feel.ts`, opened from `(tabs)/index.tsx`), and covers
+   SOS. One tap closes it, but that is the worst moment to ask for one. Proposed: never open it by itself in the
+   person's hard hours or after the wind-down starts, and give the sheet an SOS chip, as setup has. _Medium._
+2. **Back after two weeks away, a day-31 person sees "QUITTING Day 1 is today"** until they answer the gap question
+   (More says "day 31" at the same time). It reads as a reset, the one thing the app promises never happens. While the
+   gap is unanswered, the hero should keep the last known measure ("30 of 90 toward graduation") with the "14 days not
+   known yet" row under it. _High (counting and what was earned)._
+3. **Day 40 slip: the words make the run sound like a loan.** "Your 39-day run is kept for now." "Coming back saves
+   it… by Friday night." "Your 39-day run waits for you." Keep or start fresh was the owner's decision (October 22, kept
+   as is); only the words are in question. Proposed: lead with what is permanent and make the quest a way to keep
+   counting, never a rescue: "Your 39 days are yours for good. Ride out one urge or have one day with no slip by
+   Friday, and the count goes on from 39." Remove "for now" everywhere (`rkEmbers`, `rkLightLine`, `srEnd`, the sunrise
+   card). The Rekindle hold also tells a 39-day person "It is down to embers", which is too low for a long run. **Owner
+   decision:** the words. _Medium._
+4. **Planning a slip has no door to SOS, and SOS at night has no door to Planning a slip.** Someone talking it through
+   can be mid-urge, and nothing on any Talk page leads to SOS. SOS's More sheet swaps "Talk it through" for "Go to bed"
+   after dark (`app/sos.tsx`, the `big` list), which is exactly when a slip gets planned. Proposed: the SOS chip in the
+   Talk header (as setup has), and Talk it through as a row in SOS's More at every hour. _Medium._
+5. **"Go ahead, with your eyes open" never reaches the comeback.** It logs a slip and the look-back ends on a bar chart
+   and "It is in your log as a slip". No flame, no "how do you feel now", no plan for next time: the warm half of
+   Rekindle is skipped. Proposed: after the look-back's last page, go on into Rekindle's comeback at the feeling step
+   (the hold is not needed: the slip is already saved). _Medium._
+6. **"NO SLIP 7 of the last 7 days" in big letters right after logging a slip.** It is by design (today counts once
+   it ends, and a run of 7 days or more keeps its measure), but read straight after a slip it looks broken or dishonest.
+   Proposed: the same number with a quiet line under it, such as "Tonight is logged. Your 7 days stay yours." _Medium (words on the hero)._
+7. **Celebrations pile up and mix with asks.**
+   - After the first lesson and check-in, four sheets come in a row (First step, First lesson, Level up, Checked in).
+   - After "Welcome back", a badge carries a tip ask, then the feeling sheet, then an account card.
+   - Undo of a slip still gives the "Honest log" badge, straight after "Removed. Nothing was saved."
+   - A slip's points reach a new level, but the level-up shows only the next morning.
+
+   Proposed: one celebration at a time, joined into one sheet when several are due. No asks inside a celebration on a
+   day the person came back. Fix the Undo badge. _Medium (the Undo badge and levels: high, since it touches what was earned)._
+
+8. **The flame is small on the first Today.** A new person's Spark is a ~60 px dot in a ring inside a 360 px sky; it
+   is also a dim thumbnail on the review page and small on the lesson end. CLAUDE.md: "the flame stays big and alive on
+   Today." The early forms can be small flames and still be drawn big. **Owner decision:** draw every form at the same
+   size on Today, with the growth shown by the form, not the size? _Medium._
+
+**B. Breaks the flow or the thumb rule**
+
+9. **SOS celebration: the only button, Done, is under the bottom edge** (y 842–888 on an 844 px screen; off-screen on
+   a small phone), and the page scrolls sideways a little (the confetti, 417 px wide on 390). Put Done in the Dock. _Medium._
+10. **No "How is it now?" after a tool in SOS.** The ride replaced it, but `useFinishTool` still sets `step: 'after'`,
+    which nothing reads, and docs/design-standards.md still promises it. The X on a tool goes back to the ride, not to
+    the tool list. **Owner decision:** keep the ride as the answer (and update the standards and remove the dead step),
+    or bring back one quiet question after a tool ("Better" / "Still strong", where Still strong opens the tool list).
+    I would bring it back: it is the moment the person notices the urge shrinking. _Medium._
+11. **Three different "it passed" endings.** The ride's "It passed" gives the big celebration. The 10-minute pause's
+    "It passed" goes to a plain log page ("Saved · Rode it out", "What set it off?"). Already happened, "I rode it
+    out" gives a form and then three pop-ups. One urge ridden out should feel the same everywhere: the celebration page. _Medium._
+12. **"It waits on Today" is not true for a changed plan.** After "Change the plan", Today shows nothing of it. A
+    decide-later shows only when its time comes. Show the plan, quietly, under SOS until its moment has passed. _Medium._
+13. **"Did your plan hold?" comes the next morning,** before the plan's moment (late at night) has come round again.
+    Ask after the next time its moment passes. _Medium._
+14. **Small phone (375x667):**
+    - On Today, the SOS card is cut in half by the tab bar, and Already happened and Planning a slip? are below the fold.
+    - In setup, the review page's "Hold to commit" needs a scroll (known since October 26).
+
+    _Medium._
+
+15. **Learn: a lesson's card opens behind the tab bar,** cut off (lesson 4 on the map). _Medium._
+16. **Milestones opens blank for 2 to 7 seconds** the first time from More, with no spinner. It may be the test
+    machine; check on the iPhone. _Low to check, medium to fix._
+
+**C. Small bugs and words** (_low_, unless marked)
+
+17. Chart and dial labels draw in a serif font on the web (setup's minutes dial, curve, tries and slip pages): the SVG
+    text has no font family.
+18. Words and numbers:
+    - Typo in a Talk research card: "Calm you guesses low."
+    - Pattern says "16 clean days" and "Current run 17 days" on the same page.
+    - The account error says "Your log is safe on this phone" on the web too.
+    - The old error stays after "Back to sign in".
+    - Today's check-in row leaves out urges ("Mood 6 · Stress 7").
+19. Layout:
+    - Setup's screens-off times wrap onto two lines ("9:30 / PM").
+    - In dark mode, the hours page's "You guessed" bar almost disappears.
+    - "Hold to commit" has low contrast while it fills.
+    - Toasts sit over the date and the Support button.
+    - The check-in's "More about today" fold pushes Goodnight off the screen.
+    - The feelings field's title sits over the bubbles.
+20. Small behaviors:
+    - The "When did it happen?" day strip offers days before the person started.
+    - "Ashamed" quietly sets a slip's trigger to stress.
+    - Goodnight at 8:32 PM ticks the wind-down when screens-off is 11:00 PM (possibly intended).
+21. On the web, a tip opens Stripe in the same tab, so the person leaves Daybook. Open it in a new tab. _Medium (payments)._
+22. **The docs have drifted from the app** (the owner's own files, so the owner's call):
+    - CLAUDE.md says "A tip never unlocks anything" and "An account opens sync, a safe copy". Since October 23 a tip of
+      $5 opens sync, the safe copy and the full pattern (core `supporter.ts`). Every screen follows the new rule, so
+      CLAUDE.md is what is out of date.
+    - docs/design-standards.md describes "How is it now?" and the tool list (see 10).
+
+**Not checked** (web only):
+
+- The iPhone build, haptics, notifications and the keyboard.
+- A real sign-in, sync, and coming back with an account (the account screens were walked up to the failure).
+- Every lesson past the first.
+- The reminder page in setup, which does not show on the web.
+
+**Suggested order:** 1, 2, 4 and 9 first (a person in trouble meets them). Then the words in 3 and 6, once the owner
+picks them. Then 5, 7, 10 and 11 together, as "one ending for each kind of moment". Then the rest. Effort: 2 and the
+earned parts of 7 are high; 21 is medium; the rest is medium or low.
+
 ## Premium experience: the unglamorous states, one journey, failures that build trust (October 26, 2026)
 
 **What the owner asked for:** check the whole app against three principles from a video on premium apps. (1) The

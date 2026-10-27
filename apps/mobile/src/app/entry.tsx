@@ -37,6 +37,7 @@ import { Button, Chip, Icon, T } from '@/components/ui';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
+import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
 
 export default function Entry() {
@@ -126,7 +127,7 @@ export default function Entry() {
             onSave={(text) => {
               const r = addOption(st, kind, text);
               if (!r.id) {
-                say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : 'Type a few words first.');
+                say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : WORDS.needWords);
                 return;
               }
               const nid = r.id;
@@ -153,7 +154,8 @@ export default function Entry() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              update((s0) => ({ ...s0, days: removeEvent(s0.days, date, e.id) }));
+              /* a mistaken log taken back: its points go with it (they were never really earned) */
+              update((s0) => ({ ...s0, days: removeEvent(s0.days, date, e.id) }), { takeBack: true });
               closeSheet();
             }}>
             <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
@@ -162,7 +164,17 @@ export default function Entry() {
       ) : null}
       <View style={s.chips} accessibilityLabel="What happened">
         <Pill label="Rode it out" on={rode} onPress={() => !rode && patch({ outcome: 'rode', recovered: false })} />
-        <Pill label="Slipped" on={!rode} onPress={() => rode && patch({ outcome: 'slipped', paused: null, did: null })} />
+        <Pill
+          label="Slipped"
+          on={!rode}
+          onPress={() => {
+            if (!rode) return;
+            /* a slip has no pause or "what I did", so they go; a mis-tap gets them back with Undo */
+            const was = { outcome: e.outcome, paused: e.paused, did: e.did, recovered: e.recovered };
+            patch({ outcome: 'slipped', paused: null, did: null });
+            if (e.paused != null || e.did) say('Changed to Slipped.', () => patch(was));
+          }}
+        />
       </View>
       <WhenPill w={whenFromEntry(date, e.time, roll, '12:00')} none={!e.time} now={now} onPress={() => setWhenOpen(true)} />
       <WhenSheet
@@ -238,9 +250,11 @@ export default function Entry() {
               kind="danger"
               label="Yes, delete"
               onPress={() => {
-                update((s0) => ({ ...s0, days: removeEvent(s0.days, date, e.id) }));
+                const ev = e;
+                update((s0) => ({ ...s0, days: removeEvent(s0.days, date, ev.id) }));
                 closeSheet();
-                say('Deleted.');
+                /* put back as it was, with its id, if that was a mis-tap */
+                say('Deleted.', () => update((s0) => ({ ...s0, days: addEvent(s0.days, date, ev.outcome, ev.time, { ...ev }).days })));
               }}
             />
             <Button kind="ghost" label="Keep it" onPress={() => setDel(false)} />

@@ -15,6 +15,7 @@ import { Text } from '@/components/text';
 
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { openPhoneSettings } from '@/lib/reminders';
 import { dropVoice, keepVoice, useVoice, VOICE_MAX } from '@/lib/voice';
 import { font, useTheme } from '@/lib/theme';
 
@@ -32,12 +33,19 @@ export function VoiceRecorder() {
   const rs = useAudioRecorderState(rec, 250);
   const [denied, setDenied] = useState(false);
   const [sure, setSure] = useState(false);
+  /* a recording that did not work, said here (the note before it, if any, is still kept) */
+  const [fail, setFail] = useState('');
 
   const stop = async () => {
-    await rec.stop();
-    await quiet();
-    if (rec.uri) await keepVoice(rec.uri);
-    buzz('save');
+    try {
+      await rec.stop();
+      await quiet();
+      if (rec.uri) await keepVoice(rec.uri);
+      buzz('save');
+    } catch {
+      await quiet();
+      setFail(uri ? 'That did not save. Your earlier note is still here. Try again.' : 'That did not save. Try again.');
+    }
   };
   useEffect(() => {
     if (rs.isRecording && secs(rs.durationMillis) >= VOICE_MAX) stop();
@@ -52,10 +60,16 @@ export function VoiceRecorder() {
     }
     setDenied(false);
     setSure(false);
-    await loud(true);
-    await rec.prepareToRecordAsync();
-    rec.record();
-    buzz('tap');
+    setFail('');
+    try {
+      await loud(true);
+      await rec.prepareToRecordAsync();
+      rec.record();
+      buzz('tap');
+    } catch {
+      await quiet();
+      setFail('The microphone did not start. Nothing was recorded. Try again.');
+    }
   };
 
   if (rs.isRecording)
@@ -75,26 +89,42 @@ export function VoiceRecorder() {
           <VoicePlay key={v} uri={uri} label="Play my voice note" />
           <View style={s.row}>
             <Button kind="ghost" icon="mic" label="Record again" onPress={start} />
-            {sure ? (
-              <Button
-                kind="danger"
-                label="Yes, remove it"
-                onPress={() => {
-                  dropVoice();
-                  setSure(false);
-                }}
-              />
-            ) : (
-              <Button kind="ghost" icon="trash" label="Remove" onPress={() => setSure(true)} />
-            )}
+            {sure ? null : <Button kind="ghost" icon="trash" label="Remove…" onPress={() => setSure(true)} />}
           </View>
+          {sure ? (
+            <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+              <T v="label">Remove your voice note?</T>
+              <T v="small" tone="muted">
+                It is only on this phone, so it cannot be brought back.
+              </T>
+              <View style={s.row}>
+                <Button
+                  kind="danger"
+                  label="Yes, remove it"
+                  onPress={() => {
+                    dropVoice();
+                    setSure(false);
+                  }}
+                />
+                <Button kind="ghost" label="Keep it" onPress={() => setSure(false)} />
+              </View>
+            </View>
+          ) : null}
         </>
       ) : (
         <Button kind="ghost" icon="mic" label="Record a voice note" onPress={start} />
       )}
       {denied ? (
-        <T v="small" tone="danger">
-          Daybook needs the microphone to record. You can turn it on in your phone settings.
+        <>
+          <T v="small" tone="danger">
+            Daybook needs the microphone to record. You can turn it on in your phone’s settings.
+          </T>
+          <Button kind="ghost" label="Open settings" onPress={openPhoneSettings} />
+        </>
+      ) : null}
+      {fail ? (
+        <T v="small" tone="danger" accessibilityLiveRegion="polite">
+          {fail}
         </T>
       ) : null}
       <T v="small" tone="muted">
@@ -151,6 +181,7 @@ export function SosVoice() {
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  confirm: { gap: 8, padding: 12, borderRadius: 14 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   play: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 10, minHeight: 44, paddingLeft: 6, paddingRight: 16, borderRadius: 999 },
   pi: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

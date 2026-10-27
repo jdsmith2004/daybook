@@ -16,7 +16,8 @@ import { Button, Card, T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { setupKeep } from '@/lib/setup-keep';
-import { useStore } from '@/lib/store';
+import { HelpLine } from '@/components/help-line';
+import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 
 /* Learn, Journal and More before setup: what setup opens here, the way into it, and that SOS works now */
@@ -43,7 +44,13 @@ export function Welcome() {
     try {
       const text = await pickBackupText();
       if (text == null) return;
-      const b = readBackup(text);
+      let b;
+      try {
+        b = readBackup(text);
+      } catch {
+        say('That file is not a Daybook backup.');
+        return;
+      }
       const { snap: next, restored } = restoreBackup(current().snap, b);
       if (!next.settings) next.settings = defaultSettings(tk);
       await replace(
@@ -52,7 +59,7 @@ export function Welcome() {
       );
       say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
     } catch {
-      say('That file is not a Daybook backup.');
+      say(SAVE_FAILED);
     } finally {
       setBusy(false);
     }
@@ -108,9 +115,13 @@ export function Welcome() {
           <Link label="I already have an account: sign in" onPress={() => sync.signInNow({ why: 'in' })} />
         )}
         {sync.status.k === 'error' ? (
-          <T v="small" tone="danger" style={{ textAlign: 'center' }}>
-            {sync.status.msg}
-          </T>
+          <>
+            <T v="small" tone="danger" style={{ textAlign: 'center' }}>
+              {sync.status.msg}
+            </T>
+            <Button label="Try again" kind="ghost" onPress={sync.syncNow} />
+            <HelpLine subject="Daybook: sync" center />
+          </>
         ) : null}
         {BACKUP_FILES ? <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} /> : null}
       </Card>

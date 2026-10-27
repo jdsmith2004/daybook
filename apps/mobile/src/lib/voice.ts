@@ -39,11 +39,15 @@ export function useVoice(): { uri: string | null; v: number } {
   return { uri: current(), v };
 }
 
-/** keep a new recording (from the recorder's cache) as the note, in place of the old one */
+/** keep a new recording (from the recorder's cache) as the note, in place of the old one. The new one is moved in beside
+    the old one first, so if that fails the old note is still there. */
 export async function keepVoice(tmp: string) {
   const f = file();
+  const next = new File(Paths.document, 'from-me-new.m4a');
+  if (next.exists) next.delete();
+  await new File(tmp).move(next);
   if (f.exists) f.delete();
-  await new File(tmp).move(f);
+  await next.move(f);
   changed();
 }
 

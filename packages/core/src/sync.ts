@@ -12,8 +12,7 @@
    the push sends the merged log, and records the account already has newer copies of are dropped before they are sent.
    The network parts take a transport, so the same code runs against the real API and, in tests, against the API's own
    handler with an in-memory table. Checked by services/api/test/client.test.ts. */
-import { normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
-import { isKey } from './legacy/core.js';
+import { keepEarned, normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
 import { keepSup } from './supporter';
 import type { Day, Settings, Snapshot } from './types';
 
@@ -321,29 +320,6 @@ export function accountHasLog(recs: SyncRecord[]) {
 /** the log the account holds, on its own (to replace this device's log with it) */
 export function snapshotOf(recs: SyncRecord[]): Snapshot {
   return mergeRemote({ settings: null, days: {}, reviews: {} }, {}, recs).snap;
-}
-
-/** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
-    already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have, and the better supporter
-    record, and the welcome backs passed on the lesson path */
-function keepEarned(win: Settings, lose: Settings): Settings {
-  const out = JSON.parse(JSON.stringify(win)) as Settings;
-  const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
-  if (g) out.gradAt = g;
-  if (lose.seen) {
-    const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
-    s.badges = [...new Set([...s.badges, ...lose.seen.badges])];
-    s.level = Math.max(s.level, lose.seen.level);
-    const pts = Math.max(s.pts || 0, lose.seen.pts || 0);
-    if (pts) s.pts = pts;
-    out.seen = s;
-  }
-  out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };
-  out.learn.notes = { ...lose.learn.notes, ...out.learn.notes };
-  out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
-  const back = { ...(lose.learn.back || {}), ...(out.learn.back || {}) };
-  if (Object.keys(back).length) out.learn.back = back;
-  return keepSup(out, lose.sup);
 }
 
 /** A device joining an account, when both may hold settings. The settings record holds what was earned and built (the

@@ -74,7 +74,9 @@ import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from 
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
-import { useStore } from '@/lib/store';
+import { SAVE_FAILED, useStore } from '@/lib/store';
+import { useTheme } from '@/lib/theme';
+import { WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
 type Sec = 'sync' | 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'lock' | 'data';
@@ -101,6 +103,7 @@ const Chips = ({ children, label }: { children: ReactNode; label?: string }) => 
 /** every settings section, as collapsible rows. `open` opens one ("s-count"), and `onOpenLayout` tells where it is. */
 export function SettingsSections({ open: asked, onOpenLayout }: { open?: string; onOpenLayout?: (y: number) => void }) {
   const { snap, tk, now, apply, replace, erase, say, dirty, hooks, current } = useStore();
+  const c = useTheme();
   const sos = useSos();
   const sync = useSync();
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
@@ -122,7 +125,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       ([k, v]) => v === true && (k === 'lesson' || k === 'checkin' || k === 'wind' || k === 'risk' || k === 'review'),
     );
     if (turningOn && !(await allowReminders())) {
-      say('Notifications are off for Daybook. Turn them on in your phone’s settings, then try again.');
+      say(WORDS.notifyOff);
       return;
     }
     setReminderPrefs({ ...rem, ...patch });
@@ -149,14 +152,21 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
     try {
       const text = await pickBackupText();
       if (text == null) return;
-      const { snap: next, restored } = restoreBackup(current().snap, readBackup(text));
+      let b;
+      try {
+        b = readBackup(text);
+      } catch {
+        say('That file is not a Daybook backup.');
+        return;
+      }
+      const { snap: next, restored } = restoreBackup(current().snap, b);
       await replace(
         next,
         toRecords(next).map((r) => r.id as RecordId),
       );
       say(`Restored ${restored} day${restored === 1 ? '' : 's'}.`);
     } catch {
-      say('That file is not a Daybook backup.');
+      say(SAVE_FAILED);
     } finally {
       setBusy(false);
     }
@@ -169,7 +179,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       await saveBackupFile(name, data, kind === 'json' ? 'application/json' : 'text/csv');
       say('Saved ' + name);
     } catch {
-      say('Could not save ' + name + '.');
+      say('Could not save ' + name + '. Check there is room on the phone, then try again.');
     }
   };
   const pin = st.urPin ? urTool(st.urPin) : null;
@@ -195,9 +205,11 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             signedIn
               ? sync.status.k === 'expired'
                 ? 'Sign in again to keep syncing'
-                : sync.status.k === 'need'
-                  ? SYNC_NEED_SHORT
-                  : 'On' + (sync.email ? ' · ' + sync.email : '')
+                : sync.status.k === 'error'
+                  ? 'Not syncing right now · your log is safe here'
+                  : sync.status.k === 'need'
+                    ? SYNC_NEED_SHORT
+                    : 'On' + (sync.email ? ' · ' + sync.email : '')
               : 'Off · your log stays on this device',
             <SyncBody />,
           )}
@@ -514,20 +526,30 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             </>
           ) : null}
           {wipe ? (
-            <View style={{ gap: 8 }}>
-              <T v="label" tone="danger">
+            <View style={{ gap: 8, padding: 12, borderRadius: 14, backgroundColor: c.dangerSoft }}>
+              <T v="label">
                 {signedIn
-                  ? `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}, on this device and in your account? Your other devices clear it too when they next sync. This cannot be undone.`
-                  : `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}? This cannot be undone.`}
+                  ? `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}, on this device and in your account?`
+                  : `Delete every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}?`}
+              </T>
+              <T v="small" tone="muted">
+                {signedIn
+                  ? 'Your other devices clear it too when they next sync. Your account keeps a copy for 7 days, so it can be brought back until then.' +
+                    (voiceOk ? ' The voice note is only on this phone and cannot be brought back.' : '')
+                  : 'Your log is only on this device, so this cannot be undone.'}
               </T>
               <Chips>
                 <Button
                   kind="danger"
-                  label="Yes, delete everything"
+                  label={busy ? 'Deleting…' : 'Yes, delete everything'}
+                  disabled={busy}
                   onPress={async () => {
-                    if (signedIn && !(await sync.eraseAccount())) {
+                    setBusy(true);
+                    const ok = !signedIn || (await sync.eraseAccount());
+                    setBusy(false);
+                    if (!ok) {
                       setWipe(false);
-                      say('Could not reach your account. Nothing was deleted.');
+                      say('Could not reach your account, so nothing was deleted. Check the connection and try again.');
                       return;
                     }
                     await erase();

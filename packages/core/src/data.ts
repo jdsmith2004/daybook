@@ -63,8 +63,32 @@ export function readBackup(text: string): Snapshot {
   return { settings: o.settings ? normSettings(o.settings) : null, days, reviews };
 }
 
+/** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
+    already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have, and the better supporter
+    record, and the welcome backs passed on the lesson path */
+export function keepEarned(win: Settings, lose: Settings): Settings {
+  const out = JSON.parse(JSON.stringify(win)) as Settings;
+  const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
+  if (g) out.gradAt = g;
+  if (lose.seen) {
+    const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
+    s.badges = [...new Set([...s.badges, ...lose.seen.badges])];
+    s.level = Math.max(s.level, lose.seen.level);
+    const pts = Math.max(s.pts || 0, lose.seen.pts || 0);
+    if (pts) s.pts = pts;
+    out.seen = s;
+  }
+  out.learn.prac = { ...lose.learn.prac, ...out.learn.prac };
+  out.learn.notes = { ...lose.learn.notes, ...out.learn.notes };
+  out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
+  const back = { ...(lose.learn.back || {}), ...(out.learn.back || {}) };
+  if (Object.keys(back).length) out.learn.back = back;
+  return keepSup(out, lose.sup);
+}
+
 /** restores a backup on top of what is here, the way the legacy app does: the backup's days and reviews replace the same days
-    and reviews here, its settings replace these settings, and the answers added to the lists are combined so none are lost. */
+    and reviews here, its settings replace these settings, and the answers added to the lists are combined so none are lost.
+    What was earned here stays earned (keepEarned). */
 export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { snap: Snapshot; restored: number } {
   const days: Days = { ...here.days };
   let restored = 0;
@@ -83,8 +107,8 @@ export function restoreBackup(here: Snapshot, b: Snapshot, now = Date.now()): { 
     const mine = here.settings ? here.settings.opts : b.settings.opts;
     settings = { ...normSettings(b.settings), u: now };
     settings.opts = mergeOpts(mine, settings.opts);
-    /* an older backup never takes away a tip */
-    settings = keepSup(settings, here.settings?.sup);
+    /* an older backup never takes away a tip, or anything else earned here (a level, a badge, points, lessons marked) */
+    settings = here.settings ? keepEarned(settings, here.settings) : settings;
   }
   return { snap: { settings, days, reviews }, restored };
 }

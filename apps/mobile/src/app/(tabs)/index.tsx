@@ -17,8 +17,6 @@ import {
   dayFeelQuiet,
   markOpen,
   tipAsk,
-  tipQuiet,
-  pulseAsk,
   urLastAt,
   tipButton,
   autoCount,
@@ -52,8 +50,6 @@ import { Text } from '@/components/text';
 import { AccountCard } from '@/components/account';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';
 import { HomeScreenCard } from '@/components/home-screen';
-import { PulseCard } from '@/components/pulse';
-import { usePulse } from '@/lib/pulse';
 import { MomentCard } from '@/components/moment-card';
 import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
@@ -126,7 +122,6 @@ export default function Today() {
   /* back after days away (core awayDue): Welcome back opens once, and once more the next day if it was closed unanswered;
      after that the gap waits as a quiet row (BackRow). Kept in this device's memory, never synced. */
   const sos = useSos();
-  const pulse = usePulse();
   const due = st && !syncing ? awayDue(snap.days, st, tk) : null;
   const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
   const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
@@ -244,8 +239,6 @@ export default function Today() {
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
-  /* the counts ask, once, on a calm day, never beside another ask (core pulseAsk) */
-  const counts = pulseAsk(pulse, snap.days, tk, new Date(now).getHours(), !!(ask || tip), quiet || tipQuiet(snap.days, st, { now, sos: urLastAt(sos.mem) }));
   /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
   const sub = (
@@ -288,7 +281,6 @@ export default function Today() {
       <YourDay snap={snap} tk={tk} now={now} />
       {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
       {tip ? <TipCard /> : null}
-      {counts ? <PulseCard /> : null}
       <HomeScreenCard />
     </Screen>
   );

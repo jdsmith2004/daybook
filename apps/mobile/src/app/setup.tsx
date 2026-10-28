@@ -182,7 +182,7 @@ export default function Setup() {
   useEffect(() => {
     if (!f.redo) storeSetup(f.saved || pg.k === 'done' ? null : f);
   }, [f, pg.k]);
-  /* the opt-in counts: how far a new person got (core pulse.ts), kept on the device until they say yes */
+  /* the anonymous counts: how far a new person got (core pulse.ts), a basic count sent without asking */
   useEffect(() => {
     if (!f.redo) countSetup(OB_PAGES.indexOf(pg), pg.k === 'done');
   }, [f.redo, pg]);

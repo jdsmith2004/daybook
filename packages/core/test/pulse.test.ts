@@ -1,4 +1,4 @@
-/* Opt-in counts: nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
+/* Anonymous counts: basic ones without asking, the rest after yes, nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { OB_PAGES } from '../src/setup';
@@ -7,6 +7,7 @@ import {
   pulseAdd,
   pulseAnswer,
   pulseBand,
+  pulseBasic,
   pulseBatch,
   pulseClean,
   pulseKeys,
@@ -46,10 +47,20 @@ describe('counting', () => {
     expect(pulseOpened(s, {}, D0).days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
   });
-  it('sends nothing before the person says yes', () => {
-    const s = pulseAdd(pulseNew(D0), 'sos', D0);
+  it('before the person says yes, only the basic counts are sent, and the rest waits on the device', () => {
+    let s = pulseAdd(pulseNew(D0), 'sos', D0);
+    expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
+    s = pulseSetup(pulseOpened(s, {}, D0), 2, true);
+    const b = pulseBatch(s, '2026-10-25', 'ios', '1.0.0')!;
+    expect(b.days[0].c).toEqual({ act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1, setup_done: 1 });
+    for (const k of Object.keys(b.days[0].c)) expect(pulseBasic(k), k).toBe(true);
+    s = pulseSent(s, b);
+    expect(s.days[D0]).toEqual({ sos: 1 });
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
     expect(pulseBatch(pulseAnswer(s, true, '2026-10-25'), '2026-10-25', 'ios', '1.0.0')!.days[0].c).toEqual({ sos: 1 });
+  });
+  it('the basic counts are only the day opened and setup', () => {
+    for (const k of pulseKeys()) expect(pulseBasic(k), k).toBe(k.startsWith('act_') || k.startsWith('setup_'));
   });
   it('every name has plain words for the privacy page', () => {
     for (const k of pulseKeys()) expect(pulseMeaning(k), k).not.toBe(k);
@@ -169,20 +180,7 @@ describe('the server check', () => {
   });
 });
 
-describe('the ask and the summary', () => {
-  it('asks from day two, in the daytime, on a calm day, beside no other ask', async () => {
-    const { pulseAsk } = await import('../src/pulse');
-    const s = pulseNew(D0);
-    const tk = '2026-10-23';
-    expect(pulseAsk(s, {}, tk, 12, false, false)).toBe(true);
-    expect(pulseAsk(s, {}, D0, 12, false, false)).toBe(false);
-    expect(pulseAsk(s, {}, tk, 22, false, false)).toBe(false);
-    expect(pulseAsk(s, {}, tk, 12, true, false)).toBe(false);
-    expect(pulseAsk(s, {}, tk, 12, false, true)).toBe(false);
-    expect(pulseAsk(s, addEvent({}, D0, 'slipped', '23:00').days, tk, 12, false, false)).toBe(false);
-    expect(pulseAsk(pulseAnswer(s, false, D0), {}, tk, 12, false, false)).toBe(false);
-    expect(pulseAsk(on(), {}, tk, 12, false, false)).toBe(false);
-  });
+describe('the summary', () => {
   it('adds up the totals for the Stats page', async () => {
     const { pulseSummary } = await import('../src/pulse');
     const sum = pulseSummary(

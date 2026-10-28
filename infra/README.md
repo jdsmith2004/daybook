@@ -82,7 +82,7 @@ It is on. It needed the trigger's role first, made this way:
 only its own table, never `daybook-records`. The table keeps totals per day and the feedback, never who sent anything.
 It costs pennies (a few cents a month at a few hundred people).
 
-It is off until its role exists:
+It is on since October 28, 2026 (the role was made when the bootstrap stack was applied for payments). How it was set up:
 
 1. Apply the bootstrap stack once more with your own AWS sign-in (`cd infra/bootstrap && terraform apply`). It adds the
    `daybook-app-pulse` role (the pulse table and its own logs, nothing else) and lets deploys hand that role to the

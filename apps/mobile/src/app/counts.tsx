@@ -1,6 +1,7 @@
 /* Anonymous counts: what is sent and what never is, the last batch exactly as it went, and the switch (core pulse.ts).
+   The basic counts go without asking (the owner, October 28, 2026); here the person adds the rest, or turns all of it off.
    Named "counts", not "pulse": on the web, /pulse is the server's own address. */
-import { pulseMeaning, SITE_PAGES } from '@daybook/core';
+import { PULSE_WORDS, pulseMeaning, SITE_PAGES } from '@daybook/core';
 import { Linking, View } from 'react-native';
 
 import { Link } from '@/components/choices';
@@ -12,7 +13,8 @@ import { answerPulse, usePulse } from '@/lib/pulse';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 
-const EXAMPLES = ['act_7_13', 'back_1', 'setup_done', 'sos', 'tool_breathe', 'lesson_done', 'checkin', 'slip_logged'];
+const BASIC = ['act_0', 'act_7_13', 'setup_done'];
+const MORE = ['back_1', 'sos', 'tool_breathe', 'lesson_done', 'checkin', 'slip_logged'];
 const NEVER = [
   'Anything you write: notes, plans, reasons, messages',
   'What led to an urge or a slip, or when it happened',
@@ -24,28 +26,37 @@ export default function Counts() {
   const s = usePulse();
   const { say } = useStore();
   const on = s?.on === true;
+  const off = s?.on === false;
   const set = (v: boolean) => {
     buzz('tap');
     answerPulse(v);
     say(v ? WORDS.countsOn : WORDS.countsOff);
   };
+  const list = (ks: string[]) => (
+    <View style={{ gap: 4 }}>
+      {ks.map((k) => (
+        <T key={k} v="small">
+          {'• ' + pulseMeaning(k)}
+        </T>
+      ))}
+    </View>
+  );
   return (
-    <SheetFrame title="Anonymous counts" sub={on ? 'On. Thank you for helping the next person.' : 'Off. Nothing is sent.'}>
+    <SheetFrame title="Anonymous counts" sub={on ? PULSE_WORDS.all : off ? PULSE_WORDS.off : PULSE_WORDS.basic}>
       <T>
-        Daybook is built by one person. With counts on, your phone sends a few numbers once a day, for days that are over. The server adds them to totals for
-        everyone and keeps nothing else, so no count can be traced back to you.
+        Daybook is built by one person. Your phone sends a few numbers once a day, for days that are over. The server adds them to totals for everyone and keeps
+        nothing else, so no count can be traced back to you.
       </T>
-      <SheetH title="What is sent" />
+      <SheetH title="Basic counts" />
       <T v="small" tone="muted">
-        Names and small numbers, like these:
+        {off ? 'Off.' : 'On.'} Only whether Daybook was opened that day, and how far setup got:
       </T>
-      <View style={{ gap: 4 }}>
-        {EXAMPLES.map((k) => (
-          <T key={k} v="small">
-            {'• ' + pulseMeaning(k)}
-          </T>
-        ))}
-      </View>
+      {list(BASIC)}
+      <SheetH title="More counts" />
+      <T v="small" tone="muted">
+        {on ? 'On.' : 'Off until you turn them on.'} Which parts of Daybook were used, like these:
+      </T>
+      {list(MORE)}
       <SheetH title="What is never sent" />
       <View style={{ gap: 4 }}>
         {NEVER.map((t) => (
@@ -71,14 +82,10 @@ export default function Counts() {
         <Link label="Read the privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
       </View>
       <Dock>
-        {on ? <Button label="Done" onPress={closeSheet} /> : <Button label="Send anonymous counts" onPress={() => set(true)} />}
-        {on ? (
+        {on ? <Button label="Done" onPress={closeSheet} /> : <Button label={off ? 'Send anonymous counts' : 'Send more counts'} onPress={() => set(true)} />}
+        {!off ? (
           <View style={{ alignItems: 'center' }}>
-            <Link label="Turn counts off" tone="muted" onPress={() => set(false)} />
-          </View>
-        ) : s && s.on === null ? (
-          <View style={{ alignItems: 'center' }}>
-            <Link label="No thanks" onPress={() => set(false)} />
+            <Link label="Turn all counts off" tone="muted" onPress={() => set(false)} />
           </View>
         ) : null}
       </Dock>

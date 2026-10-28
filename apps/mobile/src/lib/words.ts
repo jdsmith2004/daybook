@@ -12,7 +12,7 @@ export const WORDS = {
   copied: 'Copied.',
   copiedToSend: 'Copied. Paste it in your messages.',
   copyFailed: 'Could not copy. Press and hold the text to copy it.',
-  countsOn: 'Counts are on. Thank you. That helps the next person.',
+  countsOn: 'All counts are on. Thank you. That helps the next person.',
   countsOff: 'Counts are off. Nothing is sent.',
   /** a file picked to restore that is not a backup */
   notBackup: 'That file is not a Daybook backup. Nothing was changed.',

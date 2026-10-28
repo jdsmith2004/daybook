@@ -165,9 +165,11 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   - Identifiers: user ID (the account ID, and Apple's ID for the person when they sign in with Apple).
   - Purchases: purchase history (the supporter record: a tip's amount, date, where it came from, and Apple's or Stripe's
     reference, kept under the account so the tip opens sync).
-  - Usage data: product interaction (the opt-in counts, core `pulse.ts`): **not linked** to the person, used for
-    analytics only, **not** used for tracking. It is optional: the app asks once and sends nothing until the person
-    says yes. Add this before a build with `EXPO_PUBLIC_PULSE_URL` goes to review.
+  - Usage data: product interaction (the anonymous counts, core `pulse.ts`): **not linked** to the person, used for
+    analytics only, **not** used for tracking. Since October 28, 2026 the basic counts (the app was opened that day,
+    how far setup got) are sent without asking; the rest only after the person says yes in More, and More turns all
+    of it off. So it is collected from everyone who has not turned it off: do not mark it optional. Add this before a
+    build with `EXPO_PUBLIC_PULSE_URL` goes to review.
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
   - Tracking: **no**. Data used to track you: **none**.
@@ -310,8 +312,8 @@ they would be Play in-app products, and that is a separate piece of work.
      can delete it in the app or by email): personal info (email address, user IDs, religious beliefs from the faith
      question), health and fitness (health info: the log), app activity (other user-generated content: notes and plans).
      Used for app functionality and account management only.
-     Once the opt-in counts are in a build: app activity, app interactions (optional, collected for analytics, not shared,
-     processed so it cannot be tied to a person), and feedback as other user-generated content (optional).
+     Once the anonymous counts are in a build: app activity, app interactions (collected for analytics, not shared,
+     processed so it cannot be tied to a person; the basic counts are sent without asking, so not optional), and feedback as other user-generated content (optional).
 7. **Production.** When the closed test is done, apply for production access in the Play Console's dashboard, then release
    the newest build to production (start at a staged rollout if it offers one). Review usually takes a few days; paste any
    message from Google to Claude Code.

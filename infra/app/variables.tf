@@ -45,7 +45,7 @@ variable "dev_origins" {
 variable "pulse" {
   description = "true: the opt-in counts and feedback (infra/app/pulse.tf). Needs the daybook-app-pulse role, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "pulse_zip" {

@@ -6,7 +6,8 @@
    - Fit the shapes: a small block puzzle for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.
    - Name it: the feeling under the urge, on the feelings field, and what it is asking for (feel-move.tsx).
-   - Later: the hour after, both ways, in your own words.
+   - Later: the hour after, both ways, in your own words. Over the two hours, once the log has it, one line on how it
+     really felt after the last slips (core slipFeltLine), never in a practice ride or the first 30 seconds of an SOS.
    - Say it fast: the loudest thought, said fast for 20 seconds, then let go.
    - Your words: your note or a reason, read slowly, and your voice note. */
 import { FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, urFromYou, type UrMem } from '@daybook/core';
@@ -39,6 +40,9 @@ export interface MoveProps {
   onFeel?: (f: { w: string; lead: string | null; trig: string | null }) => void;
   /** open a tool over the ride (Name it, for a feeling whose tool is not a ride move) */
   onTool?: (id: string) => void;
+  /** the hour after: how it felt after the last slips, in the person's own record (core slipFeltLine), or null. SOS gives
+      it only in a real SOS, from 30 seconds on. */
+  felt?: string | null;
 }
 
 /** say a line to a screen reader on iOS (which has no live regions); Android and the web read the live region */
@@ -179,9 +183,11 @@ export function GroundMove({ on, onDone }: MoveProps) {
 }
 
 /* ---------- later (play it forward) ---------- */
-export function LaterMove({ onDone }: MoveProps) {
+export function LaterMove({ onDone, felt: felt0 }: MoveProps) {
   const c = useTheme();
   const { mem, setMem } = useSos();
+  /* the person's own record of how it felt after (kept from when the move opened, so the words never jump) */
+  const [felt] = useState(() => felt0 || null);
   const had = !!(mem.fwd?.a?.length || mem.fwd?.b?.length);
   const [step, setStep] = useState<0 | 1 | 2>(had ? 2 : 0);
   const [a, setA] = useState<string[]>(() => (mem.fwd?.a || []).slice());
@@ -222,6 +228,13 @@ export function LaterMove({ onDone }: MoveProps) {
   return (
     <View style={s.move}>
       <Words head={picked ? 'Good choice' : 'Which hour do you want?'} sub={picked ? 'Hold on to that picture.' : 'Tap the one you want.'} />
+      {felt ? (
+        <Appear delay={500} style={[s.felt, { backgroundColor: c.slipSoft }]}>
+          <T v="small" style={{ color: c.ink, textAlign: 'center' }}>
+            {felt}
+          </T>
+        </Appear>
+      ) : null}
       <View style={s.mid}>
         <View style={{ alignSelf: 'stretch', alignItems: 'center' }}>
           <View style={[s.now, { backgroundColor: c.surface }]}>
@@ -440,6 +453,7 @@ const s = StyleSheet.create({
   step: { flex: 1, height: 6, borderRadius: 3 },
   line: { alignItems: 'center' },
   now: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999 },
+  felt: { alignSelf: 'center', maxWidth: 340, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
   two: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
   hour: { flex: 1, gap: 4, padding: 14, borderRadius: 22, minHeight: 120, borderColor: 'transparent', borderWidth: 3 },
   hourT: { fontFamily: font.display, fontSize: 18, lineHeight: 23 },

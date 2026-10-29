@@ -25,6 +25,7 @@ import {
   rideMark,
   rideNext,
   rkStepFor,
+  slipFeltLine,
   urEntry,
   urEvidence,
   urFromYou,
@@ -141,6 +142,9 @@ export default function Sos() {
   }, [front, ur?.step]);
 
   const tags = useMemo(() => urTags(snap.days, st, tk, sos.mem), [snap.days, st, tk, sos.mem]);
+  /* how it felt after the last slips, in their own record (core slipFeltLine), for the hour after: never in a practice
+     ride, and never in the first 30 seconds */
+  const feltLine = useMemo(() => (practice ? null : slipFeltLine(snap.days)), [practice, snap.days]);
   const mark = useMemo(() => rideMark(snap.days), [snap.days]);
 
   const level = Math.max(1, g.level.n);
@@ -353,6 +357,7 @@ export default function Sos() {
             lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
           }}
           onTool={pickTool}
+          felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
         />
       </Stage>
       <Dock>
@@ -493,6 +498,8 @@ function Round({ icon, label, onPress, on }: { icon: string; label: string; onPr
 
 /** a practice ride is this many moves */
 const PRACTICE_N = 3;
+/** the record of how it felt after slips is never shown before this far into an SOS */
+const FELT_AFTER = 30000;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },

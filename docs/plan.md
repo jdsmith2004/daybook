@@ -2558,7 +2558,7 @@ showing people still opening Daybook, and three calls.
 > not failure.
 >
 > Why I think it fits here: it is free with nothing to unlock, with no ads, no tracking and no account needed. Your log
-> stays on your phone. The code is public on GitHub, so anyone can check that.
+> stays on your phone.
 >
 > [Optional, only if true and you want to share it: one sentence on why you built it.]
 >

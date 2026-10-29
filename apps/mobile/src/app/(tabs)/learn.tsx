@@ -16,7 +16,7 @@ import {
   lessonsDone,
   lessonsLocked,
   lessonTimeline,
-  LEARN_FREE,
+  LEARN_LOCK,
   lfDate,
   LUNITS,
   type LessonMap,
@@ -272,7 +272,7 @@ function LessonsPane({ m, win, hide, onGeom }: { m: LessonMap; win: [number, num
         <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
           <Icon name="lock" size={18} color={c.accentText} />
           <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
-            {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
+            {LEARN_LOCK.learn}
           </T>
           <Icon name="next" size={16} color={c.accentText} />
         </Pressable>
@@ -348,7 +348,7 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Lesson ${no}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
+      accessibilityLabel={`Lesson ${no}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? LEARN_LOCK.next + '.' : side + '.'}`}
       onPress={() => openLesson(L.id)}
       style={({ pressed }) => [s.row, { backgroundColor: c.surface, borderColor: done ? c.cardEdge : 'transparent', opacity: pressed ? 0.85 : 1 }]}>
       <View style={[s.lrIc, { backgroundColor: done ? c.mintSoft : t.soft }]}>

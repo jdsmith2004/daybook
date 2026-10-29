@@ -2,6 +2,7 @@
    after, a Sunday, a pause, days away, and a day with nothing left to do. */
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
+import { LEARN_LOCK } from '../src/accounts';
 import { moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
 import type { Days } from '../src/types';
@@ -20,7 +21,7 @@ describe('a calm day', () => {
     expect(p.more).toBeNull();
     expect(p.then).toBe('Then: the check-in around 6 PM and the wind-down from 10:00 PM.');
   });
-  it('without an account, a lesson that waits behind one is never the card', () => {
+  it('without an account, a lesson that waits behind one asks to sign up for it', () => {
     const s0 = normSettings({ ...st, routine: { ...st.routine, morning: false } });
     const d = withDay(
       {},
@@ -30,8 +31,7 @@ describe('a calm day', () => {
     const signedIn = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
     const local = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
     expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: LESSONS[3].id, h: LESSONS[3].title, btn: 'Start' });
-    expect(local).toMatchObject({ k: 'calm', go: 'lesson', btn: 'Read it again' });
-    expect(LESSONS.slice(0, 3).map((L) => L.id)).toContain(local.v);
+    expect(local).toMatchObject({ k: 'calm', go: 'lesson', v: LESSONS[3].id, h: LESSONS[3].title, p: LEARN_LOCK.next + '.', btn: LEARN_LOCK.btn });
   });
   it('all done: rest well, and who the person is now', () => {
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });

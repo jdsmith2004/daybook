@@ -23,7 +23,7 @@ import {
   sumDay,
   type RhythmStop,
 } from './legacy/core.js';
-import { lessonOpen } from './accounts';
+import { hardDay, LEARN_LOCK, lessonOpen } from './accounts';
 import { firstUndone, lessonNo, lessonsDone, lessonStop, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
@@ -360,8 +360,8 @@ export interface NextUp {
 }
 /** the part of the day that is open now, or the next one to open (legacy nextUp), today's lesson first until it is done
     (dayRhythm). Without an account (`account` false),
-    a lesson that waits behind one is never offered: Next up gives a re-read of a finished lesson instead, so Today never
-    turns into a sign-up page (and never on the morning after a slip). */
+    a lesson that waits behind one is still offered, with "Sign up to unlock all the lessons for free" under it (the owner,
+    October 23, 2026); on a slip day or the day after, Next up gives a re-read of a finished lesson instead. */
 export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): NextUp {
   const r = dayRhythm(days, st, tk, nowMs);
   const n = r.stops.length;
@@ -388,6 +388,12 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
     if (nl && lessonOpen(nl, doneIds, account)) {
       o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
       o.s = lmin(nl);
+      o.act = 'lesson';
+      o.v = nl.id;
+    } else if (nl && !hardDay(days, tk)) {
+      /* waits behind an account: the lesson page sends the person to sign up, then opens it */
+      o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
+      o.s = LEARN_LOCK.next;
       o.act = 'lesson';
       o.v = nl.id;
     } else {

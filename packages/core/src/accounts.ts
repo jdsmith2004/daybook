@@ -26,6 +26,16 @@ export function lessonOpen(L: Lesson, done: Set<string>, account: boolean): bool
   return account || done.has(L.id) || freeLessons().indexOf(L) >= 0;
 }
 
+/** the words where a lesson waits behind an account: the line on Learn, and under a lesson that is suggested or tapped */
+export const LEARN_LOCK = {
+  learn: 'Sign up to unlock the rest of the lessons.',
+  next: 'Sign up to unlock all the lessons for free',
+  btn: 'Sign up for free',
+};
+
+/** a slip today or yesterday: Daybook does not ask for an account then */
+export const hardDay = (days: Days, tk: DayKey): boolean => eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
+
 /** how many lessons are waiting behind an account */
 export const lessonsLocked = (all: Lesson[], done: Set<string>, account: boolean) => all.filter((L) => !lessonOpen(L, done, account)).length;
 
@@ -36,8 +46,7 @@ export function accountAsk(days: Days, st: Settings, tk: DayKey, level: number, 
   if (account) return null;
   const no = isKey(st.acctNo) ? (st.acctNo as DayKey) : null;
   if (no && diffDays(tk, no) < ACCT_WAIT) return null;
-  const hard = eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
-  if (hard) return null;
+  if (hardDay(days, tk)) return null;
   if (diffDays(tk, st.start) >= 7) return 'week';
   if (level >= ACCT_LEVEL) return 'level';
   return null;

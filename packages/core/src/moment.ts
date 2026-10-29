@@ -20,6 +20,7 @@ import { addDays, diffDays, sumDay } from './legacy/core.js';
 import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
+import { LEARN_LOCK } from './accounts';
 import { nextUp, stopTiles, type StopGo } from './day';
 import { comebackNow, rkComebackSay, rkEnded, rkOpen, safeName, sunriseDue, tellStartDue } from './rekindle';
 import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
@@ -236,14 +237,15 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   const cur = d.tiles.find((x) => x.cur);
   if (cur) {
     const o = cur.go === 'lesson' ? nextUp(days, st, tk, now, dev.account !== false) : null;
-    /* without an account, a lesson that waits behind one is never the card: nextUp offers a re-read instead */
+    /* without an account, a lesson that waits behind one asks to sign up for it; on a hard day nextUp offers a re-read */
     const swap = o && o.act === 'lesson' && o.v && o.v !== cur.id ? o : null;
+    const locked = !swap && o && o.act === 'lesson' && o.s === LEARN_LOCK.next;
     m(
       'calm',
       cur.eyebrow,
       swap ? (swap.t || '').replace(/^(Lesson \d+|Read again): /, '') : cur.head,
-      swap ? 'A quick re-read keeps one fresh.' : cur.body,
-      swap ? 'Read it again' : cur.btn,
+      swap ? 'A quick re-read keeps one fresh.' : locked ? LEARN_LOCK.next + '.' : cur.body,
+      swap ? 'Read it again' : locked ? LEARN_LOCK.btn : cur.btn,
       cur.go,
       'the day',
       swap ? swap.v : cur.id,

@@ -7,6 +7,7 @@
    signpost starts each land, and a trophy ends the path. Only the lands near the screen are drawn, to keep it light. The
    pin's bob and the next stone's ring are still under Reduce Motion. */
 import {
+  LEARN_LOCK,
   LUNITS,
   lmin,
   lessonNo,
@@ -393,17 +394,13 @@ export function StoneCard({
         {L.title}
       </Text>
       <Text style={[s_.cardP, { color: ink }]}>{L.tag}</Text>
-      {locked ? (
-        <Text style={[s_.cardP, { color: ink, marginTop: 6 }]}>A free account opens the other {waiting} lessons, and keeps your progress safe.</Text>
-      ) : null}
+      {locked ? <Text style={[s_.cardP, { color: ink, marginTop: 6 }]}>{LEARN_LOCK.next}.</Text> : null}
       <Pressable
         accessibilityRole="button"
         onPress={locked ? onSignIn : onStart}
         style={({ pressed }) => [s_.go, { backgroundColor: c.surface, shadowColor: deep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
         <Icon name={locked ? 'lock' : when ? 'book' : 'play'} size={18} color={c.scheme === 'dark' ? t.ic : t.text} />
-        <Text style={[s_.goT, { color: c.scheme === 'dark' ? t.ic : t.text }]}>
-          {locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
-        </Text>
+        <Text style={[s_.goT, { color: c.scheme === 'dark' ? t.ic : t.text }]}>{locked ? LEARN_LOCK.btn : when ? 'Read it again' : `Start lesson ${no}`}</Text>
       </Pressable>
     </View>
   );

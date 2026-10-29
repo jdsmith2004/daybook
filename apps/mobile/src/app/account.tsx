@@ -2,7 +2,7 @@
    6-digit code from the email (it goes on by itself once all six digits are in), and the person is signed in. Also: choosing a
    password for an account made with a temporary one, and "Forgot password". Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
-import { CognitoError, emailOk, PASSWORD_MIN, passwordOk, SUP_SYNC_WORDS } from '@daybook/core';
+import { CognitoError, emailOk, LEARN_LOCK, PASSWORD_MIN, passwordOk, SUP_SYNC_WORDS } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -127,7 +127,7 @@ export default function Account() {
     mode === 'in'
       ? 'Sign in to bring your log, your plan and your progress to this device.'
       : p.why === 'lesson'
-        ? 'The first three lessons are open to everyone. A free account opens all of them.'
+        ? LEARN_LOCK.next + '.'
         : p.why === 'setup'
           ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan, your log and your progress safe, and the same on every device you use. It is private to you.'
           : 'A free account opens every lesson, and for supporters it keeps a copy of your progress safe and the same on every device you use. It is private to you.';

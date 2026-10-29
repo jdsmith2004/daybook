@@ -1,5 +1,40 @@
 # What is planned next
 
+## The feelings grid, its own look (the owner, October 29, 2026; on branch feelings-own-look, not merged)
+
+The feeling chart itself (energy one way, pleasantness the other, four corners) is the Mood Meter's, a well-known chart
+anyone can use. The look of today's picker (a pannable field of bubbles that swell under the thumb and morph into
+shapes) is How We Feel's signature, and the owner wants the grid to lead the SOS marketing, so it gets Daybook's own look
+first (Apple's guideline 4.1, copycats, and the comments a copied look would draw). Fifteen directions are drawn in
+`docs/feelings-review` (`all.png` is the sheet); the owner picks, then the chosen one is built on this branch and shown
+on the simulator before anything merges.
+
+1. Ember field: embers on a night sky; the one under the thumb flares into a little flame.
+2. Sparks from the fire: feelings rise as sparks from the hearth; higher is more energy.
+3. Move the sun: the SOS sun is the picker; raise it for energy, slide it from storm to clear sky.
+4. Inner weather: storms, sun, rain and a quiet moon, sized by strength.
+5. The flame shows it: the mascot takes the feeling's color and shape from one pad under the thumb.
+6. Constellations: four constellations (The Storm, The Spark, The Fog, The Hearth); a star lights and says its name.
+7. Lanterns: rows of paper lanterns; the one you stop on lights up.
+8. Only words: the chart is made of the words, the one under the thumb big.
+9. Two slides, then a word: energy, then pleasant, then four word chips. Close to Apple's State of Mind.
+10. Four doors, then a word: Wound up, Lit up, Weighed down, Settled; then six words.
+11. The dial: a thumb dial round the flame. Feeling wheels are everywhere, so it is common, not ours.
+12. The sea: wave height is energy, the water's color is pleasantness.
+13. A map of feelings: a small land like the lesson map; feelings are places.
+14. Swipe the card: one big card, swiped toward how you feel. Close to Moodnotes' swiped face.
+15. One color field: a soft gradient and a loupe. Nearest to How We Feel's colored canvas.
+
+What the research says (a research agent, October 29): naming a feeling calms the body even with one quick word (Lieberman
+2007); finer words predict fewer lapses after treatment, and the skill grows with practice; under stress, a coarse first
+choice (about four) and then nine to twelve words beats 144 at once.
+
+Recommendation: 10 then 1. Four doors first (fast under stress, one tap a stressed person can make), then the ember field
+of that corner for the exact word, so the rolling, alive feel stays. It keeps the flame at the center, and the embers
+feeding the flame is the picture for the videos. 3 (move the sun) is the strongest picture for a video and ties to the SOS
+sun, but one sun is coarse and needs a word list after it. Effort: medium (a screen and its words; no data changes, the
+feeling ids stay).
+
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
 **Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below

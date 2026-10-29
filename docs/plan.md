@@ -32,6 +32,19 @@ choice (about four) and then nine to twelve words beats 144 at once.
 **The owner's decision (October 29): the grid stays.** None of the fifteen beat it. What can change is the shape a
 feeling takes, how the grid starts, and the lighting; the next round looks only at those, inside today's grid.
 
+Round two, on the real grid (`docs/feelings-review/round2`, one row picture per question, each led by today's look):
+
+- A, the shape a feeling grows into: A0 today's shape families; A1 every feeling becomes the flame in its own color;
+  A2 a fire for each corner (crackling, tall, low, a glowing coal); A3 the mascot itself, with a face that matches.
+- B, how it starts: B0 today's four jelly circles; B1 four fires; B2 the four colors around the flame, the grid pouring
+  out of it; B3 from SOS, the sun just breathed with split into four quarters.
+- C, the lighting: C0 today's flat bubbles; C1 firelight (the middle lights its neighbors, the far ones sink into the
+  night); C2 each bubble lit from within; C3 the sky glowing from below in the color being rolled over.
+
+Recommendation: A2, B2, C1. A fire for each corner keeps a shape per kind of feeling (the meaning the shape families give
+today) while every shape is Daybook's; the grid pouring out of the flame puts the heart of the app at the start; firelight
+is the most alive and makes the roll feel like carrying a light. Effort: medium.
+
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
 **Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below

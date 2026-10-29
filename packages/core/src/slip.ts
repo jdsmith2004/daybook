@@ -133,6 +133,34 @@ export function slipNowLine(days: Days, id: string | null, fa: RkFeel): string |
   );
 }
 
+/** the feelings afterwards that say what the habit really left behind */
+const HEAVY: RkFeel[] = ['flat', 'shame', 'giveup'];
+const HEAVY_SHORT: Partial<Record<RkFeel, string>> = { flat: 'flat', shame: 'ashamed', giveup: 'like giving up' };
+/** how it felt after the last slips, for the next urge (SOS, the hour after): "After 3 of your last 4 slips, you felt flat
+    or empty." Seeing what it really gave, in the person's own record, lowers its pull (reward re-valuation; Brewer and
+    others 2011). Only with at least 2 of the last 5 slips with how it felt recorded (fa), and when most of those were flat,
+    ashamed or like giving up; null otherwise. */
+export function slipFeltLine(days: Days): string | null {
+  const named = slipsBut(days, null)
+    .filter((e) => e.fa)
+    .slice(-5);
+  if (named.length < 2) return null;
+  const c: Partial<Record<RkFeel, number>> = {};
+  for (const e of named) if (HEAVY.indexOf(e.fa as RkFeel) >= 0) c[e.fa as RkFeel] = (c[e.fa as RkFeel] || 0) + 1;
+  const n = HEAVY.reduce((a, f) => a + (c[f] || 0), 0);
+  if (n * 2 <= named.length) return null;
+  const fs = HEAVY.filter((f) => c[f]).sort((a, b) => c[b]! - c[a]! || HEAVY.indexOf(a) - HEAVY.indexOf(b));
+  const words =
+    fs.length === 1
+      ? NOW_WORDS[fs[0]]
+      : fs
+          .map((f) => HEAVY_SHORT[f])
+          .join(', ')
+          .replace(/, ([^,]*)$/, ' or $1');
+  const m = named.length;
+  return 'After ' + (n === m ? (m === 2 ? 'both' : 'each') : n) + ' of your last ' + m + ' slips, you felt ' + words + '.';
+}
+
 /** "And now?": the feelings afterwards (the same words as Rekindle's), each with its answer: a heading and a line. Kind
     and true: about the action, never the person, and with what the habit really left behind. */
 export const SLIP_NOW = RK_FEELS;

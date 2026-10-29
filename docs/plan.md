@@ -362,8 +362,27 @@ the hand-off to Talk it through after a slip (the plan is made inside the flow n
 The data: two optional fields on a slip, `fb` (the feeling word before) and `fa` (how it felt after), and `fw` on the
 after-slip plan (a talk-through with pr 1). Older app versions drop these fields when they edit that day.
 
-Not yet (follow-ups): show the plan at the matching hour (a just-in-time reminder), read `fb` in the Journal's
-patterns and the Sunday story, and use `fa` at the next urge ("Last 4 times, afterward you felt flat").
+Follow-ups, done (October 29, 2026; on branch worktree-agent-a1a5d71da18700c7c, not merged):
+
+- **The plan at its hour.** A plan made after a slip is for the next time its moment comes round: late at night from
+  9 PM to 5 AM, the evening from 5 PM to 9 PM, a slip in the daytime the same hour the next day. Today shows it under
+  SOS from an hour before until the moment ends ("Your plan for tonight"), and not in between; "Did your plan hold?"
+  waits until after it. With the heads-up switch on, one quiet note comes at the moment's start ("Your plan for tonight",
+  "The plan you made: put the device out of reach."). It takes the hard-hours heads-up's place on its day, so a day
+  still has at most two notes, or three with one heads-up. A plan in the person's own words is not put on a locked
+  screen. This also fixed the plans made since October 27 (they carry `ft`, not `fw`), which were being asked about the
+  morning after the slip, and a slip at 11:50 PM no longer settles the plan made for it at 12:05 AM.
+- **The situation before slips, in Pattern and the Sunday review** (the feeling before, `fb`, is no longer asked, so the
+  situation in `trigger` took its place). Once at least 3 of the last six slips have a situation and the most common
+  one is behind at least half: "Being in bed late with your phone came before 3 of your last 5 slips. Your plan for
+  that moment is ready." Pattern shows it at the top of What sets it off?; the Sunday review's slips screen shows it in
+  place of "Most came with".
+- **How it felt after, at the next urge.** In SOS, at the hour after (the two hours, a calm move), once at least 2 of
+  the last 5 slips have how it felt afterwards and most were flat, ashamed or like giving up: "After 4 of your last 5
+  slips, you felt flat or ashamed." Never in a practice ride or the first 30 seconds (Brewer and others 2011).
+
+Not yet: the hard-hours card still offers "Make a plan for tonight" when a plan made after a slip is already waiting
+for the same night, and the iPhone build and VoiceOver are not checked for these.
 
 ## The QA list of October 24, 2026 (the owner)
 

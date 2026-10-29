@@ -435,7 +435,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             />
             <OnOff
               name="Heads-up before hard hours"
-              sub="When your log shows a time of day that is often hard, a nudge 90 minutes before, to talk it through"
+              sub="When your log shows a time of day that is often hard, a nudge 90 minutes before, to talk it through. A plan you made for next time comes back at its hour."
               on={rem.risk}
               onPick={(on) => setRem({ risk: on })}
             />

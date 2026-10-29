@@ -26,7 +26,12 @@
    The lesson reminder took its place (docs/plan.md, "Lessons first", C2), after Duolingo's: the one routine reminder on
    by default, once a day at about the time the last lesson was finished, a day later (else the hour the app is usually
    open, never at night), skipped once today's lesson is done or when no new lesson is open, and sharing one note with the
-   check-in reminder when that comes within the same hour. Not copied: the guilt. The words stay warm. */
+   check-in reminder when that comes within the same hour. Not copied: the guilt. The words stay warm.
+   The plan at its hour (October 29, 2026): a plan made after a slip ("When it is late and I am in bed with my phone, I
+   will ...") comes back once, quietly, at the start of the moment it is for, the next time it comes round (talkPlanAhead).
+   It is a heads-up, under the same switch as the one before hard hours, and takes that heads-up's place on its day, so a
+   day still has at most two notes, or three with one heads-up. The words say only the move (the person's own words are
+   not put on a locked screen), never what the plan is about. */
 import { moodOf } from './day';
 import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
@@ -35,6 +40,8 @@ import { lessonDoneOn, lessonWalk } from './lessons';
 import { rkActive, rkCard, rkOpen } from './rekindle';
 import { riskAt, riskWindow } from './risk';
 import { isSunday, sunDue } from './sunday';
+import { TALK_MOVES, type TalkMove } from './talk';
+import { talkPlanAhead } from './talk-log';
 import type { Clock, DayKey, Days, Reviews, Settings } from './types';
 
 /** the reminder choices, kept on each phone (each phone decides) */
@@ -87,9 +94,9 @@ export const NUDGE_OPEN_MIN = 120;
 /** a notification that has not helped by then is a miss */
 export const NUDGE_JUDGE_MIN = 180;
 
-export type NudgeKind = 'lesson' | 'checkin' | 'wind' | 'sunday' | 'risk' | 'back';
-/** the kinds that learn (the come-back notes are fixed) */
-export type NudgeLearned = Exclude<NudgeKind, 'back'>;
+export type NudgeKind = 'lesson' | 'checkin' | 'wind' | 'sunday' | 'risk' | 'back' | 'plan';
+/** the kinds that learn (the come-back notes and the plan at its hour are fixed) */
+export type NudgeLearned = Exclude<NudgeKind, 'back' | 'plan'>;
 export const NUDGE_LEARNED: NudgeLearned[] = ['lesson', 'checkin', 'wind', 'sunday', 'risk'];
 /** each kind's switch in NudgePrefs */
 export const NUDGE_PREF: Record<NudgeLearned, 'lesson' | 'checkin' | 'wind' | 'review' | 'risk'> = {
@@ -145,7 +152,7 @@ export interface NudgeWordRec {
   h: number;
   last: DayKey | null;
 }
-const KINDS: NudgeKind[] = ['lesson', 'checkin', 'wind', 'sunday', 'risk', 'back'];
+const KINDS: NudgeKind[] = ['lesson', 'checkin', 'wind', 'sunday', 'risk', 'back', 'plan'];
 export const nudgeLogNew = (): NudgeLog => ({ plan: [], wait: [], lv: {}, miss: {}, taps: [], opens: [], w: {} });
 /** a stored log, made safe to read */
 export function normNudgeLog(x: unknown): NudgeLog {
@@ -248,6 +255,14 @@ export const NUDGE_WORDS = {
       { t: 'Breathe, plan, go 🧘', b: 'Two minutes now make the next few hours easier. Tap to start.' },
     ],
   } as Record<NudgeLearned, NudgeWord[]>,
+  /** a plan made after a slip, at the start of its moment: the title by the moment, and the move (planMove), or this when
+      the plan is in the person's own words */
+  plan: {
+    late: 'Your plan for tonight 🌙',
+    evening: 'Your plan for this evening 🌆',
+    day: 'Your plan for today ☀️',
+    own: 'The plan you made is ready. Tap to see it.',
+  },
   /** after a few heavy days: the check-in offers, it does not ask */
   heavy: { t: 'No pressure tonight 🤍', b: 'A short check-in is enough tonight. Nothing to get right.' },
   /** the come-back notes (days 2, 7 and 30), each with something in it; the last says it is the last */
@@ -481,7 +496,39 @@ export function nudgeCtx(days: Days, st: Settings, reviews: Reviews, tk: DayKey)
 const slipOn = (days: Days, k: DayKey) => (days[k]?.events || []).some((e) => e.outcome === 'slipped');
 
 /* ---------- the plan ---------- */
-const PRI: Record<NudgeKind, number> = { risk: 0, lesson: 1, checkin: 2, sunday: 3, wind: 4, back: 5 };
+const PRI: Record<NudgeKind, number> = { plan: 0, risk: 0, lesson: 1, checkin: 2, sunday: 3, wind: 4, back: 5 };
+
+/** the hours the plan at its hour may come (9 AM up to 9 PM, the start of late at night): a plan for the daytime made at
+    night waits on Today instead */
+const PLAN_HOURS: [number, number] = [9, 21];
+/** the move a plan made after a slip names on a note: "The plan you made: put the device out of reach." Only a move from
+    the list (TALK_MOVES), which never says what the plan is about; null for a plan in the person's own words. */
+export function planMove(m: string[]): string | null {
+  const w = TALK_MOVES[m[0] as TalkMove]?.[1];
+  return w ? 'The plan you made: ' + w + '.' : null;
+}
+/** the note for a plan made after a slip, at the start of its moment, when that falls on log day k (between its rollover
+    and the next), in the hours a note may come; else null */
+export function planNudge(days: Days, st: Settings, prefs: NudgePrefs, k: DayKey, now: number): Nudge | null {
+  if (!prefs.risk) return null;
+  const a = talkPlanAhead(days, now);
+  if (!a) return null;
+  if (a.start < riskAt(k, st.rollover, st.rollover) || a.start >= riskAt(addDays(k, 1), st.rollover, st.rollover)) return null;
+  const d = new Date(a.start);
+  const h = d.getHours() + d.getMinutes() / 60;
+  if (h < PLAN_HOURS[0] || h > PLAN_HOURS[1]) return null;
+  const W = NUDGE_WORDS.plan;
+  return {
+    id: 'plan-' + k,
+    k: 'plan',
+    d: k,
+    at: a.start,
+    title: a.mo === 'late' ? W.late : a.mo === 'evening' ? W.evening : W.day,
+    body: planMove(a.talk.m) || W.own,
+    url: '/',
+    quiet: true,
+  };
+}
 /** every other day (or Sunday) at step 1 */
 const onStep = (lv: number, k: DayKey, st: Settings, weekly = false) => lv <= 0 || (lv === 1 && Math.floor(diffDays(k, st.start) / (weekly ? 7 : 1)) % 2 === 0);
 
@@ -530,6 +577,13 @@ function dayList(
     const win = riskWindow(days, st, k);
     if (win) add('risk', riskAt(k, win.start, roll) - 90 * 60000, '/talk?prep=1');
   }
+  /* the plan made after a slip, at its hour: it is that day's heads-up, in place of the one before hard hours */
+  const pn = planNudge(days, st, prefs, k, now);
+  if (pn) {
+    const r = out.findIndex((n) => n.k === 'risk');
+    if (r >= 0) out.splice(r, 1);
+    out.push(pn);
+  }
   /* on a Sunday, the check-in reminder carries the review too */
   const ci = out.find((n) => n.k === 'checkin');
   const su = out.findIndex((n) => n.k === 'sunday');
@@ -564,7 +618,7 @@ function dayList(
     }
   /* after a slip: the first routine reminder of the day says it kindly (over the mood words) */
   const kind = kindWords(days, st, k);
-  const first = out.filter((n) => n.k !== 'risk').sort((a, b) => a.at - b.at)[0];
+  const first = out.filter((n) => n.k !== 'risk' && n.k !== 'plan').sort((a, b) => a.at - b.at)[0];
   if (kind && first) {
     first.title = kind.t;
     first.body = kind.b;
@@ -585,10 +639,11 @@ function kindWords(days: Days, st: Settings, k: DayKey): { t: string; b: string 
   return (c.kind === 'sun' || c.kind === 'almost') && rkOpen(days, st, k, r.k).op ? NUDGE_WORDS.quest : null;
 }
 
-/** at most NUDGE_MAX a day (one more with the heads-up before hard hours), NUDGE_GAP minutes apart, the most useful kept */
+/** at most NUDGE_MAX a day (one more with the heads-up before hard hours, or the plan at its hour in its place), NUDGE_GAP
+    minutes apart, the most useful kept */
 function capped(list: Nudge[]): Nudge[] {
   const keep: Nudge[] = [];
-  const max = NUDGE_MAX + (list.some((n) => n.k === 'risk') ? 1 : 0);
+  const max = NUDGE_MAX + (list.some((n) => n.k === 'risk' || n.k === 'plan') ? 1 : 0);
   for (const n of list.slice().sort((a, b) => PRI[a.k] - PRI[b.k] || a.at - b.at)) {
     if (keep.length >= max) break;
     if (keep.some((x) => Math.abs(x.at - n.at) < NUDGE_GAP * 60000)) continue;
@@ -661,7 +716,7 @@ export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, revie
     x.w[n.w] = { n: r.n + 1, h: r.h + (h ? 1 : 0), last: !r.last || n.d > r.last ? n.d : r.last };
   };
   const due = log.plan.filter((n) => n.at <= now);
-  const wait = allowed && st ? [...log.wait, ...due].filter((n) => n.k !== 'back') : [];
+  const wait = allowed && st ? [...log.wait, ...due].filter((n) => n.k !== 'back' && n.k !== 'plan') : [];
   x.wait = [];
   for (const n of wait.sort((a, b) => a.at - b.at)) {
     const k = n.k as NudgeLearned;

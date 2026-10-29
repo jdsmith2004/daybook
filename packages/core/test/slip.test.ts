@@ -55,6 +55,33 @@ describe('the pattern lines', () => {
     expect(core.slipNowLine(days, 's9', 'flat')).toBe('After 2 of your last 3 slips, you felt flat or empty.');
     expect(core.slipNowLine(days, 's9', 'okay')).toBeNull();
   });
+
+  it('at the next urge: how it felt after the last slips, only with 2 or more recorded and most of them heavy', () => {
+    const fa = (list: (core.RkFeel | null)[]) =>
+      list.reduce((d: core.Days, f, i) => slipOn(d, core.addDays(K, -10 + i), 's' + i, '22:00', f ? { fa: f } : {}), {});
+    expect(core.slipFeltLine({})).toBeNull();
+    expect(core.slipFeltLine(fa(['flat']))).toBeNull();
+    expect(core.slipFeltLine(fa(['flat', 'flat']))).toBe('After both of your last 2 slips, you felt flat or empty.');
+    expect(core.slipFeltLine(fa(['flat', 'okay', 'flat', 'flat']))).toBe('After 3 of your last 4 slips, you felt flat or empty.');
+    /* slips with nothing recorded are not counted either way */
+    expect(core.slipFeltLine(fa(['flat', null, 'flat', null]))).toBe('After both of your last 2 slips, you felt flat or empty.');
+    /* most, not half */
+    expect(core.slipFeltLine(fa(['flat', 'okay']))).toBeNull();
+    expect(core.slipFeltLine(fa(['flat', 'pull', 'angry', 'shame']))).toBeNull();
+    /* mixed: the heavy feelings named, the most common first */
+    expect(core.slipFeltLine(fa(['shame', 'flat', 'shame', 'giveup', 'okay']))).toBe('After 4 of your last 5 slips, you felt ashamed, flat or like giving up.');
+    expect(core.slipFeltLine(fa(['shame', 'flat', 'flat']))).toBe('After each of your last 3 slips, you felt flat or ashamed.');
+    /* only the last five recorded */
+    expect(core.slipFeltLine(fa(['flat', 'flat', 'flat', 'okay', 'okay', 'okay', 'pull']))).toBeNull();
+  });
+
+  it('the line at the next urge never names the habit, and has no contractions', () => {
+    for (const f of ['flat', 'shame', 'giveup'] as core.RkFeel[]) {
+      const l = core.slipFeltLine({ ...slipOn(slipOn({}, K, 'a', '21:00', { fa: f }), '2026-10-21', 'b', '21:00', { fa: f }) })!;
+      expect(l).not.toMatch(noContractions);
+      expect(l).not.toMatch(/porn|addict|relapse/i);
+    }
+  });
 });
 
 describe('the plan for next time', () => {

@@ -10,7 +10,7 @@
 import { addDays, diffDays, eventsOf, optText, sumDay } from './legacy/core.js';
 import { logStart } from './log-start';
 import { riskWindow, type RiskWindow } from './risk';
-import { talksOf, TALK_NEEDS, type TalkNeed } from './talk';
+import { talkAfterSlip, talksOf, TALK_NEEDS, type TalkNeed } from './talk';
 import { plural } from './view';
 import type { DayKey, Days, Settings } from './types';
 
@@ -188,8 +188,9 @@ export function patTriggers(days: Days, st: Settings, keys: DayKey[], tk: DayKey
 }
 /** the trigger's words inside a sentence: "Bored or idle" reads as "bored or idle" */
 const low = (t: string) => (/^[A-Z][a-z]/.test(t) && !/^I\b/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t);
-/** what the triggers say, in plain words (at most two lines) */
-export function patTriggerLines(list: PatTrigger[]): string[] {
+/** what the triggers say, in plain words (at most two lines). said: a trigger the page already names as the one before the
+    slips (patSlipTrig), so its "the one to plan for" line is not said twice. */
+export function patTriggerLines(list: PatTrigger[], said?: string | null): string[] {
   const out: string[] = [];
   const tot = (x: PatTrigger) => x.rode + x.slipped;
   const top = list[0];
@@ -203,9 +204,55 @@ export function patTriggerLines(list: PatTrigger[]): string[] {
         '.',
     );
   const risky = list.filter((x) => tot(x) >= 3 && x.slipped > 0).sort((a, b) => b.slipped / tot(b) - a.slipped / tot(a) || b.slipped - a.slipped)[0];
-  if (risky && risky.slipped >= 2 && risky.slipped / tot(risky) >= 0.3)
+  if (risky && risky.k !== said && risky.slipped >= 2 && risky.slipped / tot(risky) >= 0.3)
     out.push('When it is ' + low(risky.t) + ', it ends in a slip ' + risky.slipped + ' times out of ' + tot(risky) + '. That is the one to plan for.');
   return out;
+}
+
+/** the situation in a sentence, as what came before a slip: "Being in bed late with your phone came before ..." */
+const SLIP_TRIG_WORDS: Record<string, string> = {
+  late: 'Being in bed late with your phone',
+  lonely: 'Feeling lonely or low',
+  bored: 'Being bored or idle',
+  stress: 'Feeling stressed or anxious',
+  tired: 'Being tired',
+  scroll: 'Scrolling or gaming',
+};
+/** slips looked at for the situation before them: the last six, in the last 90 days */
+export const SLIP_TRIG_LAST = 6;
+/** what was going on before the person's slips, once there is a real pattern: at least 3 of the last six slips (in the
+    last 90 days) have a situation, and the most common one was behind at least half of those. One plain, hopeful line,
+    about the situation and never the person: "Being in bed late with your phone came before 3 of your last 4 slips. Your
+    plan for that moment is ready." The second sentence says a plan is ready when the latest plan made after a slip is
+    for that situation (log.tsx, ft); otherwise it says what a plan does. Null when there is no pattern yet. */
+export function patSlipTrig(days: Days, st: Settings, tk: DayKey): { k: string; n: number; of: number; line: string } | null {
+  const slips = (eventsOf(days, addDays(tk, -89)) as { key: DayKey; time?: string | null; outcome: string; trigger?: string | null }[])
+    .filter((e) => e.key <= tk && e.outcome === 'slipped')
+    .sort((a, b) => (a.key + (a.time || '')).localeCompare(b.key + (b.time || '')))
+    .slice(-SLIP_TRIG_LAST);
+  const c: Record<string, number> = {};
+  let named = 0;
+  for (const e of slips)
+    if (e.trigger && e.trigger !== 'other' && e.trigger !== 'none' && optText('trig', e.trigger, st.opts)) {
+      c[e.trigger] = (c[e.trigger] || 0) + 1;
+      named++;
+    }
+  if (named < 3) return null;
+  const k = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+  if (c[k] * 2 < named) return null;
+  const what = SLIP_TRIG_WORDS[k] || '“' + optText('trig', k, st.opts) + '”';
+  const plans = talksOf(days).filter((x) => talkAfterSlip(x.talk));
+  const ready = plans.length && plans[plans.length - 1].talk.ft === k;
+  const line =
+    what +
+    ' came before ' +
+    (c[k] === slips.length ? 'each' : c[k]) +
+    ' of your last ' +
+    slips.length +
+    ' slips' +
+    '. ' +
+    (ready ? 'Your plan for that moment is ready.' : 'A plan for that moment makes the next one easier.');
+  return { k, n: c[k], of: slips.length, line };
 }
 
 /** what the pull was after, from talk-throughs in the range */

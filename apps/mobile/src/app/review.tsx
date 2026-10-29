@@ -16,6 +16,7 @@ import {
   LESSONS,
   saveSun,
   SRC,
+  patSlipTrig,
   story,
   storyHardDays,
   storyIfLine,
@@ -286,6 +287,8 @@ export default function Review() {
         </>
       );
     } else if (scr === 'slips') {
+      /* once the last slips show a pattern, what came before them (core patSlipTrig), in place of this week's most common */
+      const pat = patSlipTrig(snap.days, st, tk < sun ? tk : sun);
       main = (
         <>
           {eyebrow('THE HARD MOMENTS')}
@@ -295,7 +298,7 @@ export default function Review() {
             {S.slips.waited ? (
               <Fact icon="timer" text={'You waited first ' + S.slips.waited + ' of ' + S.slips.n + ' times. That wait is the skill growing.'} />
             ) : null}
-            {S.slips.top ? <Fact icon="compass" text={'Most came with: ' + S.slips.top + '.'} /> : null}
+            {pat ? <Fact icon="compass" text={pat.line} /> : S.slips.top ? <Fact icon="compass" text={'Most came with: ' + S.slips.top + '.'} /> : null}
             <Fact icon="leaf" text="Each one is data for the week ahead, not a reset." />
           </View>
         </>

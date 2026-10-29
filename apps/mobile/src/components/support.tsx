@@ -2,7 +2,7 @@
    the card on Today, the row on More, and the card on a locked page. Every one opens the tip sheet (app/tip.tsx), where a
    tip of $5 or more makes the person a supporter (core supporter.ts). Once they are, the asks stop and the row on More
    says thank you. On iPhone the tip is Apple's in-app purchase first, with the web tip page as a second way (allowed on
-   the US storefront, Guidelines 3.1.1(a) and 3.1.3; Daybook is offered in the United States only, docs/launch.md). On
+   the United States storefront only, Guidelines 3.1.1(a) and 3.1.3; core tipWaysFor; other storefronts, docs/launch.md). On
    Android nothing about tips shows and nothing is locked, until Google Play's rules for it are checked (docs/plan.md). */
 import {
   extraLocked,

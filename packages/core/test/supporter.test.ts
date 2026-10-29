@@ -30,6 +30,8 @@ import {
   tipEnough,
   tipLink,
   TIP_TIER_IDS,
+  tipWaysFor,
+  webTipStorefront,
   type Supporter,
 } from '../src/supporter';
 
@@ -311,5 +313,46 @@ describe('Daybook Pattern', () => {
   it('the sheet lists what is really open', () => {
     expect(supPerks(true).map((p) => p.id)).toEqual(['sync', 'stats']);
     expect(supPerks(false).map((p) => p.id)).toEqual(['sync']);
+  });
+});
+
+describe('the web tip page by App Store storefront', () => {
+  it('only the United States storefront allows the link out to pay on the web', () => {
+    expect(webTipStorefront('USA')).toBe(true);
+    expect(webTipStorefront('usa')).toBe(true);
+    expect(webTipStorefront(' US ')).toBe(true);
+    for (const c of ['GBR', 'CAN', 'AUS', 'NZL', 'IRL', 'GB', 'CA', 'USB', 'UMI', 'PRI']) expect(webTipStorefront(c), c).toBe(false);
+  });
+  it('a storefront not known yet counts as not allowed (the safe side)', () => {
+    for (const c of [null, undefined, '', '  ', 0, {}]) expect(webTipStorefront(c)).toBe(false);
+  });
+  it('an iPhone offers Apple first, and the web tip page only on the United States storefront', () => {
+    expect(tipWaysFor('ios', true, 'USA')).toEqual(['apple', 'web']);
+    expect(tipWaysFor('ios', true, 'GBR')).toEqual(['apple']);
+    expect(tipWaysFor('ios', true, 'AUS')).toEqual(['apple']);
+    expect(tipWaysFor('ios', true, null)).toEqual(['apple']);
+    /* a build with no in-app purchase cannot know its storefront, so it offers nothing rather than the web page */
+    expect(tipWaysFor('ios', false, null)).toEqual([]);
+  });
+  it('the web app and Android are unchanged: the web tip page, whatever the storefront', () => {
+    expect(tipWaysFor('web', false, null)).toEqual(['web']);
+    expect(tipWaysFor('android', false, null)).toEqual(['web']);
+    expect(tipWaysFor('android', false, 'GBR')).toEqual(['web']);
+  });
+  it('the words an iPhone outside the United States can show never point to paying on the web', () => {
+    /* only these are shown with the web tip page itself (tip.tsx, tip.ts, tip-store.ts), on a storefront that allows it */
+    const { web: _a, webTitle: _b, webLine: _c, appleOffWeb: _d, webClosed: _e, ...sheet } = core.TIP_WORDS.sheet;
+    const { none: _f, ...sync } = core.SUP_SYNC_WORDS;
+    const shown = JSON.stringify([{ ...core.TIP_WORDS, sheet }, sync]);
+    expect(shown).not.toMatch(/(tip|tipped|pay|paid) (on|through) the web|web tip|stripe|website|tip page/i);
+    expect(core.SUP_SYNC_WORDS.none).toMatch(/stripe/i);
+  });
+  it('the Daybook Pattern sheet off the United States storefront: no web, and no dollar amounts in its words', () => {
+    /* web, webTitle, webLine, webClosed and termsWeb show only with the web page itself (pattern-sheet.tsx) */
+    const { web: _a, webTitle: _b, webLine: _c, webClosed: _d, termsWeb: _e, restoreNoneWeb: _f, ...sheet } = core.PAT_WORDS.sheet;
+    const shown = JSON.stringify(sheet);
+    expect(shown).not.toMatch(/(pay|paid|tip|tipped) (on|through) the web|stripe|website/i);
+    /* Apple shows each country's price; a fixed dollar figure would be wrong in pounds or Australian dollars */
+    expect(JSON.stringify([sheet.small, sheet.more])).not.toMatch(/\$\d/);
   });
 });

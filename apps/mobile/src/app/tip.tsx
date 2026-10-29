@@ -1,8 +1,8 @@
 /* The tip sheet: the one place a tip is offered (Today's Support button and card, the row on More, a locked page). The why
    at the top, what a tip unlocks in the middle, the three tips low where the thumb is, each with its price as the store
    gives it (lib/tip.ts). On iPhone, Apple's in-app purchase is first, and a quiet link under the tips opens the choice of
-   the same three on the web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and
-   3.1.3); one pick opens it. Anything that goes wrong is said here, under the tips: on iPhone the toast sits under a
+   the same three on the web tip page, which takes Apple Pay too (on the United States storefront only, Guidelines 3.1.1(a)
+   and 3.1.3; core tipWaysFor); one pick opens it. Anything that goes wrong is said here, under the tips: on iPhone the toast sits under a
    sheet, where no one would see it. A supporter sees a thank-you instead, with a quiet way to tip again. A tip that goes
    through ends in a short celebration. The payments side saves the record (Settings.sup); this page only shows it. Once
    Daybook Pattern is on sale, this route is its sheet instead, which holds the tips too (components/pattern-sheet.tsx), and

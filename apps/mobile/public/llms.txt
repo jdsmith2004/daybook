@@ -39,6 +39,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 
 - [About Daybook](https://d3c9g6kent5bsr.cloudfront.net/about.html): what it is and how it compares
 - [Open Daybook in a browser](https://d3c9g6kent5bsr.cloudfront.net/)
+- [Guides](https://d3c9g6kent5bsr.cloudfront.net/guides/index.html): plain answers to what people ask while quitting porn (stopping an urge now, after a relapse, nights, willpower, how long it takes), drawn from Daybook's lessons
 - [Support and common questions](https://d3c9g6kent5bsr.cloudfront.net/support.html)
 - [Privacy policy](https://d3c9g6kent5bsr.cloudfront.net/privacy.html)
 - [Source code (public)](https://github.com/jdsmith2004/daybook)

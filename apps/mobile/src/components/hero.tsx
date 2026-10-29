@@ -12,7 +12,7 @@
    and a slip never touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen
    feeding the flame.
    Every form is drawn the same size (big-flame.tsx): the growth shows in the form. On a short phone the sky is shorter
-   (lib/today-size.ts), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
+   (lib/today-size.ts; Today passes its height), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
    that hold, one quiet line under the sky says the slip is logged and the days stay (core heroSlipLine). */
 import { CHEERS, emblemScene, heroNumber, heroSlipLine, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,20 +32,38 @@ import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
-import { SKY_MAX, useTodaySize } from '@/lib/today-size';
+import { SKY_MAX } from '@/lib/today-size';
 
 /** the flame's drawing, as a share of the sky's height, and how far down it starts */
 const FLAME_OF = 206 / SKY_MAX;
 const FLAME_TOP = 2;
 
-export function Hero({ g, snap, tk, now, children }: { g: GameState; snap: Snapshot; tk: string; now: number; children?: React.ReactNode }) {
+export function Hero({
+  g,
+  snap,
+  tk,
+  now,
+  sky = SKY_MAX,
+  compact,
+  children,
+}: {
+  g: GameState;
+  snap: Snapshot;
+  tk: string;
+  now: number;
+  /** the sky's height (lib/today-size.ts) */
+  sky?: number;
+  /** a short phone: a little less room around the next step (lib/today-size.ts) */
+  compact?: boolean;
+  children?: React.ReactNode;
+}) {
   const c = useTheme();
   const line = heroSlipLine(snap.days, snap.settings!, tk, now);
   return (
     <Card style={s.card}>
-      <Sky g={g} snap={snap} tk={tk} now={now} />
+      <Sky g={g} snap={snap} tk={tk} now={now} height={sky} />
       {children || line ? (
-        <View style={s.under}>
+        <View style={[s.under, compact && s.underCompact]}>
           {line ? <Text style={[s.slipLine, { color: c.muted }]}>{line}</Text> : null}
           {children}
         </View>
@@ -75,13 +93,13 @@ const STARS: [number, number, number][] = [
   [38, 150, 2],
 ];
 
-function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
+function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: string; now: number; height: number }) {
   const c = useTheme();
   const { say } = useStore();
   const reduce = useReducedMotion();
   const lvl = g.level;
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
-  const SCENE_H = useTodaySize().sky;
+  const SCENE_H = height;
   const FLAME = Math.round(SCENE_H * FLAME_OF);
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
@@ -362,6 +380,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
   },
   under: { padding: 14 },
+  underCompact: { paddingVertical: 10 },
   slipLine: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, textAlign: 'center', marginTop: -2, marginBottom: 10 },
   ring: { position: 'absolute', top: 12, left: 12, alignItems: 'flex-start', gap: 3 },
   ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16, marginTop: 2 },

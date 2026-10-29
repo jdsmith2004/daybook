@@ -915,8 +915,9 @@ export default function Setup() {
           <>
             <Head h="Here is your plan." />
             <Middle>
-              {/* the flame first, big and alive, with Day 1 beside it; then the plan builds itself, row by row, top to bottom */}
-              <FitArt min={0.9}>
+              {/* the flame first, big and alive, with Day 1 beside it; then the plan builds itself, row by row, top to bottom.
+                  On a short phone the flame gives up room before Hold to commit leaves the screen. */}
+              <FitArt min={SHORT ? 0.7 : 0.9}>
                 <Appear by={12} delay={PLAN_AT} duration={320}>
                   <View style={s.day1}>
                     <PlanFlame lit={lit} size={SHORT ? 92 : 124} />
@@ -1220,7 +1221,7 @@ export default function Setup() {
       }>
       <Stage key={pg.id} dir={dir}>
         {/* every page fills the width, and its Dock sits at the bottom */}
-        <View style={s.page}>
+        <View style={[s.page, SHORT && pg.k === 'review' && s.pageShort]}>
           {body}
           {foot ? <Dock>{foot}</Dock> : null}
         </View>
@@ -2000,6 +2001,8 @@ const s = StyleSheet.create({
   lockW: { fontFamily: font.body, fontSize: 12, alignSelf: 'flex-start' },
   c: { textAlign: 'center' },
   page: { flexGrow: 1, alignSelf: 'stretch', gap: 14 },
+  /* the review page on a short phone: the plan, the flame and Hold to commit all on one screen */
+  pageShort: { gap: 8 },
   head: { gap: 8, alignSelf: 'stretch' },
   cheerQ: { fontFamily: font.bodyBold, fontSize: SHORT ? 19 : 21, lineHeight: SHORT ? 25 : 28, alignSelf: 'stretch' },
   title26: { fontSize: 26, lineHeight: 31 },

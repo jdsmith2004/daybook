@@ -3,57 +3,54 @@
    inside it (one tap each, or none), the same as SOS and the pause.
 
    After "I slipped" the slip is saved at once, and the comeback starts (core slip.ts has the research). One tap a page,
-   and the X closes it at any point with everything given so far kept:
-   1. Rekindle: one big button to press and hold until the embers catch. Once it is held: this is a slip, and you can
-      recover from it, and one line on what it did not take (core rkLitLine: a long run's days are yours for good, or
-      what is still yours). A long run is never "down to embers" (rkHoldWords). The run question for a slip that ends
-      a run of 7 days or more is not asked here: the sunrise check asks it the next morning (core rkAskOpen).
-   2. Before it happened: the four colors open the field of feelings (the one SOS uses), and the word comes back big,
-      breathing in its own color, with what that feeling was asking for, what porn gave it instead, and the person's own
-      pattern. It goes on the slip (fb), and sets its trigger when there is none and the feeling plainly is one (core
-      feelTrigOf), so the patterns learn from slips too.
-   3. And now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
-      record of it (fa). Still pulled toward it leads to SOS.
-   4. Next time: when you feel that, what you will do instead. One tap saves the if-then plan as an after-slip
-      talk-through (pr 1, fw), which Today asks about the next morning. Then the finish, with the plan to say once.
+   and the X closes it at any point with everything given so far kept. Rethought on October 27, 2026 (the owner: do not
+   ask how they felt before a slip, the answer is the urge itself):
+   1. Rekindle: one big button to press and hold until the fire catches (components/hearth.tsx). Once it is held: this
+      is a slip, and you can recover from it, and one line on what it did not take (core rkLitLine: a long run's days
+      are yours for good, or what is still yours). A long run is never "down to embers" (rkHoldWords). The run question
+      for a slip that ends a run of 7 days or more is not asked here: the sunrise check asks it the next morning (core
+      rkAskOpen).
+   2. Right now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
+      record of it (fa). Still pulled toward it leads to SOS; like giving up shows the 988 line too.
+   3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
+      alone): the same answers as "What set it off?" after an urge, so slips and urges are counted together.
+   4. Next time: "When it is late and I am in bed with my phone, I will ...". One tap saves the if-then plan as an
+      after-slip talk-through (pr 1, ft), which Today asks about the next morning. Then the finish, by the fire, with
+      the plan to say once.
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
-   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slBefore): the
-   slip is saved already, so there is nothing to hold, and the look back ends warm, with the flame and a plan.
+   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow): the
+   slip is saved already, so there is nothing to hold, and the look back ends warm, with the fire and a plan.
    Rekindle's quest and points come from the log itself (core rkOf), so they go on exactly as before: one small thing
    waits on Today, the sunrise check the next morning. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
+  addOption,
   clockOf,
   didIds,
   entryLabel,
   gameCompute,
   moveEvent,
+  optList,
+  OPT_MAX,
   patchEvent,
   removeEvent,
-  rkEmbers,
   rkHoldWords,
   rkLitLine,
   rkRunBefore,
-  feelAt,
-  feelFam,
-  feelPos,
-  feelTrigOf,
-  famOfWord,
   newTalk,
   saveTalk,
-  SLIP_ASKS,
-  SLIP_HELP_WORDS,
   SLIP_NEED,
   SLIP_NOW,
   SLIP_NOW_SAYS,
-  slipBeforeLine,
   slipMoment,
   slipMoves,
   slipNowLine,
+  slipWhen,
   talkHeld,
   talkHeldTag,
   talkMoveName,
   TALK_OWN_LEN,
+  TALK_WHEN,
   talkPlanLine,
   urNight,
   whenEntry,
@@ -73,11 +70,11 @@ import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
-import { BigOption, Link } from '@/components/choices';
+import { AddOwn, AddTile, BigOption, Link, Tiles } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { EmberArt, HoldButton, useEmberHold } from '@/components/rekindle';
-import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
-import { ChoiceRows, FeelQuads, FeelShape } from '@/components/slip';
+import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
+import { Dock, Middle, SceneFrame } from '@/components/scene';
+import { ChoiceRows } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
 import { OwnField } from '@/components/own';
 import { RodeOut } from '@/components/rode-out';
@@ -91,9 +88,9 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'won' | 'slHold' | 'slBefore' | 'slFeel' | 'slNow' | 'slNowSay' | 'slPlan' | 'slDone';
+type Step = 'q1' | 'won' | 'slHold' | 'slNow' | 'slNowSay' | 'slBefore' | 'slPlan' | 'slDone';
 /* the comeback's dots: each page counts as the step it belongs to */
-const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slBefore: 1, slFeel: 1, slNow: 2, slNowSay: 2, slPlan: 3, slDone: 4 };
+const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slNow: 1, slNowSay: 1, slBefore: 2, slPlan: 3, slDone: 4 };
 /* the icons and shapes of the feelings afterwards, and of the plan's moves */
 const NOW_SHAPE: Record<RkFeel, ShapeKind> = {
   shame: 'cookie12',
@@ -156,11 +153,11 @@ export default function Log() {
     params.from === 'urge' || params.from === 'pause' || params.from === 'talk' ? params.from : 'hero',
   );
   /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves. One from a look back starts
-     at the feeling before it (the slip was saved when it was looked back on). An urge ridden out is the celebration. */
-  const [step, setStep] = useState<Step>(() =>
-    handed ? (params.outcome === 'slipped' ? (from === 'talk' && params.step === 'slBefore' ? 'slBefore' : 'slHold') : 'won') : 'q1',
-  );
-  const [hist, setHist] = useState<Step[]>(() => (handed && step !== 'slBefore' ? ['q1'] : []));
+     at how it feels now (the slip was saved when it was looked back on; an older link may still say slBefore). An urge
+     ridden out is the celebration. */
+  const fromLook = from === 'talk' && (params.step === 'slNow' || params.step === 'slBefore');
+  const [step, setStep] = useState<Step>(() => (handed ? (params.outcome === 'slipped' ? (fromLook ? 'slNow' : 'slHold') : 'won') : 'q1'));
+  const [hist, setHist] = useState<Step[]>(() => (handed && !fromLook ? ['q1'] : []));
   const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));
   const [outcome, setOutcome] = useState<Outcome | null>(() => (handed ? (params.outcome as Outcome) : null));
   const [pts0, setPts0] = useState(() => (handed ? Number(params.pts0) || 0 : 0));
@@ -171,10 +168,13 @@ export default function Log() {
   /* the plan in the person's own words is being typed */
   const [ownPlan, setOwnPlan] = useState(false);
   const [lit, setLit] = useState(false);
-  const hold = useEmberHold(lit, () => {
+  const hold = useHearthHold(lit, () => {
     setLit(true);
     AccessibilityInfo.announceForAccessibility(rkHoldWords(true, false).h);
   });
+  /* adding the person's own answer to "What was going on?", and showing the whole list */
+  const [adding, setAdding] = useState(false);
+  const [allOpts, setAllOpts] = useState(false);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
   if (!st || !g) return <Redirect href="/" />;
@@ -185,6 +185,7 @@ export default function Log() {
     if (!back) setHist((h) => h.concat(step));
     setStep(next);
     setOwnPlan(false);
+    setAdding(false);
   };
   const goBack = () => {
     const h = hist.slice();
@@ -193,6 +194,7 @@ export default function Log() {
     setHist(h);
     setStep(prev);
     setOwnPlan(false);
+    setAdding(false);
   };
 
   /* the first answer: saves the entry (or changes it, when coming back) */
@@ -232,6 +234,19 @@ export default function Log() {
   const patch = (p: Partial<DayEvent>) => {
     if (!evId) return;
     update((s) => ({ ...s, days: patchEvent(s.days, date, evId, p) }));
+  };
+  /* the person's own answer to "What was going on?": kept in their list, set on the slip, then on to the plan */
+  const saveOwn = (text: string) => {
+    const r = addOption(st, 'trig', text);
+    if (!r.id) {
+      say(text.trim() ? 'That list is full. Remove one in My plan, under Lists, first.' : 'Type a few words first.');
+      return;
+    }
+    const id = r.id;
+    update((s) => ({ ...s, settings: r.st, days: evId ? patchEvent(s.days, date, evId, { trigger: id }) : s.days }));
+    setAdding(false);
+    buzz('tap');
+    go('slPlan');
   };
   const undo = () => {
     /* a mistaken log taken back: its points go with it (they were never really earned) */
@@ -282,30 +297,27 @@ export default function Log() {
 
   /* ---------- the saved entry, with Undo, on the first page of the comeback ---------- */
   const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} /> : null;
-  /* the progress dots of a slip: the hold, before it happened, now, next time (all four filled at the finish) */
+  /* the progress dots of a slip: the hold, now, just before, next time (all four filled at the finish) */
   const slDots = () => {
     const i = SL_DOT[step] ?? 0;
     return { n: 4, i, label: i >= 4 ? 'All done' : 'Step ' + (i + 1) + ' of 4' };
   };
   /* the comeback's pages are night-colored late, like SOS */
   const slNight = night || urNight(new Date(now).getHours());
-  /* the feeling named for before it, and its place in the field */
-  const fb = ev?.fb || null;
-  const fbPos = feelPos(fb);
-  const fam = famOfWord(fb);
+  /* what was going on just before it, as the plan's "when" */
+  const slWhen = slipWhen(ev?.trigger);
   /* saving the plan: a new pick replaces the one made a moment ago */
   const savePlan = (m: TalkMove | null, own?: string) => {
-    if (!fb || !fam) return;
     const t: Talk = {
       ...(plan || newTalk(Date.now())),
       p: 'change',
       pr: 1,
-      n: SLIP_NEED[fam],
+      n: SLIP_NEED[slWhen],
       m: m ? [m] : [],
       mx: own ? [own] : undefined,
       mo: slipMoment(ev?.time),
       at: null,
-      fw: fb,
+      ft: slWhen,
     };
     if (!plan) count('talk_done');
     setPlan(t);
@@ -380,31 +392,29 @@ export default function Log() {
       </>
     );
   } else if (step === 'slHold') {
-    /* 1. press and hold to rekindle: the only way on. Once it is held, the flame, the heading and one line on what the slip
-       did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026) */
-    const e = rkEmbers(snap.days, st, snap.reviews, tk, date, lit, !!ev?.sp);
+    /* 1. press and hold to rekindle: the only way on. Once it is held, the fire, the heading and one line on what the slip
+       did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026). The saved pill
+       keeps its place once lit, so nothing on the page jumps at the moment it catches. */
     const w = rkHoldWords(lit, !!ev?.sp, rkRunBefore(snap.days, st, tk, date));
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
-        {lit ? null : saved}
-        <EmberArt level={Math.max(1, e.level)} hold={hold} />
-        <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
-          {w.h}
-        </T>
-        {lit ? (
-          <Appear delay={350} by={6}>
-            <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T>
-          </Appear>
-        ) : (
-          <T style={s.center}>{w.p}</T>
-        )}
+        <View style={{ opacity: lit ? 0 : 1 }} pointerEvents={lit ? 'none' : 'auto'}>
+          {saved}
+        </View>
+        <Hearth hold={hold} />
+        <Appear key={lit ? 'lit' : 'low'} delay={lit ? 650 : 0} by={lit ? 10 : 0} duration={lit ? 420 : 0} style={s.words}>
+          <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
+            {w.h}
+          </T>
+          {lit ? <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T> : <T style={s.center}>{w.p}</T>}
+        </Appear>
         <Dock>
           {lit ? (
-            <Appear delay={600} by={10}>
-              <Button label="Next" onPress={() => go('slBefore')} />
+            <Appear delay={1300} by={10}>
+              <Button label="Next" kind="warm" onPress={() => go('slNow')} />
             </Appear>
           ) : (
             <HoldButton hold={hold} />
@@ -414,79 +424,8 @@ export default function Log() {
     );
     /* when it happened can still be changed here, before anything else is asked */
     if (!lit && ev) footer = <Link label="Change time" tone="muted" onPress={() => setWhenOpen(true)} />;
-  } else if (step === 'slBefore') {
-    /* 2. before it happened: the four colors, then the field, then the word */
-    sky = slNight ? 'night' : 'sky';
-    title = 'Rekindle';
-    dots = slDots();
-    body = (
-      <>
-        <T v="eyebrow" tone="muted" style={s.center}>
-          Before it happened
-        </T>
-        <T v="title" style={s.h} accessibilityRole="header">
-          What were you feeling?
-        </T>
-        <T tone="muted" style={s.center}>
-          Often the urge is a way out of a feeling. Tap the color closest to yours.
-        </T>
-        <Dock>
-          <FeelQuads
-            start={fbPos}
-            onPick={(r, c) => {
-              const w = feelAt(r, c)!.w;
-              const f = feelFam(r, c)!;
-              /* the feeling also names the slip's trigger, when it has none yet and the feeling plainly is one (core
-                 feelTrigOf: being ashamed is never filed as stress) */
-              const tr = feelTrigOf(f);
-              patch({ fb: w, ...(ev && !ev.trigger && tr ? { trigger: tr } : {}) });
-              buzz('save');
-              AccessibilityInfo.announceForAccessibility('You felt ' + w.toLowerCase() + '.');
-              go('slFeel');
-            }}
-          />
-        </Dock>
-      </>
-    );
-    footer = <Link label="Skip" tone="muted" onPress={() => go('slNow')} />;
-  } else if (step === 'slFeel' && fb && fbPos && fam) {
-    /* the word, breathing in its own color, and what it was asking for */
-    const ask = SLIP_ASKS[fam];
-    const mine = slipBeforeLine(snap.days, evId, fam);
-    sky = slNight ? 'night' : 'sky';
-    title = 'Rekindle';
-    dots = slDots();
-    body = (
-      <>
-        <T v="eyebrow" tone="muted" style={s.center}>
-          Before it happened, you felt
-        </T>
-        <Text style={[s.word, { color: slNight ? '#FFFFFF' : c.ink }]} accessibilityRole="header">
-          {fb}
-        </Text>
-        <View style={s.middle}>
-          <FeelShape r={fbPos.r} c={fbPos.c} />
-        </View>
-        <Appear delay={400} by={12} duration={360} style={[s.card, { backgroundColor: slNight ? 'rgba(255,255,255,0.10)' : c.surface }]}>
-          <T v="label">{ask.h}</T>
-          <T v="small" style={{ lineHeight: 20 }}>
-            {ask.t}
-          </T>
-          {mine ? (
-            <T v="small" tone="muted" style={{ lineHeight: 20, marginTop: 4 }}>
-              {mine}
-            </T>
-          ) : null}
-        </Appear>
-        {SLIP_HELP_WORDS.indexOf(fb) >= 0 ? <HelpFoot /> : null}
-        <Dock>
-          <Button label="Next" onPress={() => go('slNow')} />
-        </Dock>
-      </>
-    );
-    footer = <Link label="Pick another feeling" tone="muted" onPress={goBack} />;
-  } else if (step === 'slNow' || step === 'slFeel') {
-    /* 3. and now: how it feels a few minutes later */
+  } else if (step === 'slNow') {
+    /* 2. right now: how it feels a few minutes later */
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
@@ -512,7 +451,7 @@ export default function Log() {
         </Dock>
       </>
     );
-    footer = <Link label="Skip" tone="muted" onPress={() => go(fb ? 'slPlan' : 'slDone')} />;
+    footer = <Link label="Skip" tone="muted" onPress={() => go('slBefore')} />;
   } else if (step === 'slNowSay') {
     /* the kind, true answer to how it feels, and their own record of it */
     const fa = (ev?.fa || 'okay') as RkFeel;
@@ -520,7 +459,7 @@ export default function Log() {
     const say = SLIP_NOW_SAYS[fa];
     const tn = toneOf(c, row[4]);
     const mine = slipNowLine(snap.days, evId, fa);
-    const next = () => go(fb ? 'slPlan' : 'slDone');
+    const next = () => go('slBefore');
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
@@ -547,6 +486,8 @@ export default function Log() {
             </Appear>
           ) : null}
         </Middle>
+        {/* giving up can mean more than this slip: the free line to talk to someone */}
+        {fa === 'giveup' ? <HelpFoot /> : null}
         <Dock>
           {fa === 'pull' ? (
             <>
@@ -562,10 +503,49 @@ export default function Log() {
       </>
     );
     footer = fa === 'pull' ? null : <Link label="Pick another" tone="muted" onPress={goBack} />;
-  } else if (step === 'slPlan' && fb && fam) {
-    /* 4. next time: when you feel that, what you will do instead */
+  } else if (step === 'slBefore') {
+    /* 3. just before: the situation, one tap (the same answers as after an urge, so they are counted together) */
+    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
+    const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="eyebrow" tone="muted" style={s.center}>
+          Just before
+        </T>
+        <T v="title" style={s.h} accessibilityRole="header">
+          What was going on?
+        </T>
+        <T tone="muted" style={s.center}>
+          Pick the closest. One tap.
+        </T>
+        {adding ? (
+          <AddOwn kind="trig" onSave={saveOwn} onCancel={() => setAdding(false)} />
+        ) : (
+          <Dock>
+            <Tiles
+              list={L.list}
+              cur={ev?.trigger || null}
+              onPick={(v) => {
+                patch({ trigger: v === 'none' ? null : v });
+                buzz('tap');
+                go('slPlan');
+              }}
+              extra={full ? null : <AddTile label="Add your own" onPress={() => setAdding(true)} />}
+            />
+          </Dock>
+        )}
+        {L.hidden && !allOpts && !adding ? <Link label="Show all options" onPress={() => setAllOpts(true)} /> : null}
+      </>
+    );
+    footer = adding ? null : <Link label="Skip" tone="muted" onPress={() => go('slPlan')} />;
+  } else if (step === 'slPlan') {
+    /* 4. next time: in that situation, what you will do instead */
     const held = talkHeld(snap.days);
-    const moves = slipMoves(fam, slNight || slipMoment(ev?.time) === 'late', held);
+    const moves = slipMoves(slWhen, slNight || slipMoment(ev?.time) === 'late', held);
+    const mo = slipMoment(ev?.time);
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
@@ -575,10 +555,18 @@ export default function Log() {
           Next time
         </T>
         <T v="title" style={s.h} accessibilityRole="header">
-          {'When you feel ' + fb.toLowerCase() + ', what will you do instead?'}
+          What will you do instead?
         </T>
+        <View style={s.plan}>
+          <T style={[s.center, s.planT]}>
+            {'When ' +
+              TALK_WHEN[slWhen] +
+              (slWhen !== 'late' && mo === 'late' ? ' late at night' : slWhen !== 'late' && mo === 'evening' ? ' in the evening' : '') +
+              ', I will …'}
+          </T>
+        </View>
         <T tone="muted" style={s.center}>
-          Pick one. It becomes your plan, and Daybook asks how it held tomorrow morning.
+          Pick one. Daybook asks how it held tomorrow morning.
         </T>
         {ownPlan ? (
           /* the box and its button stay near the top, where the keyboard does not cover them */
@@ -612,31 +600,39 @@ export default function Log() {
       </>
     );
     footer = ownPlan ? null : <Link label="Skip" tone="muted" onPress={() => go('slDone')} />;
-  } else if (step === 'slDone' || step === 'slPlan') {
-    /* the finish: the flame, and the plan to say once */
+  } else if (step === 'slDone') {
+    /* the finish: the fire, still burning, and the plan to say once */
     const line = plan ? talkPlanLine(plan) : null;
-    sky = slNight ? 'night' : 'sun';
+    sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
-        <Finish
-          level={Math.max(1, g.level.n)}
-          title={line ? 'Your plan for next time' : 'You came back.'}
-          text={
-            line
-              ? '“' + line + '”\nSay it once, out loud or in your head, so it comes back to you at the moment.'
-              : 'Logged honestly, and looked at. That is how the next one gets easier.'
-          }
-          tone="sun"
-        />
-        {gain ? (
-          <T v="label" tone="mintText" style={s.center}>
-            {'+' + gain + ' points'}
+        <Hearth hold={hold} />
+        <View style={s.words}>
+          <T v="title" style={s.h} accessibilityRole="header">
+            {line ? 'Your plan for next time' : 'You came back.'}
           </T>
-        ) : null}
+          {line ? (
+            <>
+              <View style={s.plan}>
+                <T style={[s.center, s.planT]}>{'“' + line + '”'}</T>
+              </View>
+              <T tone="muted" style={s.center}>
+                Say it once, out loud or in your head, so it comes back to you at the moment.
+              </T>
+            </>
+          ) : (
+            <T style={s.center}>Logged honestly, and looked at. That is how the next one gets easier.</T>
+          )}
+          {gain ? (
+            <T v="label" tone="mintText" style={s.center}>
+              {'+' + gain + ' points'}
+            </T>
+          ) : null}
+        </View>
         <Dock>
-          <Button label="Done" onPress={closeAll} />
+          <Button label="Done" kind="warm" onPress={closeAll} />
         </Dock>
       </>
     );
@@ -678,9 +674,9 @@ const s = StyleSheet.create({
   h: { textAlign: 'center' },
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
-  middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 140 },
-  word: { fontFamily: font.displayBold, fontSize: 44, lineHeight: 50, textAlign: 'center' },
-  card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
+  words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },
+  plan: { alignSelf: 'stretch', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)' },
+  planT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 24 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

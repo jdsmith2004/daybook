@@ -47,17 +47,6 @@ describe('the feeling before and after, on the slip', () => {
 });
 
 describe('the pattern lines', () => {
-  it('says nothing until there is a pattern, then counts the family over the last slips', () => {
-    let days = slipOn({}, K, 's9', '22:10');
-    expect(core.slipBeforeLine(days, 's9', 'fear')).toBeNull();
-    days = slipOn(days, '2026-10-10', 'a', '21:00', { fb: 'Stressed' });
-    expect(core.slipBeforeLine(days, 's9', 'fear')).toBe('Stress or worry came before both of your last 2 slips.');
-    expect(core.slipBeforeLine(days, 's9', 'lonely')).toBe('This is new: your last slip came after something else.');
-    days = slipOn(days, '2026-10-12', 'b', '21:00', { fb: 'Lonely' });
-    days = slipOn(days, '2026-10-14', 'c', '21:00', { fb: 'Anxious' });
-    expect(core.slipBeforeLine(days, 's9', 'fear')).toBe('Stress or worry came before 3 of your last 4 slips.');
-  });
-
   it('shows how it felt afterwards before, only when it has happened before and never for okay', () => {
     let days = slipOn({}, K, 's9', '22:10');
     expect(core.slipNowLine(days, 's9', 'flat')).toBeNull();
@@ -69,18 +58,41 @@ describe('the pattern lines', () => {
 });
 
 describe('the plan for next time', () => {
-  it('offers four moves that fit the feeling, early bed at night, the device out of reach, and what held first', () => {
-    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'people', 'out', 'away']);
-    expect(core.slipMoves('shame', false)).toEqual(['kind', 'tell', 'write', 'walk', 'away']);
-    expect(core.slipMoves('anger', false)[0]).toBe('move');
+  it('offers four moves that fit what was going on, early bed at night, the device out of reach, and what held first', () => {
+    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'people', 'kind', 'away']);
+    expect(core.slipMoves('late', false)).toEqual(['away', 'bed', 'shower', 'breathe']);
+    expect(core.slipMoves('stress', false)[0]).toBe('walk');
     /* late at night, going out is swapped for something that works at home, and early bed is offered */
-    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'show', 'bed', 'away']);
-    expect(core.slipMoves('low', true)).toEqual(['text', 'kind', 'shower', 'bed', 'away']);
-    expect(core.slipMoves('tired', true)).toEqual(['bed', 'nap', 'shower', 'breathe', 'away']);
+    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'kind', 'bed', 'away']);
+    expect(core.slipMoves('bored', true)).toEqual(['hands', 'show', 'move', 'bed', 'away']);
     expect(core.slipMoves('lonely', false, { people: { held: 2, n: 3 } })[0]).toBe('people');
-    /* every family's moves are real moves, with words */
-    const fams: core.FeelFam[] = ['lonely', 'shame', 'anger', 'fear', 'bored', 'tired', 'low', 'bright', 'calm'];
-    for (const f of fams) for (const night of [false, true]) for (const m of core.slipMoves(f, night)) expect(core.TALK_MOVES[m][0]).toBeTruthy();
+    /* every situation's moves are real moves, with words */
+    for (const w of Object.keys(core.TALK_WHEN) as core.TalkWhen[])
+      for (const night of [false, true]) for (const m of core.slipMoves(w, night)) expect(core.TALK_MOVES[m][0]).toBeTruthy();
+  });
+
+  it('reads the situation from the slip: a built-in answer, or the urge itself', () => {
+    expect(core.slipWhen('late')).toBe('late');
+    expect(core.slipWhen('scroll')).toBe('scroll');
+    for (const t of ['other', 'none', 'u_abc123', null, undefined, 'toString']) expect(core.slipWhen(t)).toBe('urge');
+  });
+
+  it('reads as an if-then plan from what was going on', () => {
+    const t = {
+      ...core.newTalk(1000),
+      p: 'change' as const,
+      pr: 1 as const,
+      n: 'rest' as const,
+      m: ['away'] as core.TalkMove[],
+      mo: 'late',
+      ft: 'late' as const,
+    };
+    expect(core.talkPlanLine(t)).toBe('When it is late and I am in bed with my phone, I will put the device out of reach.');
+    expect(core.talkPlanLine({ ...t, ft: 'bored', mo: 'evening', m: ['hands'] })).toBe('When I am bored in the evening, I will start something with my hands.');
+    expect(core.talkPlanLine({ ...t, ft: 'urge', mo: null, m: ['walk'] })).toBe('When the urge comes, I will walk it off.');
+    expect(core.normTalk(t)!.ft).toBe('late');
+    expect(core.normTalk({ ...t, ft: 'nope' as core.TalkWhen })).not.toHaveProperty('ft');
+    expect(core.normTalk({ ...t, ft: 'toString' as core.TalkWhen })).not.toHaveProperty('ft');
   });
 
   it('takes a plan in the person own words', () => {
@@ -129,14 +141,10 @@ describe('the plan for next time', () => {
 });
 
 describe('the words', () => {
-  it('are plain, with no contractions, and every feeling family and feeling afterwards has its answer', () => {
-    const fams: core.FeelFam[] = ['lonely', 'shame', 'anger', 'fear', 'bored', 'tired', 'low', 'bright', 'calm'];
-    for (const f of fams) {
-      expect(core.SLIP_ASKS[f].h.length).toBeGreaterThan(0);
-      expect(core.SLIP_NEED[f]).toBeTruthy();
-    }
+  it('are plain, with no contractions, and every situation and feeling afterwards has its words', () => {
+    for (const w of Object.keys(core.TALK_WHEN) as core.TalkWhen[]) expect(core.SLIP_NEED[w]).toBeTruthy();
     for (const [id] of core.SLIP_NOW) expect(core.SLIP_NOW_SAYS[id].t.length).toBeGreaterThan(0);
-    const all = [...Object.values(core.SLIP_ASKS), ...Object.values(core.SLIP_NOW_SAYS)].flatMap((x) => [x.h, x.t]);
+    const all = [...Object.values(core.SLIP_NOW_SAYS).flatMap((x) => [x.h, x.t]), ...Object.values(core.TALK_WHEN)];
     for (const w of all) {
       expect(w).not.toMatch(noContractions);
       expect(w).not.toMatch(/—/);

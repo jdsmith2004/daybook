@@ -1059,7 +1059,7 @@ export default function TalkIt() {
                 /* on into Rekindle at the feeling before it: the slip is saved already, so there is nothing to hold */
                 router.replace({
                   pathname: '/log',
-                  params: { date: slipped.k, evId: slipped.id, outcome: 'slipped', step: 'slBefore', from: 'talk', pts0: String(slipped.pts0) },
+                  params: { date: slipped.k, evId: slipped.id, outcome: 'slipped', step: 'slNow', from: 'talk', pts0: String(slipped.pts0) },
                 })
               }
             />

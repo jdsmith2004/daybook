@@ -296,6 +296,36 @@ except the Undo right after a mistaken log; the toast carries Undo; the X goes o
 strip with Try again (or Sign in) when sync has not worked for more than a day, and nothing for a short time offline;
 the setup's backup restore uses the shared words, like Settings and the welcome page.
 
+## Logging a slip, second look, and Rekindle rebuilt (the owner, October 27, 2026; on branch slip-again, not merged)
+
+The owner: do not ask how they felt before a slip ("the answer is going to be horny"), the Already happened flow needs
+another look, and the Rekindle celebration is really bad. Two agents researched it.
+
+- **Ask about the situation, not the feeling.** Right after a slip, shame is at its peak and stays up for hours (Henry
+  and others 2025, a daily-log study of porn use). The most reported triggers there were could not sleep, craving,
+  internet or social media, bored, lonely and stressed. "Craving" tells nothing about next time. Marlatt's lapse
+  management turns "I have no willpower" into one situation not handled well, so the useful question is what was
+  going on. The feelings grid is gone. In its place is "What was going on?", with the same answers as after an urge
+  (late in bed, lonely, bored, stressed, tired, scrolling, the person's own, Not sure), so slips and urges count
+  together.
+- **The new order:**
+  1. Rekindle.
+  2. How do you feel now, and its kind answer. Like giving up shows the 988 line.
+  3. Just before.
+  4. Next time: "When it is late and I am in bed with my phone, I will ...", saved with `ft`, the situation.
+  5. The finish, by the fire.
+- **Rekindle, rebuilt (components/hearth.tsx, Reanimated and SVG, no new native module).** Relief, not a prize:
+  - Charred logs on embers that breathe.
+  - A hold whose ticks speed up under the finger.
+  - At the catch: a white flash, a squash, a flame springing past its size, a heartbeat buzz (heavy, then soft), and
+    warm light over the whole screen.
+  - Embers rise and drift, and a few keep rising.
+  - The words land after the fire. Nothing jumps.
+  - With Reduce Motion on, it simply fades up.
+
+Not yet: the first tap on Next after the hold sometimes did not register on the simulator (it did before this change
+too), and Android and VoiceOver are not checked.
+
 ## Logging a slip, rebuilt from the ground up (the owner, October 25, 2026; on branch slip-redesign, not merged)
 
 The goal: after a slip, the person comes back stronger and is less likely to slip again. Three agents researched it

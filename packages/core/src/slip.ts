@@ -18,7 +18,7 @@
 import { addDays, clockOf, eventsOf } from './legacy/core.js';
 import { FEEL_TRIG, FEELINGS, feelFam, type FeelFam } from './feelings';
 import { RK_FEELS, type RkFeel } from './rekindle-learn';
-import type { TalkHeld, TalkMove, TalkNeed } from './talk';
+import { TALK_WHEN, type TalkHeld, type TalkMove, type TalkNeed, type TalkWhen } from './talk';
 import type { Clock, DayEvent, DayKey, Days } from './types';
 
 /** where a feeling word sits in the field (FEELINGS), or null for a word that is not one */
@@ -37,107 +37,54 @@ export function famOfWord(w: string | null | undefined): FeelFam | null {
   return p ? feelFam(p.r, p.c) : null;
 }
 
-/** what the feeling before a slip was asking for, and what the habit gave it instead (like every care screen, these
-    never name it): a heading and one or two lines. Said after the fact, so it is about the action, never the person. */
-export const SLIP_ASKS: Record<FeelFam, { h: string; t: string }> = {
-  lonely: {
-    h: 'Lonely is asking for people.',
-    t: 'The habit gave the look of closeness for a few minutes, and the ache came back. What you were reaching for is real, and a person can answer it.',
-  },
-  shame: {
-    h: 'Shame asks you to hide.',
-    t: 'The habit gave a few minutes of not feeling it, and left more of it after. What helps is the opposite of hiding: kindness, and one honest word to someone.',
-  },
-  anger: {
-    h: 'Anger wants a way out.',
-    t: 'The habit looked like a release, and the anger was still there after. Your body is a faster way to spend it.',
-  },
-  fear: {
-    h: 'Stress was looking for an off switch.',
-    t: 'The habit switched it off for minutes, then the worry came back with one more thing on top. A walk or a long breath out is an off switch that leaves nothing behind.',
-  },
-  bored: {
-    h: 'Boredom is asking for something real.',
-    t: 'The habit is the easiest answer to boredom, not one that fixes it. Something to move, make or see does.',
-  },
-  tired: {
-    h: 'Tired is asking for rest.',
-    t: 'A tired brain loses fights a rested one wins. That is not weakness: everyone is weaker at this hour. Rest is the plan.',
-  },
-  low: {
-    h: 'A low mood is asking for comfort.',
-    t: 'The habit is a short loan: the mood comes back lower. Something small and real lifts it more: a person, a walk, some light.',
-  },
-  bright: {
-    h: 'Good energy wanted somewhere to go.',
-    t: 'Even a good mood can tip into an urge. Give the energy a place you will be glad of tomorrow.',
-  },
-  calm: {
-    h: 'It came even on a calm day.',
-    t: 'That is worth knowing: it was the habit talking, not a need. A habit fades each time it is not fed.',
-  },
-};
+/** the situation just before a slip, as the plan's "when" (talk.ts TALK_WHEN): the slip's trigger when it is one of
+    the built-in ones, or the urge itself (Not sure, Other, an answer of the person's own, or none) */
+export function slipWhen(trigger: string | null | undefined): TalkWhen {
+  return trigger && Object.prototype.hasOwnProperty.call(TALK_WHEN, trigger) ? (trigger as TalkWhen) : 'urge';
+}
 
-/** each family by name, for the pattern line ("Stress or worry came before 3 of your last 4 slips.") */
-const FAM_NAME: Record<FeelFam, string> = {
-  lonely: 'Feeling lonely or hurt',
-  shame: 'Shame or guilt',
-  anger: 'Anger',
-  fear: 'Stress or worry',
-  bored: 'Boredom',
-  tired: 'Being tired',
-  low: 'A low mood',
-  bright: 'High energy',
-  calm: 'A calm mood',
-};
-
-/** the need a family is, in talk-through terms (the plan's n, read by the needs pattern) */
-export const SLIP_NEED: Record<FeelFam, TalkNeed> = {
+/** the need each situation is, in talk-through terms (the plan's n, read by the needs pattern) */
+export const SLIP_NEED: Record<TalkWhen, TalkNeed> = {
+  late: 'rest',
   lonely: 'close',
-  shame: 'escape',
-  anger: 'relief',
-  fear: 'relief',
   bored: 'bored',
+  stress: 'relief',
   tired: 'rest',
-  low: 'escape',
-  bright: 'reward',
-  calm: 'bored',
+  scroll: 'bored',
+  urge: 'relief',
 };
 
-/** the moves that meet each family's need, best first: four each, picked for what that feeling is asking for */
-const FAM_MOVES: Record<FeelFam, TalkMove[]> = {
+/** the moves that fit each situation, best first: four each */
+const WHEN_MOVES: Record<TalkWhen, TalkMove[]> = {
+  /* the phone in bed is the situation itself: put it somewhere else */
+  late: ['away', 'bed', 'shower', 'breathe'],
   /* people, in the plainest ways to reach them */
-  lonely: ['text', 'call', 'people', 'out'],
-  /* the opposite of hiding: kindness, and one person who knows */
-  shame: ['kind', 'tell', 'write', 'walk'],
-  /* spend the charge through the body */
-  anger: ['move', 'walk', 'shower', 'write'],
-  /* turn the alarm down, then get it out of the head */
-  fear: ['breathe', 'walk', 'write', 'shower'],
+  lonely: ['text', 'call', 'people', 'kind'],
   /* something real to do */
   bored: ['fill', 'hands', 'out', 'move'],
+  /* turn the alarm down, then get it out of the head */
+  stress: ['walk', 'breathe', 'shower', 'write'],
   /* rest */
-  tired: ['bed', 'nap', 'shower', 'breathe'],
-  /* small, real lifts: a person, light, a walk, kindness */
-  low: ['people', 'light', 'walk', 'kind'],
-  /* somewhere good for the energy to go */
-  bright: ['out', 'hands', 'move', 'laugh'],
-  /* the habit talking on a calm day: fill the hour */
-  calm: ['fill', 'hands', 'out', 'walk'],
+  tired: ['bed', 'nap', 'away', 'shower'],
+  /* the screen is the slope: step off it */
+  scroll: ['away', 'out', 'hands', 'move'],
+  /* the urge came on its own: distance, and a change of state */
+  urge: ['away', 'walk', 'shower', 'text'],
 };
 
 /* late at night, the moves that mean going out become ones that work at home at that hour */
 const NIGHT_SWAP: Partial<Record<TalkMove, TalkMove>> = { people: 'text', out: 'show', walk: 'shower', fill: 'hands', light: 'kind' };
-/** the moves offered for the plan: the family's four (late at night, the ones that mean going out swap for ones that
-    work at home, and early bed takes the last place when it is not there), then the device out of reach. Moves whose
-    plan held before come first, the most held first (talkHeld). The plan page adds the person's own words after them. */
-export function slipMoves(fam: FeelFam, night: boolean, held: TalkHeld = {}): TalkMove[] {
-  let base = FAM_MOVES[fam].slice();
+/** the moves offered for the plan: the situation's four (late at night, the ones that mean going out swap for ones that
+    work at home, and early bed takes the last place when it is not there), then the device out of reach when it is not
+    there yet. Moves whose plan held before come first, the most held first (talkHeld). The plan page adds the person's
+    own words after them. */
+export function slipMoves(when: TalkWhen, night: boolean, held: TalkHeld = {}): TalkMove[] {
+  let base = WHEN_MOVES[when].slice();
   if (night) {
     base = [...new Set(base.map((m) => NIGHT_SWAP[m] || m))];
     if (base.indexOf('bed') < 0) base = base.slice(0, 3).concat('bed');
   }
-  const all = base.concat('away');
+  const all = [...new Set(base.concat('away'))];
   const h = (m: TalkMove) => held[m]?.held || 0;
   return all.slice().sort((a, b) => h(b) - h(a) || all.indexOf(a) - all.indexOf(b));
 }
@@ -156,20 +103,6 @@ function slipsBut(days: Days, id: string | null): DayEvent[] {
   return (eventsOf(days) as (DayEvent & { key: DayKey })[])
     .filter((e) => e.outcome === 'slipped' && e.id !== id)
     .sort((a, b) => (a.key + (a.time || '')).localeCompare(b.key + (b.time || '')));
-}
-
-/** the person's own pattern for the feeling before: "Stress or worry came before 3 of your last 4 slips." Counted over
-    the last six slips with a feeling named (this one too), once two or more have one; until then, nothing (the page
-    stays short). */
-export function slipBeforeLine(days: Days, id: string | null, fam: FeelFam): string | null {
-  const named = slipsBut(days, id)
-    .filter((e) => famOfWord(e.fb))
-    .slice(-5);
-  if (!named.length) return null;
-  const m = named.length + 1;
-  const n = named.filter((e) => famOfWord(e.fb) === fam).length + 1;
-  if (n === 1) return 'This is new: your last ' + (m - 1 === 1 ? 'slip' : m - 1 + ' slips') + ' came after something else.';
-  return FAM_NAME[fam] + ' came before ' + (n === m ? (m === 2 ? 'both' : 'each') + ' of your last ' + m + ' slips.' : n + ' of your last ' + m + ' slips.');
 }
 
 /** how each feeling afterwards reads in a sentence */

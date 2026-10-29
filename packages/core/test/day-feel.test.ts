@@ -24,9 +24,8 @@ describe('the five answers', () => {
       expect(a.say).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d)\b|\bit[’']s\b/i);
       expect(a.say).not.toMatch(/\b(fail|failed|bad|wrong|should|reset|lost)\b/i);
     }
-    /* the low answers point at SOS, gently */
-    expect(DAY_FEEL[0].say).toMatch(/SOS is one tap/);
-    expect(DAY_FEEL[1].say).toMatch(/SOS is one tap/);
+    /* the low answers offer SOS, gently: urges follow a low mood within hours */
+    expect(DAY_FEEL.filter((a) => a.help).map((a) => a.w)).toEqual(['Rough', 'Low']);
   });
 });
 

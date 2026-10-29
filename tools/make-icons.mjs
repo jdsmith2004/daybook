@@ -10,23 +10,37 @@
  *   favicon.png                  48, the flame badge for the browser tab
  *   notification-icon.png        96, the flame's outline in white on clear (Android's small note icon)
  *   notification-large.png       256, the flame badge on transparent (Android's large note icon)
- * and the pictures in a note (iPhone) into apps/mobile/assets/notify, 512 each:
- *   flame-bright.png, flame-warm.png, flame-steady.png, flame-ember.png, flame-asleep.png
  * and into apps/mobile/public, for the web app on a Home Screen: apple-touch-icon.png (180), icon-192.png, icon-512.png
  * Run it again after the flame changes:  npm run icons  (Node runs the TypeScript file directly)
+ *
+ * The icon in a look, for a time of year (core flame-art.ts IconLook; the calendar is in docs/icon-calendar.md), the way
+ * Duolingo dresses its owl: the look ships as the app's own icon in an App Store update, and the next update puts the
+ * plain flame back. Only the icon changes (icon.png, Android's foreground and the web app's icons); the splash, the
+ * favicon and the note icons stay the flame as it is.
+ *   npm run icons -- --auto                the icon for an update built today (core iconLookFor: the calendar, a few
+ *                                          days ahead for review); run before every App Store build
+ *   npm run icons -- --look halloween      the icon in a look, by hand
+ *   npm run icons                          the plain flame again
  */
 import { chromium } from 'playwright-core';
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { flameIconSvg, flameMaskSvg, flameNoteSvg, flameSvg } from '../packages/core/src/flame-art.ts';
+import { ICON_LOOKS, iconLookFor, flameIconSvg, flameLookSvg, flameMaskSvg, flameSvg } from '../packages/core/src/flame-art.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'apps/mobile/assets/images');
-const notify = join(root, 'apps/mobile/assets/notify');
 const pub = join(root, 'apps/mobile/public');
 const LEVEL = 13;
 const NIGHT = '#1B1550';
+const at = process.argv.indexOf('--look');
+const today = new Date().toLocaleDateString('en-CA');
+const LOOK = process.argv.includes('--auto') ? iconLookFor(today) : at > 0 ? process.argv[at + 1] : null;
+if (process.argv.includes('--auto')) console.log('Icon for an update built ' + today + ': ' + (LOOK || 'the plain flame'));
+if (LOOK && !ICON_LOOKS.includes(LOOK)) {
+  console.error('No look called ' + LOOK + '. The looks: ' + ICON_LOOKS.join(', '));
+  process.exit(1);
+}
 
 function findChromium() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -46,14 +60,19 @@ function findChromium() {
 const badge = (size) => flameSvg(LEVEL, { still: true, size }).replace(/ class="[^"]*"/g, '');
 /* full bleed: the flame alone on its night sky, filling the square */
 const sized = (svg, size) => svg.replace('<svg ', `<svg width="${size}" height="${size}" `);
-const bleed = (size) => sized(flameIconSvg(), size);
+const bleed = (size) => sized(LOOK ? flameLookSvg(LOOK) : flameIconSvg(), size);
+/* Android's foreground in a look: the look's square, round, inside the safe zone (Android draws the night color behind) */
+const androidFg = () =>
+  LOOK
+    ? `<div style="width:1024px;height:1024px;display:grid;place-items:center"><div style="width:600px;height:600px;border-radius:50%;overflow:hidden">${bleed(600)}</div></div>`
+    : `<div style="width:1024px;height:1024px;display:grid;place-items:center">${badge(600)}</div>`;
 
 const jobs = [
   { file: 'icon.png', size: 1024, html: (s) => bleed(s), bg: NIGHT },
   {
     file: 'android-icon-foreground.png',
     size: 1024,
-    html: () => `<div style="width:1024px;height:1024px;display:grid;place-items:center">${badge(600)}</div>`,
+    html: androidFg,
     bg: 'transparent',
   },
   { file: 'android-icon-background.png', size: 1024, html: () => '', bg: NIGHT },
@@ -65,17 +84,12 @@ const jobs = [
   { file: 'icon-512.png', size: 512, html: (s) => bleed(s), bg: NIGHT, dir: pub },
   { file: 'notification-icon.png', size: 96, html: (s) => sized(flameMaskSvg(), s), bg: 'transparent' },
   { file: 'notification-large.png', size: 256, html: (s) => badge(s), bg: 'transparent' },
-  ...['bright', 'warm', 'steady', 'ember', 'asleep'].map((m) => ({
-    file: `flame-${m}.png`,
-    dir: notify,
-    size: 512,
-    html: (s) => sized(flameNoteSvg(m), s),
-    bg: NIGHT,
-  })),
 ];
 
 const browser = await chromium.launch({ executablePath: findChromium() });
-for (const j of jobs) {
+/* in a look, only the icon itself changes */
+const ICON_ONLY = ['icon.png', 'android-icon-foreground.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
+for (const j of LOOK ? jobs.filter((x) => ICON_ONLY.includes(x.file)) : jobs) {
   const page = await browser.newPage({ viewport: { width: j.size, height: j.size } });
   await page.setContent(`<html><body style="margin:0;width:${j.size}px;height:${j.size}px;overflow:hidden;background:${j.bg}">${j.html(j.size)}</body></html>`);
   mkdirSync(j.dir || out, { recursive: true });

@@ -62,6 +62,10 @@ import { useCareSettings, useStore } from '@/lib/store';
 import { font, NightContext, useSkyTheme, useTheme } from '@/lib/theme';
 import { useVoice } from '@/lib/voice';
 
+/* the screenshot studio (EXPO_PUBLIC_SHOTS=1, dev only) can open SOS on its finish, a ride that passed (?won=1) */
+const SHOTS = process.env.EXPO_PUBLIC_SHOTS === '1';
+const SHOT_WON: Rode = { key: '2026-10-16', id: 'shot', mins: 8, moves: ['breathe', 'move', 'ground'], gain: 15, sos: true };
+
 export default function Sos() {
   const { snap, tk, now, update, apply } = useStore();
   /* late at night the screens go dark */
@@ -71,7 +75,7 @@ export default function Sos() {
   const sos = useSos();
   const st = useCareSettings();
   const voice = useVoice();
-  const { practice: pq } = useLocalSearchParams<{ practice?: string }>();
+  const { practice: pq, won: wq } = useLocalSearchParams<{ practice?: string; won?: string }>();
   const [practice] = useState(() => pq === '1');
   /* a practice ride is not counted as an SOS */
   useEffect(() => {
@@ -85,7 +89,7 @@ export default function Sos() {
 
   /* the ride: every move shown in this SOS, oldest first; the last one is showing */
   const [seq, setSeq] = useState<string[]>([]);
-  const [won, setWon] = useState<Rode | null>(null);
+  const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
   /* "How is it now?" after a tool, answered Better: It passed is the next step */

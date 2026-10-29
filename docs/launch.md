@@ -113,8 +113,8 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
   > few taps, learn your pattern, and keep going after a hard day. A slip is data, not a reset: what you build stays yours.
   >
   > What is inside
-  > • SOS: breathe first, then a tool that fits the moment.
-  > • Rekindle: after a slip, a short, honest look back and a small quest that can keep your run.
+  > • SOS: one guided ride that keeps going until the urge passes, with the reason behind every move.
+  > • Rekindle: after a slip, name the feeling underneath it, see what it really gave you, and make one plan for next time.
   > • Your pattern: the hours and moments that are hardest for you, from your own log.
   > • Lessons built on good research, written plainly.
   > • Your own plan: why you are doing this, and what you will do when an urge comes.

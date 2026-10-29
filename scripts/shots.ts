@@ -26,6 +26,9 @@ interface Scene {
   theme?: 'light' | 'dark';
   at?: string;
   scroll?: number;
+  zoom?: number;
+  top?: number;
+  pills?: string;
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -110,7 +113,8 @@ for (const sc of scenes) {
     const errs: string[] = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     const q = new URLSearchParams({ size: key });
-    for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll'] as const) if (sc[k] != null) q.set(k, String(sc[k]));
+    for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll', 'zoom', 'top', 'pills'] as const)
+      if (sc[k] != null) q.set(k, String(sc[k]));
     const file = join(out, key, `${String(count[key]).padStart(2, '0')}-${sc.name}.png`);
     try {
       await page.goto(`http://localhost:${port}/shots?${q}`);

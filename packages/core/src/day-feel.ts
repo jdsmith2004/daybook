@@ -24,12 +24,14 @@ export interface DayFeelAnswer {
   w: string;
   /** what Today says after the tap: warm, and short */
   say: string;
+  /** a rough or low day: urges follow a low mood within hours, so the card offers SOS, one tap away */
+  help?: boolean;
 }
 
 /** the five answers, lowest first. A hard day is honest data, never a fault, so the low words are as kind as the high ones. */
 export const DAY_FEEL: DayFeelAnswer[] = [
-  { n: 1, w: 'Rough', say: 'Thank you for telling. A rough day is still a day you showed up. SOS is one tap.' },
-  { n: 2, w: 'Low', say: 'Thank you for telling. Go gently today. SOS is one tap if you need it.' },
+  { n: 1, w: 'Rough', say: 'Thank you for telling. A rough day is still a day you showed up.', help: true },
+  { n: 2, w: 'Low', say: 'Thank you for telling. Go gently today, and use SOS if an urge comes.', help: true },
   { n: 3, w: 'Okay', say: 'Thank you. Okay is a good place to build from.' },
   { n: 4, w: 'Good', say: 'Good. It is in today’s log.' },
   { n: 5, w: 'Great', say: 'Great. Enjoy it, and notice what helped.' },

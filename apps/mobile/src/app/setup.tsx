@@ -1075,8 +1075,8 @@ export default function Setup() {
                   <Icon name="flame" size={16} color={c.accentInk} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.lockT, { color: nightInk.ink }]}>Daybook</Text>
-                  <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin}</Text>
+                  <Text style={[s.lockT, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.t}</Text>
+                  <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.b}</Text>
                 </View>
                 <Text style={[s.lockW, { color: nightInk.muted }]}>now</Text>
               </View>

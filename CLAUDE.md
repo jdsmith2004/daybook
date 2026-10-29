@@ -100,6 +100,10 @@ need, without letting the screen turn into a list of features.
   - **Build it on a feature branch, look at it on the web and on the iOS simulator, and show the owner on the simulator**
     (a release build, so it runs at real speed). Never merge it before the owner has seen it; this overrides "merge when
     the tests pass" above.
+- **The icon follows the calendar (the owner, October 26, 2026).** Before every App Store build, run `npm run icons --
+--auto`: it sets the app icon to the look for that time of year (Halloween, autumn, winter, New Year, Valentine's) or
+  the plain flame, by date, with no need to ask. Commit the icon and say which one the update carries. The calendar and
+  why it ships this way are in `docs/icon-calendar.md`.
 - **Deploy to AWS when it is worth it, not on every push.** The repository is private (the owner, October 23, 2026),
   so there is no GitHub Pages preview; the AWS site is the only site. It deploys only when the last commit of a push has
   `[deploy]` in its message (or the owner presses Actions, Deploy, Run workflow). Use your judgment: add `[deploy]` once

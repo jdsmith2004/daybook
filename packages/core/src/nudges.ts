@@ -10,14 +10,16 @@
    - The habit takes over: when the person checks in on their own most days, the check-in reminder comes later, as a backup.
    - A kind that is ignored three times in a row steps down (every day, every other day, paused); one that helps steps back up.
      A pause is said on Today, with a choice.
-   - The plan covers today and tomorrow, then five come-back notes (2, 4, 7, 14 and 30 days on) for anyone whose phone
+   - The plan covers today and tomorrow, then three come-back notes (2, 7 and 30 days on) for anyone whose phone
      allows notifications, and is made again each time the app opens. So when the app goes quiet, the reminders stop on
      their own, the notes say Daybook is still here (each with something in it, never only "we miss you"), and then
      nothing comes until the person opens it. They come at the hour the app is usually open (the second pass).
    - After a heavy few days (low mood or high stress in the check-ins), the routine notes offer and do not ask.
-   - Words that learn: each routine kind has three wordings, and the phone keeps how often each one helped. The pick is a
-     small version of Duolingo's bandit: the one that helps most wins, yesterday's loses unless it is clearly better, and a
-     wording never sent gets its turn.
+   - Words that learn: each routine kind has five to eleven wordings, each with a title, and the phone keeps how often each
+     one helped. The pick is a small version of Duolingo's bandit: the one that helps most wins among those not sent in the
+     last week (so no two days in a row read the same), a wording never sent gets its turn, and some fit only a moment (the
+     days in the run, a level, the next form close, morning or evening). The notes carry no picture: on iPhone a picture
+     shows beside the app icon, and the two looked like the same icon twice (the owner, October 25, 2026).
    The words can show on a locked screen, so none of them says what Daybook is for. Checked by test/nudges.test.ts.
    The morning reminder ("Last night's questions") went with the morning questions on October 23, 2026: saved choices
    that still hold it are read and ignored, and a morning note already planned is dropped (normNudgeLog).
@@ -27,7 +29,8 @@
    check-in reminder when that comes within the same hour. Not copied: the guilt. The words stay warm. */
 import { moodOf } from './day';
 import { lessonOpen } from './accounts';
-import { addDays, diffDays, fmtClock, LESSON_WIN_FROM, routineOn } from './legacy/core.js';
+import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
+import { formWord } from './levels';
 import { lessonDoneOn, lessonWalk } from './lessons';
 import { rkActive, rkCard, rkOpen } from './rekindle';
 import { riskAt, riskWindow } from './risk';
@@ -66,11 +69,15 @@ export const NUDGE_DEFAULTS: NudgePrefs = {
 };
 /** when the Sunday review reminder comes */
 export const NUDGE_SUNDAY_AT: Clock = '17:00';
-/** most notifications in one day, and the least time between two */
-export const NUDGE_MAX = 3;
+/** most notifications in one day (one more when the heads-up before hard hours is among them), and the least time between
+    two. Most apps people keep send one a day; several a day wear off and get switched off (docs/plan.md, "Notes with a
+    voice"). */
+export const NUDGE_MAX = 2;
 export const NUDGE_GAP = 60;
+/** the lesson and the check-in this close together are one note */
+export const NUDGE_FOLD = 120;
 /** the come-back notes, in days after the last time the app was open */
-export const NUDGE_BACK = [2, 4, 7, 14, 30];
+export const NUDGE_BACK = [2, 7, 30];
 /** how long the open times are kept, to learn the hour the app is usually open */
 export const NUDGE_OPENS_DAYS = 28;
 /** misses in a row before a kind steps down */
@@ -93,10 +100,6 @@ export const NUDGE_PREF: Record<NudgeLearned, 'lesson' | 'checkin' | 'wind' | 'r
   risk: 'risk',
 };
 
-/** the flame picture a notification carries (apps/mobile/assets/notify; on iPhone only) */
-export type NudgePic = 'flame-bright' | 'flame-warm' | 'flame-steady' | 'flame-ember' | 'flame-asleep';
-export const NUDGE_PICS: NudgePic[] = ['flame-bright', 'flame-warm', 'flame-steady', 'flame-ember', 'flame-asleep'];
-
 export interface Nudge {
   /** kind and day: one of each kind a day */
   id: string;
@@ -104,6 +107,7 @@ export interface Nudge {
   /** the log day it is for */
   d: DayKey;
   at: number;
+  title: string;
   body: string;
   /** the screen a tap opens */
   url: string;
@@ -111,8 +115,6 @@ export interface Nudge {
   quiet?: true;
   /** the Sunday review, folded into the check-in reminder; or the check-in, folded into the lesson reminder */
   also?: 'sunday' | 'checkin';
-  /** its picture: the flame backs off with the person, and rests; it is never shown out */
-  pic: NudgePic;
   /** the wording it carries (NUDGE_WORDS.pick), when it was picked; the mood and kinder words are not learned */
   w?: string;
 }
@@ -174,56 +176,91 @@ function normWords(v: unknown): Record<string, NudgeWordRec> {
   return out;
 }
 
-/** the words, in one place. Plain on purpose: a notification can show on a locked screen. */
+/** a wording: a title and a body. {off} is the screens-off time, {run} the days in the current run, {lvl} the level,
+    {pts} and {form} the points to the next form and its name. when: the wording only fits then (Duolingo's templates
+    "sleep" the same way): run, three days or more in the run; level, level 3 or more; form, the next form 60 points or
+    fewer away; am, a note before noon; pm, a note from 6 PM. */
+export interface NudgeWord {
+  t: string;
+  b: string;
+  when?: 'run' | 'level' | 'form' | 'am' | 'pm';
+}
+/** the words, in one place. The flame speaks, warm and a little playful, after Duolingo's (the owner, October 25, 2026),
+    and never with guilt. Plain on purpose: a notification can show on a locked screen, so none of them says what Daybook
+    is for. Titles stay short (about 30 characters) and bodies under about 90, so a locked screen shows them whole. */
 export const NUDGE_WORDS = {
-  checkin: 'Check in. Under a minute.',
-  sunday: 'A few minutes to look back on your week.',
-  both: 'Check in, and a few minutes to look back on your week.',
+  checkin: { t: 'Quick check-in ✅', b: 'Under a minute. How did today go?' },
+  sunday: { t: 'Your week in review 📅', b: 'A few minutes to look back on your week.' },
+  both: { t: 'Check-in and your week 📅', b: 'Check in, and a few minutes to look back on your week.' },
   /** the lesson reminder with the check-in folded in (both due within the hour) */
-  lessonCi: 'Your lesson and your check-in are ready. A few minutes for both.',
-  wind: (off: string) => 'Wind down. Screens off at ' + off + '.',
-  risk: 'Your hard hours start soon. Two quiet minutes now make them easier.',
+  lessonCi: { t: 'Lesson and check-in ✨', b: 'Your lesson and your check-in are ready. A few minutes for both.' },
+  wind: (off: string) => ({ t: 'Wind-down time 🌙', b: 'Screens off at ' + off + '. Tap for your calm hour.' }),
+  risk: { t: 'Heads-up 🧭', b: 'Your hard hours start soon. Two quiet minutes now make them easier.' },
   /** the first reminder the morning after a slip */
-  after: 'A new day. Everything you built is still here.',
+  after: { t: 'A new day ☀️', b: 'A new day. Everything you built is still here.' },
   /** while the Rekindle quest is open */
-  quest: 'Your Rekindle quest is still open. One small step today.',
-  /** three wordings for each routine kind (the first is the one above); {off} is the screens-off time */
+  quest: { t: 'Your quest is still open 🗺️', b: 'Your Rekindle quest is still open. One small step today.' },
+  /** the wordings for each routine kind; the first of each is the one above */
   pick: {
     lesson: [
-      'Your lesson for today is ready. A few calm minutes.',
-      'A new lesson is waiting for you. It takes a few minutes.',
-      'One short lesson today, and your flame grows a little.',
+      { t: 'Your lesson is ready 📖', b: 'Today’s lesson takes a few minutes. Tap to start.' },
+      { t: 'Psst, it is your flame 🔥', b: 'Today’s lesson is ready. A few minutes, and I grow a little.' },
+      { t: 'Got a few minutes? ⏳', b: 'Your next lesson is short. Tap to read it.' },
+      { t: 'Brain snack time 🍪', b: 'One bite-size lesson, a few minutes. Tap to start.' },
+      { t: 'Knock knock 🚪', b: 'It is today’s lesson. A few minutes, then the day is yours.' },
+      { t: 'New lesson today ✨', b: 'Something new to learn, in a few minutes. Tap to start.' },
+      { t: 'Day {run} ☀️', b: '{run} days of showing up. Today’s lesson takes a few minutes.', when: 'run' },
+      { t: '{pts} points to {form} 🌱', b: 'Today’s lesson gets you there faster. A few minutes.', when: 'form' },
+      { t: 'Level {lvl} and climbing 📈', b: 'Keep going with today’s lesson. A few minutes.', when: 'level' },
+      { t: 'Good morning ☀️', b: 'Start the day with today’s lesson. A few minutes.', when: 'am' },
+      { t: 'Evening lesson 🌙', b: 'Today’s lesson is ready before the day winds down. A few minutes.', when: 'pm' },
     ],
-    checkin: ['Check in. Under a minute.', 'How did today go? A short check-in, under a minute.', 'Your evening check-in is ready. A few taps.'],
-    wind: ['Wind down. Screens off at {off}.', 'An hour to screens-off at {off}. Time to slow down.', 'Screens off at {off}. A calm hour starts now.'],
+    checkin: [
+      { t: 'Quick check-in ✅', b: 'Under a minute. How did today go?' },
+      { t: 'How was today? 🤔', b: 'Check in with a few taps. Under a minute.' },
+      { t: 'Tap, tap, done 👆', b: 'Your check-in takes under a minute, and your flame gets the points.' },
+      { t: 'Hey, it is me again 🔥', b: 'Time to check in. A few taps, under a minute.' },
+      { t: 'Your day in a few taps ✍️', b: 'Check in: what went well, what was hard. Under a minute.' },
+      { t: 'Good day or hard day 🙂', b: 'Both are worth a check-in. Under a minute.' },
+      { t: 'Day {run} check-in 📘', b: 'Save how today went. Under a minute.', when: 'run' },
+      { t: 'Your evening check-in 🌙', b: 'A few taps, under a minute. Then you are done for the day.', when: 'pm' },
+    ],
+    wind: [
+      { t: 'Wind-down time 🌙', b: 'Screens off at {off}. Tap for your calm hour.' },
+      { t: 'One hour to {off} 🛏️', b: 'Time to slow down. Tap to start your wind-down.' },
+      { t: 'Cozy mode 🕯️', b: 'Dim the lights and start your wind-down. Screens off at {off}.' },
+      { t: 'I am getting sleepy 😴', b: 'Screens off at {off}. Your wind-down is ready.' },
+      { t: 'Phone, meet charger 🔌', b: 'Screens off at {off}. Leave it across the room tonight.' },
+      { t: 'Good night, almost 🌛', b: 'An hour until {off}. Tap to start your wind-down.' },
+    ],
     sunday: [
-      'A few minutes to look back on your week.',
-      'A short look back at the week, and one small goal for the next.',
-      'Your week, in a few minutes. What went well?',
+      { t: 'Your week in review 📅', b: 'A few minutes to look back on your week.' },
+      { t: 'Sunday look back ☕', b: 'What went well this week? A few minutes, then one goal for next week.' },
+      { t: 'That is a wrap 🎬', b: 'Look back on your week in a few minutes, then pick one goal.' },
+      { t: 'High five for the week ✋', b: 'See what you did this week, in a few minutes.' },
+      { t: 'Sunday, slow and easy 🌤️', b: 'Your weekly look back is ready. A few minutes.' },
     ],
     risk: [
-      'Your hard hours start soon. Two quiet minutes now make them easier.',
-      'A harder part of the day is coming. A plan made now makes it lighter.',
-      'Heads-up: the next few hours are often hard. Your plan is one tap away.',
+      { t: 'Heads-up 🧭', b: 'Your hard hours start soon. Two quiet minutes now make them easier.' },
+      { t: 'Plan ahead 🗺️', b: 'A harder part of the day is coming. Make a plan in two minutes.' },
+      { t: 'Quick prep 🛡️', b: 'The next few hours are often hard. Your plan is one tap away.' },
+      { t: 'I have your back 🔥', b: 'Tough hours ahead. Two minutes now, and you walk in ready.' },
+      { t: 'Breathe, plan, go 🧘', b: 'Two minutes now make the next few hours easier. Tap to start.' },
     ],
-  } as Record<NudgeLearned, string[]>,
+  } as Record<NudgeLearned, NudgeWord[]>,
   /** after a few heavy days: the check-in offers, it does not ask */
-  heavy: 'A short check-in is enough tonight. Nothing to get right.',
-  /** the come-back notes (days 2, 4, 7, 14 and 30), each with something in it */
+  heavy: { t: 'No pressure tonight 🤍', b: 'A short check-in is enough tonight. Nothing to get right.' },
+  /** the come-back notes (days 2, 7 and 30), each with something in it; the last says it is the last */
   back: [
-    'Daybook is here when you are ready. Your plan is one tap away.',
-    'Nothing is lost. Everything you wrote is kept, and the next lesson takes two minutes.',
-    'A week is a long time. A minute today is enough, and Daybook starts where you are, not where you were.',
-    'Everything is kept. Whenever you come back, the door is open.',
-    'This is the last note for now. Daybook stays quiet until you open it, and everything is kept.',
+    { t: 'Still here, still warm 👋', b: 'Daybook is here when you are ready. Your next lesson takes a few minutes.' },
+    { t: 'Everything is kept 📦', b: 'Nothing is lost. A minute today is enough, and Daybook starts where you are.' },
+    { t: 'Last note for now 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
   ],
   /** the same, when the person left on a hard day (a slip, or a heavy week): no lesson, the hard day in mind */
   tender: [
-    'A hard day does not undo the rest. Everything you built is still here, and your plan is one tap away.',
-    'Nothing is lost. Everything you wrote is kept, and one quiet minute is a fine way back.',
-    'A week is a long time. A minute today is enough, and Daybook starts where you are, not where you were.',
-    'Everything you built is kept. Whenever you come back, the door is open, with no questions about the gap.',
-    'This is the last note for now. Daybook stays quiet until you open it, and everything is kept.',
+    { t: 'Still here 🤍', b: 'A hard day does not undo the rest. Your plan is one tap away.' },
+    { t: 'Nothing is lost 🤍', b: 'Everything you built is kept. One quiet minute is a fine way back.' },
+    { t: 'Last note for now 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
   ],
   /** the cards on Today */
   name: {
@@ -360,28 +397,85 @@ function hash01(x: string): number {
   for (let i = 0; i < x.length; i++) h = Math.imul(h ^ x.charCodeAt(i), 16777619);
   return (h >>> 0) / 4294967296;
 }
-/** the wording for a kind on day tk: score = (helped + 1) / (judged + 2), less 0.1 halved every 15 days since it was last
-    sent, plus up to 0.02 from the day and the id. The highest wins. Returns the wording's id (kind.index). */
-export function pickWords(kind: NudgeLearned, log: Pick<NudgeLog, 'w'>, tk: DayKey): string {
+/** what some wordings say and when they fit (NudgeWord.when): the days in the run, the level, and the next form */
+export interface NudgeCtx {
+  run: number;
+  lvl: number;
+  /** points to the next form, and its name ("a Campfire"), or null when it is not close or there is none */
+  form: { pts: number; name: string } | null;
+}
+const CTX0: NudgeCtx = { run: 0, lvl: 1, form: null };
+/** a wording fits: its moment, at this hour of the note */
+const fits = (w: NudgeWord, ctx: NudgeCtx, hour: number) =>
+  !w.when ||
+  (w.when === 'run' && ctx.run >= 3) ||
+  (w.when === 'level' && ctx.lvl >= 3) ||
+  (w.when === 'form' && !!ctx.form) ||
+  (w.when === 'am' && hour < 12) ||
+  (w.when === 'pm' && hour >= 18);
+/** days before a wording comes again (fewer when a kind has fewer that fit) */
+export const NUDGE_FRESH_DAYS = 7;
+/** the last day each wording was sent or is planned (log.w, and the plan and the notes waiting to be judged), before day k */
+function lastSent(log: Pick<NudgeLog, 'w'> & Partial<Pick<NudgeLog, 'plan' | 'wait'>>, k: DayKey, also: { w?: string; d: DayKey }[]): Record<string, DayKey> {
+  const out: Record<string, DayKey> = {};
+  for (const [id, r] of Object.entries(log.w)) if (r.last && r.last < k) out[id] = r.last;
+  for (const n of [...(log.plan || []), ...(log.wait || []), ...also]) if (n.w && n.d < k && (!out[n.w] || n.d > out[n.w])) out[n.w] = n.d;
+  return out;
+}
+/** the wording for a kind on day tk. Among those that fit (ctx, the note's hour) and were not sent in the last week (when
+    every one was, the one sent longest ago), the highest score wins: (helped + 1) / (judged + 2), plus up to 0.02 from the
+    day and the id, so a new one gets tried. also: what this plan already picked for earlier days. Returns the wording's
+    id (kind.index). */
+export function pickWords(
+  kind: NudgeLearned,
+  log: Pick<NudgeLog, 'w'> & Partial<Pick<NudgeLog, 'plan' | 'wait'>>,
+  tk: DayKey,
+  ctx: NudgeCtx = CTX0,
+  hour = 12,
+  also: { w?: string; d: DayKey }[] = [],
+): string {
+  const last = lastSent(log, tk, also);
+  const ids = NUDGE_WORDS.pick[kind].map((w, i) => ({ w, id: kind + '.' + i })).filter((x) => fits(x.w, ctx, hour));
+  const gap = (id: string) => (last[id] ? diffDays(tk, last[id]) : Infinity);
+  const win = Math.min(NUDGE_FRESH_DAYS, ids.length - 1);
+  let pool = ids.filter((x) => gap(x.id) > win);
+  if (!pool.length) {
+    const far = Math.max(...ids.map((x) => gap(x.id)));
+    pool = ids.filter((x) => gap(x.id) === far);
+  }
   let best = '',
     top = -Infinity;
-  NUDGE_WORDS.pick[kind].forEach((_, i) => {
-    const id = kind + '.' + i;
+  for (const { id } of pool) {
     const r = log.w[id];
-    const fresh = r?.last ? 0.1 * Math.pow(0.5, Math.max(0, diffDays(tk, r.last)) / 15) : 0;
-    const sc = ((r?.h || 0) + 1) / ((r?.n || 0) + 2) - fresh + 0.02 * hash01(tk + '|' + id);
+    const sc = ((r?.h || 0) + 1) / ((r?.n || 0) + 2) + 0.02 * hash01(tk + '|' + id);
     if (sc > top) {
       top = sc;
       best = id;
     }
-  });
+  }
   return best;
 }
-/** a wording's words */
-export function wordsOf(id: string, st: Pick<Settings, 'screensOff'>): string {
+const fill = (x: string, st: Pick<Settings, 'screensOff'>, ctx: NudgeCtx) =>
+  x
+    .replace(/\{off\}/g, fmtClock(st.screensOff))
+    .replace(/\{run\}/g, String(ctx.run))
+    .replace(/\{lvl\}/g, String(ctx.lvl))
+    .replace(/\{pts\}/g, String(ctx.form?.pts ?? ''))
+    .replace(/\{form\}/g, ctx.form?.name ?? '');
+/** a wording's title and body */
+export function wordsOf(id: string, st: Pick<Settings, 'screensOff'>, ctx: NudgeCtx = CTX0): { t: string; b: string } {
   const [k, i] = id.split('.');
-  const w = (NUDGE_WORDS.pick[k as NudgeLearned] || [])[Number(i)] || '';
-  return w.replace('{off}', fmtClock(st.screensOff));
+  const w = (NUDGE_WORDS.pick[k as NudgeLearned] || [])[Number(i)];
+  return w ? { t: fill(w.t, st, ctx), b: fill(w.b, st, ctx) } : { t: 'Daybook', b: '' };
+}
+/** the context for the plan: the run today and the level (tomorrow's run is one more) */
+export function nudgeCtx(days: Days, st: Settings, reviews: Reviews, tk: DayKey): NudgeCtx {
+  const lv = gameCompute(days, st, reviews, tk).level;
+  return {
+    run: streaks(days, st, tk).cur,
+    lvl: lv.n,
+    form: lv.evolves && lv.nextName && lv.toNext <= 60 ? { pts: lv.toNext, name: formWord(lv.nextName) } : null,
+  };
 }
 
 const slipOn = (days: Days, k: DayKey) => (days[k]?.events || []).some((e) => e.outcome === 'slipped');
@@ -413,15 +507,18 @@ function dayList(
   heavy: boolean,
   now: number,
   account: boolean,
+  ctx: NudgeCtx,
+  also: { w?: string; d: DayKey }[],
 ): Nudge[] {
   const roll = st.rollover;
   const lv = (x: NudgeLearned) => log.lv[x] || 0;
   const out: Nudge[] = [];
-  /* each kind's words are picked from its three, by what has helped (pickWords) */
+  /* each kind's words are picked from its own, by what has helped and what was sent lately (pickWords) */
   const add = (kind: NudgeLearned, at: number, url = '/', quiet = false) => {
     if (doneOn(days, st, reviews, kind, k)) return;
-    const w = pickWords(kind, log, k);
-    out.push({ id: kind + '-' + k, k: kind, d: k, at, body: wordsOf(w, st), url, pic: 'flame-bright', w, ...(quiet ? { quiet: true as const } : {}) });
+    const w = pickWords(kind, log, k, ctx, new Date(at).getHours(), also);
+    const x = wordsOf(w, st, ctx);
+    out.push({ id: kind + '-' + k, k: kind, d: k, at, title: x.t, body: x.b, url, w, ...(quiet ? { quiet: true as const } : {}) });
   };
   const lid = prefs.lesson && onStep(lv('lesson'), k, st) ? lessonDue(days, st, k, account) : null;
   if (lid) add('lesson', atOf(k, lessonAt(days, log, k, now).at, roll), '/lesson/' + lid);
@@ -438,18 +535,20 @@ function dayList(
   const su = out.findIndex((n) => n.k === 'sunday');
   if (ci && su >= 0) {
     out.splice(su, 1);
-    ci.body = NUDGE_WORDS.both;
+    ci.title = NUDGE_WORDS.both.t;
+    ci.body = NUDGE_WORDS.both.b;
     ci.also = 'sunday';
     delete ci.w;
   }
-  /* the lesson and the check-in within the same hour: one note, at the check-in's time (the one the person set), that
+  /* the lesson and the check-in within two hours: one note, at the check-in's time (the one the person set), that
      opens the lesson. Not when the check-in already carries the Sunday review: three in one is too much. */
   const le = out.find((n) => n.k === 'lesson');
   const ci2 = out.findIndex((n) => n.k === 'checkin' && !n.also);
-  if (le && ci2 >= 0 && Math.abs(out[ci2].at - le.at) < NUDGE_GAP * 60000) {
+  if (le && ci2 >= 0 && Math.abs(out[ci2].at - le.at) < NUDGE_FOLD * 60000) {
     le.at = out[ci2].at;
     out.splice(ci2, 1);
-    le.body = NUDGE_WORDS.lessonCi;
+    le.title = NUDGE_WORDS.lessonCi.t;
+    le.body = NUDGE_WORDS.lessonCi.b;
     le.also = 'checkin';
     delete le.w;
   }
@@ -458,8 +557,8 @@ function dayList(
   if (heavy)
     for (const n of out) {
       if (n.k === 'checkin') {
-        n.body = NUDGE_WORDS.heavy;
-        n.pic = 'flame-warm';
+        n.title = NUDGE_WORDS.heavy.t;
+        n.body = NUDGE_WORDS.heavy.b;
         delete n.w;
       } else if (n.k === 'wind' || n.k === 'lesson') n.quiet = true;
     }
@@ -467,9 +566,9 @@ function dayList(
   const kind = kindWords(days, st, k);
   const first = out.filter((n) => n.k !== 'risk').sort((a, b) => a.at - b.at)[0];
   if (kind && first) {
-    first.body = kind;
+    first.title = kind.t;
+    first.body = kind.b;
     first.url = '/';
-    first.pic = 'flame-warm';
     delete first.w;
     delete first.also;
     delete first.quiet;
@@ -478,7 +577,7 @@ function dayList(
 }
 
 /** the kinder words for day k: the morning after a slip, and the days the Rekindle quest is still open */
-function kindWords(days: Days, st: Settings, k: DayKey): string | null {
+function kindWords(days: Days, st: Settings, k: DayKey): { t: string; b: string } | null {
   const r = rkActive(days, st, k);
   if (!r || r.phase !== 'sun') return null;
   if (k === addDays(r.k, 1)) return NUDGE_WORDS.after;
@@ -486,11 +585,12 @@ function kindWords(days: Days, st: Settings, k: DayKey): string | null {
   return (c.kind === 'sun' || c.kind === 'almost') && rkOpen(days, st, k, r.k).op ? NUDGE_WORDS.quest : null;
 }
 
-/** at most NUDGE_MAX a day, NUDGE_GAP minutes apart, the most useful kept */
+/** at most NUDGE_MAX a day (one more with the heads-up before hard hours), NUDGE_GAP minutes apart, the most useful kept */
 function capped(list: Nudge[]): Nudge[] {
   const keep: Nudge[] = [];
+  const max = NUDGE_MAX + (list.some((n) => n.k === 'risk') ? 1 : 0);
   for (const n of list.slice().sort((a, b) => PRI[a.k] - PRI[b.k] || a.at - b.at)) {
-    if (keep.length >= NUDGE_MAX) break;
+    if (keep.length >= max) break;
     if (keep.some((x) => Math.abs(x.at - n.at) < NUDGE_GAP * 60000)) continue;
     keep.push(n);
   }
@@ -499,9 +599,6 @@ function capped(list: Nudge[]): Nudge[] {
 
 /** whether any notification is turned on at all */
 export const nudgesOn = (p: NudgePrefs) => p.lesson || p.checkin || p.wind || p.review || p.risk;
-
-/** the come-back notes' pictures: the flame rests with the person, and is still lit on the last one */
-const BACK_PIC: NudgePic[] = ['flame-steady', 'flame-steady', 'flame-ember', 'flame-ember', 'flame-asleep'];
 
 /** the notifications to schedule now: today and tomorrow, then the come-back notes. now is the time the app is open.
     allowed: whether the phone lets Daybook notify (the come-back notes are for anyone it does, unless turned off).
@@ -522,7 +619,12 @@ export function nudgePlan(
   if (nudgesOn(prefs)) {
     const backup = ciOnOwn(days, st, prefs, tk);
     const heavy = weekFeel(days, tk) === 'heavy';
-    for (const k of [tk, addDays(tk, 1)]) out.push(...capped(dayList(days, st, reviews, prefs, log, k, backup, heavy, now, account).filter((n) => n.at > now)));
+    const ctx = nudgeCtx(days, st, reviews, tk);
+    /* tomorrow's words: one more day in the run, and not today's wording again */
+    for (const [i, k] of [tk, addDays(tk, 1)].entries()) {
+      const c = i && ctx.run ? { ...ctx, run: ctx.run + 1 } : ctx;
+      out.push(...capped(dayList(days, st, reviews, prefs, log, k, backup, heavy, now, account, c, out).filter((n) => n.at > now)));
+    }
   }
   if (allowed && prefs.back !== false) {
     /* at the hour the app is usually open; tender words when the person left on a hard day */
@@ -530,8 +632,8 @@ export function nudgePlan(
     const tender = slipOn(days, tk) || slipOn(days, addDays(tk, -1)) || weekFeel(days, tk) === 'heavy';
     NUDGE_BACK.forEach((n, i) => {
       const d = addDays(tk, n);
-      const body = (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
-      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), body, url: '/', pic: BACK_PIC[i] });
+      const x = (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
+      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), title: x.t, body: x.b, url: '/' });
     });
   }
   return out.sort((a, b) => a.at - b.at);
@@ -591,7 +693,7 @@ export function nudgeKeep(log: NudgeLog, plan: Nudge[], now: number): NudgeLog {
   };
 }
 /** the plan's identity, to tell when the phone's schedule needs making again */
-export const nudgeKey = (plan: Pick<Nudge, 'id' | 'at' | 'body'>[]) => plan.map((n) => n.id + '@' + n.at + ':' + n.body).join('|');
+export const nudgeKey = (plan: Pick<Nudge, 'id' | 'at' | 'title' | 'body'>[]) => plan.map((n) => n.id + '@' + n.at + ':' + n.title + ':' + n.body).join('|');
 /** a paused (or stepped down) kind, back to every day */
 export const nudgeResume = (log: NudgeLog, k: NudgeLearned): NudgeLog => ({ ...log, lv: { ...log.lv, [k]: 0 }, miss: { ...log.miss, [k]: 0 } });
 

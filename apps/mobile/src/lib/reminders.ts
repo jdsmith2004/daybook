@@ -3,11 +3,9 @@
    this schedules that plan, one notification at a time, and makes it again each time the app opens. The words are plain on
    purpose, because a notification can show on a locked screen: nothing in them says what Daybook is for. Tapping one opens
    Today (or the screen it is for: the lesson reminder opens today's lesson). On Android each kind has its own channel, so one can be quieted without the others.
-   On iPhone each note carries its flame picture (core Nudge.pic, apps/mobile/assets/notify); Android shows the fixed small
-   and large icons from app.json, because a local note there cannot carry a picture of its own. */
-import type { Nudge, NudgeKind, NudgePic } from '@daybook/core';
-import { Asset } from 'expo-asset';
-import { File, Paths } from 'expo-file-system';
+   Each note has its own title (core NUDGE_WORDS) and no picture: on iPhone a picture shows beside the app icon, and the
+   flame picture looked like the icon twice. Android shows the fixed small and large icons from app.json. */
+import type { Nudge, NudgeKind } from '@daybook/core';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Linking, Platform } from 'react-native';
@@ -57,28 +55,6 @@ export async function allowReminders(): Promise<boolean> {
   return r.granted;
 }
 
-/* the flame pictures, iPhone only. iOS moves an attached file into its own store, so each note gets its own copy in the cache. */
-const PICS: Record<NudgePic, number> = {
-  'flame-bright': require('@/assets/notify/flame-bright.png'),
-  'flame-warm': require('@/assets/notify/flame-warm.png'),
-  'flame-steady': require('@/assets/notify/flame-steady.png'),
-  'flame-ember': require('@/assets/notify/flame-ember.png'),
-  'flame-asleep': require('@/assets/notify/flame-asleep.png'),
-};
-async function attach(n: Nudge): Promise<Notifications.NotificationContentAttachmentIos[]> {
-  if (Platform.OS !== 'ios') return [];
-  try {
-    const [a] = await Asset.loadAsync(PICS[n.pic] ?? PICS['flame-bright']);
-    if (!a.localUri) return [];
-    const to = new File(Paths.cache, 'note-' + n.id + '.png');
-    if (to.exists) to.delete();
-    new File(a.localUri).copy(to);
-    return [{ identifier: n.pic, url: to.uri, type: null, typeHint: 'public.png' }];
-  } catch {
-    return [];
-  }
-}
-
 /* each scheduling waits for the one before it, so an older plan can never add a note after a newer one cleared the schedule */
 let scheduling: Promise<void> = Promise.resolve();
 /** the plan from core nudgePlan, as the phone's schedule: everything Daybook scheduled is replaced by it (a one-off from Talk it through stays) */
@@ -97,15 +73,13 @@ async function replaceSchedule(plan: Nudge[]): Promise<void> {
     if (n.at <= now) continue;
     /* the come-back notes arrive quietly on iPhone too */
     const quiet = n.quiet || n.k === 'back';
-    const attachments = await attach(n);
     await Notifications.scheduleNotificationAsync({
       identifier: n.id,
       content: {
-        title: 'Daybook',
+        title: n.title,
         body: n.body,
         data: { url: n.url, id: n.id },
         ...(quiet ? { interruptionLevel: 'passive' as const } : {}),
-        ...(attachments.length ? { attachments } : {}),
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: channelOf(n.k) },
     });

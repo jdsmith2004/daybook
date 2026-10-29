@@ -14,6 +14,7 @@ import {
   awayDue,
   awayStart,
   dayFeelDue,
+  dayFeelOf,
   dayFeelQuiet,
   markOpen,
   tipAsk,
@@ -43,8 +44,8 @@ import {
   sunriseDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { AppState, Pressable, StyleSheet, type ScrollViewInstance } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
@@ -63,6 +64,8 @@ import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop } from '@/lib/nav';
+import { useCelebrating } from '@/components/celebrate';
+import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -141,6 +144,14 @@ export default function Today() {
   const focused = useIsFocused();
   const focusRef = useRef(focused);
   focusRef.current = focused;
+  /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
+  const [askFeel, setAskFeel] = useState(false);
+  /* it waits while a celebration is up; one that comes after it was answered simply ends it */
+  const celebrating = useCelebrating();
+  const feltToday = !!dayFeelOf(snap.days[tk]);
+  useEffect(() => {
+    if (celebrating && askFeel && feltToday) setAskFeel(false);
+  }, [celebrating, askFeel, feltToday]);
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = !!due && askAgain;
@@ -162,7 +173,7 @@ export default function Today() {
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       spendFirstOpen();
-      router.push('/today-feel');
+      setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
   }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack]);
@@ -235,6 +246,7 @@ export default function Today() {
     nudge,
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
+    comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
@@ -257,32 +269,35 @@ export default function Today() {
     </>
   );
   return (
-    <Screen
-      scrollRef={scroll}
-      eyebrow={size.compact ? undefined : 'My Daybook'}
-      title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
-      sub={sub}
-      pullDown={(px) => {
-        openJournalFrom(px);
-        router.push('/journal');
-      }}
-      action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
-      <NotifyBanner />
-      <SyncStrip />
-      <Hero g={g} snap={snap} tk={tk} now={now}>
-        <MomentCard pick={pick} snap={snap} tk={tk} now={now} compact={size.compact} />
-        {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
-      </Hero>
-      <Card>
-        <LogLink compact={size.compact} />
-        <WaitingPlan snap={snap} tk={tk} now={now} />
-      </Card>
-      <NightWinCard snap={snap} tk={tk} />
-      <YourDay snap={snap} tk={tk} now={now} />
-      {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
-      {tip ? <TipCard /> : null}
-      <HomeScreenCard />
-    </Screen>
+    <View style={{ flex: 1 }}>
+      <Screen
+        scrollRef={scroll}
+        eyebrow={size.compact ? undefined : 'My Daybook'}
+        title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
+        sub={sub}
+        pullDown={(px) => {
+          openJournalFrom(px);
+          router.push('/journal');
+        }}
+        action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
+        <NotifyBanner />
+        <SyncStrip />
+        <Hero g={g} snap={snap} tk={tk} now={now}>
+          <MomentCard pick={pick} snap={snap} tk={tk} now={now} compact={size.compact} />
+          {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
+        </Hero>
+        <Card>
+          <LogLink compact={size.compact} />
+          <WaitingPlan snap={snap} tk={tk} now={now} />
+        </Card>
+        <NightWinCard snap={snap} tk={tk} />
+        <YourDay snap={snap} tk={tk} now={now} />
+        {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
+        {tip ? <TipCard /> : null}
+        <HomeScreenCard />
+      </Screen>
+      {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+    </View>
   );
 }
 

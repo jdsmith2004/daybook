@@ -668,6 +668,9 @@ synced. The words never say what Daybook is for, because a note can show on a lo
   `largeIcon` (the flame badge), which fixes the white square; no per-note picture, because expo-notifications 58 does not
   do it for local notes. The flame backs off with the person, and never looks sad, sick or dead: the pictures are a
   flame resting, not a mascot guilting.
+  **Taken out on October 25, 2026** (the owner): on iPhone a note's picture shows beside the app icon, and the flame
+  picture looked like the same icon twice. The notes carry no picture now; the flame's forms became app icons instead
+  (see "Notes with a voice, and app icons" at the end).
 - **The ask on Today.** Core `notify.ts`: `notifyAsk(env, mem, days, st, tk)` says whether the banner shows and what it
   says. It shows while this phone can notify (a phone app, not the web), setup is done, notifications are not granted,
   the person has not chosen "Stop asking on this phone", the X was not tapped today, and it is not the day of a slip or
@@ -3045,3 +3048,27 @@ hard to discover (Clear's review), hence the first-time line and the More row.
 **For later, the owner's call:** whether writing in the journal feeds the flame (points for an entry, as for an honest
 log); a tab layout with the journal as a tab of its own (the owner is open to it); "on this day" (a hopeful entry from a
 month ago brought back); a Face ID lock for the journal; a slip's comeback offering a short structured entry.
+
+## Notes with a voice, and the icon calendar (the owner, October 25 and 26, 2026)
+
+The owner: the notifications are generic, the same thing every time, and should feel like Duolingo's, while staying
+clear about what they ask and never flooding anyone; the icon should change now and then like Duolingo's owl; and a note
+showed the app icon on both sides.
+
+- **The double icon.** iOS shows a note's attached picture beside the app icon, and the flame picture was the icon's own
+  art. The pictures are gone (`apps/mobile/assets/notify`, `flameNoteSvg`, `Nudge.pic`).
+- **A title on every note** instead of "Daybook", and the flame speaking: warm, a little playful, one emoji in the
+  title, never guilt. Every note says what it asks and how long it takes ("Tap to start", "A few minutes", "Under a
+  minute"): a plain title doubled opens over a catchy one in Service NSW's test, and iOS's Reduce Interruptions filters
+  vague notes. Five to eleven wordings per kind (core `NUDGE_WORDS.pick`), titles about 30 characters and bodies under 90.
+  Some fit only a moment, the way Duolingo's templates sleep: "Day 12 ☀️" with three or more days in the run, the points
+  to the next form when it is 60 or fewer away, the level from 3, morning and evening lines.
+- **No repeat in a week.** A wording sent (or planned) in the last week is skipped while there are others, then the best
+  scorer wins (Yancey and Settles 2020).
+- **Fewer notes.** Apps people keep send one a day, and more get switched off (Localytics: 37% would turn them off at 2
+  to 5 a week of marketing; Braze caps at one a day). Two a day at most now, three only with the heads-up before hard
+  hours; the lesson and the check-in within two hours are one note; three come-back notes (days 2, 7 and 30, the last
+  one saying so) instead of five. One evening note did not wear off over 30 days in Drink Less.
+- **The icon calendar** (`docs/icon-calendar.md`). Duolingo's seasonal and melting icons ship as the app's own icon in
+  an update, for everyone (the melting look was tried and dropped). An app switching its own icon shows a pop-up each time, cannot do it while closed, and has
+  been turned down in review, so Daybook does it Duolingo's way: `npm run icons -- --look <look>` before an update.

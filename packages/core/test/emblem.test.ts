@@ -1,6 +1,7 @@
-/* The flame in its own sky, for the top of Today (emblem.ts emblemScene). */
+/* The flame in its own sky, for the top of Today (emblem.ts emblemScene), and the icon calendar (flame-art.ts). */
 import { describe, expect, it } from 'vitest';
 import { emblemLayers, emblemScene, emblemXml } from '../src/emblem';
+import { ICON_CALENDAR, ICON_LOOKS, iconLookFor } from '../src/flame-art';
 
 describe('the flame in its own sky', () => {
   it('every level has a sky, and the round frame is softened away', () => {
@@ -27,7 +28,15 @@ describe('the flame in its own sky', () => {
     const day = emblemScene(40);
     expect(day.stars).toBe(false);
     expect(day.ink).toBe('dark');
-    expect(day.ground).toBe('#3DAA84');
+    expect(day.ground).toBe('#2E8E6E');
+    /* the card's ground is the drawing's own hills, run on past its edges, so the hills are drawn once */
+    expect(day.land).toMatch(/^<path d="M-1000 96H-2C/);
+    expect(day.land).toContain('fill="#2E8E6E"');
+    expect(night.land).toMatch(/^<path d="M-1000 /);
+    /* every drawing with hills gives them to the card, the sunrise too */
+    for (let l = 1; l <= 60; l++) expect(!!emblemScene(l).land, `level ${l}`).toBe(/<path d="M-2 [\d.]+C[^"]*V122H-2Z"/.test(emblemScene(l).xml));
+    expect(emblemScene(33).land).toBeTruthy();
+    expect(emblemScene(33).ink).toBe('light');
     /* the full suns shine in a clear day sky */
     expect(emblemScene(46).sky).toEqual(['#3FA2FF', '#86CCFF', '#CFEBFF']);
   });
@@ -56,5 +65,19 @@ describe('the flame in layers, so only the figure moves', () => {
       expect(L.at.x).toBeGreaterThan(0.2);
       expect(L.at.y).toBeGreaterThan(0.2);
     }
+  });
+});
+
+describe('the icon calendar', () => {
+  it('picks the look for the day an update reaches people, a few days after it is built', () => {
+    expect(iconLookFor('2026-10-26')).toBe('halloween');
+    expect(iconLookFor('2026-10-30')).toBe('autumn');
+    expect(iconLookFor('2026-11-28')).toBe('winter');
+    expect(iconLookFor('2026-12-25')).toBe('newyear');
+    expect(iconLookFor('2027-01-01')).toBe('newyear');
+    expect(iconLookFor('2027-01-02')).toBeNull();
+    expect(iconLookFor('2027-02-05')).toBe('valentine');
+    expect(iconLookFor('2027-06-10')).toBeNull();
+    for (const c of ICON_CALENDAR) expect(ICON_LOOKS).toContain(c.look);
   });
 });

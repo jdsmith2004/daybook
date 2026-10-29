@@ -3,17 +3,31 @@
     {
       "name": "today",
       "screen": "/",
-      "caption": "Quit porn without shame",
-      "sub": "A slip is data, not a reset. What you build stays yours.",
+      "caption": "Quit without shame",
+      "sub": "A slip is data, not a reset.",
+      "pills": "Free|No account|No ads",
       "bg": "night",
       "theme": "light",
+      "zoom": 0.84,
+      "top": 0.2,
       "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
       "name": "sos",
       "screen": "/sos",
-      "caption": "Help the moment an urge hits",
-      "sub": "Breathe first, then a tool that fits the moment.",
+      "screen2": "/sos?won=1",
+      "caption": "Breathe through it. It passes.",
+      "sub": "Tap SOS. It guides you, move by move, until the urge passes.",
+      "bg": "dawn",
+      "theme": "light",
+      "sizes": ["ios69", "ios63", "play-phone"],
+      "zoom": 0.6
+    },
+    {
+      "name": "slip",
+      "screen": "/log?date=2026-09-12&evId=slip&outcome=slipped&step=slPlan",
+      "caption": "After a slip, come back stronger",
+      "sub": "See what was going on, then make one plan for next time.",
       "bg": "dawn",
       "theme": "light",
       "sizes": ["ios69", "ios63", "play-phone"]
@@ -48,10 +62,13 @@
     {
       "name": "private",
       "screen": "/privacy",
-      "caption": "Private by design",
-      "sub": "No ads, no tracking. Without an account, your log never leaves your phone.",
+      "caption": "Nobody has to know",
+      "sub": "Without an account, your log never leaves your phone.",
+      "pills": "No ads|No tracking|App lock",
       "bg": "cream",
       "theme": "light",
+      "zoom": 0.92,
+      "top": 0.215,
       "sizes": ["ios69", "ios63", "play-phone"]
     },
     {

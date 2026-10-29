@@ -1,4 +1,4 @@
-/* The top of Today: your flame in its own sky (core: emblemScene), with stars at night and its hills along the bottom; your
+/* The top of Today: your flame in its own sky (core: emblemScene), with stars at night and its own hills carried on across the card; your
    one number sits on the picture (core: heroNumber), your level beside it, and the bar to the next form along its edge.
    Under the picture, in the same card, the one next step (core pickMoment, moment-card.tsx), so what you do and what it
    grows are one picture (CLAUDE.md, "The flame is the heart of the app"). The flame moves in a way that fits its form and
@@ -20,7 +20,7 @@ import { Text } from '@/components/text';
 
 /** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
 const ON_ART = 1.15;
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, SvgXml } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
@@ -71,20 +71,6 @@ const STARS: [number, number, number][] = [
   [62, 10, 2],
   [38, 150, 2],
 ];
-/** a color between two, part of the way from a to b */
-function mix(a: string, b: string, t: number) {
-  const p = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
-  return (
-    '#' +
-    [0, 1, 2]
-      .map((i) =>
-        Math.round(p(a, i) + (p(b, i) - p(a, i)) * t)
-          .toString(16)
-          .padStart(2, '0'),
-      )
-      .join('')
-  );
-}
 
 function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
@@ -97,8 +83,9 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
   const light = sc.ink === 'light';
-  const ink = light ? '#FFFFFF' : '#1F1A4A';
-  const soft = light ? '#DCD3FF' : '#3D3670';
+  const ink = light ? '#FFFFFF' : '#14112E';
+  /* on green hills the small words take the full ink, so they still read */
+  const soft = light ? '#DCD3FF' : sc.land ? ink : '#3D3670';
   const glass = light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.62)';
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
@@ -206,11 +193,15 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
               />
             ))
           : null}
-        {sc.ground ? (
-          <Svg style={s.hills} width="100%" height={70} viewBox="0 0 390 70" preserveAspectRatio="none" pointerEvents="none">
-            <Path d="M0 38 Q90 8 190 35 T390 27 V70 H0z" fill={mix(sc.ground, sc.sky[2], 0.45)} />
-            <Path d="M0 56 Q120 35 240 53 T390 49 V70 H0z" fill={sc.ground} />
-          </Svg>
+        {/* the drawing's own hills, carried on across the card at the drawing's scale, so its hills fade into the same ones */}
+        {sc.land ? (
+          <SvgXml
+            xml={`<svg viewBox="${60 - 400} ${(-FLAME_TOP * 120) / FLAME} 800 ${(SCENE_H * 120) / FLAME}" preserveAspectRatio="xMidYMin slice">${sc.land}</svg>`}
+            style={StyleSheet.absoluteFill}
+            width="100%"
+            height={SCENE_H}
+            pointerEvents="none"
+          />
         ) : null}
       </Pressable>
       <Pressable
@@ -337,7 +328,6 @@ const s = StyleSheet.create({
   card: { padding: 0, gap: 0 },
   sky: { borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  hills: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   flame: { position: 'absolute', top: FLAME_TOP, left: 0, right: 0, alignItems: 'center' },
   num: { position: 'absolute', left: 14, bottom: 16, maxWidth: '52%' },
   eb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },

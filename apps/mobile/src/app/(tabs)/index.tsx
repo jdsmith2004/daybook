@@ -6,7 +6,9 @@
    is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
    rows; then the asks, one at a time, and none on the day the person came back or in the hours after an SOS or a slip
    (lib/quiet-asks.ts). A plan talked through waits quietly under SOS until its moment has passed (core talkPlanNow). On
-   a short phone Today goes compact (lib/today-size.ts), so SOS and its two buttons fit above the tab bar. Pulling the page down past its top opens the journal (app/journal.tsx), and until
+   a short phone Today goes compact (lib/today-size.ts), so SOS and its two buttons fit above the tab bar. On the day of
+   a slip, its card ("After a slip") sits right under SOS instead of in the flame's card: a person who just slipped may
+   still be pulled toward it, so SOS stays in sight with the flame, and the slip's one small thing is just below. Pulling the page down past its top opens the journal (app/journal.tsx), and until
    it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
    celebration opens. */
 import {
@@ -71,7 +73,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
-import { useTodaySize } from '@/lib/today-size';
+import { MORE_ROOM, NOTE_ROOM, todaySize, useTodayRoom } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -235,7 +237,7 @@ export default function Today() {
   const nlog = useNudgeLog();
   const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
   const quiet = useQuietAsks();
-  const size = useTodaySize();
+  const room = useTodayRoom();
 
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
@@ -253,6 +255,12 @@ export default function Today() {
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
+  /* the day of a slip: its card sits under SOS (see the top of this file), so it never pushes SOS out of sight */
+  const slipDay = pick.card.k === 'slip-day';
+  /* the quiet lines under the next step (what was logged today, and "And one more") take their room, so the sky can make way.
+     On the day of a slip the card is not under the flame, so there is room to spare. */
+  const size = todaySize(room, slipDay ? 0 : (note ? NOTE_ROOM : 0) + (pick.more ? MORE_ROOM : 0));
+  const moment = <MomentCard pick={pick} snap={snap} tk={tk} now={now} />;
   const sub = (
     <>
       {be ? (
@@ -282,14 +290,15 @@ export default function Today() {
         action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
         <NotifyBanner />
         <SyncStrip />
-        <Hero g={g} snap={snap} tk={tk} now={now}>
-          <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
-          {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
+        <Hero g={g} snap={snap} tk={tk} now={now} sky={size.sky} compact={size.compact}>
+          {slipDay ? null : moment}
+          {note ? <Text style={[s.note, { color: c.accentText }, slipDay && s.noteFirst]}>{note}</Text> : null}
         </Hero>
-        <Card>
+        <Card style={size.compact && s.sosCompact}>
           <LogLink compact={size.compact} />
           <WaitingPlan snap={snap} tk={tk} now={now} />
         </Card>
+        {slipDay ? moment : null}
         <NightWinCard snap={snap} tk={tk} />
         <YourDay snap={snap} tk={tk} now={now} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
@@ -304,4 +313,6 @@ export default function Today() {
 const s = StyleSheet.create({
   be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
   note: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18, textAlign: 'center', marginTop: 8 },
+  noteFirst: { marginTop: 0 },
+  sosCompact: { paddingVertical: 12 },
 });

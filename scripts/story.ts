@@ -4,7 +4,8 @@
 
    A story is data, in stories/*.json: a person (settings), and a list of visits. Each visit names the logical day, the
    time the app is opened, what happens before it is opened ("before") and after the picture ("after"), and what Today
-   should show ("expect", a case-insensitive regular expression matched against the top of Today, the card above SOS;
+   should show ("expect", a case-insensitive regular expression matched against the top of Today, above Your day: the card
+   under the flame, or on the day of a slip the card just under SOS;
    "absent", ones that must not match anywhere on Today). A story's "never" list must not match on any day, and its "history" holds what happened on days
    with no visit (by day, the same things as below). Things that can happen:
      { "slip": "23:10" }                 a slip at that time (add "trigger": "Bored" if you like)
@@ -290,8 +291,9 @@ for (const f of files) {
     } catch (e) {
       why.push((e as Error).message.split('\n').slice(0, 6).join(' | '));
     }
-    /* the card: the top of Today, above SOS (the rows below it name the day's stops too, so they are left out) */
-    const card = text.split(/\nSOS\n/)[0];
+    /* the card: the top of Today, above Your day (its rows name the day's stops too, so they are left out). It is the card
+       under the flame, or on the day of a slip the card just under SOS. */
+    const card = text.split(/\nYour day\n/)[0];
     if (text && !new RegExp(v.expect, 'i').test(card)) why.push(`expected /${v.expect}/ in the card`);
     for (const a of [...(v.absent || []), ...(story.never || [])]) if (text && new RegExp(a, 'i').test(text)) why.push(`did not expect /${a}/`);
     for (const e of errs) why.push('page error: ' + e);

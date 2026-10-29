@@ -395,6 +395,93 @@ describe('words that learn', () => {
   });
 });
 
+describe('the plan at its hour (a plan made after a slip)', () => {
+  /* the slip at 11:10 PM on October 13, and the plan for next time a few minutes later (log.tsx) */
+  const T = at('2026-10-13T23:20');
+  const after = (m: string[], mo: string | null = 'late', mx?: string[]) =>
+    core.saveTalk(
+      slip({}, '2026-10-13', '23:10'),
+      '2026-10-13',
+      {
+        ...core.newTalk(T),
+        id: 'nx',
+        p: 'change',
+        pr: 1,
+        n: 'rest',
+        m: m as core.TalkMove[],
+        ...(mx ? { mx } : {}),
+        mo,
+        at: null,
+        ft: 'late',
+      },
+      T,
+    );
+  const heads = (p: core.Nudge[]) => p.filter((n) => n.k === 'plan' || n.k === 'risk');
+  const hh: NudgePrefs = { ...core.NUDGE_DEFAULTS, lesson: false, risk: true };
+
+  it('comes once, quietly, at the start of the moment the plan is for, with the move and nothing about what it is for', () => {
+    const p = heads(plan(after(['away']), hh, at('2026-10-14T09:00')));
+    expect(p).toEqual([
+      {
+        id: 'plan-2026-10-14',
+        k: 'plan',
+        d: '2026-10-14',
+        at: at('2026-10-14T21:00'),
+        title: 'Your plan for tonight 🌙',
+        body: 'The plan you made: put the device out of reach.',
+        url: '/',
+        quiet: true,
+      },
+    ]);
+    /* the evening's note at 5 PM; a plan in the person's own words is not put on a locked screen */
+    const eve = heads(plan(after([], 'evening', ['play guitar']), hh, at('2026-10-14T09:00')))[0];
+    expect(eve).toMatchObject({ at: at('2026-10-14T17:00'), title: 'Your plan for this evening 🌆', body: core.NUDGE_WORDS.plan.own });
+  });
+
+  it('is under the heads-up switch, and not once its moment has come, it was looked back on, or a slip came since', () => {
+    expect(heads(plan(after(['away']), { ...hh, risk: false, checkin: true }, at('2026-10-14T09:00')))).toEqual([]);
+    expect(heads(plan(after(['away']), hh, at('2026-10-14T21:00')))).toEqual([]);
+    const again = slip(after(['away']), tk, '15:00');
+    expect(heads(plan(again, hh, at('2026-10-14T16:00')))).toEqual([]);
+  });
+
+  it('takes the place of the heads-up before hard hours on its day, so the cap of three holds', () => {
+    let d = after(['away']);
+    for (const k of ['2026-09-30', '2026-10-01', '2026-10-06', '2026-10-07', '2026-10-08']) d = slip(d, k, '19:10');
+    const all: NudgePrefs = { ...core.NUDGE_DEFAULTS, lesson: false, checkin: true, wind: true, risk: true, checkinAt: '18:00' };
+    const today = routine(plan(d, all, at('2026-10-14T07:00'))).filter((n) => n.d === tk);
+    expect(today.some((n) => n.k === 'risk')).toBe(false);
+    expect(today.filter((n) => n.k === 'plan')).toHaveLength(1);
+    expect(today.length).toBeLessThanOrEqual(3);
+    /* the next day, with the plan behind it, the heads-up is back */
+    expect(routine(plan(d, all, at('2026-10-14T07:00'))).some((n) => n.k === 'risk' && n.d === '2026-10-15')).toBe(true);
+  });
+
+  it('a plan for the daytime made at night waits on Today, with no note at night', () => {
+    const night = at('2026-10-13T23:30');
+    const d = core.saveTalk(
+      {},
+      '2026-10-13',
+      { ...core.newTalk(night), id: 'd', p: 'change', pr: 1, n: 'bored', m: ['walk'], mo: null, at: null, ft: 'bored' },
+      night,
+    );
+    expect(heads(plan(d, hh, at('2026-10-14T09:00')))).toEqual([]);
+  });
+
+  it('is not learned, and is never judged', () => {
+    const p = plan(after(['away']), hh, at('2026-10-14T09:00'));
+    const kept = core.nudgeKeep(log0, p, at('2026-10-14T09:00'));
+    const x = core.nudgeLearn(kept, after(['away']), st, {}, at('2026-10-15T09:00'), true);
+    expect(x.wait).toEqual([]);
+    expect(x.lv).toEqual({});
+    expect(core.normNudgeLog(kept).plan.some((n) => n.k === 'plan')).toBe(true);
+  });
+
+  it('no move names what the plan is about', () => {
+    for (const m of Object.keys(core.TALK_MOVES)) expect(core.planMove([m])).not.toMatch(/porn|slip|clean|urge|addict|relapse|sober|habit|sex|streak/i);
+  });
+});
+
 it('the words never say what Daybook is for, and use no contractions', () => {
   const all = JSON.stringify({ ...core.NUDGE_WORDS, wind: core.NUDGE_WORDS.wind('10:30 PM') });
   expect(all).not.toMatch(/miss you/i);

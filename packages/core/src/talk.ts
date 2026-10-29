@@ -575,6 +575,10 @@ export const newTalk = (now: number): Talk => ({
   a: null,
 });
 
+/** a plan made after a slip, for next time (log.tsx): from what was going on just before it (ft), or, from before
+    October 27, 2026, from the feeling (fw). A short plan made ahead of the hard hours (also pr 1) has neither. */
+export const talkAfterSlip = (t: Pick<Talk, 'p' | 'fw' | 'ft'>): boolean => t.p === 'change' && !!(t.fw || t.ft);
+
 /** every talk-through in the log, oldest first, with its day */
 export function talksOf(days: Days): { k: DayKey; talk: Talk }[] {
   const out: { k: DayKey; talk: Talk }[] = [];
@@ -621,12 +625,19 @@ export function talkLookAt(t: Pick<Talk, 't' | 'at'>, hard: TalkHard = []): numb
 
 const p2 = (n: number) => String(n).padStart(2, '0');
 /** a slip in the log after the talk-through at t on log day k: later that day (or with no time), or on a later day. A slip
-    in the same minute is the one the talk-through came after (Talk it through right after logging a slip), not a new one. */
+    in the same minute is the one the talk-through came after (Talk it through right after logging a slip), not a new one.
+    Times read in the log day's order: after midnight, before the usual rollover (4 AM), is later than 11 PM, so a plan made
+    at 12:05 AM after a slip at 11:50 PM is not settled by that slip. */
 export function slipSince(days: Days, k: DayKey, t: number): boolean {
   const d = new Date(t);
-  const since = p2(d.getHours()) + ':' + p2(d.getMinutes());
-  return Object.keys(days).some((dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || e.time > since)));
+  const ord = (c: string) => (c < p2(SINCE_ROLL) + ':00' ? '1' : '0') + c;
+  const since = ord(p2(d.getHours()) + ':' + p2(d.getMinutes()));
+  return Object.keys(days).some(
+    (dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || ord(e.time) > since)),
+  );
 }
+/** the rollover slipSince reads times by (it has no settings; 4 AM is the default, and nearly everyone keeps it) */
+const SINCE_ROLL = 4;
 
 /** what one talk-through needs from Today at now, if anything. A decide-later or a changed plan is settled by a slip
     logged after it: the slip was already looked at honestly when it was logged, so Today does not ask again. */

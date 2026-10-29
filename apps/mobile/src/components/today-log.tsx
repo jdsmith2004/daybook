@@ -111,9 +111,10 @@ export function LogLink({ compact }: { compact?: boolean }) {
   );
 }
 
-/* a plan talked through waits here, quietly, under SOS, until its moment has passed (core talkPlanNow): a changed plan, a
-   plan for next time made after a slip, or a decide-later until its time (which opens the choice when tapped). Talk it
-   through says "It waits on Today", and this is where. */
+/* a plan talked through waits here, quietly, under SOS, until its moment has passed (core talkPlanNow): a changed plan, or
+   a decide-later until its time (which opens the choice when tapped). Talk it through says "It waits on Today", and this
+   is where. A plan for next time made after a slip shows here at its hour: from an hour before its moment until the
+   moment ends ("Your plan for tonight"). */
 export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const w = talkPlanNow(snap.days, snap.settings, tk, now);

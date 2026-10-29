@@ -8,6 +8,7 @@ import { dayFeelOf } from './day-feel';
 import { addDays, dayPoints, fmtDate, LESSONS, runLedger, sortedEvents, statusOf, sumDay } from './legacy/core.js';
 import { logStart } from './log-start';
 import { urSosLines, urTool } from './sos';
+import { talkAfterSlip } from './talk';
 import { eventRow, plural } from './view';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
@@ -188,7 +189,7 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     if (read.length) more.push({ ic: 'book', t: 'Read: ' + read.join(', ') });
     /* a short plan made ahead of the hard hours had no slip in mind: it reads as a plan */
     const talks = (p.tt || []).filter((t) => !t.pr).length;
-    const after = (p.tt || []).filter((t) => t.pr && t.fw).length;
+    const after = (p.tt || []).filter((t) => t.pr && talkAfterSlip(t)).length;
     const plans = (p.tt || []).length - talks - after;
     if (talks) more.push({ ic: 'chat', t: talks === 1 ? 'Talked it through first' : 'Talked it through ' + talks + ' times' });
     if (plans) more.push({ ic: 'compass', t: 'Made a plan for the hard hours' });

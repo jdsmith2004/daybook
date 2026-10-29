@@ -17,7 +17,7 @@ const CHANNEL = 'reminders';
 const CHANNELS: { id: string; name: string; kinds: NudgeKind[]; low?: boolean }[] = [
   { id: CHANNEL, name: 'Check-ins', kinds: ['checkin', 'wind'] },
   { id: 'lessons', name: 'Lessons', kinds: ['lesson'] },
-  { id: 'hard-hours', name: 'Hard hours', kinds: ['risk'] },
+  { id: 'hard-hours', name: 'Hard hours', kinds: ['risk', 'plan'] },
   { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
   { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'], low: true },
 ];

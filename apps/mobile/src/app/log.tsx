@@ -15,8 +15,8 @@
    3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
       alone): the same answers as "What set it off?" after an urge, so slips and urges are counted together.
    4. Next time: "When it is late and I am in bed with my phone, I will ...". One tap saves the if-then plan as an
-      after-slip talk-through (pr 1, ft), which Today asks about the next morning. Then the finish, by the fire, with
-      the plan to say once.
+      after-slip talk-through (pr 1, ft), which comes back on Today at its hour (core talkPlanNow) and is asked about once
+      that hour has passed. Then the finish, by the fire, with the plan to say once.
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
    Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow): the
    slip is saved already, so there is nothing to hold, and the look back ends warm, with the fire and a plan.
@@ -570,7 +570,7 @@ export default function Log() {
           </T>
         </View>
         <T tone="muted" style={s.center}>
-          Pick one. Daybook asks how it held tomorrow morning.
+          Pick one. Daybook brings it back when that time comes again.
         </T>
         {ownPlan ? (
           /* the box and its button stay near the top, where the keyboard does not cover them */

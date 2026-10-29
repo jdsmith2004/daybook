@@ -29,11 +29,8 @@ What the research says (a research agent, October 29): naming a feeling calms th
 2007); finer words predict fewer lapses after treatment, and the skill grows with practice; under stress, a coarse first
 choice (about four) and then nine to twelve words beats 144 at once.
 
-Recommendation: 10 then 1. Four doors first (fast under stress, one tap a stressed person can make), then the ember field
-of that corner for the exact word, so the rolling, alive feel stays. It keeps the flame at the center, and the embers
-feeding the flame is the picture for the videos. 3 (move the sun) is the strongest picture for a video and ties to the SOS
-sun, but one sun is coarse and needs a word list after it. Effort: medium (a screen and its words; no data changes, the
-feeling ids stay).
+**The owner's decision (October 29): the grid stays.** None of the fifteen beat it. What can change is the shape a
+feeling takes, how the grid starts, and the lighting; the next round looks only at those, inside today's grid.
 
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 

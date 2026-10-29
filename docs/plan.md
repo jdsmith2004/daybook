@@ -1,5 +1,22 @@
 # What is planned next
 
+## The App Store outside the United States (October 29, 2026; on branch claude/clever-villani-6a3f09, not merged)
+
+Finding people is the hard part, and many people quitting are in the UK, Canada and Australia. The only thing that kept the
+iPhone app in the US was the link out to pay on the web, which Apple allows on the US storefront only (3.1.1(a)).
+
+- Done (needs the owner's yes to merge, since it touches how money is asked for): the storefront rule is in core
+  (`tipWaysFor`, `webTipStorefront` in `supporter.ts`, with tests). On iPhone the web tip link shows only when StoreKit says
+  the storefront is the United States, and not while it is unknown; the purchase path refuses the web page elsewhere too.
+  The two lines that said "if you tipped on the web" (Restore finding nothing, "I already tipped") are neutral off the US
+  storefront. The web app and Android are unchanged. Helps Daybook grow: four new storefronts at no cost; tips there are
+  Apple's in-app purchase, which counts by tier, so any tip makes a supporter in any currency.
+- The owner: the countries in App Store Connect (launch.md step 9). Ireland and the EU wait for the Digital Services Act
+  trader question, since a trader's address and phone show on the EU App Store page.
+- Follow-up (medium): the crisis line is 988 everywhere in the app (21 places). It works in the US and Canada; the UK and
+  Ireland have Samaritans (116 123), Australia Lifeline (13 11 14), New Zealand 1737. Show the line for the person's
+  region (the phone's region, since it is care and must work with no store), with 988 as the default.
+
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
 **Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below

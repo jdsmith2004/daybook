@@ -26,8 +26,10 @@ import {
   tipLink,
   TIP_USD,
   TIP_WORDS,
+  tipWaysFor,
   type Supporter,
   type TipTierId,
+  type TipVia,
 } from '@daybook/core';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -41,8 +43,8 @@ import {
   loadPrices,
   ownedTips,
   ownedTipsFailed,
+  storefront,
   storePrice,
-  usStorefront,
   watchTips,
   type StoreTip,
 } from './tip-store';
@@ -55,16 +57,13 @@ export const TIP_TIERS: { id: TipTier; name: string; usd: number }[] = [
   { id: 'amazing', name: 'Amazing tip', usd: TIP_USD.amazing },
 ];
 
-/** how a tip is paid: Apple's in-app purchase (iPhone only) or the web tip page */
-export type TipVia = 'apple' | 'web';
+export type { TipVia };
 
-/** the ways this device can pay, best first. On iPhone the web tip page is offered only on the United States storefront
-    (Guidelines 3.1.1(a)), and not until the store has said which one it is. (Android is not shipped; the Play Store would
-    not allow the web page for this, so ask before shipping it there.) */
-export function tipWays(): TipVia[] {
-  if (!iapAvailable) return ['web'];
-  return usStorefront() ? ['apple', 'web'] : ['apple'];
-}
+/** the ways this device can pay, best first (core tipWaysFor). On iPhone the web tip page is offered only on the United
+    States storefront (Guidelines 3.1.1(a)), and not until the store has said which one it is, so Daybook can be offered in
+    every other storefront with Apple's in-app purchase alone. (Android is not shipped; the Play Store would not allow the
+    web page for this, so ask before shipping it there.) */
+export const tipWays = (): TipVia[] => tipWaysFor(Platform.OS, iapAvailable, storefront());
 
 /** asks the store for its prices again (the tip sheet, as it opens); resolves once it has answered or failed */
 export const refreshPrices = (): Promise<void> => (iapAvailable ? loadPrices().catch(() => undefined) : Promise.resolve());
@@ -294,6 +293,8 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
       buying.delete(tier);
     }
   }
+  /* never the web tip page where this device may not offer it (an iPhone outside the United States storefront) */
+  if (!tipWays().includes('web')) return null;
   const link = tipLink(tier, account);
   if (!link) return null;
   if (Platform.OS === 'web') {

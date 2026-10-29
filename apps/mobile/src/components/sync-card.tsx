@@ -18,7 +18,7 @@ import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { PREV_DAYS, useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
-import { syncTips, tipError } from '@/lib/tip';
+import { syncTips, tipError, tipWays } from '@/lib/tip';
 import { useTheme } from '@/lib/theme';
 
 /** words written for a phone, said for the place the log is kept: on the web it is this browser, not this phone */
@@ -109,7 +109,8 @@ function FindTip() {
         setBusy(true);
         const r = await syncTips(true).catch(() => null);
         setBusy(false);
-        if (!r || !supActive(r.server)) say(tipError() && tipError() !== 'No tip was found.' ? tipError() : SUP_SYNC_WORDS.none);
+        if (!r || !supActive(r.server))
+          say(tipError() && tipError() !== 'No tip was found.' ? tipError() : tipWays().includes('web') ? SUP_SYNC_WORDS.none : SUP_SYNC_WORDS.noneNoWeb);
       }}
     />
   );

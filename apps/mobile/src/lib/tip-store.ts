@@ -4,7 +4,7 @@
 
    Only iPhone takes Apple's purchase. Android is not shipped; there tipWays offers the web tip page alone, and this module
    is never called. */
-import { ACCOUNT_RE, appleTier, APPLE_TIPS, TIP_TIER_IDS, TIP_WORDS, type TipTierId } from '@daybook/core';
+import { ACCOUNT_RE, appleTier, APPLE_TIPS, TIP_TIER_IDS, TIP_WORDS, webTipStorefront, type TipTierId } from '@daybook/core';
 import { requireOptionalNativeModule } from 'expo';
 import * as IAP from 'expo-iap';
 import { Platform } from 'react-native';
@@ -40,16 +40,17 @@ function connect(): Promise<boolean> {
 const prices: Partial<Record<TipTierId, string>> = {};
 export const storePrice = (tier: TipTierId): string | undefined => prices[tier];
 
-/** asks the App Store for the three products and their prices */
 /* the App Store country of this Apple Account (alpha-3, "USA"), or null until the store says */
-let storefront: string | null = null;
-/** whether this Apple Account is on the United States storefront, the only one where a link out to pay on the web is
-    allowed (Guidelines 3.1.1(a)); false until the store has said */
-export const usStorefront = (): boolean => storefront === 'USA';
+let front: string | null = null;
+/** the App Store storefront of this Apple Account, or null while it is not known; core tipWaysFor decides from it whether
+    the web tip page may be offered (the United States only, Guidelines 3.1.1(a)) */
+export const storefront = (): string | null => front;
 
+/** asks the App Store for the storefront, the three products and their prices. The storefront is asked again each time
+    (the person can change the country of their Apple Account), and an answer that fails leaves it unknown: the safe side. */
 export async function loadPrices(): Promise<void> {
   if (!(await connect())) return;
-  if (!storefront) storefront = await IAP.getStorefront().catch(() => null);
+  front = await IAP.getStorefront().catch(() => null);
   try {
     const list = (await IAP.fetchProducts({ skus: TIP_TIER_IDS.map((t) => APPLE_TIPS[t]), type: 'in-app' })) as IAP.Product[] | null;
     for (const p of list || []) {
@@ -104,7 +105,7 @@ const failed = (code?: string) => {
     return;
   }
   const w = TIP_WORDS.sheet;
-  if (code && OFF_CODES.includes(code)) storeError = usStorefront() ? w.appleOffWeb : w.appleOff;
+  if (code && OFF_CODES.includes(code)) storeError = webTipStorefront(front) ? w.appleOffWeb : w.appleOff;
   else if (code === IAP.ErrorCode.IapNotAvailable) storeError = w.appleBlocked;
   else storeError = w.appleFailed;
 };

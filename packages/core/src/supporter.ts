@@ -155,6 +155,30 @@ export const ACCOUNT_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 /** a Stripe Checkout Session id */
 export const STRIPE_SESSION_RE = /^cs_(live|test)_[A-Za-z0-9]{10,200}$/;
 
+/* ---------- where the web tip page may be offered ---------- */
+
+/** how a tip is paid: Apple's in-app purchase (iPhone only) or the web tip page */
+export type TipVia = 'apple' | 'web';
+
+/** The App Store storefronts where an iPhone app may link out to pay on the web: the United States only (Guidelines
+    3.1.1(a) and 3.1.3). In every other storefront Daybook is offered in (the UK, Canada, Australia, New Zealand, Ireland
+    and any added later), an iPhone shows Apple's in-app purchase alone. StoreKit names the country in ISO 3166-1 alpha-3
+    ("USA"); alpha-2 is taken too. */
+export const WEB_TIP_STOREFRONTS: readonly string[] = ['USA', 'US'];
+
+/** whether an App Store storefront allows the link to the web tip page; false while it is not known (the safe side) */
+export const webTipStorefront = (code: unknown): boolean => typeof code === 'string' && WEB_TIP_STOREFRONTS.includes(code.trim().toUpperCase());
+
+/** The ways a tip can be paid on a device, best first. On iPhone: Apple's in-app purchase (when the build has it), then the
+    web tip page only when the storefront is known to allow it. Anywhere else (the web, and Android, where support.tsx
+    shows no tips for now): the web tip page. */
+export function tipWaysFor(os: string, iap: boolean, storefront: string | null | undefined): TipVia[] {
+  if (os !== 'ios') return ['web'];
+  const ways: TipVia[] = iap ? ['apple'] : [];
+  if (webTipStorefront(storefront)) ways.push('web');
+  return ways;
+}
+
 /** Accounts made before this moment keep sync with no tip (src 'grandfather'): the end of the day tips opened sync,
     October 23, 2026, in Chicago. Accounts that hold synced data when the server first checks them keep it too, whenever
     they were made (services/api supporter.ts). */
@@ -167,6 +191,8 @@ export const SUP_SYNC_WORDS = {
   check: 'I already tipped',
   checking: 'Looking for your tip…',
   none: 'No tip was found for this account yet. If you tipped on the web, open the page Stripe sent you back to, or write to us.',
+  /* the same, on an iPhone outside the United States storefront, where the web tip page is not offered (tipWaysFor) */
+  noneNoWeb: 'No tip was found for this account yet. If you tipped on another device, sign in to this account there once, or write to us.',
   /* where no tip can be paid (Android, until Google Play's billing is in): nothing about tips, and nothing to pay elsewhere */
   needNoTip: 'Sync and the safe copy are not open for this account yet. Your log stays safe on this device.',
   shortNoTip: 'Signed in · sync is not open yet',

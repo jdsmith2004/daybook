@@ -11,7 +11,8 @@
    Play's rules are checked), nothing about tips shows and nothing is locked. Checked by test/support.test.ts.
 
    On iPhone, Apple's in-app purchase is first, as Guideline 3.1.1 requires for anything that unlocks features; the link
-   to the web tip page is allowed on the United States storefront (3.1.1(a), 3.1.3), and Daybook is offered there only. */
+   to the web tip page is shown on the United States storefront only (3.1.1(a), 3.1.3; supporter.ts tipWaysFor), so Daybook
+   can be offered in other storefronts too. */
 import { changeSettings, type Change } from './actions';
 import type { AcctWhy } from './accounts';
 import { addDays, diffDays, eventsOf, isKey, isTime, logicalKey } from './legacy/core.js';
@@ -154,7 +155,8 @@ export const TIP_WORDS = {
     approved: 'Thank you. Your tip was approved, and your extras are open.',
     storeDown: 'Could not reach the App Store just now. A tip you made is not lost. Try again in a moment.',
     restore: 'Restore a tip',
-    restoreNone: 'No earlier tip was found on this Apple Account. If you tipped on the web, sign in with that account first.',
+    /** (no word about the web: it is said on every storefront, and only the United States one may point to the web) */
+    restoreNone: 'No earlier tip was found on this Apple Account. If you tipped while signed in to Daybook, sign in with that account first.',
     restoreNoneWeb: 'No earlier tip was found here. If you tipped while signed in, sign in with that account first.',
     /** under a restore that found nothing: a missing tip is opened by hand */
     restoreHelp: 'A tip that is missing can be opened by hand, with the email on your receipt.',

@@ -9,6 +9,10 @@ is fixed on `main`, with these left as they are:
 - 14, the night of a slip: the "After a slip" card still puts the SOS card below the fold. The round SOS tab stays in reach.
 - 8, the lesson end: the flame shrinks to about 84 px on a 390x844 page to keep the answer and the button in reach.
 
+**Since fixed (October 29, 2026):** 14 and the night of a slip. On Today, SOS and its two buttons end above the tab bar at
+390x844 and 375x667 on an ordinary day and the day of a slip (that day the "After a slip" card sits just under SOS), and
+setup's Hold to commit is on screen at 375x667.
+
 Not checked, as before: the iPhone build and haptics, a real sign-in and sync, and a real Stripe payment.
 
 **What the owner asked for:** walk the web app as five people (a new person through setup, the first Today and lesson;

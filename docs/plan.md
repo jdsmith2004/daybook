@@ -45,6 +45,12 @@ Recommendation: A2, B2, C1. A fire for each corner keeps a shape per kind of fee
 today) while every shape is Daybook's; the grid pouring out of the flame puts the heart of the app at the start; firelight
 is the most alive and makes the roll feel like carrying a light. Effort: medium.
 
+**The owner's decision on round two (October 29): the grid does not change, except to try squares in place of circles;
+the first screen ("Where is the feeling sitting?") becomes B3, the SOS sun in four parts, with today's wandering twins
+behind.** Round three (`docs/feelings-review/round3`) draws that: S1 four quarters, S2 one sun with whole-sun twins, S3
+soft quarters, S4 with turning rays; T1 the gold core kept with the colors as a ring, T2 ring and rays, T3 big and low, T4
+soft with more glow; G1 to G3 the grid with circles (today), rounded squares and squircles.
+
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
 **Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below

@@ -91,10 +91,14 @@ export const feelKind = (r: number, c: number): ShapeKind => {
   return `feel:${FAMILY[k]}:${across}:${down}`;
 };
 
-/** the chosen bubble's shape: it starts as the circle it was and, after a short beat in the eye, morphs out (MorphShape
+/** how round a bubble's corners are, as a share of its size: each bubble is a rounded square (the owner, October 29,
+    2026, trying squares in place of circles), as round as the M3 square the chosen one morphs out of */
+const SQ = 0.3;
+
+/** the chosen bubble's shape: it starts as the square it was and, after a short beat in the eye, morphs out (MorphShape
     springs when `kind` changes). The beat keeps a bubble that only rolls through from flickering into its shape. */
 function SelShape({ kind, size, color }: { kind: ShapeKind; size: number; color: string }) {
-  const [k, setK] = useState<ShapeKind>('circle');
+  const [k, setK] = useState<ShapeKind>('square');
   useEffect(() => {
     const t = setTimeout(() => setK(kind), 250);
     return () => clearTimeout(t);
@@ -176,7 +180,7 @@ const Bub = memo(function Bub({
             <SelShape kind={feelKind(r, c)} size={dia} color={color} />
           </View>
         ) : (
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: dia / 2, backgroundColor: color }]} />
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: dia * SQ, backgroundColor: color }]} />
         )}
         <Text numberOfLines={long ? 1 : 2} style={[s.bubT, { fontSize: fs, lineHeight: fs + 3 }]}>
           {f.w}

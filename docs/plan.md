@@ -1,5 +1,56 @@
 # What is planned next
 
+## The feelings grid, its own look (the owner, October 29, 2026; on branch feelings-own-look, not merged)
+
+The feeling chart itself (energy one way, pleasantness the other, four corners) is the Mood Meter's, a well-known chart
+anyone can use. The look of today's picker (a pannable field of bubbles that swell under the thumb and morph into
+shapes) is How We Feel's signature, and the owner wants the grid to lead the SOS marketing, so it gets Daybook's own look
+first (Apple's guideline 4.1, copycats, and the comments a copied look would draw). Fifteen directions are drawn in
+`docs/feelings-review` (`all.png` is the sheet); the owner picks, then the chosen one is built on this branch and shown
+on the simulator before anything merges.
+
+1. Ember field: embers on a night sky; the one under the thumb flares into a little flame.
+2. Sparks from the fire: feelings rise as sparks from the hearth; higher is more energy.
+3. Move the sun: the SOS sun is the picker; raise it for energy, slide it from storm to clear sky.
+4. Inner weather: storms, sun, rain and a quiet moon, sized by strength.
+5. The flame shows it: the mascot takes the feeling's color and shape from one pad under the thumb.
+6. Constellations: four constellations (The Storm, The Spark, The Fog, The Hearth); a star lights and says its name.
+7. Lanterns: rows of paper lanterns; the one you stop on lights up.
+8. Only words: the chart is made of the words, the one under the thumb big.
+9. Two slides, then a word: energy, then pleasant, then four word chips. Close to Apple's State of Mind.
+10. Four doors, then a word: Wound up, Lit up, Weighed down, Settled; then six words.
+11. The dial: a thumb dial round the flame. Feeling wheels are everywhere, so it is common, not ours.
+12. The sea: wave height is energy, the water's color is pleasantness.
+13. A map of feelings: a small land like the lesson map; feelings are places.
+14. Swipe the card: one big card, swiped toward how you feel. Close to Moodnotes' swiped face.
+15. One color field: a soft gradient and a loupe. Nearest to How We Feel's colored canvas.
+
+What the research says (a research agent, October 29): naming a feeling calms the body even with one quick word (Lieberman
+2007); finer words predict fewer lapses after treatment, and the skill grows with practice; under stress, a coarse first
+choice (about four) and then nine to twelve words beats 144 at once.
+
+**The owner's decision (October 29): the grid stays.** None of the fifteen beat it. What can change is the shape a
+feeling takes, how the grid starts, and the lighting; the next round looks only at those, inside today's grid.
+
+Round two, on the real grid (`docs/feelings-review/round2`, one row picture per question, each led by today's look):
+
+- A, the shape a feeling grows into: A0 today's shape families; A1 every feeling becomes the flame in its own color;
+  A2 a fire for each corner (crackling, tall, low, a glowing coal); A3 the mascot itself, with a face that matches.
+- B, how it starts: B0 today's four jelly circles; B1 four fires; B2 the four colors around the flame, the grid pouring
+  out of it; B3 from SOS, the sun just breathed with split into four quarters.
+- C, the lighting: C0 today's flat bubbles; C1 firelight (the middle lights its neighbors, the far ones sink into the
+  night); C2 each bubble lit from within; C3 the sky glowing from below in the color being rolled over.
+
+Recommendation: A2, B2, C1. A fire for each corner keeps a shape per kind of feeling (the meaning the shape families give
+today) while every shape is Daybook's; the grid pouring out of the flame puts the heart of the app at the start; firelight
+is the most alive and makes the roll feel like carrying a light. Effort: medium.
+
+**The owner's decision on round two (October 29): the grid does not change, except to try squares in place of circles;
+the first screen ("Where is the feeling sitting?") becomes B3, the SOS sun in four parts, with today's wandering twins
+behind.** Round three (`docs/feelings-review/round3`) draws that: S1 four quarters, S2 one sun with whole-sun twins, S3
+soft quarters, S4 with turning rays; T1 the gold core kept with the colors as a ring, T2 ring and rays, T3 big and low, T4
+soft with more glow; G1 to G3 the grid with circles (today), rounded squares and squircles.
+
 ## Whole-app UX audit: five people walked start to finish (October 27, 2026)
 
 **Done (October 27, 2026; the owner: "do it all", at high effort, owner decisions as recommended).** Every finding below

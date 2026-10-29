@@ -283,7 +283,7 @@ export default function Today() {
         <NotifyBanner />
         <SyncStrip />
         <Hero g={g} snap={snap} tk={tk} now={now}>
-          <MomentCard pick={pick} snap={snap} tk={tk} now={now} compact={size.compact} />
+          <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
           {note ? <Text style={[s.note, { color: c.accentText }]}>{note}</Text> : null}
         </Hero>
         <Card>

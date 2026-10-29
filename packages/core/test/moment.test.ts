@@ -14,12 +14,12 @@ const kinds = (days: Days, tk: string, now: number, s = st, dev = {}) => moments
 const slip = (days: Days, k: string, time = '23:00') => addEvent(days, k, 'slipped', time, {}, 1).days;
 
 describe('a calm day', () => {
-  it('the card is the day’s next stop, and the line under it names the rest', () => {
+  it('the card is the day’s next stop, with no line under it (Your day names the rest)', () => {
     const p = pickMoment({}, st, {}, '2026-10-20', at(20, 7));
     /* the morning has no stop of its own any more: the day opens on its lesson */
     expect(p.card).toMatchObject({ k: 'calm', h: LESSONS[0].title, btn: 'Start', go: 'lesson', v: LESSONS[0].id });
     expect(p.more).toBeNull();
-    expect(p.then).toBe('Then: the check-in around 6 PM and the wind-down from 10:00 PM.');
+    expect(p).not.toHaveProperty('then');
   });
   it('without an account, a lesson that waits behind one is never the card', () => {
     const s0 = normSettings({ ...st, routine: { ...st.routine, morning: false } });
@@ -38,7 +38,6 @@ describe('a calm day', () => {
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });
     const p = pickMoment({}, off, {}, '2026-10-20', at(20, 21));
     expect(p.card.k).toBe('done');
-    expect(p.then).toBe('');
   });
 });
 
@@ -71,7 +70,6 @@ describe('a slip, and the day after', () => {
     const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
     expect(p.card).toMatchObject({ k: 'run-ask', eb: 'Your sunrise check', h: 'Your run question from last night is waiting', go: 'sunrise' });
     expect(p.card.p).toBe('Your 7 days are yours for good. Keep counting from 7, or start fresh? Both answers are good ones.');
-    expect(p.then).toMatch(/^Then: .*the wind-down\.$/);
     /* not before the day starts, and not after noon: it never sits there all day */
     expect(kinds(d, '2026-10-22', at(23, 2))).not.toContain('run-ask');
     expect(kinds(d, '2026-10-22', at(22, 11, 59))).toContain('run-ask');

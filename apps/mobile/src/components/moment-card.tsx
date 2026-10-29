@@ -1,10 +1,10 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
    next stop, a run question left open, the Sunday review, the first week, a first pattern, days away), the whole band one
-   button, with the rest of the day named under it. The day of a slip keeps its full card, with its words of care; the
+   button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (the hard hours, a talk-through, a counting note,
    a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
-   two overlap. On a short phone (compact) the line naming the rest of the day is left out, so SOS fits above the tab bar. */
+   two overlap. */
 import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -24,15 +24,10 @@ import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
-export function MomentCard({ pick, snap, tk, now, compact }: { pick: MomentPick; snap: Snapshot; tk: string; now: number; compact?: boolean }) {
+export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Snapshot; tk: string; now: number }) {
   return (
     <View style={{ gap: 8 }}>
-      <TheCard m={pick.card} then={pick.then} snap={snap} tk={tk} now={now} />
-      {pick.then && BAND.has(pick.card.k) && !compact ? (
-        <T v="small" tone="muted" style={s.thenLine}>
-          {pick.then}
-        </T>
-      ) : null}
+      <TheCard m={pick.card} snap={snap} tk={tk} now={now} />
       {pick.more ? (
         <T v="small" tone="muted" style={s.more}>
           {'And one more: ' + pick.more.one + '. It comes up here next.'}
@@ -42,7 +37,7 @@ export function MomentCard({ pick, snap, tk, now, compact }: { pick: MomentPick;
   );
 }
 
-function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Snapshot; tk: string; now: number }) {
+function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; now: number }) {
   const { didSmall } = useLogActions();
   switch (m.k) {
     case 'pause':
@@ -66,7 +61,7 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
     case 'run-ask':
       return <Band m={m} sky="sun" onPress={() => router.push('/sunrise')} />;
     case 'slip-day':
-      return <Tile m={m} sky="sun" then={then} onPress={() => didSmall(tk)} />;
+      return <Tile m={m} sky="sun" onPress={() => didSmall(tk)} />;
     case 'calm': {
       const sky = ({ lesson: 'sky', checkin: 'violet', wind: 'night' } as const)[m.go as 'lesson'] || 'violet';
       return <Band m={m} sky={sky} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
@@ -84,8 +79,6 @@ function TheCard({ m, then, snap, tk, now }: { m: Moment; then: string; snap: Sn
   }
 }
 
-/* the moments that are one band under the flame (the rest of the day is named under it) */
-const BAND = new Set<Moment['k']>(['run-ask', 'calm', 'sunday', 'first-week', 'first-pattern', 'away']);
 /* the band's button stays short; the longer action is said in its label for screen readers */
 const PILL: Partial<Record<string, string>> = { sunrise: 'Choose', review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
 
@@ -129,7 +122,7 @@ function Band({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: (
 }
 
 /* the day of a slip: its full card, with its words of care and its one button */
-function Tile({ m, sky, then, onPress }: { m: Moment; sky: StopTile['sky']; then: string; onPress: () => void }) {
+function Tile({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {
   const c = useTheme();
   const L = lookOf(sky, c);
   const deep = c.scheme === 'dark' || sky === 'night';
@@ -167,7 +160,6 @@ function Tile({ m, sky, then, onPress }: { m: Moment; sky: StopTile['sky']; then
           <Text style={[s.btnT, { color: btn.ink }]}>{m.btn}</Text>
         </Pressable>
       ) : null}
-      {then ? <Text style={[s.then, { color: soft }]}>{then}</Text> : null}
     </View>
   );
 }
@@ -293,10 +285,8 @@ const s = StyleSheet.create({
   body: { fontFamily: font.bodyMedium, fontSize: 15.5, lineHeight: 21 },
   btn: { minHeight: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginTop: 4, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
   btnT: { fontFamily: font.bodyBold, fontSize: 17 },
-  then: { fontFamily: font.body, fontSize: 14, lineHeight: 19, textAlign: 'center' },
   ic: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   more: { paddingHorizontal: 8 },
-  thenLine: { paddingHorizontal: 8, textAlign: 'center' },
   band: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76, padding: 14, borderRadius: 20, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
   bandT: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
   go: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },

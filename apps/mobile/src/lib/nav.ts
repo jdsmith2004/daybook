@@ -10,7 +10,21 @@ export function keepRootState(get: () => State | undefined) {
 }
 
 /** the sheets: one thing, over everything (on iOS a card that slides up below the status bar) */
-export const SHEETS = ['points', 'mode', 'growth', 'day/[date]', 'entry', 'badge/[id]', 'privacy', 'account', 'counts', 'feedback', 'stats', 'tip'];
+export const SHEETS = [
+  'points',
+  'lessons-week',
+  'mode',
+  'growth',
+  'day/[date]',
+  'entry',
+  'badge/[id]',
+  'privacy',
+  'account',
+  'counts',
+  'feedback',
+  'stats',
+  'tip',
+];
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */
 const SCENE = /^(sos|tool\/\[id\]|log|sunrise|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;

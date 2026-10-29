@@ -3,11 +3,14 @@
    Under the picture, in the same card, the one next step (core pickMoment, moment-card.tsx), so what you do and what it
    grows are one picture (CLAUDE.md, "The flame is the heart of the app"). The flame moves in a way that fits its form and
    the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it and it says
-   hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while the
+   hi; tap the sky for Milestones; the level for how points work; the number for your days. Under the level, a small key in
+   the bar's color says what the bar is: "40 points to Level 20". When points come in while the
    app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
    to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
-   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek). It only fills, and a slip never
-   touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen feeding the flame.
+   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek), with words that say what it counts
+   ("1 of 7 days, lessons this week"); a tap opens the sheet that says how it fills (app/lessons-week.tsx). It only fills,
+   and a slip never touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen
+   feeding the flame.
    Every form is drawn the same size (big-flame.tsx): the growth shows in the form. On a short phone the sky is shorter
    (lib/today-size.ts), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
    that hold, one quiet line under the sky says the slip is logged and the days stay (core heroSlipLine). */
@@ -206,10 +209,10 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Opens Learn.`}
+        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Tap to see how it fills.`}
         onPress={() => {
           buzz('tap');
-          router.navigate('/learn');
+          router.push('/lessons-week');
         }}
         style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
         <Animated.View style={{ transform: [{ scale: ringPop }] }}>
@@ -218,11 +221,13 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
             lit={c.sun}
             dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
             now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
-            ink={ink}
           />
         </Animated.View>
+        <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
+          {shown.n} of 7 days
+        </Text>
         <Text maxFontSizeMultiplier={ON_ART} style={[s.ringT, { color: soft }]}>
-          LESSON DAYS
+          {'LESSONS\nTHIS WEEK'}
         </Text>
       </Pressable>
       <View style={s.flame} pointerEvents="box-none">
@@ -254,7 +259,7 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
       ) : null}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points. Tap to see how points work.`}
+        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
         onPress={() => router.push('/points')}
         style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
         {h && h.chip ? (
@@ -268,6 +273,15 @@ function Sky({ g, snap, tk, now }: { g: GameState; snap: Snapshot; tk: string; n
         <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
           Level {lvl.n} · {lvl.name} ›
         </Text>
+        {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
+        {lvl.next ? (
+          <View style={s.barKey}>
+            <View style={[s.barSw, { backgroundColor: c.sun }]} />
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.barT, { color: soft }]}>
+              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
       {grew ? (
         <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
@@ -296,7 +310,7 @@ function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
   return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 /** the week's days, n of them lit (the first n lit days; a newer one waits for the bloom) */
-function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string; dim: string; now: string; ink: string }) {
+function WeekRing({ week, lit, dim, now }: { week: LessonWeek; lit: string; dim: string; now: string }) {
   const r = (RING - RING_W) / 2;
   const step = 360 / 7;
   let left = week.n;
@@ -317,9 +331,6 @@ function WeekRing({ week, lit, dim, now, ink }: { week: LessonWeek; lit: string;
           );
         })}
       </Svg>
-      <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
-        {week.n}
-      </Text>
     </View>
   );
 }
@@ -352,7 +363,10 @@ const s = StyleSheet.create({
   },
   under: { padding: 14 },
   slipLine: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, textAlign: 'center', marginTop: -2, marginBottom: 10 },
-  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'center', gap: 3 },
-  ringN: { fontFamily: font.display, fontSize: 16, lineHeight: 19 },
-  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, letterSpacing: 1 },
+  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'flex-start', gap: 3 },
+  ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16, marginTop: 2 },
+  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, lineHeight: 12, letterSpacing: 1 },
+  barKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -2 },
+  barSw: { width: 14, height: 4, borderRadius: 2 },
+  barT: { fontFamily: font.bodySemi, fontSize: 12, lineHeight: 15 },
 });

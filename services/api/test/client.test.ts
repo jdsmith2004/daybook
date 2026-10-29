@@ -180,6 +180,60 @@ describe('two devices of one person', () => {
     expect(core.talksOf(b.snap.days)[0].talk.fw).toBe('Lonely');
   });
 
+  it('an older app version that changes a day never takes away what only a newer version can see', async () => {
+    const k = '2026-10-18';
+    const a = new Device(transport('alice'));
+    const old = new Device(transport('alice'));
+    const c = new Device(transport('alice'));
+    const plan = {
+      ...core.newTalk(150),
+      p: 'change' as const,
+      pr: 1 as const,
+      n: 'close' as const,
+      m: ['text'] as core.TalkMove[],
+      mo: 'late',
+      ft: 'lonely' as const,
+    };
+    a.change((s) => ({ ...s, settings: st(90) }), 90);
+    a.change(
+      (s) => ({ ...s, days: core.saveTalk(core.addEvent(s.days, k, 'slipped', '23:00', { id: 's9', trigger: 'lonely', fa: 'flat' }, 100).days, k, plan, 150) }),
+      150,
+    );
+    await a.sync();
+    serverNow += 1000;
+    await old.sync();
+    /* the older version reads the day through its own normDay, which has never heard of fa, pr or ft */
+    const seen = old.snap.days[k];
+    old.snap = {
+      ...old.snap,
+      days: {
+        ...old.snap.days,
+        [k]: {
+          ...seen,
+          events: seen.events.map(({ fa: _fa, fb: _fb, ...e }) => e),
+          p: seen.p && { ...seen.p, tt: seen.p.tt?.map(({ pr: _pr, ft: _ft, fw: _fw, ...t }) => t) },
+        },
+      },
+    };
+    /* and then logs an urge ridden out on that day, which sends the whole day as it sees it */
+    old.change((s) => addRode(s, k, serverNow + 10), serverNow + 10);
+    serverNow += 1000;
+    await old.sync();
+    serverNow += 1000;
+    await a.sync();
+    const day = a.snap.days[k];
+    expect(day.events.map((e) => e.outcome).sort()).toEqual(['rode', 'slipped']);
+    expect(day.events.find((e) => e.id === 's9')).toMatchObject({ fa: 'flat', trigger: 'lonely' });
+    expect(core.talksOf(a.snap.days)[0].talk).toMatchObject({ pr: 1, ft: 'lonely' });
+    /* the mended day went back to the account, so a third device gets all of it */
+    expect(a.dirty).toEqual({});
+    serverNow += 1000;
+    await c.sync();
+    expect(c.snap.days[k].events.find((e) => e.id === 's9')?.fa).toBe('flat');
+    expect(core.talksOf(c.snap.days)[0].talk.ft).toBe('lonely');
+    expect(c.snap.days[k].events.length).toBe(2);
+  });
+
   it('a deleted day stays deleted, and an older copy does not bring it back', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

@@ -81,11 +81,51 @@ function localU(s: Snapshot, dirty: Dirty, id: RecordId): number | null {
   return dirty[id] != null ? dirty[id] : null;
 }
 
+/* What an older app version does not know. It reads a day through its own normDay, which drops fields it has never
+   heard of, so when it changes that day (a new entry, a check-in) the copy it sends comes back without them: how a slip
+   felt after (fa) and the feeling before (fb, older slips), the situation and the after-slip mark on a plan (ft, pr, fw),
+   the mood and urges of the check-in (md, u), the answer to "How are you feeling today?" (df). None of these is ever
+   taken off by the app once set, so a copy without one that this device has is a copy from an app that cannot see it. */
+const EV_KEEP = ['fb', 'fa'] as const;
+const TALK_KEEP = ['pr', 'fw', 'ft'] as const;
+const CI_KEEP = ['md', 'u'] as const;
+const P_KEEP = ['df'] as const;
+
+/** fills in, from `had`, the fields that only a newer app knows and `day` is missing (see EV_KEEP above), so an older app
+    version that changed the day never takes them away. A slip's fields come back only while it is still a slip, and a
+    plan's only to the same plan (by id). Gives back `day` itself when nothing was missing. */
+export function keepNewer(day: Day, had: Day | undefined): Day {
+  if (!had) return day;
+  let filled = false;
+  const fill = <T extends object>(to: T, from: object | null | undefined, keys: readonly string[]): T => {
+    if (!from) return to;
+    let out = to;
+    for (const k of keys) {
+      const v = (from as Record<string, unknown>)[k];
+      if (v === undefined || k in to) continue;
+      if (out === to) out = { ...to };
+      (out as Record<string, unknown>)[k] = v;
+      filled = true;
+    }
+    return out;
+  };
+  const before = new Map(had.events.map((e) => [e.id, e]));
+  const events = day.events.map((e) => (e.outcome === 'slipped' && before.get(e.id)?.outcome === 'slipped' ? fill(e, before.get(e.id), EV_KEEP) : e));
+  const checkin = day.checkin ? fill(day.checkin, had.checkin, CI_KEEP) : day.checkin;
+  let p = day.p ? fill(day.p, had.p, P_KEEP) : day.p;
+  if (p && p.tt && had.p?.tt) {
+    const talks = new Map(had.p.tt.map((t) => [t.id, t]));
+    const tt = p.tt.map((t) => fill(t, talks.get(t.id), TALK_KEEP));
+    if (tt.some((t, i) => t !== p!.tt![i])) p = { ...p, tt };
+  }
+  return filled ? { ...day, events, checkin, p } : day;
+}
+
 /** Two copies of one day, both changed (two devices logged on the same day before syncing): joined entry by entry, so no
     entry is lost. An entry in both is taken from the newer copy; an entry in one only is kept, unless the other copy
     deleted it (Day.gone): a delete wins over an older copy. The check-in and the day's plan come from the newer copy, or
-    from the older one when the newer has none. The joined day gets a change time past both, so it wins everywhere.
-    Gives back null when nothing is left in it. */
+    from the older one when the newer has none. What only a newer app version knows is kept from either copy (keepNewer).
+    The joined day gets a change time past both, so it wins everywhere. Gives back null when nothing is left in it. */
 export function mergeDay(a: Day, b: Day): Day | null {
   const [newer, older] = (b.u || 0) > (a.u || 0) ? [b, a] : [a, b];
   const gone = [...new Set([...(older.gone || []), ...(newer.gone || [])])].slice(-100);
@@ -102,7 +142,7 @@ export function mergeDay(a: Day, b: Day): Day | null {
   if (!events.length && !checkin && !p) return null;
   const day: Day = { d: newer.d, events, checkin, p, u: Math.max(a.u || 0, b.u || 0) + 1 };
   if (gone.length) day.gone = gone;
-  return day;
+  return keepNewer(day, older);
 }
 
 const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
@@ -155,8 +195,20 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
        to an older copy of the settings) */
     if (p.kind === 'settings') snap.settings = r.data ? keepSup(r.data as Settings, snap.settings?.sup) : null;
     else if (p.kind === 'days') {
-      if (r.data) snap.days[p.key] = r.data as Snapshot['days'][string];
-      else delete snap.days[p.key];
+      if (r.data) {
+        /* a copy from an older app version may have dropped what it cannot see: kept from this device's copy, and the
+           mended day is sent back, so the account (and every other device) has it again */
+        const theirs = r.data as Day;
+        const kept = keepNewer(theirs, snap.days[p.key]);
+        if (kept !== theirs) {
+          const u = r.u + 1;
+          snap.days[p.key] = { ...kept, u };
+          d[r.id] = u;
+          changed.add(r.id);
+          continue;
+        }
+        snap.days[p.key] = theirs;
+      } else delete snap.days[p.key];
     } else if (p.kind === 'journal') {
       if (r.data) jn[p.key] = r.data as JEntry;
       else delete jn[p.key];

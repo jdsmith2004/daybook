@@ -4,8 +4,23 @@ import { isDayHours } from '../src/view';
 import { describe, expect, it } from 'vitest';
 import { computeMetrics, normSettings } from '../src/legacy/core.js';
 import { addEvent } from '../src/mutate';
-import { inTen, patDiffs, patGaps, patInsights, patKeys, patNowLine, patRideOut, patTriggerLines, patTriggers, patWeeks, patWhen } from '../src/pattern';
+import {
+  inTen,
+  patDiffs,
+  patGaps,
+  patInsights,
+  patKeys,
+  patNowLine,
+  patRideOut,
+  patSlipTrig,
+  patTriggerLines,
+  patTriggers,
+  patWeeks,
+  patWhen,
+} from '../src/pattern';
 import { riskWindow } from '../src/risk';
+import { newTalk, type TalkMove } from '../src/talk';
+import { saveTalk } from '../src/talk-log';
 import type { DayKey, Days } from '../src/types';
 import { addDays } from '../src/legacy/core.js';
 
@@ -92,6 +107,8 @@ describe('when and what', () => {
       '“Bored or idle” comes up most: 6 times, and you rode it out every time.',
       'When it is stressed or anxious, it ends in a slip 5 times out of 5. That is the one to plan for.',
     ]);
+    /* not said twice when the line about the last slips already names it */
+    expect(patTriggerLines(t.list, 'stress')).toEqual(['“Bored or idle” comes up most: 6 times, and you rode it out every time.']);
   });
   it('puts it together in at most three sentences', () => {
     const g = patGaps(d, st, '2026-10-16');
@@ -128,5 +145,52 @@ describe('hard hours in the daytime', () => {
     expect(isDayHours('10 PM to 12 AM')).toBe(false);
     expect(isDayHours('12 AM to 2 AM')).toBe(false);
     expect(isDayHours('4 AM to 6 AM')).toBe(false);
+  });
+});
+
+describe('what came before the slips (patSlipTrig)', () => {
+  const tk = '2026-10-20';
+  const slips = (trigs: (string | null)[]) => trigs.reduce((d: Days, t, i) => ev(d, addDays(tk, -20 + i * 2), 'slipped', '23:10', t), {});
+  it('is said only once there is a real pattern: 3 slips with a situation, the most common behind at least half', () => {
+    expect(patSlipTrig(slips(['late', 'late']), st, tk)).toBeNull();
+    expect(patSlipTrig(slips(['late', 'bored', 'stress']), st, tk)).toBeNull();
+    expect(patSlipTrig(slips(['late', 'bored', 'late', 'other', null]), st, tk)).toMatchObject({ k: 'late', n: 2, of: 5 });
+    expect(patSlipTrig(slips(['late', 'bored', 'stress', 'lonely']), st, tk)).toBeNull();
+    /* only the last six slips, in the last 90 days */
+    expect(patSlipTrig(slips(['late', 'late', 'late', 'bored', 'stress', 'lonely', 'tired', 'scroll', 'bored']), st, tk)).toBeNull();
+  });
+  it('one plain line about the situation, with a plan when one is ready for it', () => {
+    const d = slips(['bored', 'stress', 'late', 'late', 'lonely', 'late']);
+    expect(patSlipTrig(d, st, tk)!.line).toBe(
+      'Being in bed late with your phone came before 3 of your last 6 slips. A plan for that moment makes the next one easier.',
+    );
+    expect(patSlipTrig(slips(['late', 'late', 'late', 'late']), st, tk)!.line).toMatch(
+      /^Being in bed late with your phone came before each of your last 4 slips\./,
+    );
+    const t = {
+      ...newTalk(1000),
+      p: 'change' as const,
+      pr: 1 as const,
+      n: 'rest' as const,
+      m: ['away'] as TalkMove[],
+      mo: 'late',
+      at: null,
+      ft: 'late' as const,
+    };
+    expect(patSlipTrig(saveTalk(d, tk, t, 1000), st, tk)!.line).toBe(
+      'Being in bed late with your phone came before 3 of your last 6 slips. Your plan for that moment is ready.',
+    );
+    /* a plan for another situation is not this one */
+    expect(patSlipTrig(saveTalk(d, tk, { ...t, ft: 'bored' }, 1000), st, tk)!.line).toMatch(/makes the next one easier\.$/);
+    /* an answer in the person's own words reads in quotes */
+    const own = normSettings({ ...st, opts: { trig: [{ id: 'u_fight', t: 'After a fight' }] } });
+    expect(patSlipTrig(slips(['u_fight', 'u_fight', 'late']), own, tk)!.line).toMatch(/^“After a fight” came before 2 of your last 3 slips\./);
+  });
+  it('is about the situation, never the person', () => {
+    for (const k of ['late', 'lonely', 'bored', 'stress', 'tired', 'scroll']) {
+      const l = patSlipTrig(slips([k, k, k]), st, tk)!.line;
+      expect(l).toMatch(/ came before each of your last 3 slips\. /);
+      expect(l).not.toMatch(/you (failed|gave in|should|always|never)|your fault|weak|n['’]t|porn/i);
+    }
   });
 });

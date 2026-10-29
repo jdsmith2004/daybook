@@ -16,6 +16,7 @@ import {
   patNeeds,
   patNowLine,
   patRideOut,
+  patSlipTrig,
   patTriggerLines,
   patTriggers,
   patWeeks,
@@ -213,6 +214,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const ride = patRideOut(weeks);
   const when = patWhen(snap.days, st, keys, tk);
   const trig = patTriggers(snap.days, st, keys, tk);
+  /* what came before the last slips, once it is a real pattern (the last six slips, whatever the range) */
+  const slipTrig = patSlipTrig(snap.days, st, tk);
   const needs = patNeeds(snap.days, keys);
   const diffs = patDiffs(snap.days, keys);
   const ins = patInsights(g, ride, when, trig.list);
@@ -418,6 +421,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
 
         <View onLayout={at('what')}>
           <Block title="What sets it off?">
+            {slipTrig ? <T style={{ fontFamily: font.bodySemi }}>{slipTrig.line}</T> : null}
             {trig.list.length ? (
               <>
                 <Legend
@@ -435,7 +439,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                     ] as [number, 'rode' | 'slip'][],
                   }))}
                 />
-                {patTriggerLines(trig.list).map((l) => (
+                {patTriggerLines(trig.list, slipTrig?.k).map((l) => (
                   <T key={l} style={{ fontFamily: font.bodySemi }}>
                     {l}
                   </T>

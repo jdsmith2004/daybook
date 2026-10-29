@@ -6,6 +6,10 @@
      caption  the headline; sub: a smaller line under it
      bg       a key of BACKGROUNDS; theme: light or dark (the app's own theme inside the phone)
      at       the moment the demo log is seen at (default DEMO.at); scroll: how far down the screen to start
+     zoom     the phone's width as a share of the shot's (default FRAME.width); a big phone runs off the bottom edge
+     top      where the phone starts, as a share of the shot's height (default CAPTION.phoneTop)
+     pills    short facts under the caption, split by |, each with a check (only true ones: "Free|No account|No ads")
+     In a phone shot, screen2 is a second phone in front of the first, a little lower and to the right.
    When the image is ready to capture, window.__shotsReady is true (scripts/shots.ts waits for it). */
 import { flameFigureSvg } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
@@ -135,18 +139,68 @@ function Caption({ p, bg, W, align = 'center', scale = 1 }: { p: Params; bg: Bg;
           p.sub,
         )
       : null,
+    p.pills ? <Pills list={p.pills.split('|')} bg={bg} W={W * scale} align={align} /> : null,
+  );
+}
+
+/* the facts under the caption: small pills, each with a check */
+function Pills({ list, bg, W, align }: { list: string[]; bg: Bg; W: number; align: 'center' | 'left' }) {
+  const fs = W * CAPTION.pill;
+  const check = `<svg viewBox="0 0 16 16" width="${fs * 0.9}" height="${fs * 0.9}"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="${bg.ink}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return h(
+    'div',
+    { style: { display: 'flex', flexWrap: 'wrap', justifyContent: align === 'center' ? 'center' : 'flex-start', gap: fs * 0.5, marginTop: fs * 0.3 } },
+    list.map((t) =>
+      h(
+        'div',
+        {
+          key: t,
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: fs * 0.35,
+            padding: `${fs * 0.42}px ${fs * 0.75}px ${fs * 0.42}px ${fs * 0.6}px`,
+            borderRadius: 999,
+            background: bg.pill,
+            fontFamily: FONTS.body,
+            fontSize: fs,
+            lineHeight: 1,
+            color: bg.ink,
+          },
+        },
+        h('span', { style: { display: 'flex' }, dangerouslySetInnerHTML: { __html: check } }),
+        t,
+      ),
+    ),
   );
 }
 
 function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: Size; bg: Bg; W: number; H: number; screens: string[]; onReady: () => void }) {
-  const pw = W * FRAME.width;
+  const top = H * Number(p.top || CAPTION.phoneTop);
+  const caption = h(
+    'div',
+    { key: 'cap', style: { position: 'absolute', left: W * CAPTION.side, right: W * CAPTION.side, top: W * CAPTION.top } },
+    <Caption p={p} bg={bg} W={W} />,
+  );
+  /* two phones: the first behind on the left, the second in front, lower and to the right, each turned a little */
+  if (screens.length >= 2) {
+    const pw = W * Number(p.zoom || FRAME.pair);
+    const at = (left: number, y: number, turn: number, screen: string) =>
+      h(
+        'div',
+        { key: screen, style: { position: 'absolute', left, top: y, transform: `rotate(${turn}deg)`, transformOrigin: '50% 0' } },
+        <Phone width={pw} device={size.device || 'iphone'} screen={screen} p={p} onReady={onReady} />,
+      );
+    return h('div', null, caption, at(-W * 0.05, top, -4, screens[0]), at(W - pw - W * 0.005, top + H * 0.07, 4, screens[1]));
+  }
+  const pw = W * Number(p.zoom || FRAME.width);
   return h(
     'div',
     null,
-    h('div', { style: { position: 'absolute', left: W * CAPTION.side, right: W * CAPTION.side, top: W * CAPTION.top } }, <Caption p={p} bg={bg} W={W} />),
+    caption,
     h(
       'div',
-      { style: { position: 'absolute', left: (W - pw) / 2, top: H * CAPTION.phoneTop } },
+      { style: { position: 'absolute', left: (W - pw) / 2, top } },
       <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} />,
     ),
   );

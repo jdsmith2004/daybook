@@ -35,12 +35,14 @@ export interface Bg {
   ink: string;
   sub: string;
   stars: boolean;
+  /** the pills' fill under the caption */
+  pill: string;
 }
 export const BACKGROUNDS: Record<string, Bg> = {
-  night: { sky: ['#15103C', '#2B2169', '#4A3592'], glow: 'rgba(255,194,90,.30)', ink: '#FFFFFF', sub: '#D9D2FF', stars: true },
-  dawn: { sky: ['#2C2175', '#7A3F98', '#F08C7C'], glow: 'rgba(255,214,140,.32)', ink: '#FFFFFF', sub: '#FFE6DA', stars: true },
-  cream: { sky: ['#FFF8EB', '#FFEFD6', '#FFE2BC'], glow: 'rgba(255,170,80,.28)', ink: '#2A2350', sub: '#6B6489', stars: false },
-  day: { sky: ['#5AA8FF', '#9CD3FF', '#E4F4FF'], glow: 'rgba(255,230,140,.40)', ink: '#14244A', sub: '#2E4A7A', stars: false },
+  night: { sky: ['#15103C', '#2B2169', '#4A3592'], glow: 'rgba(255,194,90,.30)', ink: '#FFFFFF', sub: '#D9D2FF', stars: true, pill: 'rgba(255,255,255,.16)' },
+  dawn: { sky: ['#2C2175', '#7A3F98', '#F08C7C'], glow: 'rgba(255,214,140,.32)', ink: '#FFFFFF', sub: '#FFE6DA', stars: true, pill: 'rgba(255,255,255,.18)' },
+  cream: { sky: ['#FFF8EB', '#FFEFD6', '#FFE2BC'], glow: 'rgba(255,170,80,.28)', ink: '#2A2350', sub: '#6B6489', stars: false, pill: 'rgba(42,35,80,.08)' },
+  day: { sky: ['#5AA8FF', '#9CD3FF', '#E4F4FF'], glow: 'rgba(255,230,140,.40)', ink: '#14244A', sub: '#2E4A7A', stars: false, pill: 'rgba(255,255,255,.55)' },
 };
 
 export const FONTS = {
@@ -55,6 +57,8 @@ export const CAPTION = {
   head: 0.088,
   sub: 0.043,
   gap: 0.022,
+  /** the facts under the caption (pills) */
+  pill: 0.036,
   /** where the phone starts, as a share of the shot's height */
   phoneTop: 0.235,
 };
@@ -62,6 +66,8 @@ export const CAPTION = {
 /** the phone in the shot: its width as a share of the shot's, the screen inside it, and the real app's viewport */
 export const FRAME = {
   width: 0.72,
+  /** each phone's width when two stand together */
+  pair: 0.6,
   /** the app is laid out at this phone size, then scaled into the frame */
   viewport: { w: 390, h: 844 },
   iphone: { bezel: 0.034, radius: 0.15, body: '#12101E', edge: '#3A3550', island: true, statusH: 50, homeBar: true },

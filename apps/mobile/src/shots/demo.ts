@@ -26,6 +26,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
+  /* a lesson looked at again on four days this week, so the ring of lesson days on Today is part lit */
+  const RECENT = ['2026-10-12', '2026-10-13', '2026-10-15', '2026-10-16'];
   let id = 0;
   const ev = (time: string, outcome: 'rode' | 'slipped', trigger: string) => ({
     id: 'e' + ++id,
@@ -48,7 +50,18 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       d,
       events,
       checkin: { m: 6 + (i % 4), c: 6, e: 6 + (i % 3), s: 4 - (i % 3), h: 7, so: 'Y', ro: 'N', n: '', done: true, at: 0 },
-      p: { w: [], wd: i % 2 === 0, r: false, c: i % 3, m: false, tl: [], po: null, ls: i % 4 === 0 && lessons.length ? [lessons.shift()] : [], lv: [], ov: {} },
+      p: {
+        w: [],
+        wd: i % 2 === 0,
+        r: false,
+        c: i % 3,
+        m: false,
+        tl: [],
+        po: null,
+        ls: i % 4 === 0 && lessons.length ? [lessons.shift()] : [],
+        lv: RECENT.includes(d) ? ['l2'] : [],
+        ov: {},
+      },
       u: 1,
     };
   }

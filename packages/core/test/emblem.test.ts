@@ -1,6 +1,7 @@
-/* The flame in its own sky, for the top of Today (emblem.ts emblemScene). */
+/* The flame in its own sky, for the top of Today (emblem.ts emblemScene), and the icon calendar (flame-art.ts). */
 import { describe, expect, it } from 'vitest';
 import { emblemLayers, emblemScene, emblemXml } from '../src/emblem';
+import { ICON_CALENDAR, ICON_LOOKS, iconLookFor } from '../src/flame-art';
 
 describe('the flame in its own sky', () => {
   it('every level has a sky, and the round frame is softened away', () => {
@@ -64,5 +65,19 @@ describe('the flame in layers, so only the figure moves', () => {
       expect(L.at.x).toBeGreaterThan(0.2);
       expect(L.at.y).toBeGreaterThan(0.2);
     }
+  });
+});
+
+describe('the icon calendar', () => {
+  it('picks the look for the day an update reaches people, a few days after it is built', () => {
+    expect(iconLookFor('2026-10-26')).toBe('halloween');
+    expect(iconLookFor('2026-10-30')).toBe('autumn');
+    expect(iconLookFor('2026-11-28')).toBe('winter');
+    expect(iconLookFor('2026-12-25')).toBe('newyear');
+    expect(iconLookFor('2027-01-01')).toBe('newyear');
+    expect(iconLookFor('2027-01-02')).toBeNull();
+    expect(iconLookFor('2027-02-05')).toBe('valentine');
+    expect(iconLookFor('2027-06-10')).toBeNull();
+    for (const c of ICON_CALENDAR) expect(ICON_LOOKS).toContain(c.look);
   });
 });

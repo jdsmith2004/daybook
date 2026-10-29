@@ -533,34 +533,136 @@ export function flameIconSvg(): string {
   );
 }
 
-/* ---------- the pictures in a note ---------- */
-/* One for each way a note speaks. The flame backs off with the person and rests, and it is always lit: it is never shown
-   out, sad or sick. sky: its three colors; glow: the light's color, how strong, how wide; kind, k, by: the flame; n: stars */
-export type NoteMood = 'bright' | 'warm' | 'steady' | 'ember' | 'asleep';
-const NOTE: Record<NoteMood, { sky: string[]; glow: [string, number, number]; kind: Kind; k: number; by: number; n: number; rest?: boolean }> = {
-  /* the app icon: the full flame at its best */
-  bright: { sky: ['#15103C', '#281F66', '#3A2C86'], glow: ['#FFC25A', 0.75, 56], kind: 'full', k: 0.76, by: 104, n: 6 },
-  /* the kinder words: the full flame in a dawn of rose and amber, a soft warm light */
-  warm: { sky: ['#2C2175', '#7A4399', '#E0808C'], glow: ['#FFB7A8', 0.6, 54], kind: 'full', k: 0.72, by: 104, n: 3 },
-  /* come back, day 2 and 4: the small flame, calm */
-  steady: { sky: ['#17113F', '#2B2169', '#3E2D88'], glow: ['#FFC25A', 0.5, 44], kind: 'small', k: 0.6, by: 104, n: 8 },
-  /* day 7 and 14: the spark, a little lower and a little smaller */
-  ember: { sky: ['#15103C', '#221A5C', '#33287A'], glow: ['#FFC25A', 0.42, 36], kind: 'tiny', k: 0.5, by: 106, n: 10 },
-  /* day 30: the spark resting, eyes closed and smiling, still lit under the stars */
-  asleep: { sky: ['#0B0A2E', '#1A1550', '#2C2072'], glow: ['#FFC25A', 0.36, 32], kind: 'tiny', k: 0.44, by: 108, n: 12, rest: true },
+/* ---------- the icon, dressed up ---------- */
+/* The same flame as the app icon in a look for a time of year, the way Duolingo dresses its owl: clearly the same icon
+   every time (the melting flame, tried October 26, read as weird and was dropped). A look ships as the app's own icon in an App Store update (tools/make-icons.mjs --look; the calendar is in
+   docs/icon-calendar.md), so everyone sees it, and the next update puts the plain flame back. The flame stands where it
+   does on the icon (its base at 60, 104, 0.76 of its box), so a hat sits on its tip at about (54, 20). */
+export const ICON_LOOKS = ['halloween', 'autumn', 'winter', 'newyear', 'valentine'] as const;
+export type IconLook = (typeof ICON_LOOKS)[number];
+/** when each look is the icon, every year, as month-day from and to (both in; the last one wraps the new year). Between
+    them the icon is the plain flame. docs/icon-calendar.md shows it. */
+export const ICON_CALENDAR: { look: IconLook; from: string; to: string }[] = [
+  { look: 'valentine', from: '02-07', to: '02-15' },
+  { look: 'halloween', from: '10-15', to: '11-01' },
+  { look: 'autumn', from: '11-02', to: '11-30' },
+  { look: 'winter', from: '12-01', to: '12-26' },
+  { look: 'newyear', from: '12-27', to: '01-04' },
+];
+/** days an update takes to reach people (App Review, then the phones updating): the icon is picked for the build day plus this */
+export const ICON_LEAD_DAYS = 3;
+/** the look for an update built on day k (YYYY-MM-DD): the look on the day it reaches people, or null for the plain flame */
+export function iconLookFor(k: string): IconLook | null {
+  const d = new Date(k + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + ICON_LEAD_DAYS);
+  const md = d.toISOString().slice(5, 10);
+  const c = ICON_CALENDAR.find((x) => (x.from <= x.to ? md >= x.from && md <= x.to : md >= x.from || md <= x.to));
+  return c ? c.look : null;
+}
+const leaf = (x: number, y: number, r: number, c: string) =>
+  `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M0 -6C4 -4 5 2 0 6C-5 2 -4 -4 0 -6Z" fill="${c}"/><path d="M0 -5V6" stroke="#7A3A1A" stroke-width=".7"/></g>`;
+const heart = (x: number, y: number, r: number, c: string, op = 1) =>
+  `<path d="M${f(x)} ${f(y + r * 0.9)}C${f(x - r * 1.6)} ${f(y - r * 0.1)} ${f(x - r * 0.9)} ${f(y - r * 1.3)} ${f(x)} ${f(y - r * 0.45)}C${f(x + r * 0.9)} ${f(y - r * 1.3)} ${f(x + r * 1.6)} ${f(y - r * 0.1)} ${f(x)} ${f(y + r * 0.9)}Z" fill="${c}" opacity="${op}"/>`;
+const bat = (x: number, y: number, s: number) =>
+  `<path transform="translate(${x} ${y}) scale(${s})" d="M0 0C-3 -4 -8 -5 -12 -2C-10 -1 -9 1 -9 3C-7 1 -5 1 -4 3C-3 1 -1 1 0 2C1 1 3 1 4 3C5 1 7 1 9 3C9 1 10 -1 12 -2C8 -5 3 -4 0 0Z" fill="#160B26"/>`;
+const flakes = (list: number[][]) => list.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="#fff" opacity=".9"/>`).join('');
+const LOOKS: Record<IconLook, { sky: [string, string, string]; back: string; front: string; hat?: boolean }> = {
+  /* a witch's hat on the tip, a big moon and two bats */
+  halloween: {
+    sky: ['#140A2E', '#3A1A5E', '#C0572A'],
+    hat: true,
+    back: `<circle cx="96" cy="22" r="14" fill="#FFE9A8"/><circle cx="91" cy="18" r="3" fill="#F2D488" opacity=".7"/><circle cx="100" cy="27" r="2" fill="#F2D488" opacity=".7"/>${bat(96, 24, 0.8)}${bat(20, 96, 0.9)}${bat(104, 84, 0.6)}`,
+    front:
+      `<g transform="rotate(-14 56 32)"><ellipse cx="56" cy="32" rx="27" ry="5.5" fill="#24133F"/><path d="M42 31L60 -6L71 31Z" fill="#2E1A52"/>` +
+      `<path d="M44.5 26L69 26L70.5 31L43 31Z" fill="#8A3FC0"/><rect x="53" y="25.5" width="7" height="6" rx="1" fill="none" stroke="#FFC94A" stroke-width="1.6"/></g>`,
+  },
+  /* a red winter hat with its white trim and bobble, snow falling, snow on the ground */
+  winter: {
+    sky: ['#0E1A44', '#24387A', '#5874B8'],
+    hat: true,
+    back:
+      flakes([
+        [16, 18, 1.6],
+        [30, 40, 1.2],
+        [100, 16, 1.8],
+        [88, 44, 1.2],
+        [12, 62, 1.3],
+        [108, 70, 1.5],
+        [74, 8, 1.1],
+        [24, 84, 1.2],
+      ]) + `<path d="M-2 108C30 100 90 100 122 108V122H-2Z" fill="#EAF2FF"/>`,
+    front:
+      `<g transform="rotate(-10 58 32)"><path d="M38 33C40 12 58 -2 80 6C70 8 68 18 76 33Z" fill="#E0323C"/><path d="M41 30C44 14 58 4 74 8" fill="none" stroke="#B8222C" stroke-width="2" opacity=".5"/>` +
+      `<rect x="34" y="28" width="46" height="10" rx="5" fill="#fff"/><circle cx="82" cy="7" r="6" fill="#fff"/></g>`,
+  },
+  /* a party hat, confetti and two bursts of fireworks */
+  newyear: {
+    sky: ['#120C3A', '#2A1E6E', '#4A2F8E'],
+    hat: true,
+    back:
+      [
+        [24, 26, '#FFD25A'],
+        [98, 22, '#7FE0FF'],
+      ]
+        .map(([x, y, c]) =>
+          Array.from({ length: 10 }, (_, i) => {
+            const a = (i / 10) * Math.PI * 2;
+            return `<path d="M${f(+x + Math.cos(a) * 5)} ${f(+y + Math.sin(a) * 5)}L${f(+x + Math.cos(a) * 13)} ${f(+y + Math.sin(a) * 13)}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`;
+          }).join(''),
+        )
+        .join('') +
+      [
+        [14, 70, '#FF7A9C', 20],
+        [104, 64, '#FFD25A', -30],
+        [20, 96, '#7FE0FF', 40],
+        [100, 92, '#9CF08A', 10],
+        [40, 50, '#FFD25A', -20],
+        [82, 46, '#FF7A9C', 35],
+      ]
+        .map(([x, y, c, r]) => `<rect x="${x}" y="${y}" width="5" height="2.6" rx="1" fill="${c}" transform="rotate(${r} ${x} ${y})"/>`)
+        .join(''),
+    front:
+      `<g transform="rotate(-12 56 30)"><path d="M43 33L58 -2L71 33Z" fill="#FF5A8A"/><path d="M49 19L65 19L67.5 25L46.5 25Z" fill="#FFD25A"/><path d="M53.5 9L62.5 9L64 13L52 13Z" fill="#7FE0FF"/>` +
+      `<circle cx="58" cy="-3" r="4.5" fill="#FFD25A"/><ellipse cx="57" cy="33" rx="15" ry="3" fill="#D93A6C"/></g>`,
+  },
+  /* hearts floating in a rose sky, and rosy cheeks */
+  valentine: {
+    sky: ['#2E1048', '#71205E', '#E05A86'],
+    back:
+      heart(20, 26, 7, '#FF8FB0', 0.85) +
+      heart(100, 20, 9, '#FF8FB0', 0.85) +
+      heart(104, 64, 5, '#FFC2D4', 0.8) +
+      heart(14, 66, 5, '#FFC2D4', 0.8) +
+      heart(60, 8, 4, '#FFC2D4', 0.7),
+    front: `<ellipse cx="38" cy="86" rx="6" ry="3.6" fill="#FF6A8A" opacity=".55"/><ellipse cx="82" cy="86" rx="6" ry="3.6" fill="#FF6A8A" opacity=".55"/>`,
+  },
+  /* a warm scarf and falling leaves at dusk */
+  autumn: {
+    sky: ['#24123E', '#5E2A58', '#D2703F'],
+    back:
+      leaf(20, 24, 30, '#FF9A3A') +
+      leaf(98, 18, -20, '#E0502E') +
+      leaf(106, 58, 60, '#FFC23A') +
+      leaf(14, 64, -40, '#E0502E') +
+      leaf(30, 96, 15, '#FFC23A') +
+      leaf(96, 94, -50, '#FF9A3A'),
+    front:
+      `<path d="M30 96C44 104 76 104 90 96L91 103C76 111 44 111 29 103Z" fill="#D8343C"/><path d="M34 99L38 106M44 101L47 108M56 102L58 109M68 102L69 109M80 100L80 107" stroke="#F5E6C8" stroke-width="2.2" opacity=".85"/>` +
+      `<path d="M72 104L84 104L82 120L70 120Z" fill="#C42A32"/><path d="M71 116L83 116" stroke="#F5E6C8" stroke-width="2"/>`,
+  },
 };
-/** the flame for a note's picture (iPhone): a square SVG 120 by 120 with no motion, as the mood asks */
-export function flameNoteSvg(mood: NoteMood): string {
-  const m = NOTE[mood] || NOTE.bright,
-    id = 'em' + ++seq,
-    [gc, go, gr] = m.glow,
-    cy = m.by - 60 * m.k;
-  let h = `<rect width="120" height="120" fill="url(#${id}sk)"/>${stars(m.n, 0.8)}`;
-  if (m.rest) h += `<path d="M98 7A10 10 0 1 0 106 23A8 8 0 1 1 98 7Z" fill="#FFF3B0" opacity=".85"/>`;
-  h += `<circle cx="60" cy="${f(cy)}" r="${gr}" fill="url(#${id}ng)"/>${shadow(id, 60, m.by + 2, 56 * m.k)}`;
-  h += flameFig(id, m.kind, 60, m.by, m.k, { rest: m.rest });
-  const ng = `<defs><radialGradient id="${id}ng"><stop offset="0" stop-color="${gc}" stop-opacity="${go}"/><stop offset="1" stop-color="${gc}" stop-opacity="0"/></radialGradient></defs>`;
-  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${defsFor(id, m.sky)}${ng}${h}</svg>`.replace(/ (class|style)="[^"]*"/g, '');
+/** the app icon in one of its looks (tools/make-icons.mjs), a square SVG 120 by 120 with no motion */
+export function flameLookSvg(look: IconLook): string {
+  const L = LOOKS[look],
+    id = 'em' + ++seq;
+  const body = `${shadow(id, 60, 106, 42)}${flameFig(id, 'full', 60, 104, 0.76)}${L.front}`;
+  return (
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${defsFor(id, L.sky)}` +
+    `<rect width="120" height="120" fill="url(#${id}sk)"/>${L.back}<circle cx="60" cy="66" r="54" fill="url(#${id}go)"/>` +
+    /* with a hat, the flame stands a little smaller, so the hat fits */
+    (L.hat ? `<g transform="translate(60 110) scale(.84) translate(-60 -110)">${body}</g>` : body) +
+    `</svg>`
+  ).replace(/ (class|style)="[^"]*"/g, '');
 }
 
 /** the full flame's outline in white on clear, for Android's small note icon (it uses only the alpha) */

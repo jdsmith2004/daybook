@@ -198,6 +198,25 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
   lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.
 - 10: yes, fix the public pages.
 
+**Daybook Pattern, decision 9 in detail (the owner, October 30, 2026: "Yes, all your picks"). Built on branch
+claude/high-product-087e62, off until `PATTERN_FROM` is set.** Why it moved the deep pattern: a $5 tip opened the whole pattern
+for good, so a $24.99 pattern product had nothing to sell. It helps the person (a monthly read of what is changing, in their own
+numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, finding 20).
+
+- Products: the three tips stay. Daybook Pattern, monthly $2.99 and lifetime $24.99. Lifetime is the marked pick.
+- What opens what: free keeps every care tool, the one look, the slip gaps and My numbers. A tip from launch on opens sync and
+  the safe copy. Daybook Pattern opens the deep pages (when, what sets it off, hard days, what helps), What changed this month,
+  and sync. Tips from before launch keep everything, including the month read, and are never asked.
+- The ask: one card on the locked section and one row on More, led by a true line from the log; no line, no ask. Not in the
+  TIP_CALM days after a slip or TIP_QUIET hours after an SOS, then the card is a kind word with no price. Tips and their
+  moments are unchanged.
+- Web: lifetime only, for now. Lapse: three grace days, then the tip rules; finished month reads stay; sync stops saving and
+  says so. What the owner sets up: docs/launch.md, section 7b.
+- Two things the tests caught, kept as rules: an account on Daybook Pattern is never read as grandfathered from its data, and
+  between two paid tips the earlier one stays, because its date decides what it keeps.
+- **Next (high, when the owner has set up the products):** turn it on, as docs/launch.md 7b step 6 says, then the sandbox list in
+  step 8. Refunds on the monthly plan rely on the date running out, as tips do; a webhook could be added if refunds become common.
+
 **Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
 once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).
 

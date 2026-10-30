@@ -1,0 +1,36 @@
+{
+  "identifier" : "D4F0A1B2",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    { "displayPrice" : "5.00", "familyShareable" : false, "internalID" : "6700000001", "localizations" : [ { "description" : "A $5 tip.", "displayName" : "Kind tip", "locale" : "en_US" } ], "productID" : "daybook.tip.kind", "referenceName" : "Kind tip", "type" : "NonConsumable" },
+    { "displayPrice" : "10.00", "familyShareable" : false, "internalID" : "6700000002", "localizations" : [ { "description" : "A $10 tip.", "displayName" : "Generous tip", "locale" : "en_US" } ], "productID" : "daybook.tip.generous", "referenceName" : "Generous tip", "type" : "NonConsumable" },
+    { "displayPrice" : "20.00", "familyShareable" : false, "internalID" : "6700000003", "localizations" : [ { "description" : "A $20 tip.", "displayName" : "Amazing tip", "locale" : "en_US" } ], "productID" : "daybook.tip.amazing", "referenceName" : "Amazing tip", "type" : "NonConsumable" },
+    { "displayPrice" : "24.99", "familyShareable" : false, "internalID" : "6700000004", "localizations" : [ { "description" : "Your whole pattern and a read of each month, for good.", "displayName" : "Daybook Pattern Lifetime", "locale" : "en_US" } ], "productID" : "daybook.pattern.lifetime", "referenceName" : "Pattern lifetime", "type" : "NonConsumable" }
+  ],
+  "settings" : { "_failTransactionsEnabled" : false, "_storeKitErrors" : [] },
+  "subscriptionGroups" : [
+    {
+      "id" : "21700001",
+      "localizations" : [],
+      "name" : "Daybook Pattern",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6700000005",
+          "introductoryOffer" : null,
+          "localizations" : [ { "description" : "Your whole pattern and a read of each month. Sync too.", "displayName" : "Daybook Pattern", "locale" : "en_US" } ],
+          "productID" : "daybook.pattern.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pattern monthly",
+          "subscriptionGroupID" : "21700001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 4, "minor" : 0 }
+}

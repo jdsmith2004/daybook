@@ -207,22 +207,25 @@ export function PatternCard() {
   );
 }
 
+/** the finished months this person can read (core patMonthOpen); where nothing is locked (Android), all of them */
+export function useOpenMonths(): string[] {
+  const { snap, tk, now } = useStore();
+  const st = snap.settings;
+  if (!st) return [];
+  const all = monthList(snap.days, st, tk);
+  return TIP_ON ? all.filter((ym) => patMonthOpen(st, monthEnd(ym), now)) : all;
+}
+
 /** the way into the month read on Pattern: the latest month's first line, or when the first read comes */
 export function MonthCard() {
-  const { snap, tk, now } = useStore();
+  const { snap, tk } = useStore();
+  const open = useOpenMonths();
   const st = snap.settings;
   if (!st) return null;
   const w = PAT_WORDS.month;
-  const open = monthList(snap.days, st, tk).filter((ym) => patMonthOpen(st, monthEnd(ym), now));
   const r = open[0] ? monthRead(snap.days, st, open[0]) : null;
   return (
-    <LinkCard
-      icon="sunrise"
-      tone="accent"
-      title={w.title}
-      sub={r ? r.head : w.waiting + monthNext(tk) + w.waitingEnd}
-      onPress={() => (r ? router.push('/month') : undefined)}
-    />
+    <LinkCard icon="sunrise" tone="accent" title={w.title} sub={r ? r.head : w.waiting + monthNext(tk) + w.waitingEnd} onPress={() => router.push('/month')} />
   );
 }
 

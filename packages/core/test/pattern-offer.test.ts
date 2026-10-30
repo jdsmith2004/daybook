@@ -102,10 +102,10 @@ describe('what changed this month', () => {
     expect(r.name).toBe('October');
     expect(r.head).toBe('October was lighter than September.');
     const t = r.lines.map((l) => l.t).join(' ');
-    expect(t).toContain('1 slip this month, down from 5.');
+    expect(t).toContain('1 slip in October, down from 5.');
     expect(t).toContain('You rode out 8 in 10 hard moments, up from 2 in 10.');
     expect(t).toContain('came before 1 of your slips, down from 4.');
-    expect(t).toContain('Your hardest hours were 9 to 11 PM. In September they were 10 PM to 12 AM.');
+    expect(t).toContain('Your hardest hours were 9 to 11 PM. In September they were 11 PM to 1 AM.');
   });
   it('a harder month says so plainly, without shame, and holds on to something', () => {
     const hard = log([
@@ -124,7 +124,31 @@ describe('what changed this month', () => {
   it('a first month, with nothing to compare, still reads', () => {
     const r = monthRead(log(sept), st, '2026-09')!;
     expect(r.head).toBe('You stayed with it all through September.');
-    expect(r.lines[0].t).toBe('5 slips logged this month.');
+    expect(r.lines[0].t).toBe('5 slips logged in September.');
+  });
+  it('a share ridden out is said only when it rose or is most of them', () => {
+    const low = log([
+      ['2026-10-03', '21:00', 'slipped'],
+      ['2026-10-08', '21:00', 'slipped'],
+      ['2026-10-12', '21:00', 'slipped'],
+      ['2026-10-14', '21:00', 'rode'],
+    ]);
+    expect(monthRead(low, st, '2026-10')!.lines.map((l) => l.k)).not.toContain('ride');
+  });
+  it('the hardest hours are where things happen, and one reason behind every slip is said as each', () => {
+    const r = monthRead(
+      log([
+        ['2026-10-03', '21:30', 'slipped', 'stress'],
+        ['2026-10-08', '21:40', 'slipped', 'stress'],
+        ['2026-10-12', '21:10', 'rode'],
+        ['2026-10-14', '21:20', 'rode'],
+      ]),
+      st,
+      '2026-10',
+    )!;
+    const t = r.lines.map((l) => l.t).join(' ');
+    expect(t).toContain('9 to 11 PM');
+    expect(t).toContain('came before each of your 2 slips');
   });
   it('a month with no slips says that first', () => {
     const r = monthRead(

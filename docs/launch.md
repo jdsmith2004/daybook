@@ -251,6 +251,81 @@ costs money or is unclear. Tell me what you did at each step and anything that d
 Review usually takes one to three days. If Apple asks a question or rejects it, paste their message to Claude Code: the
 reply, or the fix and a new build (step 5), goes from there. When it is approved, press **Release this version**.
 
+## 7b. Daybook Pattern (you, or Claude in Chrome with you watching, about 40 minutes)
+
+The one paid product beyond the tips (the owner, October 30, 2026; the decisions are in docs/plan.md). The code is in the
+app and turned off: until `PATTERN_FROM` is set in `packages/core/src/supporter.ts`, a tip opens what it always did and
+nobody sees the product. Turn it on only after every step here, in this order.
+
+**1. App Store Connect: the subscription.** Apps, Daybook, Monetization, Subscriptions.
+
+- Create a subscription group. Reference name: `Daybook Pattern`. Under the group's App Store Localization, English (U.S.),
+  display name `Daybook Pattern`.
+- In the group, +, with these exact values:
+
+  | Reference name  | Product ID                | Duration | Price | Display name    | Description                                            |
+  | --------------- | ------------------------- | -------- | ----- | --------------- | ------------------------------------------------------ |
+  | Pattern monthly | `daybook.pattern.monthly` | 1 month  | $2.99 | Daybook Pattern | Your whole pattern and a read of each month. Sync too. |
+
+- Availability: the United States. Family Sharing off. No introductory offer.
+- Review screenshot: the Daybook Pattern sheet on an iPhone (`docs/shots/pattern-review.png`). Review note: "Daybook is free
+  and all care stays free. Daybook Pattern opens the deeper pages of the person's own pattern, a monthly read of what changed,
+  and sync. To see it, use the demo account, log a few urges with a time, open Pattern, and tap See Daybook Pattern. Restore
+  a purchase and Manage or cancel are on the same sheet."
+
+**2. App Store Connect: the lifetime form.** Monetization, In-App Purchases, +, type **Non-Consumable**:
+
+| Reference name   | Product ID                 | Price  | Display name             | Description                                            |
+| ---------------- | -------------------------- | ------ | ------------------------ | ------------------------------------------------------ |
+| Pattern lifetime | `daybook.pattern.lifetime` | $24.99 | Daybook Pattern Lifetime | Your whole pattern and a read of each month, for good. |
+
+Availability the United States, Family Sharing off, the same screenshot and review note. The product IDs must match core
+`APPLE_PATTERN` exactly. Neither name carries a word about what Daybook is for, because both show in the person's purchase list.
+
+**3. The terms link Apple requires for a subscription.** On the version page, in the description's last line, add:
+`Terms of use: https://d3c9g6kent5bsr.cloudfront.net/terms.html`. The privacy policy URL is already set. The sheet in the app
+has both links, and says the price, the length and how it renews (Guideline 3.1.2).
+
+**4. Stripe: the lifetime form, on the web only.** Payment Links, New: a new product "Daybook Pattern, lifetime", $24.99,
+one-time, USD, quantity not adjustable, no address. Under **After payment**, "Don't show confirmation page", and enter exactly
+`https://d3c9g6kent5bsr.cloudfront.net/tipped.html?session_id={CHECKOUT_SESSION_ID}`. Send Claude the link (it is public);
+it goes in `PATTERN_LINK`. No monthly on the web for now (the owner, October 30, 2026): Stripe takes about 13% of $2.99, near
+Apple's 15%, and a web subscription would need a cancel page, a wider Stripe key and a server check on renewals. The Stripe
+key stays as it is (Checkout Sessions: Read).
+
+**5. What the statement says.** Apple's charge reads APPLE.COM/BILL. Stripe's reads JEFFREY until Stripe accepts DAYBOOK:
+Settings, Business, Public details, Statement descriptor, try `DAYBOOK` again. Either way, no word about what Daybook is for.
+
+**6. Claude turns it on, in one change,** once the products say Ready to Submit and the link is sent:
+
+- Sets `PATTERN_LINK`, and `PATTERN_FROM` to the moment of that change. It is never moved afterward, because a tip from before
+  it keeps the whole pattern for good. A test checks the two are set together.
+- Runs `npm run shots`-style pictures of the sheet for `docs/shots/pattern-review.png`.
+- Changes the words that say a tip opens the pattern, on `about.html` (including "no subscription"), `support.html`,
+  `terms.html`, `privacy.html` and `llms.txt`; the tip's words in the app change by themselves with `PATTERN_FROM`.
+- Changes the listing (section 6): "A one-time tip of $5 or more makes you a supporter, which opens sync and a safe copy." and
+  "Daybook Pattern opens your whole pattern (when it happens, what sets it off, what helps you most) and a monthly read of
+  what changed. $2.99 a month, or $24.99 once." "with no subscription" goes. Apple requires this text to be true on the day.
+- Adds to App Privacy nothing new: Purchases, purchase history is already declared, and the Daybook Pattern record is the same kind.
+
+**7. Submit.** On the version page, In-App Purchases and Subscriptions, select both. A first subscription goes to review with an
+app version.
+
+**8. Test before the world sees it** (TestFlight, with the sandbox tester from docs/plan.md, "Payments"):
+
+- [ ] Monthly: buy, the deep pages open, sync opens on a signed-in account (the server takes the Apple transaction).
+- [ ] Sandbox renews a month in five minutes: leave it through two renewals, the record's end moves on, nothing asks again.
+- [ ] Cancel from Manage or cancel: after the last renewal and the three grace days, the pages go back to the tip rules; the log,
+      the points, the level and the finished month reads stay; sync says plainly it has stopped saving.
+- [ ] Lifetime: buy, delete the app, install it, Restore a purchase. It comes back.
+- [ ] A tip from before `PATTERN_FROM`, restored on a new phone, still opens the whole pattern.
+- [ ] Web: the Stripe link in a test purchase, back through tipped.html, signed in and signed out.
+
+The local StoreKit file (`apps/mobile/storekit/Daybook.storekit`) lets Xcode run all of the buying and lapsing on a simulator with
+no App Store Connect, but those purchases are not signed by Apple, so the server refuses them, on purpose.
+
+**What it costs to run:** nothing new. No webhook, no new AWS. Apple keeps 15% (Small Business Program), Stripe 2.9% + 30¢.
+
 ## 8. Google Play (Android)
 
 The same app, built and sent by its own button: Actions, **Google Play**, Run workflow (`.github/workflows/play.yml`). It

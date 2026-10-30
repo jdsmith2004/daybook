@@ -101,7 +101,8 @@ function hardStart(t: Tally): number | null {
   let start = 0;
   for (let h = 0; h < 24; h++) {
     const v = t.hours[h] + t.hours[(h + 1) % 24];
-    if (v > best) {
+    /* on a tie, the window that starts where things happen, as risk.ts does */
+    if (v > best || (v === best && t.hours[h] > t.hours[start])) {
       best = v;
       start = h;
     }
@@ -147,21 +148,23 @@ export function monthRead(days: Days, st: Settings, ym: string): MonthRead | nul
   const rate = t.rode / entries(t);
   const pRate = p ? p.rode / entries(p) : null;
 
-  if (!t.slips) lines.push({ k: 'slips', icon: 'sunrise', t: p?.slips ? 'No slips this month, down from ' + p.slips + '.' : 'No slips this month.' });
-  else if (!p) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + ' logged this month.' });
-  else if (t.slips < p.slips) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + ' this month, down from ' + p.slips + '.' });
-  else if (t.slips === p.slips) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + ' this month, the same as ' + was + '.' });
+  const inM = ' in ' + name;
+  if (!t.slips) lines.push({ k: 'slips', icon: 'sunrise', t: p?.slips ? 'No slips' + inM + ', down from ' + p.slips + '.' : 'No slips' + inM + '.' });
+  else if (!p) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + ' logged' + inM + '.' });
+  else if (t.slips < p.slips) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + inM + ', down from ' + p.slips + '.' });
+  else if (t.slips === p.slips) lines.push({ k: 'slips', icon: 'sunrise', t: plural(t.slips, 'slip') + inM + ', the same as ' + was + '.' });
   else
     lines.push({
       k: 'slips',
       icon: 'sunrise',
-      t: plural(t.slips, 'slip') + ' this month, up from ' + p.slips + '. Every one is logged, so what comes next starts from what is true.',
+      t: plural(t.slips, 'slip') + inM + ', up from ' + p.slips + '. Every one is logged, so what comes next starts from what is true.',
     });
 
+  /* the share ridden out, when it rose or is already most of them: this read looks for what is going right */
   if (t.slips && t.rode) {
     if (pRate != null && rate >= pRate + 0.1)
       lines.push({ k: 'ride', icon: 'heart', t: 'You rode out ' + inTen(rate) + ' hard moments, up from ' + inTen(pRate) + '.' });
-    else if (pRate == null || rate >= pRate) lines.push({ k: 'ride', icon: 'heart', t: 'You rode out ' + inTen(rate) + ' hard moments.' });
+    else if (rate >= 0.5) lines.push({ k: 'ride', icon: 'heart', t: 'You rode out ' + inTen(rate) + ' hard moments.' });
   }
 
   if (t.longest >= 2 && (!p || t.longest > p.longest))
@@ -188,7 +191,13 @@ export function monthRead(days: Days, st: Settings, ym: string): MonthRead | nul
     lines.push({
       k: 'trig',
       icon: 'bolt',
-      t: whatCame(st, topTrig) + ' came before ' + t.trig[topTrig] + ' of your ' + t.slips + ' slips. That is the moment to plan for.',
+      t:
+        whatCame(st, topTrig) +
+        ' came before ' +
+        (t.trig[topTrig] === t.slips ? 'each' : t.trig[topTrig]) +
+        ' of your ' +
+        t.slips +
+        ' slips. That is the moment to plan for.',
     });
 
   const hard = hardStart(t);
@@ -275,10 +284,9 @@ export const PAT_WORDS = {
   /** the card and page for the month read */
   month: {
     title: 'What changed this month',
-    open: 'Open the read for ',
+    in: 'What changed in ',
     waiting: 'Your first read comes on ',
     waitingEnd: ', once the month has enough in it to read.',
     earlier: 'Earlier months',
-    none: 'This month does not have enough in it to read yet.',
   },
 };

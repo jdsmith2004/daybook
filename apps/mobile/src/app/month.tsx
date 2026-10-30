@@ -1,33 +1,34 @@
 /* What changed this month (core pattern-offer.ts, monthRead): a short read of one finished month against the one before, from
    the person's own log. Part of Daybook Pattern. A month that finished while the plan was active stays readable after it
    ends (core patMonthOpen). The flame stays at the top, because a month read is a picture of the person changing. */
-import { gameCompute, monthEnd, monthList, monthRead, PAT_WORDS, patMonthOpen } from '@daybook/core';
+import { gameCompute, monthNext, monthRead, PAT_WORDS } from '@daybook/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Flame } from '@/components/flame';
 import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
+import { useOpenMonths } from '@/components/support';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
 export default function Month() {
   const c = useTheme();
-  const { snap, tk, now } = useStore();
+  const { snap, tk } = useStore();
   const st = snap.settings;
-  const months = st ? monthList(snap.days, st, tk).filter((ym) => patMonthOpen(st, monthEnd(ym), now)) : [];
+  const months = useOpenMonths();
   const [pick, setPick] = useState<string | null>(null);
   const ym = pick || months[0] || null;
   const r = st && ym ? monthRead(snap.days, st, ym) : null;
   const w = PAT_WORDS.month;
   const level = st ? gameCompute(snap.days, st, snap.reviews, tk).level.n : 1;
   return (
-    <SheetFrame title={w.title}>
+    <SheetFrame title={r ? w.in + r.name : w.title}>
       <View style={s.top}>
         <Flame level={level} size={110} alive />
         <T v="title" style={s.c} accessibilityRole="header">
-          {r ? r.head : w.none}
+          {r ? r.head : w.waiting + monthNext(tk) + w.waitingEnd}
         </T>
       </View>
       {r ? (

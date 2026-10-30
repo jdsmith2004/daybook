@@ -24,10 +24,7 @@ import {
   plural,
   sunList,
   logRateKeys,
-  monthEnd,
-  monthList,
   PATTERN_FROM,
-  patMonthOpen,
   ratingOf,
   talkEvidence,
   urWorks,
@@ -51,7 +48,7 @@ import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
 import { TodaySoFar } from '@/components/today-log';
 import { SundayCard } from '@/components/sunday-card';
-import { MonthCard, PatternCard, UnlockCard, useLocked } from '@/components/support';
+import { MonthCard, PatternCard, UnlockCard, useLocked, useOpenMonths } from '@/components/support';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
@@ -208,6 +205,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const [range, setRange] = useState<PatRange>('90');
   const [ys, setYs] = useState<Partial<Record<PatGo, number>>>({});
   const locked = useLocked('stats');
+  const openMonths = useOpenMonths();
   const keys = patKeys(range, snap.days, st, tk);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
@@ -362,7 +360,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
 
       {locked ? numbers : null}
       {/* a plan that has ended keeps the months that finished while it was active, so they stay outside the lock */}
-      {locked && PATTERN_FROM != null && monthList(snap.days, st, tk).some((ym) => patMonthOpen(st, monthEnd(ym), now)) ? <MonthCard /> : null}
+      {locked && PATTERN_FROM != null && openMonths.length ? <MonthCard /> : null}
       <Deep locked={locked} onY={(y) => setYs((o) => (o.when === y ? o : { ...o, when: y, what: y, days: y }))}>
         {PATTERN_FROM != null && !locked ? <MonthCard /> : null}
         <View onLayout={at('when')}>

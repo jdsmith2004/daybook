@@ -408,8 +408,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                   </>
                 }>
                 <Chips label="Counting">
-                  <Chip label="Strict" on={st.cleanMode === 'strict'} onPress={() => apply(setCountMode(st, 'strict', tk))} />
                   <Chip label="Gentle" on={st.cleanMode === 'gentle'} onPress={() => apply(setCountMode(st, 'gentle', tk))} />
+                  <Chip label="Strict" on={st.cleanMode === 'strict'} onPress={() => apply(setCountMode(st, 'strict', tk))} />
                   <Chip label="Step down" on={st.cleanMode === 'step'} onPress={() => apply(setCountMode(st, 'step', tk))} />
                 </Chips>
               </Field>

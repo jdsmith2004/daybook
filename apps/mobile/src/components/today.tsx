@@ -137,7 +137,7 @@ function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
 export function LinkText({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Text accessibilityRole="link" onPress={onPress} style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>
+    <Text accessibilityRole="link" onPress={onPress} style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>
       {label}
     </Text>
   );

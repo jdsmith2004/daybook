@@ -28,15 +28,10 @@ export function WhenPill({ w, now, onPress, none }: { w: When; now: number; onPr
         buzz('tap');
         onPress();
       }}
-      style={({ pressed }) => [
-        s.pill,
-        { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] },
-      ]}>
+      style={({ pressed }) => [s.pill, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
       <Icon name="calendar" size={17} color={c.accentText} />
       <Text style={[s.pillT, { color: c.ink }]}>{label}</Text>
-      <View style={[s.pillGo, { backgroundColor: c.accentSoft }]}>
-        <Icon name="pencil" size={13} color={c.accentText} />
-      </View>
+      <Icon name="pencil" size={15} color={c.accentText} />
     </Pressable>
   );
 }
@@ -288,7 +283,7 @@ function Wheel({ label, items, index, onChange, width }: { label: string; items:
               <Text
                 style={{
                   fontFamily: d === 0 ? font.display : font.bodySemi,
-                  fontSize: d === 0 ? 26 : d === 1 ? 20 : 17,
+                  fontSize: d === 0 ? 28 : d === 1 ? 20 : 17,
                   color: d === 0 ? c.ink : c.muted,
                   opacity: d === 0 ? 1 : d === 1 ? 0.75 : 0.4,
                 }}>
@@ -310,17 +305,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     minHeight: 44,
-    paddingLeft: 14,
-    paddingRight: 6,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: 1.5,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
   },
-  pillT: { fontFamily: font.bodyBold, fontSize: 16 },
-  pillGo: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  pillT: { fontFamily: font.bodySemi, fontSize: 15 },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {
     width: '100%',
@@ -339,7 +327,7 @@ const s = StyleSheet.create({
   big: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
   note: { fontFamily: font.bodyMedium, fontSize: 13, textAlign: 'center', marginTop: -6, minHeight: 18 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  q: { minHeight: 38, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  q: { minHeight: 44, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   qT: { fontFamily: font.bodySemi, fontSize: 15 },
   days: { gap: 8, paddingHorizontal: 2, paddingVertical: 2 },
   day: { width: 56, paddingVertical: 8, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', gap: 1 },

@@ -18,6 +18,7 @@ import { Text } from '@/components/text';
 import { SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { FlameMedallion } from '@/components/flame-medallion';
+import { Medal } from '@/components/medal';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -33,22 +34,6 @@ const SCENES = /^\/(sos|tool|log|checkin|talk|review|wind|night|lesson|lwrite|se
 const TABS = /^\/(pattern|learn|more)?$/;
 
 /** a badge: a round medal in its color, or a dashed lock while it is not earned yet */
-export function BadgeArt({ icon, tone, size, earned }: { icon: string; tone: string; size: number; earned: boolean }) {
-  const c = useTheme();
-  const t = toneOf(c, tone || 'accent');
-  return (
-    <View
-      style={[
-        { width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' },
-        earned
-          ? { backgroundColor: t.ic, borderBottomWidth: 5, borderBottomColor: 'rgba(0,0,0,0.14)' }
-          : { backgroundColor: c.surface2, borderWidth: 2, borderStyle: 'dashed', borderColor: c.muted },
-      ]}>
-      <Icon name={earned ? icon : 'lock'} size={size * (earned ? 0.5 : 0.4)} color={earned ? t.ink : c.muted} />
-    </View>
-  );
-}
-
 /* a stop that is half answered (Last night between its two taps) holds celebrations, so a level-up never covers the next
    question; they show once it is finished */
 let holds = 0;
@@ -214,7 +199,7 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
       ' ' +
       (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
   } else if (it.type === 'badge') {
-    art = <BadgeArt icon={it.b.icon} tone={it.b.tone} size={104} earned />;
+    art = <Medal id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={132} earned />;
     eyebrow = it.b.id === 'honest' ? 'Honesty' : rest.length ? 'New badges' : 'New badge';
     title = it.b.name;
     sub = it.b.desc;
@@ -285,7 +270,7 @@ function Row({ it }: { it: CelItem }) {
   const c = useTheme();
   const art =
     it.type === 'badge' ? (
-      <BadgeArt icon={it.b.icon} tone={it.b.tone} size={40} earned />
+      <Medal id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={44} earned />
     ) : it.type === 'level' ? (
       <Flame level={it.level.n} size={40} />
     ) : (

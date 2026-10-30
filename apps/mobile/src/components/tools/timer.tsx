@@ -80,7 +80,7 @@ export function ToolTimer({
           <T v="label" style={[s.c, { maxWidth: 170 }]}>
             {label}
           </T>
-          <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text>
+          {left > 0 ? <Text style={[s.time, { color: c.ink }]}>{fmtMS(left)}</Text> : null}
         </Beat>
       </WavyRing>
     </View>

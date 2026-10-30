@@ -111,7 +111,6 @@ function TipSheet() {
       {TIP_TIERS.map((t, i) => (
         <PayRow
           key={t.id}
-          n={i}
           name={t.name}
           badge={i === 1 ? w.badge : undefined}
           price={priced ? tipPrice(t.id) : '…'}
@@ -179,6 +178,7 @@ function TipSheet() {
   return (
     <SheetFrame title={w.title} sub={w.line}>
       <View style={s.mid}>
+        <Flame level={level} size={150} alive />
         <Perks list={supPerks()} />
       </View>
       <Dock>

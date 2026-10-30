@@ -315,10 +315,7 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onPick(k)}
-            style={[
-              seg.b,
-              on && { backgroundColor: c.surface },
-            ]}>
+            style={[seg.b, on && { backgroundColor: c.surface }]}>
             {/* a tab name stays whole: it grows less with the phone's text size, and shrinks a little before it would break */}
             <Text
               numberOfLines={1}

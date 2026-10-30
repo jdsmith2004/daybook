@@ -52,11 +52,7 @@ export function SheetFrame({
               </T>
               {sub ? <T tone="muted">{sub}</T> : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              onPress={onClose}
-              style={[s.x, { backgroundColor: c.surface }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.surface }]}>
               <Icon name="x" color={c.ink} />
             </Pressable>
           </View>

@@ -46,7 +46,7 @@ describe('the look', () => {
     expect(off).toEqual([]);
   });
   it('no text left at the default size', () => {
-    const off = code.filter((c) => /<Text style=\{\{ fontFamily: font\.\w+, color:/.test(c.text)).map((c) => c.name);
+    const off = code.filter((c) => /<Text style=\{\{ fontFamily: font\.\w+, color:(?:(?!fontSize)[^}])*\}\}/.test(c.text)).map((c) => c.name);
     expect(off).toEqual([]);
   });
   it('a card has one edge: its fill', () => {

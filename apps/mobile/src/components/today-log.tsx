@@ -116,9 +116,7 @@ export function PauseBanner() {
           : 'Pause in progress · about ' + Math.max(1, Math.ceil(left / 60000)) + ' min left'}
       </T>
       <View style={[s.bannerBtn, { backgroundColor: c.surface }]}>
-        <Text style={{ fontFamily: font.bodySemi, color: done ? c.mintText : c.violetText, fontSize: 15 }}>
-          {done ? 'See how it went' : 'Resume'}
-        </Text>
+        <Text style={{ fontFamily: font.bodySemi, color: done ? c.mintText : c.violetText, fontSize: 15 }}>{done ? 'See how it went' : 'Resume'}</Text>
       </View>
     </Pressable>
   );

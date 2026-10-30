@@ -41,6 +41,7 @@ export function LogLink() {
         accessibilityLabel="Already happened? Log what happened."
         onPress={() => router.push('/log')}
         style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+        <Icon name="check" size={16} color={c.accentText} />
         <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           Already happened
         </Text>
@@ -50,6 +51,7 @@ export function LogLink() {
         accessibilityLabel="Planning a slip? Talk it through first."
         onPress={() => router.push('/talk')}
         style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+        <Icon name="compass" size={16} color={c.accentText} />
         <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           Planning a slip?
         </Text>
@@ -154,7 +156,7 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13 },
   pair: { flexDirection: 'row', gap: 8 },
-  log: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingHorizontal: 8, borderRadius: 999 },
+  log: { flex: 1, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingHorizontal: 4, borderRadius: 999 },
   logT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1, textAlign: 'center' },
   plan: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20 },
   planH: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },

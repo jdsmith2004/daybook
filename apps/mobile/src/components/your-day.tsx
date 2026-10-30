@@ -1,12 +1,13 @@
-/* "Your day" on Today: one line from morning to night (core: stopTiles in day.ts) with a stop for each part, in the color of its
-   full-screen moment. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means progress), the
-   rest a quiet line, so the day fills as it is lived. A stop says when it opens, or that it is done; the next step's words stay in
-   the band on the flame, the one owner of the next step and its button (finding 10 of October 30, 2026). Every stop opens its
-   moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx); the open one
-   opens the same thing as that band (core openTile). "Change" turns parts of today on or off, in a sheet. */
-import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+/* "Your day" on Today: the home screen's spine, one line down the page from morning to night (core: stopTiles in day.ts). What is
+   next is the one big bright card on the line, and its tap starts it; the other stops are slim rows beside the line, so there is
+   never a question of what to do. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means
+   progress), the rest a quiet line. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
+   and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
+   the stops here are all rows. "Change" turns parts of today on or off, in a sheet. */
+import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Moment, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
 import { router, useIsFocused } from 'expo-router';
 import { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +49,7 @@ export function lookOf(sky: StopTile['sky'], c: Palette & { scheme: 'light' | 'd
   }
 }
 
-export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
+export function YourDay({ snap, tk, now, hero, foot }: { snap: Snapshot; tk: string; now: number; hero?: Moment | null; foot?: string }) {
   const c = useTheme();
   const st = snap.settings!;
   const r = stopTiles(snap.days, st, tk, now);
@@ -57,20 +58,32 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
   const open = openTile(snap.days, st, tk, now, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);
   const [sheet, setSheet] = useState(false);
-  const [width, setWidth] = useState(0);
   const n = r.tiles.length;
-  /* how far the squiggle has come: to the last stop done in a row from the morning, and on toward the next */
-  let run = 0;
-  while (run < n && r.tiles[run].done) run++;
-  const progress = !run || n < 2 ? 0 : Math.min(1, (run - 0.5) / (n - 1));
-  const focused = useIsFocused();
-  /* the line runs from the middle of the first stop to the middle of the last */
-  const lineW = Math.max(0, width - width / Math.max(1, n));
+  /* the big card goes on the stop it starts */
+  const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
   return (
-    <View style={{ gap: 8, marginTop: 8 }}>
-      <View style={s.head}>
-        <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
-          Your day
+    <View>
+      {n ? (
+        r.tiles.map((t, i) => {
+          const tile = open && open.k === t.k && !t.done ? open : t;
+          const big = hero && heroKey === t.k && !t.done;
+          return (
+            <View key={t.k} style={s.stop}>
+              <Rail done={t.done} cur={big ? true : t.cur} first={!i} last={i === n - 1} upDone={i > 0 && r.tiles[i - 1].done} />
+              <View style={[s.stopIn, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
+                {big ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
+              </View>
+            </View>
+          );
+        })
+      ) : (
+        <T tone="muted" style={{ paddingHorizontal: 4 }}>
+          Nothing is switched on for today. Tap Change to turn parts of the day back on.
+        </T>
+      )}
+      <View style={s.foot}>
+        <T v="small" tone="muted" style={{ flex: 1 }}>
+          {[foot, changed ? changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.' : ''].filter(Boolean).join(' ')}
         </T>
         <Pressable
           accessibilityRole="button"
@@ -84,57 +97,94 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
           <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
         </Pressable>
       </View>
-      {changed ? (
-        <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
-          {changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.'}
-        </T>
-      ) : null}
-      {n ? (
-        <View
-          style={[s.path, { backgroundColor: c.surface }]}
-          accessibilityRole="summary"
-          accessibilityLabel={r.done + ' of ' + n + ' done'}
-          onLayout={(e) => setWidth(e.nativeEvent.layout.width - PATH_PAD * 2)}>
-          {n > 1 && lineW > 0 ? (
-            <View style={[s.line, { left: PATH_PAD + width / n / 2 }]} pointerEvents="none">
-              <WavyLine width={lineW} p={progress} color={c.sun2} track={c.line} speed={focused ? undefined : 0} />
-            </View>
-          ) : null}
-          {r.tiles.map((t) => (
-            <Stop key={t.k} t={open && open.k === t.k && !t.done ? open : t} />
-          ))}
-        </View>
-      ) : (
-        <T tone="muted" style={{ paddingHorizontal: 4 }}>
-          Nothing is switched on for today. Tap Change to turn parts of the day back on.
-        </T>
-      )}
       <RoutineSheet open={sheet} onClose={() => setSheet(false)} snap={snap} tk={tk} />
     </View>
   );
 }
 
-/* ---------- a stop on the line: its shape, its name, and when ---------- */
+/* ---------- the line down the left, with a stop's mark on it ---------- */
+const RAIL = 24;
+const MARK = 20;
+function Rail({ done, cur, first, last, upDone }: { done: boolean; cur: boolean; first: boolean; last: boolean; upDone: boolean }) {
+  const c = useTheme();
+  return (
+    <View style={s.rail} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Line hidden={first} done={upDone} />
+      {done ? (
+        <View style={[s.mark, { backgroundColor: c.mint }]}>
+          <Icon name="check" size={13} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} />
+        </View>
+      ) : (
+        <View style={[s.mark, cur ? { backgroundColor: c.sun2 } : { borderWidth: 3, borderColor: c.line }]} />
+      )}
+      <Line hidden={last} done={done} />
+    </View>
+  );
+}
+
+/* a piece of the line: the squiggle where the day is done, quiet where it is still to come. A squiggle only ever runs along its
+   width, so this one is laid on its side. */
+function Line({ hidden, done }: { hidden: boolean; done: boolean }) {
+  const c = useTheme();
+  const focused = useIsFocused();
+  const [h, setH] = useState(0);
+  if (hidden) return <View style={{ flex: 1 }} />;
+  return (
+    <View style={{ flex: 1, minHeight: 6, width: RAIL, alignItems: 'center' }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
+      {done && h > 0 ? (
+        <View style={{ position: 'absolute', width: h, height: 12, left: RAIL / 2 - h / 2, top: h / 2 - 6, transform: [{ rotate: '90deg' }] }}>
+          <WavyLine width={h} p={1} color={c.sun2} track={c.line} ease={false} speed={focused ? undefined : 0} />
+        </View>
+      ) : (
+        <View style={{ flex: 1, width: 3, backgroundColor: done ? c.sun2 : c.line }} />
+      )}
+    </View>
+  );
+}
+
+/* ---------- what is next: the one big bright card, the whole card one tap, with its word on a sticker ---------- */
+const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
+function Hero({ m, t }: { m: Moment; t: StopTile }) {
+  const c = useTheme();
+  const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={(m.btn || pill) + ': ' + m.h}
+      onPress={() => openStop(t.go, t.id)}
+      style={({ pressed }) => [s.hero, { transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
+      <LinearGradient colors={[c.sun, c.sun2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[s.heroEb, { color: c.onSun }]} numberOfLines={1}>
+          {m.eb}
+        </Text>
+        <Text style={[s.heroT, { color: c.onSun }]} numberOfLines={3}>
+          {m.h}
+        </Text>
+      </View>
+      <Shape kind="cookie12" size={84} color={c.onSun}>
+        <Text style={[s.heroGoT, { color: c.sun }]}>{pill}</Text>
+      </Shape>
+    </Pressable>
+  );
+}
+
+/* ---------- a stop that is not next: one slim row ---------- */
 const STOP_SHAPE: Partial<Record<StopTile['sky'], ShapeKind>> = { sky: 'cookie9', violet: 'cookie12', night: 'sunny', sun: 'flower' };
-function Stop({ t }: { t: StopTile }) {
+function Row({ t }: { t: StopTile }) {
   const c = useTheme();
   const L = lookOf(t.sky, c);
-  /* done: the color of a win. The one that is open now: its moment's full color. Later: its soft color. */
-  const bg = t.done ? c.mint : t.cur ? L.btn : L.soft;
-  const ink = t.done ? (c.scheme === 'dark' ? '#06352A' : '#FFFFFF') : t.cur ? L.onBtn : L.ink;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
       onPress={() => openStop(t.go, t.id)}
-      style={({ pressed }) => [s.stop, pressed && { opacity: 0.7 }]}>
-      <Shape kind={STOP_SHAPE[t.sky] || 'cookie9'} size={STOP} color={bg}>
-        <Icon name={t.done ? 'check' : t.ic} size={24} color={ink} />
-      </Shape>
-      <T v="label" style={s.c} numberOfLines={1}>
+      style={({ pressed }) => [s.row, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name={t.ic} size={20} color={t.done ? c.muted : t.sky === 'night' ? c.accentText : L.ink} />
+      <Text style={[s.rowT, { color: t.done ? c.muted : c.ink }]}>
         {t.title}
-      </T>
-      <Text style={[s.when, { color: t.done ? c.mintText : t.state === 'due' ? c.accentText : c.muted }]}>{t.done ? 'Done' : t.right}</Text>
+        <Text style={[s.rowS, { color: c.muted }]}>{'  ' + (t.done ? t.line : t.right)}</Text>
+      </Text>
     </Pressable>
   );
 }
@@ -192,19 +242,31 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
   );
 }
 
-/** a stop's shape, and the card's padding beside the stops */
-const STOP = 56;
-const PATH_PAD = 8;
-
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
+  stop: { flexDirection: 'row', gap: 8 },
+  stopIn: { flex: 1, paddingVertical: 4 },
+  rail: { width: RAIL, alignItems: 'center' },
+  mark: { width: MARK, height: MARK, borderRadius: MARK / 2, alignItems: 'center', justifyContent: 'center', marginVertical: 2 },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 116,
+    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  heroEb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  heroT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
+  heroGoT: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  rowT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  rowS: { fontFamily: font.body, fontSize: 13 },
+  foot: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, paddingLeft: RAIL + 8, paddingRight: 4 },
   change: { minHeight: 44, justifyContent: 'center' },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
-  path: { flexDirection: 'row', paddingVertical: 16, paddingHorizontal: PATH_PAD, borderRadius: 20 },
-  line: { position: 'absolute', top: 16 + STOP / 2 - 6 },
-  stop: { flex: 1, alignItems: 'center', gap: 2, minHeight: 44 },
-  c: { textAlign: 'center', marginTop: 6 },
-  when: { fontFamily: font.body, fontSize: 13, lineHeight: 18, textAlign: 'center' },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {
     alignSelf: 'stretch',

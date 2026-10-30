@@ -1,15 +1,14 @@
-/* Today, one moment at a time (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with the date
-   and who I am becoming written on it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the
-   heart of the app"). Right under it, one card, picked by the moment (a pause, the hard hours, the day of a slip, a talk-through,
-   days away, the Sunday review, a one-time moment, or the day's next stop), with one quiet line naming the next one when two
-   overlap, and one quiet line for what was logged today and the week's goal. Then Already happened and Planning a slip? (care is
-   never locked; SOS is the round button in the tab bar, always in reach of the thumb); last night's win, when an urge was ridden
-   out in SOS at night (night-win.tsx); Your day as a plain list; then the asks, one at a time, and none on the day the person came
-   back or in the hours after an SOS or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the two buttons until
-   its moment has passed (core talkPlanNow). The sky takes the room the rest does not need (lib/today-size.ts), so all of it fits
-   above the tab bar on any phone. Pulling the page down past its top opens the journal (app/journal.tsx), and until it has been
-   opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
-   celebration opens. */
+/* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with the date and who I
+   am becoming written on it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the
+   app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is the round button in the tab bar, always in
+   reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
+   do is plain at a glance. When a bigger moment has the next step (a pause, the hard hours, the day of a slip, a talk-through, days
+   away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
+   SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS
+   or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the line until its moment has passed (core talkPlanNow).
+   The sky takes the room the rest does not need (lib/today-size.ts). Pulling the page down past its top opens the journal
+   (app/journal.tsx), and until it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the
+   first time it is earned, and its celebration opens. */
 import {
   accountAsk,
   awayDue,
@@ -74,7 +73,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
-import { MORE_ROOM, NOTE_ROOM, SLIP_ROOM, useTodaySize } from '@/lib/today-size';
+import { NOTE_ROOM, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -261,7 +260,9 @@ export default function Today() {
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
   /* the quiet lines under the next step take their room from the sky */
   const slipLine = heroSlipLine(snap.days, st, tk, now);
-  const size = sizeFor((note ? NOTE_ROOM : 0) + (pick.more ? MORE_ROOM : 0) + (slipLine ? NOTE_ROOM : 0) + (pick.card.k === 'slip-day' ? SLIP_ROOM : 0));
+  /* the day's next stop is the big card on the line (your-day.tsx); any other moment keeps its own card above the line */
+  const calm = pick.card.k === 'calm';
+  const size = sizeFor(slipLine ? NOTE_ROOM : 0);
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
   const head = (
@@ -309,17 +310,20 @@ export default function Today() {
             }
           />
         }>
-        <View style={{ gap: 8 }}>
-          {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
-          <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
-          {note ? <Text style={[s.line, { color: c.muted }]}>{note}</Text> : null}
-          <LogLink />
-          <WaitingPlan snap={snap} tk={tk} now={now} />
-        </View>
+        <LogLink />
+        {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
+        {calm ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
+        <YourDay
+          snap={snap}
+          tk={tk}
+          now={now}
+          hero={calm ? pick.card : null}
+          foot={[note, pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
+        />
+        <WaitingPlan snap={snap} tk={tk} now={now} />
         <NotifyBanner />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
-        <YourDay snap={snap} tk={tk} now={now} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
         {tip ? <TipCard /> : null}
         <HomeScreenCard />

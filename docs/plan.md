@@ -176,6 +176,22 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
 10. Fix the public pages now (the code link in llms.txt, "Coming soon", the lesson claims)? **Yes, today.** It is low
     effort and the code link breaks a standing rule.
 
+**The owner's decisions (October 30, 2026):**
+
+- 1 and 2 (the run ledger, hours since the slip): asked for in plainer words; open.
+- 3: the tip lines on badges and levels wait for the first week, as the card does. The Support button stays from day 1,
+  and the rating ask stays at the end of setup (the owner: asking at first download is common procedure).
+- 4: the account gate moves from lesson 4 to lesson 8.
+- 5: yes, the second slip in a week gets the most care and a door to a person.
+- 6: yes, filter the faith lessons by the setup answer. The owner believes in faith and God as part of the process and
+  plans more about Jesus later, so for a person who said yes the faith lessons stay first-class, and the filter only keeps
+  them out of the path of someone who said no.
+- 7: yes, the four missing lessons, and identity moved into week 2.
+- 8: yes, the five-question screen again every 30 days, with the score shown falling.
+- 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; monthly $2.99 or a
+  lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.
+- 10: yes, fix the public pages.
+
 **Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
 once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).
 

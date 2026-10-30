@@ -178,7 +178,13 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
 
 **The owner's decisions (October 30, 2026):**
 
-- 1 and 2 (the run ledger, hours since the slip): asked for in plainer words; open.
+- 1 (the run ledger): refactor it, but the counting modes keep their meaning, because people can switch. On strict, a
+  slip puts the count to 0 (the person chose strict). On gentle, a slip is forgiven (one day off, never to zero). Step
+  down stays hours since the slip and the best stretch. One count per mode, shown the same everywhere (Today, Journal, My
+  numbers, Milestones, the comeback words); the keep-or-fresh question and the three-day rescue go, since the mode decides.
+- 2 (hours since the slip): the days stay the big number; the hours become the chip under it.
+- How the work runs (the owner, October 30): separate sessions, one per effort level, all at once, each on its own branch.
+  Fable only where it buys a better result; here Opus does high and medium, Sonnet does low.
 - 3: the tip lines on badges and levels wait for the first week, as the card does. The Support button stays from day 1,
   and the rating ask stays at the end of setup (the owner: asking at first download is common procedure).
 - 4: the account gate moves from lesson 4 to lesson 8.

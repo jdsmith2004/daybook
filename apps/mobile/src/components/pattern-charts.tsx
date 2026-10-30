@@ -4,7 +4,7 @@
    - RideWeeks: each week as one column, the share ridden out in teal
    - Clock: a 24-hour clock, midnight at the top, a wedge for each hour, the hard hours as a violet band
    - WeekRow: the days of the week, Monday first, the hardest one marked
-   - DiffDots: slip days against days with no slip, as two dots on one line
+   - DiffDots: slip days against days with no slip, as two dots on one line, with its sentence under it
    They grow in once, and with Reduce Motion on they are simply there. */
 import type { PatDiff, PatGaps, PatHour, PatWeek, PatWhen, RiskWindow } from '@daybook/core';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { useChartColors } from '@/components/charts';
 import { useOnce } from '@/components/talk-art';
+import { T } from '@/components/ui';
 import { NATIVE } from '@/lib/motion';
 import { font } from '@/lib/theme';
 
@@ -158,7 +159,7 @@ export function Clock({ hours, hard }: { hours: PatHour[]; hard: PatWhen['hard']
   const lbl = (h: number, t: string) => {
     const [x, y] = pol(cx, cy, R + 16, ang(h));
     return (
-      <SvgText key={h} x={x} y={y + 4} fontSize={11.5} fill={k.ax} textAnchor={h === 6 ? 'start' : h === 18 ? 'end' : 'middle'} fontFamily={font.bodySemi}>
+      <SvgText key={h} x={x} y={y + 4} fontSize={12} fill={k.ax} textAnchor={h === 6 ? 'start' : h === 18 ? 'end' : 'middle'} fontFamily={font.bodySemi}>
         {t}
       </SvgText>
     );
@@ -199,9 +200,9 @@ export function Clock({ hours, hard }: { hours: PatHour[]; hard: PatWhen['hard']
             {top && top.rode + top.slipped ? (
               <>
                 <SvgText x={cx} y={cy - 4} fontSize={11} fill={k.ax} textAnchor="middle" fontFamily={font.bodySemi}>
-                  MOST AT
+                  Most at
                 </SvgText>
-                <SvgText x={cx} y={cy + 16} fontSize={18} fill={k.c.ink} textAnchor="middle" fontFamily={font.display}>
+                <SvgText x={cx} y={cy + 16} fontSize={17} fill={k.c.ink} textAnchor="middle" fontFamily={font.display}>
                   {(top.h % 12 || 12) + (top.h < 12 ? ' AM' : ' PM')}
                 </SvgText>
               </>
@@ -241,9 +242,7 @@ export function WeekRow({ week, hard }: { week: PatWhen['week']; hard: number | 
                 <View style={[s.empty, { width: 22, height: 4, borderColor: k.grid }]} />
               )}
             </View>
-            <View style={[s.dayPill, on ? { backgroundColor: k.c.accentSoft } : null]}>
-              <Text style={[s.day, { color: on ? k.c.accentText : k.ax, fontFamily: on ? font.bodyBold : font.bodySemi }]}>{x.name.slice(0, 3)}</Text>
-            </View>
+            <Text style={[s.day, { color: on ? k.c.ink : k.ax, fontFamily: on ? font.bodyBold : font.bodySemi }]}>{x.name.slice(0, 3)}</Text>
           </View>
         );
       })}
@@ -256,7 +255,7 @@ export function DiffDots({ list }: { list: PatDiff[] }) {
   const k = useChartColors();
   const [w, onLayout] = useWidth();
   return (
-    <View onLayout={onLayout} style={{ gap: 16 }}>
+    <View onLayout={onLayout} style={{ gap: 24 }}>
       {list.map((d) => {
         const top = d.unit === 'pct' ? 1 : d.unit === 'h' ? Math.max(10, Math.ceil(Math.max(d.clean, d.slip))) : 10;
         const X = (v: number) => 10 + (v / top) * (w - 20);
@@ -273,15 +272,16 @@ export function DiffDots({ list }: { list: PatDiff[] }) {
                   <Line x1={a} y1={12} x2={b} y2={12} stroke={k.ax} strokeWidth={3} strokeLinecap="round" />
                   <Circle cx={a} cy={12} r={8} fill={k.rode} />
                   <Circle cx={b} cy={12} r={8} fill={k.slip} />
-                  <SvgText x={a} y={32} fontSize={11.5} fill={k.rode} textAnchor="middle" fontFamily={font.bodyBold}>
+                  <SvgText x={a} y={32} fontSize={12} fill={k.rode} textAnchor="middle" fontFamily={font.bodyBold}>
                     {fmt(d.clean)}
                   </SvgText>
-                  <SvgText x={b} y={32} fontSize={11.5} fill={k.slip} textAnchor="middle" fontFamily={font.bodyBold}>
+                  <SvgText x={b} y={32} fontSize={12} fill={k.slip} textAnchor="middle" fontFamily={font.bodyBold}>
                     {fmt(d.slip)}
                   </SvgText>
                 </Svg>
               ) : null}
             </View>
+            <T>{d.line}</T>
           </View>
         );
       })}
@@ -299,6 +299,5 @@ const s = StyleSheet.create({
   empty: { borderTopWidth: 2, borderStyle: 'dotted' },
   ax: { fontFamily: font.body, fontSize: 12 },
   day: { fontSize: 12 },
-  dayPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
   dl: { fontFamily: font.bodySemi, fontSize: 15 },
 });

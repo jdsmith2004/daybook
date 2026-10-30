@@ -47,9 +47,6 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
       <Stage key={'s' + step} dir={dir}>
         <Middle>
           <Breath />
-          <T v="eyebrow" tone="muted">
-            Notice it
-          </T>
           <T v="title" style={s.c} accessibilityRole="header">
             An urge is here. Let it be.
           </T>
@@ -62,9 +59,6 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
   if (step === 1)
     return (
       <Stage key={'s' + step} dir={dir}>
-        <T v="eyebrow" tone="muted">
-          Look closer
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           Where do you feel it?
         </T>
@@ -92,9 +86,6 @@ export function Curious({ finish, step, setStep, dir }: ToolProps & Stepped) {
   };
   return (
     <Stage key={'s' + step} dir={dir}>
-      <T v="eyebrow" tone="muted">
-        Watch it
-      </T>
       <T v="title" style={s.c} accessibilityRole="header">
         Now just watch it.
       </T>
@@ -540,9 +531,6 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
   if (step === 0)
     return (
       <Stage key={'s' + step} dir={dir}>
-        <T v="eyebrow" tone="muted">
-          If I give in
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           An hour after giving in, I usually feel…
         </T>
@@ -556,9 +544,6 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
   if (step === 1)
     return (
       <Stage key={'s' + step} dir={dir}>
-        <T v="eyebrow" tone="muted">
-          If I ride it out
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           An hour after riding it out, I usually feel…
         </T>
@@ -603,14 +588,14 @@ export function Forward({ finish, step, setStep, dir }: ToolProps & Stepped) {
           <Fork left={c.slip} right={c.mint} />
           <View style={s.two}>
             <Card style={{ flex: 1, backgroundColor: c.slipSoft, borderColor: c.slipSoft }}>
-              <T v="small" tone="slipText">
-                An hour after giving in
+              <T v="eyebrow" tone="slipText">
+                Giving in
               </T>
               <T>{wa.length ? wa.join(', ') : 'You did not pick anything.'}</T>
             </Card>
             <Card style={{ flex: 1, backgroundColor: c.mintSoft, borderColor: c.mintSoft }}>
-              <T v="small" tone="mintText">
-                An hour after riding it out
+              <T v="eyebrow" tone="mintText">
+                Riding it out
               </T>
               <T>{wb.length ? wb.join(', ') : 'You did not pick anything.'}</T>
             </Card>
@@ -688,10 +673,10 @@ const s = StyleSheet.create({
   blob: { position: 'absolute', left: 0 },
   quiet: { alignItems: 'center' },
   calmWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  calm: { fontFamily: font.display, fontSize: 22, lineHeight: 30, textAlign: 'center' },
+  calm: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },
   now: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999 },
-  tomorrow: { alignSelf: 'stretch', gap: 4, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 18 },
-  tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
+  tomorrow: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 20 },
+  tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   thoughtT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
   breath: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },

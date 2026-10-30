@@ -79,11 +79,14 @@ import { Text } from '@/components/text';
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { Link } from '@/components/choices';
+import { FitArt } from '@/components/fit';
+import { Flame } from '@/components/flame';
 import { OwnChip, OwnField } from '@/components/own';
 import { SafeTextButton } from '@/components/safe-text';
 import { SosPill } from '@/components/sos-pill';
 import { KnownLine, Sources } from '@/components/research';
-import { Dock, Finish, SceneFrame } from '@/components/scene';
+import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
+import { Shape } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
 import { TalkArtView } from '@/components/talk-art';
 import { Button, Chip, Icon, T } from '@/components/ui';
@@ -359,11 +362,8 @@ export default function TalkIt() {
     const allRead = known.every((x) => seen0.indexOf(x.k) >= 0);
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          What your mind is doing
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          {allRead ? 'You know these already' : 'A few things to know'}
+          {allRead ? 'You know these already' : 'What your mind is doing'}
         </T>
         <View style={[s.middle, { gap: 8 }]}>
           {known.map((x, i) => (
@@ -386,14 +386,11 @@ export default function TalkIt() {
   } else if (step === 'read') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          The research
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           What your mind is doing
         </T>
         {TALK_CARDS.map((x) => (
-          <View key={x.k} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip, gap: 10 }]}>
+          <View key={x.k} style={s.readItem}>
             <Text style={[s.planT, { color: c.ink }]} accessibilityRole="header">
               {x.title}
             </Text>
@@ -412,7 +409,7 @@ export default function TalkIt() {
     body = (
       <Appear key={card.k} x={36 * dir} by={0} duration={260} style={s.stage}>
         <T v="eyebrow" tone="muted">
-          What your mind is doing{fresh.length > 1 ? ' · ' + (ci + 1) + ' of ' + fresh.length : ''}
+          What your mind is doing
         </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {card.title}
@@ -439,9 +436,11 @@ export default function TalkIt() {
   } else if (step === 'need') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          {prep ? prepEb : 'Talking it through'}
-        </T>
+        {prep ? (
+          <T v="eyebrow" tone="muted">
+            {prepEb}
+          </T>
+        ) : null}
         <T v="title" style={s.c} accessibilityRole="header">
           {prep ? 'What usually makes these hours hard?' : 'What are you really after tonight?'}
         </T>
@@ -512,32 +511,40 @@ export default function TalkIt() {
     const whys = base.concat(talk.why.filter((r) => base.indexOf(r) < 0));
     body = (
       <>
-        <View style={[s.middle, { justifyContent: 'flex-start', paddingTop: 8 }]}>
-          <View style={[s.echo, { backgroundColor: c.surface, borderColor: c.accent, shadowColor: c.lip }]}>
+        {/* the number said back, on a soft shape, with what it means; what is in it is answered low, under the thumb */}
+        <FitArt min={0.55}>
+          <Shape kind="cookie9" size={96} color={c.surface}>
             <Text style={[s.echoN, { color: c.accentText }]}>{n}</Text>
+          </Shape>
+        </FitArt>
+        <Appear delay={120} by={8}>
+          <Text style={[s.reflect, { color: c.ink }]}>{talkReflect(n)}</Text>
+        </Appear>
+        {own === 'why' ? (
+          <View style={{ alignSelf: 'stretch', gap: 10 }}>
+            <T v="label" style={s.c}>
+              What is in that {n}?
+            </T>
+            {ownField('Like: being there for my kids', (t) => set({ why: addOwn(talk.why, t) }))}
           </View>
-          <Appear delay={120} by={8}>
-            <Text style={[s.reflect, { color: c.ink }]}>{talkReflect(n)}</Text>
-          </Appear>
-          {n > 0 ? (
-            <Appear delay={300} by={8} style={{ alignSelf: 'stretch', gap: 10 }}>
-              <T v="label" style={s.c}>
-                What is in that {n}?
-              </T>
-              {own === 'why' ? (
-                ownField('Like: being there for my kids', (t) => set({ why: addOwn(talk.why, t) }))
-              ) : (
+        ) : (
+          <Dock>
+            {n > 0 ? (
+              <Appear delay={300} by={8} style={{ alignSelf: 'stretch', gap: 10 }}>
+                <T v="label" style={s.c}>
+                  What is in that {n}?
+                </T>
                 <ChipWrap>
                   {whys.map((r) => (
                     <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
                   ))}
                   <OwnChip onPress={() => setOwn('why')} />
                 </ChipWrap>
-              )}
-            </Appear>
-          ) : null}
-        </View>
-        {own === 'why' ? null : <Dock>{next('path')}</Dock>}
+              </Appear>
+            ) : null}
+            {next('path')}
+          </Dock>
+        )}
       </>
     );
   } else if (step === 'path') {
@@ -573,9 +580,6 @@ export default function TalkIt() {
   } else if (step === 'cMoves') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          {prep ? prepEb : 'Change the plan'}
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {prep ? 'What will you do instead?' : talk.n ? 'Meet ' + needWord + ' another way.' : 'Meet that need another way.'}
         </T>
@@ -615,15 +619,12 @@ export default function TalkIt() {
     const ready = !!talk.mo;
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          {prep ? prepEb : 'Change the plan'}
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           When is the hard part?
         </T>
         <View style={s.middle}>
           {ready ? (
-            <Appear key={talk.mo} by={8} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+            <Appear key={talk.mo} by={8} style={[s.plan, { backgroundColor: c.surface }]}>
               <T v="eyebrow" tone="muted">
                 Your plan
               </T>
@@ -682,9 +683,6 @@ export default function TalkIt() {
   } else if (step === 'wWhen') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Wait, and decide later
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           When will you decide?
         </T>
@@ -707,14 +705,11 @@ export default function TalkIt() {
   } else if (step === 'wUntil') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Until {talk.at ? talkClock(talk.at) : 'then'}
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
-          One thing to do in the meantime
+          {talk.at ? 'One thing to do until ' + talkClock(talk.at) : 'One thing to do in the meantime'}
         </T>
         <T style={s.c} tone="muted">
-          A little of that, another way.
+          What you need, another way.
         </T>
         {own === 'wUntil' ? (
           ownField('Like: play guitar for 20 minutes', (t) => set({ m: [], mx: [t] }))
@@ -754,9 +749,6 @@ export default function TalkIt() {
     const read = seen0.indexOf('liking') >= 0;
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Eyes open
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {lk.title}
         </T>
@@ -771,9 +763,6 @@ export default function TalkIt() {
     const any = talk.b.length + talk.f.length > 0;
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Before
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           What do you notice in your body right now?
         </T>
@@ -804,9 +793,6 @@ export default function TalkIt() {
   } else if (step === 'oExpect') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Before
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {talk.n ? 'How much ' + needWord + ' do you expect it to give you?' : 'How much of what you need do you expect it to give you?'}
         </T>
@@ -825,24 +811,19 @@ export default function TalkIt() {
   } else if (step === 'oReady') {
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          Eyes open
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           If you go ahead, go slowly enough to notice.
         </T>
-        <View style={[s.middle, { gap: 10 }]}>
+        <View style={[s.middle, { gap: 16 }]}>
           {[
             ['wind', 'Your breath, and what your body is doing.'],
             ['sparkle', 'The moment it stops giving you anything.'],
             ['stop', 'You can stop at any point. That is allowed too.'],
             ['check', 'Afterwards, come back here for one minute.'],
           ].map(([ic, t], i) => (
-            <Appear key={i} delay={120 + i * 90} by={8} style={[s.forRow, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-              <View style={[s.forIc, { backgroundColor: c.violetSoft }]}>
-                <Icon name={ic} size={20} color={c.violetText} />
-              </View>
-              <T style={{ flex: 1 }}>{t}</T>
+            <Appear key={i} delay={120 + i * 90} by={8} style={s.forRow}>
+              <Icon name={ic} size={22} color={c.violetText} />
+              <T style={[s.body, { flex: 1 }]}>{t}</T>
             </Appear>
           ))}
           <T style={[s.c, s.warm]}>Whatever happens, nothing you have built is lost.</T>
@@ -873,7 +854,7 @@ export default function TalkIt() {
                 : 'You saw it coming and chose. That is the climb.'
           }
         />
-        <Appear delay={420} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+        <Appear delay={420} style={[s.plan, { backgroundColor: c.surface }]}>
           <T v="eyebrow" tone="muted">
             {wait ? 'Until then' : 'Your plan'}
           </T>
@@ -905,6 +886,12 @@ export default function TalkIt() {
               ? 'You chose with your eyes open ' + ago + '. Either answer is useful.'
               : 'Either answer is useful. Honest is what counts.'}
         </T>
+        {/* the flame in the open middle: it is still lit, whichever answer comes next */}
+        <Middle>
+          <FitArt min={0.55}>
+            <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={170} alive />
+          </FitArt>
+        </Middle>
         <Dock>
           <Answer
             icon={change ? 'check' : 'sun'}
@@ -1036,9 +1023,6 @@ export default function TalkIt() {
     const ev = talkEvidence(snap.days);
     body = went ? (
       <>
-        <T v="eyebrow" tone="muted">
-          Looked back
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           Thank you for looking at it honestly.
         </T>
@@ -1047,8 +1031,8 @@ export default function TalkIt() {
           <Appear delay={300} by={8}>
             <T style={s.c}>{talkEvidenceLine(ev)}</T>
           </Appear>
-          <Appear delay={460} by={8} style={[s.plan, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-            <T>It is in your log as a slip: data, not a reset. Nothing you built is gone. Next: what you felt before it, and a plan for next time.</T>
+          <Appear delay={460} by={8}>
+            <T style={[s.c, s.warm]}>It is in your log as a slip: data, not a reset. Nothing you built is gone.</T>
           </Appear>
         </View>
         <Dock>
@@ -1136,7 +1120,7 @@ function Evidence({ rows }: { rows: { e: number; g: number }[] }) {
     </View>
   );
   return (
-    <View style={[s.ev, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+    <View style={[s.ev, { backgroundColor: c.surface }]}>
       <View style={s.evBars}>
         {rows.map((r, i) => (
           <View key={i} style={s.evPair}>
@@ -1168,43 +1152,14 @@ const s = StyleSheet.create({
   btnSpace: { height: 52 },
   warm: { fontFamily: font.bodyMedium, marginTop: 4 },
   body: { alignSelf: 'stretch', fontSize: 17, lineHeight: 24 },
-  forRow: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 18,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  forIc: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  echo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
+  forRow: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 14 },
   echoN: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 56 },
-  reflect: { fontFamily: font.display, fontSize: 22, lineHeight: 30, textAlign: 'center' },
-  plan: {
-    alignSelf: 'stretch',
-    gap: 6,
-    padding: 16,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  planT: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
-  ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
+  reflect: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  plan: { alignSelf: 'stretch', gap: 6, padding: 16, borderRadius: 20 },
+  /* one card on the research page: its heading, its picture, its words, with room between them */
+  readItem: { alignSelf: 'stretch', gap: 10, marginTop: 16 },
+  planT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
+  ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10 },
   evBars: { height: 122, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 18 },
   evCol: { alignItems: 'center', gap: 4 },
   evN: { fontFamily: font.bodyBold, fontSize: 13, fontVariant: ['tabular-nums'] },

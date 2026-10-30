@@ -2,7 +2,7 @@
    typed (settings.learn.wr). It earns no points: it is for the person, not for a score. The route's n is the checkpoint's
    own record (c1 to c16, always about the same two lessons); the number shown is its place on the path (core lcheckNo).
    Ported from the legacy SCENES.lwrite. */
-import { LCHECKS, lcheckNo, lcheckPair, lessonNo, LUNITS, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
+import { LCHECKS, lcheckNo, lcheckPair, lessonNo, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -11,10 +11,10 @@ import { Text, TextInput } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LxCheck } from '@/components/lesson-art';
-import { Icon, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
-import { font, toneOf, useTheme } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 export default function Lwrite() {
   const { n: nRaw } = useLocalSearchParams<{ n: string }>();
@@ -30,16 +30,9 @@ export default function Lwrite() {
   const pair = lcheckPair(n);
   const A = pair && pair.a;
   const B = pair && pair.b;
-  const t = toneOf(c, B ? LUNITS[B.u].tone : 'accent');
   const total = C ? C.q.length : 0;
   const fin = i === total;
   const txt = lwriteOf(st, n);
-  const btn = (label: string, onPress: () => void, icon = true) => (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.next, { backgroundColor: c.accent, shadowColor: c.accentDeep }]}>
-      <Text style={[s.nextT, { color: c.accentInk }]}>{label}</Text>
-      {icon ? <Icon name="next" size={20} color={c.accentInk} /> : null}
-    </Pressable>
-  );
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
@@ -49,7 +42,7 @@ export default function Lwrite() {
               ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(A, st) ? ' · lessons ' + lessonNo(A, st) + ' and ' + lessonNo(B, st) : '')
               : 'Checkpoint'}
           </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
@@ -62,29 +55,17 @@ export default function Lwrite() {
                 <View key={j} style={[s.progI, { backgroundColor: fin || j < i ? c.mint : j === i ? c.accent : c.lip }]} />
               ))}
             </View>
-            <ScrollView
-              ref={scroll}
-              style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
-              contentContainerStyle={s.cardIn}
-              automaticallyAdjustKeyboardInsets
-              keyboardShouldPersistTaps="handled">
+            <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={s.cardIn} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
               <KeyboardRoom scroll={scroll}>
                 {!fin ? (
                   <>
-                    <View style={s.eye}>
-                      <View style={[s.ei, { backgroundColor: t.soft }]}>
-                        <Icon name="pencil" size={16} color={t.text} />
-                      </View>
-                      <Text style={[s.eyeT, { color: t.text }]}>
-                        WRITE IT OUT · {i + 1} OF {total}
-                      </Text>
-                    </View>
-                    <T style={s.h} accessibilityRole="header">
+                    <T v="eyebrow" tone="muted">
+                      Write it out · {i + 1} of {total}
+                    </T>
+                    <T v="title" accessibilityRole="header">
                       {C.q[i]}
                     </T>
-                    <T tone="muted" style={{ fontSize: 17 }}>
-                      A few sentences is plenty. Only you see this.
-                    </T>
+                    <T tone="muted">A few sentences is plenty. Only you see this.</T>
                     <TextInput
                       key={i}
                       accessibilityLabel="Your answer"
@@ -94,10 +75,10 @@ export default function Lwrite() {
                       placeholder="Start anywhere"
                       placeholderTextColor={c.muted}
                       onChangeText={(v) => apply({ st: lwriteSave(snap.settings!, n, i, v) })}
-                      style={[s.wr, { borderColor: c.accent, color: c.ink, backgroundColor: c.surface }]}
+                      style={[s.wr, { borderColor: c.line, color: c.ink, backgroundColor: c.surface }]}
                     />
-                    <T v="small" tone="mintText">
-                      ✓ Saved as you type
+                    <T v="small" tone="muted">
+                      Saved as you type
                     </T>
                   </>
                 ) : (
@@ -105,43 +86,51 @@ export default function Lwrite() {
                     <View style={{ alignItems: 'center' }}>
                       <LxCheck />
                     </View>
-                    <T v="label" tone="mintText">
-                      CHECKPOINT SAVED
+                    <T v="eyebrow" tone="mintText">
+                      Checkpoint saved
                     </T>
-                    <T style={s.h} accessibilityRole="header">
+                    <T v="title" accessibilityRole="header">
                       That is in your plan.
                     </T>
-                    <T style={{ fontSize: 17, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
-                    <Route
-                      label="Read it in My plan"
-                      onPress={() => {
-                        closeAll();
-                        router.push({ pathname: '/plan', params: { pane: 'learned' } });
-                      }}
-                    />
-                    <Route
-                      label="Back to Learn"
-                      onPress={() => {
-                        closeAll();
-                        router.navigate('/learn');
-                      }}
-                    />
+                    <T>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
                   </>
                 )}
               </KeyboardRoom>
             </ScrollView>
-            <View style={s.foot}>
-              {!fin && i > 0 ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Back"
-                  onPress={() => setI(i - 1)}
-                  style={[s.back, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
-                  <Icon name="back" size={22} color={c.ink} />
-                </Pressable>
-              ) : null}
-              {fin ? btn('Done', closeAll, false) : btn(i === total - 1 ? 'Finish' : 'Next', () => setI(i + 1))}
-            </View>
+            {fin ? (
+              <View style={{ gap: 8 }}>
+                <Route
+                  label="Read it in My plan"
+                  onPress={() => {
+                    closeAll();
+                    router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                  }}
+                />
+                <Route
+                  label="Back to Learn"
+                  onPress={() => {
+                    closeAll();
+                    router.navigate('/learn');
+                  }}
+                />
+                <Button label="Done" onPress={closeAll} />
+              </View>
+            ) : (
+              <View style={s.foot}>
+                {i > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Back"
+                    onPress={() => setI(i - 1)}
+                    style={({ pressed }) => [s.back, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+                    <Icon name="back" size={20} color={c.ink} />
+                  </Pressable>
+                ) : null}
+                <View style={{ flex: 1 }}>
+                  <Button label={i === total - 1 ? 'Finish' : 'Next'} onPress={() => setI(i + 1)} />
+                </View>
+              </View>
+            )}
           </>
         )}
       </View>
@@ -152,39 +141,23 @@ export default function Lwrite() {
 function Route({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.soft, { backgroundColor: c.accentSoft }]}>
-      <Text style={{ flex: 1, fontFamily: font.bodySemi, fontSize: 17, color: c.accentText }}>{label}</Text>
-      <Icon name="next" size={20} color={c.accentText} />
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.7 : 1 }]}>
+      <T v="label" tone="accentText" style={{ flex: 1 }}>
+        {label}
+      </T>
+      <Icon name="next" size={16} color={c.accentText} />
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   prog: { flexDirection: 'row', gap: 4 },
-  progI: { flex: 1, height: 8, borderRadius: 4 },
-  card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0 },
-  cardIn: { padding: 22, gap: 14 },
-  eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
-  h: { fontFamily: font.display, fontSize: 28, lineHeight: 31 },
-  wr: { minHeight: 170, padding: 14, borderRadius: 16, borderWidth: 2, fontFamily: font.body, fontSize: 17, lineHeight: 24, textAlignVertical: 'top' },
-  foot: { flexDirection: 'row', gap: 10 },
-  next: {
-    flex: 1,
-    minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 18,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  nextT: { fontFamily: font.bodySemi, fontSize: 20 },
-  back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  soft: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 16 },
+  progI: { flex: 1, height: 4, borderRadius: 2 },
+  cardIn: { paddingVertical: 12, gap: 12 },
+  wr: { minHeight: 170, padding: 16, borderRadius: 20, borderWidth: 1.5, fontFamily: font.body, fontSize: 17, lineHeight: 24, textAlignVertical: 'top' },
+  foot: { flexDirection: 'row', gap: 8 },
+  back: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  soft: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 50, paddingHorizontal: 16, borderRadius: 12 },
 });

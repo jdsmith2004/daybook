@@ -92,9 +92,7 @@ export function Fold({
           onToggle();
         }}
         style={({ pressed }) => [s.foldHead, pressed && { opacity: 0.75 }]}>
-        <View style={s.foldIc}>
-          <Icon name={icon} size={18} color={nightInk.ink} />
-        </View>
+        <Icon name={icon} size={20} color={nightInk.ink} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <T v="label">{title}</T>
           {sub ? (
@@ -128,9 +126,7 @@ export function NightRow({ icon, title, sub, onPress }: { icon: string; title: s
           onPress();
         }}
         style={({ pressed }) => [s.foldHead, pressed && { opacity: 0.75 }]}>
-        <View style={s.foldIc}>
-          <Icon name={icon} size={18} color={nightInk.ink} />
-        </View>
+        <Icon name={icon} size={20} color={nightInk.ink} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <T v="label">{title}</T>
           {sub ? (
@@ -196,7 +192,7 @@ export function LoudFold({ open, onToggle, plan }: { open: boolean; onToggle: ()
   );
 }
 
-/** one thing on the wind-down list, as a big card with a round check */
+/** one thing on the wind-down list: a round check and its words, in the row that holds them */
 function WindItem({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   const c = useTheme();
   return (
@@ -204,14 +200,11 @@ function WindItem({ label, on, onPress }: { label: string; on: boolean; onPress:
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
       onPress={onPress}
-      style={({ pressed }) => [
-        s.item,
-        { backgroundColor: c.surface, borderColor: on ? c.mint : 'transparent', shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] },
-      ]}>
-      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
+      style={({ pressed }) => [s.item, pressed && { opacity: 0.75 }]}>
+      <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : nightInk.muted }]}>
         {on ? <Icon name="check" size={16} color="#06352A" /> : null}
       </View>
-      <Text style={[s.itemT, { color: c.ink }]}>{label}</Text>
+      <Text style={[s.itemT, { color: nightInk.ink }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -460,23 +453,10 @@ const s = StyleSheet.create({
     elevation: 3,
   },
   gnT: { fontFamily: font.display, fontSize: 22, color: MOON_INK },
-  fold: { alignSelf: 'stretch', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
-  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, paddingVertical: 8 },
-  foldIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
-  foldBody: { gap: 10, paddingHorizontal: 14, paddingBottom: 14 },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 52,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 2,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 3 },
-  },
+  fold: { alignSelf: 'stretch', borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
+  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingHorizontal: 16, paddingVertical: 8 },
+  foldBody: { gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 4 },
   box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   itemT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   art: { position: 'absolute', width: W, height: H },

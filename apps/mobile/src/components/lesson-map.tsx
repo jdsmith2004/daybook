@@ -408,8 +408,8 @@ export function Signpost({ l, at, y, k, gone }: { l: MapLand; at: { left: number
           </View>
         ) : null}
         <View style={{ flexShrink: 1 }}>
-          <Text style={[s_.boardEye, { color: t.text, fontSize: 11 * k }]}>SECTION {l.k + 1}</Text>
-          <Text style={[s_.boardT, { color: c.ink, fontSize: 17 * k, lineHeight: 20 * k }]}>{u.name}</Text>
+          <Text style={[s_.boardEye, { color: t.text }]}>Section {l.k + 1}</Text>
+          <Text style={[s_.boardT, { color: c.ink }]}>{u.name}</Text>
         </View>
         <View style={[s_.tip, { backgroundColor: c.surface, borderColor: t.ic, width: 18 * k, height: 18 * k, right: -9 * k, marginTop: -9 * k }]} />
       </View>
@@ -470,8 +470,8 @@ export function StoneCard({
       <View style={[s_.point, { left: x - 16 - 11, backgroundColor: bg }]} />
       <View style={s_.cardTop}>
         <Text style={[s_.cardEye, { color: ink }]}>
-          LESSON {no} · {lmin(L).toUpperCase()}
-          {when ? ' · DONE ' + when.toUpperCase() : ''}
+          Lesson {no} · {lmin(L)}
+          {when ? ' · done ' + when : ''}
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} hitSlop={10} style={s_.x}>
           <Icon name="x" size={20} color={ink} />
@@ -539,7 +539,8 @@ export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[s_.chipEye, { color: t.text }]} numberOfLines={1}>
-          {here ? 'YOU ARE IN · ' : ''}SECTION {l.k + 1} OF {of}
+          {here ? 'You are in section ' : 'Section '}
+          {l.k + 1} of {of}
         </Text>
         <Text style={[s_.chipT, { color: c.ink }]} numberOfLines={1}>
           {u.name}
@@ -583,8 +584,8 @@ const s_ = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  boardEye: { fontFamily: font.bodyBold, letterSpacing: 1.1 },
-  boardT: { fontFamily: font.display },
+  boardEye: { fontFamily: font.bodySemi, fontSize: 12, lineHeight: 16 },
+  boardT: { fontFamily: font.display, fontSize: 17, lineHeight: 20 },
   tip: { position: 'absolute', top: '50%', borderTopWidth: 2.5, borderRightWidth: 2.5, transform: [{ rotate: '45deg' }], borderTopRightRadius: 4 },
   gold: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFC832', alignItems: 'center', justifyContent: 'center' },
   card: {
@@ -592,7 +593,7 @@ const s_ = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 8,
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 16,
     gap: 4,
     shadowOffset: { width: 0, height: 12 },
@@ -602,14 +603,14 @@ const s_ = StyleSheet.create({
   },
   point: { position: 'absolute', top: -9, width: 22, height: 22, borderRadius: 4, transform: [{ rotate: '45deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  cardEye: { flex: 1, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1, opacity: 0.88 },
-  x: { width: 36, height: 36, marginRight: -8, marginTop: -6, alignItems: 'center', justifyContent: 'center' },
+  cardEye: { flex: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, opacity: 0.9 },
+  x: { width: 44, height: 44, marginRight: -12, marginVertical: -10, alignItems: 'center', justifyContent: 'center' },
   cardT: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   cardP: { fontFamily: font.body, fontSize: 15, lineHeight: 21, opacity: 0.94 },
   go: {
     marginTop: 12,
-    minHeight: 54,
-    borderRadius: 16,
+    minHeight: 50,
+    borderRadius: 25,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -646,10 +647,10 @@ const s_ = StyleSheet.create({
     elevation: 6,
   },
   chipArt: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  chipEye: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1.1 },
-  chipT: { fontFamily: font.display, fontSize: 20, lineHeight: 23 },
+  chipEye: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16 },
+  chipT: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
   ringT: { fontFamily: font.display, fontSize: 13 },
-  nextEye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
+  nextEye: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   today: { position: 'absolute', zIndex: 4, width: 60, alignItems: 'center' },
   todayT: {
     fontFamily: font.bodyBold,
@@ -859,15 +860,16 @@ function NextLabel({ s, land, x, y, k, w, onPress }: { s: MapStone; land: MapLan
   const c = useTheme();
   const t = toneOf(c, toneName(land.u));
   const right = land.right;
-  const left = right ? x + 50 * k : 12;
-  const width = right ? w - left - 12 : x - 50 * k - 12;
+  /* clear of the ring around the stone (54 from its center, and its line) */
+  const left = right ? x + 66 * k : 16;
+  const width = right ? w - left - 16 : x - 66 * k - 16;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Up next: lesson ${s.n}, ${s.L.title}, ${lmin(s.L)}. Open its card.`}
       onPress={onPress}
       style={{ position: 'absolute', left, width, top: y - 30 * k, zIndex: 4, alignItems: right ? 'flex-start' : 'flex-end' }}>
-      <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>UP NEXT · {lmin(s.L).toUpperCase()}</Text>
+      <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>Up next · {lmin(s.L)}</Text>
       <Text style={[s_.nextT, { color: c.ink, textAlign: right ? 'left' : 'right' }]}>
         {s.n}. {s.L.title}
       </Text>

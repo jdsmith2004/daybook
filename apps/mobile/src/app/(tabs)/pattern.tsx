@@ -24,7 +24,6 @@ import {
   patWeeks,
   patWhen,
   plural,
-  sunList,
   logRateKeys,
   ratingOf,
   talkEvidence,
@@ -77,15 +76,9 @@ export default function Pattern() {
   const inset = useSafeAreaInsets();
   const [paneY, setPaneY] = useState(0);
   if (!st) return <SetupFirst title="Pattern" line="Everything you log shows up here by itself: urges ridden out, slips, and how each day went." />;
-  const sub =
-    pane === 'days'
-      ? 'Everything you log shows up here by itself. Tap a day to add or fix something.'
-      : pane === 'patterns'
-        ? 'When it gets hard, what sets it off, and how you are climbing.'
-        : 'Your Sunday reviews, and each week in numbers.';
   const cw = Math.max(0, weekOf(tk, st));
   return (
-    <Screen eyebrow="My Daybook" title="Pattern" sub={<T tone="muted">{sub}</T>} scrollRef={scroll}>
+    <Screen title="Pattern" scrollRef={scroll}>
       <Segments
         label="Pattern sections"
         list={[
@@ -97,7 +90,7 @@ export default function Pattern() {
         onPick={setPane}
       />
       <View onLayout={(e) => setPaneY(e.nativeEvent.layout.y)}>
-        <Appear key={pane} style={{ gap: 14 }}>
+        <Appear key={pane} style={{ gap: 16 }}>
           {pane === 'days' ? (
             <DaysPane />
           ) : pane === 'patterns' ? (
@@ -108,10 +101,6 @@ export default function Pattern() {
           ) : (
             <>
               <SundayList snap={snap} tk={tk} />
-              {sunList(snap.reviews).length ? null : <EmptyChart text="No reviews yet. Each Sunday review you finish is kept here." />}
-              <T v="h2" style={{ marginTop: 6 }}>
-                Week by week
-              </T>
               <WeekView k={week == null ? cw : week} onNav={setWeek} />
             </>
           )}
@@ -128,14 +117,7 @@ function DaysPane() {
   const st = snap.settings!;
   const [all, setAll] = useState(false);
   const list = daysList(snap.days, st, tk, all);
-  const tone = (status: string) =>
-    status === 'slip'
-      ? { bg: c.slipSoft, fg: c.slipText }
-      : status === 'clean'
-        ? { bg: c.mintSoft, fg: c.mintText }
-        : status === 'tracked'
-          ? { bg: c.skySoft, fg: c.skyText }
-          : { bg: c.surface2, fg: c.muted };
+  const tone = (status: string) => (status === 'slip' ? c.slipText : status === 'clean' ? c.mintText : status === 'tracked' ? c.skyText : c.muted);
   return (
     <>
       {/* today's entries and the week's goal from Sunday live here; Today keeps one line for both, under the next step */}
@@ -145,56 +127,44 @@ function DaysPane() {
       <SundayCard snap={snap} tk={tk} />
       {list.weeks.map((w) => (
         <Card key={w.wk + w.title}>
-          <View style={s.between}>
-            <T v="h2" style={{ flex: 1 }}>
+          <View style={{ gap: 2 }}>
+            <T v="h2" accessibilityRole="header">
               {w.title}
             </T>
             <T v="small" tone="muted">
               {w.count}
             </T>
           </View>
-          <View style={{ gap: 2 }}>
-            {w.rows.map((r) => {
-              const t = tone(r.status);
-              return (
-                <Pressable
-                  key={r.key}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${r.weekday} ${r.date}. ${r.pill}. ${r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) : ''}${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
-                  onPress={() => router.push({ pathname: '/day/[date]', params: { date: r.key } })}
-                  style={({ pressed }) => [s.day, { borderTopColor: c.line, opacity: pressed ? 0.75 : 1 }]}>
-                  <View style={{ width: 56 }}>
-                    <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: c.ink }}>{r.weekday}</Text>
-                    <T v="small" tone="muted">
-                      {r.date}
-                    </T>
-                  </View>
-                  <View style={{ flex: 1, gap: 1 }}>
-                    <T v="small" tone="muted">
-                      {r.phase}
-                    </T>
-                    <T v="small">{r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) + r.times : r.times}</T>
-                    {r.rate ? (
-                      <T v="small" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
-                        {r.rate}
-                      </T>
-                    ) : null}
-                  </View>
-                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    {r.pill ? (
-                      <View style={[s.pill, { backgroundColor: t.bg }]}>
-                        <Text style={{ fontFamily: font.bodySemi, fontSize: 12, color: t.fg }}>{r.pill}</Text>
-                      </View>
-                    ) : null}
-                    {r.pts ? (
-                      <T v="small" tone="mintText" style={{ fontFamily: font.bodySemi }}>
-                        +{r.pts}
-                      </T>
-                    ) : null}
-                  </View>
-                </Pressable>
-              );
-            })}
+          {/* a day is two lines: how it went and what was logged. The ratings and the day's phase wait on the day's own page */}
+          <View>
+            {w.rows.map((r) => (
+              <Pressable
+                key={r.key}
+                accessibilityRole="button"
+                accessibilityLabel={`${r.weekday} ${r.date}. ${r.phase}. ${r.pill}. ${r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) : ''}${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
+                onPress={() => router.push({ pathname: '/day/[date]', params: { date: r.key } })}
+                style={({ pressed }) => [s.day, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
+                <View style={{ width: 56 }}>
+                  <T v="label">{r.weekday}</T>
+                  <T v="small" tone="muted">
+                    {r.date}
+                  </T>
+                </View>
+                <View style={{ flex: 1 }}>
+                  {/* "No entry" over "Nothing logged" would say it twice */}
+                  {r.pill && r.pill !== 'No entry' ? <T style={{ fontFamily: font.bodySemi, color: tone(r.status) }}>{r.pill}</T> : null}
+                  <T v="small" tone="muted">
+                    {r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) + r.times : r.times}
+                  </T>
+                </View>
+                {r.pts ? (
+                  <T v="small" tone="muted">
+                    +{r.pts}
+                  </T>
+                ) : null}
+                <Icon name="next" size={16} color={c.muted} />
+              </Pressable>
+            ))}
           </View>
         </Card>
       ))}
@@ -266,16 +236,16 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const numbers = (
     <Card>
       <T v="h2">My numbers</T>
-      <View style={s.stats}>
-        {nums.map((x) => (
-          <View key={x.l} style={[s.stat, { backgroundColor: c.surface2 }]}>
-            <T v="small" tone="muted">
-              {x.l}
-            </T>
+      <View>
+        {nums.map((x, i) => (
+          <View key={x.l} accessible accessibilityLabel={`${x.l}: ${x.b}. ${x.s}`} style={[s.stat, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }]}>
             <Text style={[s.statB, { color: c.ink }]}>{x.b}</Text>
-            <T v="small" tone="muted">
-              {x.s}
-            </T>
+            <View style={{ flex: 1 }}>
+              <T v="label">{x.l}</T>
+              <T v="small" tone="muted">
+                {x.s}
+              </T>
+            </View>
           </View>
         ))}
       </View>
@@ -294,30 +264,30 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           <Chip key={k} label={l} on={range === k} onPress={() => setRange(k)} />
         ))}
       </View>
-      <Card style={{ backgroundColor: c.accentSoft, borderColor: c.accent }}>
-        <T v="eyebrow" tone="accentText">
-          Your pattern in one look
+      {/* the one thing on this page: what the log says, in plain sentences, each with its graph further down */}
+      <Card>
+        <T v="h2" accessibilityRole="header">
+          In one look
         </T>
         {ins.length ? (
-          ins.map((x, i) => (
-            <Appear key={x.t} delay={120 + i * 110} by={6}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityHint="Shows the graph behind it"
-                onPress={() => ys[x.go] != null && onGo(ys[x.go]!)}
-                style={({ pressed }) => [s.ins, { backgroundColor: c.surface, shadowColor: c.lip, opacity: pressed ? 0.8 : 1 }]}>
-                <View style={[s.insIc, { backgroundColor: c.accentSoft }]}>
-                  <Icon name={GO_IC[x.go]} size={18} color={c.accentText} />
-                </View>
-                <T style={{ flex: 1, fontFamily: font.bodySemi }}>{x.t}</T>
-                <Icon name="down" size={18} color={c.muted} />
-              </Pressable>
-            </Appear>
-          ))
+          <View>
+            {ins.map((x, i) => (
+              <Appear key={x.t} delay={120 + i * 110} by={6}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityHint="Shows the graph behind it"
+                  onPress={() => ys[x.go] != null && onGo(ys[x.go]!)}
+                  style={({ pressed }) => [s.ins, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }, { opacity: pressed ? 0.7 : 1 }]}>
+                  <Icon name={GO_IC[x.go]} size={22} color={c.accentText} />
+                  <T style={s.insT}>{x.t}</T>
+                  <Icon name="down" size={16} color={c.muted} />
+                </Pressable>
+              </Appear>
+            ))}
+          </View>
         ) : (
           <T>
-            Your pattern fills in as you log. Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether
-            slips are getting further apart.
+            Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further apart.
           </T>
         )}
       </Card>
@@ -326,12 +296,12 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         <Block title="Are slips getting further apart?">
           {g.slips ? (
             <>
-              <Gaps g={g} />
-              <T v="small" tone="muted">
-                Each bar is the no-slip days before a slip, oldest on the left. The open bar is the stretch going now.
-              </T>
               <T style={{ fontFamily: font.bodySemi }}>{trendLine}</T>
               <T>{patNowLine(g, tk, lastSlip || null)}</T>
+              <Gaps g={g} />
+              <T v="small" tone="muted">
+                No-slip days before each slip, oldest on the left. The open bar is the stretch going now.
+              </T>
               <NumbersTable
                 cap="No-slip days before each slip"
                 head={['Slip', 'No-slip days before']}
@@ -343,9 +313,10 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           )}
           {weeks.some((w) => w.rode + w.slipped) ? (
             <>
-              <T v="label" style={{ marginTop: 8 }}>
+              <T v="label" style={{ marginTop: 12 }}>
                 Ridden out, week by week
               </T>
+              {rideLine ? <T>{rideLine}</T> : null}
               <Legend
                 items={[
                   ['rode', 'Rode it out'],
@@ -353,7 +324,6 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                 ]}
               />
               <RideWeeks weeks={weeks} />
-              {rideLine ? <T style={{ fontFamily: font.bodySemi }}>{rideLine}</T> : null}
               <NumbersTable
                 cap="Entries each week"
                 head={['Week from', 'Rode it out', 'Slipped']}
@@ -370,6 +340,20 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           <Block title="When does it happen?" count={when.timed ? when.timed + ' with a time' : ''}>
             {when.timed ? (
               <>
+                {when.hard.weekdays ? (
+                  <T>
+                    <Text style={{ fontFamily: font.bodySemi }}>
+                      {when.hard.same ? 'Hard hours: ' : 'Weekdays: '}
+                      {when.hard.weekdays.label}.
+                    </Text>{' '}
+                    {when.hard.weekdays.line}
+                  </T>
+                ) : null}
+                {when.hard.weekends ? (
+                  <T>
+                    <Text style={{ fontFamily: font.bodySemi }}>Weekends: {when.hard.weekends.label}.</Text> {when.hard.weekends.line}
+                  </T>
+                ) : null}
                 <Legend
                   items={(
                     [
@@ -379,40 +363,20 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                   ).concat(hard ? [['win', 'Your hard hours']] : [])}
                 />
                 <Clock hours={when.hours} hard={when.hard} />
-                {hard ? (
-                  <>
-                    {when.hard.weekdays ? (
-                      <T>
-                        <Text style={{ fontFamily: font.bodyBold }}>
-                          {when.hard.same ? 'Hard hours: ' : 'Weekdays: '}
-                          {when.hard.weekdays.label}.
-                        </Text>{' '}
-                        {when.hard.weekdays.line}
-                      </T>
-                    ) : null}
-                    {when.hard.weekends ? (
-                      <T>
-                        <Text style={{ fontFamily: font.bodyBold }}>Weekends: {when.hard.weekends.label}.</Text> {when.hard.weekends.line}
-                      </T>
-                    ) : null}
-                    <T v="small" tone="muted">
-                      The same hard hours Today watches for, from the last 60 days.
-                    </T>
-                  </>
-                ) : (
-                  <T v="small" tone="muted">
-                    Hard hours show up once one two-hour stretch holds two slips or six urges.
-                  </T>
-                )}
-                <T v="label" style={{ marginTop: 8 }}>
+                <T v="small" tone="muted">
+                  {hard
+                    ? 'The same hard hours Today watches for, from the last 60 days.'
+                    : 'Hard hours show up once one two-hour stretch holds two slips or six urges.'}
+                </T>
+                <T v="label" style={{ marginTop: 12 }}>
                   Days of the week
                 </T>
-                <WeekRow week={when.week} hard={when.day ? when.day.d : null} />
                 {when.day ? (
-                  <T style={{ fontFamily: font.bodySemi }}>
+                  <T>
                     {when.day.name}s are the hardest: {when.day.n} of {when.day.slips ? plural(when.day.of, 'slip') : when.day.of + ' entries'}.
                   </T>
                 ) : null}
+                <WeekRow week={when.week} hard={when.day ? when.day.d : null} />
                 <NumbersTable
                   cap="Entries by hour"
                   head={['Hour', 'Rode it out', 'Slipped']}
@@ -432,6 +396,11 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             {slipTrig ? <T style={{ fontFamily: font.bodySemi }}>{slipTrig.line}</T> : null}
             {trig.list.length ? (
               <>
+                {patTriggerLines(trig.list, slipTrig?.k).map((l) => (
+                  <T key={l} style={{ fontFamily: font.bodySemi }}>
+                    {l}
+                  </T>
+                ))}
                 <Legend
                   items={[
                     ['rode', 'Rode it out'],
@@ -447,11 +416,6 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                     ] as [number, 'rode' | 'slip'][],
                   }))}
                 />
-                {patTriggerLines(trig.list, slipTrig?.k).map((l) => (
-                  <T key={l} style={{ fontFamily: font.bodySemi }}>
-                    {l}
-                  </T>
-                ))}
                 {trig.none ? (
                   <T v="small" tone="muted">
                     {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
@@ -468,7 +432,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             )}
             {needs.length ? (
               <>
-                <T v="label" style={{ marginTop: 8 }}>
+                <T v="label" style={{ marginTop: 12 }}>
                   What the pull was after
                 </T>
                 <HBars
@@ -494,11 +458,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                   ]}
                 />
                 <DiffDots list={diffs.list} />
-                {diffs.list.map((d) => (
-                  <T key={d.k}>{d.line}</T>
-                ))}
                 <T v="small" tone="muted">
-                  From {plural(diffs.cleanN, 'check-in day')} with no slip and {diffs.slipN} with one. Only differences big enough to mean something show here.
+                  From {plural(diffs.cleanN, 'check-in day')} with no slip and {diffs.slipN} with one.
                 </T>
               </>
             ) : (
@@ -510,7 +471,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             )}
             {anyRating ? (
               <>
-                <T v="label" style={{ marginTop: 8 }}>
+                <T v="label" style={{ marginTop: 12 }}>
                   Your check-ins over time
                 </T>
                 <FeelTiles keys={keys} series={series} />
@@ -541,7 +502,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                     unit={(n) => (n === 1 ? 'try' : 'tries')}
                   />
                   <T v="small" tone="muted">
-                    SOS tools over the last four months: after each one, did the urge pass? SOS uses this to choose what to suggest.
+                    SOS tools over the last four months. SOS uses this to choose what to suggest.
                   </T>
                 </>
               ) : null}
@@ -604,22 +565,11 @@ function Block({ title, count, sub, children }: { title: string; count?: string;
 
 const s = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  day: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1, minHeight: 56 },
-  pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
-  ins: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  insIc: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  stat: { flexGrow: 1, flexBasis: '45%', gap: 2, padding: 12, borderRadius: 16 },
-  statB: { fontFamily: font.display, fontSize: 28 },
+  day: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderTopWidth: 1, minHeight: 56 },
+  ins: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: 44 },
+  insT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  statB: { fontFamily: font.display, fontSize: 28, lineHeight: 34, minWidth: 56 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   peek: { maxHeight: 250, overflow: 'hidden' },
   peekFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 150 },

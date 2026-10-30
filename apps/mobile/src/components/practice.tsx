@@ -38,6 +38,7 @@ export function LineWords({ it, big }: { it: PItem; big?: boolean }) {
     </Text>
   );
 }
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 const lower = (t: string) => (/^[A-Z][a-z]/.test(t) && !/^I\b/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t);
 
 /** one ready-made line. state: added here (Undo shows), already there before, or not yet */
@@ -65,13 +66,11 @@ export function PLine({
   const copy = it.k === 'copy';
   const on = !!state;
   return (
-    <View style={[s.card, { backgroundColor: c.surface, borderColor: on ? c.mint : c.line }]}>
+    <View style={[s.card, { backgroundColor: c.surface }]}>
       <View style={s.eye}>
-        <View style={[s.ei, { backgroundColor: on ? c.mintSoft : t.soft }]}>
-          <Icon name={on ? 'check' : ICON[it.k]} size={14} color={on ? c.mintText : t.text} />
-        </View>
+        <Icon name={on ? 'check' : ICON[it.k]} size={15} color={on ? c.mintText : t.text} />
         <Text style={[s.eyeT, { color: on ? c.mintText : t.text }]} numberOfLines={1}>
-          {(copy ? it.label || 'To send' : ITEM_WHERE[it.k]).toUpperCase()}
+          {cap(copy ? it.label || 'To send' : ITEM_WHERE[it.k])}
         </Text>
       </View>
       <LineWords it={it} />
@@ -99,12 +98,9 @@ export function PLine({
           <Pressable
             accessibilityRole="button"
             onPress={copy ? onCopy : onAdd}
-            style={({ pressed }) => [
-              s.btn,
-              { backgroundColor: on ? c.mintSoft : c.accent, shadowColor: on ? c.lip : c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] },
-            ]}>
-            <Icon name={on ? 'check' : copy ? 'copy' : 'plus'} size={19} color={on ? c.mintText : c.accentInk} />
-            <Text style={[s.btnT, { color: on ? c.mintText : c.accentInk }]} numberOfLines={1}>
+            style={({ pressed }) => [s.btn, { backgroundColor: on ? c.mintSoft : c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
+            <Icon name={on ? 'check' : copy ? 'copy' : 'plus'} size={18} color={on ? c.mintText : c.accentText} />
+            <Text style={[s.btnT, { color: on ? c.mintText : c.accentText }]} numberOfLines={1}>
               {on ? 'Copied · copy again' : itemButton(it)}
             </Text>
           </Pressable>
@@ -130,10 +126,8 @@ export function LineEditor({ it, t, onAdd, onCancel }: { it: PItem; t: Tone; onA
   return (
     <View style={{ gap: 10 }}>
       <View style={s.eye}>
-        <View style={[s.ei, { backgroundColor: t.soft }]}>
-          <Icon name="pencil" size={14} color={t.text} />
-        </View>
-        <Text style={[s.eyeT, { color: t.text }]}>CHANGE THE WORDS · {ITEM_WHERE[it.k].toUpperCase()}</Text>
+        <Icon name="pencil" size={15} color={t.text} />
+        <Text style={[s.eyeT, { color: t.text }]}>Change the words · {ITEM_WHERE[it.k]}</Text>
       </View>
       {it.k === 'plan' ? (
         <>
@@ -158,7 +152,11 @@ export function LineEditor({ it, t, onAdd, onCancel }: { it: PItem; t: Tone; onA
           accessibilityState={{ disabled: !ok }}
           disabled={!ok}
           onPress={() => onAdd({ ...it, when: it.k === 'plan' ? when.trim() : it.when, text: text.trim() })}
-          style={({ pressed }) => [s.btn, { backgroundColor: ok ? c.accent : c.lip, shadowColor: c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+          style={({ pressed }) => [
+            s.btn,
+            s.btnMain,
+            { backgroundColor: ok ? c.accent : c.lip, shadowColor: c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] },
+          ]}>
           <Icon name="plus" size={19} color={ok ? c.accentInk : c.muted} />
           <Text style={[s.btnT, { color: ok ? c.accentInk : c.muted }]}>{itemButton(it)}</Text>
         </Pressable>
@@ -186,7 +184,7 @@ export function WriteBox({
 }) {
   const c = useTheme();
   return (
-    <View style={[s.write, { backgroundColor: t.soft }]}>
+    <View style={s.write}>
       <T v="label">{label}</T>
       <TextInput
         value={value}
@@ -208,7 +206,7 @@ export function WriteBox({
               accessibilityLabel={'Use this: ' + x}
               accessibilityState={{ selected: on }}
               onPress={() => onChange(x)}
-              style={({ pressed }) => [s.ex, { backgroundColor: c.surface, borderColor: on ? t.ic : 'transparent', opacity: pressed ? 0.8 : 1 }]}>
+              style={({ pressed }) => [s.ex, { backgroundColor: on ? t.soft : c.surface, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={on ? 'check' : 'plus'} size={15} color={t.text} />
               <Text style={[s.exT, { color: c.ink }]}>{x}</Text>
             </Pressable>
@@ -230,7 +228,7 @@ export function GoRow({ label, ic, went, onPress }: { label: string; ic?: string
       accessibilityRole="button"
       accessibilityLabel={label + (went ? '. Done. Open it again.' : '')}
       onPress={onPress}
-      style={({ pressed }) => [s.go, { backgroundColor: c.accentSoft, shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+      style={({ pressed }) => [s.go, { backgroundColor: c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
       <Icon name={went ? 'check' : ic || 'next'} size={20} color={c.accentText} />
       <Text style={[s.goT, { color: c.accentText }]}>{label}</Text>
       <Icon name="next" size={18} color={c.accentText} />
@@ -239,46 +237,25 @@ export function GoRow({ label, ic, went, onPress }: { label: string; ic?: string
 }
 
 const s = StyleSheet.create({
-  card: { gap: 10, padding: 14, borderRadius: 20, borderWidth: 2 },
-  eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ei: { width: 24, height: 24, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  eyeT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
+  card: { gap: 12, padding: 16, borderRadius: 20 },
+  eye: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eyeT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   words: { fontFamily: font.bodyMedium, fontSize: 17, lineHeight: 24 },
   wordsBig: { fontSize: 20, lineHeight: 26 },
   b: { fontFamily: font.bodyBold },
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minHeight: 52,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  btnT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 17 },
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, paddingHorizontal: 16, borderRadius: 999 },
+  /* the one main button of the page that changes a line's words */
+  btnMain: { minHeight: 56, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0 },
+  btnT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  done: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 14, borderRadius: 16 },
+  done: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 16, borderRadius: 999 },
   undo: { minHeight: 48, minWidth: 64, alignItems: 'center', justifyContent: 'center' },
-  link: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 40 },
-  linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
-  in: { fontFamily: font.body, fontSize: 17, lineHeight: 23, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
-  write: { gap: 10, padding: 14, borderRadius: 20 },
-  ex: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 14, borderWidth: 2 },
+  link: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
+  linkT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  in: { fontFamily: font.body, fontSize: 17, lineHeight: 23, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
+  write: { gap: 12 },
+  ex: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 12 },
   exT: { flex: 1, fontFamily: font.body, fontSize: 15, lineHeight: 21 },
-  go: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minHeight: 56,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  goT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17 },
+  go: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  goT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
 });

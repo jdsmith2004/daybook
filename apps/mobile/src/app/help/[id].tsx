@@ -22,7 +22,7 @@ import { Text, TextInput } from '@/components/text';
 import { Segments } from '@/components/form';
 import { B, ChipBtn, Code, CopyChip, Ext, Fine, HCard, Links, Note, NumRow, OL, P, RelLesson, Sec, UL } from '@/components/help-bits';
 import { HelpFoot } from '@/components/help-foot';
-import { LinkCard } from '@/components/link-card';
+import { LinkCard, Rows } from '@/components/link-card';
 import { Screen } from '@/components/screen';
 import { Card, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
@@ -41,7 +41,7 @@ export default function HelpPageRoute() {
   if (!(id in HELP_PAGES)) return <Redirect href="/help" />;
   const pg = HELP_PAGES[id as HelpPage];
   return (
-    <Screen title={pg.t} sub={<T tone="muted">{pg.s}</T>} back="Get help">
+    <Screen title={pg.t} back="Get help">
       {id === 'people' ? (
         <People />
       ) : id === 'therapy' ? (
@@ -67,6 +67,7 @@ function useSub(page: 'therapy' | 'phone', want?: string) {
 
 /* ---------- people ---------- */
 function People() {
+  const c = useTheme();
   const { snap } = useStore();
   const nm = safeName(snap.settings);
   return (
@@ -83,8 +84,9 @@ function People() {
         )}
       </Sec>
       <Sec title="Any hour">
-        <Card>
+        <Card style={s.nums}>
           <NumRow
+            first
             name="988 Suicide & Crisis Lifeline"
             num="988"
             note="Call or text, or chat at 988lifeline.org. Free, 24/7. The name says suicide because it is there for that. It is also open to anyone who is struggling or needs to talk. A counselor starts by asking if you are safe. Answer honestly, then say what is going on."
@@ -108,22 +110,23 @@ function People() {
         <T v="small" tone="muted">
           Hours are more limited. Check each one before you call.
         </T>
-        <Card>
+        <Card style={s.nums}>
           <NumRow
+            first
             name="NAMI HelpLine"
             num="1-800-950-6264"
             note="Mental health information and referrals, Mon to Fri 10 AM to 10 PM Eastern. Or text “helpline” to 62640. Not a crisis line: for a crisis, call or text 988."
             copy="1-800-950-6264"
           />
           <NumRow name="211" num="2-1-1" note="Dial 211 for local services and referrals. Free and confidential. Hours and services vary by area." copy="211" />
-          <T v="label">Warmlines</T>
-          <P>
-            A warmline is a peer-run phone line that offers callers emotional support, answered by volunteers who are in recovery themselves. Which lines there
-            are, and their hours, depend on your state.
-          </P>
-          <Links>
+          <View style={[s.warm, { borderColor: c.line }]}>
+            <T v="label">Warmlines</T>
+            <T v="small" tone="muted">
+              A warmline is a peer-run phone line that offers callers emotional support, answered by volunteers who are in recovery themselves. Which lines
+              there are, and their hours, depend on your state.
+            </T>
             <Ext url="https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory" label="NAMI Warmline Directory" />
-          </Links>
+          </View>
         </Card>
       </Sec>
       <Sec title="If your worries involve children">
@@ -131,8 +134,9 @@ function People() {
           Stop It Now is a confidential helpline for adults who are worried about their own sexual thoughts or behavior toward children, or about someone
           else’s. Reaching out before anything happens is exactly what it is for.
         </P>
-        <Card>
+        <Card style={s.nums}>
           <NumRow
+            first
             name="Stop It Now helpline"
             num="1-888-773-8368"
             note="Free and confidential. Weekday daytime hours (Eastern time), plus chat and email. Check the hours on their site."
@@ -140,7 +144,9 @@ function People() {
           />
         </Card>
       </Sec>
-      <Note>Phone numbers are shown as text on purpose. Tap Copy, then paste it into your phone app.</Note>
+      <T v="small" tone="muted">
+        Phone numbers are shown as text on purpose. Tap Copy, then paste it into your phone app.
+      </T>
       <Links>
         <Ext url="https://988lifeline.org/" label="988lifeline.org" />
         <Ext url="https://www.crisistextline.org/text-us/" label="Crisis Text Line" />
@@ -368,10 +374,12 @@ function Groups() {
           ]}
         />
       </HCard>
-      <RelLesson id="l11" />
-      <RelLesson id="l25" />
-      <RelLesson id="l26" />
-      <RelLesson id="l28" />
+      <Rows>
+        <RelLesson id="l11" />
+        <RelLesson id="l25" />
+        <RelLesson id="l26" />
+        <RelLesson id="l28" />
+      </Rows>
     </>
   );
 }
@@ -445,9 +453,11 @@ function Faith() {
         </P>
       </HCard>
       <Sec title="The faith lessons">
-        {['l29', 'l30', 'l31', 'l32'].map((id) => (
-          <RelLesson key={id} id={id} />
-        ))}
+        <Rows>
+          {['l29', 'l30', 'l31', 'l32'].map((id) => (
+            <RelLesson key={id} id={id} />
+          ))}
+        </Rows>
       </Sec>
     </>
   );
@@ -586,7 +596,7 @@ function Sources() {
     }),
   );
   return (
-    <Screen title="Sources" sub={<T tone="muted">Where the numbers and the research come from.</T>} back="Get help">
+    <Screen title="Sources" back="Get help">
       <Card>
         <View style={s.between}>
           <T v="h2">Help pages</T>
@@ -622,10 +632,12 @@ function Sources() {
 }
 
 const s = StyleSheet.create({
+  nums: { gap: 0, paddingVertical: 4 },
+  warm: { gap: 2, paddingTop: 12, paddingBottom: 4, borderTopWidth: 1 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   names: { flexDirection: 'row', gap: 8 },
   name: { flex: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1.5, fontFamily: font.body, fontSize: 15 },
   crit: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1 },
   checks: { flexDirection: 'row', gap: 6 },
-  sq: { width: 40, height: 40, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  sq: { width: 44, height: 44, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

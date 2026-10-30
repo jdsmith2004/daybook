@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 
 import { Link } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Screen } from '@/components/screen';
 import { ErasedNote } from '@/components/sync-card';
 import { Button, Card, T } from '@/components/ui';
@@ -24,7 +24,7 @@ import { useSync } from '@/lib/sync';
 /* Learn, Journal and More before setup: what setup opens here, the way into it, and that SOS works now */
 export function SetupFirst({ title, line }: { title: string; line: string }) {
   return (
-    <Screen eyebrow="My Daybook" title={title}>
+    <Screen title={title}>
       <Card>
         <T style={{ fontSize: 17, lineHeight: 24 }}>{line}</T>
         <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
@@ -92,14 +92,13 @@ export function Welcome() {
     return () => sub.remove();
   }, [focused, sync.loaded, signedIn]);
   return (
-    <Screen eyebrow="My Daybook" title="Quit porn, one honest day at a time.">
+    <Screen title="Quit porn, one honest day at a time.">
       <ErasedNote />
-      <Card>
-        <View style={{ alignItems: 'center', gap: 10, paddingVertical: 8 }}>
-          <Flame level={1} size={150} />
+      <View style={{ gap: 16 }}>
+        <View style={{ alignItems: 'center', gap: 16, paddingVertical: 8 }}>
+          <FlameMedallion level={1} size={240} label="Your flame" />
           <T tone="muted" style={{ textAlign: 'center', fontSize: 17, lineHeight: 24 }}>
-            Five minutes builds your plan: a few questions, the facts about what you are up against, and a plan made from your answers. Every question can be
-            skipped.
+            About 8 minutes builds your plan, from your own answers. Every question can be skipped.
           </T>
         </View>
         <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
@@ -125,7 +124,7 @@ export function Welcome() {
           </>
         ) : null}
         {BACKUP_FILES ? <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} /> : null}
-      </Card>
+      </View>
     </Screen>
   );
 }

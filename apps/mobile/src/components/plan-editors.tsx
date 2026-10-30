@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
+import { PageLink } from '@/components/editable';
 import { Button, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -40,15 +41,14 @@ export function SlipEditor() {
   };
   return (
     <View style={{ gap: 12 }}>
-      {/* the card around it already says "If I slip" */}
+      {/* the part around it already says "If I slip" */}
       <T v="small" tone="muted">
-        {filled} of {SLIP_MAX} steps. Read this now, while it is calm. A slip is data, not a reset. These are your steps: change them so they sound like you.
-        After you log a slip, they show on Today. Changes save as you type.
+        {filled} of {SLIP_MAX} steps. Change them so they sound like you. Changes save as you type.
       </T>
       {!n ? <T tone="muted">No steps yet. Add one, or go back to the starter plan.</T> : null}
       {rows.map((t, i) =>
         del === i && t.trim() ? (
-          <View key={i} style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+          <View key={i} style={s.confirm}>
             <T>
               <Text style={{ fontFamily: font.bodyBold }}>Step {i + 1}.</Text> {t}
             </T>
@@ -66,16 +66,12 @@ export function SlipEditor() {
             </View>
           </View>
         ) : (
-          <View key={i} style={{ gap: 6 }}>
-            <Field
-              label={'Step ' + (i + 1)}
-              multiline
-              maxLength={SLIP_LEN}
-              value={t}
-              placeholder="What I will do after a slip"
-              onChangeText={(v) => put(rows.map((x, k) => (k === i ? v : x)))}
-            />
-            <View style={s.row} accessibilityLabel={`Step ${i + 1} of ${n}`}>
+          <View key={i}>
+            {/* the step's name, with its moves beside it, over its box */}
+            <View style={s.head} accessibilityLabel={`Step ${i + 1} of ${n}`}>
+              <T v="label" style={{ flex: 1 }}>
+                Step {i + 1}
+              </T>
               <Sq icon="up" label={`Move step ${i + 1} up`} off={i === 0} onPress={() => mv(i, i - 1)} />
               <Sq icon="down" label={`Move step ${i + 1} down`} off={i === n - 1} onPress={() => mv(i, i + 1)} />
               <Sq
@@ -88,11 +84,19 @@ export function SlipEditor() {
                 }}
               />
             </View>
+            <Field
+              label={'Step ' + (i + 1)}
+              hideLabel
+              multiline
+              maxLength={SLIP_LEN}
+              value={t}
+              placeholder="What I will do after a slip"
+              onChangeText={(v) => put(rows.map((x, k) => (k === i ? v : x)))}
+            />
           </View>
         ),
       )}
-      <Button
-        kind="ghost"
+      <PageLink
         icon="plus"
         label="Add a step"
         disabled={n >= SLIP_MAX}
@@ -108,7 +112,7 @@ export function SlipEditor() {
         </T>
       ) : null}
       {ask ? (
-        <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+        <View style={s.confirm}>
           <T v="label">Replace my steps with the starter plan?</T>
           <View style={s.row}>
             <Button
@@ -127,9 +131,7 @@ export function SlipEditor() {
           </View>
         </View>
       ) : slipIsStarter(rows) ? null : (
-        <Pressable accessibilityRole="button" onPress={() => setAsk(true)} style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Go back to the starter plan</Text>
-        </Pressable>
+        <PageLink label="Go back to the starter plan" onPress={() => setAsk(true)} />
       )}
     </View>
   );
@@ -144,15 +146,15 @@ function Sq({ icon, label, off, danger, onPress }: { icon: string; label: string
       accessibilityState={{ disabled: !!off }}
       disabled={off}
       onPress={onPress}
-      style={[s.sq, { borderColor: c.line, backgroundColor: c.surface, opacity: off ? 0.4 : 1 }]}>
-      <Icon name={icon} size={18} color={danger ? c.danger : c.ink} />
+      style={({ pressed }) => [s.sq, { opacity: off ? 0.3 : pressed ? 0.6 : 1 }]}>
+      <Icon name={icon} size={18} color={danger ? c.danger : c.accentText} />
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  confirm: { gap: 8, padding: 12, borderRadius: 14 },
-  sq: { width: 44, height: 40, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  head: { flexDirection: 'row', alignItems: 'center' },
+  confirm: { gap: 8 },
+  sq: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

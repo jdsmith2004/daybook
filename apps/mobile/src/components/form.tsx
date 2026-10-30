@@ -288,7 +288,7 @@ const s = StyleSheet.create({
   knob: { position: 'absolute', width: 26, height: 26, borderRadius: 13, borderWidth: 2, marginLeft: -13, top: 5 },
   yn: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
   seg: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pill: { minWidth: 56, minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: 1.5 },
+  pill: { minWidth: 56, minHeight: 44, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: 1.5 },
   pillT: { fontFamily: font.bodySemi, fontSize: 15 },
   sq: { width: 40, height: 40, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   sqT: { fontFamily: font.bodyBold, fontSize: 20, lineHeight: 22 },
@@ -317,14 +317,7 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
             onPress={() => onPick(k)}
             style={[
               seg.b,
-              on && {
-                backgroundColor: c.surface,
-                borderColor: c.accent,
-                shadowColor: c.lip,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
-              },
+              on && { backgroundColor: c.surface },
             ]}>
             {/* a tab name stays whole: it grows less with the phone's text size, and shrinks a little before it would break */}
             <Text
@@ -332,7 +325,7 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
               adjustsFontSizeToFit
               minimumFontScale={0.75}
               maxFontSizeMultiplier={BIG_MAX}
-              style={[seg.t, { color: on ? c.ink : c.accentText }]}>
+              style={[seg.t, list.length > 3 && seg.tSmall, { color: on ? c.ink : c.accentText }]}>
               {name}
             </Text>
           </Pressable>
@@ -354,4 +347,6 @@ const seg = StyleSheet.create({
     borderColor: 'transparent',
   },
   t: { fontFamily: font.bodySemi, fontSize: 15 },
+  /* four tabs: the web cannot shrink a word to fit, so the size does it */
+  tSmall: { fontSize: 13 },
 });

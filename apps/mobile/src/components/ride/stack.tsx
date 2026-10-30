@@ -625,7 +625,7 @@ const s = StyleSheet.create({
   shine: { position: 'absolute', left: '12%', right: '12%', top: '8%', backgroundColor: 'rgba(255, 255, 255, 0.26)' },
   lip: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.14)' },
   float: { fontFamily: font.displayBold, fontSize: 44, lineHeight: 50 },
-  floatSub: { fontFamily: font.bodySemi, fontSize: 16 },
+  floatSub: { fontFamily: font.bodySemi, fontSize: 15 },
   done: { gap: 4, padding: 16 },
   doneN: { fontFamily: font.displayBold, fontSize: 56, lineHeight: 62 },
 });

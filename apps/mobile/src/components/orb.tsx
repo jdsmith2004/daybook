@@ -370,7 +370,6 @@ const s = StyleSheet.create({
   },
   dot: { position: 'absolute', left: '50%', top: '50%' },
   orb: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 30, elevation: 6 },
-  phase: { fontFamily: font.display, fontSize: 28, lineHeight: 38 },
+  phase: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   guide: { position: 'absolute', borderWidth: 1, opacity: 0.1 },
-  time: { fontFamily: font.bodySemi, fontSize: 16, opacity: 0.8, fontVariant: ['tabular-nums'] },
 });

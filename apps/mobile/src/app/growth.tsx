@@ -7,7 +7,7 @@ import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { closeSheet, SheetFrame } from '@/components/sheet';
-import { Bar, Button, Icon, T } from '@/components/ui';
+import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { Dock } from '@/components/scene';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -32,36 +32,38 @@ export default function Growth() {
       accessibilityState={{ disabled: off }}
       disabled={off}
       onPress={() => setSi(Math.max(0, Math.min(last, si + d)))}
-      style={[s.nav, { borderColor: c.line, backgroundColor: c.surface, opacity: off ? 0.4 : 1 }]}>
-      {d < 0 ? <Icon name="back" size={16} color={c.ink} /> : null}
-      <Text style={{ fontFamily: font.bodySemi, color: c.ink }}>{text}</Text>
-      {d > 0 ? <Icon name="next" size={16} color={c.ink} /> : null}
+      style={({ pressed }) => [s.nav, { opacity: off ? 0.4 : pressed ? 0.7 : 1 }]}>
+      {d < 0 ? <Icon name="back" size={16} color={c.accentText} /> : null}
+      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{text}</Text>
+      {d > 0 ? <Icon name="next" size={16} color={c.accentText} /> : null}
     </Pressable>
   );
   return (
     <SheetFrame title={sg.name} sub={`Form ${si + 1} of ${STAGES.length}`}>
       <View style={{ alignItems: 'center', gap: 8 }}>
-        <Flame level={stageLevel(si, lvl)} size={156} locked={state === 'later'} alive />
-        <T style={{ textAlign: 'center', fontSize: 17 }}>{sg.meaning}</T>
+        <Flame level={stageLevel(si, lvl)} size={220} locked={state === 'later'} alive />
+        <T style={{ textAlign: 'center', fontSize: 17, lineHeight: 22 }}>{sg.meaning}</T>
       </View>
-      {sg.steps.map((_, t) => {
-        const n = si * STEPS + t + 1;
-        const ss = n < lvl.n ? 'done' : n === lvl.n ? 'now' : 'later';
-        return (
-          <View key={t} style={[s.step, { backgroundColor: ss === 'now' ? c.sunSoft : c.surface2 }]}>
-            <Flame level={n} size={60} locked={ss === 'later'} label="" />
-            <View style={{ flex: 1 }}>
-              <T v="label">Level {n}</T>
-              <T v="small" tone="muted">
-                {sg.steps[t]}
+      <Card style={{ gap: 0, paddingVertical: 4 }}>
+        {sg.steps.map((_, t) => {
+          const n = si * STEPS + t + 1;
+          const ss = n < lvl.n ? 'done' : n === lvl.n ? 'now' : 'later';
+          return (
+            <View key={t} style={[s.step, t > 0 && { borderTopColor: c.line, borderTopWidth: 1 }]}>
+              <Flame level={n} size={64} locked={ss === 'later'} label="" />
+              <View style={{ flex: 1 }}>
+                <T v="label">Level {n}</T>
+                <T v="small" tone="muted">
+                  {sg.steps[t]}
+                </T>
+              </View>
+              <T v="small" tone={ss === 'done' ? 'mintText' : ss === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+                {ss === 'done' ? '✓ Reached' : ss === 'now' ? 'You are here' : LEVELS[n - 1][0] + ' pts'}
               </T>
             </View>
-            <T v="small" tone={ss === 'done' ? 'mintText' : ss === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-              {ss === 'done' ? '✓ Reached' : ss === 'now' ? 'You are here' : LEVELS[n - 1][0] + ' pts'}
-            </T>
-          </View>
-        );
-      })}
+          );
+        })}
+      </Card>
       {state === 'now' ? (
         <View style={{ gap: 6 }}>
           <Bar frac={lp / 100} from={c.sun} />
@@ -90,7 +92,7 @@ export default function Growth() {
 }
 
 const s = StyleSheet.create({
-  step: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, borderRadius: 16 },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  nav: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
+  nav: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 },
 });

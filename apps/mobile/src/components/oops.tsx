@@ -4,8 +4,9 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Flame } from '@/components/flame';
 import { HelpLine } from '@/components/help-line';
-import { Button, Icon, T } from '@/components/ui';
+import { Button, T } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 
 export function Oops({ title, lines, onRetry, subject }: { title: string; lines: string[]; onRetry: () => void; subject: string }) {
@@ -14,8 +15,8 @@ export function Oops({ title, lines, onRetry, subject }: { title: string; lines:
   return (
     <View style={[s.page, { backgroundColor: c.bg, paddingTop: inset.top + 24, paddingBottom: inset.bottom + 16 }]}>
       <ScrollView contentContainerStyle={s.top}>
-        <View style={[s.mark, { backgroundColor: c.sunSoft }]}>
-          <Icon name="heart" size={30} color={c.ink} />
+        <View style={s.mark}>
+          <Flame level={11} size={160} />
         </View>
         <T v="title" accessibilityRole="header">
           {title}
@@ -33,8 +34,8 @@ export function Oops({ title, lines, onRetry, subject }: { title: string; lines:
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, paddingHorizontal: 20 },
+  page: { flex: 1, paddingHorizontal: 16 },
   top: { gap: 12 },
-  mark: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  dock: { gap: 14, paddingTop: 12 },
+  mark: { alignItems: 'center', marginBottom: 8 },
+  dock: { gap: 12, paddingTop: 12 },
 });

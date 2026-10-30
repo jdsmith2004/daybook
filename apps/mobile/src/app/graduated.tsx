@@ -1,6 +1,6 @@
 /* "You graduated": the celebration the first time graduation is earned (opened from Today), and the award page after that
-   (opened from Milestones). Fireworks and confetti, the flame in its cap, the numbers that got the person here, and who they
-   are becoming. Nothing about Today changes. Under it, quietly, the tip link (support.ts), when one is set. */
+   (opened from Milestones). Fireworks and confetti, the flame in its cap, big, the numbers that got the person here, and who they
+   are becoming. The page scrolls on a short phone, with Keep going pinned, so the flame never steps aside. Nothing about Today changes. Under it, quietly, the tip link (support.ts), when one is set. */
 import { fmtDate, gameCompute, GRAD_DAYS, GRAD_WINDOW, gradInfo, isSupporter, lessonsDone, TIP_WORDS, urEvidence } from '@daybook/core';
 import { Redirect } from 'expo-router';
 import { useEffect } from 'react';
@@ -9,8 +9,7 @@ import { Text } from '@/components/text';
 
 import { Confetti } from '@/components/celebrate';
 import { Fireworks, GradFlame } from '@/components/grad';
-import { FitArt } from '@/components/fit';
-import { Dock, SceneFrame } from '@/components/scene';
+import { SceneFrame } from '@/components/scene';
 import { openTip, TIP_URL } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -45,17 +44,15 @@ export default function Graduated() {
     </View>
   );
   return (
-    <SceneFrame title="Graduation" sky="night" onClose={close}>
+    <SceneFrame title="Graduation" sky="night" onClose={close} pin={<Button label="Keep going" onPress={close} />}>
       <Fireworks bursts={6} />
       <Confetti big />
       <View style={s.body}>
-        <FitArt drop={0.4}>
-          <Animated.View style={pop(flame, 0.5)}>
-            <GradFlame level={g.level.n} size={150} />
-          </Animated.View>
-        </FitArt>
+        <Animated.View style={pop(flame, 0.5)}>
+          <GradFlame level={g.level.n} size={220} />
+        </Animated.View>
         <Animated.View style={[{ alignItems: 'center', gap: 8 }, rise(words, 14)]}>
-          <Text style={[s.eye, { color: ink }]}>{fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</Text>
+          <Text style={[s.eye, { color: ink }]}>{fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
           <Text style={[s.h, { color: ink }]} accessibilityRole="header">
             You graduated!
           </Text>
@@ -71,7 +68,7 @@ export default function Graduated() {
           </View>
           {be ? (
             <View style={[s.be, { backgroundColor: nightInk.btn }]}>
-              <Text style={[s.beCap, { color: ink }]}>WHO YOU ARE BECOMING</Text>
+              <Text style={[s.beCap, { color: ink }]}>Who you are becoming</Text>
               <Text style={[s.beT, { color: ink }]}>{be}</Text>
             </View>
           ) : null}
@@ -88,23 +85,20 @@ export default function Graduated() {
           ) : null}
         </Animated.View>
       </View>
-      <Dock>
-        <Button label="Keep going" onPress={close} />
-      </Dock>
     </SceneFrame>
   );
 }
 
 const s = StyleSheet.create({
   body: { alignItems: 'center', gap: 18, paddingTop: 8 },
-  eye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.4, opacity: 0.85 },
+  eye: { fontFamily: font.bodySemi, fontSize: 13, opacity: 0.85 },
   h: { fontFamily: font.display, fontSize: 38, lineHeight: 42, textAlign: 'center' },
   p: { textAlign: 'center', maxWidth: 360 },
   facts: { flexDirection: 'row', gap: 8 },
-  fact: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)' },
+  fact: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)' },
   factN: { fontFamily: font.display, fontSize: 28 },
   factL: { fontFamily: font.bodyMedium, fontSize: 13, textAlign: 'center', opacity: 0.9 },
-  be: { gap: 4, padding: 14, borderRadius: 18 },
-  beCap: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1, opacity: 0.8 },
+  be: { gap: 4, padding: 16, borderRadius: 20 },
+  beCap: { fontFamily: font.bodySemi, fontSize: 13, opacity: 0.85 },
   beT: { fontFamily: font.display, fontSize: 17, lineHeight: 24 },
 });

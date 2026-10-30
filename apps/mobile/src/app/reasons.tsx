@@ -8,6 +8,7 @@ import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Field } from '@/components/choices';
+import { Hair } from '@/components/editable';
 import { Collapse } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { Button, Card, Icon, T } from '@/components/ui';
@@ -36,37 +37,6 @@ function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: Cat
         );
       })}
     </View>
-  );
-}
-
-function SmallBtn({
-  icon,
-  label,
-  onPress,
-  disabled,
-  danger,
-  text,
-}: {
-  icon: string;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-  text?: string;
-}) {
-  const c = useTheme();
-  const col = disabled ? c.line : danger ? c.danger : c.ink;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={[s.sb, { borderColor: c.line }, text ? { paddingHorizontal: 12 } : { width: 44 }]}>
-      <Icon name={icon} size={18} color={col} />
-      {text ? <Text style={{ fontFamily: font.bodySemi, color: col }}>{text}</Text> : null}
-    </Pressable>
   );
 }
 
@@ -116,122 +86,116 @@ export default function Reasons() {
   const back = params.from === 'lesson' ? 'Back to the lesson' : 'My plan';
 
   return (
-    <Screen title="My reasons" sub={<T tone="muted">Why this matters to you. Read them when it gets hard.</T>} back={back}>
-      <Card>
-        <View style={s.top}>
-          <View style={[s.topIc, { backgroundColor: c.sunSoft }]}>
-            <Icon name="star" size={22} color={c.sunText} />
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            <T v="label">{n ? n + ' reason' + (n === 1 ? '' : 's') : 'No reasons yet'}</T>
-            <T v="small" tone="muted">
-              {n ? 'Read them one at a time, the way you will on a hard night.' : 'Start with one true line. That is enough.'}
-            </T>
-          </View>
-        </View>
-        {n ? <Button label="Read them" onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'reasons' } })} /> : null}
-      </Card>
+    <Screen title="My reasons" sub={n ? undefined : <T tone="muted">Start with one true line. That is enough.</T>} back={back}>
+      {n ? <Button label="Read them one at a time" onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'reasons' } })} /> : null}
 
       {n ? (
         <Card>
-          <View style={s.between}>
-            <T v="h2">My list</T>
-            <T v="small" tone="muted">
-              {n} of {REASON_MAX}
-            </T>
-          </View>
-          <T v="small" tone="muted">
-            The first one shows first when you read them. Use the arrows to change the order.
-          </T>
           {rs.map((text, i) => {
             const cat = reasonCat(st, text);
             const t = toneOf(c, cat.tone);
             const lab = 'reason ' + (i + 1);
-            if (edit === i)
-              return (
-                <View key={i} style={[s.item, { borderColor: t.ic }]}>
-                  {/* the group comes first, so the box and its Save stay together above the keyboard */}
-                  <CatChips label="Group" cur={editCat} onPick={setEditCat} />
-                  <KeepAbove style={{ gap: 10 }}>
-                    <Field label={'Reason ' + (i + 1)} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} autoFocus />
-                    <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
-                      {draft.length} of {REASON_LEN}
-                    </T>
-                    <View style={s.row}>
-                      <Button label="Save" onPress={save} />
-                      <Button kind="ghost" label="Cancel" onPress={() => setEdit(null)} />
-                    </View>
-                  </KeepAbove>
-                </View>
-              );
-            const head = (
-              <View style={s.main}>
-                <View style={[s.ic, { backgroundColor: t.soft }]}>
-                  <Icon name={cat.ic} size={18} color={t.text} />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <T v="small" tone="muted">
+            const line = (
+              <>
+                <View style={s.tag}>
+                  <Icon name={cat.ic} size={14} color={t.text} />
+                  <T v="small" tone="muted" style={{ flex: 1 }}>
                     {cat.name}
                     {i === 0 && n > 1 ? ' · shows first' : ''}
                   </T>
-                  <T>{text}</T>
                 </View>
-              </View>
+                <T>{text}</T>
+              </>
             );
-            if (del === i)
-              return (
-                <View key={i} style={[s.item, { borderColor: c.line }]}>
-                  {head}
-                  <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+            return (
+              <View key={i} style={{ gap: 12 }}>
+                {i > 0 ? <Hair /> : null}
+                {edit === i ? (
+                  <View style={{ gap: 8 }}>
+                    {/* the group comes first, so the box and its Save stay together above the keyboard */}
+                    <CatChips label="Group" cur={editCat} onPick={setEditCat} />
+                    <KeepAbove style={{ gap: 8 }}>
+                      <Field label={'Reason ' + (i + 1)} multiline maxLength={REASON_LEN} value={draft} onChangeText={setDraft} autoFocus />
+                      <View style={s.row}>
+                        <View style={{ flex: 1 }}>
+                          <Button label="Save" onPress={save} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Button kind="ghost" label="Cancel" onPress={() => setEdit(null)} />
+                        </View>
+                      </View>
+                      <View style={s.tools} accessibilityLabel={`Reason ${i + 1} of ${n}`}>
+                        <Tool
+                          icon="up"
+                          text="Up"
+                          label={'Move ' + lab + ' up'}
+                          disabled={i === 0}
+                          onPress={() => {
+                            const r = moveReason(st, i, -1);
+                            if (r) {
+                              apply(r);
+                              setEdit(i - 1);
+                            }
+                          }}
+                        />
+                        <Tool
+                          icon="down"
+                          text="Down"
+                          label={'Move ' + lab + ' down'}
+                          disabled={i === n - 1}
+                          onPress={() => {
+                            const r = moveReason(st, i, 1);
+                            if (r) {
+                              apply(r);
+                              setEdit(i + 1);
+                            }
+                          }}
+                        />
+                        <Tool
+                          icon="trash"
+                          text="Remove"
+                          danger
+                          label={'Remove ' + lab}
+                          onPress={() => {
+                            setDel(i);
+                            setEdit(null);
+                          }}
+                        />
+                      </View>
+                    </KeepAbove>
+                  </View>
+                ) : del === i ? (
+                  <View style={{ gap: 8 }}>
+                    <View style={{ gap: 2 }}>{line}</View>
                     <T v="label">Remove this reason?</T>
                     <View style={s.row}>
-                      <Button
-                        kind="danger"
-                        label="Yes, remove it"
-                        onPress={() => {
-                          const r = removeReason(st, i);
-                          setDel(null);
-                          if (r) apply(r);
-                        }}
-                      />
-                      <Button kind="ghost" label="Keep it" onPress={() => setDel(null)} />
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          kind="danger"
+                          label="Yes, remove it"
+                          onPress={() => {
+                            const r = removeReason(st, i);
+                            setDel(null);
+                            if (r) apply(r);
+                          }}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button kind="ghost" label="Keep it" onPress={() => setDel(null)} />
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            return (
-              <View key={i} style={[s.item, { borderColor: c.line }]}>
-                {head}
-                <View style={s.row} accessibilityLabel={`Reason ${i + 1} of ${n}`}>
-                  <SmallBtn icon="pencil" text="Edit" label={'Edit ' + lab} onPress={() => startEdit(i)} />
-                  <SmallBtn
-                    icon="up"
-                    label={'Move ' + lab + ' up'}
-                    disabled={i === 0}
-                    onPress={() => {
-                      const r = moveReason(st, i, -1);
-                      if (r) apply(r);
-                    }}
-                  />
-                  <SmallBtn
-                    icon="down"
-                    label={'Move ' + lab + ' down'}
-                    disabled={i === n - 1}
-                    onPress={() => {
-                      const r = moveReason(st, i, 1);
-                      if (r) apply(r);
-                    }}
-                  />
-                  <SmallBtn
-                    icon="trash"
-                    danger
-                    label={'Remove ' + lab}
-                    onPress={() => {
-                      setDel(i);
-                      setEdit(null);
-                    }}
-                  />
-                </View>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={text}
+                    accessibilityHint="Opens it to reword, move or remove"
+                    onPress={() => startEdit(i)}
+                    style={({ pressed }) => [s.main, { opacity: pressed ? 0.6 : 1 }]}>
+                    <View style={{ flex: 1, gap: 2 }}>{line}</View>
+                    <Icon name="pencil" size={16} color={c.muted} />
+                  </Pressable>
+                )}
               </View>
             );
           })}
@@ -239,9 +203,7 @@ export default function Reasons() {
       ) : null}
 
       {n >= REASON_MAX ? (
-        <Card>
-          <T tone="muted">That is {REASON_MAX} reasons, the most Daybook holds. Edit or remove one to make room for a new one.</T>
-        </Card>
+        <T tone="muted">That is {REASON_MAX} reasons, the most Daybook holds. Change or remove one to make room for a new one.</T>
       ) : (
         <>
           <Card>
@@ -251,13 +213,15 @@ export default function Reasons() {
             </T>
             <CatChips label="Group, optional" cur={addCat} onPick={(id) => setAddCat(addCat === id ? null : id)} />
             <T v="small" tone="muted">
-              Picking a group is optional. If you skip it, Daybook guesses.
+              A group is optional. Skip it, and Daybook guesses.
             </T>
-            <KeepAbove style={{ gap: 10 }}>
+            <KeepAbove style={{ gap: 8 }}>
               <Field key={addKey} label="New reason" hideLabel multiline maxLength={REASON_LEN} value={add} placeholder="I want to…" onChangeText={setAdd} />
-              <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
-                {add.length} of {REASON_LEN}
-              </T>
+              {add.length > REASON_LEN - 40 ? (
+                <T v="small" tone="muted" style={{ alignSelf: 'flex-end' }}>
+                  {add.length} of {REASON_LEN}
+                </T>
+              ) : null}
               <Button label="Add reason" disabled={!add.trim()} onPress={addIt} />
             </KeepAbove>
           </Card>
@@ -267,19 +231,21 @@ export default function Reasons() {
               <T v="small" tone="muted">
                 Tap one to start from it, then change it until it sounds like you.
               </T>
-              {reasonIdeas(rs).map(([x, k]) => (
-                <Pressable
-                  key={k}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    setAdd(x[0]);
-                    setAddCat(x[1]);
-                  }}
-                  style={[s.idea, { borderColor: c.line }]}>
-                  <Icon name="plus" size={16} color={c.accentText} />
-                  <T style={{ flex: 1 }}>{x[0]}</T>
-                </Pressable>
-              ))}
+              <View>
+                {reasonIdeas(rs).map(([x, k]) => (
+                  <Pressable
+                    key={k}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setAdd(x[0]);
+                      setAddCat(x[1]);
+                    }}
+                    style={({ pressed }) => [s.idea, { opacity: pressed ? 0.6 : 1 }]}>
+                    <Icon name="plus" size={16} color={c.accentText} />
+                    <T style={{ flex: 1 }}>{x[0]}</T>
+                  </Pressable>
+                ))}
+              </View>
             </Card>
           ) : null}
         </>
@@ -287,7 +253,7 @@ export default function Reasons() {
 
       <Collapse title="In my own words" sub="A longer why, if you want one" open={why} onToggle={() => setWhy(!why)}>
         <T v="small" tone="muted">
-          Not required. A few sentences about what you want your life to look like.
+          A few sentences about what you want your life to look like.
         </T>
         <Field
           label="Why I am doing this"
@@ -301,17 +267,47 @@ export default function Reasons() {
   );
 }
 
+/** an action on an open reason: only its words and a small icon */
+function Tool({
+  icon,
+  text,
+  label,
+  onPress,
+  disabled,
+  danger,
+}: {
+  icon: string;
+  text: string;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  const c = useTheme();
+  const col = danger ? c.danger : c.accentText;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [s.tool, { opacity: disabled ? 0.35 : pressed ? 0.6 : 1 }]}>
+      <Icon name={icon} size={16} color={col} />
+      <T v="small" style={{ fontFamily: font.bodySemi, color: col }}>
+        {text}
+      </T>
+    </Pressable>
+  );
+}
+
 const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  cat: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1.5 },
-  sb: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 12, borderWidth: 1 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  topIc: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  item: { gap: 10, padding: 12, borderRadius: 16, borderWidth: 1.5 },
-  main: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  ic: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  confirm: { gap: 8, padding: 12, borderRadius: 14 },
-  idea: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1 },
+  cat: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  main: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', minHeight: 44 },
+  row: { flexDirection: 'row', gap: 8 },
+  tools: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12 },
+  tool: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 4 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingVertical: 6 },
 });

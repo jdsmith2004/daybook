@@ -152,8 +152,9 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
         <SvgXml xml={layers.front} width={size} height={size} style={StyleSheet.absoluteFill} />
       </View>
       {grad ? (
-        <View pointerEvents="none" style={{ position: 'absolute', right: -size * 0.04, top: -size * 0.06, transform: [{ rotate: '14deg' }] }}>
-          <GradCap size={size * 0.42} />
+        /* on the head, whichever form: the figure always sits at the same place (see place above) */
+        <View pointerEvents="none" style={{ position: 'absolute', left: size * 0.46, top: size * (MID_Y - 0.33), transform: [{ rotate: '14deg' }] }}>
+          <GradCap size={size * 0.26} />
         </View>
       ) : null}
     </View>

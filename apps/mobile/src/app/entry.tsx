@@ -86,8 +86,10 @@ export default function Entry() {
     };
     return (
       <SheetFrame title="Add an entry">
-        <T style={{ fontSize: 17 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
-        <WhenPill w={when || whenStart(date, now, roll)} none={!when} now={now} onPress={() => setWhenOpen(true)} />
+        <T style={{ fontSize: 17, lineHeight: 22 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
+        <T v="small" tone="muted">
+          {ph.p === 'tracking' ? 'Tracking week: no pass or fail, just learning. ' : ''}Either choice earns points for being honest.
+        </T>
         <WhenSheet
           open={whenOpen}
           value={when || whenFromEntry(date, null, roll, '12:00')}
@@ -100,12 +102,9 @@ export default function Entry() {
             setWhen(w);
           }}
         />
-        <T v="small" tone="muted">
-          {isToday ? 'Filled in for you. Tap it if this happened earlier.' : 'Tap it to set the time, or say you are not sure.'}
-          {ph.p === 'tracking' ? ' Tracking week: no pass or fail, just learning.' : ''} Either choice earns points for being honest.
-        </T>
-        {/* the two answers sit low, by the thumb */}
+        {/* the answers sit low, by the thumb: when it happened, and what happened */}
         <Dock>
+          <WhenPill w={when || whenStart(date, now, roll)} none={!when} now={now} onPress={() => setWhenOpen(true)} />
           <BigOption tone="mint" icon="wave" title="Rode it out" sub="The urge came and I did not act on it." onPress={() => pick('rode')} />
           <BigOption tone="slip" icon="leaf" title="I slipped" sub="A slip is data, not a reset." onPress={() => pick('slipped')} />
         </Dock>
@@ -161,12 +160,13 @@ export default function Entry() {
           </T>
           <Pressable
             accessibilityRole="button"
+            style={s.undo}
             onPress={() => {
               /* a mistaken log taken back: its points go with it (they were never really earned) */
               update((s0) => ({ ...s0, days: removeEvent(s0.days, date, e.id) }), { takeBack: true });
               closeSheet();
             }}>
-            <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
+            <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
           </Pressable>
         </View>
       ) : null}
@@ -203,8 +203,8 @@ export default function Entry() {
       />
       {sos.length ? (
         <View style={[s.sos, { backgroundColor: c.violetSoft }]}>
-          <T v="small" tone="violetText" style={{ fontFamily: font.bodyBold, letterSpacing: 0.6 }}>
-            FROM SOS
+          <T v="eyebrow" tone="violetText">
+            From SOS
           </T>
           {sos.map((x, i) => (
             <T key={i}>{x}</T>
@@ -229,14 +229,16 @@ export default function Entry() {
       ) : (
         <View style={[s.care, { backgroundColor: c.sunSoft }]}>
           <T>Nothing resets. One small step within the hour keeps the snowball from starting.</T>
-          <Chip
-            label={e.recovered ? '✓ I did one small thing' : 'I did one small thing'}
-            on={!!e.recovered}
-            onPress={() => patch({ recovered: !e.recovered })}
-          />
           <T v="small" tone="muted">
             Water, step outside, or text someone.
           </T>
+          <View style={s.chips}>
+            <Chip
+              label={e.recovered ? '✓ I did one small thing' : 'I did one small thing'}
+              on={!!e.recovered}
+              onPress={() => patch({ recovered: !e.recovered })}
+            />
+          </View>
         </View>
       )}
       <KeepAbove style={{ gap: 14 }}>
@@ -278,7 +280,7 @@ export default function Entry() {
           }}
           style={s.delBtn}>
           <Icon name="trash" size={18} color={c.danger} />
-          <Text style={{ fontFamily: font.bodySemi, color: c.danger }}>Delete</Text>
+          <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.danger }}>Delete</Text>
         </Pressable>
       )}
     </SheetFrame>
@@ -287,9 +289,10 @@ export default function Entry() {
 
 const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  saved: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 14 },
-  sos: { gap: 4, padding: 12, borderRadius: 14 },
-  care: { gap: 8, padding: 12, borderRadius: 14 },
-  confirm: { gap: 8, padding: 12, borderRadius: 14 },
+  saved: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, paddingHorizontal: 16, borderRadius: 20 },
+  undo: { minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  sos: { gap: 4, padding: 16, borderRadius: 20 },
+  care: { gap: 8, padding: 16, borderRadius: 20 },
+  confirm: { gap: 12, padding: 16, borderRadius: 20 },
   delBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
 });

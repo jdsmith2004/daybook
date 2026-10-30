@@ -61,9 +61,7 @@ export function ScienceSheet({ id, name, open, night, onClose }: { id: string; n
                 {sci.lesson ? (
                   <View style={{ gap: 4 }}>
                     {sci.lesson.ask ? <Text style={[s.ask, { color: c.muted }]}>{sci.lesson.ask}</Text> : null}
-                    <T v="small" style={{ lineHeight: 21 }}>
-                      {sci.lesson.key}
-                    </T>
+                    <T>{sci.lesson.key}</T>
                   </View>
                 ) : null}
                 {sci.proofs.length ? (
@@ -98,16 +96,16 @@ export function ScienceSheet({ id, name, open, night, onClose }: { id: string; n
 const s = StyleSheet.create({
   btn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   wrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,10,40,0.38)' },
-  sheet: { maxHeight: '82%', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 20, paddingTop: 10 },
+  sheet: { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 16, paddingTop: 10 },
   top: { height: 40, alignItems: 'center', justifyContent: 'center' },
   grab: { width: 40, height: 5, borderRadius: 3 },
   x: { position: 'absolute', right: 0, top: 2, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 0.3 },
+  eyeT: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
-  ask: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 19 },
-  studies: { borderRadius: 20, paddingHorizontal: 14 },
+  ask: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  studies: { borderRadius: 20, paddingHorizontal: 16 },
   study: { paddingVertical: 12, gap: 3 },
   studyH: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  studyS: { fontFamily: font.body, fontSize: 13, lineHeight: 17 },
+  studyS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
 });

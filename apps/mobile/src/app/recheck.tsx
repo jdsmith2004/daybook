@@ -14,7 +14,8 @@ import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-const ICONS = ['leaf', 'wave', 'flame'];
+/* never the flame here: the flame is the person getting free */
+const ICONS = ['leaf', 'wave', 'bolt'];
 const TONES = ['mint', 'sky', 'violet'];
 
 export default function Recheck() {

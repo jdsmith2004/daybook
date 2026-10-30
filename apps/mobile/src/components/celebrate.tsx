@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 
+import { SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { MomentAsk, useTipMoment } from '@/components/support';
@@ -25,6 +26,8 @@ import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
+/* the flame on a sheet: big, and a little less on a short phone, so the sheet and its button still fit */
+const ART = SHORT ? 150 : 190;
 const SCENES = /^\/(sos|tool|log|checkin|talk|review|wind|night|lesson|lwrite|setup)(\/|$)/;
 /** the main tabs: a celebration shows only there, never over a page the person is busy on */
 const TABS = /^\/(pattern|learn|more)?$/;
@@ -197,7 +200,7 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
   let sub = '';
   if (it.type === 'level') {
     const L = it.level;
-    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} /> : <FlameMedallion level={L.n} size={150} />;
+    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} /> : <FlameMedallion level={L.n} size={ART} />;
     eyebrow = it.evolve ? 'New form' : 'Level up';
     title = 'Level ' + L.n + ': ' + L.name;
     /* a level reached on the day of a slip waits for the next day (core checkNew): it says it was earned then */
@@ -217,7 +220,7 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
     sub = it.b.desc;
   } else if (it.type === 'perfect') {
     const lvl = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
-    art = <FlameMedallion level={Math.max(1, lvl)} size={150} />;
+    art = <FlameMedallion level={Math.max(1, lvl)} size={ART} />;
     eyebrow = 'Full ring';
     title = 'All ' + it.n + ' wins today';
     sub = 'That is a full day of looking after yourself. Rest well.';
@@ -244,12 +247,16 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
   return (
     <Animated.View accessibilityViewIsModal accessibilityLiveRegion="assertive" style={[s.card, { backgroundColor: c.surface, transform: [{ scale }] }]}>
       {art}
-      {eyebrow ? <Text style={[s.eye, { color: c.accentText }]}>{eyebrow.toUpperCase()}</Text> : null}
+      {eyebrow ? (
+        <T v="eyebrow" tone="accentText" style={{ marginTop: 6 }}>
+          {eyebrow}
+        </T>
+      ) : null}
       <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
         {title}
       </Text>
       {sub ? (
-        <T tone="muted" style={{ textAlign: 'center', fontSize: 16, lineHeight: 22 }}>
+        <T tone="muted" style={{ textAlign: 'center' }}>
           {sub}
         </T>
       ) : null}
@@ -282,9 +289,7 @@ function Row({ it }: { it: CelItem }) {
     ) : it.type === 'level' ? (
       <Flame level={it.level.n} size={40} />
     ) : (
-      <View style={[s.rowIc, { backgroundColor: c.sunSoft }]}>
-        <Icon name="star" size={20} color={c.sunText} />
-      </View>
+      <Icon name="star" size={22} color={c.sunText} />
     );
   const name = it.type === 'badge' ? it.b.name : celTitle(it);
   const desc = it.type === 'badge' ? it.b.desc : it.type === 'level' ? it.level.step : '';
@@ -310,7 +315,7 @@ function Evolve({ from, to }: { from: number; to: number }) {
     Animated.timing(v, { toValue: 1, duration: 1100, delay: 250, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
   }, [v]);
   return (
-    <View style={{ width: 150, height: 150 }}>
+    <View style={{ width: ART, height: ART }}>
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
@@ -319,14 +324,14 @@ function Evolve({ from, to }: { from: number; to: number }) {
             transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }],
           },
         ]}>
-        <FlameMedallion level={from} size={150} />
+        <FlameMedallion level={from} size={ART} />
       </Animated.View>
       <Animated.View
         pointerEvents="none"
         style={[
           StyleSheet.absoluteFill,
           {
-            borderRadius: 75,
+            borderRadius: ART / 2,
             backgroundColor: '#FFF3B0',
             opacity: v.interpolate({ inputRange: [0, 0.45, 0.6, 1], outputRange: [0, 0, 0.85, 0] }),
             transform: [{ scale: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.1, 1.7] }) }],
@@ -334,7 +339,7 @@ function Evolve({ from, to }: { from: number; to: number }) {
         ]}
       />
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }]}>
-        <FlameMedallion level={to} size={150} />
+        <FlameMedallion level={to} size={ART} />
       </Animated.View>
     </View>
   );
@@ -441,18 +446,16 @@ const s = StyleSheet.create({
     paddingTop: 26,
     paddingHorizontal: 22,
     paddingBottom: 22,
-    borderRadius: 32,
+    borderRadius: 28,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 25,
     shadowOffset: { width: 0, height: 18 },
     elevation: 12,
   },
-  eye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2, marginTop: 6 },
   rows: { alignSelf: 'stretch', gap: 10, marginTop: 6, paddingTop: 12, borderTopWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  rowT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  rowT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   rowS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  h: { fontFamily: font.display, fontSize: 28, lineHeight: 32, textAlign: 'center' },
+  h: { fontFamily: font.display, fontSize: 28, lineHeight: 34, textAlign: 'center' },
 });

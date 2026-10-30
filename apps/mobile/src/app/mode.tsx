@@ -36,28 +36,24 @@ export default function Mode() {
     );
   };
   return (
-    <SheetFrame title="Where I am" sub="Tracking week, quitting, or just tracking">
-      <Card>
+    <SheetFrame title="Where I am">
+      <View style={{ gap: 2 }}>
         <T v="h2">{mi.title}</T>
         <T tone="muted">{mi.line}</T>
-      </Card>
-      <View style={{ gap: 8 }}>
-        {MODE_LEGEND(st).map(([k, name, text]) => (
-          <View key={k} style={[s.li, { backgroundColor: k === mi.k ? c.accentSoft : c.surface, borderColor: k === mi.k ? c.accent : c.cardEdge }]}>
-            <T v="label">
+      </View>
+      <Card style={{ gap: 0, paddingVertical: 4 }}>
+        {MODE_LEGEND(st).map(([k, name, text], i) => (
+          <View key={k} style={[s.li, i > 0 && { borderTopColor: c.line, borderTopWidth: 1 }]}>
+            <T v="label" tone={k === mi.k ? 'accentText' : 'ink'}>
               {name}
-              {k === mi.k ? (
-                <T v="small" tone="accentText">
-                  {'  you are here'}
-                </T>
-              ) : null}
+              {k === mi.k ? '  ·  you are here' : ''}
             </T>
             <T v="small" tone="muted">
               {text}
             </T>
           </View>
         ))}
-      </View>
+      </Card>
       <T v="small" tone="muted">
         Your log is never touched. You can change this whenever you like.
       </T>
@@ -86,6 +82,6 @@ export default function Mode() {
 }
 
 const s = StyleSheet.create({
-  li: { gap: 4, padding: 12, borderRadius: 16, borderWidth: 1.5 },
+  li: { gap: 4, paddingVertical: 12 },
   acts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

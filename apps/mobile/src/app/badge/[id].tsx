@@ -3,7 +3,7 @@ import { badgeDone, gameCompute } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
-import { BadgeArt } from '@/components/celebrate';
+import { Medal } from '@/components/medal';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { Dock } from '@/components/scene';
@@ -27,8 +27,8 @@ export default function BadgeSheet() {
   return (
     <SheetFrame title={b.name}>
       <View style={{ alignItems: 'center', gap: 12 }}>
-        <BadgeArt icon={b.icon} tone={b.tone} size={116} earned={done} />
-        <T style={{ textAlign: 'center', fontSize: 17 }}>{b.desc}</T>
+        <Medal id={b.id} icon={b.icon} tone={b.tone} size={160} earned={done} />
+        <T style={{ textAlign: 'center', fontSize: 17, lineHeight: 22 }}>{b.desc}</T>
         <T tone={done ? 'mintText' : 'muted'}>{done ? '✓ Earned. Badges are never taken away.' : `Progress: ${b.now} of ${b.goal}`}</T>
       </View>
       <Dock>

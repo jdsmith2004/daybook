@@ -79,6 +79,7 @@ import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { AddOwn, AddTile, BigOption, Link, Tiles } from '@/components/choices';
+import { FitArt } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
@@ -346,7 +347,7 @@ export default function Log() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let sky: Sky = 'sky';
-  let title = from === 'urge' ? 'SOS' : 'Quick check-in';
+  let title = from === 'urge' ? 'SOS' : from === 'pause' ? 'Pause' : 'Already happened';
   let dots: { n: number; i: number; label: string } | null = null;
 
   /* an urge ridden out: the one celebration, with what helped and what set it off inside it */
@@ -367,13 +368,18 @@ export default function Log() {
     const pause = from === 'pause' || from === 'urge';
     body = (
       <>
-        <Flame level={Math.max(1, g.level.n)} size={84} />
         <T v="title" style={s.h} accessibilityRole="header">
           {pause ? 'How is the urge now?' : 'What happened?'}
         </T>
         <T tone="muted" style={s.center}>
           One tap. You can stop after that.
         </T>
+        {/* the flame in the open middle: whatever the answer is, it stays lit */}
+        <Middle>
+          <FitArt min={0.55}>
+            <Flame level={Math.max(1, g.level.n)} size={180} alive />
+          </FitArt>
+        </Middle>
         <Dock>
           {/* the day and time it is logged for: tap to change it, when it happened earlier */}
           {!ev && !pause ? <WhenPill w={when} now={now} onPress={() => setWhenOpen(true)} /> : null}
@@ -449,9 +455,6 @@ export default function Log() {
       <>
         {/* a slip added in the entry sheet comes in here, so its Undo is here too */}
         {from === 'entry' ? saved : null}
-        <T v="eyebrow" tone="muted" style={s.center}>
-          Right now
-        </T>
         <T v="title" style={s.h} accessibilityRole="header">
           How do you feel now?
         </T>
@@ -538,14 +541,8 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
-        <T v="eyebrow" tone="muted" style={s.center}>
-          Just before
-        </T>
         <T v="title" style={s.h} accessibilityRole="header">
-          What was going on?
-        </T>
-        <T tone="muted" style={s.center}>
-          Pick the closest. One tap.
+          What was going on just before?
         </T>
         {adding ? (
           <AddOwn kind="trig" onSave={saveOwn} onCancel={() => setAdding(false)} />
@@ -577,22 +574,17 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
-        <T v="eyebrow" tone="muted" style={s.center}>
-          Next time
-        </T>
         <T v="title" style={s.h} accessibilityRole="header">
-          What will you do instead?
+          Next time, what will you do instead?
         </T>
-        <View style={s.plan}>
-          <T style={[s.center, s.planT]}>
-            {'When ' +
-              TALK_WHEN[slWhen] +
-              (slWhen !== 'late' && mo === 'late' ? ' late at night' : slWhen !== 'late' && mo === 'evening' ? ' in the evening' : '') +
-              ', I will …'}
-          </T>
-        </View>
+        <T style={[s.center, s.planT]}>
+          {'When ' +
+            TALK_WHEN[slWhen] +
+            (slWhen !== 'late' && mo === 'late' ? ' late at night' : slWhen !== 'late' && mo === 'evening' ? ' in the evening' : '') +
+            ', I will …'}
+        </T>
         <T tone="muted" style={s.center}>
-          Pick one. Daybook brings it back when that time comes again.
+          Daybook brings it back when that time comes again.
         </T>
         {ownPlan ? (
           /* the box and its button stay near the top, where the keyboard does not cover them */
@@ -652,9 +644,9 @@ export default function Log() {
           </T>
           {line ? (
             <>
-              <View style={s.plan}>
-                <T style={[s.center, s.planT]}>{'“' + line + '”'}</T>
-              </View>
+              <T v="h2" style={s.center}>
+                {'“' + line + '”'}
+              </T>
               <T tone="muted" style={s.center}>
                 Say it once, out loud or in your head, so it comes back to you at the moment.
               </T>
@@ -708,7 +700,7 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo:
         </T>
       ) : null}
       <Pressable accessibilityRole="button" onPress={onUndo} hitSlop={10} style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
       </Pressable>
     </View>
   );
@@ -719,9 +711,7 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },
-  plan: { alignSelf: 'stretch', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)' },
-  planT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 24 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  planT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

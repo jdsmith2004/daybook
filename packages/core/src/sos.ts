@@ -633,7 +633,13 @@ export interface NeedDo {
   text?: string;
 }
 const NEED_DO: Record<string, NeedDo> = {
-  hungry: { ic: 'leaf', head: 'Eat something real.', tool: null, label: 'I will eat something' },
+  hungry: {
+    ic: 'leaf',
+    head: 'Eat something real.',
+    tool: null,
+    label: 'I will eat something',
+    text: 'Drink a glass of water too. Running on empty makes everything harder.',
+  },
   angry: { ic: 'bolt', head: 'Move it out of your body first.', tool: 'move', label: 'Move for 2 minutes' },
   lonely: { ic: 'heart', head: 'Reach one person.', tool: 'message', label: 'Reach a person' },
   tired: {

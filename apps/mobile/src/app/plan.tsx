@@ -37,21 +37,21 @@ import {
   toggleSafety,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
-import { Editable } from '@/components/editable';
+import { Editable, Hair, PageLink, PageSec } from '@/components/editable';
 import { Check, Segments } from '@/components/form';
 import { RelLesson } from '@/components/help-bits';
 import { HelpFoot } from '@/components/help-foot';
-import { LinkCard } from '@/components/link-card';
+import { Rows } from '@/components/link-card';
 import { ListCard } from '@/components/list-card';
 import { SlipEditor } from '@/components/plan-editors';
 import { Screen } from '@/components/screen';
-import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { Button, Chip, Icon, T } from '@/components/ui';
 import { VoiceRecorder } from '@/components/voice-note';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -83,14 +83,8 @@ export default function Plan() {
           const y = e.nativeEvent.layout.y;
           setTimeout(() => scroll.current?.scrollTo({ y: Math.max(0, y + paneY.current - 8), animated: true }), 250);
         };
-  const words = {
-    why: 'Who you are becoming, and why. Read it on a hard night. Tap anything to change it.',
-    plans: 'What you will do when an urge hits, and after a slip, decided now while it is calm.',
-    lists: 'Your calm moves, your wind-down, and the words that steady you.',
-    learned: 'What each lesson gave you, and what you wrote. Only you see it.',
-  }[pane];
   return (
-    <Screen title="My plan" sub={<T tone="muted">{words}</T>} back="More" scrollRef={scroll}>
+    <Screen title="My plan" back="More" scrollRef={scroll}>
       <Segments
         label="My plan sections"
         list={[
@@ -105,7 +99,7 @@ export default function Plan() {
           setPane(p);
         }}
       />
-      <Appear key={pane} style={{ gap: 14 }} onLayout={(e) => (paneY.current = e.nativeEvent.layout.y)}>
+      <Appear key={pane} style={{ gap: 24 }} onLayout={(e) => (paneY.current = e.nativeEvent.layout.y)}>
         {pane === 'plans' ? (
           <Plans place={place} />
         ) : pane === 'lists' ? (
@@ -117,47 +111,6 @@ export default function Plan() {
         )}
       </Appear>
     </Screen>
-  );
-}
-
-/** a part of the page: an icon, a title, an optional count, then its lines */
-function Sec({
-  icon,
-  tone = 'accent',
-  title,
-  aside,
-  children,
-  onLayout,
-}: {
-  icon: string;
-  tone?: 'accent' | 'mint' | 'sky' | 'sun' | 'coral' | 'violet';
-  title: string;
-  aside?: string;
-  children: ReactNode;
-  onLayout?: (e: LayoutChangeEvent) => void;
-}) {
-  const c = useTheme();
-  const soft = { accent: c.accentSoft, mint: c.mintSoft, sky: c.skySoft, sun: c.sunSoft, coral: c.coralSoft, violet: c.violetSoft }[tone];
-  const ink = { accent: c.accentText, mint: c.mintText, sky: c.skyText, sun: c.sunText, coral: c.coralText, violet: c.violetText }[tone];
-  return (
-    <View onLayout={onLayout}>
-      <Card>
-        <View style={s.head}>
-          <View style={[s.headIc, { backgroundColor: soft }]}>
-            <Icon name={icon} size={22} color={ink} />
-          </View>
-          <T v="h2" style={{ flex: 1 }}>
-            {title}
-          </T>
-          {aside ? (
-            <T v="small" tone="muted">
-              {aside}
-            </T>
-          ) : null}
-        </View>
-        {children}
-      </Card>
-    </View>
   );
 }
 
@@ -181,31 +134,23 @@ function Why({ place }: { place: Place }) {
           maxLength={BE_LEN}
           onSave={set('becoming')}
         />
-        <T v="small" tone="muted">
-          Today shows it under the date, and SOS opens with it.
-        </T>
       </View>
-      <Sec icon="star" tone="sun" title="Why I am doing this" aside={`${st.reasons.length} reasons`}>
-        {st.reasons.length ? (
-          st.reasons.map((r, i) => (
-            <View key={i} style={s.line}>
-              <Icon name="heart" size={16} color={c.coralText} />
-              <T style={{ flex: 1 }}>{r}</T>
-            </View>
-          ))
-        ) : (
-          <T tone="muted">No reasons yet. They are what you read when it gets hard.</T>
-        )}
-        <Chip label={st.reasons.length ? 'Add, reorder or reword' : 'Add my first reason'} on={false} onPress={() => router.push('/reasons')} />
-        <View style={[s.rule, { backgroundColor: c.line }]} />
+      <PageSec icon="heart" tone="coral" title="Why I am doing this">
+        {st.reasons.length ? st.reasons.map((r, i) => <T key={i}>{r}</T>) : <T tone="muted">No reasons yet. They are what you read when it gets hard.</T>}
+        <PageLink
+          icon={st.reasons.length ? 'pencil' : 'plus'}
+          label={st.reasons.length ? 'Add, reorder or reword' : 'Add my first reason'}
+          onPress={() => router.push('/reasons')}
+        />
+        <Hair />
         <Editable label="My goal" value={st.goal} prompt="Add my goal" onSave={set('goal')} />
         <Editable label="In my own words" value={st.why} prompt="Say why this matters" onSave={set('why')} />
-      </Sec>
-      <Sec icon="compass" tone="violet" title="The loop and my rule">
+      </PageSec>
+      <PageSec icon="compass" tone="violet" title="The loop and my rule">
         <Editable label="The loop I am breaking" value={st.loop} prompt="Name the loop" placeholder="Fail → shame → hide → give up." onSave={set('loop')} />
         <Editable label="My new rule" value={st.rule} prompt="Write my rule" placeholder="I log slips instead of hiding them." onSave={set('rule')} />
-      </Sec>
-      <Sec icon="chat" tone="mint" title="My safe person" onLayout={place('safe')}>
+      </PageSec>
+      <PageSec icon="chat" tone="mint" title="My safe person" onLayout={place('safe')}>
         <Editable label="Name" value={st.safePerson} prompt="Add someone I trust" maxLength={80} onSave={set('safePerson')} />
         <Editable
           label="Their number"
@@ -219,11 +164,11 @@ function Why({ place }: { place: Place }) {
           }}
         />
         <T v="small" tone="muted">
-          With their number, Text {safeName(st) || 'them'} opens your messages app with the words ready to send. It stays on this device and is never synced.
-          Scripts you can copy are in Get help › What to say.
+          Text {safeName(st) || 'them'} then opens your messages with the words ready. The number stays on this device and is never synced. Scripts to copy are
+          in Get help › What to say.
         </T>
-      </Sec>
-      <Sec icon="sparkle" tone="sky" title="A note for hard moments">
+      </PageSec>
+      <PageSec icon="sparkle" tone="sky" title="A note for hard moments">
         <Editable
           label="From me, on a calm day"
           value={st.note || ''}
@@ -233,10 +178,10 @@ function Why({ place }: { place: Place }) {
           onSave={set('note')}
         />
         <T v="small" tone="muted">
-          SOS and My reasons show it to you first. With no note, SOS shows one of your reasons.
+          SOS and My reasons show it to you first.
         </T>
         <VoiceRecorder />
-      </Sec>
+      </PageSec>
       <HelpFoot />
     </>
   );
@@ -307,7 +252,7 @@ function IfThenForm({
   /* short ideas as chips, longer ones as rows that wrap */
   const ideas = (list: string[], cur: string, set: (v: string) => void, rows?: boolean) =>
     rows ? (
-      <View style={{ gap: 6 }}>
+      <View>
         {list.map((x) => {
           const on = cur.trim() === x;
           return (
@@ -316,11 +261,9 @@ function IfThenForm({
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               onPress={() => set(x)}
-              style={[s.idea, { backgroundColor: c.surface, borderColor: on ? c.accent : c.line }]}>
-              <Icon name={on ? 'check' : 'plus'} size={15} color={c.accentText} />
-              <T v="small" style={{ flex: 1, color: c.ink }}>
-                {x}
-              </T>
+              style={({ pressed }) => [s.idea, { opacity: pressed ? 0.6 : 1 }]}>
+              <Icon name={on ? 'check' : 'plus'} size={16} color={c.accentText} />
+              <T style={{ flex: 1 }}>{x}</T>
             </Pressable>
           );
         })}
@@ -333,7 +276,7 @@ function IfThenForm({
       </View>
     );
   return (
-    <Appear by={4} duration={180} style={[s.urge, { backgroundColor: c.surface2, borderColor: c.accent }]}>
+    <Appear by={4} duration={180} style={{ gap: 8 }}>
       <T v="label">If</T>
       <TextInput
         value={when}
@@ -357,7 +300,7 @@ function IfThenForm({
           placeholder="One clear thing I will do"
           placeholderTextColor={c.muted}
           accessibilityLabel="Then I will"
-          style={[input, { minHeight: 64 }]}
+          style={[input, { minHeight: 88 }]}
         />
         {then0 ? null : ideas(THEN_IDEAS, then, setThen, true)}
         <Button label={save} disabled={!ok} onPress={() => onSave(when, then)} />
@@ -369,7 +312,7 @@ function IfThenForm({
       </Pressable>
       {onRemove ? (
         ask ? (
-          <View style={[s.confirm, { backgroundColor: c.dangerSoft }]}>
+          <View style={{ gap: 8 }}>
             <T v="label">Take this line off your plan?</T>
             <View style={s.formRow}>
               <View style={{ flex: 1 }}>
@@ -404,39 +347,40 @@ function UrgePlan() {
   return (
     <>
       {rows.length ? null : <T tone="muted">No lines yet. Add one for your hardest moment.</T>}
-      {rows.map((r) =>
-        open === r.i ? (
-          <IfThenForm
-            key={r.i}
-            when0={r.when}
-            then0={r.then}
-            save="Save"
-            onCancel={() => setOpen(null)}
-            onSave={(w, t) => {
-              apply((cur) => ({ st: planEdit(cur, r.i, w, t) }));
-              setOpen(null);
-              say('Saved.');
-            }}
-            onRemove={() => {
-              const x = planRemove(st, r.i);
-              if (x.ok) apply({ st: x.st });
-              setOpen(null);
-              if (x.ok) say('Removed from your urge plan.', () => apply((cur) => ({ st: planRestore(cur, r.i, { when: r.when, then: r.then }) })));
-              else say('Removed from your urge plan.');
-            }}
-          />
-        ) : (
-          <Pressable
-            key={r.i}
-            accessibilityRole="button"
-            accessibilityHint="Opens it to change"
-            onPress={() => setOpen(r.i)}
-            style={({ pressed }) => [s.urge, s.line, { backgroundColor: c.surface2, borderColor: 'transparent', opacity: pressed ? 0.85 : 1 }]}>
-            <IfThen when={r.when} then={r.then} />
-            <Icon name="pencil" size={16} color={c.muted} />
-          </Pressable>
-        ),
-      )}
+      {rows.map((r, j) => (
+        <View key={r.i} style={{ gap: 12 }}>
+          {j > 0 ? <Hair /> : null}
+          {open === r.i ? (
+            <IfThenForm
+              when0={r.when}
+              then0={r.then}
+              save="Save"
+              onCancel={() => setOpen(null)}
+              onSave={(w, t) => {
+                apply((cur) => ({ st: planEdit(cur, r.i, w, t) }));
+                setOpen(null);
+                say('Saved.');
+              }}
+              onRemove={() => {
+                const x = planRemove(st, r.i);
+                if (x.ok) apply({ st: x.st });
+                setOpen(null);
+                if (x.ok) say('Removed from your urge plan.', () => apply((cur) => ({ st: planRestore(cur, r.i, { when: r.when, then: r.then }) })));
+                else say('Removed from your urge plan.');
+              }}
+            />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Opens it to change"
+              onPress={() => setOpen(r.i)}
+              style={({ pressed }) => [s.line, { opacity: pressed ? 0.6 : 1 }]}>
+              <IfThen when={r.when} then={r.then} />
+              <Icon name="pencil" size={16} color={c.muted} />
+            </Pressable>
+          )}
+        </View>
+      ))}
       {open === 'new' ? (
         <IfThenForm
           when0=""
@@ -456,7 +400,7 @@ function UrgePlan() {
           That is the most lines ({PLAN_MAX}). Fewer, clearer lines are easier to follow on a hard night.
         </T>
       ) : (
-        <Button kind="ghost" icon="plus" label="Add an if-then line" onPress={() => setOpen('new')} />
+        <PageLink icon="plus" label="Add an if-then line" onPress={() => setOpen('new')} />
       )}
     </>
   );
@@ -472,57 +416,66 @@ function Plans({ place }: { place: Place }) {
   const [why, setWhy] = useState<'safety' | 'steps' | null>(null);
   return (
     <>
-      <Sec icon="shield" title="When an urge hits" onLayout={place('urge')}>
-        <T v="small" tone="muted">
-          Decided now, while it is calm, so a hard moment only has to follow it. Tap a line to change it. Lessons add lines here too.
-        </T>
-        <UrgePlan />
-      </Sec>
-      <RelLesson id="l9" />
-      <Sec icon="heart" tone="coral" title="If I slip" aside={`${slip.length} steps`} onLayout={place('slip')}>
-        {editSlip ? (
-          <Appear by={4} duration={180} style={{ gap: 12 }}>
-            <SlipEditor />
-            <Button label="Done" onPress={() => setEditSlip(false)} />
-          </Appear>
-        ) : (
-          <>
-            <T v="small" tone="muted">
-              A slip is data, not a reset. After you log one, these show on Today.
-            </T>
-            {slip.map((t, i) => (
-              <View key={i} style={s.line}>
-                <View style={[s.num, { backgroundColor: c.coralSoft }]}>
-                  <T style={{ fontFamily: font.bodyBold, fontSize: 13, color: c.coralText }}>{i + 1}</T>
-                </View>
-                <T style={{ flex: 1 }}>{t}</T>
-              </View>
-            ))}
-            <Chip label="Change my steps" on={false} onPress={() => setEditSlip(true)} />
-          </>
-        )}
-      </Sec>
       <View style={{ gap: 8 }}>
-        <RelLesson id="l3" />
-        <RelLesson id="l6" />
+        <PageSec icon="shield" title="When an urge hits" sub="Decided now, while it is calm, so a hard moment only has to follow it." onLayout={place('urge')}>
+          <UrgePlan />
+        </PageSec>
+        <Rows>
+          <RelLesson id="l9" />
+        </Rows>
       </View>
-      <Sec icon="check" tone="mint" title="Safety net" aside={`${m.safety} of ${SAFETY.length} done`} onLayout={place('safety')}>
-        <T v="small" tone="muted">
-          Small setups that make the hard hours easier.
-        </T>
+      <View style={{ gap: 8 }}>
+        <PageSec
+          icon="heart"
+          tone="coral"
+          title="If I slip"
+          sub={editSlip ? undefined : 'A slip is data, not a reset. After you log one, these show on Today.'}
+          onLayout={place('slip')}>
+          {editSlip ? (
+            <Appear by={4} duration={180} style={{ gap: 12 }}>
+              <SlipEditor />
+              <Button label="Done" onPress={() => setEditSlip(false)} />
+            </Appear>
+          ) : (
+            <>
+              {slip.map((t, i) => (
+                <View key={i} style={s.line}>
+                  <T style={{ fontFamily: font.bodyBold, color: c.coralText, minWidth: 16 }}>{i + 1}</T>
+                  <T style={{ flex: 1 }}>{t}</T>
+                </View>
+              ))}
+              <PageLink icon="pencil" label="Change my steps" onPress={() => setEditSlip(true)} />
+            </>
+          )}
+        </PageSec>
+        <Rows>
+          <RelLesson id="l3" />
+          <RelLesson id="l6" />
+        </Rows>
+      </View>
+      <PageSec
+        icon="check"
+        tone="mint"
+        title="Safety net"
+        aside={`${m.safety} of ${SAFETY.length} done`}
+        sub="Small setups that make the hard hours easier."
+        onLayout={place('safety')}>
         {SAFETY.map(([label, w], i) => (
           <Check key={i} label={label} why={why === 'safety' ? w : undefined} on={!!st.safety[i]} onPress={() => apply((cur) => toggleSafety(cur, i))} />
         ))}
         <WhyLink on={why === 'safety'} onPress={() => setWhy(why === 'safety' ? null : 'safety')} />
-      </Sec>
-      <Sec icon="flag" tone="sky" title="My next small steps" aside={`${m.help} of ${HELP_STEPS.length} done`} onLayout={place('steps')}>
-        <T v="small" tone="muted">
-          Real help is a few small calls, not one big leap.
-        </T>
+      </PageSec>
+      <PageSec
+        icon="flag"
+        tone="sky"
+        title="My next small steps"
+        aside={`${m.help} of ${HELP_STEPS.length} done`}
+        sub="Real help is a few small calls, not one big leap."
+        onLayout={place('steps')}>
         {HELP_STEPS.map((label, i) => (
           <Check key={i} label={label} on={!!st.help[i]} onPress={() => apply((cur) => toggleHelpStep(cur, i))} />
         ))}
-      </Sec>
+      </PageSec>
       <HelpFoot />
     </>
   );
@@ -531,7 +484,11 @@ function Plans({ place }: { place: Place }) {
 function WhyLink({ on, onPress }: { on: boolean; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ expanded: on }} onPress={onPress} hitSlop={8} style={s.why}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ expanded: on }}
+      onPress={onPress}
+      style={({ pressed }) => [s.why, { opacity: pressed ? 0.6 : 1 }]}>
       <T v="small" style={{ fontFamily: font.bodySemi, color: c.accentText }}>
         {on ? 'Hide why each one helps' : 'Why each one helps'}
       </T>
@@ -541,32 +498,37 @@ function WhyLink({ on, onPress }: { on: boolean; onPress: () => void }) {
 
 /** fresh: the row a lesson just added ("words:0"), to light up. add: a list to open with Add ready. */
 function Lists({ fresh, add, place }: { fresh?: string; add?: string; place: Place }) {
+  const c = useTheme();
   const { snap, apply, say } = useStore();
   const st = snap.settings!;
   const [fk, fi] = (fresh || '').split(':');
   const at = (k: ListKey) => (fk === k && fi !== '' && !isNaN(+fi) ? +fi : undefined);
   const mine = (kind: 'trig' | 'did') => st.opts[kind].filter((o) => !o.off);
   const one = (kind: 'trig' | 'did', title: string) => (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: 2 }}>
       <T v="label">{title}</T>
       {mine(kind).length ? (
         mine(kind).map((o) => (
           <View key={o.id} style={s.opt}>
             <T style={{ flex: 1 }}>{o.t}</T>
-            <Chip
-              label="Remove"
-              on={false}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={'Remove ' + o.t}
               onPress={() => {
                 const at = st.opts[kind].findIndex((y) => y.id === o.id);
                 apply((cur) => ({ st: removeOption(cur, snap.days, kind, o.id) }));
                 say('Removed. Older entries keep it.', () => apply((cur) => ({ st: optionRestore(cur, kind, o, at) })));
               }}
-            />
+              style={({ pressed }) => [s.drop, { opacity: pressed ? 0.6 : 1 }]}>
+              <T v="small" style={{ fontFamily: font.bodySemi, color: c.danger }}>
+                Remove
+              </T>
+            </Pressable>
           </View>
         ))
       ) : (
         <T v="small" tone="muted">
-          No answers of your own yet. The ones you add when you log show up here.
+          None yet.
         </T>
       )}
     </View>
@@ -610,20 +572,17 @@ function Lists({ fresh, add, place }: { fresh?: string; add?: string; place: Pla
         openAdd={add === 'words'}
         onLayout={place('words')}
       />
-      <Sec icon="pencil" title="My own answers" aside="check-in">
-        <T v="small" tone="muted">
-          To add one, tap “Add your own” on a check-in question. Removing one takes it off the list, and entries that used it keep their words.
-        </T>
+      <PageSec icon="pencil" title="My own answers" sub="To add one, tap “Add your own” on a check-in question. Entries that used one keep their words.">
         {one('trig', 'What set it off')}
+        <Hair />
         {one('did', 'What did you do')}
-      </Sec>
+      </PageSec>
     </>
   );
 }
 
 /** what the lessons gave me (the old My playbook): each takeaway with my notes, what I wrote, and copy it all */
 function Learned() {
-  const c = useTheme();
   const { snap, say } = useStore();
   const st = snap.settings!;
   const done = lessonsDone(snap.days);
@@ -647,7 +606,7 @@ function Learned() {
     copyText(text, say);
   };
   const Note = ({ label, text }: { label: string; text: string }) => (
-    <View style={[s.note, { backgroundColor: c.surface2 }]}>
+    <View style={s.note}>
       <T v="small" tone="muted">
         {label}
       </T>
@@ -656,28 +615,31 @@ function Learned() {
   );
   return (
     <>
-      <Sec icon="book" tone="sky" title="What I have learned" aside={`${mine.length} of ${lessonCount(lessonWalk(snap.days, st)).of}`}>
+      <PageSec icon="book" tone="sky" title="What I have learned" aside={`${mine.length} of ${lessonCount(lessonWalk(snap.days, st)).of}`}>
         {mine.length ? (
-          mine.map((L) => (
-            <View key={L.id} style={[s.takeaway, { borderColor: c.line }]}>
-              <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-                {lessonNo(L, st) ? 'Lesson ' + lessonNo(L, st) + ' · ' : ''}
-                {L.title}
-              </T>
-              <T>{L.key}</T>
-              {picks[L.id] ? <Note label="What I picked" text={picks[L.id]} /> : null}
-              {notes[L.id] ? <Note label={L.np} text={String(notes[L.id])} /> : null}
+          mine.map((L, j) => (
+            <View key={L.id} style={{ gap: 12 }}>
+              {j > 0 ? <Hair /> : null}
+              <View style={{ gap: 4 }}>
+                <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
+                  {lessonNo(L, st) ? 'Lesson ' + lessonNo(L, st) + ' · ' : ''}
+                  {L.title}
+                </T>
+                <T>{L.key}</T>
+                {picks[L.id] ? <Note label="What I picked" text={picks[L.id]} /> : null}
+                {notes[L.id] ? <Note label={L.np} text={String(notes[L.id])} /> : null}
+              </View>
             </View>
           ))
         ) : (
           <T tone="muted">No lessons finished yet. Each one leaves a one-line takeaway here, with your note.</T>
         )}
-        <Chip label="Open Learn" on={false} onPress={toLearn} />
-      </Sec>
-      <Sec icon="pencil" tone="violet" title="What I wrote">
+        <PageLink icon="book" label="Open Learn" onPress={toLearn} />
+      </PageSec>
+      <PageSec icon="pencil" tone="violet" title="What I wrote" sub="Only you see it.">
         {wrote.length ? (
           wrote.map((x) => (
-            <View key={x.n} style={{ gap: 6 }}>
+            <View key={x.n} style={{ gap: 4 }}>
               <T v="label">
                 Checkpoint {lcheckNo(x.n, st)}: {x.C.t}
               </T>
@@ -687,29 +649,23 @@ function Learned() {
         ) : (
           <T tone="muted">No writing yet. After every second lesson there is a short piece of writing, and what you write shows up here.</T>
         )}
-      </Sec>
-      <Button kind="ghost" icon="copy" label="Copy my whole plan as text" onPress={copy} />
+      </PageSec>
+      <PageLink icon="copy" label="Copy my whole plan as text" onPress={copy} />
       <HelpFoot />
     </>
   );
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  be: { borderRadius: 24, padding: 18, gap: 8 },
-  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  rule: { height: 1, marginVertical: 2 },
-  urge: { borderRadius: 16, borderWidth: 2, padding: 12, gap: 8 },
+  be: { borderRadius: 20, padding: 16, gap: 8 },
+  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
-  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  idea: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 12, borderWidth: 1.5 },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingVertical: 6 },
   formRow: { flexDirection: 'row', gap: 8 },
-  confirm: { gap: 8, padding: 12, borderRadius: 14 },
-  remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 40 },
-  num: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  why: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
-  opt: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  note: { gap: 2, padding: 10, borderRadius: 12 },
-  takeaway: { gap: 6, paddingBottom: 12, borderBottomWidth: 1 },
+  remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44 },
+  why: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  opt: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  drop: { minHeight: 44, justifyContent: 'center', paddingLeft: 8 },
+  note: { gap: 2, marginTop: 4 },
 });

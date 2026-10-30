@@ -22,6 +22,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
+import { useChartColors } from '@/components/charts';
 import { CheckinBlock } from '@/components/checkin';
 import { Stepper, YesNo } from '@/components/form';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
@@ -31,6 +32,7 @@ import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
+/* how the day went: its fill, its words, and a plain icon */
 const HEAD: Record<CalKind, { ic: string; tone: (c: Palette) => [string, string] }> = {
   ok: { ic: 'check', tone: (c) => [c.mintSoft, c.mintText] },
   saved: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
@@ -59,6 +61,15 @@ export default function DaySheet() {
     buzz('tap');
     router.setParams({ date: k });
   };
+  const facts = x.ci
+    ? [
+        x.ci.h != null ? 'Slept ' + x.ci.h + ' h' : '',
+        x.ci.so ? (x.ci.so === 'Y' ? 'Screens off on time' : x.po ? 'Picked the phone back up' : 'Screens on late') : '',
+        x.ci.ro === 'Y' ? 'Reached out' : '',
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
   const stat = [x.rode ? x.rode + (x.rode === 1 ? ' urge ridden out' : ' urges ridden out') : '', x.pts ? '+' + x.pts + ' points' : ''].filter(Boolean);
 
   return (
@@ -71,9 +82,7 @@ export default function DaySheet() {
 
       {/* how it went */}
       <View style={[s.hero, { backgroundColor: bg }]}>
-        <View style={[s.heroIc, { backgroundColor: c.surface }]}>
-          <Icon name={HEAD[x.kind].ic} size={26} color={ink} />
-        </View>
+        <Icon name={HEAD[x.kind].ic} size={28} color={ink} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[s.heroT, { color: ink }]}>{x.head}</Text>
           {stat.length ? <Text style={[s.heroS, { color: ink }]}>{stat.join(' · ')}</Text> : null}
@@ -81,7 +90,7 @@ export default function DaySheet() {
       </View>
 
       {/* what happened */}
-      <SheetH title="What happened" aside={x.events.length ? String(x.events.length) : undefined} />
+      <SheetH title="What happened" />
       {x.events.length ? (
         <Card style={{ gap: 0, paddingVertical: 4 }}>
           {x.events.map((e, i) => (
@@ -91,13 +100,11 @@ export default function DaySheet() {
               accessibilityLabel={e.time + '. ' + e.what + (e.meta ? '. ' + e.meta : '') + '. Open it.'}
               onPress={() => router.push({ pathname: '/entry', params: { date, id: e.id } })}
               style={({ pressed }) => [s.ev, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }, pressed && { opacity: 0.75 }]}>
-              <View style={{ alignItems: 'center', gap: 6, width: 64 }}>
-                <Text style={[s.evTime, { color: c.ink }]}>{e.time}</Text>
-                <View style={[s.evMark, { backgroundColor: e.outcome === 'rode' ? c.mint : c.slip }]}>
-                  <Icon name={e.outcome === 'rode' ? 'wave' : 'leaf'} size={14} color="#FFFFFF" />
-                </View>
-              </View>
-              <View style={{ flex: 1, gap: 3 }}>
+              <T v="small" style={s.evTime}>
+                {e.time}
+              </T>
+              <View style={[s.evMark, { backgroundColor: e.outcome === 'rode' ? c.mint : c.slip }, e.outcome !== 'rode' && { borderRadius: 3 }]} />
+              <View style={{ flex: 1, gap: 2 }}>
                 <T v="label">{e.what}</T>
                 {e.meta ? (
                   <T v="small" tone="muted">
@@ -105,7 +112,7 @@ export default function DaySheet() {
                   </T>
                 ) : null}
                 {e.sos.map((l, j) => (
-                  <T key={j} v="small" tone="violetText">
+                  <T key={j} v="small" tone="muted">
                     {l}
                   </T>
                 ))}
@@ -126,7 +133,7 @@ export default function DaySheet() {
           <SheetH title="Check-in" />
         </View>
         {x.ci && !editing ? (
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setEdit(date)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Edit the check-in" onPress={() => setEdit(date)} style={s.editB}>
             <Text style={[s.edit, { color: c.accentText }]}>Edit</Text>
           </Pressable>
         ) : null}
@@ -134,17 +141,17 @@ export default function DaySheet() {
       {!editing && x.ci ? (
         <Card>
           <Bars ci={x.ci} />
-          <View style={s.facts}>
-            {x.ci.h != null ? <Fact ic="moon" t={'Slept ' + x.ci.h + ' h'} /> : null}
-            {x.ci.so ? <Fact ic="phone" t={x.ci.so === 'Y' ? 'Screens off on time' : x.po ? 'Picked the phone back up' : 'Screens on late'} /> : null}
-            {x.ci.ro === 'Y' ? <Fact ic="heart" t="Reached out" /> : null}
-          </View>
+          {facts ? (
+            <T v="small" tone="muted">
+              {facts}
+            </T>
+          ) : null}
           {x.ci.n ? <T style={s.note}>“{x.ci.n}”</T> : null}
         </Card>
       ) : (
         <>
           <Card>
-            <CheckinBlock dkey={date} isToday={date === tk} />
+            <CheckinBlock key={date} dkey={date} isToday={date === tk} onSaved={() => setEdit(null)} onCancel={() => setEdit(null)} />
           </Card>
           <SheetH title="Night and sleep" />
           <Card>
@@ -177,9 +184,7 @@ export default function DaySheet() {
           <Card style={{ gap: 10 }}>
             {x.more.map((m) => (
               <View key={m.t} style={s.more}>
-                <View style={[s.moreIc, { backgroundColor: c.accentSoft }]}>
-                  <Icon name={m.ic} size={16} color={c.accentText} />
-                </View>
+                <Icon name={m.ic} size={22} color={c.accentText} />
                 <T style={{ flex: 1 }}>{m.t}</T>
               </View>
             ))}
@@ -187,7 +192,8 @@ export default function DaySheet() {
         </>
       ) : null}
       <Dock>
-        <Button label="Done" onPress={closeSheet} />
+        {/* the check-in's Save is the one filled button while its form is open */}
+        <Button kind={editing ? 'ghost' : 'primary'} label="Done" onPress={closeSheet} />
       </Dock>
     </SheetFrame>
   );
@@ -197,26 +203,27 @@ function Step({ label, onPress, a11y }: { label: string; onPress: () => void; a1
   const c = useTheme();
   if (!label) return <View />;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={a11y} hitSlop={8} onPress={onPress} style={[s.step, { backgroundColor: c.surface2 }]}>
-      <Text style={[s.stepT, { color: c.ink }]}>{label}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={a11y} onPress={onPress} style={({ pressed }) => [s.step, { opacity: pressed ? 0.6 : 1 }]}>
+      <Text style={[s.stepT, { color: c.accentText }]}>{label}</Text>
     </Pressable>
   );
 }
 
-/* the check-in's answers, as short bars out of 10: mood, urges and stress, and an older day's own ratings (core rateKeys) */
+/* the check-in's answers, as short bars out of 10: mood, urges and stress, and an older day's own ratings (core rateKeys).
+   One color: a rating is not good or bad by its hue, and the number says the rest. */
 function Bars({ ci }: { ci: Partial<Record<RateKey, number | null>> }) {
   const c = useTheme();
-  const tint: Record<RateKey, string> = { md: c.mint, u: c.violet, m: c.mint, c: c.sky, e: c.sun, s: c.coral };
-  const rows: [string, number | null, string][] = rateKeys(ci).map((k) => [ratingOf(k).name, ci[k] ?? null, tint[k]]);
+  const { acc } = useChartColors();
+  const rows: [string, number | null][] = rateKeys(ci).map((k) => [ratingOf(k).name, ci[k] ?? null]);
   return (
     <View style={{ gap: 8 }}>
       {rows
         .filter((r) => r[1] != null)
-        .map(([l, v, col]) => (
+        .map(([l, v]) => (
           <View key={l} style={s.bar} accessible accessibilityLabel={l + ' ' + v + ' of 10'}>
             <Text style={[s.barL, { color: c.ink }]}>{l}</Text>
             <View style={[s.track, { backgroundColor: c.surface2 }]}>
-              <View style={{ width: ((v as number) / 10) * 100 + '%', height: '100%', borderRadius: 5, backgroundColor: col }} />
+              <View style={{ width: ((v as number) / 10) * 100 + '%', height: '100%', borderRadius: 4, backgroundColor: acc }} />
             </View>
             <Text style={[s.barV, { color: c.ink }]}>{v}</Text>
           </View>
@@ -225,37 +232,23 @@ function Bars({ ci }: { ci: Partial<Record<RateKey, number | null>> }) {
   );
 }
 
-function Fact({ ic, t }: { ic: string; t: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.fact, { backgroundColor: c.surface2 }]}>
-      <Icon name={ic} size={14} color={c.ink} />
-      <Text style={[s.factT, { color: c.ink }]}>{t}</Text>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
-  steps: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 },
-  step: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999 },
+  steps: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: -8 },
+  step: { minHeight: 44, minWidth: 44, justifyContent: 'center' },
   stepT: { fontFamily: font.bodySemi, fontSize: 15 },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 22 },
-  heroIc: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  heroT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
-  heroS: { fontFamily: font.bodySemi, fontSize: 15 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
+  heroT: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  heroS: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   ev: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  evTime: { fontFamily: font.bodyBold, fontSize: 13 },
-  evMark: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  evTime: { width: 60, fontFamily: font.bodySemi },
+  evMark: { width: 12, height: 12, borderRadius: 6 },
   note: { fontFamily: font.display, fontSize: 15, lineHeight: 21, opacity: 0.85 },
-  secHead: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  edit: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline', paddingBottom: 2 },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  secHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  editB: { minHeight: 44, minWidth: 44, marginVertical: -8, alignItems: 'flex-end', justifyContent: 'center' },
+  edit: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   barL: { width: 94, fontFamily: font.bodySemi, fontSize: 15 },
-  track: { flex: 1, height: 10, borderRadius: 5, overflow: 'hidden' },
-  barV: { width: 22, textAlign: 'right', fontFamily: font.bodyBold, fontSize: 15 },
-  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  factT: { fontFamily: font.bodySemi, fontSize: 13 },
-  more: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  moreIc: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  track: { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
+  barV: { width: 22, textAlign: 'right', fontFamily: font.bodySemi, fontSize: 15 },
+  more: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });

@@ -152,7 +152,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
             </View>
           ))}
         </Appear>
-        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
           {won.moves.length ? (
             <>
               <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
@@ -230,7 +230,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
         </Appear>
         {askPrac ? (
           <T v="small" tone="muted" style={s.center}>
-            Tip: run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
+            Run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
           </T>
         ) : null}
       </SceneFrame>
@@ -253,20 +253,11 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
   chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13 },
-  card: {
-    alignSelf: 'stretch',
-    gap: 10,
-    padding: 16,
-    borderRadius: 24,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  q: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
+  card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20 },
+  q: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   opt: { fontFamily: font.body, fontSize: 13 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 13, borderRadius: 19 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
   pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   lesson: { fontFamily: font.bodySemi, fontSize: 13 },
   rule: { height: 1, marginVertical: 2 },

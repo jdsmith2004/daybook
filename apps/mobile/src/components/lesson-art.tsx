@@ -1,4 +1,4 @@
-/* The picture on a lesson card: an icon in a circle, a chain of steps, a wave, a snowball, your loop, a big number, a shield,
+/* The picture on a lesson card: an icon on a soft shape, a chain of steps, a wave, a snowball, your loop, a big number, a shield,
    a check mark, or one of the moving research pictures from Talk it through and Rekindle. Ported from the legacy lxArt and friends, in the lesson's unit color. Each one settles in once when it
    appears: the icons pop in, a chain shows one step at a time, a dot rides the wave up and over, and a big number counts up.
    With Reduce Motion on, they show as they end. */
@@ -9,30 +9,40 @@ import { Text } from '@/components/text';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { RkArtView } from '@/components/rk-art';
+import { Shape, type ShapeKind } from '@/components/shapes';
 import { TalkArtView } from '@/components/talk-art';
 import { Icon } from '@/components/ui';
 import { pop, rise, useAppear, useReducedMotion } from '@/lib/motion';
 import { font, useTheme, type Tone } from '@/lib/theme';
 
-export function LxIco({ name, t, size = 120 }: { name: string; t: Tone; size?: number }) {
+/* art labels read as plain words, whatever the lesson's data has them in */
+const plain = (x: string) => (x === x.toUpperCase() ? x.charAt(0) + x.slice(1).toLowerCase() : x);
+
+/* the soft shapes a lesson's picture wears; each icon always gets the same one, so a lesson keeps its look */
+const ICO_SHAPES: ShapeKind[] = ['cookie9', 'sunny', 'clover4', 'cookie12', 'flower', 'softBurst', 'puffy', 'cookie6'];
+const shapeOf = (name: string) => ICO_SHAPES[Array.from(name).reduce((a, x) => a + x.charCodeAt(0), 0) % ICO_SHAPES.length];
+
+export function LxIco({ name, t, size = 150 }: { name: string; t: Tone; size?: number }) {
   const v = useAppear(0, 380);
   return (
-    <Animated.View
-      style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }, pop(v)]}>
-      <Icon name={name || 'sparkle'} size={size * 0.47} color={t.ic} />
+    <Animated.View style={pop(v)}>
+      <Shape kind={shapeOf(name || 'sparkle')} size={size} color={t.ic}>
+        {/* on the web the shape's drawing is placed absolutely and would paint over a plain child, so the icon is placed too */}
+        <View style={{ position: 'relative' }}>
+          <Icon name={name || 'sparkle'} size={Math.round(size * 0.42)} color={t.ink} />
+        </View>
+      </Shape>
     </Animated.View>
   );
 }
 
 export function LxShield({ t }: { t: Tone }) {
-  const c = useTheme();
   const v = useAppear(0, 420);
   return (
     <Animated.View style={pop(v)}>
-      <Svg width={120} height={120} viewBox="0 0 120 120" accessibilityLabel="A shield">
-        <Circle cx={60} cy={60} r={56} fill={t.soft} />
-        <Path d="M60 26l26 11v20c0 18-11 30-26 37-15-7-26-19-26-37V37z" fill={c.surface} stroke={t.ic} strokeWidth={4} strokeLinejoin="round" />
-        <Path d="M48 58l8 8 16-17" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+      <Svg width={130} height={130} viewBox="24 20 72 80" accessibilityLabel="A shield">
+        <Path d="M60 26l26 11v20c0 18-11 30-26 37-15-7-26-19-26-37V37z" fill={t.ic} stroke={t.ic} strokeWidth={4} strokeLinejoin="round" />
+        <Path d="M48 58l8 8 16-17" fill="none" stroke={t.ink} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
     </Animated.View>
   );
@@ -53,7 +63,6 @@ export function LxCheck() {
 }
 
 function Chain({ nodes, icons, t }: { nodes: string[]; icons?: string[]; t: Tone }) {
-  const c = useTheme();
   const dense = nodes.length >= 5;
   return (
     <View style={{ alignSelf: 'stretch', alignItems: 'center' }} accessible accessibilityLabel={nodes.join(', then ')}>
@@ -69,16 +78,12 @@ function Chain({ nodes, icons, t }: { nodes: string[]; icons?: string[]; t: Tone
                 alignItems: 'center',
                 gap: 12,
                 paddingVertical: dense ? 8 : 12,
-                paddingHorizontal: 14,
-                borderRadius: 16,
+                paddingHorizontal: 16,
+                borderRadius: 12,
                 backgroundColor: hot ? t.ic : t.soft,
               }}>
-              {icons && icons[i] ? (
-                <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={icons[i]} size={18} color={t.text} />
-                </View>
-              ) : null}
-              <Text style={{ fontFamily: font.display, fontSize: dense ? 16 : 19, color: hot ? t.ink : t.text }}>{n}</Text>
+              {icons && icons[i] ? <Icon name={icons[i]} size={18} color={hot ? t.ink : t.text} /> : null}
+              <Text style={{ fontFamily: font.display, fontSize: dense ? 15 : 17, color: hot ? t.ink : t.text }}>{n}</Text>
             </View>
           </Step>
         );
@@ -117,14 +122,14 @@ function Wave({ t, al }: { t: Tone; al?: string }) {
       <Svg width="100%" height={150} viewBox="0 0 330 150" accessibilityLabel={al || 'An urge rises, peaks, and falls like a wave'}>
         <Path d="M8 128 C70 128 96 26 165 26 S262 128 322 128" fill="none" stroke={t.ic} strokeWidth={5} strokeLinecap="round" />
         {still || !w ? <Circle cx={165} cy={26} r={8} fill={t.ic} /> : null}
-        <SvgText x={52} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-          RISES
+        <SvgText x={52} y={146} fontSize={11} fontWeight="700" fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          Rises
         </SvgText>
-        <SvgText x={165} y={14} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-          PEAKS
+        <SvgText x={165} y={14} fontSize={11} fontWeight="700" fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          Peaks
         </SvgText>
-        <SvgText x={278} y={146} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-          PASSES
+        <SvgText x={278} y={146} fontSize={11} fontWeight="700" fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+          Passes
         </SvgText>
       </Svg>
       {w && !still ? (
@@ -160,11 +165,11 @@ function Snow({ t, o }: { t: Tone; o: { a?: string; b?: string; al?: string } })
       <Circle cx={110} cy={54} r={14} fill={t.soft} stroke={t.ic} strokeWidth={2} />
       <Circle cx={194} cy={75} r={24} fill={t.soft} stroke={t.ic} strokeWidth={2} />
       <Circle cx={288} cy={99} r={36} fill={t.ic} stroke={t.ic} strokeWidth={2} />
-      <SvgText x={43} y={16} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-        {o.a || 'ONE SLIP'}
+      <SvgText x={43} y={16} fontSize={11} fontWeight="700" fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+        {plain(o.a || 'One slip')}
       </SvgText>
-      <SvgText x={288} y={103} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={t.ink} textAnchor="middle" fontFamily={font.bodyBold}>
-        {o.b || 'GIVING UP'}
+      <SvgText x={288} y={103} fontSize={11} fontWeight="700" fill={t.ink} textAnchor="middle" fontFamily={font.bodyBold}>
+        {plain(o.b || 'Giving up')}
       </SvgText>
     </Svg>
   );
@@ -178,12 +183,12 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
     return (
       <View style={{ alignSelf: 'stretch', alignItems: 'center', gap: 8 }}>
         <Chain nodes={n} t={t} />
-        <Text style={{ fontFamily: font.body, fontSize: 13, color: c.muted, textAlign: 'center' }}>…and back to the start. {o.c || 'YOUR LOOP'}</Text>
+        <Text style={{ fontFamily: font.body, fontSize: 13, color: c.muted, textAlign: 'center' }}>…and back to the start. {plain(o.c || 'Your loop')}</Text>
       </View>
     );
   const box = (x: number, y: number, s: string) => (
     <G key={s + x + y}>
-      <Rect x={x} y={y} width={112} height={48} rx={16} fill={t.soft} />
+      <Rect x={x} y={y} width={112} height={48} rx={12} fill={c.surface} />
       <SvgText x={x + 56} y={y + 31} fontSize={17} fill={t.text} textAnchor="middle" fontFamily={font.display}>
         {s}
       </SvgText>
@@ -215,8 +220,8 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
       {arrow(260, 72, 260, 120)}
       {arrow(196, 150, 132, 150)}
       {arrow(70, 118, 70, 70)}
-      <SvgText x={165} y={100} fontSize={11} fontWeight="700" letterSpacing={1.1} fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
-        {o.c || 'YOUR LOOP'}
+      <SvgText x={165} y={100} fontSize={11} fontWeight="700" fill={c.muted} textAnchor="middle" fontFamily={font.bodyBold}>
+        {plain(o.c || 'Your loop')}
       </SvgText>
     </Svg>
   );

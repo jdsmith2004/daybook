@@ -1,5 +1,5 @@
-/* Milestones: your flame and its twelve forms, how points work, and your badges. Ported from the legacy
-   viewMiles and rewardsBody. */
+/* Milestones: your flame, big, in its own sky, who you are becoming, graduation, the twelve forms it grows through, how points
+   work, and your badges (the biggest ones first, the rest one tap away). Ported from the legacy viewMiles and rewardsBody. */
 import {
   badgeDone,
   fmtDate,
@@ -20,28 +20,48 @@ import {
   stageState,
   STEPS,
 } from '@daybook/core';
-import { Redirect, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '@/components/text';
+import { StatusBar } from 'expo-status-bar';
+import { Redirect, router, useIsFocused } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BadgeArt } from '@/components/celebrate';
+import { Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
-import { GradCap, GradFlame } from '@/components/grad';
+import { FlameSky } from '@/components/flame-sky';
 import { Collapse } from '@/components/form';
+import { GradCap } from '@/components/grad';
+import { skyInk } from '@/components/hero';
+import { Medal } from '@/components/medal';
 import { PointsList } from '@/components/points-list';
 import { Screen } from '@/components/screen';
-import { Bar, Button, Card, Icon, T } from '@/components/ui';
+import { Text } from '@/components/text';
+import { Bar, Card, Icon, T } from '@/components/ui';
+import { useBackLabel, useOverModal } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+
+/** a form in the row of twelve */
+const FORM_W = 132;
+const FORM_GAP = 12;
+/** how many badges show before See all */
+const EARNED_CAP = 6;
+const CLOSE_CAP = 3;
 
 export default function Miles() {
   const c = useTheme();
   const { snap, tk } = useStore();
   const st = snap.settings;
+  const inset = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const over = useOverModal();
+  const focused = useIsFocused();
+  const backLabel = useBackLabel('More');
+  const forms = useRef<ScrollViewInstance>(null);
   const [how, setHow] = useState(false);
+  const [all, setAll] = useState(false);
   /* the page frame, your level, who you are becoming and graduation show at once; the twelve flame forms (SVG) and the badges
-     (more than forty small drawings) come right after, in two steps, so the page is never blank while they draw */
+     (small drawings) come right after, in two steps, so the page is never blank while they draw */
   const [fill, setFill] = useState(0);
   useEffect(() => {
     const a = setTimeout(() => setFill(1), 30);
@@ -60,44 +80,94 @@ export default function Miles() {
   const who = [...recordLines(snap.days, st, tk), ...identityLines(snap.days, st, snap.reviews, tk)];
   const back = hoursBack(snap.days, st, tk);
   const todo = shown.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
+  /* the biggest wins first */
+  const big = [...earned].sort((a, b) => b.goal - a.goal);
+  const ink = skyInk(lvl.n);
+  /* on iOS a page opened over a sheet is itself a card below the status bar (components/screen.tsx) */
+  const top = Platform.OS === 'ios' && over ? 0 : inset.top;
+  const FOOT = 84;
+  const sky = Math.round(Math.max(320, Math.min(460, height * 0.52)));
+  const flame = Math.round(Math.min(width, sky - top - FOOT - 24));
+  const badge = (b: (typeof shown)[number]) => {
+    const d = badgeDone(b, st);
+    return (
+      <Pressable
+        key={b.id}
+        accessibilityRole="button"
+        accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
+        onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
+        style={({ pressed }) => [s.badge, { opacity: pressed ? 0.7 : 1 }]}>
+        <Medal id={b.id} icon={b.icon} tone={b.tone} size={64} earned={d} />
+        <T v="small" style={{ fontFamily: font.bodySemi, textAlign: 'center' }} numberOfLines={2}>
+          {b.name}
+        </T>
+        <T v="small" tone="muted">
+          {d ? 'Earned' : b.now + ' of ' + b.goal}
+        </T>
+      </Pressable>
+    );
+  };
   return (
-    <Screen title="Milestones" sub={<T tone="muted">Your flame, graduation, and your badges.</T>} back="More">
-      <Card>
-        <View style={s.lvl}>
-          <GradFlame level={lvl.n} size={124} />
-          <View style={{ flex: 1, gap: 4 }}>
+    <Screen
+      title="Milestones"
+      bare
+      top={
+        <FlameSky level={lvl.n} height={sky} flame={flame} foot={FOOT - 18}>
+          <View style={[s.head, { top: top + 4 }]} pointerEvents="box-none">
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`}
-              onPress={() => router.push('/growth')}
-              style={[s.pill, { backgroundColor: c.accentSoft }]}>
-              <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>
-                Level {lvl.n} of {LEVELS.length}
-              </Text>
-              <Icon name="next" size={14} color={c.accentText} />
+              accessibilityLabel={backLabel}
+              onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+              style={s.back}>
+              <Icon name="back" size={22} color={ink.ink} />
+              <T v="label" style={{ color: ink.ink }}>
+                {backLabel}
+              </T>
             </Pressable>
-            <T v="h2">{lvl.name}</T>
-            <T v="small" tone="muted">
-              {lvl.step}
-            </T>
-            <T>
-              <Text style={{ fontFamily: font.display, fontSize: 22 }}>{g.pts.toLocaleString('en-US')}</Text> points
-            </T>
-            <Bar frac={lvl.frac} from={c.sun} />
-            <T v="small" tone="muted">
-              {nextLine(lvl)}
+            <T v="title" accessibilityRole="header" style={{ color: ink.ink }}>
+              Milestones
             </T>
           </View>
-        </View>
-      </Card>
+          <View style={s.foot} pointerEvents="box-none">
+            <View style={{ flex: 1, gap: 2 }} pointerEvents="box-none">
+              <T v="title" style={{ color: ink.ink }}>
+                {lvl.name}
+              </T>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`}
+                onPress={() => router.push('/growth')}
+                hitSlop={12}
+                style={s.level}>
+                <T v="label" style={{ color: ink.ink }}>
+                  Level {lvl.n} of {LEVELS.length}
+                </T>
+                <Icon name="next" size={14} color={ink.ink} />
+              </Pressable>
+            </View>
+            <View style={{ alignItems: 'flex-end', gap: 2 }} accessible accessibilityLabel={`${g.pts.toLocaleString('en-US')} points`}>
+              <Text style={[s.pts, { color: ink.ink }]}>{g.pts.toLocaleString('en-US')}</Text>
+              <T v="label" style={{ color: ink.ink }}>
+                points
+              </T>
+            </View>
+          </View>
+        </FlameSky>
+      }>
+      {focused ? <StatusBar style={ink.light ? 'light' : 'dark'} /> : null}
+      <View style={{ gap: 8 }}>
+        <T>{lvl.step}</T>
+        <Bar frac={lvl.frac} from={c.sun} />
+        <T v="small" tone="muted">
+          {nextLine(lvl)}
+        </T>
+      </View>
       {who.length || back ? (
         <Card>
           <T v="h2">Who you are becoming</T>
           {who.map((x) => (
-            <View key={x.who} style={s.row}>
-              <View style={[s.whoIc, { backgroundColor: c.mintSoft }]}>
-                <Icon name={x.ic} size={18} color={c.mintText} />
-              </View>
+            <View key={x.who} style={s.who}>
+              <Icon name={x.ic} size={20} color={c.mintText} />
               <View style={{ flex: 1 }}>
                 <T v="label">{x.who}</T>
                 <T v="small" tone="muted">
@@ -114,8 +184,8 @@ export default function Miles() {
         </Card>
       ) : null}
       {gi.at ? (
-        <Card style={{ backgroundColor: c.sunSoft }}>
-          <View style={s.row}>
+        <Card tone="note">
+          <View style={s.who}>
             <GradCap size={52} />
             <View style={{ flex: 1, gap: 2 }}>
               <T v="h2">Graduated</T>
@@ -125,29 +195,26 @@ export default function Miles() {
             </View>
           </View>
           <T v="small">{gradLine(gi)}</T>
-          <Button kind="ghost" label="See your graduation" onPress={() => router.push('/graduated')} />
+          <View style={{ alignItems: 'flex-start', marginLeft: -6 }}>
+            <Link label="See your graduation" onPress={() => router.push('/graduated')} />
+          </View>
         </Card>
       ) : gi.show ? (
         <Card>
-          <View style={s.between}>
-            <T v="h2">Toward graduation</T>
-            <T v="small" tone="muted">
-              {gi.count} of {GRAD_DAYS}
-            </T>
-          </View>
+          <T v="h2">Toward graduation</T>
           <Bar frac={gi.count / GRAD_DAYS} from={c.accent} />
           <T v="small">{gradLine(gi)}</T>
           <T v="small" tone="muted">
-            A hard day takes one day off the count, never the rest. Graduation is a party and an award that stays yours, and Today stays just as it is.
+            A hard day takes one day off the count, never the rest. Graduation is an award that stays yours.
           </T>
         </Card>
       ) : (
-        <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
+        <T v="small" tone="muted">
           {GRAD_ABOUT}
         </T>
       )}
       {fill >= 1 ? (
-        <Card>
+        <View style={{ gap: 8, marginTop: 8 }}>
           <View style={s.between}>
             <T v="h2">Growth path</T>
             <T v="small" tone="muted">
@@ -155,43 +222,42 @@ export default function Miles() {
             </T>
           </View>
           <T v="small" tone="muted">
-            Your flame grows a little with every level and turns into something new every fifth one. Tap a form to see how it grows.
+            A new form every five levels. Tap one to see how it grows.
           </T>
-          {STAGES.map((sg, i) => {
-            const state = stageState(i, lvl);
-            const a = i * STEPS + 1;
-            const b = i * STEPS + STEPS;
-            const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
-            return (
-              <Pressable
-                key={i}
-                accessibilityRole="button"
-                accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
-                onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
-                style={[s.gp, { backgroundColor: state === 'now' ? c.sunSoft : c.surface2, borderColor: state === 'now' ? c.sun : 'transparent' }]}>
-                <Flame level={stageLevel(i, lvl)} size={56} locked={state === 'later'} label="" />
-                <View style={{ flex: 1 }}>
+          <ScrollView
+            ref={forms}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={s.forms}
+            contentContainerStyle={s.formsIn}
+            onContentSizeChange={() =>
+              forms.current?.scrollTo({ x: Math.max(0, lvl.stage * (FORM_W + FORM_GAP) - (width - FORM_W) / 2 + 16), animated: false })
+            }>
+            {STAGES.map((sg, i) => {
+              const state = stageState(i, lvl);
+              const a = i * STEPS + 1;
+              const b = i * STEPS + STEPS;
+              const say = state === 'done' ? 'reached' : state === 'now' ? 'you are here, level ' + lvl.n : 'starts at ' + stagePts(i) + ' points';
+              return (
+                <Pressable
+                  key={i}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
+                  onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
+                  style={({ pressed }) => [s.form, { opacity: pressed ? 0.7 : 1 }]}>
+                  <Flame level={stageLevel(i, lvl)} size={FORM_W} locked={state === 'later'} label="" />
                   <T v="label">{sg.name}</T>
-                  <T v="small" tone="muted">
-                    Levels {a} to {b}
+                  <T
+                    v="small"
+                    tone={state === 'now' ? 'sunText' : state === 'done' ? 'mintText' : 'muted'}
+                    style={state === 'now' ? { fontFamily: font.bodySemi } : null}>
+                    {state === 'done' ? 'Reached' : state === 'now' ? 'You are here' : stagePts(i) + ' points'}
                   </T>
-                </View>
-                {state === 'done' ? (
-                  <View style={s.row}>
-                    <Icon name="check" size={16} color={c.mintText} />
-                    <T v="small" tone="mintText">
-                      Reached
-                    </T>
-                  </View>
-                ) : (
-                  <T v="small" tone={state === 'now' ? 'sunText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
-                    {state === 'now' ? 'Level ' + lvl.n : stagePts(i) + ' pts'}
-                  </T>
-                )}
-              </Pressable>
-            );
-          })}
-        </Card>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
       ) : null}
       {fill >= 1 ? (
         <Collapse title="How points work" open={how} onToggle={() => setHow(!how)}>
@@ -199,50 +265,48 @@ export default function Miles() {
         </Collapse>
       ) : null}
       {fill >= 2 ? (
-        <Card>
+        <View style={{ gap: 8, marginTop: 8 }}>
           <View style={s.between}>
             <T v="h2">Badges</T>
             <T v="small" tone="muted">
               {earned.length} of {shown.length}
             </T>
           </View>
-          <View style={s.badges}>
-            {earned.concat(todo).map((b) => {
-              const d = badgeDone(b, st);
-              return (
-                <Pressable
-                  key={b.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
-                  onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
-                  style={s.badge}>
-                  <BadgeArt icon={b.icon} tone={b.tone} size={64} earned={d} />
-                  <T v="small" style={{ fontFamily: font.bodyBold, textAlign: 'center' }} numberOfLines={2}>
-                    {b.name}
-                  </T>
-                  <T v="small" tone="muted">
-                    {d ? 'Earned' : b.now + ' of ' + b.goal}
-                  </T>
-                </Pressable>
-              );
-            })}
-          </View>
-          <T v="small" tone="muted">
+          <View style={s.badges}>{all ? big.concat(todo).map(badge) : big.slice(0, EARNED_CAP).map(badge)}</View>
+          {!all && todo.length ? (
+            <>
+              <T v="label" style={{ marginTop: 8 }}>
+                Closest
+              </T>
+              <View style={s.badges}>{todo.slice(0, CLOSE_CAP).map(badge)}</View>
+            </>
+          ) : null}
+          {shown.length > EARNED_CAP + CLOSE_CAP ? (
+            <View style={{ alignItems: 'center' }}>
+              <Link label={all ? 'Show fewer' : 'See all ' + shown.length + ' badges'} onPress={() => setAll(!all)} />
+            </View>
+          ) : null}
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
             Badges are never taken away. A slip does not undo any of them.
           </T>
-        </Card>
+        </View>
       ) : null}
+      <View style={{ height: inset.bottom }} />
     </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  whoIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  lvl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 12, minHeight: 32, borderRadius: 999 },
+  head: { position: 'absolute', left: 16, right: 16, gap: 0 },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start', minHeight: 44, minWidth: 44, marginLeft: -4 },
+  foot: { position: 'absolute', left: 16, right: 16, bottom: 14, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  level: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start' },
+  pts: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  gp: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, borderRadius: 16, borderWidth: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  badge: { width: '31%', flexGrow: 1, alignItems: 'center', gap: 4, paddingVertical: 8 },
+  who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  forms: { marginHorizontal: -16, flexGrow: 0 },
+  formsIn: { paddingHorizontal: 16, gap: FORM_GAP },
+  form: { width: FORM_W, alignItems: 'center', gap: 2 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 },
+  badge: { width: '33.33%', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 4 },
 });

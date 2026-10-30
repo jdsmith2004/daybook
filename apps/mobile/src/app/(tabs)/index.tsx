@@ -309,8 +309,6 @@ export default function Today() {
             }
           />
         }>
-        <NotifyBanner />
-        <SyncStrip />
         <View style={{ gap: 8 }}>
           {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
           <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
@@ -318,6 +316,8 @@ export default function Today() {
           <LogLink />
           <WaitingPlan snap={snap} tk={tk} now={now} />
         </View>
+        <NotifyBanner />
+        <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         <YourDay snap={snap} tk={tk} now={now} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}

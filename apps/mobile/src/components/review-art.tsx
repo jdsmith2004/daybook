@@ -4,7 +4,7 @@
    them at rest. */
 import { LESSONS, SRC, type StoryDay, type StoryTeach, type StoryWeek } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { AnimatedText, Text } from '@/components/text';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -44,17 +44,31 @@ export function StoryBars({ n, i }: { n: number; i: number }) {
   );
 }
 
-/** one line of science under a screen: the words, the source to tap, and the lesson to read */
-export function Teach({ teach }: { teach: StoryTeach }) {
+/** one line of science under a screen: the words, the source to tap, and the lesson to read. folded: on a short phone with a
+    picture to read, it starts as one row, so the picture keeps its size */
+export function Teach({ teach, folded }: { teach: StoryTeach; folded?: boolean }) {
   const c = useTheme();
+  const [open, setOpen] = useState(false);
   const l = (LESSONS as unknown as { id: string; title: string }[]).find((x) => x.id === teach.l);
+  if (folded && !open)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: false }}
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => [s.fold, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+        <T v="eyebrow" style={{ flex: 1, color: c.violetText }}>
+          Why it matters
+        </T>
+        <Icon name="down" size={16} color={c.muted} />
+      </Pressable>
+    );
   return (
-    <View style={[s.teach, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-      <View style={s.teachHead}>
-        <Icon name="sparkle" size={15} color={c.violetText} />
-        <Text style={[s.eyebrow, { color: c.violetText }]}>WHY IT MATTERS</Text>
-      </View>
-      <T style={{ fontSize: 15, lineHeight: 22 }}>{teach.t}</T>
+    <View style={[s.teach, { backgroundColor: c.surface }]}>
+      <T v="eyebrow" style={{ color: c.violetText }}>
+        Why it matters
+      </T>
+      <T>{teach.t}</T>
       {/* the lesson, and where the science comes from: one small line, a bonus that never pushes the page past the screen */}
       <View style={s.teachFoot}>
         {l ? (
@@ -135,10 +149,10 @@ export function RideWave({ mins }: { mins: number | null }) {
         </Animated.View>
       </View>
       <View style={s.waveL}>
-        {['RISES', 'PEAKS', 'PASSES'].map((x) => (
-          <Text key={x} style={[s.eyebrow, { color: c.muted }]}>
+        {['Rises', 'Peaks', 'Passes'].map((x) => (
+          <T key={x} v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
             {x}
-          </Text>
+          </T>
         ))}
       </View>
       {mins ? (
@@ -181,7 +195,7 @@ export function TrigBars({ rows }: { rows: { id: string; t: string; rode: number
   const c = useTheme();
   const max = Math.max(1, ...rows.map((r) => r.rode + r.slipped));
   return (
-    <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+    <View style={[s.card, { backgroundColor: c.surface }]}>
       {rows.map((r, i) => (
         <TrigRow key={r.id} t={r.t} rode={r.rode} slipped={r.slipped} max={max} i={i} />
       ))}
@@ -209,10 +223,8 @@ function HelpRow({ r, i, top }: { r: { t: string; ev: string; ic: string }; i: n
   const v = useOnce(200 + i * 170, 480);
   const t = toneOf(c, top ? 'sun' : 'mint');
   return (
-    <Animated.View style={[s.help, { backgroundColor: c.surface, borderColor: top ? c.sun : c.cardEdge }, pop(v)]}>
-      <View style={[s.helpIc, { backgroundColor: t.soft }]}>
-        <Icon name={r.ic} size={22} color={t.text} />
-      </View>
+    <Animated.View style={[s.help, { backgroundColor: c.surface }, pop(v)]}>
+      <Icon name={r.ic} size={22} color={t.text} />
       <View style={{ flex: 1 }}>
         <T v="label">{r.t}</T>
         <T v="small" tone="muted">
@@ -237,24 +249,24 @@ export function HelpList({ rows }: { rows: { id: string; t: string; ev: string; 
 function Ring({ frac, label, value, col, i }: { frac: number; label: string; value: string; col: string; i: number }) {
   const c = useTheme();
   const v = useOnce(200 + i * 160, 900, false);
-  const R = 30;
+  const R = 26;
   const L = 2 * Math.PI * R;
   return (
     <View style={s.ring} accessible accessibilityLabel={label + ': ' + value}>
-      <View style={{ width: 76, height: 76, alignItems: 'center', justifyContent: 'center' }}>
-        <Svg width={76} height={76} style={StyleSheet.absoluteFill}>
-          <Circle cx={38} cy={38} r={R} stroke={c.surface2} strokeWidth={8} fill="none" />
+      <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={64} height={64} style={StyleSheet.absoluteFill}>
+          <Circle cx={32} cy={32} r={R} stroke={c.surface2} strokeWidth={7} fill="none" />
           <AnimatedCircle
-            cx={38}
-            cy={38}
+            cx={32}
+            cy={32}
             r={R}
             stroke={col}
-            strokeWidth={8}
+            strokeWidth={7}
             fill="none"
             strokeLinecap="round"
             strokeDasharray={`${L} ${L}`}
             strokeDashoffset={v.interpolate({ inputRange: [0, 1], outputRange: [L, L * (1 - Math.max(0.02, Math.min(1, frac)))] })}
-            transform="rotate(-90 38 38)"
+            transform="rotate(-90 32 32)"
           />
         </Svg>
         <Text style={[s.ringV, { color: c.ink }]}>{value}</Text>
@@ -269,7 +281,7 @@ export function Rings({ base }: { base: { days: number; sleep: number | null; ph
   const c = useTheme();
   const n = Math.max(1, base.days);
   return (
-    <View style={[s.card, s.rings, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+    <View style={[s.card, s.rings, { backgroundColor: c.surface }]}>
       <Ring i={0} frac={base.sleep != null ? base.sleep / 8 : 0} label="Sleep" value={base.sleep != null ? base.sleep + ' h' : '–'} col={c.violet} />
       <Ring i={1} frac={base.phone / n} label="Phone away" value={base.phone + '/' + n} col={c.sky} />
       <Ring i={2} frac={base.checkins / n} label="Check-ins" value={base.checkins + '/' + n} col={c.mint} />
@@ -331,7 +343,7 @@ export function WeekBars({ weeks }: { weeks: StoryWeek[] }) {
   const max = 7;
   return (
     <View
-      style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge }]}
+      style={[s.card, { backgroundColor: c.surface }]}
       accessible
       accessibilityLabel={'Days with no slip, week by week: ' + weeks.map((w) => w.noSlip).join(', ')}>
       <View style={s.wks}>
@@ -356,9 +368,8 @@ export function Big({ children, color, delay = 150 }: { children: React.ReactNod
 const s = StyleSheet.create({
   bars: { flexDirection: 'row', gap: 4, alignSelf: 'stretch' },
   bar: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
-  eyebrow: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
-  teach: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
-  teachHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  teach: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 20 },
+  fold: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 16, borderRadius: 20 },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
   lessonT: { fontFamily: font.bodySemi, fontSize: 13, textDecorationLine: 'underline', flexShrink: 1 },
   teachFoot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
@@ -368,14 +379,13 @@ const s = StyleSheet.create({
   dayL: { fontFamily: font.bodyBold, fontSize: 13 },
   waveL: { width: 300, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, marginTop: 6 },
-  card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20, borderWidth: 1.5 },
+  card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20 },
   between: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   track: { flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden' },
   legend: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
-  help: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, borderWidth: 1.5 },
-  helpIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  rings: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 8 },
-  ring: { alignItems: 'center', gap: 6, width: 76 },
+  help: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
+  rings: { flexDirection: 'row', gap: 4 },
+  ring: { flex: 1, alignItems: 'center', gap: 4 },
   ringV: { fontFamily: font.display, fontSize: 15 },
   goalDots: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
   goalDot: { width: 38, height: 38, borderRadius: 19, borderWidth: 2.5, overflow: 'hidden' },

@@ -1,4 +1,4 @@
-/* Answers that feel good to touch: a raised card with a colored icon, the words, and a short line. It sinks a little
+/* Answers that feel good to touch: a raised card with an icon at its own size, the words, and a short line. It sinks a little
    under the finger, springs back, and when picked it fills with its color and shows a check that pops in. Answer is
    one row (one choice, or one of several with multi); AnswerChip is the small rounded kind for quick lists. */
 import { useEffect, useRef } from 'react';
@@ -72,11 +72,7 @@ export function Answer({
             ],
           },
         ]}>
-        {icon ? (
-          <View style={[s.ic, { backgroundColor: on ? t.ic : t.soft }]}>
-            <Icon name={icon} size={22} color={on ? t.ink : t.text} />
-          </View>
-        ) : null}
+        {icon ? <Icon name={icon} size={22} color={t.text} /> : null}
         <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
           <Text style={[s.title, { color: c.ink }]}>{title}</Text>
           {sub ? <Text style={[s.sub, { color: c.muted }]}>{sub}</Text> : null}
@@ -120,8 +116,6 @@ export function AnswerChip({ label, on, tone = 'accent', onPress }: { label: str
           s.chip,
           {
             backgroundColor: fill.interpolate({ inputRange: [0, 1], outputRange: [c.surface, t.ic] }),
-            shadowColor: c.lip,
-            shadowOffset: { width: 0, height: 3 },
             transform: [{ translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, 2] }) }],
           },
         ]}>
@@ -140,25 +134,23 @@ const s = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     minHeight: 60,
     paddingVertical: 10,
-    paddingLeft: 12,
-    paddingRight: 14,
+    paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 2,
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 2,
   },
-  ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 21 },
+  title: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   sub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   mark: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   square: { borderRadius: 8 },
   dot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   squareDot: { borderRadius: 8 },
-  chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: 999, justifyContent: 'center', shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
+  chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: 999, justifyContent: 'center' },
   chipT: { fontFamily: font.bodySemi, fontSize: 15 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
 });

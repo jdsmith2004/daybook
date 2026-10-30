@@ -3,6 +3,7 @@ import { accountLater, accountWords, diffDays, type AcctWhy } from '@daybook/cor
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
+import { Link } from '@/components/choices';
 import { STORAGE_LINE } from '@/components/home-screen';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
@@ -17,7 +18,7 @@ export function AccountCard({ why, locked }: { why: AcctWhy; locked: number }) {
   const { snap, tk, apply } = useStore();
   const w = accountWords(why, locked, diffDays(tk, snap.settings!.start), TIP_ON);
   return (
-    <Card style={{ backgroundColor: c.skySoft, borderColor: c.skySoft }}>
+    <Card style={{ backgroundColor: c.skySoft }}>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
         <Icon name="shield" size={22} color={c.skyText} />
         <T v="label" style={{ flex: 1 }}>
@@ -26,9 +27,9 @@ export function AccountCard({ why, locked }: { why: AcctWhy; locked: number }) {
       </View>
       <T v="small">{w.p}</T>
       {STORAGE_LINE ? <T v="small">{STORAGE_LINE}</T> : null}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
-        <Button kind="ghost" label="Not now" onPress={() => apply(accountLater(snap.settings!, tk))} />
+      <Button label="Create an account or sign in" onPress={() => sync.signInNow()} />
+      <View style={{ alignItems: 'center', marginVertical: -4 }}>
+        <Link label="Not now" onPress={() => apply(accountLater(snap.settings!, tk))} />
       </View>
       <T v="small" tone="muted">
         Free, private to you, and you can delete it any time. <LinkText label="What is kept" onPress={() => router.push('/privacy')} />

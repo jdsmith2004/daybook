@@ -23,7 +23,7 @@ import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
 import { FeelMove } from './feel-move';
 import { StackMove } from './stack';
-import { Button, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
@@ -122,7 +122,13 @@ export function SqueezeMove({ on, onDone }: MoveProps) {
         <WavyRing size={250} p={hold ? x / HOLD : all ? 1 : 1 - (x - HOLD) / REST} color={c.coral} track={c.coral + '2E'} stroke={6} speed={0}>
           <Reanimated.View style={clench}>
             <MorphShape kind={hold ? 'cookie4' : 'cookie12'} size={190} color={hold ? c.coral : c.coralSoft}>
-              <Text style={[s.count, { color: hold ? '#FFFFFF' : c.coralText }]}>{hold ? left : all ? '✓' : ''}</Text>
+              {all ? (
+                <View>
+                  <Icon name="check" size={56} color={c.coralText} />
+                </View>
+              ) : (
+                <Text style={[s.count, { color: hold ? '#FFFFFF' : c.coralText }]}>{hold ? left : ''}</Text>
+              )}
             </MorphShape>
           </Reanimated.View>
         </WavyRing>
@@ -169,7 +175,13 @@ export function GroundMove({ on, onDone }: MoveProps) {
           }}>
           <Reanimated.View style={st}>
             <MorphShape kind={(['sunny', 'clover4', 'cookie6', 'puffy', 'heart'] as ShapeKind[])[i % 5]} size={210} color={tone}>
-              <Text style={[s.big, { color: '#FFFFFF' }]}>{all ? '✓' : left}</Text>
+              {all ? (
+                <View>
+                  <Icon name="check" size={72} color="#FFFFFF" />
+                </View>
+              ) : (
+                <Text style={[s.big, { color: '#FFFFFF' }]}>{left}</Text>
+              )}
             </MorphShape>
           </Reanimated.View>
         </Pressable>
@@ -204,10 +216,10 @@ export function LaterMove({ onDone, felt: felt0 }: MoveProps) {
     return (
       <View style={s.move}>
         <Words
-          head={first ? 'An hour after giving in, I feel...' : 'An hour after riding it out, I feel...'}
+          head={first ? 'An hour after giving in, I feel…' : 'An hour after riding it out, I feel…'}
           sub="Tap any that are true. Asked once, kept for next time."
         />
-        <View style={[s.mid, { justifyContent: 'flex-start', paddingTop: 8 }]}>
+        <View style={[s.mid, s.low]}>
           <Tiles list={first ? FWD_A : FWD_B} cur={first ? a : b} onPick={(v) => (first ? toggle(a, setA, v) : toggle(b, setB, v))} />
         </View>
         <Button
@@ -307,7 +319,7 @@ export function SayMove({ onDone }: MoveProps) {
     return (
       <View style={s.move}>
         <Words head="Which thought is loudest?" sub="Pick the one the urge is saying." />
-        <View style={[s.mid, { justifyContent: 'flex-start', paddingTop: 8 }]}>
+        <View style={[s.mid, s.low]}>
           <Tiles
             list={THOUGHTS}
             cur={last}
@@ -356,8 +368,8 @@ export function WordsMove({ on, onDone }: MoveProps) {
       <Words head="Read it slowly" sub="Out loud, if you can." />
       <View style={s.mid}>
         <View style={[s.note, { backgroundColor: c.sunSoft }]}>
-          <T v="small" tone="sunText" style={{ fontFamily: font.bodyBold, letterSpacing: 1 }}>
-            {(fy?.cap || 'From you').toUpperCase()}
+          <T v="eyebrow" tone="sunText">
+            {fy?.cap || 'From you'}
           </T>
           <Text style={[s.noteT, { color: c.ink }]}>{fy?.t || ''}</Text>
           <SosVoice />
@@ -444,23 +456,24 @@ const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   words: { minHeight: 92, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
   head: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 36, textAlign: 'center' },
-  left: { textAlign: 'left', fontSize: 22, lineHeight: 27 },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  /* choices sit low, where the thumb is */
+  low: { justifyContent: 'flex-end' },
   count: { fontFamily: font.displayBold, fontSize: 64, lineHeight: 72, fontVariant: ['tabular-nums'] },
   big: { fontFamily: font.displayBold, fontSize: 84, lineHeight: 92, fontVariant: ['tabular-nums'] },
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'center', width: 160 },
   step: { flex: 1, height: 6, borderRadius: 3 },
   line: { alignItems: 'center' },
   now: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999 },
-  felt: { alignSelf: 'center', maxWidth: 340, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
+  felt: { alignSelf: 'center', maxWidth: 340, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
   two: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
-  hour: { flex: 1, gap: 4, padding: 14, borderRadius: 22, minHeight: 120, borderColor: 'transparent', borderWidth: 3 },
-  hourT: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
-  tomorrow: { alignSelf: 'stretch', gap: 2, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18 },
+  hour: { flex: 1, gap: 4, padding: 14, borderRadius: 20, minHeight: 120, borderColor: 'transparent', borderWidth: 3 },
+  hourT: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
+  tomorrow: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 20 },
   tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   quiet: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
-  note: { alignSelf: 'stretch', gap: 8, padding: 22, borderRadius: 26 },
-  noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
+  note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
+  noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
 });

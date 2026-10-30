@@ -10,6 +10,7 @@ import {
   isTime,
   keyOfDate,
   LEARN_FREE,
+  gameCompute,
   levelOf,
   OB_BE,
   OB_PAGES,
@@ -38,7 +39,6 @@ import {
   obSave,
   obSosLine,
   obWave,
-  emblemLayers,
   obSrc,
   obSug,
   obThenOpts,
@@ -57,7 +57,6 @@ import {
   type RecordId,
   type Settings,
   type SetupAnswers,
-  LESSONS,
   LIKE_WORDS,
   likeAnswer,
   likeAskDue,
@@ -68,7 +67,6 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';
@@ -76,11 +74,11 @@ import { Confetti } from '@/components/celebrate';
 import { Field } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { FitArt, SHORT } from '@/components/fit';
-import { Flame } from '@/components/flame';
-import { LessonArt, LxCheck } from '@/components/lesson-art';
+import { FlameMedallion } from '@/components/flame-medallion';
+import { LessonArt } from '@/components/lesson-art';
 import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
-import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicToday, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
+import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
 import { useClock } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
 import { TIP_ON } from '@/components/support';
@@ -158,6 +156,8 @@ export default function Setup() {
   const a = f.a;
   const sec = OB_SECS.find((x) => x[0] === pg.s) || OB_SECS[0];
   const t = toneOf(c, sec[2]);
+  /* the flame as it is now: a spark for a new person, the grown form on a walk-through */
+  const flameLevel = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
 
   /* a log arrived some other way (a restored backup) while a new person was in the setup: the setup steps aside */
   useEffect(() => {
@@ -309,8 +309,6 @@ export default function Setup() {
       </T>
     ) : null;
   };
-  /* the scene pages have no card: the art sits big on the act's sky. Every other page is a question or a teaching card. */
-  const bare = ['hello', 'hours', 'waves', 'breathe', 'curve', 'tries', 'slip'].includes(pg.k) || (pg.k === 'done' && !f.redo);
   const W = Math.min(win.width, MAX_WIDTH) - 32;
 
   switch (pg.k) {
@@ -320,8 +318,8 @@ export default function Setup() {
         <>
           <Head h="Walk through it again." sub="Nothing changes until the last page." />
           <Middle>
-            <FitArt min={0.45}>
-              <PicToday />
+            <FitArt min={0.5}>
+              <FlameMedallion level={flameLevel} size={220} label="Your flame" />
             </FitArt>
           </Middle>
           {prev && prev.at ? (
@@ -343,8 +341,9 @@ export default function Setup() {
             sub="A plan built from your answers, help when urges hit, and progress you can see. Free. No ads, no subscription."
           />
           <Middle>
-            <FitArt min={0.45}>
-              <PicToday />
+            {/* the first thing a new person sees: the flame, big and alive, the same one they will watch grow */}
+            <FitArt min={0.5}>
+              <FlameMedallion level={1} size={240} label="Your flame" />
             </FitArt>
           </Middle>
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
@@ -356,12 +355,7 @@ export default function Setup() {
                 onPress={() => sync.signInNow({ why: 'in' })}
               />
             ) : null}
-            {BACKUP_FILES ? (
-              <>
-                {sync.status.k !== 'off' && sync.status.k !== 'on' ? <Text style={{ color: c.muted }}>·</Text> : null}
-                <TextLink label="I have a backup file" onPress={restore} />
-              </>
-            ) : null}
+            {BACKUP_FILES ? <TextLink label="I have a backup file" onPress={restore} /> : null}
           </View>
         </>
       );
@@ -378,12 +372,12 @@ export default function Setup() {
                 const at = toneOf(c, x[2]);
                 const time = ACT_TIME[x[0]] || '';
                 return (
-                  <View key={x[0]} style={[s.act, { backgroundColor: at.soft }]} accessible accessibilityLabel={`${x[1]} · ${time}`}>
-                    <ShapePic id={ACT_SHAPE[x[0]] || 'pause'} ic={x[3]} t={at} size={52} />
-                    <T style={s.actT}>
-                      <Text style={{ fontFamily: font.bodyBold, color: at.text }}>{x[1]}</Text>
-                      <Text style={{ color: c.muted }}> · {time}</Text>
-                    </T>
+                  <View key={x[0]} style={s.act} accessible accessibilityLabel={`${x[1]} · ${time}`}>
+                    <ShapePic id={ACT_SHAPE[x[0]] || 'pause'} ic={x[3]} t={at} size={64} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.actT, { color: c.ink }]}>{x[1]}</Text>
+                      <T tone="muted">{time}</T>
+                    </View>
                   </View>
                 );
               })}
@@ -400,7 +394,7 @@ export default function Setup() {
       body = (
         <>
           <Head h={pg.h!} sub={pg.sub} />
-          <QArt pg={pg} t={t} />
+          <QArt pg={pg} t={t} level={flameLevel} />
           <IconTiles
             list={pg.list!}
             cols={pg.k === 'years' ? 1 : pg.cols || 1}
@@ -455,12 +449,7 @@ export default function Setup() {
           <Head h="In the last 6 months, how often is this true for you?" small />
           {/* the statement, big, in the middle; the three answers low, as one row */}
           <Middle>
-            <View style={[s.quote, { backgroundColor: t.soft }]}>
-              <Text style={[s.quoteM, { color: t.ic }]} accessibilityElementsHidden importantForAccessibility="no">
-                “
-              </Text>
-              <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
-            </View>
+            <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
           </Middle>
           <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
             {OB_BPS_C.map(([id, label], j) => {
@@ -476,9 +465,9 @@ export default function Setup() {
                     s.freq,
                     {
                       backgroundColor: on ? t.soft : c.surface,
-                      borderColor: on ? t.ic : c.line,
+                      borderColor: on ? t.ic : 'transparent',
                       shadowColor: c.lip,
-                      transform: [{ translateY: pressed ? 2 : 0 }],
+                      transform: [{ translateY: pressed ? 3 : 0 }],
                     },
                   ]}>
                   <FreqDot n={j} col={t.ic} />
@@ -713,9 +702,7 @@ export default function Setup() {
           <View style={{ gap: 10 }}>
             {goals.map((g) => (
               <Opt key={g.id} on={v === g.id} t={t} onPress={() => pick('goal', g.id, false)}>
-                <View style={[s.ti, { backgroundColor: t.soft }]}>
-                  <Icon name={g.ic} size={22} color={t.text} />
-                </View>
+                <Icon name={g.ic} size={24} color={t.text} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={[s.optT, { color: c.ink }]}>{g.t}</Text>
                   <T v="small" tone="muted">
@@ -761,7 +748,7 @@ export default function Setup() {
                     s.pill,
                     {
                       backgroundColor: on ? t.soft : c.surface,
-                      borderColor: on ? t.ic : c.line,
+                      borderColor: on ? t.ic : 'transparent',
                     },
                   ]}>
                   {on ? <Icon name="check" size={16} color={t.text} /> : null}
@@ -921,19 +908,19 @@ export default function Setup() {
               <FitArt min={SHORT ? 0.7 : 0.9}>
                 <Appear by={12} delay={PLAN_AT} duration={320}>
                   <View style={s.day1}>
-                    <PlanFlame lit={lit} size={SHORT ? 92 : 124} />
+                    <PlanFlame lit={lit} size={SHORT ? 100 : 132} />
                     <View style={{ gap: 2 }}>
                       <T v="label" tone="muted">
                         Day 1
                       </T>
-                      <Text style={{ fontFamily: font.display, fontSize: SHORT ? 24 : 28, lineHeight: SHORT ? 30 : 34, color: c.ink }}>
+                      <Text style={{ fontFamily: font.display, fontSize: SHORT ? 22 : 28, lineHeight: SHORT ? 28 : 34, color: c.ink }}>
                         {obDate(obDay1(g, null, tk))}
                       </Text>
                     </View>
                   </View>
                 </Appear>
               </FitArt>
-              <View style={[s.plan, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+              <View style={[s.plan, { backgroundColor: c.surface }]}>
                 {[
                   <PlanRow key="g" icon="flag" l="Goal" v={g.t} first />,
                   <View key="sp" style={[s.planRow, { borderTopColor: c.line, gap: 10 }]}>
@@ -996,7 +983,7 @@ export default function Setup() {
                         s.ch,
                         {
                           backgroundColor: c.surface,
-                          borderColor: on ? t.ic : c.line,
+                          borderColor: on ? t.ic : 'transparent',
                         },
                       ]}>
                       <View
@@ -1090,7 +1077,7 @@ export default function Setup() {
                 key={x}
                 on={remAt === x}
                 t={t}
-                style={{ flexBasis: '30%', flexGrow: 1, justifyContent: 'center' }}
+                style={{ flexBasis: '30%', flexGrow: 1, justifyContent: 'center', paddingHorizontal: 8 }}
                 onPress={() => {
                   setRemAt(x);
                   buzz('tap');
@@ -1121,15 +1108,8 @@ export default function Setup() {
         <>
           <Head h="Your plan is ready. Make it yours." />
           <Middle>
-            <FitArt min={0.5} drop={0.5}>
-              <View style={s.orbWrap}>
-                <LinearGradient colors={[c.accent, c.sky]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={s.orb} />
-                <View style={[s.orbDot, { backgroundColor: c.mint, top: 6, left: 4 }]} />
-                <View style={[s.orbDot, { backgroundColor: c.sun, width: 22, height: 22, bottom: 10, right: 0 }]} />
-                <View style={{ zIndex: 1 }}>
-                  <Icon name="shield" size={60} color={c.accentInk} />
-                </View>
-              </View>
+            <FitArt min={0.6}>
+              <FlameMedallion level={2} size={200} label="Your flame" />
             </FitArt>
           </Middle>
           <View style={{ gap: 8 }}>
@@ -1174,7 +1154,7 @@ export default function Setup() {
               }
             />
             <Middle>
-              <LxCheck />
+              <FlameMedallion level={flameLevel} size={200} label="Your flame" />
             </Middle>
             <Route label="Read my plan" onPress={() => !busy() && router.replace('/plan')} />
           </>
@@ -1206,7 +1186,7 @@ export default function Setup() {
       title={sec[1]}
       sky={sec[2] as Sky}
       bar={{ frac, label: barLabel, color: fin ? c.mint : t.ic }}
-      bare={bare}
+      bare
       onBack={noBack ? null : () => !f.saved && go(-1)}
       onClose={exit}
       topRight={
@@ -1333,7 +1313,7 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
           p={gone / BREATHE_SECS}
           left={(BREATHE_SECS - gone) * 1000}
           sec={sec}
-          beat={BREATHE_BEAT}
+          beat={done ? BEAT_BREATH : BREATHE_BEAT}
           label={done ? 'Well done' : 'Breathing'}
           color={c.scheme === 'dark' ? c.sun : c.accent}
           ink={c.accentText}
@@ -1346,7 +1326,6 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
 /* the freq and mins pages: the picture big on its own with a muted "Slide to answer" under it; once there is an answer, the picture
    settles smaller above the chosen words. The block under the picture keeps one height, so nothing jumps. */
 function SlideShow({ idx, pic, words, grow }: { idx: number; pic: ReactNode; words: string | null; grow: number }) {
-  const c = useTheme();
   const reduce = useReducedMotion();
   const BIG = SHORT ? Math.min(grow, 1.12) : grow;
   const k = useRef(new Animated.Value(idx >= 0 ? 0 : 1)).current;
@@ -1411,9 +1390,15 @@ function Show({
 function Head({ h, sub, small }: { h: string; sub?: ReactNode; small?: boolean }) {
   return (
     <View style={s.head}>
-      <T v="title" style={[s.c, small ? s.titleSm : SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
-        {h}
-      </T>
+      {small ? (
+        <T tone="muted" style={[s.c, s.p]} accessibilityRole="header">
+          {h}
+        </T>
+      ) : (
+        <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
+          {h}
+        </T>
+      )}
       {typeof sub === 'string' ? (
         <T tone="muted" style={[s.c, s.p]}>
           {sub}
@@ -1433,12 +1418,16 @@ const PAGE_SHAPE: Record<string, string> = { years: 'pause', faith: 'breathe', t
 const ACT_SHAPE: Record<string, string> = { you: 'curious', hour: 'breathe', plan: 'surprise' };
 const ACT_TIME: Record<string, string> = { you: 'about 3 minutes', hour: 'about 2 minutes', plan: 'about 3 minutes' };
 /* the open middle of a one-tap page: the flame (alive) on the first question, else a shape with the page's icon */
-function QArt({ pg, t }: { pg: ObPage; t: Tone }) {
+function QArt({ pg, t, level }: { pg: ObPage; t: Tone; level: number }) {
   if (!pg.art) return <Middle>{null}</Middle>;
   return (
     <Middle>
       <FitArt min={0.5} drop={0.5}>
-        {pg.art === 'flame' ? <Flame level={1} size={120} alive /> : <ShapePic id={PAGE_SHAPE[pg.id] || 'pause'} ic={pg.art} t={t} size={110} />}
+        {pg.art === 'flame' ? (
+          <FlameMedallion level={level} size={170} label="Your flame" />
+        ) : (
+          <ShapePic id={PAGE_SHAPE[pg.id] || 'pause'} ic={pg.art} t={t} size={110} />
+        )}
       </FitArt>
     </Middle>
   );
@@ -1462,10 +1451,10 @@ function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPres
       style={({ pressed }) => [
         s.opt,
         {
-          borderColor: on ? t.ic : c.line,
+          borderColor: on ? t.ic : 'transparent',
           backgroundColor: on ? t.soft : c.surface,
           shadowColor: c.lip,
-          transform: [{ translateY: pressed ? 2 : 0 }],
+          transform: [{ translateY: pressed ? 3 : 0 }],
         },
         style,
       ]}>
@@ -1507,10 +1496,10 @@ function IconTiles({
               tall ? s.tall : null,
               cols === 2 ? { flexBasis: '46%', flexGrow: 1 } : { flexBasis: '100%' },
               {
-                borderColor: sel ? t.ic : c.line,
+                borderColor: sel ? t.ic : 'transparent',
                 backgroundColor: sel ? t.soft : c.surface,
                 shadowColor: c.lip,
-                transform: [{ translateY: pressed ? 2 : 0 }],
+                transform: [{ translateY: pressed ? 3 : 0 }],
               },
             ]}>
             {years ? (
@@ -1528,9 +1517,7 @@ function IconTiles({
                 ))}
               </View>
             ) : typeof it[2] === 'string' ? (
-              <View style={[s.tIc, { backgroundColor: sel ? c.surface : t.soft }]}>
-                <Icon name={it[2]} size={20} color={t.text} />
-              </View>
+              <Icon name={it[2]} size={24} color={t.text} />
             ) : null}
             <Text style={[s.optT, tall && s.tallT, { color: sel ? t.text : c.ink }]}>{it[1]}</Text>
             {sel ? (
@@ -1568,10 +1555,10 @@ function More({ more }: { more: { label: string; paras: string[]; keys: string[]
           flexDirection: 'row',
           alignItems: 'center',
           gap: 6,
-          minHeight: 40,
+          minHeight: 44,
         }}>
         <Icon name={open ? 'up' : 'down'} size={16} color={c.accentText} />
-        <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{more.label}</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: c.accentText }}>{more.label}</Text>
       </Pressable>
       {open ? (
         <View style={[s.more, { backgroundColor: c.surface2 }]}>
@@ -1605,18 +1592,15 @@ function SosRow() {
       accessibilityRole="button"
       accessibilityLabel="Having an urge right now? Open SOS first. No setup needed."
       onPress={() => router.push('/sos')}
-      style={({ pressed }) => [
-        s.sosRow,
-        { backgroundColor: c.sos, shadowColor: c.sosDeep, shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] },
-      ]}>
-      <View style={[s.sosIc, { backgroundColor: c.sosSoft }]}>
-        <Icon name="life" size={22} color={c.sosInk} />
-      </View>
+      style={({ pressed }) => [s.sosRow, { backgroundColor: c.surface, opacity: pressed ? 0.75 : 1 }]}>
+      <Icon name="life" size={24} color={c.sos} />
       <View style={{ flex: 1 }}>
-        <Text style={[s.sosRowB, { color: c.sosInk }]}>Having an urge right now?</Text>
-        <Text style={[s.sosRowS, { color: c.sosInk }]}>Open SOS first. No setup needed.</Text>
+        <T v="label">Having an urge right now?</T>
+        <T v="small" tone="muted">
+          Open SOS first. No setup needed.
+        </T>
       </View>
-      <Icon name="next" size={20} color={c.sosInk} />
+      <Icon name="next" size={18} color={c.muted} />
     </Pressable>
   );
 }
@@ -1629,7 +1613,6 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
           fontFamily: font.bodySemi,
           fontSize: 15,
           color: c.accentText,
-          textDecorationLine: 'underline',
         }}>
         {label}
       </Text>
@@ -1640,11 +1623,9 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
 const PLAN_AT = 200;
 const PLEDGE = 'I will log honestly, slips included.';
 const PLAN_STEP = 90;
-/** the flame on the review page: big and alive from the first moment, drawn the way the end of setup draws it (the figure fills
-    a round window, never a small spark in a big sky). It is a quiet flame until the hold is done; then it pops on a spring and
-    one slow bloom of light goes through it. With Reduce Motion on it is still. */
+/** the flame on the review page: big and alive from the first moment, the same one as on the first page. It is a quiet flame
+    until the hold is done; then it pops on a spring and one slow bloom of light goes through it. With Reduce Motion on it is still. */
 function PlanFlame({ lit, size }: { lit: boolean; size: number }) {
-  const c = useTheme();
   const reduce = useReducedMotion();
   const pop = useRef(new Animated.Value(1)).current;
   const first = useRef(true);
@@ -1657,16 +1638,9 @@ function PlanFlame({ lit, size }: { lit: boolean; size: number }) {
     pop.setValue(0.82);
     Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
   }, [lit, reduce, pop]);
-  const zoom = 3.2;
-  const big = size * zoom;
-  const at = useMemo(() => emblemLayers(1, false)?.at ?? { x: 0.5, y: 0.5 }, []);
   return (
     <Animated.View style={{ transform: [{ scale: pop }] }}>
-      <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', borderWidth: 4, borderColor: c.sun }}>
-        <View style={{ position: 'absolute', left: size / 2 - at.x * big, top: size / 2 - at.y * big }}>
-          <Flame level={1} size={big} alive pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame'} />
-        </View>
-      </View>
+      <FlameMedallion level={1} size={size} pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame'} />
     </Animated.View>
   );
 }
@@ -1995,127 +1969,93 @@ function Cheer() {
 
 const s = StyleSheet.create({
   remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
-  lock: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14 },
-  lockIc: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  lockT: { fontFamily: font.bodyBold, fontSize: 15 },
-  lockB: { fontFamily: font.body, fontSize: 15, lineHeight: 19 },
-  lockW: { fontFamily: font.body, fontSize: 12, alignSelf: 'flex-start' },
+  lock: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
+  lockIc: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  lockT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  lockB: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
+  lockW: { fontFamily: font.body, fontSize: 12, lineHeight: 16, alignSelf: 'flex-start' },
   c: { textAlign: 'center' },
-  page: { flexGrow: 1, alignSelf: 'stretch', gap: 14 },
+  page: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   /* the review page on a short phone: the plan, the flame and Hold to commit all on one screen */
   pageShort: { gap: 8 },
   head: { gap: 8, alignSelf: 'stretch' },
-  cheerQ: { fontFamily: font.bodyBold, fontSize: SHORT ? 19 : 21, lineHeight: SHORT ? 25 : 28, alignSelf: 'stretch' },
-  title26: { fontSize: 28, lineHeight: 31 },
-  titleShort: { fontSize: 22, lineHeight: 29 },
-  titleSm: { fontSize: 22, lineHeight: 27 },
+  cheerQ: { fontFamily: font.bodySemi, fontSize: SHORT ? 17 : 20, lineHeight: SHORT ? 22 : 25, alignSelf: 'stretch' },
+  title26: { fontSize: 28, lineHeight: 34 },
+  titleShort: { fontSize: 22, lineHeight: 28 },
   rows: { alignSelf: 'stretch', gap: 8 },
-  acts: { alignSelf: 'stretch', gap: 12 },
-  act: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 22 },
-  actT: { flex: 1, fontSize: 17, lineHeight: 24 },
+  acts: { alignSelf: 'stretch', gap: 24, paddingHorizontal: 16 },
+  act: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  actT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   huge: { fontFamily: font.displayBold, fontSize: SHORT ? 72 : 96, lineHeight: SHORT ? 78 : 104, fontVariant: ['tabular-nums'] },
   sosPill: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  sosPillT: { fontFamily: font.bodyBold, fontSize: 15 },
-  sosRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginTop: 6,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-  },
-  sosIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  sosRowB: { fontFamily: font.bodyBold, fontSize: 15 },
-  sosRowS: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
-  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: 8 },
-  orbWrap: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
-  orb: { position: 'absolute', left: 10, top: 10, right: 10, bottom: 10, borderRadius: 999 },
-  orbDot: { position: 'absolute', width: 30, height: 30, borderRadius: 999 },
-  p: { fontSize: SHORT ? 16 : 18, lineHeight: SHORT ? 23 : 26 },
-  quote: { alignSelf: 'stretch', minHeight: 170, justifyContent: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 24, borderRadius: 22 },
-  quoteM: { position: 'absolute', top: 6, left: 18, fontFamily: font.display, fontSize: 48, lineHeight: 52 },
-  quoteT: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
+  sosPillT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  /* the door to SOS on the first page: plain, so it does not shout over the way in; the red is in its icon and in the pill above */
+  sosRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: 16 },
+  p: { fontSize: SHORT ? 15 : 17, lineHeight: SHORT ? 21 : 24 },
+  quoteT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center', paddingHorizontal: 8 },
   freq: {
     flex: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 4,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  freqT: { fontFamily: font.bodySemi, fontSize: 15 },
+  freqT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   opt: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     minHeight: 56,
     paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
   },
   /* a time that sits beside an icon: its own width, never squeezed into two lines (flex: 0 gave the web a width of zero) */
   noWrap: { flexGrow: 0, flexBasis: 'auto' },
-  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 21 },
+  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   tile: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     minHeight: 56,
     paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  tall: { flexDirection: 'column', justifyContent: 'center', gap: 8, minHeight: 92, paddingHorizontal: 8 },
-  tallT: { flex: 0, textAlign: 'center', fontSize: 15 },
-  tIc: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  tick: { position: 'absolute', top: 7, right: 7, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  ti: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lv: {
-    width: 44,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2,
-    overflow: 'hidden',
-  },
-  grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  eq: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  tall: { flexDirection: 'column', justifyContent: 'center', gap: 8, minHeight: 88, paddingHorizontal: 8 },
+  tallT: { flex: 0, textAlign: 'center', fontSize: 15, lineHeight: 20 },
+  tick: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  eq: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   soft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 16,
+    gap: 12,
+    padding: 16,
+    borderRadius: 20,
   },
-  more: { gap: 8, padding: 12, borderRadius: 14 },
+  more: { gap: 8, padding: 16, borderRadius: 20 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row',
@@ -2123,37 +2063,38 @@ const s = StyleSheet.create({
     gap: 6,
     minHeight: 44,
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderRadius: 22,
     borderWidth: 2,
     maxWidth: '100%',
   },
   planVal: { fontSize: 15, lineHeight: 20 },
   day1: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  plan: { alignSelf: 'stretch', borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 14 },
+  plan: { alignSelf: 'stretch', borderRadius: 20, paddingHorizontal: 16 },
   planRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: SHORT ? 5 : 10,
-    borderTopWidth: 1,
+    paddingVertical: SHORT ? 4 : 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   pledge: {
     fontFamily: font.display,
-    fontSize: SHORT ? 18 : 20,
+    fontSize: SHORT ? 17 : 20,
+    lineHeight: SHORT ? 22 : 25,
     textAlign: 'center',
     marginTop: SHORT ? 0 : 4,
   },
   ch: {
     flexDirection: 'row',
     gap: 12,
-    padding: 12,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 20,
     borderWidth: 2,
   },
   bx: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     borderRadius: 8,
     borderWidth: 2,
     alignItems: 'center',
@@ -2161,14 +2102,14 @@ const s = StyleSheet.create({
   },
   hold: {
     flex: 1,
-    minHeight: 60,
-    borderRadius: 18,
+    minHeight: 56,
+    borderRadius: 999,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     ...(Platform.OS === 'web' ? { userSelect: 'none' } : {}),
   },
-  holdT: { fontFamily: font.bodySemi, fontSize: 20 },
-  holdP: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
+  holdT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  holdP: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
 });

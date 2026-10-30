@@ -11,24 +11,12 @@ export function PulseRows() {
   const stats = useStatsSeen();
   if (!pulseOffered) return null;
   const sub =
-    s?.on === true
-      ? 'All on. A few counts once a day, never your words or your log.'
-      : s?.on === false
-        ? 'Off. Nothing is sent.'
-        : 'Basic. Only the days Daybook was opened and how far setup got.';
+    s?.on === true ? 'All on. Never your words or your log.' : s?.on === false ? 'Off. Nothing is sent.' : 'Basic: the days opened, how far setup got';
   return (
     <>
-      <LinkCard icon="chart" tone="sky" title="Anonymous counts" sub={sub} onPress={() => router.push('/counts')} />
-      <LinkCard
-        icon="chat"
-        tone="sky"
-        title="Send feedback"
-        sub="What helps, what does not, what is missing. Anonymous."
-        onPress={() => router.push('/feedback')}
-      />
-      {stats ? (
-        <LinkCard icon="chart" tone="violet" title="Stats" sub="The owner's view: the counts and the feedback" onPress={() => router.push('/stats')} />
-      ) : null}
+      <LinkCard icon="chart" title="Anonymous counts" sub={sub} onPress={() => router.push('/counts')} />
+      <LinkCard icon="chat" title="Send feedback" sub="What helps, what does not, what is missing" onPress={() => router.push('/feedback')} />
+      {stats ? <LinkCard icon="chart" title="Stats" sub="The owner's view" onPress={() => router.push('/stats')} /> : null}
     </>
   );
 }

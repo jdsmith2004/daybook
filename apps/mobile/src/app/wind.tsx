@@ -30,7 +30,24 @@ export default function Wind() {
   const ci = r.stops.find((x) => x.k === 'evening' && !x.done);
   const toggle = (f: 'wind' | 'loud') => setFold(fold === f ? null : f);
   return (
-    <SceneFrame title="Wind-down" sky="night" onClose={close}>
+    <SceneFrame
+      title="Wind-down"
+      sky="night"
+      onClose={close}
+      pin={
+        /* pinned to the bottom of the screen, so a row that opens above it never pushes it out of reach */
+        p && p.po ? (
+          <>
+            <T style={s.c}>Phone away at {fmtClock(p.po)}. Good night.</T>
+            <Button label="Done" onPress={close} />
+          </>
+        ) : (
+          <>
+            <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
+            <GoodnightButton onPress={() => setBed(goodnight(null))} />
+          </>
+        )
+      }>
       <T v="title" style={s.c} accessibilityRole="header">
         Time to wind down
       </T>
@@ -47,20 +64,6 @@ export default function Wind() {
         {ci ? <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers, then Goodnight" onPress={() => router.replace('/checkin')} /> : null}
         <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
         <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
-        {p && p.po ? (
-          <>
-            <T style={s.c}>Phone away at {fmtClock(p.po)}. Good night.</T>
-            <Button label="Done" onPress={close} />
-          </>
-        ) : (
-          <>
-            <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
-            <T v="small" tone="muted" style={s.c}>
-              Before {fmtClock(st.screensOff)}, it counts as screens off on time too.
-            </T>
-            <GoodnightButton onPress={() => setBed(goodnight(null))} />
-          </>
-        )}
       </Dock>
     </SceneFrame>
   );

@@ -7,7 +7,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { LinkCard } from '@/components/link-card';
-import { Card, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { copyText, WORDS } from '@/lib/words';
@@ -17,7 +17,7 @@ export function useCopy() {
   return (text: string, ok: string = WORDS.copied) => copyText(text, say, ok);
 }
 
-/** a small round button: Copy, or a link to somewhere in the app */
+/** a small plain button: Copy, or a link to somewhere in the app */
 export function ChipBtn({ icon, label, onPress, a11y }: { icon?: string; label: string; onPress: () => void; a11y?: string }) {
   const c = useTheme();
   return (
@@ -25,9 +25,10 @@ export function ChipBtn({ icon, label, onPress, a11y }: { icon?: string; label: 
       accessibilityRole="button"
       accessibilityLabel={a11y || label}
       onPress={onPress}
-      style={({ pressed }) => [s.chip, { borderColor: c.line, backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}>
-      {icon ? <Icon name={icon} size={16} color={c.ink} /> : null}
-      <Text style={{ fontFamily: font.bodySemi, color: c.ink }}>{label}</Text>
+      hitSlop={4}
+      style={({ pressed }) => [s.chip, { opacity: pressed ? 0.7 : 1 }]}>
+      {icon ? <Icon name={icon} size={16} color={c.accentText} /> : null}
+      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{label}</Text>
     </Pressable>
   );
 }
@@ -47,7 +48,7 @@ export function Ext({ url, label }: { url: string; label: string }) {
       onPress={() => Linking.openURL(url).catch(() => undefined)}
       hitSlop={6}
       style={s.ext}>
-      <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>{label}</Text>
+      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{label}</Text>
       <Icon name="ext" size={14} color={c.accentText} />
     </Pressable>
   );
@@ -55,22 +56,24 @@ export function Ext({ url, label }: { url: string; label: string }) {
 
 export const Links = ({ children }: { children: ReactNode }) => <View style={s.links}>{children}</View>;
 
-/** a titled card (legacy hcard) */
+/** a titled part of the page, read like a page of a book: the heading close to its words, with room above (legacy hcard) */
 export function HCard({ title, children, links }: { title: string; children: ReactNode; links?: ReactNode }) {
   return (
-    <Card>
-      <T v="h2">{title}</T>
+    <View style={s.part}>
+      <T v="h2" accessibilityRole="header">
+        {title}
+      </T>
       {children}
       {links ? <Links>{links}</Links> : null}
-    </Card>
+    </View>
   );
 }
 
 /** a titled section on the page, outside a card (legacy sec) */
 export function Sec({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View style={{ gap: 8 }}>
-      <T v="eyebrow" tone="muted" accessibilityRole="header">
+    <View style={s.part}>
+      <T v="h2" accessibilityRole="header">
         {title}
       </T>
       {children}
@@ -111,19 +114,14 @@ export function OL({ items }: { items: ReactNode[] }) {
 }
 
 export function Note({ children }: { children: ReactNode }) {
-  const c = useTheme();
-  return (
-    <View style={[s.note, { backgroundColor: c.sunSoft }]}>
-      <T v="small">{children}</T>
-    </View>
-  );
+  return <T v="label">{children}</T>;
 }
 
 /** a phone number with a Copy button (legacy numRow) */
-export function NumRow({ name, num, note, copy }: { name: string; num: string; note: string; copy: string }) {
+export function NumRow({ name, num, note, copy, first }: { name: string; num: string; note: string; copy: string; first?: boolean }) {
   const c = useTheme();
   return (
-    <View style={[s.num, { borderColor: c.line }]}>
+    <View style={[s.num, { borderColor: c.line }, first && { borderTopWidth: 0 }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <T v="label">{name}</T>
         <Text style={{ fontFamily: font.display, fontSize: 20, color: c.accentText }} selectable>
@@ -165,10 +163,10 @@ export function Fine({ children }: { children: ReactNode }) {
 }
 
 const s = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
-  ext: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32 },
-  links: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, columnGap: 14, alignItems: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, minWidth: 44 },
+  ext: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, alignItems: 'center' },
   li: { flexDirection: 'row', gap: 8 },
-  note: { padding: 10, borderRadius: 12 },
-  num: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1 },
+  part: { gap: 8, marginTop: 8 },
+  num: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1 },
 });

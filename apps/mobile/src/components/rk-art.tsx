@@ -270,10 +270,10 @@ function Trap({ w }: { w: number }) {
         <Draw d={`M${sx + 26} 100 C ${sx + 90} 128, ${ex - 110} 140, ${ex - 26} 136`} v={good} color={c.mint} width={6} />
       </Svg>
       <Animated.View style={[s.abs, s.node, { left: sx - 30, top: 59, borderColor: c.ink, backgroundColor: c.surface }, pop(slip)]}>
-        <Text style={[s.nodeT, { color: c.ink }]}>ONE{'\n'}SLIP</Text>
+        <Text style={[s.nodeT, { color: c.ink }]}>One{'\n'}slip</Text>
       </Animated.View>
       <Animated.View style={[s.abs, s.end, { left: ex - 24, top: 16, backgroundColor: c.coralSoft, borderColor: c.coral, opacity: bad }]}>
-        <Text style={[s.nodeT, { color: c.coralText }]}>MORE</Text>
+        <Text style={[s.nodeT, { color: c.coralText }]}>More</Text>
       </Animated.View>
       <Animated.View style={[s.abs, s.end, { left: ex - 24, top: 112, backgroundColor: c.mint, borderColor: c.mint }, pop(end)]}>
         <Icon name="check" size={24} color="#FFFFFF" />
@@ -412,7 +412,7 @@ const s = StyleSheet.create({
   toT: { fontFamily: font.bodyBold, fontSize: 15 },
   node: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   end: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  nodeT: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1, textAlign: 'center', lineHeight: 14 },
+  nodeT: { fontFamily: font.bodyBold, fontSize: 12, textAlign: 'center', lineHeight: 15 },
   key: { position: 'absolute', left: 0, right: 0, bottom: 12, flexDirection: 'row', justifyContent: 'center', gap: 18 },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   keyDot: { width: 12, height: 12, borderRadius: 6 },

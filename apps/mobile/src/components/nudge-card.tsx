@@ -4,14 +4,12 @@
 import { NUDGE_PREF, nudgeCard, nudgeResume, type Snapshot } from '@daybook/core';
 import { View } from 'react-native';
 
-import { Button, Card, Icon, T } from '@/components/ui';
+import { Button, Card, T } from '@/components/ui';
 import { setNudgeLog, setReminderPrefs, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
-import { useTheme } from '@/lib/theme';
 
 export function NudgeCard({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const c = useTheme();
   const { say } = useStore();
   const prefs = useReminderPrefs();
   const log = useNudgeLog();
@@ -41,13 +39,8 @@ export function NudgeCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   };
   return (
     <Card>
-      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-        <Icon name="timer" size={22} color={c.accentText} />
-        <T v="label" style={{ flex: 1 }}>
-          {card.h}
-        </T>
-      </View>
-      <T v="small">{card.p}</T>
+      <T v="h2">{card.h}</T>
+      <T tone="muted">{card.p}</T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         <Button label={card.yes} onPress={yes} />
         <Button kind="ghost" label={card.no} onPress={no} />

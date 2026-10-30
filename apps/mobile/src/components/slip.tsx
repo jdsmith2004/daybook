@@ -63,7 +63,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     minHeight: 58,
-    borderRadius: 18,
+    borderRadius: 20,
     paddingVertical: 9,
     paddingHorizontal: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -71,6 +71,6 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  name: { fontFamily: font.bodyBold, fontSize: 16 },
+  name: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   sub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
 });

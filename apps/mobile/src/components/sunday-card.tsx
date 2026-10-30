@@ -19,9 +19,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
     return (
       <Card>
         <View style={s.head}>
-          <View style={[s.ic, { backgroundColor: c.sunSoft }]}>
-            <Icon name="flag" size={20} color={c.sunText} />
-          </View>
+          <Icon name="flag" size={22} color={c.sunText} />
           <View style={{ flex: 1, gap: 2 }}>
             <T v="eyebrow" tone="muted">
               Your goal for the week ahead
@@ -57,9 +55,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   return (
     <Card>
       <View style={s.head}>
-        <View style={[s.ic, { backgroundColor: c.sunSoft }]}>
-          <Icon name="flag" size={20} color={c.sunText} />
-        </View>
+        <Icon name="flag" size={22} color={c.sunText} />
         <View style={{ flex: 1, gap: 2 }}>
           <T v="eyebrow" tone="muted">
             This week’s goal
@@ -79,7 +75,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       {frac != null && k ? (
         <View style={s.dots} accessibilityLabel={now.done + ' of ' + now.g.n + ' ' + k.unit}>
           {Array.from({ length: now.g.n! }, (_, i) => (
-            <View key={i} style={[s.dot, { backgroundColor: i < now.done! ? c.mint : c.surface2, borderColor: i < now.done! ? c.mint : c.line }]} />
+            <View key={i} style={[s.dot, { backgroundColor: i < now.done! ? c.mint : c.surface2 }]} />
           ))}
         </View>
       ) : null}
@@ -94,9 +90,7 @@ function Extra({ icon, tone, title, text }: { icon: string; tone: string; title:
   const t = toneOf(c, tone);
   return (
     <View style={s.head}>
-      <View style={[s.ic, { backgroundColor: t.soft }]}>
-        <Icon name={icon} size={20} color={t.text} />
-      </View>
+      <Icon name={icon} size={22} color={t.text} />
       <View style={{ flex: 1, gap: 2 }}>
         <T v="eyebrow" tone="muted">
           {title}
@@ -108,8 +102,7 @@ function Extra({ icon, tone, title, text }: { icon: string; tone: string; title:
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  dots: { flexDirection: 'row', gap: 6, paddingLeft: 52 },
-  dot: { flex: 1, maxWidth: 40, height: 10, borderRadius: 5, borderWidth: 1.5 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  dots: { flexDirection: 'row', gap: 6, paddingLeft: 34 },
+  dot: { flex: 1, maxWidth: 40, height: 8, borderRadius: 4 },
 });

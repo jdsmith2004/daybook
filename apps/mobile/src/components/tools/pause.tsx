@@ -22,7 +22,7 @@ import {
 import { router } from 'expo-router';
 import { useNextTool } from '@/lib/tools';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BigOption, Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
@@ -46,6 +46,9 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
   const c = useTheme();
   const sos = useSos();
   const st = useCareSettings();
+  /* the flame stays big where it fits, and steps back only on the smallest phones, so the answers stay in reach */
+  const { height } = useWindowDimensions();
+  const flame = height >= 700 ? 140 : 110;
   const t = sos.timer;
   const [idea, setIdea] = useState(() => pickIdea(st, null, Math.random));
   const [again, setAgain] = useState(false);
@@ -180,10 +183,10 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
           <T style={s.c}>An urge is a wave: it builds, peaks, and passes. You do not have to fight it or obey it. Just outlast this one.</T>
         </Middle>
         <Dock>
-          <Button label="Start the 10 minutes" onPress={start} />
           <T v="small" tone="muted" style={s.c}>
             {room + ' The timer keeps counting if you close the app.'}
           </T>
+          <Button label="Start the 10 minutes" onPress={start} />
         </Dock>
       </Stage>
     );
@@ -239,7 +242,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
   if (again)
     return (
       <Stage key="again" dir={1}>
-        <Flame level={level} size={96} />
+        <Flame level={level} size={flame} />
         <T v="title" style={s.c} accessibilityRole="header">
           That is okay. Waves can come back.
         </T>
@@ -263,7 +266,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
     );
   return (
     <Stage key="after" dir={1}>
-      <Flame level={level} size={110} />
+      <Flame level={level} size={flame} />
       <T v="title" style={s.c} accessibilityRole="header">
         {t?.early ? 'You paused. That counts.' : 'You made it through ten minutes.'}
       </T>
@@ -289,7 +292,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
         }}
       />
       <T v="small" tone="muted" style={s.c}>
-        The pause already counted. Skipping is fine.
+        The pause already counted.
       </T>
     </Stage>
   );

@@ -67,7 +67,7 @@ export function StretchRuler({ r }: { r: ReturnType<typeof stepRuler> }) {
           <Animated.View
             style={[
               s.dot,
-              { backgroundColor: c.sun, borderColor: c.surface, shadowColor: c.lip },
+              { backgroundColor: c.sun, borderColor: c.surface },
               { transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-14, at - 14] }) }] },
             ]}>
             <Icon name="flame" size={15} color={c.onSun} />
@@ -149,10 +149,6 @@ const s = StyleSheet.create({
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
   },
   week: { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch' },
   day: { alignItems: 'center', gap: 5, width: 34 },

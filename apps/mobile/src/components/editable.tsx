@@ -1,13 +1,87 @@
 /* A line of the person's own words that reads like a page, not a form: a small label, their words, and a pencil. Tap it to
-   change the words in place; Done (or leaving the box) saves. With nothing written yet it shows a gentle prompt instead. */
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+   change the words in place; Done (or leaving the box) saves. With nothing written yet it shows a gentle prompt instead.
+   With it, the plain parts of a page like that (My plan, My reasons): a part with its heading over one card, a thin line
+   between two things in a card, and a link that is only words. */
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { TextInput } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { KeepAbove } from '@/components/keyboard';
-import { Icon, T } from '@/components/ui';
+import { Card, Icon, T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';
+
+export type PageTone = 'accent' | 'mint' | 'sky' | 'sun' | 'coral' | 'violet';
+
+/** a part of the page: its icon at its own size, a heading and an optional count, a line if it needs one, then one card */
+export function PageSec({
+  icon,
+  tone = 'accent',
+  title,
+  aside,
+  sub,
+  tight,
+  children,
+  onLayout,
+}: {
+  icon: string;
+  tone?: PageTone;
+  title: string;
+  aside?: string;
+  sub?: string;
+  /** the card holds a plain list: its rows bring their own room */
+  tight?: boolean;
+  children: ReactNode;
+  onLayout?: (e: LayoutChangeEvent) => void;
+}) {
+  const c = useTheme();
+  const ink = { accent: c.accentText, mint: c.mintText, sky: c.skyText, sun: c.sunText, coral: c.coralText, violet: c.violetText }[tone];
+  return (
+    <View onLayout={onLayout} style={s.sec}>
+      <View style={s.head}>
+        <Icon name={icon} size={20} color={ink} />
+        <T v="h2" style={{ flex: 1 }} accessibilityRole="header">
+          {title}
+        </T>
+        {aside ? (
+          <T v="small" tone="muted">
+            {aside}
+          </T>
+        ) : null}
+      </View>
+      {sub ? (
+        <T v="small" tone="muted">
+          {sub}
+        </T>
+      ) : null}
+      <Card style={[{ marginTop: 4 }, tight && { gap: 0, paddingVertical: 4 }]}>{children}</Card>
+    </View>
+  );
+}
+
+/** a thin line between two things in a card */
+export function Hair() {
+  const c = useTheme();
+  return <View style={{ height: 1, backgroundColor: c.line }} />;
+}
+
+/** an action that is only words, in the accent's color, with a small icon */
+export function PageLink({ icon, label, onPress, disabled }: { icon?: string; label: string; onPress: () => void; disabled?: boolean }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [s.link, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }]}>
+      {icon ? <Icon name={icon} size={18} color={c.accentText} /> : null}
+      <T v="label" tone="accentText">
+        {label}
+      </T>
+    </Pressable>
+  );
+}
 
 export function Editable({
   label,
@@ -17,7 +91,6 @@ export function Editable({
   onSave,
   maxLength,
   big,
-  icon,
 }: {
   label?: string;
   value: string;
@@ -28,7 +101,6 @@ export function Editable({
   maxLength?: number;
   /** the large words at the top of My plan */
   big?: boolean;
-  icon?: string;
 }) {
   const c = useTheme();
   const [editing, setEditing] = useState(false);
@@ -82,11 +154,6 @@ export function Editable({
       accessibilityHint="Opens it to change"
       onPress={() => setEditing(true)}
       style={({ pressed }) => [s.row, { opacity: pressed ? 0.8 : 1 }]}>
-      {icon ? (
-        <View style={[s.ic, { backgroundColor: c.accentSoft }]}>
-          <Icon name={icon} size={16} color={c.accentText} />
-        </View>
-      ) : null}
       <View style={{ flex: 1, gap: 2 }}>
         {label ? (
           <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
@@ -107,19 +174,21 @@ export function Editable({
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, minHeight: 40, paddingVertical: 4 },
-  ic: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  big: { fontFamily: font.display, fontSize: 22, lineHeight: 29 },
-  in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 2, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
+  sec: { gap: 4 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start' },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, minHeight: 44, paddingVertical: 4 },
+  big: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
   inBig: {
     fontFamily: font.display,
-    fontSize: 20,
-    lineHeight: 27,
-    borderWidth: 2,
-    borderRadius: 14,
+    fontSize: 22,
+    lineHeight: 28,
+    borderWidth: 1.5,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     minHeight: 60,
   },
-  done: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 16, borderRadius: 999 },
+  done: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999 },
 });

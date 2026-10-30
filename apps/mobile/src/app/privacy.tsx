@@ -4,13 +4,14 @@ import { SITE_PAGES } from '@daybook/core';
 import { router } from 'expo-router';
 import { Linking } from 'react-native';
 
+import { LinkCard, Rows } from '@/components/link-card';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { Dock } from '@/components/scene';
 
 export default function Privacy() {
   return (
-    <SheetFrame title="Your account and your privacy" sub="What is kept, who can see it, and how to remove it">
+    <SheetFrame title="Your account and your privacy">
       <SheetH title="Without an account" />
       <T>Everything stays on this device. Nothing about your log leaves it.</T>
       <SheetH title="With an account" />
@@ -33,9 +34,11 @@ export default function Privacy() {
         Delete everything (in Settings) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in Settings ›
         Sync) removes your account, that copy and your sign-in for good.
       </T>
-      <Button kind="ghost" label="Open Settings" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />
-      <Button kind="ghost" label="Read the full privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
-      <Button kind="ghost" label="Terms of use" onPress={() => Linking.openURL(SITE_PAGES.terms).catch(() => undefined)} />
+      <Rows>
+        <LinkCard icon="sliders" title="Open Settings" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />
+        <LinkCard icon="shield" title="Read the full privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
+        <LinkCard icon="book" title="Terms of use" onPress={() => Linking.openURL(SITE_PAGES.terms).catch(() => undefined)} />
+      </Rows>
       <Dock>
         <Button label="Done" onPress={closeSheet} />
       </Dock>

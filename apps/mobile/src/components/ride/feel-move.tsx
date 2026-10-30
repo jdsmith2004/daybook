@@ -40,13 +40,10 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
     return (
       <View style={s.move}>
         <View style={s.words}>
-          <T v="eyebrow" tone="muted" style={s.c}>
-            Name it to tame it
-          </T>
           <Text style={[s.word, { color: c.ink }]} accessibilityRole="header">
             {f.w}
           </Text>
-          <T v="small" tone="muted" style={s.c}>
+          <T tone="muted" style={s.c}>
             {'Say it on a slow breath out: “I feel ' + f.w.toLowerCase() + '.”'}
           </T>
         </View>
@@ -57,10 +54,8 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
           <T v="eyebrow" tone="muted">
             What it is asking for
           </T>
-          <Text style={[s.askH, { color: c.ink }]}>{ask.h}</Text>
-          <T v="small" style={{ lineHeight: 20 }}>
-            {ask.t}
-          </T>
+          <T v="h2">{ask.h}</T>
+          <T>{ask.t}</T>
         </Appear>
         <View style={s.dock}>
           {own ? <Button label={own.name} onPress={() => onTool?.(own.id)} /> : null}
@@ -77,7 +72,7 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
         <Text style={[s.head, { color: c.ink }]} accessibilityRole="header">
           Name it
         </Text>
-        <T v="small" tone="muted" style={s.c}>
+        <T tone="muted" style={s.c}>
           Where is the feeling under the urge? Tap the closest color.
         </T>
       </View>
@@ -122,7 +117,6 @@ const s = StyleSheet.create({
   word: { fontFamily: font.displayBold, fontSize: 40, lineHeight: 46, textAlign: 'center' },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
-  card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
-  askH: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
+  card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 20 },
   dock: { gap: 8 },
 });

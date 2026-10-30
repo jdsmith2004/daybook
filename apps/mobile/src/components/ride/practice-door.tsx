@@ -19,15 +19,13 @@ export function PracticeDoor() {
         buzz('tap');
         router.push({ pathname: '/sos', params: { practice: '1' } });
       }}
-      style={({ pressed }) => [s.door, { backgroundColor: c.skySoft, borderColor: c.sky, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-      <View style={[s.ic, { backgroundColor: c.sky }]}>
-        <Icon name="wave" size={22} color={c.scheme === 'dark' ? '#0B2340' : '#FFFFFF'} />
-      </View>
+      style={({ pressed }) => [s.door, { backgroundColor: c.skySoft, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name="wave" size={22} color={c.skyText} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[s.t, { color: c.skyText }]}>Practice a ride</Text>
-        <Text style={[s.sub, { color: c.ink }]}>The three SOS moves, on a calm day. Practiced calm, they come easier when it counts.</Text>
+        <Text style={[s.sub, { color: c.ink }]}>The three SOS moves, on a calm day.</Text>
       </View>
-      <Icon name="next" size={20} color={c.skyText} />
+      <Icon name="next" size={16} color={c.skyText} />
     </Pressable>
   );
 }
@@ -37,15 +35,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 14,
+    padding: 16,
     borderRadius: 20,
-    borderWidth: 2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
   },
-  ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  t: { fontFamily: font.bodyBold, fontSize: 16 },
-  sub: { fontFamily: font.body, fontSize: 15, lineHeight: 19, marginTop: 1 },
+  t: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  sub: { fontFamily: font.body, fontSize: 13, lineHeight: 18, marginTop: 1 },
 });

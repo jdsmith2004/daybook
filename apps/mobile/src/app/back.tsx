@@ -5,7 +5,7 @@
    drawn big (flame-medallion.tsx). */
 import { answerAwaySlips, awayDue, awaySpan, gameCompute } from '@daybook/core';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { FlameMedallion } from '@/components/flame-medallion';
@@ -18,6 +18,7 @@ import { useStore } from '@/lib/store';
 
 export default function Back() {
   const { snap, tk, apply } = useStore();
+  const win = useWindowDimensions();
   const st = snap.settings;
   /* the gap is fixed when the page opens, so answering does not change what is shown */
   const [gap] = useState(() => (st ? awayDue(snap.days, st, tk) : null));
@@ -42,7 +43,7 @@ export default function Back() {
     return (
       <SceneFrame title="Welcome back" sky="mint" onClose={close}>
         <View style={s.mid}>
-          <FlameMedallion level={level} size={150} />
+          <FlameMedallion level={level} size={Math.min(win.width - 96, win.height * 0.36, 280)} />
         </View>
         <T v="title" style={s.c} accessibilityRole="header">
           {words.h}

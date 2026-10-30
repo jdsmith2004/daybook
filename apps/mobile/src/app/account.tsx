@@ -3,7 +3,7 @@
    password for an account made with a temporary one, and "Forgot password". Sign in with Apple, where it is offered, is one
    tap above all that (lib/apple.ts); it opens the same account as the email when that email is confirmed. Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
-import { CognitoError, emailOk, LEARN_FREE, PASSWORD_MIN, passwordOk } from '@daybook/core';
+import { CognitoError, emailOk, gameCompute, LEARN_FREE, PASSWORD_MIN, passwordOk } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -12,15 +12,17 @@ import { TextInput } from '@/components/text';
 import { AppleButton } from '@/components/apple-button';
 import { Field } from '@/components/choices';
 import { Segments } from '@/components/form';
+import { GradFlame } from '@/components/grad';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { SYNC_NEED } from '@/components/support';
 import { here, SyncBody, TrustChoice } from '@/components/sync-card';
 import { LinkText } from '@/components/today';
-import { Button, Icon, T } from '@/components/ui';
+import { Button, T } from '@/components/ui';
 import { apple, appleOffered, askApple } from '@/lib/apple';
 import { cognito, keepTokens, type Session } from '@/lib/auth';
 import { HelpLine } from '@/components/help-line';
 import { buzz } from '@/lib/feel';
+import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { font, useTheme } from '@/lib/theme';
 
@@ -29,6 +31,7 @@ type Step = 'start' | 'code' | 'newpw' | 'forgot' | 'reset' | 'done';
 export default function Account() {
   const c = useTheme();
   const sync = useSync();
+  const { snap, tk } = useStore();
   const p = useLocalSearchParams<{ why?: string; then?: string; email?: string }>();
   const [mode, setMode] = useState<'new' | 'in'>(p.why === 'in' ? 'in' : 'new');
   const [step, setStep] = useState<Step>('start');
@@ -179,8 +182,8 @@ export default function Account() {
       : p.why === 'lesson'
         ? 'The first ' + LEARN_FREE + ' lessons are open to everyone. A free account opens all of them.'
         : p.why === 'setup'
-          ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan, your log and your progress safe, and the same on every device you use. It is private to you.'
-          : 'A free account opens every lesson, and for supporters it keeps a copy of your progress safe and the same on every device you use. It is private to you.';
+          ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan and your log safe on every device. It is private to you.'
+          : 'A free account opens every lesson, and for supporters it keeps your log safe on every device. It is private to you.';
 
   let body;
   const failed = sync.status.k === 'error' || sync.status.k === 'expired';
@@ -200,9 +203,7 @@ export default function Account() {
         </View>
       ) : (
         <View style={{ gap: 14, alignItems: 'center', paddingVertical: 8 }}>
-          <View style={[s.ok, { backgroundColor: c.mintSoft }]}>
-            <Icon name="check" size={34} color={c.mintText} />
-          </View>
+          <GradFlame level={snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1} size={200} />
           <T v="h2" style={{ textAlign: 'center' }}>
             {mode === 'new' && !viaApple ? 'Your account is ready.' : 'You are signed in.'}
           </T>
@@ -453,11 +454,10 @@ function Pw({
 }
 
 const s = StyleSheet.create({
-  code: { fontFamily: font.display, fontSize: 34, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 18, paddingVertical: 14 },
+  code: { fontFamily: font.display, fontSize: 34, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 12, paddingVertical: 12 },
   links: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  apple: { gap: 22, paddingTop: 10, paddingBottom: 8 },
+  apple: { gap: 24, paddingTop: 8, paddingBottom: 8 },
   or: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   orLine: { flex: 1, height: StyleSheet.hairlineWidth * 2, borderRadius: 1 },
-  ok: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   pwHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
 });

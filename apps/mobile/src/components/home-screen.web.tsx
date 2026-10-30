@@ -55,6 +55,7 @@ export function HomeScreenCard() {
         <T key={i} v="small">{`${i + 1}. ${x}`}</T>
       ))}
       <Button
+        kind="ghost"
         label="Got it"
         onPress={() => {
           try {

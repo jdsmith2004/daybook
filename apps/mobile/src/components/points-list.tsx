@@ -52,7 +52,7 @@ export function PointsList() {
         accessibilityState={{ expanded: all }}
         onPress={() => setAll(!all)}
         hitSlop={8}
-        style={{ minHeight: 32, justifyContent: 'center' }}>
+        style={{ minHeight: 44, justifyContent: 'center' }}>
         <T v="small" style={{ fontFamily: font.bodySemi, color: c.accentText }}>
           {all ? 'Show the short version' : 'See every rule'}
         </T>

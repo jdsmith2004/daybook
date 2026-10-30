@@ -19,7 +19,7 @@ export function OwnField({ placeholder, max, onSave, onCancel }: { placeholder: 
     if (t) onSave(t);
   };
   return (
-    <Appear by={8} duration={220}>
+    <Appear by={8} duration={220} style={s.fill}>
       <KeepAbove style={s.own}>
         <Field
           label="In your own words"
@@ -61,6 +61,7 @@ export function OwnChip({ onPress, label = 'Your own' }: { onPress: () => void; 
 }
 
 const s = StyleSheet.create({
+  fill: { alignSelf: 'stretch' },
   own: { alignSelf: 'stretch', gap: 10, marginTop: 4 },
   ownRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   ownChip: {

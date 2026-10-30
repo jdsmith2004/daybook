@@ -38,7 +38,6 @@ function waitWords(d: Due, tk: DayKey): { head: string; sub: string } {
 const openTalk = (q: 'decide' | 'look', id: string) => router.push(('/talk?' + q + '=' + id) as '/talk');
 
 export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
-  const c = useTheme();
   const { tk, update, say } = useStore();
   const d = talkDueNow(snap.days, snap.settings, tk, now);
   if (!d) return null;
@@ -55,20 +54,9 @@ export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
   };
   return (
     <Card>
-      <View style={s.head}>
-        <View style={[s.ic, { backgroundColor: c.violetSoft }]}>
-          <Icon
-            name={d.due === 'passed' ? 'leaf' : d.due === 'waiting' || d.due === 'decide' ? 'timer' : t.p === 'change' ? 'compass' : 'sun'}
-            size={20}
-            color={c.violetText}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <T v="label">{head}</T>
-          <T v="small" tone="muted">
-            {sub}
-          </T>
-        </View>
+      <View style={{ gap: 4 }}>
+        <T v="h2">{head}</T>
+        <T tone="muted">{sub}</T>
       </View>
       {d.due === 'passed' ? (
         <>
@@ -97,13 +85,8 @@ export function TalkDoor({ line, onOpen }: { line?: string; onOpen?: () => void 
         if (onOpen) onOpen();
         else router.push('/talk');
       }}
-      style={({ pressed }) => [
-        s.door,
-        { backgroundColor: c.violetSoft, borderColor: c.violet, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] },
-      ]}>
-      <View style={[s.doorIc, { backgroundColor: c.violet }]}>
-        <Icon name="chat" size={22} color={c.scheme === 'dark' ? '#1A1250' : '#FFFFFF'} />
-      </View>
+      style={({ pressed }) => [s.door, { backgroundColor: c.violetSoft, opacity: pressed ? 0.8 : 1 }]}>
+      <Icon name="chat" size={22} color={c.violetText} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[s.doorT, { color: c.violetText }]}>Planning a slip?</Text>
         <Text style={[s.doorS, { color: c.ink }]}>{line || 'When it feels planned, owed or certain, or you have stopped caring. Talk it through first.'}</Text>
@@ -114,21 +97,7 @@ export function TalkDoor({ line, onOpen }: { line?: string; onOpen?: () => void 
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  door: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  doorIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  doorT: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
-  doorS: { fontFamily: font.body, fontSize: 15, lineHeight: 19, marginTop: 1 },
+  door: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20 },
+  doorT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  doorS: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
 });

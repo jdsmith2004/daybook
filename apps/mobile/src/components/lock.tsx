@@ -84,17 +84,16 @@ export function LockGate({ children }: { children: ReactNode }) {
       </View>
       {hide ? (
         <View style={[StyleSheet.absoluteFill, s.cover, { backgroundColor: c.bg }]} accessibilityViewIsModal>
-          <Flame level={1} size={110} />
-          {locked ? (
-            <>
+          <View style={s.mid}>
+            {/* the campfire for everyone, so the cover says nothing of how far the person has come */}
+            <Flame level={11} size={240} />
+            {locked ? (
               <T v="title" accessibilityRole="header">
                 Daybook is locked
               </T>
-              <View style={{ alignSelf: 'stretch' }}>
-                <Button label="Unlock" onPress={unlock} />
-              </View>
-            </>
-          ) : null}
+            ) : null}
+          </View>
+          {locked ? <Button label="Unlock" onPress={unlock} /> : null}
         </View>
       ) : null}
     </View>
@@ -102,5 +101,6 @@ export function LockGate({ children }: { children: ReactNode }) {
 }
 
 const s = StyleSheet.create({
-  cover: { alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 },
+  cover: { paddingHorizontal: 16, paddingTop: 64, paddingBottom: 48 },
+  mid: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
 });

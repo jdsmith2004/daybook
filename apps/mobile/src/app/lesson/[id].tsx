@@ -37,7 +37,6 @@ import {
   lessonReach,
   lessonBackRecall,
   lessonRecallOf,
-  LESSONS,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -69,10 +68,10 @@ import { Dock } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
 import { FlameMedallion } from '@/components/flame-medallion';
-import { LessonArt, LxCheck, LxIco, LxShield, BigNumber } from '@/components/lesson-art';
+import { LessonArt, LxIco, BigNumber } from '@/components/lesson-art';
 import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { close, closeAll } from '@/lib/nav';
@@ -273,7 +272,7 @@ export default function LessonScreen() {
         <FitArt style={s.art}>
           <LxIco name={L.ic} t={t} />
         </FitArt>
-        <Eyebrow icon="flag" label={u.name} t={t} />
+        <Eyebrow label={u.name} t={t} />
         <T style={s.h} accessibilityRole="header">
           {L.title}
         </T>
@@ -283,22 +282,24 @@ export default function LessonScreen() {
           </T>
         ) : null}
         {L.ask ? (
-          <View style={[s.ask, { backgroundColor: t.soft }]}>
-            <Text style={[s.eye2, { color: t.text }]}>THIS LESSON ANSWERS</Text>
-            <Text style={[s.askP, { color: c.ink }]}>{L.ask}</Text>
+          <View style={s.askB}>
+            <Text style={[s.eye2, { color: t.text }]}>This lesson answers</Text>
+            <T style={s.p}>{L.ask}</T>
           </View>
         ) : (
           <T style={s.p}>{L.tag}</T>
         )}
         {done.has(L.id) ? (
-          <View style={[s.tag, { backgroundColor: c.mintSoft }]}>
-            <Icon name="check" size={14} color={c.mintText} />
-            <Text style={{ fontFamily: font.bodyBold, color: c.mintText, fontSize: 13 }}>You finished this one</Text>
+          <View style={s.tag}>
+            <Icon name="check" size={15} color={c.mintText} />
+            <T v="eyebrow" tone="mintText">
+              You finished this one
+            </T>
           </View>
         ) : null}
         {lessonHasQuick(L) ? (
           <Dock>
-            <View style={{ gap: 10 }} accessibilityLabel="Pick a length">
+            <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
               <LenBtn
                 t={t}
                 on={pref === 'q'}
@@ -315,9 +316,6 @@ export default function LessonScreen() {
                 mins="3–5 min"
                 onPress={() => start('f')}
               />
-              <T v="small" tone="muted">
-                You can read it again in the other length any time.
-              </T>
             </View>
           </Dock>
         ) : null}
@@ -334,7 +332,7 @@ export default function LessonScreen() {
       const r = P.rc!;
       body = (
         <>
-          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P, st)} t={t} />
+          <Eyebrow label={'Quick recall · lesson ' + lessonNo(P, st)} t={t} />
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
@@ -364,7 +362,7 @@ export default function LessonScreen() {
           </Dock>
         </>
       );
-      foot = <Next label={rc == null ? 'Skip' : 'Next'} onPress={() => step(1)} />;
+      foot = rc == null ? <Ghost label="Skip" onPress={() => step(1)} /> : <Next label="Next" onPress={() => step(1)} />;
     } else if (it.t === 'done') {
       const pr = lessonPractice(L);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
@@ -380,7 +378,7 @@ export default function LessonScreen() {
           </T>
           {gain > 0 ? (
             <View style={[s.pill, { backgroundColor: c.sun }]}>
-              <Text style={{ fontFamily: font.bodyBold, color: c.onSun, fontSize: 15 }}>+{gain} points</Text>
+              <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
             </View>
           ) : again && !SHORT ? (
             <T tone="muted">Already counted. Read it as often as you like.</T>
@@ -388,12 +386,12 @@ export default function LessonScreen() {
           <View style={[s.key, { backgroundColor: t.soft }]}>
             {L.ask ? (
               <>
-                <Text style={[s.eye2, { color: t.text }]}>YOU ASKED</Text>
+                <Text style={[s.eye2, { color: t.text }]}>You asked</Text>
                 <T>{L.ask}</T>
-                <Text style={[s.eye2, { color: t.text, marginTop: 6 }]}>THE ANSWER</Text>
+                <Text style={[s.eye2, { color: t.text, marginTop: 8 }]}>The answer</Text>
               </>
             ) : (
-              <Text style={[s.eye2, { color: t.text }]}>THE ONE THING TO KEEP</Text>
+              <Text style={[s.eye2, { color: t.text }]}>The one thing to keep</Text>
             )}
             <Text style={[s.keyP, { color: c.ink }]}>{L.key}</Text>
           </View>
@@ -432,11 +430,7 @@ export default function LessonScreen() {
         const pk = pick[ci] ?? null;
         body = (
           <>
-            <Eyebrow
-              icon={(LX_E[gr && LX_E[card.e || ''] ? card.e! : 'turn'] || LX_E.turn)[0]}
-              label={card.el || (LX_E[card.e || 'turn'] || LX_E.turn)[1]}
-              t={t}
-            />
+            <Eyebrow label={card.el || (LX_E[card.e || 'turn'] || LX_E.turn)[1]} t={t} />
             <T style={[s.h, s.hsm]} accessibilityRole="header">
               {card.h}
             </T>
@@ -463,7 +457,14 @@ export default function LessonScreen() {
                   Tap any other answer to read its comment.
                 </T>
               ) : null}
-              {card.sv && pk != null ? <T tone="mintText">✓ Saved to My plan</T> : null}
+              {card.sv && pk != null ? (
+                <View style={s.tag}>
+                  <Icon name="check" size={15} color={c.mintText} />
+                  <T v="eyebrow" tone="mintText">
+                    Saved to My plan
+                  </T>
+                </View>
+              ) : null}
             </Dock>
           </>
         );
@@ -528,7 +529,7 @@ export default function LessonScreen() {
       <LineEditor key={editing} it={ed} t={t} onAdd={(x) => add(editing!, x)} onCancel={() => setEditing(null)} />
     ) : (
       <>
-        <Eyebrow icon="bolt" label={'Put it to work · ' + a.mins + ' min'} t={t} />
+        <Eyebrow label={'Put it to work · ' + a.mins + ' min'} t={t} />
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {a.h}
         </T>
@@ -565,8 +566,7 @@ export default function LessonScreen() {
     );
     const acted = Object.keys(got).length > 0 || Object.keys(went).length > 0 || Object.keys(copied).length > 0 || !!(wrote && wrote.trim());
     foot = ed ? null : (
-      <>
-        <Ghost label="Skip practice" onPress={() => toStage('practiced')} />
+      <View style={s.footCol}>
         <Next
           label="Done"
           noIcon
@@ -575,7 +575,8 @@ export default function LessonScreen() {
             toStage('practiced');
           }}
         />
-      </>
+        <Quiet label="Skip practice" onPress={() => toStage('practiced')} />
+      </View>
     );
   } else {
     const a = lessonPractice(L);
@@ -584,52 +585,60 @@ export default function LessonScreen() {
     prog = <Prog total={1} i={0} all />;
     body = (
       <>
-        <FitArt style={s.art}>{prac ? <LxCheck /> : <LxIco name={L.ic} t={t} />}</FitArt>
-        {prac ? <Eyebrow icon="check" label="Practiced" t={{ ...t, soft: c.mintSoft, text: c.mintText }} /> : <Eyebrow icon="flag" label="Lesson done" t={t} />}
+        {/* the flame again, grown a little by this: the end of a lesson is its moment */}
+        <FitArt style={s.art} min={0.62}>
+          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={160} />
+        </FitArt>
+        {prac ? <Eyebrow label="Practiced" t={{ ...t, text: c.mintText }} /> : <Eyebrow label="Lesson done" t={t} />}
         <T style={s.h} accessibilityRole="header">
           {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
-        <T style={s.p}>{prac ? 'That is the lesson and the practice. Pick what comes next.' : 'The practice stays in Learn whenever you want it.'}</T>
+        {prac ? null : <T style={s.p}>The practice stays in Learn whenever you want it.</T>}
         {ringLit ? (
           <T style={s.p} tone="sunText">
             That lit today on your lessons ring, on the flame in Today. One part for each day you do a lesson this week.
           </T>
         ) : null}
-        <View style={{ gap: 10 }}>
-          {due && pair ? (
+        {due && pair ? (
+          <Dock>
             <Route
               label="Write it out"
               small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, st) + ' and ' + lessonNo(pair.b, st)}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
-          ) : null}
-          {care ? null : (
-            <>
-              <Route
-                label="Back to Learn"
-                onPress={() => {
-                  closeAll();
-                  router.navigate('/learn');
-                }}
-              />
-              <Route
-                label="Back to Today"
-                onPress={() => {
-                  closeAll();
-                  router.navigate('/');
-                }}
-              />
-            </>
-          )}
-        </View>
+          </Dock>
+        ) : null}
       </>
     );
-    foot =
-      next && !care ? (
-        <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
-      ) : (
-        <Next label="Done" noIcon onPress={closeAll} />
-      );
+    foot = (
+      <View style={s.footCol}>
+        {next && !care ? (
+          <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
+        ) : (
+          <Next label="Done" noIcon onPress={closeAll} />
+        )}
+        {care ? null : (
+          <View style={s.quiets}>
+            <Quiet
+              half
+              label="Back to Learn"
+              onPress={() => {
+                closeAll();
+                router.navigate('/learn');
+              }}
+            />
+            <Quiet
+              half
+              label="Back to Today"
+              onPress={() => {
+                closeAll();
+                router.navigate('/');
+              }}
+            />
+          </View>
+        )}
+      </View>
+    );
   }
 
   return (
@@ -644,7 +653,7 @@ export default function LessonScreen() {
         ref={scroll}
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
-        style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
+        style={s.card}
         contentContainerStyle={s.cardIn}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
@@ -700,12 +709,12 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     <View style={[s.key, { backgroundColor: t.soft }]}>
       {k.ask ? (
         <>
-          <Text style={[s.eye2, { color: t.text }]}>THIS LESSON ANSWERS</Text>
+          <Text style={[s.eye2, { color: t.text }]}>This lesson answers</Text>
           <T>{k.ask}</T>
-          <Text style={[s.eye2, { color: t.text, marginTop: 6 }]}>THE KEY IDEA</Text>
+          <Text style={[s.eye2, { color: t.text, marginTop: 8 }]}>The key idea</Text>
         </>
       ) : (
-        <Text style={[s.eye2, { color: t.text }]}>THE KEY IDEA</Text>
+        <Text style={[s.eye2, { color: t.text }]}>The key idea</Text>
       )}
       <Text style={[s.keyP, { color: c.ink }]}>{k.key}</Text>
     </View>
@@ -717,7 +726,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     const nx = w.next;
     body = (
       <>
-        <Eyebrow icon="compass" label={'Lesson ' + n + ' · ' + LUNITS[L.u].name} t={t} />
+        <Eyebrow label={'Lesson ' + n + ' · ' + LUNITS[L.u].name} t={t} />
         <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
           {L.title}
         </T>
@@ -727,7 +736,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         </T>
         {go.length ? (
           <Dock>
-            <Text style={[s.eye2, { color: t.text }]}>TRY IT NOW</Text>
+            <Text style={[s.eye2, { color: t.text }]}>Try it now</Text>
             {go.map((g, j) => (
               <GoRow
                 key={j}
@@ -768,9 +777,9 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       <>
         {/* the flame stays beside the words, never dropped for room */}
         <View style={s.backHead}>
-          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 64 : 78} />
+          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 80 : 104} />
           <View style={{ flex: 1, gap: 6 }}>
-            <Eyebrow icon="sparkle" label="Welcome back" t={t} />
+            <Eyebrow label="Welcome back" t={t} />
             <T style={[s.h, s.hsm]} accessibilityRole="header">
               {L.title}
             </T>
@@ -780,7 +789,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {keyBox}
         {r && P ? (
           <Dock>
-            <Text style={[s.eye2, { color: t.text }]}>QUICK RECALL</Text>
+            <Text style={[s.eye2, { color: t.text }]}>Quick recall</Text>
             <T style={[s.p, { fontFamily: font.bodySemi }]}>{r.q}</T>
             <Opts
               list={r.c}
@@ -810,28 +819,23 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   }
   return (
     <Frame title={'Lesson ' + n + ' of ' + w.path.length} onClose={close} c={c} inset={inset}>
-      <ScrollView
-        ref={scroll}
-        onLayout={fit.onLayout}
-        onContentSizeChange={fit.onContentSizeChange}
-        style={[s.card, { backgroundColor: c.surface, shadowColor: c.lip }]}
-        contentContainerStyle={s.cardIn}>
+      <ScrollView ref={scroll} onLayout={fit.onLayout} onContentSizeChange={fit.onContentSizeChange} style={s.card} contentContainerStyle={s.cardIn}>
         <FitProvider value={fit.ctx}>
           <Appear key={gate} by={10} style={s.cardBody}>
             {body}
           </Appear>
         </FitProvider>
       </ScrollView>
-      {foot}
+      <View style={s.foot}>{foot}</View>
     </Frame>
   );
 }
 /** a quiet link under the main button, for something the X does not do */
-function Quiet({ label, onPress }: { label: string; onPress: () => void }) {
+function Quiet({ label, onPress, half }: { label: string; onPress: () => void; half?: boolean }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={s.quiet}>
-      <Text style={[s.linkT, { color: c.accentText }]}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
+      <Text style={[s.linkT, { color: c.accentText, textDecorationLine: 'none' }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -855,16 +859,12 @@ function Frame({
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted" accessibilityRole="header">
             {title}
           </T>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={[s.x, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
@@ -886,15 +886,8 @@ function Prog({ total, i, all }: { total: number; i: number; all?: boolean }) {
     </View>
   );
 }
-function Eyebrow({ icon, label, t }: { icon: string; label: string; t: Tone }) {
-  return (
-    <View style={s.eye}>
-      <View style={[s.ei, { backgroundColor: t.soft }]}>
-        <Icon name={icon} size={16} color={t.text} />
-      </View>
-      <Text style={[s.eyeT, { color: t.text }]}>{label.toUpperCase()}</Text>
-    </View>
-  );
+function Eyebrow({ label, t }: { label: string; t: Pick<Tone, 'text'> }) {
+  return <Text style={[s.eyeT, { color: t.text }]}>{label}</Text>;
 }
 function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
   const c = useTheme();
@@ -902,17 +895,18 @@ function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; ti
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={[s.len, { borderColor: on ? t.ic : c.line, backgroundColor: c.surface, shadowColor: c.lip }]}>
+      style={({ pressed }) => [
+        s.len,
+        { borderColor: on ? t.ic : 'transparent', backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] },
+      ]}>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: font.display, fontSize: 22, color: c.ink }}>{title}</Text>
+        <Text style={{ fontFamily: font.display, fontSize: 20, lineHeight: 25, color: c.ink }}>{title}</Text>
         <T v="small" tone="muted">
           {sub}
         </T>
-        {on ? <Text style={[s.eye2, { color: t.text, marginTop: 3 }]}>YOUR USUAL</Text> : null}
+        {on ? <Text style={[s.eye2, { color: t.text, marginTop: 4 }]}>Your usual</Text> : null}
       </View>
-      <View style={[s.lm, { backgroundColor: t.soft }]}>
-        <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: t.text }}>{mins}</Text>
-      </View>
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: t.text }}>{mins}</Text>
     </Pressable>
   );
 }
@@ -939,7 +933,7 @@ function Opts({
         const ok = best != null && pk != null && j === best;
         const no = best != null && pk != null && j !== best && tried.indexOf(j) >= 0;
         const sel = pk === j;
-        const bc = ok ? c.mint : sel ? t.ic : c.line;
+        const bc = ok ? c.mint : sel ? t.ic : 'transparent';
         const bg = ok ? c.mintSoft : sel && best == null ? t.soft : c.surface;
         const fg = ok ? c.mintText : no ? c.muted : sel && best == null ? t.text : c.ink;
         return (
@@ -961,7 +955,7 @@ function Reply({ text, t }: { text: string; t: Tone }) {
   const c = useTheme();
   return (
     <View style={[s.reply, { backgroundColor: t.soft }]} accessibilityLiveRegion="polite">
-      <Text style={{ fontFamily: font.body, fontSize: 16, lineHeight: 23, color: c.ink }}>{text}</Text>
+      <Text style={{ fontFamily: font.body, fontSize: 15, lineHeight: 21, color: c.ink }}>{text}</Text>
     </View>
   );
 }
@@ -1002,8 +996,8 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
         if (b[0] === 'p') return <Rich key={k} text={b[1]} st={st} style={s.p} />;
         if (b[0] === 'q')
           return (
-            <View key={k} style={[s.quote, { backgroundColor: t.soft, borderLeftColor: t.ic }]}>
-              <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 25, color: c.ink }}>
+            <View key={k} style={s.quote}>
+              <Text style={{ fontFamily: font.display, fontSize: 20, lineHeight: 26, color: t.text }}>
                 {lfmt(b[1], st)
                   .map((x) => x.t)
                   .join('')}
@@ -1015,8 +1009,8 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
             <View key={k} style={{ gap: 6 }}>
               {b[1].map((x, j) => (
                 <View key={j} style={{ flexDirection: 'row', gap: 8 }}>
-                  <T style={{ fontSize: 17 }}>•</T>
-                  <Rich text={x} st={st} style={{ flex: 1, fontSize: 17, lineHeight: 24 }} />
+                  <T style={s.p}>•</T>
+                  <Rich text={x} st={st} style={[s.p, { flex: 1 }]} />
                 </View>
               ))}
             </View>
@@ -1025,8 +1019,8 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
           const rows = planRows(st);
           if (!rows.length) return null;
           return (
-            <View key={k} style={[s.plan, { backgroundColor: c.surface2 }]}>
-              <Text style={[s.eye2, { color: c.muted }]}>YOUR URGE PLAN RIGHT NOW</Text>
+            <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
+              <Text style={[s.eye2, { color: c.muted }]}>Your urge plan right now</Text>
               {rows.map((r, j) => (
                 <T key={j}>
                   <Text style={{ fontFamily: font.bodyBold }}>If</Text> {r.when}
@@ -1041,10 +1035,10 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
         if (b[0] === 'mylog') {
           const lg = lessonLog(snap.days, st);
           return (
-            <View key={k} style={[s.plan, { backgroundColor: c.surface2 }]}>
+            <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
               {lg.few ? (
                 <>
-                  <Text style={[s.eye2, { color: c.muted }]}>YOUR LOG SO FAR</Text>
+                  <Text style={[s.eye2, { color: c.muted }]}>Your log so far</Text>
                   <T>
                     {(lg.n ? lg.n + (lg.n === 1 ? ' entry' : ' entries') : 'No entries yet') +
                       '. A week of honest entries is enough to start seeing a pattern.'}
@@ -1052,7 +1046,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
                 </>
               ) : (
                 <>
-                  <Text style={[s.eye2, { color: c.muted }]}>WHAT YOUR LOG SHOWS RIGHT NOW</Text>
+                  <Text style={[s.eye2, { color: c.muted }]}>What your log shows right now</Text>
                   <T>
                     <Text style={{ fontFamily: font.bodyBold }}>{lg.n}</Text> entries, <Text style={{ fontFamily: font.bodyBold }}>{lg.rode}</Text> of them rode
                     out.
@@ -1077,8 +1071,8 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
         if (b[0] === 'words') {
           const w = st.words || [];
           return (
-            <View key={k} style={[s.plan, { backgroundColor: c.surface2 }]}>
-              <Text style={[s.eye2, { color: c.muted }]}>WORDS THAT STEADY ME</Text>
+            <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
+              <Text style={[s.eye2, { color: c.muted }]}>Words that steady me</Text>
               {w.length ? (
                 w.map((x, j) => <T key={j}>{x}</T>)
               ) : (
@@ -1095,22 +1089,25 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
 
 function TextCard({ L, card, t, st, onSrc }: { L: Lesson; card: Card; t: Tone; st: Settings; onSrc: () => void }) {
   const e = LX_E[card.e || 'insight'] || LX_E.insight;
+  /* a real picture (a chain, a wave, a number, a loop) always shows. A plain icon says nothing the words do not, so it shows
+     only on the answer, the card the lesson turns on, and the words get the room on the others. */
+  const art = card.art && (card.art[0] !== 'icon' || card.e === 'answer') ? card.art : null;
   return (
     <>
-      {card.art ? (
-        <FitArt style={s.art} drop={0.5}>
-          <LessonArt key={L.id + card.h} art={card.art} ic={L.ic} t={t} st={st} />
+      {art ? (
+        <FitArt style={s.art} drop={0.5} stretch={art[0] === 'research'}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={t} st={st} />
         </FitArt>
       ) : null}
-      <Eyebrow icon={e[0]} label={card.el || e[1]} t={t} />
+      <Eyebrow label={card.el || e[1]} t={t} />
       <T style={[s.h, card.h.length > 46 && s.hsm]} accessibilityRole="header">
         {card.h}
       </T>
       <Blocks bs={card.b} L={L} t={t} st={st} />
       {card.so ? (
-        <View style={[s.so, { borderColor: t.ic }]}>
-          <Text style={[s.eye2, { color: t.text }]}>WHAT THIS MEANS FOR YOU</Text>
-          <Rich text={card.so} st={st} style={s.p} />
+        <View style={s.so}>
+          <Text style={[s.eye2, { color: t.text }]}>What this means for you</Text>
+          <Rich text={card.so} st={st} style={[s.p, { fontFamily: font.bodyMedium }]} />
         </View>
       ) : null}
       {card.fact ? <Fact text={card.fact.s} t={t} onPress={onSrc} /> : null}
@@ -1167,7 +1164,7 @@ function GuessCard({
   if (!gs.lock) {
     return (
       <>
-        <Eyebrow icon={LX_E.guess[0]} label={card.el || LX_E.guess[1]} t={t} />
+        <Eyebrow label={card.el || LX_E.guess[1]} t={t} />
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {card.h}
         </T>
@@ -1241,14 +1238,14 @@ function GuessCard({
           </Text>
         </View>
       </View>
-      <Eyebrow icon={LX_E.proof[0]} label={LX_E.proof[1]} t={t} />
+      <Eyebrow label={LX_E.proof[1]} t={t} />
       <T style={[s.h, s.hsm]} accessibilityRole="header">
         {rv.h || card.h}
       </T>
       <T style={s.p}>
         {guessFeedback(g, v)}
         {rv.b ? ' ' : ''}
-        {rv.b ? <Rich text={rv.b} st={null} /> : null}
+        {rv.b ? <Rich text={rv.b} st={null} style={s.p} /> : null}
       </T>
       {card.fact ? <Fact text={card.fact.s} t={t} onPress={onSrc} /> : null}
     </>
@@ -1290,8 +1287,8 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
               <Pressable
                 accessibilityRole="link"
                 onPress={() => Linking.openURL(e[1])}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36 }}>
-                <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Open the source</Text>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44 }}>
+                <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>Open the source</Text>
                 <Icon name="ext" size={14} color={c.accentText} />
               </Pressable>
             </View>
@@ -1320,11 +1317,7 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
           <T v="h2" accessibilityRole="header">
             {title}
           </T>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.surface }]}>
             <Icon name="x" color={c.ink} />
           </Pressable>
         </View>
@@ -1341,88 +1334,57 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
   );
 }
 
-/* a short phone gets slightly smaller type and room, so a card fits (components/fit) */
+/* a short phone gets slightly smaller type and room, so a card fits (components/fit). The words sit on the page itself, with no
+   card around them: a box here is something the person is meant to see as one thing (a choice, the answer, their plan). */
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   prog: { flexDirection: 'row', gap: 4 },
-  progI: { flex: 1, height: 8, borderRadius: 4 },
-  card: { flex: 1, borderRadius: 28, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
-  cardIn: { padding: SHORT ? 18 : 22, flexGrow: 1 },
-  cardBody: { gap: SHORT ? 11 : 14, flexGrow: 1 },
+  progI: { flex: 1, height: 6, borderRadius: 3 },
+  card: { flex: 1, marginHorizontal: -16 },
+  cardIn: { paddingHorizontal: 16, paddingTop: SHORT ? 12 : 16, paddingBottom: 16, flexGrow: 1 },
+  cardBody: { gap: 12, flexGrow: 1 },
   guessMid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', minHeight: 170 },
-  art: { alignItems: 'center', justifyContent: 'center' },
-  eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
-  eye2: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
-  h: { fontFamily: font.display, fontSize: SHORT ? 25 : 30, lineHeight: SHORT ? 29 : 34 },
-  hsm: { fontSize: SHORT ? 22 : 26, lineHeight: SHORT ? 27 : 31 },
-  p: { fontSize: SHORT ? 16.5 : 18, lineHeight: SHORT ? 23 : 26 },
-  ask: { gap: 4, padding: 14, borderRadius: 18 },
-  askP: { fontFamily: font.display, fontSize: 20, lineHeight: 26 },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
-  pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
-  key: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 18 },
-  keyP: { fontFamily: font.display, fontSize: SHORT ? 17 : 19, lineHeight: SHORT ? 23 : 26, marginTop: 4 },
+  art: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  eyeT: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, marginBottom: -8 },
+  eye2: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  h: { fontFamily: font.display, fontSize: SHORT ? 22 : 28, lineHeight: SHORT ? 28 : 34 },
+  hsm: { fontSize: 22, lineHeight: 28 },
+  p: { fontSize: 17, lineHeight: 24 },
+  askB: { gap: 4, marginTop: 4 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pill: { paddingHorizontal: 16, paddingVertical: 4, borderRadius: 999 },
+  key: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 20 },
+  keyP: { fontFamily: font.display, fontSize: SHORT ? 17 : 20, lineHeight: SHORT ? 23 : 26 },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
-  foot: { flexDirection: 'row', gap: 10 },
-  backHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  footCol: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
+  linkT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textDecorationLine: 'underline' },
+  foot: { flexDirection: 'row', gap: 12 },
+  backHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  footCol: { flex: 1, gap: 4 },
   quiet: { width: '100%', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  next: {
-    flex: 1,
-    minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    borderRadius: 18,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  nextT: { fontFamily: font.bodySemi, fontSize: 20, textAlign: 'center' },
-  back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  ghost: { minHeight: 60, paddingHorizontal: 20, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  soft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minHeight: 56,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  softT: { fontFamily: font.bodySemi, fontSize: 17, flexShrink: 1 },
+  quiets: { width: '100%', flexDirection: 'row' },
+  quietHalf: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   len: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     minHeight: 76,
-    padding: 14,
-    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  lm: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
-  opt: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 54, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2 },
-  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 21 },
-  reply: { padding: 14, borderRadius: 16 },
-  quote: { padding: 14, borderRadius: 16, borderLeftWidth: 5 },
-  plan: { gap: 6, padding: 14, borderRadius: 16 },
-  so: { gap: 4, paddingLeft: 12, borderLeftWidth: 3 },
+  opt: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 54, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, borderWidth: 2 },
+  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  reply: { padding: 16, borderRadius: 20 },
+  quote: { paddingVertical: 4 },
+  plan: { gap: 8, padding: 16, borderRadius: 20 },
+  so: { gap: 4, marginTop: 8 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28, marginTop: 'auto', opacity: 0.85 },
-  factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13 },
-  act: { gap: 10, padding: 14, borderRadius: 20 },
-  stepLi: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 10, borderRadius: 14 },
-  stepN: { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   ticks: { flexDirection: 'row', justifyContent: 'space-between' },
   mk: { position: 'absolute', top: -6, width: 24, height: 24, marginLeft: -12, borderRadius: 12, borderWidth: 4 },
   sheet: {
@@ -1439,5 +1401,5 @@ const s = StyleSheet.create({
     borderTopRightRadius: 28,
   },
   grab: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3 },
-  src: { gap: 4, padding: 12, borderRadius: 14 },
+  src: { gap: 4, padding: 12, borderRadius: 12 },
 });

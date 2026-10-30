@@ -116,6 +116,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   btnText: { fontFamily: font.bodyBold, fontSize: 15 },
-  chip: { minHeight: 38, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  chip: { minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   chipText: { fontFamily: font.bodySemi, fontSize: 15 },
 });

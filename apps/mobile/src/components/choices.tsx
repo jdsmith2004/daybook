@@ -50,9 +50,7 @@ export function BigOption({
           transform: [{ translateY: pressed ? 3 : 0 }],
         },
       ]}>
-      <View style={[s.optIc, { backgroundColor: t.soft }]}>
-        <Icon name={icon} size={24} color={t.text} />
-      </View>
+      <Icon name={icon} size={24} color={t.text} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[s.optT, { color: c.ink }]}>
           {title}
@@ -206,10 +204,9 @@ const s = StyleSheet.create({
     minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-    paddingLeft: 8,
-    paddingRight: 14,
+    gap: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 2,
     shadowOffset: { width: 0, height: 4 },
@@ -217,8 +214,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  optIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  optT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22 },
+  optT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   tag: { fontFamily: font.bodySemi, fontSize: 12 },
   grid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tile: {
@@ -236,7 +232,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  tileT: { fontFamily: font.bodySemi, fontSize: 16, textAlign: 'center' },
+  tileT: { fontFamily: font.bodySemi, fontSize: 15, textAlign: 'center' },
   add: { flexDirection: 'row', gap: 6, borderStyle: 'dashed', backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0 },
   block: { flexGrow: 0, flexBasis: 'auto', width: '100%' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

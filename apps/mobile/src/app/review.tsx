@@ -6,8 +6,9 @@
    out. Each one has a line of science with its source and the lesson to read.
 
    Then getting ready for the next week, kept short: your take (what worked, what to change), and one small goal. Saving
-   it says All done, worth 20 points once, and the goal waits on Today. After that, and only if the person wants them: an
-   if-then plan for the hardest moment, the harder days ahead, and a note to their future self, shown midweek.
+   it says All done, with the flame big, worth 20 points once, and the goal waits on Today. A quiet link under Done opens
+   the rest, only if the person wants them: an if-then plan for the hardest moment, the harder days ahead, and a note to
+   their future self, shown midweek.
    ?s=<a Sunday> opens that week's review (to write it late, or change it). */
 import {
   addDays,
@@ -56,6 +57,7 @@ import { FitArt, SHORT } from '@/components/fit';
 import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { Flame } from '@/components/flame';
+import { Rows } from '@/components/link-card';
 import { OwnChip, OwnField } from '@/components/own';
 import { Clock } from '@/components/pattern-charts';
 import { SourceLine } from '@/components/research';
@@ -71,7 +73,7 @@ import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
 
-type After = 'take' | 'goal' | 'done' | 'xIt' | 'xHard' | 'xNote';
+type After = 'take' | 'goal' | 'done' | 'more' | 'xIt' | 'xHard' | 'xNote';
 type Own = 'w' | 'c' | 'g' | 'iw' | 'it' | null;
 const SKY: Record<StoryScreen, Sky> = {
   intro: 'violet',
@@ -155,7 +157,8 @@ export default function Review() {
     setDir(-1);
     if (after === 'goal') setAfter('take');
     else if (after === 'take') setAfter(null);
-    else if (after && after[0] === 'x') setAfter('done');
+    else if (after === 'more') setAfter('done');
+    else if (after && after[0] === 'x') setAfter('more');
     else if (i > 0) setI(i - 1);
   };
   /* the review as it stands, and saving it (again, for the extras: the points come once) */
@@ -169,7 +172,7 @@ export default function Review() {
     setDir(1);
     setAfter('done');
   };
-  const sky: Sky = after ? (after === 'done' ? 'sun' : 'violet') : SKY[scr];
+  const sky: Sky = after ? (after === 'done' || after === 'more' ? 'sun' : 'violet') : SKY[scr];
 
   /* the picture area of a story screen: a tap on its right side goes on, on its left side goes back */
   const tapZone = (e: { nativeEvent: { pageX: number } }) => (e.nativeEvent.pageX < win.width * 0.3 ? i > 0 && back() : next());
@@ -197,7 +200,7 @@ export default function Review() {
           </Text>
           <FitArt>
             <Appear delay={200} by={10}>
-              <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={150} />
+              <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={200} />
             </Appear>
           </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>
@@ -209,7 +212,7 @@ export default function Review() {
       const zero = S.w.noSlip === 0;
       main = (
         <>
-          {eyebrow('YOUR SEVEN DAYS')}
+          {eyebrow('Your seven days')}
           <Big>{zero ? S.w.days : S.w.noSlip}</Big>
           <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{zero ? 'days you showed up and logged it' : 'days with no slip'}</T>
           <DaysRow days={S.days} />
@@ -228,7 +231,7 @@ export default function Review() {
     } else if (scr === 'ride') {
       main = (
         <>
-          {eyebrow('URGES')}
+          {eyebrow('Urges')}
           <Big color={c.mintText}>{S.w.rode}</Big>
           <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.w.rode === 1 ? 'urge ridden out' : 'urges ridden out'}</T>
           <FitArt>
@@ -244,12 +247,12 @@ export default function Review() {
       const hard = S.when.hard.weekdays || S.when.hard.weekends;
       main = (
         <>
-          {eyebrow('WHEN IT CAME')}
+          {eyebrow('When it came')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             Most often around {(top.h % 12 || 12) + (top.h < 12 ? ' AM' : ' PM')}
           </Text>
           <FitArt stretch>
-            <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge, alignItems: 'center', paddingVertical: 8 }]}>
+            <View style={[s.card, { backgroundColor: c.surface, alignItems: 'center', paddingVertical: 8 }]}>
               <View style={{ width: Math.min(250, win.width - 72) }}>
                 <Clock hours={S.when.hours} hard={S.when.hard} />
               </View>
@@ -265,7 +268,7 @@ export default function Review() {
     } else if (scr === 'trig') {
       main = (
         <>
-          {eyebrow('WHAT SET IT OFF')}
+          {eyebrow('What set it off')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.trig[0].t} came up most
           </Text>
@@ -277,7 +280,7 @@ export default function Review() {
     } else if (scr === 'help') {
       main = (
         <>
-          {eyebrow('WHAT HELPED')}
+          {eyebrow('What helped')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.help[0].t} worked best
           </Text>
@@ -294,7 +297,7 @@ export default function Review() {
       const pat = patSlipTrig(snap.days, st, tk < sun ? tk : sun);
       main = (
         <>
-          {eyebrow('THE HARD MOMENTS')}
+          {eyebrow('The hard moments')}
           <Big color={c.slipText}>{S.slips.n}</Big>
           <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.slips.n === 1 ? 'slip, logged honestly' : 'slips, logged honestly'}</T>
           <View style={{ alignSelf: 'stretch', gap: 8 }}>
@@ -316,7 +319,7 @@ export default function Review() {
             : 'Small habits here make every hard moment smaller.';
       main = (
         <>
-          {eyebrow('THE FOUNDATIONS')}
+          {eyebrow('The foundations')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             What holds the rest up
           </Text>
@@ -332,7 +335,7 @@ export default function Review() {
       const L = S.last;
       main = (
         <>
-          {eyebrow('LAST WEEK’S GOAL')}
+          {eyebrow('Last week’s goal')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {L.g.t}
           </Text>
@@ -359,7 +362,7 @@ export default function Review() {
     } else if (scr === 'long') {
       main = (
         <>
-          {eyebrow('THE LONG VIEW')}
+          {eyebrow('The long view')}
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {S.weeks.length} weeks, side by side
           </Text>
@@ -380,19 +383,15 @@ export default function Review() {
       const l = (LESSONS as unknown as { id: string; title: string }[]).find((x) => x.id === d.l);
       main = (
         <>
-          {eyebrow('ONE THING TO KNOW')}
-          <FitArt min={0}>
-            <View style={[s.deepIc, { backgroundColor: c.violetSoft }]}>
-              <Icon name={d.ic} size={30} color={c.violetText} />
-            </View>
-          </FitArt>
+          {eyebrow('One thing to know')}
+          <Icon name={d.ic} size={34} color={c.violetText} />
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             {d.title}
           </Text>
-          <View style={[s.card, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+          <View style={[s.card, { backgroundColor: c.surface }]}>
             {d.paras.map((p, j) => (
               <Appear key={j} delay={150 + j * 260}>
-                <T style={{ fontSize: SHORT ? 15 : 16, lineHeight: SHORT ? 21 : 23 }}>{p}</T>
+                <T>{p}</T>
               </Appear>
             ))}
             <View style={s.foot2}>
@@ -420,7 +419,9 @@ export default function Review() {
         <Pressable accessible={false} onPress={tapZone} style={s.zone}>
           {main}
         </Pressable>
-        {teach ? <Teach teach={teach} /> : null}
+        {teach ? (
+          <Teach key={scr} teach={teach} folded={SHORT && (scr === 'ride' || scr === 'clock' || scr === 'help' || scr === 'base' || scr === 'long')} />
+        ) : null}
         <Dock>{scr === 'intro' ? <Button label="Start" onPress={next} /> : nextBtn}</Dock>
       </>
     );
@@ -430,7 +431,7 @@ export default function Review() {
     body =
       own === 'w' || own === 'c' ? (
         <>
-          {eyebrow(own === 'w' ? 'WHAT WORKED' : 'WHAT TO CHANGE')}
+          {eyebrow(own === 'w' ? 'What worked' : 'What to change')}
           <OwnField
             placeholder={own === 'w' ? 'Like: going for a run after work' : 'Like: Sunday evenings'}
             max={SUN_LEN}
@@ -444,7 +445,7 @@ export default function Review() {
         </>
       ) : (
         <>
-          {eyebrow('GETTING READY · 1 OF 2')}
+          {eyebrow('Getting ready · 1 of 2')}
           <T v="title" style={s.c} accessibilityRole="header">
             Your take on the week
           </T>
@@ -486,12 +487,12 @@ export default function Review() {
     body =
       own === 'g' ? (
         <>
-          {eyebrow('ONE SMALL GOAL')}
+          {eyebrow('One small goal')}
           <OwnField placeholder="Like: a walk after dinner" max={80} onSave={(t) => (setGoal({ t }), setOwn(null))} onCancel={() => setOwn(null)} />
         </>
       ) : (
         <>
-          {eyebrow('GETTING READY · 2 OF 2')}
+          {eyebrow('Getting ready · 2 of 2')}
           <T v="title" style={s.c} accessibilityRole="header">
             One small goal for next week
           </T>
@@ -499,7 +500,7 @@ export default function Review() {
             Small and close. It waits on Today all week, and Daybook counts it for you.
           </T>
           {goal ? (
-            <Appear key={goal.t} by={6} style={[s.goalCard, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+            <Appear key={goal.t} by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
               <Icon name="flag" size={22} color={c.sunText} />
               <Text style={[s.goalT, { color: c.ink }]}>{goal.t}</Text>
             </Appear>
@@ -557,8 +558,69 @@ export default function Review() {
         </>
       );
   } else if (after === 'done') {
-    /* ---------- all done, and more if wanted ---------- */
+    /* ---------- all done: the flame, big, and the week in a line ---------- */
     const gain = Math.max(0, gameCompute(snap.days, st, snap.reviews, tk).pts - pts0);
+    const r = snap.reviews[sunKey(sun)]?.sun;
+    const planSay = sunPlanSay(snap.reviews, st, tk, r?.it);
+    body = (
+      <>
+        <Finish
+          level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
+          title="All done!"
+          text={goal ? goal.t + '. It waits on Today all week.' : 'Your week is saved.'}
+          size={190}
+          always
+          least={0.6}
+        />
+        <Appear delay={300} style={{ alignSelf: 'stretch', gap: 4 }}>
+          <T style={[s.c, { fontFamily: font.bodySemi }]}>
+            {[
+              S.w.noSlip ? S.w.noSlip + ' of ' + S.w.days + ' days with no slip' : '',
+              S.w.rode ? S.w.rode + (S.w.rode === 1 ? ' urge' : ' urges') + ' ridden out' : '',
+            ]
+              .filter(Boolean)
+              .join(' · ') || 'A week looked back on, honestly.'}
+          </T>
+          {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={650} style={[s.pts, { color: c.mintText }]} /> : null}
+        </Appear>
+        <Dock>
+          {/* a plan said once comes back at the moment (Sheeran 2025) */}
+          {planSay ? (
+            <View style={{ alignSelf: 'stretch', alignItems: 'center' }}>
+              <T style={[s.c, { fontFamily: font.bodySemi }]}>{'“' + planSay + '”'}</T>
+              {said ? (
+                <View style={s.saidRow}>
+                  <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
+                    Good. It comes back to you at the moment.
+                  </T>
+                </View>
+              ) : (
+                <Link
+                  label="Say it once, then tap here"
+                  onPress={() => {
+                    buzz('tap');
+                    setSaid(true);
+                  }}
+                />
+              )}
+            </View>
+          ) : null}
+          <Button label="Done" onPress={closeAll} />
+          <View style={{ alignItems: 'center' }}>
+            <Link
+              label="Want to do more? All optional."
+              onPress={() => {
+                buzz('tap');
+                setDir(1);
+                setAfter('more');
+              }}
+            />
+          </View>
+        </Dock>
+      </>
+    );
+  } else if (after === 'more') {
+    /* ---------- more, only if wanted ---------- */
     const r = snap.reviews[sunKey(sun)]?.sun;
     const extra = (k: After, icon: string, tone: string, title: string, sub: string, done: boolean) => {
       const t = toneOf(c, tone);
@@ -572,80 +634,34 @@ export default function Review() {
             setOwn(null);
             setAfter(k);
           }}
-          style={({ pressed }) => [
-            s.extra,
-            { backgroundColor: c.surface, borderColor: done ? c.mint : c.cardEdge, shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] },
-          ]}>
-          <View style={[s.extraIc, { backgroundColor: t.soft }]}>
-            <Icon name={icon} size={20} color={t.text} />
+          style={({ pressed }) => [s.extra, { opacity: pressed ? 0.7 : 1 }]}>
+          <Icon name={icon} size={20} color={t.text} />
+          <View style={[s.extraIn, { borderBottomColor: c.line }]}>
+            <View style={{ flex: 1 }}>
+              <T v="label">{title}</T>
+              <T v="small" tone="muted" numberOfLines={1}>
+                {sub}
+              </T>
+            </View>
+            {done ? <Icon name="check" size={20} color={c.mintText} /> : <Icon name="next" size={16} color={c.muted} />}
           </View>
-          <View style={{ flex: 1 }}>
-            <T v="label">{title}</T>
-            <T v="small" tone="muted">
-              {sub}
-            </T>
-          </View>
-          {done ? <Icon name="check" size={20} color={c.mintText} /> : <Icon name="next" size={18} color={c.muted} />}
         </Pressable>
       );
     };
-    const planSay = sunPlanSay(snap.reviews, st, tk, r?.it);
     body = (
       <>
-        <Finish
-          level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
-          title="All done!"
-          text={goal ? 'Your goal waits on Today all week.' : 'Your week is saved.'}
-        />
-        <Appear delay={300} style={[s.summary, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-          <T v="eyebrow" tone="muted">
-            {sunRange(sun)}
-          </T>
-          <T style={{ fontFamily: font.bodySemi }}>
-            {[
-              S.w.noSlip ? S.w.noSlip + ' of ' + S.w.days + ' days with no slip' : '',
-              S.w.rode ? S.w.rode + (S.w.rode === 1 ? ' urge' : ' urges') + ' ridden out' : '',
-            ]
-              .filter(Boolean)
-              .join(' · ') || 'A week looked back on, honestly.'}
-          </T>
-          {goal ? (
-            <View style={s.sumGoal}>
-              <Icon name="flag" size={16} color={c.sunText} />
-              <T v="small" style={{ flex: 1, fontFamily: font.bodySemi }}>
-                {goal.t}
-              </T>
-            </View>
-          ) : null}
-        </Appear>
-        {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={650} style={[s.pts, { color: c.mintText }]} /> : null}
+        <T v="title" style={s.c} accessibilityRole="header">
+          Want to do more?
+        </T>
+        <T tone="muted" style={[s.c, s.lead]}>
+          All optional.
+        </T>
         <Dock>
-          {/* a plan said once comes back at the moment (Sheeran 2025) */}
-          {planSay ? (
-            <View style={[s.say, { backgroundColor: c.surface, shadowColor: c.lip }]}>
-              <T style={[s.c, { fontFamily: font.bodySemi }]}>{'“' + planSay + '”'}</T>
-              {said ? (
-                <T v="small" tone="mintText" style={[s.c, { fontFamily: font.bodySemi }]}>
-                  Good. It comes back to you at the moment.
-                </T>
-              ) : (
-                <Button
-                  kind="ghost"
-                  label="Say it once, then tap here"
-                  onPress={() => {
-                    buzz('tap');
-                    setSaid(true);
-                  }}
-                />
-              )}
-            </View>
-          ) : null}
-          <T v="eyebrow" tone="muted" style={s.c}>
-            WANT TO DO MORE? ALL OPTIONAL
-          </T>
-          {extra('xIt', 'compass', 'violet', 'Plan for your hardest moment', r?.it ? storyIfLine(r.it) : 'An if-then plan, made while you are calm', !!r?.it)}
-          {extra('xHard', 'calendar', 'coral', 'See your harder days ahead', r?.hd ? 'Marked on Today' : 'From your log, with a heads-up', !!r?.hd)}
-          {extra('xNote', 'pencil', 'sun', 'A note to future you', r?.nt ? '“' + r.nt + '”' : 'Shown to you from Wednesday on', !!r?.nt)}
+          <Rows>
+            {extra('xIt', 'compass', 'violet', 'Plan for your hardest moment', r?.it ? storyIfLine(r.it) : 'An if-then plan, made while you are calm', !!r?.it)}
+            {extra('xHard', 'calendar', 'coral', 'See your harder days ahead', r?.hd ? 'Marked on Today' : 'From your log, with a heads-up', !!r?.hd)}
+            {extra('xNote', 'pencil', 'sun', 'A note to future you', r?.nt ? '“' + r.nt + '”' : 'Shown to you from Wednesday on', !!r?.nt)}
+          </Rows>
           <Button label="Done" onPress={closeAll} />
         </Dock>
       </>
@@ -659,7 +675,7 @@ export default function Review() {
     body =
       own === 'iw' || own === 'it' ? (
         <>
-          {eyebrow(own === 'iw' ? 'WHEN…' : 'I WILL…')}
+          {eyebrow(own === 'iw' ? 'When…' : 'I will…')}
           <OwnField
             placeholder={own === 'iw' ? 'Like: I get home from work tired' : 'Like: make tea and call my brother'}
             max={80}
@@ -674,11 +690,11 @@ export default function Review() {
         </>
       ) : (
         <>
-          {eyebrow('YOUR HARDEST MOMENT')}
+          {eyebrow('Your hardest moment')}
           <T v="title" style={s.c} accessibilityRole="header">
             Decide now, while you are calm
           </T>
-          <Appear key={(itW || '') + (itT || '')} by={6} style={[s.goalCard, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+          <Appear key={(itW || '') + (itT || '')} by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
             <Icon name="compass" size={22} color={c.violetText} />
             <Text style={[s.goalT, { color: itW && itT ? c.ink : c.muted }]}>
               {itW && itT ? storyIfLine({ w: itW, t: itT }) : 'When ' + (itW || '…') + ', I will ' + (itT || '…')}
@@ -730,7 +746,7 @@ export default function Review() {
     };
     body = (
       <>
-        {eyebrow('THE WEEK AHEAD')}
+        {eyebrow('The week ahead')}
         <T v="title" style={s.c} accessibilityRole="header">
           {hd.length ? (hd.length === 1 ? 'One day to plan for' : 'Two days to plan for') : 'No day stands out'}
         </T>
@@ -741,10 +757,8 @@ export default function Review() {
         </T>
         <View style={{ alignSelf: 'stretch', gap: 10 }}>
           {hd.map((x, j) => (
-            <Appear key={x.d} delay={150 + j * 200} style={[s.extra, { backgroundColor: c.surface, borderColor: c.coral, shadowColor: c.lip }]}>
-              <View style={[s.extraIc, { backgroundColor: c.coralSoft }]}>
-                <Icon name="calendar" size={20} color={c.coralText} />
-              </View>
+            <Appear key={x.d} delay={150 + j * 200} style={[s.goalCard, { backgroundColor: c.surface }]}>
+              <Icon name="calendar" size={20} color={c.coralText} />
               <View style={{ flex: 1 }}>
                 <T v="label">{dateOf(x.d)}</T>
                 <T v="small" tone="muted">
@@ -778,7 +792,7 @@ export default function Review() {
                 buzz('save');
                 say('On those days, Today reminds you, with your plan.');
                 setDir(-1);
-                setAfter('done');
+                setAfter('more');
               }}
             />
           ) : (
@@ -791,7 +805,7 @@ export default function Review() {
     /* ---------- a note to future you: the box and its button stay near the top, above the keyboard ---------- */
     body = (
       <>
-        {eyebrow('A NOTE TO FUTURE YOU')}
+        {eyebrow('A note to future you')}
         <T v="title" style={s.c} accessibilityRole="header">
           What will you need to hear midweek?
         </T>
@@ -813,7 +827,7 @@ export default function Review() {
               buzz('save');
               say('Today shows it to you from Wednesday on.');
               setDir(-1);
-              setAfter('done');
+              setAfter('more');
             }}
           />
         </KeepAbove>
@@ -844,7 +858,7 @@ function Fact({ icon, text }: { icon: string; text: string }) {
   return (
     <View style={[s.fact, { backgroundColor: c.surface }]}>
       <Icon name={icon} size={18} color={c.accentText} />
-      <T style={{ flex: 1, fontSize: 15, lineHeight: 21 }}>{text}</T>
+      <T style={{ flex: 1 }}>{text}</T>
     </View>
   );
 }
@@ -856,9 +870,7 @@ function Part({ icon, tone, title, children }: { icon: string; tone: string; tit
   return (
     <View style={s.part}>
       <View style={s.partHead}>
-        <View style={[s.partIc, { backgroundColor: t.soft }]}>
-          <Icon name={icon} size={15} color={t.text} />
-        </View>
+        <Icon name={icon} size={16} color={t.text} />
         <T v="label">{title}</T>
       </View>
       <ChipWrap>{children}</ChipWrap>
@@ -898,7 +910,7 @@ function Step({ label, sign, off, onPress }: { label: string; sign: string; off:
         buzz('tap');
         onPress();
       }}
-      style={[s.step, { backgroundColor: c.surface, borderColor: c.line, opacity: off ? 0.4 : 1 }]}>
+      style={[s.step, { backgroundColor: c.surface, opacity: off ? 0.4 : 1 }]}>
       <Text style={[s.stepT, { color: c.ink }]}>{sign}</Text>
     </Pressable>
   );
@@ -911,9 +923,8 @@ const s = StyleSheet.create({
   h1: { fontFamily: font.displayBold, fontSize: 38, lineHeight: 44, textAlign: 'center' },
   h2: { fontFamily: font.display, fontSize: 28, lineHeight: 33, textAlign: 'center', maxWidth: 400 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
-  card: { alignSelf: 'stretch', gap: SHORT ? 9 : 12, padding: SHORT ? 13 : 16, borderRadius: 20, borderWidth: 1.5 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
-  deepIc: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  card: { alignSelf: 'stretch', gap: SHORT ? 8 : 12, padding: SHORT ? 12 : 16, borderRadius: 20 },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12 },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
   lessonT: { fontFamily: font.bodySemi, fontSize: 13, textDecorationLine: 'underline', flexShrink: 1 },
   foot2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
@@ -921,7 +932,6 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   part: { alignSelf: 'stretch', gap: 8 },
   partHead: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' },
-  partIc: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   pick: {
     minHeight: 44,
     paddingHorizontal: 14,
@@ -936,34 +946,12 @@ const s = StyleSheet.create({
   pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   pickS: { fontFamily: font.body, fontSize: 12, marginTop: 1 },
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  step: { width: 40, height: 40, borderRadius: 13, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   stepT: { fontFamily: font.bodyBold, fontSize: 20, lineHeight: 22 },
-  say: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18 },
-  goalCard: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
+  saidRow: { minHeight: 44, justifyContent: 'center' },
+  goalCard: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
   goalT: { flex: 1, fontFamily: font.display, fontSize: 20, lineHeight: 26 },
-  summary: { alignSelf: 'stretch', gap: 6, padding: 16, borderRadius: 20, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
-  sumGoal: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  extra: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: SHORT ? 9 : 12,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  extraIc: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  extra: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16 },
+  extraIn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 56, paddingVertical: 8, paddingRight: 12, borderBottomWidth: 1 },
   pts: { fontFamily: font.display, fontSize: 17, textAlign: 'center' },
 });

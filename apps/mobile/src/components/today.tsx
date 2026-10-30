@@ -29,24 +29,21 @@ import { font, useTheme } from '@/lib/theme';
 
 /* ---------- the Days card: the mode's one count, as Today shows it, and what stays on the record ---------- */
 function Chips({ v }: { v: CleanView }) {
-  const c = useTheme();
   const ch = runChips(v);
-  const chip = (small: string, text: string, bg: string, fg: 'ink' | 'mintText' | 'violetText') => (
-    <View key={small} style={[s.chip, { backgroundColor: bg }]}>
-      <T v="small" tone={fg === 'ink' ? 'muted' : fg} style={{ fontFamily: font.bodySemi }}>
+  const row = (small: string, text: string) => (
+    <View key={small} style={s.kept}>
+      <T tone="muted" style={{ flex: 1 }}>
         {small}
       </T>
-      <T v="label" tone={fg}>
-        {text}
-      </T>
+      <T v="label">{text}</T>
     </View>
   );
   return (
-    <View style={s.wrap}>
-      {ch.hours ? chip('Since your last slip', ch.hours, c.mintSoft, 'mintText') : null}
-      {ch.longest ? chip('Longest run', ch.longest, c.surface2, 'ink') : null}
-      {ch.noSlip ? chip('No-slip days in all', ch.noSlip, c.surface2, 'ink') : null}
-      {ch.next ? chip('Next goal', ch.next, c.violetSoft, 'violetText') : null}
+    <View style={{ gap: 4 }}>
+      {ch.hours ? row('Since your last slip', ch.hours) : null}
+      {ch.longest ? row('Longest run', ch.longest) : null}
+      {ch.noSlip ? row('No-slip days in all', ch.noSlip) : null}
+      {ch.next ? row('Next goal', ch.next) : null}
     </View>
   );
 }
@@ -101,9 +98,7 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
       </T>
       <View style={s.baseline}>
         <T v="big">{t.big}</T>
-        <T tone="muted" style={{ fontSize: 16 }}>
-          {t.of}
-        </T>
+        <T tone="muted">{t.of}</T>
       </View>
       <T v="small" tone="muted">
         {t.sub}
@@ -126,12 +121,13 @@ function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
       accessibilityRole="button"
       accessibilityHint="Opens Milestones"
       onPress={() => router.push('/miles')}
-      style={[s.grad, { backgroundColor: g.at ? c.sunSoft : c.accentSoft }]}>
-      <Icon name={g.at ? 'crown' : 'trophy'} size={18} color={g.at ? c.ink : c.accentText} />
-      <T v="small" style={{ flex: 1, fontFamily: font.bodySemi, color: g.at ? c.ink : c.accentText }}>
+      style={({ pressed }) => [s.grad, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name={g.at ? 'crown' : 'trophy'} size={22} color={g.at ? c.sunText : c.accentText} />
+      <T v="small" style={{ flex: 1 }}>
         {g.at ? 'Graduated. ' : ''}
         {line}
       </T>
+      <Icon name="next" size={16} color={c.muted} />
     </Pressable>
   );
 }
@@ -164,12 +160,12 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
   const hhLook = !hh
     ? null
     : hh.state === 'won'
-      ? { bg: c.mintSoft, ink: c.mintText, ic: 'check' }
+      ? { ink: c.mintText, ic: 'check' }
       : hh.state === 'during'
-        ? { bg: c.coralSoft, ink: c.coralText, ic: 'life' }
+        ? { ink: c.coralText, ic: 'life' }
         : hh.state === 'lost'
-          ? { bg: c.surface2, ink: c.muted, ic: 'leaf' }
-          : { bg: c.violetSoft, ink: c.violetText, ic: hh.day ? 'sun' : 'moon' };
+          ? { ink: c.muted, ic: 'leaf' }
+          : { ink: c.violetText, ic: hh.day ? 'sun' : 'moon' };
   return (
     <Card>
       <View style={s.between}>
@@ -206,14 +202,14 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       {/* the plan's week */}
       <WeekDots week={week} />
       <View style={s.wrap}>
-        <View style={[s.stepChip, { backgroundColor: onAim ? c.mintSoft : c.surface2 }]}>
+        <View style={s.stepChip}>
           <Icon name="flag" size={14} color={onAim ? c.mintText : c.muted} />
           <Text style={[s.stepChipT, { color: onAim ? c.mintText : c.ink }]}>
             {kv.target == null ? 'First week: no aim yet' : kv.target === 0 ? 'Aim: no slips' : 'Aim: ' + kv.target + ' or fewer'}
           </Text>
         </View>
         {kv.wSl ? (
-          <View style={[s.stepChip, { backgroundColor: kv.wWait ? c.skySoft : c.surface2 }]}>
+          <View style={s.stepChip}>
             <Icon name="timer" size={14} color={kv.wWait ? c.skyText : c.muted} />
             <Text style={[s.stepChipT, { color: kv.wWait ? c.skyText : c.ink }]}>
               Waited first {kv.wWait} of {kv.wSl}
@@ -223,7 +219,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       </View>
 
       {hh && hhLook ? (
-        <View style={[s.slim, { backgroundColor: hhLook.bg }]}>
+        <View style={s.slim}>
           <Icon name={hhLook.ic} size={17} color={hhLook.ink} />
           <View style={{ flex: 1 }}>
             <Text style={[s.slimT, { color: hhLook.ink }]}>{hh.short}</Text>
@@ -233,7 +229,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       ) : null}
 
       {k.ready ? (
-        <View style={[s.box, { backgroundColor: c.sunSoft }]}>
+        <View style={s.flat}>
           <View style={s.slimRow}>
             <Icon name="trophy" size={18} color={c.sunText} />
             <T v="label" style={{ flex: 1 }}>
@@ -247,7 +243,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
         </View>
       ) : null}
       {k.help ? (
-        <View style={[s.slim, { backgroundColor: c.coralSoft }]}>
+        <View style={s.slim}>
           <Icon name="heart" size={17} color={c.coralText} />
           <Text style={[s.slimT, { color: c.coralText }]}>Extra support helps</Text>
           <Pressable accessibilityRole="link" hitSlop={6} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'therapy' } })}>
@@ -264,7 +260,6 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
 
 /* ---------- the notes and the offer ---------- */
 export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const c = useTheme();
   const { apply } = useStore();
   const st = snap.settings!;
   if (st.cleanNote?.m === 'step') {
@@ -276,7 +271,7 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
           So Daybook switched to the step-down plan: longer stretches between slips, and fewer slips each week. The goal is still to quit. This is how you get
           there.
         </T>
-        <View style={[s.box, { backgroundColor: c.surface }]}>
+        <View style={{ gap: 4 }}>
           <T v="label">Years of trying is not proof you cannot. It is practice.</T>
           <T v="small" tone="muted">
             Many people who quit smoking needed 30 or more tries. And in a small trial, a skills-based therapy cut porn viewing by about 93%. This habit can
@@ -343,7 +338,9 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 const s = StyleSheet.create({
-  grad: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 14 },
+  grad: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, minHeight: 44, borderTopWidth: 1 },
+  kept: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  flat: { gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },
@@ -366,9 +363,9 @@ const s = StyleSheet.create({
   stepBig: { fontFamily: font.displayBold, fontSize: 46, lineHeight: 50 },
   newBest: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
   newBestT: { fontFamily: font.bodyBold, fontSize: 13 },
-  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
+  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   stepChipT: { fontFamily: font.bodySemi, fontSize: 13 },
-  slim: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14 },
+  slim: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   slimRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   slimT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 19 },
   slimSub: { fontFamily: font.body, fontSize: 13, lineHeight: 17, opacity: 0.9 },

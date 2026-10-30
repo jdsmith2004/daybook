@@ -41,24 +41,18 @@ export function Back({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel="Back"
       onPress={onPress}
-      style={[
-        s.back,
-        {
-          backgroundColor: c.scBtn,
-          shadowColor: c.lip,
-          borderColor: c.cardEdge,
-        },
-      ]}>
+      style={({ pressed }) => [s.back, { backgroundColor: c.scBtn, opacity: pressed ? 0.7 : 1 }]}>
       <Icon name="back" size={22} color={c.ink} />
     </Pressable>
   );
 }
 
+/** the quiet way on: plain words where the main button will be, the same height, so nothing moves when an answer turns it into Next */
 export function Ghost({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.ghost, { backgroundColor: c.scBtn, borderColor: c.cardEdge }]}>
-      <Text style={[s.nextT, { color: c.ink, fontSize: 17 }]}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.ghost, { opacity: pressed ? 0.6 : 1 }]}>
+      <Text style={[s.ghostT, { color: c.accentText }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -66,7 +60,7 @@ export function Ghost({ label, onPress }: { label: string; onPress: () => void }
 export function Route({ label, small, onPress }: { label: string; small?: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[s.soft, { backgroundColor: c.accentSoft, shadowColor: c.lip }]}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
       <View style={{ flex: 1 }}>
         <Text style={[s.softT, { color: c.accentText }]}>{label}</Text>
         {small ? (
@@ -98,46 +92,23 @@ function Rich({ text, st, style }: { text: string; st: Settings | null; style?: 
 }
 
 const s = StyleSheet.create({
+  /* the capsule, with the small lip that makes it feel pressed */
   next: {
     flex: 1,
-    minHeight: 60,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingHorizontal: 20,
-    borderRadius: 18,
+    paddingHorizontal: 24,
+    borderRadius: 999,
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  nextT: { fontFamily: font.bodySemi, fontSize: 20, textAlign: 'center' },
-  back: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ghost: {
-    minHeight: 60,
-    paddingHorizontal: 20,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  soft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minHeight: 56,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  softT: { fontFamily: font.bodySemi, fontSize: 17, flexShrink: 1 },
+  nextT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, textAlign: 'center' },
+  back: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  ghost: { flex: 1, minHeight: 56, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
+  ghostT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center' },
+  soft: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  softT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, flexShrink: 1 },
 });

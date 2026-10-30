@@ -18,13 +18,26 @@ import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; isToday: boolean; onSaved?: () => void; scene?: boolean }) {
+export function CheckinBlock({
+  dkey,
+  isToday,
+  onSaved,
+  onCancel,
+  scene,
+}: {
+  dkey: DayKey;
+  isToday: boolean;
+  onSaved?: () => void;
+  /** the page around it shows the saved answers, and its Edit opens this form directly; Cancel goes back to them */
+  onCancel?: () => void;
+  scene?: boolean;
+}) {
   const c = useTheme();
   const { snap, tk, update, say } = useStore();
   const st = snap.settings!;
   const saved = snap.days[dkey]?.checkin;
   const done = !!(saved && saved.done);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(!!onCancel);
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, dkey));
   const [drafted, setDrafted] = useState(false);
 
@@ -121,11 +134,12 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
     setDrafted(false);
     setEditing(false);
     setForm(checkinFormOf(snap.days, dkey));
+    onCancel?.();
   };
   return (
     <View style={{ gap: 14 }}>
       <T v="small" tone="muted">
-        Give each one an honest 0 to 10. Do not round up to feel better. Best after dinner or before your wind-down.
+        Give each one an honest 0 to 10. Do not round up to feel better.
       </T>
       {rateKeys(form).map((k) => {
         const R = ratingOf(k);
@@ -143,12 +157,12 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
         <Button label={done ? 'Update check-in' : isToday ? 'Save today' : 'Save this day'} onPress={save} />
       </KeepAbove>
       {done ? (
-        <Pressable accessibilityRole="button" onPress={cancel} style={{ alignSelf: 'center', minHeight: 40, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Cancel changes</Text>
+        <Pressable accessibilityRole="button" onPress={cancel} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Cancel changes</Text>
         </Pressable>
       ) : null}
       <T v="small" tone="muted">
-        Sleep and screens-off are under Night and sleep. If something happened, log it first. A slip is data, not a reset.
+        If something happened, log it first. A slip is data, not a reset.
       </T>
     </View>
   );
@@ -157,6 +171,6 @@ export function CheckinBlock({ dkey, isToday, onSaved, scene }: { dkey: DayKey; 
 const s = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile: { flexGrow: 1, flexBasis: '22%', alignItems: 'center', paddingVertical: 10, borderRadius: 14, gap: 2 },
+  tile: { flexGrow: 1, flexBasis: '22%', alignItems: 'center', paddingVertical: 12, borderRadius: 12, gap: 2 },
   tileV: { fontFamily: font.display, fontSize: 22 },
 });

@@ -47,7 +47,7 @@ import { Screen } from '@/components/screen';
 import { TalkDoor } from '@/components/talk-card';
 import { PracticeDoor } from '@/components/ride/practice-door';
 import { ToolGrid } from '@/components/tool-grid';
-import { LinkCard } from '@/components/link-card';
+import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SetupFirst } from '@/components/welcome';
@@ -155,7 +155,6 @@ export default function Learn() {
   const land = view.focus >= 0 ? m.lands[view.focus] : null;
   return (
     <Screen
-      eyebrow="My Daybook"
       scrollRef={scroll}
       hidden={!placed}
       title="Learn"
@@ -194,7 +193,7 @@ export default function Learn() {
       />
       <Appear
         key={pane}
-        style={{ gap: 14 }}
+        style={{ gap: 16 }}
         onLayout={(e) => {
           geo.current.pane = e.nativeEvent.layout.y;
           look();
@@ -289,20 +288,15 @@ function LessonsPane({
   const at = useRef({ y: -1, k: 0 });
   const tell = () => at.current.y >= 0 && at.current.k > 0 && onGeom({ y: at.current.y, k: at.current.k });
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 16 }}>
       {due ? (
-        <Card style={{ backgroundColor: c.violetSoft, borderColor: c.violetSoft }}>
-          <View style={s.hhTop}>
-            <View style={[s.hhIc, { backgroundColor: c.surface }]}>
-              <Icon name="pencil" size={22} color={c.violetText} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="h2">Write it out</T>
-              <T v="small">
-                Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {pair ? lessonNo(pair.a, st) : ''} and{' '}
-                {pair ? lessonNo(pair.b, st) : ''}. 3 to 5 minutes, no points, only you see it.
-              </T>
-            </View>
+        <Card style={{ backgroundColor: c.violetSoft }}>
+          <View style={{ gap: 2 }}>
+            <T v="h2">Write it out</T>
+            <T v="small">
+              Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. About lessons {pair ? lessonNo(pair.a, st) : ''} and {pair ? lessonNo(pair.b, st) : ''}. 3
+              to 5 minutes, and only you see it.
+            </T>
           </View>
           <Button label="Start writing" onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })} />
         </Card>
@@ -310,7 +304,7 @@ function LessonsPane({
 
       {!account && waiting ? (
         <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
-          <Icon name="shield" size={18} color={c.accentText} />
+          <Icon name="shield" size={22} color={c.accentText} />
           <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
             {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
           </T>
@@ -354,7 +348,7 @@ function LessonsPane({
           icon="star"
           open={faith}
           onToggle={() => setFaith(!faith)}>
-          <View style={{ gap: 8 }}>
+          <View>
             {LESSONS.filter((L) => L.f).map((L) => (
               <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} />
             ))}
@@ -369,7 +363,7 @@ function LessonsPane({
           icon="calendar"
           open={past}
           onToggle={() => setPast(!past)}>
-          <View style={{ gap: 8 }}>
+          <View>
             {tl.past.map((x, i) => (
               <LessonRow
                 key={x.L.id}
@@ -408,30 +402,32 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
       accessibilityRole="button"
       accessibilityLabel={`${no ? 'Lesson ' + no : 'Faith lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
       onPress={() => openLesson(L.id)}
-      style={({ pressed }) => [s.row, { backgroundColor: c.surface, borderColor: done ? c.cardEdge : 'transparent', opacity: pressed ? 0.85 : 1 }]}>
-      <View style={[s.lrIc, { backgroundColor: done ? c.mintSoft : t.soft }]}>
+      style={({ pressed }) => [s.row, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
+      <View style={s.lrIc}>
         {done ? (
           <Icon name="check" size={18} color={c.mintText} />
         ) : locked ? (
-          <Icon name="lock" size={16} color={t.text} />
+          <Icon name="lock" size={18} color={c.muted} />
         ) : /* a lesson off the path has no number */
         no ? (
-          <Text style={[s.no, { color: t.text }]}>{no}</Text>
+          <T v="label" style={{ color: t.text }}>
+            {no}
+          </T>
         ) : (
-          <Icon name="star" size={16} color={t.text} />
+          <Icon name="star" size={18} color={t.text} />
         )}
       </View>
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text style={[s.lrT, { color: c.ink }]}>
+      <View style={{ flex: 1 }}>
+        <T v="label">
           {done && no ? <Text style={{ color: c.muted }}>{no} </Text> : null}
           {L.title}
-        </Text>
+        </T>
         <T v="small" tone="muted" numberOfLines={1}>
-          {done ? <Text style={{ color: t.text, fontFamily: font.bodySemi }}>{sub}</Text> : sub}
+          {sub}
         </T>
       </View>
       {side ? (
-        <T v="small" tone={done ? 'mintText' : 'muted'} style={{ fontFamily: font.bodySemi }}>
+        <T v="small" tone="muted">
           {side}
         </T>
       ) : null}
@@ -441,7 +437,6 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
 
 /* ---------- tools ---------- */
 function ToolsPane() {
-  const c = useTheme();
   const { snap, tk, apply } = useStore();
   const st = snap.settings!;
   const p = snap.days[tk]?.p || blankP();
@@ -459,17 +454,12 @@ function ToolsPane() {
   return (
     <>
       <PauseBanner />
+      <PracticeDoor />
+      <TalkDoor />
       <Card>
-        <View style={s.between}>
-          <T v="h2">Pick a tool</T>
-          <T v="small" tone="muted">
-            tap one
-          </T>
-        </View>
-        <PracticeDoor />
-        <TalkDoor />
+        <T v="h2">Pick a tool</T>
         <ToolGrid days={snap.days} tags={tags} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
-        <T v="small">
+        <T v="small" tone="muted">
           Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week:{' '}
           <Text style={{ fontFamily: font.bodyBold }}>{wg.tools}</Text> of {TOOL_IDS.length} tools tried
         </T>
@@ -479,30 +469,27 @@ function ToolsPane() {
           </T>
         ) : null}
       </Card>
-      <Card>
-        <T v="h2">My go-to in SOS</T>
-        <Collapse title="SOS suggests first" sub={pinT ? pinT.name : 'The best fit for the moment'} open={pinOpen} onToggle={() => setPinOpen(!pinOpen)}>
-          <View style={s.chips}>
-            {[['', 'The best fit for the moment'] as [string, string]].concat(TOOLS.map((x) => [x.id, x.name] as [string, string])).map(([id, name]) => (
-              <Chip
-                key={id || 'best'}
-                label={name}
-                on={pin === id}
-                onPress={() => {
-                  apply({ st: changeSettings(st, (s0) => void (s0.urPin = TOOL_IDS.indexOf(id) >= 0 ? id : null)) });
-                  setPinOpen(false);
-                }}
-              />
-            ))}
-          </View>
-        </Collapse>
+      <Collapse title="My go-to in SOS" sub={pinT ? pinT.name : 'The best fit for the moment'} open={pinOpen} onToggle={() => setPinOpen(!pinOpen)}>
         <T v="small" tone="muted">
           {pinT
             ? 'SOS puts ' + pinT.name + ' first every time. It still keeps track of what helps.'
             : 'SOS learns which tools help you, and picks the best fit for the moment.'}
         </T>
-      </Card>
-      <View style={{ gap: 8 }}>
+        <View style={s.chips}>
+          {[['', 'The best fit for the moment'] as [string, string]].concat(TOOLS.map((x) => [x.id, x.name] as [string, string])).map(([id, name]) => (
+            <Chip
+              key={id || 'best'}
+              label={name}
+              on={pin === id}
+              onPress={() => {
+                apply({ st: changeSettings(st, (s0) => void (s0.urPin = TOOL_IDS.indexOf(id) >= 0 ? id : null)) });
+                setPinOpen(false);
+              }}
+            />
+          ))}
+        </View>
+      </Collapse>
+      <Rows>
         <LinkCard
           icon="pencil"
           title="Write or edit my reasons"
@@ -511,34 +498,16 @@ function ToolsPane() {
         />
         <LinkCard icon="moon" title="Tonight's wind-down" sub="A short checklist for the last hour" onPress={() => router.navigate('/')} />
         <LinkCard icon="life" title="Need a person or a plan?" sub="Free help, scripts, phone setup" onPress={() => router.push('/help')} />
-      </View>
-      <View style={{ height: 1, backgroundColor: c.line, opacity: 0 }} />
+      </Rows>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  due: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
-  dueT: { fontFamily: font.bodyBold, fontSize: 15 },
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  hhTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  hhIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  segs: { flexDirection: 'row', gap: 2 },
-  lockLine: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
-  segI: { flex: 1, height: 8, borderRadius: 3 },
+  due: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
+  dueT: { fontFamily: font.bodySemi, fontSize: 15 },
+  lockLine: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  more: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 },
-  moreT: { fontFamily: font.bodySemi, fontSize: 15 },
-  next: { gap: 12, padding: 16, borderRadius: 24 },
-  nextT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
-  eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyeT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  sec: { gap: 10, padding: 14, borderRadius: 22 },
-  secTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  secT: { flex: 1, fontFamily: font.bodyBold, fontSize: 17 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 16, borderWidth: 1.5 },
-  lrIc: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  no: { fontFamily: font.bodyBold, fontSize: 15 },
-  lrT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, borderTopWidth: 1 },
+  lrIc: { width: 24, alignItems: 'center' },
 });

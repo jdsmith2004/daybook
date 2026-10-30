@@ -28,7 +28,11 @@ export function DateStep({
     onPick(next);
   };
   const btn = (txt: string, n: number, a11y: string) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={a11y} onPress={() => step(n)} style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      onPress={() => step(n)}
+      style={({ pressed }) => [s.sq, { backgroundColor: c.surface2, opacity: pressed ? 0.6 : 1 }]}>
       <Text style={[s.sqT, { color: c.ink }]}>{txt}</Text>
     </Pressable>
   );
@@ -49,8 +53,8 @@ export function DateStep({
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  sq: { minWidth: 40, height: 40, paddingHorizontal: 6, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sq: { minWidth: 44, height: 44, paddingHorizontal: 6, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   sqT: { fontFamily: font.bodyBold, fontSize: 15 },
   v: { flex: 1, textAlign: 'center', fontFamily: font.bodySemi, fontSize: 15 },
 });

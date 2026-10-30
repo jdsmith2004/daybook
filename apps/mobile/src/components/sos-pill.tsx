@@ -23,6 +23,7 @@ export function SosPill({ label = 'SOS. Help with an urge right now.', over = fa
         if (!over && sos.ur && router.canGoBack()) router.back();
         else router.push('/sos');
       }}
+      hitSlop={4}
       style={({ pressed }) => [s.pill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
       <Icon name="life" size={17} color={c.sosInk} />
       <Text style={[s.t, { color: c.sosInk }]}>SOS</Text>

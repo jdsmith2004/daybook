@@ -47,9 +47,7 @@ export function NightWinCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   return (
     <View style={[s.card, { backgroundColor: c.mintSoft }]} accessibilityRole="summary">
       <View style={s.top}>
-        <View style={[s.ic, { backgroundColor: c.surface }]}>
-          <Icon name="moon" size={20} color={c.mintText} />
-        </View>
+        <Icon name="moon" size={20} color={c.mintText} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[s.line, { color: c.ink }]}>{win.line}</Text>
           <T v="small" tone="muted">
@@ -100,7 +98,7 @@ export function NightWinCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           </View>
         </View>
       ) : ask ? (
-        <View style={{ alignItems: 'flex-start', marginLeft: 46 }}>
+        <View style={{ alignItems: 'flex-start', marginLeft: 32 }}>
           <Link label="Add a note for next time" onPress={() => setAsking(true)} />
         </View>
       ) : null}
@@ -125,13 +123,12 @@ function Pill({ icon, label, tone, onPress }: { icon: string; label: string; ton
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 20, padding: 14, gap: 10 },
+  card: { borderRadius: 20, padding: 16, gap: 10 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ic: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   line: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21 },
   x: { padding: 4, alignSelf: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 12, borderRadius: 999 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999 },
   pillT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

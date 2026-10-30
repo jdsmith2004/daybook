@@ -23,7 +23,7 @@ export function Sources({ keys, map }: { keys: string[]; map: Record<string, [st
             accessibilityRole="link"
             accessibilityLabel={'Source: ' + map[k][0]}
             onPress={() => Linking.openURL(map[k][1]).catch(() => undefined)}
-            style={({ pressed }) => [s.src, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [s.src, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
             <Icon name="book" size={13} color={c.accentText} />
             <Text style={[s.srcT, { color: c.accentText }]} numberOfLines={1}>
               {srcName(map, k)}
@@ -78,7 +78,7 @@ export function KnownLine({
   const c = useTheme();
   const [open, setOpen] = useState(false);
   return (
-    <View style={[s.known, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+    <View style={[s.known, { backgroundColor: c.surface }]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.knownHead}>
         <Icon name={icon} size={18} color={c.mintText} />
         <T style={{ flex: 1 }}>{short}</T>
@@ -101,8 +101,8 @@ const s = StyleSheet.create({
   line: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 4, flexShrink: 1 },
   lineI: { minHeight: 24, justifyContent: 'center', maxWidth: '100%' },
   lineT: { fontFamily: font.bodyMedium, fontSize: 12, textDecorationLine: 'underline' },
-  src: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%', minHeight: 32, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1.5 },
+  src: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%', minHeight: 32, paddingHorizontal: 12, borderRadius: 999 },
   srcT: { fontFamily: font.bodySemi, fontSize: 13, flexShrink: 1 },
-  known: { borderRadius: 18, padding: 12, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
-  knownHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
+  known: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
+  knownHead: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 32 },
 });

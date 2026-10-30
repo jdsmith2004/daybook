@@ -19,12 +19,12 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
   const w = v.w;
   const rv = snap.reviews['w' + v.wk];
   const a = rv ? rv.a : { hard: '', helped: '', change: '', proud: '' };
-  const tile = (l: string, b: string | number, sub?: string) => (
-    <View key={l} style={[s.stat, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+  const num = (l: string, b: string | number, sub?: string) => (
+    <View key={l} style={s.num}>
+      <Text style={[s.numB, { color: c.ink }]}>{b}</Text>
       <T v="small" tone="muted">
         {l}
       </T>
-      <Text style={[s.statB, { color: c.ink }]}>{b}</Text>
       {sub ? (
         <T v="small" tone="muted">
           {sub}
@@ -39,67 +39,83 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
       accessibilityState={{ disabled: off }}
       disabled={off}
       onPress={() => onNav(v.wk + d)}
-      style={[s.nav, { borderColor: c.line, backgroundColor: c.surface, opacity: off ? 0.4 : 1 }]}>
+      style={({ pressed }) => [s.nav, { opacity: off ? 0.3 : pressed ? 0.6 : 1 }]}>
       <Icon name={d < 0 ? 'back' : 'next'} size={18} color={c.ink} />
     </Pressable>
   );
+  const logged = w.checkins + w.events > 0;
+  const rated = v.avgs.some((x) => x.vals.some((y) => y != null));
+  /* only what the week really shows: a row with nothing to say yet stays out, and with no real row there is no card */
+  const shows = v.shows.filter(([, dd]) => dd !== '–');
+  const showsAny = shows.some(([, dd]) => !dd.startsWith('Needs'));
   return (
     <>
-      <View style={s.head}>
-        <View style={{ flex: 1 }}>
-          <T v="h2" accessibilityRole="header">
-            Week {v.wk + 1}
-          </T>
-          <T tone="muted">{v.range}</T>
-        </View>
-        {nav(-1, 'Earlier week', v.wk === 0)}
-        {nav(1, 'Later week', v.wk >= v.cw)}
-      </View>
-      <View style={s.stats}>
-        {tile('Check-ins', w.checkins + ' of 7')}
-        {tile('Entries', w.events)}
-        {tile('Rode it out', w.rode)}
-        {tile('Slipped', w.slipped, w.slipDays ? w.slipDays + ' day' + (w.slipDays === 1 ? '' : 's') : '')}
-      </View>
-      {w.checkins + w.events ? null : <EmptyChart text="No entries this week yet. The check-ins and urges you log show up here." />}
       <Card>
-        <View style={s.between}>
-          <T v="h2">Average ratings</T>
-          <T v="small" tone="muted">
-            0 to 10
-          </T>
+        <View style={s.head}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T v="h2" accessibilityRole="header">
+              Week {v.wk + 1}
+            </T>
+            <T v="small" tone="muted">
+              {v.range}
+            </T>
+          </View>
+          {nav(-1, 'Earlier week', v.wk === 0)}
+          {nav(1, 'Later week', v.wk >= v.cw)}
         </View>
-        <View style={s.stats}>
-          {v.avgs.map((x) => (
-            <View key={x.f} style={[s.stat, { backgroundColor: c.surface2, borderColor: c.surface2 }]}>
+        <View style={s.nums}>
+          {num('Check-ins', w.checkins + ' of 7')}
+          {num('Entries', w.events)}
+          {num('Rode it out', w.rode)}
+          {num('Slipped', w.slipped, w.slipDays ? w.slipDays + ' day' + (w.slipDays === 1 ? '' : 's') : '')}
+        </View>
+        {logged ? null : <EmptyChart text="No entries this week yet. The check-ins and urges you log show up here." />}
+      </Card>
+      {rated ? (
+        <Card>
+          <View style={s.between}>
+            <T v="h2">Average ratings</T>
+            <T v="small" tone="muted">
+              0 to 10
+            </T>
+          </View>
+          <View>
+            {v.avgs.map((x, i) => (
+              <View key={x.f} style={[s.avg, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }]}>
+                <View style={{ flex: 1 }}>
+                  <T v="label">{x.l}</T>
+                  {x.move ? (
+                    <T v="small" tone="muted">
+                      {x.move}
+                    </T>
+                  ) : null}
+                </View>
+                {x.vals.some((y) => y != null) ? <Spark vals={x.vals} label={x.l + ' each day this week'} /> : null}
+                <Text style={[s.numB, s.avgV, { color: c.ink }]}>{x.v}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+      ) : null}
+      {logged && showsAny ? (
+        <Card>
+          <T v="h2">What the week shows</T>
+          {shows.map(([dt, dd]) => (
+            <View key={dt} style={{ gap: 2 }}>
               <T v="small" tone="muted">
-                {x.l}
+                {dt}
               </T>
-              <Text style={[s.statB, { color: c.ink }]}>{x.v}</Text>
-              <T v="small" tone="muted">
-                {x.move || ' '}
-              </T>
-              {x.vals.some((y) => y != null) ? <Spark vals={x.vals} label={x.l + ' each day this week'} /> : null}
+              <T v="label">{dd}</T>
             </View>
           ))}
-        </View>
-      </Card>
-      <Card>
-        <T v="h2">What the week shows</T>
-        {v.shows.map(([dt, dd]) => (
-          <View key={dt} style={{ gap: 2 }}>
-            <T v="small" tone="muted">
-              {dt}
-            </T>
-            <T v="label">{dd}</T>
-          </View>
-        ))}
-      </Card>
-      {v.wk === 0 ? (
+        </Card>
+      ) : null}
+      {/* the choice at the end of the first week; once Day 1 has come, moving it from here would undo a count already running */}
+      {v.wk === 0 && !(st.day1 && st.day1 <= tk) ? (
         <Card tone="note">
           <T v="h2">What comes next</T>
           <T>
-            This first week is for noticing. Nothing is counted yet, so there is nothing to fail. When it ends, you choose: start counting days (Day 1), or keep
+            This first week is for noticing. Nothing is counted yet, so there is nothing to fail. When it ends, you choose: start counting days, or keep
             tracking without counting. Both are fine.
           </T>
           <T v="label">
@@ -146,11 +162,13 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nav: { width: 44, height: 44, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  stat: { flexGrow: 1, flexBasis: '45%', gap: 2, padding: 12, borderRadius: 16, borderWidth: 1.5 },
-  statB: { fontFamily: font.display, fontSize: 28 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', marginRight: -8 },
+  nav: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  nums: { flexDirection: 'row', gap: 8 },
+  num: { flex: 1 },
+  numB: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  avg: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, minHeight: 56 },
+  avgV: { minWidth: 44, textAlign: 'right' },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

@@ -5,7 +5,7 @@ import { fmtDate, fmtHour, type DayKey } from '@daybook/core';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
-import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Icon, T } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';
@@ -185,7 +185,6 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
             const have = sr.vals.map((v, i) => [v, i] as [number | null, number]).filter((x) => x[0] != null);
             let solid = '';
             let pale = '';
-            let area = '';
             const runs: number[][] = [];
             have.forEach(([, i]) => {
               const last = runs[runs.length - 1];
@@ -194,10 +193,6 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
             });
             runs.forEach((r) => {
               if (r.length > 1) {
-                area +=
-                  `M${X(r[0]).toFixed(1)} ${h - 12}` +
-                  r.map((i) => `L${X(i).toFixed(1)} ${Y(sr.vals[i]!).toFixed(1)}`).join('') +
-                  `L${X(r[r.length - 1]).toFixed(1)} ${h - 12}Z`;
                 for (let q = 1; q < r.length; q++) {
                   const seg = `M${X(r[q - 1]).toFixed(1)} ${Y(sr.vals[r[q - 1]]!).toFixed(1)}L${X(r[q]).toFixed(1)} ${Y(sr.vals[r[q]]!).toFixed(1)}`;
                   if (r[q] - r[q - 1] === 1) solid += seg;
@@ -216,15 +211,8 @@ export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: stri
                   </T>
                 </View>
                 <Svg width={tw} height={h}>
-                  <Defs>
-                    <LinearGradient id={'g' + sr.id} x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0" stopColor={k.acc} stopOpacity={0.26} />
-                      <Stop offset="1" stopColor={k.acc} stopOpacity={0} />
-                    </LinearGradient>
-                  </Defs>
                   <Line x1={0} x2={tw} y1={h - 12} y2={h - 12} stroke={k.grid} strokeWidth={1.5} />
                   <Line x1={0} x2={tw} y1={Y(5)} y2={Y(5)} stroke={k.grid} strokeWidth={1} strokeDasharray="3 4" />
-                  {area ? <Path d={area} fill={`url(#g${sr.id})`} /> : null}
                   {pale ? <Path d={pale} stroke={k.acc} strokeOpacity={0.4} strokeWidth={2.5} fill="none" strokeLinecap="round" /> : null}
                   {solid ? <Path d={solid} stroke={k.acc} strokeWidth={2.5} fill="none" strokeLinecap="round" /> : null}
                   {sr.vals.map((v, i) => {
@@ -383,7 +371,7 @@ export function Legend({ items }: { items: ['rode' | 'slip' | 'acc' | 'win', str
     <View style={s.legend}>
       {items.map(([kk, l]) => (
         <View key={l} style={s.li}>
-          <View style={[s.sw, { backgroundColor: col[kk], opacity: kk === 'win' ? 0.25 : 1 }]} />
+          <View style={[s.sw, { backgroundColor: col[kk], opacity: 1 }]} />
           <T v="small" tone="muted">
             {l}
           </T>
@@ -400,7 +388,7 @@ export function NumbersTable({ cap, head, rows }: { cap: string; head: string[];
   return (
     <View>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.tv}>
-        <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>Show the numbers</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 13, color: c.accentText }}>{open ? 'Hide the numbers' : 'Show the numbers'}</Text>
         <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
           <Icon name="next" size={16} color={c.accentText} />
         </View>
@@ -429,15 +417,9 @@ export function NumbersTable({ cap, head, rows }: { cap: string; head: string[];
   );
 }
 
+/** what a chart says before it has anything to draw: one plain line where the chart will be */
 export function EmptyChart({ text }: { text: string }) {
-  const c = useTheme();
-  return (
-    <View style={[s.empty, { backgroundColor: c.surface2 }]}>
-      <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-        {text}
-      </T>
-    </View>
-  );
+  return <T tone="muted">{text}</T>;
 }
 
 const s = StyleSheet.create({
@@ -445,10 +427,9 @@ const s = StyleSheet.create({
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   li: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sw: { width: 12, height: 12, borderRadius: 3 },
-  tv: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40 },
+  tv: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, alignSelf: 'flex-start' },
   table: { borderTopWidth: 1 },
   tr: { flexDirection: 'row', borderBottomWidth: 1, paddingVertical: 6 },
   th: { flex: 1, fontFamily: font.bodySemi, fontSize: 13 },
   td: { flex: 1, fontFamily: font.body, fontSize: 13, fontVariant: ['tabular-nums'] },
-  empty: { padding: 18, borderRadius: 14 },
 });

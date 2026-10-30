@@ -37,7 +37,6 @@ import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Appear } from '@/components/appear';
-import { PickRow } from '@/components/picks';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
@@ -114,20 +113,6 @@ export function Move({ finish, level }: ToolProps) {
   /* the move and how to do it at the top, to be read; the timer in the middle; done at the bottom */
   return (
     <Stage key={'run' + (sit ? 's' : 'u')} dir={0}>
-      <View style={{ alignSelf: 'stretch' }}>
-        <PickRow
-          label="Where are you?"
-          list={[
-            { k: 'sit', label: 'In my seat' },
-            { k: 'up', label: 'On my feet' },
-          ]}
-          cur={sit ? 'sit' : 'up'}
-          onPick={(k) => {
-            sos.setMem((x) => ({ ...x, moveSit: k === 'sit' }));
-            setM0(Date.now());
-          }}
-        />
-      </View>
       <T v="eyebrow" tone="muted">
         {'Move ' + (i + 1) + ' of ' + list.length}
       </T>
@@ -149,10 +134,21 @@ export function Move({ finish, level }: ToolProps) {
         />
       </Middle>
       <Dock>
-        <Button label="I am done" onPress={() => setDone(true)} />
         <T v="small" tone="muted" style={s.c}>
           {sit ? 'Slow and small counts, and no one has to notice. Stop if anything hurts.' : 'A slow walk counts too. Stop if anything hurts.'}
         </T>
+        <Button label="I am done" onPress={() => setDone(true)} />
+        {/* the quiet way to change the choice, under the main button (docs/design-standards.md, "The page around it") */}
+        <View style={s.quiet}>
+          <Link
+            label={sit ? 'I am on my feet' : 'I am in my seat'}
+            onPress={() => {
+              buzz('tap');
+              sos.setMem((x) => ({ ...x, moveSit: !sit }));
+              setM0(Date.now());
+            }}
+          />
+        </View>
       </Dock>
     </Stage>
   );
@@ -216,13 +212,11 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
       <T v="title" style={s.c} accessibilityRole="header">
         {night ? 'The best move tonight is sleep.' : 'Practice the bedtime move.'}
       </T>
-      <T style={s.c}>
-        {night
-          ? combo
-            ? 'Three things, then a plan for the thoughts.'
-            : 'Urges are louder when you are tired. Three things, then a plan for the thoughts.'
-          : 'Late at night this is often the strongest tool. Walk through it now so it is easy later.'}
-      </T>
+      {night && combo ? null : (
+        <T style={s.c}>
+          {night ? 'Urges are louder when you are tired.' : 'Late at night this is often the strongest tool. Walk through it now so it is easy later.'}
+        </T>
+      )}
       {/* read at the top, not under the main button (the thumb rule) */}
       {night ? (
         <T v="small" tone="muted" style={s.c}>
@@ -364,7 +358,7 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
   const pickTool = tid ? urTool(tid) : null;
   const card = (small: string, text: string) => {
     const k = face % SUR_KINDS.length;
-    const fs = text.length <= 22 ? 28 : text.length <= 44 ? 24 : 20;
+    const fs = text.length <= 22 ? 28 : text.length <= 44 ? 22 : 20;
     return (
       <Animated.View
         style={{ transform: [{ scaleX: flip }, { scale: land }] }}
@@ -403,9 +397,9 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
         {spinning ? 'Picking something…' : 'Try this one.'}
       </T>
       <T style={s.c} tone="muted">
-        From your calm-move menu.
+        From your calm-move menu. Change it in My plan, under Lists.
       </T>
-      <Middle>{spinning ? card('', pick || '…') : card('Try this', pick || '')}</Middle>
+      <Middle>{card('', pick || '…')}</Middle>
       <Dock>
         {spinning ? (
           <View style={s.btnSpace} />
@@ -428,9 +422,6 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
                 <Link label="Back to the tools" onPress={exit} />
               </View>
             ) : null}
-            <T v="small" tone="muted" style={s.c}>
-              {menu.length} ideas in your menu. Edit them in My plan, under Lists.
-            </T>
           </>
         )}
       </Dock>
@@ -589,13 +580,11 @@ export function Message({ finish }: ToolProps) {
               onLongPress={() => copy(m, say)}
               style={({ pressed }) => [s.text, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
               <T style={{ flex: 1 }}>{m}</T>
-              <View style={[s.send, { backgroundColor: c.skySoft }]}>
-                <Icon name="next" size={20} color={c.skyText} />
-              </View>
+              <Icon name="next" size={18} color={c.skyText} />
             </Pressable>
           ))}
           <T v="small" tone="muted" style={s.c}>
-            Tap one to send it. Hold to copy.
+            Hold one to copy it.
           </T>
           {/* a text box and its buttons stay together near the top, where the keyboard does not cover them */}
           {writing ? (
@@ -692,7 +681,7 @@ export function Reasons({ finish }: ToolProps) {
   const i = ((i0 % n) + n) % n;
   const text = r[i];
   const cat = reasonCat(st, text);
-  const size = text.length <= 36 ? 30 : text.length <= 80 ? 24 : text.length <= 120 ? 20 : 17;
+  const size = text.length <= 36 ? 28 : text.length <= 80 ? 22 : text.length <= 120 ? 20 : 17;
   return (
     <>
       {noteCard}
@@ -702,18 +691,13 @@ export function Reasons({ finish }: ToolProps) {
       <Middle>
         {/* a light stack: the next card peeks out from behind the one on top */}
         <View style={s.stack}>
-          {n > 1 ? <View style={[s.peek, { backgroundColor: c.surface2, borderColor: c.cardEdge }]} /> : null}
+          {n > 1 ? <View style={[s.peek, { backgroundColor: c.surface2 }]} /> : null}
           <Animated.View
             {...pan.panHandlers}
             style={{
               transform: [{ translateX: dx }, { rotate: dx.interpolate({ inputRange: [-300, 0, 300], outputRange: ['-7deg', '0deg', '7deg'] }) }],
             }}>
-            <Appear
-              key={'r' + i}
-              by={0}
-              x={dir * 28}
-              duration={260}
-              style={[s.reason, { backgroundColor: c.surface, borderColor: c.cardEdge, shadowColor: c.lip }]}>
+            <Appear key={'r' + i} by={0} x={dir * 28} duration={260} style={[s.reason, { backgroundColor: c.surface }]}>
               <Shape kind="cookie12" size={56} color={c.accentSoft} turn={i * 15}>
                 {/* in a View, so on the web it sits over the shape and not under it */}
                 <View>
@@ -757,32 +741,17 @@ const s = StyleSheet.create({
     minHeight: 64,
     paddingVertical: 14,
     paddingLeft: 16,
-    paddingRight: 12,
-    borderRadius: 18,
+    paddingRight: 16,
+    borderRadius: 20,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 2,
   },
-  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   c: { textAlign: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  grid: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tile: {
-    flexGrow: 1,
-    flexBasis: '45%',
-    minHeight: 64,
-    borderRadius: 18,
-    padding: 10,
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  tileT: { fontFamily: font.bodyBold, fontSize: 16 },
-  tileS: { fontFamily: font.body, fontSize: 13 },
+  tileT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   list: { alignSelf: 'stretch', gap: 8 },
   two: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },
   quiet: { alignSelf: 'stretch', alignItems: 'center' },
@@ -791,7 +760,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     minHeight: 58,
-    borderRadius: 18,
+    borderRadius: 20,
     paddingVertical: 9,
     paddingHorizontal: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -799,8 +768,8 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  planLine: { alignSelf: 'stretch', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 },
-  check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 2 },
+  planLine: { alignSelf: 'stretch', borderRadius: 12, padding: 12 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 20, borderWidth: 2 },
   box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   surIn: { alignItems: 'center', gap: 6 },
   surT: { fontFamily: font.display, textAlign: 'center' },
@@ -808,18 +777,14 @@ const s = StyleSheet.create({
   reason: {
     alignSelf: 'stretch',
     minHeight: 220,
-    borderRadius: 26,
-    borderWidth: 2,
-    padding: 22,
-    gap: 14,
+    borderRadius: 20,
+    padding: 24,
+    gap: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 4 },
   },
   stack: { alignSelf: 'stretch' },
   medalName: { marginTop: -8 },
-  peek: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 26, borderWidth: 2, transform: [{ rotate: '-4deg' }, { translateY: 10 }] },
-  sq: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  peek: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20, transform: [{ rotate: '-4deg' }, { translateY: 10 }] },
+  sq: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

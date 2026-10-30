@@ -1,5 +1,5 @@
 /* The month calendar, first in Pattern > Days (core: calendar.ts): each day colored by how it went, today ringed, the
-   month's numbers in a few chips, and ‹ › to go back through the months to where the log starts. A tap on a day opens
+   month's numbers in one line, and ‹ › to go back through the months to where the log starts. A tap on a day opens
    it (app/day/[date].tsx). */
 import { calLabel, calMonth, type CalKind, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
@@ -9,7 +9,7 @@ import { Text } from '@/components/text';
 
 import { Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { font, useTheme, type Palette } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 
 const WORD: Record<CalKind, string> = {
   ok: 'no slip',
@@ -30,14 +30,16 @@ function weeks(lead: number, days: CalDay[]) {
   return Array.from({ length: all.length / 7 }, (_, i) => all.slice(i * 7, i * 7 + 7));
 }
 
-function look(kind: CalKind, c: Palette) {
+function look(kind: CalKind, c: ReturnType<typeof useTheme>) {
+  /* the night's mint and amber are bright, so the number on them is dark */
+  const on = c.scheme === 'dark' ? '#10163A' : '#FFFFFF';
   switch (kind) {
     case 'ok':
-      return { bg: c.mint, bd: c.mint, ink: '#FFFFFF' };
+      return { bg: c.mint, bd: c.mint, ink: on };
     case 'saved':
-      return { bg: c.mint, bd: c.saved, ink: '#FFFFFF' };
+      return { bg: c.mint, bd: c.saved, ink: on };
     case 'slip':
-      return { bg: c.slip, bd: c.slip, ink: '#FFFFFF' };
+      return { bg: c.slip, bd: c.slip, ink: on };
     case 'logged':
       return { bg: c.skySoft, bd: c.skySoft, ink: c.skyText };
     case 'none':
@@ -65,44 +67,43 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       ['away', 'Away'],
     ] as [CalKind, string][]
   ).filter(([k]) => kinds.has(k));
-  const chips = [
-    m.sum.noSlip ? [m.sum.noSlip + (m.sum.noSlip === 1 ? ' no-slip day' : ' no-slip days'), c.mintSoft, c.mintText] : null,
-    m.sum.rode ? [m.sum.rode + (m.sum.rode === 1 ? ' urge ridden out' : ' urges ridden out'), c.skySoft, c.skyText] : null,
-    m.sum.slips ? [m.sum.slips + (m.sum.slips === 1 ? ' slip, logged' : ' slips, logged'), c.surface2, c.ink] : null,
-  ].filter(Boolean) as [string, string, string][];
+  const sum = [
+    m.sum.noSlip ? m.sum.noSlip + (m.sum.noSlip === 1 ? ' no-slip day' : ' no-slip days') : '',
+    m.sum.rode ? m.sum.rode + (m.sum.rode === 1 ? ' urge ridden out' : ' urges ridden out') : '',
+    m.sum.slips ? m.sum.slips + (m.sum.slips === 1 ? ' slip, logged' : ' slips, logged') : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const nav = (to: string | null, label: string, icon: string) => (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !to }}
       disabled={!to}
-      hitSlop={6}
       onPress={() => {
         buzz('tap');
         setYm(to);
       }}
-      style={[s.nav, { backgroundColor: c.surface2, opacity: to ? 1 : 0.35 }]}>
+      style={({ pressed }) => [s.nav, { opacity: !to ? 0.3 : pressed ? 0.6 : 1 }]}>
       <Icon name={icon} size={18} color={c.ink} />
     </Pressable>
   );
   return (
     <Card>
-      <View style={s.head}>
-        <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
-          {m.title}
-        </T>
-        {nav(m.prev, 'Earlier month', 'back')}
-        {nav(m.next, 'Later month', 'next')}
-      </View>
-      {chips.length ? (
-        <View style={s.chips}>
-          {chips.map(([t, bg, ink]) => (
-            <View key={t} style={[s.chip, { backgroundColor: bg }]}>
-              <Text style={[s.chipT, { color: ink }]}>{t}</Text>
-            </View>
-          ))}
+      <View style={s.top}>
+        <View style={s.head}>
+          <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
+            {m.title}
+          </T>
+          {nav(m.prev, 'Earlier month', 'back')}
+          {nav(m.next, 'Later month', 'next')}
         </View>
-      ) : null}
+        {sum ? (
+          <T v="small" tone="muted">
+            {sum}
+          </T>
+        ) : null}
+      </View>
       {/* week rows of seven equal cells: a width of 100/7 percent each rounds up on iOS and pushes Saturday onto the next line */}
       <View style={s.grid}>
         <View style={s.week}>
@@ -177,7 +178,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
             {g.line}
           </T>
           {g.n == null ? (
-            <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/back')}>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/back')} style={s.fill}>
               <T v="small" style={{ color: c.accentText, textDecorationLine: 'underline' }}>
                 Fill in
               </T>
@@ -185,25 +186,21 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           ) : null}
         </View>
       ))}
-      <T v="small" tone="muted">
-        Tap a day to see it, or to add or fix something.
-      </T>
     </Card>
   );
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nav: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  chipT: { fontFamily: font.bodySemi, fontSize: 13 },
+  top: { marginTop: -8 },
+  head: { flexDirection: 'row', alignItems: 'center', marginRight: -8 },
+  nav: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  fill: { minHeight: 44, minWidth: 44, marginVertical: -13, alignItems: 'flex-end', justifyContent: 'center' },
   grid: { gap: 0 },
   week: { flexDirection: 'row' },
   dowBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
   box: { flex: 1, aspectRatio: 1, padding: 3 },
   dow: { textAlign: 'center', fontFamily: font.bodySemi, fontSize: 13, marginTop: 'auto', marginBottom: 2 },
-  cell: { flex: 1, borderRadius: 11, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  cell: { flex: 1, borderRadius: 12, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   num: { fontFamily: font.bodyBold, fontSize: 15 },
   many: { position: 'absolute', bottom: 1, right: 4, fontFamily: font.bodyBold, fontSize: 11 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },

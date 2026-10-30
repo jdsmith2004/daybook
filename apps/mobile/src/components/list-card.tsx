@@ -1,12 +1,14 @@
-/* One of my lists (calm moves, the wind-down, words that steady me) as rows you can see: tap a row to reword, move or remove
-   it, and "Add" puts a new one at the end. A row just added (from a lesson, or here) glows for a moment so it is easy to find. */
+/* One of my lists (calm moves, the wind-down, words that steady me) as a plain list: a heading over one card, a thin line
+   between the rows. Tap a row to reword, move or remove it, and "Add" puts a new one at the end. A row just added (from a
+   lesson, or here) glows for a moment so it is easy to find. */
 import { listAdd, listEdit, listInsert, listMove, listRemove, LISTS, type ListKey } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { TextInput } from '@/components/text';
 
-import { Card, Icon, T } from '@/components/ui';
+import { Hair, PageLink, PageSec } from '@/components/editable';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
@@ -68,118 +70,94 @@ export function ListCard({
   };
 
   return (
-    <View onLayout={onLayout}>
-      <Card>
-        <View style={s.head}>
-          <View style={[s.headIc, { backgroundColor: soft }]}>
-            <Icon name={icon} size={22} color={ink} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <T v="h2">{title}</T>
-            <T v="small" tone="muted">
-              {sub}
-            </T>
-          </View>
-          <T v="small" tone="muted">
-            {rows.length} of {L.max}
-          </T>
+    <PageSec icon={icon} tone={tone} title={title} sub={sub} tight onLayout={onLayout}>
+      {rows.length ? null : (
+        <T tone="muted" style={{ paddingVertical: 8 }}>
+          No {L.name} yet. Add the first one.
+        </T>
+      )}
+      {rows.map((r, i) => (
+        <View key={i + ':' + r}>
+          {i > 0 ? <Hair /> : null}
+          <Row
+            text={r}
+            n={numbered ? i + 1 : null}
+            soft={soft}
+            ink={ink}
+            open={open === i}
+            lit={lit === i}
+            onLitDone={() => setLit(null)}
+            onToggle={() => setOpen(open === i ? null : i)}
+            onSave={(t) => apply((cur) => ({ st: listEdit(cur, k, i, t) }))}
+            onMove={(d) => {
+              apply((cur) => ({ st: listMove(cur, k, i, d) }));
+              setOpen(i + d);
+            }}
+            canUp={i > 0}
+            canDown={i < rows.length - 1}
+            onRemove={() => {
+              const res = listRemove(snap.settings!, k, i);
+              if (res.ok) {
+                const gone = r;
+                say(res.toast, () => apply((cur) => ({ st: listInsert(cur, k, i, gone) })));
+                apply({ st: res.st });
+                setOpen(null);
+              } else say(res.toast);
+            }}
+          />
         </View>
-        <View style={{ gap: 8 }}>
-          {rows.length ? null : (
-            <T tone="muted" style={{ paddingVertical: 4 }}>
-              No {L.name} yet. Add the first one.
-            </T>
-          )}
-          {rows.map((r, i) => (
-            <Row
-              key={i + ':' + r}
-              text={r}
-              n={numbered ? i + 1 : null}
-              icon={icon}
-              soft={soft}
-              ink={ink}
-              open={open === i}
-              lit={lit === i}
-              onLitDone={() => setLit(null)}
-              onToggle={() => setOpen(open === i ? null : i)}
-              onSave={(t) => apply((cur) => ({ st: listEdit(cur, k, i, t) }))}
-              onMove={(d) => {
-                apply((cur) => ({ st: listMove(cur, k, i, d) }));
-                setOpen(i + d);
-              }}
-              canUp={i > 0}
-              canDown={i < rows.length - 1}
-              onRemove={() => {
-                const res = listRemove(snap.settings!, k, i);
-                if (res.ok) {
-                  const gone = r;
-                  say(res.toast, () => apply((cur) => ({ st: listInsert(cur, k, i, gone) })));
-                  apply({ st: res.st });
-                  setOpen(null);
-                } else say(res.toast);
-              }}
-            />
-          ))}
-          {adding ? (
-            <KeepAbove style={[s.addBox, { borderColor: c.accent, backgroundColor: c.surface }]}>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                autoFocus
-                placeholder={placeholder}
-                placeholderTextColor={c.muted}
-                maxLength={L.len}
-                multiline={k === 'words'}
-                submitBehavior={k === 'words' ? 'newline' : 'submit'}
-                returnKeyType="done"
-                onSubmitEditing={add}
-                accessibilityLabel={addLabel}
-                style={[s.addIn, { color: c.ink }]}
-              />
-              <View style={s.addBtns}>
-                <Pressable accessibilityRole="button" onPress={() => (setAdding(false), setDraft(''))} hitSlop={8} style={s.ghost}>
-                  <T v="label" tone="muted">
-                    Close
-                  </T>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: !draft.trim() }}
-                  disabled={!draft.trim()}
-                  onPress={add}
-                  style={({ pressed }) => [s.addGo, { backgroundColor: c.accent, opacity: !draft.trim() ? 0.5 : pressed ? 0.85 : 1 }]}>
-                  <Icon name="plus" size={18} color={c.accentInk} />
-                  <T v="label" style={{ color: c.accentInk }}>
-                    Add
-                  </T>
-                </Pressable>
-              </View>
-            </KeepAbove>
-          ) : rows.length < L.max ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setAdding(true)}
-              style={({ pressed }) => [s.addRow, { borderColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
-              <Icon name="plus" size={20} color={c.accentText} />
-              <T v="label" style={{ color: c.accentText }}>
-                {addLabel}
+      ))}
+      {adding ? (
+        <KeepAbove style={{ gap: 8, paddingVertical: 8 }}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            autoFocus
+            placeholder={placeholder}
+            placeholderTextColor={c.muted}
+            maxLength={L.len}
+            multiline={k === 'words'}
+            submitBehavior={k === 'words' ? 'newline' : 'submit'}
+            returnKeyType="done"
+            onSubmitEditing={add}
+            accessibilityLabel={addLabel}
+            style={[s.editIn, { color: c.ink, backgroundColor: c.surface, borderColor: c.line }]}
+          />
+          <View style={s.addBtns}>
+            <Pressable accessibilityRole="button" onPress={() => (setAdding(false), setDraft(''))} hitSlop={8} style={s.ghost}>
+              <T v="label" tone="muted">
+                Close
               </T>
             </Pressable>
-          ) : (
-            <T v="small" tone="muted">
-              The list is full. Remove one to make room.
-            </T>
-          )}
-        </View>
-      </Card>
-    </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !draft.trim() }}
+              disabled={!draft.trim()}
+              onPress={add}
+              style={({ pressed }) => [s.addGo, { backgroundColor: c.accent, opacity: !draft.trim() ? 0.5 : pressed ? 0.85 : 1 }]}>
+              <T v="label" style={{ color: c.accentInk }}>
+                Add
+              </T>
+            </Pressable>
+          </View>
+        </KeepAbove>
+      ) : rows.length < L.max ? (
+        <>
+          {rows.length ? <Hair /> : null}
+          <PageLink icon="plus" label={addLabel} onPress={() => setAdding(true)} />
+        </>
+      ) : (
+        <T v="small" tone="muted" style={{ paddingVertical: 8 }}>
+          The list is full. Remove one to make room.
+        </T>
+      )}
+    </PageSec>
   );
 }
 
 function Row({
   text,
   n,
-  icon,
   soft,
   ink,
   open,
@@ -194,7 +172,6 @@ function Row({
 }: {
   text: string;
   n: number | null;
-  icon: string;
   soft: string;
   ink: string;
   open: boolean;
@@ -234,25 +211,22 @@ function Row({
     return () => a.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lit, reduced]);
-  const bg = glow.interpolate({ inputRange: [0, 1], outputRange: [c.surface2, soft] });
-  const edge = glow.interpolate({ inputRange: [0, 1], outputRange: [open ? c.accent : 'transparent', ink] });
+  const bg = glow.interpolate({ inputRange: [0, 1], outputRange: [c.surface, soft] });
 
   return (
-    <Animated.View style={[s.row, { backgroundColor: lit ? bg : c.surface2, borderColor: lit ? edge : open ? c.accent : 'transparent' }]}>
+    <Animated.View style={[s.row, lit ? { backgroundColor: bg } : null]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={text}
         accessibilityHint="Opens it to reword, move or remove"
         accessibilityState={{ expanded: open }}
         onPress={onToggle}
-        style={s.rowTop}>
-        <View style={[s.rowIc, { backgroundColor: soft }]}>
-          {n != null ? <T style={{ fontFamily: font.bodyBold, fontSize: 13, color: ink }}>{n}</T> : <Icon name={icon} size={16} color={ink} />}
-        </View>
+        style={({ pressed }) => [s.rowTop, { opacity: pressed ? 0.6 : 1 }]}>
+        {n != null ? <T style={{ fontFamily: font.bodyBold, color: ink, minWidth: 16 }}>{n}</T> : null}
         <T style={{ flex: 1 }}>{text}</T>
         {lit ? (
           <View style={[s.newTag, { backgroundColor: ink }]}>
-            <T v="small" style={{ fontFamily: font.bodyBold, color: c.surface }}>
+            <T v="small" style={{ fontFamily: font.bodySemi, color: c.surface }}>
               New
             </T>
           </View>
@@ -261,7 +235,7 @@ function Row({
         )}
       </Pressable>
       {open ? (
-        <KeepAbove style={{ gap: 10, paddingTop: 4 }}>
+        <KeepAbove style={{ gap: 4, paddingBottom: 4 }}>
           <TextInput
             value={val}
             onChangeText={setVal}
@@ -276,7 +250,7 @@ function Row({
             <Tool icon="down" label="Down" on={canDown} onPress={() => (onSave(val), onMove(1))} />
             <Tool icon="trash" label="Remove" on onPress={onRemove} danger />
             <View style={{ flex: 1 }} />
-            <Tool icon="check" label="Done" on onPress={() => (onSave(val), onToggle())} />
+            <Tool label="Done" on onPress={() => (onSave(val), onToggle())} />
           </View>
         </KeepAbove>
       ) : null}
@@ -284,7 +258,8 @@ function Row({
   );
 }
 
-function Tool({ icon, label, on, onPress, danger }: { icon: string; label: string; on: boolean; onPress: () => void; danger?: boolean }) {
+/** an action on an open row: only its words and a small icon */
+function Tool({ icon, label, on, onPress, danger }: { icon?: string; label: string; on: boolean; onPress: () => void; danger?: boolean }) {
   const c = useTheme();
   const col = danger ? c.danger : c.accentText;
   return (
@@ -293,9 +268,8 @@ function Tool({ icon, label, on, onPress, danger }: { icon: string; label: strin
       accessibilityState={{ disabled: !on }}
       disabled={!on}
       onPress={onPress}
-      hitSlop={6}
-      style={({ pressed }) => [s.tool, { borderColor: c.line, backgroundColor: c.surface, opacity: !on ? 0.4 : pressed ? 0.8 : 1 }]}>
-      <Icon name={icon} size={16} color={col} />
+      style={({ pressed }) => [s.tool, { opacity: !on ? 0.35 : pressed ? 0.6 : 1 }]}>
+      {icon ? <Icon name={icon} size={16} color={col} /> : null}
       <T v="small" style={{ fontFamily: font.bodySemi, color: col }}>
         {label}
       </T>
@@ -304,12 +278,10 @@ function Tool({ icon, label, on, onPress, danger }: { icon: string; label: strin
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  row: { borderRadius: 16, borderWidth: 2, paddingHorizontal: 10, paddingVertical: 8 },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 },
-  rowIc: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  newTag: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 },
+  /* the glow reaches a little past the words, so its corners do not touch them */
+  row: { marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 12 },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingVertical: 8 },
+  newTag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   editIn: {
     fontFamily: font.body,
     fontSize: 15,
@@ -320,21 +292,9 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     minHeight: 48,
   },
-  tools: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  tool: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minHeight: 50,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-  },
-  addBox: { borderWidth: 2, borderRadius: 16, padding: 10, gap: 8 },
-  addIn: { fontFamily: font.body, fontSize: 15, lineHeight: 21, minHeight: 40, paddingHorizontal: 4 },
+  tools: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, alignItems: 'center' },
+  tool: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 4 },
   addBtns: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12 },
-  ghost: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 8 },
-  addGo: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16, borderRadius: 999 },
+  ghost: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  addGo: { alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingHorizontal: 20, borderRadius: 999 },
 });

@@ -81,7 +81,7 @@ export function Breathe({ finish, exit, sos, level }: ToolProps) {
           </View>
           <View style={s.group} accessibilityRole="radiogroup" accessibilityLabel="Length">
             {[1, 3, 5].map((m) => (
-              <Pick key={m} on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
+              <Pick key={m} third on={mins === m} title={m + ' min'} onPress={() => setMins(m)} />
             ))}
           </View>
           <Button
@@ -121,7 +121,7 @@ export function Breathe({ finish, exit, sos, level }: ToolProps) {
   );
 }
 
-function Pick({ on, title, sub, onPress }: { on: boolean; title: string; sub?: string; onPress: () => void }) {
+function Pick({ on, title, sub, third, onPress }: { on: boolean; title: string; sub?: string; third?: boolean; onPress: () => void }) {
   const c = useTheme();
   return (
     <Pressable
@@ -130,6 +130,7 @@ function Pick({ on, title, sub, onPress }: { on: boolean; title: string; sub?: s
       onPress={onPress}
       style={[
         s.pick,
+        third && s.third,
         {
           backgroundColor: on ? c.accentSoft : c.surface,
           borderColor: on ? c.accent : 'transparent',
@@ -299,7 +300,7 @@ const s = StyleSheet.create({
     flexGrow: 1,
     flexBasis: '40%',
     minHeight: 56,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 2,
     padding: 10,
     alignItems: 'center',
@@ -309,7 +310,9 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  pickT: { fontFamily: font.bodyBold, fontSize: 16 },
+  /* the three lengths sit in one row */
+  third: { flexBasis: '30%' },
+  pickT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   pickS: { fontFamily: font.body, fontSize: 13 },
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'stretch' },
   step: { flex: 1, height: 6, borderRadius: 3 },

@@ -32,7 +32,6 @@ import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
-import { DoneMark } from '@/components/done-mark';
 import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
 import { FitArt } from '@/components/fit';
@@ -40,9 +39,9 @@ import { YesNo } from '@/components/form';
 import { Fold, GoingToBed, GoodnightButton, LoudFold, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
 import { NightSky } from '@/components/night-sky';
 import { TalkDoor } from '@/components/talk-card';
-import { Dock, Middle, SceneFrame } from '@/components/scene';
+import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
-import { Button, Chip, Icon, T } from '@/components/ui';
+import { Button, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
@@ -176,9 +175,6 @@ export default function Checkin() {
     const v = form[step] ?? null;
     body = (
       <>
-        <T v="eyebrow" tone="muted">
-          {R.name}
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           {R.q}
         </T>
@@ -241,9 +237,6 @@ export default function Checkin() {
       </>
     ) : (
       <>
-        <T v="eyebrow" tone="muted">
-          More
-        </T>
         <T v="title" style={s.c} accessibilityRole="header">
           Anything else about this day?
         </T>
@@ -277,19 +270,12 @@ export default function Checkin() {
     const wind = r && r.stops.find((x) => x.k === 'night' && !x.done);
     body = (
       <>
-        <DoneMark />
-        <Appear delay={180}>
-          <T v="title" style={s.c} accessibilityRole="header">
-            Day logged.
-          </T>
-        </Appear>
-        <Appear delay={260} style={{ alignItems: 'center', gap: 4 }}>
-          <T style={s.c}>{msg}</T>
-          {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
-        </Appear>
+        {/* the day is logged, and the flame takes it in */}
+        <Finish level={Math.max(1, g.level.n)} title="Day logged." text={msg} always least={0.6} />
+        {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         <View style={s.tiles}>
           {rateKeys(form).map((f, j) => (
-            <Appear key={f} delay={360 + j * 70} by={14} style={[s.tile, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+            <Appear key={f} delay={360 + j * 70} by={14} style={s.tile}>
               <Text style={[s.tileV, { color: c.ink }]}>{form[f] == null ? '–' : form[f]}</Text>
               <T v="small" tone="muted">
                 {ratingOf(f).name}
@@ -303,11 +289,8 @@ export default function Checkin() {
           </Appear>
         ) : null}
         {wind && r ? (
-          <Appear delay={700} style={[s.next, { backgroundColor: c.surface }]}>
-            <View style={[s.nextIc, { backgroundColor: c.violetSoft }]}>
-              <Icon name="moon" size={18} color={c.violetText} />
-            </View>
-            <T style={{ flex: 1 }}>
+          <Appear delay={700}>
+            <T style={s.c}>
               <T v="label">Next: Goodnight, when the phone goes down.</T> {stopStatus(wind, r.windMin)}.
             </T>
           </Appear>
@@ -412,19 +395,7 @@ const s = StyleSheet.create({
   moreOpen: { alignSelf: 'stretch', gap: 12 },
   /* keeps the slider in the same place before and after Next shows */
   btnSpace: { height: 52 },
-  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignSelf: 'stretch' },
-  tile: {
-    flexGrow: 1,
-    flexBasis: '22%',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 16,
-    gap: 2,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 3 },
-  },
+  tiles: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
+  tile: { alignItems: 'center', gap: 2 },
   tileV: { fontFamily: font.display, fontSize: 28 },
-  next: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', padding: 14, borderRadius: 18 },
-  nextIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });

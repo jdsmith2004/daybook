@@ -70,7 +70,6 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
         s.card,
         {
           backgroundColor: c.surface,
-          borderColor: c.cardEdge,
           opacity: v,
           transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
         },
@@ -148,8 +147,7 @@ const s = StyleSheet.create({
     bottom: 44,
     maxWidth: 520,
     alignSelf: 'center',
-    borderRadius: 26,
-    borderWidth: 1,
+    borderRadius: 28,
     paddingTop: 14,
     paddingBottom: 14,
     paddingHorizontal: 16,
@@ -167,6 +165,6 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   opt: { flex: 1, alignItems: 'center', gap: 5, paddingVertical: 2 },
   word: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 17 },
-  sos: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 16 },
-  sosT: { fontFamily: font.bodyBold, fontSize: 16 },
+  sos: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 50, borderRadius: 999 },
+  sosT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

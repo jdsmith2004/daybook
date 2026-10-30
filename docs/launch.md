@@ -258,7 +258,7 @@ lifetime, which is simply a tip of $10 or more: $10, or $30 to give more. A $5 t
 the safe copy. The code is in the app and turned off: until `PATTERN_FROM` is set in `packages/core/src/supporter.ts`, a tip opens
 what it always did and nobody sees the product. Turn it on only after every step here, in this order.
 
-**1. App Store Connect: the subscription, the one new product.** Apps, Daybook, Monetization, Subscriptions.
+**1. App Store Connect: the subscription, the one new product. Done October 30, 2026 (group 22530041, product 6829022289), waiting for an app version.** Apps, Daybook, Monetization, Subscriptions. The group shows as "Daybook" in the person's subscription list, not the full app name, so it says nothing about what Daybook is for.
 
 - Create a subscription group. Reference name: `Daybook Pattern`. Under the group's App Store Localization, English (U.S.),
   display name `Daybook Pattern`.

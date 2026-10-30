@@ -301,7 +301,7 @@ wider Stripe key and a server check on renewals. The Stripe key stays as it is (
 **5. What the statement says.** Apple's charge reads APPLE.COM/BILL. Stripe's reads JEFFREY until Stripe accepts DAYBOOK:
 Settings, Business, Public details, Statement descriptor, try `DAYBOOK` again. Either way, no word about what Daybook is for.
 
-**6. Claude turns it on, in one change,** once the subscription says Ready to Submit and the link is sent:
+**6. Claude turns it on, in one change,** once the link is sent (the subscription stays at Prepare for Submission, with Add for Review on, until it goes in with a version):
 
 - Sets `TIP_LINKS.amazing`, and `PATTERN_FROM` to the moment of that change. It is never moved afterward, because a tip from
   before it keeps the whole pattern for good.

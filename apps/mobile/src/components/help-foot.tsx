@@ -25,7 +25,7 @@ export function HelpFoot() {
         onPress={() => copyText('988', say)}
         style={({ pressed }) => [s.chip, { opacity: pressed ? 0.7 : 1 }]}>
         <Icon name="copy" size={16} color={c.accentText} />
-        <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>Copy</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>Copy</Text>
       </Pressable>
     </View>
   );

@@ -32,7 +32,7 @@ function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: Cat
             onPress={() => onPick(k.id)}
             style={[s.cat, { backgroundColor: on ? t.soft : c.surface, borderColor: on ? t.ic : c.line }]}>
             <Icon name={k.ic} size={16} color={on ? t.text : c.muted} />
-            <Text style={{ fontFamily: font.bodySemi, color: on ? t.text : c.ink }}>{k.name}</Text>
+            <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: on ? t.text : c.ink }}>{k.name}</Text>
           </Pressable>
         );
       })}

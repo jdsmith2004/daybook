@@ -1,5 +1,31 @@
 # What is planned next
 
+## No AI slop: every screen reviewed (the owner, October 30, 2026)
+
+**What the owner asked for:** research what separates a well-built app from AI slop, then go through everything and fix it ("nothing's off
+limits"), with a review of every single screen, "doesn't mean every screen needs to be changed". The rules are now in
+docs/design-standards.md ("The look"), docs/craft-checklist.md, CLAUDE.md and `packages/core/test/craft.test.ts`.
+
+**Result:** 427 screens and steps reviewed, 308 changed, 105 left as they were, 14 read in code only, plus Today and the shared parts. Today
+measured 14 font sizes before and 7 after, Pattern 26 pills before and 0 after. Today: the flame in a sky from edge to edge; SOS is the
+round button (the big red one on the page went, the owner may correct this); Your day is one line through the day with the squiggle.
+
+**Choices made for the owner, to correct back if wrong:** no points per day in the Pattern list, no tool count on Learn, every earned badge
+shows, the if-then plan stays one tap from the Sunday review's end, Add my reasons on the empty reasons page outside SOS, setup no longer
+says "no subscription", the reminders strip moved from above the flame to under the two quiet buttons (it keeps its sun color), the
+Move tool's seat or feet switch is a quiet link, most lesson reading cards have no icon, and the stamp in Planning a slip? keeps its capitals.
+
+**Open questions (owner decision):**
+
+1. Planning a slip? runs up to 12 steps. Worth one pass together? _Medium._
+2. Should today's day page send people to the full-screen check-in, with its form only for past days? _Medium._
+3. SOS's More sheet is two columns of tools with a lip; the standard says one column of rows, which makes it twice as long. _Medium._
+4. Should a Pattern page have a flame moment (a good week, say)? _Medium._
+5. RiskCard's "Hard hours held" and TalkCard's waiting and plan states never draw: show them or remove them? _Medium._
+
+**Known and not fixed:** a note covers the date and part of the flame while it shows; `useFitRoom` (fit.tsx) can over-shrink a picture when a
+`Dock` fills the page; a person's Day 1 and the rest of the app were checked on the web with motion off, and only Today on the iPhone build.
+
 ## Whole-app analysis: how it connects, how it flows, and whether it helps (October 30, 2026)
 
 **What the owner asked for:** a thorough look at how everything connects and flows, whether the app makes sense, has an

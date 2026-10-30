@@ -85,7 +85,7 @@ export function CheckinBlock({
               setForm(checkinFormOf(snap.days, dkey));
               setEditing(true);
             }}>
-            <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Edit</Text>
+            <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Edit</Text>
           </Pressable>
         </View>
         <View style={s.tiles}>{rateKeys(saved!).map((k) => tile(saved![k] ?? null, ratingOf(k).name))}</View>

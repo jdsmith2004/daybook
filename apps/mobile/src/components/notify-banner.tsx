@@ -1,5 +1,5 @@
-/* The ask on Today when notifications are off (core notify.ts; docs/plan.md, "Notifications, second pass"): a strip at the
-   very top, above the flame, full width, in the sun color with a bell and an X, like Duolingo's. The one place Daybook nags,
+/* The ask on Today when notifications are off (core notify.ts; docs/plan.md, "Notifications, second pass"): a strip in
+   the sun color with a bell and an X, like Duolingo's, right under the two quiet buttons, so it never pushes them out of reach. The one place Daybook nags,
    by the owner's choice: it comes back each day until notifications are on or "Stop asking on this phone" is chosen in
    Settings. It is never a modal and never blocks anything. "Turn on" asks the phone; the lesson reminder is on by default
    (core nudges.ts, "Lessons first"), and when nothing at all is on it is turned back on (the check-in and the wind-down
@@ -70,7 +70,7 @@ export function NotifyBanner() {
 }
 
 const s = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 14, paddingRight: 8, borderRadius: 12, marginBottom: 12 },
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 14, paddingRight: 8, borderRadius: 20, marginBottom: 12 },
   text: { flex: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   btn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
   btnT: { fontFamily: font.bodyBold, fontSize: 13 },

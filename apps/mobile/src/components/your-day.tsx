@@ -181,7 +181,9 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
               router.push({ pathname: '/settings', params: { open: 's-routine' } });
             }}
             style={{ minHeight: 40, justifyContent: 'center', alignSelf: 'center' }}>
-            <Text style={{ fontFamily: font.bodySemi, color: c.accentText, textDecorationLine: 'underline' }}>Change my usual routine in Settings</Text>
+            <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>
+              Change my usual routine in Settings
+            </Text>
           </Pressable>
           <Button label="Done" onPress={onClose} />
         </View>

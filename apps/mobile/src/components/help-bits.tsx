@@ -28,7 +28,7 @@ export function ChipBtn({ icon, label, onPress, a11y }: { icon?: string; label: 
       hitSlop={4}
       style={({ pressed }) => [s.chip, { opacity: pressed ? 0.7 : 1 }]}>
       {icon ? <Icon name={icon} size={16} color={c.accentText} /> : null}
-      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{label}</Text>
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{label}</Text>
     </Pressable>
   );
 }
@@ -48,7 +48,7 @@ export function Ext({ url, label }: { url: string; label: string }) {
       onPress={() => Linking.openURL(url).catch(() => undefined)}
       hitSlop={6}
       style={s.ext}>
-      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{label}</Text>
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{label}</Text>
       <Icon name="ext" size={14} color={c.accentText} />
     </Pressable>
   );

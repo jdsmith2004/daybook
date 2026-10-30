@@ -34,7 +34,7 @@ export default function Growth() {
       onPress={() => setSi(Math.max(0, Math.min(last, si + d)))}
       style={({ pressed }) => [s.nav, { opacity: off ? 0.4 : pressed ? 0.7 : 1 }]}>
       {d < 0 ? <Icon name="back" size={16} color={c.accentText} /> : null}
-      <Text style={{ fontFamily: font.bodySemi, color: c.accentText }}>{text}</Text>
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{text}</Text>
       {d > 0 ? <Icon name="next" size={16} color={c.accentText} /> : null}
     </Pressable>
   );

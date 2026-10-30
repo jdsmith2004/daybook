@@ -336,10 +336,7 @@ export default function Setup() {
         </>
       ) : (
         <>
-          <Head
-            h="Quit porn, one honest day at a time."
-            sub="A plan built from your answers, a short lesson a day, and help when urges hit."
-          />
+          <Head h="Quit porn, one honest day at a time." sub="A plan built from your answers, a short lesson a day, and help when urges hit." />
           <Middle>
             {/* the first thing a new person sees: the flame, big and alive, the same one they will watch grow */}
             <FitArt min={0.5}>
@@ -1664,7 +1661,7 @@ function LevelBar() {
         <T v="label">
           Level {from.n} → Level {to.n}
         </T>
-        <Text style={{ fontFamily: font.bodyBold, color: c.mintText }}>+{SETUP_PTS} points</Text>
+        <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: c.mintText }}>+{SETUP_PTS} points</Text>
       </View>
       <View style={{ height: 14, borderRadius: 7, backgroundColor: c.mintSoft, overflow: 'hidden' }}>
         <Animated.View

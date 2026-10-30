@@ -303,7 +303,7 @@ function FitCheck() {
                   accessibilityLabel={name(k) + ': ' + t}
                   onPress={() => apply({ st: toggleTherapist(snap.settings!, r, k) })}
                   style={[s.sq, { backgroundColor: on ? c.mintSoft : c.surface, borderColor: on ? c.mintText : c.line }]}>
-                  <Text style={{ fontFamily: font.bodyBold, color: on ? c.mintText : c.ink }}>{on ? '✓' : k + 1}</Text>
+                  <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: on ? c.mintText : c.ink }}>{on ? '✓' : k + 1}</Text>
                 </Pressable>
               );
             })}

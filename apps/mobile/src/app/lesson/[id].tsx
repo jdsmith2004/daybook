@@ -378,7 +378,7 @@ export default function LessonScreen() {
           </T>
           {gain > 0 ? (
             <View style={[s.pill, { backgroundColor: c.sun }]}>
-              <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
+              <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
             </View>
           ) : again && !SHORT ? (
             <T tone="muted">Already counted. Read it as often as you like.</T>

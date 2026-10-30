@@ -317,7 +317,7 @@ const s = StyleSheet.create({
   readRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   big: { fontFamily: font.displayBold, fontSize: 52, lineHeight: 60, fontVariant: ['tabular-nums'] },
   bigCompact: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, fontVariant: ['tabular-nums'] },
-  unit: { fontFamily: font.bodySemi, fontSize: 16 },
+  unit: { fontFamily: font.bodySemi, fontSize: 15 },
   hint: { paddingBottom: 12 },
   hintCompact: { paddingBottom: 2 },
   hit: { height: 60, justifyContent: 'center' },

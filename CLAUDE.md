@@ -87,6 +87,12 @@ need, without letting the screen turn into a list of features.
   Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
   The old review artifacts are retired: never edit or republish them. (The rule is there so work lands in the code, not
   in a hosted page. Claude Design is allowed for trying out a look, by the owner's choice; the app's code stays the real thing.)
+- **No AI slop (the owner, October 30, 2026).** Daybook must look made on purpose by someone who cares, never like a template.
+  Before building or changing any screen, read "The look" in docs/design-standards.md, and before calling it done, look at a
+  picture of it and run docs/craft-checklist.md on it. The usual slop: cards inside cards, a border plus a soft shadow, an icon in a
+  tinted circle, capitals on small labels, a pile of pills, a subtitle that explains the screen, half font sizes, gradients for
+  decoration, every screen the same layout. `packages/core/test/craft.test.ts` fails on what a machine can check. A new design
+  that wins by removing soul fails too: spirit comes first, and the flame gets bigger, not smaller.
 - **Be a coworker, not an assistant.** Your opinion matters, so say it. When a request is too vague to do well, say what is
   unclear and what you would do, instead of guessing quietly. When you think a request is wrong, or see a better way, push
   back plainly and say why, before the work, not after it. Do not agree just to please. Once we have talked it through and
@@ -169,7 +175,7 @@ cd apps/mobile && npx expo start
     covers the bottom of the screen while typing.
   - In a full-screen moment (`SceneFrame`) or a sheet (`SheetFrame`), wrap the answers and the main button in `Dock`
     (components/scene.tsx), which pushes them to the bottom. For a number from a range, use `Slider` (components/slider.tsx).
-- **Tools and moments follow docs/design-standards.md:** one squiggle (`SQUIGGLE`), one timer (`ToolTimer`), smooth motion,
+- **Every screen follows "The look" in docs/design-standards.md, and tools and moments the rest of it:** one squiggle (`SQUIGGLE`), one timer (`ToolTimer`), smooth motion,
   two-step choices, and the X going one step back. Read it before building or changing a tool, or reusing these patterns.
 - **Formatting is Prettier, from one place.** `.prettierrc.json` at the root sets it for everything (single quotes, lines up
   to 160, `>` on the last line of a tag), `.editorconfig` covers editors, and `.prettierignore` leaves the frozen files
@@ -180,4 +186,4 @@ cd apps/mobile && npx expo start
 - **Privacy first.** Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add anything that reads people's logs on the server, and no analytics beyond the anonymous counts (by the owner's choice, October 22, 2026; core `pulse.ts`). Since October 28, 2026 (the owner: "I just want to track it, I don't want to ask them") the basic counts, the day opened and how far setup got (`pulseBasic`), are sent without asking; every other count waits for the person's yes in More, and More turns all of them off. Only the fixed names in `PULSE_KEYS` with small numbers, never a word, time, trigger, id or the log, and the server keeps only totals per day. A new count is added to `PULSE_KEYS` and to the list on the privacy page in the same change. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
-- Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result.
+- Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result, against docs/craft-checklist.md.

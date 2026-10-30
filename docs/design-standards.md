@@ -1,8 +1,37 @@
-# Design standards for tools and moments
+# Design standards
 
-These rules came out of the owner's passes over the SOS tools on a real iPhone (October 2026). They hold for every tool,
-and for any screen elsewhere in the app that borrows these patterns (a timer, a squiggle, a shape, a two-step choice).
+The look holds for every screen. The rest came out of the owner's passes over the SOS tools on a real iPhone (October 2026). They hold
+for every tool, and for any screen elsewhere in the app that borrows these patterns (a timer, a squiggle, a shape, a two-step choice).
 CLAUDE.md's thumb-zone and words rules still come first; these add to them.
+
+## The look (the owner, October 30, 2026: no AI slop)
+
+The whole app went through this on October 30, 2026 (the record is in docs/plan.md). `packages/core/test/craft.test.ts` fails on the
+parts a machine can check; the rest is the checklist in docs/craft-checklist.md, run on a picture of the screen, not on the code.
+
+- **A reason for everything.** Point at each thing on a screen and name the state or action it carries. If you cannot, it goes.
+  The first check is to blur the picture: 2 or 3 masses, one clearly first.
+- **One type scale.** 11, 12, 13, 15, 17, 20, 22, 28, 34, then big display numbers (38 and up). `T` first: `small` 13, `body` 15, `label`
+  15 semibold, `h2` 20, `title` 28. 3 or 4 sizes on a screen. Emphasis is weight and color, not another size.
+- **No capitals for labels:** no `.toUpperCase()`, `textTransform` or letter spacing on a label. A label says something the
+  heading does not, or it goes. "A thought, not an order" (a stamp in a picture) is art, not a label.
+- **A card has one edge: its fill** (`Card`: `c.surface`, radius 20, padding 16). Never a border plus a soft shadow. **No card inside
+  a card:** group with space and a heading instead.
+- **Lists are plain grouped lists:** `Rows` and `LinkCard`. An icon at its own size, a title, one line, a chevron, a thin line
+  between rows. Never a stack of separate cards that say the same kind of thing.
+- **No icon in a tinted circle** at the head of a row or card. A stop, a badge or a moment that wants a shape uses a real one
+  (`Shape`, `Medal`), and it means something.
+- **One filled button on a view,** in `c.accent`; red only for SOS and danger. The rest are quiet fills or words. 44 tall at least.
+- **The lip** (the small hard shadow that presses down) is for the main button and big choice cards in full-screen moments, and
+  the round SOS. Nothing else has one.
+- **Few words.** A subtitle that says what the screen already shows goes. Paragraphs become sentences, sentences become labels.
+  "My Daybook" and the like are gone for good.
+- **Radii:** 12 small, 20 cards, 28 sheets, capsule for buttons and pills; an inner radius nests inside the outer.
+- **Space:** 4, 8, 12, 16, 24, 32. Related things 4 to 8 apart, sections 24 or more, one left edge 16 from the screen.
+- **Sameness is a smell.** Three screens side by side should not look like one template with new words: a screen's layout comes
+  from its one job. Today is a sky; Your day is a line through the day; Milestones is the flame; SOS is one living thing.
+- **Spirit is not optional.** Clearing clutter must never leave a tidy page with no soul. Keep the skies, the flame, the shapes,
+  the squiggle, the motion and the warm words, and where a page has room, make the flame bigger, not smaller.
 
 ## Motion
 
@@ -77,5 +106,6 @@ CLAUDE.md's thumb-zone and words rules still come first; these add to them.
 
 ## Checking
 
+- Look at a picture of every screen you changed and run docs/craft-checklist.md on it.
 - Check every changed tool on the iPhone build as well as the web, light and dark, and with Reduce Motion on.
 - In development, Metro must not run with `CI=1` (it turns off reloads, so edits never reach the app).

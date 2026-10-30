@@ -104,6 +104,6 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   big: { minHeight: 58, borderRadius: 18 },
-  t: { fontFamily: font.bodySemi, fontSize: 16 },
+  t: { fontFamily: font.bodySemi, fontSize: 15 },
   tBig: { fontFamily: font.display, fontSize: 22 },
 });

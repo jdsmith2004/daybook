@@ -37,7 +37,7 @@ need, without letting the screen turn into a list of features.
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work
-  with no account and no payment, always. A free account opens the lessons after the first three (see accounts.ts). Ask
+  with no account and no payment, always. A free account opens the lessons after the first eight (see accounts.ts; moved from three by the owner, October 30, 2026). Ask
   for one only at good moments, never after a slip.
 - **Setup is hard to skip, and it ends with the account ask.** A new person is meant to finish setup and leave knowing the
   app will help them. There is no "skip setup" button; closing setup (or SOS, or leaving the app) brings it back the next

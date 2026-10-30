@@ -1,5 +1,6 @@
 /* Hard hours: learning the window from slips, urges and talk-throughs, the day's phase, keeping a held hour, and the
    phone heads-ups. */
+import { LEARN_FREE } from '../src/index';
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { normDay } from '../src/legacy/core.js';
@@ -113,12 +114,12 @@ describe('the hard hours card, for someone doing well', () => {
     const free = read(
       {},
       '2026-10-10',
-      path.slice(0, 3).map((L) => L.id),
+      path.slice(0, LEARN_FREE).map((L) => L.id),
     );
     const x = riskLesson(free, st, tk, false)!;
     expect(x.again).toBe(true);
-    expect(path.slice(0, 3)).toContain(x.L);
-    expect(riskLesson(free, st, tk, true)).toMatchObject({ L: path[3], again: false });
+    expect(path.slice(0, LEARN_FREE)).toContain(x.L);
+    expect(riskLesson(free, st, tk, true)).toMatchObject({ L: path[LEARN_FREE], again: false });
   });
   it('says when they start, and what the plan is for', () => {
     expect(riskStartLabel(23)).toBe('11 PM');

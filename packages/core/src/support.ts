@@ -78,10 +78,11 @@ export function tipAsk(days: Days, st: Settings, tk: DayKey, hour: number, acct:
 
 /** a moment of earned value: a new level, a new badge, the first week looked back on */
 export type TipMoment = 'level' | 'badge' | 'week';
-/** whether this moment carries a tip ask (a line and a button under it): the same good-moment rules as the card, and at
-    most one ask of any kind in TIP_SPACE days. A celebration that comes in quietly (right after a slip) never asks. */
+/** whether this moment carries a tip ask (a line and a button under it): the same good-moment rules as the card, so it
+    waits TIP_FIRST days too (the owner, October 30, 2026), and at most one ask of any kind in TIP_SPACE days. A celebration
+    that comes in quietly (right after a slip) never asks. */
 export function tipMoment(days: Days, st: Settings, tk: DayKey, hour: number, url = SUPPORT_URL, near: TipNear | null = null, quiet = false): boolean {
-  return !quiet && askable(days, st, tk, hour, url, near);
+  return !quiet && diffDays(tk, st.start) >= TIP_FIRST && askable(days, st, tk, hour, url, near);
 }
 /** a moment asked: no other ask for TIP_SPACE days */
 export const tipMomentShown = (st: Settings, tk: DayKey, now = Date.now()): Change => ({

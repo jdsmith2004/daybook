@@ -41,13 +41,14 @@ describe('the unlock rule', () => {
     expect(core.lessonsDone(days).size).toBe(6);
     expect(core.lessonsEarly(days).size).toBe(0);
   });
-  it('the account rule stays on top: without one, lesson 4 is Up next but waits behind it', () => {
-    const days = rec(ids(3));
+  it('the account rule stays on top: without one, the lesson after the free ones is Up next but waits behind it', () => {
+    const days = rec(ids(core.LEARN_FREE));
     const w = core.lessonWalk(days, st0());
-    expect(w.next).toBe(path[3]);
-    expect(core.lessonGate(path[3], w)).toBe('open');
-    expect(core.lessonOpen(path[3], w.done, false)).toBe(false);
-    expect(core.lessonOpen(path[3], w.done, true)).toBe(true);
+    const first = path[core.LEARN_FREE];
+    expect(w.next).toBe(first);
+    expect(core.lessonGate(first, w)).toBe('open');
+    expect(core.lessonOpen(first, w.done, false)).toBe(false);
+    expect(core.lessonOpen(first, w.done, true)).toBe(true);
   });
   it('with every lesson done in order, everything opens and nothing is next', () => {
     const w = core.lessonWalk(rec(ids(path.length)), st0());
@@ -140,14 +141,14 @@ describe('lessons read early (before this rule)', () => {
     expect('back' in core.normSettings(JSON.parse(JSON.stringify(st))).learn).toBe(false);
   });
   it('a re-read offered without an account is never one the path has not reached', () => {
-    /* lessons 1 to 3, then lesson 20 early: lesson 4 waits behind an account */
-    const d = rec(ids(3), [path[19].id]);
+    /* the free lessons, then lesson 20 early: the next one waits behind an account */
+    const d = rec(ids(core.LEARN_FREE), [path[19].id]);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(d, st0(), tk, new Date(2026, 9, 20, h, 30).getTime(), false);
-      if (o.act === 'lesson') expect(ids(3)).toContain(o.v);
+      if (o.act === 'lesson') expect(ids(core.LEARN_FREE)).toContain(o.v);
     }
     const r = core.riskLesson(d, st0(), tk, false)!;
-    expect(ids(3)).toContain(r.L.id);
+    expect(ids(core.LEARN_FREE)).toContain(r.L.id);
   });
   it('two read early in a row each get their welcome back, in path order', () => {
     const d = rec(ids(1), [path[2].id, path[1].id]);

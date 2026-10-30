@@ -12,7 +12,7 @@ import { SUPPORT_MIN } from './supporter';
 import type { DayKey, Days, Settings } from './types';
 
 /** lessons open without an account, at the start of the daily order */
-export const LEARN_FREE = 3;
+export const LEARN_FREE = 8;
 /** after "Not now", days before Daybook asks again */
 export const ACCT_WAIT = 7;
 /** the first level-up that asks: the first step of Kindling, a new form of the flame. Not level 2: the setup alone gives

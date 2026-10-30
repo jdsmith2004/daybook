@@ -379,7 +379,7 @@ export function lessonAt(days: Days, log: Pick<NudgeLog, 'opens'>, k: DayKey, no
   return last ? { at: last, from: 'last' } : { at: clockOf(usualHour(log, now) * 60), from: 'usual' };
 }
 /** the lesson the reminder for day k opens: the next new one, while today's is not done and it is open (without an account,
-    the lessons after the first three wait behind one); else null, and no reminder (a re-read is never pushed) */
+    the lessons after the first LEARN_FREE wait behind one); else null, and no reminder (a re-read is never pushed) */
 export function lessonDue(days: Days, st: Settings, k: DayKey, account = true): string | null {
   if (k < LESSON_WIN_FROM || !routineOn(st, days[k]?.p, 'lesson') || lessonDoneOn(days[k]?.p)) return null;
   const w = lessonWalk(days, st);
@@ -653,7 +653,7 @@ export const nudgesOn = (p: NudgePrefs) => p.lesson || p.checkin || p.wind || p.
 
 /** the notifications to schedule now: today and tomorrow, then the come-back notes. now is the time the app is open.
     allowed: whether the phone lets Daybook notify (the come-back notes are for anyone it does, unless turned off).
-    account: whether the person has one (without it, the lessons after the first three wait, and are not reminded of). */
+    account: whether the person has one (without it, the lessons after the first LEARN_FREE wait, and are not reminded of). */
 export function nudgePlan(
   days: Days,
   st: Settings | null,

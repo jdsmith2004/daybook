@@ -84,7 +84,7 @@ export interface MomentDev {
   nudge?: { k: 'paused' | 'backup' | 'time'; h: string; p: string } | null;
   /** the first day the first pattern was shown as the card: it is the card on that day only */
   patternDay?: DayKey | null;
-  /** signed in: lessons after the first three are open (nextUp) */
+  /** signed in: lessons after the first LEARN_FREE are open (nextUp) */
   account?: boolean;
   /** the slip whose comeback was celebrated and put away (its button pressed): it is not the card again */
   comebackSeen?: DayKey | null;

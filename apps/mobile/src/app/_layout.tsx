@@ -39,7 +39,7 @@ function Reminders() {
   const prefs = useReminderPrefs();
   const log = useNudgeLog();
   const { ready, snap, tk } = useStore();
-  /* without an account, the lessons after the first three wait behind one, so they are not reminded of */
+  /* without an account, the lessons after the first LEARN_FREE wait behind one, so they are not reminded of */
   const account = useAccount();
   const live = useRef(snap);
   live.current = snap;

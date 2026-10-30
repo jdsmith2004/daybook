@@ -549,13 +549,18 @@ describe('the lesson reminder (Lessons first, C2)', () => {
   it('is skipped once today’s lesson is done, and when there is no new lesson to do', () => {
     const d = finish({}, tk, 'l1', '2026-10-14T10:00');
     expect(lessonsOf(plan(d, ls, at('2026-10-14T10:05'), logO)).map((n) => [n.d, hm(n.at), n.url])).toEqual([['2026-10-15', '10:00', '/lesson/l2']]);
-    /* without an account, the lessons after the first three wait behind one: no reminder for a re-read */
-    let three: Days = {};
-    for (let i = 0; i < 3; i++)
-      three = finish(three, core.addDays(tk, -3 + i), core.firstUndone(core.lessonsDone(three))!.id, core.addDays(tk, -3 + i) + 'T12:00');
-    expect(core.lessonDue(three, st, tk, false)).toBeNull();
-    expect(lessonsOf(core.nudgePlan(three, st, {}, ls, logO, tk, at('2026-10-14T09:00'), true, false))).toEqual([]);
-    expect(core.lessonDue(three, st, tk, true)).toBe(core.firstUndone(core.lessonsDone(three))!.id);
+    /* without an account, the lessons after the free ones wait behind one: no reminder for a re-read */
+    let free: Days = {};
+    for (let i = 0; i < core.LEARN_FREE; i++)
+      free = finish(
+        free,
+        core.addDays(tk, -core.LEARN_FREE + i),
+        core.firstUndone(core.lessonsDone(free))!.id,
+        core.addDays(tk, -core.LEARN_FREE + i) + 'T12:00',
+      );
+    expect(core.lessonDue(free, st, tk, false)).toBeNull();
+    expect(lessonsOf(core.nudgePlan(free, st, {}, ls, logO, tk, at('2026-10-14T09:00'), true, false))).toEqual([]);
+    expect(core.lessonDue(free, st, tk, true)).toBe(core.firstUndone(core.lessonsDone(free))!.id);
     /* a day with the lesson switched off in the routine */
     const off = core.routineDay({}, st, tk, 'lesson', false);
     expect(lessonsOf(plan(off, ls, at('2026-10-14T09:00'), logO)).map((n) => n.d)).toEqual(['2026-10-15']);

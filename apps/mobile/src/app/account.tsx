@@ -3,7 +3,7 @@
    password for an account made with a temporary one, and "Forgot password". Sign in with Apple, where it is offered, is one
    tap above all that (lib/apple.ts); it opens the same account as the email when that email is confirmed. Opened by sync.signInNow, from Settings, the
    account card on Today, and a lesson that opens with an account (which then opens by itself). */
-import { CognitoError, emailOk, PASSWORD_MIN, passwordOk } from '@daybook/core';
+import { CognitoError, emailOk, LEARN_FREE, PASSWORD_MIN, passwordOk } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -177,7 +177,7 @@ export default function Account() {
     mode === 'in'
       ? 'Sign in to bring your log, your plan and your progress to this device.'
       : p.why === 'lesson'
-        ? 'The first three lessons are open to everyone. A free account opens all of them.'
+        ? 'The first ' + LEARN_FREE + ' lessons are open to everyone. A free account opens all of them.'
         : p.why === 'setup'
           ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan, your log and your progress safe, and the same on every device you use. It is private to you.'
           : 'A free account opens every lesson, and for supporters it keeps a copy of your progress safe and the same on every device you use. It is private to you.';

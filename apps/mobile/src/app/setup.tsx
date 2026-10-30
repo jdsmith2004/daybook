@@ -9,6 +9,7 @@ import {
   fmtDate,
   isTime,
   keyOfDate,
+  LEARN_FREE,
   levelOf,
   OB_BE,
   OB_PAGES,
@@ -1133,7 +1134,7 @@ export default function Setup() {
           </Middle>
           <View style={{ gap: 8 }}>
             {[
-              'Every lesson open, not just the first three',
+              'Every lesson open, not just the first ' + LEARN_FREE,
               'Free, and private to you. Nothing is shared or sold.',
               ...(TIP_ON ? ['With a tip, a safe copy of your log and the same on every device'] : []),
             ].map((x) => (

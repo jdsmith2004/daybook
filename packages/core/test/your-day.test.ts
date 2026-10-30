@@ -1,5 +1,6 @@
 /* Your day as tiles (each stop has its color, its line, and where it opens), Good night as the phone going away, and sleep
    in the evening check-in. The morning stop that asked about last night was retired on October 23, 2026. */
+import { LEARN_FREE, lessonPath } from '../src/index';
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { checkinFormOf, offOnTime, openTile, phoneAway, saveCheckin, stopTiles } from '../src/day';
@@ -119,17 +120,19 @@ describe('the stop that is next, grown in place in Your day', () => {
     expect(calm({})).toMatchObject({ h: t.head, btn: t.btn, go: t.go, v: t.id, eb: t.eyebrow });
   });
   it('without an account, a lesson that waits behind one becomes a re-read, in both places', () => {
-    const first3 = LESSONS.slice(0, 3).map((L) => L.id);
+    const free = lessonPath()
+      .slice(0, LEARN_FREE)
+      .map((L) => L.id);
     const done = withDay(
       {},
       '2026-10-17',
-      changeDay(undefined, '2026-10-17', (x) => void (x.p = { ...blankP(), ls: first3 }), 1),
+      changeDay(undefined, '2026-10-17', (x) => void (x.p = { ...blankP(), ls: free }), 1),
     );
     const t = openTile(done, st, tk, at(9), false)!;
     expect(t).toMatchObject({ btn: 'Read it again', body: 'A quick re-read keeps one fresh.' });
-    expect(first3).toContain(t.id);
+    expect(free).toContain(t.id);
     expect(calm(done, false)).toMatchObject({ v: t.id, btn: 'Read it again' });
-    expect(openTile(done, st, tk, at(9), true)).toMatchObject({ id: LESSONS[3].id, btn: 'Start' });
+    expect(openTile(done, st, tk, at(9), true)).toMatchObject({ id: lessonPath()[LEARN_FREE].id, btn: 'Start' });
   });
   it('the check-in once the lesson is done, and nothing when no part of the day is on', () => {
     const d = recordLesson({}, tk, LESSONS[0], at(9)).days;

@@ -46,9 +46,9 @@ describe('today’s lesson is Next up until it is done', () => {
     expect(core.nextUp(off, st, tk, at(tk + 'T19:00')).k).toBe('evening');
   });
 
-  it('without an account, past the first three, it is a re-read, still first', () => {
+  it('without an account, past the free lessons, it is a re-read, still first', () => {
     let d: Days = {};
-    for (let i = 3; i >= 1; i--) d = finish(d, core.addDays(tk, -i), core.addDays(tk, -i) + 'T12:00');
+    for (let i = core.LEARN_FREE; i >= 1; i--) d = finish(d, core.addDays(tk, -i), core.addDays(tk, -i) + 'T12:00');
     const n = core.nextUp(d, st, tk, at(tk + 'T19:00'), false);
     expect([n.k, n.act, n.pts]).toEqual(['lesson', 'lesson', 5]);
   });

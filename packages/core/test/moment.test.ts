@@ -1,5 +1,6 @@
 /* Today's one card (moment.ts), across scripted days of a made-up person: a calm day, the night of a slip and the day
    after, a Sunday, a pause, days away, and a day with nothing left to do. */
+import { LEARN_FREE, lessonPath } from '../src/index';
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { moments, pickMoment, standRow } from '../src/moment';
@@ -26,13 +27,28 @@ describe('a calm day', () => {
     const d = withDay(
       {},
       '2026-10-19',
-      changeDay(undefined, '2026-10-19', (x) => void (x.p = { ...blankP(), ls: LESSONS.slice(0, 3).map((L) => L.id) }), 1),
+      changeDay(
+        undefined,
+        '2026-10-19',
+        (x) =>
+          void (x.p = {
+            ...blankP(),
+            ls: lessonPath()
+              .slice(0, LEARN_FREE)
+              .map((L) => L.id),
+          }),
+        1,
+      ),
     );
     const signedIn = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
     const local = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
-    expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: LESSONS[3].id, h: LESSONS[3].title, btn: 'Start' });
+    expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, h: lessonPath()[LEARN_FREE].title, btn: 'Start' });
     expect(local).toMatchObject({ k: 'calm', go: 'lesson', btn: 'Read it again' });
-    expect(LESSONS.slice(0, 3).map((L) => L.id)).toContain(local.v);
+    expect(
+      lessonPath()
+        .slice(0, LEARN_FREE)
+        .map((L) => L.id),
+    ).toContain(local.v);
   });
   it('all done: rest well, and who the person is now', () => {
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });

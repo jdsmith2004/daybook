@@ -199,21 +199,41 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
   to 26. Finished lessons stay finished for people mid-path. **Not said because it is not known:** a figure for how long a
   flat stretch or low desire lasts, or for how long trust takes.
 - 8: yes, the five-question screen again every 30 days, with the score shown falling.
-- 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; monthly $2.99 or a
-  lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.
+- 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; the prices the owner settled on are below).
 - 10: yes, fix the public pages.
 
-<<<<<<< HEAD
+**Daybook Pattern, decision 9 in detail (the owner, October 30, 2026: "Yes, all your picks"). Built on branch
+claude/high-product-087e62, off until `PATTERN_FROM` is set.** Why it moved the deep pattern: a $5 tip opened the whole pattern
+for good, so a pattern product had nothing to sell. It helps the person (a monthly read of what is changing, in their own
+numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, finding 20).
+
+- Products (the owner changed the prices the same day): monthly $3, lifetime $10 (the marked pick), or $30 to give more, plus a quiet
+  $5 tip. Lifetime is simply a tip of $10 or more: the live Generous product is the $10, Amazing moves from $20 to $30, and the same
+  rule reads the web payments, so the only new product is the monthly plan. One screen holds all of it. Why not separate products:
+  a $10 tip that opened less than a $10 lifetime would have no reason to exist. The cost, said to the owner: at $10, four months of
+  the monthly plan costs more than lifetime, so expect most people to take lifetime and treat monthly as the low-commitment way in.
+- What opens what: free keeps every care tool, the one look, the slip gaps and My numbers. A $5 tip from launch on opens sync and
+  the safe copy. Daybook Pattern opens the deep pages (when, what sets it off, hard days, what helps), What changed this month,
+  and sync. Tips from before launch keep everything, including the month read, and are never asked.
+- The ask: one card on the locked section and one row on More, led by a true line from the log; no line, no ask. Not in the
+  TIP_CALM days after a slip or TIP_QUIET hours after an SOS, then the card is a kind word with no price. Tips and their
+  moments are unchanged.
+- Web: lifetime only, for now. Lapse: three grace days, then the tip rules; finished month reads stay; sync stops saving and
+  says so. What the owner sets up: docs/launch.md, section 7b.
+- Two things the tests caught, kept as rules: an account on Daybook Pattern is never read as grandfathered from its data, and
+  between two paid tips a lifetime one wins, else the earlier one, so what a person holds never shrinks (core `tipBetter`).
+- **Next (high, when the owner has set up the products):** turn it on, as docs/launch.md 7b step 6 says, then the sandbox list in
+  step 8. Refunds on the monthly plan rely on the date running out, as tips do; a webhook could be added if refunds become common.
+
 **Built (findings 2 and 3, decisions 1 and 2, October 30):** one count per mode (core `hero.ts`, `view.ts`, `journal.ts`,
 `miles.ts`). Strict: days in a row, 0 on the day of a slip. Gentle: the days that hold (`todayMeasure`). Step down: unchanged.
 The chip under the number holds the hours since a slip, for 72 hours. Gone: `app/sunrise.tsx`, `app/deeper.tsx`, the run
 question, the rescue, the run-ended card and the words. Migration: `st.countFrom` is stamped on the first open of this version
 (`keepCounts`), and slips up to it keep the old rule in `runLedger`; `seen.longest` is a floor so a switch of mode never lowers
-the longest run. Open for the owner: strict is the default and setup never offers gentle, so most people did not choose it.
-=======
-**Done on October 30, 2026 (asks, gates and doors, medium):** findings 1 (tip lines only), 21 (lesson 8), 6, 7, 8 (the entry sheet; Welcome back not changed), 4 (the medium part), 9, 10, 16 (the 30-day screen and the Sunday review; the hard-hours card not changed) and 22 (words only). A plain level and a full ring are a toast; the five questions say "in the last 30 days", where the setup says six months, so the score can move.
+the longest run. New people start on gentle (the owner's decision the same day), and step down never lands on strict by
+itself; people already on strict stay there.
 
-> > > > > > > 35924e8 (Plan: what the asks, gates and doors batch did [deploy])
+**Done on October 30, 2026 (asks, gates and doors, medium):** findings 1 (tip lines only), 21 (lesson 8), 6, 7, 8 (the entry sheet; Welcome back not changed), 4 (the medium part), 9, 10, 16 (the 30-day screen and the Sunday review; the hard-hours card not changed) and 22 (words only). A plain level and a full ring are a toast; the five questions say "in the last 30 days", where the setup says six months, so the score can move.
 
 **Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
 once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).

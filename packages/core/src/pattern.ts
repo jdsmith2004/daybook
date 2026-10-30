@@ -210,7 +210,7 @@ export function patTriggerLines(list: PatTrigger[], said?: string | null): strin
 }
 
 /** the situation in a sentence, as what came before a slip: "Being in bed late with your phone came before ..." */
-const SLIP_TRIG_WORDS: Record<string, string> = {
+export const SLIP_TRIG_WORDS: Record<string, string> = {
   late: 'Being in bed late with your phone',
   lonely: 'Feeling lonely or low',
   bored: 'Being bored or idle',

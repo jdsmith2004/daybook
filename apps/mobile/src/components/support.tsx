@@ -7,6 +7,15 @@
 import {
   extraLocked,
   isSupporter,
+  PAT_WORDS,
+  patActive,
+  monthEnd,
+  monthList,
+  monthNext,
+  monthRead,
+  patMonthOpen,
+  patOffer,
+  patPreview,
   SUPPORT_URL,
   SUP_SYNC_WORDS,
   tipAnswered,
@@ -39,6 +48,17 @@ export const SYNC_NEED = TIP_ON ? SUP_SYNC_WORDS.need : SUP_SYNC_WORDS.needNoTip
 export const SYNC_NEED_SHORT = TIP_ON ? SUP_SYNC_WORDS.short : SUP_SYNC_WORDS.shortNoTip;
 /** opens the tip sheet */
 export const openTip = () => (TIP_ON ? router.push('/tip') : undefined);
+
+/** opens the Daybook Pattern sheet, the same route as the tips once it is on sale */
+export const openPattern = openTip;
+
+/** the line from the person's own log that leads the ask for Daybook Pattern, or null when it cannot be asked for now (core patOffer) */
+export function usePatOffer(): string | null {
+  const { snap, tk, now } = useStore();
+  const sos = useSos();
+  if (!TIP_ON || !snap.settings) return null;
+  return patOffer(snap.days, snap.settings, tk, { now, sos: urLastAt(sos.mem) });
+}
 
 /** whether an extra shows as locked here (core extraLocked) */
 export function useLocked(extra: Extra, signedIn?: boolean): boolean {
@@ -74,12 +94,21 @@ export function TipCard() {
   );
 }
 
-/** the row on More: an ask, or a thank-you for a supporter; nothing where no tip is offered */
+/** the row on More: an ask, or a thank-you for a supporter; nothing where no tip is offered. Daybook Pattern gets its own row,
+    led by the line from the person's log, while it can be asked for. */
 export function TipRow() {
   const { snap } = useStore();
+  const offer = usePatOffer();
   if (!TIP_ON) return null;
+  if (patActive(snap.settings?.pat))
+    return <LinkCard icon="heart" tone="sun" title={PAT_WORDS.rowHave.title} sub={PAT_WORDS.rowHave.sub} onPress={openPattern} />;
   const w = isSupporter(snap.settings) ? TIP_WORDS.rowThanks : TIP_WORDS.row;
-  return <LinkCard icon="heart" tone="sun" title={w.title} sub={w.sub} onPress={openTip} />;
+  return (
+    <>
+      {offer ? <LinkCard icon="chart" tone="accent" title={PAT_WORDS.row.title} sub={offer} onPress={openPattern} /> : null}
+      <LinkCard icon="heart" tone="sun" title={w.title} sub={w.sub} onPress={openTip} />
+    </>
+  );
 }
 
 /** the small Support button beside Today's title */
@@ -153,6 +182,52 @@ export function UnlockCard({ extra }: { extra: 'stats' | 'sync' }) {
       <T v="small">{w.p}</T>
       <Button label={TIP_WORDS.lock.btn} onPress={openTip} />
     </Card>
+  );
+}
+
+/** the card on the locked part of Pattern, once Daybook Pattern is on sale: the line from the person's own log and the way in.
+    With nothing true to say yet, or at a moment when nothing is asked, only a kind word: no price and no button. */
+export function PatternCard() {
+  const c = useTheme();
+  const { snap, tk } = useStore();
+  const offer = usePatOffer();
+  const w = PAT_WORDS.card;
+  const quiet = !offer && !!snap.settings && patPreview(snap.days, snap.settings, tk);
+  return (
+    <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+        <View style={[s.lock, { backgroundColor: c.sun }]}>
+          <Icon name="lock" size={18} color={c.onSun} />
+        </View>
+        <T v="h2" style={{ flex: 1 }}>
+          {w.h}
+        </T>
+      </View>
+      <T v="small">{offer || (quiet ? w.rest : w.soon)}</T>
+      {offer ? <Button label={w.go} onPress={openPattern} /> : null}
+    </Card>
+  );
+}
+
+/** the finished months this person can read (core patMonthOpen); where nothing is locked (Android), all of them */
+export function useOpenMonths(): string[] {
+  const { snap, tk, now } = useStore();
+  const st = snap.settings;
+  if (!st) return [];
+  const all = monthList(snap.days, st, tk);
+  return TIP_ON ? all.filter((ym) => patMonthOpen(st, monthEnd(ym), now)) : all;
+}
+
+/** the way into the month read on Pattern: the latest month's first line, or when the first read comes */
+export function MonthCard() {
+  const { snap, tk } = useStore();
+  const open = useOpenMonths();
+  const st = snap.settings;
+  if (!st) return null;
+  const w = PAT_WORDS.month;
+  const r = open[0] ? monthRead(snap.days, st, open[0]) : null;
+  return (
+    <LinkCard icon="sunrise" tone="accent" title={w.title} sub={r ? r.head : w.waiting + monthNext(tk) + w.waitingEnd} onPress={() => router.push('/month')} />
   );
 }
 

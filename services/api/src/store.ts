@@ -11,7 +11,7 @@
    MemoryStore does the same in memory, for the tests. */
 import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { BatchWriteCommand, DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { normSup, type Supporter } from '@daybook/core';
+import { normPat, normSup, type PatRec, type Supporter } from '@daybook/core';
 
 export interface StoredRecord {
   id: string;
@@ -40,6 +40,7 @@ export interface ClaimRow {
 /** the partition that holds the checked tips */
 export const CLAIMS = '#claims';
 const SUP = '#sup';
+const PAT = '#pat';
 
 /** a cursor that did not come from this service */
 export class BadCursor extends Error {}
@@ -62,6 +63,9 @@ export interface Store {
   getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null>;
   /** saves the person's supporter record, and adds `ref` to its claims */
   putSup(user: string, sup: Supporter, ref?: string): Promise<void>;
+  /** the person's Daybook Pattern record and the claims it came from, as for a supporter record */
+  getPat(user: string): Promise<{ pat: PatRec; refs: string[] } | null>;
+  putPat(user: string, pat: PatRec, ref?: string): Promise<void>;
   /** whether the person has any synced record (settings, a day, a review), deleted ones included */
   hasData(user: string): Promise<boolean>;
   getClaim(key: string): Promise<ClaimRow | null>;
@@ -267,36 +271,55 @@ export class DynamoStore implements Store {
     return n;
   }
 
-  async getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null> {
+  /* the supporter record and the Daybook Pattern record are kept the same way, each under its own sort key */
+  private async getOwn<T>(user: string, sk: string, norm: (x: unknown) => T | null): Promise<{ rec: T; refs: string[] } | null> {
     const q = await this.db.send(
       new QueryCommand({
         TableName: this.table,
         KeyConditionExpression: 'pk = :p AND sk = :k',
-        ExpressionAttributeValues: { ':p': user, ':k': SUP },
+        ExpressionAttributeValues: { ':p': user, ':k': sk },
       }),
     );
     const i = q.Items?.[0];
     if (!i) return null;
-    let sup: Supporter | null = null;
+    let rec: T | null = null;
     try {
-      sup = normSup(JSON.parse(String(i.d)));
+      rec = norm(JSON.parse(String(i.d)));
     } catch {
-      sup = null;
+      rec = null;
     }
-    if (!sup) return null;
+    if (!rec) return null;
     const refs = i.refs instanceof Set ? [...i.refs].map(String) : Array.isArray(i.refs) ? i.refs.map(String) : [];
-    return { sup, refs };
+    return { rec, refs };
   }
 
-  async putSup(user: string, sup: Supporter, ref?: string): Promise<void> {
+  private async putOwn(user: string, sk: string, rec: unknown, ref?: string): Promise<void> {
     await this.db.send(
       new UpdateCommand({
         TableName: this.table,
-        Key: { pk: user, sk: SUP },
+        Key: { pk: user, sk },
         UpdateExpression: 'SET d = :d' + (ref ? ' ADD refs :r' : ''),
-        ExpressionAttributeValues: ref ? { ':d': JSON.stringify(sup), ':r': new Set([ref]) } : { ':d': JSON.stringify(sup) },
+        ExpressionAttributeValues: ref ? { ':d': JSON.stringify(rec), ':r': new Set([ref]) } : { ':d': JSON.stringify(rec) },
       }),
     );
+  }
+
+  async getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null> {
+    const r = await this.getOwn(user, SUP, normSup);
+    return r && { sup: r.rec, refs: r.refs };
+  }
+
+  async putSup(user: string, sup: Supporter, ref?: string): Promise<void> {
+    await this.putOwn(user, SUP, sup, ref);
+  }
+
+  async getPat(user: string): Promise<{ pat: PatRec; refs: string[] } | null> {
+    const r = await this.getOwn(user, PAT, normPat);
+    return r && { pat: r.rec, refs: r.refs };
+  }
+
+  async putPat(user: string, pat: PatRec, ref?: string): Promise<void> {
+    await this.putOwn(user, PAT, pat, ref);
   }
 
   async hasData(user: string): Promise<boolean> {
@@ -348,9 +371,9 @@ export class DynamoStore implements Store {
   }
 
   async dropClaims(user: string): Promise<number> {
-    const mine = await this.getSup(user);
+    const [mine, pat] = await Promise.all([this.getSup(user), this.getPat(user)]);
     const gone: string[] = [];
-    for (const key of mine?.refs || []) {
+    for (const key of [...(mine?.refs || []), ...(pat?.refs || [])]) {
       const c = await this.getClaim(key);
       if (c && c.sub === user) gone.push(key);
     }
@@ -407,6 +430,7 @@ export class MemoryStore implements Store {
       this.rows.delete(user);
       this.erasedCopies.delete(user);
       this.sups.delete(user);
+      this.pats.delete(user);
       return n;
     }
     let kept = this.erasedCopies.get(user);
@@ -439,6 +463,7 @@ export class MemoryStore implements Store {
   }
 
   sups = new Map<string, { sup: Supporter; refs: Set<string> }>();
+  pats = new Map<string, { pat: PatRec; refs: Set<string> }>();
   claims = new Map<string, ClaimRow>();
 
   async getSup(user: string): Promise<{ sup: Supporter; refs: string[] } | null> {
@@ -450,6 +475,17 @@ export class MemoryStore implements Store {
     const refs = this.sups.get(user)?.refs || new Set<string>();
     if (ref) refs.add(ref);
     this.sups.set(user, { sup: { ...sup }, refs });
+  }
+
+  async getPat(user: string): Promise<{ pat: PatRec; refs: string[] } | null> {
+    const x = this.pats.get(user);
+    return x ? { pat: { ...x.pat }, refs: [...x.refs] } : null;
+  }
+
+  async putPat(user: string, pat: PatRec, ref?: string): Promise<void> {
+    const refs = this.pats.get(user)?.refs || new Set<string>();
+    if (ref) refs.add(ref);
+    this.pats.set(user, { pat: { ...pat }, refs });
   }
 
   async hasData(user: string): Promise<boolean> {
@@ -470,7 +506,7 @@ export class MemoryStore implements Store {
 
   async dropClaims(user: string): Promise<number> {
     let n = 0;
-    for (const key of this.sups.get(user)?.refs || []) {
+    for (const key of [...(this.sups.get(user)?.refs || []), ...(this.pats.get(user)?.refs || [])]) {
       if (this.claims.get(key)?.sub === user) {
         this.claims.delete(key);
         n++;

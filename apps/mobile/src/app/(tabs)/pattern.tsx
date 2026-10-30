@@ -1,8 +1,8 @@
 /* Pattern (the tab was called Journal until the journal itself came, October 2026): what happened. Days (the month and every day), Your pattern (a few plain answers, each with the graph behind
    it: are slips getting further apart, when it happens, what sets it off, what is different on hard days, what helps),
-   Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without a
-   tip, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a card
-   that opens the tip sheet (core supporter.ts, patPartOpen). */
+   Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without the
+   pattern open, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a
+   card that opens the tip sheet, or once Daybook Pattern is on sale the sheet for that (core supporter.ts, patPartOpen). */
 import {
   bpsRow,
   bpsScores,
@@ -25,6 +25,7 @@ import {
   patWhen,
   plural,
   logRateKeys,
+  PATTERN_FROM,
   ratingOf,
   talkEvidence,
   urWorks,
@@ -50,7 +51,7 @@ import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
 import { TodaySoFar } from '@/components/today-log';
 import { SundayCard } from '@/components/sunday-card';
-import { UnlockCard, useLocked } from '@/components/support';
+import { MonthCard, PatternCard, UnlockCard, useLocked, useOpenMonths } from '@/components/support';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
@@ -182,6 +183,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const [range, setRange] = useState<PatRange>('90');
   const [ys, setYs] = useState<Partial<Record<PatGo, number>>>({});
   const locked = useLocked('stats');
+  const openMonths = useOpenMonths();
   const keys = patKeys(range, snap.days, st, tk);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
@@ -335,7 +337,10 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       </View>
 
       {locked ? numbers : null}
+      {/* a plan that has ended keeps the months that finished while it was active, so they stay outside the lock */}
+      {locked && PATTERN_FROM != null && openMonths.length ? <MonthCard /> : null}
       <Deep locked={locked} onY={(y) => setYs((o) => (o.when === y ? o : { ...o, when: y, what: y, days: y }))}>
+        {PATTERN_FROM != null && !locked ? <MonthCard /> : null}
         <View onLayout={at('when')}>
           <Block title="When does it happen?" count={when.timed ? when.timed + ' with a time' : ''}>
             {when.timed ? (
@@ -533,7 +538,7 @@ function Deep({ locked, onY, children }: { locked: boolean; onY: (y: number) => 
         <View style={[{ gap: 14, opacity: 0.55 }, PEEK_BLUR]}>{children}</View>
         <LinearGradient colors={[c.bg + '00', c.bg]} style={s.peekFade} />
       </View>
-      <UnlockCard extra="stats" />
+      {PATTERN_FROM != null ? <PatternCard /> : <UnlockCard extra="stats" />}
     </View>
   );
 }

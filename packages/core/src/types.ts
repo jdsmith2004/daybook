@@ -3,7 +3,7 @@
 import type { Journal } from './journal-entries';
 import type { Talk } from './talk';
 import type { SunReview } from './sunday';
-import type { Supporter } from './supporter';
+import type { PatRec, Supporter } from './supporter';
 
 export type DayKey = string; // 'YYYY-MM-DD', the logical day (it rolls over at settings.rollover o'clock)
 export type Clock = string; // 'HH:MM', 24-hour
@@ -173,6 +173,8 @@ export interface Settings {
       old gentle switch ('gentle') */
   cleanNote: { on: DayKey; m: 'step' | 'count' | 'gentle' } | null;
   cleanHold: DayKey | null;
+  /** how days were counted before step down, so coming back from it never lands on strict by itself */
+  cleanWas?: 'strict' | 'gentle';
   /** the day this person first opened the one-count rule: slips up to it keep the rule they were made under (runLedger, miles.ts keepCounts) */
   countFrom?: DayKey;
   stepAt: DayKey | null;
@@ -204,6 +206,8 @@ export interface Settings {
   tipMo?: DayKey | null;
   /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
   sup?: Supporter | null;
+  /** Daybook Pattern on this device (supporter.ts). Optional, so older records need no change. */
+  pat?: PatRec | null;
   /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
   u: number;

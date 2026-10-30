@@ -2,9 +2,12 @@
    uses tip-store.web.ts, which has none. The three tips are non-consumable products (core APPLE_TIPS), so StoreKit keeps
    them in the person's purchase history: a new phone or a reinstall finds them again, and nothing is ever bought twice.
 
+   The monthly plan of Daybook Pattern is one more product (core APPLE_MONTHLY), an auto-renewable subscription, which StoreKit
+   hands over again with a later end each time it renews. Lifetime is the larger tips.
+
    Only iPhone takes Apple's purchase. Android is not shipped; there tipWays offers the web tip page alone, and this module
    is never called. */
-import { ACCOUNT_RE, appleTier, APPLE_TIPS, TIP_TIER_IDS, TIP_WORDS, type TipTierId } from '@daybook/core';
+import { ACCOUNT_RE, APPLE_MONTHLY, appleTier, APPLE_TIPS, PAT_WORDS, TIP_TIER_IDS, TIP_WORDS, type TipTierId } from '@daybook/core';
 import { requireOptionalNativeModule } from 'expo';
 import * as IAP from 'expo-iap';
 import { Platform } from 'react-native';
@@ -24,6 +27,16 @@ export interface StoreTip {
   purchase: IAP.Purchase;
 }
 
+/** the monthly plan StoreKit holds for this Apple Account */
+export interface StorePat {
+  jws: string;
+  otid: string;
+  since: number;
+  /** when the paid month ends, ms */
+  until: number;
+  purchase: IAP.Purchase;
+}
+
 let conn: Promise<boolean> | null = null;
 /** the store connection, made once (and again after a failure) */
 function connect(): Promise<boolean> {
@@ -39,6 +52,8 @@ function connect(): Promise<boolean> {
 /** the prices as the App Store formats them for this person ("$4.99"), once known */
 const prices: Partial<Record<TipTierId, string>> = {};
 export const storePrice = (tier: TipTierId): string | undefined => prices[tier];
+let monthlyPrice: string | undefined;
+export const storeMonthlyPrice = (): string | undefined => monthlyPrice;
 
 /** asks the App Store for the three products and their prices */
 /* the App Store country of this Apple Account (alpha-3, "USA"), or null until the store says */
@@ -52,9 +67,11 @@ export async function loadPrices(): Promise<void> {
   if (!storefront) storefront = await IAP.getStorefront().catch(() => null);
   try {
     const list = (await IAP.fetchProducts({ skus: TIP_TIER_IDS.map((t) => APPLE_TIPS[t]), type: 'in-app' })) as IAP.Product[] | null;
-    for (const p of list || []) {
+    const subs = (await IAP.fetchProducts({ skus: [APPLE_MONTHLY], type: 'subs' }).catch(() => null)) as IAP.Product[] | null;
+    for (const p of [...(list || []), ...(subs || [])]) {
       const t = appleTier(p.id);
       if (t && p.displayPrice) prices[t] = p.displayPrice;
+      if (p.id === APPLE_MONTHLY && p.displayPrice) monthlyPrice = p.displayPrice;
     }
   } catch {
     /* the prices stay as the app's own until the store answers */
@@ -75,9 +92,24 @@ function toTip(p: IAP.Purchase): StoreTip | null {
   };
 }
 
-/** tells StoreKit the tip was received, so it stops offering it again at each launch. A non-consumable stays in the
-    purchase history either way, so this can never lose a tip. */
-export async function finishTip(t: StoreTip): Promise<void> {
+function toPat(p: IAP.Purchase): StorePat | null {
+  if (p.productId !== APPLE_MONTHLY || p.purchaseState !== 'purchased' || !p.purchaseToken) return null;
+  const ios = p as IAP.PurchaseIOS;
+  if (ios.revocationDateIOS) return null;
+  const until = Number(ios.expirationDateIOS);
+  if (!until) return null;
+  return {
+    jws: p.purchaseToken,
+    otid: String(ios.originalTransactionIdentifierIOS || ios.transactionId || p.id),
+    since: Number(ios.originalTransactionDateIOS || p.transactionDate) || Date.now(),
+    until,
+    purchase: p,
+  };
+}
+
+/** tells StoreKit a purchase was received, so it stops offering it again at each launch. A non-consumable stays in the
+    purchase history, and a subscription stays until it ends, so this can never lose one. */
+export async function finishTip(t: { purchase: IAP.Purchase }): Promise<void> {
   try {
     await IAP.finishTransaction({ purchase: t.purchase, isConsumable: false });
   } catch {
@@ -98,32 +130,43 @@ export const ownedTipsFailed = () => ownedFailed;
 const QUIET_CODES: string[] = [IAP.ErrorCode.UserCancelled, IAP.ErrorCode.DeferredPayment, IAP.ErrorCode.Pending];
 /* the store does not have the tips for this build: they are not approved yet, or the Paid Apps Agreement is not active */
 const OFF_CODES: string[] = [IAP.ErrorCode.SkuNotFound, IAP.ErrorCode.ItemUnavailable];
-const failed = (code?: string) => {
+const failed = (code?: string, pattern = false) => {
   if (code && QUIET_CODES.includes(code)) {
     storeQuiet = code === IAP.ErrorCode.UserCancelled ? 'cancelled' : 'waiting';
     return;
   }
   const w = TIP_WORDS.sheet;
-  if (code && OFF_CODES.includes(code)) storeError = usStorefront() ? w.appleOffWeb : w.appleOff;
+  const pw = PAT_WORDS.sheet;
+  if (code && OFF_CODES.includes(code)) storeError = pattern ? pw.appleOff : usStorefront() ? w.appleOffWeb : w.appleOff;
   else if (code === IAP.ErrorCode.IapNotAvailable) storeError = w.appleBlocked;
-  else storeError = w.appleFailed;
+  else storeError = pattern ? pw.appleFailed : w.appleFailed;
 };
 
 /** Buys a tip. Resolves to the tip once Apple has taken the payment; null when it was cancelled, failed (appleTipError says
     so), or is waiting (Ask to Buy: it arrives later through watchTips). `account`: the signed-in account id, put on the
-    purchase so the server can tell whose it is. */
-export async function buyApple(tier: TipTierId, account: string | null): Promise<StoreTip | null> {
+    purchase so the server can tell whose it is. `pattern`: said in the words of Daybook Pattern. */
+export const buyApple = (tier: TipTierId, account: string | null, pattern = false): Promise<StoreTip | null> =>
+  buySku(APPLE_TIPS[tier], 'in-app', toTip, account, pattern);
+/** Buys the monthly plan, the same way. */
+export const buyAppleMonthly = (account: string | null): Promise<StorePat | null> => buySku(APPLE_MONTHLY, 'subs', toPat, account, true);
+
+async function buySku<T>(
+  sku: string,
+  type: 'in-app' | 'subs',
+  read: (p: IAP.Purchase) => T | null,
+  account: string | null,
+  pattern: boolean,
+): Promise<T | null> {
   storeError = '';
   storeQuiet = null;
   if (!(await connect())) {
-    failed();
+    failed(undefined, pattern);
     return null;
   }
-  const sku = APPLE_TIPS[tier];
   return new Promise((resolve) => {
     let done = false;
     const subs: { remove: () => void }[] = [];
-    const finish = (v: StoreTip | null) => {
+    const finish = (v: T | null) => {
       if (done) return;
       done = true;
       subs.forEach((s) => s.remove());
@@ -138,7 +181,7 @@ export async function buyApple(tier: TipTierId, account: string | null): Promise
             storeQuiet = 'waiting';
             return finish(null);
           }
-          finish(toTip(p));
+          finish(read(p));
         },
         { dedupeTransactionIOS: false },
       ),
@@ -146,41 +189,42 @@ export async function buyApple(tier: TipTierId, account: string | null): Promise
     subs.push(
       IAP.purchaseErrorListener((e) => {
         if (e.productId && e.productId !== sku) return;
-        failed(e.code);
+        failed(e.code, pattern);
         finish(null);
       }),
     );
-    IAP.requestPurchase({
-      request: { apple: { sku, ...(account && ACCOUNT_RE.test(account) ? { appAccountToken: account.toLowerCase() } : {}) } },
-      type: 'in-app',
-    }).catch((e: { code?: string }) => {
-      failed(e?.code);
+    const apple = { sku, ...(account && ACCOUNT_RE.test(account) ? { appAccountToken: account.toLowerCase() } : {}) };
+    IAP.requestPurchase(type === 'subs' ? { request: { apple }, type } : { request: { apple }, type }).catch((e: { code?: string }) => {
+      failed(e?.code, pattern);
       finish(null);
     });
   });
 }
 
-/** the tips this Apple Account holds. With `ask`, StoreKit first syncs with the App Store, which can ask the person to
-    sign in to their Apple Account: only when they asked to restore. */
-export async function ownedTips(ask = false): Promise<StoreTip[]> {
+/** what this Apple Account holds: its tips, and Daybook Pattern while it is active. With `ask`, StoreKit first syncs with the
+    App Store, which can ask the person to sign in to their Apple Account: only when they asked to restore. */
+export async function ownedTips(ask = false): Promise<{ tips: StoreTip[]; pats: StorePat[] }> {
   ownedFailed = false;
   if (!(await connect())) {
     ownedFailed = true;
-    return [];
+    return { tips: [], pats: [] };
   }
   if (ask) await IAP.restorePurchases().catch(() => undefined);
   try {
     const list = await IAP.getAvailablePurchases({ onlyIncludeActiveItemsIOS: true });
-    return list.map(toTip).filter((t): t is StoreTip => !!t);
+    return { tips: list.map(toTip).filter((t): t is StoreTip => !!t), pats: list.map(toPat).filter((t): t is StorePat => !!t) };
   } catch {
     ownedFailed = true;
-    return [];
+    return { tips: [], pats: [] };
   }
 }
 
-/** tips that arrive outside a purchase on this screen (Ask to Buy approved later, a purchase interrupted by the app
-    closing, a purchase finished on another device). Gives back a function that stops listening. */
-export function watchTips(on: (t: StoreTip) => void): () => void {
+/** Apple's own page to change or cancel a subscription */
+export const manageApple = (): Promise<void> => IAP.deepLinkToSubscriptions({}).then(() => undefined);
+
+/** purchases that arrive outside a purchase on this screen (Ask to Buy approved later, a purchase interrupted by the app
+    closing, a purchase finished on another device, a monthly renewal). Gives back a function that stops listening. */
+export function watchTips(on: (t: StoreTip) => void, onPat: (t: StorePat) => void): () => void {
   if (!iapAvailable) return () => undefined;
   let sub: { remove: () => void } | null = null;
   let live = true;
@@ -189,6 +233,8 @@ export function watchTips(on: (t: StoreTip) => void): () => void {
     sub = IAP.purchaseUpdatedListener((p) => {
       const t = toTip(p);
       if (t) on(t);
+      const k = toPat(p);
+      if (k) onPat(k);
     });
   });
   return () => {

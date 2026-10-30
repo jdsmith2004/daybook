@@ -77,8 +77,9 @@ export function obSuggest(a: SetupAnswers): string {
 
 /** how days count from the start, from how often the person said it happens: about once a day or more starts in step down
     (a clean run is a hard first goal then, and Daybook moves them to counting days once their stretches get long); anything
-    less, or no answer, counts days strictly. Setup never sets gentle counting; it stays a quiet choice in Settings. */
-export const obMode = (a: SetupAnswers): CountMode => (a.freq === 'f3' || a.freq === 'f4' ? 'step' : 'strict');
+    less, or no answer, starts gentle, where a slip takes one day off (the owner, October 30, 2026). Strict puts the count to 0
+    on a slip, so it is only ever a choice the person makes, in Settings. */
+export const obMode = (a: SetupAnswers): CountMode => (a.freq === 'f3' || a.freq === 'f4' ? 'step' : 'gentle');
 /** the counting the plan gives: a new person gets obMode. A walk-through keeps the counting the person has: after setup, only
     the log (switching, both ways) and the person in Settings move it, so a walk-through never undoes a choice made there. */
 export const obPlanMode = (a: SetupAnswers, st: Settings | null): CountMode => (st ? st.cleanMode : obMode(a));
@@ -640,7 +641,7 @@ export function obTries(a: SetupAnswers): ObShow {
 
 /** under the goals: the Day 1 it sets, how days count, and why this one. In step down, "Why this one?" also says why step down,
     and that Daybook moves the person to counting days once their stretches get long. "Quit, starting tomorrow" explains a
-    clear line, which is about strict counting, so in step down its place goes to the step-down why. */
+    clear line, which is about counting days, so in step down its place goes to the step-down why. */
 export function obGoalInfo(a: SetupAnswers, st: Settings | null, tk: DayKey) {
   const g = obGoal(a, st, tk);
   const mode = obPlanMode(a, st);

@@ -1,10 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import {
+  APPLE_MONTHLY,
   appleTier,
   extraLocked,
+  extraOpen,
+  keepPat,
   LOOKS_READY,
+  normPat,
+  PAT_GRACE,
+  LIFETIME_CENTS,
+  PAT_MONTHLY_USD,
+  patActive,
+  patBest,
+  patMonthOpen,
+  patOpen,
   patPartOpen,
+  PATTERN_FROM,
+  type PatRec,
   supPerks,
   APPLE_TIPS,
   isSupporter,
@@ -13,6 +26,7 @@ import {
   STRIPE_SESSION_RE,
   supActive,
   supBest,
+  TIP_USD,
   tipEnough,
   tipLink,
   TIP_TIER_IDS,
@@ -167,5 +181,135 @@ describe('locks', () => {
     const ended = { start: '2026-10-01', sup: { since: 1, kind: 'monthly', until: 1000, src: 'stripe' } } as never;
     expect(extraLocked(ended, 'stats', { canTip: true, now: 999 })).toBe(false);
     expect(extraLocked(ended, 'stats', { canTip: true, now: 1000 })).toBe(true);
+  });
+});
+
+describe('Daybook Pattern', () => {
+  const FROM = 1_000_000;
+  const before: Supporter = { since: FROM - 1, kind: 'tip', until: null, src: 'apple', cents: 500 };
+  const after: Supporter = { since: FROM + 1, kind: 'tip', until: null, src: 'stripe', cents: 500 };
+  const old: Supporter = { since: 5, kind: 'tip', until: null, src: 'grandfather' };
+  const monthly: PatRec = { since: FROM + 5, kind: 'monthly', until: FROM + 100, src: 'apple', cents: 300, ref: 'abc' };
+  const lifetime: Supporter = { since: FROM + 5, kind: 'tip', until: null, src: 'apple', cents: LIFETIME_CENTS, ref: 'def' };
+  const NOW = FROM + 50;
+  const DAY = 86400_000;
+
+  it('costs what the owner chose, and the largest tip moves only when it goes on sale', () => {
+    expect(PAT_MONTHLY_USD).toBe(3);
+    expect(LIFETIME_CENTS).toBe(1000);
+    expect(TIP_USD.generous * 100).toBe(LIFETIME_CENTS);
+    expect(TIP_USD.amazing).toBe(PATTERN_FROM == null ? 20 : 30);
+  });
+  it('a tip of $10 or more after the day is lifetime, on Apple or the web; a smaller one opens sync', () => {
+    for (const cents of [1000, 2000, 3000]) {
+      const st = { sup: { ...after, cents } } as never;
+      expect(patOpen(st, NOW + 1e12, FROM)).toBe(true);
+      expect(extraOpen(st, 'stats', NOW + 1e12, FROM)).toBe(true);
+      expect(extraOpen(st, 'sync', NOW + 1e12, FROM)).toBe(true);
+    }
+    expect(patOpen({ sup: { ...after, cents: 999 } } as never, NOW, FROM)).toBe(false);
+    /* a tip with no amount on it is not lifetime, and a grandfathered account is never */
+    expect(patOpen({ sup: { ...after, cents: undefined } } as never, NOW, FROM)).toBe(false);
+    expect(patOpen({ sup: { ...old, cents: 1000 } } as never, NOW, FROM)).toBe(false);
+  });
+  it('what a person holds never shrinks when a second tip comes, in either order', () => {
+    const big: Supporter = { ...after, since: FROM + 9, cents: 1000 };
+    const later: Supporter = { ...after, since: FROM + 9 };
+    /* the $5 tip first, then lifetime: lifetime is kept, though it is later */
+    expect(supBest(after, big)).toBe(big);
+    expect(supBest(big, after)).toBe(big);
+    /* a tip from before the day and lifetime after it: either way everything stays open */
+    expect(patOpen({ sup: supBest(before, big) } as never, NOW, FROM)).toBe(true);
+    expect(patOpen({ sup: supBest(big, before) } as never, NOW, FROM)).toBe(true);
+    /* two small ones: the earlier, whose date decides */
+    expect(supBest(before, later)).toBe(before);
+    expect(supBest(later, before)).toBe(before);
+    /* the same tip seen twice keeps the same object, so settings do not churn */
+    expect(supBest(big, { ...big })).toBe(big);
+  });
+  it('before it goes on sale, a tip opens everything it always did', () => {
+    expect(patOpen({ sup: after } as never, NOW, null)).toBe(true);
+    expect(extraOpen({ sup: after } as never, 'stats', NOW, null)).toBe(true);
+  });
+  it('a tip from before the day keeps the whole pattern for good; a tip after it opens sync', () => {
+    expect(patOpen({ sup: before } as never, NOW + 1e12, FROM)).toBe(true);
+    expect(extraOpen({ sup: before } as never, 'sync', NOW, FROM)).toBe(true);
+    expect(patOpen({ sup: after } as never, NOW, FROM)).toBe(false);
+    expect(extraOpen({ sup: after } as never, 'stats', NOW, FROM)).toBe(false);
+    expect(extraOpen({ sup: after } as never, 'sync', NOW, FROM)).toBe(true);
+  });
+  it('an account from before tips has sync only, on sale or not', () => {
+    for (const from of [null, FROM]) {
+      expect(patOpen({ sup: old } as never, NOW, from)).toBe(false);
+      expect(extraOpen({ sup: old } as never, 'sync', NOW, from)).toBe(true);
+    }
+    expect(isSupporter({ sup: old } as never, NOW)).toBe(false);
+  });
+  it('the product opens the pattern and sync, and makes a supporter, so every ask stops', () => {
+    for (const st of [{ pat: monthly }, { sup: lifetime }] as never[]) {
+      expect(patOpen(st, NOW, FROM)).toBe(true);
+      expect(extraOpen(st, 'sync', NOW, FROM)).toBe(true);
+      expect(isSupporter(st, NOW)).toBe(true);
+      expect(extraLocked(st, 'stats', { canTip: true, now: NOW, from: FROM })).toBe(false);
+    }
+  });
+  it('a monthly plan runs past its end by the grace days, then goes back to the tip rules', () => {
+    const end = monthly.until!;
+    expect(patActive(monthly, end + (PAT_GRACE * DAY - 1))).toBe(true);
+    expect(patActive(monthly, end + PAT_GRACE * DAY)).toBe(false);
+    const late = end + 30 * DAY;
+    expect(patOpen({ pat: monthly } as never, late, FROM)).toBe(false);
+    expect(isSupporter({ pat: monthly } as never, late)).toBe(false);
+    expect(extraOpen({ pat: monthly } as never, 'sync', late, FROM)).toBe(false);
+    /* a tip held alongside keeps what the tip opens */
+    expect(extraOpen({ pat: monthly, sup: after } as never, 'sync', late, FROM)).toBe(true);
+    expect(patOpen({ pat: monthly, sup: after } as never, late, FROM)).toBe(false);
+    expect(patOpen({ pat: monthly, sup: before } as never, late, FROM)).toBe(true);
+  });
+  it('months that finished while a plan was active stay readable after it ends', () => {
+    const end = monthly.until!;
+    const late = end + 400 * DAY;
+    const st = { pat: monthly } as never;
+    expect(patMonthOpen(st, end - 10, late, FROM)).toBe(true);
+    expect(patMonthOpen(st, end, late, FROM)).toBe(true);
+    expect(patMonthOpen(st, end + 1, late, FROM)).toBe(false);
+    expect(patMonthOpen({} as never, 0, late, FROM)).toBe(false);
+    /* while it is open, every month */
+    expect(patMonthOpen(st, end + 1, NOW, FROM)).toBe(true);
+    expect(patMonthOpen({ sup: lifetime } as never, 1e15, NOW, FROM)).toBe(true);
+  });
+  it('cleans a record from elsewhere', () => {
+    expect(normPat('yes')).toBeNull();
+    expect(normPat({ ...monthly, until: null })).toBeNull();
+    expect(normPat({ ...monthly, src: 'grandfather' })).toBeNull();
+    expect(normPat({ ...monthly, kind: 'tip' })).toBeNull();
+    expect(normPat({ ...monthly, ref: 'x y', cents: -1 })).toEqual({ since: monthly.since, kind: 'monthly', until: monthly.until, src: 'apple' });
+  });
+  it('keeps the better record: the later end, with the earlier start', () => {
+    expect(patBest(null, monthly)).toBe(monthly);
+    const next = { ...monthly, since: monthly.since + 9, until: monthly.until! + 30 };
+    expect(patBest(monthly, next)).toEqual({ ...next, since: monthly.since });
+    expect(patBest(next, monthly)).toEqual({ ...next, since: monthly.since });
+  });
+  it('settings that come back without the record get it back', () => {
+    const a = { pat: monthly } as never;
+    expect(keepPat(a, null)).toBe(a);
+    expect(keepPat(a, monthly)).toBe(a);
+    expect((keepPat({} as never, monthly) as { pat: PatRec }).pat).toEqual(monthly);
+    expect(keepPat(null, monthly)).toBeNull();
+  });
+  it('between two paid tips the earlier one stays, because its date decides what it keeps', () => {
+    expect(supBest(after, before)).toBe(before);
+    expect(supBest(before, after)).toBe(before);
+    expect(supBest(old, after)).toBe(after);
+    expect(supBest(after, old)).toBe(after);
+  });
+  it('tells its products apart from the tips', () => {
+    expect(appleTier(APPLE_MONTHLY)).toBeNull();
+    expect(Object.values(APPLE_TIPS)).not.toContain(APPLE_MONTHLY);
+  });
+  it('the sheet lists what is really open', () => {
+    expect(supPerks(true).map((p) => p.id)).toEqual(['sync', 'stats']);
+    expect(supPerks(false).map((p) => p.id)).toEqual(['sync']);
   });
 });

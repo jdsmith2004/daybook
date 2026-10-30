@@ -24,12 +24,12 @@ describe('setup picks how days count from how often', () => {
     }
   });
 
-  it('anything less, or no answer, counts days strictly; setup never sets gentle', () => {
+  it('anything less, or no answer, starts gentle; setup never sets strict', () => {
     for (const freq of ['f0', 'f1', 'f2', undefined]) {
-      expect(core.obMode({ freq })).toBe('strict');
+      expect(core.obMode({ freq })).toBe('gentle');
       for (const aim of ['quit', 'less', 'nights', 'learn', undefined]) {
         const st = core.obSave({ freq, aim }, null, null, tk, 0).st;
-        expect([st.cleanMode, st.stepAt]).toEqual(['strict', null]);
+        expect([st.cleanMode, st.stepAt]).toEqual(['gentle', null]);
       }
     }
   });
@@ -55,7 +55,7 @@ describe('setup picks how days count from how often', () => {
     expect(gi.more.keys).toEqual(['gujar', 'lindson']);
     /* "Quit, starting tomorrow" explains a clear line, so in step down the step-down why takes its place */
     expect(core.obGoalInfo({ freq: 'f3', aim: 'quit' }, null, tk).more.keys).toEqual(['lindson']);
-    expect(core.obGoalInfo({ freq: 'f2', aim: 'quit' }, null, tk).soft).toContain('A day counts when no slip is logged.');
+    expect(core.obGoalInfo({ freq: 'f2', aim: 'quit' }, null, tk).soft).toContain('A slip takes one day off, never all of them.');
   });
 
   it('a walk-through never changes the counting the person has, whatever they say now', () => {
@@ -96,14 +96,14 @@ describe('step down moves to counting days by itself', () => {
     expect(core.stepView(longStretch, st, now).ready).toBe(true);
     expect(core.shouldAutoCount(longStretch, st, tk, now)).toBe(true);
     const a = core.autoCount(st, tk).st;
-    expect([a.cleanMode, a.stepGrad, a.cleanHold, a.cleanNote]).toEqual(['strict', tk, tk, { on: tk, m: 'count' }]);
+    expect([a.cleanMode, a.stepGrad, a.cleanHold, a.cleanNote]).toEqual(['gentle', tk, tk, { on: tk, m: 'count' }]);
     expect(a.stepAt).toBe('2026-10-01');
     /* the Stepped up badge reads stepGrad, so it is earned the same as by the button */
     expect(core.gameCompute(longStretch, a, {}, tk).S.grad).toBe(1);
     expect(core.gameCompute(longStretch, core.stepGrad(st, tk).st, {}, tk).S.grad).toBe(1);
     /* Okay clears the note, and nothing else */
     const ok = core.cleanOk(a).st;
-    expect([ok.cleanNote, ok.cleanMode, ok.stepGrad]).toEqual([null, 'strict', tk]);
+    expect([ok.cleanNote, ok.cleanMode, ok.stepGrad]).toEqual([null, 'gentle', tk]);
   });
 
   it('not before it is ready, not inside the two-week hold, not before Day 1, and not when switching is left to the person', () => {

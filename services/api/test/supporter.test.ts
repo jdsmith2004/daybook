@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BadProof, type AppleTip } from '../src/apple';
 import { MemoryStore } from '../src/store';
 import { NotSetUp, type StripeSession } from '../src/stripe';
-import { supKeep, type Pay } from '../src/supporter';
+import { claimStripe as claimStripeDirect, supKeep, type Pay } from '../src/supporter';
 import { makeHandler, OPEN_CLAIM } from '../src/sync';
 
 const A = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -305,7 +305,113 @@ describe('which record is kept', () => {
     expect(supKeep(g, m)).toBe(g);
     expect(supKeep(g, t)).toBe(t);
     expect(supKeep(t, g)).toBe(t);
-    expect(supKeep(t, { ...t, cents: 2000 })).toBe(t);
+    /* a tip of $10 or more replaces a smaller one, since it opens more; between two of a size, the first stays */
+    const small = { ...t, cents: 500 };
+    const big = { ...t, since: t.since + 9, cents: 1000 };
+    expect(supKeep(small, big)).toBe(big);
+    expect(supKeep(big, small)).toBe(big);
+    expect(supKeep(big, { ...big, since: big.since + 1, cents: 3000 })).toBe(big);
     expect(supKeep(m, { ...m, until: 200 }).until).toBe(200);
+  });
+});
+
+describe('Daybook Pattern', () => {
+  const FROM = 1000;
+  const base = { otid: 'OTID', since: 5000, token: null, env: 'Sandbox' as const };
+  const monthly = (until: number) => ({ ...base, pat: 'monthly' as const, until, cents: 300 });
+  const pat = async (user = A) => (await sup(user)).body.pat;
+  const stubApple = (jws: string, p: unknown) => (apple[jws] = p as AppleTip);
+
+  it('an account with neither answers with nulls', async () => {
+    expect((await sup()).body).toEqual({ sup: null, pat: null });
+  });
+  it('monthly from Apple opens sync, and its record moves on with each renewal', async () => {
+    stubApple('m1', monthly(now + 1000));
+    const r = await claimApple('m1');
+    expect(r.status).toBe(200);
+    expect(r.body.pat.kind).toBe('monthly');
+    expect(r.body.sup).toBeNull();
+    expect((await push()).status).toBe(200);
+    stubApple('m2', monthly(now + 90_000));
+    expect((await claimApple('m2')).body.pat.until).toBe(now + 90_000);
+    /* an older transaction brought later never moves it back */
+    expect((await claimApple('m1')).body.pat.until).toBe(now + 90_000);
+    expect((await pat()).kind).toBe('monthly');
+  });
+  it('a plan that has ended stops new saves after the grace days, and keeps what was saved', async () => {
+    stubApple('m', monthly(now + 1000));
+    await claimApple('m');
+    expect((await push()).status).toBe(200);
+    now += 1000 + 3 * 86400_000 - 1;
+    expect((await push()).status).toBe(200);
+    now += 2;
+    expect((await push()).status).toBe(402);
+    const g = await call(ev('GET', { query: { since: '0' } }));
+    expect(g.body.records.length).toBe(1);
+    /* the record stays, and the data it holds does not make the account grandfathered */
+    expect((await pat()).kind).toBe('monthly');
+    expect((await sup()).body.sup).toBeNull();
+  });
+  it('lifetime is a tip of $10 or more: it never ends, and a smaller tip before or after it does not replace it', async () => {
+    const tip = (otid: string, since: number, cents: number) => ({
+      otid,
+      since,
+      cents,
+      tier: cents >= 1000 ? 'generous' : 'kind',
+      token: null,
+      env: 'Sandbox' as const,
+    });
+    stubApple('small', tip('S', 5000, 500));
+    stubApple('big', tip('L', 6000, 1000));
+    await claimApple('small');
+    expect((await claimApple('big')).body.sup.cents).toBe(1000);
+    expect((await claimApple('small')).body.sup.cents).toBe(1000);
+    now += 1e12;
+    expect((await push()).status).toBe(200);
+  });
+  it('a tip and the product live side by side, and neither claim drops the other', async () => {
+    sessions[ID1] = cs(ID1);
+    stubApple('m', monthly(now + 1000));
+    expect((await claimStripe(ID1)).body.sup.kind).toBe('tip');
+    const r = await claimApple('m');
+    expect(r.body.sup.kind).toBe('tip');
+    expect(r.body.pat.kind).toBe('monthly');
+    /* the plan ends, and the tip still opens sync */
+    now += 30 * 86400_000;
+    expect((await push()).status).toBe(200);
+  });
+  it('a purchase from another Daybook account is refused, and so is one already linked', async () => {
+    stubApple('x', { ...monthly(now + 1000), token: B });
+    expect((await claimApple('x')).status).toBe(403);
+    stubApple('m', monthly(now + 1000));
+    expect((await claimApple('m')).status).toBe(200);
+    expect((await claimApple('m', B)).status).toBe(409);
+  });
+  it('closing an account lets go of the purchase, so it can open another', async () => {
+    stubApple('m', monthly(now + 1000));
+    await claimApple('m');
+    expect((await call(ev('DELETE', { query: { all: '1' } }))).status).toBe(200);
+    expect((await pat()) ?? null).toBeNull();
+    expect((await claimApple('m', B)).status).toBe(200);
+  });
+
+  describe('on the web', () => {
+    const stripeClaim = (id: string, user: string) => claimStripeDirect(store, pay, user, user, id, now);
+    it('a payment of $10 or more is a tip with its amount, which is what makes it lifetime', async () => {
+      sessions[ID1] = cs(ID1, { amount_total: 1000 });
+      const r = await stripeClaim(ID1, A);
+      expect(r.sup).toMatchObject({ kind: 'tip', until: null, src: 'stripe', cents: 1000, ref: ID1 });
+      expect(r.pat).toBeNull();
+      expect((await push(A)).status).toBe(200);
+    });
+    it('a signed-out device keeps the record it brought, and it links to the first account that brings it', async () => {
+      sessions[ID1] = cs(ID1, { amount_total: 1000 });
+      const out = await stripeClaim(ID1, '');
+      expect(out.sup?.ref).toBe(ID1);
+      expect(await store.getSup(A)).toBeNull();
+      expect((await stripeClaim(ID1, A)).sup?.cents).toBe(1000);
+      expect((await store.getSup(A))?.sup.cents).toBe(1000);
+      await expect(stripeClaim(ID1, B)).rejects.toThrow(/another Daybook account/);
+    });
   });
 });

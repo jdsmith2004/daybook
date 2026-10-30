@@ -15,7 +15,7 @@
 import { keepEarned, normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
 import type { JEntry } from './journal-entries';
 import { goneMark } from './mutate';
-import { keepSup } from './supporter';
+import { keepPat, keepSup } from './supporter';
 import type { Day, Settings, Snapshot } from './types';
 
 /** the records this device changed and has not sent yet: id -> the change time it had */
@@ -193,7 +193,7 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     if (here == null && !r.data) continue; /* a deletion of something this device never had */
     /* settings from the account keep the supporter record this device has, if it is the better one (a tip is never lost
        to an older copy of the settings) */
-    if (p.kind === 'settings') snap.settings = r.data ? keepSup(r.data as Settings, snap.settings?.sup) : null;
+    if (p.kind === 'settings') snap.settings = r.data ? keepPat(keepSup(r.data as Settings, snap.settings?.sup), snap.settings?.pat) : null;
     else if (p.kind === 'days') {
       if (r.data) {
         /* a copy from an older app version may have dropped what it cannot see: kept from this device's copy, and the

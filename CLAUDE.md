@@ -34,6 +34,8 @@ need, without letting the screen turn into a list of features.
   on strict a slip puts it to 0 (gentle takes one day off, step down is hours since the slip). What was earned still stays:
   the longest run, the no-slip days, the comebacks, points, level, badges and graduation never drop, and the day of a slip
   says so. Nothing asks about the count after a slip and nothing rescues it (core `hero.ts`, `runLedger`).
+  New people start on gentle (or step down when it happens daily), and coming back from step down never lands on strict by
+  itself, so strict is only ever a person's own choice (the owner, October 30, 2026; core `obMode`, `countBack`).
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work
@@ -53,6 +55,14 @@ need, without letting the screen turn into a list of features.
   owes anything, never asks in the hours after an SOS or a slip, and stops for good once the person is a supporter.
   People who had an account before this keep sync. The tip jar is never removed or hidden on a platform without asking
   the owner first. Later the owner may sell products in the app instead; ask before building toward that.
+- **Daybook Pattern, the one product beyond the tips (the owner, October 30, 2026).** Monthly $3 (Apple only), or lifetime, which
+  is simply a tip of $10 or more: $10, or $30 to give more (never called a donation: Daybook is not a charity). It opens the
+  deeper pattern, a monthly read of what changed, and sync (while it is active, for monthly). From the day it goes on sale
+  (`PATTERN_FROM`, `supporter.ts`, unset until the owner has set up the products in docs/launch.md), a $5 tip opens sync and the safe
+  copy; a tip from before that day keeps everything it opened, for good, and that date is never moved. The ask leads with a true
+  line from the person's own log (`patPreview`) and is not made at all without one. When a monthly plan ends, the pages go back to
+  the tip rules; nothing leaves the log, and finished month reads stay readable. The Hard hours card, the heads-ups and every care
+  tool stay free: never move them behind it.
 - **Think like a business, too (the owner, October 23, 2026).** Daybook exists to improve lives and to make money, by
   charging the people who get the most from it and by a good pricing model. Care stays free because that is how Daybook
   reaches the most people, and that rule guides what is locked; it is never said in the ask. Never tell a person they do

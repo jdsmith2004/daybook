@@ -7,7 +7,8 @@
    - into a copy kept on the device apart from the log (KEPT), so a log replaced by an account's, an older backup or a new
      setup can never take a tip away: whenever the settings come back without it, it is put back (sync.tsx).
    - and, when the person is signed in, to the server, which keeps its own record and decides about sync from it.
-   Nothing here ever removes a record.
+   Nothing here ever removes a record. Daybook Pattern takes the same path with its own record (Settings.pat, PatRec): a
+   monthly plan that ends simply stops being active by its date, and the record stays.
 
    The web tip: on a phone it opens in an auth session (expo-web-browser), first at the site's tipped.html, which notes that
    the app opened it and goes on to the Stripe page; after paying, Stripe sends the person back to tipped.html with the
@@ -16,16 +17,21 @@
    where syncTips claims it; the first tab hears of the id through the storage event and claims it too. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  normPat,
   normSup,
+  PAT_MONTHLY_USD,
+  PAT_WORDS,
+  patActive,
+  patBest,
   STRIPE_SESSION_RE,
   supActive,
   supBest,
-  supPaid,
   TIPPED_APP,
   TIPPED_PAGE,
   tipLink,
   TIP_USD,
   TIP_WORDS,
+  type PatRec,
   type Supporter,
   type TipTierId,
 } from '@daybook/core';
@@ -36,14 +42,18 @@ import {
   appleTipError,
   appleTipQuiet,
   buyApple,
+  buyAppleMonthly,
   finishTip,
   iapAvailable,
   loadPrices,
+  manageApple,
   ownedTips,
   ownedTipsFailed,
+  storeMonthlyPrice,
   storePrice,
   usStorefront,
   watchTips,
+  type StorePat,
   type StoreTip,
 } from './tip-store';
 
@@ -75,6 +85,11 @@ export function tipPrice(tier: TipTier): string {
   return storePrice(tier) || `$${t.usd.toFixed(2)}`;
 }
 
+/** the price to show for the monthly plan, as the store formats it (falls back to "$3.00") */
+export const monthlyPrice = (): string => storeMonthlyPrice() || `$${PAT_MONTHLY_USD.toFixed(2)}`;
+/** Apple's own page to change or cancel the monthly plan */
+export const manageMonthly = (): Promise<void> => manageApple().catch(() => undefined);
+
 /* ---------- what the app gives this module (sync.tsx registers it) ---------- */
 
 export interface TipHost {
@@ -86,6 +101,8 @@ export interface TipHost {
   open: (body: unknown) => Promise<{ status: number; body: Record<string, unknown> } | null>;
   /** puts the record on the settings, through the normal change path (only when it is better than theirs) */
   save: (sup: Supporter) => void;
+  /** the same for the Daybook Pattern record */
+  savePat: (pat: PatRec) => void;
   /** the server now says this account is a supporter: sync may go on */
   resume: () => void;
   /** a line at the bottom of the screen */
@@ -99,26 +116,31 @@ export function setTipHost(h: TipHost | null) {
 /* ---------- the copy kept on the device ---------- */
 
 const KEPT = 'daybook.sup';
+const KEPT_PAT = 'daybook.pat';
 /** the web tip's Checkout Session id, between Stripe sending the person back and Daybook claiming it (tipped.js) */
 const PENDING = 'daybook.tipped';
 /** the Daybook tab's answer to the tip tab: it heard the id (public/tipped.js reads the same name) */
 const HEARD = 'daybook.tipped.heard';
 let kept: Supporter | null = null;
+let keptP: PatRec | null = null;
 let keptRead: Promise<void> | null = null;
 const listeners = new Set<(s: Supporter) => void>();
 
 /** reads the kept record, once */
 export function loadKept(): Promise<void> {
   if (!keptRead)
-    keptRead = AsyncStorage.getItem(KEPT)
-      .then((raw) => {
+    keptRead = AsyncStorage.multiGet([KEPT, KEPT_PAT])
+      .then(([[, raw], [, rawP]]) => {
         kept = raw ? normSup(JSON.parse(raw)) : null;
+        keptP = rawP ? normPat(JSON.parse(rawP)) : null;
       })
       .catch(() => undefined);
   return keptRead;
 }
 /** the record kept on this device (after loadKept), or null */
 export const keptSup = (): Supporter | null => kept;
+/** the Daybook Pattern record kept on this device (after loadKept), or null */
+export const keptPat = (): PatRec | null => keptP;
 
 /** a new record from a tip arrived: called with it (for a thank-you on screen) */
 export function onTipped(fn: (s: Supporter) => void): () => void {
@@ -140,7 +162,26 @@ async function keep(rec: unknown): Promise<Supporter | null> {
   return best;
 }
 
+/** the same for a Daybook Pattern record */
+async function keepP(rec: unknown): Promise<PatRec | null> {
+  await loadKept();
+  const r = normPat(rec);
+  if (!r) return keptP;
+  const best = patBest(keptP, r);
+  const changed = JSON.stringify(best) !== JSON.stringify(keptP);
+  keptP = best;
+  if (changed) await AsyncStorage.setItem(KEPT_PAT, JSON.stringify(best)).catch(() => undefined);
+  if (best) host?.savePat(best);
+  return best;
+}
+
 /* ---------- the server ---------- */
+
+/** what a claim or a look at the account gives back */
+interface Held {
+  sup: Supporter | null;
+  pat: PatRec | null;
+}
 
 let lastError = '';
 /** what the server said when a tip could not be confirmed, in its words ('' when nothing went wrong, or it was cancelled) */
@@ -150,8 +191,8 @@ export const tipError = (): string => lastError;
 let retryLater = false;
 const KEPT_WORDS = TIP_WORDS.sheet.unconfirmed;
 
-/** sends a web tip's Checkout Session id to the server; the record it gives back, or null */
-async function claimStripe(id: string): Promise<Supporter | null> {
+/** sends a web payment's Checkout Session id to the server; the records it gives back, or null */
+async function claimStripe(id: string): Promise<Held | null> {
   if (!STRIPE_SESSION_RE.test(id) || !host) return null;
   const signedIn = !!host.account();
   const r = signedIn ? await host.api('POST', '?claim=stripe', { session: id }) : await host.open({ session: id });
@@ -171,12 +212,14 @@ async function claimStripe(id: string): Promise<Supporter | null> {
   }
   lastError = '';
   const sup = normSup(r.body.sup);
-  if (sup && signedIn && supActive(sup)) host.resume();
-  return sup ? { ...sup, ref: sup.ref || id } : null;
+  const pat = normPat(r.body.pat);
+  if (signedIn && (supActive(sup) || patActive(pat))) host.resume();
+  if (!sup && !pat) return null;
+  return { sup: sup ? { ...sup, ref: sup.ref || id } : null, pat: pat ? { ...pat, ref: pat.ref || id } : null };
 }
 
-/** sends an Apple tip to the server, when signed in; the record it gives back, or null */
-async function claimApple(t: StoreTip): Promise<Supporter | null> {
+/** sends an Apple purchase to the server, when signed in; the records it gives back, or null */
+async function claimApple(t: { jws: string }): Promise<Held | null> {
   if (!host?.account()) return null;
   const r = await host.api('POST', '?claim=apple', { jws: t.jws });
   if (!r || r.status !== 200) {
@@ -184,8 +227,9 @@ async function claimApple(t: StoreTip): Promise<Supporter | null> {
     return null;
   }
   const sup = normSup(r.body.sup);
-  if (sup && supActive(sup)) host.resume();
-  return sup;
+  const pat = normPat(r.body.pat);
+  if (supActive(sup) || patActive(pat)) host.resume();
+  return { sup, pat };
 }
 
 const appleRecord = (t: StoreTip): Supporter => ({ since: t.since, kind: 'tip', until: null, src: 'apple', cents: TIP_USD[t.tier] * 100, ref: t.otid });
@@ -195,7 +239,24 @@ async function tookApple(t: StoreTip): Promise<Supporter | null> {
   const mine = await keep(appleRecord(t));
   await finishTip(t);
   const theirs = await claimApple(t).catch(() => null);
-  return theirs ? keep(theirs) : mine;
+  return theirs?.sup ? keep(theirs.sup) : mine;
+}
+
+const applePat = (t: StorePat): PatRec => ({
+  since: t.since,
+  kind: 'monthly',
+  until: t.until,
+  src: 'apple',
+  cents: PAT_MONTHLY_USD * 100,
+  ref: t.otid,
+});
+
+/** the same for Daybook Pattern */
+async function tookApplePat(t: StorePat): Promise<PatRec | null> {
+  const mine = await keepP(applePat(t));
+  await finishTip(t);
+  const theirs = await claimApple(t).catch(() => null);
+  return theirs?.pat ? keepP(theirs.pat) : mine;
 }
 
 /* ---------- paying ---------- */
@@ -211,7 +272,7 @@ async function webOnPhone(link: string): Promise<string | null> {
 }
 
 /** the Apple tips being bought on screen right now */
-const buying = new Set<TipTier>();
+const buying = new Set<TipTier | 'monthly'>();
 
 /** how the last tip on screen ended, when it did not simply go through, in words for the person: nothing charged, waiting
     for approval, already owned, or paid and kept until it is confirmed. Every one says what is safe. */
@@ -240,13 +301,13 @@ function waitForWebTip(): Promise<Supporter | null> {
   return new Promise((done) => {
     let over = false;
     const away = Date.now();
-    const finish = (sup: Supporter | null) => {
+    const finish = (got: Supporter | null) => {
       if (over) return;
       over = true;
       window.removeEventListener('storage', heard);
       document.removeEventListener('visibilitychange', back);
       window.removeEventListener('focus', back);
-      done(sup);
+      done(got);
     };
     const heard = (e: StorageEvent) => {
       if (e.key === PENDING && e.newValue)
@@ -265,18 +326,19 @@ function waitForWebTip(): Promise<Supporter | null> {
 }
 
 /** pays a tip. Resolves to the new supporter record once the payment is confirmed, or null when it was cancelled or failed
-    (tipError says why, when there is something to say). */
-export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | null> {
+    (tipError says why, when there is something to say). `pattern`: the sheet is selling Daybook Pattern, so what goes wrong is
+    said in its words. */
+export async function buyTip(tier: TipTier, via: TipVia, pattern = false): Promise<Supporter | null> {
   lastError = '';
   lastWords = '';
-  const w = TIP_WORDS.sheet;
+  const w = pattern ? PAT_WORDS.sheet : TIP_WORDS.sheet;
   const account = host?.account() || null;
   if (via === 'apple') {
     if (!iapAvailable) return null;
     buying.add(tier);
     try {
       const before = kept?.ref;
-      const t = await buyApple(tier, account);
+      const t = await buyApple(tier, account, pattern);
       if (!t) {
         lastError = appleTipError();
         const q = appleTipQuiet();
@@ -294,7 +356,12 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
       buying.delete(tier);
     }
   }
-  const link = tipLink(tier, account);
+  return webPay(tipLink(tier, account), w);
+}
+
+/** pays on the web page: a new tab on the web, an auth session on a phone. Resolves to the record once the payment is confirmed.
+    `w`: the words for a page closed early, and for a payment not confirmed yet. */
+async function webPay(link: string, w: { webClosed: string; unconfirmed: string }): Promise<Supporter | null> {
   if (!link) return null;
   if (Platform.OS === 'web') {
     /* the tip page opens in a new tab, so the person never leaves Daybook; the tab comes back to tipped.html, which keeps the
@@ -318,14 +385,45 @@ export async function buyTip(tier: TipTier, via: TipVia): Promise<Supporter | nu
     lastWords = w.webClosed;
     return null;
   }
-  const sup = await claimStripe(id);
-  if (!sup) {
+  const got = await claimStripe(id);
+  if (!got) {
     /* paid, but not confirmed yet: kept, and tried again at the next start */
     if (retryLater) await AsyncStorage.setItem(PENDING, id).catch(() => undefined);
-    lastWords = lastError || KEPT_WORDS;
+    lastWords = lastError || w.unconfirmed;
     return null;
   }
-  return keep(sup);
+  if (got.pat) await keepP(got.pat);
+  return got.sup ? keep(got.sup) : kept;
+}
+
+/** starts the monthly plan, on Apple only. Resolves to the record once the payment is confirmed, or null when it was cancelled
+    or failed (tipWords says why). */
+export async function buyMonthly(): Promise<PatRec | null> {
+  lastError = '';
+  lastWords = '';
+  const w = PAT_WORDS.sheet;
+  if (!iapAvailable) return null;
+  buying.add('monthly');
+  try {
+    const had = keptP;
+    const t = await buyAppleMonthly(host?.account() || null);
+    if (!t) {
+      lastError = appleTipError();
+      const q = appleTipQuiet();
+      lastWords = lastError || (q === 'waiting' ? w.waiting : w.cancelled);
+      return null;
+    }
+    /* a plan this Apple Account already has comes back as the same purchase, and Apple charges nothing for it. One started again
+       keeps its id, and comes back with a later end. */
+    if (had && had.ref === t.otid && t.until <= had.until) {
+      lastWords = w.already;
+      await finishTip(t);
+      return null;
+    }
+    return await tookApplePat(t);
+  } finally {
+    buying.delete('monthly');
+  }
 }
 
 /** looks for tips paid before (a new phone, a reinstall, a tip on the web) and resolves to the record, or null */
@@ -359,12 +457,18 @@ async function clearPending() {
   await AsyncStorage.removeItem(PENDING).catch(() => undefined);
 }
 
-let syncing: Promise<{ sup: Supporter | null; server: Supporter | null }> | null = null;
-/** Brings every tip together: a web tip waiting to be claimed, the Apple tips this Apple Account holds, and the server's
-    record. When the server has no record yet but this device has proof of a tip (an Apple purchase, or a web tip claimed
-    while signed out), the proof is sent, so the account opens. `ask`: the person asked to restore (StoreKit may ask them
-    to sign in to their Apple Account). Gives back the record kept here and the server's. Run at start and after sign-in. */
-export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: Supporter | null }> {
+/** what syncTips finds: the records kept here, the server's, and whether the server now lets this account sync */
+export interface TipSync extends Held {
+  server: Supporter | null;
+  serverPat: PatRec | null;
+  open: boolean;
+}
+let syncing: Promise<TipSync> | null = null;
+/** Brings every purchase together: a web payment waiting to be claimed, what this Apple Account holds, and the server's
+    records. When the server has no record yet but this device has proof (an Apple purchase, or a web payment claimed while
+    signed out), the proof is sent, so the account opens. `ask`: the person asked to restore (StoreKit may ask them to sign
+    in to their Apple Account). Gives back the records kept here and the server's. Run at start and after sign-in. */
+export function syncTips(ask = false): Promise<TipSync> {
   if (syncing && !ask) return syncing;
   const run = (async () => {
     await loadKept();
@@ -372,31 +476,47 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
     /* a web tip that came back here */
     const id = await pendingId();
     if (id) {
-      const sup = await claimStripe(id);
-      if (sup || !retryLater) await clearPending();
-      if (sup) {
-        await keep(sup);
+      const got = await claimStripe(id);
+      if (got || !retryLater) await clearPending();
+      if (got) {
+        if (got.sup) await keep(got.sup);
+        if (got.pat) await keepP(got.pat);
         host?.say('Thank you for supporting Daybook.');
       }
     }
     /* what the server keeps for this account */
     let server: Supporter | null = null;
+    let serverPat: PatRec | null = null;
+    const heard = (h: Held | null) => {
+      if (h?.sup) server = h.sup;
+      if (h?.pat) serverPat = h.pat;
+    };
     if (host?.account()) {
       const r = await host.api('GET', '?sup=1');
-      if (r && r.status === 200) server = normSup(r.body.sup);
+      if (r && r.status === 200) heard({ sup: normSup(r.body.sup), pat: normPat(r.body.pat) });
       if (server) await keep(server);
+      if (serverPat) await keepP(serverPat);
     }
-    /* Apple tips on this Apple Account: kept here, and sent when the server does not have one yet */
-    const owned = iapAvailable ? await ownedTips(ask) : [];
-    for (const t of owned) {
-      await keep(appleRecord(t));
-      if (host?.account() && !supPaid(server)) server = (await claimApple(t).catch(() => null)) || server;
+    /* what this Apple Account holds: kept here, and sent when the server does not have it yet (a renewal moves a monthly on) */
+    const owned = iapAvailable ? await ownedTips(ask) : { tips: [], pats: [] };
+    for (const t of owned.tips) {
+      const rec = appleRecord(t);
+      await keep(rec);
+      /* the server has no tip yet, or a smaller one than this (core tipBetter) */
+      if (host?.account() && supBest(server, rec) !== server) heard(await claimApple(t).catch(() => null));
     }
-    /* a web tip claimed while signed out, linked now */
-    if (host?.account() && !supPaid(server) && kept?.src === 'stripe' && kept.ref) server = (await claimStripe(kept.ref)) || server;
+    for (const t of owned.pats) {
+      const rec = applePat(t);
+      await keepP(rec);
+      await finishTip(t);
+      if (host?.account() && JSON.stringify(patBest(serverPat, rec)) !== JSON.stringify(serverPat)) heard(await claimApple(t).catch(() => null));
+    }
+    /* a web payment claimed while signed out, linked now */
+    if (host?.account() && kept?.src === 'stripe' && kept.ref && supBest(server, kept) !== server) heard(await claimStripe(kept.ref));
     if (server) await keep(server);
-    if (ask && !kept) lastError = lastError || (iapAvailable && ownedTipsFailed() ? TIP_WORDS.sheet.storeDown : 'No tip was found.');
-    return { sup: kept, server };
+    if (serverPat) await keepP(serverPat);
+    if (ask && !kept && !keptP) lastError = lastError || (iapAvailable && ownedTipsFailed() ? TIP_WORDS.sheet.storeDown : 'No tip was found.');
+    return { sup: kept, pat: keptP, server, serverPat, open: supActive(server) || patActive(serverPat) };
   })();
   syncing = run;
   const done = () => {
@@ -406,21 +526,35 @@ export function syncTips(ask = false): Promise<{ sup: Supporter | null; server: 
   return run;
 }
 
-/** starts listening for Apple tips that arrive on their own (Ask to Buy approved later, an interrupted purchase) */
+/** starts listening for Apple purchases that arrive on their own (Ask to Buy approved later, an interrupted purchase, a monthly
+    renewal) */
 export function watchAppleTips(): () => void {
-  return watchTips((t) => {
-    /* a tip being bought on screen right now is taken by buyTip */
-    if (!buying.has(t.tier))
-      loadKept()
-        .then(async () => {
-          /* a tip that is new here (Ask to Buy approved, a purchase finished after the app closed) is thanked once; one
-             StoreKit hands over again at launch is not */
-          const was = kept?.ref;
-          const sup = await tookApple(t);
-          if (sup && was !== t.otid && sup.ref === t.otid) host?.say(TIP_WORDS.sheet.approved);
-        })
-        .catch(() => undefined);
-  });
+  return watchTips(
+    (t) => {
+      /* a tip being bought on screen right now is taken by buyTip */
+      if (!buying.has(t.tier))
+        loadKept()
+          .then(async () => {
+            /* a tip that is new here (Ask to Buy approved, a purchase finished after the app closed) is thanked once; one
+               StoreKit hands over again at launch is not */
+            const was = kept?.ref;
+            const sup = await tookApple(t);
+            if (sup && was !== t.otid && sup.ref === t.otid) host?.say(TIP_WORDS.sheet.approved);
+          })
+          .catch(() => undefined);
+    },
+    (t) => {
+      if (!buying.has('monthly'))
+        loadKept()
+          .then(async () => {
+            /* new here is thanked once; a renewal, or one handed over again at launch, is not */
+            const was = keptP?.ref;
+            const pat = await tookApplePat(t);
+            if (pat && was !== t.otid && pat.ref === t.otid) host?.say(PAT_WORDS.sheet.approved);
+          })
+          .catch(() => undefined);
+    },
+  );
 }
 
 /** a web tip's id handed to the app by an address (app/tipped.tsx): kept, then claimed. Before sync has started (the app

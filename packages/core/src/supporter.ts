@@ -7,7 +7,12 @@
    sync keep it (src 'grandfather'): earned things stay earned.
 
    On the device the record lives in Settings.sup. For sync, the server keeps its own record and decides; the device
-   copy only shows and hides the extras. */
+   copy only shows and hides the extras.
+
+   Daybook Pattern (the owner, October 30, 2026) opens the deeper pattern, the month read and sync, and comes two ways: monthly
+   ($3, Apple's subscription, its own record, Settings.pat) or lifetime, which is simply a tip of LIFETIME_USD or more. From the
+   day it goes on sale (PATTERN_FROM) a smaller tip opens sync and the safe copy; a tip from before that day keeps everything it
+   opened, for good. Until PATTERN_FROM is set, nothing changes for anyone. */
 import type { Settings } from './types';
 
 /** where a tip goes (the old single tip page). Empty: nothing about tips shows. */
@@ -73,24 +78,125 @@ export const supPaid = (sup: Supporter | null | undefined, now = Date.now()): bo
   return !!s && s.src !== 'grandfather' && supActive(s, now);
 };
 
-/** whether the person on this device is a supporter now: a tip, not a grandfathered account (which keeps sync only, and
-    is still asked, and thanked, like anyone who has not tipped) */
-export const isSupporter = (st: Settings | null | undefined, now = Date.now()): boolean => supPaid(st?.sup, now);
+/* ---------- Daybook Pattern ---------- */
 
-/** whether an extra is open. Every extra opens with support; sync also opens for an account from before tips, and
-    nothing opens any other way. */
-export const extraOpen = (st: Settings | null | undefined, extra: Extra, now = Date.now()): boolean =>
-  isSupporter(st, now) || (extra === 'sync' && supActive(st?.sup, now));
+/** The moment Daybook Pattern went on sale, ms: set in the same change that turns it on (docs/launch.md), and never moved
+    after that, because a tip from before it keeps the whole pattern. null: not on sale, and tips open what they always did. */
+export const PATTERN_FROM: number | null = null;
+
+/** what the monthly plan costs, in US dollars */
+export const PAT_MONTHLY_USD = 3;
+/** Apple's product for the monthly plan, an auto-renewable subscription. Lifetime is the tip products (TIP_USD). */
+export const APPLE_MONTHLY = 'daybook.pattern.monthly';
+/** a tip of this much or more is lifetime: it opens everything, for good */
+export const LIFETIME_USD = 10;
+export const LIFETIME_CENTS = LIFETIME_USD * 100;
+/** whether a tip's record is enough to be lifetime */
+export const tipLifetime = (s: Supporter | null | undefined): boolean => (s?.cents ?? 0) >= LIFETIME_CENTS;
+/** days a monthly record stays open past its end, so a renewal that is late or still being retried never flashes a lock */
+export const PAT_GRACE = 3;
+const GRACE_MS = PAT_GRACE * 86400_000;
+
+export interface PatRec {
+  /** when it started, ms */
+  since: number;
+  kind: 'monthly';
+  /** when the paid month ends, ms */
+  until: number;
+  src: 'apple';
+  /** what it cost, in cents, when known */
+  cents?: number;
+  /** what proves it, as on a tip's record: Apple's original transaction id */
+  ref?: string;
+}
+
+/** a record that came from somewhere else, cleaned; null when it is not one */
+export function normPat(x: unknown): PatRec | null {
+  if (!x || typeof x !== 'object') return null;
+  const o = x as Record<string, unknown>;
+  const since = Number(o.since);
+  if (!Number.isFinite(since) || since < 0) return null;
+  if (o.kind !== 'monthly' || o.src !== 'apple' || o.until == null) return null;
+  const until = Number(o.until);
+  if (!Number.isFinite(until)) return null;
+  const out: PatRec = { since, kind: 'monthly', until, src: 'apple' };
+  const cents = Number(o.cents);
+  if (o.cents != null && Number.isInteger(cents) && cents >= 0 && cents < 100_000_000) out.cents = cents;
+  if (typeof o.ref === 'string' && /^[A-Za-z0-9_.-]{1,200}$/.test(o.ref)) out.ref = o.ref;
+  return out;
+}
+
+/** whether a record is active now: until its end and PAT_GRACE days after */
+export const patActive = (pat: PatRec | null | undefined, now = Date.now()): boolean => {
+  const p = normPat(pat);
+  return !!p && p.until + GRACE_MS > now;
+};
+
+/** the better of two records: the later end, keeping the earlier start */
+export function patBest(a: PatRec | null | undefined, b: PatRec | null | undefined): PatRec | null {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  const later = b.until > a.until ? b : a;
+  return b.since < a.since && later === a ? { ...a, since: b.since } : a.since < b.since && later === b ? { ...b, since: a.since } : later;
+}
+
+/** the settings with the better of their own record and `pat`, the same object when that is what they had, as keepSup does */
+export function keepPat<T extends Settings | null>(st: T, pat: PatRec | null | undefined): T {
+  if (!st) return st;
+  const mine = normPat(st.pat);
+  const best = patBest(mine, normPat(pat));
+  if (!best || JSON.stringify(best) === JSON.stringify(mine)) return st;
+  return { ...st, pat: best };
+}
+
+/** what a person holds, on their settings or as records just found */
+type Holds = Pick<Settings, 'sup' | 'pat'> | null | undefined;
+
+/** whether the whole pattern is open: the monthly plan while it is active, a tip of LIFETIME_USD or more, or a tip from before it
+    went on sale, for good. On sale or not, a grandfathered account has only sync. */
+export const patOpen = (st: Holds, now = Date.now(), from: number | null = PATTERN_FROM): boolean => {
+  if (patActive(st?.pat, now)) return true;
+  if (!supPaid(st?.sup, now)) return false;
+  const s = normSup(st?.sup)!;
+  return from == null || s.since < from || tipLifetime(s);
+};
+
+/** whether a month's read can be opened: while the pattern is open, every month; after a monthly plan has ended, the months
+    that finished while it was active, which stay readable for good. monthEnd: the moment that month was over, ms. */
+export const patMonthOpen = (st: Holds, monthEnd: number, now = Date.now(), from: number | null = PATTERN_FROM): boolean => {
+  if (patOpen(st, now, from)) return true;
+  const p = normPat(st?.pat);
+  return !!p && monthEnd <= p.until;
+};
+
+/** whether the person on this device is a supporter now: a tip or Daybook Pattern, not a grandfathered account (which keeps
+    sync only, and is still asked, and thanked, like anyone who has not tipped) */
+export const isSupporter = (st: Holds, now = Date.now()): boolean => supPaid(st?.sup, now) || patActive(st?.pat, now);
+
+/** whether an extra is open. Sync and the looks open with support, and sync also for an account from before tips. The
+    deeper pattern opens with patOpen, which is the same as support until Daybook Pattern is on sale. */
+export const extraOpen = (st: Settings | null | undefined, extra: Extra, now = Date.now(), from: number | null = PATTERN_FROM): boolean =>
+  extra === 'stats' ? patOpen(st, now, from) : isSupporter(st, now) || (extra === 'sync' && supActive(st?.sup, now));
 
 /** whether a payment of this many cents is enough to make a supporter */
 export const tipEnough = (cents: number): boolean => Number.isFinite(cents) && cents >= SUPPORT_MIN * 100;
 
-/** the better of two records: one with no end wins (a tip over a grandfathered account), else the later end. Used to merge
-    the server's and the device's. */
+/** which of two paid tips to keep: a lifetime one over a smaller one (it opens everything whatever its date), else the
+    earlier, because the first tip's date decides what it keeps (patOpen). So what a person holds never shrinks. */
+export const tipBetter = (cur: Supporter, next: Supporter): Supporter => {
+  if (tipLifetime(cur) !== tipLifetime(next)) return tipLifetime(next) ? next : cur;
+  return next.since < cur.since ? next : cur;
+};
+
+/** the better of two records: one with no end wins (a tip over a grandfathered account), else the later end. Between two
+    paid tips, tipBetter. Used to merge the server's and the device's. */
 export function supBest(a: Supporter | null | undefined, b: Supporter | null | undefined): Supporter | null {
   if (!a) return b ?? null;
   if (!b) return a;
-  if (a.until == null && b.until == null) return a.src === 'grandfather' && b.src !== 'grandfather' ? b : a;
+  if (a.until == null && b.until == null) {
+    if (a.src === 'grandfather') return b.src !== 'grandfather' ? b : a;
+    return b.src !== 'grandfather' ? tipBetter(a, b) : a;
+  }
   if (a.until == null) return a;
   if (b.until == null) return b;
   return b.until > a.until ? b : a;
@@ -110,10 +216,12 @@ export function keepSup<T extends Settings | null>(st: T, sup: Supporter | null 
 
 /* ---------- paying a tip ---------- */
 
-/** the three tips (Kind $5, Generous $10, Amazing $20, the owner's choice) */
+/** the three tips (Kind $5, Generous $10, Amazing $20, the owner's choice). Once Daybook Pattern is on sale, Generous and Amazing
+    are its lifetime form, and Amazing is $30 (the owner, October 30, 2026): its price in App Store Connect and its web link
+    change in the same step as PATTERN_FROM (docs/launch.md). */
 export type TipTierId = 'kind' | 'generous' | 'amazing';
 export const TIP_TIER_IDS: TipTierId[] = ['kind', 'generous', 'amazing'];
-export const TIP_USD: Record<TipTierId, number> = { kind: 5, generous: 10, amazing: 20 };
+export const TIP_USD: Record<TipTierId, number> = { kind: 5, generous: 10, amazing: PATTERN_FROM == null ? 20 : 30 };
 
 /** Apple's in-app purchase products, one per tip: non-consumable, so a tip shows up again on a new phone (StoreKit keeps
     them in the person's purchase history) and can be restored. A second tip of the same size would be a new product later
@@ -170,6 +278,9 @@ export const SUP_SYNC_WORDS = {
   /* where no tip can be paid (Android, until Google Play's billing is in): nothing about tips, and nothing to pay elsewhere */
   needNoTip: 'Sync and the safe copy are not open for this account yet. Your log stays safe on this device.',
   shortNoTip: 'Signed in · sync is not open yet',
+  /* a monthly Daybook Pattern that has ended: plainly, so nobody thinks the safe copy is still current */
+  lapsed:
+    'Your Daybook Pattern has ended, so sync has stopped saving new changes. Everything already saved is still yours to read. New changes stay safe on this device.',
 };
 
 /** whether the extra flame looks exist yet. Only the twelve forms of the flame exist now, and they are earned, never
@@ -183,23 +294,38 @@ export interface Perk {
   name: string;
   sub: string;
 }
-export function supPerks(): Perk[] {
-  const all: Perk[] = [
-    { id: 'sync', icon: 'shield', name: 'Sync and a safe copy', sub: 'Your log the same on your phone and the web, kept safe if a phone is lost.' },
-    { id: 'stats', icon: 'chart', name: 'Your whole pattern', sub: 'When it happens, what sets it off, and what helps you most.' },
-    { id: 'looks', icon: 'sparkle', name: 'New flame looks', sub: 'New colors for your flame.' },
-  ];
-  return all.filter((p) => p.id !== 'looks' || LOOKS_READY);
+const PERK_SYNC: Perk = {
+  id: 'sync',
+  icon: 'shield',
+  name: 'Sync and a safe copy',
+  sub: 'Your log the same on your phone and the web, kept safe if a phone is lost.',
+};
+const PERK_STATS: Perk = { id: 'stats', icon: 'chart', name: 'Your whole pattern', sub: 'When it happens, what sets it off, and what helps you most.' };
+const PERK_LOOKS: Perk = { id: 'looks', icon: 'sparkle', name: 'New flame looks', sub: 'New colors for your flame.' };
+/** what a tip opens, as the sheet lists it. withPattern: the deeper pattern is on the list, as it is before Daybook Pattern
+    goes on sale, and for a person who has it open. */
+export function supPerks(withPattern = PATTERN_FROM == null): Perk[] {
+  return [PERK_SYNC, ...(withPattern ? [PERK_STATS] : []), ...(LOOKS_READY ? [PERK_LOOKS] : [])];
 }
+/** what Daybook Pattern opens, as its sheet lists it: one short line each */
+export const PAT_PERKS: string[] = [
+  'When it happens, what sets it off, what helps most',
+  'A read each month of what is getting better',
+  'One log on every device, safe if a phone is lost',
+];
 
 /** whether an extra shows as locked on this device. canTip: a tip can be paid here (on Android, until Google Play's rules
     are checked, nothing is locked, because nothing can be paid). Sync shows its lock only while signed out: a signed-in
     account may be grandfathered, and the server decides that, not the device. */
-export function extraLocked(st: Settings | null | undefined, extra: Extra, o: { canTip: boolean; signedIn?: boolean; now?: number }): boolean {
+export function extraLocked(
+  st: Settings | null | undefined,
+  extra: Extra,
+  o: { canTip: boolean; signedIn?: boolean; now?: number; from?: number | null },
+): boolean {
   if (!o.canTip || !st) return false;
   if (extra === 'looks' && !LOOKS_READY) return false;
   if (extra === 'sync' && o.signedIn) return false;
-  return !extraOpen(st, extra, o.now);
+  return !extraOpen(st, extra, o.now, o.from === undefined ? PATTERN_FROM : o.from);
 }
 
 /** the parts of Journal, Pattern. The pattern in one look, whether slips are getting further apart, and My numbers stay

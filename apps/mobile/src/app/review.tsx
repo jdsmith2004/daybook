@@ -607,6 +607,17 @@ export default function Review() {
           ) : null}
           <Button label="Done" onPress={closeAll} />
           <View style={{ alignItems: 'center' }}>
+            {/* the one extra with real evidence behind it stays one tap from here */}
+            {snap.reviews[sunKey(sun)]?.sun?.it ? null : (
+              <Link
+                label="Plan for your hardest moment"
+                onPress={() => {
+                  buzz('tap');
+                  setDir(1);
+                  setAfter('xIt');
+                }}
+              />
+            )}
             <Link
               label="Want to do more? All optional."
               onPress={() => {

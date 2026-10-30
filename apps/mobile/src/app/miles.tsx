@@ -44,8 +44,7 @@ import { font, useTheme } from '@/lib/theme';
 /** a form in the row of twelve */
 const FORM_W = 132;
 const FORM_GAP = 12;
-/** how many badges show before See all */
-const EARNED_CAP = 6;
+/** every badge earned shows; of the ones still to come, this many before See all */
 const CLOSE_CAP = 3;
 
 export default function Miles() {
@@ -272,7 +271,7 @@ export default function Miles() {
               {earned.length} of {shown.length}
             </T>
           </View>
-          <View style={s.badges}>{all ? big.concat(todo).map(badge) : big.slice(0, EARNED_CAP).map(badge)}</View>
+          <View style={s.badges}>{all ? big.concat(todo).map(badge) : big.map(badge)}</View>
           {!all && todo.length ? (
             <>
               <T v="label" style={{ marginTop: 8 }}>
@@ -281,7 +280,7 @@ export default function Miles() {
               <View style={s.badges}>{todo.slice(0, CLOSE_CAP).map(badge)}</View>
             </>
           ) : null}
-          {shown.length > EARNED_CAP + CLOSE_CAP ? (
+          {todo.length > CLOSE_CAP ? (
             <View style={{ alignItems: 'center' }}>
               <Link label={all ? 'Show fewer' : 'See all ' + shown.length + ' badges'} onPress={() => setAll(!all)} />
             </View>

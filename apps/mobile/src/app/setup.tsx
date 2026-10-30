@@ -338,7 +338,7 @@ export default function Setup() {
         <>
           <Head
             h="Quit porn, one honest day at a time."
-            sub="A plan built from your answers, help when urges hit, and progress you can see. Free. No ads, no subscription."
+            sub="A plan built from your answers, a short lesson a day, and help when urges hit."
           />
           <Middle>
             {/* the first thing a new person sees: the flame, big and alive, the same one they will watch grow */}

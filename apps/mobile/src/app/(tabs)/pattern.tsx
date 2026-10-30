@@ -158,11 +158,6 @@ function DaysPane() {
                     {r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) + r.times : r.times}
                   </T>
                 </View>
-                {r.pts ? (
-                  <T v="small" tone="muted">
-                    +{r.pts}
-                  </T>
-                ) : null}
                 <Icon name="next" size={16} color={c.muted} />
               </Pressable>
             ))}

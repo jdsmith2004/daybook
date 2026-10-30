@@ -616,7 +616,7 @@ export function Message({ finish }: ToolProps) {
 }
 
 /* ---------- my reasons ---------- */
-export function Reasons({ finish }: ToolProps) {
+export function Reasons({ finish, sos: fromSos }: ToolProps) {
   const c = useTheme();
   const st = useCareSettings();
   const r = st?.reasons || [];
@@ -674,7 +674,10 @@ export function Reasons({ finish }: ToolProps) {
           </T>
           <T style={s.c}>Write a few lines about why this matters to you. They show up here when you need them.</T>
         </Middle>
-        <Dock>{note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}</Dock>
+        <Dock>
+          {note ? <Button label="Done" onPress={() => finish('reasons', { msg: 'Good to remember.' })} /> : null}
+          {fromSos ? null : <Button kind={note ? 'ghost' : 'primary'} label="Add my reasons" onPress={() => router.push('/reasons')} />}
+        </Dock>
       </>
     );
   const n = r.length;

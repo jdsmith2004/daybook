@@ -459,10 +459,6 @@ function ToolsPane() {
       <Card>
         <T v="h2">Pick a tool</T>
         <ToolGrid days={snap.days} tags={tags} onPick={(id) => router.push({ pathname: '/tool/[id]', params: { id } })} />
-        <T v="small" tone="muted">
-          Today: <Text style={{ fontFamily: font.bodyBold }}>{p.c}</Text> calm move{p.c === 1 ? '' : 's'} · This week:{' '}
-          <Text style={{ fontFamily: font.bodyBold }}>{wg.tools}</Text> of {TOOL_IDS.length} tools tried
-        </T>
         {fresh ? (
           <T v="small" tone="muted">
             “New” marks a tool you have not used yet. SOS offers those now and then, when an urge is small.

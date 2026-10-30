@@ -83,17 +83,19 @@ export function TipRow() {
 }
 
 /** the small Support button beside Today's title */
-export function TipTop() {
+export function TipTop({ on }: { on?: { glass: string; ink: string } }) {
   const c = useTheme();
+  const bg = on ? on.glass : c.sun;
+  const ink = on ? on.ink : c.onSun;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Support Daybook. Opens the tips, and what a tip unlocks."
       onPress={openTip}
       hitSlop={6}
-      style={({ pressed }) => [s.top, { backgroundColor: c.sun, opacity: pressed ? 0.85 : 1 }]}>
-      <Icon name="heart" size={16} color={c.onSun} />
-      <Text style={[s.topT, { color: c.onSun }]}>{TIP_WORDS.top}</Text>
+      style={({ pressed }) => [s.top, { backgroundColor: bg, opacity: pressed ? 0.85 : 1 }]}>
+      <Icon name="heart" size={15} color={ink} />
+      <Text style={[s.topT, { color: ink }]}>{TIP_WORDS.top}</Text>
     </Pressable>
   );
 }
@@ -156,7 +158,7 @@ export function UnlockCard({ extra }: { extra: 'stats' | 'sync' }) {
 
 const s = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, marginTop: 2 },
-  topT: { fontFamily: font.bodyBold, fontSize: 14 },
+  topT: { fontFamily: font.bodySemi, fontSize: 13 },
   moment: { alignSelf: 'stretch', gap: 8, padding: 12, borderRadius: 18 },
   lock: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });

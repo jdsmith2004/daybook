@@ -30,6 +30,8 @@ export function Screen({
   action,
   hidden,
   pullDown,
+  top,
+  bare,
 }: {
   eyebrow?: string;
   title: string;
@@ -49,6 +51,10 @@ export function Screen({
   hidden?: boolean;
   /** pulled down past its top and let go: open something, which starts this far down the screen (its bottom edge) */
   pullDown?: (px: number) => void;
+  /** a picture that fills the top of the page from edge to edge, under the clock, in place of the title (Today's sky) */
+  top?: ReactNode;
+  /** the picture is still under the clock, so no band of the page color there */
+  bare?: boolean;
 }) {
   const c = useTheme();
   const safe = useSafeAreaInsets();
@@ -83,46 +89,50 @@ export function Screen({
       automaticallyAdjustKeyboardInsets
       keyboardDismissMode="interactive"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[s.content, { paddingTop: inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
-      <Appear webOnly style={[s.col, hidden ? { opacity: 0 } : null]}>
+      contentContainerStyle={[s.content, { paddingTop: top ? 0 : inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
+      {top ? <View style={s.top}>{top}</View> : null}
+      <Appear webOnly style={[s.col, top ? { marginTop: 16 } : null, hidden ? { opacity: 0 } : null]}>
         {back ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={label}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            style={[s.back, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
-            <Icon name="back" size={20} color={c.ink} />
+            style={s.back}>
+            <Icon name="back" size={22} color={c.accentText} />
             {typeof back === 'string' ? (
-              <T v="label" style={{ paddingRight: 6 }}>
+              <T v="label" style={{ color: c.accentText }}>
                 {label}
               </T>
             ) : null}
           </Pressable>
         ) : null}
-        <View style={{ gap: 2, marginBottom: 4 }}>
-          <View style={s.head}>
-            <View style={{ flex: 1, gap: 2 }}>
-              {eyebrow ? (
-                <T v="eyebrow" tone="muted">
-                  {eyebrow}
+        {top ? null : (
+          <View style={{ gap: 2, marginBottom: 4 }}>
+            <View style={s.head}>
+              <View style={{ flex: 1, gap: 2 }}>
+                {eyebrow ? (
+                  <T v="eyebrow" tone="muted">
+                    {eyebrow}
+                  </T>
+                ) : null}
+                <T v="title" accessibilityRole="header">
+                  {title}
                 </T>
-              ) : null}
-              <T v="title" accessibilityRole="header">
-                {title}
-              </T>
+              </View>
+              {action}
             </View>
-            {action}
+            {sub}
           </View>
-          {sub}
-        </View>
+        )}
         <KeyboardRoom room={kb.room}>{children}</KeyboardRoom>
       </Appear>
     </Scroll>
   );
   /* the page scrolls under the clock and the battery: a band of the page color keeps them readable */
-  const bar = inset.top ? (
-    <LinearGradient pointerEvents="none" colors={[c.bg, c.bg, c.bg + '00']} locations={[0, 0.75, 1]} style={[s.bar, { height: inset.top + 12 }]} />
-  ) : null;
+  const bar =
+    inset.top && !bare ? (
+      <LinearGradient pointerEvents="none" colors={[c.bg, c.bg, c.bg + '00']} locations={[0, 0.75, 1]} style={[s.bar, { height: inset.top + 12 }]} />
+    ) : null;
   return (
     <View onLayout={kb.onLayout} style={{ flex: 1 }} {...pull.touch}>
       {pull.on && !pull.ios ? <Animated.View style={{ flex: 1, transform: [{ translateY: pull.value }] }}>{page}</Animated.View> : page}
@@ -141,20 +151,19 @@ export function Screen({
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 16, alignItems: 'center' },
-  col: { width: '100%', maxWidth: MAX_WIDTH, gap: 14 },
+  col: { width: '100%', maxWidth: MAX_WIDTH, gap: 16 },
+  top: { alignSelf: 'stretch', marginHorizontal: -16 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   over: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
   back: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
     alignSelf: 'flex-start',
     minHeight: 44,
     minWidth: 44,
-    paddingHorizontal: 10,
-    borderRadius: 22,
-    borderWidth: 1.5,
+    marginLeft: -4,
   },
 });
 

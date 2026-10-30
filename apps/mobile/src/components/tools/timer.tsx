@@ -94,5 +94,5 @@ const s = StyleSheet.create({
   beat: { width: BEAT, height: BEAT, alignItems: 'center', justifyContent: 'center', gap: 2 },
   beatIn: { alignItems: 'center', justifyContent: 'center' },
   time: { fontFamily: font.displayBold, fontSize: 48, lineHeight: 56, fontVariant: ['tabular-nums'] },
-  word: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 18 },
+  word: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 18 },
 });

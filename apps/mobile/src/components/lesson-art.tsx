@@ -178,7 +178,7 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
     return (
       <View style={{ alignSelf: 'stretch', alignItems: 'center', gap: 8 }}>
         <Chain nodes={n} t={t} />
-        <Text style={{ fontFamily: font.body, fontSize: 13.5, color: c.muted, textAlign: 'center' }}>…and back to the start. {o.c || 'YOUR LOOP'}</Text>
+        <Text style={{ fontFamily: font.body, fontSize: 13, color: c.muted, textAlign: 'center' }}>…and back to the start. {o.c || 'YOUR LOOP'}</Text>
       </View>
     );
   const box = (x: number, y: number, s: string) => (

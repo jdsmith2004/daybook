@@ -103,7 +103,7 @@ export function PicToday() {
           <Icon name="book" size={12} color="#fff" />
           <View>
             <Text style={{ fontFamily: font.bodyBold, fontSize: 6.5, letterSpacing: 0.6, color: '#fff', opacity: 0.85 }}>NEXT UP</Text>
-            <Text style={{ fontFamily: font.bodyBold, fontSize: 9.5, color: '#fff' }}>Urges are waves</Text>
+            <Text style={{ fontFamily: font.bodyBold, fontSize: 11, color: '#fff' }}>Urges are waves</Text>
           </View>
         </View>
         <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 8 }}>
@@ -287,7 +287,7 @@ export function PicTries({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
     fontFamily: font.bodyBold,
-    fontSize: 10,
+    fontSize: 11,
     fill: c.muted,
     textAnchor: 'middle' as const,
   };
@@ -334,7 +334,7 @@ export function PicCurve({ width = 320 }: { width?: number }) {
   const c = useTheme();
   const cs = {
     fontFamily: font.bodyBold,
-    fontSize: 10,
+    fontSize: 11,
     fill: c.muted,
     textAnchor: 'middle' as const,
   };
@@ -458,7 +458,7 @@ export function PicLesson() {
           <Path d="M6 52C38 52 52 10 85 10S132 52 164 52" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
           <Circle cx={85} cy={10} r={6} fill={c.mintText} />
         </Svg>
-        <Text style={{ fontFamily: font.display, fontSize: 18, color: c.ink }}>Urges are waves</Text>
+        <Text style={{ fontFamily: font.display, fontSize: 17, color: c.ink }}>Urges are waves</Text>
         <T v="small" tone="muted">
           Lesson 2 · 3 min
         </T>

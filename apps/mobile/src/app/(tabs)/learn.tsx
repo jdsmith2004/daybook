@@ -519,7 +519,7 @@ function ToolsPane() {
 
 const s = StyleSheet.create({
   due: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 14, borderRadius: 22 },
-  dueT: { fontFamily: font.bodyBold, fontSize: 14.5 },
+  dueT: { fontFamily: font.bodyBold, fontSize: 15 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   hhTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   hhIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
@@ -539,6 +539,6 @@ const s = StyleSheet.create({
   secT: { flex: 1, fontFamily: font.bodyBold, fontSize: 17 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 16, borderWidth: 1.5 },
   lrIc: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  no: { fontFamily: font.bodyBold, fontSize: 14.5 },
-  lrT: { fontFamily: font.bodyBold, fontSize: 15.5, lineHeight: 20 },
+  no: { fontFamily: font.bodyBold, fontSize: 15 },
+  lrT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
 });

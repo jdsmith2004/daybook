@@ -40,7 +40,7 @@ export function SyncStrip() {
 
 const s = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, borderRadius: 16, marginBottom: 12 },
-  text: { flex: 1, fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18 },
+  text: { flex: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   btn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
-  btnT: { fontFamily: font.bodyBold, fontSize: 13.5 },
+  btnT: { fontFamily: font.bodyBold, fontSize: 13 },
 });

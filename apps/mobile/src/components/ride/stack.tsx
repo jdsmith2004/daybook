@@ -615,7 +615,7 @@ export function StackMove({ on, onDone }: MoveProps) {
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 8 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4, minHeight: 56 },
-  head: { fontFamily: font.displayBold, fontSize: 32, lineHeight: 38 },
+  head: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 38 },
   field: { flexGrow: 1, minHeight: 360, alignSelf: 'stretch' },
   board: { position: 'absolute' },
   slot: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },

@@ -768,7 +768,7 @@ export default function Setup() {
                   <Text
                     style={{
                       fontFamily: font.bodySemi,
-                      fontSize: 15.5,
+                      fontSize: 15,
                       color: on ? t.text : c.ink,
                       flexShrink: 1,
                     }}>
@@ -1585,7 +1585,7 @@ function More({ more }: { more: { label: string; paras: string[]; keys: string[]
               onPress={() => Linking.openURL(x[1]).catch(() => undefined)}
               style={{
                 fontFamily: font.body,
-                fontSize: 14,
+                fontSize: 15,
                 color: c.accentText,
                 textDecorationLine: 'underline',
               }}>
@@ -1997,8 +1997,8 @@ const s = StyleSheet.create({
   remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14 },
   lockIc: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  lockT: { fontFamily: font.bodyBold, fontSize: 14 },
-  lockB: { fontFamily: font.body, fontSize: 14, lineHeight: 19 },
+  lockT: { fontFamily: font.bodyBold, fontSize: 15 },
+  lockB: { fontFamily: font.body, fontSize: 15, lineHeight: 19 },
   lockW: { fontFamily: font.body, fontSize: 12, alignSelf: 'flex-start' },
   c: { textAlign: 'center' },
   page: { flexGrow: 1, alignSelf: 'stretch', gap: 14 },
@@ -2006,8 +2006,8 @@ const s = StyleSheet.create({
   pageShort: { gap: 8 },
   head: { gap: 8, alignSelf: 'stretch' },
   cheerQ: { fontFamily: font.bodyBold, fontSize: SHORT ? 19 : 21, lineHeight: SHORT ? 25 : 28, alignSelf: 'stretch' },
-  title26: { fontSize: 26, lineHeight: 31 },
-  titleShort: { fontSize: 24, lineHeight: 29 },
+  title26: { fontSize: 28, lineHeight: 31 },
+  titleShort: { fontSize: 22, lineHeight: 29 },
   titleSm: { fontSize: 22, lineHeight: 27 },
   rows: { alignSelf: 'stretch', gap: 8 },
   acts: { alignSelf: 'stretch', gap: 12 },
@@ -2045,7 +2045,7 @@ const s = StyleSheet.create({
   p: { fontSize: SHORT ? 16 : 18, lineHeight: SHORT ? 23 : 26 },
   quote: { alignSelf: 'stretch', minHeight: 170, justifyContent: 'center', paddingHorizontal: 22, paddingTop: 30, paddingBottom: 24, borderRadius: 22 },
   quoteM: { position: 'absolute', top: 6, left: 18, fontFamily: font.display, fontSize: 48, lineHeight: 52 },
-  quoteT: { fontFamily: font.display, fontSize: 23, lineHeight: 30 },
+  quoteT: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
   freq: {
     flex: 1,
     alignItems: 'center',
@@ -2058,7 +2058,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  freqT: { fontFamily: font.bodySemi, fontSize: 14 },
+  freqT: { fontFamily: font.bodySemi, fontSize: 15 },
   opt: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2074,7 +2074,7 @@ const s = StyleSheet.create({
   },
   /* a time that sits beside an icon: its own width, never squeezed into two lines (flex: 0 gave the web a width of zero) */
   noWrap: { flexGrow: 0, flexBasis: 'auto' },
-  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
+  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 21 },
   tile: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2089,7 +2089,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   tall: { flexDirection: 'column', justifyContent: 'center', gap: 8, minHeight: 92, paddingHorizontal: 8 },
-  tallT: { flex: 0, textAlign: 'center', fontSize: 15.5 },
+  tallT: { flex: 0, textAlign: 'center', fontSize: 15 },
   tIc: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   tick: { position: 'absolute', top: 7, right: 7, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   ti: {
@@ -2169,6 +2169,6 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     ...(Platform.OS === 'web' ? { userSelect: 'none' } : {}),
   },
-  holdT: { fontFamily: font.bodySemi, fontSize: 19 },
+  holdT: { fontFamily: font.bodySemi, fontSize: 20 },
   holdP: { fontFamily: font.body, fontSize: 13, marginTop: 1 },
 });

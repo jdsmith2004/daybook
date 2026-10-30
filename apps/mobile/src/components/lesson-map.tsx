@@ -408,7 +408,7 @@ export function Signpost({ l, at, y, k, gone }: { l: MapLand; at: { left: number
           </View>
         ) : null}
         <View style={{ flexShrink: 1 }}>
-          <Text style={[s_.boardEye, { color: t.text, fontSize: 10.5 * k }]}>SECTION {l.k + 1}</Text>
+          <Text style={[s_.boardEye, { color: t.text, fontSize: 11 * k }]}>SECTION {l.k + 1}</Text>
           <Text style={[s_.boardT, { color: c.ink, fontSize: 17 * k, lineHeight: 20 * k }]}>{u.name}</Text>
         </View>
         <View style={[s_.tip, { backgroundColor: c.surface, borderColor: t.ic, width: 18 * k, height: 18 * k, right: -9 * k, marginTop: -9 * k }]} />
@@ -602,9 +602,9 @@ const s_ = StyleSheet.create({
   },
   point: { position: 'absolute', top: -9, width: 22, height: 22, borderRadius: 4, transform: [{ rotate: '45deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  cardEye: { flex: 1, fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1.1, opacity: 0.88 },
+  cardEye: { flex: 1, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1, opacity: 0.88 },
   x: { width: 36, height: 36, marginRight: -8, marginTop: -6, alignItems: 'center', justifyContent: 'center' },
-  cardT: { fontFamily: font.display, fontSize: 23, lineHeight: 28 },
+  cardT: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   cardP: { fontFamily: font.body, fontSize: 15, lineHeight: 21, opacity: 0.94 },
   go: {
     marginTop: 12,
@@ -629,7 +629,7 @@ const s_ = StyleSheet.create({
     shadowRadius: 0,
     elevation: 4,
   },
-  end: { fontFamily: font.bodyBold, fontSize: 14 },
+  end: { fontFamily: font.bodyBold, fontSize: 15 },
   chip: {
     width: '100%',
     flexDirection: 'row',
@@ -647,13 +647,13 @@ const s_ = StyleSheet.create({
   },
   chipArt: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   chipEye: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1.1 },
-  chipT: { fontFamily: font.display, fontSize: 19, lineHeight: 23 },
+  chipT: { fontFamily: font.display, fontSize: 20, lineHeight: 23 },
   ringT: { fontFamily: font.display, fontSize: 13 },
-  nextEye: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1.1 },
+  nextEye: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
   today: { position: 'absolute', zIndex: 4, width: 60, alignItems: 'center' },
   todayT: {
     fontFamily: font.bodyBold,
-    fontSize: 11.5,
+    fontSize: 12,
     color: '#5A3A00',
     backgroundColor: '#FFC832',
     borderRadius: 9,

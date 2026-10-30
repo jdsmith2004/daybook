@@ -26,20 +26,7 @@ export function T({
 
 export function Card({ children, style, tone }: { children: ReactNode; style?: StyleProp<ViewStyle>; tone?: 'plain' | 'note' }) {
   const c = useTheme();
-  return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: tone === 'note' ? c.sunSoft : c.surface,
-          borderColor: tone === 'note' ? c.sunSoft : c.cardEdge,
-          shadowColor: c.shadow,
-        },
-        style,
-      ]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.card, { backgroundColor: tone === 'note' ? c.sunSoft : c.surface }, style]}>{children}</View>;
 }
 
 export function Button({
@@ -103,27 +90,24 @@ export function Bar({ frac, from, to, height = 12, track }: { frac: number; from
   );
 }
 
+/* one type scale (design-standards.md): 13 small, 15 reading, 20 and 28 for headings, and a big number. Weight and color do
+   the rest. A card has one edge: its fill. */
 const styles = StyleSheet.create({
   body: { fontFamily: font.body, fontSize: 15, lineHeight: 21 },
   small: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  label: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19 },
-  eyebrow: { fontFamily: font.bodyBold, fontSize: 12, lineHeight: 16, letterSpacing: 0.8, textTransform: 'uppercase' },
-  title: { fontFamily: font.display, fontSize: 30, lineHeight: 36 },
-  h2: { fontFamily: font.display, fontSize: 20, lineHeight: 26 },
+  label: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  eyebrow: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  title: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  h2: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   big: { fontFamily: font.display, fontSize: 46, lineHeight: 50 },
   card: {
-    borderRadius: 24,
-    borderWidth: 2,
+    borderRadius: 20,
     padding: 16,
     gap: 12,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    elevation: 2,
   },
   btn: {
-    minHeight: 46,
-    paddingHorizontal: 18,
+    minHeight: 50,
+    paddingHorizontal: 20,
     borderRadius: 999,
     borderWidth: 1.5,
     flexDirection: 'row',
@@ -133,5 +117,5 @@ const styles = StyleSheet.create({
   },
   btnText: { fontFamily: font.bodyBold, fontSize: 15 },
   chip: { minHeight: 38, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  chipText: { fontFamily: font.bodySemi, fontSize: 14 },
+  chipText: { fontFamily: font.bodySemi, fontSize: 15 },
 });

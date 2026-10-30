@@ -443,7 +443,7 @@ export const moveTint = (c: Palette, id: string) =>
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   words: { minHeight: 92, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
-  head: { fontFamily: font.displayBold, fontSize: 30, lineHeight: 36, textAlign: 'center' },
+  head: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 36, textAlign: 'center' },
   left: { textAlign: 'left', fontSize: 22, lineHeight: 27 },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
@@ -456,11 +456,11 @@ const s = StyleSheet.create({
   felt: { alignSelf: 'center', maxWidth: 340, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
   two: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
   hour: { flex: 1, gap: 4, padding: 14, borderRadius: 22, minHeight: 120, borderColor: 'transparent', borderWidth: 3 },
-  hourT: { fontFamily: font.display, fontSize: 18, lineHeight: 23 },
+  hourT: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
   tomorrow: { alignSelf: 'stretch', gap: 2, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18 },
-  tmT: { fontFamily: font.display, fontSize: 19, lineHeight: 25 },
+  tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   quiet: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   note: { alignSelf: 'stretch', gap: 8, padding: 22, borderRadius: 26 },
-  noteT: { fontFamily: font.display, fontSize: 26, lineHeight: 33 },
+  noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
 });

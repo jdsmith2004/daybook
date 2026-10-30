@@ -44,10 +44,10 @@ export function Toast() {
         <View accessibilityLiveRegion="polite" role="status" style={[s.toast, s.win, { backgroundColor: bg }]}>
           <Icon name={toast.quiet ? 'heart' : 'sparkle'} size={22} color={fg} />
           <View style={{ flexShrink: 1 }}>
-            <Text style={{ fontFamily: font.display, fontSize: 18, color: fg }}>
+            <Text style={{ fontFamily: font.display, fontSize: 17, color: fg }}>
               +{toast.pts} point{toast.pts === 1 ? '' : 's'}
             </Text>
-            <Text style={{ fontFamily: font.bodySemi, fontSize: 13.5, color: fg, opacity: 0.9 }}>{toast.why}</Text>
+            <Text style={{ fontFamily: font.bodySemi, fontSize: 13, color: fg, opacity: 0.9 }}>{toast.why}</Text>
           </View>
         </View>
       </View>

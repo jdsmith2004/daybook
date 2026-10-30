@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
   chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
-  chipT: { fontFamily: font.bodyBold, fontSize: 13.5 },
+  chipT: { fontFamily: font.bodyBold, fontSize: 13 },
   card: {
     alignSelf: 'stretch',
     gap: 10,
@@ -263,11 +263,11 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  q: { fontFamily: font.display, fontSize: 18, lineHeight: 23 },
+  q: { fontFamily: font.display, fontSize: 17, lineHeight: 23 },
   opt: { fontFamily: font.body, fontSize: 13 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 13, borderRadius: 19 },
-  pickT: { fontFamily: font.bodySemi, fontSize: 14.5 },
-  lesson: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  pickT: { fontFamily: font.bodySemi, fontSize: 15 },
+  lesson: { fontFamily: font.bodySemi, fontSize: 13 },
   rule: { height: 1, marginVertical: 2 },
 });

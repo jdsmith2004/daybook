@@ -30,52 +30,30 @@ export function useLogActions() {
   return { didSmall };
 }
 
-/* the link under the flame: for when it already happened */
-/* the one button that matters most: SOS, when an urge is happening right now (legacy hx-urge). Under it,
-   two quieter ones for the other times: it already happened (log it), or a slip is being planned (Talk it through). */
-export function LogLink({ compact }: { compact?: boolean }) {
+/* the two quiet buttons under the next step: it already happened (log it), or a slip is being planned (Talk it through). SOS
+   itself is the round button in the tab bar, in reach of the thumb on every page. */
+export function LogLink() {
   const c = useTheme();
   return (
-    <View style={{ gap: compact ? 8 : 10 }}>
+    <View style={s.pair}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="SOS. I am having an urge. Tap for help right now."
-        onPress={() => router.push('/sos')}
-        style={({ pressed }) => [
-          s.sos,
-          compact && s.sosCompact,
-          { backgroundColor: c.sos, shadowColor: c.sosDeep, shadowOffset: { width: 0, height: pressed ? 1 : 5 }, transform: [{ translateY: pressed ? 4 : 0 }] },
-        ]}>
-        <View style={[s.sosIc, { backgroundColor: c.sosSoft }]}>
-          <Icon name="life" size={28} color={c.sosInk} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.sosB, { color: c.sosInk }]}>SOS</Text>
-          <Text style={[s.sosS, { color: c.sosInk }]}>I am having an urge</Text>
-        </View>
-        <Icon name="next" size={22} color={c.sosInk} />
+        accessibilityLabel="Already happened? Log what happened."
+        onPress={() => router.push('/log')}
+        style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+        <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+          Already happened
+        </Text>
       </Pressable>
-      {/* the other two times: it already happened, or it is being planned (Talk it through) */}
-      <View style={s.pair}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Already happened? Log what happened."
-          onPress={() => router.push('/log')}
-          style={({ pressed }) => [s.log, compact && s.logCompact, { backgroundColor: c.surface, borderColor: c.cardEdge, opacity: pressed ? 0.85 : 1 }]}>
-          <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-            Already happened
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Planning a slip? Talk it through first."
-          onPress={() => router.push('/talk')}
-          style={({ pressed }) => [s.log, compact && s.logCompact, { backgroundColor: c.violetSoft, borderColor: c.violetSoft, opacity: pressed ? 0.85 : 1 }]}>
-          <Text style={[s.logT, { color: c.violetText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-            Planning a slip?
-          </Text>
-        </Pressable>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Planning a slip? Talk it through first."
+        onPress={() => router.push('/talk')}
+        style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+        <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+          Planning a slip?
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -100,7 +78,7 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
   );
   if (w.due !== 'waiting')
     return (
-      <View style={[s.plan, { borderColor: c.line }]} accessibilityLabel={w.head + '. ' + w.line}>
+      <View style={[s.plan, { backgroundColor: c.surface }]} accessibilityLabel={w.head + '. ' + w.line}>
         {body}
       </View>
     );
@@ -112,7 +90,7 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
         buzz('tap');
         router.push(('/talk?decide=' + w.id) as '/talk');
       }}
-      style={({ pressed }) => [s.plan, { borderColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
+      style={({ pressed }) => [s.plan, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}>
       {body}
     </Pressable>
   );
@@ -176,39 +154,11 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13 },
   pair: { flexDirection: 'row', gap: 8 },
-  log: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minHeight: 52,
-    paddingHorizontal: 8,
-    borderRadius: 18,
-    borderWidth: 2,
-  },
-  logT: { fontFamily: font.bodySemi, fontSize: 14, flexShrink: 1, textAlign: 'center' },
-  logCompact: { minHeight: 46 },
-  sosCompact: { minHeight: 64, paddingVertical: 8 },
-  plan: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-  planH: { fontFamily: font.bodyBold, fontSize: 12.5, letterSpacing: 0.4 },
-  planT: { fontFamily: font.body, fontSize: 14.5, lineHeight: 20 },
-  sos: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    minHeight: 72,
-    paddingVertical: 11,
-    paddingLeft: 12,
-    paddingRight: 14,
-    borderRadius: 22,
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-  },
-  sosIc: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  sosB: { fontFamily: font.display, fontSize: 28, letterSpacing: 1.5, lineHeight: 30 },
-  sosS: { fontFamily: font.bodyMedium, fontSize: 13.5, marginTop: 2, opacity: 0.95 },
+  log: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingHorizontal: 8, borderRadius: 999 },
+  logT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1, textAlign: 'center' },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20 },
+  planH: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  planT: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, borderRadius: 16 },
   bannerBtn: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

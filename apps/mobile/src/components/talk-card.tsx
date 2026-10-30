@@ -129,6 +129,6 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   doorIc: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  doorT: { fontFamily: font.display, fontSize: 19, lineHeight: 24 },
-  doorS: { fontFamily: font.body, fontSize: 14, lineHeight: 19, marginTop: 1 },
+  doorT: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
+  doorS: { fontFamily: font.body, fontSize: 15, lineHeight: 19, marginTop: 1 },
 });

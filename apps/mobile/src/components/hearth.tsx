@@ -457,5 +457,5 @@ const s = StyleSheet.create({
   hold: { width: '100%', minHeight: 76, borderRadius: 22, overflow: 'hidden', justifyContent: 'center' },
   holdFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FF9A3C', transformOrigin: 'left' },
   holdIn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
-  holdT: { fontFamily: font.display, fontSize: 19 },
+  holdT: { fontFamily: font.display, fontSize: 20 },
 });

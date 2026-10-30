@@ -293,7 +293,7 @@ export default function LessonScreen() {
         {done.has(L.id) ? (
           <View style={[s.tag, { backgroundColor: c.mintSoft }]}>
             <Icon name="check" size={14} color={c.mintText} />
-            <Text style={{ fontFamily: font.bodyBold, color: c.mintText, fontSize: 13.5 }}>You finished this one</Text>
+            <Text style={{ fontFamily: font.bodyBold, color: c.mintText, fontSize: 13 }}>You finished this one</Text>
           </View>
         ) : null}
         {lessonHasQuick(L) ? (
@@ -911,7 +911,7 @@ function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; ti
         {on ? <Text style={[s.eye2, { color: t.text, marginTop: 3 }]}>YOUR USUAL</Text> : null}
       </View>
       <View style={[s.lm, { backgroundColor: t.soft }]}>
-        <Text style={{ fontFamily: font.bodyBold, fontSize: 14, color: t.text }}>{mins}</Text>
+        <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: t.text }}>{mins}</Text>
       </View>
     </Pressable>
   );
@@ -1003,7 +1003,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
         if (b[0] === 'q')
           return (
             <View key={k} style={[s.quote, { backgroundColor: t.soft, borderLeftColor: t.ic }]}>
-              <Text style={{ fontFamily: font.display, fontSize: 18, lineHeight: 25, color: c.ink }}>
+              <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 25, color: c.ink }}>
                 {lfmt(b[1], st)
                   .map((x) => x.t)
                   .join('')}
@@ -1236,7 +1236,7 @@ function GuessCard({
             <View style={[s.mk, { left: `${pa}%`, backgroundColor: c.accent, borderColor: c.surface }]} />
           </View>
           {Ticks}
-          <Text style={{ fontFamily: font.body, fontSize: 13.5, color: c.muted, textAlign: 'center' }}>
+          <Text style={{ fontFamily: font.body, fontSize: 13, color: c.muted, textAlign: 'center' }}>
             {g.cap || 'People ranged from ' + g.lo + ' to ' + g.hi + ' ' + g.unit}
           </Text>
         </View>
@@ -1354,13 +1354,13 @@ const s = StyleSheet.create({
   art: { alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  eyeT: { fontFamily: font.bodyBold, fontSize: 12.5, letterSpacing: 1.2 },
-  eye2: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1.1 },
+  eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
+  eye2: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.1 },
   h: { fontFamily: font.display, fontSize: SHORT ? 25 : 30, lineHeight: SHORT ? 29 : 34 },
   hsm: { fontSize: SHORT ? 22 : 26, lineHeight: SHORT ? 27 : 31 },
   p: { fontSize: SHORT ? 16.5 : 18, lineHeight: SHORT ? 23 : 26 },
   ask: { gap: 4, padding: 14, borderRadius: 18 },
-  askP: { fontFamily: font.display, fontSize: 19, lineHeight: 26 },
+  askP: { fontFamily: font.display, fontSize: 20, lineHeight: 26 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
   pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
   key: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 18 },
@@ -1383,7 +1383,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  nextT: { fontFamily: font.bodySemi, fontSize: 19, textAlign: 'center' },
+  nextT: { fontFamily: font.bodySemi, fontSize: 20, textAlign: 'center' },
   back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   ghost: { minHeight: 60, paddingHorizontal: 20, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   soft: {
@@ -1413,13 +1413,13 @@ const s = StyleSheet.create({
   },
   lm: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
   opt: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 54, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 16, borderWidth: 2 },
-  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 16.5, lineHeight: 21 },
+  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 21 },
   reply: { padding: 14, borderRadius: 16 },
   quote: { padding: 14, borderRadius: 16, borderLeftWidth: 5 },
   plan: { gap: 6, padding: 14, borderRadius: 16 },
   so: { gap: 4, paddingLeft: 12, borderLeftWidth: 3 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28, marginTop: 'auto', opacity: 0.85 },
-  factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 12.5 },
+  factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13 },
   act: { gap: 10, padding: 14, borderRadius: 20 },
   stepLi: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 10, borderRadius: 14 },
   stepN: { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },

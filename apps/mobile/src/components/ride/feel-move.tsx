@@ -118,11 +118,11 @@ export function FeelMove({ onDone, onFeel, onTool }: MoveProps) {
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   words: { minHeight: 92, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
-  head: { fontFamily: font.displayBold, fontSize: 30, lineHeight: 36, textAlign: 'center' },
+  head: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 36, textAlign: 'center' },
   word: { fontFamily: font.displayBold, fontSize: 40, lineHeight: 46, textAlign: 'center' },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
   card: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 22 },
-  askH: { fontFamily: font.display, fontSize: 19, lineHeight: 24 },
+  askH: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },
   dock: { gap: 8 },
 });

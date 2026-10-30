@@ -139,9 +139,9 @@ const s = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  link: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
+  link: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   lineHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  chipT: { fontFamily: font.bodySemi, fontSize: 13 },
 });

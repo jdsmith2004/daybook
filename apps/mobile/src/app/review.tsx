@@ -844,7 +844,7 @@ function Fact({ icon, text }: { icon: string; text: string }) {
   return (
     <View style={[s.fact, { backgroundColor: c.surface }]}>
       <Icon name={icon} size={18} color={c.accentText} />
-      <T style={{ flex: 1, fontSize: 15.5, lineHeight: 21 }}>{text}</T>
+      <T style={{ flex: 1, fontSize: 15, lineHeight: 21 }}>{text}</T>
     </View>
   );
 }
@@ -909,13 +909,13 @@ const s = StyleSheet.create({
   lead: { maxWidth: 380, alignSelf: 'center' },
   zone: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 6 },
   h1: { fontFamily: font.displayBold, fontSize: 38, lineHeight: 44, textAlign: 'center' },
-  h2: { fontFamily: font.display, fontSize: 27, lineHeight: 33, textAlign: 'center', maxWidth: 400 },
+  h2: { fontFamily: font.display, fontSize: 28, lineHeight: 33, textAlign: 'center', maxWidth: 400 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
   card: { alignSelf: 'stretch', gap: SHORT ? 9 : 12, padding: SHORT ? 13 : 16, borderRadius: 20, borderWidth: 1.5 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
   deepIc: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
-  lessonT: { fontFamily: font.bodySemi, fontSize: 13.5, textDecorationLine: 'underline', flexShrink: 1 },
+  lessonT: { fontFamily: font.bodySemi, fontSize: 13, textDecorationLine: 'underline', flexShrink: 1 },
   foot2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
   be: { fontFamily: font.display, fontSize: 17, lineHeight: 23, opacity: 0.85 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
@@ -950,7 +950,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  goalT: { flex: 1, fontFamily: font.display, fontSize: 19, lineHeight: 26 },
+  goalT: { flex: 1, fontFamily: font.display, fontSize: 20, lineHeight: 26 },
   summary: { alignSelf: 'stretch', gap: 6, padding: 16, borderRadius: 20, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
   sumGoal: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
   extra: {
@@ -965,5 +965,5 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   extraIc: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  pts: { fontFamily: font.display, fontSize: 18, textAlign: 'center' },
+  pts: { fontFamily: font.display, fontSize: 17, textAlign: 'center' },
 });

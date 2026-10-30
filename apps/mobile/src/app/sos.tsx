@@ -503,7 +503,7 @@ const FELT_AFTER = 30000;
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
-  passedT: { fontFamily: font.bodyBold, fontSize: 14 },
+  passedT: { fontFamily: font.bodyBold, fontSize: 15 },
   ctl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   mid: { flex: 1, gap: 7, alignItems: 'center' },
@@ -511,7 +511,7 @@ const s = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  whyT: { fontFamily: font.bodySemi, fontSize: 12.5 },
+  whyT: { fontFamily: font.bodySemi, fontSize: 13 },
   center: { alignItems: 'center' },
   bigRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 18 },
@@ -525,7 +525,7 @@ const s = StyleSheet.create({
   moreTop: { height: 40, alignItems: 'center', justifyContent: 'center' },
   grab: { width: 40, height: 5, borderRadius: 3 },
   moreX: { position: 'absolute', right: 0, top: 2, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  moreH: { fontFamily: font.display, fontSize: 18, lineHeight: 23, marginTop: 4 },
+  moreH: { fontFamily: font.display, fontSize: 17, lineHeight: 23, marginTop: 4 },
   slip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, marginTop: 6 },
-  slipT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
+  slipT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
 });

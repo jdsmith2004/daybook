@@ -67,5 +67,5 @@ export default function Points() {
 const s = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   pts: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  big: { fontFamily: font.display, fontSize: 30, lineHeight: 38 },
+  big: { fontFamily: font.display, fontSize: 28, lineHeight: 38 },
 });

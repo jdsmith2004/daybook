@@ -1,5 +1,5 @@
-/* "Your day" on Today: the day as a path from morning to night (core: stopTiles in day.ts), one plain row per stop, in the
-   color of its full-screen moment; a done one says what was done. The band on the flame is the one owner of the next step
+/* "Your day" on Today: the day from morning to night (core: stopTiles in day.ts), a plain list with one row per stop, its
+   icon in the color of its full-screen moment; a done one gets a check and says what was done. The band on the flame is the one owner of the next step
    and its button (finding 10 of October 30, 2026), so the open stop here is a plain row like the others; it opens the same
    thing as that band (core openTile).
    Every stop opens its moment with one tap, at any time:
@@ -7,13 +7,14 @@
    a sheet. */
 import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
 import { router } from 'expo-router';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnOff } from '@/components/form';
-import { Button, Card, Icon, T } from '@/components/ui';
+import { Rows } from '@/components/link-card';
+import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
@@ -59,28 +60,25 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
   const [sheet, setSheet] = useState(false);
   const n = r.tiles.length;
   return (
-    <Card>
+    <View style={{ gap: 8, marginTop: 8 }}>
       <View style={s.head}>
         <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
           Your day
         </T>
         {n ? (
-          <View style={s.pips} accessible accessibilityLabel={r.done + ' of ' + n + ' done'}>
-            {r.tiles.map((t) => (
-              <View key={t.k} style={[s.pip, { backgroundColor: t.done ? c.mint : t.cur ? c.accent : c.line }]} />
-            ))}
-          </View>
+          <T v="small" tone="muted">
+            {r.done + ' of ' + n}
+          </T>
         ) : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Change today’s routine"
-          hitSlop={8}
+          hitSlop={10}
           onPress={() => {
             buzz('tap');
             setSheet(true);
           }}
-          style={({ pressed }) => [s.change, { backgroundColor: c.surface2, opacity: pressed ? 0.75 : 1 }]}>
-          <Icon name="sliders" size={15} color={c.accentText} />
+          style={({ pressed }) => [s.change, { opacity: pressed ? 0.6 : 1 }]}>
           <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
         </Pressable>
       </View>
@@ -90,19 +88,16 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
         </T>
       ) : null}
       {n ? (
-        <View>
-          {r.tiles.map((t, i) => (
-            <Fragment key={t.k}>
-              {i ? <View style={[s.link, { backgroundColor: r.tiles[i - 1].done ? c.mint : c.line }]} /> : null}
-              <StopRow t={open && open.k === t.k && !t.done ? open : t} />
-            </Fragment>
+        <Rows>
+          {r.tiles.map((t) => (
+            <StopRow key={t.k} t={open && open.k === t.k && !t.done ? open : t} />
           ))}
-        </View>
+        </Rows>
       ) : (
         <T tone="muted">Nothing is switched on for today. Tap Change to turn parts of the day back on.</T>
       )}
       <RoutineSheet open={sheet} onClose={() => setSheet(false)} snap={snap} tk={tk} />
-    </Card>
+    </View>
   );
 }
 
@@ -116,22 +111,17 @@ function StopRow({ t }: { t: StopTile }) {
       accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
       onPress={() => openStop(t.go, t.id)}
       style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}>
-      <View style={[s.ic, { backgroundColor: L.soft }]}>
-        <Icon name={t.ic} size={22} color={L.ink} />
-        {t.done ? (
-          <View style={[s.badge, { backgroundColor: c.mint, borderColor: c.surface }]}>
-            <Icon name="check" size={11} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} />
-          </View>
-        ) : null}
+      <Icon name={t.done ? 'check' : t.ic} size={22} color={t.done ? c.mintText : t.sky === 'night' ? c.accentText : L.ink} />
+      <View style={[s.rowIn, { borderBottomColor: c.line }]}>
+        <View style={{ flex: 1, gap: 1 }}>
+          <T v="label">{t.title}</T>
+          <T v="small" tone="muted">
+            {t.line}
+          </T>
+        </View>
+        {t.right ? <Text style={[s.right, { color: t.state === 'due' ? c.accentText : c.muted }]}>{t.right}</Text> : null}
+        <Icon name="next" size={16} color={c.muted} />
       </View>
-      <View style={{ flex: 1, gap: 1 }}>
-        <T v="label">{t.title}</T>
-        <T v="small" tone="muted">
-          {t.line}
-        </T>
-      </View>
-      {t.right ? <Text style={[s.right, { color: t.state === 'due' ? c.accentText : c.muted }]}>{t.right}</Text> : null}
-      <Icon name="next" size={16} color={c.muted} />
     </Pressable>
   );
 }
@@ -188,26 +178,12 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pips: { flexDirection: 'row', gap: 4 },
-  pip: { width: 16, height: 6, borderRadius: 3 },
-  change: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 34, paddingHorizontal: 11, borderRadius: 999 },
-  changeT: { fontFamily: font.bodySemi, fontSize: 14 },
-  link: { width: 3, height: 12, borderRadius: 2, marginLeft: 22.5 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 2 },
-  ic: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  badge: {
-    position: 'absolute',
-    right: -3,
-    bottom: -3,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  right: { fontFamily: font.bodySemi, fontSize: 13.5, textAlign: 'right', maxWidth: 110 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
+  change: { minHeight: 44, justifyContent: 'center' },
+  changeT: { fontFamily: font.bodySemi, fontSize: 15 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 16 },
+  rowIn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 60, paddingVertical: 10, paddingRight: 14, borderBottomWidth: 1 },
+  right: { fontFamily: font.bodyMedium, fontSize: 13, textAlign: 'right', maxWidth: 110 },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {
     alignSelf: 'stretch',

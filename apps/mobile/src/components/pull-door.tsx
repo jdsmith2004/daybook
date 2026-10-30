@@ -65,17 +65,18 @@ export function PullDoor({ pull, armed, top }: { pull: Animated.AnimatedInterpol
 }
 
 /** under Today's title until the journal has been opened once: where it is, and a tap opens it too */
-export function PullHint({ onPress }: { onPress: () => void }) {
+export function PullHint({ onPress, color }: { onPress: () => void; color?: string }) {
   const c = useTheme();
+  const ink = color || c.muted;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Open your journal. You can also pull Today down."
       onPress={onPress}
       style={({ pressed }) => [s.hint, { opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name="pencil" size={14} color={c.muted} />
-      <Text style={[s.hintT, { color: c.muted }]}>Pull down for your journal</Text>
-      <Icon name="down" size={14} color={c.muted} />
+      <Icon name="pencil" size={14} color={ink} />
+      <Text style={[s.hintT, { color: ink }]}>Pull down for your journal</Text>
+      <Icon name="down" size={14} color={ink} />
     </Pressable>
   );
 }

@@ -448,7 +448,7 @@ const s = StyleSheet.create({
   tv: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40 },
   table: { borderTopWidth: 1 },
   tr: { flexDirection: 'row', borderBottomWidth: 1, paddingVertical: 6 },
-  th: { flex: 1, fontFamily: font.bodySemi, fontSize: 12.5 },
-  td: { flex: 1, fontFamily: font.body, fontSize: 13.5, fontVariant: ['tabular-nums'] },
+  th: { flex: 1, fontFamily: font.bodySemi, fontSize: 13 },
+  td: { flex: 1, fontFamily: font.body, fontSize: 13, fontVariant: ['tabular-nums'] },
   empty: { padding: 18, borderRadius: 14 },
 });

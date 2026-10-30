@@ -133,7 +133,7 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
 
 const s = StyleSheet.create({
   lRow: { height: 18, position: 'relative' },
-  mLabel: { position: 'absolute', top: 0, width: LW, fontSize: 12.5 },
+  mLabel: { position: 'absolute', top: 0, width: LW, fontSize: 13 },
   trackBox: { height: 30, justifyContent: 'center' },
   track: { height: 12, borderRadius: 6, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 6 },

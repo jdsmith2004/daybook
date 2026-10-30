@@ -111,7 +111,7 @@ export default function Lwrite() {
                     <T style={s.h} accessibilityRole="header">
                       That is in your plan.
                     </T>
-                    <T style={{ fontSize: 18, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                    <T style={{ fontSize: 17, lineHeight: 26 }}>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
                     <Route
                       label="Read it in My plan"
                       onPress={() => {
@@ -168,8 +168,8 @@ const s = StyleSheet.create({
   cardIn: { padding: 22, gap: 14 },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ei: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  eyeT: { fontFamily: font.bodyBold, fontSize: 12.5, letterSpacing: 1.2 },
-  h: { fontFamily: font.display, fontSize: 26, lineHeight: 31 },
+  eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
+  h: { fontFamily: font.display, fontSize: 28, lineHeight: 31 },
   wr: { minHeight: 170, padding: 14, borderRadius: 16, borderWidth: 2, fontFamily: font.body, fontSize: 17, lineHeight: 24, textAlignVertical: 'top' },
   foot: { flexDirection: 'row', gap: 10 },
   next: {
@@ -184,7 +184,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  nextT: { fontFamily: font.bodySemi, fontSize: 19 },
+  nextT: { fontFamily: font.bodySemi, fontSize: 20 },
   back: { width: 60, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   soft: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 16, borderRadius: 16 },
 });

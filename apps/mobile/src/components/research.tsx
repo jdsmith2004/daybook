@@ -96,13 +96,13 @@ export function KnownLine({
 }
 
 const s = StyleSheet.create({
-  body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
+  body: { alignSelf: 'stretch', fontSize: 17, lineHeight: 24 },
   srcs: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   line: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 4, flexShrink: 1 },
   lineI: { minHeight: 24, justifyContent: 'center', maxWidth: '100%' },
   lineT: { fontFamily: font.bodyMedium, fontSize: 12, textDecorationLine: 'underline' },
   src: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%', minHeight: 32, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1.5 },
-  srcT: { fontFamily: font.bodySemi, fontSize: 12.5, flexShrink: 1 },
+  srcT: { fontFamily: font.bodySemi, fontSize: 13, flexShrink: 1 },
   known: { borderRadius: 18, padding: 12, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
   knownHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
 });

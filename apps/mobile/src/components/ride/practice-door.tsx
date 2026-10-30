@@ -47,5 +47,5 @@ const s = StyleSheet.create({
   },
   ic: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   t: { fontFamily: font.bodyBold, fontSize: 16 },
-  sub: { fontFamily: font.body, fontSize: 14, lineHeight: 19, marginTop: 1 },
+  sub: { fontFamily: font.body, fontSize: 15, lineHeight: 19, marginTop: 1 },
 });

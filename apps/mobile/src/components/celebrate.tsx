@@ -452,7 +452,7 @@ const s = StyleSheet.create({
   rows: { alignSelf: 'stretch', gap: 10, marginTop: 6, paddingTop: 12, borderTopWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  rowT: { fontFamily: font.bodyBold, fontSize: 15.5, lineHeight: 20 },
-  rowS: { fontFamily: font.body, fontSize: 13.5, lineHeight: 18 },
+  rowT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  rowS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 32, textAlign: 'center' },
 });

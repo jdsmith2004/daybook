@@ -128,10 +128,10 @@ const s = StyleSheet.create({
   card: { borderRadius: 20, padding: 14, gap: 10 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   ic: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  line: { fontFamily: font.bodySemi, fontSize: 15.5, lineHeight: 21 },
+  line: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21 },
   x: { padding: 4, alignSelf: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 12, borderRadius: 999 },
-  pillT: { fontFamily: font.bodySemi, fontSize: 14 },
+  pillT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

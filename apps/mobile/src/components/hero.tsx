@@ -1,25 +1,22 @@
-/* The top of Today: your flame in its own sky (core: emblemScene), with stars at night and its own hills carried on across the card; your
-   one number sits on the picture (core: heroNumber), your level beside it, and the bar to the next form along its edge.
-   Under the picture, in the same card, the one next step (core pickMoment, moment-card.tsx), so what you do and what it
-   grows are one picture (CLAUDE.md, "The flame is the heart of the app"). The flame moves in a way that fits its form and
-   the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it and it says
-   hi; tap the sky for Milestones; the level for how points work; the number for your days. Under the level, a small key in
-   the bar's color says what the bar is: "40 points to Level 20". When points come in while the
-   app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills
-   to where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
-   In the sky's corner, a small ring of seven: this week's lesson days (core lessonWeek), with words that say what it counts
-   ("1 of 7 days, lessons this week"); a tap opens the sheet that says how it fills (app/lessons-week.tsx). It only fills,
-   and a slip never touches it. A lesson finished lights its day at the same moment the flame blooms, so each one is seen
-   feeding the flame.
-   Every form is drawn the same size (big-flame.tsx): the growth shows in the form. On a short phone the sky is shorter
-   (lib/today-size.ts; Today passes its height), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
-   that hold, one quiet line under the sky says the slip is logged and what stays (core heroSlipLine). The chip under the
-   number holds the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation. */
-import { CHEERS, emblemScene, heroNumber, heroSlipLine, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
+/* The top of Today: your flame in its own sky (core: emblemScene), from edge to edge and under the clock, with stars at night
+   and its own hills carried on across the page. The date and who I am becoming are written on the sky; your one number sits low
+   on the left (core: heroNumber), your level on the right, and the bar to the next form along the bottom edge. The flame is the
+   biggest thing on the screen (lib/today-size.ts; CLAUDE.md, "The flame is the heart of the app"). The one next step hangs right
+   under it (core pickMoment, moment-card.tsx), so what you do and what it grows are one picture. The flame moves in a way that
+   fits its form and the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it
+   and it says hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while
+   the app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills to
+   where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
+   On the left of the sky, a small ring of seven: this week's lesson days (core lessonWeek); a tap opens the sheet that says how
+   it fills (app/lessons-week.tsx). It only fills, and a slip never touches it. A lesson finished lights its day at the same moment
+   the flame blooms, so each one is seen feeding the flame.
+   Under the number, the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation. */
+import { CHEERS, emblemScene, heroNumber, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 
 /** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
@@ -28,49 +25,55 @@ import Svg, { Path, SvgXml } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
-import { Card, Icon } from '@/components/ui';
+import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
-import { SKY_MAX } from '@/lib/today-size';
+import { FOOT } from '@/lib/today-size';
 
-/** the flame's drawing, as a share of the sky's height, and how far down it starts */
-const FLAME_OF = 206 / SKY_MAX;
-const FLAME_TOP = 2;
+/** the star field was drawn for a sky this tall, and spreads with the real one */
+const STAR_SKY = 262;
 
 export function Hero({
   g,
   snap,
   tk,
   now,
-  sky = SKY_MAX,
-  compact,
-  children,
+  sky,
+  flame,
+  title,
+  head,
+  action,
 }: {
   g: GameState;
   snap: Snapshot;
   tk: string;
   now: number;
-  /** the sky's height (lib/today-size.ts) */
-  sky?: number;
-  /** a short phone: a little less room around the next step (lib/today-size.ts) */
-  compact?: boolean;
-  children?: React.ReactNode;
+  /** the sky's height and the flame's drawing (lib/today-size.ts) */
+  sky: number;
+  flame: number;
+  /** the date */
+  title: string;
+  /** what is written under the date (it reads the sky's ink from skyInk) */
+  head?: React.ReactNode;
+  /** a small button at the top right */
+  action?: React.ReactNode;
 }) {
-  const c = useTheme();
-  const line = heroSlipLine(snap.days, snap.settings!, tk, now);
-  return (
-    <Card style={s.card}>
-      <Sky g={g} snap={snap} tk={tk} now={now} height={sky} />
-      {children || line ? (
-        <View style={[s.under, compact && s.underCompact]}>
-          {line ? <Text style={[s.slipLine, { color: c.muted }]}>{line}</Text> : null}
-          {children}
-        </View>
-      ) : null}
-    </Card>
-  );
+  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} head={head} action={action} />;
+}
+
+/** the colors of the words on the sky at this level */
+export function skyInk(level: number) {
+  const sc = emblemScene(level);
+  const light = sc.ink === 'light';
+  return {
+    light,
+    ink: light ? '#FFFFFF' : '#14112E',
+    /* on green hills the small words take the full ink, so they still read */
+    soft: light ? '#DCD3FF' : sc.land ? '#14112E' : '#3D3670',
+    glass: light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.62)',
+  };
 }
 
 /* ---------- the flame in its own sky ---------- */
@@ -94,21 +97,40 @@ const STARS: [number, number, number][] = [
   [38, 150, 2],
 ];
 
-function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: string; now: number; height: number }) {
+function Sky({
+  g,
+  snap,
+  tk,
+  now,
+  height,
+  flame,
+  title,
+  head,
+  action,
+}: {
+  g: GameState;
+  snap: Snapshot;
+  tk: string;
+  now: number;
+  height: number;
+  flame: number;
+  title: string;
+  head?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   const c = useTheme();
   const { say } = useStore();
   const reduce = useReducedMotion();
   const lvl = g.level;
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
+  const inset = useSafeAreaInsets();
   const SCENE_H = height;
-  const FLAME = Math.round(SCENE_H * FLAME_OF);
+  const FLAME = flame;
+  /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock */
+  const FLAME_TOP = SCENE_H - FLAME - FOOT + 18;
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
-  const light = sc.ink === 'light';
-  const ink = light ? '#FFFFFF' : '#14112E';
-  /* on green hills the small words take the full ink, so they still read */
-  const soft = light ? '#DCD3FF' : sc.land ? ink : '#3D3670';
-  const glass = light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.62)';
+  const { light, ink, soft, glass } = skyInk(lvl.n);
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
   const [pulse, setPulse] = useState(0);
@@ -185,7 +207,7 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
       {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
       <LinearGradient
         colors={sc.sky}
-        locations={sc.at.map((o) => (FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
+        locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
         style={StyleSheet.absoluteFill}
       />
       {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
@@ -205,7 +227,7 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
                   s.star,
                   {
                     left: `${x}%`,
-                    top: y,
+                    top: (y * SCENE_H) / STAR_SKY,
                     width: r,
                     height: r,
                     borderRadius: r / 2,
@@ -226,32 +248,41 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
           />
         ) : null}
       </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Tap to see how it fills.`}
-        onPress={() => {
-          buzz('tap');
-          router.push('/lessons-week');
-        }}
-        style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
-        <Animated.View style={{ transform: [{ scale: ringPop }] }}>
-          <WeekRing
-            week={shown}
-            lit={c.sun}
-            dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
-            now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
-          />
-        </Animated.View>
-        <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
-          {shown.n} of 7 days
-        </Text>
-        <Text maxFontSizeMultiplier={ON_ART} style={[s.ringT, { color: soft }]}>
-          {'LESSONS\nTHIS WEEK'}
-        </Text>
-      </Pressable>
-      <View style={s.flame} pointerEvents="box-none">
+      {/* the flame first, so what is written on the sky lies over it and takes the tap */}
+      <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
         <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
           <BigFlame level={lvl.n} size={FLAME} pulse={pulse} />
+        </Pressable>
+      </View>
+      <View style={[s.head, { top: inset.top + 10 }]} pointerEvents="box-none">
+        <View style={s.headRow} pointerEvents="box-none">
+          <View style={{ flex: 1 }} pointerEvents="box-none">
+            <Text accessibilityRole="header" maxFontSizeMultiplier={ON_ART} style={[s.date, { color: ink }]}>
+              {title}
+            </Text>
+          </View>
+          {action}
+        </View>
+        {head}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Tap to see how it fills.`}
+          onPress={() => {
+            buzz('tap');
+            router.push('/lessons-week');
+          }}
+          style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
+          <Animated.View style={{ transform: [{ scale: ringPop }] }}>
+            <WeekRing
+              week={shown}
+              lit={c.sun}
+              dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
+              now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
+            />
+          </Animated.View>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
+            {shown.n} of 7
+          </Text>
         </Pressable>
       </View>
       {h ? (
@@ -261,7 +292,7 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
           onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
           style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
-            {h.eb.toUpperCase()}
+            {h.eb}
           </Text>
           {/* the words beside the number wrap to a second line on a narrow phone, so they never run under the level */}
           <View style={s.nRow}>
@@ -275,9 +306,9 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
             ) : null}
           </View>
           {h.chip ? (
-            <View style={[s.chip, { backgroundColor: glass }]}>
-              {h.star ? <Icon name="star" size={13} color={ink} /> : null}
-              <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
+            <View style={s.chip}>
+              {h.star ? <Icon name="star" size={13} color={soft} /> : null}
+              <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft }]}>
                 {h.chip}
               </Text>
             </View>
@@ -294,18 +325,15 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
         </Text>
         {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
         {lvl.next ? (
-          <View style={s.barKey}>
-            <View style={[s.barSw, { backgroundColor: c.sun }]} />
-            <Text maxFontSizeMultiplier={ON_ART} style={[s.barT, { color: soft }]}>
-              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
-            </Text>
-          </View>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
+            {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+          </Text>
         ) : null}
       </Pressable>
       {grew ? (
-        <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+        <View style={[s.grew, { backgroundColor: glass, top: inset.top + 112 }]} pointerEvents="none">
           <Icon name="star" size={13} color={ink} />
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
             Your flame grew
           </Text>
         </View>
@@ -320,8 +348,8 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
 }
 
 /* ---------- the week's lesson days: seven arcs, Monday at the top, going round ---------- */
-const RING = 44;
-const RING_W = 5;
+const RING = 34;
+const RING_W = 4;
 function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
   const p = (a: number) => [cx + r * Math.cos(((a - 90) * Math.PI) / 180), cy + r * Math.sin(((a - 90) * Math.PI) / 180)];
   const [x0, y0] = p(a0);
@@ -355,32 +383,24 @@ function WeekRing({ week, lit, dim, now }: { week: LessonWeek; lit: string; dim:
 }
 
 const s = StyleSheet.create({
-  card: { padding: 0, gap: 0 },
-  sky: { borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: 'hidden' },
+  sky: { overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  flame: { position: 'absolute', top: FLAME_TOP, left: 0, right: 0, alignItems: 'center' },
-  num: { position: 'absolute', left: 14, bottom: 16, maxWidth: '52%' },
-  eb: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1.2 },
-  n: { fontFamily: font.display, fontSize: 34, lineHeight: 38 },
+  head: { position: 'absolute', left: 16, right: 16, gap: 2 },
+  headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  date: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  flame: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  num: { position: 'absolute', left: 16, bottom: 18, maxWidth: '58%' },
+  eb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  n: { fontFamily: font.display, fontSize: 44, lineHeight: 48 },
   nRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 20, paddingBottom: 4 },
-  lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '45%' },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    marginTop: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  chipT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13 },
-  lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },
+  unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 22, paddingBottom: 6 },
+  lv: { position: 'absolute', right: 16, bottom: 18, alignItems: 'flex-end', gap: 1, maxWidth: '40%' },
+  chip: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4 },
+  small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
+  lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
   grew: {
     position: 'absolute',
-    top: 12,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -389,13 +409,6 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  under: { padding: 14 },
-  underCompact: { paddingVertical: 10 },
-  slipLine: { fontFamily: font.bodySemi, fontSize: 14, lineHeight: 19, textAlign: 'center', marginTop: -2, marginBottom: 10 },
-  ring: { position: 'absolute', top: 12, left: 12, alignItems: 'flex-start', gap: 3 },
-  ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16, marginTop: 2 },
-  ringT: { fontFamily: font.bodyBold, fontSize: 9.5, lineHeight: 12, letterSpacing: 1 },
-  barKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -2 },
-  barSw: { width: 14, height: 4, borderRadius: 2 },
-  barT: { fontFamily: font.bodySemi, fontSize: 12, lineHeight: 15 },
+  ring: { alignSelf: 'flex-start', alignItems: 'flex-start', gap: 4, marginTop: 8, minWidth: 44, minHeight: 44 },
+  ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
 });

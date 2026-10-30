@@ -105,9 +105,9 @@ const s = StyleSheet.create({
   eye: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   eyeT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 0.3 },
   h: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
-  ask: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 19 },
+  ask: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 19 },
   studies: { borderRadius: 20, paddingHorizontal: 14 },
   study: { paddingVertical: 12, gap: 3 },
   studyH: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  studyS: { fontFamily: font.body, fontSize: 12.5, lineHeight: 17 },
+  studyS: { fontFamily: font.body, fontSize: 13, lineHeight: 17 },
 });

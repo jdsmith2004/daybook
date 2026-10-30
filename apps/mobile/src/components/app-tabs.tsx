@@ -46,7 +46,7 @@ function Bar({ children, ...rest }: { children?: React.ReactNode }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
   return (
-    <View {...rest} style={[s.bar, { backgroundColor: c.surface, borderTopColor: c.cardEdge, shadowColor: c.accent, paddingBottom: 6 + inset.bottom }]}>
+    <View {...rest} style={[s.bar, { backgroundColor: c.surface, borderTopColor: c.line, paddingBottom: 4 + inset.bottom }]}>
       <View style={s.inner}>{children}</View>
     </View>
   );
@@ -59,8 +59,8 @@ function TabButton({ children, isFocused, icon, ...props }: TabTriggerSlotProps 
       {...(props as PressableProps)}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
-      style={({ pressed }) => [s.tab, isFocused && { backgroundColor: c.accentSoft }, pressed && { opacity: 0.7 }]}>
-      <Icon name={icon} size={26} color={isFocused ? c.accentText : c.muted} />
+      style={({ pressed }) => [s.tab, pressed && { opacity: 0.7 }]}>
+      <Icon name={icon} size={24} color={isFocused ? c.accentText : c.muted} />
       <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>
         {children}
       </Text>
@@ -105,19 +105,13 @@ function SosTab() {
 
 const s = StyleSheet.create({
   bar: {
-    borderTopWidth: 2,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    paddingTop: 6,
+    borderTopWidth: 1,
+    paddingTop: 4,
     paddingHorizontal: 8,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 10,
   },
   inner: { flexDirection: 'row', gap: 4, alignSelf: 'center', width: '100%', maxWidth: MAX_WIDTH },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 56, paddingVertical: 6, borderRadius: 16 },
-  label: { fontFamily: font.bodySemi, fontSize: 11.5 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 52, paddingVertical: 4 },
+  label: { fontFamily: font.bodySemi, fontSize: 12 },
   sos: {
     /* raised enough that its shadow ends above the SOS label, also on a phone with a Home button (no room under the bar) */
     position: 'absolute',

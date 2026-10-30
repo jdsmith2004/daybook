@@ -1167,7 +1167,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'center' },
   btnSpace: { height: 52 },
   warm: { fontFamily: font.bodyMedium, marginTop: 4 },
-  body: { alignSelf: 'stretch', fontSize: 16.5, lineHeight: 24 },
+  body: { alignSelf: 'stretch', fontSize: 17, lineHeight: 24 },
   forRow: {
     alignSelf: 'stretch',
     flexDirection: 'row',

@@ -286,7 +286,7 @@ export function Reveal({ open, style, children }: { open: boolean; style?: Style
 
 const s = StyleSheet.create({
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  out: { fontFamily: font.display, fontSize: 18, minWidth: 24, textAlign: 'right' },
+  out: { fontFamily: font.display, fontSize: 17, minWidth: 24, textAlign: 'right' },
   track: { height: 36, justifyContent: 'center' },
   rail: { height: 8, borderRadius: 4, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },

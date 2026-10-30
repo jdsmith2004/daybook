@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  nextT: { fontFamily: font.bodySemi, fontSize: 19, textAlign: 'center' },
+  nextT: { fontFamily: font.bodySemi, fontSize: 20, textAlign: 'center' },
   back: {
     width: 60,
     height: 60,

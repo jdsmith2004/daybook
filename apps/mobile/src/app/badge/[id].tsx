@@ -28,7 +28,7 @@ export default function BadgeSheet() {
     <SheetFrame title={b.name}>
       <View style={{ alignItems: 'center', gap: 12 }}>
         <BadgeArt icon={b.icon} tone={b.tone} size={116} earned={done} />
-        <T style={{ textAlign: 'center', fontSize: 18 }}>{b.desc}</T>
+        <T style={{ textAlign: 'center', fontSize: 17 }}>{b.desc}</T>
         <T tone={done ? 'mintText' : 'muted'}>{done ? '✓ Earned. Badges are never taken away.' : `Progress: ${b.now} of ${b.goal}`}</T>
       </View>
       <Dock>

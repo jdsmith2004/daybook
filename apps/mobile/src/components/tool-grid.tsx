@@ -129,7 +129,7 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   name: { fontFamily: font.bodyBold, fontSize: 15 },
-  desc: { fontFamily: font.body, fontSize: 12.5 },
+  desc: { fontFamily: font.body, fontSize: 13 },
   tag: { fontFamily: font.bodySemi, fontSize: 12, marginTop: 1 },
   new: { position: 'absolute', top: 6, right: 6, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999 },
   newT: { fontFamily: font.bodyBold, fontSize: 11 },

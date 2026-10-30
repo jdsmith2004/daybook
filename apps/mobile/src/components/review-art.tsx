@@ -54,7 +54,7 @@ export function Teach({ teach }: { teach: StoryTeach }) {
         <Icon name="sparkle" size={15} color={c.violetText} />
         <Text style={[s.eyebrow, { color: c.violetText }]}>WHY IT MATTERS</Text>
       </View>
-      <T style={{ fontSize: 15.5, lineHeight: 22 }}>{teach.t}</T>
+      <T style={{ fontSize: 15, lineHeight: 22 }}>{teach.t}</T>
       {/* the lesson, and where the science comes from: one small line, a bonus that never pushes the page past the screen */}
       <View style={s.teachFoot}>
         {l ? (
@@ -356,11 +356,11 @@ export function Big({ children, color, delay = 150 }: { children: React.ReactNod
 const s = StyleSheet.create({
   bars: { flexDirection: 'row', gap: 4, alignSelf: 'stretch' },
   bar: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
-  eyebrow: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1 },
+  eyebrow: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
   teach: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18, borderWidth: 1.5 },
   teachHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
-  lessonT: { fontFamily: font.bodySemi, fontSize: 13.5, textDecorationLine: 'underline', flexShrink: 1 },
+  lessonT: { fontFamily: font.bodySemi, fontSize: 13, textDecorationLine: 'underline', flexShrink: 1 },
   teachFoot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
   days: { flexDirection: 'row', justifyContent: 'center', gap: 6, alignSelf: 'stretch' },
   day: { alignItems: 'center', gap: 6, flex: 1, maxWidth: 48 },
@@ -382,7 +382,7 @@ const s = StyleSheet.create({
   goalFill: { alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
   wks: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end' },
   wk: { alignItems: 'center', gap: 4 },
-  wkN: { fontFamily: font.display, fontSize: 18, lineHeight: 22 },
+  wkN: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   wkL: { fontFamily: font.bodySemi, fontSize: 11 },
   big: { fontFamily: font.displayBold, fontSize: 64, lineHeight: 72, textAlign: 'center' },
 });

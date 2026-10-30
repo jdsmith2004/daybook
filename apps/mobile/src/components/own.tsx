@@ -73,5 +73,5 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
   },
-  ownChipT: { fontFamily: font.bodySemi, fontSize: 15.5 },
+  ownChipT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

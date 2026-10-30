@@ -406,7 +406,7 @@ const s = StyleSheet.create({
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
   tap: { fontFamily: font.bodySemi, marginTop: 4 },
-  pts: { fontFamily: font.display, fontSize: 18 },
+  pts: { fontFamily: font.display, fontSize: 17 },
   offer: { alignItems: 'center' },
   saveLink: { alignItems: 'center' },
   moreOpen: { alignSelf: 'stretch', gap: 12 },
@@ -424,7 +424,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     shadowOffset: { width: 0, height: 3 },
   },
-  tileV: { fontFamily: font.display, fontSize: 26 },
+  tileV: { fontFamily: font.display, fontSize: 28 },
   next: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', padding: 14, borderRadius: 18 },
   nextIc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });

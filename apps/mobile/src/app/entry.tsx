@@ -86,7 +86,7 @@ export default function Entry() {
     };
     return (
       <SheetFrame title="Add an entry">
-        <T style={{ fontSize: 18 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
+        <T style={{ fontSize: 17 }}>{isToday ? 'What happened?' : 'What happened on ' + fmtDate(date) + '?'}</T>
         <WhenPill w={when || whenStart(date, now, roll)} none={!when} now={now} onPress={() => setWhenOpen(true)} />
         <WhenSheet
           open={whenOpen}

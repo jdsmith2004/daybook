@@ -155,9 +155,9 @@ const s = StyleSheet.create({
   loud: { borderWidth: 2.5 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   ic: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1 },
+  eyebrow: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1 },
   title: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
   link: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
   lessonLine: { textAlign: 'center', marginTop: 2 },
-  linkT: { fontFamily: font.bodySemi, fontSize: 14.5, textDecorationLine: 'underline' },
+  linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
 });

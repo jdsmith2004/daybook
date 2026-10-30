@@ -453,7 +453,7 @@ function Pw({
 }
 
 const s = StyleSheet.create({
-  code: { fontFamily: font.display, fontSize: 32, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 18, paddingVertical: 14 },
+  code: { fontFamily: font.display, fontSize: 34, letterSpacing: 12, textAlign: 'center', borderWidth: 2, borderRadius: 18, paddingVertical: 14 },
   links: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   apple: { gap: 22, paddingTop: 10, paddingBottom: 8 },
   or: { flexDirection: 'row', alignItems: 'center', gap: 12 },

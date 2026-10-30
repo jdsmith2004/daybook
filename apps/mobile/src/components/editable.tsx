@@ -109,11 +109,11 @@ export function Editable({
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, minHeight: 40, paddingVertical: 4 },
   ic: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  big: { fontFamily: font.display, fontSize: 23, lineHeight: 29 },
+  big: { fontFamily: font.display, fontSize: 22, lineHeight: 29 },
   in: { fontFamily: font.body, fontSize: 15, lineHeight: 21, borderWidth: 2, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },
   inBig: {
     fontFamily: font.display,
-    fontSize: 21,
+    fontSize: 20,
     lineHeight: 27,
     borderWidth: 2,
     borderRadius: 14,

@@ -481,7 +481,7 @@ const s = StyleSheet.create({
   box: { alignSelf: 'stretch', height: H, borderRadius: 24, borderWidth: 2, overflow: 'hidden' },
   abs: { position: 'absolute' },
   ringAbs: { position: 'absolute', left: 0, top: 0, borderWidth: 3 },
-  label: { position: 'absolute', fontSize: 12.5, lineHeight: 16 },
+  label: { position: 'absolute', fontSize: 13, lineHeight: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
   tube: { position: 'absolute', width: 34, borderRadius: 17, borderWidth: 3, overflow: 'hidden' },
   bulb: { position: 'absolute', width: 44, height: 44, borderRadius: 22, borderWidth: 4 },
@@ -494,7 +494,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 3,
   },
-  bubbleT: { fontFamily: font.display, fontSize: 26, lineHeight: 32 },
+  bubbleT: { fontFamily: font.display, fontSize: 28, lineHeight: 32 },
   tail: {
     position: 'absolute',
     bottom: -12,
@@ -508,7 +508,7 @@ const s = StyleSheet.create({
     borderRightColor: 'transparent',
   },
   stamp: { borderWidth: 3, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
-  stampT: { fontFamily: font.bodyBold, fontSize: 13.5, letterSpacing: 1.2 },
+  stampT: { fontFamily: font.bodyBold, fontSize: 13, letterSpacing: 1.2 },
   pan: { minWidth: 104, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 14, alignItems: 'center' },
   panT: { fontFamily: font.bodyBold, fontSize: 13 },
   lens: { width: 64, height: 64, borderRadius: 32, borderWidth: 5 },
@@ -527,5 +527,5 @@ const s = StyleSheet.create({
   },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   keySw: { width: 14, height: 5, borderRadius: 3 },
-  keyT: { fontFamily: font.bodySemi, fontSize: 12.5 },
+  keyT: { fontFamily: font.bodySemi, fontSize: 13 },
 });

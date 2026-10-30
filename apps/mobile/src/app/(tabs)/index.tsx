@@ -1,15 +1,14 @@
-/* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
-   moment (a pause, the hard hours, the day of a slip, a talk-through, days away, the Sunday
-   review, a one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
-   sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
-   one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
-   is never locked); last night's win, when an urge was ridden out in SOS at night (night-win.tsx); Your day as plain
-   rows; then the asks, one at a time, and none on the day the person came back or in the hours after an SOS or a slip
-   (lib/quiet-asks.ts). A plan talked through waits quietly under SOS until its moment has passed (core talkPlanNow). On
-   a short phone Today goes compact (lib/today-size.ts), so SOS and its two buttons fit above the tab bar. On the day of
-   a slip, its card ("After a slip") sits right under SOS instead of in the flame's card: a person who just slipped may
-   still be pulled toward it, so SOS stays in sight with the flame, and the slip's one small thing is just below. Pulling the page down past its top opens the journal (app/journal.tsx), and until
-   it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
+/* Today, one moment at a time (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with the date
+   and who I am becoming written on it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the
+   heart of the app"). Right under it, one card, picked by the moment (a pause, the hard hours, the day of a slip, a talk-through,
+   days away, the Sunday review, a one-time moment, or the day's next stop), with one quiet line naming the next one when two
+   overlap, and one quiet line for what was logged today and the week's goal. Then Already happened and Planning a slip? (care is
+   never locked; SOS is the round button in the tab bar, always in reach of the thumb); last night's win, when an urge was ridden
+   out in SOS at night (night-win.tsx); Your day as a plain list; then the asks, one at a time, and none on the day the person came
+   back or in the hours after an SOS or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the two buttons until
+   its moment has passed (core talkPlanNow). The sky takes the room the rest does not need (lib/today-size.ts), so all of it fits
+   above the tab bar on any phone. Pulling the page down past its top opens the journal (app/journal.tsx), and until it has been
+   opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the first time it is earned, and its
    celebration opens. */
 import {
   accountAsk,
@@ -37,6 +36,7 @@ import {
   graduate,
   p2,
   firstPattern,
+  heroSlipLine,
   nudgeCard,
   pickMoment,
   shouldAutoCount,
@@ -46,6 +46,7 @@ import {
   sunriseDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
@@ -56,12 +57,12 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { MomentCard } from '@/components/moment-card';
 import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
-import { Hero } from '@/components/hero';
+import { Hero, skyInk } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
 import { PullHint } from '@/components/pull-door';
 import { Screen } from '@/components/screen';
 import { LogLink, WaitingPlan } from '@/components/today-log';
-import { Card, T } from '@/components/ui';
+import { T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
@@ -73,7 +74,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
-import { MORE_ROOM, NOTE_ROOM, todaySize, useTodayRoom } from '@/lib/today-size';
+import { MORE_ROOM, NOTE_ROOM, SLIP_ROOM, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -236,7 +237,10 @@ export default function Today() {
   const nlog = useNudgeLog();
   const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
   const quiet = useQuietAsks();
-  const room = useTodayRoom();
+  /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
+  const [past, setPast] = useState(false);
+  const scrolled = useRef(0);
+  const sizeFor = useTodaySize();
 
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
@@ -255,22 +259,21 @@ export default function Today() {
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
-  /* the day of a slip: its card sits under SOS (see the top of this file), so it never pushes SOS out of sight */
-  const slipDay = pick.card.k === 'slip-day';
-  /* the quiet lines under the next step (what was logged today, and "And one more") take their room, so the sky can make way.
-     On the day of a slip the card is not under the flame, so there is room to spare. */
-  const size = todaySize(room, slipDay ? 0 : (note ? NOTE_ROOM : 0) + (pick.more ? MORE_ROOM : 0));
-  const moment = <MomentCard pick={pick} snap={snap} tk={tk} now={now} />;
-  const sub = (
+  /* the quiet lines under the next step take their room from the sky */
+  const slipLine = heroSlipLine(snap.days, st, tk, now);
+  const size = sizeFor((note ? NOTE_ROOM : 0) + (pick.more ? MORE_ROOM : 0) + (slipLine ? NOTE_ROOM : 0) + (pick.card.k === 'slip-day' ? SLIP_ROOM : 0));
+  const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
+  const ink = skyInk(g.level.n);
+  const head = (
     <>
       {be ? (
         <Pressable accessibilityRole="button" accessibilityLabel={`Who I am becoming: ${be} Opens My plan.`} onPress={() => router.push('/plan')}>
-          <Text style={[s.be, { color: c.muted }]}>{be}</Text>
+          <Text style={[s.be, { color: ink.soft }]}>{be}</Text>
         </Pressable>
       ) : null}
-      {sos.mem.jnSeen || size.compact ? null : <PullHint onPress={() => router.push('/journal')} />}
+      {sos.mem.jnSeen ? null : <PullHint color={ink.soft} onPress={() => router.push('/journal')} />}
       {early ? (
-        <T v="small" tone="muted" style={{ marginTop: 4 }}>
+        <T v="small" style={{ color: ink.soft }}>
           Still {fmtDate(tk, { weekday: 'long' })}’s log until {fmtClock(p2(st.rollover) + ':00')}
         </T>
       ) : null}
@@ -278,27 +281,43 @@ export default function Today() {
   );
   return (
     <View style={{ flex: 1 }}>
+      {focused ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <Screen
         scrollRef={scroll}
-        eyebrow={size.compact ? undefined : 'My Daybook'}
-        title={fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' })}
-        sub={sub}
+        title={title}
+        bare={!past}
+        onScroll={(y) => {
+          if (y > size.sky - 60 !== scrolled.current > size.sky - 60) setPast(y > size.sky - 60);
+          scrolled.current = y;
+        }}
         pullDown={(px) => {
           openJournalFrom(px);
           router.push('/journal');
         }}
-        action={tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop /> : undefined}>
+        top={
+          <Hero
+            g={g}
+            snap={snap}
+            tk={tk}
+            now={now}
+            sky={size.sky}
+            flame={size.flame}
+            title={title}
+            head={head}
+            action={
+              tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
+            }
+          />
+        }>
         <NotifyBanner />
         <SyncStrip />
-        <Hero g={g} snap={snap} tk={tk} now={now} sky={size.sky} compact={size.compact}>
-          {slipDay ? null : moment}
-          {note ? <Text style={[s.note, { color: c.accentText }, slipDay && s.noteFirst]}>{note}</Text> : null}
-        </Hero>
-        <Card style={size.compact && s.sosCompact}>
-          <LogLink compact={size.compact} />
+        <View style={{ gap: 8 }}>
+          {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
+          <MomentCard pick={pick} snap={snap} tk={tk} now={now} />
+          {note ? <Text style={[s.line, { color: c.muted }]}>{note}</Text> : null}
+          <LogLink />
           <WaitingPlan snap={snap} tk={tk} now={now} />
-        </Card>
-        {slipDay ? moment : null}
+        </View>
         <NightWinCard snap={snap} tk={tk} />
         <YourDay snap={snap} tk={tk} now={now} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
@@ -311,8 +330,6 @@ export default function Today() {
 }
 
 const s = StyleSheet.create({
-  be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, marginTop: 2 },
-  note: { fontFamily: font.bodySemi, fontSize: 13.5, lineHeight: 18, textAlign: 'center', marginTop: 8 },
-  noteFirst: { marginTop: 0 },
-  sosCompact: { paddingVertical: 12 },
+  be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20 },
+  line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },
 });

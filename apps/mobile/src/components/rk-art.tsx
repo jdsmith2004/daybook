@@ -382,7 +382,7 @@ function Kind({ w }: { w: number }) {
 
 const s = StyleSheet.create({
   abs: { position: 'absolute' },
-  barWord: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 13.5 },
+  barWord: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 13 },
   track: { position: 'absolute', height: 18, borderRadius: 9, overflow: 'hidden' },
   tag: {
     flexDirection: 'row',
@@ -407,9 +407,9 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 2,
   },
-  saidT: { fontFamily: font.bodyBold, fontSize: 14.5 },
+  saidT: { fontFamily: font.bodyBold, fontSize: 15 },
   to: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, flexShrink: 1 },
-  toT: { fontFamily: font.bodyBold, fontSize: 14 },
+  toT: { fontFamily: font.bodyBold, fontSize: 15 },
   node: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   end: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   nodeT: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 1, textAlign: 'center', lineHeight: 14 },

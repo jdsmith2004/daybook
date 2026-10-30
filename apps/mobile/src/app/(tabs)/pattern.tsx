@@ -619,7 +619,7 @@ const s = StyleSheet.create({
   insIc: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stat: { flexGrow: 1, flexBasis: '45%', gap: 2, padding: 12, borderRadius: 16 },
-  statB: { fontFamily: font.display, fontSize: 26 },
+  statB: { fontFamily: font.display, fontSize: 28 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   peek: { maxHeight: 250, overflow: 'hidden' },
   peekFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 150 },

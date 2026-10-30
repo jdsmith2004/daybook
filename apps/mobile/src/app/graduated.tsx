@@ -103,8 +103,8 @@ const s = StyleSheet.create({
   facts: { flexDirection: 'row', gap: 8 },
   fact: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)' },
   factN: { fontFamily: font.display, fontSize: 28 },
-  factL: { fontFamily: font.bodyMedium, fontSize: 12.5, textAlign: 'center', opacity: 0.9 },
+  factL: { fontFamily: font.bodyMedium, fontSize: 13, textAlign: 'center', opacity: 0.9 },
   be: { gap: 4, padding: 14, borderRadius: 18 },
-  beCap: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1, opacity: 0.8 },
-  beT: { fontFamily: font.display, fontSize: 18, lineHeight: 24 },
+  beCap: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1, opacity: 0.8 },
+  beT: { fontFamily: font.display, fontSize: 17, lineHeight: 24 },
 });

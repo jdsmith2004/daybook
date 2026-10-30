@@ -55,5 +55,5 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', minHeight: 28 },
   time: { fontFamily: font.bodyBold, fontSize: 15, fontVariant: ['tabular-nums'], minWidth: 38 },
   mark: { position: 'absolute', top: -3, width: 3, height: 18, borderRadius: 2 },
-  usual: { fontFamily: font.bodySemi, fontSize: 12.5 },
+  usual: { fontFamily: font.bodySemi, fontSize: 13 },
 });

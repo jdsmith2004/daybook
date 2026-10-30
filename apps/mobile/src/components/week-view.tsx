@@ -150,7 +150,7 @@ const s = StyleSheet.create({
   nav: { width: 44, height: 44, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stat: { flexGrow: 1, flexBasis: '45%', gap: 2, padding: 12, borderRadius: 16, borderWidth: 1.5 },
-  statB: { fontFamily: font.display, fontSize: 26 },
+  statB: { fontFamily: font.display, fontSize: 28 },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

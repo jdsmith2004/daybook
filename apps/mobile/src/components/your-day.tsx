@@ -1,19 +1,18 @@
-/* "Your day" on Today: the day from morning to night (core: stopTiles in day.ts), a plain list with one row per stop, its
-   icon in the color of its full-screen moment; a done one gets a check and says what was done. The band on the flame is the one owner of the next step
-   and its button (finding 10 of October 30, 2026), so the open stop here is a plain row like the others; it opens the same
-   thing as that band (core openTile).
-   Every stop opens its moment with one tap, at any time:
-   the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx). "Change" turns parts of today on or off, in
-   a sheet. */
+/* "Your day" on Today: one line from morning to night (core: stopTiles in day.ts) with a stop for each part, in the color of its
+   full-screen moment. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means progress), the
+   rest a quiet line, so the day fills as it is lived. A stop says when it opens, or that it is done; the next step's words stay in
+   the band on the flame, the one owner of the next step and its button (finding 10 of October 30, 2026). Every stop opens its
+   moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx) and the wind-down (app/wind.tsx); the open one
+   opens the same thing as that band (core openTile). "Change" turns parts of today on or off, in a sheet. */
 import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnOff } from '@/components/form';
-import { Rows } from '@/components/link-card';
+import { Shape, WavyLine, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
@@ -58,18 +57,21 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
   const open = openTile(snap.days, st, tk, now, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);
   const [sheet, setSheet] = useState(false);
+  const [width, setWidth] = useState(0);
   const n = r.tiles.length;
+  /* how far the squiggle has come: to the last stop done in a row from the morning, and on toward the next */
+  let run = 0;
+  while (run < n && r.tiles[run].done) run++;
+  const progress = !run || n < 2 ? 0 : Math.min(1, (run - 0.5) / (n - 1));
+  const focused = useIsFocused();
+  /* the line runs from the middle of the first stop to the middle of the last */
+  const lineW = Math.max(0, width - width / Math.max(1, n));
   return (
     <View style={{ gap: 8, marginTop: 8 }}>
       <View style={s.head}>
         <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
           Your day
         </T>
-        {n ? (
-          <T v="small" tone="muted">
-            {r.done + ' of ' + n}
-          </T>
-        ) : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Change today’s routine"
@@ -83,45 +85,56 @@ export function YourDay({ snap, tk, now }: { snap: Snapshot; tk: string; now: nu
         </Pressable>
       </View>
       {changed ? (
-        <T v="small" tone="muted">
+        <T v="small" tone="muted" style={{ paddingHorizontal: 4 }}>
           {changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.'}
         </T>
       ) : null}
       {n ? (
-        <Rows>
+        <View
+          style={[s.path, { backgroundColor: c.surface }]}
+          accessibilityRole="summary"
+          accessibilityLabel={r.done + ' of ' + n + ' done'}
+          onLayout={(e) => setWidth(e.nativeEvent.layout.width - PATH_PAD * 2)}>
+          {n > 1 && lineW > 0 ? (
+            <View style={[s.line, { left: PATH_PAD + width / n / 2 }]} pointerEvents="none">
+              <WavyLine width={lineW} p={progress} color={c.sun2} track={c.line} speed={focused ? undefined : 0} />
+            </View>
+          ) : null}
           {r.tiles.map((t) => (
-            <StopRow key={t.k} t={open && open.k === t.k && !t.done ? open : t} />
+            <Stop key={t.k} t={open && open.k === t.k && !t.done ? open : t} />
           ))}
-        </Rows>
+        </View>
       ) : (
-        <T tone="muted">Nothing is switched on for today. Tap Change to turn parts of the day back on.</T>
+        <T tone="muted" style={{ paddingHorizontal: 4 }}>
+          Nothing is switched on for today. Tap Change to turn parts of the day back on.
+        </T>
       )}
       <RoutineSheet open={sheet} onClose={() => setSheet(false)} snap={snap} tk={tk} />
     </View>
   );
 }
 
-/* ---------- a stop that is not open: one line ---------- */
-function StopRow({ t }: { t: StopTile }) {
+/* ---------- a stop on the line: its shape, its name, and when ---------- */
+const STOP_SHAPE: Partial<Record<StopTile['sky'], ShapeKind>> = { sky: 'cookie9', violet: 'cookie12', night: 'sunny', sun: 'flower' };
+function Stop({ t }: { t: StopTile }) {
   const c = useTheme();
   const L = lookOf(t.sky, c);
+  /* done: the color of a win. The one that is open now: its moment's full color. Later: its soft color. */
+  const bg = t.done ? c.mint : t.cur ? L.btn : L.soft;
+  const ink = t.done ? (c.scheme === 'dark' ? '#06352A' : '#FFFFFF') : t.cur ? L.onBtn : L.ink;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
       onPress={() => openStop(t.go, t.id)}
-      style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}>
-      <Icon name={t.done ? 'check' : t.ic} size={22} color={t.done ? c.mintText : t.sky === 'night' ? c.accentText : L.ink} />
-      <View style={[s.rowIn, { borderBottomColor: c.line }]}>
-        <View style={{ flex: 1, gap: 1 }}>
-          <T v="label">{t.title}</T>
-          <T v="small" tone="muted">
-            {t.line}
-          </T>
-        </View>
-        {t.right ? <Text style={[s.right, { color: t.state === 'due' ? c.accentText : c.muted }]}>{t.right}</Text> : null}
-        <Icon name="next" size={16} color={c.muted} />
-      </View>
+      style={({ pressed }) => [s.stop, pressed && { opacity: 0.7 }]}>
+      <Shape kind={STOP_SHAPE[t.sky] || 'cookie9'} size={STOP} color={bg}>
+        <Icon name={t.done ? 'check' : t.ic} size={24} color={ink} />
+      </Shape>
+      <T v="label" style={s.c} numberOfLines={1}>
+        {t.title}
+      </T>
+      <Text style={[s.when, { color: t.done ? c.mintText : t.state === 'due' ? c.accentText : c.muted }]}>{t.done ? 'Done' : t.right}</Text>
     </Pressable>
   );
 }
@@ -177,13 +190,19 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
   );
 }
 
+/** a stop's shape, and the card's padding beside the stops */
+const STOP = 56;
+const PATH_PAD = 8;
+
 const s = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
   change: { minHeight: 44, justifyContent: 'center' },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 16 },
-  rowIn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 60, paddingVertical: 10, paddingRight: 14, borderBottomWidth: 1 },
-  right: { fontFamily: font.bodyMedium, fontSize: 13, textAlign: 'right', maxWidth: 110 },
+  path: { flexDirection: 'row', paddingVertical: 16, paddingHorizontal: PATH_PAD, borderRadius: 20 },
+  line: { position: 'absolute', top: 16 + STOP / 2 - 6 },
+  stop: { flex: 1, alignItems: 'center', gap: 2, minHeight: 44 },
+  c: { textAlign: 'center', marginTop: 6 },
+  when: { fontFamily: font.body, fontSize: 13, lineHeight: 18, textAlign: 'center' },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {
     alignSelf: 'stretch',

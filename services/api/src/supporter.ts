@@ -16,12 +16,11 @@
 import {
   ACCOUNT_RE,
   GRANDFATHER_BEFORE,
-  PAT_LIFETIME_CENTS,
   patActive,
   patBest,
-  PATTERN_FROM,
   STRIPE_SESSION_RE,
   supActive,
+  tipBetter,
   tipEnough,
   type PatRec,
   type Supporter,
@@ -88,13 +87,13 @@ async function givePat(store: Store, user: string, username: string, pat: PatRec
 }
 
 /** the record to keep when a new one comes: one with no end beats one with an end (the later end between two); between
-    two with no end, a paid tip replaces a grandfathered record (it carries the amount), and the earlier paid tip stays,
-    since its date decides what it keeps (core patOpen) */
+    two with no end, a paid tip replaces a grandfathered record (it carries the amount), and between two paid tips core
+    tipBetter decides, so what a person holds never shrinks */
 export function supKeep(cur: Supporter | null, next: Supporter): Supporter {
   if (!cur) return next;
   if (cur.until == null && next.until == null) {
     if (cur.src === 'grandfather') return next.src !== 'grandfather' ? next : cur;
-    return next.src !== 'grandfather' && next.since < cur.since ? next : cur;
+    return next.src !== 'grandfather' ? tipBetter(cur, next) : cur;
   }
   if (cur.until == null) return cur;
   if (next.until == null) return next;
@@ -132,17 +131,9 @@ async function give(store: Store, user: string, username: string, sup: Supporter
 
 /** A web tip: the Checkout Session the Payment Link sent the person back with. `user` is the signed-in account, or '' for
     a signed-out device (the open door, POST /sync/claim). A session that was paid with an account id on it
-    (client_reference_id, put there by the app when the person was signed in) goes to that account, whoever brings it. Once
-    Daybook Pattern is on sale, a payment of its lifetime price or more is that (`from`: PATTERN_FROM). */
-export async function claimStripe(
-  store: Store,
-  pay: Pay,
-  user: string,
-  username: string,
-  id: unknown,
-  now: number,
-  from: number | null = PATTERN_FROM,
-): Promise<Held> {
+    (client_reference_id, put there by the app when the person was signed in) goes to that account, whoever brings it. Its amount
+    says what it opens (core patOpen). */
+export async function claimStripe(store: Store, pay: Pay, user: string, username: string, id: unknown, now: number): Promise<Held> {
   if (typeof id !== 'string' || !STRIPE_SESSION_RE.test(id)) throw new PayError(400, 'That is not a tip.');
   if (!pay.stripe) throw new PayError(503, 'Web tips are not set up yet.');
   let s;
@@ -162,12 +153,6 @@ export async function claimStripe(
   const since = (s.created || now / 1000) * 1000;
   const key = 'stripe/' + id;
   await bind(store, key, to, { at: now, src: 'stripe', cents });
-  if (from != null && cents >= PAT_LIFETIME_CENTS) {
-    const pat: PatRec = { since, kind: 'lifetime', until: null, src: 'stripe', cents, ref: id };
-    if (!to) return { sup: null, pat };
-    const kept = await givePat(store, to, to === user ? username : '', pat, key, pay, now);
-    return user ? kept : { sup: null, pat };
-  }
   const sup: Supporter = { since, kind: 'tip', until: null, src: 'stripe', cents, ref: id };
   if (!to) return { sup, pat: null };
   const kept = await give(store, to, to === user ? username : '', sup, key, pay, now);
@@ -175,7 +160,7 @@ export async function claimStripe(
   return { sup: user ? kept : sup, pat: user ? ((await store.getPat(to))?.pat ?? null) : null };
 }
 
-/** An Apple purchase, a tip or Daybook Pattern: the signed transaction StoreKit gave the phone. Signed in only. A monthly
+/** An Apple purchase, a tip or the monthly plan: the signed transaction StoreKit gave the phone. Signed in only. A monthly
     plan is brought again after it renews, and its record moves on to the new end. */
 export async function claimApple(store: Store, pay: Pay, user: string, username: string, jws: unknown, now: number): Promise<Held> {
   if (!pay.apple) throw new PayError(503, 'Apple tips are not set up yet.');
@@ -190,7 +175,7 @@ export async function claimApple(store: Store, pay: Pay, user: string, username:
   const key = 'apple/' + t.otid;
   await bind(store, key, user, { at: now, src: 'apple', cents: t.cents, env: t.env });
   if ('pat' in t)
-    return givePat(store, user, username, { since: t.since || now, kind: t.pat, until: t.until, src: 'apple', cents: t.cents, ref: t.otid }, key, pay, now);
+    return givePat(store, user, username, { since: t.since || now, kind: 'monthly', until: t.until, src: 'apple', cents: t.cents, ref: t.otid }, key, pay, now);
   const sup: Supporter = { since: t.since || now, kind: 'tip', until: null, src: 'apple', cents: t.cents, ref: t.otid };
   return { sup: await give(store, user, username, sup, key, pay, now), pat: (await store.getPat(user))?.pat ?? null };
 }

@@ -16,7 +16,7 @@ import { changeSettings, type Change } from './actions';
 import type { AcctWhy } from './accounts';
 import { addDays, diffDays, eventsOf, isKey, isTime, logicalKey } from './legacy/core.js';
 import { riskAt } from './risk';
-import { isSupporter, PATTERN_FROM, SITE_URL, SUPPORT_MIN, SUPPORT_URL } from './supporter';
+import { isSupporter, LIFETIME_USD, PATTERN_FROM, SITE_URL, SUPPORT_MIN, SUPPORT_URL } from './supporter';
 import type { DayKey, Days, Settings } from './types';
 
 export const SITE_PAGES = { support: SITE_URL + '/support.html', privacy: SITE_URL + '/privacy.html', terms: SITE_URL + '/terms.html' };
@@ -118,26 +118,33 @@ export const tipGetsShort = (live: boolean) => (live ? 'sync and a safe copy' : 
 const LIVE = PATTERN_FROM != null;
 const GETS = tipGets(LIVE);
 const SHORT = tipGetsShort(LIVE);
+/** once Daybook Pattern is on sale, the asks sell lifetime, and a smaller tip is the quiet choice on the sheet */
+const ONCE = '$' + LIFETIME_USD + ' once opens everything, for good.';
 
 /** the words, in one place. They sell what a tip opens; they never shame, and never say anything is owed. */
 export const TIP_WORDS = {
   /** the card on Today */
-  h: 'Unlock the extras with a ' + M + ' tip.',
-  p:
-    'One person builds Daybook. A tip of ' + M + ' or more makes you a supporter and unlocks ' + GETS + '. It is yours for good, and it keeps Daybook growing.',
+  h: LIVE ? 'Open everything for $' + LIFETIME_USD + '.' : 'Unlock the extras with a ' + M + ' tip.',
+  p: LIVE
+    ? 'One person builds Daybook. ' + ONCE + ' Your whole pattern, a read of each month, and sync. It keeps Daybook growing.'
+    : 'One person builds Daybook. A tip of ' +
+      M +
+      ' or more makes you a supporter and unlocks ' +
+      GETS +
+      '. It is yours for good, and it keeps Daybook growing.',
   go: 'See the tips',
   no: 'Not right now',
   /** the row on More */
-  row: { title: 'Support Daybook', sub: 'A tip of ' + M + ' or more unlocks ' + SHORT + '.' },
+  row: { title: 'Support Daybook', sub: LIVE ? ONCE : 'A tip of ' + M + ' or more unlocks ' + SHORT + '.' },
   rowThanks: { title: 'You are a supporter', sub: 'Thank you. See what is open for you.' },
   grad: 'Daybook runs on tips from people like you. If it helped you get here, a tip helps the next person get here too.',
   /** the small button at the top of Today */
   top: 'Support',
   /** the line and button under a moment of earned value (tipMoment) */
   moment: {
-    level: 'Your flame is growing. Grow with it: a tip of ' + M + ' or more unlocks ' + SHORT + '.',
-    badge: 'You earned that. A tip of ' + M + ' or more unlocks ' + SHORT + '.',
-    week: 'A whole week of showing up. A tip of ' + M + ' or more unlocks ' + SHORT + '.',
+    level: 'Your flame is growing. Grow with it: ' + (LIVE ? ONCE : 'a tip of ' + M + ' or more unlocks ' + SHORT + '.'),
+    badge: 'You earned that. ' + (LIVE ? ONCE : 'A tip of ' + M + ' or more unlocks ' + SHORT + '.'),
+    week: 'A whole week of showing up. ' + (LIVE ? ONCE : 'A tip of ' + M + ' or more unlocks ' + SHORT + '.'),
     go: 'See the tips',
   },
   /** the tip sheet */
@@ -180,7 +187,7 @@ export const TIP_WORDS = {
   },
   /** the card on a locked page */
   lock: {
-    btn: 'Unlock with a ' + M + ' tip',
+    btn: LIVE ? 'See the ways to open it' : 'Unlock with a ' + M + ' tip',
     stats: {
       h: 'The rest of your pattern',
       p: 'When it happens, what sets it off, what is different on hard days and what helps you most. A tip of ' + M + ' or more opens it, for good.',

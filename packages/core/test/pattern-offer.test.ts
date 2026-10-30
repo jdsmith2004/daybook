@@ -63,8 +63,10 @@ describe('when it is asked for', () => {
     expect(patOffer(slipped, st, '2026-11-12', { now: new Date(2026, 10, 12, 12).getTime(), sos: null }, FROM)).not.toBeNull();
   });
   it('never of someone who has it', () => {
-    const have = { ...st, pat: { since: 2000, kind: 'lifetime', until: null, src: 'apple' } } as Settings;
+    const have = { ...st, pat: { since: 2000, kind: 'monthly', until: near.now + 1000, src: 'apple' } } as Settings;
     expect(patOffer(days, have, tk, near, FROM)).toBeNull();
+    const lifetime = { ...st, sup: { since: 2000, kind: 'tip', until: null, src: 'apple', cents: 1000 } } as Settings;
+    expect(patOffer(days, lifetime, tk, near, FROM)).toBeNull();
     const before = { ...st, sup: { since: 500, kind: 'tip', until: null, src: 'apple' } } as Settings;
     expect(patOffer(days, before, tk, near, FROM)).toBeNull();
   });

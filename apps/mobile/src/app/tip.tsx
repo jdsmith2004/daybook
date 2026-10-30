@@ -4,10 +4,10 @@
    the same three on the web tip page, which takes Apple Pay too (allowed on the US storefront, Guidelines 3.1.1(a) and
    3.1.3); one pick opens it. Anything that goes wrong is said here, under the tips: on iPhone the toast sits under a
    sheet, where no one would see it. A supporter sees a thank-you instead, with a quiet way to tip again. A tip that goes
-   through ends in a short celebration. The payments side saves the record (Settings.sup); this page only shows it. With
-   ?for=pattern, this route shows the Daybook Pattern sheet instead (components/pattern-sheet.tsx). */
-import { fmtDate, gameCompute, isSupporter, keyOfDate, PAT_WORDS, patOpen, PATTERN_FROM, supPaid, supPerks, TIP_WORDS } from '@daybook/core';
-import { router, useLocalSearchParams } from 'expo-router';
+   through ends in a short celebration. The payments side saves the record (Settings.sup); this page only shows it. Once
+   Daybook Pattern is on sale, this route is its sheet instead, which holds the tips too (components/pattern-sheet.tsx), and
+   the sheet here goes in that same change. */
+import { fmtDate, gameCompute, isSupporter, keyOfDate, patOpen, PATTERN_FROM, supPaid, supPerks, TIP_WORDS } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -17,7 +17,6 @@ import { HelpLine } from '@/components/help-line';
 import { PatternSheet } from '@/components/pattern-sheet';
 import { Dock, Finish } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
-import { usePatOffer } from '@/components/support';
 import { PayRow, Perks } from '@/components/tip-parts';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -25,8 +24,7 @@ import { useStore } from '@/lib/store';
 import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, tipWords, type TipTier, type TipVia } from '@/lib/tip';
 
 export default function Tip() {
-  const { for: which } = useLocalSearchParams<{ for?: string }>();
-  return which === 'pattern' ? <PatternSheet /> : <TipSheet />;
+  return PATTERN_FROM != null ? <PatternSheet /> : <TipSheet />;
 }
 
 function TipSheet() {
@@ -52,8 +50,6 @@ function TipSheet() {
   const sup = isSupporter(st);
   const level = st ? gameCompute(snap.days, st, snap.reviews, tk).level.n : 1;
   const w = TIP_WORDS.sheet;
-  /* Daybook Pattern, where it can be asked for: a quiet way across from the tips */
-  const offer = usePatOffer();
 
   const got = () => {
     buzz('lit');
@@ -173,7 +169,6 @@ function TipSheet() {
           <Button kind={again ? 'ghost' : 'primary'} label={w.done} onPress={closeSheet} />
           {again ? null : (
             <View style={{ alignItems: 'center' }}>
-              {offer ? <Link label={PAT_WORDS.card.go} onPress={() => router.replace({ pathname: '/tip', params: { for: 'pattern' } })} /> : null}
               <Link label={w.again} onPress={() => setAgain(true)} />
             </View>
           )}
@@ -189,7 +184,6 @@ function TipSheet() {
       <Dock>
         {tiers}
         <View style={s.foot}>
-          {offer ? <Link label={PAT_WORDS.card.go} onPress={() => router.replace({ pathname: '/tip', params: { for: 'pattern' } })} /> : null}
           {busy === 'restore' ? <ActivityIndicator /> : <Link label={w.restore} onPress={restore} />}
           <T v="small" tone="muted" style={s.c}>
             {w.note}

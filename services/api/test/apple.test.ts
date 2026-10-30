@@ -134,17 +134,14 @@ describe('an Apple tip', () => {
     await expect(appleVerifier()(jws())).rejects.toThrow(/could not confirm/);
   });
 
-  it('checks both forms of Daybook Pattern', async () => {
+  it('checks the monthly plan', async () => {
     const v = appleVerifier([root]);
     const end = Date.now() + 30 * 86400_000;
-    const m = await v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription', expiresDate: end, price: 2990, currency: 'USD' }));
-    expect(m).toMatchObject({ pat: 'monthly', until: end, cents: 299 });
-    const l = await v(jws({ productId: 'daybook.pattern.lifetime', price: 24990, currency: 'USD' }));
-    expect(l).toMatchObject({ pat: 'lifetime', until: null, cents: 2499 });
-    /* monthly needs its end, and each form its own type */
+    const m = await v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription', expiresDate: end, price: 3000, currency: 'USD' }));
+    expect(m).toMatchObject({ pat: 'monthly', until: end, cents: 300 });
+    /* it needs its end, and its own type */
     await expect(v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription' }))).rejects.toThrow(/not Daybook Pattern/);
     await expect(v(jws({ productId: 'daybook.pattern.monthly', type: 'Non-Consumable', expiresDate: end }))).rejects.toThrow(/not Daybook Pattern/);
-    await expect(v(jws({ productId: 'daybook.pattern.lifetime', type: 'Consumable' }))).rejects.toThrow(/not Daybook Pattern/);
     await expect(
       v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription', expiresDate: end, revocationDate: Date.now() })),
     ).rejects.toThrow(/refunded/);

@@ -101,7 +101,86 @@ export function PayRow({
   );
 }
 
+/** what Daybook Pattern opens: plain lines, each with a check */
+export function PerkLines({ list, open }: { list: string[]; open?: boolean }) {
+  const c = useTheme();
+  return (
+    <View style={{ gap: 8, alignSelf: 'stretch' }}>
+      {list.map((t) => (
+        <View key={t} style={s.line}>
+          <Icon name="check" size={18} color={open ? c.mint : c.sunText} />
+          <T v="small" style={{ flex: 1 }}>
+            {t}
+          </T>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** one choice in a group of ways to pay: a radio, what it is, and its price with how often it is paid */
+export interface PlanChoice {
+  id: string;
+  name: string;
+  sub: string;
+  price: string;
+  per: string;
+  badge?: string;
+}
+export function Plans({ list, on, off, onPick }: { list: PlanChoice[]; on: string; off: boolean; onPick: (id: string) => void }) {
+  const c = useTheme();
+  return (
+    <View accessibilityRole="radiogroup" style={[s.plans, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+      {list.map((p, i) => {
+        const here = p.id === on;
+        return (
+          <Pressable
+            key={p.id}
+            accessibilityRole="radio"
+            accessibilityLabel={`${p.name}, ${p.price} ${p.per}. ${p.sub}${p.badge ? '. ' + p.badge : ''}`}
+            accessibilityState={{ checked: here, disabled: off }}
+            disabled={off}
+            onPress={() => onPick(p.id)}
+            style={({ pressed }) => [
+              s.plan,
+              i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line },
+              here && { backgroundColor: c.accentSoft },
+              pressed && { opacity: 0.8 },
+            ]}>
+            <View style={[s.radio, { borderColor: here ? c.accent : c.line, backgroundColor: here ? c.accent : 'transparent' }]}>
+              {here ? <View style={[s.dot, { backgroundColor: c.accentInk }]} /> : null}
+            </View>
+            <View style={{ flex: 1, gap: 1 }}>
+              <View style={s.nameRow}>
+                <Text style={[s.rowT, { color: c.ink }]}>{p.name}</Text>
+                {p.badge ? <Text style={[s.badgeT, { color: c.sunText }]}>{p.badge}</Text> : null}
+              </View>
+              <T v="small" tone="muted">
+                {p.sub}
+              </T>
+            </View>
+            <View style={s.price}>
+              <Text style={[s.priceT, { color: c.ink }]}>{p.price}</Text>
+              <T v="small" tone="muted">
+                {p.per}
+              </T>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  plans: { borderRadius: 20, borderWidth: 1.5, overflow: 'hidden' },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 66, paddingVertical: 10, paddingHorizontal: 14 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  price: { alignItems: 'flex-end' },
+  priceT: { fontFamily: font.bodyBold, fontSize: 20 },
   perk: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18 },
   perkIc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   row: {

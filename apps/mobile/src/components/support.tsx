@@ -49,8 +49,8 @@ export const SYNC_NEED_SHORT = TIP_ON ? SUP_SYNC_WORDS.short : SUP_SYNC_WORDS.sh
 /** opens the tip sheet */
 export const openTip = () => (TIP_ON ? router.push('/tip') : undefined);
 
-/** opens the Daybook Pattern sheet */
-export const openPattern = () => (TIP_ON ? router.push({ pathname: '/tip', params: { for: 'pattern' } }) : undefined);
+/** opens the Daybook Pattern sheet, the same route as the tips once it is on sale */
+export const openPattern = openTip;
 
 /** the line from the person's own log that leads the ask for Daybook Pattern, or null when it cannot be asked for now (core patOffer) */
 export function usePatOffer(): string | null {

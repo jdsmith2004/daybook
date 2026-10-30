@@ -1,33 +1,86 @@
-/* The Daybook Pattern sheet (opened with /tip?for=pattern; core supporter.ts and pattern-offer.ts). The line from the person's
-   own log at the top, what it opens in the middle, the two forms low where the thumb is, lifetime marked as the pick, and what
-   Apple asks to be said beside a subscription at the foot. On iPhone, a quiet link under them opens lifetime on the web page
-   (United States storefront only); on the web, lifetime is the only form. Someone who has it sees a thank-you, with Apple's
-   page to change or cancel the monthly plan. Anything that goes wrong is said here, as on the tip sheet. */
-import { fmtDate, gameCompute, keyOfDate, PAT_PERKS, PAT_WORDS, patActive, patOpen, patPreview, SITE_PAGES, type PatKind } from '@daybook/core';
-import { router } from 'expo-router';
+/* The Daybook Pattern sheet: once it is on sale, the one place to pay (core supporter.ts and pattern-offer.ts). The line from the
+   person's own log at the top, the flame and what it opens in the middle, and low where the thumb is, one group of choices with
+   lifetime already picked and one button, so paying stays one tap. The two lifetime choices are the tips of $10 and $30; a quiet
+   link under the button takes the $5 tip instead, and on iPhone another pays the picked choice on the web page (United States
+   storefront only). On the web, lifetime is all there is. Someone who has it sees a thank-you, with Apple's page to change or
+   cancel the monthly plan and a quiet way to go lifetime or give more. Anything that goes wrong is said here. */
+import {
+  fmtDate,
+  gameCompute,
+  keyOfDate,
+  PAT_PERKS,
+  PAT_WORDS,
+  patActive,
+  patOpen,
+  patPreview,
+  SITE_PAGES,
+  supPaid,
+  supPerks,
+  tipLifetime,
+} from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { Link } from '@/components/choices';
 import { Flame } from '@/components/flame';
 import { HelpLine } from '@/components/help-line';
 import { Dock, Finish } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
-import { PayRow, Perks } from '@/components/tip-parts';
+import { PerkLines, Plans } from '@/components/tip-parts';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { buyPattern, manageMonthly, patPrice, patWays, refreshPrices, syncTips, tipError, tipWords, type TipVia } from '@/lib/tip';
+import {
+  buyMonthly,
+  buyTip,
+  manageMonthly,
+  monthlyPrice,
+  refreshPrices,
+  syncTips,
+  tipError,
+  tipPrice,
+  tipWays,
+  tipWords,
+  type TipTier,
+  type TipVia,
+} from '@/lib/tip';
+import { useTheme } from '@/lib/theme';
 
 const longDate = (ms: number) => fmtDate(keyOfDate(new Date(ms)), { month: 'long', day: 'numeric', year: 'numeric' });
+/** "$10", not "$10.00" */
+const short = (price: string) => price.replace(/\.00$/, '');
+
+type Plan = 'monthly' | 'lifetime' | 'more';
+/** the tip each choice is */
+const TIER: Record<Exclude<Plan, 'monthly'> | 'small', TipTier> = { lifetime: 'generous', more: 'amazing', small: 'kind' };
+
+/** a quiet text link: the accent for something to do, muted for the small print */
+function Quiet({ label, onPress, muted }: { label: string; onPress: () => void; muted?: boolean }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+      onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+      <T v="small" style={{ color: muted ? c.muted : c.accentText }}>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
 
 export function PatternSheet() {
   const { snap, tk } = useStore();
   const st = snap.settings;
   const w = PAT_WORDS.sheet;
-  const [busy, setBusy] = useState<PatKind | 'restore' | null>(null);
+  const ways = tipWays();
+  const [busy, setBusy] = useState<Plan | 'small' | 'restore' | null>(null);
   const [msg, setMsg] = useState('');
-  const [won, setWon] = useState(false);
+  /* what just went through: everything, or the $5 tip's sync and safe copy */
+  const [won, setWon] = useState<'all' | 'tip' | null>(null);
+  /* someone who has it asked to go lifetime or give more */
+  const [again, setAgain] = useState(false);
+  const [pick, setPick] = useState<Plan>('lifetime');
   const lock = useRef(false);
   const [priced, setPriced] = useState(false);
   useEffect(() => {
@@ -42,19 +95,22 @@ export function PatternSheet() {
     setMsg(m);
     if (m) AccessibilityInfo.announceForAccessibility(m);
   };
-  const pay = async (kind: PatKind, via: TipVia) => {
+  const pay = async (plan: Plan | 'small', via: TipVia = ways[0] || 'web') => {
     if (busy || lock.current) return;
     lock.current = true;
-    setBusy(kind);
+    setBusy(plan);
     tell('');
     try {
-      if (await buyPattern(kind, via)) {
+      const all = plan === 'monthly' ? !!(await buyMonthly()) : null;
+      const tip = plan === 'monthly' ? null : await buyTip(TIER[plan], via, true);
+      if (all || tip) {
         buzz('lit');
-        setWon(true);
+        setAgain(false);
+        setWon(all || patOpen({ sup: tip }) ? 'all' : 'tip');
       } else tell(tipWords() || tipError());
     } catch {
       /* a failure after the payment is possible, so this does not promise nothing was charged */
-      tell('The purchase could not be finished. If it was charged, it is not lost: Restore a purchase finds it.');
+      tell('The purchase could not be finished. If it was charged, it is not lost: Restore finds it.');
     } finally {
       lock.current = false;
       setBusy(null);
@@ -67,10 +123,10 @@ export function PatternSheet() {
     tell('');
     try {
       const r = await syncTips(true);
-      if (patActive(r.pat)) {
+      if (patActive(r.pat) || supPaid(r.sup)) {
         buzz('lit');
-        setWon(true);
-      } else tell(life.includes('apple') ? w.restoreNone : w.restoreNoneWeb);
+        setWon(patOpen(r) ? 'all' : 'tip');
+      } else tell(ways.includes('apple') ? w.restoreNone : w.restoreNoneWeb);
     } catch {
       tell(w.appleFailed);
     } finally {
@@ -78,107 +134,107 @@ export function PatternSheet() {
       setBusy(null);
     }
   };
-  const life = patWays('lifetime');
-  const month = patWays('monthly');
   /* the web link (iPhone only): one choice in the system's own sheet, and the pick opens the web page */
   const onWeb = () => {
-    if (busy) return;
-    const name = w.lifetime + ' · ' + patPrice('lifetime');
+    if (busy || pick === 'monthly') return;
+    const name = w[pick].name + ' · ' + short(tipPrice(TIER[pick]));
     ActionSheetIOS.showActionSheetWithOptions({ title: w.webTitle, message: w.webLine, options: [name, 'Cancel'], cancelButtonIndex: 1 }, (i) => {
-      if (i === 0) pay('lifetime', 'web');
+      if (i === 0) pay(pick, 'web');
     });
   };
+  const priceOf = (plan: Plan) => (priced ? short(plan === 'monthly' ? monthlyPrice() : tipPrice(TIER[plan])) : '…');
+
+  const monthlyOn = patActive(st?.pat);
+  const manage = monthlyOn && st?.pat?.src === 'apple' ? <Quiet label={w.manage} onPress={() => manageMonthly()} /> : null;
 
   if (won)
     return (
       <SheetFrame title={w.haveTitle}>
-        <Finish level={level} title={w.doneTitle} text={w.doneLine} size={120} alive />
-        <Perks list={PAT_PERKS} open />
+        <Finish level={level} title={won === 'all' ? w.doneTitle : w.tipDoneTitle} text={won === 'all' ? w.doneLine : w.tipDoneLine} size={120} alive />
+        <PerkLines list={won === 'all' ? PAT_PERKS : supPerks(false).map((p) => p.sub)} open />
         <Dock>
           <Button label={w.done} onPress={closeSheet} />
+          {manage ? <View style={s.foot}>{manage}</View> : null}
         </Dock>
       </SheetFrame>
     );
 
-  if (st && patOpen(st))
+  const has = !!st && patOpen(st);
+  const lifetime = tipLifetime(st?.sup);
+  if (has && !again)
     return (
       <SheetFrame title={w.haveTitle} sub={w.haveLine}>
         <View style={s.mid}>
-          <Flame level={level} size={120} alive />
-          <Perks list={PAT_PERKS} open />
-          {st.pat?.since ? (
-            <T v="small" tone="muted" style={s.c}>
-              {w.since + longDate(st.pat.since)}.{st.pat.until != null ? ' ' + w.renews + longDate(st.pat.until) + '.' : ''}
-            </T>
-          ) : null}
+          <Flame level={level} size={160} alive />
+          <PerkLines list={PAT_PERKS} open />
+          <T v="small" tone="muted" style={s.c}>
+            {monthlyOn
+              ? w.since + longDate(st!.pat!.since) + '. ' + w.renews + longDate(st!.pat!.until) + '.'
+              : st?.sup?.since
+                ? w.since + longDate(st.sup.since) + '.'
+                : ''}
+          </T>
         </View>
         <Dock>
           <Button label={w.done} onPress={closeSheet} />
-          {st.pat?.kind === 'monthly' && st.pat.src === 'apple' ? (
-            <View style={{ alignItems: 'center' }}>
-              <Link label={w.manage} onPress={() => manageMonthly()} />
-            </View>
-          ) : null}
+          <View style={s.links}>
+            {manage}
+            <Quiet
+              label={lifetime ? w.giveMore : w.goLifetime}
+              onPress={() => {
+                setPick(lifetime ? 'more' : 'lifetime');
+                setAgain(true);
+              }}
+            />
+          </View>
         </Dock>
       </SheetFrame>
     );
 
+  /* someone who has it is not offered what would give them less */
+  const plans: Plan[] = [...(!has && ways.includes('apple') ? (['monthly'] as const) : []), ...(lifetime ? [] : (['lifetime'] as const)), 'more'];
   const line = st ? patPreview(snap.days, st, tk) : null;
+  const go = w[pick].go + (priced ? ' · ' + priceOf(pick) + (pick === 'monthly' ? ' ' + w.monthly.per : '') : '');
   return (
-    <SheetFrame title={w.title} sub={line || w.line}>
+    <SheetFrame
+      title={again ? (lifetime ? w.giveMore : w.goLifetime) : w.title}
+      sub={again ? (monthlyOn && !lifetime ? w.goLifetimeLine : undefined) : line || w.line}>
       <View style={s.mid}>
-        <Perks list={PAT_PERKS} />
+        <Flame level={level} size={again ? 160 : 96} alive />
+        {again ? null : <PerkLines list={PAT_PERKS} />}
       </View>
       <Dock>
-        <View style={{ gap: 10 }}>
-          {month.length ? (
-            <PayRow
-              n={0}
-              icon="sunrise"
-              name={w.monthly}
-              sub={w.monthlySub}
-              price={priced ? patPrice('monthly') : '…'}
-              busy={busy === 'monthly'}
-              off={!!busy}
-              onPress={() => pay('monthly', 'apple')}
-            />
-          ) : null}
-          {life.length ? (
-            <PayRow
-              n={2}
-              icon="sparkle"
-              name={w.lifetime}
-              sub={w.lifetimeSub}
-              badge={w.badge}
-              price={priced ? patPrice('lifetime') : '…'}
-              busy={busy === 'lifetime'}
-              off={!!busy}
-              onPress={() => pay('lifetime', life[0])}
-            />
-          ) : null}
-          {msg ? (
-            <View style={{ gap: 4 }} accessibilityLiveRegion="polite">
-              <T v="small" style={s.c}>
-                {msg}
-              </T>
-              {[w.cancelled, w.webClosed, w.already, w.waiting].includes(msg) ? null : <HelpLine subject="Daybook: Daybook Pattern" center />}
-            </View>
-          ) : null}
-          {life.length > 1 ? (
-            <View style={{ alignItems: 'center' }}>
-              <Link label={w.web} onPress={onWeb} />
-            </View>
-          ) : null}
-        </View>
+        <Plans
+          list={plans.map((p) => ({ id: p, name: w[p].name, sub: w[p].sub, price: priceOf(p), per: w[p].per, badge: p === 'lifetime' ? w.badge : undefined }))}
+          on={pick}
+          off={!!busy}
+          onPick={(id) => {
+            buzz('tick');
+            setPick(id as Plan);
+            tell('');
+          }}
+        />
+        {msg ? (
+          <View style={{ gap: 4 }} accessibilityLiveRegion="polite">
+            <T v="small" style={s.c}>
+              {msg}
+            </T>
+            {[w.cancelled, w.webClosed, w.already, w.waiting].includes(msg) ? null : <HelpLine subject="Daybook: Daybook Pattern" center />}
+          </View>
+        ) : null}
+        <Button label={busy && busy !== 'restore' ? 'One moment…' : go} disabled={!!busy} onPress={() => pay(pick)} />
         <View style={s.foot}>
-          <Link label={w.tip} onPress={() => router.replace('/tip')} />
-          {busy === 'restore' ? <ActivityIndicator /> : <Link label={w.restore} onPress={restore} />}
-          <T v="small" tone="muted" style={s.c}>
-            {month.length ? w.terms : w.termsWeb}
+          <View style={s.links}>
+            {!has && !supPaid(st?.sup) ? <Quiet label={w.small} onPress={() => pay('small')} /> : null}
+            {ways.length > 1 && pick !== 'monthly' ? <Quiet label={w.web} onPress={onWeb} /> : null}
+          </View>
+          <T v="small" tone="muted" style={[s.c, s.legal]}>
+            {plans.includes('monthly') ? w.terms : w.termsWeb}
           </T>
-          <View style={s.legal}>
-            <Link label={w.termsLink} onPress={() => Linking.openURL(SITE_PAGES.terms).catch(() => undefined)} />
-            <Link label={w.privacyLink} onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
+          <View style={s.links}>
+            {busy === 'restore' ? <ActivityIndicator /> : <Quiet muted label={w.restore} onPress={restore} />}
+            <Quiet muted label={w.termsLink} onPress={() => Linking.openURL(SITE_PAGES.terms).catch(() => undefined)} />
+            <Quiet muted label={w.privacyLink} onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
           </View>
         </View>
       </Dock>
@@ -188,7 +244,8 @@ export function PatternSheet() {
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
+  legal: { fontSize: 12, lineHeight: 16 },
   mid: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', gap: 14, paddingVertical: 4 },
-  foot: { alignItems: 'center', gap: 4 },
-  legal: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
+  foot: { alignItems: 'center', gap: 10, marginTop: 2 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 18, rowGap: 8, justifyContent: 'center', alignItems: 'center' },
 });

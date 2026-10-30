@@ -305,7 +305,12 @@ describe('which record is kept', () => {
     expect(supKeep(g, m)).toBe(g);
     expect(supKeep(g, t)).toBe(t);
     expect(supKeep(t, g)).toBe(t);
-    expect(supKeep(t, { ...t, cents: 2000 })).toBe(t);
+    /* a tip of $10 or more replaces a smaller one, since it opens more; between two of a size, the first stays */
+    const small = { ...t, cents: 500 };
+    const big = { ...t, since: t.since + 9, cents: 1000 };
+    expect(supKeep(small, big)).toBe(big);
+    expect(supKeep(big, small)).toBe(big);
+    expect(supKeep(big, { ...big, since: big.since + 1, cents: 3000 })).toBe(big);
     expect(supKeep(m, { ...m, until: 200 }).until).toBe(200);
   });
 });
@@ -313,8 +318,7 @@ describe('which record is kept', () => {
 describe('Daybook Pattern', () => {
   const FROM = 1000;
   const base = { otid: 'OTID', since: 5000, token: null, env: 'Sandbox' as const };
-  const monthly = (until: number) => ({ ...base, pat: 'monthly' as const, until, cents: 299 });
-  const lifetime = { ...base, otid: 'LIFE', pat: 'lifetime' as const, until: null, cents: 2499 };
+  const monthly = (until: number) => ({ ...base, pat: 'monthly' as const, until, cents: 300 });
   const pat = async (user = A) => (await sup(user)).body.pat;
   const stubApple = (jws: string, p: unknown) => (apple[jws] = p as AppleTip);
 
@@ -348,12 +352,20 @@ describe('Daybook Pattern', () => {
     expect((await pat()).kind).toBe('monthly');
     expect((await sup()).body.sup).toBeNull();
   });
-  it('lifetime never ends, and a monthly never replaces it', async () => {
-    stubApple('m', monthly(now + 1000));
-    stubApple('l', lifetime);
-    await claimApple('m');
-    expect((await claimApple('l')).body.pat.kind).toBe('lifetime');
-    expect((await claimApple('m')).body.pat.kind).toBe('lifetime');
+  it('lifetime is a tip of $10 or more: it never ends, and a smaller tip before or after it does not replace it', async () => {
+    const tip = (otid: string, since: number, cents: number) => ({
+      otid,
+      since,
+      cents,
+      tier: cents >= 1000 ? 'generous' : 'kind',
+      token: null,
+      env: 'Sandbox' as const,
+    });
+    stubApple('small', tip('S', 5000, 500));
+    stubApple('big', tip('L', 6000, 1000));
+    await claimApple('small');
+    expect((await claimApple('big')).body.sup.cents).toBe(1000);
+    expect((await claimApple('small')).body.sup.cents).toBe(1000);
     now += 1e12;
     expect((await push()).status).toBe(200);
   });
@@ -384,32 +396,22 @@ describe('Daybook Pattern', () => {
   });
 
   describe('on the web', () => {
-    const stripeClaim = (id: string, user: string, from: number | null) => claimStripeDirect(store, pay, user, user, id, now, from);
-    it('a payment of the lifetime price is a tip until it is on sale, and the lifetime form after', async () => {
-      sessions[ID1] = cs(ID1, { amount_total: 2499 });
-      const off = await stripeClaim(ID1, A, null);
-      expect(off.sup?.cents).toBe(2499);
-      expect(off.pat).toBeNull();
-      sessions[ID2] = cs(ID2, { amount_total: 2499 });
-      const on = await stripeClaim(ID2, B, FROM);
-      expect(on.pat).toMatchObject({ kind: 'lifetime', until: null, src: 'stripe', cents: 2499, ref: ID2 });
-      expect(on.sup).toBeNull();
-      expect((await push(B)).status).toBe(200);
-    });
-    it('a tip stays a tip once it is on sale', async () => {
-      sessions[ID1] = cs(ID1, { amount_total: 2000 });
-      const r = await stripeClaim(ID1, A, FROM);
-      expect(r.sup?.kind).toBe('tip');
+    const stripeClaim = (id: string, user: string) => claimStripeDirect(store, pay, user, user, id, now);
+    it('a payment of $10 or more is a tip with its amount, which is what makes it lifetime', async () => {
+      sessions[ID1] = cs(ID1, { amount_total: 1000 });
+      const r = await stripeClaim(ID1, A);
+      expect(r.sup).toMatchObject({ kind: 'tip', until: null, src: 'stripe', cents: 1000, ref: ID1 });
       expect(r.pat).toBeNull();
+      expect((await push(A)).status).toBe(200);
     });
     it('a signed-out device keeps the record it brought, and it links to the first account that brings it', async () => {
-      sessions[ID1] = cs(ID1, { amount_total: 2499 });
-      const out = await stripeClaim(ID1, '', FROM);
-      expect(out.pat?.ref).toBe(ID1);
-      expect(await store.getPat(A)).toBeNull();
-      expect((await stripeClaim(ID1, A, FROM)).pat?.kind).toBe('lifetime');
-      expect((await store.getPat(A))?.pat.kind).toBe('lifetime');
-      await expect(stripeClaim(ID1, B, FROM)).rejects.toThrow(/another Daybook account/);
+      sessions[ID1] = cs(ID1, { amount_total: 1000 });
+      const out = await stripeClaim(ID1, '');
+      expect(out.sup?.ref).toBe(ID1);
+      expect(await store.getSup(A)).toBeNull();
+      expect((await stripeClaim(ID1, A)).sup?.cents).toBe(1000);
+      expect((await store.getSup(A))?.sup.cents).toBe(1000);
+      await expect(stripeClaim(ID1, B)).rejects.toThrow(/another Daybook account/);
     });
   });
 });

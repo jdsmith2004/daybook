@@ -200,11 +200,15 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
 
 **Daybook Pattern, decision 9 in detail (the owner, October 30, 2026: "Yes, all your picks"). Built on branch
 claude/high-product-087e62, off until `PATTERN_FROM` is set.** Why it moved the deep pattern: a $5 tip opened the whole pattern
-for good, so a $24.99 pattern product had nothing to sell. It helps the person (a monthly read of what is changing, in their own
+for good, so a pattern product had nothing to sell. It helps the person (a monthly read of what is changing, in their own
 numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, finding 20).
 
-- Products: the three tips stay. Daybook Pattern, monthly $2.99 and lifetime $24.99. Lifetime is the marked pick.
-- What opens what: free keeps every care tool, the one look, the slip gaps and My numbers. A tip from launch on opens sync and
+- Products (the owner changed the prices the same day): monthly $3, lifetime $10 (the marked pick), or $30 to give more, plus a quiet
+  $5 tip. Lifetime is simply a tip of $10 or more: the live Generous product is the $10, Amazing moves from $20 to $30, and the same
+  rule reads the web payments, so the only new product is the monthly plan. One screen holds all of it. Why not separate products:
+  a $10 tip that opened less than a $10 lifetime would have no reason to exist. The cost, said to the owner: at $10, four months of
+  the monthly plan costs more than lifetime, so expect most people to take lifetime and treat monthly as the low-commitment way in.
+- What opens what: free keeps every care tool, the one look, the slip gaps and My numbers. A $5 tip from launch on opens sync and
   the safe copy. Daybook Pattern opens the deep pages (when, what sets it off, hard days, what helps), What changed this month,
   and sync. Tips from before launch keep everything, including the month read, and are never asked.
 - The ask: one card on the locked section and one row on More, led by a true line from the log; no line, no ask. Not in the
@@ -213,7 +217,7 @@ numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, findin
 - Web: lifetime only, for now. Lapse: three grace days, then the tip rules; finished month reads stay; sync stops saving and
   says so. What the owner sets up: docs/launch.md, section 7b.
 - Two things the tests caught, kept as rules: an account on Daybook Pattern is never read as grandfathered from its data, and
-  between two paid tips the earlier one stays, because its date decides what it keeps.
+  between two paid tips a lifetime one wins, else the earlier one, so what a person holds never shrinks (core `tipBetter`).
 - **Next (high, when the owner has set up the products):** turn it on, as docs/launch.md 7b step 6 says, then the sandbox list in
   step 8. Refunds on the monthly plan rely on the date running out, as tips do; a webhook could be added if refunds become common.
 

@@ -2,23 +2,12 @@
    uses tip-store.web.ts, which has none. The three tips are non-consumable products (core APPLE_TIPS), so StoreKit keeps
    them in the person's purchase history: a new phone or a reinstall finds them again, and nothing is ever bought twice.
 
-   Daybook Pattern is two more products (core APPLE_PATTERN): lifetime is non-consumable like a tip, and monthly is an
-   auto-renewable subscription, which StoreKit hands over again with a later end each time it renews.
+   The monthly plan of Daybook Pattern is one more product (core APPLE_MONTHLY), an auto-renewable subscription, which StoreKit
+   hands over again with a later end each time it renews. Lifetime is the larger tips.
 
    Only iPhone takes Apple's purchase. Android is not shipped; there tipWays offers the web tip page alone, and this module
    is never called. */
-import {
-  ACCOUNT_RE,
-  applePatKind,
-  APPLE_PATTERN,
-  appleTier,
-  APPLE_TIPS,
-  PAT_WORDS,
-  TIP_TIER_IDS,
-  TIP_WORDS,
-  type PatKind,
-  type TipTierId,
-} from '@daybook/core';
+import { ACCOUNT_RE, APPLE_MONTHLY, appleTier, APPLE_TIPS, PAT_WORDS, TIP_TIER_IDS, TIP_WORDS, type TipTierId } from '@daybook/core';
 import { requireOptionalNativeModule } from 'expo';
 import * as IAP from 'expo-iap';
 import { Platform } from 'react-native';
@@ -38,14 +27,13 @@ export interface StoreTip {
   purchase: IAP.Purchase;
 }
 
-/** a form of Daybook Pattern StoreKit holds for this Apple Account */
+/** the monthly plan StoreKit holds for this Apple Account */
 export interface StorePat {
-  kind: PatKind;
   jws: string;
   otid: string;
   since: number;
-  /** when the paid month ends, ms; null for lifetime */
-  until: number | null;
+  /** when the paid month ends, ms */
+  until: number;
   purchase: IAP.Purchase;
 }
 
@@ -64,8 +52,8 @@ function connect(): Promise<boolean> {
 /** the prices as the App Store formats them for this person ("$4.99"), once known */
 const prices: Partial<Record<TipTierId, string>> = {};
 export const storePrice = (tier: TipTierId): string | undefined => prices[tier];
-const patPrices: Partial<Record<PatKind, string>> = {};
-export const storePatPrice = (kind: PatKind): string | undefined => patPrices[kind];
+let monthlyPrice: string | undefined;
+export const storeMonthlyPrice = (): string | undefined => monthlyPrice;
 
 /** asks the App Store for the three products and their prices */
 /* the App Store country of this Apple Account (alpha-3, "USA"), or null until the store says */
@@ -78,15 +66,12 @@ export async function loadPrices(): Promise<void> {
   if (!(await connect())) return;
   if (!storefront) storefront = await IAP.getStorefront().catch(() => null);
   try {
-    const list = (await IAP.fetchProducts({ skus: [...TIP_TIER_IDS.map((t) => APPLE_TIPS[t]), APPLE_PATTERN.lifetime], type: 'in-app' })) as
-      | IAP.Product[]
-      | null;
-    const subs = (await IAP.fetchProducts({ skus: [APPLE_PATTERN.monthly], type: 'subs' }).catch(() => null)) as IAP.Product[] | null;
+    const list = (await IAP.fetchProducts({ skus: TIP_TIER_IDS.map((t) => APPLE_TIPS[t]), type: 'in-app' })) as IAP.Product[] | null;
+    const subs = (await IAP.fetchProducts({ skus: [APPLE_MONTHLY], type: 'subs' }).catch(() => null)) as IAP.Product[] | null;
     for (const p of [...(list || []), ...(subs || [])]) {
       const t = appleTier(p.id);
       if (t && p.displayPrice) prices[t] = p.displayPrice;
-      const k = applePatKind(p.id);
-      if (k && p.displayPrice) patPrices[k] = p.displayPrice;
+      if (p.id === APPLE_MONTHLY && p.displayPrice) monthlyPrice = p.displayPrice;
     }
   } catch {
     /* the prices stay as the app's own until the store answers */
@@ -108,14 +93,12 @@ function toTip(p: IAP.Purchase): StoreTip | null {
 }
 
 function toPat(p: IAP.Purchase): StorePat | null {
-  const kind = applePatKind(p.productId);
-  if (!kind || p.purchaseState !== 'purchased' || !p.purchaseToken) return null;
+  if (p.productId !== APPLE_MONTHLY || p.purchaseState !== 'purchased' || !p.purchaseToken) return null;
   const ios = p as IAP.PurchaseIOS;
   if (ios.revocationDateIOS) return null;
-  const until = kind === 'monthly' ? Number(ios.expirationDateIOS) : null;
-  if (kind === 'monthly' && !until) return null;
+  const until = Number(ios.expirationDateIOS);
+  if (!until) return null;
   return {
-    kind,
     jws: p.purchaseToken,
     otid: String(ios.originalTransactionIdentifierIOS || ios.transactionId || p.id),
     since: Number(ios.originalTransactionDateIOS || p.transactionDate) || Date.now(),
@@ -161,11 +144,11 @@ const failed = (code?: string, pattern = false) => {
 
 /** Buys a tip. Resolves to the tip once Apple has taken the payment; null when it was cancelled, failed (appleTipError says
     so), or is waiting (Ask to Buy: it arrives later through watchTips). `account`: the signed-in account id, put on the
-    purchase so the server can tell whose it is. */
-export const buyApple = (tier: TipTierId, account: string | null): Promise<StoreTip | null> => buySku(APPLE_TIPS[tier], 'in-app', toTip, account, false);
-/** Buys a form of Daybook Pattern, the same way. */
-export const buyApplePat = (kind: PatKind, account: string | null): Promise<StorePat | null> =>
-  buySku(APPLE_PATTERN[kind], kind === 'monthly' ? 'subs' : 'in-app', toPat, account, true);
+    purchase so the server can tell whose it is. `pattern`: said in the words of Daybook Pattern. */
+export const buyApple = (tier: TipTierId, account: string | null, pattern = false): Promise<StoreTip | null> =>
+  buySku(APPLE_TIPS[tier], 'in-app', toTip, account, pattern);
+/** Buys the monthly plan, the same way. */
+export const buyAppleMonthly = (account: string | null): Promise<StorePat | null> => buySku(APPLE_MONTHLY, 'subs', toPat, account, true);
 
 async function buySku<T>(
   sku: string,

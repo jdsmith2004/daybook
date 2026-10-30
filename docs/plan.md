@@ -1,5 +1,187 @@
 # What is planned next
 
+## Whole-app analysis: how it connects, how it flows, and whether it helps (October 30, 2026)
+
+**What the owner asked for:** a thorough look at how everything connects and flows, whether the app makes sense, has an
+easy flow, and is genuinely positioned to help people. Analysis only, with questions. Nothing is fixed here.
+
+**How it was done:** five Sonnet agents in parallel (the rules engine against CLAUDE.md, the navigation map, the words
+and lessons, positioning and the market, the evidence behind each mechanic), while this session walked a fresh install
+on the web at 390x844 (setup end to end, lesson 1, an SOS ride, a slip through Rekindle, Planning a slip, Learn, Pattern,
+More), ran the story walk (14 of 14 days as expected, after a Playwright Chromium fix on this machine only), and checked
+every claim below in the code. `npm run typecheck` and `npm test` pass (3,028 core tests, 121 API).
+
+### The verdict
+
+The bones are right, and better than the market. SOS, Rekindle and setup are the best-built parts: SOS starts doing
+something on the first tap, Rekindle's words ("You did something. You are not something.") meet a person where they are,
+and setup teaches the wave, a real breath and the slip-as-data idea in about eight minutes. The free side is genuinely
+generous next to Quittr, Brainbuddy and Fortify, which lock nearly everything. The hope-first voice holds in the hard
+moments.
+
+Three things undermine it, and they are all fixable:
+
+1. **The app asks before it has helped.** In the first ten minutes a new person meets the account ask (setup), the "Do you
+   like Daybook so far?" rating ask (setup end), the Support button (top right of the very first Today), and then, after
+   lesson 1, the first badge sheet carries "You earned that. A tip of $5 or more unlocks…". The tip card waits a week
+   (`TIP_FIRST = 7`), but the badge and level lines (`tipMoment`) and the Support button (`tipButton`) have no such gate
+   (core `support.ts`). A person who has quit many times and feels ashamed is being sold to before the app has helped once.
+2. **Two progress systems run side by side, and the old one still resets.** The hero shows "days that hold" (no-slip days
+   in a window, which never drops to zero). Under it the old run ledger (`runLedger`, core.js) still zeroes a run on an
+   unsaved slip, and its words leak into the comeback: "Run saved. You came back." (seen in the story walk), "Keep
+   counting from N, or start fresh?" (sunrise), "A second slip within a week cannot be saved, so a new run starts
+   tomorrow" (rekindle.ts). The website promises "89 good days, one slip, all 89 kept". Both cannot be the message.
+3. **The flame grows for using the app, not for the spine.** Points come mostly from logging and check-ins. The story's
+   made-up person is level 14 (Campfire) with 0 of 45 lessons done. The daily lesson is gated at lesson 4 behind an
+   account that earns nothing (only a tip opens sync), so the spine is the one thing a free person loses on day 4.
+
+### What holds up (keep it)
+
+- Setup: 30 pages on the web, every question skippable, the Brief Pornography Screen with a warm reply, the wave page, a
+  real 30-second breath, "a slip is data" shown as a chart, and a hold-to-commit review. It ends knowing the plan.
+- SOS: breath first, one move at a time, "It passed" always one tap away, the More sheet only if wanted, "I slipped" at
+  the bottom of it, and the ending ("You rode it out", +15, what helped, what set it off) is warm.
+- Rekindle: the hold, "This is a slip, and you can recover from it. Level 3, 50 points and 1 urge ridden out: all still
+  yours", the feeling after with a kind answer each, the situation, one if-then plan. The honest-log badge comes in quiet.
+- Today after a slip: the hero keeps the days ("Tonight is logged. Your 7 days stay yours."), the care card sits under
+  SOS, every ask is off. The morning after looks like a calm day with one fewer day in the window. That is hope first.
+- The words: almost no contractions or hedges anywhere, no "addict" as a label, and the best lines are very good.
+- Talk it through: the three honest paths, with the research one tap away.
+
+### The findings, ranked by how much they hurt a real person
+
+Each carries the Opus effort it needs. **Owner decision** marks a choice that is the owner's.
+
+**A. Trust and hope**
+
+1. **Three asks in the first ten minutes** (above). Proposed: give `tipMoment` and `tipButton` the same week gate as the
+   card; move "Do you like Daybook so far?" to the first comeback or the first week, not the end of setup; drop the tip
+   bullet from the account page. **Owner decision:** the account ask at setup end stays (your rule); the rest. _Medium._
+2. **The run ledger contradicts the promise.** Proposed: retire the run as a visible thing. Keep the days that hold as
+   the only measure on Today, Journal and My numbers; remove "Run saved", "start fresh", "cannot be saved" and the
+   Journal's "Next run starts tomorrow"; keep `longest` as a quiet Milestones fact. The comeback card then says only "You
+   came back: N comebacks." **Owner decision**, since you chose keep-or-fresh on October 22. _High (counting)._
+3. **Hours since the slip as the biggest number on Today** for 72 hours after a short-run slip, counting up from "Under
+   an hour" (hero.ts). Your October 21 call, but it is a count that starts at zero on the screen that promises none.
+   Proposed: the days that hold stay the number; hours become the chip. **Owner decision.** _Medium._
+4. **The second slip gets the coldest path, and the evidence says it is the dangerous one.** Kirchner, Shiffman and
+   Wileyto (2012, about 1,000 real-time lapses): the reaction to the first lapse did not predict relapse; falling
+   confidence after repeated lapses did. Today a second slip within 7 days "cannot be saved", zeroes the run, and gets the
+   same four pages. Proposed: the second slip in a week gets the most care, not the least: a shorter Rekindle, a line
+   that names it ("Two in a week is where most people give up. You are still here."), and a plain door to a person (the
+   safe person's text, 988 where it fits, and the "What therapy is like" lesson). _Medium, high where the run changes._
+5. **The public pages break the owner's own rules.** `apps/mobile/public/llms.txt:44` still links the GitHub repository
+   ("Never link to the code"; the October 23 commit took it off the pages but not this file). `about.html` says "Coming
+   soon to the App Store" twice while docs/launch.md says 1.1.0 is live. `support.html` says the lessons are free;
+   `about.html` says "No account needed" and "Never locks care behind a paywall"; the app locks lesson 4 behind an
+   account. A brand that sells honesty loses more from one visible contradiction than a normal app would. _Low._
+6. **Faith: setup says the answer "only changes which lessons come up", and nothing reads it.** `lessonPath()` has no
+   filter; the flag only marks the four God lessons, which sit in everyone's path at about day 17. Proposed: filter them
+   by the answer (and offer them in Learn), or change the sentence. _Medium._
+
+**B. Flow**
+
+7. **Rekindle has no SOS door** (log.tsx passes no top-right pill, unlike talk.tsx and setup.tsx). Right after a slip the
+   urge is often not done; the only way to SOS is the "Still pulled" answer two pages in, which `router.replace`s
+   Rekindle away, so the situation and the plan for next time are skipped and that SOS ends on a celebration. Proposed:
+   the SOS pill in Rekindle's bar, and "Still pulled" pushes SOS over Rekindle instead of replacing it. _Medium._
+8. **Two slip paths never reach Rekindle:** a slip added in the entry sheet (from a day page) and the slips counted on
+   Welcome back. Proposed: the entry sheet's slip goes on to the feeling step, no hold; Welcome back stays as it is but
+   offers "Talk through the last one". _Medium._
+9. **Every open starts with something to dismiss.** In the story's 14 days, 11 opened on a level-up or badge sheet and 9
+   closed the "How are you feeling today?" pop. Levels arrive every day or two (60 levels), so "Level up" stops meaning
+   anything by week two. Proposed: celebrations only for a new form, a badge, or a comeback; levels inside the bar on
+   the hero, no sheet; the day-feel pop only on days with no sheet. _Medium (high where points or levels change)._
+10. **The lesson band and Your day duplicate the same stop with the same button** (both from `openTile`). The Fable
+    review of October 22 asked for one owner of "next"; two Start buttons remain. _Medium._
+11. **The thumb rule in SOS:** "It passed" and More are 36-point circles in the top bar, and "Which thought is loudest?"
+    puts its seven chips in the top half with the bottom empty. Proposed: "It passed" as the Dock's main button, the
+    thought chips low. **Owner decision** (the SOS passes of October 24 set the bar). _Medium._
+12. **Compact Today on nearly every iPhone.** `ROOM_FULL = 832` points; a notched 390x844 iPhone has about 750 to 770, so
+    the full layout is only for Pro Max and tablets. The pull-to-journal hint is then never seen; the journal is found
+    only from More. _Low to decide, medium to change._
+13. **Celebrations never show on the Pattern tab** (`TABS` in celebrate.tsx has no `pattern`), and can show over the
+    journal. _Low._
+14. **Small things seen on the walk:** the lesson's guess and check can be passed with Next and Finish without an answer
+    (so the "one check" is not one); the rode-out page's "What helped?" chips are generic and do not name the SOS moves
+    just used; the setup's screens-off page does not show on the web and the review says "Screens off 11:00 PM" as if
+    chosen; the "Quit, starting tomorrow" goal gives two Day 1s on the first Today ("TRACKING Day 1" and "Day 1: Oct
+    31"); two React DOM warnings in development (`transform-origin` in rekindle.tsx, hearth.tsx, flame.tsx, big-flame.tsx;
+    `collapsable` on the talk research page). _Low._
+
+**C. Content and the science**
+
+15. **Lessons that are missing for this audience:** what recovery feels like and when it gets easier (the flat, low-drive
+    weeks that read as "I am broken"); partners, and a partner who found out; sexuality after porn; what to do at day 30,
+    60, 90 and after (complacency, "I can test myself"). The identity lessons (34 to 37) and the tool lessons (21 to 28)
+    come weeks after the person needs them. Lessons 25 to 28 lean on cigarettes, chocolate and calories; about 20 of 45
+    proof cards are smokers, dieters or students. The strongest five are 3, 9, 10, 5 and 6; the weakest are 42 to 45
+    (programs, alcohol evidence) and 39. Proposed: four new lessons (above), identity moved into week 2, tools into
+    week 2 to 3. _Medium (words), and the owner's rule that lessons inspire hope leads._
+16. **What the evidence supports most, and the app under-uses:** if-then plans (d about .3 to .65, Gollwitzer and
+    Sheeran; Sheeran 2025) are the best-supported thing here, and they are made once and rarely rehearsed. Proposed: the
+    hard-hours card and the Sunday review ask the person to say their plan once. A validated measure: the five-question
+    screen is already in setup; re-ask it every 30 days and show the score falling, since the trials count reduction as
+    success (74% cut use by 70% or more in Crosby and Twohig 2016; only 35% stopped). Practice one calm-state strategy
+    daily rather than rotating eight moves (Lopez, Ochsner and Kober 2022). _Medium._
+17. **What the evidence does not support or warns about:** points and 60 levels (small, fading effects); "clean" as the
+    identity word (Grubbs: moral conflict and self-labeling drive distress apart from use; the app uses "clean" six
+    times); a 12x12 feelings grid at the moment of an urge (a design cost, not an evidence point); daily lessons as a
+    treatment (they are an engagement habit; the "Put it to work" step is what carries weight). The no-reset window is
+    untested but consistent with the habit and lapse data; it is the app's most original idea.
+18. **Words that break the voice** (counts from grep): "for now" 12 times in user-facing text; "clean" 6; "Streak 5" and
+    "A new best" inside the Fit the shapes tool during an urge; the nudge mascot voice ("Brain snack time 🍪", "Hey, it
+    is me again 🔥", "Level N and climbing 📈"); "Unlock the extras" and "Grow with it" tie a purchase to growth; "not a
+    reset" is now the most repeated phrase about the thing it denies (20 times). Two contractions, both in the texts to a
+    safe person (core.js:195-196). _Low._
+
+**D. Positioning and money** (the market agent's figures carry sources in its report; the verdict is mine)
+
+19. **"The quit app that does not reset" is not unique** (Reset Ladder and Relay claim it; Reframe and I Am Sober show a
+    counter). What is rare is the combination: free care, local-first privacy, a non-resetting measure, a mascot and a
+    lesson spine. The headline ("Quit porn without shame") is the generic part; the "0 versus 89" graphic below the fold
+    is the real pitch. Proposed: lead with the contrast in words ("Keep your 89 days after one slip") and keep "without
+    shame" as the second line. _Low._
+20. **The tip jar can cover costs, not a livelihood,** unless Daybook reaches tens of thousands of downloads a month: at
+    0.5% to 2% paying an average of $8 after Apple's 15%, each 1,000 downloads yields about $35 to $135, once. The
+    category's lifetime prices run $50 to $200, so people here do pay more than $5 once. **Owner decision**, since
+    products need your yes: a single clear product (the pattern, previewed from the person's own log), monthly $2.99
+    or lifetime about $20 to $30, with the $5 tip kept as the starter. _High (payments)._
+21. **The account gate earns nothing and costs the spine.** The account is free; only the tip opens sync. The lock on
+    lesson 4 adds friction on day 4, creates email-linked health data, and produces no revenue, while the person is
+    asked three ways (setup, the Today card, the lock). **Owner decision:** keep the account for sync only and let the
+    tip be the one ask, or move the gate to lesson 8 (after the first week). _Medium._
+22. **The count modes are six concepts for one question** (strict, gentle, step down, switch for me, tracking week, Day
+    1), never asked of a new person, and More says "How I count days: Strict", which sounds like a test. The Settings
+    help still says "finish the Rekindle quest". Proposed: hide the modes until a rough patch, rename strict to
+    "A day counts with no slip", and rewrite the help. _Medium._
+
+### Questions for the owner (each with a recommendation)
+
+1. Retire the run ledger as a visible thing, so the days that hold are the only measure? **I would.** It is the one place
+   the app contradicts its promise, and the hero already does the right thing.
+2. Keep hours-since-slip as the hero number for 72 hours (your October 21 call), or make it the chip? **The chip.**
+3. Gate every tip line and the Support button behind the first week, as the card already is, and move the rating ask to
+   the first comeback? **Yes, all three.**
+4. The account gate on lesson 4: keep, move to lesson 8, or account for sync only? **Account for sync only.** If the
+   gate must stay, lesson 8.
+5. Give the second slip in a week the most care and a door to a person? **Yes.** This is the strongest evidence in the
+   whole review.
+6. Filter the faith lessons by the setup answer? **Yes.** Otherwise the sentence in setup is untrue.
+7. Add the four missing lessons and move identity to week 2? **Yes**, four lessons, in your voice.
+8. Re-ask the five-question screen every 30 days and show the score falling? **Yes.** It is the measure the trials use,
+   and it lets someone at "much less" see a win.
+9. Products: one clear paid thing beyond the tip? **Your call before any work.** My pick is the pattern, previewed from
+   the person's own log, at a monthly $2.99 or a lifetime $19.99 to $29.99.
+10. Fix the public pages now (the code link in llms.txt, "Coming soon", the lesson claims)? **Yes, today.** It is low
+    effort and the code link breaks a standing rule.
+
+**Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
+once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).
+
+**Not checked:** the iPhone build, haptics and notifications; a real sign-in, sync and payment; dark mode and Reduce
+Motion on this pass; the 375x667 size (the October 27 audit covered it).
+
 ## The feelings grid, its own look (the owner, October 29, 2026; on branch feelings-own-look, not merged)
 
 The feeling chart itself (energy one way, pleasantness the other, four corners) is the Mood Meter's, a well-known chart

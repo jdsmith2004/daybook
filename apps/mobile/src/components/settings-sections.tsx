@@ -277,11 +277,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       {sec(
         'count',
         'How I count days',
-        st.cleanMode === 'gentle'
-          ? 'A slip takes one day off'
-          : st.cleanMode === 'step'
-            ? 'Longer stretches between slips'
-            : 'Days in a row with no slip',
+        st.cleanMode === 'gentle' ? 'A slip takes one day off' : st.cleanMode === 'step' ? 'Longer stretches between slips' : 'Days in a row with no slip',
         <>
           <T v="small" tone="muted">
             A day counts when no slip is logged on it. A day with nothing logged counts too, as long as you are around: after two days in a row with Daybook not

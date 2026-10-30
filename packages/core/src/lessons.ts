@@ -193,8 +193,7 @@ function lessonPathBefore(): Lesson[] {
     path was not finished yet, in the order of today or in the order before it changed. Read from the record, in the order
     lessons were finished (by day, then within the day). */
 export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
-  const off = faithOut(st);
-  const before = off ? lessonPathBefore().filter((L) => !L.f) : lessonPathBefore();
+  const before = faithOut(st) ? lessonPathBefore().filter((L) => !L.f) : lessonPathBefore();
   const path = lessonPathFor(st);
   const fin = new Set<string>();
   const early = new Set<string>();
@@ -204,7 +203,8 @@ export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
     return i >= 0 && p.slice(0, i).every((x) => fin.has(x.id));
   };
   lessonsInOrder(days).forEach(({ L }) => {
-    if (!reached(path, L) && !reached(before, L)) early.add(L.id);
+    /* a lesson off this person's path is never waited for, so it is never early */
+    if (path.indexOf(L) >= 0 && !reached(path, L) && !reached(before, L)) early.add(L.id);
     fin.add(L.id);
   });
   return early;

@@ -1,7 +1,7 @@
-/* Today and Journal, after logging: the word the morning a run ends (RunKeptCard), today's entries (TodaySoFar, in
+/* Today and Journal, after logging: today's entries (TodaySoFar, in
    Journal), SOS with Already happened and Planning a slip? (LogLink), the plan talked through that waits under them
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
-import { changeDay, clockOf, fmtClock, countText, GRAD_DAYS, rkEnded, sumDay, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
+import { changeDay, clockOf, fmtClock, countText, sumDay, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -28,37 +28,6 @@ export function useLogActions() {
     say('Good. That is the move.');
   };
   return { didSmall };
-}
-
-/* the morning a run ends (its window closed, or a second slip within a week): what was built, said once, so a run never
-   just disappears (core rkEnded) */
-export function RunKeptCard({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const c = useTheme();
-  const e = rkEnded(snap.days, snap.settings!, tk);
-  if (!e) return null;
-  return (
-    <View style={[s.card, { borderColor: c.cardEdge, backgroundColor: c.surface }]} accessibilityRole="summary">
-      <View style={[s.top, { alignItems: 'center' }]}>
-        <View style={[s.ico, { backgroundColor: c.sunSoft }]}>
-          <Icon name="flame" size={22} color={c.sunText} />
-        </View>
-        <T v="h2" style={{ flex: 1 }} accessibilityRole="header">
-          {'Your ' + e.run + (e.run === 1 ? ' day is kept' : ' days are kept')}
-        </T>
-      </View>
-      <T tone="muted">{e.text}</T>
-      <View style={s.chips}>
-        <View style={[s.chip, { backgroundColor: c.sunSoft }]}>
-          <Text style={[s.chipT, { color: c.sunText }]}>{'Longest run: ' + e.longest + (e.longest === 1 ? ' day' : ' days')}</Text>
-        </View>
-        {e.grad != null ? (
-          <View style={[s.chip, { backgroundColor: c.accentSoft }]}>
-            <Text style={[s.chipT, { color: c.accentText }]}>{'Graduation: ' + e.grad + ' of ' + GRAD_DAYS}</Text>
-          </View>
-        ) : null}
-      </View>
-    </View>
-  );
 }
 
 /* the link under the flame: for when it already happened */

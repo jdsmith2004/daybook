@@ -172,16 +172,11 @@ describe('the plan', () => {
     expect(after[0]).toMatchObject({ d: '2026-10-15', body: 'A new day. Everything you built is still here.' });
   });
 
-  it('while the Rekindle quest is open, its reminder takes the check-in reminder’s place', () => {
+  it('after the morning after, the days go back to their usual words: no quest to remind about', () => {
     const d = slip({}, '2026-10-12', '21:30');
-    const words = (k: string) => routine(plan(d, ci, at(k + 'T09:00'), log0, k)).map((n) => n.d + ' ' + n.body);
-    expect(words('2026-10-14')).toEqual([
-      '2026-10-14 Your Rekindle quest is still open. One small step today.',
-      '2026-10-15 Your Rekindle quest is still open. One small step today.',
-    ]);
-    const later = routine(plan(d, ci, at('2026-10-16T09:00'), log0, '2026-10-16'));
-    expect(later.map((n) => n.d + ' ' + n.k)).toEqual(['2026-10-16 checkin', '2026-10-17 checkin']);
-    for (const n of later) expect(n.body).toBe(core.wordsOf(n.w!, st).b);
+    const words = (k: string) => routine(plan(d, ci, at(k + 'T09:00'), log0, k));
+    for (const k of ['2026-10-14', '2026-10-16']) for (const n of words(k)) expect(n.body).toBe(core.wordsOf(n.w!, st).b);
+    expect(JSON.stringify(core.NUDGE_WORDS)).not.toMatch(/quest/i);
   });
 });
 

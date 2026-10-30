@@ -203,6 +203,13 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
   lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.
 - 10: yes, fix the public pages.
 
+**Built (findings 2 and 3, decisions 1 and 2, October 30):** one count per mode (core `hero.ts`, `view.ts`, `journal.ts`,
+`miles.ts`). Strict: days in a row, 0 on the day of a slip. Gentle: the days that hold (`todayMeasure`). Step down: unchanged.
+The chip under the number holds the hours since a slip, for 72 hours. Gone: `app/sunrise.tsx`, `app/deeper.tsx`, the run
+question, the rescue, the run-ended card and the words. Migration: `st.countFrom` is stamped on the first open of this version
+(`keepCounts`), and slips up to it keep the old rule in `runLedger`; `seen.longest` is a floor so a switch of mode never lowers
+the longest run. Open for the owner: strict is the default and setup never offers gentle, so most people did not choose it.
+
 **Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
 once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).
 

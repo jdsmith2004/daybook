@@ -1,5 +1,5 @@
 /* The month calendar in Pattern, and the summary of one day. The calendar colors each day by how it went: no slip, a
-   slip (one slip in the gentle count, or a slip that kept the run, has its own mark), a day that was only logged, or
+   slip (one the old rule saved keeps its mark), a day that was only logged, or
    nothing logged. The months go back to where the log starts. A tap on a day opens its summary: how it went, what
    happened (each entry with its time, what set it off and what helped), the check-in at a glance, and the rest of the
    day (tools used, lessons read, a talk-through, phone away, hard hours held). Checked by test/calendar.test.ts. */
@@ -12,9 +12,9 @@ import { talkAfterSlip } from './talk';
 import { eventRow, plural } from './view';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
-/** ok: no slip. one: one slip, and the gentle count still counts it. saved: a slip the run came through (a save). open: a
-    slip the run can still come through. slip, logged, none, before (the log had not started), ahead (still to come). */
-export type CalKind = 'ok' | 'one' | 'saved' | 'open' | 'slip' | 'logged' | 'none' | 'before' | 'ahead' | 'away';
+/** ok: no slip. saved: a slip the old rule saved (runLedger), which keeps its mark. slip, logged, none, before (the log had
+    not started), ahead (still to come). */
+export type CalKind = 'ok' | 'saved' | 'slip' | 'logged' | 'none' | 'before' | 'ahead' | 'away';
 export interface CalDay {
   k: DayKey;
   /** the day of the month */
@@ -68,7 +68,6 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
   const [y, mo] = m.split('-').map(Number);
   const n = new Date(y, mo, 0).getDate();
   const L = runLedger(days, st, tk);
-  const gentle = st.cleanMode === 'gentle';
   const sum = { noSlip: 0, slips: 0, rode: 0, logged: 0 };
   const out: CalDay[] = [];
   for (let i = 1; i <= n; i++) {
@@ -82,13 +81,9 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
       const status = statusOf(k, d, st, tk, days);
       kind =
         status === 'slip'
-          ? gentle && s.slipped === 1
-            ? 'one'
-            : L && L.kind[k] === 'saved'
-              ? 'saved'
-              : L && L.kind[k] === 'open'
-                ? 'open'
-                : 'slip'
+          ? L && L.kind[k] === 'saved'
+            ? 'saved'
+            : 'slip'
           : status === 'clean'
             ? 'ok'
             : status === 'tracked' || status === 'events'
@@ -160,7 +155,7 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
       ? key === tk
         ? 'No slip so far'
         : 'No slip'
-      : kind === 'one' || kind === 'saved' || kind === 'open' || kind === 'slip'
+      : kind === 'saved' || kind === 'slip'
         ? plural(s.slipped, 'slip') + ', logged honestly'
         : kind === 'logged'
           ? 'Logged'

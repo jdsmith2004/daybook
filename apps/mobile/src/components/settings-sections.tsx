@@ -278,10 +278,10 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
         'count',
         'How I count days',
         st.cleanMode === 'gentle'
-          ? 'Gentle: one slip or fewer'
+          ? 'Gentle: a slip takes one day off'
           : st.cleanMode === 'step'
             ? 'Step down: longer stretches, fewer slips'
-            : 'Strict: no slip logged',
+            : 'Strict: days in a row with no slip',
         <>
           <T v="small" tone="muted">
             A day counts when no slip is logged on it. A day with nothing logged counts too, as long as you are around: after two days in a row with Daybook not
@@ -292,11 +292,15 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             label="Counting"
             hint={
               <>
-                <B>Strict:</B> a day counts with no slip. <B>Gentle:</B> a day counts with one slip or fewer. In both, the first slip in any 7 days can be
-                saved: finish the Rekindle quest within three days and your run keeps going.{'\n\n'}
-                <B>Step down:</B> for when slips happen most days. Instead of a run you lose every day or two, you aim for longer stretches between slips and
-                fewer slips each week. When your stretch passes a week, or a week has one slip or none, you are ready to count days, and Daybook moves you there
-                (or offers to, when switching is left to you).
+                <B>Strict:</B> a day counts when no slip is logged. The number is your days in a row. A slip puts it to 0, and it climbs again from the next
+                day. Every day you earned stays on your record.{'\n\n'}
+                <B>Gentle:</B> the number is the days that hold, in your last week or on the way to graduation. A slip takes one day off, never all of them.
+                {'\n\n'}
+                <B>Step down:</B> for when slips happen most days. The number is the hours since your last slip, with your best stretch beside it, and you aim
+                for longer stretches and fewer slips each week. When your stretch passes a week, or a week has one slip or none, you are ready to count days,
+                and Daybook moves you there (or offers to, when switching is left to you).{'\n\n'}
+                Graduation is the same in all three: 90 days with no slip within 100. Your points, level, badges, longest run and comebacks stay when you
+                switch.
               </>
             }>
             <Chips label="Counting">

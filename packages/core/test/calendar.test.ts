@@ -46,12 +46,12 @@ describe('the month calendar', () => {
     expect(calMonth(d, st, TK, '2025-01').ym).toBe('2026-09');
     expect(calMonth(d, st, TK, '2030-01').ym).toBe('2026-10');
   });
-  it('marks one slip on a gentle count apart', () => {
+  it('a slip is a slip on the gentle count too: it takes that day off', () => {
     let g = addEvent({}, '2026-10-10', 'slipped', '22:00', {}, 1).days;
     g = addEvent(g, '2026-10-11', 'slipped', '22:00', {}, 1).days;
     g = addEvent(g, '2026-10-11', 'slipped', '23:00', {}, 1).days;
     const gm = calMonth(g, { ...st, cleanMode: 'gentle' }, TK);
-    expect([gm.days[9].kind, gm.days[10].kind]).toEqual(['one', 'slip']);
+    expect([gm.days[9].kind, gm.days[10].kind]).toEqual(['slip', 'slip']);
   });
 });
 

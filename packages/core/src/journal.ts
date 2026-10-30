@@ -29,7 +29,9 @@ import {
   type RunLedger,
 } from './legacy/core.js';
 import { logRateKeys, rateKeys, ratingOf, type RateKey } from './day';
+import { todayMeasure } from './graduate';
 import { logStart } from './log-start';
+import { rkComebackCount } from './rekindle';
 import { urStats } from './sos';
 import { phaseLabel } from './view';
 import { TOOLS } from './legacy/core.js';
@@ -39,6 +41,7 @@ import type { DayKey, Days, Settings } from './types';
 export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: RunLedger) {
   const d = days[key];
   const s = sumDay(d);
+  /* a slip the old rule saved (runLedger): the person came back, and the log says so */
   const rk = L && L.kind[key];
   const status = statusOf(key, d, st, tk, days);
   const evs = sortedEvents(d, st.rollover);
@@ -50,7 +53,7 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   const c = d && d.checkin && d.checkin.done ? d.checkin : null;
   const pill =
     status === 'slip'
-      ? (s.slipped > 1 ? `Slipped ×${s.slipped}` : 'Slipped') + (rk === 'saved' ? ' · run saved' : rk === 'open' ? ' · run waiting' : '')
+      ? (s.slipped > 1 ? `Slipped ×${s.slipped}` : 'Slipped') + (rk === 'saved' ? ' · you came back' : '')
       : status === 'clean' && key === tk
         ? 'No slip so far'
         : (STATUS_TXT as Record<string, string>)[status] || '';
@@ -112,12 +115,21 @@ export function myNumbers(days: Days, st: Settings, tk: DayKey, nowMs: number) {
     if (s.n || s.checked) dl++;
   });
   const n = (k: string) => m[k] as number;
-  const streakSub = `${n('cur') > 0 ? 'Current run ' + n('cur') : 'Next run starts tomorrow'} · ${n('cleanDays')} ${st.cleanMode === 'gentle' ? 'good' : 'no-slip'} day${n('cleanDays') === 1 ? '' : 's'} in all`;
+  /* the count, as Today shows it, then what stays on the record */
+  const noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  const back = rkComebackCount(days, st, tk);
+  const kept = [`${noSlip} no-slip day${noSlip === 1 ? '' : 's'} in all`, back ? `${back} comeback${back === 1 ? '' : 's'}` : ''].filter(Boolean);
+  const t = counting && st.cleanMode === 'gentle' ? todayMeasure(days, st, tk) : null;
+  const now = t ? (t.n > 0 ? `Now ${t.n} ${t.of}` : '') : n('cur') > 0 ? `Now ${n('cur')} ${n('cur') === 1 ? 'day' : 'days in a row'}` : '';
   const sv = counting && st.cleanMode === 'step' ? stepView(days, st, nowMs) : null;
   const third = sv
-    ? { l: 'Best stretch', b: fmtStretchShort(sv.best), s: 'between slips' + (sv.usual != null ? '. Usual: about ' + fmtStretch(sv.usual) : '') }
+    ? {
+        l: 'Best stretch',
+        b: fmtStretchShort(sv.best),
+        s: 'between slips' + (sv.usual != null ? '. Usual: about ' + fmtStretch(sv.usual) : '') + (back ? ` · ${back} comeback${back === 1 ? '' : 's'}` : ''),
+      }
     : counting
-      ? { l: 'Longest run', b: String(n('longest')), s: streakSub }
+      ? { l: 'Longest run', b: String(n('longest')), s: [now, ...kept].filter(Boolean).join(' · ') }
       : { l: 'Days logged', b: String(dl), s: `of ${n('days')} day${n('days') === 1 ? '' : 's'} so far` };
   return [
     {

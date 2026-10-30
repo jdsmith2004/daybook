@@ -68,7 +68,7 @@ describe.each(logs)('$name', (fx) => {
 });
 
 describe('a day in the list', () => {
-  it('says how many slips, and whether the run was saved or is on the line', () => {
+  it('says how many slips', () => {
     const st = core.normSettings({ v: 1, start: '2026-09-01', day1: '2026-09-08', rollover: 4, screensOff: '23:00', u: 1 });
     const days: Days = {};
     let d = core.addEvent(days, '2026-10-10', 'slipped', '22:00').days;

@@ -1,8 +1,8 @@
 /* The Today cards as data. The legacy app builds these inside its HTML templates, reading the global Store and the clock.
    Here they are pure: the screen passes in the log, the settings, today's key and the time, and gets back what to show.
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
-import { awayGapAt } from './away';
-import { rkRunWords } from './rekindle';
+import { hoursSinceSlip } from './hero';
+import { todayMeasure } from './graduate';
 import {
   addDays,
   DID_T,
@@ -11,22 +11,19 @@ import {
   fmtClock,
   trigText,
   allKeys,
-  dayKind,
+  computeMetrics,
   diffDays,
   fmtDate as fmtDateShort,
   fmtStretch,
   fmtStretchShort,
   maxKey,
   phaseOf,
-  RK_DAYS,
   roughPatch,
-  slipMoments,
+  runLedger,
   stepView,
   streaks,
   weekRange,
   sumDay,
-  type DayKindName,
-  type RunLedger,
   type StepView,
 } from './legacy/core.js';
 import type { DayEvent, DayKey, Days, Settings } from './types';
@@ -34,43 +31,30 @@ import type { DayEvent, DayKey, Days, Settings } from './types';
 export const RUN_GOALS = [3, 7, 14, 30, 60, 90, 180, 365];
 export const plural = (n: number, w: string) => n + ' ' + w + (n === 1 ? '' : 's');
 
-export type CellKind = DayKindName | 'saved' | 'open';
-
 export interface CleanView {
   mode: 'strict' | 'gentle';
   tracking: boolean;
-  cells: { k: DayKey; kind: CellKind; today: boolean }[];
-  good: number;
-  span: number;
+  /** the run: the big number in strict */
   cur: number;
+  /** the longest run, which never drops (computeMetrics) */
   longest: number;
+  /** the days with no slip in all */
+  noSlip: number;
   counted: number;
-  first: DayKey;
   /* tracking only */
   phase?: string;
   tday?: number;
   tlen?: number;
   /* counting only */
-  saves?: number;
-  open?: RunLedger['open'];
-  backH?: number | null;
+  /** the hours since the last slip, for 72 hours after one (the same chip as Today's) */
+  hours?: number | null;
   next?: number | null;
 }
 
-/** the Days card: the last 30 days, the run, the comeback hours and the next goal (legacy cleanView) */
+/** the Days card: the run, what stays on the record, the hours since a slip and the next goal */
 export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): CleanView {
   const mode = st.cleanMode === 'gentle' ? 'gentle' : 'strict';
-  const v: CleanView = {
-    mode,
-    tracking: !st.day1 || tk < st.day1,
-    cells: [],
-    good: 0,
-    span: 0,
-    cur: 0,
-    longest: 0,
-    counted: 0,
-    first: tk,
-  };
+  const v: CleanView = { mode, tracking: !st.day1 || tk < st.day1, cur: 0, longest: 0, noSlip: 0, counted: 0 };
   if (v.tracking) {
     const ph = phaseOf(tk, st);
     v.phase = ph.p;
@@ -80,25 +64,11 @@ export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   }
   const sk = streaks(days, st, tk, mode, false);
   v.cur = sk.cur;
-  v.longest = sk.longest;
+  /* the record never drops, whichever way the days are counted now */
+  v.longest = Math.max(sk.longest, computeMetrics(days, st, tk).longest);
   v.counted = sk.counted;
-  v.span = Math.min(30, sk.counted);
-  v.saves = sk.saves;
-  v.open = sk.open;
-  /* the first month fills in from Day 1; after that it is always the last 30 days. A saved slip day keeps its own mark. */
-  v.first = sk.counted <= 30 ? (st.day1 as DayKey) : addDays(tk, -29);
-  for (let i = 0; i < 30; i++) {
-    const k = addDays(v.first, i);
-    const kind: CellKind = sk.kind[k] || dayKind(k, days[k], st, tk, mode, days);
-    /* a gap away has one gray look; its no-slip days still count */
-    v.cells.push({ k, kind: awayGapAt(days, st, k, tk) ? 'unknown' : kind, today: k === tk });
-    if (kind === 'ok' || kind === 'one') v.good++;
-  }
-  /* the comeback: hours since the last slip, while the run is short and the slip was recent */
-  const sl = slipMoments(days, st, nowMs);
-  const last = sl.length ? sl[sl.length - 1] : null;
-  v.backH = last != null && !v.open && v.cur <= 3 ? (nowMs - last) / 36e5 : null;
-  if (v.backH != null && v.backH >= 72) v.backH = null;
+  v.noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  v.hours = hoursSinceSlip(days, { ...st, cleanMode: mode }, tk, nowMs);
   v.next = v.longest > v.cur ? (RUN_GOALS.find((n) => n > v.cur) ?? null) : null;
   return v;
 }
@@ -118,18 +88,13 @@ export function trackFacts(days: Days, tk: DayKey) {
   return { dl, rode, slips };
 }
 
-/** the chips under the Days card (legacy runChips), as data */
+/** the chips under the Days card, as data: the same hours as Today's chip, then what stays on the record */
 export function runChips(v: CleanView) {
-  let main: { kind: 'line' | 'soft' | 'run'; small?: string; text: string; saved?: number };
-  if (v.open) main = { kind: 'line', small: 'Run waiting', text: plural(v.open.run, 'day') };
-  else if (v.backH != null) main = { kind: 'soft', small: 'Comeback', text: fmtStretch(v.backH) };
-  else if (v.cur > 0) main = { kind: 'run', small: 'Current run', text: plural(v.cur, 'day'), saved: v.saves || 0 };
-  else main = { kind: 'soft', text: 'Next run starts tomorrow' };
   return {
-    main,
+    hours: v.hours != null ? fmtStretch(v.hours) : null,
     longest: v.longest > 0 ? plural(v.longest, 'day') : null,
-    next: v.next && !v.open ? plural(v.next, 'day') : null,
-    line: v.open ? Object.values(rkRunWords(v.open.run, v.open.k)).join(' ') : null,
+    noSlip: v.noSlip > 0 ? plural(v.noSlip, 'day') : null,
+    next: v.next ? plural(v.next, 'day') : null,
   };
 }
 
@@ -146,17 +111,29 @@ export function daysCardText(days: Days, st: Settings, v: CleanView, tk: DayKey)
           : 'Just tracking · day ' + v.tday;
     return { tracking: true as const, eyebrow, facts: f };
   }
-  const gentle = v.mode === 'gentle';
+  const step = st.cleanMode === 'step';
+  /* the same number Today shows, in the same words */
+  if (v.mode === 'gentle') {
+    const t = todayMeasure(days, st, tk);
+    const first = t?.of === 'Day 1 is today';
+    const today = t?.of === 'Today counts';
+    return {
+      tracking: false as const,
+      step,
+      eyebrow: 'Days that hold',
+      big: first ? 'Day 1' : today ? 'Today' : String(t?.n ?? 0),
+      of: first ? 'is today' : today ? 'counts' : t?.of || '',
+      sub: 'A slip takes one day off, never all of them. Every slip is still logged.',
+    };
+  }
   return {
     tracking: false as const,
     /* in step down, the Days card is the step-down card (see stepCard) */
-    step: st.cleanMode === 'step',
-    eyebrow: st.cleanMode === 'step' ? 'Step down' : gentle ? 'Good days' : 'No slip logged',
-    good: v.good,
-    of: v.counted > 30 ? 'of the last 30 days' : 'of ' + plural(v.counted, 'day') + ' so far',
-    sub: gentle
-      ? 'A day counts with one slip or fewer. Every slip is still logged.'
-      : 'A day counts when no slip is logged. A day with nothing logged counts too.',
+    step,
+    eyebrow: step ? 'Step down' : 'No slip',
+    big: String(v.cur),
+    of: v.cur === 1 ? 'day' : v.cur === 0 ? 'days' : 'days in a row',
+    sub: 'A day counts when no slip is logged. A slip starts the count again the next day, and the days you earned stay on your record.',
   };
 }
 

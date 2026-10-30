@@ -27,56 +27,26 @@ import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-/* ---------- the Days card: the month, the run, the next goal ---------- */
+/* ---------- the Days card: the mode's one count, as Today shows it, and what stays on the record ---------- */
 function Chips({ v }: { v: CleanView }) {
   const c = useTheme();
   const ch = runChips(v);
-  const tones = {
-    line: { bg: c.slipSoft, fg: 'slipText' as const },
-    soft: { bg: c.mintSoft, fg: 'mintText' as const },
-    run: { bg: c.surface2, fg: 'ink' as const },
-  }[ch.main.kind];
+  const chip = (small: string, text: string, bg: string, fg: 'ink' | 'mintText' | 'violetText') => (
+    <View key={small} style={[s.chip, { backgroundColor: bg }]}>
+      <T v="small" tone={fg === 'ink' ? 'muted' : fg} style={{ fontFamily: font.bodySemi }}>
+        {small}
+      </T>
+      <T v="label" tone={fg}>
+        {text}
+      </T>
+    </View>
+  );
   return (
-    <View style={{ gap: 10 }}>
-      <View style={s.wrap}>
-        <View style={[s.chip, { backgroundColor: tones.bg }]}>
-          {ch.main.small ? (
-            <T v="small" tone={tones.fg === 'ink' ? 'muted' : tones.fg} style={{ fontFamily: font.bodySemi }}>
-              {ch.main.small}
-            </T>
-          ) : null}
-          <T v="label" tone={tones.fg}>
-            {ch.main.text}
-            {ch.main.saved ? <T v="label" tone="muted">{` · ${ch.main.saved} saved`}</T> : null}
-          </T>
-        </View>
-        {ch.longest ? (
-          <View style={[s.chip, { backgroundColor: c.surface2 }]}>
-            <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-              Longest run
-            </T>
-            <T v="label">{ch.longest}</T>
-          </View>
-        ) : null}
-        {ch.next ? (
-          <View style={[s.chip, { backgroundColor: c.violetSoft }]}>
-            <T v="small" tone="violetText" style={{ fontFamily: font.bodySemi }}>
-              Next goal
-            </T>
-            <T v="label" tone="violetText">
-              {ch.next}
-            </T>
-          </View>
-        ) : null}
-      </View>
-      {ch.line ? (
-        <View style={s.row}>
-          <Icon name="flame" color={c.slip} />
-          <T v="small" style={{ flex: 1 }}>
-            {ch.line}
-          </T>
-        </View>
-      ) : null}
+    <View style={s.wrap}>
+      {ch.hours ? chip('Since your last slip', ch.hours, c.mintSoft, 'mintText') : null}
+      {ch.longest ? chip('Longest run', ch.longest, c.surface2, 'ink') : null}
+      {ch.noSlip ? chip('No-slip days in all', ch.noSlip, c.surface2, 'ink') : null}
+      {ch.next ? chip('Next goal', ch.next, c.violetSoft, 'violetText') : null}
     </View>
   );
 }
@@ -126,16 +96,11 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
   if (t.step) return <StepCard snap={snap} tk={tk} now={now} size={size} v={v} />;
   return (
     <Card>
-      <View style={s.between}>
-        <T v="eyebrow" tone="muted">
-          {t.eyebrow}
-        </T>
-        <T v="small" tone="muted">
-          {fmtDate(v.first, { month: 'short', day: 'numeric' })} to today
-        </T>
-      </View>
+      <T v="eyebrow" tone="muted">
+        {t.eyebrow}
+      </T>
       <View style={s.baseline}>
-        <T v="big">{t.good}</T>
+        <T v="big">{t.big}</T>
         <T tone="muted" style={{ fontSize: 16 }}>
           {t.of}
         </T>

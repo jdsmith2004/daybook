@@ -161,26 +161,11 @@ function Shell() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />
           {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, the evening check-in, going deeper, the wind-down, good night, a lesson */}
-          {[
-            'sos',
-            'tool/[id]',
-            'log',
-            'sunrise',
-            'checkin',
-            'talk',
-            'review',
-            'deeper',
-            'wind',
-            'night',
-            'lesson/[id]',
-            'lwrite/[n]',
-            'setup',
-            'graduated',
-            'week',
-            'back',
-          ].map((name) => (
-            <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-          ))}
+          {['sos', 'tool/[id]', 'log', 'checkin', 'talk', 'review', 'wind', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup', 'graduated', 'week', 'back'].map(
+            (name) => (
+              <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+            ),
+          )}
           {/* the journal comes down over Today like a shade, and moves itself (app/journal.tsx), so Today stays under it */}
           <Stack.Screen name="journal" options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }} />
           {/* the sheets: one thing, over everything */}

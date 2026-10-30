@@ -1,5 +1,5 @@
-/* Rekindle, checked against the legacy app: which Rekindle a slip gets, the card on Today, the short and full screens' words,
-   and the sunrise check (now coming back, marked on the slip). The legacy screens are HTML, so the port's words are looked for in their text. */
+/* Rekindle, checked against the legacy app: which Rekindle a slip gets, and the sunrise check (now coming back, marked on the
+   slip). The quest's card and words went with the rescue (the owner, October 30, 2026). */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,19 +20,6 @@ afterEach(() => vi.useRealTimers());
 
 describe('the Rekindle words match the legacy app', () => {
   const w = JSON.parse(readFileSync(join(dir, 'rekindle-words.json'), 'utf8'));
-  it('choices and prompts', () => {
-    expect(core.RK_WAIT).toEqual(w.RK_WAIT);
-    expect(core.RT_Q).toEqual(w.RT_Q);
-  });
-  it('the message to a safe person', () => {
-    ['', 'Sam', 'Alexander Hamilton the Third'].forEach((n, i) => {
-      expect(core.rkTellText(core.normSettings({ start: '2026-10-01', safePerson: n }))).toBe(w.tell[i]);
-    });
-  });
-  it('"next time ..." for each hard moment', () => {
-    const st = core.normSettings({ start: '2026-10-01', opts: { trig: [{ id: 'u_work', t: 'Work stress' }], did: [] } });
-    for (const [t, want] of w.when) expect(core.srWhen(t, st)).toBe(want);
-  });
   it('plans in lower case', () => {
     for (const [x, want] of w.lower) expect(core.lowerFirst(x)).toBe(want);
   });
@@ -64,45 +51,6 @@ describe.each(logs)('$name', (fx) => {
       for (const k of Object.keys(R.steps)) expect(core.rkStepFor(days, k)).toBe(R.steps[k]);
       const act = core.rkActive(days, st, tk);
       expect(J(act)).toEqual(R.active);
-      if (!act) return;
-      const html = R.card.text;
-      const c = core.rkCard(days, st, tk, act, new Date(now).getHours());
-      expect(html).toContain(c.h);
-      expect(html).toContain(c.p);
-      if (c.why) expect(html).toContain(c.why);
-      for (const m of c.missions) {
-        expect(html).toContain(m.title);
-        expect(html).toContain(m.sub);
-        for (const a of m.actions) expect(html).toContain(a.label);
-      }
-      if (c.quote) expect(html).toContain(`If ${c.quote.when}, then ${c.quote.then}`);
-      for (const t of c.care) expect(html).toContain(t);
-      expect(html.includes('Start my sunrise check')).toBe(c.sunrise);
-      expect(R.card.flames).toBe(`${c.flames.filter(Boolean).length} of ${c.flames.length} flames lit`);
-      expect(R.card.line).toBe(c.line);
-    });
-
-    it('words the short Rekindle and the quest the same way', () => {
-      const tk = at();
-      const hour = new Date(now).getHours();
-      for (const k of Object.keys(R.light)) {
-        const ev = days[k].events.find((x) => x.id === R.ev[k])!;
-        expect(norm(R.light[k].text)).toContain(norm(core.rkLightLine(days, st, k, tk, now)));
-        expect(R.light[k].text).toContain('Saved · ' + core.entryLabel(ev));
-        const q = core.rkQuest(days, st, tk, k, ev, hour);
-        const qh = R.quest[k].text;
-        expect(qh).toContain(q.h);
-        expect(qh).toContain(q.p);
-        expect(qh).toContain(q.prize.b);
-        expect(qh).toContain(q.prize.s);
-        expect(qh).toContain(q.done);
-        expect(qh.includes('Did you wait first?')).toBe(q.askWait);
-        for (const m of q.missions) {
-          expect(qh).toContain(m.title);
-          expect(qh).toContain(m.sub);
-        }
-        expect(R.quest[k].flames).toBe(`${q.flames.filter(Boolean).length} of ${q.flames.length} flames lit`);
-      }
     });
   });
 });
@@ -128,89 +76,14 @@ describe('the sunrise check: coming back, marked on the slip', () => {
     expect(core.srDone(old, '2026-10-14', 'a', T)['2026-10-14'].events[0].rk).toEqual({ dp: 'trace', at: T, pl: '' });
     expect(core.srDone(days, '2026-10-14', 'nope', T)).toBe(days);
   });
-
-  it('going deeper marks the fourth mission, with the trace-back answers', () => {
-    const next = core.rkDeep(days, st, '2026-10-14', 'trace', ['in bed', 'scrolling', 'x'.repeat(300)], 5000)!;
-    const ev = next['2026-10-14'].events[0];
-    expect(ev.rk?.dp).toBe('trace');
-    expect(ev.rk?.tr?.[2]).toHaveLength(200);
-    expect(core.rkOf(next, '2026-10-14', st)?.m4).toBe(true);
-  });
 });
 
-describe('the run waits for you (three days after the slip)', () => {
-  const st = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
-  /* nine clean days, then a slip on Saturday, October 10 */
-  const K = '2026-10-10';
-  const base = () => {
-    let days: Days = {};
-    for (let i = 0; i < 9; i++) days = core.addEvent(days, core.addDays('2026-10-01', i), 'rode', '21:00').days;
-    const r = core.addEvent(days, K, 'slipped', '22:40');
-    return { days: r.days, id: r.id };
-  };
-  const phone = (days: Days, k: string) =>
-    core.withDay(
-      days,
-      k,
-      core.changeDay(days[k], k, (d) => void (d.p = { ...core.blankP(), po: '22:50' })),
-    );
-  it('waits through the third day after the slip, then the run ends', () => {
-    const { days } = base();
-    expect(core.runLedger(days, st, core.addDays(K, 3)).open).toMatchObject({ k: K, run: 9 });
-    /* the days after the slip keep counting while it waits */
-    expect(core.runLedger(days, st, core.addDays(K, 3)).cur).toBe(12);
-    const after = core.runLedger(days, st, core.addDays(K, 4));
-    expect(after.open).toBeNull();
-    expect(after.longest).toBe(9);
-  });
-  it('the phone can go away on a later night, and an honest "screens stayed on" does not end it', () => {
-    let { days, id } = base();
-    days = core.withDay(
-      days,
-      K,
-      core.changeDay(days[K], K, (d) => void (d.checkin = { ...core.normCheckin({})!, so: 'N' })),
-    );
-    expect(core.runLedger(days, st, core.addDays(K, 1)).open).toMatchObject({ k: K });
-    days = core.patchEvent(days, K, id, { recovered: true });
-    days = phone(days, core.addDays(K, 2));
-    days = core.srDone(days, K, id, core.addDays(K, 2));
-    const L = core.runLedger(days, st, core.addDays(K, 2));
-    expect(L.kind[K]).toBe('saved');
-    expect(L.cur).toBe(12);
-  });
-  it('Today keeps the quest while the run waits, and says the run was kept the morning after it ends', () => {
-    const { days } = base();
-    expect(core.rkActive(days, st, core.addDays(K, 2))).toMatchObject({ phase: 'sun', k: K });
-    expect(core.rkActive(days, st, core.addDays(K, 4))).toBeNull();
-    expect(core.rkEnded(days, st, core.addDays(K, 3))).toBeNull();
-    const e = core.rkEnded(days, st, core.addDays(K, 4))!;
-    expect(e).toMatchObject({ run: 9, why: 'clock', lit: 0, of: 3 });
-    expect(e.text).toBe('The quest closed last night with 0 of 3 lit. Your new run counts from Sunday, and it is already 4 days. What you built stays yours.');
-    expect(core.rkEnded(days, st, core.addDays(K, 5))).toBeNull();
-  });
-  it('a second slip within a week cannot be saved: the next morning says what was kept', () => {
-    let { days, id } = base();
-    days = core.patchEvent(days, K, id, { recovered: true });
-    days = phone(days, K);
-    days = core.srDone(days, K, id, core.addDays(K, 1));
-    const K2 = core.addDays(K, 3);
-    days = core.addEvent(days, K2, 'slipped', '23:00').days;
-    expect(core.rkLightLine(days, st, K2, K2, Date.now())).toBe(
-      'A second slip within a week cannot be saved, so a new run starts tomorrow. Your 12 days are kept, and so are your points, level and badges.',
-    );
-    expect(core.rkEnded(days, st, core.addDays(K2, 1))).toMatchObject({ run: 12, why: 'again' });
-  });
-  it('the words lead with counting on, never a rescue, and give the day the quest closes', () => {
-    const { days, id } = base();
-    const ev = days[K].events.find((e) => e.id === id)!;
-    const q = core.rkQuest(days, st, K, K, ev, 22);
-    expect(q.h).toBe('Keep counting from 9');
-    expect(q.p).toBe('Three steps, any time until Tuesday night, and the count goes on.');
-  });
-  it('the record of clean days counts from Day 1, like the run', () => {
-    const st2 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, u: 1 });
-    expect(core.rkComebacks(base().days, st2, K).runs).toEqual([9]);
-  });
+it('the record of clean days counts from Day 1, like the run', () => {
+  const st2 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, u: 1 });
+  let days: Days = {};
+  for (let i = 0; i < 9; i++) days = core.addEvent(days, core.addDays('2026-10-01', i), 'rode', '21:00').days;
+  days = core.addEvent(days, '2026-10-10', 'slipped', '22:40').days;
+  expect(core.rkComebacks(days, st2, '2026-10-10').runs).toEqual([9]);
 });
 
 it('Day 1: tell the safe person you started, once, in plain words', () => {
@@ -222,19 +95,4 @@ it('Day 1: tell the safe person you started, once, in plain words', () => {
   const t = core.startTellText(st);
   expect(t.startsWith('Hey Sam, ')).toBe(true);
   expect(t).not.toMatch(/n't|'re|'m|porn/i);
-});
-
-it('after the sunrise check, the steps still open stay on Today with their buttons until the quest closes', () => {
-  const st = core.normSettings({ v: 1, start: '2026-10-01', day1: '2026-10-01', rollover: 4, u: 1, cleanMode: 'gentle' });
-  const K = '2026-10-20';
-  let days: Days = core.addEvent({}, K, 'slipped', '23:00').days;
-  const tk = core.addDays(K, 1);
-  days[K]!.events[0]!.rk = { at: tk, pl: '' } as never;
-  const act = core.rkActive(days, st, tk)!;
-  const c = core.rkCard(days, st, tk, act, 9);
-  expect(c.kind).toBe('done');
-  expect(c.h).toBe('You came back');
-  expect(c.p).toBe('That is the real skill. 2 small steps left, any time until Friday night.');
-  expect(c.missions.map((m) => m.key)).toEqual(['m1', 'm2']);
-  expect(c.missions[0]!.actions.map((a) => a.label)).toEqual(['I did it']);
 });

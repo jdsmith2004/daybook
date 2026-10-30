@@ -125,8 +125,6 @@ describe('coming back: how many slips while away', () => {
     expect(m.sum.slips).toBe(3);
     /* Oct 1 to 5, 7 of the gap, Oct 16 to 19, and today so far */
     expect(m.sum.noSlip).toBe(5 + 7 + 4 + 1);
-    /* no Rekindle card: these slips have no day or time */
-    expect(core.rkEnded(days, s1, '2026-10-16')).toBeNull();
   });
 
   it('gentle counting lets each of those days count, as it does a logged slip', () => {

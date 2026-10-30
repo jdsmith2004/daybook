@@ -37,7 +37,7 @@
       "open": "12:30",
       "what": "an urge ridden out: coming back yesterday lit the second flame, so the comeback is noticed",
       "before": [{ "morning": true }, { "rode": "11:45", "trigger": "Stressed" }],
-      "expect": "All three lit\\. You came back"
+      "expect": "You came back: \\d+ comebacks?\\."
     },
     { "day": "2026-10-22", "open": "09:00", "what": "a calm day", "before": [{ "morning": true }], "expect": "Lesson \\d+ of \\d+" }
   ]

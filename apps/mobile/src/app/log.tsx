@@ -7,9 +7,8 @@
    ask how they felt before a slip, the answer is the urge itself):
    1. Rekindle: one big button to press and hold until the fire catches (components/hearth.tsx). Once it is held: this
       is a slip, and you can recover from it, and one line on what it did not take (core rkLitLine: a long run's days
-      are yours for good, or what is still yours). A long run is never "down to embers" (rkHoldWords). The run question
-      for a slip that ends a run of 7 days or more is not asked here: the sunrise check asks it the next morning (core
-      rkAskOpen).
+      are on the record, or what is still yours). A long run is never "down to embers" (rkHoldWords). Nothing asks about
+      the count: the mode decides it (core hero.ts).
    2. Right now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
       record of it (fa). Still pulled toward it leads to SOS; like giving up shows the 988 line too.
    3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
@@ -20,8 +19,8 @@
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
    Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow): the
    slip is saved already, so there is nothing to hold, and the look back ends warm, with the fire and a plan.
-   Rekindle's quest and points come from the log itself (core rkOf), so they go on exactly as before: one small thing
-   waits on Today, the sunrise check the next morning. Ported from the legacy SCENES.checkin. */
+   Rekindle's points come from the log itself (core rkOf): one small thing waits on Today, and coming back the next morning
+   is the sunrise check. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
   addOption,

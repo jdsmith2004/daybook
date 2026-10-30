@@ -259,6 +259,9 @@ function normSeen(s){
  /* the most points ever shown, kept when a change would lower them (miles.ts keepPoints): points are never taken away */
  const pts=parseInt(s.pts,10);
  if(pts>0)o.pts=pts;
+ /* the longest run ever shown (miles.ts keepCounts): switching how days count never lowers it */
+ const lg=parseInt(s.longest,10);
+ if(lg>0)o.longest=lg;
  return o;
 }
 function normLearn(l){
@@ -322,6 +325,8 @@ function normSettings(s){
  o.cleanAuto=o.cleanAuto!==false;
  o.cleanNote=(o.cleanNote&&isKey(o.cleanNote.on))?{on:o.cleanNote.on,m:o.cleanNote.m==='step'||o.cleanNote.m==='count'?o.cleanNote.m:'gentle'}:null;
  o.cleanHold=isKey(o.cleanHold)?o.cleanHold:null;
+ /* countFrom: the day this person first opened the one-count rule (runLedger). Kept only when it is a day, so a log without it reads as before. */
+ if(!isKey(o.countFrom))delete o.countFrom;
  o.stepAt=isKey(o.stepAt)?o.stepAt:null;
  o.stepNo=isKey(o.stepNo)?o.stepNo:null;
  o.stepGrad=isKey(o.stepGrad)?o.stepGrad:null;
@@ -357,7 +362,7 @@ function normEvent(e){
  if([0,5,10,20].indexOf(e.wt)>=0)o.wt=e.wt;
  /* on a slip: the exact minutes waited first, as the slip's "Did you wait first?" slider set them (wt keeps the step the older rules count) */
  if(e.outcome==='slipped'&&Number.isInteger(e.wm)&&e.wm>=0&&e.wm<=240)o.wm=e.wm;
- /* keep or start fresh, on a slip that ends a run of RUN_ASK days or more: true keep the run going, false start fresh, absent not answered */
+ /* keep or start fresh, kept from older builds (the old rule in runLedger reads it): true keep the run going, false start fresh, absent not answered */
  if(e.outcome==='slipped'&&(e.keep===true||e.keep===false))o.keep=e.keep;
  /* on a slip (slip.ts): the feeling named for before it (fb, a word from the field of feelings) and how it felt afterwards (fa) */
  if(e.outcome==='slipped'&&typeof e.fb==='string'&&/^[A-Za-z][A-Za-z ]{0,23}$/.test(e.fb))o.fb=e.fb;
@@ -463,25 +468,22 @@ function dayKind(key,day,st,today,mode,days){
  }
  return n===0?'ok':n<=cleanLimit(st,mode)?'one':'slip';
 }
-/* ===== SAVING A RUN =====
-   The first slip in any 7 days gets the full Rekindle. When a run was going, that slip can also save the run: finish the Rekindle missions
-   (one small thing, the phone away one night, a sunrise check one morning, and for a run of 14 days or more one deeper mission)
-   within RK_DAYS days after the slip (the owner, October 18: the run waits for you), and the run keeps going. An honest "screens stayed
-   on" never ends it: the phone can go away another night. The slip stays in the log, and the day is marked as saved, so the count of days
-   with no slip stays honest. Later slips that week get a short Rekindle and cannot save a run. Worked out from the log, like everything else.
-   Keep or start fresh (the owner, October 21): a slip that ends a run of RUN_ASK days or more asks the person, on the slip entry, whether to
-   keep the run going (keep: true, the save above) or start fresh (keep: false, the run ends on the slip day like any slip). No answer yet
-   waits, as before. A shorter run ends at the slip. Slips on days before RUN_ASK_FROM keep the rule they were made under (any run could be
-   saved), so a save already earned is never taken away. */
-const RUN_DEEP=14,RK_DAYS=3,RUN_ASK=7,RUN_ASK_FROM='2026-10-22';
-/* Coming back saves the run (the owner, October 22, docs/plan.md roadmap move 3): for slips from RK_BACK_FROM on, a run is also saved
-   when, within RK_DAYS, the sunrise check is done and the third flame lights by itself (rkThirdOf: the next urge ridden out, or a full
-   day with no slip). No errands. The missions above still save it too, so a save is never harder than before and nothing is taken away. */
+/* ===== THE ONE COUNT (the owner, October 30, 2026) =====
+   A slip ends the run on the day it happens, and the next day starts a new one. There is no rescue and no question: the mode
+   decides what Today shows (hero.ts), and the days earned stay on the record (longest, computeMetrics; the no-slip days in all).
+   ===== WHAT CAME BEFORE =====
+   Until then, the first slip in any 7 days could save a run: finish the Rekindle missions, or come back (the sunrise check, and the
+   third flame by itself) within BACK_DAYS, unless the person chose to start fresh on the slip (keep: false). Those rules stay for slips
+   up to st.countFrom, the day this person first opened the new rule (the store sets it, miles.ts keepCounts), because the update
+   reaches each phone on its own day: a run saved stays saved, and a person mid-rescue keeps what the old rule gives them. No countFrom
+   yet means nothing has moved to the new rule. Worked out from the log, like everything else. */
+const RUN_DEEP=14,BACK_DAYS=3,RUN_ASK=7,RUN_ASK_FROM='2026-10-22';
+/* From RK_BACK_FROM on, the old rule also saved a run by coming back: within BACK_DAYS, the sunrise check and the third flame (rkThirdOf). */
 const RK_BACK_FROM='2026-10-19';
-/* the third comeback flame for the slip on day k, as of today: the first urge ridden out after the slip (that day, later, or the days
+/* the third comeback flame for the slip on day k, as of today (it counts a comeback, and rescues nothing now): the first urge ridden out after the slip (that day, later, or the days
    after, up to the window), or the first full day after it with no slip. {k:the day it lit, rode:true for an urge} or null. */
 function rkThirdOf(days,k,st,today){
- const roll=st&&st.rollover!=null?st.rollover:4,dl=addDays(k,RK_DAYS),ev=sortedEvents(days[k],roll);
+ const roll=st&&st.rollover!=null?st.rollover:4,dl=addDays(k,BACK_DAYS),ev=sortedEvents(days[k],roll);
  let last=-1;ev.forEach((e,i)=>{if(e.outcome==='slipped')last=i});
  if(ev.slice(last+1).some(e=>e.outcome==='rode'))return {k,rode:true};
  for(let d=addDays(k,1);d<=dl&&d<=today;d=addDays(d,1)){
@@ -495,31 +497,32 @@ function rkThirdOf(days,k,st,today){
  }
  return null;
 }
-/* the answer on a slip day: true keep, false start fresh, null not answered (rekindle.ts rkKeep writes it on one slip of the day) */
+/* the answer an older build kept on a slip day: true keep, false start fresh, null not answered */
 function rkKeepOf(day){const e=((day&&day.events)||[]).find(x=>x.outcome==='slipped'&&typeof x.keep==='boolean');return e?e.keep:null}
 function rkFullDays(days){
  const out={};let last=null;
  allKeys(days).forEach(k=>{if(sumDay(days[k]).slipped>0&&(!last||diffDays(k,last)>=7)){out[k]=1;last=k}});
  return out;
 }
-/* the run, day by day. kind[k] is 'saved' or 'open' for a slip day that was saved or can still be. open: the save still in play, if any.
-   runs, when given, gets the run before each first slip in 7 days (rekindle.ts rkAsk). */
-function runLedger(days,st,today,mode,noSave,runs){
+/* the run, day by day. A slip ends it. Under the old rule (slips up to countFrom), kind[k] is 'saved' or 'open' for a slip day that was saved
+   or can still be, and open is the save still in play, if any. */
+function runLedger(days,st,today,mode,noSave){
  mode=mode||st.cleanMode;
  const L={cur:0,longest:0,clean:0,counted:0,saves:0,kind:{},open:null};
  if(!st.day1)return L;
  const canSave=!noSave&&(mode==='strict'||mode==='gentle'),full=canSave?rkFullDays(days):{};
  for(let k=st.day1;k<=today;k=addDays(k,1)){
-  const dk=dayKind(k,days[k],st,today,mode,days);
+  let dk=dayKind(k,days[k],st,today,mode,days);
+  /* one slip kept a gentle run going until countFrom; since then a slip ends the run in every mode, so the longest run means the same everywhere */
+  if(dk==='one'&&st.countFrom&&k>st.countFrom)dk='slip';
   /* a day Daybook does not know about pauses the run: it neither counts nor ends it (away.ts) */
   if(dk==='unknown')continue;
   L.counted++;
   if(dk!=='slip'){L.cur++;L.clean++}
   else{
    let s=null;const run=L.cur;
-   if(full[k]&&runs)runs[k]=run;
-   if(full[k]&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
-    const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,RK_DAYS);
+   if(full[k]&&(!st.countFrom||k<=st.countFrom)&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
+    const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,BACK_DAYS);
     const done=!!(r&&r.m3&&r.ev.rk.at<=dl&&((r.m1&&r.m2&&(!deep||r.m4))||(k>=RK_BACK_FROM&&rkThirdOf(days,k,st,today))));
     s=done?'saved':today<=dl?'open':null;
     if(s)L.kind[k]=s;
@@ -558,7 +561,7 @@ function computeMetrics(days,st,today){
  });
  const sk=streaks(days,st,today);
  return {days:Math.max(0,diffDays(today,st.start)+1),checkins,urges,rode,slips,recovered,pauses,pauseRate:urges?pauses/urges:null,
-  cleanDays:sk.clean,counted:sk.counted,slipDays,cur:sk.cur,longest:sk.longest,reached,
+  cleanDays:sk.clean,counted:sk.counted,slipDays,cur:sk.cur,longest:Math.max(sk.longest,(st.seen&&st.seen.longest)||0),reached,
   safety:st.safety.filter(Boolean).length,help:st.help.filter(Boolean).length};
 }
 
@@ -819,16 +822,16 @@ function dayPoints(days,key,st){
  if(rk&&rk.m3){add('sunrise','Sunrise check',15);if(rk.n===3)add('rekindle','Rekindled',20)}
  return {total:parts.reduce((a,b)=>a+b.pts,0),parts};
 }
-/* ===== REKINDLE: the quest after a slip, worked out from the log like everything else.
+/* ===== REKINDLE: what comes after a slip, worked out from the log like everything else.
    It hangs on the last slip of a day (or the one that already has a sunrise check). Three missions:
-   m1 one small thing (the slip's "recovered"), m2 phone away or screens off on time, that night or any night until the save window
-   closes (RK_DAYS), m3 the sunrise check, one morning. ===== */
+   m1 one small thing (the slip's "recovered"), m2 phone away or screens off on time, that night or any night in the BACK_DAYS after it,
+   m3 the sunrise check, one morning. They earn points and the Rekindled badge; they no longer keep a run going. ===== */
 function rkOf(days,k,st){
  const d=days[k];if(!d||!d.events||!d.events.length)return null;
  const sl=sortedEvents(d,st&&st.rollover!=null?st.rollover:4).filter(e=>e.outcome==='slipped');
  if(!sl.length)return null;
  const ev=sl.find(e=>e.rk)||sl[sl.length-1];
- let m2=false;for(let i=0;i<=RK_DAYS&&!m2;i++){const x=days[addDays(k,i)];m2=!!(x&&((x.p&&x.p.po)||(x.checkin&&x.checkin.so==='Y')))}
+ let m2=false;for(let i=0;i<=BACK_DAYS&&!m2;i++){const x=days[addDays(k,i)];m2=!!(x&&((x.p&&x.p.po)||(x.checkin&&x.checkin.so==='Y')))}
  const m1=sl.some(e=>e.recovered),m3=!!(ev.rk&&ev.rk.at),m4=!!(ev.rk&&ev.rk.dp);
  return {k,ev,m1,m2,m3,m4,n:(m1?1:0)+(m2?1:0)+(m3?1:0)};
 }
@@ -893,7 +896,7 @@ const BADGES=[
  {id:'bounce',name:'Bounce back',desc:'Do one small thing within the hour after a slip.',icon:'bolt',tone:'sun',goal:1,now:S=>S.recovered},
  {id:'bounce-5',name:'Bounce-back pro',desc:'Do that 5 times.',icon:'bolt',tone:'sun',goal:5,now:S=>S.recovered},
  {id:'rekindled',name:'Rekindled',desc:'Finish all three Rekindle missions after a slip.',icon:'flame',tone:'sun',goal:1,now:S=>S.rekindled},
- {id:'run-saved',name:'Run saved',desc:'Keep a run going after a slip by finishing the Rekindle quest.',icon:'flame',tone:'coral',goal:1,now:S=>S.saves},
+ {id:'run-saved',name:'Kept going',desc:'You came back after a slip and your run kept going.',icon:'flame',tone:'coral',goal:1,now:S=>S.saves},
  {id:'stretch-48',name:'48 hours',desc:'Go 48 hours between slips.',icon:'timer',tone:'sky',goal:1,now:S=>S.stretch48},
  {id:'lower-week',name:'A lower week',desc:'Finish a week with fewer slips than the week before.',icon:'chart',tone:'mint',goal:1,now:S=>S.lowerWeeks},
  {id:'stepped-up',name:'Stepped up',desc:'Finish the step-down plan and start counting days.',icon:'crown',tone:'sun',goal:1,now:S=>S.grad},
@@ -3161,13 +3164,8 @@ export {
   eventsOf,
   cleanLimit,
   dayKind,
-  RUN_DEEP,
-  RK_DAYS,
-  RK_BACK_FROM,
+  BACK_DAYS,
   rkThirdOf,
-  RUN_ASK,
-  RUN_ASK_FROM,
-  rkKeepOf,
   rkFullDays,
   runLedger,
   streaks,

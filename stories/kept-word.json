@@ -7,7 +7,7 @@
     "rollover": 4,
     "screensOff": "23:00"
   },
-  "never": ["Time to decide"],
+  "never": ["Time to decide", "Run saved", "start fresh", "Next run", "Keep counting from"],
   "visits": [
     {
       "day": "2026-10-15",
@@ -44,15 +44,15 @@
     {
       "day": "2026-10-22",
       "open": "08:00",
-      "what": "the morning after: coming back is the sunrise check; with the small step and Good night done, the run is saved",
+      "what": "the morning after: coming back is the sunrise check; the count is 1, with the hours as its chip",
       "expect": "Lesson \\d+ of \\d+",
       "absent": ["The morning after", "What came just before", "run question"]
     },
     {
       "day": "2026-10-23",
       "open": "10:00",
-      "what": "the comeback, noticed: a day with no slip lit the third flame, and the run is saved",
-      "expect": "Run saved\\. You came back",
+      "what": "the comeback, noticed: a day with no slip lit the third flame",
+      "expect": "You came back: 1 comeback",
       "absent": ["After a slip", "run is waiting"]
     },
     {

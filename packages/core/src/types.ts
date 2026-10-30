@@ -43,7 +43,7 @@ export interface DayEvent {
   wt?: 0 | 5 | 10 | 20 | null;
   /** a slip: the exact minutes waited first, from the slip's "Did you wait first?" slider (0 to 30, where 30 is 30 or more) */
   wm?: number;
-  /** a slip that ends a run of RUN_ASK days or more: true keep the run going (Rekindle saves it), false start fresh, absent not answered yet */
+  /** an older build's answer on a slip that ended a long run (the old rule in runLedger reads it): true keep the run going, false start fresh */
   keep?: boolean;
   /** a slip: the feeling named for before it, a word from the field of feelings (slip.ts) */
   fb?: string;
@@ -164,7 +164,7 @@ export interface Settings {
   celebrate: boolean;
   /** what was already celebrated, and the floors that keep earned things earned. pts: the most points ever shown, kept
       when a change would lower them (miles.ts keepPoints) */
-  seen: { badges: string[]; quests: string[]; level: number; full: DayKey | null; lad: number; pts?: number } | null;
+  seen: { badges: string[]; quests: string[]; level: number; full: DayKey | null; lad: number; pts?: number; longest?: number } | null;
   opts: { trig: { id: string; t: string; off?: true }[]; did: { id: string; t: string; off?: true }[] };
   cleanMode: CountMode;
   /** switch for me: Daybook moves between step down and counting days as the log changes (false: leave it) */
@@ -173,6 +173,8 @@ export interface Settings {
       old gentle switch ('gentle') */
   cleanNote: { on: DayKey; m: 'step' | 'count' | 'gentle' } | null;
   cleanHold: DayKey | null;
+  /** the day this person first opened the one-count rule: slips up to it keep the rule they were made under (runLedger, miles.ts keepCounts) */
+  countFrom?: DayKey;
   stepAt: DayKey | null;
   stepNo: DayKey | null;
   stepGrad: DayKey | null;

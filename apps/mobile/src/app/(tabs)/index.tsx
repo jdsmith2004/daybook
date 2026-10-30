@@ -1,5 +1,5 @@
 /* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
-   moment (a pause, the hard hours, a run question left open or the day of a slip, a talk-through, days away, the Sunday
+   moment (a pause, the hard hours, the day of a slip, a talk-through, days away, the Sunday
    review, a one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care

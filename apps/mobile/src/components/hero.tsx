@@ -13,7 +13,8 @@
    feeding the flame.
    Every form is drawn the same size (big-flame.tsx): the growth shows in the form. On a short phone the sky is shorter
    (lib/today-size.ts; Today passes its height), so SOS still fits above the tab bar. On the day of a slip, while the number still shows the days
-   that hold, one quiet line under the sky says the slip is logged and the days stay (core heroSlipLine). */
+   that hold, one quiet line under the sky says the slip is logged and what stays (core heroSlipLine). The chip under the
+   number holds the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation. */
 import { CHEERS, emblemScene, heroNumber, heroSlipLine, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -273,6 +274,14 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
               </Text>
             ) : null}
           </View>
+          {h.chip ? (
+            <View style={[s.chip, { backgroundColor: glass }]}>
+              {h.star ? <Icon name="star" size={13} color={ink} /> : null}
+              <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
+                {h.chip}
+              </Text>
+            </View>
+          ) : null}
         </Pressable>
       ) : null}
       <Pressable
@@ -280,14 +289,6 @@ function Sky({ g, snap, tk, now, height }: { g: GameState; snap: Snapshot; tk: s
         accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
         onPress={() => router.push('/points')}
         style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
-        {h && h.chip ? (
-          <View style={[s.chip, { backgroundColor: glass }]}>
-            {h.star ? <Icon name="star" size={13} color={ink} /> : null}
-            <Text maxFontSizeMultiplier={ON_ART} style={[s.chipT, { color: ink }]}>
-              {h.chip}
-            </Text>
-          </View>
-        ) : null}
         <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
           Level {lvl.n} · {lvl.name} ›
         </Text>
@@ -364,8 +365,17 @@ const s = StyleSheet.create({
   nRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
   unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 20, paddingBottom: 4 },
   lv: { position: 'absolute', right: 14, bottom: 18, alignItems: 'flex-end', gap: 6, maxWidth: '45%' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  chipT: { fontFamily: font.bodySemi, fontSize: 13.5 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  chipT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13 },
   lvT: { fontFamily: font.bodySemi, fontSize: 14, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
   grew: {

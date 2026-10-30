@@ -32,7 +32,13 @@ export default function Back() {
         ? { h: 'Welcome back.', p: 'Everything you built is still here.' }
         : saved === 0
           ? { h: 'Then those days count.', p: `${gap.n} more ${gap.n === 1 ? 'day' : 'days'} with no slip. That is real, and it is yours.` }
-          : { h: 'Thank you for being honest.', p: 'Each slip takes one day, never more. A slip is data, not a reset, and your longest run stays yours.' };
+          : {
+              h: 'Thank you for being honest.',
+              p:
+                st?.cleanMode === 'gentle'
+                  ? 'Each slip takes one day, never more. A slip is data, and your longest run stays yours.'
+                  : 'A slip is data. Every day you earned stays on your record, and your longest run stays yours.',
+            };
     return (
       <SceneFrame title="Welcome back" sky="mint" onClose={close}>
         <View style={s.mid}>

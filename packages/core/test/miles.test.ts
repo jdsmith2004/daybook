@@ -91,7 +91,7 @@ it('who you are, in numbers: only what was done, said as who the person is, and 
   let days = core.addEvent({}, '2026-10-05', 'rode', '22:00').days;
   days = core.addEvent(days, '2026-10-06', 'slipped', '23:00').days;
   const lines = core.identityLines(days, st, {}, tk);
-  expect(lines.map((x) => x.n)).toEqual(['1 time', '1 slip, every one logged']);
+  expect(lines.map((x) => x.n)).toEqual(['1 time', '1 slip, every one logged', '1 comeback']);
   for (const x of lines) expect(x.who).toMatch(/^You are someone who /);
   /* the hours given back: nine finished days with no slip since Day 1, at the setup's pace */
   const h = core.hoursBack(days, st, tk);

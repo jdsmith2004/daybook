@@ -30,6 +30,10 @@ need, without letting the screen turn into a list of features.
   them until the person has gone at least a week with no slip. Early on, the goals are small and close.
 - **Progress is never all or nothing.** Avoid any count that drops to zero and makes day 89 feel like a disaster. Prefer
   measures that hold what was earned (for example, no-slip days in a recent window) over a single streak that resets.
+  One exception, by the owner's choice (October 30, 2026): each counting mode has one count, shown the same everywhere, and
+  on strict a slip puts it to 0 (gentle takes one day off, step down is hours since the slip). What was earned still stays:
+  the longest run, the no-slip days, the comebacks, points, level, badges and graduation never drop, and the day of a slip
+  says so. Nothing asks about the count after a slip and nothing rescues it (core `hero.ts`, `runLedger`).
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work

@@ -25,28 +25,15 @@ describe('a slip after a long run', () => {
     expect(core.rkHoldWords(false, false, 39).p).toBe('Your 39 days built a fire that holds its heat. Press and hold to breathe it back up.');
     expect(core.rkHoldWords(false, false, 6).p).toMatch(/down to embers/);
     expect(core.rkHoldWords(false, false).p).toMatch(/down to embers/);
-    expect(core.rkEmbers(slip(K), st, {}, K, K, false, false).p).not.toMatch(/embers/);
-    expect(core.rkEmbers(slip(K6), st, {}, K6, K6, false, false).p).toMatch(/embers/);
   });
 
-  it('leads with what is permanent: the days are yours for good, and the quest keeps the count going', () => {
-    expect(core.rkRunWords(39, K)).toEqual({
-      b: 'Your 39 days are yours for good.',
-      rest: 'Ride out one urge or have one day with no slip by Wednesday night, and the count goes on from 39.',
-    });
-    /* a slip from before the comeback (RK_BACK_FROM) had the missions */
-    expect(core.rkRunWords(9, '2026-10-10').rest).toBe('Finish the Rekindle quest by Tuesday night, and the count goes on from 9.');
+  it('leads with what is permanent, in the words of the mode, and never says a run can be saved or lost', () => {
     const days = slip(K);
-    const all = [
-      core.rkLitLine(days, st, {}, K, K),
-      core.rkLightLine(slip(K, [{ id: 's2', time: '23:00', outcome: 'slipped' }]), st, K, K, 0),
-      JSON.stringify(core.rkEmbers(days, st, {}, K, K, true, false)),
-      JSON.stringify(core.rkKeptForNow({ k: K, run: 7 }, K)),
-      JSON.stringify(core.rkChoice(days, st, K, core.rkAsk(days, st, K, K)!)),
-      JSON.stringify(core.srEnd(days, st, core.addDays(K, 1), K, core.rkOf(days, K, st)!, 7)),
-    ].join(' ');
-    expect(all).not.toMatch(/for now|waits for you|saves it|can still be saved|Save your|down to embers/);
-    expect(core.rkLitLine(days, st, {}, K, K)).toBe('Your 7 days are yours for good, and so is everything you earned.');
+    expect(core.rkLitLine(days, st, {}, K, K)).toBe('Your 7 days are on your record, and everything you earned is still yours.');
+    const g = { ...st, cleanMode: 'gentle' as const };
+    expect(core.rkRunBefore(days, g, K, K)).toBe(7);
+    expect(core.rkLitLine(days, g, {}, K, K)).toBe('Your 7 days still count, and everything you earned is still yours.');
+    expect([core.rkLitLine(days, st, {}, K, K), core.rkLitLine(days, g, {}, K, K)].join(' ')).not.toMatch(/for now|saved?\b|down to embers|start fresh/i);
   });
 });
 

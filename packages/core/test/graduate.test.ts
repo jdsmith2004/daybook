@@ -61,22 +61,6 @@ it('the words are warm and never talk about losing anything', () => {
   expect(lines).not.toMatch(/\b\w+n[’']t\b/);
 });
 
-it('after a slip that ends a long run, Rekindle honors the run and the way to graduation', () => {
-  const st = st0(core.addDays(tk, -60));
-  const long = core.addEvent({}, tk, 'slipped', '22:00').days;
-  const h = core.rkHonor(long, st, tk, tk);
-  expect(h).toMatch(/^60 days\. That is huge, and it still counts\./);
-  expect(h).toContain('of 90 toward graduation');
-  expect(h).not.toMatch(/lost|lose|reset|start over|\b\w+n[’']t\b/i);
-  const short = core.addEvent({}, tk, 'slipped', '22:00').days;
-  expect(core.rkHonor(short, st0(core.addDays(tk, -3)), tk, tk)).toBeNull();
-});
-
-it('a run under 30 days is honored without naming the 90', () => {
-  const h = core.rkHonor(core.addEvent({}, tk, 'slipped', '22:00').days, st0(core.addDays(tk, -20)), tk, tk);
-  expect(h).toBe('20 days. That is huge, and it still counts.');
-});
-
 describe('the one day number on Today', () => {
   const st0 = core.normSettings({ v: 1, start: '2026-09-24', day1: '2026-10-01', rollover: 4, screensOff: '23:00', u: 1 });
   const slip = (d: string) => ({

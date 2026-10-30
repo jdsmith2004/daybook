@@ -12,11 +12,11 @@
    DELETE /sync?all=1                    close the account: remove everything for good, then delete the sign-in itself
 
    Supporters (supporter.ts; core supporter.ts holds the rules):
-   GET    /sync?sup=1                    { sup }: this person's supporter record, or null
-   POST   /sync?claim=stripe { session } a web tip: the Checkout Session id the Payment Link sent back; gives { sup }
-   POST   /sync?claim=apple  { jws }     an Apple tip: the signed transaction from StoreKit; gives { sup }
-   POST   /sync/claim        { session } the one open door (no sign-in), for a web tip on a signed-out device: the tip is
-                                       checked and marked as used, and { sup } comes back for that device to keep
+   GET    /sync?sup=1                    { sup, pat }: this person's supporter record and Daybook Pattern record, or nulls
+   POST   /sync?claim=stripe { session } a web payment: the Checkout Session id the Payment Link sent back; gives { sup, pat }
+   POST   /sync?claim=apple  { jws }     an Apple purchase: the signed transaction from StoreKit; gives { sup, pat }
+   POST   /sync/claim        { session } the one open door (no sign-in), for a web payment on a signed-out device: it is
+                                       checked and marked as used, and { sup, pat } comes back for that device to keep
 
    Sign in with Apple (apple-sign-in.ts):
    POST   /sync/apple { token, nonce }   the second open door: Apple's identity token for Cognito tokens { tokens }
@@ -25,7 +25,7 @@
                   with no code, an account joined to Apple answers 409 { code: 'NeedApple' } and nothing is deleted, so the app
                   asks Apple; { apple: { skip: true } } is a device that cannot ask Apple (Android), and closes it anyway
 
-   Saving records (POST /sync) needs a supporter, or an account from before tips (grandfathered); otherwise it answers
+   Saving records (POST /sync) needs a supporter or Daybook Pattern, or an account from before tips (grandfathered); otherwise it answers
    402 { need: 'support' } and saves nothing. Everything else stays open to every signed-in person, so nobody is ever cut
    off from their own log: reading it (a new phone, a lapsed supporter getting their log back), bringing back an erased
    log, erasing it, and closing the account.
@@ -39,7 +39,7 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructured
 import type { CheckApple, RevokeApple } from './apple-id';
 import { AppleError, appleLink, appleSignIn, type AppleUsers } from './apple-sign-in';
 import { BadCursor, type Store } from './store';
-import { claimApple, claimStripe, maySync, PayError, resolveSup, type Pay } from './supporter';
+import { claimApple, claimStripe, heldBy, maySync, PayError, type Held, type Pay } from './supporter';
 
 export const PAGE = 500;
 export const MAX_PUSH = 200;
@@ -96,9 +96,9 @@ function claimBody(event: APIGatewayProxyEventV2WithJWTAuthorizer): Record<strin
     return null;
   }
 }
-async function paid(f: () => Promise<unknown>): Promise<Res> {
+async function paid(f: () => Promise<Held>): Promise<Res> {
   try {
-    return json(200, { sup: await f() });
+    return json(200, await f());
   } catch (e) {
     if (e instanceof PayError) return json(e.status, { error: e.message });
     throw e;
@@ -155,7 +155,7 @@ export function makeHandler(
 
     if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
 
-    if (method === 'GET' && q.sup === '1') return json(200, { sup: await resolveSup(store, user, username, pay, clock()) });
+    if (method === 'GET' && q.sup === '1') return json(200, await heldBy(store, user, username, pay, clock()));
 
     if (method === 'POST' && (q.claim === 'stripe' || q.claim === 'apple')) {
       const b = claimBody(event);

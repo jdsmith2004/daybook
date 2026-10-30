@@ -1,7 +1,7 @@
 /* Reviews, backups, and the records that sync moves. */
 import { isKey, mergeOpts, normDay, normSettings } from './legacy/core.js';
 import { isJnId, normJEntry, type JEntry, type Journal } from './journal-entries';
-import { keepSup } from './supporter';
+import { keepPat, keepSup } from './supporter';
 import { normSun } from './sunday';
 import type { Day, DayKey, Days, Review, Reviews, Settings, Snapshot } from './types';
 
@@ -91,7 +91,7 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
   const back = { ...(lose.learn.back || {}), ...(out.learn.back || {}) };
   if (Object.keys(back).length) out.learn.back = back;
-  return keepSup(out, lose.sup);
+  return keepPat(keepSup(out, lose.sup), lose.pat);
 }
 
 /** restores a backup on top of what is here, the way the legacy app does: the backup's days and reviews replace the same days

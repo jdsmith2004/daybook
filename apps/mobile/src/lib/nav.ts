@@ -24,6 +24,7 @@ export const SHEETS = [
   'feedback',
   'stats',
   'tip',
+  'month',
 ];
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */

@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { appleVerifier, BUNDLE_ID } from '../src/apple';
+import { appleVerifier, BUNDLE_ID, type AppleTip } from '../src/apple';
 import { APPLE_ROOT_G3 } from '../src/apple-root';
 
 let dir = '';
@@ -122,7 +122,7 @@ describe('an Apple tip', () => {
   });
 
   it('a signed tip checks, with its tier, amount and purchase id', async () => {
-    const t = await appleVerifier([root])(jws({ appAccountToken: 'AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE' }));
+    const t = (await appleVerifier([root])(jws({ appAccountToken: 'AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE' }))) as AppleTip;
     expect(t.tier).toBe('generous');
     expect(t.cents).toBe(999);
     expect(t.otid).toBe('2000000000000001');
@@ -132,6 +132,22 @@ describe('an Apple tip', () => {
 
   it('the same transaction is refused against Apple’s real root (the chain must lead to Apple)', async () => {
     await expect(appleVerifier()(jws())).rejects.toThrow(/could not confirm/);
+  });
+
+  it('checks both forms of Daybook Pattern', async () => {
+    const v = appleVerifier([root]);
+    const end = Date.now() + 30 * 86400_000;
+    const m = await v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription', expiresDate: end, price: 2990, currency: 'USD' }));
+    expect(m).toMatchObject({ pat: 'monthly', until: end, cents: 299 });
+    const l = await v(jws({ productId: 'daybook.pattern.lifetime', price: 24990, currency: 'USD' }));
+    expect(l).toMatchObject({ pat: 'lifetime', until: null, cents: 2499 });
+    /* monthly needs its end, and each form its own type */
+    await expect(v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription' }))).rejects.toThrow(/not Daybook Pattern/);
+    await expect(v(jws({ productId: 'daybook.pattern.monthly', type: 'Non-Consumable', expiresDate: end }))).rejects.toThrow(/not Daybook Pattern/);
+    await expect(v(jws({ productId: 'daybook.pattern.lifetime', type: 'Consumable' }))).rejects.toThrow(/not Daybook Pattern/);
+    await expect(
+      v(jws({ productId: 'daybook.pattern.monthly', type: 'Auto-Renewable Subscription', expiresDate: end, revocationDate: Date.now() })),
+    ).rejects.toThrow(/refunded/);
   });
 
   it('refuses another app, another product, a refund, a consumable, Xcode, and a changed payload', async () => {
@@ -147,7 +163,7 @@ describe('an Apple tip', () => {
   });
 
   it('a Production transaction checks the same way', async () => {
-    const t = await appleVerifier([root])(jws({ environment: 'Production', productId: 'daybook.tip.kind', price: 5000 }));
+    const t = (await appleVerifier([root])(jws({ environment: 'Production', productId: 'daybook.tip.kind', price: 5000 }))) as AppleTip;
     expect(t.tier).toBe('kind');
     expect(t.cents).toBe(500);
   });

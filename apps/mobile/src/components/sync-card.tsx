@@ -1,6 +1,6 @@
 /* Sync between devices, in Settings: sign in, see when it last synced, sync now, sign out, or delete the account. The first
    time a device joins an account that already has a log, the question of what to keep is asked here. */
-import { fmtDate, keyOfDate, supActive, SUPPORT_MIN, SUP_SYNC_WORDS } from '@daybook/core';
+import { fmtDate, keyOfDate, patActive, SUPPORT_MIN, SUP_SYNC_WORDS } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -109,7 +109,7 @@ function FindTip() {
         setBusy(true);
         const r = await syncTips(true).catch(() => null);
         setBusy(false);
-        if (!r || !supActive(r.server)) say(tipError() && tipError() !== 'No tip was found.' ? tipError() : SUP_SYNC_WORDS.none);
+        if (!r || !r.open) say(tipError() && tipError() !== 'No tip was found.' ? tipError() : SUP_SYNC_WORDS.none);
       }}
     />
   );
@@ -217,7 +217,9 @@ export function SyncBody() {
 
   const line =
     st.k === 'need'
-      ? SYNC_NEED
+      ? snap.settings?.pat && !patActive(snap.settings.pat)
+        ? SUP_SYNC_WORDS.lapsed
+        : SYNC_NEED
       : st.k === 'expired'
         ? 'Sign in again to keep syncing. Your log is still here.'
         : st.k === 'error'

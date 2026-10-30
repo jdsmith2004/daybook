@@ -25,7 +25,7 @@ import {
   type SyncRecord,
   type SyncTransport,
 } from '@daybook/core';
-import { changeSettings, keepSup, supActive, type Supporter } from '@daybook/core';
+import { changeSettings, keepPat, keepSup, type PatRec, type Supporter } from '@daybook/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
@@ -38,7 +38,7 @@ import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, sign
 import { SYNC_URL, syncOffered } from './config';
 import { here } from './here';
 import { useStore } from './store';
-import { keptSup, loadKept, setTipHost, syncTips, watchAppleTips } from './tip';
+import { keptPat, keptSup, loadKept, setTipHost, syncTips, watchAppleTips } from './tip';
 
 const KEY = 'daybook.sync';
 const EVERY = 5 * 60_000;
@@ -233,7 +233,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         linked.current = true;
         syncTips()
           .then((r) => {
-            if (supActive(r.server)) resumeRef.current();
+            if (r.open) resumeRef.current();
           })
           .catch(() => undefined);
       }
@@ -633,6 +633,15 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     },
     [current, apply],
   );
+  const savePat = useCallback(
+    (pat: PatRec) => {
+      const st = current().snap.settings;
+      if (!st) return;
+      const next = keepPat(st, pat);
+      if (next !== st) apply({ st: changeSettings(st, (x) => void (x.pat = next.pat)) });
+    },
+    [current, apply],
+  );
   useEffect(() => {
     setTipHost({
       account: () => sessionRef.current?.sub || null,
@@ -647,11 +656,12 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         }
       },
       save: saveSup,
+      savePat,
       resume: () => resumeRef.current(),
       say,
     });
     return () => setTipHost(null);
-  }, [callApi, saveSup, say]);
+  }, [callApi, saveSup, savePat, say]);
   /* Apple tips that arrive on their own, and at start every tip this device knows of (a web tip just paid, a restore) */
   useEffect(() => watchAppleTips(), []);
   useEffect(() => {
@@ -665,11 +675,13 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     loadKept().then(() => {
       const k = keptSup();
       if (live && k) saveSup(k);
+      const p = keptPat();
+      if (live && p) savePat(p);
     });
     return () => {
       live = false;
     };
-  }, [ready, snap.settings, saveSup]);
+  }, [ready, snap.settings, saveSup, savePat]);
 
   const value = useMemo<SyncValue>(
     () => ({

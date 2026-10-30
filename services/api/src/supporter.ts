@@ -6,13 +6,26 @@
 
    Grandfathered: an account that synced before tips opened sync keeps it with no tip. The first time the server looks at
    an account with no record, it gives it src 'grandfather' (and keeps that for good) when either
-     - the account already holds synced data. Since the sync gate went live, an account with no record can never write,
-       so data can only be there from before; this needs no clock and no list, and it holds whenever the deploy lands; or
+     - the account already holds synced data and has never held Daybook Pattern. Since the sync gate went live, an account
+       with neither record can never write, so data can only be there from before; this needs no clock and no list, and it
+       holds whenever the deploy lands; or
      - Cognito says the account was made before core GRANDFATHER_BEFORE (for someone who signed up but had not synced yet).
        This needs cognito-idp:AdminGetUser on the function's role (infra/bootstrap); until the owner applies that, the
        first rule alone decides.
    Nothing is ever deleted because someone is not a supporter: their records stay and they can still read them. */
-import { ACCOUNT_RE, GRANDFATHER_BEFORE, STRIPE_SESSION_RE, supActive, tipEnough, type Supporter } from '@daybook/core';
+import {
+  ACCOUNT_RE,
+  GRANDFATHER_BEFORE,
+  PAT_LIFETIME_CENTS,
+  patActive,
+  patBest,
+  PATTERN_FROM,
+  STRIPE_SESSION_RE,
+  supActive,
+  tipEnough,
+  type PatRec,
+  type Supporter,
+} from '@daybook/core';
 
 import { BadProof, type VerifyApple } from './apple';
 import type { Store } from './store';
@@ -40,7 +53,8 @@ export class PayError extends Error {
 export async function resolveSup(store: Store, user: string, username: string, pay: Pay, now: number): Promise<Supporter | null> {
   const cur = await store.getSup(user);
   if (cur) return cur.sup;
-  let old = await store.hasData(user);
+  /* an account on Daybook Pattern wrote its data with that open, so the data says nothing about being from before tips */
+  let old = !(await store.getPat(user)) && (await store.hasData(user));
   if (!old && pay.createdAt && username) {
     const at = await pay.createdAt(username).catch(() => null);
     old = at != null && at < GRANDFATHER_BEFORE;
@@ -51,16 +65,37 @@ export async function resolveSup(store: Store, user: string, username: string, p
   return g;
 }
 
-/** whether the account may sync now */
+/** whether the account may sync now: a tip, an account from before tips, or Daybook Pattern while it is active */
 export async function maySync(store: Store, user: string, username: string, pay: Pay, now: number): Promise<boolean> {
-  return supActive(await resolveSup(store, user, username, pay, now), now);
+  if (supActive(await resolveSup(store, user, username, pay, now), now)) return true;
+  return patActive((await store.getPat(user))?.pat, now);
+}
+
+/** what a claim, or a look at the account, gives back: the supporter record and the Daybook Pattern record */
+export interface Held {
+  sup: Supporter | null;
+  pat: PatRec | null;
+}
+/** both of the person's records */
+export async function heldBy(store: Store, user: string, username: string, pay: Pay, now: number): Promise<Held> {
+  return { sup: await resolveSup(store, user, username, pay, now), pat: (await store.getPat(user))?.pat ?? null };
+}
+/** saves a Daybook Pattern record, keeping the better of it and what was there */
+async function givePat(store: Store, user: string, username: string, pat: PatRec, ref: string, pay: Pay, now: number): Promise<Held> {
+  const keep = patBest((await store.getPat(user))?.pat, pat)!;
+  await store.putPat(user, keep, ref);
+  return { sup: await resolveSup(store, user, username, pay, now), pat: keep };
 }
 
 /** the record to keep when a new one comes: one with no end beats one with an end (the later end between two); between
-    two with no end, a paid tip replaces a grandfathered record (it carries the amount), and otherwise the first stays */
+    two with no end, a paid tip replaces a grandfathered record (it carries the amount), and the earlier paid tip stays,
+    since its date decides what it keeps (core patOpen) */
 export function supKeep(cur: Supporter | null, next: Supporter): Supporter {
   if (!cur) return next;
-  if (cur.until == null && next.until == null) return cur.src === 'grandfather' && next.src !== 'grandfather' ? next : cur;
+  if (cur.until == null && next.until == null) {
+    if (cur.src === 'grandfather') return next.src !== 'grandfather' ? next : cur;
+    return next.src !== 'grandfather' && next.since < cur.since ? next : cur;
+  }
   if (cur.until == null) return cur;
   if (next.until == null) return next;
   return next.until > cur.until ? next : cur;
@@ -78,7 +113,7 @@ async function bind(store: Store, key: string, user: string, row: { at: number; 
     }
     if (c.sub === user) return;
     if (!user) throw new PayError(409, 'This tip is already linked to a Daybook account. Sign in to that account to use it.');
-    if (!c.sub || !(await store.getSup(c.sub))) {
+    if (!c.sub || !((await store.getSup(c.sub)) || (await store.getPat(c.sub)))) {
       if (await store.putClaim(key, { ...row, sub: user }, c)) return;
       continue;
     }
@@ -97,8 +132,17 @@ async function give(store: Store, user: string, username: string, sup: Supporter
 
 /** A web tip: the Checkout Session the Payment Link sent the person back with. `user` is the signed-in account, or '' for
     a signed-out device (the open door, POST /sync/claim). A session that was paid with an account id on it
-    (client_reference_id, put there by the app when the person was signed in) goes to that account, whoever brings it. */
-export async function claimStripe(store: Store, pay: Pay, user: string, username: string, id: unknown, now: number): Promise<Supporter> {
+    (client_reference_id, put there by the app when the person was signed in) goes to that account, whoever brings it. Once
+    Daybook Pattern is on sale, a payment of its lifetime price or more is that (`from`: PATTERN_FROM). */
+export async function claimStripe(
+  store: Store,
+  pay: Pay,
+  user: string,
+  username: string,
+  id: unknown,
+  now: number,
+  from: number | null = PATTERN_FROM,
+): Promise<Held> {
   if (typeof id !== 'string' || !STRIPE_SESSION_RE.test(id)) throw new PayError(400, 'That is not a tip.');
   if (!pay.stripe) throw new PayError(503, 'Web tips are not set up yet.');
   let s;
@@ -115,17 +159,25 @@ export async function claimStripe(store: Store, pay: Pay, user: string, username
   const named = s.client_reference_id && ACCOUNT_RE.test(s.client_reference_id) ? s.client_reference_id.toLowerCase() : '';
   if (named && user && named !== user.toLowerCase()) throw new PayError(403, 'This tip was made from another Daybook account. Sign in to that one.');
   const to = named || user;
-  const sup: Supporter = { since: (s.created || now / 1000) * 1000, kind: 'tip', until: null, src: 'stripe', cents, ref: id };
+  const since = (s.created || now / 1000) * 1000;
   const key = 'stripe/' + id;
   await bind(store, key, to, { at: now, src: 'stripe', cents });
-  if (!to) return sup;
+  if (from != null && cents >= PAT_LIFETIME_CENTS) {
+    const pat: PatRec = { since, kind: 'lifetime', until: null, src: 'stripe', cents, ref: id };
+    if (!to) return { sup: null, pat };
+    const kept = await givePat(store, to, to === user ? username : '', pat, key, pay, now);
+    return user ? kept : { sup: null, pat };
+  }
+  const sup: Supporter = { since, kind: 'tip', until: null, src: 'stripe', cents, ref: id };
+  if (!to) return { sup, pat: null };
   const kept = await give(store, to, to === user ? username : '', sup, key, pay, now);
   /* a signed-out device keeps the record of the tip it brought, with its proof, so it can be linked when it signs in */
-  return user ? kept : sup;
+  return { sup: user ? kept : sup, pat: user ? ((await store.getPat(to))?.pat ?? null) : null };
 }
 
-/** An Apple tip: the signed transaction StoreKit gave the phone. Signed in only. */
-export async function claimApple(store: Store, pay: Pay, user: string, username: string, jws: unknown, now: number): Promise<Supporter> {
+/** An Apple purchase, a tip or Daybook Pattern: the signed transaction StoreKit gave the phone. Signed in only. A monthly
+    plan is brought again after it renews, and its record moves on to the new end. */
+export async function claimApple(store: Store, pay: Pay, user: string, username: string, jws: unknown, now: number): Promise<Held> {
   if (!pay.apple) throw new PayError(503, 'Apple tips are not set up yet.');
   let t;
   try {
@@ -137,6 +189,8 @@ export async function claimApple(store: Store, pay: Pay, user: string, username:
   if (t.token && t.token !== user.toLowerCase()) throw new PayError(403, 'This purchase was made from another Daybook account. Sign in to that one.');
   const key = 'apple/' + t.otid;
   await bind(store, key, user, { at: now, src: 'apple', cents: t.cents, env: t.env });
+  if ('pat' in t)
+    return givePat(store, user, username, { since: t.since || now, kind: t.pat, until: t.until, src: 'apple', cents: t.cents, ref: t.otid }, key, pay, now);
   const sup: Supporter = { since: t.since || now, kind: 'tip', until: null, src: 'apple', cents: t.cents, ref: t.otid };
-  return give(store, user, username, sup, key, pay, now);
+  return { sup: await give(store, user, username, sup, key, pay, now), pat: (await store.getPat(user))?.pat ?? null };
 }

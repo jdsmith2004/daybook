@@ -1,14 +1,15 @@
-/* Checking an Apple tip. The phone sends the signed transaction StoreKit gave it (a JWS). Apple's own library
+/* Checking an Apple purchase. The phone sends the signed transaction StoreKit gave it (a JWS). Apple's own library
    (@apple/app-store-server-library, SignedDataVerifier) checks that the certificate chain in it leads to Apple's root
    (apple-root.ts), that the signature is good, and that it is for this app; then this checks that it is one of the three
-   tips (core APPLE_TIPS), a non-consumable, and not refunded.
+   tips (core APPLE_TIPS, non-consumable) or a form of Daybook Pattern (core APPLE_PATTERN: lifetime is non-consumable, and
+   monthly an auto-renewable subscription with an end), and not refunded.
 
    Production and Sandbox are both taken: App Review and TestFlight buy in the Sandbox, and only people the owner invites
    can. Xcode and local testing are never taken, because their transactions are not signed by Apple. Revocation is not
    looked up online (enableOnlineChecks false): the dates are checked at the time Apple signed the transaction, so a tip
    bought years ago still checks, and a check never fails because Apple's revocation server was slow. */
 import { Environment, SignedDataVerifier } from '@apple/app-store-server-library';
-import { appleTier, TIP_USD, type TipTierId } from '@daybook/core';
+import { applePatKind, appleTier, PAT_LIFETIME_CENTS, PAT_USD, TIP_USD, type PatKind, type TipTierId } from '@daybook/core';
 
 import { APPLE_ROOT_G3 } from './apple-root';
 
@@ -29,10 +30,17 @@ export interface AppleTip {
   env: 'Production' | 'Sandbox';
 }
 
+/** a form of Daybook Pattern Apple signed, checked. `until`: when the paid month ends (null for lifetime). */
+export interface ApplePattern extends Omit<AppleTip, 'tier'> {
+  pat: PatKind;
+  until: number | null;
+}
+export type ApplePurchase = AppleTip | ApplePattern;
+
 /** a transaction that is not a good tip; the words are safe to show */
 export class BadProof extends Error {}
 
-export type VerifyApple = (jws: string) => Promise<AppleTip>;
+export type VerifyApple = (jws: string) => Promise<ApplePurchase>;
 
 function envOf(jws: string): string | null {
   try {
@@ -59,13 +67,29 @@ export function appleVerifier(roots: Buffer[] = [APPLE_ROOT_G3], bundleId = BUND
       throw new BadProof('Apple could not confirm that purchase.');
     }
     const tier = appleTier(t.productId);
-    if (!tier) throw new BadProof('That purchase is not a Daybook tip.');
-    if (t.type !== 'Non-Consumable') throw new BadProof('That purchase is not a Daybook tip.');
-    if (t.revocationDate != null) throw new BadProof('That tip was refunded.');
+    const pat = applePatKind(t.productId);
+    if (!tier && !pat) throw new BadProof('That purchase is not a Daybook tip.');
+    if (t.revocationDate != null) throw new BadProof(tier ? 'That tip was refunded.' : 'That purchase was refunded.');
     if (!t.originalTransactionId) throw new BadProof('Apple could not confirm that purchase.');
     const since = Number(t.originalPurchaseDate ?? t.purchaseDate) || 0;
-    /* the price Apple charged, in thousandths, when it was in dollars; else the tip's own size */
-    const cents = t.currency === 'USD' && Number.isFinite(t.price) ? Math.round(Number(t.price) / 10) : TIP_USD[tier] * 100;
-    return { tier, otid: String(t.originalTransactionId), since, cents, token: t.appAccountToken ? String(t.appAccountToken).toLowerCase() : null, env };
+    /* the price Apple charged, in thousandths, when it was in dollars; else the product's own size */
+    const paid = t.currency === 'USD' && Number.isFinite(t.price) ? Math.round(Number(t.price) / 10) : null;
+    const base = {
+      otid: String(t.originalTransactionId),
+      since,
+      token: t.appAccountToken ? String(t.appAccountToken).toLowerCase() : null,
+      env: env as AppleTip['env'],
+    };
+    if (tier) {
+      if (t.type !== 'Non-Consumable') throw new BadProof('That purchase is not a Daybook tip.');
+      return { ...base, tier, cents: paid ?? TIP_USD[tier] * 100 };
+    }
+    if (pat === 'lifetime') {
+      if (t.type !== 'Non-Consumable') throw new BadProof('That purchase is not Daybook Pattern.');
+      return { ...base, pat, until: null, cents: paid ?? PAT_LIFETIME_CENTS };
+    }
+    const until = Number(t.expiresDate);
+    if (t.type !== 'Auto-Renewable Subscription' || !Number.isFinite(until) || until <= 0) throw new BadProof('That purchase is not Daybook Pattern.');
+    return { ...base, pat: 'monthly', until, cents: paid ?? Math.round(PAT_USD.monthly * 100) };
   };
 }

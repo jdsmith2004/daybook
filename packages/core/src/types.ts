@@ -3,7 +3,7 @@
 import type { Journal } from './journal-entries';
 import type { Talk } from './talk';
 import type { SunReview } from './sunday';
-import type { Supporter } from './supporter';
+import type { PatRec, Supporter } from './supporter';
 
 export type DayKey = string; // 'YYYY-MM-DD', the logical day (it rolls over at settings.rollover o'clock)
 export type Clock = string; // 'HH:MM', 24-hour
@@ -202,6 +202,8 @@ export interface Settings {
   tipMo?: DayKey | null;
   /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
   sup?: Supporter | null;
+  /** Daybook Pattern on this device (supporter.ts). Optional, so older records need no change. */
+  pat?: PatRec | null;
   /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
   u: number;

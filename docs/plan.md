@@ -193,6 +193,11 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
   plans more about Jesus later, so for a person who said yes the faith lessons stay first-class, and the filter only keeps
   them out of the path of someone who said no.
 - 7: yes, the four missing lessons, and identity moved into week 2.
+  Done October 30: lessons l46 (what getting free feels like, lesson 5), l47 and l48 (partners and sex after porn, closing
+  Shame and kindness) and l49 (day 30, 60, 90 and after, last on the path). The first week is How it works and Why it is
+  hard to stop; identity is lessons 10 to 13; the tools 14 to 21; faith moved from 17 to 22, and Shame and kindness from 9
+  to 26. Finished lessons stay finished for people mid-path. **Not said because it is not known:** a figure for how long a
+  flat stretch or low desire lasts, or for how long trust takes.
 - 8: yes, the five-question screen again every 30 days, with the score shown falling.
 - 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; monthly $2.99 or a
   lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.

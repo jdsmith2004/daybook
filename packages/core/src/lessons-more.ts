@@ -1,7 +1,9 @@
-/* Lessons 33 to 45. Lessons 33 to 40 are the two newer units: "Why it is hard to stop" and "Becoming someone new".
+/* Lessons 33 to 49. Lessons 33 to 40 are the two newer units: "Why it is hard to stop" and "Becoming someone new".
    Lesson 41, "The picture and the real thing", is the science behind Talk it through and Rekindle, in "Seeing your
    pattern". Lessons 42 to 45 are the science behind the SOS moves that had no lesson of their own (Fit the shapes,
-   5-4-3-2-1, The hour after, Your words), in "Skills for the moment"; each move's Why it works opens its lesson. They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
+   5-4-3-2-1, The hour after, Your words), in "Skills for the moment"; each move's Why it works opens its lesson. Lessons 46 to
+   49 fill what was missing: what getting free feels like (How it works), partners and sex after porn (Shame and kindness),
+   and day 30, 60, 90 and after (A life that holds, the last on the path). They follow the same lesson standard as the first 32 (see the LESSONS note in legacy/core.js), and
    legacy/core.js adds them to LESSONS, LUNITS and SRC, so every rule that counts lessons sees all of them.
 
    Each unit is a family: one hard idea taught four ways (the science, a scene, a practice, your own log), read together as
@@ -139,6 +141,47 @@ export const SRC_MORE: Record<string, [string, string]> = {
   dijkstra15: [
     'Dijkstra & Menninga (2015): experimentally induced states of mind determine abstinent smokers’ level of craving in reaction to smoking cues, Addictive Behaviors Reports',
     'https://pmc.ncbi.nlm.nih.gov/articles/PMC5845922/',
+  ],
+  /* lessons 46 to 49 */
+  fernandez23: [
+    'Fernandez, Kuss, Justice, Fernandez & Griffiths (2023): effects of a 7-day pornography abstinence period on withdrawal-related symptoms, a randomized controlled study, Archives of Sexual Behavior',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC9847461/',
+  ],
+  fernandez21: [
+    'Fernandez, Kuss & Griffiths (2021): lived experiences of recovery from problematic pornography use, a qualitative study of abstinence journals, Archives of Sexual Behavior',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC7889567/',
+  ],
+  lally10: [
+    'Lally, van Jaarsveld, Potts & Wardle (2010): how are habits formed, modelling habit formation in the real world, European Journal of Social Psychology',
+    'https://doi.org/10.1002/ejsp.674',
+  ],
+  schneider98: [
+    'Schneider, Corley & Irons (1998): surviving disclosure of infidelity, results of an international survey of 164 recovering sex addicts and partners, Sexual Addiction & Compulsivity',
+    'https://jenniferschneider.com/articles/Surviving_Disclosure_of_Infidelity.html',
+  ],
+  corley13: [
+    'Corley, Pollard, Hook & Schneider (2013): the impact of disclosure of relapse by self-identified sexual addicts, Sexual Addiction & Compulsivity',
+    'https://www.ojp.gov/ncjrs/virtual-library/abstracts/impact-disclosure-relapse-self-identified-sexual-addicts',
+  ],
+  zitzman09: [
+    'Zitzman & Butler (2009): wives’ experience of husbands’ pornography use and concomitant deception as an attachment threat, Sexual Addiction & Compulsivity',
+    'https://doi.org/10.1080/10720160903202679',
+  ],
+  bothe21: [
+    'Bőthe et al. (2021): are sexual functioning problems associated with frequent pornography use and/or problematic pornography use? Addictive Behaviors',
+    'https://pubmed.ncbi.nlm.nih.gov/32810799/',
+  ],
+  grubbs19: [
+    'Grubbs & Gola (2019): is pornography use related to erectile functioning? Journal of Sexual Medicine',
+    'https://pubmed.ncbi.nlm.nih.gov/30621919/',
+  ],
+  zimmer20: [
+    'Zimmer & Imhoff (2020): abstinence from masturbation and hypersexuality, Archives of Sexual Behavior',
+    'https://pubmed.ncbi.nlm.nih.gov/32130561/',
+  ],
+  mallory19: [
+    'Mallory, Stanton & Handy (2019): couples’ sexual communication and dimensions of sexual function, a meta-analysis, Journal of Sex Research',
+    'https://pubmed.ncbi.nlm.nih.gov/30777780/',
   ],
 };
 /* two sources the first 32 lessons already use */
@@ -1907,6 +1950,655 @@ export function lessonsMore(shared: Record<string, Src>): Lesson[] {
       scope:
         'The empathy gap was measured in smokers, and the self-persuasion and counseling studies were mostly about drinking. The same gap, and the same pull of your own reasons, run through every habit like this one. What it means for you: on a calm day you know what matters, and one line in your own words carries that into the hard moment.',
       src: src('sayette', 'loewenstein05', 'loman18', 'magill18', 'crosby', 'wood09', 'dijkstra15'),
+    },
+
+    /* ---------- l46, in How it works: what getting free feels like ---------- */
+    {
+      id: 'l46',
+      u: 0,
+      v: 2,
+      care: true,
+      chk: 'October 30, 2026',
+      title: 'What getting free feels like',
+      tag: 'The flat days pass, and the pull gets weaker as you go.',
+      ic: 'sunrise',
+      mins: 4,
+      ask: 'Why do I feel so flat since I stopped, and when does it get easier?',
+      key: 'A flat, irritable stretch is common in the first weeks, and it does not mean you are broken. There is no fixed timeline. It eases over weeks, and every urge you ride out is practice that makes the next one easier.',
+      np: 'What a flat day feels like for me, and what I will do on one',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['icon', { ic: 'sunrise' }],
+          h: 'You stopped, and now everything feels flat. Did you break something?',
+          b: [
+            bP(
+              'The days feel gray. You are short with people. Good things feel quiet. Many people hit this in the first weeks and take it as proof that something is wrong with them. This lesson is about what it really is, and what comes after it.',
+            ),
+          ],
+        },
+        {
+          k: 'guess',
+          e: 'predict',
+          h: 'In a trial of a therapy for porn use, men were checked on three months after it ended. How many in 100 had cut their viewing by at least 70%?',
+          p: 'Guess first.',
+          g: {
+            min: 0,
+            max: 100,
+            step: 1,
+            unit: 'percent',
+            ans: 74,
+            lo: 70,
+            hi: 100,
+            ticks: [0, 25, 50, 75, 100],
+            big: 'percent had cut it by 70% or more',
+            cap: 'Three months after the therapy ended',
+            rv: {
+              h: '74 in 100 had cut it by 70% or more.',
+              b: '35 in 100 had stopped completely. Both are real wins. Getting free is a road, and most of the men were well along it.',
+            },
+          },
+          fact: { s: 'Randomized trial · 28 men · Crosby & Twohig, 2016', i: [0] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['wave', {}],
+          h: 'The flat stretch is a stretch. It is not your life now, and it eases.',
+          b: [
+            bP(
+              'For a long time, one habit did a lot of work: it eased stress, filled the empty hour, and ended the day. When it goes, what it covered comes back up, and you have not yet found your new ways to meet it. That can feel flat, restless, or short-tempered. You are not broken. You are learning to live without it, and you get better at that.',
+            ),
+            bP(
+              '**Nobody can give you a date.** There is no fixed timeline, and anyone who promises one is guessing. Most people notice it easing over weeks: fewer pulls, weaker pulls, and more good days between them.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '7', s: 'days off porn, with no withdrawal effects found' }],
+          h: 'When researchers tested a week off porn, they found no withdrawal effects.',
+          b: [
+            bP(
+              '176 students who watched porn at least three times a week were split into two groups, and one group was asked to stop for seven days. Craving, mood and withdrawal symptoms came out about the same in both groups. And 45% of the group asked to stop slipped at least once that week.',
+            ),
+          ],
+          so: 'A low week is a low week. It is not damage from stopping. And if you slipped early on, you are in very good company.',
+          fact: { s: 'Randomized trial · 176 students · Fernandez et al., 2023', i: [1] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['chain', { n: ['Hard stretches', 'Less craving', 'Better mood, more energy'], i: ['moon', 'wave', 'sunrise'] }],
+          h: 'People who kept journals of quitting wrote about the hard days, and what came after.',
+          b: [
+            bP(
+              'Researchers read 104 journals from men on a forum for quitting porn. Many wrote about less craving, better mood, more energy and clearer thinking, more ease with people, and closer relationships. The same journals hold the hard parts: 55 of the 104 slipped at least once, and nearly one in three wrote about a sharp drop in sexual desire, which some called the flatline.',
+            ),
+          ],
+          so: 'The flat stretch and the good days are in the same stories. Feeling flat does not mean it is not working.',
+          fact: { s: 'Journal study · 104 men · Fernandez, Kuss & Griffiths, 2021', i: [2] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '18 to 254', s: 'days for a new habit to feel automatic' }],
+          h: 'Change takes weeks, it is uneven, and every urge you ride out counts.',
+          b: [
+            bP(
+              'In a study of 96 people building one new daily habit, the time it took ranged from 18 to 254 days, and one missed day barely changed the result. That is why nobody can promise you a date. Relapse researchers add the part that is in your hands: each time you cope with a hard moment, your confidence grows, and the next one gets easier.',
+            ),
+          ],
+          so: 'Uneven is normal. You are not waiting for this to happen to you. Every urge you ride out is making it happen.',
+          fact: { s: 'Study · 96 volunteers · Lally et al., 2010 · Larimer, Palmer & Marlatt, 1999', i: [3, 4] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'compass' }],
+          h: 'On a flat day, do the small things anyway.',
+          b: [
+            bL([
+              '**Name it:** “This is a flat day. It passes.”',
+              '**Feed the basics:** sleep, real food, a walk outside.',
+              '**Reach one person:** a text counts. People, movement and writing it down are what helped men who kept journals of quitting.',
+              '**Count your wins:** one urge ridden out today is a win, even on a gray day.',
+            ]),
+            bP(
+              'You do not have to feel good to be getting better. If the low stays for weeks or turns dark, tell a doctor. Depression is common and very treatable, and getting help is a strong move.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'Day 12. You have felt gray and irritable all week. A thought says, “This is who I am without it.” What is most accurate?',
+          ask: 'Pick the best answer.',
+          a: 2,
+          c: [
+            ['It is true. This is how I will feel from now on', 'A flat stretch feels permanent from the inside. It is a stretch, and it eases.'],
+            ['Stopping must have damaged something', 'A trial of a week off porn found no withdrawal effects. Low days are common, and they are not damage.'],
+            [
+              'This is a flat stretch. I do the small things, and it eases',
+              'Yes. You read it for what it is, and you keep going. That is what getting free feels like from the inside.',
+            ],
+            [
+              'Going back once will make me feel normal',
+              'The flat feeling is asking for sleep, people and time. It is not asking for porn, and going back would only give the wanting more practice.',
+            ],
+          ],
+        },
+      ],
+      rc: {
+        q: 'A friend who stopped two weeks ago says, “I feel nothing. I think I ruined myself.” What is the truest thing to say?',
+        c: [
+          'You might have. See how you feel in a year',
+          'Many people hit a flat stretch. It eases, and you are not broken',
+          'Go back once and you will feel normal',
+          'It will all be over by day 30',
+        ],
+        a: 1,
+        r: 'A flat stretch is common and it eases. It has no fixed date, and it is not damage.',
+        cr: [
+          'Not quite. Nothing here says they ruined anything. Low days are common, and they ease.',
+          'Right. It is common, it eases, and it does not mean they are broken.',
+          'Not quite. Going back gives the wanting more practice. Sleep, people and time are what a flat day needs.',
+          'Not quite. Nobody can promise a date. Most people notice it easing over weeks.',
+        ],
+      },
+      scope:
+        'The week-long trial followed students, the therapy trial was small, and the journals came from men who chose to write about quitting. Together they show that a low stretch is no sign of damage, that big change is real, and that many people come out the far side feeling better. Nobody can promise a date, and this lesson will not pretend to. Every urge you ride out is practice, and that part is yours.',
+      src: src('crosby', 'fernandez23', 'fernandez21', 'lally10', 'larimer'),
+    },
+
+    /* ---------- l47 and l48, closing Shame and kindness: partners, and sex after porn ---------- */
+    {
+      id: 'l47',
+      u: 1,
+      v: 2,
+      chk: 'October 30, 2026',
+      title: 'Your partner and the truth',
+      tag: 'Trust comes back through what you do, week after week.',
+      ic: 'heart',
+      mins: 4,
+      ask: 'Should I tell my partner? And if they found out, can trust come back?',
+      key: 'Trust comes back through what you do over weeks and months, not through promises. A slip you tell goes better than a slip they find. Nobody can promise how it ends, and being honest is yours either way.',
+      np: 'What I want my partner to be able to count on from me',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['icon', { ic: 'lock' }],
+          h: 'Does your partner not know? Or did they find out, and now nothing feels the same?',
+          b: [
+            bP(
+              'Either one is heavy. You want to make it right, and you are afraid of making it worse. This lesson is about what helps, and it is honest about what nobody can promise.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'Couples were surveyed some time after one of them disclosed compulsive sexual behavior. How did they feel about the telling?',
+          ask: 'Make your best guess.',
+          a: 2,
+          c: [
+            ['Most wished it had stayed secret', 'That is the fear. Looking back, very few in this survey felt that way.'],
+            [
+              'Partners were glad, and the ones who told regretted it',
+              'At the time, those who told were less sure. Later, they were even surer than their partners.',
+            ],
+            [
+              'Nearly all, on both sides, said telling was right',
+              'Good guess. It was very hard, and later nearly everyone in the survey said it was the right thing to do.',
+            ],
+            ['Most had split up', 'In this survey most had not, even many who had threatened to leave.'],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['chain', { n: ['The truth', 'What you do next', 'Week after week'], i: ['chat', 'check', 'calendar'] }],
+          h: 'The truth hurts, and it is the ground trust can grow on.',
+          b: [
+            bP(
+              'Telling does not fix anything on the day. It often hurts a lot, and your partner has every right to be hurt. What it does is end the hiding, and trust cannot grow around hiding. After that, what rebuilds trust is what you do, again and again, over weeks and months. Promises do not do it. Being the same person on the good days and the hard ones does.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '93%', s: 'of partners later said telling was the right thing' }],
+          h: 'Later on, 93% of partners and 96% of those who told said it was right.',
+          b: [
+            bP(
+              'A survey asked 82 people in recovery from compulsive sexual behavior and 82 partners. At the time, 81% of partners and 58% of those telling thought it was right. Later, those numbers were 93% and 96%. And of the partners who threatened to leave, about three in four never left.',
+            ),
+          ],
+          so: 'It can feel like the end on the day. For many couples, it was not.',
+          fact: { s: 'Survey · 164 people · Schneider, Corley & Irons, 1998', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['chain', { n: ['A slip', 'You tell them', 'It goes better'], i: ['bolt', 'chat', 'heart'] }],
+          h: 'A slip you tell goes better than a slip they find.',
+          b: [
+            bP(
+              'Researchers looked at what happens when someone in recovery slips after the first disclosure. When the person told on their own, and the partner did not have to find out, the relationship did better. In a separate study, wives in couple therapy described the deception, along with the porn, as what shook their sense of safety with their husbands.',
+            ),
+          ],
+          so: 'A slip is one thing, and hiding it is another. The hiding is the part you can change tonight.',
+          fact: { s: 'Study · Corley et al., 2013 · Interviews · 14 wives · Zitzman & Butler, 2009', i: [1, 2] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'chat' }],
+          h: 'Be the one who tells, and let what you do carry the weight.',
+          b: [
+            bL([
+              '**Tell it plainly:** no excuses. Then let them ask what they need to know.',
+              '**Tell a slip soon:** “I slipped last night. I do not hide from you now.”',
+              '**Do what you said:** small and on time. That is what trust is made of.',
+              '**Give them room:** their anger and their timeline are theirs.',
+              '**Do not make them your police:** they cannot keep you free. That work is yours, with your plan and with help.',
+            ]),
+            bP(
+              'A counselor can help you both. Talk to one first if telling would not be safe. Nobody can promise how it ends, and this app will not pretend to. Being honest is yours, whatever happens.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'You have been honest with your partner for two months. Last night you slipped, and they have no way of knowing. What gives trust the best chance?',
+          ask: 'Pick the best move.',
+          a: 1,
+          c: [
+            [
+              'Say nothing, so one night does not wreck two good months',
+              'It feels like protecting them. But the hiding is what trust breaks on, and a slip that is found goes worse than one you tell.',
+            ],
+            [
+              'Tell them soon, plainly, and say what you are doing next',
+              'Yes. It is hard, and it is the very thing you have been building for two months: they can believe you.',
+            ],
+            ['Promise it will never happen again', 'A big promise is easy to say and easy to break. What you do next says more.'],
+            [
+              'Ask them to check your phone every night',
+              'That makes them your police, and it wears on you both. A blocker or a counselor can carry that weight instead.',
+            ],
+          ],
+        },
+      ],
+      rc: {
+        q: 'Your partner found out months ago and still goes quiet some nights. You think, “I said sorry. Why are we still here?” What is the truest read?',
+        c: [
+          'They are punishing me',
+          'Trust comes back through what I do over time, and their timeline is theirs',
+          'One big apology should have settled it',
+          'If we stop talking about it, it will fade',
+        ],
+        a: 1,
+        r: 'Trust comes back through what you do, over weeks and months, on their timeline.',
+        cr: [
+          'Not quite. Hurt takes time, and it is not the same as punishment. Keep doing what you said.',
+          'Right. An apology starts it, and what you do keeps it going. Their timeline is theirs.',
+          'Not quite. An apology is a start. Trust is rebuilt by what you do after it.',
+          'Not quite. Silence can feel like hiding. Staying open is part of what rebuilds trust.',
+        ],
+      },
+      scope:
+        'The survey heard from couples in recovery who chose to answer, and the interviews were with a small group of wives in therapy. They cannot say how any one relationship will end, and neither can anyone else. They speak clearly on what matters most here: for many couples the truth was survivable, and a truth you tell goes better than one that is found.',
+      src: src('schneider98', 'corley13', 'zitzman09'),
+    },
+    {
+      id: 'l48',
+      u: 1,
+      v: 2,
+      chk: 'October 30, 2026',
+      title: 'Sex after porn',
+      tag: 'Your body, your values, and what is really known.',
+      ic: 'leaf',
+      mins: 4,
+      ask: 'What happens to desire without porn? And what about masturbation?',
+      key: 'Desire can go quiet for a while, and that is not a broken body. Nobody has measured well how long it lasts. Science has no rule on masturbation, so your values decide. Sex with a partner gets better with honest talk.',
+      np: 'What I want my sex life to be, by my own values',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['icon', { ic: 'leaf' }],
+          h: 'Without porn, what happens to desire? And what about everything else?',
+          b: [
+            bP(
+              'Many people quit and then have questions they feel they cannot ask anyone. Is low desire normal? Is masturbation okay? Will sex feel good? This lesson gives you what is known, says plainly what is not, and leaves the choices with you. It is about your own body and values. It is not a rule book.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'A survey of more than 14,000 people looked at sexual problems and porn. What went with having more of those problems?',
+          ask: 'Make your best guess.',
+          a: 1,
+          c: [
+            ['How often people watched', 'That is the common guess. Watching more often was not linked to more problems. If anything, slightly fewer.'],
+            ['Feeling that their use was out of control', 'Good guess. Problem use went with sexual problems, about the same for women and men.'],
+            ['Being a man', 'The link was about the same for women and men.'],
+            ['Nothing went with them', 'Something did: feeling that use was out of control.'],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['icon', { ic: 'sunrise' }],
+          h: 'Desire can go quiet for a while. That is not a broken body.',
+          b: [
+            bP(
+              'Some people find that desire drops after they stop, and they fear it is gone for good. That fear is a common reason to “check” with porn, and you do not need to. Nobody has shown that quitting harms your sex life. Many people write about the opposite: more desire for a real person. How long a quiet stretch lasts has not been measured well, and we will not guess.',
+            ),
+          ],
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '1 in 3', s: 'wrote about a sharp drop in desire while quitting' }],
+          h: 'A drop in desire is common in people’s stories, and it has not been measured well.',
+          b: [
+            bP(
+              'In 104 journals from men quitting porn, nearly one in three wrote about a sharp drop in desire. Many in the same journals wrote about more desire for sex with a partner. Of the 42 men with erection trouble, 21 reported at least some improvement. These men chose to write, and nobody compared them with a group who kept watching.',
+            ),
+          ],
+          so: 'Nobody can tell you when yours will settle. A quiet stretch is something people live through, and it says nothing final about you.',
+          fact: { s: 'Journal study · 104 men · Fernandez, Kuss & Griffiths, 2021', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'chart' }],
+          h: 'Feeling out of control goes with sexual problems more than how much someone watched.',
+          b: [
+            bP(
+              'In the survey of 14,581 people, problem use went with sexual problems, and how often they watched did not. In a separate set of studies, problem use and erection trouble went together at one point in time, but following men over time showed no clear cause. So nobody has shown that porn breaks erections, or that quitting is a sure cure.',
+            ),
+          ],
+          so: 'If something about your body worries you, ask a doctor. It is an ordinary question, and they have heard it before.',
+          fact: { s: 'Survey · 14,581 people · Bőthe et al., 2021 · Grubbs & Gola, 2019', i: [1, 2] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'compass' }],
+          h: 'On masturbation, science has no rule for you.',
+          b: [
+            bP(
+              'We looked for a study that tests whether masturbating helps or harms someone quitting porn, and did not find one. A survey of 1,063 people in online groups asked why people give it up, often for what they believe, and did not test what giving it up does. Some men in the journals wrote that a strong pull toward porn came right after masturbation or sex, so that hour is worth a plan.',
+            ),
+            bP(
+              'Some people leave it aside, for their faith or because it leads them back to porn. Others keep it as part of a healthy life. Both are honest ways to go.',
+            ),
+          ],
+          so: 'Your values decide this, and your faith is a good reason. Notice what it leads to for you, and choose with a clear head.',
+          fact: { s: 'Survey · 1,063 people · Zimmer & Imhoff, 2020', i: [3] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['big', { n: '48', s: 'studies of couples talking about sex' }],
+          h: 'Couples who talk about sex tend to have better sex.',
+          b: [
+            bP(
+              'A review of 48 studies found that better talk about sex between partners went with better desire, arousal, orgasm and erections, and with less pain. The link was strongest for married couples.',
+            ),
+          ],
+          so: 'A healthy sex life is built with a real person, in words. The awkward talk is part of it.',
+          fact: { s: 'Review · 48 studies · Mallory, Stanton & Handy, 2019', i: [4] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'pencil' }],
+          h: 'Decide what you want, and give your body time.',
+          b: [
+            bL([
+              '**Skip the test:** a quiet stretch does not need checking with porn.',
+              '**Choose your line while you are calm:** on masturbation and anything else, by what you value.',
+              '**Fantasy:** a thought is only a thought, and fighting it makes it louder. If it is a rerun of what you watched, come back to the room, or to the person you are with.',
+              '**Talk:** with a partner, say what you are going through, and go slowly. Closeness counts.',
+              '**Ask for help:** a doctor for your body, a counselor or sex therapist for the rest.',
+            ]),
+            bP('What a healthy sex life looks like is yours to work out. Honest, wanted, and nothing to hide is a good place to start.'),
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'Three weeks in, your desire has gone quiet. A thought says, “Better check with porn that everything still works.” What is the best move?',
+          ask: 'Pick the best move.',
+          a: 3,
+          c: [
+            ['Check once, just to know', 'That test tells you little about real life, and it is a common way back in. You do not need it.'],
+            ['Decide that my body is broken', 'Nobody has shown that quitting harms your sex life. A quiet stretch is not a verdict.'],
+            ['Push myself to feel desire every day', 'Pressure does not bring desire. Rest and time are kinder, and you have both.'],
+            ['Call it a quiet stretch, skip the test, and ask a doctor if it worries me', 'Yes. You read it for what it is, and help is there if you want it.'],
+          ],
+        },
+      ],
+      rc: {
+        q: 'A friend asks, “Am I allowed to masturbate while I quit porn?” What is the most honest answer?',
+        c: [
+          'Never. Science says it causes relapse',
+          'Always. Science says it helps',
+          'Science has no rule. Decide by your values, and notice what it leads to',
+          'Do not think about it',
+        ],
+        a: 2,
+        r: 'No study has settled it. Your values decide, and you can notice what it leads to for you.',
+        cr: [
+          'Not quite. No study shows that. Some people leave it aside for good reasons of their own, and that is theirs to choose.',
+          'Not quite. No study shows that either. Some people keep it, and some do not.',
+          'Right. It is honest about what is not known, and it leaves the choice with them.',
+          'Not quite. Pushing a thought away tends to make it louder. A clear choice is easier to live with.',
+        ],
+      },
+      scope:
+        'Research on sex after quitting porn is young. The journals came from men who chose to write, the large survey was one moment in time, and the review looked at couples in general. Where something is not known, this lesson says so. What is clear is hopeful: nobody has shown that quitting harms your sex life, and time, talk and your own values are in your hands.',
+      src: src('fernandez21', 'bothe21', 'grubbs19', 'zimmer20', 'mallory19'),
+    },
+
+    /* ---------- l49, the last lesson on the path: long goals are not pushed early (see CLAUDE.md) ---------- */
+    {
+      id: 'l49',
+      u: 5,
+      v: 2,
+      chk: 'October 30, 2026',
+      title: 'Day 30, 60, 90, and after',
+      tag: 'When it is going well, watch for “I can handle it now.”',
+      ic: 'flag',
+      mins: 3,
+      ask: 'It is going well. What do I watch for now, and what does keeping it look like?',
+      key: 'When it goes well, the risk is a small choice that looks harmless, and the thought “I can test myself.” You have nothing to test. You are someone who handles urges, and you keep what makes that true.',
+      np: 'The small yes I am most likely to allow again, and what I will do when I notice it',
+      cards: [
+        {
+          k: 'text',
+          q: 1,
+          e: 'hook',
+          el: 'Sound familiar?',
+          art: ['icon', { ic: 'flag' }],
+          h: 'It has been going well for weeks. Then a thought shows up: “I could look once, to see that I am past it.”',
+          b: [
+            bP(
+              'It does not feel like an urge. It feels like confidence. This lesson is about the quiet part of getting free, when things are good, and how to keep them that way.',
+            ),
+          ],
+        },
+        {
+          k: 'choose',
+          e: 'predict',
+          el: 'Make a guess',
+          h: 'After a long good stretch, what do you think is the main thing to watch for?',
+          ask: 'Make your best guess.',
+          a: 2,
+          c: [
+            ['A huge urge out of nowhere', 'Big urges can still come, and you know how to ride those. The quieter risk is easier to miss.'],
+            ['Losing what you have built', 'What you have built stays yours. Nothing takes it away, not even a slip.'],
+            ['Small choices that look harmless, and testing yourself', 'Good guess. Each one looks like nothing. That is why they are worth watching for.'],
+            ['Nothing, once you reach 90 days', 'Day 90 is a real win, and it deserves to feel like one. The habit of paying attention is what keeps it.'],
+          ],
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'answer',
+          el: 'The answer',
+          art: ['chain', { n: ['“It has been fine”', 'One small yes', 'A hard spot'], i: ['sparkle', 'phone', 'bolt'] }],
+          h: 'The risk now is a small yes that looks harmless.',
+          b: [
+            bP(
+              'Relapse researchers call them **apparently irrelevant decisions**: choices that each look like nothing, and together lead you to a hard spot. The phone back by the bed, because it has been fine. A late night scrolling, because you have earned it. Then the test: “Let me see if I can handle it.” You already know your chain, and you can catch it here, where it takes almost no effort.',
+            ),
+          ],
+          fact: { s: 'Relapse model · Larimer, Palmer & Marlatt, 1999', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'shield' }],
+          h: 'Testing yourself is on the list of risky moments.',
+          b: [
+            bP(
+              'Marlatt’s relapse model lists testing your own control, your “willpower,” among the high-risk situations. It teaches people that changing a habit is “a process of skill acquisition,” not a test of willpower.',
+            ),
+          ],
+          so: 'You do not owe anyone a test, and that includes you. A skill is kept by using it.',
+          fact: { s: 'Relapse model · Larimer, Palmer & Marlatt, 1999', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['chain', { n: ['What I must do', 'What I enjoy', 'A life in balance'], i: ['calendar', 'sparkle', 'sunrise'] }],
+          h: 'A life of only “shoulds” makes it harder. Joy is part of the plan.',
+          b: [
+            bP(
+              'The same model points to balance. When life is all demands and little you enjoy, the risk of relapse grows. So keeping what you have built is more than discipline. It is a good life: rest, people, work you care about, and things you do for fun.',
+            ),
+          ],
+          so: 'Enjoying your life is not a break from this. It is how you keep it.',
+          fact: { s: 'Relapse model · Larimer, Palmer & Marlatt, 1999', i: [0] },
+        },
+        {
+          k: 'text',
+          e: 'proof',
+          el: 'The science',
+          art: ['icon', { ic: 'trophy' }],
+          h: 'Every hard moment you got through built something real.',
+          b: [
+            bP(
+              'Psychologists call it **self-efficacy**: your sense that you can handle a certain hard moment. It grows each time you cope with one. You have done that again and again now. It is not a mood, and a bad week does not erase it.',
+            ),
+          ],
+          so: 'You are someone who handles urges. You did not get that from a good feeling. You got it from doing it.',
+          fact: { s: 'Relapse model · Larimer, Palmer & Marlatt, 1999', i: [0] },
+        },
+        {
+          k: 'text',
+          q: 1,
+          e: 'move',
+          el: 'What to do',
+          art: ['icon', { ic: 'compass' }],
+          h: 'Keep what got you here, and live your life.',
+          b: [
+            bL([
+              '**Keep the plain things:** the phone outside the room, your plan, your check-in. They are part of why it is going well.',
+              '**Say the test out loud:** when “I can handle it” shows up, tell your safe person.',
+              '**Look once a week:** what have I started allowing again?',
+              '**Fill your life:** one thing you enjoy, and one person, every week.',
+              '**If you slip:** it is one day in a long good stretch. What you built stays yours. Log it, and do the next small thing.',
+            ]),
+            bP('You started this not knowing if you could. Here is what your log shows now:'),
+            ['mylog'],
+          ],
+        },
+        {
+          k: 'choose',
+          q: 1,
+          e: 'check',
+          el: 'Check it',
+          h: 'Day 75, your best stretch yet. You move your phone back next to the bed, since it has been fine for weeks. What is that?',
+          ask: 'Pick the best answer.',
+          a: 1,
+          c: [
+            ['A reward I have earned', 'You have earned plenty, and a phone by the bed is not the prize. Pick a better reward.'],
+            [
+              'A small yes that looks harmless. I move it back, and that is the whole story',
+              'Yes. You caught it early, with no drama. That is what keeping it looks like.',
+            ],
+            ['Proof that I am slipping back', 'Nothing has happened. It is an early link, easy to catch, and it says nothing against you.'],
+            [
+              'A good time to test whether I am past it',
+              'You have nothing to test. Testing yourself is one of the risky moments, and you already know who you are.',
+            ],
+          ],
+        },
+      ],
+      rc: {
+        q: 'You are two months in and feel strong. A thought says, “I could look once, to prove I am past this.” What is that thought?',
+        c: ['Confidence I have earned', 'A test, and testing myself is a risky moment', 'A sign that I have failed', 'The end of my progress'],
+        a: 1,
+        r: 'You have nothing to prove. Name the test, and keep what got you here.',
+        cr: [
+          'Not quite. Your confidence is real, and it does not need proving this way.',
+          'Right. You named it. You have nothing to prove, and you know what to do.',
+          'Not quite. A thought is only a thought. Having it says nothing against you.',
+          'Not quite. Nothing has happened, and what you built stays yours.',
+        ],
+      },
+      scope:
+        'This model comes from decades of relapse research, mostly with alcohol and drugs, and it was built for habits in general. It fits what getting free asks of you once things are going well: keep the plan, catch the small yes, and build a life you like. You have been doing the hard part for a long time, and it is yours.',
+      src: src('larimer'),
     },
   ];
 }

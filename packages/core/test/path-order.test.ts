@@ -163,6 +163,81 @@ describe('lessons read early (before this rule)', () => {
   });
 });
 
+describe('when the order of the path changed (October 30, 2026)', () => {
+  /* the order before: How it works, Why it is hard, Shame and kindness, Making a plan, Faith, Skills, ... */
+  const before = ['l1', 'l2', 'l3', 'l4', 'l33', 'l34', 'l35', 'l36', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l29', 'l30', 'l31', 'l32'];
+  const days = rec(before);
+  it('nothing read in the old order counts as read early, so no welcome backs pile up', () => {
+    expect(core.lessonsEarly(rec(...before.map((id) => [id]))).size).toBe(0);
+    expect(core.lessonsEarly(days).size).toBe(0);
+  });
+  it('every finished lesson stays done, open and on the map, and Up next is the first one not read', () => {
+    const w = core.lessonWalk(days, st0());
+    expect(w.next?.id).toBe('l46');
+    expect(w.back).toBe(false);
+    expect(w.walked.size).toBe(before.length);
+    before.forEach((id) => {
+      expect(w.walked.has(id)).toBe(true);
+      expect(core.lessonGate(core.lessonById(id)!, w)).toBe('open');
+    });
+    const all = core.lessonMap(w).lands.flatMap((l) => l.stones);
+    expect(
+      all
+        .filter((s) => s.state === 'done')
+        .map((s) => s.L.id)
+        .sort(),
+    ).toEqual([...before].sort());
+    expect(core.lessonGate(core.lessonById('l13')!, w)).toBe('key');
+  });
+  it('after the new lesson, the path walks past what is done to what is not', () => {
+    const d = finish(days, core.lessonById('l46')!);
+    const w = core.lessonWalk(d, st0());
+    expect(w.next?.id).toBe('l37');
+    expect(core.nextAfter(core.lessonById('l37')!, w)?.id).toBe('l38');
+    expect(core.lessonsEarly(d).size).toBe(0);
+    /* the sections' done counts on Learn hold what was read */
+    expect(core.lessonTimeline(d, st0()).coming.find((x) => x.u === 7)).toBeUndefined();
+  });
+  it('someone who finished all 45 keeps them, and meets the four new ones', () => {
+    const w = core.lessonWalk(
+      rec(before, [
+        'l13',
+        'l14',
+        'l15',
+        'l16',
+        'l42',
+        'l43',
+        'l44',
+        'l45',
+        'l17',
+        'l18',
+        'l19',
+        'l20',
+        'l41',
+        'l37',
+        'l38',
+        'l39',
+        'l40',
+        'l21',
+        'l22',
+        'l23',
+        'l24',
+        'l25',
+        'l26',
+        'l27',
+        'l28',
+      ]),
+      st0(),
+    );
+    expect(w.early.size).toBe(0);
+    expect(w.walked.size).toBe(45);
+    expect(w.next?.id).toBe('l46');
+  });
+  it('a lesson opened out of turn in either order is still read early', () => {
+    expect([...core.lessonsEarly(rec(['l1', 'l2'], ['l29']))]).toEqual(['l29']);
+  });
+});
+
 describe('checkpoints follow the path', () => {
   it('each keeps its two lessons, one section, side by side on the path', () => {
     const order = core.lcheckOrder();
@@ -176,17 +251,19 @@ describe('checkpoints follow the path', () => {
       expect(core.lessonPairOf(p.b)).toEqual(p);
       if (i) expect(core.lessonNo(p.b)).toBeGreaterThan(core.lessonNo(core.lcheckPair(order[i - 1])!.b));
     });
-    /* the faith section comes before Skills for the moment on the path, so its checkpoints do too */
-    expect(core.lcheckNo(15)).toBeLessThan(core.lcheckNo(7));
+    /* Skills for the moment comes before the faith section on the path, and faith before Shame and kindness, so their
+       checkpoints do too */
+    expect(core.lcheckNo(7)).toBeLessThan(core.lcheckNo(15));
+    expect(core.lcheckNo(15)).toBeLessThan(core.lcheckNo(3));
   });
   it('the one due is the first on the path whose two lessons are reached and not written', () => {
     const st = st0();
     const upTo = (L: core.Lesson) => rec(path.slice(0, path.indexOf(L) + 1).map((x) => x.id));
     expect(core.lcheckDue(rec(ids(1)), st)).toBe(0);
     expect(core.lcheckDue(rec(ids(2)), st)).toBe(1);
-    /* through the faith section: checkpoints 1 to 6 written, so 15 is next, before 7 */
+    /* through the faith section: the checkpoints of How it works and Skills for the moment written, so 15 is next, before 3 */
     let w = st;
-    for (let n = 1; n <= 6; n++) w = core.lwriteSave(w, n, 0, 'line ' + n, 1);
+    for (const n of [1, 2, 7, 8]) w = core.lwriteSave(w, n, 0, 'line ' + n, 1);
     expect(core.lcheckDue(upTo(core.lessonById('l32')!), w)).toBe(15);
     /* both lessons read early do not bring a checkpoint before the path reaches them */
     expect(core.lcheckDue(rec(ids(1), ['l29', 'l30']), st)).toBe(0);

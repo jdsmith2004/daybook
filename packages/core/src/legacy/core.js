@@ -96,8 +96,8 @@ function optList(kind,opts,o){
 }
 const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward','stack'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
-/* l1 to l32 are here; l33 to l40 are in lessons-more.ts */
-const LESSON_IDS=Array.from({length:45},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
+/* l1 to l32 are here; l33 on are in lessons-more.ts */
+const LESSON_IDS=Array.from({length:49},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -1334,12 +1334,12 @@ function sunSvg(level,o){return Em.emblem(level,o)}
    who was studied, what was measured, and what it cannot show. Finishing a lesson earns 10 points once, saved by lesson id in that day's record (p.ls). ===== */
 /* each section has a color; next to each other on the path (lessons.ts UNIT_ORDER), no two look alike (accent and violet do) */
 const LUNITS=[
- {name:'How it works',sub:'Mixed feelings, urges, the snowball, and why nights are hard.',tone:'sky',cls:'lu0'},
- {name:'Shame and kindness',sub:'Why shame backfires, what kindness does, and being known.',tone:'coral',cls:'lu1'},
+ {name:'How it works',sub:'Mixed feelings, urges, the snowball, why nights are hard, and what getting free feels like.',tone:'sky',cls:'lu0'},
+ {name:'Shame and kindness',sub:'Why shame backfires, what kindness does, being known, partners, and sex after porn.',tone:'coral',cls:'lu1'},
  {name:'Making a plan',sub:'If-then plans, changing the setting, getting help, and what progress is.',tone:'mint',cls:'lu2'},
  {name:'Skills for the moment',sub:'Naming a feeling, a longer breath out, moving, and not obeying every thought.',tone:'violet',cls:'lu3'},
  {name:'Seeing your pattern',sub:'The early links in the chain, permission thoughts, your own log, and fewer fights.',tone:'sky',cls:'lu4'},
- {name:'A life that holds',sub:'Missed days, values, filling the empty hour, and what therapy is like.',tone:'coral',cls:'lu5'},
+ {name:'A life that holds',sub:'Missed days, values, filling the empty hour, what therapy is like, and day 30, 60, 90 and after.',tone:'coral',cls:'lu5'},
  {name:'Well-known programs',sub:'The 12 steps, SMART Recovery, mindfulness-based relapse prevention, and why groups help.',tone:'violet',cls:'lu6'},
  {name:'Faith and recovery',sub:'God in recovery: what the 12-step tradition and research say, a practice for hard moments, guilt, and forgiveness.',tone:'sun',cls:'lu7',faith:true}
 ];

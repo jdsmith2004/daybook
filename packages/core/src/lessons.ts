@@ -126,9 +126,15 @@ export function lessonFamily(L: Lesson): { f: LessonFamily; n: number; of: numbe
 }
 
 /** the one order the lessons are offered in, the same for everyone: a section at a time (each has its own color), so the
-    numbers never jump. Why it is hard to stop comes right after How it works; faith is its own section, after Making a
-    plan, since its first lesson adds a prayer to the urge plan. Inside a section, lessons keep their order in LESSONS. */
-export const UNIT_ORDER = [0, 8, 1, 2, 7, 3, 4, 9, 5, 6];
+    numbers never jump. The first week is How it works and Why it is hard to stop. Becoming someone new comes in the second
+    week, and Skills for the moment in the second and third, since the SOS tools are there from day 1 (the owner, October
+    30, 2026). Faith is its own section, right after them. The path ends on A life that holds, whose last lesson is day
+    30, 60, 90 and after. Inside a section, lessons keep their order in LESSONS. */
+export const UNIT_ORDER = [0, 8, 9, 3, 7, 1, 2, 4, 6, 5];
+/** the order before October 30, 2026 (the first 45 lessons). A lesson finished in this order was on the path when it was
+    read, so it stays finished where it now sits (lessonsEarly). */
+const UNIT_ORDER_BEFORE = [0, 8, 1, 2, 7, 3, 4, 9, 5, 6];
+const LESSONS_BEFORE = 45;
 let PATH: Lesson[] | null = null;
 export function lessonPath(): Lesson[] {
   if (!PATH || PATH.length !== LESSONS.length) {
@@ -165,19 +171,26 @@ export const firstUndone = (done: Set<string>) => lessonPath().find((l) => !done
    finished, with its points; the path walks up to it like any other lesson, and there it opens as a short welcome back
    (passed with lessonReach, which earns nothing and counts nothing twice). */
 
+let PATH_BEFORE: Lesson[] | null = null;
+function lessonPathBefore(): Lesson[] {
+  if (!PATH_BEFORE) PATH_BEFORE = UNIT_ORDER_BEFORE.flatMap((u) => LESSONS.slice(0, LESSONS_BEFORE).filter((L: Lesson) => L.u === u));
+  return PATH_BEFORE;
+}
 /** lessons finished before the path reached them: at the moment each was first finished, some lesson before it on the
-    path was not finished yet. Read from the record, in the order lessons were finished (by day, then within the day). */
+    path was not finished yet, in the order of today or in the order before it changed. Read from the record, in the order
+    lessons were finished (by day, then within the day). */
 export function lessonsEarly(days: Days): Set<string> {
+  const before = lessonPathBefore();
   const path = lessonPath();
   const fin = new Set<string>();
   const early = new Set<string>();
+  /** every lesson before it on this path was finished */
+  const reached = (p: Lesson[], L: Lesson) => {
+    const i = p.indexOf(L);
+    return i >= 0 && p.slice(0, i).every((x) => fin.has(x.id));
+  };
   lessonsInOrder(days).forEach(({ L }) => {
-    const i = path.indexOf(L);
-    for (let j = 0; j < i; j++)
-      if (!fin.has(path[j].id)) {
-        early.add(L.id);
-        break;
-      }
+    if (!reached(path, L) && !reached(before, L)) early.add(L.id);
     fin.add(L.id);
   });
   return early;
@@ -191,7 +204,8 @@ export interface LessonWalk {
   early: Set<string>;
   /** early ones whose welcome back was passed */
   reached: Set<string>;
-  /** every lesson behind Up next on the path: all are finished, and they open in full */
+  /** every lesson behind Up next on the path, and any further on that was finished in the order before it changed: all
+      are finished, and they open in full */
   walked: Set<string>;
   /** Up next: the first lesson on the path not finished, or finished early and not reached yet. null at the end. */
   next: Lesson | null;
@@ -207,7 +221,7 @@ export function lessonWalk(days: Days, st: Settings | null | undefined): LessonW
   const path = lessonPath();
   const at = path.findIndex((L) => stopsAt(L, done, early, reached));
   const next = at < 0 ? null : path[at];
-  const walked = new Set((at < 0 ? path : path.slice(0, at)).map((L) => L.id));
+  const walked = new Set(path.filter((L, i) => at < 0 || i < at || (i > at && !stopsAt(L, done, early, reached))).map((L) => L.id));
   return { done, early, reached, walked, next, back: !!next && done.has(next.id) };
 }
 /** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */

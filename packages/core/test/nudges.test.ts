@@ -53,7 +53,7 @@ describe('the plan', () => {
     expect(new Date(p[0].at).getHours()).toBe(18);
     expect(new Date(plan({}, ci, at('2026-10-14T13:20')).filter((n) => n.k === 'back')[2].at).toTimeString().slice(0, 5)).toBe('13:00');
     expect(p.map((n) => ({ t: n.title, b: n.body }))).toEqual(core.NUDGE_WORDS.back);
-    expect(p[2].title).toBe('Last note for now 🌙');
+    expect(p[2].title).toBe('Quiet from here 🌙');
     expect(plan({}, { ...ci, back: false }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
     /* nothing past the last note */
     expect(Math.max(...plan({}, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-11-13T09:00'));
@@ -368,7 +368,7 @@ describe('words that learn', () => {
     const run = core.NUDGE_WORDS.pick.lesson.findIndex((w) => w.when === 'run');
     expect(core.wordsOf('lesson.' + run, st, { ...none, run: 12 }).t).toBe('Day 12 ☀️');
     const form = core.NUDGE_WORDS.pick.lesson.findIndex((w) => w.when === 'form');
-    expect(core.wordsOf('lesson.' + form, st, { ...none, form: { pts: 20, name: 'a Campfire' } }).t).toBe('20 points to a Campfire 🌱');
+    expect(core.wordsOf('lesson.' + form, st, { ...none, form: { pts: 20, name: 'a Campfire' } }).t).toBe('20 points until a Campfire 🌱');
   });
 
   it('is the same for a given day, and changes across days', () => {

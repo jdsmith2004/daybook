@@ -325,3 +325,35 @@ describe('what the count keeps', () => {
     expect(core.computeMetrics(slip(slip({}, 3), 10), seen, day(12)).longest).toBe(20);
   });
 });
+
+describe('new people start on gentle', () => {
+  const save = (a: core.SetupAnswers) => core.obSave(a, null, null, day(1), 0).st;
+  it('setup gives gentle, or step down when it happens daily, and never strict', () => {
+    expect(save({ freq: 'f1' }).cleanMode).toBe('gentle');
+    expect(save({}).cleanMode).toBe('gentle');
+    expect(save({ freq: 'f4' }).cleanMode).toBe('step');
+  });
+  it('someone already on strict stays there through a walk-through of setup', () => {
+    const walked = core.obSave(
+      { freq: 'f1' },
+      strict,
+      core.obChanges({ freq: 'f1' }, strict, day(9)).map((c) => c.k),
+      day(9),
+      0,
+    ).st;
+    expect(walked.cleanMode).toBe('strict');
+  });
+  it('coming back from step down lands on what the person had: strict only if they were on it', () => {
+    const tk = day(30);
+    const fresh = save({ freq: 'f4' });
+    expect(core.autoCount(fresh, tk).st.cleanMode).toBe('gentle');
+    expect(core.stepGrad(fresh, tk).st.cleanMode).toBe('gentle');
+    /* a rough patch moved them, and they keep what they had */
+    expect(core.autoCount(core.autoStep(strict, tk).st, tk).st.cleanMode).toBe('strict');
+    expect(core.autoCount(core.autoStep(gentle, tk).st, tk).st.cleanMode).toBe('gentle');
+    expect(core.cleanKeep(core.autoStep(strict, tk).st, tk).st.cleanMode).toBe('strict');
+    expect(core.cleanKeep(core.autoStep(gentle, tk).st, tk).st.cleanMode).toBe('gentle');
+    expect(core.normSettings(core.autoStep(gentle, tk).st).cleanWas).toBe('gentle');
+    expect(core.normSettings({ ...strict, cleanWas: 'nope' })).not.toHaveProperty('cleanWas');
+  });
+});

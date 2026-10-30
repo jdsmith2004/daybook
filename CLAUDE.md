@@ -34,6 +34,8 @@ need, without letting the screen turn into a list of features.
   on strict a slip puts it to 0 (gentle takes one day off, step down is hours since the slip). What was earned still stays:
   the longest run, the no-slip days, the comebacks, points, level, badges and graduation never drop, and the day of a slip
   says so. Nothing asks about the count after a slip and nothing rescues it (core `hero.ts`, `runLedger`).
+  New people start on gentle (or step down when it happens daily), and coming back from step down never lands on strict by
+  itself, so strict is only ever a person's own choice (the owner, October 30, 2026; core `obMode`, `countBack`).
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work

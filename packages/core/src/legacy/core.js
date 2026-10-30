@@ -325,6 +325,8 @@ function normSettings(s){
  o.cleanAuto=o.cleanAuto!==false;
  o.cleanNote=(o.cleanNote&&isKey(o.cleanNote.on))?{on:o.cleanNote.on,m:o.cleanNote.m==='step'||o.cleanNote.m==='count'?o.cleanNote.m:'gentle'}:null;
  o.cleanHold=isKey(o.cleanHold)?o.cleanHold:null;
+ /* cleanWas: how days were counted before step down (actions.ts). Kept only when it is one of the two. */
+ if(o.cleanWas!=='strict'&&o.cleanWas!=='gentle')delete o.cleanWas;
  /* countFrom: the day this person first opened the one-count rule (runLedger). Kept only when it is a day, so a log without it reads as before. */
  if(!isKey(o.countFrom))delete o.countFrom;
  o.stepAt=isKey(o.stepAt)?o.stepAt:null;

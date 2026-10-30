@@ -230,7 +230,8 @@ numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, findin
 The chip under the number holds the hours since a slip, for 72 hours. Gone: `app/sunrise.tsx`, `app/deeper.tsx`, the run
 question, the rescue, the run-ended card and the words. Migration: `st.countFrom` is stamped on the first open of this version
 (`keepCounts`), and slips up to it keep the old rule in `runLedger`; `seen.longest` is a floor so a switch of mode never lowers
-the longest run. Open for the owner: strict is the default and setup never offers gentle, so most people did not choose it.
+the longest run. New people start on gentle (the owner's decision the same day), and step down never lands on strict by
+itself; people already on strict stay there.
 
 **Done on October 30, 2026 (asks, gates and doors, medium):** findings 1 (tip lines only), 21 (lesson 8), 6, 7, 8 (the entry sheet; Welcome back not changed), 4 (the medium part), 9, 10, 16 (the 30-day screen and the Sunday review; the hard-hours card not changed) and 22 (words only). A plain level and a full ring are a toast; the five questions say "in the last 30 days", where the setup says six months, so the score can move.
 

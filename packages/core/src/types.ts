@@ -173,6 +173,8 @@ export interface Settings {
       old gentle switch ('gentle') */
   cleanNote: { on: DayKey; m: 'step' | 'count' | 'gentle' } | null;
   cleanHold: DayKey | null;
+  /** how days were counted before step down, so coming back from it never lands on strict by itself */
+  cleanWas?: 'strict' | 'gentle';
   /** the day this person first opened the one-count rule: slips up to it keep the rule they were made under (runLedger, miles.ts keepCounts) */
   countFrom?: DayKey;
   stepAt: DayKey | null;

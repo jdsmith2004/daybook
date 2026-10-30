@@ -28,9 +28,13 @@ describe('settings changes', () => {
     expect(core.setCountMode(on, 'nonsense', tk).st.cleanMode).toBe('strict');
   });
 
-  it('finishing step down counts days strictly from today', () => {
+  it('finishing step down goes back to the counting the person had, and never onto strict by itself', () => {
     const g = core.stepGrad(core.stepOn(base(), '2026-10-01').st, tk).st;
     expect([g.cleanMode, g.stepGrad, g.cleanHold, g.cleanNote]).toEqual(['strict', tk, tk, null]);
+    /* base() was on strict before it; from gentle, or straight from setup, it is gentle */
+    const fromGentle = core.stepGrad(core.stepOn(core.setCountMode(base(), 'gentle', '2026-09-01').st, '2026-10-01').st, tk).st;
+    expect(fromGentle.cleanMode).toBe('gentle');
+    expect(core.stepGrad(core.normSettings({ ...base(), cleanMode: 'step' }), tk).st.cleanMode).toBe('gentle');
   });
 
   it('the automatic switch leaves a note, and "Keep counting days" undoes it', () => {

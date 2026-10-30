@@ -288,10 +288,10 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             label="Counting"
             hint={
               <>
-                <B>Strict:</B> a day counts when no slip is logged. The number is your days in a row. A slip puts it to 0, and it climbs again from the next
-                day. Every day you earned stays on your record.{'\n\n'}
                 <B>Gentle:</B> the number is the days that hold, in your last week or on the way to graduation. A slip takes one day off, never all of them.
                 {'\n\n'}
+                <B>Strict:</B> a day counts when no slip is logged. The number is your days in a row. A slip puts it to 0, and it climbs again from the next
+                day. Every day you earned stays on your record.{'\n\n'}
                 <B>Step down:</B> for when slips happen most days. The number is the hours since your last slip, with your best stretch beside it, and you aim
                 for longer stretches and fewer slips each week. When your stretch passes a week, or a week has one slip or none, you are ready to count days,
                 and Daybook moves you there (or offers to, when switching is left to you).{'\n\n'}
@@ -300,8 +300,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               </>
             }>
             <Chips label="Counting">
-              <Chip label="Strict" on={st.cleanMode === 'strict'} onPress={() => apply(setCountMode(st, 'strict', tk))} />
               <Chip label="Gentle" on={st.cleanMode === 'gentle'} onPress={() => apply(setCountMode(st, 'gentle', tk))} />
+              <Chip label="Strict" on={st.cleanMode === 'strict'} onPress={() => apply(setCountMode(st, 'strict', tk))} />
               <Chip label="Step down" on={st.cleanMode === 'step'} onPress={() => apply(setCountMode(st, 'step', tk))} />
             </Chips>
           </Field>

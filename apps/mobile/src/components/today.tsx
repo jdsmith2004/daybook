@@ -7,6 +7,7 @@ import {
   cleanView,
   daysCardText,
   fmtDate,
+  setCountMode,
   runChips,
   stepCard,
   stepGrad,
@@ -297,7 +298,7 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
     return (
       <Card tone="note">
         <T v="h2">Counting days now</T>
-        <T>Your stretches got long, so Daybook counts days now. Your run starts from your last slip.</T>
+        <T>Your stretches got long, so Daybook counts days now.</T>
         <T>The Stepped up badge is yours, and your points and badges come with you. If a week gets hard later, Daybook steps down with you again.</T>
         <View style={s.actions}>
           <Button label="Okay" onPress={() => apply(cleanOk(st))} />
@@ -316,10 +317,10 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
           The last few days have been hard. That is common when you are changing a habit, and you are still here and still logging honestly. That matters more
           than any count.
         </T>
-        <T>Until things settle, a day counts as a good day with one slip or fewer. Every slip is still logged and nothing is taken away.</T>
+        <T>Until things settle, a slip takes one day off, never all of them. Every slip is still logged and nothing is taken away.</T>
         <View style={s.actions}>
           <Button label="Okay" onPress={() => apply(cleanOk(st))} />
-          <Button label="Keep strict counting" kind="ghost" onPress={() => apply(cleanKeep(st, tk))} />
+          <Button label="Keep strict counting" kind="ghost" onPress={() => apply(setCountMode(st, 'strict', tk))} />
         </View>
       </Card>
     );

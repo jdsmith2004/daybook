@@ -26,8 +26,8 @@ export interface Change {
 }
 
 export const COUNT_TOAST: Record<CountMode, string> = {
-  strict: 'Counting strictly. A day counts with no slip.',
-  gentle: 'Counting gently. A day counts with one slip or fewer.',
+  strict: 'Counting strictly. A slip puts the count to 0, and your days stay on your record.',
+  gentle: 'Counting gently. A slip takes one day off, never all of them.',
   step: 'Step down is on: longer stretches between slips, fewer slips each week.',
 };
 
@@ -36,7 +36,10 @@ export function setCountMode(st: Settings, mode: string, tk: DayKey): Change {
   const m: CountMode = mode === 'gentle' || mode === 'step' ? mode : 'strict';
   return {
     st: changeSettings(st, (s) => {
-      if (s.cleanMode !== 'step' && m === 'step') s.stepAt = tk;
+      if (s.cleanMode !== 'step' && m === 'step') {
+        s.stepAt = tk;
+        s.cleanWas = s.cleanMode;
+      }
       s.cleanMode = m;
       s.cleanNote = null;
       s.cleanHold = m === 'step' ? null : tk;
@@ -55,6 +58,7 @@ export function setCleanAuto(st: Settings, on: boolean): Change {
 export function stepOn(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
+      if (s.cleanMode !== 'step') s.cleanWas = s.cleanMode;
       s.cleanMode = 'step';
       s.stepAt = tk;
       s.cleanNote = null;
@@ -69,16 +73,20 @@ export function stepNo(st: Settings, tk: DayKey): Change {
   return { st: changeSettings(st, (s) => void (s.stepNo = tk)), toast: 'Okay. You can turn it on any time in Settings.' };
 }
 
+/** the counting a person goes back to from step down: the one they had before it (cleanWas), and gentle when they came straight
+    from setup. Daybook never moves anyone onto strict who was not on it. */
+const countBack = (s: Settings): CountMode => (s.cleanWas === 'strict' ? 'strict' : 'gentle');
+
 /** Today: "Start counting days" once step down is done */
 export function stepGrad(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
-      s.cleanMode = 'strict';
+      s.cleanMode = countBack(s);
       s.cleanHold = tk;
       s.stepGrad = tk;
       s.cleanNote = null;
     }),
-    toast: 'Counting days now. Your run starts from your last slip.',
+    toast: 'Counting days now.',
   };
 }
 
@@ -91,11 +99,11 @@ export function cleanOk(st: Settings): Change {
 export function cleanKeep(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
-      s.cleanMode = 'strict';
+      s.cleanMode = countBack(s);
       s.cleanNote = null;
       s.cleanHold = tk;
     }),
-    toast: 'Okay. Counting strictly.',
+    toast: 'Okay. Counting days.',
   };
 }
 
@@ -104,6 +112,7 @@ export function cleanKeep(st: Settings, tk: DayKey): Change {
 export function autoStep(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
+      if (s.cleanMode !== 'step') s.cleanWas = s.cleanMode;
       s.cleanMode = 'step';
       s.stepAt = tk;
       s.cleanNote = { on: tk, m: 'step' };
@@ -117,7 +126,7 @@ export function autoStep(st: Settings, tk: DayKey): Change {
 export function autoCount(st: Settings, tk: DayKey): Change {
   return {
     st: changeSettings(st, (s) => {
-      s.cleanMode = 'strict';
+      s.cleanMode = countBack(s);
       s.cleanHold = tk;
       s.stepGrad = tk;
       s.cleanNote = { on: tk, m: 'count' };

@@ -281,3 +281,58 @@ describe('checkpoints follow the path', () => {
     expect(core.lcheckPair(12)!.b.id).toBe('l24');
   });
 });
+
+describe('the faith lessons follow the setup answer', () => {
+  const path = core.lessonPath();
+  const ans = (faith?: string) => core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: faith ? { faith } : {}, hist: [] } });
+  const faithL = core.LESSONS.filter((L) => L.f);
+  it('Yes, Somewhat and a skipped answer change nothing', () => {
+    for (const st of [ans('big'), ans('some'), ans(), core.normSettings(core.defaultSettings('2026-10-01'))]) {
+      expect(core.faithOut(st)).toBe(false);
+      expect(core.lessonPathFor(st)).toBe(path);
+    }
+  });
+  it('No leaves them out, keeps the order, and numbers the path without them', () => {
+    const st = ans('no');
+    const mine = core.lessonPathFor(st);
+    expect(mine).toEqual(path.filter((L) => !L.f));
+    expect(mine.length).toBe(path.length - faithL.length);
+    const after = path.find((L, i) => i > path.indexOf(faithL[0]) && !L.f)!;
+    expect(core.lessonNo(after, st)).toBe(core.lessonNo(after) - faithL.length);
+    expect(core.lessonNo(faithL[0], st)).toBe(0);
+    expect(core.lessonWalk({}, st).path).toBe(mine);
+    expect(core.lessonMap(core.lessonWalk({}, st)).lands.flatMap((l) => l.stones).length).toBe(mine.length);
+    expect(
+      core
+        .lessonTimeline({}, st)
+        .coming.flatMap((x) => x.left)
+        .some((L) => L.f),
+    ).toBe(false);
+  });
+  it('a faith lesson still opens from Learn, and when finished stays finished and counted', () => {
+    const st = ans('no');
+    const L = faithL[0];
+    const w0 = core.lessonWalk({}, st);
+    expect(core.lessonGate(L, w0)).toBe('open');
+    expect(core.nextAfter(L, w0)).toBe(w0.next);
+    const days = { '2026-10-02': { p: { ls: [L.id] } } } as unknown as core.Days;
+    const w = core.lessonWalk(days, st);
+    expect(w.done.has(L.id)).toBe(true);
+    expect(w.next).toBe(path[0]);
+    expect(core.lessonCount(w)).toEqual({ done: 1, of: path.length - faithL.length + 1 });
+    /* finishing it does not make the path stop anywhere */
+    expect(core.lessonsEarly(days, st).size).toBe(0);
+  });
+  it('a re-read for a person who said No is never a faith lesson', () => {
+    const st = ans('no');
+    for (let i = 0; i < 60; i++) expect(core.reviewPick(core.addDays('2026-10-01', i), st).f).toBeFalsy();
+  });
+  it('checkpoint numbers do not skip over the faith lessons', () => {
+    const st = ans('no');
+    const nums = core
+      .lcheckOrder()
+      .filter((n) => !core.lcheckPair(n)!.b.f)
+      .map((n) => core.lcheckNo(n, st));
+    expect(nums).toEqual(nums.map((_, i) => i + 1));
+  });
+});

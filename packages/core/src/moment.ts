@@ -13,6 +13,8 @@
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
        three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well."
+   11. the five questions again, every 30 days (recheck.ts): low on purpose, so they wait behind the day's next stop as "and one
+       more", and are the card once the day's stops are done. They never push the lesson off the flame.
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
@@ -45,11 +47,12 @@ export type MomentKind =
   | 'step-offer'
   | 'nudge'
   | 'first-pattern'
+  | 'recheck'
   | 'calm'
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern';
+export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck';
 
 export interface Moment {
   k: MomentKind;
@@ -88,9 +91,11 @@ export interface MomentDev {
   account?: boolean;
   /** the slip whose comeback was celebrated and put away (its button pressed): it is not the card again */
   comebackSeen?: DayKey | null;
+  /** the five questions are due again (core bpsDue, kept on this device) */
+  recheck?: boolean;
 }
 
-/** every moment that applies now, in order. The calm day (or done) is always last. */
+/** every moment that applies now, in order. The calm day (or done) comes last, but for the five questions. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
   const out: Moment[] = [];
   const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string, nx?: string) =>
@@ -222,7 +227,10 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
      day uses for its open stop too, so both open the same thing) */
   const cur = openTile(days, st, tk, now, dev.account !== false);
   if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
-  else if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
+  if (dev.recheck)
+    m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
+  if (cur) return out;
+  if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   else
     m(
       'done',

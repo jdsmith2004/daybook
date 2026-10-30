@@ -460,14 +460,14 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
     const w = lessonWalk(days, st);
     const nl = w.next;
     if (nl && lessonOpen(nl, w.done, account)) {
-      o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
+      o.t = 'Lesson ' + lessonNo(nl, st) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;
     } else {
       /* a re-read is one behind Up next on the path (one read early waits for the path to reach it) */
       const read = LESSONS.filter((L) => w.walked.has(L.id));
-      const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+      const R = account ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
       o.t = 'Read again: ' + R.title;
       o.s = 'A quick re-read';
       o.pts = 5;

@@ -1,5 +1,6 @@
 /* One entry: add one (rode it out or slipped, and when), or open one to change what happened, the time, what set it off, what
-   helped, a small step after a slip, a note, or delete it. Ported from the legacy sheetEvent and its actions. */
+   helped, a small step after a slip, a note, or delete it. A slip added here goes on to Rekindle at how it feels now, with
+   no hold (docs/design-standards.md: a slip always reaches the comeback). Ported from the legacy sheetEvent and its actions. */
 import {
   addEvent,
   addOption,
@@ -8,6 +9,7 @@ import {
   didToggle,
   fmtClock,
   fmtDate,
+  gameCompute,
   isKey,
   moveEvent,
   optList,
@@ -23,7 +25,7 @@ import {
   type Outcome,
   type When,
 } from '@daybook/core';
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -65,16 +67,22 @@ export default function Entry() {
     const ph = phaseOf(date, st);
     const pick = (v: Outcome) => {
       let nid = '';
+      const pts0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
       const at = when ? whenEntry(when, roll) : { key: date, time: null };
       update((s0) => {
         const r = addEvent(s0.days, at.key, v, at.time);
         nid = r.id;
         return { ...s0, days: r.days };
       });
+      buzz('save');
+      if (v === 'slipped') {
+        closeSheet();
+        router.push({ pathname: '/log', params: { date: at.key, evId: nid, outcome: 'slipped', step: 'slNow', from: 'entry', pts0: String(pts0) } });
+        return;
+      }
       setDate(at.key);
       setId(nid);
       setFresh(true);
-      buzz('save');
     };
     return (
       <SheetFrame title="Add an entry">

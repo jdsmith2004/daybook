@@ -17,8 +17,13 @@
       after-slip talk-through (pr 1, ft), which comes back on Today at its hour (core talkPlanNow) and is asked about once
       that hour has passed. Then the finish, by the fire, with the plan to say once.
    SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
-   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow): the
-   slip is saved already, so there is nothing to hold, and the look back ends warm, with the fire and a plan.
+   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow), and so does
+   a slip added in the entry sheet (?from=entry&step=slNow, with Undo on the page): the slip is saved already, so there is
+   nothing to hold, and it ends warm, with the fire and a plan.
+   SOS is one tap from every page of the comeback, and it opens over it: its X and its ending come back here, on the same
+   page, so the plan for next time is never lost (lib/nav.ts leave).
+   The second slip in a week (core slipRepeat) gets the most care: one line that names it on "How do you feel now?", the
+   safe person's text under the answer to that feeling, and the lesson on therapy on the plan page.
    Rekindle's points come from the log itself (core rkOf): one small thing waits on Today, and coming back the next morning
    is the sunrise check. Ported from the legacy SCENES.checkin. */
 import {
@@ -35,6 +40,10 @@ import {
   removeEvent,
   rkHoldWords,
   rkLitLine,
+  safeName,
+  SLIP_SAFE_TEXT,
+  SLIP_THERAPY_LESSON,
+  slipRepeat,
   rkRunBefore,
   newTalk,
   saveTalk,
@@ -77,6 +86,8 @@ import { ChoiceRows } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
 import { OwnField } from '@/components/own';
 import { RodeOut } from '@/components/rode-out';
+import { SafeTextButton } from '@/components/safe-text';
+import { SosPill } from '@/components/sos-pill';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -151,13 +162,13 @@ export default function Log() {
   const [when, setWhen] = useState<When>(() => whenStart(date, Date.now(), roll));
   const [whenOpen, setWhenOpen] = useState(false);
   const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
-  const [from] = useState<'urge' | 'pause' | 'talk' | 'hero'>(() =>
-    params.from === 'urge' || params.from === 'pause' || params.from === 'talk' ? params.from : 'hero',
+  const [from] = useState<'urge' | 'pause' | 'talk' | 'entry' | 'hero'>(() =>
+    params.from === 'urge' || params.from === 'pause' || params.from === 'talk' || params.from === 'entry' ? params.from : 'hero',
   );
-  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves. One from a look back starts
-     at how it feels now (the slip was saved when it was looked back on; an older link may still say slBefore). An urge
-     ridden out is the celebration. */
-  const fromLook = from === 'talk' && (params.step === 'slNow' || params.step === 'slBefore');
+  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves. One from a look back or the
+     entry sheet starts at how it feels now (the slip is saved already; an older link may still say slBefore). An urge ridden
+     out is the celebration. */
+  const fromLook = (from === 'talk' || from === 'entry') && (params.step === 'slNow' || params.step === 'slBefore');
   const shotStep = SHOTS && SL_STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : null;
   const [step, setStep] = useState<Step>(() => (handed ? (params.outcome === 'slipped' ? shotStep || (fromLook ? 'slNow' : 'slHold') : 'won') : 'q1'));
   const [hist, setHist] = useState<Step[]>(() => (handed && !fromLook ? ['q1'] : []));
@@ -309,6 +320,8 @@ export default function Log() {
   const slNight = night || urNight(new Date(now).getHours());
   /* what was going on just before it, as the plan's "when" */
   const slWhen = slipWhen(ev?.trigger);
+  /* this slip is not the only one in its week: the most care (core slipRepeat) */
+  const repeat = slipRepeat(snap.days, date, evId);
   /* saving the plan: a new pick replaces the one made a moment ago */
   const savePlan = (m: TalkMove | null, own?: string) => {
     const t: Talk = {
@@ -434,15 +447,21 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
+        {/* a slip added in the entry sheet comes in here, so its Undo is here too */}
+        {from === 'entry' ? saved : null}
         <T v="eyebrow" tone="muted" style={s.center}>
           Right now
         </T>
         <T v="title" style={s.h} accessibilityRole="header">
           How do you feel now?
         </T>
-        <T tone="muted" style={s.center}>
-          A few minutes after. Honest is best.
-        </T>
+        {repeat ? (
+          <T style={[s.center, s.kind]}>{repeat.line}</T>
+        ) : (
+          <T tone="muted" style={s.center}>
+            {date === tk ? 'A few minutes after. Honest is best.' : 'Looking back on it. Honest is best.'}
+          </T>
+        )}
         <Dock>
           <ChoiceRows
             list={SLIP_NOW.map(([id, name, sub, icon, tone]) => ({ id, name, sub, icon, tone, shape: NOW_SHAPE[id] }))}
@@ -494,13 +513,17 @@ export default function Log() {
         <Dock>
           {fa === 'pull' ? (
             <>
-              <Button label="Open SOS" onPress={() => router.replace('/sos')} />
+              <Button label="Open SOS" onPress={() => router.push('/sos')} />
               <View style={{ alignItems: 'center' }}>
                 <Link label="Keep going here" tone="muted" onPress={next} />
               </View>
             </>
           ) : (
-            <Button label="Next" onPress={next} />
+            <>
+              {/* the second slip in a week: a plain door to a person */}
+              {repeat && safeName(st) ? <SafeTextButton kind="ghost" body={SLIP_SAFE_TEXT} /> : null}
+              <Button label="Next" onPress={next} />
+            </>
           )}
         </Dock>
       </>
@@ -602,7 +625,18 @@ export default function Log() {
         )}
       </>
     );
-    footer = ownPlan ? null : <Link label="Skip" tone="muted" onPress={() => go('slDone')} />;
+    footer = ownPlan ? null : (
+      <>
+        {repeat ? (
+          <Link
+            label="What therapy is like"
+            tone="muted"
+            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
+          />
+        ) : null}
+        <Link label="Skip" tone="muted" onPress={() => go('slDone')} />
+      </>
+    );
   } else if (step === 'slDone') {
     /* the finish: the fire, still burning, and the plan to say once */
     const line = plan ? talkPlanLine(plan) : null;
@@ -643,7 +677,14 @@ export default function Log() {
 
   if (night && sky !== 'ember') sky = 'night';
   return (
-    <SceneFrame title={title} sky={sky} dots={dots} onBack={step !== 'q1' && hist.length ? goBack : null} onClose={close} footer={footer}>
+    <SceneFrame
+      title={title}
+      sky={sky}
+      dots={dots}
+      onBack={step !== 'q1' && hist.length ? goBack : null}
+      onClose={close}
+      topRight={step === 'q1' ? undefined : <SosPill over />}
+      footer={footer}>
       {body}
       {whenSheet}
     </SceneFrame>

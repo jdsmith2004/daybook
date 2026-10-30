@@ -1,4 +1,5 @@
-/* Celebrations: a new level (or a new form of the flame), a new badge, a full ring. They wait their turn:
+/* Celebrations: a new form of the flame, a new badge. A plain level and a full ring are one short toast (core celSplit),
+   since levels come every day or two and the hero's bar carries them. They wait their turn:
    they show only on the main tabs, never on top of a page, a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
    quiet line instead. Anything that arrives right after a slip comes in quietly: no confetti, no buzz. Ported from the legacy
    celebrate, celNext and confetti.
@@ -8,7 +9,7 @@
    (core tipMoment), but never on the day the person came back, nor in the hours after an SOS or a slip
    (lib/quiet-asks.ts). A mistaken log taken back with Undo takes its waiting celebration with it (lib/store.tsx). A level
    reached on the day of a slip waits for the next day (core checkNew), and then says it was earned then. */
-import { addDays, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
+import { addDays, celSplit, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -66,6 +67,9 @@ export function useHoldCelebrations(on: boolean) {
 let busy = false;
 const busySubs = new Set<() => void>();
 const busySub = (f: () => void) => (busySubs.add(f), () => void busySubs.delete(f));
+/* when a sheet last opened, so Today's day-feel question never comes on an open that already showed one */
+let sheetAt = 0;
+export const celebrationSheetAt = () => sheetAt;
 export const useCelebrating = () =>
   useSyncExternalStore(
     busySub,
@@ -131,8 +135,12 @@ export function CelebrateHost() {
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;
-    const group = lead(queue);
+    const { sheet, toast } = celSplit(queue);
     setQueue([]);
+    if (toast) sayRef.current(toast);
+    if (!sheet.length) return;
+    const group = lead(sheet);
+    sheetAt = Date.now();
     setCur(group);
     const quiet = group.some((it) => !!it.quiet || (it.type === 'badge' && it.b.id === 'honest'));
     const big = group.some((it) => it.type === 'level');
@@ -143,7 +151,7 @@ export function CelebrateHost() {
   }, [cur, blocked, queue]);
 
   useEffect(() => {
-    busy = !!cur || queue.length > 0;
+    busy = !!cur || celSplit(queue).sheet.length > 0;
     busySubs.forEach((f) => f());
   }, [cur, queue]);
 
@@ -164,12 +172,12 @@ export function CelebrateHost() {
   );
 }
 
-/** the order a sheet leads with: a new form, a level, a full ring, then the badges in the order they came */
-const RANK: Record<CelItem['type'], number> = { level: 0, perfect: 2, badge: 3, quest: 4, more: 5 };
+/** the order a sheet leads with: a new form, then the badges in the order they came, and a plain level as a row */
+const RANK: Record<CelItem['type'], number> = { level: 3.5, perfect: 2, badge: 3, quest: 4, more: 5 };
 function lead(items: CelItem[]): CelItem[] {
   return items
     .filter((it) => it.type !== 'quest')
-    .map((it, i) => ({ it, i, r: RANK[it.type] - (it.type === 'level' && it.evolve ? 0.5 : 0) }))
+    .map((it, i) => ({ it, i, r: it.type === 'level' && (it.evolve || !it.from) ? 0 : RANK[it.type] }))
     .sort((a, b) => a.r - b.r || a.i - b.i)
     .map((x) => x.it);
 }

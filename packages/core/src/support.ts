@@ -63,7 +63,7 @@ function askable(days: Days, st: Settings, tk: DayKey, hour: number, url: string
   if (hour < TIP_HOURS[0] || hour >= TIP_HOURS[1]) return false;
   if (near && tipQuiet(days, st, near)) return false;
   for (const k of [st.tipAsk, st.tipMo]) if (isKey(k) && diffDays(tk, k as DayKey) < TIP_SPACE) return false;
-  return calm(days, tk);
+  return tipCalm(days, tk);
 }
 
 /** whether Today shows the tip card now: a week in, then TIP_EVERY days after it was answered. acct: the account card's
@@ -90,7 +90,7 @@ export const tipMomentShown = (st: Settings, tk: DayKey, now = Date.now()): Chan
 });
 
 /** no slip today or in the days before it (TIP_CALM in all) */
-function calm(days: Days, tk: DayKey): boolean {
+export function tipCalm(days: Days, tk: DayKey): boolean {
   const from = addDays(tk, 1 - TIP_CALM);
   return !eventsOf(days).some((e) => e.outcome === 'slipped' && e.key >= from && e.key <= tk);
 }
@@ -98,7 +98,7 @@ function calm(days: Days, tk: DayKey): boolean {
 /** whether Today shows its small Support button at the top: until the person is a supporter, except in the days after a
     slip and in the TIP_QUIET hours after an SOS (near), like every other ask */
 export const tipButton = (days: Days, tk: DayKey, url = SUPPORT_URL, st: Settings | null = null, now = Date.now(), near: TipNear | null = null): boolean =>
-  !!url && !isSupporter(st, now) && calm(days, tk) && !(near && st && tipQuiet(days, st, near));
+  !!url && !isSupporter(st, now) && tipCalm(days, tk) && !(near && st && tipQuiet(days, st, near));
 
 /** the card is answered ("See the tips" or "Not right now"): Today asks again TIP_EVERY days later, unless a tip comes first */
 export const tipAnswered = (st: Settings, tk: DayKey, now = Date.now()): Change => ({

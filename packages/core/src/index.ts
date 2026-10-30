@@ -52,4 +52,6 @@ export * from './night-win';
 export * from './pulse';
 export * from './moment';
 export * from './slip';
+export * from './recheck';
+export * from './celebrate';
 export * from './take-back';

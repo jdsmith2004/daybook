@@ -24,7 +24,6 @@ import {
   RIDE_MOVES,
   rideMark,
   rideNext,
-  rkStepFor,
   slipFeltLine,
   urEntry,
   urEvidence,
@@ -166,12 +165,12 @@ export default function Sos() {
     const e = urEntry(a, v, st, Date.now());
     let id = '';
     let gain = 0;
-    const days = update((s) => {
+    update((s) => {
       const r = addEvent(s.days, e.key, v, e.time, e.fields);
       id = r.id;
       if (s.settings) gain = gameCompute(r.days, s.settings, s.reviews, tk).pts - gameCompute(s.days, s.settings, s.reviews, tk).pts;
       return { ...s, days: r.days };
-    }).days;
+    });
     sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
     setMore(false);
@@ -184,7 +183,7 @@ export default function Sos() {
           date: e.key,
           evId: id,
           outcome: v,
-          step: rkStepFor(days, e.key),
+          step: 'slHold',
           from: 'urge',
           pts0: String(a.p0),
           m: String(e.mins),

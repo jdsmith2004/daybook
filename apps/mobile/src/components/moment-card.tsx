@@ -70,6 +70,8 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <Band m={m} sky="violet" onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'patterns' } })} />;
     case 'away':
       return <Band m={m} sky="sky" onPress={() => router.push('/back')} />;
+    case 'recheck':
+      return <Band m={m} sky="violet" onPress={() => router.push('/recheck')} />;
     default:
       return <Done m={m} />;
   }

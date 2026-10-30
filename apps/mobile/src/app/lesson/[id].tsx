@@ -148,16 +148,19 @@ export default function LessonScreen() {
       </Frame>
     );
   const t = toneOf(c, LUNITS[L.u].tone);
-  const n = lessonNo(L);
+  const n = lessonNo(L, st);
   const w = lessonWalk(snap.days, st);
   const done = w.done;
   /* one lesson opens at a time: further on, the key idea; read early and reached now, the welcome back. "Read it all
      again" (?at=all) opens a finished one in full. */
   const gate = lessonGate(L, w);
   const back = gate === 'back';
-  if (gate !== 'open' && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
+  /* ?at=care: a door from a hard moment (Rekindle, the second slip in a week): it opens in full, and never asks for an account
+     (never after a slip). It comes back to where it was opened. */
+  const care = at === 'care';
+  if (gate !== 'open' && !care && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
-  if (!lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
+  if (!care && !lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   const next = nextAfter(L, w);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
@@ -258,7 +261,7 @@ export default function LessonScreen() {
       setLen(ln);
       setI(0);
       /* the lesson before asked its own question on its welcome back today: not again */
-      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)));
+      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)), st);
       setRcOf(P ? P.id : null);
       setRc(null);
       setRcTried([]);
@@ -331,7 +334,7 @@ export default function LessonScreen() {
       const r = P.rc!;
       body = (
         <>
-          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P)} t={t} />
+          <Eyebrow icon={LX_E.recall[0]} label={'Quick recall · lesson ' + lessonNo(P, st)} t={t} />
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
@@ -395,8 +398,8 @@ export default function LessonScreen() {
             <Text style={[s.keyP, { color: c.ink }]}>{L.key}</Text>
           </View>
           {pr && pr.write ? null : <NoteField L={L} note={note} />}
-          {done.size >= LESSONS.length ? (
-            <T tone="mintText">That is all {LESSONS.length} lessons. They stay in Learn whenever you want to read one again.</T>
+          {w.path.every((x) => done.has(x.id)) ? (
+            <T tone="mintText">That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T>
           ) : null}
           <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
             <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
@@ -596,37 +599,42 @@ export default function LessonScreen() {
           {due && pair ? (
             <Route
               label="Write it out"
-              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a) + ' and ' + lessonNo(pair.b)}
+              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, st) + ' and ' + lessonNo(pair.b, st)}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
           ) : null}
-          <Route
-            label="Back to Learn"
-            onPress={() => {
-              closeAll();
-              router.navigate('/learn');
-            }}
-          />
-          <Route
-            label="Back to Today"
-            onPress={() => {
-              closeAll();
-              router.navigate('/');
-            }}
-          />
+          {care ? null : (
+            <>
+              <Route
+                label="Back to Learn"
+                onPress={() => {
+                  closeAll();
+                  router.navigate('/learn');
+                }}
+              />
+              <Route
+                label="Back to Today"
+                onPress={() => {
+                  closeAll();
+                  router.navigate('/');
+                }}
+              />
+            </>
+          )}
         </View>
       </>
     );
-    foot = next ? (
-      <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
-    ) : (
-      <Next label="Done" noIcon onPress={closeAll} />
-    );
+    foot =
+      next && !care ? (
+        <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
+      ) : (
+        <Next label="Done" noIcon onPress={closeAll} />
+      );
   }
 
   return (
     <Frame
-      title={'Lesson ' + n + ' of ' + LESSONS.length + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')}
+      title={(n ? 'Lesson ' + n + ' of ' + w.path.length : LUNITS[L.u].name) + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')}
       onClose={close}
       c={c}
       inset={inset}
@@ -681,7 +689,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
   const t = toneOf(c, LUNITS[L.u].tone);
-  const n = lessonNo(L);
+  const n = lessonNo(L, st);
   const k = lessonKeyIdea(L);
   const first = lessonStats(snap.days).first[L.id];
   const read = first
@@ -742,7 +750,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {read ? (
           <Quiet label="Read it all again" onPress={again} />
         ) : nx ? (
-          <Quiet label={'Up next: lesson ' + lessonNo(nx)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
+          <Quiet label={'Up next: lesson ' + lessonNo(nx, st)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
         ) : null}
       </View>
     );
@@ -801,7 +809,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     );
   }
   return (
-    <Frame title={'Lesson ' + n + ' of ' + LESSONS.length} onClose={close} c={c} inset={inset}>
+    <Frame title={'Lesson ' + n + ' of ' + w.path.length} onClose={close} c={c} inset={inset}>
       <ScrollView
         ref={scroll}
         onLayout={fit.onLayout}

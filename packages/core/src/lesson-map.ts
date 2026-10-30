@@ -4,7 +4,7 @@
    phone-wide page, MAP_W across; the app scales it to the screen. Lessons open one at a time, in the order of the path
    (lessons.ts lessonWalk): the stones behind Up next are done, Up next is the one bright stone, and every stone after it
    waits, quiet, also one read early (nothing finished ever shows past Up next). */
-import { lessonSections, walkOf, type Lesson, type LessonWalk } from './lessons';
+import { walkOf, type Lesson, type LessonWalk } from './lessons';
 
 export const MAP_W = 390;
 /** room above a land's first stone (its hills and signpost), between stones, below its last stone, above the first land,
@@ -22,6 +22,8 @@ export interface MapStone {
   L: Lesson;
   /** its place in its land */
   j: number;
+  /** the number the person sees: its place on their path */
+  n: number;
   x: number;
   y: number;
   state: StoneState;
@@ -64,7 +66,14 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
   const nx = w.next;
   let y = TOP;
   let next: MapStone | null = null;
-  const lands = lessonSections().map(({ u, lessons }, k): MapLand => {
+  /* the person's path in its sections (lessonPathFor): a land holds lessons next to each other of one unit */
+  const sections: { u: number; lessons: Lesson[] }[] = [];
+  w.path.forEach((L) => {
+    const last = sections[sections.length - 1];
+    if (last && last.u === L.u) last.lessons.push(L);
+    else sections.push({ u: L.u, lessons: [L] });
+  });
+  const lands = sections.map(({ u, lessons }, k): MapLand => {
     const top = y;
     const right = k % 2 === 0;
     const base = right ? 138 : 252;
@@ -72,6 +81,7 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
       const s: MapStone = {
         L,
         j,
+        n: w.path.indexOf(L) + 1,
         x: base + (right ? 1 : -1) * SWAY[j % SWAY.length],
         y: top + HEAD + j * STEP,
         state: w.walked.has(L.id) ? 'done' : L === nx ? 'next' : 'todo',

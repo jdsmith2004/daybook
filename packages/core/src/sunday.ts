@@ -10,6 +10,7 @@
    ("w3", by the person's own weeks), which stay readable in the Journal. Its answers are also written into the record's
    text fields, so older copies of the app can read them too. */
 import { addDays, didIds, didText, eventsOf, fmtClock, sumDay, trigText } from './legacy/core.js';
+import { planRows } from './lessons';
 import { logStart } from './log-start';
 import { talksOf } from './talk';
 import { urTool } from './sos';
@@ -341,6 +342,23 @@ export function sunPlanNow(reviews: Reviews, tk: DayKey): { sun: DayKey; it: Sun
   if (!r || (!r.it && !r.hd && !r.nt)) return null;
   const wd = dateOf(tk).getDay();
   return { sun, it: r.it || null, hard: !!r.hd && r.hd.indexOf(wd) >= 0, nt: r.nt && (wd === 0 || wd >= 3) ? r.nt : null };
+}
+/** the plan to say once in the review, since rehearsed plans work better (Sheeran 2025): the one just made, else last week's,
+    else the first line of the urge plan. null when there is none. */
+export function sunPlanSay(reviews: Reviews, st: Settings, tk: DayKey, made?: SunReview['it']): string | null {
+  const it = made || sunPlanNow(reviews, tk)?.it;
+  if (it) return 'When ' + it.w + ', I will ' + it.t + '.';
+  const r = planRows(st)[0];
+  if (!r) return null;
+  const w = r.when
+    .trim()
+    .replace(/[.,]+$/, '')
+    .replace(/^(when|if)\s+/i, '');
+  const t = r.then
+    .trim()
+    .replace(/[.!]+$/, '')
+    .replace(/^i will\s+/i, '');
+  return w && t ? 'When ' + w + ', I will ' + t.charAt(0).toLowerCase() + t.slice(1) + (/[.!]$/.test(t) ? '' : '.') : null;
 }
 /** last week's goal, looked back on in this week's review: what it was, and how it went */
 export function sunLastGoal(days: Days, reviews: Reviews, sun: DayKey, tk: DayKey) {

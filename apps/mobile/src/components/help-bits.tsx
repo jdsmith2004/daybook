@@ -149,7 +149,7 @@ export function RelLesson({ id }: { id: string }) {
   return (
     <LinkCard
       icon="book"
-      title={`Lesson ${lessonNo(L)}: ${L.title}`}
+      title={(lessonNo(L, snap.settings) ? `Lesson ${lessonNo(L, snap.settings)}: ` : '') + L.title}
       sub={g === 'key' ? 'The key idea' : w.walked.has(id) ? 'Done · read it again' : lmin(L) + ' · up next'}
       onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })}
     />

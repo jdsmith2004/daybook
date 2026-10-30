@@ -4,6 +4,8 @@
    tip, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a card
    that opens the tip sheet (core supporter.ts, patPartOpen). */
 import {
+  bpsRow,
+  bpsScores,
   daysList,
   fmtDate,
   fmtHour,
@@ -32,6 +34,8 @@ import {
   type PatRange,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
+import { LinkCard } from '@/components/link-card';
+import { useSos } from '@/lib/sos';
 import { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Platform, Pressable, StyleSheet, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
@@ -59,6 +63,7 @@ type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
 
 export default function Pattern() {
+  const sos = useSos();
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'patterns' || params.pane === 'weeks' ? params.pane : 'days');
   /* a link to a section (Today's "Month ›" opens Days) moves to it, even when Pattern is already open on another one */
@@ -96,7 +101,10 @@ export default function Pattern() {
           {pane === 'days' ? (
             <DaysPane />
           ) : pane === 'patterns' ? (
-            <PatternsPane onGo={(y) => scroll.current?.scrollTo({ y: Math.max(0, inset.top + 16 + paneY + y - 12), animated: true })} />
+            <>
+              <PatternsPane onGo={(y) => scroll.current?.scrollTo({ y: Math.max(0, inset.top + 16 + paneY + y - 12), animated: true })} />
+              <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
+            </>
           ) : (
             <>
               <SundayList snap={snap} tk={tk} />

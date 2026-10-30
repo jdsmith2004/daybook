@@ -35,6 +35,7 @@ import {
   sunGoals,
   sunKey,
   sunOf,
+  sunPlanSay,
   sunRange,
   sunWorked,
   type StoryScreen,
@@ -103,6 +104,8 @@ export default function Review() {
   const { snap, tk, now, update, say } = useStore();
   const prefs = useReminderPrefs();
   const params = useLocalSearchParams<{ s?: string }>();
+  /* the plan was said once, on the last page */
+  const [said, setSaid] = useState(false);
   const st = snap.settings;
   /* which week: the one asked for, the one Today is asking about, or this one so far */
   const [sun] = useState(() => {
@@ -586,6 +589,7 @@ export default function Review() {
         </Pressable>
       );
     };
+    const planSay = sunPlanSay(snap.reviews, st, tk, r?.it);
     body = (
       <>
         <Finish
@@ -616,6 +620,26 @@ export default function Review() {
         </Appear>
         {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={650} style={[s.pts, { color: c.mintText }]} /> : null}
         <Dock>
+          {/* a plan said once comes back at the moment (Sheeran 2025) */}
+          {planSay ? (
+            <View style={[s.say, { backgroundColor: c.surface, shadowColor: c.lip }]}>
+              <T style={[s.c, { fontFamily: font.bodySemi }]}>{'“' + planSay + '”'}</T>
+              {said ? (
+                <T v="small" tone="mintText" style={[s.c, { fontFamily: font.bodySemi }]}>
+                  Good. It comes back to you at the moment.
+                </T>
+              ) : (
+                <Button
+                  kind="ghost"
+                  label="Say it once, then tap here"
+                  onPress={() => {
+                    buzz('tap');
+                    setSaid(true);
+                  }}
+                />
+              )}
+            </View>
+          ) : null}
           <T v="eyebrow" tone="muted" style={s.c}>
             WANT TO DO MORE? ALL OPTIONAL
           </T>
@@ -914,6 +938,7 @@ const s = StyleSheet.create({
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
   step: { width: 40, height: 40, borderRadius: 13, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   stepT: { fontFamily: font.bodyBold, fontSize: 20, lineHeight: 22 },
+  say: { alignSelf: 'stretch', gap: 8, padding: 14, borderRadius: 18 },
   goalCard: {
     alignSelf: 'stretch',
     flexDirection: 'row',

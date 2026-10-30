@@ -32,6 +32,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { Icon } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 /* ---------- colors ---------- */
@@ -227,7 +228,7 @@ export const Stone = memo(function Stone({
             {s.state === 'done' ? (
               <SvgXml xml={CHECK(t.ink)} width={28 * k} height={28 * k} />
             ) : (
-              <Text style={{ fontFamily: font.display, fontSize: (next ? 30 : 22) * k, color: next ? t.ink : q.ink }}>{lessonNo(s.L)}</Text>
+              <Text style={{ fontFamily: font.display, fontSize: (next ? 30 : 22) * k, color: next ? t.ink : q.ink }}>{s.n}</Text>
             )}
           </View>
         </View>
@@ -453,7 +454,8 @@ export function StoneCard({
 }) {
   const c = useTheme();
   const dark = c.scheme === 'dark';
-  const no = lessonNo(L);
+  const stg = useStore().snap.settings;
+  const no = lessonNo(L, stg);
   const q = quietOf(t, dark);
   /* a quiet stone's card is quiet too: its soft face, with dark words */
   const bg = ahead ? (dark ? mix(q.face, '#000000', 0.18) : mix(q.face, '#FFFFFF', 0.35)) : t.ic;
@@ -489,7 +491,7 @@ export function StoneCard({
         style={({ pressed }) => [s_.go, { backgroundColor: c.surface, shadowColor: deep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
         <Icon name={ahead ? 'next' : locked ? 'shield' : when ? 'book' : 'play'} size={18} color={btn} />
         <Text style={[s_.goT, { color: btn }]}>
-          {ahead ? `Up next: lesson ${lessonNo(ahead)}` : locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
+          {ahead ? `Up next: lesson ${lessonNo(ahead, stg)}` : locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
         </Text>
       </Pressable>
     </View>
@@ -751,7 +753,7 @@ export function LessonMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused, at, w > 0]);
   const label = (s: MapStone) => {
-    const no = lessonNo(s.L);
+    const no = s.n;
     const st =
       s.state === 'done'
         ? today.has(s.L.id)
@@ -862,12 +864,12 @@ function NextLabel({ s, land, x, y, k, w, onPress }: { s: MapStone; land: MapLan
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Up next: lesson ${lessonNo(s.L)}, ${s.L.title}, ${lmin(s.L)}. Open its card.`}
+      accessibilityLabel={`Up next: lesson ${s.n}, ${s.L.title}, ${lmin(s.L)}. Open its card.`}
       onPress={onPress}
       style={{ position: 'absolute', left, width, top: y - 30 * k, zIndex: 4, alignItems: right ? 'flex-start' : 'flex-end' }}>
       <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>UP NEXT · {lmin(s.L).toUpperCase()}</Text>
       <Text style={[s_.nextT, { color: c.ink, textAlign: right ? 'left' : 'right' }]}>
-        {lessonNo(s.L)}. {s.L.title}
+        {s.n}. {s.L.title}
       </Text>
     </Pressable>
   );

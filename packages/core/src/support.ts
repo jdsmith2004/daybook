@@ -91,7 +91,7 @@ export const tipMomentShown = (st: Settings, tk: DayKey, now = Date.now()): Chan
 
 /** whether this is a good moment for an ask a person has to go to (the card on a locked page, a row on More): no slip in
     the last TIP_CALM days, and no SOS or slip in the last TIP_QUIET hours */
-export const askCalm = (days: Days, st: Settings, tk: DayKey, near: TipNear | null): boolean => calm(days, tk) && !(near && tipQuiet(days, st, near));
+export const askCalm = (days: Days, st: Settings, tk: DayKey, near: TipNear | null): boolean => tipCalm(days, tk) && !(near && tipQuiet(days, st, near));
 
 /** no slip today or in the days before it (TIP_CALM in all) */
 export function tipCalm(days: Days, tk: DayKey): boolean {

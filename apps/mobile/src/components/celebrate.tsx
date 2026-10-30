@@ -27,7 +27,7 @@ import { font, toneOf, useTheme } from '@/lib/theme';
 const NATIVE = Platform.OS !== 'web';
 const SCENES = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup)(\/|$)/;
 /** the main tabs: a celebration shows only there, never over a page the person is busy on */
-const TABS = /^\/(journal|learn|more)?$/;
+const TABS = /^\/(pattern|learn|more)?$/;
 
 /** a badge: a round medal in its color, or a dashed lock while it is not earned yet */
 export function BadgeArt({ icon, tone, size, earned }: { icon: string; tone: string; size: number; earned: boolean }) {

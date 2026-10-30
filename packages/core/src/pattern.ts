@@ -334,12 +334,12 @@ export function patInsights(g: PatGaps, ride: { then: number; now: number } | nu
   const out: { t: string; go: PatGo }[] = [];
   if (g.trend === 'apart')
     out.push({
-      t: 'Your slips are getting further apart: about ' + r1(g.late!) + ' clean days between them lately, up from ' + r1(g.early!) + '.',
+      t: 'Your slips are getting further apart: about ' + r1(g.late!) + ' no-slip days between them lately, up from ' + r1(g.early!) + '.',
       go: 'apart',
     });
   else if (ride && ride.now >= ride.then + 0.15)
     out.push({ t: 'You ride out ' + inTen(ride.now) + ' hard moments now, up from ' + inTen(ride.then) + '.', go: 'apart' });
-  else if (g.now >= 7 && g.slips) out.push({ t: g.now + ' clean days and counting since your last slip.', go: 'apart' });
+  else if (g.now >= 7 && g.slips) out.push({ t: g.now + ' days with no slip since your last one.', go: 'apart' });
   const hw = when.hard.weekdays || when.hard.weekends;
   if (hw) {
     out.push({ t: hw.line, go: 'when' });

@@ -467,7 +467,7 @@ export default function LessonScreen() {
         foot = (
           <>
             {back}
-            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} onPress={() => step(1)} />
+            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} off={gr && pk == null} onPress={() => step(1)} />
           </>
         );
       } else if (card.k === 'guess') {

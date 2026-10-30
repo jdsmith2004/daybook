@@ -27,7 +27,7 @@ export interface AppleProof {
 /** the words for the server's answers that have no sentence of their own */
 export const APPLE_WORDS = {
   cancel: 'Sign in with Apple was stopped. Nothing changed.',
-  off: 'Sign in with Apple is not ready yet. Use your email for now.',
+  off: 'Sign in with Apple is not ready yet. Use your email instead.',
   unavailable: 'Sign in with Apple is not available on this device.',
   deleteNeedsApple: 'Closing an account that signs in with Apple asks Apple once more, so Apple forgets Daybook too.',
 };

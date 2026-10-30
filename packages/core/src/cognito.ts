@@ -41,7 +41,7 @@ export function cognitoWords(code: string): string {
     case 'LimitExceededException':
     case 'TooManyRequestsException':
     case 'TooManyFailedAttemptsException':
-      return 'Too many tries for now. Wait a few minutes, then try again.';
+      return 'Too many tries. Wait a few minutes, then try again.';
     case 'InvalidParameterException':
       return 'Check the email address and try again.';
     case 'NotVerified':

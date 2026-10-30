@@ -936,7 +936,7 @@ export default function Setup() {
                 {[
                   <PlanRow key="g" icon="flag" l="Goal" v={g.t} first />,
                   <View key="sp" style={[s.planRow, { borderTopColor: c.line, gap: 10 }]}>
-                    <PlanBit icon="moon" l="Screens off" v={fmtClock(isTime(a.so) ? (a.so as string) : '23:00')} />
+                    <PlanBit icon="moon" l="Screens off" v={isTime(a.so) ? fmtClock(a.so as string) : fmtClock('23:00') + ' (the usual; change it any time)'} />
                     <PlanBit icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
                   </View>,
                   th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
@@ -1149,7 +1149,7 @@ export default function Setup() {
         <View key="f" style={{ gap: 4 }}>
           <Next label="Make my free account" noIcon onPress={() => !busy() && sync.signInNow({ why: 'setup' })} off={false} />
           <TextLink
-            label="Keep it on this phone for now"
+            label="Keep it on this phone"
             onPress={() => {
               if (busy()) return;
               /* a choice, kept: Today does not ask again for a week (accounts.ts) */

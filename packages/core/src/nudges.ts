@@ -213,12 +213,12 @@ export const NUDGE_WORDS = {
       { t: 'Your lesson is ready 📖', b: 'Today’s lesson takes a few minutes. Tap to start.' },
       { t: 'Psst, it is your flame 🔥', b: 'Today’s lesson is ready. A few minutes, and I grow a little.' },
       { t: 'Got a few minutes? ⏳', b: 'Your next lesson is short. Tap to read it.' },
-      { t: 'Brain snack time 🍪', b: 'One bite-size lesson, a few minutes. Tap to start.' },
+      { t: 'One small lesson 📖', b: 'One bite-size lesson, a few minutes. Tap to start.' },
       { t: 'Knock knock 🚪', b: 'It is today’s lesson. A few minutes, then the day is yours.' },
       { t: 'New lesson today ✨', b: 'Something new to learn, in a few minutes. Tap to start.' },
       { t: 'Day {run} ☀️', b: '{run} days of showing up. Today’s lesson takes a few minutes.', when: 'run' },
-      { t: '{pts} points to {form} 🌱', b: 'Today’s lesson gets you there faster. A few minutes.', when: 'form' },
-      { t: 'Level {lvl} and climbing 📈', b: 'Keep going with today’s lesson. A few minutes.', when: 'level' },
+      { t: '{pts} points until {form} 🌱', b: 'Today’s lesson gets you there faster. A few minutes.', when: 'form' },
+      { t: 'Level {lvl}, and growing 🔥', b: 'Keep going with today’s lesson. A few minutes.', when: 'level' },
       { t: 'Good morning ☀️', b: 'Start the day with today’s lesson. A few minutes.', when: 'am' },
       { t: 'Evening lesson 🌙', b: 'Today’s lesson is ready before the day winds down. A few minutes.', when: 'pm' },
     ],
@@ -226,7 +226,7 @@ export const NUDGE_WORDS = {
       { t: 'Quick check-in ✅', b: 'Under a minute. How did today go?' },
       { t: 'How was today? 🤔', b: 'Check in with a few taps. Under a minute.' },
       { t: 'Tap, tap, done 👆', b: 'Your check-in takes under a minute, and your flame gets the points.' },
-      { t: 'Hey, it is me again 🔥', b: 'Time to check in. A few taps, under a minute.' },
+      { t: 'Your flame is waiting 🔥', b: 'Time to check in. A few taps, under a minute.' },
       { t: 'Your day in a few taps ✍️', b: 'Check in: what went well, what was hard. Under a minute.' },
       { t: 'Good day or hard day 🙂', b: 'Both are worth a check-in. Under a minute.' },
       { t: 'Day {run} check-in 📘', b: 'Save how today went. Under a minute.', when: 'run' },
@@ -269,13 +269,13 @@ export const NUDGE_WORDS = {
   back: [
     { t: 'Still here, still warm 👋', b: 'Daybook is here when you are ready. Your next lesson takes a few minutes.' },
     { t: 'Everything is kept 📦', b: 'Nothing is lost. A minute today is enough, and Daybook starts where you are.' },
-    { t: 'Last note for now 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
+    { t: 'Quiet from here 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
   ],
   /** the same, when the person left on a hard day (a slip, or a heavy week): no lesson, the hard day in mind */
   tender: [
     { t: 'Still here 🤍', b: 'A hard day does not undo the rest. Your plan is one tap away.' },
     { t: 'Nothing is lost 🤍', b: 'Everything you built is kept. One quiet minute is a fine way back.' },
-    { t: 'Last note for now 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
+    { t: 'Quiet from here 🌙', b: 'Daybook stays quiet until you open it. Everything you built is kept.' },
   ],
   /** the cards on Today */
   name: {

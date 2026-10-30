@@ -240,7 +240,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const hard = when.hard.weekdays || when.hard.weekends;
   const trendLine =
     g.trend === 'apart'
-      ? 'Getting further apart: about ' + g.late + ' clean days between slips lately, up from ' + g.early + '.'
+      ? 'Getting further apart: about ' + g.late + ' no-slip days between slips lately, up from ' + g.early + '.'
       : g.trend === 'closer'
         ? 'Lately they have come closer together: about ' +
           g.late +
@@ -248,7 +248,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           g.early +
           '. That is a signal, not a verdict. The hours and triggers below show where to aim.'
         : g.trend === 'steady'
-          ? 'About the same so far: around ' + g.late + ' clean days between slips.'
+          ? 'About the same so far: around ' + g.late + ' no-slip days between slips.'
           : 'A trend shows once there are four slips to compare.';
   const rideLine = ride
     ? ride.now > ride.then + 0.05
@@ -320,13 +320,13 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             <>
               <Gaps g={g} />
               <T v="small" tone="muted">
-                Each bar is the clean days before a slip, oldest on the left. The open bar is the stretch going now.
+                Each bar is the no-slip days before a slip, oldest on the left. The open bar is the stretch going now.
               </T>
               <T style={{ fontFamily: font.bodySemi }}>{trendLine}</T>
               <T>{patNowLine(g, tk, lastSlip || null)}</T>
               <NumbersTable
-                cap="Clean days before each slip"
-                head={['Slip', 'Clean days before']}
+                cap="No-slip days before each slip"
+                head={['Slip', 'No-slip days before']}
                 rows={g.runs.map((r, i) => [String(i + 1), String(r)]).reverse()}
               />
             </>

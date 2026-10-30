@@ -380,7 +380,7 @@ function Kind({ w }: { w: number }) {
   );
 }
 
-/* ---------- your comebacks: clean days before each slip, oldest first ---------- */
+/* ---------- your comebacks: no-slip days before each slip, oldest first ---------- */
 export function Comebacks({ cb }: { cb: RkComebacks }) {
   const c = useTheme();
   const max = Math.max(1, ...cb.runs);
@@ -391,8 +391,8 @@ export function Comebacks({ cb }: { cb: RkComebacks }) {
       style={[s.cb, { backgroundColor: c.surface, shadowColor: c.lip }]}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={'Clean days before each slip, oldest first: ' + cb.runs.join(', ')}>
-      <Text style={[s.cbHead, { color: c.muted }]}>CLEAN DAYS BEFORE EACH SLIP</Text>
+      accessibilityLabel={'No-slip days before each slip, oldest first: ' + cb.runs.join(', ')}>
+      <Text style={[s.cbHead, { color: c.muted }]}>NO-SLIP DAYS BEFORE EACH SLIP</Text>
       <View style={[s.cbBars, { height: HB + 44 }]}>
         {cb.runs.map((r, i) => {
           const last = i === n - 1;

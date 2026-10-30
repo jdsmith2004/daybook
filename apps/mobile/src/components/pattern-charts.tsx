@@ -1,6 +1,6 @@
 /* Your pattern's graphs (core: pattern.ts). Each answers one question at a glance, in the Journal's two outcome colors
    (teal: rode it out, amber: slipped) and violet for the hard hours:
-   - Gaps: a bar for the clean days before each slip, the stretch going now as an open bar, and a trend line
+   - Gaps: a bar for the no-slip days before each slip, the stretch going now as an open bar, and a trend line
    - RideWeeks: each week as one column, the share ridden out in teal
    - Clock: a 24-hour clock, midnight at the top, a wedge for each hour, the hard hours as a violet band
    - WeekRow: the days of the week, Monday first, the hardest one marked
@@ -68,7 +68,7 @@ export function Gaps({ g }: { g: PatGaps }) {
       style={{ height: H + 44 }}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={'Clean days before each slip, oldest first: ' + g.runs.join(', ') + (g.slips ? '. Now: ' + g.now : '')}>
+      accessibilityLabel={'No-slip days before each slip, oldest first: ' + g.runs.join(', ') + (g.slips ? '. Now: ' + g.now : '')}>
       {w
         ? vals.map((v, i) => {
             const open = g.slips > 0 && i === n - 1;

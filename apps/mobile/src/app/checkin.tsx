@@ -265,7 +265,7 @@ export default function Checkin() {
           <GoodnightButton onPress={sayGoodnight} />
           {any ? (
             <View style={s.saveLink}>
-              <Link label="Save for now, and say goodnight later" onPress={save} />
+              <Link label="Save, and say goodnight later" onPress={save} />
             </View>
           ) : null}
         </>

@@ -32,7 +32,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 
 - Free, with no ads and no subscription. Care (SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today) is free for everyone. A tip of $5 or more, paid once, makes a person a supporter, which opens sync, the safe copy and the whole pattern (when it happens, what sets it off, what helps). Tips are on iPhone (Apple in-app purchase) and the web tip page.
 - No tracking and no ads. Nothing is sold or shared. The only counts are anonymous, opt-in totals (never a word, the log or who someone is).
-- Works fully with no account; the log then never leaves the phone. An optional free account opens the lessons after the first three. Sync and a safe copy, readable only with the person's sign-in, open with a tip of $5 or more (accounts made before October 24, 2026 keep sync). Delete my account removes everything.
+- Works fully with no account; the log then never leaves the phone. An optional free account opens the lessons after the first eight. Sync and a safe copy, readable only with the person's sign-in, open with a tip of $5 or more (accounts made before October 24, 2026 keep sync). Delete my account removes everything.
 - Face ID or passcode lock. Reminders use plain words that do not say what the app is for.
 
 ## Links
@@ -41,4 +41,3 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 - [Open Daybook in a browser](https://d3c9g6kent5bsr.cloudfront.net/)
 - [Support and common questions](https://d3c9g6kent5bsr.cloudfront.net/support.html)
 - [Privacy policy](https://d3c9g6kent5bsr.cloudfront.net/privacy.html)
-- [Source code (public)](https://github.com/jdsmith2004/daybook)

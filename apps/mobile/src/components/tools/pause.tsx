@@ -253,7 +253,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
           </View>
         </Dock>
         <Link
-          label="I am okay for now"
+          label="I am okay"
           onPress={() => {
             sos.setTimer(null);
             close();

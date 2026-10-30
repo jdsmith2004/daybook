@@ -105,7 +105,7 @@ export function WeekView({ k, onNav }: { k: number; onNav: (k: number) => void }
           <T v="label">
             {st.day1
               ? 'Day 1 of quitting is set for ' + fmtDate(st.day1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.'
-              : 'No Day 1 is set. You are just tracking for now.'}
+              : 'No Day 1 is set. You are just tracking.'}
           </T>
           <View style={s.chips}>
             {st.day1 ? (

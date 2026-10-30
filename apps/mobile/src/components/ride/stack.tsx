@@ -501,7 +501,7 @@ export function StackMove({ on, onDone }: MoveProps) {
         <View style={{ flex: 1 }}>
           <Text style={[s.head, { color: c.ink }]}>{g.score}</Text>
           <T v="small" tone="muted">
-            {g.streak > 1 ? 'Streak ' + g.streak + (best ? ' · best ' + best : '') : best ? 'Best ' + best : 'Fill a row or a column to clear it.'}
+            {g.streak > 1 ? g.streak + ' in a row' + (best ? ' · best ' + best : '') : best ? 'Best ' + best : 'Fill a row or a column to clear it.'}
           </T>
         </View>
         <WavyLine width={88} p={sec / STACK_SEC} color={c.sky} track={c.sky + '33'} speed={0} />
@@ -556,7 +556,7 @@ export function StackMove({ on, onDone }: MoveProps) {
                     key={g.pop.id}
                     color={c.ink}
                     text={'+' + g.pop.pts}
-                    sub={g.pop.empty ? 'Board clear!' : g.pop.streak > 1 ? 'Streak ' + g.pop.streak : g.pop.lines > 1 ? g.pop.lines + ' lines' : undefined}
+                    sub={g.pop.empty ? 'Board clear!' : g.pop.streak > 1 ? g.pop.streak + ' in a row' : g.pop.lines > 1 ? g.pop.lines + ' lines' : undefined}
                   />
                 </View>
               ) : null}
@@ -595,7 +595,7 @@ export function StackMove({ on, onDone }: MoveProps) {
                   pointerEvents="none"
                   style={[s.over, s.done, { left: bx, top: by, width: W, height: W, borderRadius: r + 8, backgroundColor: c.bg + 'E6' }]}>
                   <Text style={[s.doneN, { color: c.ink }]}>{g.score}</Text>
-                  <T style={{ textAlign: 'center' }}>{newBest ? 'A new best.' : 'Your eyes were busy.'}</T>
+                  <T style={{ textAlign: 'center' }}>{newBest ? 'Your best yet.' : 'Your eyes were busy.'}</T>
                   <T v="small" tone="muted" style={{ textAlign: 'center' }}>
                     Notice how the urge feels now.
                   </T>

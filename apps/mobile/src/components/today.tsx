@@ -346,7 +346,7 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
   if (st.cleanNote) {
     return (
       <Card tone="note">
-        <T v="h2">A gentler way to count, for now</T>
+        <T v="h2">A gentler way to count</T>
         <T>
           The last few days have been hard. That is common when you are changing a habit, and you are still here and still logging honestly. That matters more
           than any count.

@@ -95,7 +95,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   const week = !!st.day1 && diffDays(st.day1, st.start) === 7;
   /* the chip says when counting starts, so it never reads as a second Day 1 beside the day of the tracking week */
   const d1 = st.day1 ? 'Counting starts ' + fmtDate(st.day1, { month: 'short', day: 'numeric' }) : null;
-  return out(week ? 'Tracking week' : st.day1 ? 'Tracking' : 'Just tracking', 'Day ' + p.n, week ? 'of 7' : '', d1);
+  return out(week ? 'Tracking week' : st.day1 ? 'Tracking, before your count' : 'Just tracking', 'Day ' + p.n, week ? 'of 7' : '', d1);
 }
 
 /** the day of a slip, while the number still shows the days that hold (today counts once it ends, and a run that is kept

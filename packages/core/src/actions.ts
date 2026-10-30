@@ -152,7 +152,7 @@ export function modeActs(st: Settings, tk: DayKey, k: ModeInfo['k']): [string, '
   const d1 = st.day1;
   const tom = addDays(tk, 1);
   if (k === 'before') return [];
-  if (k === 'quit' || k === 'step') return [['Just track for now', 'none']];
+  if (k === 'quit' || k === 'step') return [['Just track', 'none']];
   if (k === 'week')
     return [
       ...(d1 && d1 > tom ? ([['Start Day 1 tomorrow', 'tomorrow']] as [string, 'tomorrow'][]) : []),

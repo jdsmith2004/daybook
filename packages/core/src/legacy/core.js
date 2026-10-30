@@ -192,8 +192,8 @@ const SCRIPTS=[
  ['Asking about price',"Do you currently offer any sliding scale or reduced-fee spots?"],
  ["Questions for a therapist's intro call",'1) How do you work with compulsive porn use?  2) What would the first few sessions look like?  3) Do you offer a sliding scale or intern rates?  4) How do you feel about working with my values and faith?'],
  ['Asking my doctor for a referral',"I have had a habit I cannot control for years, and it is hurting my sleep, focus, and relationships. Can you refer me to counseling?"],
- ['For my safe person','I\'m working on something, and I might tell you when I slip. All I need is for you to say "thanks for telling me." No advice, no fixing.'],
- ['After a slip, to my safe person','I slipped. I\'m telling you because hiding makes it worse. I don\'t need advice. Just thanks for listening.'],
+ ['For my safe person','I am working on something, and I might tell you when I slip. All I need is for you to say "thanks for telling me." No advice, no fixing.'],
+ ['After a slip, to my safe person','I slipped. I am telling you because hiding makes it worse. I do not need advice. Just thanks for listening.'],
  ['A text when I am lonely','Hey, thinking of you. Got a few minutes to talk tonight?'],
  ['Asking a faith leader or mentor to meet','I would like to talk with you about something personal that I have been struggling with. Do you have some time this week?'],
  ['The first sentence, with a faith leader','I have been struggling with compulsive porn use. I want to stop, and I want your support. I am also looking at counseling and a recovery group. Could we talk about how my faith fits in?'],
@@ -926,10 +926,10 @@ const BADGES=[
  {id:'back',name:'Back again',desc:'Come back after a few days away. Returning is the real skill.',icon:'sun',tone:'sun',goal:1,now:S=>S.comeback?1:0},
  {id:'quest-1',name:'Quest done',desc:'Finish a weekly quest.',icon:'star',tone:'sun',goal:1,now:S=>S.questsDone},
  {id:'quest-3',name:'Quest crusher',desc:'Finish all three quests in one week.',icon:'crown',tone:'sun',goal:1,now:S=>S.fullQuestWeeks},
- {id:'clean-3',name:'Three clear days',desc:'A clean streak of 3 days.',icon:'sun',tone:'sun',goal:3,now:S=>S.longest},
- {id:'clean-7',name:'Seven clear days',desc:'A clean streak of 7 days.',icon:'sun',tone:'sun',goal:7,now:S=>S.longest},
- {id:'clean-14',name:'Fortnight',desc:'A clean streak of 14 days.',icon:'crown',tone:'sun',goal:14,now:S=>S.longest},
- {id:'clean-30',name:'Full month',desc:'A clean streak of 30 days.',icon:'crown',tone:'sun',goal:30,now:S=>S.longest}
+ {id:'clean-3',name:'Three clear days',desc:'3 days in a row with no slip.',icon:'sun',tone:'sun',goal:3,now:S=>S.longest},
+ {id:'clean-7',name:'Seven clear days',desc:'7 days in a row with no slip.',icon:'sun',tone:'sun',goal:7,now:S=>S.longest},
+ {id:'clean-14',name:'Fortnight',desc:'14 days in a row with no slip.',icon:'crown',tone:'sun',goal:14,now:S=>S.longest},
+ {id:'clean-30',name:'Full month',desc:'30 days in a row with no slip.',icon:'crown',tone:'sun',goal:30,now:S=>S.longest}
 ];
 
 function totalPoints(days,st,reviews,today){
@@ -1885,7 +1885,7 @@ const LESSONS=[
    {k:'text',q:1,e:'move',el:'What to do',art:['icon',{ic:'sparkle'}],
     h:'Measure progress by more than a streak.',
     b:[bP('Count these as real progress:'),bL(['An honest log, even after a slip.','An urge ridden out.','A night with the phone outside the bedroom.','A text to a real person.'])]},
-   {k:'choose',q:1,e:'check',el:'Check it',h:'You were clean for three weeks, then slipped. What is the most accurate way to see it?',ask:'Pick the best answer.',a:2,
+   {k:'choose',q:1,e:'check',el:'Check it',h:'You went three weeks with no slip, then slipped. What is the most accurate way to see it?',ask:'Pick the best answer.',a:2,
     c:[['You are back at day zero, so nothing counted','That is the straight-line picture. The three weeks still happened, and so did what you learned.'],
        ['Three good weeks, so you were never serious','That is the snowball thought. A setback is part of the process, not a verdict.'],
        ['A setback inside real growth. Keep going','Yes. Getting better is non-linear. Setbacks can be part of it, and the growth you built still counts.'],
@@ -2730,7 +2730,7 @@ const OB_GWHY={
  week:{h:'Why a tracking week first?',p:'You cannot change a pattern you cannot see. For seven days you log what happens, with no rules and nothing to fail. Then you set Day 1 knowing your hard hours and what sets it off.',f:'In a review of 138 experiments, tracking progress helped people reach their goals, and it helped more when the progress was written down.',src:'harkin'},
  now:{h:'Why a clear line?',p:'A clear line works when you already know your pattern. If you slip, nothing resets: your points, level, and badges stay, and the next day counts again.',f:'Among people quitting smoking, those whose confidence dropped after a slip slipped again sooner. Protecting your confidence matters more than a perfect record.',src:'kirchner'},
  nights:{h:'Why nights first?',p:'Late at night you are tired, often alone, and holding a phone. Fix that hour first and the biggest fight gets smaller. You track for a week, then set Day 1.',f:'After a night without sleep, people’s reward systems overreacted to pleasant pictures. A tired brain makes any quick reward look bigger than it is.',src:'gujar'},
- step:{h:'Why step down?',p:'When it happens most days, a clean run is out of reach at first, and losing it every day or two wears you down. So you aim for longer stretches between slips, counted in hours at first, and fewer slips each week. When your stretches get long, Daybook moves you to counting days by itself.',f:'For smoking, a review of 22 trials found that cutting down first and quitting all at once worked about equally well in the long run.',src:'lindson'},
+ step:{h:'Why step down?',p:'When it happens most days, a long run with no slip is out of reach at first, and losing it every day or two wears you down. So you aim for longer stretches between slips, counted in hours at first, and fewer slips each week. When your stretches get long, Daybook moves you to counting days by itself.',f:'For smoking, a review of 22 trials found that cutting down first and quitting all at once worked about equally well in the long run.',src:'lindson'},
  less:{h:'Why cut back first?',p:'A goal you can keep builds confidence, and confidence carries you through the next hard moment. A day counts with one slip or fewer. Switch to strict counting in Settings when you are ready.',f:'Among people quitting smoking, those whose confidence dropped after a slip slipped again sooner. A goal you can keep protects it.',src:'kirchner'}
 };
 /* reasons offered on "What do you want your life to look like instead?", by what the person said it costs them */

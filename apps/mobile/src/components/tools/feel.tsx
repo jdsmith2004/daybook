@@ -690,7 +690,7 @@ export function Feel({ finish, exit, now }: ToolProps & { now: number }) {
                   }}
                 />
                 <View style={s.quiet}>
-                  <Link label="Done for now" onPress={done} />
+                  <Link label="Done" onPress={done} />
                 </View>
               </>
             ) : (

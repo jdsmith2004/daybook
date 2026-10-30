@@ -14,7 +14,7 @@ import {
   isReviewKey,
   isJnId,
   normJEntry,
-  savedRuns,
+  keepCounts,
   winGain,
   winWhy,
   keepPoints,
@@ -167,7 +167,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const winAcc = useRef<Win[]>([]);
   const noteRef = useRef<string | null>(null);
   const flushT = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedSeen = useRef<string[] | null>(null);
   /* what each change marked seen in the last minutes (badges, a level), so an Undo right after a mistaken log can take
      back what that log alone made new (core unseeTakenBack) */
   const freshRef = useRef<{ t: number; f: FreshSeen }[]>([]);
@@ -308,11 +307,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     if (st) {
       const tkNow = logicalKey(now, st.rollover);
-      const sv = savedRuns(cur.days, st, tkNow);
-      const was = savedSeen.current;
-      savedSeen.current = sv.saved;
       const items: CelItem[] = [];
-      if (was && sv.saved.some((k) => was.indexOf(k) < 0)) items.push({ type: 'saved', run: sv.cur });
       const r = checkNew(cur.days, st, cur.reviews, tkNow, quiet);
       if (r.st) {
         freshRef.current = freshRef.current.filter((x) => now - x.t < FRESH_MS).concat({ t: now, f: freshSeen(st, r.st) });
@@ -342,12 +337,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const st = snapRef.current.settings;
     if (!st) return;
     const tkNow = logicalKey(Date.now(), st.rollover);
-    if (savedSeen.current == null) savedSeen.current = savedRuns(snapRef.current.days, st, tkNow).saved;
     if (!st.seen || (st.seen.lad || 0) < LADDER_V) {
       const r = checkNew(snapRef.current.days, st, snapRef.current.reviews, tkNow, false);
       if (r.st) commitSettings(r.st);
     }
   }, [ready, snap.settings, commitSettings]);
+  /* what the count keeps (core keepCounts): the day this person first opened the one-count rule, so slips before it keep the
+     rule they were made under, and the longest run ever shown, so switching how days count never lowers it */
+  useEffect(() => {
+    if (!ready) return;
+    const st = snapRef.current.settings;
+    if (!st) return;
+    const kept = keepCounts(snapRef.current.days, st, logicalKey(Date.now(), st.rollover));
+    if (kept) commitSettings(kept);
+  }, [ready, snap.settings, snap.days, commitSettings]);
 
   const apply = useCallback(
     (c: Change | ((st: Settings) => Change)) => {
@@ -532,7 +535,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       Object.keys(next.journal || {}).forEach((k) => ids.push(`journal/${k}`));
       snapRef.current = next;
       setSnap(next);
-      savedSeen.current = null;
       /* the account's records are written before anything here is removed, so a phone that stops halfway still has a log */
       await writeQuiet(next, ids);
       const keep = new Set(ids.map((id) => P + id));

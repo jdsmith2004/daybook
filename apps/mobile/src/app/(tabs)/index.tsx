@@ -1,5 +1,5 @@
 /* Today, one moment at a time (docs/plan.md; core moment.ts): the date and who I am becoming; one card, picked by the
-   moment (a pause, the hard hours, a run question left open or the day of a slip, a talk-through, days away, the Sunday
+   moment (a pause, the hard hours, the day of a slip, a talk-through, days away, the Sunday
    review, a one-time moment, or the day's next stop), with "and one more" under it when two overlap, hanging under the flame in its
    sky (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app");
    one quiet line under it (what was logged today, the week's goal); SOS with Already happened and Planning a slip? (care
@@ -16,16 +16,16 @@ import {
   awayDue,
   awayStart,
   dayFeelDue,
-  dayFeelOf,
   dayFeelQuiet,
   markOpen,
   tipAsk,
   urLastAt,
   tipButton,
   autoCount,
+  bpsDue,
   autoStep,
   startFromLog,
-  LESSONS,
+  lessonPathFor,
   lessonsDone,
   lessonsLocked,
   fmtClock,
@@ -66,7 +66,7 @@ import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop } from '@/lib/nav';
-import { useCelebrating } from '@/components/celebrate';
+import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
@@ -148,12 +148,11 @@ export default function Today() {
   focusRef.current = focused;
   /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
   const [askFeel, setAskFeel] = useState(false);
-  /* it waits while a celebration is up; one that comes after it was answered simply ends it */
+  /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
   const celebrating = useCelebrating();
-  const feltToday = !!dayFeelOf(snap.days[tk]);
   useEffect(() => {
-    if (celebrating && askFeel && feltToday) setAskFeel(false);
-  }, [celebrating, askFeel, feltToday]);
+    if (celebrating && askFeel) setAskFeel(false);
+  }, [celebrating, askFeel]);
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = !!due && askAgain;
@@ -161,7 +160,7 @@ export default function Today() {
   const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
   useEffect(() => {
     if (!firstOpen || !ready) return;
-    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack) {
+    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || celebrationSheetAt() >= firstOpen.at) {
       spendFirstOpen();
       return;
     }
@@ -178,7 +177,7 @@ export default function Today() {
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -249,6 +248,7 @@ export default function Today() {
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
     comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
+    recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: urLastAt(sos.mem) }),
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
@@ -301,7 +301,7 @@ export default function Today() {
         {slipDay ? moment : null}
         <NightWinCard snap={snap} tk={tk} />
         <YourDay snap={snap} tk={tk} now={now} />
-        {ask ? <AccountCard why={ask} locked={lessonsLocked(LESSONS, lessonsDone(snap.days), false)} /> : null}
+        {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
         {tip ? <TipCard /> : null}
         <HomeScreenCard />
       </Screen>

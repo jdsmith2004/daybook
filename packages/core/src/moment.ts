@@ -3,30 +3,28 @@
 
     1. a pause in progress (the slim banner)
     2. in the hard hours now: SOS forward, and talk it through
-    3. a run question left open: a slip's Rekindle closed before "keep counting or start fresh?" was answered, from the
-       day after the slip until it is answered or the window closes, in the morning only, until noon (the sunrise check
-       asks it; rekindle.ts sunriseAsk).
-       There is no "morning after" card any more (the owner, October 24, 2026): coming back is the sunrise check, and
-       Today marks it by itself (sunriseDue, srDone).
+    3. there is no "morning after" card (the owner, October 24, 2026): coming back is the sunrise check, and Today marks it
+       by itself (sunriseDue, srDone). The count asks nothing after a slip (the owner, October 30, 2026).
     4. the day of a slip, after it: one small thing
     5. a talk-through due: decide now, it passed, look back
     6. hard hours in the next two hours: the plan
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday
-    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a run that ended, the comeback
-       noticed (all three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first
-       pattern
+    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
+       three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well."
+   11. the five questions again, every 30 days (recheck.ts): low on purpose, so they wait behind the day's next stop as "and one
+       more", and are the card once the day's stops are done. They never push the lesson off the flame.
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
    days-away row, the reminders) comes in as `dev`. Checked by test/moment.test.ts. */
-import { addDays, diffDays, sumDay } from './legacy/core.js';
+import { diffDays, runLedger, sumDay } from './legacy/core.js';
 import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { openTile, stopTiles, type StopGo } from './day';
-import { comebackNow, rkComebackSay, rkEnded, safeName, sunriseAsk, tellStartDue } from './rekindle';
+import { comebackNow, rkComebackSay, safeName, tellStartDue } from './rekindle';
 import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
@@ -37,7 +35,6 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 export type MomentKind =
   | 'pause'
   | 'hard-now'
-  | 'run-ask'
   | 'slip-day'
   | 'talk'
   | 'comeback'
@@ -48,14 +45,14 @@ export type MomentKind =
   | 'tell-start'
   | 'count-note'
   | 'step-offer'
-  | 'run-ended'
   | 'nudge'
   | 'first-pattern'
+  | 'recheck'
   | 'calm'
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'sunrise' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern';
+export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck';
 
 export interface Moment {
   k: MomentKind;
@@ -90,15 +87,15 @@ export interface MomentDev {
   nudge?: { k: 'paused' | 'backup' | 'time'; h: string; p: string } | null;
   /** the first day the first pattern was shown as the card: it is the card on that day only */
   patternDay?: DayKey | null;
-  /** signed in: lessons after the first three are open (nextUp) */
+  /** signed in: lessons after the first LEARN_FREE are open (nextUp) */
   account?: boolean;
   /** the slip whose comeback was celebrated and put away (its button pressed): it is not the card again */
   comebackSeen?: DayKey | null;
+  /** the five questions are due again (core bpsDue, kept on this device) */
+  recheck?: boolean;
 }
 
-/** the run question's card shows in the morning, until this hour */
-export const SUNRISE_UNTIL = 12;
-/** every moment that applies now, in order. The calm day (or done) is always last. */
+/** every moment that applies now, in order. The calm day (or done) comes last, but for the five questions. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
   const out: Moment[] = [];
   const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string, nx?: string) =>
@@ -124,27 +121,14 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           'your hard hours',
         );
 
-  /* 3. a run question left open, asked in the sunrise check: in the morning only (from the rollover to noon), never all day.
-     Unanswered, the run simply goes on counting, so a morning missed loses nothing. 4. the day of a slip */
-  const ask = sunriseAsk(days, st, tk);
-  const hour = new Date(now).getHours();
-  if (ask && hour >= (st.rollover ?? 4) && hour < SUNRISE_UNTIL)
-    m(
-      'run-ask',
-      'Your sunrise check',
-      ask.k === addDays(tk, -1) ? 'Your run question from last night is waiting' : 'Your run question is still waiting',
-      'Your ' + ask.run + ' days are yours for good. Keep counting from ' + ask.run + ', or start fresh? Both answers are good ones.',
-      'Keep counting or start fresh',
-      'sunrise',
-      'a question about your run',
-    );
+  /* 4. the day of a slip */
   const today = days[tk];
   if (sumDay(today).slipped && (today?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered))
     m(
       'slip-day',
       'After a slip',
       'Logged. That took honesty.',
-      'Nothing resets: what you built stays. One small thing now: water, a step outside, or a text to someone.',
+      'What you built stays. One small thing now: water, a step outside, or a text to someone.',
       'I did one small thing',
       'small',
       'one small thing',
@@ -215,9 +199,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     );
   if (st.cleanNote) m('count-note', 'How days count', 'A note about counting', '', null, null, 'a note about counting');
   else if (stepOffer(days, st, tk)) m('step-offer', 'How days count', 'Slips on most days lately?', '', null, null, 'a gentler plan');
-  const ended = rkEnded(days, st, tk);
-  if (ended)
-    m('run-ended', 'What you built', 'Your ' + ended.run + (ended.run === 1 ? ' day is kept' : ' days are kept'), ended.text, null, null, 'what you built');
   /* the comeback celebrates, then leads on (the owner, October 25, 2026: a finish always has an action, never a card that
      only takes room): its button is the day's next step, or "Nice" once the day is done, and either puts it away */
   const cb = comebackNow(days, st, tk);
@@ -226,8 +207,8 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     m(
       'comeback',
       'Your comeback',
-      cb.saved ? 'Run saved. You came back.' : 'All three lit. You came back.',
-      cb.flames.map((f) => f.t).join('. ') + '. ' + rkComebackSay(cb.n),
+      rkComebackSay(cb.n),
+      '',
       nx ? nx.btn : 'Nice',
       nx ? nx.go : null,
       'your comeback',
@@ -246,7 +227,10 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
      day uses for its open stop too, so both open the same thing) */
   const cur = openTile(days, st, tk, now, dev.account !== false);
   if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
-  else if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
+  if (dev.recheck)
+    m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
+  if (cur) return out;
+  if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   else
     m(
       'done',
@@ -283,7 +267,7 @@ export interface StandRow {
   /** all of it, for a screen reader */
   say: string;
 }
-/** the number that holds what was earned and never drops to zero (heroNumber, todayMeasure), with the flame's form */
+/** the mode's one count (heroNumber), with the flame's form */
 export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string): StandRow | null {
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
@@ -298,8 +282,15 @@ export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
     return { big, line: l, note, say: big + ', ' + l + '.' + (note ? ' ' + note + '.' : '') };
   };
   if (st.cleanMode === 'step') return row(h.n + ' ' + h.unit, 'this stretch', h.chip ? h.chip.charAt(0).toLowerCase() + h.chip.slice(1) : null);
+  if (st.cleanMode !== 'gentle' && st.day1 && tk >= st.day1 && st.day1 !== tk) {
+    const cur = runLedger(days, st, tk).cur;
+    return row(
+      cur + (cur === 1 ? ' day' : ' days'),
+      cur > 1 ? 'in a row with no slip' : 'with no slip',
+      h.chip ? h.chip.charAt(0).toLowerCase() + h.chip.slice(1) : null,
+    );
+  }
   const t = todayMeasure(days, st, tk);
-  if (h.eb === 'Since your last slip') return row(h.n + ' ' + h.unit, 'since your last slip', h.chip);
   if (t && t.k === 'week') {
     if (t.of === 'Day 1 is today') return row('Day 1', 'is today');
     if (t.of === 'Today counts') return row('Today counts', 'a fresh day');

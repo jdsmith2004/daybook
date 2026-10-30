@@ -85,6 +85,18 @@ export const PRACTICE: Record<string, PStep> = {
     ok: 'You met the need, not just the urge.',
   },
 
+  l46: {
+    h: 'Keep one line for the flat days.',
+    p: 'Write it down while you can see clearly. On a gray day, you will not have to find the words.',
+    mins: 1,
+    items: [
+      line('words', 'This is a flat day, not my life. It passes, and I do the small things anyway.'),
+      plan('I feel flat and nothing seems worth doing', 'Go outside for ten minutes, eat something real, and message one person.'),
+    ],
+    go: [scene('Reach a person', 'message', 'chat')],
+    ok: 'Your flat days have an answer now.',
+  },
+
   /* ---------- Why it is hard to stop ---------- */
   l33: {
     h: 'Call it wanting.',
@@ -176,6 +188,38 @@ export const PRACTICE: Record<string, PStep> = {
     ],
     go: [scene('Reach a person', 'message', 'chat'), help('Look at free groups', 'groups', '', 'dots')],
     ok: 'That is a real step toward people.',
+  },
+
+  l47: {
+    h: 'Have the words ready.',
+    p: 'Whether it is the first time or a slip, change these until they sound like you. Say them when you are ready, and soon.',
+    mins: 2,
+    items: [
+      copy(
+        'Telling for the first time',
+        'There is something I have been hiding from you, and I want to stop hiding it. I have been struggling with porn, and I am working on it. You do not have to say anything now. I will answer what you want to ask.',
+      ),
+      copy('Telling about a slip', 'I slipped last night. I am telling you because I do not hide things from you now. Here is what I am doing next: ___'),
+      plan('I slip and want to hide it from my partner', 'Tell them within a day, in one plain sentence, and say what I am doing next.'),
+    ],
+    go: [help('Therapy on a small budget', 'therapy', 'start', 'heart')],
+    ok: 'You have the words ready.',
+  },
+  l48: {
+    h: 'Put it in your own words.',
+    p: 'Write what you want your sex life to be, by your own values. Only you see it. Tap an example to start from it.',
+    mins: 2,
+    write: [
+      'Honest, wanted, and with nothing to hide.',
+      'Close to one person, and something I am glad to remember.',
+      'I am giving my body time, and I am not testing it.',
+    ],
+    items: [
+      plan('my desire feels gone and I want to test it with porn', 'Say “this is a quiet stretch,” skip the test, and do one thing that is good for my body.'),
+      line('words', 'A quiet stretch is not a broken body. I do not need to test it.'),
+    ],
+    go: [help('Therapy on a small budget', 'therapy', 'start', 'heart')],
+    ok: 'You put it in your own words.',
   },
 
   /* ---------- Making a plan ---------- */
@@ -512,6 +556,17 @@ export const PRACTICE: Record<string, PStep> = {
     ],
     go: [help('Therapy on a small budget', 'therapy', 'start', 'heart'), help('What to say', 'say', '', 'chat')],
     ok: 'You took a step toward help.',
+  },
+  l49: {
+    h: 'Give the good days a plan too.',
+    p: 'Good weeks are when people stop planning. Add a line now, so “I can handle it” already has an answer.',
+    mins: 1,
+    items: [
+      plan('I catch myself thinking I could test myself', 'Say “I have nothing to test,” tell my safe person, and do the next thing on my plan.'),
+      line('be', 'I am someone who handles urges, and I keep what makes that true.'),
+      line('words', 'I have nothing to test. I already know who I am.'),
+    ],
+    ok: 'Your good days have a plan too.',
   },
 
   /* ---------- Well-known programs ---------- */

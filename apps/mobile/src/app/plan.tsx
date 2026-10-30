@@ -11,7 +11,9 @@ import {
   HELP_STEPS,
   LCHECKS,
   lcheckNo,
+  lessonCount,
   lessonNo,
+  lessonWalk,
   LESSONS,
   lessonsDone,
   type ListKey,
@@ -631,10 +633,17 @@ function Learned() {
   /* each checkpoint's writing under its own record, shown in the path's order and with the number the path gives it */
   const wrote = LCHECKS.map((C, k) => ({ n: k + 1, C, a: lwriteOf(st, k + 1) }))
     .filter((x) => x.a.some((t) => t.trim()))
-    .sort((a, b) => lcheckNo(a.n) - lcheckNo(b.n));
+    .sort((a, b) => lcheckNo(a.n, st) - lcheckNo(b.n, st));
   const toLearn = () => router.navigate('/learn');
   const copy = () => {
-    const text = playbookText(st, done, LESSONS, (id) => LESSONS.findIndex((L) => L.id === id), LCHECKS, lcheckNo);
+    const text = playbookText(
+      st,
+      done,
+      LESSONS,
+      (id) => LESSONS.findIndex((L) => L.id === id),
+      LCHECKS,
+      (n) => lcheckNo(n, st),
+    );
     copyText(text, say);
   };
   const Note = ({ label, text }: { label: string; text: string }) => (
@@ -647,12 +656,13 @@ function Learned() {
   );
   return (
     <>
-      <Sec icon="book" tone="sky" title="What I have learned" aside={`${mine.length} of ${LESSONS.length}`}>
+      <Sec icon="book" tone="sky" title="What I have learned" aside={`${mine.length} of ${lessonCount(lessonWalk(snap.days, st)).of}`}>
         {mine.length ? (
           mine.map((L) => (
             <View key={L.id} style={[s.takeaway, { borderColor: c.line }]}>
               <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-                Lesson {lessonNo(L)} · {L.title}
+                {lessonNo(L, st) ? 'Lesson ' + lessonNo(L, st) + ' · ' : ''}
+                {L.title}
               </T>
               <T>{L.key}</T>
               {picks[L.id] ? <Note label="What I picked" text={picks[L.id]} /> : null}
@@ -669,7 +679,7 @@ function Learned() {
           wrote.map((x) => (
             <View key={x.n} style={{ gap: 6 }}>
               <T v="label">
-                Checkpoint {lcheckNo(x.n)}: {x.C.t}
+                Checkpoint {lcheckNo(x.n, st)}: {x.C.t}
               </T>
               {x.C.q.map((q, i) => (x.a[i] && x.a[i].trim() ? <Note key={i} label={q} text={x.a[i]} /> : null))}
             </View>

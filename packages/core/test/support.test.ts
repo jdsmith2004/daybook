@@ -73,6 +73,11 @@ it('after an answer, the card waits two weeks, then asks again, and again', () =
 it('a moment of earned value asks too, at a good moment only', () => {
   const now = new Date(2026, 9, 15, 12, 0).getTime();
   expect(core.tipMoment({}, week, tk, 12, url, { now, sos: null })).toBe(true);
+  /* it waits the first week, as the card does: the first badge, on day 1 or day 6, does not ask */
+  expect(core.tipMoment({}, st0(tk), tk, 12, url, { now, sos: null })).toBe(false);
+  expect(core.tipMoment({}, st0(core.addDays(tk, 1 - core.TIP_FIRST)), tk, 12, url, { now, sos: null })).toBe(false);
+  /* the Support button stays from day 1, by the owner's choice */
+  expect(core.tipButton({}, tk, url, st0(tk), now)).toBe(true);
   /* never quietly after a slip, never in the quiet hours, never at night, never in the calm days after a slip */
   expect(core.tipMoment({}, week, tk, 12, url, { now, sos: null }, true)).toBe(false);
   expect(core.tipMoment({}, week, tk, 12, url, { now, sos: now - 30 * 60_000 })).toBe(false);

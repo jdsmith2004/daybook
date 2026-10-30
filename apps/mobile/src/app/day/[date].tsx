@@ -33,9 +33,7 @@ import { font, useTheme, type Palette } from '@/lib/theme';
 
 const HEAD: Record<CalKind, { ic: string; tone: (c: Palette) => [string, string] }> = {
   ok: { ic: 'check', tone: (c) => [c.mintSoft, c.mintText] },
-  one: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
   saved: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
-  open: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
   slip: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
   logged: { ic: 'pencil', tone: (c) => [c.skySoft, c.skyText] },
   none: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },

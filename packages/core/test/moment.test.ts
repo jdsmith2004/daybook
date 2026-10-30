@@ -1,10 +1,11 @@
 /* Today's one card (moment.ts), across scripted days of a made-up person: a calm day, the night of a slip and the day
-   after (a run question left open, in the morning only), a Sunday, a pause, days away, and a day with nothing left to do. */
+   after, a Sunday, a pause, days away, and a day with nothing left to do. */
+import { LEARN_FREE, lessonPath } from '../src/index';
 import { describe, expect, it } from 'vitest';
 import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
-import { rkAsk, rkKeep, srDone, sunriseDue } from '../src/rekindle';
+import { srDone, sunriseDue } from '../src/rekindle';
 import type { Days } from '../src/types';
 
 /* started October 7, Day 1 October 14; October 18 is a Sunday */
@@ -26,13 +27,28 @@ describe('a calm day', () => {
     const d = withDay(
       {},
       '2026-10-19',
-      changeDay(undefined, '2026-10-19', (x) => void (x.p = { ...blankP(), ls: LESSONS.slice(0, 3).map((L) => L.id) }), 1),
+      changeDay(
+        undefined,
+        '2026-10-19',
+        (x) =>
+          void (x.p = {
+            ...blankP(),
+            ls: lessonPath()
+              .slice(0, LEARN_FREE)
+              .map((L) => L.id),
+          }),
+        1,
+      ),
     );
     const signedIn = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
     const local = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
-    expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: LESSONS[3].id, h: LESSONS[3].title, btn: 'Start' });
+    expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, h: lessonPath()[LEARN_FREE].title, btn: 'Start' });
     expect(local).toMatchObject({ k: 'calm', go: 'lesson', btn: 'Read it again' });
-    expect(LESSONS.slice(0, 3).map((L) => L.id)).toContain(local.v);
+    expect(
+      lessonPath()
+        .slice(0, LEARN_FREE)
+        .map((L) => L.id),
+    ).toContain(local.v);
   });
   it('all done: rest well, and who the person is now', () => {
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });
@@ -66,24 +82,13 @@ describe('a slip, and the day after', () => {
       ).not.toMatch(/morning after|sunrise/i);
     }
   });
-  it('a run question left open: a sunrise-check card in the morning only, saying why, and the day after it', () => {
-    const p = pickMoment(d, st, {}, '2026-10-22', at(22, 8));
-    expect(p.card).toMatchObject({ k: 'run-ask', eb: 'Your sunrise check', h: 'Your run question from last night is waiting', go: 'sunrise' });
-    expect(p.card.p).toBe('Your 7 days are yours for good. Keep counting from 7, or start fresh? Both answers are good ones.');
-    /* not before the day starts, and not after noon: it never sits there all day */
-    expect(kinds(d, '2026-10-22', at(23, 2))).not.toContain('run-ask');
-    expect(kinds(d, '2026-10-22', at(22, 11, 59))).toContain('run-ask');
-    expect(kinds(d, '2026-10-22', at(22, 12))).not.toContain('run-ask');
-    expect(kinds(d, '2026-10-22', at(22, 17, 27))).not.toContain('run-ask');
-    /* a later morning, while the window is open */
-    expect(pickMoment(d, st, {}, '2026-10-23', at(23, 9)).card.h).toBe('Your run question is still waiting');
-  });
-  it('once answered, the card goes', () => {
-    for (const keep of [true, false]) {
-      const a = rkAsk(d, st, '2026-10-22', '2026-10-21')!;
-      const done = rkKeep(d, st, '2026-10-22', '2026-10-21', a.evId, keep, 2)!;
-      expect(kinds(done, '2026-10-22', at(22, 8))).not.toContain('run-ask');
-    }
+  it('asks nothing about the count, on the night of a slip or the morning after', () => {
+    for (const h of [8, 11, 20]) expect(kinds(d, '2026-10-22', at(22, h)).join(' ')).not.toMatch(/run-/);
+    expect(
+      moments(d, st, {}, '2026-10-22', at(22, 8))
+        .map((m) => m.eb + m.h + m.p)
+        .join(' '),
+    ).not.toMatch(/start fresh|keep counting|run question/i);
   });
   it('never a word of shame and no contractions on the slip cards', () => {
     for (const m of [...moments(d, st, {}, '2026-10-21', at(21, 23, 30)), ...moments(d, st, {}, '2026-10-22', at(22, 8))]) {
@@ -104,19 +109,11 @@ describe('"and one more" clears once the sunrise check is done that day (bug, Oc
     expect(all.map((m) => m.k)).toEqual(['slip-day', 'calm']);
     expect(all.map((m) => m.one).join(' ')).not.toMatch(/sunrise/);
   });
-  it('while the run waits, behind another card: named once, and gone as soon as the check is done', () => {
+  it('while a run the old rule covers waits, coming back marks the check, and no card is named', () => {
     const tk = '2026-10-22';
-    const before = pickMoment(d, s0, {}, tk, at(22, 9), { pause: true });
-    expect(before.more).toMatchObject({ k: 'run-ask', one: 'a question about your run' });
-    /* coming back marks the check (Today, srDone), and the question is answered in it */
+    expect(pickMoment(d, s0, {}, tk, at(22, 9), { pause: true }).more).toBeNull();
     const due = sunriseDue(d, s0, tk)!;
-    let done = srDone(d, due.k, due.ev.id, tk);
-    done = rkKeep(done, s0, tk, '2026-10-21', rkAsk(done, s0, tk, '2026-10-21')!.evId, true, 3)!;
-    for (const h of [9, 13, 20]) {
-      expect(pickMoment(done, s0, {}, tk, at(22, h), { pause: true }).more).toBeNull();
-      expect(kinds(done, tk, at(22, h), s0)).not.toContain('run-ask');
-    }
-    expect(sunriseDue(done, s0, tk)).toBeNull();
+    expect(sunriseDue(srDone(d, due.k, due.ev.id, tk), s0, tk)).toBeNull();
   });
 });
 
@@ -134,8 +131,6 @@ describe('the order', () => {
     expect(p.card.k).toBe('pause');
     expect(p.more?.k).toBe('sunday');
     expect(p.more?.one).toBe('your Sunday review');
-    const q = pickMoment(slip({}, '2026-10-21'), st, {}, '2026-10-22', at(22, 8), { pause: true });
-    expect(q.more).toMatchObject({ k: 'run-ask', one: 'a question about your run' });
   });
   it('days away not known: the fill-in, once Welcome back was closed', () => {
     expect(pickMoment({}, st, {}, '2026-10-20', at(20, 10), { back: 5 }).card).toMatchObject({ k: 'away', h: '5 days not known yet', go: 'back' });
@@ -153,18 +148,24 @@ describe('the order', () => {
 });
 
 describe('the standing row', () => {
-  it('in the first week: of your first days, with the flame’s form', () => {
+  const g = normSettings({ ...st, cleanMode: 'gentle' });
+  it('strict: the days in a row, with the flame’s form', () => {
     const d = slip({}, '2026-10-16', '12:00');
-    expect(standRow(d, st, {}, '2026-10-20', at(20, 10), 'Torch')).toMatchObject({ big: '5 of your first 6 days', line: 'with no slip · a Torch' });
+    expect(standRow(d, st, {}, '2026-10-20', at(20, 10), 'Torch')).toMatchObject({ big: '4 days', line: 'in a row with no slip · a Torch' });
     expect(standRow({}, st, {}, '2026-10-14', at(14, 10), 'Spark')!.big).toBe('Day 1');
   });
-  it('after the first week: the last 7 days', () => {
-    const d = slip(slip({}, '2026-10-16', '12:00'), '2026-10-21', '12:00');
-    expect(standRow(d, st, {}, '2026-10-25', at(25, 10), 'Kindling')).toMatchObject({ big: '6 of the last 7 days', line: 'with no slip · Kindling' });
+  it('gentle, in the first week: of your first days', () => {
+    const d = slip({}, '2026-10-16', '12:00');
+    expect(standRow(d, g, {}, '2026-10-20', at(20, 10), 'Torch')).toMatchObject({ big: '5 of your first 6 days', line: 'with no slip · a Torch' });
   });
-  it('never a zero the morning after a slip', () => {
+  it('gentle, after the first week: the last 7 days', () => {
+    const d = slip(slip({}, '2026-10-16', '12:00'), '2026-10-21', '12:00');
+    expect(standRow(d, g, {}, '2026-10-25', at(25, 10), 'Kindling')).toMatchObject({ big: '6 of the last 7 days', line: 'with no slip · Kindling' });
+  });
+  it('the morning after a slip, today is already the first day of the count', () => {
     const d = slip(slip({}, '2026-10-14', '12:00'), '2026-10-15', '12:00');
-    expect(standRow(d, st, {}, '2026-10-16', at(16, 18), 'Spark')!.big).not.toMatch(/^0/);
+    expect(standRow(d, st, {}, '2026-10-16', at(16, 18), 'Spark')!.big).toBe('1 day');
+    expect(standRow(d, g, {}, '2026-10-16', at(16, 18), 'Spark')!.big).not.toMatch(/^0/);
   });
   it('a quieter line: what was logged today, and the week’s goal from Sunday', () => {
     const d = addEvent({}, '2026-10-20', 'rode', '09:00', {}, 1).days;

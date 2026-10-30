@@ -11,7 +11,6 @@ import {
   logicalKey,
   PAUSE_MS,
   pickIdea,
-  rkStepFor,
   rkWaitOf,
   trigFits,
   urEntry,
@@ -120,12 +119,12 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
       const e = urEntry(a, v, st, Date.now(), v === 'rode' && full ? { paused: true } : {});
       let id = '';
       let gain = 0;
-      const days = update((s) => {
+      update((s) => {
         const r = addEvent(s.days, e.key, v, e.time, e.fields);
         id = r.id;
         if (s.settings) gain = gameCompute(r.days, s.settings, s.reviews, e.key).pts - gameCompute(s.days, s.settings, s.reviews, e.key).pts;
         return { ...s, days: r.days };
-      }).days;
+      });
       sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
       count(v === 'rode' ? 'urge_logged' : 'slip_logged');
       sos.end();
@@ -136,7 +135,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
       router.dismissAll();
       router.push({
         pathname: '/log',
-        params: { date: e.key, evId: id, outcome: v, step: rkStepFor(days, e.key), from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) },
+        params: { date: e.key, evId: id, outcome: v, step: 'slHold', from: 'urge', pts0: String(a.p0), st: a.strength || '', m: String(e.mins) },
       });
       return;
     }
@@ -151,7 +150,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
     const waited = Math.round((Date.now() - t.start) / 60000);
     let id = '';
     let pts1 = pts0;
-    const days = update((s) => {
+    update((s) => {
       const r = addEvent(s.days, key, v, time, {
         paused: v === 'rode' && full ? true : null,
         did: did.length ? did : null,
@@ -160,14 +159,14 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
       id = r.id;
       if (s.settings) pts1 = gameCompute(r.days, s.settings, s.reviews, key).pts;
       return { ...s, days: r.days };
-    }).days;
+    });
     sos.setTimer(null);
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
     if (v === 'rode' && won) {
       won({ key, id, mins: Math.max(0, waited), moves: [], gain: Math.max(0, pts1 - pts0) + (t.gain || 0) });
       return;
     }
-    router.replace({ pathname: '/log', params: { date: key, evId: id, outcome: v, step: rkStepFor(days, key), from: 'pause', pts0: String(pts0) } });
+    router.replace({ pathname: '/log', params: { date: key, evId: id, outcome: v, step: 'slHold', from: 'pause', pts0: String(pts0) } });
   };
 
   if (mode === 'ready')

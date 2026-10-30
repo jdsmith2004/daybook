@@ -80,9 +80,10 @@ export function gradLine(g: GradInfo): string | null {
 /** what Milestones says before the first week, quietly */
 export const GRAD_ABOUT = `Graduation is a big one for later: ${GRAD_DAYS} days with no slip within ${GRAD_WINDOW}. A hard day does not erase the others. For now, one day at a time is plenty.`;
 
-/** the one day number Today shows (in the flame card). Until GRAD_TODAY days hold, only the last 7 days, small and
-    close; after that, the way to graduation; once graduated, the count that keeps going. It never drops to zero after a
-    slip: a slip takes one day off, and the rest stay. Null before Day 1 (the tracking week has its own card). */
+/** the days that hold: gentle's number on Today (hero.ts), and the way to graduation in every mode. Until GRAD_TODAY days
+    hold, only the last 7 days, small and close; after that, the way to graduation; once graduated, the count that keeps
+    going. It never drops to zero after a slip: a slip takes one day off, and the rest stay. Null before Day 1 (the tracking
+    week has its own card). */
 export interface TodayMeasure {
   k: 'week' | 'way' | 'grad';
   /** the big number */

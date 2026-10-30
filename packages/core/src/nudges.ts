@@ -6,7 +6,7 @@
    - Every notification is about something the person turned on, and is skipped when that thing is already done today.
    - At most three a day, an hour apart; the heads-up before the hard hours wins over a routine reminder. Daybook never
      picks a time at night on its own (only the times the person set, and the heads-up before night-time hard hours).
-   - After a slip, never more notifications, only kinder words: the morning after, and while the Rekindle quest is open.
+   - After a slip, never more notifications, only kinder words: the morning after.
    - The habit takes over: when the person checks in on their own most days, the check-in reminder comes later, as a backup.
    - A kind that is ignored three times in a row steps down (every day, every other day, paused); one that helps steps back up.
      A pause is said on Today, with a choice.
@@ -37,7 +37,7 @@ import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
 import { formWord } from './levels';
 import { lessonDoneOn, lessonWalk } from './lessons';
-import { rkActive, rkCard, rkOpen } from './rekindle';
+import { rkActive } from './rekindle';
 import { riskAt, riskWindow } from './risk';
 import { isSunday, sunDue } from './sunday';
 import { TALK_MOVES, type TalkMove } from './talk';
@@ -205,8 +205,6 @@ export const NUDGE_WORDS = {
   risk: { t: 'Heads-up 🧭', b: 'Your hard hours start soon. Two quiet minutes now make them easier.' },
   /** the first reminder the morning after a slip */
   after: { t: 'A new day ☀️', b: 'A new day. Everything you built is still here.' },
-  /** while the Rekindle quest is open */
-  quest: { t: 'Your quest is still open 🗺️', b: 'Your Rekindle quest is still open. One small step today.' },
   /** the wordings for each routine kind; the first of each is the one above */
   pick: {
     lesson: [
@@ -381,7 +379,7 @@ export function lessonAt(days: Days, log: Pick<NudgeLog, 'opens'>, k: DayKey, no
   return last ? { at: last, from: 'last' } : { at: clockOf(usualHour(log, now) * 60), from: 'usual' };
 }
 /** the lesson the reminder for day k opens: the next new one, while today's is not done and it is open (without an account,
-    the lessons after the first three wait behind one); else null, and no reminder (a re-read is never pushed) */
+    the lessons after the first LEARN_FREE wait behind one); else null, and no reminder (a re-read is never pushed) */
 export function lessonDue(days: Days, st: Settings, k: DayKey, account = true): string | null {
   if (k < LESSON_WIN_FROM || !routineOn(st, days[k]?.p, 'lesson') || lessonDoneOn(days[k]?.p)) return null;
   const w = lessonWalk(days, st);
@@ -630,13 +628,11 @@ function dayList(
   return out;
 }
 
-/** the kinder words for day k: the morning after a slip, and the days the Rekindle quest is still open */
+/** the kinder words for day k: the morning after a slip */
 function kindWords(days: Days, st: Settings, k: DayKey): { t: string; b: string } | null {
   const r = rkActive(days, st, k);
   if (!r || r.phase !== 'sun') return null;
-  if (k === addDays(r.k, 1)) return NUDGE_WORDS.after;
-  const c = rkCard(days, st, k, r, 12);
-  return (c.kind === 'sun' || c.kind === 'almost') && rkOpen(days, st, k, r.k).op ? NUDGE_WORDS.quest : null;
+  return k === addDays(r.k, 1) ? NUDGE_WORDS.after : null;
 }
 
 /** at most NUDGE_MAX a day (one more with the heads-up before hard hours, or the plan at its hour in its place), NUDGE_GAP
@@ -657,7 +653,7 @@ export const nudgesOn = (p: NudgePrefs) => p.lesson || p.checkin || p.wind || p.
 
 /** the notifications to schedule now: today and tomorrow, then the come-back notes. now is the time the app is open.
     allowed: whether the phone lets Daybook notify (the come-back notes are for anyone it does, unless turned off).
-    account: whether the person has one (without it, the lessons after the first three wait, and are not reminded of). */
+    account: whether the person has one (without it, the lessons after the first LEARN_FREE wait, and are not reminded of). */
 export function nudgePlan(
   days: Days,
   st: Settings | null,

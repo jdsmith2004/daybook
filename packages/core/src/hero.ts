@@ -1,16 +1,17 @@
-/* The number on the flame's picture at the top of Today: the one number for where the person is. Stepping down: this
-   stretch, with the best before it. Quitting: the days that hold (todayMeasure: the last week until 30 days hold, then the
-   way to graduation). The tracking week: which day of it. Just tracking: how many days so far. It holds what was earned, like
-   the measures it comes from. Right after a slip that ended the run (the owner, October 21: hours are more motivating
-   after a loss), the hours since it, for 72 hours, with the days that hold beside them.
-   Back after days away, while the gap is not answered (away.ts), the last week is not known, so the week's count alone
-   would say "Day 1 is today" to someone on day 31. Until the gap is answered, the number is the measure as it stood
-   before the days that are not known ("Before you were away"), beside the row that asks about them: nothing earned ever
-   reads as a reset. On the day of a slip, while the number still shows the days that hold, one quiet line under it says
-   the slip is logged and the days stay (heroSlipLine). Checked by test/hero.test.ts. */
+/* The number on the flame's picture at the top of Today: one count per mode (the owner, October 30, 2026), shown the same
+   everywhere. Strict: the days in a row with no slip, which a slip puts to 0, climbing again from the next day. Gentle: the
+   days that hold (todayMeasure: the last week until 30 days hold, then the way to graduation); a slip takes one day off,
+   never all of them. Stepping down: this stretch, with the best before it. The tracking week: which day of it. Just
+   tracking: how many days so far. The chip under the number: the hours since the last slip, for 72 hours after one; after
+   that, in strict, the way to graduation or the best run. Graduation and its count are the same in every mode.
+   Back after days away, while the gap is not answered (away.ts), the last week is not known, so gentle's count alone would
+   say "Day 1 is today" to someone on day 31. Until the gap is answered, its number is the measure as it stood before the
+   days that are not known ("Before you were away"), beside the row that asks about them; strict's run simply waits across
+   them. On the day of a slip, one quiet line under the number says the slip is logged and what stays (heroSlipLine). Checked
+   by test/hero.test.ts. */
 import { awayGaps, QUIET_GRACE } from './away';
-import { GRAD_DAYS, todayMeasure, WEEK, type TodayMeasure } from './graduate';
-import { addDays, dayKind, diffDays, evMs, fmtDate, fmtStretch, fmtStretchShort, phaseOf, runLedger, stepView, sumDay } from './legacy/core.js';
+import { GRAD_DAYS, GRAD_WINDOW, gradInfo, gradOnToday, todayMeasure, WEEK, type TodayMeasure } from './graduate';
+import { addDays, computeMetrics, diffDays, evMs, fmtDate, fmtStretch, fmtStretchShort, phaseOf, runLedger, stepView, sumDay } from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
 export interface HeroNumber {
@@ -25,21 +26,23 @@ export interface HeroNumber {
   /** all of it, for a screen reader */
   say: string;
 }
-/** how long the hours since a slip are the number: 72 hours, then the days that hold again */
+/** how long the hours since a slip are the chip: 72 hours */
 export const SLIP_HOURS = 72;
-/** the hours since the latest slip, while counting days: for SLIP_HOURS after it, when that slip ended the run (it was not kept:
-    not saved, and not waiting for the Rekindle quest). A slip that still counts as a good day (gentle, one slip) is not one.
-    null otherwise. */
+/** the hours since the latest slip, while counting days (strict or gentle), for SLIP_HOURS after it. null otherwise. */
 export function hoursSinceSlip(days: Days, st: Settings, tk: DayKey, nowMs: number): number | null {
   if (!st.day1 || tk < st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return null;
   /* the latest slip day: 72 hours reach back at most four days */
   let k: DayKey | null = null;
   for (let i = 0; i <= 4 && !k; i++) if (sumDay(days[addDays(tk, -i)]).slipped) k = addDays(tk, -i);
-  if (!k || k < st.day1 || dayKind(k, days[k], st, tk, undefined, days) !== 'slip') return null;
-  if (runLedger(days, st, tk).kind[k]) return null;
+  if (!k || k < st.day1) return null;
   const at = Math.max(...days[k].events.filter((e) => e.outcome === 'slipped').map((e) => evMs(k, e.time, st.rollover)));
   const h = Math.max(0, (nowMs - Math.min(at, nowMs)) / 36e5);
   return h < SLIP_HOURS ? h : null;
+}
+/** the chip for those hours: "13 hours since your last slip" */
+export function slipHoursChip(h: number): string {
+  const w = fmtStretch(h);
+  return w.charAt(0).toUpperCase() + w.slice(1) + ' since your last slip';
 }
 /** while the latest gap away is not answered and its not-known days reach into the last week: the week's measure as it
     stood on the first day that is not known (the last one Daybook could count), or null */
@@ -70,25 +73,27 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
     return out('This stretch', m ? m[1] : '<1', m ? m[2] : 'hour', chip, !!chip);
   }
   const t = todayMeasure(days, st, tk);
-  const h = t ? hoursSinceSlip(days, st, tk, nowMs) : null;
-  if (t && h != null) {
-    const m = /^(\d+) (.+)$/.exec(fmtStretch(h));
-    const n = m ? m[1] : '<1';
-    const unit = m ? m[2] : 'hour';
-    /* what was earned stays in view: the days that hold, as the chip */
-    const chip = t.n > 0 ? t.n + ' ' + t.of.replace(/ with no slip$/, '') : t.of;
-    const said = t.n > 0 ? t.n + ' ' + t.of : t.of;
-    return { eb: 'Since your last slip', n, unit, chip, star: false, say: (m ? m[0] : 'Under an hour') + ' since your last slip. ' + said + '.' };
-  }
   if (t) {
-    if (t.k === 'grad') return out('Graduated', String(t.n), 'of the last 100 days', 'Still going');
-    if (t.k === 'way') return out('Toward graduation', String(t.n), 'of ' + GRAD_DAYS);
+    const h = hoursSinceSlip(days, st, tk, nowMs);
+    const hours = h != null ? slipHoursChip(h) : null;
+    if (st.cleanMode !== 'gentle') {
+      const cur = runLedger(days, st, tk).cur;
+      const g = gradInfo(days, st, tk);
+      const longest = computeMetrics(days, st, tk).longest;
+      const way = g.at ? 'Graduated · ' + g.count + ' of the last ' + GRAD_WINDOW : gradOnToday(g) ? g.count + ' of ' + GRAD_DAYS + ' toward graduation' : null;
+      const best = longest > cur ? 'best ' + longest + (longest === 1 ? ' day' : ' days') : null;
+      const chip = hours || way || best;
+      if (st.day1 === tk && cur === 1) return out('Quitting', 'Day 1', 'is today', chip);
+      return out('No slip', String(cur), cur === 1 ? 'day' : cur === 0 ? 'days' : 'days in a row', chip, !hours && !way && !!best);
+    }
+    if (t.k === 'grad') return out('Graduated', String(t.n), 'of the last ' + GRAD_WINDOW + ' days', hours || 'Still going');
+    if (t.k === 'way') return out('Toward graduation', String(t.n), 'of ' + GRAD_DAYS, hours);
     /* back after days away, the gap not answered yet: the count as it stood before it, when that is more than the week shows */
-    const held = t.k === 'week' ? awayHeldMeasure(days, st, tk) : null;
-    if (held && held.n > t.n) return out('Before you were away', String(held.n), held.of.replace(/^of the last /, 'of '));
-    if (t.of === 'Day 1 is today') return out('Quitting', 'Day 1', 'is today');
-    if (t.of === 'Today counts') return out('Still going', 'Today', 'counts');
-    return out('No slip', String(t.n), t.of.replace(/ with no slip$/, ''));
+    const held = awayHeldMeasure(days, st, tk);
+    if (held && held.n > t.n) return out('Before you were away', String(held.n), held.of.replace(/^of the last /, 'of '), hours);
+    if (t.of === 'Day 1 is today') return out('Quitting', 'Day 1', 'is today', hours);
+    if (t.of === 'Today counts') return out('Still going', 'Today', 'counts', hours);
+    return out('No slip', String(t.n), t.of.replace(/ with no slip$/, ''), hours);
   }
   const p = phaseOf(tk, st);
   if (p.p !== 'tracking') return null;
@@ -98,15 +103,15 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   return out(week ? 'Tracking week' : st.day1 ? 'Tracking, before your count' : 'Just tracking', 'Day ' + p.n, week ? 'of 7' : '', d1);
 }
 
-/** the day of a slip, while the number still shows the days that hold (today counts once it ends, and a run that is kept
-    keeps its measure): one quiet line under it, so the number never reads as if the slip was missed. Null otherwise. */
+/** the day of a slip: one quiet line under the number, so the slip is never read as missed, and what stays is said.
+    Strict: the days before it are on the record. Gentle: the days that hold stay. Null otherwise. */
 export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number): string | null {
-  if (st.cleanMode === 'step') return null;
+  if (st.cleanMode === 'step' || !st.day1 || tk < st.day1) return null;
   const slips = (days[tk]?.events || []).filter((e) => e.outcome === 'slipped');
   if (!slips.length) return null;
-  const h = heroNumber(days, st, tk, nowMs);
-  const n = h ? Number(h.n) : NaN;
-  if (!h || h.eb === 'Since your last slip' || !(n > 0)) return null;
+  const strict = st.cleanMode !== 'gentle';
+  const n = strict ? (tk > st.day1 ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
+  if (!(n > 0)) return null;
   /* the latest slip's hour, in the log day's order (an hour after midnight comes after the evening) */
   const hours = slips
     .map((e) => e.time)
@@ -115,5 +120,6 @@ export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number
   const rolled = (x: number) => (x < st.rollover ? x + 24 : x);
   const hour = hours.length ? hours.sort((a, b) => rolled(a) - rolled(b)).slice(-1)[0] : new Date(nowMs).getHours();
   const when = hour < st.rollover || hour >= 17 ? 'Tonight' : hour < 12 ? 'This morning' : 'Today';
+  if (strict) return when + ' is logged. Your ' + n + (n === 1 ? ' day is' : ' days are') + ' on your record.';
   return when + ' is logged. Your ' + n + (n === 1 ? ' day stays' : ' days stay') + ' yours.';
 }

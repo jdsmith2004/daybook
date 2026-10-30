@@ -25,10 +25,11 @@ export const SHEETS = [
   'stats',
   'tip',
   'month',
+  'recheck',
 ];
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */
-const SCENE = /^(sos|tool\/\[id\]|log|sunrise|checkin|talk|review|deeper|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
+const SCENE = /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
 
 /** the routes open now, bottom to top (Expo Router keeps the app's stack inside one "__root" route) */
 function openRoutes(): Route[] {
@@ -37,10 +38,11 @@ function openRoutes(): Route[] {
   return st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
 }
 
-/** back to where the person started: every full-screen moment on top closes (the setup stays when SOS was opened from it) */
+/** back to where the person started: every full-screen moment on top closes. The setup stays when SOS was opened from it, and
+    so does Rekindle (the log): the comeback still has its plan to make, on the page where it was left. */
 function leave(routes: Route[]) {
   let n = 0;
-  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name) && !(n > 0 && routes[routes.length - 1 - n].name === 'setup')) n++;
+  while (n < routes.length - 1 && SCENE.test(routes[routes.length - 1 - n].name) && !(n > 0 && /^(setup|log)$/.test(routes[routes.length - 1 - n].name))) n++;
   if (n > 0) router.dismiss(n);
   else if (router.canDismiss()) router.dismissAll();
   else if (router.canGoBack()) router.back();
@@ -51,7 +53,7 @@ function leave(routes: Route[]) {
     from the Sunday review: the X returns to the screen the person came from, never past it. SOS opened from inside the setup
     closes back to the setup, on the page where it was left; Talk it through opened from SOS closes back to SOS, where the urge
     is still open. Opened directly (a web link), it goes to Today. (The log after a slip replaces SOS rather than sitting on it,
-    since that SOS has ended, so its X does not go back to an SOS.) */
+    since that SOS has ended, so its X does not go back to an SOS. SOS opened from Rekindle sits on it, and closes back to it.) */
 export function close() {
   const routes = openRoutes();
   if (routes.length >= 2 && SCENE.test(routes[routes.length - 1].name)) {

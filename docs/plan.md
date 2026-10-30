@@ -193,9 +193,13 @@ Each carries the Opus effort it needs. **Owner decision** marks a choice that is
   plans more about Jesus later, so for a person who said yes the faith lessons stay first-class, and the filter only keeps
   them out of the path of someone who said no.
 - 7: yes, the four missing lessons, and identity moved into week 2.
+  Done October 30: lessons l46 (what getting free feels like, lesson 5), l47 and l48 (partners and sex after porn, closing
+  Shame and kindness) and l49 (day 30, 60, 90 and after, last on the path). The first week is How it works and Why it is
+  hard to stop; identity is lessons 10 to 13; the tools 14 to 21; faith moved from 17 to 22, and Shame and kindness from 9
+  to 26. Finished lessons stay finished for people mid-path. **Not said because it is not known:** a figure for how long a
+  flat stretch or low desire lasts, or for how long trust takes.
 - 8: yes, the five-question screen again every 30 days, with the score shown falling.
-- 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; monthly $2.99 or a
-  lifetime of about $20 to $30). The exact product and price are confirmed with the owner before any payment work.
+- 9: yes to one clear paid product beyond the tip (the pattern, previewed from the person's own log; the prices the owner settled on are below).
 - 10: yes, fix the public pages.
 
 **Daybook Pattern, decision 9 in detail (the owner, October 30, 2026: "Yes, all your picks"). Built on branch
@@ -220,6 +224,15 @@ numbers) and it helps Daybook earn (a tip covers costs, not a livelihood, findin
   between two paid tips a lifetime one wins, else the earlier one, so what a person holds never shrinks (core `tipBetter`).
 - **Next (high, when the owner has set up the products):** turn it on, as docs/launch.md 7b step 6 says, then the sandbox list in
   step 8. Refunds on the monthly plan rely on the date running out, as tips do; a webhook could be added if refunds become common.
+
+**Built (findings 2 and 3, decisions 1 and 2, October 30):** one count per mode (core `hero.ts`, `view.ts`, `journal.ts`,
+`miles.ts`). Strict: days in a row, 0 on the day of a slip. Gentle: the days that hold (`todayMeasure`). Step down: unchanged.
+The chip under the number holds the hours since a slip, for 72 hours. Gone: `app/sunrise.tsx`, `app/deeper.tsx`, the run
+question, the rescue, the run-ended card and the words. Migration: `st.countFrom` is stamped on the first open of this version
+(`keepCounts`), and slips up to it keep the old rule in `runLedger`; `seen.longest` is a floor so a switch of mode never lowers
+the longest run. Open for the owner: strict is the default and setup never offers gentle, so most people did not choose it.
+
+**Done on October 30, 2026 (asks, gates and doors, medium):** findings 1 (tip lines only), 21 (lesson 8), 6, 7, 8 (the entry sheet; Welcome back not changed), 4 (the medium part), 9, 10, 16 (the 30-day screen and the Sunday review; the hard-hours card not changed) and 22 (words only). A plain level and a full ring are a toast; the five questions say "in the last 30 days", where the setup says six months, so the score can move.
 
 **Suggested order:** 5 (pages), 1 and 3 (asks), 7 (the SOS door in Rekindle), then 2 and 4 (the run and the second slip)
 once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 15 and 16 (lessons and the measure).

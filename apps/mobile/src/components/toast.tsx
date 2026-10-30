@@ -17,7 +17,7 @@ import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 /** the full-screen moments (app/_layout.tsx), where answers sit low */
-const MOMENT = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup|graduated)(\/|$)/;
+const MOMENT = /^\/(sos|tool|log|checkin|talk|review|wind|night|lesson|lwrite|setup|graduated)(\/|$)/;
 /** the tabs: their top is the date and the Support button, so a message sits just under that row */
 const TABS = /^\/(pattern|learn|more)?\/?$/;
 /** where a message from the screen before is left behind */

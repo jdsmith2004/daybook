@@ -3,7 +3,7 @@
    ends sooner than it says, a feeling named and settling, guilt against shame, the two paths after one slip, change
    that loops but climbs, and kindness that makes people try harder. They play once (the wave keeps a slow rhythm),
    and with Reduce Motion on they simply show their last frame. */
-import type { RkArt, RkComebacks } from '@daybook/core';
+import type { RkArt } from '@daybook/core';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -380,53 +380,6 @@ function Kind({ w }: { w: number }) {
   );
 }
 
-/* ---------- your comebacks: no-slip days before each slip, oldest first ---------- */
-export function Comebacks({ cb }: { cb: RkComebacks }) {
-  const c = useTheme();
-  const max = Math.max(1, ...cb.runs);
-  const HB = 92;
-  const n = cb.runs.length;
-  return (
-    <View
-      style={[s.cb, { backgroundColor: c.surface, shadowColor: c.lip }]}
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={'No-slip days before each slip, oldest first: ' + cb.runs.join(', ')}>
-      <Text style={[s.cbHead, { color: c.muted }]}>NO-SLIP DAYS BEFORE EACH SLIP</Text>
-      <View style={[s.cbBars, { height: HB + 44 }]}>
-        {cb.runs.map((r, i) => {
-          const last = i === n - 1;
-          return (
-            <View key={i} style={s.cbCol}>
-              <Text style={[s.cbN, { color: last ? c.accentText : c.muted }]}>{r}</Text>
-              <Appear
-                delay={150 + i * 90}
-                by={0}
-                style={[
-                  s.cbBar,
-                  {
-                    width: n > 6 ? 22 : 28,
-                    height: Math.max(5, (r / max) * HB),
-                    backgroundColor: last ? c.accent : c.mint,
-                    opacity: last ? 1 : 0.75,
-                  },
-                ]}>
-                <View />
-              </Appear>
-              {last ? <Icon name="flame" size={16} color={c.accentText} /> : <View style={{ height: 16 }} />}
-            </View>
-          );
-        })}
-      </View>
-      {cb.longest ? (
-        <Text style={[s.cbFoot, { color: c.muted }]}>
-          Longest: <Text style={{ color: c.ink, fontFamily: font.bodyBold }}>{cb.longest === 1 ? '1 day' : cb.longest + ' days'}</Text>. It stays yours.
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   abs: { position: 'absolute' },
   barWord: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 13.5 },
@@ -465,11 +418,4 @@ const s = StyleSheet.create({
   keyDot: { width: 12, height: 12, borderRadius: 6 },
   keyT: { fontFamily: font.bodySemi, fontSize: 13 },
   flag: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  cb: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 8, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0 },
-  cbHead: { fontFamily: font.bodyBold, fontSize: 11.5, letterSpacing: 1, textAlign: 'center' },
-  cbBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 10 },
-  cbCol: { alignItems: 'center', gap: 4 },
-  cbN: { fontFamily: font.bodyBold, fontSize: 13, fontVariant: ['tabular-nums'] },
-  cbBar: { borderRadius: 8 },
-  cbFoot: { fontFamily: font.body, fontSize: 14, textAlign: 'center' },
 });

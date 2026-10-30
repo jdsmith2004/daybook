@@ -18,10 +18,10 @@ const words = (L: Lesson): string[] => {
   return out;
 };
 
-it('there are 45 lessons, and the ids match the lesson list', () => {
+it('there are 49 lessons, and the ids match the lesson list', () => {
   expect(core.LESSONS.map((L) => L.id)).toEqual(core.LESSON_IDS);
-  expect(core.LESSON_IDS).toHaveLength(45);
-  expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41', 'l42', 'l43', 'l44', 'l45']);
+  expect(core.LESSON_IDS).toHaveLength(49);
+  expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41', 'l42', 'l43', 'l44', 'l45', 'l46', 'l47', 'l48', 'l49']);
 });
 
 it('a finished new lesson is kept in the day record and counts', () => {
@@ -82,6 +82,34 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
   });
 });
 
+describe('the four lessons added October 30, 2026', () => {
+  it('sit where they are meant to on the path: the hope lesson early, the long view last', () => {
+    expect(core.lessonNo(core.lessonById('l46')!)).toBe(5);
+    expect(core.lessonById('l47')!.u).toBe(1);
+    expect(core.lessonById('l48')!.u).toBe(1);
+    expect(core.lessonNo(core.lessonById('l49')!)).toBe(core.LESSONS.length);
+  });
+  it('each has a practice step that can put a line on the plan', () => {
+    ['l46', 'l47', 'l48', 'l49'].forEach((id) => {
+      const items = core.practiceOf(id)!.items!;
+      expect(items.some((it) => it.k === 'plan')).toBe(true);
+      const it = items.find((x) => x.k === 'plan')!;
+      const r = core.itemAdd(core.normSettings(core.defaultSettings('2026-10-01')), it);
+      expect(r.ok).toBe(true);
+    });
+  });
+  it('say so plainly where nothing is known or promised', () => {
+    const say = (id: string) => words(core.lessonById(id)!).join(' ');
+    expect(say('l46')).toMatch(/no fixed timeline/);
+    expect(say('l47')).toMatch(/nobody can promise/i);
+    expect(say('l48')).toMatch(/has not been measured well/);
+  });
+  it('finishing the last lesson ends the path', () => {
+    const w = core.walkOf(new Set(core.lessonPath().map((L) => L.id)));
+    expect(w.next).toBeNull();
+  });
+});
+
 describe('families', () => {
   it('every lesson in a family exists, and no lesson is in two', () => {
     const all = core.LESSON_FAMILIES.flatMap((f) => f.ids);
@@ -94,16 +122,20 @@ describe('families', () => {
     expect(core.lessonFamily(core.lessonById('l1')!)).toBeNull();
   });
 
-  it('the path goes one section at a time, each section once, with faith after Making a plan', () => {
+  it('the path goes one section at a time, each section once: identity in week 2, the tools in weeks 2 and 3, then faith', () => {
     const ids = core.lessonPath().map((L) => L.id);
     expect(ids.slice().sort()).toEqual(core.LESSON_IDS.slice().sort());
     const units = core.lessonSections().map((x) => x.u);
     expect(new Set(units).size).toBe(units.length);
     expect(units).toEqual(core.UNIT_ORDER);
-    expect(ids.slice(0, 8)).toEqual(['l1', 'l2', 'l3', 'l4', 'l33', 'l34', 'l35', 'l36']);
-    expect(units.indexOf(7)).toBe(units.indexOf(2) + 1);
-    expect(ids.slice(16, 20)).toEqual(['l29', 'l30', 'l31', 'l32']);
-    expect(core.lessonNo(core.lessonById('l29')!)).toBe(17);
+    expect(ids.slice(0, 9)).toEqual(['l1', 'l2', 'l3', 'l4', 'l46', 'l33', 'l34', 'l35', 'l36']);
+    expect(ids.slice(9, 13)).toEqual(['l37', 'l38', 'l39', 'l40']);
+    expect(ids.slice(13, 21)).toEqual(['l13', 'l14', 'l15', 'l16', 'l42', 'l43', 'l44', 'l45']);
+    expect(ids.slice(21, 25)).toEqual(['l29', 'l30', 'l31', 'l32']);
+    expect(core.lessonNo(core.lessonById('l29')!)).toBe(22);
+    /* partners and sex after porn close the section on shame and closeness; the long view closes the path */
+    expect(ids.slice(25, 31)).toEqual(['l5', 'l6', 'l7', 'l8', 'l47', 'l48']);
+    expect(ids[ids.length - 1]).toBe('l49');
   });
 
   it('sections next to each other on the path have different colors', () => {
@@ -126,18 +158,21 @@ describe('families', () => {
     ]);
     /* l2 and l33 were finished before the path reached them: Up next is l2, as a welcome back, and l33 waits */
     expect(tl.next?.id).toBe('l2');
-    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 1 });
-    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l4']);
+    expect(tl.coming[0]).toMatchObject({ u: 0, n: 5, done: 1 });
+    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l4', 'l46']);
     expect(tl.coming[1]).toMatchObject({ u: 8, done: 0 });
     expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.LESSONS.length);
   });
 
   it('recall asks about the lesson before this one on the path', () => {
     const l2 = core.lessonById('l2')!;
-    const l4 = core.lessonById('l4')!;
+    const l46 = core.lessonById('l46')!;
     const l33 = core.lessonById('l33')!;
     expect(core.lessonRecallOf(core.lessonById('l3')!, new Set(['l1', 'l2']))).toBe(l2);
-    expect(core.lessonRecallOf(l33, new Set(['l1', 'l2', 'l3', 'l4']))).toBe(l4);
+    expect(core.lessonRecallOf(l33, new Set(['l1', 'l2', 'l3', 'l4', 'l46']))).toBe(l46);
+    expect(core.lessonRecallOf(core.lessonById('l37')!, new Set(['l36']))).toBe(core.lessonById('l36'));
+    expect(core.lessonRecallOf(core.lessonById('l13')!, new Set(['l40']))).toBe(core.lessonById('l40'));
+    expect(core.lessonRecallOf(core.lessonById('l29')!, new Set(['l45']))).toBe(core.lessonById('l45'));
   });
 
   it('checkpoints stop at the last written one, so the new lessons never offer one that is not there', () => {

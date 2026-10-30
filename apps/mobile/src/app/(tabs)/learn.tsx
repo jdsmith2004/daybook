@@ -13,11 +13,15 @@ import {
   LCHECKS,
   type Lesson,
   LESSONS,
+  lessonCount,
+  faithOut,
   lessonMap,
+  lmin,
   lessonNo,
   lessonOpen,
   lessonsDone,
   lessonsLocked,
+  lessonPathFor,
   lessonTimeline,
   lessonWalk,
   LEARN_FREE,
@@ -169,7 +173,7 @@ export default function Learn() {
         <T tone="muted">
           {pane === 'tools'
             ? 'Try the tools when it is calm, so you know what works when it is not.'
-            : `${walk.walked.size} of ${LESSONS.length} done. One short lesson a day is plenty.`}
+            : `${lessonCount(walk).done} of ${lessonCount(walk).of} done. One short lesson a day is plenty.`}
         </T>
       }>
       <Segments
@@ -220,6 +224,7 @@ export default function Learn() {
 /** what floats over the top of the map: the section on screen, and a checkpoint to write when one is ready. It fades in
     once the map reaches the top of the screen. */
 function Floating({ show, due, children }: { show: boolean; due: number; children: React.ReactNode }) {
+  const { snap } = useStore();
   const c = useTheme();
   const still = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
@@ -238,7 +243,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
           onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })}
           style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
           <Icon name="pencil" size={16} color={c.violetText} />
-          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due)} is ready: write it out</Text>
+          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings)} is ready: write it out</Text>
           <Icon name="next" size={16} color={c.violetText} />
         </Pressable>
       ) : null}
@@ -278,7 +283,8 @@ function LessonsPane({
   const account = useAccount();
   const sync = useSync();
   const open = (L: Lesson) => lessonOpen(L, done, account);
-  const waiting = lessonsLocked(LESSONS, done, account);
+  const waiting = lessonsLocked(lessonPathFor(st), done, account);
+  const [faith, setFaith] = useState(false);
   /* the map's place in the pane and its scale arrive in either order; pass them on once both are known */
   const at = useRef({ y: -1, k: 0 });
   const tell = () => at.current.y >= 0 && at.current.k > 0 && onGeom({ y: at.current.y, k: at.current.k });
@@ -293,8 +299,8 @@ function LessonsPane({
             <View style={{ flex: 1, gap: 2 }}>
               <T v="h2">Write it out</T>
               <T v="small">
-                Checkpoint {lcheckNo(due)}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {pair ? lessonNo(pair.a) : ''} and{' '}
-                {pair ? lessonNo(pair.b) : ''}. 3 to 5 minutes, no points, only you see it.
+                Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. A short piece of writing about lessons {pair ? lessonNo(pair.a, st) : ''} and{' '}
+                {pair ? lessonNo(pair.b, st) : ''}. 3 to 5 minutes, no points, only you see it.
               </T>
             </View>
           </View>
@@ -340,6 +346,22 @@ function LessonsPane({
         />
       </View>
 
+      {/* said No to faith in the setup: these lessons are off the path, and still here to find */}
+      {faithOut(st) ? (
+        <Collapse
+          title="Faith and recovery"
+          sub="Off your path, by your answer in the setup. Here if you ever want them."
+          icon="star"
+          open={faith}
+          onToggle={() => setFaith(!faith)}>
+          <View style={{ gap: 8 }}>
+            {LESSONS.filter((L) => L.f).map((L) => (
+              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} />
+            ))}
+          </View>
+        </Collapse>
+      ) : null}
+
       {tl.past.length ? (
         <Collapse
           title="In the order you finished them"
@@ -379,11 +401,12 @@ function LessonsPane({
 function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; locked?: boolean; side: string; sub: string }) {
   const c = useTheme();
   const t = toneOf(c, LUNITS[L.u].tone);
-  const no = lessonNo(L);
+  const { snap } = useStore();
+  const no = lessonNo(L, snap.settings);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Lesson ${no}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
+      accessibilityLabel={`${no ? 'Lesson ' + no : 'Faith lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
       onPress={() => openLesson(L.id)}
       style={({ pressed }) => [s.row, { backgroundColor: c.surface, borderColor: done ? c.cardEdge : 'transparent', opacity: pressed ? 0.85 : 1 }]}>
       <View style={[s.lrIc, { backgroundColor: done ? c.mintSoft : t.soft }]}>
@@ -391,13 +414,16 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
           <Icon name="check" size={18} color={c.mintText} />
         ) : locked ? (
           <Icon name="lock" size={16} color={t.text} />
-        ) : (
+        ) : /* a lesson off the path has no number */
+        no ? (
           <Text style={[s.no, { color: t.text }]}>{no}</Text>
+        ) : (
+          <Icon name="star" size={16} color={t.text} />
         )}
       </View>
       <View style={{ flex: 1, gap: 1 }}>
         <Text style={[s.lrT, { color: c.ink }]}>
-          {done ? <Text style={{ color: c.muted }}>{no} </Text> : null}
+          {done && no ? <Text style={{ color: c.muted }}>{no} </Text> : null}
           {L.title}
         </Text>
         <T v="small" tone="muted" numberOfLines={1}>

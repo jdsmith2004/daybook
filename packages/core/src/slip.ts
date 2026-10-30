@@ -213,3 +213,23 @@ export function slipAfterTalk(days: Days, k: DayKey, t: number, tk: DayKey): { k
   }
   return null;
 }
+
+/* ---------- the second slip in a week gets the most care ----------
+   The reaction to a first lapse did not predict relapse; falling confidence after repeated lapses did (Kirchner, Shiffman
+   and Wileyto 2012, about 1,000 real-time lapses). So a slip with another one in the 7 days up to it names that, plainly,
+   and the comeback opens a door to a person: the safe person's text, and the lesson on what therapy is like. */
+/** the days a slip looks back over, its own day included */
+export const SLIP_WEEK = 7;
+/** the lesson the plan page offers, by its id (it opens in full from there, with no account asked: lesson page, at=care) */
+export const SLIP_THERAPY_LESSON = 'l24';
+/** the words ready to send to the safe person: nothing about what it is, and nothing asked but to talk */
+export const SLIP_SAFE_TEXT = 'This week has been a hard one, and I could use someone in my corner. Can we talk?';
+/** what names it, when this slip is not the only one in its week: the slips counted (this one too) and the line. null for a
+    first slip, or for one that is not in the log. */
+export function slipRepeat(days: Days, date: DayKey, id: string | null | undefined): { n: number; line: string } | null {
+  if (!id || !(days[date]?.events || []).some((e) => e.id === id && e.outcome === 'slipped')) return null;
+  const from = addDays(date, 1 - SLIP_WEEK);
+  const n = (eventsOf(days) as (DayEvent & { key: DayKey })[]).filter((e) => e.outcome === 'slipped' && e.key >= from && e.key <= date).length;
+  if (n < 2) return null;
+  return { n, line: (n === 2 ? 'Two in a week' : 'A week like this') + ' is where most people give up. You are still here.' };
+}

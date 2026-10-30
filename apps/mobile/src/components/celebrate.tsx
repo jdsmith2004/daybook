@@ -1,14 +1,15 @@
-/* Celebrations: a new level (or a new form of the flame), a new badge, a full ring, a run saved. They wait their turn:
+/* Celebrations: a new form of the flame, a new badge. A plain level and a full ring are one short toast (core celSplit),
+   since levels come every day or two and the hero's bar carries them. They wait their turn:
    they show only on the main tabs, never on top of a page, a sheet or a full-screen moment, so a hard moment is not interrupted. With celebrations off they are said in a
    quiet line instead. Anything that arrives right after a slip comes in quietly: no confetti, no buzz. Ported from the legacy
    celebrate, celNext and confetti.
    One at a time: everything that is waiting when the person comes back to the tabs shows as one sheet (the UX audit of
    October 27, 2026: after the first lesson and check-in, four sheets came in a row). The biggest win leads it (a new
-   form, a level, a run saved, then a badge), with the rest as rows under it, and one button. A tip ask can ride on it
+   form, a level, then a badge), with the rest as rows under it, and one button. A tip ask can ride on it
    (core tipMoment), but never on the day the person came back, nor in the hours after an SOS or a slip
    (lib/quiet-asks.ts). A mistaken log taken back with Undo takes its waiting celebration with it (lib/store.tsx). A level
    reached on the day of a slip waits for the next day (core checkNew), and then says it was earned then. */
-import { addDays, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
+import { addDays, celSplit, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -16,7 +17,6 @@ import { Text } from '@/components/text';
 
 import { Flame } from '@/components/flame';
 import { FlameMedallion } from '@/components/flame-medallion';
-import { Flames } from '@/components/rekindle';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -25,7 +25,7 @@ import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
-const SCENES = /^\/(sos|tool|log|sunrise|checkin|talk|review|deeper|wind|night|lesson|lwrite|setup)(\/|$)/;
+const SCENES = /^\/(sos|tool|log|checkin|talk|review|wind|night|lesson|lwrite|setup)(\/|$)/;
 /** the main tabs: a celebration shows only there, never over a page the person is busy on */
 const TABS = /^\/(pattern|learn|more)?$/;
 
@@ -67,6 +67,9 @@ export function useHoldCelebrations(on: boolean) {
 let busy = false;
 const busySubs = new Set<() => void>();
 const busySub = (f: () => void) => (busySubs.add(f), () => void busySubs.delete(f));
+/* when a sheet last opened, so Today's day-feel question never comes on an open that already showed one */
+let sheetAt = 0;
+export const celebrationSheetAt = () => sheetAt;
 export const useCelebrating = () =>
   useSyncExternalStore(
     busySub,
@@ -132,8 +135,12 @@ export function CelebrateHost() {
   /* the next one, when nothing is open */
   useEffect(() => {
     if (cur || blocked || !queue.length) return;
-    const group = lead(queue);
+    const { sheet, toast } = celSplit(queue);
     setQueue([]);
+    if (toast) sayRef.current(toast);
+    if (!sheet.length) return;
+    const group = lead(sheet);
+    sheetAt = Date.now();
     setCur(group);
     const quiet = group.some((it) => !!it.quiet || (it.type === 'badge' && it.b.id === 'honest'));
     const big = group.some((it) => it.type === 'level');
@@ -144,7 +151,7 @@ export function CelebrateHost() {
   }, [cur, blocked, queue]);
 
   useEffect(() => {
-    busy = !!cur || queue.length > 0;
+    busy = !!cur || celSplit(queue).sheet.length > 0;
     busySubs.forEach((f) => f());
   }, [cur, queue]);
 
@@ -165,12 +172,12 @@ export function CelebrateHost() {
   );
 }
 
-/** the order a sheet leads with: a new form, a level, a run saved, a full ring, then the badges in the order they came */
-const RANK: Record<CelItem['type'], number> = { level: 0, saved: 1, perfect: 2, badge: 3, quest: 4, more: 5 };
+/** the order a sheet leads with: a new form, then the badges in the order they came, and a plain level as a row */
+const RANK: Record<CelItem['type'], number> = { level: 3.5, perfect: 2, badge: 3, quest: 4, more: 5 };
 function lead(items: CelItem[]): CelItem[] {
   return items
     .filter((it) => it.type !== 'quest')
-    .map((it, i) => ({ it, i, r: RANK[it.type] - (it.type === 'level' && it.evolve ? 0.5 : 0) }))
+    .map((it, i) => ({ it, i, r: it.type === 'level' && (it.evolve || !it.from) ? 0 : RANK[it.type] }))
     .sort((a, b) => a.r - b.r || a.i - b.i)
     .map((x) => x.it);
 }
@@ -214,11 +221,6 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
     eyebrow = 'Full ring';
     title = 'All ' + it.n + ' wins today';
     sub = 'That is a full day of looking after yourself. Rest well.';
-  } else if (it.type === 'saved') {
-    art = <Flames on={[true, true, true]} big />;
-    eyebrow = 'Run saved';
-    title = it.run + ' day' + (it.run === 1 ? '' : 's') + ' and counting';
-    sub = 'You did the work after a slip, so your run keeps going. The gold mark on your calendar shows where you came back.';
   } else if (it.type === 'more') {
     title = it.title || 'Nice';
     sub = it.sub || '';
@@ -281,7 +283,7 @@ function Row({ it }: { it: CelItem }) {
       <Flame level={it.level.n} size={40} />
     ) : (
       <View style={[s.rowIc, { backgroundColor: c.sunSoft }]}>
-        <Icon name={it.type === 'saved' ? 'flame' : 'star'} size={20} color={c.sunText} />
+        <Icon name="star" size={20} color={c.sunText} />
       </View>
     );
   const name = it.type === 'badge' ? it.b.name : celTitle(it);

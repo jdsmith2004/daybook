@@ -2,8 +2,9 @@
    sheetGrowth and badgeDone. */
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
-import { addDays, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { addDays, computeMetrics, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
+import { rkComebackCount } from './rekindle';
 import { hardHeld } from './risk';
 import { formOfLevel, LADDER_V, LEVELS, STEPS, type Level } from './levels';
 import { changeSettings } from './actions';
@@ -11,9 +12,10 @@ import type { DayKey, Days, Reviews } from './types';
 
 /** a badge stays earned once it was seen earned, even if an old entry is changed later */
 export const badgeDone = (b: Badge, st: Settings | null) => b.done || !!(st && st.seen && st.seen.badges.indexOf(b.id) >= 0);
-/** the badges about things that were retired (weekly quests, and the morning questions on October 23, 2026): shown only to
+/** the badges about things that were retired (weekly quests, the morning questions on October 23, 2026, and saving a run on
+    October 30, 2026): shown only to
     someone who earned them */
-export const RETIRED_BADGES = ['quest-1', 'quest-3', 'morning-5'];
+export const RETIRED_BADGES = ['quest-1', 'quest-3', 'morning-5', 'run-saved'];
 export const shownBadges = <B extends Badge>(bs: B[], st: Settings | null) => bs.filter((b) => RETIRED_BADGES.indexOf(b.id) < 0 || badgeDone(b, st));
 
 /* ---------- what is new since last time: levels, badges, quests, a full ring (legacy checkNew, ensureSeen, reseat) ---------- */
@@ -23,7 +25,6 @@ export type CelItem =
   | { type: 'badge'; b: Badge; quiet?: boolean }
   | { type: 'quest'; q: Quest; quiet?: boolean }
   | { type: 'perfect'; n: number; quiet?: boolean }
-  | { type: 'saved'; run: number; quiet?: boolean }
   | { type: 'more'; title: string; sub: string; quiet?: boolean };
 
 /** the first look, or an older ladder: what is already earned is taken note of without any fanfare */
@@ -101,15 +102,22 @@ export const celTitle = (it: CelItem) =>
         ? 'Quest done: ' + it.q.name
         : it.type === 'perfect'
           ? 'All ' + it.n + ' wins today'
-          : it.type === 'saved'
-            ? 'Run saved: ' + it.run + ' day' + (it.run === 1 ? '' : 's')
-            : it.title || 'Nice';
+          : it.title || 'Nice';
 
-/** the days whose run was saved by finishing the Rekindle quest (a new one gets its own moment) */
-export const savedRuns = (days: Days, st: Settings, tk: DayKey) => {
-  const L = runLedger(days, st, tk);
-  return { saved: Object.keys(L.kind).filter((k) => L.kind[k] === 'saved'), cur: L.cur };
-};
+/** what the count keeps, called whenever the log or the settings change: the day this person first opened the one-count rule
+    (countFrom: slips up to it keep the rule they were made under, runLedger), and the longest run ever shown, so that
+    switching how days count never lowers it. Gives back the settings to save, or null when nothing moved. */
+export function keepCounts(days: Days, st: Settings, tk: DayKey): Settings | null {
+  const longest = runLedger(days, st, tk).longest;
+  const stamp = !isKey(st.countFrom);
+  /* the floor waits for seen (seenBaseline): a seen made up here would make every earned badge look new */
+  const raise = !!st.seen && longest > (st.seen.longest || 0);
+  if (!stamp && !raise) return null;
+  return changeSettings(st, (s) => {
+    if (stamp) s.countFrom = tk;
+    if (raise && s.seen) s.seen = { ...s.seen, longest };
+  });
+}
 
 /* ---------- what an action just earned (legacy winSnap, winNote, winWhy) ---------- */
 const dpMap = (days: Days, key: DayKey, st: Settings) => {
@@ -185,18 +193,29 @@ export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: Da
   const S0 = gameCompute(days, st, reviews, tk).S;
   const num = (v: unknown) => (typeof v === 'number' ? v : 0);
   const S = { rode: num(S0.rode), slips: num(S0.slips), lessons: num(S0.lessons), checkins: num(S0.checkins) };
-  const sunrise = eventsOf(days).filter((e) => e.outcome === 'slipped' && e.rk && isKey(e.rk.at)).length;
+  const comebacks = rkComebackCount(days, st, tk);
   const held = hardHeld(days);
   const times = (n: number, one: string, many: string) => n + ' ' + (n === 1 ? one : many);
   const out: (IdLine | null)[] = [
     S.rode ? { ic: 'wave', who: 'You are someone who rides out urges.', n: times(S.rode, 'time', 'times') } : null,
     S.slips ? { ic: 'leaf', who: 'You are someone who tells the truth, even about a slip.', n: times(S.slips, 'slip', 'slips') + ', every one logged' } : null,
-    sunrise ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(sunrise, 'comeback', 'comebacks') } : null,
+    comebacks ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(comebacks, 'comeback', 'comebacks') } : null,
     held ? { ic: 'shield', who: 'You are someone who gets through the hard hours.', n: times(held, 'time', 'times') } : null,
     S.lessons ? { ic: 'book', who: 'You are someone who learns how this works.', n: times(S.lessons, 'lesson', 'lessons') + ' finished' } : null,
     S.checkins ? { ic: 'pencil', who: 'You are someone who looks honestly at the day.', n: times(S.checkins, 'check-in', 'check-ins') } : null,
   ];
   return out.filter((x): x is IdLine => !!x);
+}
+
+/** what stays on the record, in every mode, said the same way: the longest run and the days with no slip in all. Shown from two
+    days on, so a first day is not a record yet. */
+export function recordLines(days: Days, st: Settings, tk: DayKey): IdLine[] {
+  const longest = computeMetrics(days, st, tk).longest;
+  const noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  return [
+    longest >= 2 ? { ic: 'flame', who: 'You are someone who can go the distance.', n: 'Longest run: ' + longest + ' days' } : null,
+    noSlip >= 2 ? { ic: 'sun', who: 'You are someone who has days free of it.', n: noSlip + ' no-slip days, all on your record' } : null,
+  ].filter((x): x is IdLine => !!x);
 }
 
 /** the hours given back so far: the days with no slip since Day 1, at the pace the person told the setup (obHours).

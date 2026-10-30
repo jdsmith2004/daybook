@@ -90,7 +90,7 @@ const SETUP_GOALS: Goal[] = OB_GOALS.filter((g) => g.id !== 'step' && g.id !== '
 export const obDate = (k: DayKey | null | undefined) => (k ? fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' }) : 'not set');
 export const obCount = (m: CountMode | string) =>
   m === 'gentle'
-    ? 'A day counts with one slip or fewer'
+    ? 'A slip takes one day off, never all of them'
     : m === 'step'
       ? 'Longer stretches between slips, fewer slips each week'
       : 'A day counts when no slip is logged';

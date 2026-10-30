@@ -50,15 +50,7 @@ describe('did you wait first?', () => {
   });
 
   it('says a kind word for every answer, in plain words', () => {
-    expect(core.rkWaitShow(0)).toBe('0');
-    expect(core.rkWaitShow(30)).toBe('30+');
-    expect(core.rkWaitUnit(1)).toBe('minute');
-    expect(core.rkWaitUnit(2)).toBe('minutes');
-    expect(core.rkWaitLine(1)).toBe('1 minute of waiting. That is the muscle that grows.');
-    expect(core.rkWaitLine(12)).toBe('You held off for 12 minutes. That is the muscle that grows.');
-    const words = Array.from({ length: 31 }, (_, m) => core.rkWaitLine(m)).concat(
-      [true, false].flatMap((lit) => [true, false].flatMap((sp) => Object.values(core.rkHoldWords(lit, sp)))),
-    );
+    const words = [true, false].flatMap((lit) => [true, false].flatMap((sp) => Object.values(core.rkHoldWords(lit, sp))));
     for (const w of words) {
       expect(w).not.toMatch(noContractions);
       expect(w).not.toMatch(/fail|relapse|reset|ruin|blew/i);

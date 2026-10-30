@@ -171,10 +171,10 @@ export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true)
   if (lessonStop(days, st, tk).kind === 'read') return null;
   const w = lessonWalk(days, st);
   const nl = w.next;
-  if (nl && lessonOpen(nl, w.done, account)) return { L: nl, n: lessonNo(nl), again: false };
+  if (nl && lessonOpen(nl, w.done, account)) return { L: nl, n: lessonNo(nl, st), again: false };
   const read = (LESSONS as Lesson[]).filter((L) => w.walked.has(L.id));
-  const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
-  return { L: R, n: lessonNo(R), again: true };
+  const R = account ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+  return { L: R, n: lessonNo(R, st), again: true };
 }
 
 /** hard hours held on today or yesterday that are not recorded yet (the latest first) */

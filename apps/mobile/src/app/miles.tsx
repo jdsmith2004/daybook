@@ -10,6 +10,7 @@ import {
   gradLine,
   hoursBack,
   identityLines,
+  recordLines,
   LEVELS,
   nextLine,
   shownBadges,
@@ -56,7 +57,7 @@ export default function Miles() {
   const shown = shownBadges(g.badges, st);
   const earned = shown.filter((b) => badgeDone(b, st));
   const gi = gradInfo(snap.days, st, tk);
-  const who = identityLines(snap.days, st, snap.reviews, tk);
+  const who = [...recordLines(snap.days, st, tk), ...identityLines(snap.days, st, snap.reviews, tk)];
   const back = hoursBack(snap.days, st, tk);
   const todo = shown.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
   return (

@@ -66,9 +66,10 @@ CLAUDE.md's thumb-zone and words rules still come first; these add to them.
   ride's It passed, the 10-minute pause's It passed (from SOS or on its own) and Already happened, I rode it out all use
   `RodeOut` (`components/rode-out.tsx`): the flame with its burst, confetti, how long it took, how many have been ridden
   out, what helped (the moves of an SOS, or what you did) and what set it off, each one tap or none.
-- **A slip always reaches the comeback.** I slipped in SOS, the pause, Already happened and an eyes-open go-ahead in Talk
-  it through all go on to Rekindle (`app/log.tsx`), so every one ends warm, with the flame and a plan for next time. A slip
-  that is already saved (the go-ahead's look back) starts at the feeling before it, with no hold.
+- **A slip always reaches the comeback.** I slipped in SOS, the pause, Already happened, the entry sheet and an eyes-open
+  go-ahead in Talk it through all go on to Rekindle (`app/log.tsx`), so every one ends warm, with the flame and a plan for
+  next time. A slip from the entry sheet or the go-ahead's look back starts at how it feels now, with no hold. SOS opens
+  over Rekindle (`SosPill over`, "Open SOS"), and its X and its ending come back to the same page.
 - **Done is always in reach.** On an ending with a long card, Done is pinned at the bottom (`SceneFrame`'s `pin`) while
   the card scrolls, on the smallest phone too. Confetti is clipped to the screen, so the page never scrolls sideways.
 - **A long run is never "down to embers".** After a slip, the words lead with what is permanent ("Your 39 days are yours

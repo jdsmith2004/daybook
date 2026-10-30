@@ -187,9 +187,34 @@ describe('the line under Rekindle once it is held', () => {
     const st = core.normSettings({ start: '2026-10-01', day1: '2026-10-01' });
     const days = slipOn({}, K, 's1', '22:10');
     const line = core.rkLitLine(days, st, {}, K, K);
-    expect(line).toBe('Your 19 days are yours for good, and so is everything you earned.');
+    expect(line).toBe('Your 19 days are on your record, and everything you earned is still yours.');
     expect(line).not.toMatch(/for now/);
     expect(line.split('. ').length).toBe(1);
     expect(line).not.toMatch(noContractions);
+  });
+});
+
+describe('the second slip in a week gets the most care', () => {
+  const slip = (d: core.Days, k: string) => core.addEvent(d, k, 'slipped', '21:00');
+  it('a first slip gets no line; another within seven days does', () => {
+    const a = slip({}, '2026-10-10');
+    expect(core.slipRepeat(a.days, '2026-10-10', a.id)).toBeNull();
+    const b = slip(a.days, '2026-10-16');
+    expect(core.slipRepeat(b.days, '2026-10-16', b.id)).toMatchObject({ n: 2, line: 'Two in a week is where most people give up. You are still here.' });
+    const c = slip(a.days, '2026-10-17');
+    expect(core.slipRepeat(c.days, '2026-10-17', c.id)).toBeNull();
+  });
+  it('a third says it without counting up', () => {
+    const a = slip(slip({}, '2026-10-10').days, '2026-10-11');
+    const b = slip(a.days, '2026-10-12');
+    expect(core.slipRepeat(b.days, '2026-10-12', b.id)!.line).toBe('A week like this is where most people give up. You are still here.');
+  });
+  it('an urge ridden out does not count, and neither does an entry that is not there', () => {
+    const a = core.addEvent(slip({}, '2026-10-10').days, '2026-10-11', 'rode', '21:00');
+    expect(core.slipRepeat(a.days, '2026-10-11', a.id)).toBeNull();
+    expect(core.slipRepeat(a.days, '2026-10-11', 'nope')).toBeNull();
+  });
+  it('the lesson it opens is there', () => {
+    expect(core.lessonById(core.SLIP_THERAPY_LESSON)?.title).toBe('What therapy is like');
   });
 });

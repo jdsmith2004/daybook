@@ -13,9 +13,7 @@ import { font, useTheme, type Palette } from '@/lib/theme';
 
 const WORD: Record<CalKind, string> = {
   ok: 'no slip',
-  one: 'one slip, still counts',
-  saved: 'a slip, run saved',
-  open: 'a slip, run can keep going',
+  saved: 'a slip you came back from',
   slip: 'a slip',
   logged: 'logged',
   none: 'nothing logged',
@@ -36,12 +34,8 @@ function look(kind: CalKind, c: Palette) {
   switch (kind) {
     case 'ok':
       return { bg: c.mint, bd: c.mint, ink: '#FFFFFF' };
-    case 'one':
-      return { bg: c.mint, bd: c.slip, ink: '#FFFFFF' };
     case 'saved':
       return { bg: c.mint, bd: c.saved, ink: '#FFFFFF' };
-    case 'open':
-      return { bg: c.slip, bd: c.slipSoft, ink: '#FFFFFF' };
     case 'slip':
       return { bg: c.slip, bd: c.slip, ink: '#FFFFFF' };
     case 'logged':
@@ -65,9 +59,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const legend = (
     [
       ['ok', 'No slip'],
-      ['one', 'One slip, counts'],
-      ['saved', 'Run saved'],
-      ['open', 'Run can keep going'],
+      ['saved', 'You came back'],
       ['slip', 'Slip'],
       ['logged', 'Logged'],
       ['away', 'Away'],

@@ -41,13 +41,14 @@ describe('the unlock rule', () => {
     expect(core.lessonsDone(days).size).toBe(6);
     expect(core.lessonsEarly(days).size).toBe(0);
   });
-  it('the account rule stays on top: without one, lesson 4 is Up next but waits behind it', () => {
-    const days = rec(ids(3));
+  it('the account rule stays on top: without one, the lesson after the free ones is Up next but waits behind it', () => {
+    const days = rec(ids(core.LEARN_FREE));
     const w = core.lessonWalk(days, st0());
-    expect(w.next).toBe(path[3]);
-    expect(core.lessonGate(path[3], w)).toBe('open');
-    expect(core.lessonOpen(path[3], w.done, false)).toBe(false);
-    expect(core.lessonOpen(path[3], w.done, true)).toBe(true);
+    const first = path[core.LEARN_FREE];
+    expect(w.next).toBe(first);
+    expect(core.lessonGate(first, w)).toBe('open');
+    expect(core.lessonOpen(first, w.done, false)).toBe(false);
+    expect(core.lessonOpen(first, w.done, true)).toBe(true);
   });
   it('with every lesson done in order, everything opens and nothing is next', () => {
     const w = core.lessonWalk(rec(ids(path.length)), st0());
@@ -140,14 +141,14 @@ describe('lessons read early (before this rule)', () => {
     expect('back' in core.normSettings(JSON.parse(JSON.stringify(st))).learn).toBe(false);
   });
   it('a re-read offered without an account is never one the path has not reached', () => {
-    /* lessons 1 to 3, then lesson 20 early: lesson 4 waits behind an account */
-    const d = rec(ids(3), [path[19].id]);
+    /* the free lessons, then lesson 20 early: the next one waits behind an account */
+    const d = rec(ids(core.LEARN_FREE), [path[19].id]);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(d, st0(), tk, new Date(2026, 9, 20, h, 30).getTime(), false);
-      if (o.act === 'lesson') expect(ids(3)).toContain(o.v);
+      if (o.act === 'lesson') expect(ids(core.LEARN_FREE)).toContain(o.v);
     }
     const r = core.riskLesson(d, st0(), tk, false)!;
-    expect(ids(3)).toContain(r.L.id);
+    expect(ids(core.LEARN_FREE)).toContain(r.L.id);
   });
   it('two read early in a row each get their welcome back, in path order', () => {
     const d = rec(ids(1), [path[2].id, path[1].id]);
@@ -160,6 +161,81 @@ describe('lessons read early (before this rule)', () => {
     w = core.lessonWalk(d, st);
     expect(w.next).toBe(path[3]);
     expect(w.back).toBe(false);
+  });
+});
+
+describe('when the order of the path changed (October 30, 2026)', () => {
+  /* the order before: How it works, Why it is hard, Shame and kindness, Making a plan, Faith, Skills, ... */
+  const before = ['l1', 'l2', 'l3', 'l4', 'l33', 'l34', 'l35', 'l36', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l29', 'l30', 'l31', 'l32'];
+  const days = rec(before);
+  it('nothing read in the old order counts as read early, so no welcome backs pile up', () => {
+    expect(core.lessonsEarly(rec(...before.map((id) => [id]))).size).toBe(0);
+    expect(core.lessonsEarly(days).size).toBe(0);
+  });
+  it('every finished lesson stays done, open and on the map, and Up next is the first one not read', () => {
+    const w = core.lessonWalk(days, st0());
+    expect(w.next?.id).toBe('l46');
+    expect(w.back).toBe(false);
+    expect(w.walked.size).toBe(before.length);
+    before.forEach((id) => {
+      expect(w.walked.has(id)).toBe(true);
+      expect(core.lessonGate(core.lessonById(id)!, w)).toBe('open');
+    });
+    const all = core.lessonMap(w).lands.flatMap((l) => l.stones);
+    expect(
+      all
+        .filter((s) => s.state === 'done')
+        .map((s) => s.L.id)
+        .sort(),
+    ).toEqual([...before].sort());
+    expect(core.lessonGate(core.lessonById('l13')!, w)).toBe('key');
+  });
+  it('after the new lesson, the path walks past what is done to what is not', () => {
+    const d = finish(days, core.lessonById('l46')!);
+    const w = core.lessonWalk(d, st0());
+    expect(w.next?.id).toBe('l37');
+    expect(core.nextAfter(core.lessonById('l37')!, w)?.id).toBe('l38');
+    expect(core.lessonsEarly(d).size).toBe(0);
+    /* the sections' done counts on Learn hold what was read */
+    expect(core.lessonTimeline(d, st0()).coming.find((x) => x.u === 7)).toBeUndefined();
+  });
+  it('someone who finished all 45 keeps them, and meets the four new ones', () => {
+    const w = core.lessonWalk(
+      rec(before, [
+        'l13',
+        'l14',
+        'l15',
+        'l16',
+        'l42',
+        'l43',
+        'l44',
+        'l45',
+        'l17',
+        'l18',
+        'l19',
+        'l20',
+        'l41',
+        'l37',
+        'l38',
+        'l39',
+        'l40',
+        'l21',
+        'l22',
+        'l23',
+        'l24',
+        'l25',
+        'l26',
+        'l27',
+        'l28',
+      ]),
+      st0(),
+    );
+    expect(w.early.size).toBe(0);
+    expect(w.walked.size).toBe(45);
+    expect(w.next?.id).toBe('l46');
+  });
+  it('a lesson opened out of turn in either order is still read early', () => {
+    expect([...core.lessonsEarly(rec(['l1', 'l2'], ['l29']))]).toEqual(['l29']);
   });
 });
 
@@ -176,17 +252,19 @@ describe('checkpoints follow the path', () => {
       expect(core.lessonPairOf(p.b)).toEqual(p);
       if (i) expect(core.lessonNo(p.b)).toBeGreaterThan(core.lessonNo(core.lcheckPair(order[i - 1])!.b));
     });
-    /* the faith section comes before Skills for the moment on the path, so its checkpoints do too */
-    expect(core.lcheckNo(15)).toBeLessThan(core.lcheckNo(7));
+    /* Skills for the moment comes before the faith section on the path, and faith before Shame and kindness, so their
+       checkpoints do too */
+    expect(core.lcheckNo(7)).toBeLessThan(core.lcheckNo(15));
+    expect(core.lcheckNo(15)).toBeLessThan(core.lcheckNo(3));
   });
   it('the one due is the first on the path whose two lessons are reached and not written', () => {
     const st = st0();
     const upTo = (L: core.Lesson) => rec(path.slice(0, path.indexOf(L) + 1).map((x) => x.id));
     expect(core.lcheckDue(rec(ids(1)), st)).toBe(0);
     expect(core.lcheckDue(rec(ids(2)), st)).toBe(1);
-    /* through the faith section: checkpoints 1 to 6 written, so 15 is next, before 7 */
+    /* through the faith section: the checkpoints of How it works and Skills for the moment written, so 15 is next, before 3 */
     let w = st;
-    for (let n = 1; n <= 6; n++) w = core.lwriteSave(w, n, 0, 'line ' + n, 1);
+    for (const n of [1, 2, 7, 8]) w = core.lwriteSave(w, n, 0, 'line ' + n, 1);
     expect(core.lcheckDue(upTo(core.lessonById('l32')!), w)).toBe(15);
     /* both lessons read early do not bring a checkpoint before the path reaches them */
     expect(core.lcheckDue(rec(ids(1), ['l29', 'l30']), st)).toBe(0);
@@ -201,5 +279,60 @@ describe('checkpoints follow the path', () => {
     expect(core.LCHECKS[11].t).toBe('The empty hour and therapy');
     expect(core.lcheckPair(12)!.a.id).toBe('l23');
     expect(core.lcheckPair(12)!.b.id).toBe('l24');
+  });
+});
+
+describe('the faith lessons follow the setup answer', () => {
+  const path = core.lessonPath();
+  const ans = (faith?: string) => core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: faith ? { faith } : {}, hist: [] } });
+  const faithL = core.LESSONS.filter((L) => L.f);
+  it('Yes, Somewhat and a skipped answer change nothing', () => {
+    for (const st of [ans('big'), ans('some'), ans(), core.normSettings(core.defaultSettings('2026-10-01'))]) {
+      expect(core.faithOut(st)).toBe(false);
+      expect(core.lessonPathFor(st)).toBe(path);
+    }
+  });
+  it('No leaves them out, keeps the order, and numbers the path without them', () => {
+    const st = ans('no');
+    const mine = core.lessonPathFor(st);
+    expect(mine).toEqual(path.filter((L) => !L.f));
+    expect(mine.length).toBe(path.length - faithL.length);
+    const after = path.find((L, i) => i > path.indexOf(faithL[0]) && !L.f)!;
+    expect(core.lessonNo(after, st)).toBe(core.lessonNo(after) - faithL.length);
+    expect(core.lessonNo(faithL[0], st)).toBe(0);
+    expect(core.lessonWalk({}, st).path).toBe(mine);
+    expect(core.lessonMap(core.lessonWalk({}, st)).lands.flatMap((l) => l.stones).length).toBe(mine.length);
+    expect(
+      core
+        .lessonTimeline({}, st)
+        .coming.flatMap((x) => x.left)
+        .some((L) => L.f),
+    ).toBe(false);
+  });
+  it('a faith lesson still opens from Learn, and when finished stays finished and counted', () => {
+    const st = ans('no');
+    const L = faithL[0];
+    const w0 = core.lessonWalk({}, st);
+    expect(core.lessonGate(L, w0)).toBe('open');
+    expect(core.nextAfter(L, w0)).toBe(w0.next);
+    const days = { '2026-10-02': { p: { ls: [L.id] } } } as unknown as core.Days;
+    const w = core.lessonWalk(days, st);
+    expect(w.done.has(L.id)).toBe(true);
+    expect(w.next).toBe(path[0]);
+    expect(core.lessonCount(w)).toEqual({ done: 1, of: path.length - faithL.length + 1 });
+    /* finishing it does not make the path stop anywhere */
+    expect(core.lessonsEarly(days, st).size).toBe(0);
+  });
+  it('a re-read for a person who said No is never a faith lesson', () => {
+    const st = ans('no');
+    for (let i = 0; i < 60; i++) expect(core.reviewPick(core.addDays('2026-10-01', i), st).f).toBeFalsy();
+  });
+  it('checkpoint numbers do not skip over the faith lessons', () => {
+    const st = ans('no');
+    const nums = core
+      .lcheckOrder()
+      .filter((n) => !core.lcheckPair(n)!.b.f)
+      .map((n) => core.lcheckNo(n, st));
+    expect(nums).toEqual(nums.map((_, i) => i + 1));
   });
 });

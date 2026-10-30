@@ -18,7 +18,6 @@ import {
   minToClock,
   reachedOn,
   rhythm,
-  RK_DAYS,
   ROUTINE_KEYS,
   streaks,
   sumDay,
@@ -28,7 +27,6 @@ import { lessonOpen } from './accounts';
 import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
-import { rkRunWords } from './rekindle';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
 
 /** the short status on the right of a stop */
@@ -158,16 +156,17 @@ export function sayGoodnight(days: Days, tk: DayKey, f: CheckinForm | null, at: 
 }
 /** the word after saving the check-in */
 export function checkinSaveText(days: Days, st: Settings, key: DayKey, tk: DayKey): string {
-  const sk = streaks(days, st, tk);
   const s = sumDay(days[key]);
   const runs = !!st.day1 && key === tk && st.cleanMode !== 'step';
-  if (s.slipped)
-    return (
-      'Saved. A slip is data, not a reset.' + (runs && sk.open && sk.open.k === tk ? ' ' + Object.values(rkRunWords(sk.open.run, sk.open.k)).join(' ') : '')
-    );
-  /* what holds, not a run that can drop to zero: the same measure Today shows */
-  const m = runs && key >= (st.day1 as string) ? todayMeasure(days, st, tk) : null;
-  return m && m.n > 0 ? `Saved. ${m.n} ${m.of}.` : 'Saved.';
+  if (s.slipped) return 'Saved. A slip is data, not a reset.';
+  if (!runs || key < (st.day1 as string)) return 'Saved.';
+  /* the same count Today shows */
+  if (st.cleanMode === 'gentle') {
+    const m = todayMeasure(days, st, tk);
+    return m && m.n > 0 ? `Saved. ${m.n} ${m.of}.` : 'Saved.';
+  }
+  const cur = streaks(days, st, tk).cur;
+  return cur > 0 ? `Saved. ${cur} ${cur === 1 ? 'day' : 'days in a row'} with no slip.` : 'Saved.';
 }
 /** the summary line under a saved check-in */
 export function checkinLine(days: Days, key: DayKey, c: Checkin): string {
@@ -461,14 +460,14 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
     const w = lessonWalk(days, st);
     const nl = w.next;
     if (nl && lessonOpen(nl, w.done, account)) {
-      o.t = 'Lesson ' + lessonNo(nl) + ': ' + nl.title;
+      o.t = 'Lesson ' + lessonNo(nl, st) + ': ' + nl.title;
       o.s = lmin(nl);
       o.act = 'lesson';
       o.v = nl.id;
     } else {
       /* a re-read is one behind Up next on the path (one read early waits for the path to reach it) */
       const read = LESSONS.filter((L) => w.walked.has(L.id));
-      const R = account ? reviewPick(tk) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+      const R = account ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
       o.t = 'Read again: ' + R.title;
       o.s = 'A quick re-read';
       o.pts = 5;

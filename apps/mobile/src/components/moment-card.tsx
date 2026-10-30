@@ -1,11 +1,11 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
-   next stop, a run question left open, the Sunday review, the first week, a first pattern, days away), the whole band one
+   next stop, the Sunday review, the first week, a first pattern, days away), the whole band one
    button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (the hard hours, a talk-through, a counting note,
-   a word about reminders, Day 1, a run that ended) keep their cards. Under it, one quiet line names the next moment when
+   a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
-import { comebackNow, rkComebackSay, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
+import { comebackNow, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -17,7 +17,7 @@ import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
 import { CountNotes } from '@/components/today';
 import { Flames } from '@/components/rekindle';
-import { PauseBanner, RunKeptCard, useLogActions } from '@/components/today-log';
+import { PauseBanner, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
 import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
@@ -47,8 +47,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <RiskCard snap={snap} tk={tk} now={now} />;
     case 'talk':
       return <TalkCard snap={snap} now={now} />;
-    case 'run-ended':
-      return <RunKeptCard snap={snap} tk={tk} />;
     case 'comeback':
       return <Comeback m={m} snap={snap} tk={tk} />;
     case 'tell-start':
@@ -58,8 +56,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <CountNotes snap={snap} tk={tk} />;
     case 'nudge':
       return <NudgeCard snap={snap} tk={tk} />;
-    case 'run-ask':
-      return <Band m={m} sky="sun" onPress={() => router.push('/sunrise')} />;
     case 'slip-day':
       return <Tile m={m} sky="sun" onPress={() => didSmall(tk)} />;
     case 'calm': {
@@ -74,13 +70,15 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <Band m={m} sky="violet" onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'patterns' } })} />;
     case 'away':
       return <Band m={m} sky="sky" onPress={() => router.push('/back')} />;
+    case 'recheck':
+      return <Band m={m} sky="violet" onPress={() => router.push('/recheck')} />;
     default:
       return <Done m={m} />;
   }
 }
 
 /* the band's button stays short; the longer action is said in its label for screen readers */
-const PILL: Partial<Record<string, string>> = { sunrise: 'Choose', review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
+const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
 
 /* one band in the colors of its moment, the whole band one button */
 function Band({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {
@@ -182,9 +180,6 @@ function Comeback({ m, snap, tk }: { m: Moment; snap: Snapshot; tk: string }) {
         <Flames on={cb.flames.map((f) => f.on)} />
         <T v="h2" accessibilityRole="header" style={{ textAlign: 'center' }}>
           {m.h}
-        </T>
-        <T tone="muted" style={{ textAlign: 'center' }}>
-          {rkComebackSay(cb.n)}
         </T>
       </View>
       <Pressable

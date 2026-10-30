@@ -176,7 +176,7 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Notes for App Review:**
 
   > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
-  > free account (email, or Sign in with Apple) opens the lessons after the first three. Accounts can be deleted in the
+  > free account (email, or Sign in with Apple) opens the lessons after the first eight. Accounts can be deleted in the
   > app: More, Settings, Sync, Delete my account (an account made with Apple asks Apple once more and revokes its token).
   >
   > Tips: three non-consumable in-app purchases (daybook.tip.kind $5, daybook.tip.generous $10, daybook.tip.amazing
@@ -384,7 +384,7 @@ they would be Play in-app products, and that is a separate piece of work.
      (1080 × 1920), all made by `npm run shots`. The Android ones show no tip button, as the Android app has none.
    - **Category:** Health & Fitness. **Contact email:** jeffreydsmith.cs@gmail.com. **Privacy policy:**
      https://d3c9g6kent5bsr.cloudfront.net/privacy.html
-   - **App access:** some features need a sign-in (lessons after the first three): give the review test account from step
+   - **App access:** some features need a sign-in (lessons after the first eight): give the review test account from step
      6, typed in by you.
    - **Ads:** no. **Target audience:** 16 and older (16 to 17, 18 and over), to match the App Store's 16+; not under 13, which would bring in
      the Families rules. **Content rating:** answer the questionnaire as in step 6 (porn is named and discussed plainly; no

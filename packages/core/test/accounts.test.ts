@@ -7,12 +7,14 @@ const st0 = (start: string) => core.normSettings({ ...core.defaultSettings(start
 
 it('without an account, the first lessons on the path are open, and finished ones stay open', () => {
   const free = core.freeLessons();
-  expect(free.map((L) => L.id)).toEqual(['l1', 'l2', 'l3']);
-  const l4 = core.lessonById('l4')!;
+  expect(core.LEARN_FREE).toBe(8);
+  expect(free).toEqual(core.lessonPath().slice(0, core.LEARN_FREE));
+  const after = core.lessonPath()[core.LEARN_FREE];
   expect(core.lessonOpen(free[0], new Set(), false)).toBe(true);
-  expect(core.lessonOpen(l4, new Set(), false)).toBe(false);
-  expect(core.lessonOpen(l4, new Set(['l4']), false)).toBe(true);
-  expect(core.lessonOpen(l4, new Set(), true)).toBe(true);
+  expect(core.lessonOpen(free[core.LEARN_FREE - 1], new Set(), false)).toBe(true);
+  expect(core.lessonOpen(after, new Set(), false)).toBe(false);
+  expect(core.lessonOpen(after, new Set([after.id]), false)).toBe(true);
+  expect(core.lessonOpen(after, new Set(), true)).toBe(true);
   expect(core.lessonsLocked(core.LESSONS, new Set(), false)).toBe(core.LESSONS.length - core.LEARN_FREE);
   expect(core.lessonsLocked(core.LESSONS, new Set(), true)).toBe(0);
 });
@@ -54,7 +56,7 @@ it('the words are warm, with no contractions', () => {
 
 it('without an account, Next up never offers a lesson that waits behind one', () => {
   const st = st0('2026-09-01');
-  const days = { '2026-10-01': { p: { ls: ['l1', 'l2', 'l3'] } } } as unknown as core.Days;
+  const days = { '2026-10-01': { p: { ls: core.freeLessons().map((L) => L.id) } } } as unknown as core.Days;
   const done = core.lessonsDone(days);
   let seen = 0;
   for (let h = 0; h < 24; h++) {

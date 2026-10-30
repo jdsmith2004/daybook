@@ -193,7 +193,6 @@ export function Collapse({
   sub,
   right,
   icon,
-  iconBg,
   iconInk,
   open,
   onToggle,
@@ -219,13 +218,9 @@ export function Collapse({
     else Animated.timing(turn, { toValue: open ? 1 : 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
   }, [open, reduce, turn]);
   return (
-    <View style={[s.det, { borderColor: tone === 'now' ? c.accent : c.cardEdge, backgroundColor: c.surface }]}>
+    <View style={[s.det, { backgroundColor: c.surface }, tone === 'now' && { borderWidth: 1.5, borderColor: c.accent }]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.sum}>
-        {icon ? (
-          <View style={[s.ic, { backgroundColor: iconBg || c.accentSoft }]}>
-            <Icon name={icon} size={20} color={iconInk || c.accentText} />
-          </View>
-        ) : null}
+        {icon ? <Icon name={icon} size={22} color={iconInk || c.accentText} /> : null}
         <View style={{ flex: 1, gap: 1 }}>
           <T v="label">{title}</T>
           {sub ? (
@@ -300,10 +295,9 @@ const s = StyleSheet.create({
   stepV: { fontFamily: font.display, fontSize: 17, minWidth: 58, textAlign: 'center', fontVariant: ['tabular-nums'] },
   chk: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingVertical: 4 },
   box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  det: { borderRadius: 18, borderWidth: 1.5, overflow: 'hidden' },
-  sum: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, minHeight: 60 },
-  ic: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  in: { paddingHorizontal: 14, paddingBottom: 14, gap: 12 },
+  det: { borderRadius: 20, overflow: 'hidden' },
+  sum: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingHorizontal: 16, minHeight: 60 },
+  in: { paddingHorizontal: 16, paddingBottom: 16, gap: 12 },
   /* while it grows or folds, the content keeps its own height (out of the flow), so its height stays one steady number */
   measure: { position: 'absolute', top: 0, left: 0, right: 0 },
 });

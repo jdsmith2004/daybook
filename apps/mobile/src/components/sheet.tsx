@@ -56,7 +56,7 @@ export function SheetFrame({
               accessibilityRole="button"
               accessibilityLabel="Close"
               onPress={onClose}
-              style={[s.x, { backgroundColor: c.surface, borderColor: c.cardEdge }]}>
+              style={[s.x, { backgroundColor: c.surface }]}>
               <Icon name="x" color={c.ink} />
             </Pressable>
           </View>
@@ -91,6 +91,6 @@ const s = StyleSheet.create({
   /* it fills the screen, so a Done in a Dock sits at the bottom */
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  x: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   h: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginTop: 4 },
 });

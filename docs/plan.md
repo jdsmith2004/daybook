@@ -1,5 +1,36 @@
 # What is planned next
 
+## The shape of the day (the owner, October 31, 2026)
+
+**Where it is:** drawn, waiting for the owner. Nothing built or merged. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+
+The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
+
+**The view:** three things a day is fine. What is wrong is what the day counts, what it pushes at night, what the check-in gives back, and what happens after day 49.
+
+**What the code says:** the three stops are the same on day 1 and day 300. An unread lesson stays the big card at 11 PM. The check-in's numbers change nothing on Today. There are 49 lessons, then "Read again" for 5 points. Nothing records how many people reach Goodnight.
+
+**What the research says** (no study tests this routine; nearly all of it is smoking and alcohol, read mostly from summaries): check-ins are not a treatment on their own (McCarthy 2015). Lower day-level confidence foreshadowed a next-day lapse, and daily stress did not (Shiffman, 305 smokers). More lessons did not mean more change (Rooke 2010). The one porn trial, Hands-off (Bothe 2022), lost 89% of its program group. Same-day coping after a lapse cut a second lapse that day (Kirchner, Shiffman).
+
+**What is drawn:**
+
+1. The lesson is the morning's card. The check-in is offered early and ends in Done, so bed holds only Goodnight.
+2. A confidence question takes the place of stress, and the check-in gives back one true line from the person's own log.
+3. An urge ridden out shows on the day's line.
+4. From the wind-down hour, Goodnight takes the card, and an unread lesson "can wait for tomorrow".
+5. After Goodnight there is no "All done": the flame sleeps on Today until morning, with "Cannot sleep?" under it. This is the "Asleep, and it asks" option in "When the day is finished" below.
+6. The night of a slip: one door for the next hour and Goodnight. The lesson and the check-in are gone until tomorrow.
+7. The morning after a low answer, a plan for tonight comes first, once. This is the first time an answer changes what Today offers.
+8. When the lessons are finished, the person's own words take the card, and re-reads stay in Learn.
+
+**The real choice against "Two stops" (below):** both end in the sleeping flame. Two stops puts the check-in straight before Goodnight, which is the shortest day. This one keeps it earlier, because for someone whose hard hours are at night, three numbers in bed with the phone in hand is the door to the danger. Its cost: a check-in not done by evening is more likely to be missed, and Pattern reads those numbers.
+
+**Risks:** the owner turned down a merged Bedtime on October 25 without saying why. "A reason to open at night" may be harm, since the phone is the means. Stress stops being asked, so its charts stop growing; old days keep theirs. The numbers in the pictures are drawn, and the line that comes back needs a rule for when it is true and hopeful, and for what shows when it is not. A long-term flame like the sun sits in a daytime sky at 11 PM on Today, as it does now.
+
+**Steps once chosen, in order:** the count for Goodnight and for switching a stop off, with the privacy page (_medium_). The wind-down merges, then the flame motion (_high_ for its points, already built). The rules on Today in `dayRhythm` and `stopTiles` (_medium_). The confidence question and the line that comes back (_high_: it touches what is stored and charted). Day 50 (_medium_). Each is shown on the simulator as a release build before any merge.
+
+**Helps Daybook earn or grow:** the line that comes back is what `patPreview` can lead with. A day that gets lighter, and a sleeping flame, are worth a rating and a short video. No ask is added.
+
 ## The wind-down: put your flame to bed (the owner, October 31, 2026)
 
 The owner: "look at wind down, is it contributing to the app, what does the app need, give me your ideas or do a redesign and have me

@@ -77,6 +77,8 @@ Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone
 2. On the night of a slip, the lesson and the check-in go quiet, leaving only the night's one step. Nothing earned changes.
 3. A count of Goodnights finished, in `PULSE_KEYS` and on the privacy page in the same change. The server refuses a new name until the sync service is deployed, so it needs a deploy to count.
 
+**Built, not merged (claude/day-shape-c29870):** all three. Picture: `docs/today-review/day-night-rules.png`. A slip night whose Goodnight is done says "Rest well." and not "All done", since the lesson and check-in were set aside, not done. The card follows the line, so on a normal night it sits under two rows and the hard-hours note under it needs a scroll.
+
 The rest below is not being built: no sleeping flame on Today, no "Cannot sleep?" row, the stop keeps the name Wind-down, the check-in is unchanged, and no confidence question, day 50 or switch for turning a stop off. It stays as the record.
 
 **Where it is:** the owner liked it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.

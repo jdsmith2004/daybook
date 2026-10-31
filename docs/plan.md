@@ -2,7 +2,7 @@
 
 ## The shape of the day (the owner, October 31, 2026)
 
-**Where it is:** drawn, waiting for the owner. Nothing built or merged. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+**Where it is:** the owner likes it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
 
 The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
 
@@ -23,7 +23,7 @@ The owner: "Is that the right thing to have them do? Is that what's going to hel
 7. The morning after a low answer, a plan for tonight comes first, once. This is the first time an answer changes what Today offers.
 8. When the lessons are finished, the person's own words take the card, and re-reads stay in Learn.
 
-**The real choice against "Two stops" (below):** both end in the sleeping flame. Two stops puts the check-in straight before Goodnight, which is the shortest day. This one keeps it earlier, because for someone whose hard hours are at night, three numbers in bed with the phone in hand is the door to the danger. Its cost: a check-in not done by evening is more likely to be missed, and Pattern reads those numbers.
+**Chosen over "Two stops" (below):** both end in the sleeping flame. Two stops puts the check-in straight before Goodnight, which is the shortest day. This one keeps it earlier, because for someone whose hard hours are at night, three numbers in bed with the phone in hand is the door to the danger. Its cost: a check-in not done by evening is more likely to be missed, and Pattern reads those numbers.
 
 **Risks:** the owner turned down a merged Bedtime on October 25 without saying why. "A reason to open at night" may be harm, since the phone is the means. Stress stops being asked, so its charts stop growing; old days keep theirs. The numbers in the pictures are drawn, and the line that comes back needs a rule for when it is true and hopeful, and for what shows when it is not. A long-term flame like the sun sits in a daytime sky at 11 PM on Today, as it does now.
 

@@ -809,8 +809,8 @@ export default function Log() {
   );
 }
 
-/* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line */
-const keepLast = (line: string) => line.replace(/ (\S+)$/, '\u00A0$1');
+/* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line, and "I" stays with "will" */
+const keepLast = (line: string) => line.replace(', I will ', ', I\u00A0will ').replace(/ (\S+)$/, '\u00A0$1');
 
 /* "✓ Saved · Slipped at 11:40 PM  +10  Undo" */
 function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?: () => void }) {

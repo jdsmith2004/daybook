@@ -49,7 +49,7 @@ Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; i
 - [x] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
 - [ ] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
 
-**Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip.
+**Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip; a plan at its hour sits right under Already happened and Planning a slip?, and the hard-hours line then says "You have your plan."; the fire's glow reaches under the clock with no hard edge.
 
 **Gone for good:** the chart of expected against real, "What did it cost?" and the second feelings page.
 

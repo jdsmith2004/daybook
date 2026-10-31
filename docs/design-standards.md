@@ -22,6 +22,8 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
 - **No icon in a tinted circle** at the head of a row or card. A stop, a badge or a moment that wants a shape uses a real one
   (`Shape`, `Medal`), and it means something.
 - **One filled button on a view,** in `c.accent`; red only for SOS and danger. The rest are quiet fills or words. 44 tall at least.
+- **The tab bar.** On iPhone it is Apple's own glass bar (`app-tabs.ios.tsx`), with the round SOS (`SosButton`, the word on a warm
+  button) floating over its middle; it never minimizes. Android and the web draw their own, with the same SOS and a fade above it.
 - **The lip** (the small hard shadow that presses down) is for the main button and big choice cards in full-screen moments, and
   the round SOS. Nothing else has one.
 - **Few words.** A subtitle that says what the screen already shows goes. Paragraphs become sentences, sentences become labels.

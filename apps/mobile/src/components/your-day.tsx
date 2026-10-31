@@ -49,7 +49,21 @@ export function lookOf(sky: StopTile['sky'], c: Palette & { scheme: 'light' | 'd
   }
 }
 
-export function YourDay({ snap, tk, now, hero, foot }: { snap: Snapshot; tk: string; now: number; hero?: Moment | null; foot?: string }) {
+export function YourDay({
+  snap,
+  tk,
+  now,
+  hero,
+  foot,
+  footOff,
+}: {
+  snap: Snapshot;
+  tk: string;
+  now: number;
+  hero?: Moment | null;
+  foot?: string;
+  footOff?: boolean;
+}) {
   const c = useTheme();
   const st = snap.settings!;
   const r = stopTiles(snap.days, st, tk, now);
@@ -81,7 +95,7 @@ export function YourDay({ snap, tk, now, hero, foot }: { snap: Snapshot; tk: str
           Nothing is switched on for today. Tap Change to turn parts of the day back on.
         </T>
       )}
-      <View style={s.foot}>
+      <View style={[s.foot, footOff && { opacity: 0 }]}>
         <T v="small" tone="muted" style={{ flex: 1 }}>
           {[foot, changed ? changed + (changed === 1 ? ' part' : ' parts') + ' changed for today.' : ''].filter(Boolean).join(' ')}
         </T>
@@ -264,7 +278,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   rowT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   rowS: { fontFamily: font.body, fontSize: 13 },
-  foot: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, paddingLeft: RAIL + 8, paddingRight: 4 },
+  foot: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, paddingLeft: RAIL + 8, paddingRight: 4 },
   change: { minHeight: 44, justifyContent: 'center' },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },

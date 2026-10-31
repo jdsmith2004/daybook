@@ -1,4 +1,4 @@
-/* The tab bar, the same on iOS, Android and the web: Today, Journal, a raised SOS button in the middle (it opens SOS, it is not a
+/* The tab bar on Android and the web (the iPhone uses Apple's own, app-tabs.ios.tsx): Today, Pattern, a raised SOS button in the middle (it opens SOS, it is not a
    page), Learn, and More. Like the legacy tab bar. It also notes which tab is showing, so a page's Back can name it. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
@@ -90,7 +90,7 @@ const s = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 52, paddingVertical: 4 },
   label: { fontFamily: font.bodySemi, fontSize: 12 },
   /* raised, half out of the bar, so its lip stays inside the bar on a phone with a Home button too */
-  sos: { position: 'absolute', top: -32 },
+  sos: { position: 'absolute', top: -30 },
   /* what scrolls fades out just above the bar, so nothing is cut in half at its edge */
   fade: { position: 'absolute', left: 0, right: 0, top: -29, height: 28 },
 });

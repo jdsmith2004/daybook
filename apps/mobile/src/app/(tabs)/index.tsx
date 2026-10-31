@@ -47,7 +47,7 @@ import {
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { AppState, Platform, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
@@ -193,7 +193,12 @@ export default function Today() {
     const x = riskToKeep(snap.days, st, tk, now);
     if (!x) return;
     update((s0) => ({ ...s0, days: keepHard(s0.days, x.k, x.r.win.start) }));
-    say((x.k === tk ? 'You got through ' : 'Last night you got through ') + x.r.win.label + ', your hardest hours.');
+    const st0 = x.r.win.start;
+    say(
+      (x.k === tk ? 'You got through ' : st0 >= 17 || st0 < 5 ? 'Last night you got through ' : 'Yesterday you got through ') +
+        x.r.win.label +
+        ', your hardest hours.',
+    );
   }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
   /* Today always opens on the flame and the next step: once it is out of sight (another tab, a lesson, a page, or the app
@@ -238,6 +243,8 @@ export default function Today() {
   const quiet = useQuietAsks();
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
   const [past, setPast] = useState(false);
+  /* the line under Your day sits behind the iPhone's glass tab bar until the page moves, so it waits until then */
+  const [atRest, setAtRest] = useState(true);
   const scrolled = useRef(0);
   const sizeFor = useTodaySize();
 
@@ -291,6 +298,7 @@ export default function Today() {
         bare={!past}
         onScroll={(y) => {
           if (y > size.sky - 60 !== scrolled.current > size.sky - 60) setPast(y > size.sky - 60);
+          if (y > 12 === atRest) setAtRest(y <= 12);
           scrolled.current = y;
         }}
         pullDown={(px) => {
@@ -317,6 +325,7 @@ export default function Today() {
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
         {calm ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
         <YourDay
+          footOff={Platform.OS === 'ios' && atRest}
           snap={snap}
           tk={tk}
           now={now}

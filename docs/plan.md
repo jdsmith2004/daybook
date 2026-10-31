@@ -1,5 +1,24 @@
 # What is planned next
 
+## The home screen, on its branch (the owner, October 30, 2026)
+
+**Where it is:** `claude/home-path`, not merged; the owner has it on the simulator. The owner chose the "Now" drawing: the warm card and the
+line on the left.
+
+**Built:**
+
+- Your day is on the home screen, with the two quiet buttons right under the flame.
+- Notifications are hard to ignore: the reminders strip is back under the two quiet buttons and bigger. The hard hours card is SOS's color,
+  and short enough to fit above the tab bar, so it lost its two lines of explaining and the lesson's title.
+- The iPhone uses Apple's own glass tab bar, with the round SOS floating over its middle, set never to minimize. This is one commit, easy to
+  drop. Android and the web keep the bar the app draws, with a fade above it so nothing is cut in half.
+- SOS is the word on a warm button, not the lifebuoy.
+
+**Open:**
+
+- Whether real hard hours notifications should be Time Sensitive, so they get through Focus. That needs an Apple capability on the app.
+- The glass bar has not been seen on a real iPhone, or on iOS older than 26, where it looks different.
+
 ## No AI slop: every screen reviewed (the owner, October 30, 2026)
 
 **What the owner asked for:** research what separates a well-built app from AI slop, then go through everything and fix it ("nothing's off

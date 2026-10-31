@@ -9,7 +9,7 @@ import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 /** the button's size */
-export const SOS_SIZE = 70;
+export const SOS_SIZE = 66;
 
 export function SosButton() {
   const c = useTheme();

@@ -9,6 +9,8 @@ import { useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { tabRoom } from '@/lib/tab-room';
+
 import { Appear } from '@/components/appear';
 import { KeyboardRoom, useKeyboardRoom } from '@/components/keyboard';
 import { PULL_ARM, PullDoor, rubber } from '@/components/pull-door';
@@ -89,7 +91,10 @@ export function Screen({
       automaticallyAdjustKeyboardInsets
       keyboardDismissMode="interactive"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[s.content, { paddingTop: top ? 0 : inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : 32 }]}>
+      contentContainerStyle={[
+        s.content,
+        { paddingTop: top ? 0 : inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : tabRoom(inset.bottom) + 32 },
+      ]}>
       {top ? <View style={s.top}>{top}</View> : null}
       <Appear webOnly style={[s.col, top ? { marginTop: 16 } : null, hidden ? { opacity: 0 } : null]}>
         {back ? (

@@ -88,7 +88,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     [-9, '07:50', 'Calm', 'First morning run in weeks. Legs heavy, head light.'],
   ];
   /* ?jn=0 shows the journal before its first entry */
-  const noJn = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('jn') === '0';
+  const noJn = typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).get('jn') === '0';
   if (!noJn)
     jn.forEach(([n, time, w, t], i) => {
       const d = day(DEMO.day, n);

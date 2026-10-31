@@ -77,6 +77,11 @@ describe('the hours after a slip are the chip, in any mode', () => {
     expect([h.eb, h.n, h.unit, h.chip, h.star]).toEqual(['No slip', '1', 'day', '13 hours since your last slip', false]);
     expect(h.say).toBe('No slip: 1 day. 13 hours since your last slip.');
   });
+  it('on the day of the slip, the words over the number do not say no slip', () => {
+    const h = hero(st, at + 0.5 * H);
+    expect(h.eb).toBe('Still going');
+    expect(h.say).toContain('since your last slip');
+  });
   it('right after the slip: under an hour', () => {
     const h = hero(st, at + 5 * 60e3);
     expect([h.n, h.chip]).toEqual(['0', 'Under an hour since your last slip']);

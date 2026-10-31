@@ -85,7 +85,7 @@ import { OwnChip, OwnField } from '@/components/own';
 import { SafeTextButton } from '@/components/safe-text';
 import { SosPill } from '@/components/sos-pill';
 import { KnownLine, Sources } from '@/components/research';
-import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
+import { Dock, Finish, Middle, Pin, SceneFrame } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
 import { TalkArtView } from '@/components/talk-art';
@@ -323,11 +323,15 @@ export default function TalkIt() {
   let foot: React.ReactNode = null;
   const next = (to: Step, ok = true, label = 'Next') =>
     ok ? (
-      <Appear by={10} duration={220}>
-        <Button label={label} onPress={() => go(to)} />
-      </Appear>
+      <Pin>
+        <Appear by={10} duration={220}>
+          <Button label={label} onPress={() => go(to)} />
+        </Appear>
+      </Pin>
     ) : (
-      <View style={s.btnSpace} />
+      <Pin>
+        <View style={s.btnSpace} />
+      </Pin>
     );
 
   /* "Read the research": every card in full, a quiet link away */

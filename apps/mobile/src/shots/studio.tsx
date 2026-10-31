@@ -9,6 +9,8 @@
      zoom     the phone's width as a share of the shot's (default FRAME.width); a big phone runs off the bottom edge
      top      where the phone starts, as a share of the shot's height (default CAPTION.phoneTop)
      pills    short facts under the caption, split by |, each with a check (only true ones: "Free|No account|No ads")
+     pic      in place of the live app, a picture of it from the iPhone simulator (scripts/shots-ios.ts), for the iPhone sizes: only there is Apple's
+              glass tab bar real (pic2, pic3 go with screen2, screen3)
      In a phone shot, screen2 is a second phone in front of the first, a little lower and to the right.
    When the image is ready to capture, window.__shotsReady is true (scripts/shots.ts waits for it). */
 import { flameFigureSvg } from '@daybook/core';
@@ -43,7 +45,7 @@ export default function Studio() {
   const bg: Bg = BACKGROUNDS[p.bg || 'night'] || BACKGROUNDS.night;
   const W = size.w / size.scale;
   const H = size.h / size.scale;
-  const screens = [p.screen, p.screen2, p.screen3].filter((x): x is string => !!x);
+  const screens = [p.pic || p.screen, p.pic2 || p.screen2, p.pic3 || p.screen3].filter((x): x is string => !!x);
   const [loaded, setLoaded] = useState(0);
   useEffect(() => {
     window.__shotsReady = false;
@@ -290,7 +292,8 @@ function Phone({ width, device, screen, p, onReady }: { width: number; device: '
   const bez = width * f.bezel;
   const sw = width - bez * 2;
   const s = sw / FRAME.viewport.w;
-  const sh = FRAME.viewport.h * s;
+  const pic = screen.endsWith('.png');
+  const sh = pic ? sw * FRAME.picRatio : FRAME.viewport.h * s;
   const dark = p.theme === 'dark';
   const appBg = dark ? '#17142B' : '#FFF8EB';
   const ink = dark ? '#FFFFFF' : '#1A1530';
@@ -331,28 +334,31 @@ function Phone({ width, device, screen, p, onReady }: { width: number; device: '
     overflow: 'hidden',
     background: appBg,
   };
-  const children: ReactNode[] = [
-    /* the app, under the status bar */
-    h('iframe', {
-      key: 'app',
-      ref: frame,
-      src,
-      onLoad: settle,
-      scrolling: 'no',
-      style: {
-        position: 'absolute',
-        left: 0,
-        top: status * s,
-        width: FRAME.viewport.w,
-        height: FRAME.viewport.h - status,
-        border: 0,
-        transform: `scale(${s})`,
-        transformOrigin: '0 0',
-        background: appBg,
-      },
-    }),
-    <StatusBar key="sb" s={s} ink={ink} device={device} h={status} />,
-  ];
+  const children: ReactNode[] = pic
+    ? /* the picture already has its status bar and its island */
+      [h('img', { key: 'app', src: screen, onLoad: onReady, onError: onReady, style: { position: 'absolute', left: 0, top: 0, width: sw, height: sh } })]
+    : [
+        /* the app, under the status bar */
+        h('iframe', {
+          key: 'app',
+          ref: frame,
+          src,
+          onLoad: settle,
+          scrolling: 'no',
+          style: {
+            position: 'absolute',
+            left: 0,
+            top: status * s,
+            width: FRAME.viewport.w,
+            height: FRAME.viewport.h - status,
+            border: 0,
+            transform: `scale(${s})`,
+            transformOrigin: '0 0',
+            background: appBg,
+          },
+        }),
+        <StatusBar key="sb" s={s} ink={ink} device={device} h={status} />,
+      ];
   if (f.homeBar)
     children.push(
       h('div', {

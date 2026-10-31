@@ -4,7 +4,7 @@
 import { emblemLayers } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,9 @@ import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { MAX_WIDTH, NightContext, nightInk, skies, useTheme, type Sky } from '@/lib/theme';
+
+/* a step's main button, handed up to the frame (Pin) */
+const PinCtx = createContext<((node: ReactNode) => void) | null>(null);
 
 export function SceneFrame({
   title,
@@ -65,6 +68,8 @@ export function SceneFrame({
   const scroll = useRef<ScrollViewInstance>(null);
   /* a picture inside (FitArt) shrinks so the page fits a short phone */
   const fit = useFitRoom();
+  const [stepPin, setStepPin] = useState<ReactNode>(null);
+  const held = pin ?? stepPin;
   const at = dots ? dots.i + '/' + dots.n : bar ? bar.label : '';
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });
@@ -74,12 +79,11 @@ export function SceneFrame({
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
         ref={scroll}
+        /* it starts under the clock, so a long page scrolls away beneath it and never through it */
+        style={{ marginTop: inset.top }}
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
-        contentContainerStyle={[
-          s.scroll,
-          { paddingTop: inset.top + 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : pin ? 12 : inset.bottom + (SHORT ? 10 : 24) },
-        ]}
+        contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : held ? 12 : inset.bottom + (SHORT ? 10 : 24) }]}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
@@ -113,7 +117,7 @@ export function SceneFrame({
               ) : null}
               <View style={[s.card, SHORT && s.cardShort, bar && !bare && (SHORT ? s.paperShort : s.paper)]}>
                 {bar ? <Paper on={!bare} /> : null}
-                {children}
+                <PinCtx.Provider value={setStepPin}>{children}</PinCtx.Provider>
               </View>
               {footer ? <View style={s.foot}>{footer}</View> : null}
             </View>
@@ -121,9 +125,9 @@ export function SceneFrame({
         </FitProvider>
         {sheet && !pinSheet ? <Sheet bottom={inset.bottom}>{sheet}</Sheet> : null}
       </ScrollView>
-      {pin ? (
+      {held ? (
         <View style={[s.pinned, { paddingBottom: inset.bottom + (SHORT ? 10 : 24) }]}>
-          <View style={s.pinCol}>{pin}</View>
+          <View style={s.pinCol}>{held}</View>
         </View>
       ) : null}
       {sheet && pinSheet ? (
@@ -189,6 +193,17 @@ function Dot({ state, colors }: { state: 0 | 1 | 2; colors: [string, string, str
     direct child of the frame's content; everything above stays where it is. */
 export function Dock({ children }: { children: ReactNode }) {
   return <View style={s.dock}>{children}</View>;
+}
+
+/** a step's main button, held at the bottom of the screen while a long list above it scrolls, so a small phone never has to
+    scroll to find it. Goes where the button would go, inside the Dock. */
+export function Pin({ children }: { children: ReactNode }) {
+  const set = useContext(PinCtx);
+  useLayoutEffect(() => {
+    set?.(children);
+  });
+  useLayoutEffect(() => () => set?.(null), [set]);
+  return set ? null : <>{children}</>;
 }
 
 /** one step of a full-screen moment. Give it a new `key` for each step: it slides in from the right (dir 1), from the left

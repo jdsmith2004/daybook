@@ -76,6 +76,8 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   if (t) {
     const h = hoursSinceSlip(days, st, tk, nowMs);
     const hours = h != null ? slipHoursChip(h) : null;
+    /* on the day of a slip, "No slip" over the count would not be true */
+    const label = (days[tk]?.events || []).some((e) => e.outcome === 'slipped') ? 'Still going' : 'No slip';
     if (st.cleanMode !== 'gentle') {
       const cur = runLedger(days, st, tk).cur;
       const g = gradInfo(days, st, tk);
@@ -84,7 +86,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
       const best = longest > cur ? 'best ' + longest + (longest === 1 ? ' day' : ' days') : null;
       const chip = hours || way || best;
       if (st.day1 === tk && cur === 1) return out('Quitting', 'Day 1', 'is today', chip);
-      return out('No slip', String(cur), cur === 1 ? 'day' : cur === 0 ? 'days' : 'days in a row', chip, !hours && !way && !!best);
+      return out(label, String(cur), cur === 1 ? 'day' : cur === 0 ? 'days' : 'days in a row', chip, !hours && !way && !!best);
     }
     if (t.k === 'grad') return out('Graduated', String(t.n), 'of the last ' + GRAD_WINDOW + ' days', hours || 'Still going');
     if (t.k === 'way') return out('Toward graduation', String(t.n), 'of ' + GRAD_DAYS, hours);
@@ -93,7 +95,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
     if (held && held.n > t.n) return out('Before you were away', String(held.n), held.of.replace(/^of the last /, 'of '), hours);
     if (t.of === 'Day 1 is today') return out('Quitting', 'Day 1', 'is today', hours);
     if (t.of === 'Today counts') return out('Still going', 'Today', 'counts', hours);
-    return out('No slip', String(t.n), t.of.replace(/ with no slip$/, ''), hours);
+    return out(label, String(t.n), t.of.replace(/ with no slip$/, ''), hours);
   }
   const p = phaseOf(tk, st);
   if (p.p !== 'tracking') return null;

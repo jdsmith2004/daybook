@@ -93,15 +93,17 @@ export function ToolGrid({
                   style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
                   <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.name, { color: c.ink }]}>{t.name}</Text>
+                    <View style={s.nameRow}>
+                      <Text style={[s.name, { color: c.ink, flexShrink: 1 }]}>{t.name}</Text>
+                      {isNew ? (
+                        <View style={[s.new, { backgroundColor: c.sun }]}>
+                          <Text style={[s.newT, { color: c.onSun }]}>New</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
                     {tag ? <Text style={[s.tag, { color: c.mintText }]}>{tag}</Text> : null}
                   </View>
-                  {isNew ? (
-                    <View style={[s.new, { backgroundColor: c.sun }]}>
-                      <Text style={[s.newT, { color: c.onSun }]}>New</Text>
-                    </View>
-                  ) : null}
                 </Pressable>
               );
             })}
@@ -131,6 +133,7 @@ const s = StyleSheet.create({
   name: { fontFamily: font.bodyBold, fontSize: 15 },
   desc: { fontFamily: font.body, fontSize: 13 },
   tag: { fontFamily: font.bodySemi, fontSize: 12, marginTop: 1 },
-  new: { position: 'absolute', top: 6, right: 6, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  new: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999 },
   newT: { fontFamily: font.bodyBold, fontSize: 11 },
 });

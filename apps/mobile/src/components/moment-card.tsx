@@ -67,7 +67,7 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
     case 'recheck':
       return <Band m={m} onPress={() => router.push('/recheck')} />;
     default:
-      return <Done m={m} />;
+      return null;
   }
 }
 
@@ -182,25 +182,6 @@ function Comeback({ m, snap, tk }: { m: Moment; snap: Snapshot; tk: string }) {
           {m.nx ? 'Next: ' + m.nx + ' ›' : m.btn || 'Nice'}
         </Text>
       </Pressable>
-    </Card>
-  );
-}
-
-/* the day is done (or nothing is planned): no button, just rest */
-function Done({ m }: { m: Moment }) {
-  const c = useTheme();
-  return (
-    <Card>
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-        <Icon name="check" size={24} color={c.mintText} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[s.eb, { color: c.mintText }]}>{m.eb}</Text>
-          <T v="h2" accessibilityRole="header">
-            {m.h}
-          </T>
-        </View>
-      </View>
-      <T tone="muted">{m.p}</T>
     </Card>
   );
 }

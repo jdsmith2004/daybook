@@ -35,6 +35,7 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
+import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -295,10 +296,15 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             <>
               <T style={{ fontFamily: font.bodySemi }}>{trendLine}</T>
               <T>{patNowLine(g, tk, lastSlip || null)}</T>
-              <Gaps g={g} />
-              <T v="small" tone="muted">
-                No-slip days before each slip, oldest on the left. The open bar is the stretch going now.
-              </T>
+              {/* all zeros draw an empty chart: the words above already say it */}
+              {g.now > 0 || g.runs.some((r) => r > 0) ? (
+                <>
+                  <Gaps g={g} />
+                  <T v="small" tone="muted">
+                    No-slip days before each slip, oldest on the left. The open bar is the stretch going now.
+                  </T>
+                </>
+              ) : null}
               <NumbersTable
                 cap="No-slip days before each slip"
                 head={['Slip', 'No-slip days before']}
@@ -526,6 +532,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
 /** the deeper part of the pattern: as it is for a supporter; otherwise its first part, faded behind a card that opens it */
 function Deep({ locked, onY, children }: { locked: boolean; onY: (y: number) => void; children: React.ReactNode }) {
   const c = useTheme();
+  /* never an ask in the hours after an SOS or a slip */
+  const quiet = useQuietAsks();
   if (!locked) return <>{children}</>;
   return (
     <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 14 }}>
@@ -533,7 +541,7 @@ function Deep({ locked, onY, children }: { locked: boolean; onY: (y: number) => 
         <View style={[{ gap: 14, opacity: 0.55 }, PEEK_BLUR]}>{children}</View>
         <LinearGradient colors={[c.bg + '00', c.bg]} style={s.peekFade} />
       </View>
-      {PATTERN_FROM != null ? <PatternCard /> : <UnlockCard extra="stats" />}
+      {quiet ? null : PATTERN_FROM != null ? <PatternCard /> : <UnlockCard extra="stats" />}
     </View>
   );
 }

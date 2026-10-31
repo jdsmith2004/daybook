@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "shots": "node --experimental-strip-types --no-warnings scripts/shots.ts",
+    "shots:ios": "node --experimental-strip-types --no-warnings scripts/shots-ios.ts",
     "story": "node --experimental-strip-types --no-warnings scripts/story.ts"
   },
   "devDependencies": {

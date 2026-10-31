@@ -4,8 +4,7 @@ import { notifyAsk, sosLead, urLastAt } from '@daybook/core';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Animated, Easing, Platform, Pressable, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -15,22 +14,25 @@ import { useNotifyEnv } from '@/lib/notify-env';
 import { useNotifyMem } from '@/lib/prefs';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
+import { TAB_TOP } from '@/lib/tab-room';
 import { font, useTheme } from '@/lib/theme';
 
-/** how far above the home indicator's room it sits: just over the circle */
-const ABOVE = 54;
+/** whether the words show now. One ask at a time: the reminders strip goes first, and it fills the room these words would sit in. iPhone only. */
+export function useSosLeadOn() {
+  const { snap, tk, now } = useStore();
+  const sos = useSos();
+  const env = useNotifyEnv();
+  const mem = useNotifyMem();
+  const st = snap.settings;
+  if (Platform.OS !== 'ios' || !st || !sosLead(snap.days, st, tk, now, urLastAt(sos.mem))) return false;
+  return !(env && notifyAsk(env, mem, snap.days, st, tk));
+}
 
 export function SosLead() {
   const c = useTheme();
-  const { snap, tk, now } = useStore();
-  const sos = useSos();
-  const inset = useSafeAreaInsets();
   const reduce = useReducedMotion();
-  const env = useNotifyEnv();
-  const mem = useNotifyMem();
   const bob = useRef(new Animated.Value(0)).current;
-  const st = snap.settings;
-  const on = !!st && sosLead(snap.days, st, tk, now, urLastAt(sos.mem));
+  const on = useSosLeadOn();
   useEffect(() => {
     if (!on || reduce) return;
     const loop = Animated.loop(
@@ -42,11 +44,9 @@ export function SosLead() {
     loop.start();
     return () => loop.stop();
   }, [on, reduce, bob]);
-  if (!on || !st) return null;
-  /* one ask at a time: the reminders strip goes first, and it fills the room these words would sit in */
-  if (env && notifyAsk(env, mem, snap.days, st, tk)) return null;
+  if (!on) return null;
   return (
-    <Animated.View style={[s.wrap, { bottom: inset.bottom + ABOVE, transform: [{ translateY: bob }] }]}>
+    <Animated.View style={[s.wrap, { bottom: TAB_TOP, transform: [{ translateY: bob }] }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="SOS. Help with an urge."

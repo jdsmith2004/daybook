@@ -55,13 +55,14 @@ import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
+import { TAB_TOP } from '@/lib/tab-room';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 type Pane = 'lessons' | 'tools';
 /** where the next lesson sits on the screen when the page opens: a little above the middle, so its card opens low */
 const AIM = 0.45;
-/** room kept under a stone's opened card: the SOS button rises about 30 points above the tab bar, and a little air */
-const CLEAR = 44;
+/** room kept under a stone's opened card: the tab bar and the SOS button that rises over it, and a little air */
+const CLEAR = TAB_TOP + 8;
 
 export default function Learn() {
   const params = useLocalSearchParams<{ pane?: string }>();

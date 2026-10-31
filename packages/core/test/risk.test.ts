@@ -165,6 +165,9 @@ describe('the words that lead to SOS', () => {
     expect(sosLead({}, st, tk, at('2026-10-13T10:00:00'), null)).toBe(true);
     expect(sosLead({}, st, tk, at('2026-10-13T10:00:00'), at('2026-10-12T10:00:00'))).toBe(false);
   });
+  it('step aside on the day of a slip, for the card about it', () => {
+    expect(sosLead(slip({}, tk, '09:00'), st, tk, at('2026-10-13T10:00:00'), null)).toBe(false);
+  });
   it('come back around the hard hours, unless SOS was just open', () => {
     const soon = at('2026-10-13T20:00:00');
     expect(riskDay(d, st, tk, soon)?.phase).toBe('soon');

@@ -18,6 +18,8 @@ const HEAD = 88;
 export const FOOT = 86;
 /** the room a quiet line above the card takes */
 export const NOTE_ROOM = 26;
+/** the room the words above the SOS circle take, so they never lie over the last row (sos-lead.tsx) */
+export const LEAD_ROOM = 30;
 
 /** the sky's height and the flame's drawing inside it, for a screen this tall and wide. extra: a quiet line above the card */
 export function todaySize(height: number, width: number, top: number, bottom: number, extra = 0): { sky: number; flame: number } {

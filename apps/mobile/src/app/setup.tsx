@@ -668,7 +668,7 @@ export default function Setup() {
                 }}
                 onPress={() => pick('so', x, true)}>
                 {a.so === x ? <Icon name="check" size={18} color={t.text} /> : null}
-                <Text style={[s.optT, s.noWrap, { color: c.ink }]} numberOfLines={1}>
+                <Text style={[s.optTime, { color: c.ink }]} numberOfLines={1}>
                   {fmtClock(x)}
                 </Text>
               </Opt>
@@ -1079,7 +1079,7 @@ export default function Setup() {
                   setRemAt(x);
                   buzz('tap');
                 }}>
-                <Text style={[s.optT, s.noWrap, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                <Text style={[s.optTime, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {fmtClock(x)}
                 </Text>
               </Opt>
@@ -2025,7 +2025,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   /* a time that sits beside an icon: its own width, never squeezed into two lines (flex: 0 gave the web a width of zero) */
-  noWrap: { flexGrow: 0, flexBasis: 'auto' },
+  optTime: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   tile: {
     flexDirection: 'row',

@@ -331,7 +331,7 @@ function Sky({
         ) : null}
       </Pressable>
       {grew ? (
-        <View style={[s.grew, { backgroundColor: glass, top: inset.top + 112 }]} pointerEvents="none">
+        <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
           <Icon name="star" size={13} color={ink} />
           <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
             Your flame grew
@@ -399,9 +399,11 @@ const s = StyleSheet.create({
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
+  /* just over the level it belongs to, clear of the flame's face */
   grew: {
     position: 'absolute',
-    alignSelf: 'center',
+    right: 16,
+    bottom: 68,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,

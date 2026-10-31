@@ -79,6 +79,10 @@ account or sync server. The page `/shots` (which exists only in that build) draw
 a caption above it, on a brand background. `scripts/shots.ts` opens it with Playwright for each scene, waits for fonts and
 pictures, and saves the PNG. A normal build has none of this: there `/shots` just goes to Today.
 
+The iPhone sizes show pictures of the real iPhone app, with its glass tab bar. `npm run shots:ios` builds a release app in screenshot mode, runs it
+on its own simulator ("Daybook Shots") with the status bar at 9:41, and saves `store-assets/ios-screens/`; `npm run shots` then frames them. Run it
+first when the iPhone screens have changed (`-- --no-build` reuses the last build, `-- --only sos` takes just the screens with "sos" in the address).
+
 ```sh
 npm run shots                    # build in screenshot mode, then every scene
 npm run shots -- --no-build      # reuse the last build (after changing only shots.json)

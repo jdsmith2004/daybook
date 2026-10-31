@@ -51,7 +51,14 @@ export function bigLayers(level: number): { layers: EmblemLayers; zoom: number; 
         .replace(/<rect x="0" y="0" width="120" height="120" fill="url\(#em\w+sk\)"\/>/, '')
         .replace(/<circle cx="[\d.]+" cy="[\d.]+" r="[\d.]+" fill="#fff" opacity="[\d.]+"\/>/g, ''),
     );
-  const layers = { ...l, back: clean(l.back), front: clean(l.front) };
+  /* the spark's thin rays, its ring and the little flame beside it are drawn for a small picture: this close they read as stray bars and a glitch,
+     so the big flame goes without them (the owner, October 30, 2026) */
+  const spark = formOfLevel(level) === 0;
+  const layers = {
+    ...l,
+    back: clean(spark ? l.back.replace(/<path d="[^"]*" stroke="#FFF3B0"[^>]*\/>/g, '') : l.back),
+    front: spark ? '' : clean(l.front),
+  };
   return zoom > 1 ? { layers, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, zoom, dx: 0, dy: 0 };
 }
 
@@ -96,12 +103,20 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
   if (!b) return <View style={{ width: size, height: size }} accessibilityLabel={name} />;
   const { layers, zoom, dx, dy } = b;
   const origin = `${(layers.at.x * 100).toFixed(1)}% ${(layers.at.y * 100).toFixed(1)}%`;
-  /* the whole drawing, brought in close around the figure and moved so the figure sits in the same place for every form */
-  const place = { transformOrigin: origin, transform: [{ translateX: dx * size }, { translateY: dy * size }, { scale: zoom }] };
+  /* the whole drawing, brought in close around the figure and moved so the figure sits in the same place for every form. It is drawn at
+     that bigger size, never stretched: a picture scaled up after it is drawn comes out in blocks (the owner, October 30, 2026). */
+  const S = size * zoom;
+  const place = {
+    position: 'absolute' as const,
+    left: layers.at.x * size * (1 - zoom) + dx * size,
+    top: layers.at.y * size * (1 - zoom) + dy * size,
+    width: S,
+    height: S,
+  };
   const fig = {
     transformOrigin: origin,
     transform: [
-      { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [0, -float * size] }) },
+      { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [0, -float * S] }) },
       { rotate: breath.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', sway + 'deg', -sway * 0.6 + 'deg'] }) },
       {
         scale: Animated.add(
@@ -126,30 +141,30 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
       },
     ],
   };
-  const r = (size * 0.4) / zoom;
+  const r = size * 0.4;
   return (
     <View style={{ width: size, height: size }} accessible accessibilityRole="image" accessibilityLabel={name}>
-      <View style={[StyleSheet.absoluteFill, place]} pointerEvents="none">
-        <SvgXml xml={layers.back} width={size} height={size} style={StyleSheet.absoluteFill} />
+      <View style={place} pointerEvents="none">
+        <SvgXml xml={layers.back} width={S} height={S} style={StyleSheet.absoluteFill} />
         {layers.glow ? (
           <Animated.View style={[StyleSheet.absoluteFill, glow]}>
-            <SvgXml xml={layers.glow} width={size} height={size} />
+            <SvgXml xml={layers.glow} width={S} height={S} />
           </Animated.View>
         ) : null}
         <Animated.View
           style={{
             position: 'absolute',
-            left: layers.at.x * size - r,
-            top: layers.at.y * size - r,
+            left: layers.at.x * S - r,
+            top: layers.at.y * S - r,
             opacity: ring.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 1, 0] }),
             transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.8] }) }],
           }}>
           <SvgXml xml={RING} width={r * 2} height={r * 2} />
         </Animated.View>
         <Animated.View style={[StyleSheet.absoluteFill, fig]}>
-          <SvgXml xml={layers.fig} width={size} height={size} />
+          <SvgXml xml={layers.fig} width={S} height={S} />
         </Animated.View>
-        <SvgXml xml={layers.front} width={size} height={size} style={StyleSheet.absoluteFill} />
+        {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
       </View>
       {grad ? (
         /* on the head, whichever form: the figure always sits at the same place (see place above) */

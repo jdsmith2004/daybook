@@ -163,8 +163,6 @@ export default function LessonScreen() {
   const next = nextAfter(L, w);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
-  /* the comment under a picked answer can land below the card's edge on a short phone: bring it into view */
-  const reveal = () => setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);
 
   const record = () => {
     if (rec) return;
@@ -336,6 +334,14 @@ export default function LessonScreen() {
           <T style={[s.h, s.hsm]} accessibilityRole="header">
             {r.q}
           </T>
+          <ReplyRoom pk={rc}>
+            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
+            {r.cr && rc != null ? (
+              <T v="small" tone="muted">
+                Tap any other answer to read its comment.
+              </T>
+            ) : null}
+          </ReplyRoom>
           <Dock>
             <Opts
               list={r.c}
@@ -347,15 +353,8 @@ export default function LessonScreen() {
                 setRc(j);
                 setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
                 buzz('tap');
-                reveal();
               }}
             />
-            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
-            {r.cr && rc != null ? (
-              <T v="small" tone="muted">
-                Tap any other answer to read its comment.
-              </T>
-            ) : null}
             <T v="small" tone="muted">
               No points for this one. It just helps the last lesson stick.
             </T>
@@ -435,22 +434,7 @@ export default function LessonScreen() {
               {card.h}
             </T>
             {card.ask || typeof card.q === 'string' ? <T style={[s.p, { fontFamily: font.bodySemi }]}>{card.ask || (card.q as unknown as string)}</T> : null}
-            <Dock>
-              <Opts
-                list={card.c!.map((x) => x[0])}
-                best={gr ? card.a! : null}
-                pk={pk}
-                tried={tried[ci] || []}
-                t={t}
-                onPick={(j) => {
-                  setPick((p) => ({ ...p, [ci]: j }));
-                  setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-                  if (card.sv)
-                    apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
-                  buzz('tap');
-                  reveal();
-                }}
-              />
+            <ReplyRoom pk={pk}>
               {pk != null ? <Reply text={card.c![pk][1]} t={t} /> : null}
               {gr && pk != null ? (
                 <T v="small" tone="muted">
@@ -465,6 +449,22 @@ export default function LessonScreen() {
                   </T>
                 </View>
               ) : null}
+            </ReplyRoom>
+            <Dock>
+              <Opts
+                list={card.c!.map((x) => x[0])}
+                best={gr ? card.a! : null}
+                pk={pk}
+                tried={tried[ci] || []}
+                t={t}
+                onPick={(j) => {
+                  setPick((p) => ({ ...p, [ci]: j }));
+                  setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
+                  if (card.sv)
+                    apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
+                  buzz('tap');
+                }}
+              />
             </Dock>
           </>
         );
@@ -788,25 +788,26 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {read ? <T style={s.p}>{read}</T> : null}
         {keyBox}
         {r && P ? (
-          <Dock>
+          <>
             <Text style={[s.eye2, { color: t.text }]}>Quick recall</Text>
             <T style={[s.p, { fontFamily: font.bodySemi }]}>{r.q}</T>
-            <Opts
-              list={r.c}
-              best={r.a}
-              pk={rc}
-              tried={rcTried}
-              t={t}
-              onPick={(j) => {
-                setRc(j);
-                setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-                ASKED[L.id] = tk;
-                buzz('tap');
-                setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 80);
-              }}
-            />
-            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
-          </Dock>
+            <ReplyRoom pk={rc}>{rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}</ReplyRoom>
+            <Dock>
+              <Opts
+                list={r.c}
+                best={r.a}
+                pk={rc}
+                tried={rcTried}
+                t={t}
+                onPick={(j) => {
+                  setRc(j);
+                  setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+                  ASKED[L.id] = tk;
+                  buzz('tap');
+                }}
+              />
+            </Dock>
+          </>
         ) : null}
       </>
     );
@@ -948,6 +949,19 @@ function Opts({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+/* the comment on a picked answer fades in over the answers, in the open middle, so the answers never move under the thumb, and the thumb is not over it.
+   Picking another answer fades in its comment. */
+function ReplyRoom({ pk, children }: { pk: number | null; children: ReactNode }) {
+  return (
+    <View style={s.replyRoom}>
+      {pk != null ? (
+        <Appear key={pk} by={6} style={{ gap: 8 }}>
+          {children}
+        </Appear>
+      ) : null}
     </View>
   );
 }
@@ -1095,7 +1109,7 @@ function TextCard({ L, card, t, st, onSrc }: { L: Lesson; card: Card; t: Tone; s
   return (
     <>
       {art ? (
-        <FitArt style={s.art} drop={0.5} stretch={art[0] === 'research'}>
+        <FitArt style={s.art} drop={0.5} stretch={art[0] === 'research' || art[0] === 'wave'}>
           <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={t} st={st} />
         </FitArt>
       ) : null}
@@ -1379,6 +1393,7 @@ const s = StyleSheet.create({
   },
   opt: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 54, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, borderWidth: 2 },
   optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  replyRoom: { flexGrow: 1, justifyContent: 'flex-end' },
   reply: { padding: 16, borderRadius: 20 },
   quote: { paddingVertical: 4 },
   plan: { gap: 8, padding: 16, borderRadius: 20 },

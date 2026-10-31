@@ -1,8 +1,7 @@
 /* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with the date and who I
    am becoming written on it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the
-   app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is the round button in the tab bar, always in
-   reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
-   do is plain at a glance. When a bigger moment has the next step (a pause, the hard hours, the day of a slip, a talk-through, days
+   app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
+   do is plain at a glance. When a bigger moment has the next step (a pause, the day of a slip, a talk-through, days
    away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
    SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS
    or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the line until its moment has passed (core talkPlanNow).
@@ -61,6 +60,7 @@ import { openJournalFrom } from '@/components/journal';
 import { PullHint } from '@/components/pull-door';
 import { HardLine } from '@/components/risk-card';
 import { Screen } from '@/components/screen';
+import { useSosLeadOn } from '@/components/sos-lead';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
@@ -74,7 +74,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
-import { NOTE_ROOM, useTodaySize } from '@/lib/today-size';
+import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -248,6 +248,7 @@ export default function Today() {
   const [atRest, setAtRest] = useState(true);
   const scrolled = useRef(0);
   const sizeFor = useTodaySize();
+  const lead = useSosLeadOn();
 
   if (!st || !g) return <Welcome />;
   const early = new Date(now).getHours() < st.rollover;
@@ -270,7 +271,9 @@ export default function Today() {
   const slipLine = heroSlipLine(snap.days, st, tk, now);
   /* the day's next stop is the big card on the line (your-day.tsx); any other moment keeps its own card above the line */
   const calm = pick.card.k === 'calm';
-  const size = sizeFor(slipLine ? NOTE_ROOM : 0);
+  /* the day is done: no box, a few words over the line, so all of it shows */
+  const done = pick.card.k === 'done';
+  const size = sizeFor((slipLine ? NOTE_ROOM : 0) + (lead ? LEAD_ROOM : 0));
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
   const head = (
@@ -322,7 +325,13 @@ export default function Today() {
         <LogLink />
         <NotifyBanner />
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
-        {calm ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
+        {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
+        {done ? (
+          <View style={s.done}>
+            <Text style={[s.doneH, { color: c.ink }]}>{pick.card.h}</Text>
+            <Text style={[s.line, { color: c.muted, paddingHorizontal: 0 }]}>{pick.card.p}</Text>
+          </View>
+        ) : null}
         <YourDay
           note={<HardLine snap={snap} tk={tk} now={now} />}
           footOff={Platform.OS === 'ios' && atRest}
@@ -330,7 +339,7 @@ export default function Today() {
           tk={tk}
           now={now}
           hero={calm ? pick.card : null}
-          foot={[note, pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
+          foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
         <WaitingPlan snap={snap} tk={tk} now={now} />
         <SyncStrip />
@@ -347,4 +356,6 @@ export default function Today() {
 const s = StyleSheet.create({
   be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20 },
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },
+  done: { gap: 2, paddingHorizontal: 4 },
+  doneH: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
 });

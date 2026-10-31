@@ -1,5 +1,21 @@
 # What is planned next
 
+## Lessons that do not look made by AI (the owner, October 30, 2026)
+
+**Where it is:** chosen, not built. Build it on its own branch and show the owner on the simulator before merging. Pictures: `docs/lessons-review/`
+(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from).
+
+**What the owner chose:** A and C together, with two cards kept from C.
+
+- One thought at a time, on a sky that goes from night to day as the lesson goes on, with one flame that rises and glides between cards.
+- The flame says the key lines in a cream bubble. No small labels and no icon blob. The cover is the flame, the title and Quick or Full. Next stays at the bottom.
+- Kept from C: the full sun answer card (dark Next, flame) and the solid violet number card (giant sun yellow number, no sky, no flame, yellow Next).
+- Questions: bright pressable answers with a lip, fixed in place. The flame sits between the question and the answers and says the comment. The right answer turns green and the rest go quiet. A wrong pick lets the person try another, and they can move on after any pick.
+- At night the journey ends at a warm dawn, not bright day.
+- Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
+
+**Open from the same walk:** what happens when the day is finished. Today the card is gone and a few words sit above the line. The owner wants something different.
+
 ## The home screen (the owner, October 30, 2026)
 
 **Where it is:** merged to `main`, after the owner saw it on the simulator. The owner chose the "Now" drawing: the warm card and the line on

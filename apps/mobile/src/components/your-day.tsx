@@ -9,13 +9,15 @@ import { router, useIsFocused } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnOff } from '@/components/form';
-import { Shape, WavyLine, type ShapeKind } from '@/components/shapes';
+import { Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
 import { font, useTheme, type Palette } from '@/lib/theme';
@@ -79,23 +81,32 @@ export function YourDay({
   /* the big card goes on the stop it starts */
   const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
   const heroShown = !!hero && r.tiles.some((t) => t.k === heroKey && !t.done);
+  const big = heroShown ? heroKey : null;
+  /* where each stop's card sits, so its mark sits at the card's middle and the line runs from mark to mark */
+  const [rowY, setRowY] = useState<Record<string, number>>({});
+  const [cardMid, setCardMid] = useState<Record<string, number>>({});
   return (
     <View>
       {heroShown ? null : <View style={s.noteTop}>{note}</View>}
       {n ? (
-        r.tiles.map((t, i) => {
-          const tile = open && open.k === t.k && !t.done ? open : t;
-          const big = hero && heroKey === t.k && !t.done;
-          return (
-            <View key={t.k} style={s.stop}>
-              <Rail done={t.done} cur={big ? true : t.cur} first={!i} last={i === n - 1} upDone={i > 0 && r.tiles[i - 1].done} />
-              <View style={[s.stopIn, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
-                {big ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
-                {big ? <View style={s.note}>{note}</View> : null}
+        <View>
+          <DayLine tiles={r.tiles} mids={r.tiles.map((t) => (rowY[t.k] != null && cardMid[t.k] != null ? rowY[t.k] + cardMid[t.k] : null))} curKey={big} />
+          {r.tiles.map((t, i) => {
+            const tile = open && open.k === t.k && !t.done ? open : t;
+            const isBig = big === t.k;
+            return (
+              <View
+                key={t.k}
+                onLayout={(e) => put(setRowY, t.k, e.nativeEvent.layout.y)}
+                style={[s.stop, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
+                <View onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
+                  {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
+                </View>
+                {isBig ? <View style={s.note}>{note}</View> : null}
               </View>
-            </View>
-          );
-        })
+            );
+          })}
+        </View>
       ) : (
         <T tone="muted" style={{ paddingHorizontal: 4 }}>
           Nothing is switched on for today. Tap Change to turn parts of the day back on.
@@ -122,42 +133,60 @@ export function YourDay({
   );
 }
 
-/* ---------- the line down the left, with a stop's mark on it ---------- */
+/* ---------- the line down the left, with each stop's mark on it ---------- */
 const RAIL = 24;
 const MARK = 20;
-function Rail({ done, cur, first, last, upDone }: { done: boolean; cur: boolean; first: boolean; last: boolean; upDone: boolean }) {
-  const c = useTheme();
-  return (
-    <View style={s.rail} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Line hidden={first} done={upDone} />
-      {done ? (
-        <View style={[s.mark, { backgroundColor: c.mint }]}>
-          <Icon name="check" size={13} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} />
-        </View>
-      ) : (
-        <View style={[s.mark, cur ? { backgroundColor: c.sun2 } : { borderWidth: 3, borderColor: c.line }]} />
-      )}
-      <Line hidden={last} done={done} />
-    </View>
-  );
-}
+/* the air between a quiet line and a mark */
+const AIR = 2;
+const put = (set: React.Dispatch<React.SetStateAction<Record<string, number>>>, k: string, v: number) => set((o) => (o[k] === v ? o : { ...o, [k]: v }));
 
-/* a piece of the line: the squiggle where the day is done, quiet where it is still to come. A squiggle only ever runs along its
-   width, so this one is laid on its side. */
-function Line({ hidden, done }: { hidden: boolean; done: boolean }) {
+/* one drawing for the whole line: each stretch runs from one mark to the next, the squiggle where that stop is done (docs/design-standards.md:
+   squiggle means progress), a quiet line where the day is still to come. The squiggle starts under a done mark, which is solid, and lands
+   flat, so it never meets anything mid-wiggle. */
+function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | null)[]; curKey: string | null }) {
   const c = useTheme();
   const focused = useIsFocused();
-  const [h, setH] = useState(0);
-  if (hidden) return <View style={{ flex: 1 }} />;
+  const reduce = useReducedMotion();
+  const sec = useClock(!reduce && focused && tiles.some((t) => t.done));
+  if (mids.some((m) => m == null)) return null;
+  const at = mids as number[];
+  const x = RAIL / 2;
+  const solid = (i: number) => tiles[i].done || tiles[i].cur || tiles[i].k === curKey;
   return (
-    <View style={{ flex: 1, minHeight: 6, width: RAIL, alignItems: 'center' }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
-      {done && h > 0 ? (
-        <View style={{ position: 'absolute', width: h, height: 12, left: RAIL / 2 - h / 2, top: h / 2 - 6, transform: [{ rotate: '90deg' }] }}>
-          <WavyLine width={h} p={1} color={c.sun2} track={c.line} ease={false} speed={focused ? undefined : 0} />
+    <View style={s.rail} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Svg width={RAIL} height={at[at.length - 1] + MARK} {...SVG_HIDE}>
+        {tiles.slice(0, -1).map((t, i) => {
+          const end = at[i + 1] - (solid(i + 1) ? 0 : MARK / 2 + AIR);
+          if (t.done) {
+            const d = squigglePath(
+              [
+                [x, at[i]],
+                [x, end],
+              ],
+              0,
+              end - at[i],
+              SQUIGGLE.amp,
+              SQUIGGLE.wavelength,
+              sec * SQUIGGLE.speed * Math.PI * 2,
+            );
+            return <Path key={t.k} d={d} stroke={c.sun2} strokeWidth={SQUIGGLE.stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
+          }
+          return (
+            <Path key={t.k} d={`M${x} ${at[i] + MARK / 2 + AIR} L${x} ${at[i + 1] - MARK / 2 - AIR}`} stroke={c.line} strokeWidth={3} strokeLinecap="round" />
+          );
+        })}
+      </Svg>
+      {tiles.map((t, i) => (
+        <View
+          key={t.k}
+          style={[
+            s.mark,
+            { top: at[i] - MARK / 2 },
+            t.done ? { backgroundColor: c.mint } : solid(i) ? { backgroundColor: c.sun2 } : { borderWidth: 3, borderColor: c.line },
+          ]}>
+          {t.done ? <Icon name="check" size={13} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} /> : null}
         </View>
-      ) : (
-        <View style={{ flex: 1, width: 3, backgroundColor: done ? c.sun2 : c.line }} />
-      )}
+      ))}
     </View>
   );
 }
@@ -263,12 +292,11 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
 }
 
 const s = StyleSheet.create({
-  stop: { flexDirection: 'row', gap: 8 },
-  stopIn: { flex: 1, paddingVertical: 4 },
+  stop: { paddingLeft: RAIL + 8, paddingVertical: 4 },
   note: { marginTop: 8 },
   noteTop: { marginBottom: 8 },
-  rail: { width: RAIL, alignItems: 'center' },
-  mark: { width: MARK, height: MARK, borderRadius: MARK / 2, alignItems: 'center', justifyContent: 'center', marginVertical: 2 },
+  rail: { position: 'absolute', left: 0, top: 0, width: RAIL },
+  mark: { position: 'absolute', left: (RAIL - MARK) / 2, width: MARK, height: MARK, borderRadius: MARK / 2, alignItems: 'center', justifyContent: 'center' },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',

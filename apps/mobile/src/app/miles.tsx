@@ -59,6 +59,8 @@ export default function Miles() {
   const forms = useRef<ScrollViewInstance>(null);
   const [how, setHow] = useState(false);
   const [all, setAll] = useState(false);
+  /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
+  const [past, setPast] = useState(false);
   /* the page frame, your level, who you are becoming and graduation show at once; the twelve flame forms (SVG) and the badges
      (small drawings) come right after, in two steps, so the page is never blank while they draw */
   const [fill, setFill] = useState(0);
@@ -110,6 +112,9 @@ export default function Miles() {
     <Screen
       title="Milestones"
       bare
+      onScroll={(y) => {
+        if (y > sky - 60 !== past) setPast(y > sky - 60);
+      }}
       top={
         <FlameSky level={lvl.n} height={sky} flame={flame} foot={FOOT - 18}>
           <View style={[s.head, { top: top + 4 }]} pointerEvents="box-none">
@@ -153,7 +158,7 @@ export default function Miles() {
           </View>
         </FlameSky>
       }>
-      {focused ? <StatusBar style={ink.light ? 'light' : 'dark'} /> : null}
+      {focused ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <View style={{ gap: 8 }}>
         <T>{lvl.step}</T>
         <Bar frac={lvl.frac} from={c.sun} />

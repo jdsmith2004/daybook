@@ -37,7 +37,7 @@ import { Flame } from '@/components/flame';
 import { fmtMS, useSeconds } from '@/components/orb';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Appear } from '@/components/appear';
-import { Dock, Finish, Middle, Stage } from '@/components/scene';
+import { Dock, Finish, Middle, Pin, Stage } from '@/components/scene';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
@@ -277,7 +277,9 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
             {cur[2]}
           </T>
         </Appear>
-        <Button label={night ? 'Good night' : 'Done'} onPress={go} />
+        <Pin>
+          <Button label={night ? 'Good night' : 'Done'} onPress={go} />
+        </Pin>
       </Dock>
     </>
   );
@@ -606,10 +608,12 @@ export function Message({ finish }: ToolProps) {
         <T v="small" tone="muted" style={s.c}>
           Only if and when you want to. Calling counts too, and so does sitting with someone.
         </T>
-        <Button label="I sent it" onPress={() => finish('message', { noCalm: true, reach: true, msg: 'Reaching out takes guts.' })} />
-        <View style={s.quiet}>
-          <Link label={lines ? 'Back to the texts' : 'No one to text?'} onPress={() => setLines(!lines)} />
-        </View>
+        <Pin>
+          <Button label="I sent it" onPress={() => finish('message', { noCalm: true, reach: true, msg: 'Reaching out takes guts.' })} />
+          <View style={s.quiet}>
+            <Link label={lines ? 'Back to the texts' : 'No one to text?'} onPress={() => setLines(!lines)} />
+          </View>
+        </Pin>
       </Dock>
     </>
   );

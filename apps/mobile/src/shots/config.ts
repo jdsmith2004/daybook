@@ -70,6 +70,8 @@ export const FRAME = {
   pair: 0.6,
   /** the app is laid out at this phone size, then scaled into the frame */
   viewport: { w: 390, h: 844 },
+  /** a picture from the iPhone simulator: its height over its width (iPhone 17 Pro, 1206 x 2622) */
+  picRatio: 2622 / 1206,
   iphone: { bezel: 0.034, radius: 0.15, body: '#12101E', edge: '#3A3550', island: true, statusH: 50, homeBar: true },
   android: { bezel: 0.03, radius: 0.1, body: '#16141F', edge: '#3A3550', island: false, statusH: 34, homeBar: false },
   shadow: '0 40px 90px rgba(10,6,40,.45)',

@@ -4,7 +4,9 @@
      npm run shots                     build, then every scene
      npm run shots -- --no-build       reuse the last build
      npm run shots -- --only today     just the scenes whose name has "today"
-     npm run shots -- --size ios69     just one size */
+     npm run shots -- --size ios69     just one size
+   The iPhone sizes show pictures from the simulator (npm run shots:ios, store-assets/ios-screens), since Apple's glass tab bar exists only there.
+   Android and the web draw their own bar, so the Play sizes still run the app live. */
 import { execFileSync } from 'node:child_process';
 import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -13,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
 import { DEMO, SIZES } from '../apps/mobile/src/shots/config.ts';
+import { screenFile } from './ios-screens.ts';
 
 interface Scene {
   name: string;
@@ -83,7 +86,8 @@ const TYPES: Record<string, string> = {
   '.wav': 'audio/wav',
 };
 const server = createServer((q, r) => {
-  let p = join(build, decodeURIComponent((q.url || '/').split('?')[0]));
+  const path = decodeURIComponent((q.url || '/').split('?')[0]);
+  let p = path.startsWith('/ios-screens/') ? join(out, path) : join(build, path);
   if (!existsSync(p) || statSync(p).isDirectory()) p = join(build, 'index.html');
   r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' });
   createReadStream(p).pipe(r);
@@ -115,6 +119,13 @@ for (const sc of scenes) {
     const q = new URLSearchParams({ size: key });
     for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll', 'zoom', 'top', 'pills'] as const)
       if (sc[k] != null) q.set(k, String(sc[k]));
+    if (size.device === 'iphone' || key.startsWith('ios-'))
+      (['screen', 'screen2', 'screen3'] as const).forEach((k, i) => {
+        if (!sc[k]) return;
+        const f = screenFile(sc[k]!, sc.theme);
+        if (!existsSync(join(out, 'ios-screens', f))) throw new Error(`${sc.name}: no picture for ${sc[k]}. Run npm run shots:ios first.`);
+        q.set('pic' + (i ? i + 1 : ''), '/ios-screens/' + f);
+      });
     const file = join(out, key, `${String(count[key]).padStart(2, '0')}-${sc.name}.png`);
     try {
       await page.goto(`http://localhost:${port}/shots?${q}`);

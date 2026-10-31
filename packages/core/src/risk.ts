@@ -254,6 +254,8 @@ export function firstPattern(days: Days, st: Settings, tk: DayKey): string | nul
 /** whether Today leads to SOS with a few words above its button (components/sos-lead.tsx): until it has been opened once, so a person
     knows what it is, and from two hours before the hard hours until they end, unless it was open in the last three hours */
 export function sosLead(days: Days, st: Settings, tk: DayKey, now: number, sosAt?: number | null): boolean {
+  /* the day of a slip belongs to the card about it, and these words would sit on top of it */
+  if ((days[tk]?.events || []).some((e) => e.outcome === 'slipped')) return false;
   if (sosAt == null) return true;
   const r = riskDay(days, st, tk, now);
   return !!r && (r.phase === 'soon' || r.phase === 'during') && now - sosAt > 3 * 3600e3;

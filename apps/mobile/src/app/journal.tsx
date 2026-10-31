@@ -91,8 +91,8 @@ export default function JournalScreen() {
   );
 }
 
-/* feel: opened from a door after a slip, where the feeling was just named, so it opens on the page, ready to write. fresh: it
-   opens on the four colors, for a new entry. */
+/* feel: opened from a door after a slip, where the feeling was just named, so it opens on the page, ready to write, and Done goes
+   back to where it was opened. fresh: it opens on the four colors, for a new entry. */
 function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
   const { height: H, width: W } = useWindowDimensions();
   const reduce = useReducedMotion();
@@ -248,7 +248,7 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
                   key={'write' + step.id}
                   id={step.id}
                   fresh={step.fresh}
-                  onDone={(fresh) => setStep({ k: 'list', fresh: fresh || undefined })}
+                  onDone={(fresh) => (feel ? close() : setStep({ k: 'list', fresh: fresh || undefined }))}
                   onFeel={(r, c) => setStep({ k: 'grid', start: { r, c }, id: step.id, fresh: step.fresh })}
                   onBack={(r, c, blank) => {
                     /* an entry read back goes back to the list; a new one goes back to the feelings, on its word. One

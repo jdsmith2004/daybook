@@ -665,14 +665,14 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
+        {/* the plan is the heading, and the middle is the button it names */}
         <T v="title" style={s.h} accessibilityRole="header">
-          When that moment comes back
+          {line}
         </T>
         <Middle>
           <FitArt min={0.6}>
             <SosBig />
           </FitArt>
-          <Text style={[s.planBig, { color: c.ink }]}>{'“' + line + '”'}</Text>
           <T tone="muted" style={s.center}>
             {'Daybook brings it back ' + talkBackWhen(mo, now) + '.'}
           </T>
@@ -711,7 +711,7 @@ export default function Log() {
           {'When ' +
             TALK_WHEN[slWhen] +
             (slWhen !== 'late' && mo === 'late' ? ' late at night' : slWhen !== 'late' && mo === 'evening' ? ' in the evening' : '') +
-            ', I will …'}
+            ', I will\u00A0…'}
         </T>
         {ownPlan ? (
           /* the box and its button stay near the top, where the keyboard does not cover them */
@@ -837,7 +837,6 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },
-  planBig: { fontFamily: font.display, fontSize: 20, lineHeight: 25, textAlign: 'center' },
   gapLine: { alignSelf: 'stretch', minHeight: 64 },
   btnSpace: { height: 52 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },

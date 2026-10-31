@@ -3,25 +3,19 @@
    whole drawing is brought in close around the figure until it is as big as a campfire, and the figure sits in the same
    place every time. The picture's own sky and stars are left out: it sits in a sky that is painted around it (the top of
    Today, the round sky at the end of a lesson), whose stars stay small however close the figure is drawn. It moves like
-   the flame everywhere else (components/flame.tsx: a fire flickers, the rising flame floats, the suns breathe), each tap
-   sends one bloom through it, and it is still under Reduce Motion. */
-import { emblemLayers, formOfLevel, gradOf, type EmblemLayers } from '@daybook/core';
+   the flame everywhere else (components/flame.tsx: the face and the body hold still and the fire licks), each tap makes
+   the fire leap and sends one bloom through it, and it is still under Reduce Motion. */
+import { emblemLayers, fireOf, formOfLevel, gradOf, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
+import { FireLayer } from '@/components/fire-layer';
+import { GLOW, glowKind, stillBox, stillIn } from '@/components/flame';
 import { GradCap } from '@/components/grad';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 
-/* the same motion as components/flame.tsx, for each kind of form */
-const MOTION: [number, number, number, number, number][] = [
-  [0.035, 1100, 0.25, 1.6, 0.006],
-  [0.03, 1500, 0.25, 1.2, 0.02],
-  [0.03, 3200, 0.25, 0, 0.012],
-  [0.03, 2400, 0.35, 0, 0.012],
-];
-const kindOf = (form: number) => (form <= 4 ? 0 : form === 5 ? 1 : form <= 9 ? 2 : 3);
 const RING =
   '<svg viewBox="0 0 100 100"><defs><radialGradient id="bigRing" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
   '<stop offset=".5" stop-color="#FFE9A8" stop-opacity="0"/><stop offset=".78" stop-color="#FFE9A8" stop-opacity=".6"/>' +
@@ -33,7 +27,7 @@ const FULL_K = 0.48;
 const MID_Y = 0.55;
 
 /** the layers without the picture's own sky and stars, and how close to draw it: [zoom, shift x, shift y] as shares of the box */
-export function bigLayers(level: number): { layers: EmblemLayers; zoom: number; dx: number; dy: number } | null {
+export function bigLayers(level: number): { layers: EmblemLayers; fire: Fire; zoom: number; dx: number; dy: number } | null {
   const l = emblemLayers(level, true);
   if (!l) return null;
   /* the spark, the kindling and the campfire are drawn smaller than the rest: closer, up to the campfire's size */
@@ -57,9 +51,13 @@ export function bigLayers(level: number): { layers: EmblemLayers; zoom: number; 
   const layers = {
     ...l,
     back: clean(spark ? l.back.replace(/<path d="[^"]*" stroke="#FFF3B0"[^>]*\/>/g, '') : l.back),
+    side: spark ? '' : clean(l.side),
     front: spark ? '' : clean(l.front),
   };
-  return zoom > 1 ? { layers, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, zoom, dx: 0, dy: 0 };
+  const whole = fireOf(level, !spark);
+  /* embers keep their small size however close the figure is drawn */
+  const fire = zoom > 1 ? { ...whole, embers: whole.embers.map((e) => ({ ...e, r: (e.r / zoom) * 1.5 })) } : whole;
+  return zoom > 1 ? { layers, fire, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, fire, zoom, dx: 0, dy: 0 };
 }
 
 export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }: { level: number; size: number; pulse?: number; label?: string }) {
@@ -70,7 +68,7 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
-  const [grow, ms, dim, sway, float] = MOTION[kindOf(formOfLevel(level))];
+  const [ms, dim] = GLOW[glowKind(formOfLevel(level))];
   useEffect(() => {
     if (still) {
       breath.setValue(0);
@@ -101,7 +99,7 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
   }, [pulse, bloom, ring, still]);
   const name = (label ?? `Your flame, level ${level}`) + (grad ? ', wearing a graduation cap' : '');
   if (!b) return <View style={{ width: size, height: size }} accessibilityLabel={name} />;
-  const { layers, zoom, dx, dy } = b;
+  const { layers, fire, zoom, dx, dy } = b;
   const origin = `${(layers.at.x * 100).toFixed(1)}% ${(layers.at.y * 100).toFixed(1)}%`;
   /* the whole drawing, brought in close around the figure and moved so the figure sits in the same place for every form. It is drawn at
      that bigger size, never stretched: a picture scaled up after it is drawn comes out in blocks (the owner, October 30, 2026). */
@@ -113,18 +111,10 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
     width: S,
     height: S,
   };
+  /* the figure itself only moves to a tap */
   const fig = {
     transformOrigin: origin,
-    transform: [
-      { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [0, -float * S] }) },
-      { rotate: breath.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', sway + 'deg', -sway * 0.6 + 'deg'] }) },
-      {
-        scale: Animated.add(
-          breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }),
-          bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
-        ),
-      },
-    ],
+    transform: [{ scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }],
   };
   const glow = {
     transformOrigin: origin,
@@ -161,9 +151,17 @@ export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }
           }}>
           <SvgXml xml={RING} width={r * 2} height={r * 2} />
         </Animated.View>
-        <Animated.View style={[StyleSheet.absoluteFill, fig]}>
-          <SvgXml xml={layers.fig} width={S} height={S} />
-        </Animated.View>
+        {still ? (
+          <>
+            {layers.side ? <SvgXml xml={layers.side} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
+            <SvgXml xml={layers.fig} width={S} height={S} style={StyleSheet.absoluteFill} />
+          </>
+        ) : (
+          <Animated.View style={[StyleSheet.absoluteFill, fig]}>
+            <FireLayer fire={fire} unit={S / 120} leap={pulse} />
+            <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+          </Animated.View>
+        )}
         {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
       </View>
       {grad ? (

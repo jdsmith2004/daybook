@@ -48,6 +48,10 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
   cannot.
 - **Something still must not look alive.** Do not reuse a moving pattern (the breath dots, a beat) standing still: if it
   is not moving, it looks broken. Either it moves, or it is a plain shape.
+- **The flame moves as fire, never as a whole figure (the owner, October 31, 2026).** The face and the body hold still; the tips lick, a sun's rays lick out
+  from its disc, a star's points reach and draw back. The rule is one wave in core `flame-fire.ts`, for every form; a new form or a new flame in a drawing
+  moves by it, and no bobbing, swaying or breathing goes on the figure. A tap makes the fire leap and swells the figure a little, once. Skia draws it on a
+  phone (`fire-layer.native.tsx`), and plain SVG paths on the web (`fire-layer.tsx`).
 - **One breath curve.** Anything that breathes (the Breathe dots, the timer's beat, the SOS sun, the small sun in the
   tools) reads `breathAt` from `lib/breath.ts` on a clock (`useBreathClock`), never a chain of one timed animation per
   step. The curve speeds up gently, keeps an even pace through the middle and slows the same way into the turn, so it never

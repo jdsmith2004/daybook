@@ -26,6 +26,9 @@ const FULL_K = 0.48;
 /** where the figure's middle sits in the box when it is brought in close (as a share of its height) */
 const MID_Y = 0.55;
 
+/** where the graduate's cap sits, as a share of the box from the top, for the forms whose head is not where the torch's is: on the head and clear of the eyes */
+const CAP_TOP: Record<number, number> = { 5: 0.4, 6: 0.31, 7: 0.175, 8: 0.08, 9: 0.13, 10: 0.155, 11: 0.13 };
+
 /** the layers without the picture's own sky and stars, and how close to draw it: [zoom, shift x, shift y] as shares of the box */
 export function bigLayers(level: number, noLand?: boolean): { layers: EmblemLayers; fire: Fire; zoom: number; dx: number; dy: number } | null {
   const l = emblemLayers(level, true);
@@ -190,8 +193,10 @@ export const BigFlame = memo(function BigFlame({
         {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
       </View>
       {grad ? (
-        /* on the head, whichever form: the figure always sits at the same place (see place above) */
-        <View pointerEvents="none" style={{ position: 'absolute', left: size * 0.46, top: size * (MID_Y - 0.33), transform: [{ rotate: '14deg' }] }}>
+        /* on the head, whichever form */
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', left: size * 0.46, top: size * (CAP_TOP[formOfLevel(level)] ?? MID_Y - 0.33), transform: [{ rotate: '14deg' }] }}>
           <GradCap size={size * 0.26} />
         </View>
       ) : null}

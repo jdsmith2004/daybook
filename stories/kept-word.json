@@ -38,7 +38,7 @@
       "open": "23:30",
       "what": "the night of a slip",
       "before": [{ "slip": "23:10", "trigger": "Stressed" }],
-      "tap": ["I did one small thing"],
+      "tap": ["I did something else"],
       "expect": "Logged\\. That took honesty"
     },
     {

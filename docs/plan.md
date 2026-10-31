@@ -1,5 +1,17 @@
 # What is planned next
 
+## Version 1.3.0: the final walkthrough (October 31, 2026)
+
+The new look of the lessons, the fire that moves at its tips, the wind-down rebuilt and the store pictures were merged together by the owner's word, and the public guides
+were corrected and merged. Walked on a release build on two iPhone sizes as a new person, someone 40 days in, someone on the day of a slip and someone about to graduate.
+
+**Found and fixed:** graduation came up blank on iPhone, because two saves undid each other forever (the store put its live copy back to the last rendered one after each
+render); the cap covered the eyes or floated off the head on most forms; a first lesson's glow was cut in a straight line; an off button in a lesson showed its words twice;
+"tap again" on the setup pledge stopped working after four seconds.
+
+**Not merged:** iPhone tips outside the United States (`claude/clever-villani-6a3f09`, commit e5dc2d0). It conflicts with the tip code since Daybook Pattern, and Daybook is
+offered in the United States only, where the web link is already right. Opening other countries is the owner's call, and this commit is the start of that work.
+
 ## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
 
 The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of
@@ -91,8 +103,7 @@ The owner: "Is that the right thing to have them do? Is that what's going to hel
 ## The wind-down: put your flame to bed (the owner, October 31, 2026)
 
 The owner: "look at wind down, is it contributing to the app, what does the app need, give me your ideas or do a redesign and have me
-review it". **Where it is:** built on branch `claude/wind-down-review-f48cb9`, on the simulator "Daybook Wind" as a release build, **not merged:
-waiting for the owner's review.**
+review it". **Where it is:** merged for 1.3.0 by the owner's word (October 31, 2026).
 
 **What was wrong.** The one big daily moment in the app had no flame in it: a moon icon in a tinted circle, three cards the same size, "0 of 5
 done" at the hardest hour of the day, a list that paid 10 points hidden in a fold while the act itself paid 5, the phone line buried first among five
@@ -164,7 +175,7 @@ uses it, and other pages may still hit it.
 
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
-**Where it is:** built on branch `claude/lessons-look-790694`, not merged until the owner has seen it on the simulator. Pictures: `docs/lessons-review/`
+**Where it is:** merged for 1.3.0 by the owner's word (October 31, 2026). Pictures: `docs/lessons-review/`
 (`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from; `built-day.png`, `built-night.png` and `built-small-phone.png` are what was built).
 
 **What the owner chose:** A and C together, with two cards kept from C.
@@ -189,7 +200,7 @@ The first three options are in `docs/today-review/day-finished-options.png`; the
 
 **What the code says:** the wind-down counts as done once the phone-away time is set, and today runs until the rollover (4 AM by default). So the finished screen shows from Goodnight until 4 AM, unless the wind-down is switched off for that day. The check-in and the wind-down both end in the same Goodnight, so they are close to one stop already. The wind-down branch puts the flame to bed, big and asleep, with the person's own sentence (`bedWords`), so A's bigger flame and sentence would repeat it minutes later.
 
-**The wind-down session finished (not merged, waiting for the owner's review).** It keeps the wind-down and changes its job: the flame falls asleep on Goodnight and the page stays, dim, so someone who picks up the phone at 2 AM finds that page. Today is reached only through its X, or on a new open if the app was closed. So the question moved from "what does a finished day show" to "what should the day be".
+**The wind-down session finished (merged for 1.3.0).** It keeps the wind-down and changes its job: the flame falls asleep on Goodnight and the page stays, dim, so someone who picks up the phone at 2 AM finds that page. Today is reached only through its X, or on a new open if the app was closed. So the question moved from "what does a finished day show" to "what should the day be".
 
 **What each option costs (code map):** the stops on the line are built for today only (`dayRhythm`, `stopTiles`). Points, badges and Sunday goals read the raw day records, so changing the line cannot change an old day or anything earned, and no golden fixture moves as long as `rhythm()` is left alone. Making the journal a stop costs more: its entries live outside the days and it counts toward nothing. The same is true of the wind-down's scoring: on `main` Goodnight sets only the phone-away time, and the wind-down branch makes it count.
 

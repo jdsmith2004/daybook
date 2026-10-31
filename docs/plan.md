@@ -2,7 +2,13 @@
 
 ## The shape of the day (the owner, October 31, 2026)
 
-**On hold (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). That rules out the sleeping flame on Today, the "Cannot sleep?" row and the stop renamed Goodnight, and it may cover more of this. Ask the owner which parts still stand before building any of it.
+**Narrowed by the owner (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). Asked which parts still stand, the owner kept three, all _medium_, on a branch from main and shown on the simulator as a release build before any merge:
+
+1. At night, Goodnight takes the big card instead of an unread lesson (`dayRhythm`, `stopTiles`).
+2. On the night of a slip, the lesson and the check-in go quiet, leaving only the night's one step. Nothing earned changes.
+3. A count of Goodnights finished, in `PULSE_KEYS` and on the privacy page in the same change. The server refuses a new name until the sync service is deployed, so it needs a deploy to count.
+
+The rest below is not being built: no sleeping flame on Today, no "Cannot sleep?" row, the stop keeps the name Wind-down, the check-in is unchanged, and no confidence question, day 50 or switch for turning a stop off. It stays as the record.
 
 **Where it is:** the owner liked it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
 

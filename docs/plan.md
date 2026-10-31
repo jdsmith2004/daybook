@@ -14,11 +14,13 @@
 - At night the journey ends at a warm dawn, not bright day.
 - Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
 
-**Open from the same walk:** what happens when the day is finished: see "When the day is finished" below.
+**From the same walk:** what happens when the day is finished was looked at and left as it is: see "When the day is finished" below.
 
 ## When the day is finished (the owner, October 31, 2026)
 
-**Where it is:** drawn, waiting for the owner to pick. Nothing built or merged. The first three options are in `docs/today-review/day-finished-options.png`; the newer ones are below.
+**Decided (the owner, October 31, 2026): "none it's good as is."** The day stays Lesson, Check-in, Wind-down, and Today after a finished day stays as it is, with no asleep flame on Today and no new row. Nothing was built. This covers the idea of a sleeping flame on Today too, so it does not come back with the flame motion work without the owner asking. The wind-down rebuild is a separate review and is not settled by this. Everything below is the record of what was looked at, kept so it is not worked out again.
+
+The first three options are in `docs/today-review/day-finished-options.png`; the newer ones are below.
 
 **The owner on those options (October 31, 2026):** none is a clear yes. A is the closest but "doesn't really look that good", and the current screen looks bad. A separate home screen is also hard to justify: on the usual routine, a finished day means the wind-down is done, so anyone on this screen has already said Goodnight and picked the phone back up. The owner is open to changing the day itself: bring the journal in, swap stops, or remove the wind-down entirely.
 
@@ -51,7 +53,7 @@
 
 All of these replace the "Flame takes the day" option above, which was the same screen zoomed in. Where a finished day is reached in daylight (the wind-down switched off), the words stay plain and the page light.
 
-**Order once the owner picks:** the wind-down merges first, then the flame motion, since both touch `big-flame.tsx` and `hero.tsx`. The stops are _medium_: `dayRhythm`, `stopTiles`, the words and the Goodnight stop. If the journal or a points rule changes, that part is _high_. Then a release build on the simulator for the owner, before any merge.
+**The order it would have taken (not happening, see Decided above):** the wind-down merges first, then the flame motion, since both touch `big-flame.tsx` and `hero.tsx`. The stops are _medium_: `dayRhythm`, `stopTiles`, the words and the Goodnight stop. If the journal or a points rule changes, that part is _high_. Then a release build on the simulator for the owner, before any merge.
 
 **What the owner said:** "the all done you need to do that differently it just hides everything underneath the stupid box", and "can we think of a different thing to do when they finish??"
 
@@ -67,7 +69,7 @@ All of these replace the "Flame takes the day" option above, which was the same 
 
 **Helps Daybook earn or grow:** a home screen worth opening at the end of the day. No ask is added.
 
-**Steps once picked:** the words as a rule in core with tests; the sizing in `today-size.ts`; the line on its side in `your-day.tsx`; the swell on return, with a still version for Reduce Motion. All _medium_. Then a release build on the simulator for the owner, before any merge.
+**The steps A would have taken (not happening):** the words as a rule in core with tests; the sizing in `today-size.ts`; the line on its side in `your-day.tsx`; the swell on return, with a still version for Reduce Motion. All _medium_. Then a release build on the simulator for the owner, before any merge.
 
 ## The home screen (the owner, October 30, 2026)
 

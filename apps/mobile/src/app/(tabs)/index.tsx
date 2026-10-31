@@ -94,8 +94,8 @@ export default function Today() {
      switch holds for two weeks, so it never flips back and forth. */
   useEffect(() => {
     if (!ready || !st) return;
-    if (shouldAutoStep(snap.days, st, tk)) apply(autoStep(st, tk));
-    else if (shouldAutoCount(snap.days, st, tk, now)) apply(autoCount(st, tk));
+    if (shouldAutoStep(snap.days, st, tk)) apply((s) => autoStep(s, tk));
+    else if (shouldAutoCount(snap.days, st, tk, now)) apply((s) => autoCount(s, tk));
   }, [ready, st, snap.days, tk, now, apply]);
 
   /* the log starts with the first log: blank days before it are not counted, so the start (and a Day 1 before it) moves
@@ -117,8 +117,7 @@ export default function Today() {
   const synced = sync.status.k === 'off' || sync.status.k === 'out' || (sync.status.k === 'on' && !!sync.at && sync.at >= LAUNCH);
   useEffect(() => {
     if (!ready || !st || syncing || !synced) return;
-    const on = awayStart(st, tk);
-    if (on) apply({ st: on });
+    if (awayStart(st, tk)) apply((s) => ({ st: awayStart(s, tk) ?? s }));
     if (!snap.days[tk]?.p?.o) update((s0) => ({ ...s0, days: markOpen(s0.days, tk) }));
     /* coming back after a slip is the sunrise check: it lights the second flame, with nothing to answer (core srDone) */
     const back = sunriseDue(snap.days, st, tk);
@@ -183,7 +182,8 @@ export default function Today() {
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
     if (!ready || !st || !gradInfo(snap.days, st, tk).ready) return;
-    apply(graduate(st, tk));
+    /* from the settings as they are now: another change may have gone in during this same pass */
+    apply((s) => graduate(s, tk));
     router.push('/graduated');
   }, [ready, st, snap.days, tk, apply]);
 

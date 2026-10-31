@@ -175,10 +175,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /* the latest change time this copy has had for each record id, so writing the dirty list keeps marks only another copy
      (a second browser tab) made (core mergeDirty) */
   const seenRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    snapRef.current = snap;
-    dirtyRef.current = dirty;
-  }, [snap, dirty]);
+  /* every change sets these two refs itself, before its state. Copying the state into them after a render would put an older log back over
+     what a screen's effect wrote in that same pass: the next change would build on the old copy, and two of them could undo each other forever. */
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const now = useNow();
   const tk = logicalKey(now, snap.settings?.rollover ?? 4);
@@ -441,6 +439,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.multiRemove(keys);
     snapRef.current = empty();
     setSnap(empty());
+    dirtyRef.current = {};
     setDirty({});
   }, []);
 

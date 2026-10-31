@@ -71,7 +71,62 @@ Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone
 - At night the journey ends at a warm dawn, not bright day.
 - Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
 
-**Open from the same walk:** what happens when the day is finished. Today the card is gone and a few words sit above the line. The owner wants something different.
+**From the same walk:** what happens when the day is finished was looked at and left as it is: see "When the day is finished" below.
+
+## When the day is finished (the owner, October 31, 2026)
+
+**Decided (the owner, October 31, 2026): "none it's good as is."** The day stays Lesson, Check-in, Wind-down, and Today after a finished day stays as it is, with no asleep flame on Today and no new row. Nothing was built. This covers the idea of a sleeping flame on Today too, so it does not come back with the flame motion work without the owner asking. The wind-down rebuild is a separate review and is not settled by this. Everything below is the record of what was looked at, kept so it is not worked out again.
+
+The first three options are in `docs/today-review/day-finished-options.png`; the newer ones are below.
+
+**The owner on those options (October 31, 2026):** none is a clear yes. A is the closest but "doesn't really look that good", and the current screen looks bad. A separate home screen is also hard to justify: on the usual routine, a finished day means the wind-down is done, so anyone on this screen has already said Goodnight and picked the phone back up. The owner is open to changing the day itself: bring the journal in, swap stops, or remove the wind-down entirely.
+
+**What the code says:** the wind-down counts as done once the phone-away time is set, and today runs until the rollover (4 AM by default). So the finished screen shows from Goodnight until 4 AM, unless the wind-down is switched off for that day. The check-in and the wind-down both end in the same Goodnight, so they are close to one stop already. The wind-down branch puts the flame to bed, big and asleep, with the person's own sentence (`bedWords`), so A's bigger flame and sentence would repeat it minutes later.
+
+**The wind-down session finished (not merged, waiting for the owner's review).** It keeps the wind-down and changes its job: the flame falls asleep on Goodnight and the page stays, dim, so someone who picks up the phone at 2 AM finds that page. Today is reached only through its X, or on a new open if the app was closed. So the question moved from "what does a finished day show" to "what should the day be".
+
+**What each option costs (code map):** the stops on the line are built for today only (`dayRhythm`, `stopTiles`). Points, badges and Sunday goals read the raw day records, so changing the line cannot change an old day or anything earned, and no golden fixture moves as long as `rhythm()` is left alone. Making the journal a stop costs more: its entries live outside the days and it counts toward nothing. The same is true of the wind-down's scoring: on `main` Goodnight sets only the phone-away time, and the wind-down branch makes it count.
+
+**What the research says** (no trial of any of this exists for porn; full notes with links are outside the repo, in the session's notes folder as `day-stops-research.md`):
+
+- A short daily check-in is safe and mildly useful, and long forms, not frequent ones, are what wear people down (Buu 2020, McCarthy 2015, Eisele 2022). Moderate.
+- It works better when it feeds something back: monitoring with goals or feedback beat monitoring alone (Michie 2009, Harkin 2016). Moderate to strong, mostly outside addiction. Pattern is that feedback, and its comparisons need check-ins, so a daily check-in stays.
+- Journaling helps a little on average, and the benefit faded by a month in addiction treatment (Frattaroli 2006, Meshberg-Cohen 2014). Writing more often did worse in one gratitude study (Lyubomirsky 2005). So it stays a choice, and is not a duty at night. Moderate that the effect is small.
+- Fewer required things is a reasonable inference and no more: mental health apps keep very few people (Baumel 2019), a missed day barely hurts a habit (Lally 2010), and nothing compares one daily task with three. I Am Sober, the closest rival, has two bookends. No app found has three stops in a row. Weak.
+- An intact streak raises later activity and a broken one lowers it, less so when it can be repaired (Silverman and Barasch 2023). Unfinished tasks nagging at people (Zeigarnik) is not supported (Ghibellini and Meier 2025). So a day should be finished by a small amount, and a miss should cost nothing.
+
+**The options for the day** (`docs/today-review/day-stops-options.png`, drawn at 2 PM with the lesson done):
+
+- **Two stops (recommended).** Lesson, then Goodnight. The Goodnight stop opens the check-in with its own sliders, one thing at a time, which already ends in bed. It is the shortest day that keeps Pattern fed and the one act the wind-down research backs. The journal is a quiet way in on the night page, for those who want it, with no points. **The risk:** the owner turned down a merged Bedtime on October 25 without saying why. That one put the check-in into rows on one screen and guessed sleep; this keeps the screens apart and joins only the stops on the line. If the reason was that these should be two things, this is wrong too.
+- **Keep three.** Lesson, Check-in, Wind-down, with the new wind-down. The safest, and the most to do in a day.
+- **The lesson is the day.** One stop, so the day is finished by the small minimum the research favors, and in daytime the finished screen makes sense. Tonight is offered in a quiet row. **The cost:** with no pull toward the evening, check-ins and nights will fall, and Pattern and the phone-down habit go with them.
+- **Journal in.** Lesson, Journal, Goodnight. The owner's idea, and the warmest. Not recommended: it costs the sliders Pattern reads, needs the most code, and asks for writing at night, when the owner said on October 25 there was too much to fill out.
+
+**The options for after Goodnight** (`docs/today-review/day-night-options.png`), which hold for any of the days above. The sleeping flame was drawn with the wind-down branch's art:
+
+- **Asleep, and it asks (recommended).** The flame's eyes are closed and the page is dark until the first open of the new day, with one low row: "Cannot sleep?", to the plan for a loud night. The person here is awake with their phone, so this is the care they need, and a sleeping flame says "rest" without a word of shame.
+- **Asleep on Today.** The same, with the day's line on its side in place of the row.
+- **Nothing special.** Today stays as it is, with no words. Goodnight is the moment. The least to build, and it leaves a bright page at midnight.
+
+All of these replace the "Flame takes the day" option above, which was the same screen zoomed in. Where a finished day is reached in daylight (the wind-down switched off), the words stay plain and the page light.
+
+**The order it would have taken (not happening, see Decided above):** the wind-down merges first, then the flame motion, since both touch `big-flame.tsx` and `hero.tsx`. The stops are _medium_: `dayRhythm`, `stopTiles`, the words and the Goodnight stop. If the journal or a points rule changes, that part is _high_. Then a release build on the simulator for the owner, before any merge.
+
+**What the owner said:** "the all done you need to do that differently it just hides everything underneath the stupid box", and "can we think of a different thing to do when they finish??"
+
+**What the options are judged by:** a finished day is proof of who the person is becoming, and the flame getting stronger is the picture of it. It must not feel like a reward from a game. Already happened, Planning a slip? and SOS stay in plain reach, and nothing sits on top of anything.
+
+- **A. The flame takes the day (recommended).** The line through the day lies on its side: the same marks and the same squiggle in one row under the two quiet buttons, each stop still one tap. The sky takes the room that frees, so the flame goes from 315 to 393 points wide on a 393-point iPhone. The person's own sentence grows on the sky, with "Today proved it." under it. There is no box and nothing to close. Coming back from the last stop, the flame swells to its new size and blooms once, in place.
+- **B. A finish screen.** A full-screen moment, once a day, with a button to close it. Not recommended, though it was part of the first idea: the evening already ends in Goodnight (`goodnight.tsx`, the moon and the stars), so this is a second ending in a row, with one more tap at bedtime.
+- **C. Tomorrow on the line.** Nothing folds, and a fourth stop names tomorrow's lesson. Hides the least and gives a pull back tomorrow, but the flame does not change, so a finished day looks like any other.
+
+**Words chosen for A, to correct if wrong:** with a sentence, that sentence and then "Today proved it.", adding "Rest well." only at night. With no sentence, "You showed up today." and "That is who you are now." After a slip that day, "A hard day, and you finished it.", never "proved it".
+
+**A risk in A:** the flame is back at its usual size the next morning, when the day's stops come back. It happens overnight with the app closed, so it should read as a new day, but it needs a look on the simulator.
+
+**Helps Daybook earn or grow:** a home screen worth opening at the end of the day. No ask is added.
+
+**The steps A would have taken (not happening):** the words as a rule in core with tests; the sizing in `today-size.ts`; the line on its side in `your-day.tsx`; the swell on return, with a still version for Reduce Motion. All _medium_. Then a release build on the simulator for the owner, before any merge.
 
 ## The home screen (the owner, October 30, 2026)
 

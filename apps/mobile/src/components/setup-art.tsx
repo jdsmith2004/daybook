@@ -9,7 +9,7 @@ import { Shape } from '@/components/shapes';
 import { SosButton } from '@/components/sos-button';
 import { T } from '@/components/ui';
 import { DayPicture } from '@/components/your-day';
-import { font, useTheme } from '@/lib/theme';
+import { font, nightInk, useTheme } from '@/lib/theme';
 
 /* how often: a week, one dot per day it happens */
 const OB_WK = [
@@ -244,7 +244,7 @@ export function PicDay({ a }: { a: SetupAnswers }) {
         accessibilityLabel="The SOS button."
         style={Platform.OS === 'ios' ? s.sosIos : s.sosOther}>
         {Platform.OS === 'ios' ? (
-          <View style={[s.glass, { backgroundColor: c.surface }]}>
+          <View style={[s.glass, { backgroundColor: c.scheme === 'dark' ? nightInk.ink : c.surface }]}>
             <Image source={require('../../assets/images/sos-mark.png')} style={s.mark} />
           </View>
         ) : (

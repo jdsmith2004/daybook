@@ -20,7 +20,7 @@ import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
-import { font, useTheme, type Palette } from '@/lib/theme';
+import { font, nightInk, useTheme, type Palette } from '@/lib/theme';
 
 /** open a stop's moment */
 export function openStop(go: StopGo, id?: string) {
@@ -120,12 +120,15 @@ function Stops({
   hero,
   note,
   tileOf = (t) => t,
+  glass,
 }: {
   tiles: StopTile[];
   big: string | null;
   hero?: BigCard | null;
   note?: React.ReactNode;
   tileOf?: (t: StopTile) => StopTile;
+  /** on a colored sky: the line and the rows are the sky's own white, as a sky's top bar is, not the page's surface */
+  glass?: boolean;
 }) {
   const n = tiles.length;
   /* where each stop's card sits, so its mark sits at the card's middle and the line runs from mark to mark */
@@ -133,7 +136,12 @@ function Stops({
   const [cardMid, setCardMid] = useState<Record<string, number>>({});
   return (
     <View>
-      <DayLine tiles={tiles} mids={tiles.map((t) => (rowY[t.k] != null && cardMid[t.k] != null ? rowY[t.k] + cardMid[t.k] : null))} curKey={big} />
+      <DayLine
+        tiles={tiles}
+        mids={tiles.map((t) => (rowY[t.k] != null && cardMid[t.k] != null ? rowY[t.k] + cardMid[t.k] : null))}
+        curKey={big}
+        glass={glass}
+      />
       {tiles.map((t, i) => {
         const tile = tileOf(t);
         const isBig = big === t.k;
@@ -143,7 +151,7 @@ function Stops({
             onLayout={(e) => put(setRowY, t.k, e.nativeEvent.layout.y)}
             style={[s.stop, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
             <View onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
-              {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
+              {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} glass={glass} />}
             </View>
             {isBig && note ? <View style={s.note}>{note}</View> : null}
           </View>
@@ -155,6 +163,7 @@ function Stops({
 
 /** Your day as a picture, for the tour in setup: drawn with the real parts, so it always looks like Today. A picture: nothing in it is a button. */
 export function DayPicture({ wind }: { wind: string }) {
+  const glass = useTheme().scheme === 'dark';
   const stop = (k: string, sky: StopTile['sky'], ic: string, title: string, right: string, go: StopGo): StopTile => ({
     k,
     state: 'later' as StopTile['state'],
@@ -187,6 +196,7 @@ export function DayPicture({ wind }: { wind: string }) {
           ]}
           big="lesson"
           hero={{ eb: 'Lesson 1 · 1–5 min', h: 'One short lesson', btn: 'Start', go: 'lesson' }}
+          glass={glass}
         />
       </View>
     </View>
@@ -213,8 +223,9 @@ const put = (set: React.Dispatch<React.SetStateAction<Record<string, number>>>, 
 /* one drawing for the whole line: each stretch runs from one mark to the next, the squiggle where that stop is done (docs/design-standards.md:
    squiggle means progress), quiet dashes where the day is still to come. The squiggle starts under a done mark, which is solid, and lands
    flat, so it never meets anything mid-wiggle. */
-function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | null)[]; curKey: string | null }) {
+function DayLine({ tiles, mids, curKey, glass }: { tiles: StopTile[]; mids: (number | null)[]; curKey: string | null; glass?: boolean }) {
   const c = useTheme();
+  const quiet = glass ? nightInk.muted : c.line;
   const focused = useIsFocused();
   const reduce = useReducedMotion();
   const sec = useClock(!reduce && focused && tiles.some((t) => t.done));
@@ -242,7 +253,7 @@ function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | n
             return <Path key={t.k} d={d} stroke={c.sun2} strokeWidth={SQUIGGLE.stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
           }
           const q = dashed(at[i] + MARK / 2 + AIR, at[i + 1] - MARK / 2 - AIR);
-          return <Path key={t.k} d={q.d} stroke={c.line} strokeWidth={DASH.stroke} strokeLinecap="round" strokeDasharray={q.dash} fill="none" />;
+          return <Path key={t.k} d={q.d} stroke={quiet} strokeWidth={DASH.stroke} strokeLinecap="round" strokeDasharray={q.dash} fill="none" />;
         })}
       </Svg>
       {tiles.map((t, i) => (
@@ -251,7 +262,7 @@ function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | n
           style={[
             s.mark,
             { top: at[i] - MARK / 2 },
-            t.done ? { backgroundColor: c.mint } : solid(i) ? { backgroundColor: c.sun2 } : { borderWidth: 3, borderColor: c.line },
+            t.done ? { backgroundColor: c.mint } : solid(i) ? { backgroundColor: c.sun2 } : { borderWidth: 3, borderColor: quiet },
           ]}>
           {t.done ? <Icon name="check" size={13} color={c.scheme === 'dark' ? '#06352A' : '#FFFFFF'} /> : null}
         </View>
@@ -290,19 +301,21 @@ function Hero({ m, t }: { m: BigCard; t: StopTile }) {
 
 /* ---------- a stop that is not next: one slim row ---------- */
 const STOP_SHAPE: Partial<Record<StopTile['sky'], ShapeKind>> = { sky: 'cookie9', violet: 'cookie12', night: 'sunny', sun: 'flower' };
-function Row({ t }: { t: StopTile }) {
+function Row({ t, glass }: { t: StopTile; glass?: boolean }) {
   const c = useTheme();
   const L = lookOf(t.sky, c);
+  const ink = glass ? nightInk.ink : c.ink;
+  const muted = glass ? nightInk.muted : c.muted;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
       onPress={() => openStop(t.go, t.id)}
-      style={({ pressed }) => [s.row, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name={t.ic} size={20} color={t.done ? c.muted : t.sky === 'night' ? c.accentText : L.ink} />
-      <Text style={[s.rowT, { color: t.done ? c.muted : c.ink }]}>
+      style={({ pressed }) => [s.row, { backgroundColor: glass ? nightInk.btn : c.surface, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name={t.ic} size={20} color={glass ? ink : t.done ? c.muted : t.sky === 'night' ? c.accentText : L.ink} />
+      <Text style={[s.rowT, { color: t.done ? muted : ink }]}>
         {t.title}
-        <Text style={[s.rowS, { color: c.muted }]}>{'  ' + (t.done ? t.line : t.right)}</Text>
+        <Text style={[s.rowS, { color: muted }]}>{'  ' + (t.done ? t.line : t.right)}</Text>
       </Text>
     </Pressable>
   );

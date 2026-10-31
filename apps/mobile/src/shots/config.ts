@@ -28,21 +28,24 @@ export const SIZES: Record<string, Size> = {
   'ios-search': { w: 3840, h: 2560, scale: 2, kind: 'wide', use: 'App Store search results, 3:2' },
 };
 
-/** the brand's backgrounds: [top, middle, bottom] of a soft vertical gradient, a warm glow, and the caption colors */
+/** the skies, in the set's order: one sky runs across all the shots, drifting from each color to the next, so a shot's left edge meets the last one's
+    right edge. [top, middle, bottom], mixed in oklch so a gradient stays rich and never goes gray. hill: the far and near hills across the bottom. */
 export interface Bg {
   sky: [string, string, string];
-  glow: string;
+  hill: [string, string];
   ink: string;
   sub: string;
   stars: boolean;
-  /** the pills' fill under the caption */
-  pill: string;
 }
 export const BACKGROUNDS: Record<string, Bg> = {
-  night: { sky: ['#15103C', '#2B2169', '#4A3592'], glow: 'rgba(255,194,90,.30)', ink: '#FFFFFF', sub: '#D9D2FF', stars: true, pill: 'rgba(255,255,255,.16)' },
-  dawn: { sky: ['#2C2175', '#7A3F98', '#F08C7C'], glow: 'rgba(255,214,140,.32)', ink: '#FFFFFF', sub: '#FFE6DA', stars: true, pill: 'rgba(255,255,255,.18)' },
-  cream: { sky: ['#FFF8EB', '#FFEFD6', '#FFE2BC'], glow: 'rgba(255,170,80,.28)', ink: '#2A2350', sub: '#6B6489', stars: false, pill: 'rgba(42,35,80,.08)' },
-  day: { sky: ['#5AA8FF', '#9CD3FF', '#E4F4FF'], glow: 'rgba(255,230,140,.40)', ink: '#14244A', sub: '#2E4A7A', stars: false, pill: 'rgba(255,255,255,.55)' },
+  /* one sunrise, in the set's order: it starts in the night and ends in full sun, as the person does */
+  night: { sky: ['#0C0A33', '#1E1766', '#3D2A9E'], hill: ['#2E2384', '#1B1558'], ink: '#FFFFFF', sub: '#D9D2FF', stars: true },
+  dusk: { sky: ['#14104A', '#34208A', '#6E35B8'], hill: ['#4A2AA0', '#2A1A72'], ink: '#FFFFFF', sub: '#E0D8FF', stars: true },
+  plum: { sky: ['#2A1468', '#6A2AA8', '#C4479A'], hill: ['#8A2F98', '#55208A'], ink: '#FFFFFF', sub: '#F6DDF2', stars: false },
+  rose: { sky: ['#551E8A', '#B0358F', '#F06A7A'], hill: ['#C23F80', '#8A2A86'], ink: '#FFFFFF', sub: '#FFE3E6', stars: false },
+  coral: { sky: ['#9A2A80', '#E5507A', '#FF9A5C'], hill: ['#E0566E', '#B83A78'], ink: '#FFFFFF', sub: '#FFEBDD', stars: false },
+  amber: { sky: ['#E0507A', '#FF8A4C', '#FFC85C'], hill: ['#F5824A', '#E8603E'], ink: '#FFFFFF', sub: '#FFF2DC', stars: false },
+  sun: { sky: ['#F7693D', '#FF9A3D', '#FFD36B'], hill: ['#F7A63E', '#EE8A34'], ink: '#FFFFFF', sub: '#FFF2DC', stars: false },
 };
 
 export const FONTS = {
@@ -54,20 +57,16 @@ export const FONTS = {
 export const CAPTION = {
   top: 0.085,
   side: 0.08,
-  head: 0.088,
-  sub: 0.043,
-  gap: 0.022,
-  /** the facts under the caption (pills) */
-  pill: 0.036,
+  head: 0.098,
+  sub: 0.044,
+  gap: 0.024,
   /** where the phone starts, as a share of the shot's height */
-  phoneTop: 0.235,
+  phoneTop: 0.165,
 };
 
 /** the phone in the shot: its width as a share of the shot's, the screen inside it, and the real app's viewport */
 export const FRAME = {
-  width: 0.72,
-  /** each phone's width when two stand together */
-  pair: 0.6,
+  width: 0.84,
   /** the app is laid out at this phone size, then scaled into the frame */
   viewport: { w: 390, h: 844 },
   /** a picture from the iPhone simulator: its height over its width (iPhone 17 Pro, 1206 x 2622) */

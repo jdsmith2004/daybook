@@ -380,7 +380,7 @@ they would be Play in-app products, and that is a separate piece of work.
    - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
      is free, with nothing to unlock." (no tips on Android).
    - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), the feature graphic
-     `store-assets/play-feature/01-feature.png` (1024 × 500), and the six phone screenshots in `store-assets/play-phone/`
+     `store-assets/play-feature/01-feature.png` (1024 × 500), and the seven phone screenshots in `store-assets/play-phone/`
      (1080 × 1920), all made by `npm run shots`. The Android ones show no tip button, as the Android app has none.
    - **Category:** Health & Fitness. **Contact email:** jeffreydsmith.cs@gmail.com. **Privacy policy:**
      https://d3c9g6kent5bsr.cloudfront.net/privacy.html

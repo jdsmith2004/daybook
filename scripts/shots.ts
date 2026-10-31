@@ -32,7 +32,12 @@ interface Scene {
   zoom?: number;
   top?: number;
   playTop?: number;
-  pills?: string;
+  tilt?: number;
+  below?: boolean;
+  forms?: string;
+  lines?: number;
+  hero?: string;
+  head?: number;
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -118,7 +123,26 @@ for (const sc of scenes) {
     const errs: string[] = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     const q = new URLSearchParams({ size: key });
-    for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll', 'zoom', 'top', 'playTop', 'pills'] as const)
+    for (const k of [
+      'screen',
+      'screen2',
+      'screen3',
+      'caption',
+      'sub',
+      'bg',
+      'theme',
+      'at',
+      'scroll',
+      'zoom',
+      'top',
+      'playTop',
+      'tilt',
+      'below',
+      'forms',
+      'lines',
+      'hero',
+      'head',
+    ] as const)
       if (sc[k] != null) q.set(k, String(sc[k]));
     if (size.device === 'iphone' || key.startsWith('ios-'))
       (['screen', 'screen2', 'screen3'] as const).forEach((k, i) => {
@@ -127,6 +151,14 @@ for (const sc of scenes) {
         if (!existsSync(join(out, 'ios-screens', f))) throw new Error(`${sc.name}: no picture for ${sc[k]}. Run npm run shots:ios first.`);
         q.set('pic' + (i ? i + 1 : ''), '/ios-screens/' + f);
       });
+    /* the phone shots are one long picture: each knows its place, and the skies on either side of it */
+    const set = scenes.filter((x) => x.sizes.includes(key));
+    const at = set.indexOf(sc);
+    if (set.length > 1) {
+      q.set('pan', String(at));
+      if (set[at - 1]?.bg) q.set('bgL', set[at - 1].bg!);
+      if (set[at + 1]?.bg) q.set('bgR', set[at + 1].bg!);
+    }
     const file = join(out, key, `${String(count[key]).padStart(2, '0')}-${sc.name}.png`);
     try {
       await page.goto(`http://localhost:${port}/shots?${q}`);

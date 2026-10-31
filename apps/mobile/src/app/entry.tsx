@@ -237,7 +237,7 @@ export default function Entry() {
         <View style={[s.care, { backgroundColor: c.sunSoft }]}>
           <T>Nothing resets. One small step within the hour keeps the snowball from starting.</T>
           <View style={s.chips}>
-            {e.recovered ? null : (
+            {e.recovered || !isToday ? null : (
               <Chip
                 label={door.label}
                 on={false}

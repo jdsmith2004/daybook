@@ -1,6 +1,6 @@
 # What is planned next
 
-## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; on branch claude/rekindle-flow-c29870, not merged)
+## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built on branch claude/admiring-williams-999944, which carries claude/rekindle-flow-c29870; not merged until the owner has seen it on the simulator)
 
 The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of
 things that have nothing to do with it and never SOS or the journal; and "Next time, what will you do instead?" may not help at all.
@@ -32,22 +32,28 @@ things that have nothing to do with it and never SOS or the journal; and "Next t
 2. How it feels now, and its answer.
 3. After a go-ahead with a number: "You expected 8. What did it really give?", one page, with their own record. "What did it cost?" and the second feelings page go.
 4. What was going on just before.
-5. **Next time, as a plan already made:** "When I feel lonely or low late at night, I will open SOS." That is my plan, or Choose another: its own page with the tools that fit that situation (the journal, Reach a person, Breathe, Go to bed, Move), what held before first, and the person's own words.
+5. **Next time, as a plan already made:** the sentence is the page's heading, "When I feel lonely or low late at night, I will open SOS.", with the SOS button itself big in the middle (a tap opens it) and when Daybook brings it back under it. That is my plan, or Choose another: its own page with the tools that fit that situation (the journal, Reach a person, Breathe, Go to bed, Move), what held before first, and the person's own words.
 6. The finish by the fire, "You came back.", with one door for the next hour chosen from how it feels: still pulled, SOS; like giving up, My reasons; ashamed or angry, the journal; late at night, Go to bed. Using it counts as the one small thing.
 
 A plan comes back at its hour as it does today, and now a tap opens its tool. Today's after-a-slip card and the entry sheet offer the same door, with "I did something else".
 
-Picture: docs/rekindle-review/mock-new-pages.png (a mock, drawn to be judged; the real screens come in the build).
+Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; in the build the plan became the heading, because a heading above a quote said the same thing twice).
 
 **Business:** nothing locked, no ask nearby. It earns by keeping people, and a slip is when they leave. It also teaches SOS as the one reflex, and the journal gets used. Points rules do not change, and nothing earned drops.
 
 **Steps, with the effort each needs:**
 
-- [ ] **High.** Core and flow: the look back saves the slip at once and hands to the hold; its Undo puts everything back; a go-ahead is settled once the hold is done, so it is never asked twice; the entry sheet's two paths reach the hold, and changing an entry keeps what it earned. Tests.
-- [ ] **Medium.** The expected-against-real page, the new last page, Choose another, the finish's door, the Today card, the entry sheet, plans that open their tool. Tools first in Talk it through's moves.
-- [ ] **Medium.** The words: the slip plan's starting step (with `normSettings`, and the golden fixtures by hand), My plan's stale line, the Sunday story, the faith page's line, and the slip lines of lessons 3, 5, 6 and 32.
-- [ ] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
+- [x] **High.** Core and flow: the look back saves the slip at once and hands to the hold; its Undo puts everything back; a go-ahead is settled once the hold is done, so it is never asked twice; the entry sheet's two paths reach the hold, and changing an entry keeps what it earned. Tests.
+- [x] **Medium.** The expected-against-real page, the new last page, Choose another, the finish's door, the Today card, the entry sheet, plans that open their tool. Tools first in Talk it through's moves.
+- [x] **Medium.** The words: the slip plan's starting step (with `normSettings`, and the golden fixtures by hand), My plan's stale line, the Sunday story, the faith page's line, and the slip lines of lessons 3, 5, 6 and 32.
+- [x] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
 - [ ] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
+
+**Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip.
+
+**Gone for good:** the chart of expected against real, "What did it cost?" and the second feelings page.
+
+**Not checked yet:** VoiceOver and Android. A synced plan with the new `sos` or `journal` move on an older app version reads "do what I planned", since that version does not know those moves.
 
 Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone away: the tool is the app), and the roughly 24 lessons whose "What to do" card names something outside the app and not about a slip (the lessons chat is in those files).
 

@@ -294,7 +294,7 @@ export default function Log() {
       try {
         was = JSON.parse(params.was || '{}');
       } catch {}
-      update((s) => ({ ...s, days: patchEvent(s.days, date, evId, { ...was, outcome: 'rode' }) }));
+      update((s) => ({ ...s, days: patchEvent(s.days, date, evId, { ...was, outcome: 'rode' }) }), { noWin: true });
       closeAll();
       say('Changed back.');
       return;
@@ -478,7 +478,9 @@ export default function Log() {
         <View style={{ opacity: lit ? 0 : 1 }} pointerEvents={lit ? 'none' : 'auto'}>
           {saved}
         </View>
-        <Hearth hold={hold} />
+        <FitArt min={0.55} stretch>
+          <Hearth hold={hold} />
+        </FitArt>
         <Appear key={lit ? 'lit' : 'low'} delay={lit ? 650 : 0} by={lit ? 10 : 0} duration={lit ? 420 : 0} style={s.words}>
           <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
             {w.h}
@@ -667,7 +669,7 @@ export default function Log() {
       <>
         {/* the plan is the heading, and the middle is the button it names */}
         <T v="title" style={s.h} accessibilityRole="header">
-          {line}
+          {keepLast(line)}
         </T>
         <Middle>
           <FitArt min={0.6}>
@@ -754,12 +756,14 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
-        <Hearth hold={hold} />
+        <FitArt min={0.55} stretch>
+          <Hearth hold={hold} />
+        </FitArt>
         <View style={s.words}>
           <T v="title" style={s.h} accessibilityRole="header">
             You came back.
           </T>
-          <T style={s.center}>{line ? '“' + line + '”' : 'Logged honestly, and looked at. That is how the next one gets easier.'}</T>
+          <T style={s.center}>{line ? '“' + keepLast(line) + '”' : 'Logged honestly, and looked at. That is how the next one gets easier.'}</T>
           {gain ? (
             <T v="label" tone="mintText" style={s.center}>
               {'+' + gain + ' points'}
@@ -805,6 +809,9 @@ export default function Log() {
   );
 }
 
+/* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line */
+const keepLast = (line: string) => line.replace(/ (\S+)$/, '\u00A0$1');
+
 /* "✓ Saved · Slipped at 11:40 PM  +10  Undo" */
 function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?: () => void }) {
   const c = useTheme();
@@ -814,7 +821,7 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?
         <Icon name="check" size={14} color="#FFFFFF" />
       </View>
       <T v="label" style={{ flexShrink: 1 }}>
-        Saved · {text}
+        Saved · {text.replace(/ (AM|PM)/, '\u00A0$1')}
       </T>
       {gain ? (
         <T v="label" tone="mintText">

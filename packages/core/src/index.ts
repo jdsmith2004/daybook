@@ -15,6 +15,7 @@ export * from './feelings';
 export * from './day-feel';
 export * from './risk';
 export * from './lessons';
+export * from './lesson-beats';
 export * from './practice';
 export * from './lesson-map';
 export * from './section-art';

@@ -10,18 +10,22 @@
    counted twice) or Read it all again (?at=all, the full lesson). */
 import {
   type Block,
+  type Beat,
   type Card,
+  cardArt,
+  cardBeat,
+  cardLook,
+  cardNumber,
   changeSettings,
   gameCompute,
   fmtDate,
   type Go,
-  type Guess,
   guessFeedback,
   lcheckWritten,
   type Lesson,
+  lessonBeats,
   lessonById,
   lessonDoneOn,
-  lessonFamily,
   lessonGate,
   lessonHasQuick,
   lessonKeyIdea,
@@ -44,9 +48,7 @@ import {
   lfmt,
   LNOTE_LEN,
   LUNITS,
-  LX_E,
   lxGraded,
-  lxPct,
   lxRcReply,
   nextAfter,
   type PItem,
@@ -55,9 +57,10 @@ import {
   type Settings,
   srcNote,
 } from '@daybook/core';
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Redirect, router, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,28 +70,37 @@ import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { Dock } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
-import { FlameMedallion } from '@/components/flame-medallion';
-import { LessonArt, LxIco, BigNumber } from '@/components/lesson-art';
-import { Back, Ghost, Next, Rich, Route } from '@/components/lx';
+import { LessonArt, useCount } from '@/components/lesson-art';
+import { Bubble, FlameSlot, FlameStage } from '@/components/lesson-flame';
+import { LessonBackdrop } from '@/components/lesson-sky';
+import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { lessonLook, PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
 import { useAccount } from '@/lib/sync';
-import { font, MAX_WIDTH, toneOf, useTheme, type Tone } from '@/lib/theme';
+import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@/lib/theme';
 
+/** the color of quiet words low on the screen, where the sky is brightest */
+const LowInk = createContext('#FFFFFF');
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
 /** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
     not ask the same question again that day */
 const ASKED: Record<string, string> = {};
-interface Sheet {
-  t: 'src';
-  i?: number | null;
-}
+type Sheet =
+  /** where the science comes from */
+  | { t: 'src'; i?: number | null }
+  /** a card's original words, and on a question the original comment on the answer picked */
+  | { t: 'more'; i: number; pk: number | null }
+  /** the recall question's original words */
+  | { t: 'rc'; of: string; pk: number | null }
+  /** the lesson's one thing to keep, in full */
+  | { t: 'key' };
 /** a line added on the practice step: the words that went on the plan (changed or not), and what a sentence replaced */
 interface Got {
   it: PItem;
@@ -99,7 +111,7 @@ export default function LessonScreen() {
   const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
   const { snap, tk, update, apply, say } = useStore();
   const account = useAccount();
-  const c = useTheme();
+  const base = useTheme();
   const inset = useSafeAreaInsets();
   const st = snap.settings;
   const L = lessonById(id);
@@ -124,6 +136,8 @@ export default function LessonScreen() {
   const [copied, setCopied] = useState<Record<number, boolean>>({});
   const [editing, setEditing] = useState<number | null>(null);
   const [wrote, setWrote] = useState<string | null>(null);
+  /* the flame blooms when the right answer is found */
+  const [pulse, setPulse] = useState(0);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -142,11 +156,20 @@ export default function LessonScreen() {
   if (!st) return <Redirect href="/" />;
   if (!L)
     return (
-      <Frame title="Lesson" onClose={close} c={c} inset={inset}>
+      <Shell
+        look={lessonLook('sky', 0, base.scheme)}
+        level={1}
+        flameOn={false}
+        pulse={0}
+        onClose={close}
+        inset={inset}
+        scroll={scroll}
+        fit={fit}
+        bodyKey="none"
+        foot={null}>
         <T v="title">That lesson is not here</T>
-      </Frame>
+      </Shell>
     );
-  const t = toneOf(c, LUNITS[L.u].tone);
   const n = lessonNo(L, st);
   const w = lessonWalk(snap.days, st);
   const done = w.done;
@@ -163,6 +186,28 @@ export default function LessonScreen() {
   const next = nextAfter(L, w);
   const seq = lessonSeq(L, rcOf, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
+  const beats = lessonBeats(L);
+  const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
+
+  /* where this card is: the sky turns from night to day as the lesson goes on; the answer is the sun, and a number is the violet card */
+  let kind: LookKind = 'sky';
+  let p = 0;
+  let lockKey = false;
+  if (stage === 'run') {
+    const ix = Math.max(0, Math.min(seq.length - 1, i));
+    const cur = seq[ix];
+    p = (ix + 1) / seq.length;
+    if (cur.t === 'card') {
+      const cl = cardLook(cur.c, cardBeat(L, cur.ci));
+      lockKey = cl === 'guess' && !!gu[cur.ci]?.lock;
+      kind = cl === 'sun' ? 'sun' : cl === 'number' || lockKey ? 'violet' : 'sky';
+    }
+  } else if (stage !== 'cover') p = 1;
+  const look = lessonLook(kind, p, base.scheme);
+  const c = look.c;
+  const t = toneOf(c, LUNITS[L.u].tone);
+  const flameOn = kind !== 'violet' && !(stage === 'practice' && editing != null);
+  let backBtn: (() => void) | undefined;
 
   const record = () => {
     if (rec) return;
@@ -249,10 +294,10 @@ export default function LessonScreen() {
   let prog: ReactNode = null;
   let body: ReactNode;
   let foot: ReactNode = null;
+  /* the flame grows a little as the lesson goes on */
+  const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
   if (stage === 'cover') {
     const pref = st.learn.len;
-    const u = LUNITS[L.u];
-    const fam = lessonFamily(L);
     const start = (l: 'q' | 'f') => {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
@@ -267,39 +312,24 @@ export default function LessonScreen() {
     };
     body = (
       <>
-        <FitArt style={s.art}>
-          <LxIco name={L.ic} t={t} />
-        </FitArt>
-        <Eyebrow label={u.name} t={t} />
+        <FlameSlot size={SHORT ? 280 : 360} min={120} />
+        <T v="small" tone="muted">
+          {n ? 'Lesson ' + n + ' of ' + w.path.length : LUNITS[L.u].name}
+        </T>
         <T style={s.h} accessibilityRole="header">
           {L.title}
         </T>
-        {fam ? (
-          <T v="small" tone="muted">
-            Part {fam.n} of {fam.of} on {fam.f.name === u.name ? 'this idea' : 'one idea: ' + fam.f.name}
-          </T>
-        ) : null}
-        {L.ask ? (
-          <View style={s.askB}>
-            <Text style={[s.eye2, { color: t.text }]}>This lesson answers</Text>
-            <T style={s.p}>{L.ask}</T>
-          </View>
-        ) : (
-          <T style={s.p}>{L.tag}</T>
-        )}
+        <T style={s.p}>{L.ask || L.tag}</T>
         {done.has(L.id) ? (
           <View style={s.tag}>
-            <Icon name="check" size={15} color={c.mintText} />
-            <T v="eyebrow" tone="mintText">
-              You finished this one
-            </T>
+            <Icon name="check" size={15} color={c.ink} />
+            <T v="small">You finished this one</T>
           </View>
         ) : null}
         {lessonHasQuick(L) ? (
           <Dock>
             <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
               <LenBtn
-                t={t}
                 on={pref === 'q'}
                 title="Quick"
                 sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
@@ -307,8 +337,7 @@ export default function LessonScreen() {
                 onPress={() => start('q')}
               />
               <LenBtn
-                t={t}
-                on={pref === 'f'}
+                on={pref !== 'q'}
                 title="Full"
                 sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
                 mins="3–5 min"
@@ -323,81 +352,53 @@ export default function LessonScreen() {
   } else if (stage === 'run') {
     const ix = Math.max(0, Math.min(seq.length - 1, i));
     const it = seq[ix];
-    prog = <Prog total={seq.length} i={ix} />;
-    const back = ix > 0 ? <Back onPress={() => step(-1)} /> : null;
+    prog = <Prog total={seq.length} i={ix} look={look} />;
+    if (ix > 0) backBtn = () => step(-1);
+    const nextLabel = seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next';
     if (it.t === 'rc') {
       const P = lessonById(rcOf)!;
       const r = P.rc!;
+      const rb = lessonBeats(P)?.rc;
       body = (
-        <>
-          <Eyebrow label={'Quick recall · lesson ' + lessonNo(P, st)} t={t} />
-          <T style={[s.h, s.hsm]} accessibilityRole="header">
-            {r.q}
-          </T>
-          <ReplyRoom pk={rc}>
-            {rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}
-            {r.cr && rc != null ? (
-              <T v="small" tone="muted">
-                Tap any other answer to read its comment.
-              </T>
-            ) : null}
-          </ReplyRoom>
-          <Dock>
-            <Opts
-              list={r.c}
-              best={r.a}
-              pk={rc}
-              tried={rcTried}
-              t={t}
-              onPick={(j) => {
-                setRc(j);
-                setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-                buzz('tap');
-              }}
-            />
-            <T v="small" tone="muted">
-              No points for this one. It just helps the last lesson stick.
-            </T>
-          </Dock>
-        </>
+        <Question
+          h={rb?.q || r.q}
+          list={rb?.o || r.c}
+          best={r.a}
+          pk={rc}
+          tried={rcTried}
+          comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
+          first="One from last time."
+          want={want}
+          onMore={rb ? () => setSheet({ t: 'rc', of: P.id, pk: rc }) : undefined}
+          onPick={(j) => {
+            setRc(j);
+            setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+            if (j === r.a) setPulse((x) => x + 1);
+            buzz('tap');
+          }}
+        />
       );
       foot = rc == null ? <Ghost label="Skip" onPress={() => step(1)} /> : <Next label="Next" onPress={() => step(1)} />;
     } else if (it.t === 'done') {
       const pr = lessonPractice(L);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
+      const key = beats?.key || L.key;
       body = (
-        <View style={{ alignItems: 'center', gap: 12 }}>
-          {/* the flame, drawn big in its own sky, every form the same size (the owner, October 27, 2026); on a short phone
-              it shrinks a little before the words do, and never steps aside */}
-          <FitArt min={0.62}>
-            <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={136} />
-          </FitArt>
-          <T style={[s.h, { textAlign: 'center' }]} accessibilityRole="header">
-            {again ? 'Lesson ' + n + ', again' : 'Lesson ' + n + ' done'}
-          </T>
-          {gain > 0 ? (
-            <View style={[s.pill, { backgroundColor: c.sun }]}>
-              <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
-            </View>
-          ) : again && !SHORT ? (
-            <T tone="muted">Already counted. Read it as often as you like.</T>
-          ) : null}
-          <View style={[s.key, { backgroundColor: t.soft }]}>
-            {L.ask ? (
-              <>
-                <Text style={[s.eye2, { color: t.text }]}>You asked</Text>
-                <T>{L.ask}</T>
-                <Text style={[s.eye2, { color: t.text, marginTop: 8 }]}>The answer</Text>
-              </>
-            ) : (
-              <Text style={[s.eye2, { color: t.text }]}>The one thing to keep</Text>
-            )}
-            <Text style={[s.keyP, { color: c.ink }]}>{L.key}</Text>
+        <>
+          <View style={s.doneHead}>
+            <T style={[s.h, { flexShrink: 1 }]} accessibilityRole="header">
+              {again ? 'Lesson ' + n + ', again' : 'Lesson ' + n + ' done'}
+            </T>
+            {gain > 0 ? (
+              <View style={[s.pill, { backgroundColor: c.sun }]}>
+                <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
+              </View>
+            ) : null}
           </View>
+          <Bubble text={key} more={key !== L.key} onMore={() => setSheet({ t: 'key' })} />
+          <FlameSlot size={want} min={SHORT ? 96 : 130} />
           {pr && pr.write ? null : <NoteField L={L} note={note} />}
-          {w.path.every((x) => done.has(x.id)) ? (
-            <T tone="mintText">That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T>
-          ) : null}
+          {w.path.every((x) => done.has(x.id)) ? <T>That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T> : null}
           <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
             <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
           </Pressable>
@@ -407,114 +408,110 @@ export default function LessonScreen() {
               any time, day or night (US). It is open to anyone who is struggling.
             </T>
           ) : null}
-        </View>
-      );
-      foot = (
-        <>
-          {back}
-          {pr ? (
-            <Next label="Put it to work" onPress={() => toStage('practice')} />
-          ) : next ? (
-            <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
-          ) : (
-            <Next label="Done" noIcon onPress={closeAll} />
-          )}
         </>
+      );
+      foot = pr ? (
+        <Next label="Put it to work" onPress={() => toStage('practice')} />
+      ) : next ? (
+        <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
+      ) : (
+        <Next label="Done" noIcon onPress={closeAll} />
       );
     } else {
       const card = it.c;
       const ci = it.ci;
+      const b = cardBeat(L, ci);
       if (card.k === 'choose') {
         const gr = lxGraded(card);
         const pk = pick[ci] ?? null;
+        const saved = card.sv ? ' Saved to My plan.' : '';
         body = (
+          <Question
+            h={b.h || card.h}
+            list={b.o || card.c!.map((x) => x[0])}
+            best={gr ? card.a! : null}
+            pk={pk}
+            tried={tried[ci] || []}
+            comments={(b.c || card.c!.map((x) => x[1])).map((x) => x + saved)}
+            want={want}
+            onMore={b.c ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
+            onPick={(j) => {
+              setPick((p0) => ({ ...p0, [ci]: j }));
+              setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
+              if (card.sv)
+                apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
+              if (gr && j === card.a) setPulse((x) => x + 1);
+              buzz('tap');
+            }}
+          />
+        );
+        foot = <Next label={nextLabel} off={gr && pk == null} onPress={() => step(1)} />;
+      } else if (card.k === 'guess') {
+        const g = card.g!;
+        const gs = gu[ci] || { v: null, lock: false };
+        body = gs.lock ? (
+          <NumberCard
+            n={b.rv?.n || String(g.ans)}
+            h={b.rv?.h || g.rv?.h || card.h}
+            lead={guessFeedback(g, gs.v!)}
+            p={b.rv?.p || g.rv?.b}
+            st={st}
+            fact={card.fact?.s}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
+        ) : (
           <>
-            <Eyebrow label={card.el || (LX_E[card.e || 'turn'] || LX_E.turn)[1]} t={t} />
             <T style={[s.h, s.hsm]} accessibilityRole="header">
-              {card.h}
+              {b.h || card.h}
             </T>
-            {card.ask || typeof card.q === 'string' ? <T style={[s.p, { fontFamily: font.bodySemi }]}>{card.ask || (card.q as unknown as string)}</T> : null}
-            <ReplyRoom pk={pk}>
-              {pk != null ? <Reply text={card.c![pk][1]} t={t} /> : null}
-              {gr && pk != null ? (
-                <T v="small" tone="muted">
-                  Tap any other answer to read its comment.
-                </T>
-              ) : null}
-              {card.sv && pk != null ? (
-                <View style={s.tag}>
-                  <Icon name="check" size={15} color={c.mintText} />
-                  <T v="eyebrow" tone="mintText">
-                    Saved to My plan
-                  </T>
-                </View>
-              ) : null}
-            </ReplyRoom>
+            <View style={s.guessMid}>
+              <SliderValue big value={gs.v} caption={g.unit + ' · your guess'} hint="Slide below to guess" />
+            </View>
+            <FlameSlot size={want * 0.8} min={84} />
             <Dock>
-              <Opts
-                list={card.c!.map((x) => x[0])}
-                best={gr ? card.a! : null}
-                pk={pk}
-                tried={tried[ci] || []}
-                t={t}
-                onPick={(j) => {
-                  setPick((p) => ({ ...p, [ci]: j }));
-                  setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-                  if (card.sv)
-                    apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
-                  buzz('tap');
-                }}
+              <Slider
+                label={card.h}
+                value={gs.v}
+                min={g.min}
+                max={g.max}
+                step={g.step || 1}
+                unit={g.unit}
+                readout={false}
+                onChange={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
               />
             </Dock>
           </>
         );
-        foot = (
-          <>
-            {back}
-            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} off={gr && pk == null} onPress={() => step(1)} />
-          </>
-        );
-      } else if (card.k === 'guess') {
-        const g = card.g!;
-        const gs = gu[ci] || { v: null, lock: false };
-        body = (
-          <GuessCard
-            card={card}
-            g={g}
-            gs={gs}
-            t={t}
-            onSet={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
-            onSrc={() => setSheet({ t: 'src', i: ci })}
+        foot = gs.lock ? (
+          <View style={s.footCol}>
+            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
+            <Next label={nextLabel} onPress={() => step(1)} />
+          </View>
+        ) : (
+          <Next
+            label="Lock in my guess"
+            noIcon
+            off={gs.v == null}
+            onPress={() => {
+              if (gs.v == null) return;
+              setGu((x) => ({ ...x, [ci]: { v: gs.v, lock: true } }));
+              buzz('save');
+              top();
+            }}
           />
         );
-        foot = gs.lock ? (
-          <>
-            {back}
-            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} onPress={() => step(1)} />
-          </>
-        ) : (
-          <>
-            {back}
-            <Next
-              label="Lock in my guess"
-              noIcon
-              off={gs.v == null}
-              onPress={() => {
-                if (gs.v == null) return;
-                setGu((x) => ({ ...x, [ci]: { v: gs.v, lock: true } }));
-                buzz('save');
-                top();
-              }}
-            />
-          </>
-        );
       } else {
-        body = <TextCard L={L} card={card} t={t} st={st} onSrc={() => setSheet({ t: 'src', i: ci })} />;
+        body =
+          cardLook(card, b) === 'number' ? (
+            <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          ) : (
+            <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          );
         foot = (
-          <>
-            {back}
-            <Next label={seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next'} onPress={() => step(1)} />
-          </>
+          <View style={s.footCol}>
+            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
+            <Next label={nextLabel} onPress={() => step(1)} />
+          </View>
         );
       }
     }
@@ -523,19 +520,19 @@ export default function LessonScreen() {
     const items = a.items || [];
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
-    prog = <Prog total={1} i={0} all />;
+    prog = <Prog total={1} i={0} all look={look} />;
     body = ed ? (
       /* changing a line's words: the box and its button at the top, above the keyboard */
       <LineEditor key={editing} it={ed} t={t} onAdd={(x) => add(editing!, x)} onCancel={() => setEditing(null)} />
     ) : (
       <>
-        <Eyebrow label={'Put it to work · ' + a.mins + ' min'} t={t} />
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {a.h}
         </T>
         <Rich text={a.p} st={st} style={s.p} />
         {a.write ? <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} /> : null}
         <Blocks bs={a.b} L={L} t={t} st={st} />
+        <FlameSlot size={SHORT ? 200 : 260} min={110} />
         <Dock>
           {items.map((it, k) => {
             const g = got[k];
@@ -582,23 +579,16 @@ export default function LessonScreen() {
     const a = lessonPractice(L);
     const pair = lessonPairOf(L);
     const due = pair && w.walked.has(pair.a.id) && !lcheckWritten(st, pair.n);
-    prog = <Prog total={1} i={0} all />;
+    prog = <Prog total={1} i={0} all look={look} />;
     body = (
       <>
-        {/* the flame again, grown a little by this: the end of a lesson is its moment */}
-        <FitArt style={s.art} min={0.62}>
-          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={160} />
-        </FitArt>
-        {prac ? <Eyebrow label="Practiced" t={{ ...t, text: c.mintText }} /> : <Eyebrow label="Lesson done" t={t} />}
         <T style={s.h} accessibilityRole="header">
           {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
         {prac ? null : <T style={s.p}>The practice stays in Learn whenever you want it.</T>}
-        {ringLit ? (
-          <T style={s.p} tone="sunText">
-            That lit today on your lessons ring, on the flame in Today. One part for each day you do a lesson this week.
-          </T>
-        ) : null}
+        {ringLit ? <T style={s.p}>That lit today on your lessons ring, on the flame in Today. One part for each day you do a lesson this week.</T> : null}
+        {/* the end of a lesson is the flame's moment */}
+        <FlameSlot size={SHORT ? 330 : 420} min={150} />
         {due && pair ? (
           <Dock>
             <Route
@@ -642,31 +632,22 @@ export default function LessonScreen() {
   }
 
   return (
-    <Frame
-      title={(n ? 'Lesson ' + n + ' of ' + w.path.length : LUNITS[L.u].name) + (stage === 'practice' || stage === 'practiced' ? ' · done' : '')}
+    <Shell
+      look={look}
+      level={level}
+      flameOn={flameOn}
+      pulse={pulse}
       onClose={close}
-      c={c}
+      onBack={backBtn}
+      prog={prog}
       inset={inset}
-      over={sheet ? <SheetOver sheet={sheet} L={L} onClose={() => setSheet(null)} /> : null}>
-      {prog}
-      <ScrollView
-        ref={scroll}
-        onLayout={fit.onLayout}
-        onContentSizeChange={fit.onContentSizeChange}
-        style={s.card}
-        contentContainerStyle={s.cardIn}
-        automaticallyAdjustKeyboardInsets
-        keyboardShouldPersistTaps="handled">
-        <FitProvider value={fit.ctx}>
-          <KeyboardRoom scroll={scroll}>
-            <Appear key={stage + ':' + i} by={10} style={s.cardBody}>
-              {body}
-            </Appear>
-          </KeyboardRoom>
-        </FitProvider>
-      </ScrollView>
-      {foot ? <View style={s.foot}>{foot}</View> : null}
-    </Frame>
+      scroll={scroll}
+      fit={fit}
+      bodyKey={stage + ':' + i + (lockKey ? ':lock' : '')}
+      foot={foot}
+      over={sheet ? <SheetOver sheet={sheet} L={L} st={st} onClose={() => setSheet(null)} onSrc={(i0) => setSheet({ t: 'src', i: i0 })} /> : null}>
+      {body}
+    </Shell>
   );
 }
 
@@ -689,7 +670,8 @@ function goTo(g: Go) {
 function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'back' }) {
   const { snap, tk, apply } = useStore();
   const account = useAccount();
-  const c = useTheme();
+  const base = useTheme();
+  const look = lessonLook('sky', gate === 'back' ? 0.74 : 0.3, base.scheme);
   const inset = useSafeAreaInsets();
   const st = snap.settings!;
   const [rc, setRc] = useState<number | null>(null);
@@ -697,7 +679,6 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const [went, setWent] = useState<Record<number, boolean>>({});
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
-  const t = toneOf(c, LUNITS[L.u].tone);
   const n = lessonNo(L, st);
   const k = lessonKeyIdea(L);
   const first = lessonStats(snap.days).first[L.id];
@@ -705,20 +686,8 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     ? 'You read this one on ' + fmtDate(first, first.slice(0, 4) === tk.slice(0, 4) ? { month: 'long', day: 'numeric' } : { dateStyle: 'long' }) + '.'
     : '';
   const again = () => router.replace({ pathname: '/lesson/[id]', params: { id: L.id, at: 'all' } });
-  const keyBox = (
-    <View style={[s.key, { backgroundColor: t.soft }]}>
-      {k.ask ? (
-        <>
-          <Text style={[s.eye2, { color: t.text }]}>This lesson answers</Text>
-          <T>{k.ask}</T>
-          <Text style={[s.eye2, { color: t.text, marginTop: 8 }]}>The key idea</Text>
-        </>
-      ) : (
-        <Text style={[s.eye2, { color: t.text }]}>The key idea</Text>
-      )}
-      <Text style={[s.keyP, { color: c.ink }]}>{k.key}</Text>
-    </View>
-  );
+  const beats = lessonBeats(L);
+  const said = beats?.key || k.key;
   let body: ReactNode;
   let foot: ReactNode;
   if (gate === 'key') {
@@ -726,17 +695,20 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     const nx = w.next;
     body = (
       <>
-        <Eyebrow label={'Lesson ' + n + ' · ' + LUNITS[L.u].name} t={t} />
+        <T v="small" tone="muted">
+          Lesson {n} · {LUNITS[L.u].name}
+        </T>
         <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
           {L.title}
         </T>
-        {keyBox}
+        {k.ask ? <T style={s.p}>{k.ask}</T> : null}
+        <Bubble text={said} />
+        <FlameSlot size={SHORT ? 210 : 280} min={96} />
         <T style={s.p}>
           {read ? read + ' ' : ''}This is lesson {n} on your path. It opens as you go.
         </T>
         {go.length ? (
           <Dock>
-            <Text style={[s.eye2, { color: t.text }]}>Try it now</Text>
             {go.map((g, j) => (
               <GoRow
                 key={j}
@@ -766,6 +738,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   } else {
     const P = lessonBackRecall(L);
     const r = P ? P.rc! : null;
+    const rb = P ? lessonBeats(P)?.rc : null;
     const keep = () => {
       apply((cur) => ({ st: lessonReach(cur, L.id) }));
       buzz('save');
@@ -775,40 +748,36 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     };
     body = (
       <>
-        {/* the flame stays beside the words, never dropped for room */}
-        <View style={s.backHead}>
-          <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={SHORT ? 80 : 104} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <Eyebrow label="Welcome back" t={t} />
-            <T style={[s.h, s.hsm]} accessibilityRole="header">
-              {L.title}
-            </T>
-          </View>
-        </View>
-        {read ? <T style={s.p}>{read}</T> : null}
-        {keyBox}
+        <T v="small" tone="muted">
+          Welcome back. {read}
+        </T>
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {L.title}
+        </T>
         {r && P ? (
+          /* the flame says the key idea, then a comment on each answer */
+          <Question
+            head={<T style={[s.p, { fontFamily: font.bodySemi }]}>{rb?.q || r.q}</T>}
+            list={rb?.o || r.c}
+            best={r.a}
+            pk={rc}
+            tried={rcTried}
+            comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
+            first={said}
+            want={150}
+            onPick={(j) => {
+              setRc(j);
+              setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
+              ASKED[L.id] = tk;
+              buzz('tap');
+            }}
+          />
+        ) : (
           <>
-            <Text style={[s.eye2, { color: t.text }]}>Quick recall</Text>
-            <T style={[s.p, { fontFamily: font.bodySemi }]}>{r.q}</T>
-            <ReplyRoom pk={rc}>{rc != null ? <Reply text={lxRcReply(r, rc)} t={t} /> : null}</ReplyRoom>
-            <Dock>
-              <Opts
-                list={r.c}
-                best={r.a}
-                pk={rc}
-                tried={rcTried}
-                t={t}
-                onPick={(j) => {
-                  setRc(j);
-                  setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-                  ASKED[L.id] = tk;
-                  buzz('tap');
-                }}
-              />
-            </Dock>
+            <Bubble text={said} />
+            <FlameSlot size={SHORT ? 210 : 280} min={96} />
           </>
-        ) : null}
+        )}
       </>
     );
     foot = (
@@ -819,157 +788,274 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     );
   }
   return (
-    <Frame title={'Lesson ' + n + ' of ' + w.path.length} onClose={close} c={c} inset={inset}>
-      <ScrollView ref={scroll} onLayout={fit.onLayout} onContentSizeChange={fit.onContentSizeChange} style={s.card} contentContainerStyle={s.cardIn}>
-        <FitProvider value={fit.ctx}>
-          <Appear key={gate} by={10} style={s.cardBody}>
-            {body}
-          </Appear>
-        </FitProvider>
-      </ScrollView>
-      <View style={s.foot}>{foot}</View>
-    </Frame>
+    <Shell
+      look={look}
+      level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
+      flameOn
+      pulse={0}
+      onClose={close}
+      inset={inset}
+      scroll={scroll}
+      fit={fit}
+      bodyKey={gate}
+      foot={foot}>
+      {body}
+    </Shell>
   );
 }
 /** a quiet link under the main button, for something the X does not do */
 function Quiet({ label, onPress, half }: { label: string; onPress: () => void; half?: boolean }) {
-  const c = useTheme();
+  const low = useContext(LowInk);
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
-      <Text style={[s.linkT, { color: c.accentText, textDecorationLine: 'none' }]}>{label}</Text>
+      <Text style={[s.linkT, { color: low, textDecorationLine: 'none' }]}>{label}</Text>
     </Pressable>
   );
 }
 
 /* ---------- the frame ---------- */
-function Frame({
-  title,
+/** the whole screen of a lesson: its sky or card behind everything, the top line, the words over the one flame, and the main button low */
+function Shell({
+  look,
+  level,
+  flameOn,
+  pulse,
   onClose,
-  children,
-  c,
+  onBack,
+  prog,
   inset,
+  scroll,
+  fit,
+  bodyKey,
+  foot,
   over,
+  children,
 }: {
-  title: string;
+  look: Look;
+  level: number;
+  flameOn: boolean;
+  pulse: number;
   onClose: () => void;
-  children: ReactNode;
-  c: ReturnType<typeof useTheme>;
+  onBack?: () => void;
+  prog?: ReactNode;
   inset: { top: number; bottom: number };
+  scroll: RefObject<ScrollViewInstance | null>;
+  fit: ReturnType<typeof useFitRoom>;
+  bodyKey: string;
+  foot: ReactNode;
   /** something over the whole screen, like the sources sheet (outside the padded column, so it reaches the edges) */
   over?: ReactNode;
+  children: ReactNode;
 }) {
+  const c = look.c;
+  const focused = useIsFocused();
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>
-        <View style={s.top}>
-          <T v="eyebrow" tone="muted" accessibilityRole="header">
-            {title}
-          </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn }]}>
-            <Icon name="x" color={c.ink} />
-          </Pressable>
+    <PaletteOverride.Provider value={c}>
+      <View style={{ flex: 1, backgroundColor: c.bg }}>
+        {focused ? <StatusBar style={look.bar} /> : null}
+        <LessonBackdrop look={look} />
+        <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
+          <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>
+            <View style={s.top}>
+              {onBack ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={[s.x, { backgroundColor: c.scBtn }]}>
+                  <Icon name="back" color={c.ink} />
+                </Pressable>
+              ) : null}
+              <View style={{ flex: 1 }}>{prog}</View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn }]}>
+                <Icon name="x" color={c.ink} />
+              </Pressable>
+            </View>
+            <ScrollView
+              ref={scroll}
+              onLayout={fit.onLayout}
+              onContentSizeChange={fit.onContentSizeChange}
+              style={s.card}
+              contentContainerStyle={s.cardIn}
+              automaticallyAdjustKeyboardInsets
+              keyboardShouldPersistTaps="handled">
+              <FitProvider value={fit.ctx}>
+                <KeyboardRoom scroll={scroll}>
+                  <FlameStage level={level} on={flameOn} pulse={pulse}>
+                    <Appear key={bodyKey} by={0} style={s.cardBody}>
+                      {children}
+                    </Appear>
+                  </FlameStage>
+                </KeyboardRoom>
+              </FitProvider>
+            </ScrollView>
+            {foot ? (
+              <LowInk.Provider value={look.low}>
+                <View style={s.foot}>{foot}</View>
+              </LowInk.Provider>
+            ) : null}
+          </View>
         </View>
-        {children}
+        {over}
       </View>
-      {over}
-    </View>
+    </PaletteOverride.Provider>
   );
 }
 
 /* ---------- small pieces ---------- */
-function Prog({ total, i, all }: { total: number; i: number; all?: boolean }) {
-  const c = useTheme();
+function Prog({ total, i, all, look }: { total: number; i: number; all?: boolean; look: Look }) {
   return (
     <View style={s.prog} accessible accessibilityLabel={all ? 'Lesson complete' : 'Card ' + (i + 1) + ' of ' + total}>
       {Array.from({ length: total }, (_, j) => (
-        <View key={j} style={[s.progI, { backgroundColor: all || j < i ? c.mint : j === i ? c.accent : c.lip }]} />
+        <View key={j} style={[s.progI, { backgroundColor: all || j <= i ? look.dashOn : look.dashOff }]} />
       ))}
     </View>
   );
 }
-function Eyebrow({ label, t }: { label: string; t: Pick<Tone, 'text'> }) {
-  return <Text style={[s.eyeT, { color: t.text }]}>{label}</Text>;
-}
-function LenBtn({ t, on, title, sub, mins, onPress }: { t: Tone; on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
+function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
   const c = useTheme();
+  const ink = on ? c.onSun : c.ink;
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ selected: on }}
       onPress={onPress}
       style={({ pressed }) => [
         s.len,
-        { borderColor: on ? t.ic : 'transparent', backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] },
+        on
+          ? { backgroundColor: c.sun, shadowColor: c.sun2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0 }
+          : { backgroundColor: c.accentSoft },
+        { transform: [{ translateY: pressed ? 3 : 0 }] },
       ]}>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: font.display, fontSize: 20, lineHeight: 25, color: c.ink }}>{title}</Text>
-        <T v="small" tone="muted">
-          {sub}
-        </T>
-        {on ? <Text style={[s.eye2, { color: t.text, marginTop: 4 }]}>Your usual</Text> : null}
+        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: ink }}>{title}</Text>
+        <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: ink }}>{sub}</Text>
       </View>
-      <Text style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: t.text }}>{mins}</Text>
+      <Text style={{ fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: ink }}>{mins}</Text>
     </Pressable>
   );
 }
-/** the choices: the first pick shows the best answer in green; every choice stays tappable so its comment can be read */
-function Opts({
+
+/** the flame's width beside its words, once an answer is picked */
+const BESIDE = SHORT ? 88 : 104;
+
+/** a question. It sits at the top; the flame sits between it and the answers and says the comment; the answers stay put, low, whatever is tapped.
+    The room between is as tall as the longest comment needs from the first frame, so nothing moves. */
+function Question({
+  h,
+  head,
   list,
   best,
   pk,
   tried,
-  t,
+  comments,
+  first,
+  want,
+  onMore,
   onPick,
 }: {
+  h?: string;
+  /** in place of the big line, when the screen already has one */
+  head?: ReactNode;
   list: string[];
   best: number | null;
   pk: number | null;
   tried: number[];
-  t: Tone;
+  comments: string[];
+  /** what the flame says before anything is picked */
+  first?: string;
+  want: number;
+  onMore?: () => void;
   onPick: (j: number) => void;
 }) {
-  const c = useTheme();
+  const found = best != null && tried.indexOf(best) >= 0;
+  const reply = (j: number) => comments[j] + (best != null && j !== best && !found ? ' Try another.' : '');
+  const said = pk != null ? reply(pk) : first || null;
+  const [room, setRoom] = useState({ w: 0, h: 0 });
+  const [tall, setTall] = useState(0);
+  const wide = Math.max(120, room.w - BESIDE + 8);
+  const measure = (e: LayoutChangeEvent) => {
+    const y = e.nativeEvent.layout.height;
+    setTall((x) => (y > x ? y : x));
+  };
+  /* the words and the flame stand together, in the middle of the room when it has more than they need. In a short room the flame stands beside
+     the words instead of under them: the words leave it that width. */
+  const pair = tall + BESIDE - 12;
+  const top = Math.max(0, (room.h - pair) / 2);
+  const flameTop = Math.min(top + tall - 12, Math.max(0, room.h - BESIDE));
+  return (
+    <>
+      {head || (
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {h}
+        </T>
+      )}
+      <View
+        style={[s.room, { minHeight: Math.max(tall, BESIDE) + 8 }]}
+        onLayout={(e) => setRoom({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+        <FlameSlot
+          size={said ? BESIDE * 1.9 : want}
+          min={0}
+          side={!!said}
+          style={said ? { position: 'absolute', left: 0, right: 0, top: flameTop, height: BESIDE } : StyleSheet.absoluteFill}
+        />
+        {/* every comment, unseen, to learn how tall the longest is */}
+        {room.w
+          ? comments.concat(first || []).map((x, j) => (
+              <View
+                key={j}
+                style={[s.ghost, { width: wide }]}
+                onLayout={measure}
+                pointerEvents="none"
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants">
+                <Bubble text={x + (x === first ? '' : ' Try another.')} tail="right" more={!!onMore} />
+              </View>
+            ))
+          : null}
+        {said ? (
+          <Appear key={said} by={0} delay={120} style={[s.said, { width: wide, top }]}>
+            <Bubble text={said} tail="right" more={!!onMore && pk != null} onMore={onMore} />
+          </Appear>
+        ) : null}
+      </View>
+      <Dock>
+        <Opts list={list} best={best} pk={pk} tried={tried} onPick={onPick} />
+      </Dock>
+    </>
+  );
+}
+
+/** the answers: bright, with a lip you can press, fixed in place. The right one turns green and the rest go quiet. A wrong pick shows as picked, and
+    the others stay bright to try. Every one stays tappable, so its comment can be read. */
+function Opts({ list, best, pk, tried, onPick }: { list: string[]; best: number | null; pk: number | null; tried: number[]; onPick: (j: number) => void }) {
+  const found = best != null && tried.indexOf(best) >= 0;
   return (
     <View style={{ gap: 8 }}>
       {list.map((o, j) => {
-        const ok = best != null && pk != null && j === best;
-        const no = best != null && pk != null && j !== best && tried.indexOf(j) >= 0;
         const sel = pk === j;
-        const bc = ok ? c.mint : sel ? t.ic : 'transparent';
-        const bg = ok ? c.mintSoft : sel && best == null ? t.soft : c.surface;
-        const fg = ok ? c.mintText : no ? c.muted : sel && best == null ? t.text : c.ink;
+        const right = best == null ? sel : found && j === best;
+        const quiet = !right && (found || (best != null && tried.indexOf(j) >= 0));
         return (
           <Pressable
             key={j}
             accessibilityRole="button"
             accessibilityState={{ selected: sel }}
             onPress={() => onPick(j)}
-            style={[s.opt, { borderColor: bc, backgroundColor: bg }]}>
-            {ok || (best == null && sel) ? <Icon name="check" size={18} color={fg} /> : null}
-            <Text style={[s.optT, { color: fg }]}>{o}</Text>
+            style={({ pressed }) => [
+              s.opt,
+              right
+                ? { backgroundColor: RIGHT, shadowColor: RIGHT_LIP, shadowOpacity: 1 }
+                : quiet
+                  ? { backgroundColor: sel ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)', shadowOpacity: 0 }
+                  : { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1 },
+              { borderColor: sel && !right ? PAPER_INK : 'transparent', transform: [{ translateY: pressed && !quiet ? 2 : 0 }] },
+            ]}>
+            <Text style={[s.optT, { color: right ? '#FFFFFF' : PAPER_INK, opacity: quiet && !sel ? 0.72 : 1 }]}>{o}</Text>
+            {right ? (
+              <View style={s.optTick}>
+                <Icon name="check" size={18} color="#FFFFFF" />
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
-    </View>
-  );
-}
-/* the comment on a picked answer fades in over the answers, in the open middle, so the answers never move under the thumb, and the thumb is not over it.
-   Picking another answer fades in its comment. */
-function ReplyRoom({ pk, children }: { pk: number | null; children: ReactNode }) {
-  return (
-    <View style={s.replyRoom}>
-      {pk != null ? (
-        <Appear key={pk} by={6} style={{ gap: 8 }}>
-          {children}
-        </Appear>
-      ) : null}
-    </View>
-  );
-}
-function Reply({ text, t }: { text: string; t: Tone }) {
-  const c = useTheme();
-  return (
-    <View style={[s.reply, { backgroundColor: t.soft }]} accessibilityLiveRegion="polite">
-      <Text style={{ fontFamily: font.body, fontSize: 15, lineHeight: 21, color: c.ink }}>{text}</Text>
     </View>
   );
 }
@@ -1101,35 +1187,71 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
   );
 }
 
-function TextCard({ L, card, t, st, onSrc }: { L: Lesson; card: Card; t: Tone; st: Settings; onSrc: () => void }) {
-  const e = LX_E[card.e || 'insight'] || LX_E.insight;
-  /* a real picture (a chain, a wave, a number, a loop) always shows. A plain icon says nothing the words do not, so it shows
-     only on the answer, the card the lesson turns on, and the words get the room on the others. */
-  const art = card.art && (card.art[0] !== 'icon' || card.e === 'answer') ? card.art : null;
+/** the words of a card: one thought, with a real picture when it has one, and room left for the flame */
+function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: Card; beat: Beat; look: Look; st: Settings; want: number; onSrc: () => void }) {
+  const art = cardArt(card);
+  const h = beat.h || card.h;
+  /* what is the person's own stays on the card; the rest of the original words are in More */
+  const own = (card.b || []).filter((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words');
+  const tone = look.art as Tone;
   return (
     <>
-      {art ? (
-        <FitArt style={s.art} drop={0.5} stretch={art[0] === 'research' || art[0] === 'wave'}>
-          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={t} st={st} />
-        </FitArt>
-      ) : null}
-      <Eyebrow label={card.el || e[1]} t={t} />
-      <T style={[s.h, card.h.length > 46 && s.hsm]} accessibilityRole="header">
-        {card.h}
+      <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
+        {h}
       </T>
-      <Blocks bs={card.b} L={L} t={t} st={st} />
-      {card.so ? (
-        <View style={s.so}>
-          <Text style={[s.eye2, { color: t.text }]}>What this means for you</Text>
-          <Rich text={card.so} st={st} style={[s.p, { fontFamily: font.bodyMedium }]} />
+      {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
+      {beat.l ? (
+        <View style={{ gap: 8, marginTop: 4 }}>
+          {beat.l.map((x, j) => (
+            <View key={j} style={[s.line, { backgroundColor: look.row }]}>
+              <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: look.rowInk }} />
+            </View>
+          ))}
         </View>
       ) : null}
-      {card.fact ? <Fact text={card.fact.s} t={t} onPress={onSrc} /> : null}
+      {own.length ? <Blocks bs={own} L={L} t={tone} st={st} /> : null}
+      {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
+      {art ? (
+        <FitArt style={s.art} drop={0.5} stretch={art[0] === 'research' || art[0] === 'wave'}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
+        </FitArt>
+      ) : null}
+      {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
+      <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
     </>
   );
 }
-/** where the science comes from: one small line at the bottom, a bonus, never in the way. A tap opens the detail. */
-function Fact({ text, t, onPress }: { text: string; t: Tone; onPress: () => void }) {
+/** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
+function NumberCard({ n, h, lead, p, st, fact, onSrc }: { n: string; h: string; lead?: string; p?: string; st: Settings; fact?: string; onSrc: () => void }) {
+  const c = useTheme();
+  const shown = useCount(n);
+  const size = n.length <= 3 ? 128 : n.length <= 5 ? 96 : 72;
+  return (
+    <View style={s.number}>
+      <Text
+        maxFontSizeMultiplier={1}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        accessibilityLabel={n}
+        style={{ fontFamily: font.displayBold, fontSize: size, lineHeight: size * 1.08, color: c.sun, fontVariant: ['tabular-nums'] }}>
+        {shown}
+      </Text>
+      <T style={[s.h, h.length > 56 && s.hsm]} accessibilityRole="header">
+        {h}
+      </T>
+      {lead || p ? (
+        <T style={s.p} tone="muted">
+          {lead ? lead + (p ? ' ' : '') : ''}
+          {p ? <Rich text={p} st={st} style={s.p} /> : null}
+        </T>
+      ) : null}
+      {fact ? <Fact text={fact} onPress={onSrc} /> : null}
+    </View>
+  );
+}
+/** where the science comes from: one small line under the words, a bonus, never in the way. A tap opens the detail. */
+function Fact({ text, onPress }: { text: string; onPress: () => void }) {
+  const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -1137,144 +1259,28 @@ function Fact({ text, t, onPress }: { text: string; t: Tone; onPress: () => void
       onPress={onPress}
       hitSlop={8}
       style={({ pressed }) => [s.fact, pressed && { opacity: 0.7 }]}>
-      <Icon name="book" size={13} color={t.text} />
-      <Text style={[s.factT, { color: t.text }]} numberOfLines={1}>
-        {text}
-      </Text>
-      <Icon name="next" size={13} color={t.text} />
+      <Text style={[s.factT, { color: c.ink }]}>{text}</Text>
+      <Icon name="next" size={13} color={c.ink} />
     </Pressable>
   );
 }
 
-/* a number the person guesses before it is shown */
-function GuessCard({
-  card,
-  g,
-  gs,
-  t,
-  onSet,
-  onSrc,
-}: {
-  card: Card;
-  g: Guess;
-  gs: { v: number | null; lock: boolean };
-  t: Tone;
-  onSet: (v: number) => void;
-  onSrc: () => void;
-}) {
-  const c = useTheme();
-  const stepV = g.step || 1;
-  const ticks = g.ticks || [g.min, g.max];
-  const Ticks = (
-    <View style={s.ticks}>
-      {ticks.map((x, k) => (
-        <Text key={k} style={{ fontFamily: font.bodyBold, fontSize: 13, color: c.muted }}>
-          {x}
-          {k === ticks.length - 1 ? ' ' + g.unit : ''}
-        </Text>
-      ))}
-    </View>
-  );
-  if (!gs.lock) {
-    return (
-      <>
-        <Eyebrow label={card.el || LX_E.guess[1]} t={t} />
-        <T style={[s.h, s.hsm]} accessibilityRole="header">
-          {card.h}
-        </T>
-        <T style={s.p}>{card.p || 'Guess first. Guessing helps the answer stick.'}</T>
-        <View style={s.guessMid}>
-          <SliderValue big value={gs.v} caption={g.unit + ' · your guess'} hint="Slide below to guess" />
-        </View>
-        <Dock>
-          <Slider label={card.h} value={gs.v} min={g.min} max={g.max} step={stepV} unit={g.unit} readout={false} onChange={onSet} />
-        </Dock>
-      </>
-    );
-  }
-  const v = gs.v!;
-  const a = g.ans;
-  const rv = g.rv || {};
-  const pv = lxPct(g, v);
-  const pa = lxPct(g, a);
-  const lo = lxPct(g, g.lo);
-  const hi = lxPct(g, g.hi);
+/* ---------- the sheet that opens over the lesson ---------- */
+/* the original words of a card, or where the science comes from. It takes the app's own colors, not the card's. */
+function SheetOver({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; st: Settings; onClose: () => void; onSrc: (i?: number) => void }) {
   return (
-    <>
-      <View style={{ alignItems: 'center', gap: 16 }}>
-        <BigNumber n={a} s={g.big || g.unit} />
-        <View
-          style={{ alignSelf: 'stretch', gap: 6, paddingTop: 30 }}
-          accessible
-          accessibilityLabel={`You guessed ${v} ${g.unit}. The answer is ${a} ${g.unit}. People ranged from ${g.lo} to ${g.hi}.`}>
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: `${Math.min(85, Math.max(15, pv))}%`,
-              transform: [{ translateX: -40 }],
-              width: 80,
-              alignItems: 'center',
-            }}>
-            <Text
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 3,
-                borderRadius: 999,
-                overflow: 'hidden',
-                backgroundColor: c.sun,
-                color: c.onSun,
-                fontFamily: font.bodyBold,
-                fontSize: 13,
-              }}>
-              You · {v}
-            </Text>
-          </View>
-          <View style={{ height: 12, borderRadius: 6, backgroundColor: c.accentSoft }}>
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                height: 12,
-                borderRadius: 6,
-                left: `${lo}%`,
-                width: `${hi - lo}%`,
-                backgroundColor: c.accent,
-                opacity: 0.28,
-              }}
-            />
-            <View style={[s.mk, { left: `${pv}%`, backgroundColor: c.sun, borderColor: c.surface }]} />
-            <View style={[s.mk, { left: `${pa}%`, backgroundColor: c.accent, borderColor: c.surface }]} />
-          </View>
-          {Ticks}
-          <Text style={{ fontFamily: font.body, fontSize: 13, color: c.muted, textAlign: 'center' }}>
-            {g.cap || 'People ranged from ' + g.lo + ' to ' + g.hi + ' ' + g.unit}
-          </Text>
-        </View>
-      </View>
-      <Eyebrow label={LX_E.proof[1]} t={t} />
-      <T style={[s.h, s.hsm]} accessibilityRole="header">
-        {rv.h || card.h}
-      </T>
-      <T style={s.p}>
-        {guessFeedback(g, v)}
-        {rv.b ? ' ' : ''}
-        {rv.b ? <Rich text={rv.b} st={null} style={s.p} /> : null}
-      </T>
-      {card.fact ? <Fact text={card.fact.s} t={t} onPress={onSrc} /> : null}
-    </>
+    <PaletteOverride.Provider value={null}>
+      <SheetBody sheet={sheet} L={L} st={st} onClose={onClose} onSrc={onSrc} />
+    </PaletteOverride.Provider>
   );
 }
-
-/* ---------- the sheet that opens over the lesson ---------- */
-/* where the science comes from, over the lesson */
-function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: () => void }) {
+function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; st: Settings; onClose: () => void; onSrc: (i?: number) => void }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const title = 'Behind this lesson';
-  const btn = 'Close';
+  const t = toneOf(c, LUNITS[L.u].tone);
+  let title = 'Behind this lesson';
   let body: ReactNode;
-  {
+  if (sheet.t === 'src') {
     const card = sheet.i != null ? L.cards[sheet.i] : null;
     const idx = card && card.fact && card.fact.i ? card.fact.i : L.src.map((_, k) => k);
     body = (
@@ -1316,6 +1322,43 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
         ) : null}
       </>
     );
+  } else if (sheet.t === 'key') {
+    title = L.ask || 'The one thing to keep';
+    body = <T style={s.p}>{L.key}</T>;
+  } else if (sheet.t === 'rc') {
+    const r = lessonById(sheet.of)!.rc!;
+    title = r.q;
+    body =
+      sheet.pk != null ? (
+        <>
+          <T v="label">{r.c[sheet.pk]}</T>
+          <T style={s.p}>{lxRcReply(r, sheet.pk)}</T>
+        </>
+      ) : null;
+  } else {
+    const card = L.cards[sheet.i];
+    const rv = card.k === 'guess' ? card.g!.rv : null;
+    title = rv?.h || card.h;
+    body = (
+      <>
+        {rv?.b ? <Rich text={rv.b} st={st} style={s.p} /> : null}
+        {card.k === 'guess' && card.g!.cap ? <T tone="muted">{card.g!.cap}</T> : null}
+        <Blocks bs={card.b} L={L} t={t} st={st} />
+        {card.so ? (
+          <View style={s.so}>
+            <T v="label">What this means for you</T>
+            <Rich text={card.so} st={st} style={s.p} />
+          </View>
+        ) : null}
+        {card.k === 'choose' && sheet.pk != null ? (
+          <>
+            <T v="label">{card.c![sheet.pk][0]}</T>
+            <T style={s.p}>{card.c![sheet.pk][1]}</T>
+          </>
+        ) : null}
+        {card.fact ? <Fact text={card.fact.s} onPress={() => onSrc(sheet.i)} /> : null}
+      </>
+    );
   }
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex: 10 }]}>
@@ -1327,8 +1370,8 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
       />
       <View style={[s.sheet, { backgroundColor: c.bg, paddingBottom: inset.bottom + 12, maxWidth: MAX_WIDTH }]}>
         <View style={[s.grab, { backgroundColor: c.lip }]} />
-        <View style={s.top}>
-          <T v="h2" accessibilityRole="header">
+        <View style={s.sheetTop}>
+          <T v="h2" accessibilityRole="header" style={{ flex: 1 }}>
             {title}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.surface }]}>
@@ -1342,66 +1385,63 @@ function SheetOver({ sheet, L, onClose }: { sheet: Sheet; L: Lesson; onClose: ()
           keyboardShouldPersistTaps="handled">
           {body}
         </ScrollView>
-        <Next label={btn} noIcon onPress={onClose} />
+        <Next label="Close" noIcon onPress={onClose} />
       </View>
     </View>
   );
 }
 
-/* a short phone gets slightly smaller type and room, so a card fits (components/fit). The words sit on the page itself, with no
-   card around them: a box here is something the person is meant to see as one thing (a choice, the answer, their plan). */
+/* the words sit on the sky itself, with no card around them: a box here is something the person is meant to see as one thing (an answer, what
+   the flame says, a line to do, their plan). */
 const s = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  sheetTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 },
   x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   prog: { flexDirection: 'row', gap: 4 },
-  progI: { flex: 1, height: 6, borderRadius: 3 },
+  progI: { flex: 1, height: 4, borderRadius: 2 },
   card: { flex: 1, marginHorizontal: -16 },
-  cardIn: { paddingHorizontal: 16, paddingTop: SHORT ? 12 : 16, paddingBottom: 16, flexGrow: 1 },
+  cardIn: { paddingHorizontal: 16, paddingTop: SHORT ? 8 : 16, paddingBottom: 8, flexGrow: 1 },
   cardBody: { gap: 12, flexGrow: 1 },
-  guessMid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', minHeight: 170 },
-  art: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  eyeT: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, marginBottom: -8 },
+  guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
+  art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   eye2: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
-  h: { fontFamily: font.display, fontSize: SHORT ? 22 : 28, lineHeight: SHORT ? 28 : 34 },
+  h: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   hsm: { fontSize: 22, lineHeight: 28 },
   p: { fontSize: 17, lineHeight: 24 },
-  askB: { gap: 4, marginTop: 4 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pill: { paddingHorizontal: 16, paddingVertical: 4, borderRadius: 999 },
-  key: { alignSelf: 'stretch', gap: 4, padding: 16, borderRadius: 20 },
-  keyP: { fontFamily: font.display, fontSize: SHORT ? 17 : 20, lineHeight: SHORT ? 23 : 26 },
-  link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  doneHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  pill: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
+  link: { minHeight: 44, justifyContent: 'center', alignSelf: 'center', paddingHorizontal: 8 },
   linkT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textDecorationLine: 'underline' },
   foot: { flexDirection: 'row', gap: 12 },
-  backHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   footCol: { flex: 1, gap: 4 },
   quiet: { width: '100%', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   quiets: { width: '100%', flexDirection: 'row' },
   quietHalf: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  len: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 76,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+  len: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20 },
+  line: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20 },
+  number: { gap: 12, paddingTop: SHORT ? 8 : 40 },
+  room: { flexGrow: 1, alignSelf: 'stretch' },
+  ghost: { position: 'absolute', left: 0, top: 0, opacity: 0 },
+  said: { position: 'absolute', left: 0, top: 0 },
+  opt: {
+    minHeight: SHORT ? 48 : 54,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingLeft: 16,
+    paddingRight: 38,
     borderRadius: 20,
     borderWidth: 2,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
     shadowRadius: 0,
   },
-  opt: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 54, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, borderWidth: 2 },
-  optT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
-  replyRoom: { flexGrow: 1, justifyContent: 'flex-end' },
-  reply: { padding: 16, borderRadius: 20 },
+  optT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  optTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
   quote: { paddingVertical: 4 },
   plan: { gap: 8, padding: 16, borderRadius: 20 },
   so: { gap: 4, marginTop: 8 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28, marginTop: 'auto', opacity: 0.85 },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 28 },
   factT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
-  ticks: { flexDirection: 'row', justifyContent: 'space-between' },
-  mk: { position: 'absolute', top: -6, width: 24, height: 24, marginLeft: -12, borderRadius: 12, borderWidth: 4 },
   sheet: {
     position: 'absolute',
     left: 0,

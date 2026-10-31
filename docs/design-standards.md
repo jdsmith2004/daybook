@@ -35,6 +35,14 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
 - **Spirit is not optional.** Clearing clutter must never leave a tidy page with no soul. Keep the skies, the flame, the shapes,
   the squiggle, the motion and the warm words, and where a page has room, make the flame bigger, not smaller.
 
+## A lesson (the owner, October 30, 2026)
+
+One thought at a time, on a sky that goes from night to day as the lesson goes on (at night it ends on a warm dawn), with one flame that glides
+from card to card and says the key lines in a cream bubble. The answer is a whole card of sun with a dark Next. A number is a solid violet card:
+a giant sun yellow number, no sky, no flame, a yellow Next. Answers are bright with a lip and never move; the right one turns green and the rest go
+quiet. No small labels above a heading, and no icon blob. The words on a card are short beats (core `lesson-beats.ts`); the original words are one
+tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so what sits on a card needs no idea which card it is on.
+
 ## Motion
 
 - **One squiggle.** Every squiggly line is drawn with `SQUIGGLE` in `components/shapes.tsx` (thickness 5, one wiggle

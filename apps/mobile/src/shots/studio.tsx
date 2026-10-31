@@ -195,7 +195,9 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
       );
     return h('div', null, caption, at(-W * 0.05, top, -4, screens[0]), at(W - pw - W * 0.005, top + H * 0.07, 4, screens[1]));
   }
-  const pw = W * Number(p.zoom || FRAME.width);
+  /* a Play shot is shorter than the phone: the phone stands whole on it, at the usual width, so Android's own tab bar shows */
+  const android = size.device === 'android';
+  const pw = W * (android ? FRAME.width : Number(p.zoom || FRAME.width));
   return h(
     'div',
     null,
@@ -203,7 +205,7 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
     h(
       'div',
       { style: { position: 'absolute', left: (W - pw) / 2, top } },
-      <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} />,
+      <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} fit={android ? H - top - W * 0.05 : undefined} />,
     ),
   );
 }
@@ -287,13 +289,29 @@ function Flame({ width }: { width: number }) {
 }
 
 /* a phone with the real app inside: the app is laid out at the viewport size and scaled to fit the screen */
-function Phone({ width, device, screen, p, onReady }: { width: number; device: 'iphone' | 'android'; screen: string; p: Params; onReady: () => void }) {
+function Phone({
+  width,
+  device,
+  screen,
+  p,
+  onReady,
+  fit,
+}: {
+  width: number;
+  device: 'iphone' | 'android';
+  screen: string;
+  p: Params;
+  onReady: () => void;
+  /** the room for the whole phone, so it ends on the shot and its tab bar shows */
+  fit?: number;
+}) {
   const f = FRAME[device];
   const bez = width * f.bezel;
   const sw = width - bez * 2;
   const s = sw / FRAME.viewport.w;
   const pic = screen.endsWith('.png');
-  const sh = pic ? sw * FRAME.picRatio : FRAME.viewport.h * s;
+  const viewH = fit ? Math.min(FRAME.viewport.h, (fit - bez * 2) / s) : FRAME.viewport.h;
+  const sh = pic ? sw * FRAME.picRatio : viewH * s;
   const dark = p.theme === 'dark';
   const appBg = dark ? '#17142B' : '#FFF8EB';
   const ink = dark ? '#FFFFFF' : '#1A1530';
@@ -350,7 +368,7 @@ function Phone({ width, device, screen, p, onReady }: { width: number; device: '
             left: 0,
             top: status * s,
             width: FRAME.viewport.w,
-            height: FRAME.viewport.h - status,
+            height: viewH - status,
             border: 0,
             transform: `scale(${s})`,
             transformOrigin: '0 0',

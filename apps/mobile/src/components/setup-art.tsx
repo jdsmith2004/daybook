@@ -1,13 +1,15 @@
 /* The pictures in the setup: simple charts and shapes, drawn with the app's own colors. They follow the legacy obPic*
    pictures. */
 import { fmtClock, isTime, OB_MINS, OB_WHEN, type SetupAnswers } from '@daybook/core';
-import { StyleSheet, View } from 'react-native';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Shape } from '@/components/shapes';
-import { Icon, T } from '@/components/ui';
-import { font, toneOf, useTheme } from '@/lib/theme';
+import { SosButton } from '@/components/sos-button';
+import { T } from '@/components/ui';
+import { DayPicture } from '@/components/your-day';
+import { font, useTheme } from '@/lib/theme';
 
 /* how often: a week, one dot per day it happens */
 const OB_WK = [
@@ -228,31 +230,27 @@ function Legend({ col, label }: { col: string; label: string }) {
   );
 }
 
-/** a day in Daybook: three stops, one list, each with how long it takes */
+/** a day in Daybook: Your day as Today shows it, and SOS where it sits on this phone */
 export function PicDay({ a }: { a: SetupAnswers }) {
   const c = useTheme();
   const so = isTime(a.so) ? (a.so as string) : null;
-  const rows: [string, string, string, string, string][] = [
-    ['book', 'sun', 'Lesson', 'One short lesson', '1–5 min'],
-    ['pencil', 'mint', 'Check-in', 'How today went, and how you slept', '1 min'],
-    ['moon', 'violet', 'Wind-down', so ? 'Screens off at ' + fmtClock(so) : 'Screens off, phone away', 'Night'],
-  ];
   return (
-    <View style={[s.list, { backgroundColor: c.surface }]}>
-      {rows.map((r, i) => (
-        <View key={r[2]} style={[s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}>
-          <Icon name={r[0]} size={22} color={toneOf(c, r[1]).text} />
-          <View style={{ flex: 1 }}>
-            <T v="label">{r[2]}</T>
-            <T v="small" tone="muted">
-              {r[3]}
-            </T>
+    <View style={s.day}>
+      <DayPicture wind={so ? 'Screens off at ' + fmtClock(so) : 'At night'} />
+      <View
+        pointerEvents="none"
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel="The SOS button."
+        style={Platform.OS === 'ios' ? s.sosIos : s.sosOther}>
+        {Platform.OS === 'ios' ? (
+          <View style={[s.glass, { backgroundColor: c.surface }]}>
+            <Image source={require('../../assets/images/sos-mark.png')} style={s.mark} />
           </View>
-          <T v="small" tone="muted">
-            {r[4]}
-          </T>
-        </View>
-      ))}
+        ) : (
+          <SosButton />
+        )}
+      </View>
     </View>
   );
 }
@@ -261,8 +259,11 @@ export function PicDay({ a }: { a: SetupAnswers }) {
 export const whenIcon = (t: string) => (OB_WHEN.find((w) => w[0] === t) || [])[2] || 'moon';
 
 const s = StyleSheet.create({
-  list: { alignSelf: 'stretch', borderRadius: 20, paddingHorizontal: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  day: { alignSelf: 'stretch', gap: 16 },
+  sosIos: { alignSelf: 'flex-end' },
+  sosOther: { alignSelf: 'center' },
+  glass: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
+  mark: { width: 54, height: 36 },
   dot: {
     width: 32,
     height: 32,

@@ -1,7 +1,7 @@
 /* "Your day" on Today: the home screen's spine, one line down the page from morning to night (core: stopTiles in day.ts). What is
    next is the one big bright card on the line, and its tap starts it; the other stops are slim rows beside the line, so there is
    never a question of what to do. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means
-   progress), the rest a quiet line. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
+   progress), the rest quiet dashes. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
    and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
    the stops here are all rows. "Change" turns parts of today on or off, in a sheet. */
 import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Moment, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
@@ -82,31 +82,11 @@ export function YourDay({
   const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
   const heroShown = !!hero && r.tiles.some((t) => t.k === heroKey && !t.done);
   const big = heroShown ? heroKey : null;
-  /* where each stop's card sits, so its mark sits at the card's middle and the line runs from mark to mark */
-  const [rowY, setRowY] = useState<Record<string, number>>({});
-  const [cardMid, setCardMid] = useState<Record<string, number>>({});
   return (
     <View>
       {heroShown ? null : <View style={s.noteTop}>{note}</View>}
       {n ? (
-        <View>
-          <DayLine tiles={r.tiles} mids={r.tiles.map((t) => (rowY[t.k] != null && cardMid[t.k] != null ? rowY[t.k] + cardMid[t.k] : null))} curKey={big} />
-          {r.tiles.map((t, i) => {
-            const tile = open && open.k === t.k && !t.done ? open : t;
-            const isBig = big === t.k;
-            return (
-              <View
-                key={t.k}
-                onLayout={(e) => put(setRowY, t.k, e.nativeEvent.layout.y)}
-                style={[s.stop, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
-                <View onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
-                  {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
-                </View>
-                {isBig ? <View style={s.note}>{note}</View> : null}
-              </View>
-            );
-          })}
-        </View>
+        <Stops tiles={r.tiles} big={big} hero={hero} note={note} tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)} />
       ) : (
         <T tone="muted" style={{ paddingHorizontal: 4 }}>
           Nothing is switched on for today. Tap Change to turn parts of the day back on.
@@ -133,15 +113,105 @@ export function YourDay({
   );
 }
 
+/* the stops on their line: the big card for what is next, slim rows for the rest */
+function Stops({
+  tiles,
+  big,
+  hero,
+  note,
+  tileOf = (t) => t,
+}: {
+  tiles: StopTile[];
+  big: string | null;
+  hero?: BigCard | null;
+  note?: React.ReactNode;
+  tileOf?: (t: StopTile) => StopTile;
+}) {
+  const n = tiles.length;
+  /* where each stop's card sits, so its mark sits at the card's middle and the line runs from mark to mark */
+  const [rowY, setRowY] = useState<Record<string, number>>({});
+  const [cardMid, setCardMid] = useState<Record<string, number>>({});
+  return (
+    <View>
+      <DayLine tiles={tiles} mids={tiles.map((t) => (rowY[t.k] != null && cardMid[t.k] != null ? rowY[t.k] + cardMid[t.k] : null))} curKey={big} />
+      {tiles.map((t, i) => {
+        const tile = tileOf(t);
+        const isBig = big === t.k;
+        return (
+          <View
+            key={t.k}
+            onLayout={(e) => put(setRowY, t.k, e.nativeEvent.layout.y)}
+            style={[s.stop, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
+            <View onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
+              {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
+            </View>
+            {isBig && note ? <View style={s.note}>{note}</View> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Your day as a picture, for the tour in setup: drawn with the real parts, so it always looks like Today. A picture: nothing in it is a button. */
+export function DayPicture({ wind }: { wind: string }) {
+  const stop = (k: string, sky: StopTile['sky'], ic: string, title: string, right: string, go: StopGo): StopTile => ({
+    k,
+    state: 'later' as StopTile['state'],
+    done: false,
+    cur: k === 'lesson',
+    sky,
+    ic,
+    title,
+    line: '',
+    right,
+    eyebrow: '',
+    head: '',
+    body: '',
+    chips: [],
+    btn: '',
+    go,
+  });
+  return (
+    <View
+      pointerEvents="none"
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel="Your day on Today: a lesson first, then a check-in, then a wind-down, one line down the page.">
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Stops
+          tiles={[
+            stop('lesson', 'sun', 'book', 'Lesson', '', 'lesson'),
+            stop('evening', 'sky', 'pencil', 'Check-in', '1 minute', 'checkin'),
+            stop('night', 'night', 'moon', 'Wind-down', wind, 'wind'),
+          ]}
+          big="lesson"
+          hero={{ eb: 'Lesson 1 · 1–5 min', h: 'One short lesson', btn: 'Start', go: 'lesson' }}
+        />
+      </View>
+    </View>
+  );
+}
+
 /* ---------- the line down the left, with each stop's mark on it ---------- */
 const RAIL = 24;
 const MARK = 20;
-/* the air between a quiet line and a mark */
-const AIR = 2;
+/* the air between a dashed stretch and a mark */
+const AIR = 4;
+/* the dashes of the part still to come: short and round. The gap is fitted to each stretch, so a whole dash starts and ends it, never a cut one. */
+const DASH = { stroke: 4, long: 8, gap: 6 };
+function dashed(from: number, to: number) {
+  const cap = DASH.stroke / 2;
+  const len = to - from - DASH.stroke;
+  const n = Math.max(1, Math.round((to - from + DASH.gap) / (DASH.long + DASH.gap)));
+  const on = DASH.long - DASH.stroke;
+  const off = n > 1 ? (len - n * on) / (n - 1) : len;
+  return { d: `M${RAIL / 2} ${from + cap} L${RAIL / 2} ${to - cap}`, dash: `${on} ${off}` };
+}
 const put = (set: React.Dispatch<React.SetStateAction<Record<string, number>>>, k: string, v: number) => set((o) => (o[k] === v ? o : { ...o, [k]: v }));
 
 /* one drawing for the whole line: each stretch runs from one mark to the next, the squiggle where that stop is done (docs/design-standards.md:
-   squiggle means progress), a quiet line where the day is still to come. The squiggle starts under a done mark, which is solid, and lands
+   squiggle means progress), quiet dashes where the day is still to come. The squiggle starts under a done mark, which is solid, and lands
    flat, so it never meets anything mid-wiggle. */
 function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | null)[]; curKey: string | null }) {
   const c = useTheme();
@@ -171,9 +241,8 @@ function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | n
             );
             return <Path key={t.k} d={d} stroke={c.sun2} strokeWidth={SQUIGGLE.stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
           }
-          return (
-            <Path key={t.k} d={`M${x} ${at[i] + MARK / 2 + AIR} L${x} ${at[i + 1] - MARK / 2 - AIR}`} stroke={c.line} strokeWidth={3} strokeLinecap="round" />
-          );
+          const q = dashed(at[i] + MARK / 2 + AIR, at[i + 1] - MARK / 2 - AIR);
+          return <Path key={t.k} d={q.d} stroke={c.line} strokeWidth={DASH.stroke} strokeLinecap="round" strokeDasharray={q.dash} fill="none" />;
         })}
       </Svg>
       {tiles.map((t, i) => (
@@ -193,7 +262,8 @@ function DayLine({ tiles, mids, curKey }: { tiles: StopTile[]; mids: (number | n
 
 /* ---------- what is next: the one big bright card, the whole card one tap, with its word on a sticker ---------- */
 const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
-function Hero({ m, t }: { m: Moment; t: StopTile }) {
+type BigCard = Pick<Moment, 'eb' | 'h' | 'btn' | 'go'>;
+function Hero({ m, t }: { m: BigCard; t: StopTile }) {
   const c = useTheme();
   const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
   return (

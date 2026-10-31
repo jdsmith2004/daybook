@@ -19,7 +19,7 @@ const BREATH: Steps = [
   ['in', 4],
   ['out', 6],
 ];
-/** the plan after a slip is this button: the same round SOS as the one on the tab bar, big, on a slow breath, and it works */
+/** the plan after a slip is this button: a round SOS, big, on a slow breath, and it works */
 export function SosBig() {
   const c = useTheme();
   const reduce = useReducedMotion();

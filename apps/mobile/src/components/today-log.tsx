@@ -32,7 +32,7 @@ export function useLogActions() {
 }
 
 /* the two quiet buttons under the next step: it already happened (log it), or a slip is being planned (Talk it through). SOS
-   itself is the round button in the tab bar, in reach of the thumb on every page. */
+   itself is the round button by the tab bar, in reach of the thumb on every page. */
 export function LogLink() {
   const c = useTheme();
   return (

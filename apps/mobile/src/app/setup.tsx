@@ -624,7 +624,7 @@ export default function Setup() {
     case 'tour': {
       const x = obSosLine(a);
       body = (
-        <Show st={st} art={<PicDay a={a} />} h="A day in Daybook" line="About five minutes a day. Each stop opens at its time.">
+        <Show st={st} art={<PicDay a={a} />} h="A day in Daybook" line="About five minutes a day, one stop at a time.">
           <Rich
             text={
               (a.when || []).length > 0

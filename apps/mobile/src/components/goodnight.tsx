@@ -309,6 +309,7 @@ const DIM_TO = 0.62;
 export function NightPage({
   bed,
   when,
+  opens,
   onGoodnight,
   plan,
   rowAbove,
@@ -317,6 +318,8 @@ export function NightPage({
   bed: Bed | null;
   /** the few words in the top bar while it is awake (core windWhen) */
   when?: string;
+  /** too early for Goodnight: the time it opens (core goodnightOpens). The flame stays up, and the plan for a loud night and SOS stay in reach. */
+  opens?: string | null;
   onGoodnight?: () => void;
   /** the plan picked in SOS "Go to bed" */
   plan?: string;
@@ -407,6 +410,13 @@ export function NightPage({
               </T>
             ) : null}
           </Appear>
+        ) : opens ? (
+          <View style={[s.words, s.top]}>
+            <T v="title" style={s.c} accessibilityRole="header">
+              Your flame is up with you
+            </T>
+            <T style={s.c}>{'Goodnight opens at ' + opens + '.'}</T>
+          </View>
         ) : (
           <View style={[s.words, s.top]}>
             <T v="title" style={s.c} accessibilityRole="header">
@@ -427,6 +437,10 @@ export function NightPage({
                   <NightChip icon="shield" label="Thoughts loud?" onPress={() => setSheet('loud')} />
                 </View>
               </>
+            ) : opens ? (
+              <View style={s.chips}>
+                <NightChip icon="shield" label="Thoughts loud?" onPress={() => setSheet('loud')} />
+              </View>
             ) : (
               <>
                 {rowAbove}

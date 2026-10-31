@@ -5,7 +5,7 @@
    (components/goodnight.tsx). Above the button, folded rows: More (sleep last night in hours, kept in checkin.h, which the
    Sunday sleep goal and the week read; whether you reached out; one line), the wind-down list, and the plan for a loud
    night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
-   A day before today (`k`) ends with Save instead, and no Goodnight.
+   A day before today (`k`), or a check-in before Goodnight opens (core goodnightOpens), ends with Save instead.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
 import {
@@ -13,8 +13,10 @@ import {
   checkinAnswered,
   checkinFormOf,
   checkinSaveText,
+  clockOf,
   fmtClock,
   gameCompute,
+  goodnightOpens,
   rateKeys,
   ratingOf,
   rhythm,
@@ -102,6 +104,8 @@ export default function Checkin() {
   }, [k]);
 
   if (!st) return <Redirect href="/" />;
+  /* it ends in Goodnight once that is open (core goodnightOpens). A check-in before then, or for a day before today, ends with Save. */
+  const bedtime = tonight && !goodnightOpens(st, clockOf(now));
   /* the reminder offer (no reminder yet: the setup's "Not now", or none asked), at about the time this check-in was done */
   const remAt = clockNear(now);
   const offer =
@@ -207,13 +211,13 @@ export default function Checkin() {
         form={form}
         set={set}
         tonight={tonight}
-        open={!tonight || fold === 'more'}
+        open={!bedtime || fold === 'more'}
         onToggle={() => toggle('more')}
-        fixed={!tonight}
-        saveBtn={tonight ? null : any ? <Button label="Save this day" onPress={save} /> : null}
+        fixed={!bedtime}
+        saveBtn={bedtime ? null : any ? <Button label="Save this day" onPress={save} /> : null}
       />
     );
-    body = tonight ? (
+    body = bedtime ? (
       <>
         <T v="title" style={s.c} accessibilityRole="header">
           {any ? 'Alright. That is today.' : 'Alright. Time for bed.'}
@@ -246,7 +250,7 @@ export default function Checkin() {
       </>
     );
     /* Goodnight is pinned to the bottom of the screen, so a row that opens above it never pushes it out of reach */
-    if (tonight)
+    if (bedtime)
       pin = (
         <>
           <T style={[s.c, s.tap]}>Phone on its charger, away from your bed.</T>
@@ -301,8 +305,8 @@ export default function Checkin() {
 
   return (
     <SceneFrame
-      title={step === 'night' && tonight ? 'Good night' : 'Check-in'}
-      sky={step === 'night' && tonight ? 'night' : 'violet'}
+      title={step === 'night' && bedtime ? 'Good night' : 'Check-in'}
+      sky={step === 'night' && bedtime ? 'night' : 'violet'}
       dots={{ n: STEPS.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + STEPS.length }}
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}

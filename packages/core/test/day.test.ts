@@ -110,13 +110,56 @@ describe('the night and the wind-down', () => {
     d = core.windToggle(d, st, '2026-10-15', 0, 99);
     expect(d['2026-10-15'].p?.wd).toBe(false);
   });
-  it('Goodnight is the wind-down, on time or late, and stays counted however the list is ticked; a nap in the afternoon is not', () => {
+  it('Goodnight is the wind-down, on time or late, and stays counted however the list is ticked', () => {
     const on = core.phoneAway({}, '2026-10-15', '22:15', 1, st);
     expect(on['2026-10-15'].p?.wd).toBe(true);
     expect(core.phoneAway({}, '2026-10-15', '01:30', 1, st)['2026-10-15'].p?.wd).toBe(true);
-    expect(core.phoneAway({}, '2026-10-15', '13:00', 1, st)['2026-10-15'].p?.wd).toBeFalsy();
     const ticked = core.windToggle(on, st, '2026-10-15', 0, 2);
     expect(core.windToggle(ticked, st, '2026-10-15', 0, 3)['2026-10-15'].p?.wd).toBe(true);
+  });
+  describe('Goodnight well before the evening', () => {
+    const k = '2026-10-15';
+    const nine = new Date(2026, 9, 15, 9, 0).getTime();
+    it('does not put the phone away: no time, no points, no night, and the stop stays open', () => {
+      const d = core.phoneAway({}, k, '09:00', 1, st);
+      expect(d).toEqual({});
+      expect(core.phoneNights(d)).toBe(0);
+      expect(core.dayPoints(d, k, st).parts.map((x) => x.k)).not.toContain('phone');
+      expect(core.rhythm(d, st, k, nine).stops.find((x) => x.k === 'night')?.done).toBeFalsy();
+    });
+    it('a check-in saved in the morning keeps its numbers, and the evening is still ahead', () => {
+      const d = core.sayGoodnight({}, k, { m: null, c: null, e: null, s: 2, md: 6, u: 1, h: 7, ro: null, n: '' }, '09:00', 1, st);
+      expect(d[k].checkin).toMatchObject({ md: 6, u: 1, s: 2, h: 7, done: true, so: null });
+      expect(d[k].p?.po ?? null).toBeNull();
+      const stops = core.rhythm(d, st, k, nine).stops;
+      expect(stops.find((x) => x.k === 'evening')?.done).toBe(true);
+      expect(stops.find((x) => x.k === 'night')?.done).toBeFalsy();
+    });
+    it('opens six hours before the screens-off time, on the person’s own clock, and late nights still count', () => {
+      const me = { ...st, screensOff: '22:30', rollover: 4 };
+      expect(core.goodnightOpens(me, '09:00')).toBe(core.fmtClock('16:30'));
+      expect(core.goodnightOpens(me, '16:29')).toBe(core.fmtClock('16:30'));
+      expect(core.goodnightOpens(me, '16:30')).toBeNull();
+      expect(core.goodnightOpens(me, '23:50')).toBeNull();
+      expect(core.goodnightOpens(me, '03:59')).toBeNull();
+      expect(core.phoneAway({}, k, '03:59', 1, me)[k].p?.po).toBe('03:59');
+      /* someone who sleeps by day: screens off at 8 AM, so 7 AM is their evening */
+      const day = { ...st, screensOff: '08:00', rollover: 4 };
+      expect(core.goodnightOpens(day, '07:00')).toBeNull();
+      expect(core.phoneAway({}, k, '07:00', 1, day)[k].p?.wd).toBe(true);
+      /* a screens-off time just after midnight opens in the evening before */
+      expect(core.goodnightOpens({ ...st, screensOff: '00:30', rollover: 4 }, '09:00')).toBe(core.fmtClock('18:30'));
+    });
+    it('a day already saved with the phone away keeps its points and its done state', () => {
+      const saved = { [k]: { ...core.phoneAway({}, k, '22:00', 1, st)[k] } };
+      saved[k].p = { ...saved[k].p!, po: '09:00', wd: false };
+      expect(core.dayPoints(saved, k, st).parts.map((x) => x.k)).toContain('phone');
+      expect(core.rhythm(saved, st, k, nine).stops.find((x) => x.k === 'night')?.done).toBe(true);
+      expect(core.phoneNights(saved)).toBe(1);
+    });
+    it('SOS Go to bed too early says when the phone went down and claims no night', () => {
+      expect(core.bedWords({}, st, k, '04:30').line).toBe('Down at 4:30 AM.');
+    });
   });
   it('the nights the phone went down only grow, and nothing says in a row', () => {
     let d = core.phoneAway({}, '2026-10-13', '22:00', 1, st);

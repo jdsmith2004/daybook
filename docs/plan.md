@@ -1,9 +1,9 @@
 # What is planned next
 
-## The home screen, on its branch (the owner, October 30, 2026)
+## The home screen (the owner, October 30, 2026)
 
-**Where it is:** `claude/home-path`, not merged; the owner has it on the simulator. The owner chose the "Now" drawing: the warm card and the
-line on the left.
+**Where it is:** merged to `main`, after the owner saw it on the simulator. The owner chose the "Now" drawing: the warm card and the line on
+the left.
 
 **Built:**
 

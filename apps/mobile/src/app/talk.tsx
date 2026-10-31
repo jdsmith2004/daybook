@@ -13,7 +13,7 @@
    the look back goes on into Rekindle's comeback at the feeling before it (log.tsx), so it ends warm: the flame and a
    plan for next time, the same as a slip logged from Already happened.
    The SOS pill sits in the top bar on every page: someone talking it through can be in the middle of an urge.
-   And ?prep=1, "Make a plan for tonight" from the hard hours card: a short plan for someone who may be doing well, with
+   And ?prep=1, "Make a plan" from the hard hours line on Today: a short plan for someone who may be doing well, with
    no slip in mind. No signs, no research, no paths: what usually makes these hours hard (the needs), what to do instead
    (the moves), and the moment (their start, while it is still ahead), saved as a change plan (marked pr, so it never
    counts as a sign of when it gets hard).

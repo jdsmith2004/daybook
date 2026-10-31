@@ -7,8 +7,8 @@
    When it may ask: after the setup, once a day on the day's first open (dayOpenNext, which the app keeps on the device),
    and never after a slip: not on a day with a slip logged, and not while a Rekindle is open (the quest, the sunrise check
    and the days its run waits to be saved). The app also keeps it off SOS and every full-screen moment: it opens only over
-   Today. It never opens by itself in the person's hard hours (risk.ts, and the two hours before them, when Today shows the
-   hard hours card), or once the wind-down has started (an hour before screens-off, until the new day): at 11 PM with an
+   Today. It never opens by itself in the person's hard hours (risk.ts, and the two hours before them, when Today says
+   them), or once the wind-down has started (an hour before screens-off, until the new day): at 11 PM with an
    urge, a question about the day is in the way (dayFeelQuiet). Checked by test/day-feel.test.ts. */
 import { sumDay } from './legacy/core.js';
 import { changeDay } from './mutate';

@@ -2,7 +2,7 @@
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
    next stop, the Sunday review, the first week, a first pattern, days away), the whole band one
    button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
-   comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (the hard hours, a talk-through, a counting note,
+   comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
 import { comebackNow, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
@@ -11,7 +11,6 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { NudgeCard } from '@/components/nudge-card';
-import { RiskCard } from '@/components/risk-card';
 import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
@@ -42,9 +41,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
   switch (m.k) {
     case 'pause':
       return <PauseBanner />;
-    case 'hard-now':
-    case 'hard-soon':
-      return <RiskCard snap={snap} tk={tk} now={now} />;
     case 'talk':
       return <TalkCard snap={snap} now={now} />;
     case 'comeback':

@@ -56,6 +56,7 @@ export function YourDay({
   hero,
   foot,
   footOff,
+  note,
 }: {
   snap: Snapshot;
   tk: string;
@@ -63,6 +64,8 @@ export function YourDay({
   hero?: Moment | null;
   foot?: string;
   footOff?: boolean;
+  /** a quiet line under the big card, or above the rows when there is no big card */
+  note?: React.ReactNode;
 }) {
   const c = useTheme();
   const st = snap.settings!;
@@ -75,8 +78,10 @@ export function YourDay({
   const n = r.tiles.length;
   /* the big card goes on the stop it starts */
   const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
+  const heroShown = !!hero && r.tiles.some((t) => t.k === heroKey && !t.done);
   return (
     <View>
+      {heroShown ? null : <View style={s.noteTop}>{note}</View>}
       {n ? (
         r.tiles.map((t, i) => {
           const tile = open && open.k === t.k && !t.done ? open : t;
@@ -86,6 +91,7 @@ export function YourDay({
               <Rail done={t.done} cur={big ? true : t.cur} first={!i} last={i === n - 1} upDone={i > 0 && r.tiles[i - 1].done} />
               <View style={[s.stopIn, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
                 {big ? <Hero m={hero!} t={tile} /> : <Row t={tile} />}
+                {big ? <View style={s.note}>{note}</View> : null}
               </View>
             </View>
           );
@@ -259,6 +265,8 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
 const s = StyleSheet.create({
   stop: { flexDirection: 'row', gap: 8 },
   stopIn: { flex: 1, paddingVertical: 4 },
+  note: { marginTop: 8 },
+  noteTop: { marginBottom: 8 },
   rail: { width: RAIL, alignItems: 'center' },
   mark: { width: MARK, height: MARK, borderRadius: MARK / 2, alignItems: 'center', justifyContent: 'center', marginVertical: 2 },
   hero: {

@@ -8,11 +8,11 @@ line on the left.
 **Built:**
 
 - Your day is on the home screen, with the two quiet buttons right under the flame.
-- Notifications are hard to ignore: the reminders strip is back under the two quiet buttons and bigger. The hard hours card is SOS's color,
-  and short enough to fit above the tab bar, so it lost its two lines of explaining and the lesson's title.
-- The iPhone uses Apple's own glass tab bar, with the round SOS floating over its middle, set never to minimize. This is one commit, easy to
-  drop. Android and the web keep the bar the app draws, with a fade above it so nothing is cut in half.
-- SOS is the word on a warm button, not the lifebuoy.
+- Hard hours are never a card. The next step in them is still the lesson or SOS (the owner: "maybe just let them know"), so the lesson stays
+  the big card and one quiet line under it says the hours and offers a plan. The reminders strip is back under the two quiet buttons, and bigger.
+- The iPhone uses Apple's own glass tab bar, with SOS in the separate glass circle iOS gives the search tab: the word in the app's letters and
+  warm color, never selected, its press opens SOS. The bar never minimizes. Android and the web keep the bar the app draws, with a round SOS and
+  a fade above the bar so nothing is cut in half.
 
 **Open:**
 

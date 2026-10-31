@@ -59,6 +59,7 @@ import { NotifyBanner } from '@/components/notify-banner';
 import { Hero, skyInk } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
 import { PullHint } from '@/components/pull-door';
+import { HardLine } from '@/components/risk-card';
 import { Screen } from '@/components/screen';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { T } from '@/components/ui';
@@ -269,8 +270,6 @@ export default function Today() {
   const slipLine = heroSlipLine(snap.days, st, tk, now);
   /* the day's next stop is the big card on the line (your-day.tsx); any other moment keeps its own card above the line */
   const calm = pick.card.k === 'calm';
-  /* one loud thing at a time: the hard hours card carries its own heads-up */
-  const hard = pick.card.k === 'hard-soon' || pick.card.k === 'hard-now';
   const size = sizeFor(slipLine ? NOTE_ROOM : 0);
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
@@ -321,10 +320,11 @@ export default function Today() {
           />
         }>
         <LogLink />
-        {hard ? null : <NotifyBanner />}
+        <NotifyBanner />
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
         {calm ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
         <YourDay
+          note={<HardLine snap={snap} tk={tk} now={now} />}
           footOff={Platform.OS === 'ios' && atRest}
           snap={snap}
           tk={tk}

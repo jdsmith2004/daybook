@@ -2,12 +2,12 @@
    the log and the clock, so three systems never each ask for "what next". First match wins:
 
     1. a pause in progress (the slim banner)
-    2. in the hard hours now: SOS forward, and talk it through
+    2. the hard hours are never the card (the owner, October 30, 2026): the next step in them is still the lesson or SOS, and Today
+       says the hours in one quiet line under the card (risk-card.tsx)
     3. there is no "morning after" card (the owner, October 24, 2026): coming back is the sunrise check, and Today marks it
        by itself (sunriseDue, srDone). The count asks nothing after a slip (the owner, October 30, 2026).
     4. the day of a slip, after it: one small thing
     5. a talk-through due: decide now, it passed, look back
-    6. hard hours in the next two hours: the plan
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
@@ -25,7 +25,7 @@ import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { openTile, stopTiles, type StopGo } from './day';
 import { comebackNow, rkComebackSay, safeName, tellStartDue } from './rekindle';
-import { firstPattern, riskDay, riskPlanLabel, riskStartLabel } from './risk';
+import { firstPattern } from './risk';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
@@ -34,11 +34,9 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 
 export type MomentKind =
   | 'pause'
-  | 'hard-now'
   | 'slip-day'
   | 'talk'
   | 'comeback'
-  | 'hard-soon'
   | 'away'
   | 'sunday'
   | 'first-week'
@@ -104,23 +102,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   /* 1. a pause in progress */
   if (dev.pause) m('pause', 'A pause', 'Your pause', 'One tap back to it.', 'Resume', 'pause', 'your pause');
 
-  /* 2 and 6. the hard hours (risk.ts), now or in the next two hours */
-  const risk = riskDay(days, st, tk, now);
-  const hard = risk && (risk.phase === 'during' || risk.phase === 'soon') ? risk : null;
-  const hardEb = hard ? 'Your hard hours · ' + hard.win.label : '';
-  if (hard && hard.phase === 'during')
-    hard.talked
-      ? m('hard-now', hardEb, 'You planned for this.', 'If it gets hard anyway, SOS is one tap.', null, null, 'your hard hours')
-      : m(
-          'hard-now',
-          hardEb,
-          'You are in your hard hours.',
-          'SOS is one tap. A short plan helps too.',
-          riskPlanLabel(hard.win.start),
-          'talk',
-          'your hard hours',
-        );
-
   /* 4. the day of a slip */
   const today = days[tk];
   if (sumDay(today).slipped && (today?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered))
@@ -145,19 +126,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           : ['Look back.', 'One minute. Honest is what counts.', 'Look back'];
     m('talk', 'Talk it through', w[0], w[1], w[2], 'talk', t.due === 'look' ? 'a look back' : 'a choice to make', t.talk.id);
   }
-  if (hard && hard.phase === 'soon')
-    hard.talked
-      ? m('hard-soon', hardEb, 'You are ready.', 'You made your plan. If it gets hard anyway, SOS is one tap.', null, null, 'your hard hours')
-      : m(
-          'hard-soon',
-          hardEb,
-          'Your hard hours start at ' + riskStartLabel(hard.win.start) + '.',
-          'A short plan now, while it is quiet, makes them easier.',
-          riskPlanLabel(hard.win.start),
-          'talk',
-          'a plan for your hard hours',
-        );
-
   /* 7. days away not known */
   if (dev.back)
     m(

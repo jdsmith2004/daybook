@@ -1,0 +1,132 @@
+/* The guides: plain answers to what people search for while quitting, on top of site.css. No scripts, readable on a phone, light and dark. */
+/* Fredoka, the app's display face (SIL Open Font License, ../fonts/OFL.txt), served from this site, never a font service */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('../fonts/fredoka-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+h1,
+h2 {
+  font-family:
+    'Fredoka',
+    ui-rounded,
+    'SF Pro Rounded',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+h1 {
+  font-size: 36px;
+  line-height: 1.12;
+}
+.eyebrow {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+ol.do {
+  padding-left: 22px;
+}
+ol.do li {
+  margin: 10px 0;
+}
+.card h2 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+.short h2 {
+  color: var(--mint-text);
+}
+.help {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.help h2 {
+  color: var(--accent);
+}
+
+/* the next question: whole rows to tap, not small links */
+.more {
+  list-style: none;
+  padding: 0;
+}
+.more li {
+  margin: 0 0 10px;
+}
+.more a {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 18px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+.more a span {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 15px;
+  margin-top: 2px;
+}
+.src ul {
+  font-size: 15px;
+  color: var(--muted);
+}
+.src a {
+  overflow-wrap: anywhere;
+}
+
+/* the main button sits low, where the thumb is (as on the about page) */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--bg) 28%);
+}
+.dock .inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.open {
+  display: block;
+  text-align: center;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  text-decoration: none;
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(98, 71, 234, 0.3);
+}
+.dock p {
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  margin: 8px 0 0;
+}
+.dock p a {
+  font-weight: 600;
+}
+.wrap.page {
+  padding-bottom: 8px;
+}
+footer.wrap {
+  margin-top: 0;
+  padding-top: 0;
+  border: 0;
+}
+footer.wrap p:first-child {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}

@@ -9,9 +9,15 @@
       "theme": "light",
       "top": 0.362,
       "playTop": 0.15,
-      "sizes": ["ios69", "ios63", "play-phone"],
-      "hero": "40",
-      "head": 0.088
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "hero": "19",
+      "heroSize": 0.88,
+      "head": 0.088,
+      "duo": {
+        "top": 0.47,
+        "zoom": 0.72,
+        "heroSize": 0.62
+      }
     },
     {
       "name": "sos",
@@ -22,7 +28,11 @@
       "zoom": 0.98,
       "top": 0.165,
       "playTop": 0.2,
-      "sizes": ["ios69", "ios63", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "duo": {
+        "top": 0.25,
+        "zoom": 0.76
+      }
     },
     {
       "name": "slip",
@@ -33,7 +43,14 @@
       "below": true,
       "top": -0.075,
       "playTop": 0.2,
-      "sizes": ["ios69", "ios63", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "duo": {
+        "caption": "A slip is not a reset",
+        "head": 0.078,
+        "below": false,
+        "top": 0.17,
+        "zoom": 0.66
+      }
     },
     {
       "name": "grow",
@@ -44,8 +61,14 @@
       "theme": "dark",
       "top": 0.36,
       "playTop": 0.42,
-      "sizes": ["ios69", "ios63", "play-phone"],
-      "zoom": 0.84
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "zoom": 0.84,
+      "duo": {
+        "head": 0.078,
+        "lines": 1,
+        "top": 0.5,
+        "zoom": 0.72
+      }
     },
     {
       "name": "pattern",
@@ -57,7 +80,11 @@
       "tilt": -3,
       "top": 0.165,
       "playTop": 0.2,
-      "sizes": ["ios69", "ios63", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "duo": {
+        "top": 0.25,
+        "zoom": 0.76
+      }
     },
     {
       "name": "learn",
@@ -67,7 +94,11 @@
       "theme": "light",
       "top": 0.165,
       "playTop": 0.2,
-      "sizes": ["ios69", "ios63", "play-phone"]
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "duo": {
+        "top": 0.25,
+        "zoom": 0.76
+      }
     },
     {
       "name": "private",
@@ -78,8 +109,13 @@
       "zoom": 0.98,
       "top": 0.5,
       "playTop": 0.2,
-      "sizes": ["ios69", "ios63", "play-phone"],
-      "hero": "60"
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "hero": "60",
+      "duo": {
+        "top": 0.56,
+        "zoom": 0.76,
+        "heroSize": 0.5
+      }
     },
     {
       "name": "feature",

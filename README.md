@@ -91,7 +91,7 @@ npm run shots -- --size ios69    # one size
 ```
 
 **Add a scene:** add an entry to `shots.json`: `name`, `sizes` (keys of `SIZES` in `apps/mobile/src/shots/config.ts`:
-`ios69`, `ios63`, `play-phone`, `play-feature`, `ios-header`, `ios-search`), `screen` (an app path, like `/learn` or
+`ios69`, `ios63`, `duo-outer`, `duo-inner`, `play-phone`, `play-feature`, `ios-header`, `ios-search`; `duo` holds what changes on the squarer Duo sizes), `screen` (an app path, like `/learn` or
 `/journal?pane=patterns`; `screen2` and `screen3` put more phones in the wide images), `caption` and `sub`, `bg` (a key
 of `BACKGROUNDS`), `theme` (`light` or `dark`), and if needed `at` (the demo moment, like `2026-10-17T21:30:00`) and
 `scroll` (pixels down the screen). Files are numbered in the order of `shots.json`. Captions only describe what the app
@@ -101,7 +101,7 @@ image.
 **The look of the set:** one sunrise. The skies in `BACKGROUNDS` go from night to full sun in the order of the set, and each shot's edges drift
 half way to its neighbor's sky, with one line of hills across them all, so side by side they are one picture. No two shots share a layout: `zoom`,
 `top`, `tilt`, `below` (the words under the phone), `hero` (a level's flame rising behind the phone) and `forms` (a rising row of the flame's forms)
-are the ways to change it. Captions stay at 3 to 5 words, big enough to read at 40% (search shows them about that small). Never a price or "Free"
+are the ways to change it. The first shot and the demo person stay on a flame, never the sun: everyone starts with the flame (the owner, October 31, 2026). Captions stay at 3 to 5 words, big enough to read at 40% (search shows them about that small). Never a price or "Free"
 (App Review 2.3.7), and the first three shots carry the set. To look at one by hand: `EXPO_PUBLIC_SHOTS=1 npx expo start --web` in `apps/mobile`, then open
 `/shots?size=ios69&screen=/&caption=Hello`.
 

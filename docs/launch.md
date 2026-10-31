@@ -145,6 +145,10 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Screenshots:** the seven in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
   (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same seven from
   `store-assets/ios63/` (1206 × 2622) there. Download them from GitHub on whichever computer you are using.
+- **iPhone Duo** (optional until April 2027, and only then for builds on the iOS 27.1 SDK or later): the same seven in
+  `store-assets/duo-outer/` (1398 × 2034) and `store-assets/duo-inner/` (2007 × 2853). Sending them puts a badge on the listing
+  saying the app is optimized for iPhone Duo, and the pictures show the iPhone screen, not a real Duo capture, since that takes
+  Xcode 27.1.
 - **Header and search results** (new in App Store Connect for iOS 27; optional, and reviewed like the rest): the header
   is `store-assets/ios-header/01-header.png` (3840 × 1646, 21:9) and the search card `store-assets/ios-search/01-search.png`
   (3840 × 2560, 3:2), on the version page's Header and Search Results tab. Apple asks that these suit a 4+ rating even

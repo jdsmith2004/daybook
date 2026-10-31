@@ -426,7 +426,7 @@ function Faith() {
               <B>Say your words.</B> A short prayer, a verse, or a line that steadies you.
             </>,
             <>
-              <B>Do the next small thing.</B> Stand up, drink water, step outside, or call someone.
+              <B>Do the next small thing.</B> Open SOS, or stand up and call someone.
             </>,
           ]}
         />

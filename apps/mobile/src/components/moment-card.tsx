@@ -20,6 +20,7 @@ import { PauseBanner, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
 import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
+import { openCare } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
@@ -53,7 +54,17 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
     case 'nudge':
       return <NudgeCard snap={snap} tk={tk} />;
     case 'slip-day':
-      return <Tile m={m} sky="sun" onPress={() => didSmall(tk)} />;
+      return (
+        <Tile
+          m={m}
+          sky="sun"
+          onPress={() => {
+            didSmall(tk, true);
+            if (m.door) openCare(m.door);
+          }}
+          onAlt={() => didSmall(tk)}
+        />
+      );
     case 'calm':
       return <Band m={m} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
     case 'sunday':
@@ -103,7 +114,7 @@ function Band({ m, onPress }: { m: Moment; onPress: () => void }) {
 }
 
 /* the day of a slip: its full card, with its words of care and its one button */
-function Tile({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: () => void }) {
+function Tile({ m, sky, onPress, onAlt }: { m: Moment; sky: StopTile['sky']; onPress: () => void; onAlt?: () => void }) {
   const c = useTheme();
   const L = lookOf(sky, c);
   const deep = c.scheme === 'dark' || sky === 'night';
@@ -139,6 +150,11 @@ function Tile({ m, sky, onPress }: { m: Moment; sky: StopTile['sky']; onPress: (
             },
           ]}>
           <Text style={[s.btnT, { color: btn.ink }]}>{m.btn}</Text>
+        </Pressable>
+      ) : null}
+      {m.alt && onAlt ? (
+        <Pressable accessibilityRole="button" onPress={onAlt} hitSlop={8} style={s.alt}>
+          <Text style={[s.altT, { color: soft }]}>{m.alt}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -232,6 +248,8 @@ const s = StyleSheet.create({
   body: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 21 },
   btn: { minHeight: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginTop: 4, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
   btnT: { fontFamily: font.bodyBold, fontSize: 17 },
+  alt: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  altT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   more: { paddingHorizontal: 16 },
   band: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 84, paddingVertical: 12, paddingLeft: 16, paddingRight: 14, borderRadius: 20 },
   bandT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },

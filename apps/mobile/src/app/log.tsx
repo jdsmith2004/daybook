@@ -13,13 +13,14 @@
       record of it (fa). Still pulled toward it leads to SOS; like giving up shows the 988 line too.
    3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
       alone): the same answers as "What set it off?" after an urge, so slips and urges are counted together.
-   4. Next time: "When it is late and I am in bed with my phone, I will ...". One tap saves the if-then plan as an
-      after-slip talk-through (pr 1, ft), which comes back on Today at its hour (core talkPlanNow) and is asked about once
-      that hour has passed. Then the finish, by the fire, with the plan to say once.
-   SOS and the 10-minute pause save a slip themselves (with the minutes they measured), then hand it over at screen 1.
-   Talk it through's look back on an eyes-open go-ahead hands its slip over at screen 2 (?from=talk&step=slNow), and so does
-   a slip added in the entry sheet (?from=entry&step=slNow, with Undo on the page): the slip is saved already, so there is
-   nothing to hold, and it ends warm, with the fire and a plan.
+   4. Next time: a plan made already, from what was going on: "When it is late and I am in bed with my phone, I will open SOS."
+      One tap keeps it, saved as an after-slip talk-through (pr 1, ft), which comes back on Today at its hour, where a tap opens
+      the tool (core talkPlanNow), and is asked about once that hour has passed. Choose another is its own page: the tools that
+      fit, and the person's own words. Then the finish, by the fire, with one door for the next hour (core slipNext).
+   Every slip starts at the hold, however it came (the owner, October 31, 2026): SOS and the 10-minute pause save it themselves,
+   with the minutes they measured; the entry sheet saves a new one, or changes an entry to a slip; and "I went ahead" in Talk it
+   through's look back saves it and comes straight here, ahead of anything else it asks. A go-ahead's number comes after the
+   answer to how it feels (slGave). Once the hold is done, the go-ahead before it is settled, so Today does not ask again.
    SOS is one tap from every page of the comeback, and it opens over it: its X and its ending come back here, on the same
    page, so the plan for next time is never lost (lib/nav.ts leave).
    The second slip in a week (core slipRepeat) gets the most care: one line that names it on "How do you feel now?", the
@@ -33,6 +34,9 @@ import {
   didIds,
   entryLabel,
   gameCompute,
+  goAheadBefore,
+  lookBackGave,
+  lookUndo,
   moveEvent,
   optList,
   OPT_MAX,
@@ -41,6 +45,9 @@ import {
   rkHoldWords,
   rkLitLine,
   safeName,
+  settleGoAhead,
+  SLIP_LEAD,
+  slipNext,
   SLIP_SAFE_TEXT,
   SLIP_THERAPY_LESSON,
   slipRepeat,
@@ -54,6 +61,10 @@ import {
   slipMoves,
   slipNowLine,
   slipWhen,
+  talkBackWhen,
+  talkById,
+  talkEvidence,
+  talkEvidenceLine,
   talkHeld,
   talkHeldTag,
   talkMoveName,
@@ -83,7 +94,8 @@ import { FitArt } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
-import { ChoiceRows } from '@/components/slip';
+import { Slider, SliderValue } from '@/components/slider';
+import { ChoiceRows, SosBig } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
 import { OwnField } from '@/components/own';
 import { RodeOut } from '@/components/rode-out';
@@ -93,18 +105,18 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
-import { close, closeAll } from '@/lib/nav';
+import { close, closeAll, openCare } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 
-type Step = 'q1' | 'won' | 'slHold' | 'slNow' | 'slNowSay' | 'slBefore' | 'slPlan' | 'slDone';
-const SL_STEPS: Step[] = ['slHold', 'slNow', 'slNowSay', 'slBefore', 'slPlan', 'slDone'];
+type Step = 'q1' | 'won' | 'slHold' | 'slNow' | 'slNowSay' | 'slGave' | 'slBefore' | 'slPlan' | 'slOther' | 'slDone';
+const SL_STEPS: Step[] = ['slHold', 'slNow', 'slNowSay', 'slGave', 'slBefore', 'slPlan', 'slOther', 'slDone'];
 /* the screenshot studio (EXPO_PUBLIC_SHOTS=1, dev only) can open a slip's comeback on any of its pages */
 const SHOTS = process.env.EXPO_PUBLIC_SHOTS === '1';
 /* the comeback's dots: each page counts as the step it belongs to */
-const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slNow: 1, slNowSay: 1, slBefore: 2, slPlan: 3, slDone: 4 };
+const SL_DOT: Partial<Record<Step, number>> = { slHold: 0, slNow: 1, slNowSay: 1, slGave: 1, slBefore: 2, slPlan: 3, slOther: 3, slDone: 4 };
 /* the icons and shapes of the feelings afterwards, and of the plan's moves */
 const NOW_SHAPE: Record<RkFeel, ShapeKind> = {
   shame: 'cookie12',
@@ -134,6 +146,8 @@ const MOVE_IC: Partial<Record<TalkMove, string>> = {
   tell: 'chat',
   move: 'bolt',
   light: 'sun',
+  sos: 'life',
+  journal: 'pencil',
 };
 const MOVE_TONE = ['mint', 'sky', 'sun', 'violet'];
 
@@ -153,6 +167,11 @@ export default function Log() {
     night?: string;
     full?: string;
     kl?: string;
+    /* from the look back: the talk-through, and whether its "I went ahead" wrote this slip. From an entry changed to a slip:
+       what it was before. */
+    talk?: string;
+    made?: string;
+    was?: string;
   }>();
   const sos = useSos();
   const st = useCareSettings();
@@ -163,16 +182,15 @@ export default function Log() {
   const [when, setWhen] = useState<When>(() => whenStart(date, Date.now(), roll));
   const [whenOpen, setWhenOpen] = useState(false);
   const handed = !!(params.evId && (params.outcome === 'rode' || params.outcome === 'slipped'));
-  const [from] = useState<'urge' | 'pause' | 'talk' | 'entry' | 'hero'>(() =>
-    params.from === 'urge' || params.from === 'pause' || params.from === 'talk' || params.from === 'entry' ? params.from : 'hero',
+  const [from] = useState<'urge' | 'pause' | 'talk' | 'entry' | 'change' | 'hero'>(() =>
+    params.from === 'urge' || params.from === 'pause' || params.from === 'talk' || params.from === 'entry' || params.from === 'change' ? params.from : 'hero',
   );
-  /* a slip handed over (SOS, the pause) starts at the hold: they measured the wait themselves. One from a look back or the
-     entry sheet starts at how it feels now (the slip is saved already; an older link may still say slBefore). An urge ridden
+  /* a slip handed over starts at the hold, wherever it came from: "you are still good" comes before any question. An urge ridden
      out is the celebration. */
-  const fromLook = (from === 'talk' || from === 'entry') && (params.step === 'slNow' || params.step === 'slBefore');
   const shotStep = SHOTS && SL_STEPS.indexOf(params.step as Step) >= 0 ? (params.step as Step) : null;
-  const [step, setStep] = useState<Step>(() => (handed ? (params.outcome === 'slipped' ? shotStep || (fromLook ? 'slNow' : 'slHold') : 'won') : 'q1'));
-  const [hist, setHist] = useState<Step[]>(() => (handed && !fromLook ? ['q1'] : []));
+  const [step, setStep] = useState<Step>(() => (handed ? (params.outcome === 'slipped' ? shotStep || 'slHold' : 'won') : 'q1'));
+  /* SOS and the pause keep the way back to "How is the urge now?"; the others said it was a slip a moment ago */
+  const [hist, setHist] = useState<Step[]>(() => (handed && (from === 'urge' || from === 'pause' || from === 'hero') ? ['q1'] : []));
   const [evId, setEvId] = useState<string | null>(() => (handed ? params.evId! : null));
   const [outcome, setOutcome] = useState<Outcome | null>(() => (handed ? (params.outcome as Outcome) : null));
   const [pts0, setPts0] = useState(() => (handed ? Number(params.pts0) || 0 : 0));
@@ -186,7 +204,13 @@ export default function Log() {
   const hold = useHearthHold(lit, () => {
     setLit(true);
     AccessibilityInfo.announceForAccessibility(rkHoldWords(true, false).h);
+    /* the slip is looked at now: a go-ahead before it is settled, so Today does not ask about it again */
+    const held = evId ? snap.days[date]?.events.find((x) => x.id === evId) : null;
+    if (held) update((s0) => ({ ...s0, days: settleGoAhead(s0.days, date, held.time, tk) }));
   });
+  /* a go-ahead's number: the talk-through it belongs to, once the page is open, and what it really gave */
+  const [gaveId, setGaveId] = useState<string | null>(null);
+  const [gave, setGave] = useState<number | null>(null);
   /* adding the person's own answer to "What was going on?", and showing the whole list */
   const [adding, setAdding] = useState(false);
   const [allOpts, setAllOpts] = useState(false);
@@ -264,8 +288,27 @@ export default function Log() {
     go('slPlan');
   };
   const undo = () => {
-    /* a mistaken log taken back: its points go with it (they were never really earned) */
-    if (evId) update((s) => ({ ...s, days: removeEvent(s.days, date, evId) }), { takeBack: true });
+    /* an entry changed to a slip goes back to what it was, with all it had */
+    if (from === 'change' && evId) {
+      let was: Partial<DayEvent> = {};
+      try {
+        was = JSON.parse(params.was || '{}');
+      } catch {}
+      update((s) => ({ ...s, days: patchEvent(s.days, date, evId, { ...was, outcome: 'rode' }) }), { noWin: true });
+      closeAll();
+      say('Changed back.');
+      return;
+    }
+    /* a mistaken log taken back: its points go with it (they were never really earned). "I went ahead" tapped by mistake opens
+       the look back again. */
+    if (evId)
+      update(
+        (s) => ({
+          ...s,
+          days: from === 'talk' && params.talk ? lookUndo(removeEvent(s.days, date, evId), params.talk) : removeEvent(s.days, date, evId),
+        }),
+        { takeBack: true },
+      );
     if (from === 'urge')
       sos.setMem((m) => {
         const { last: _last, ...rest } = m;
@@ -311,7 +354,15 @@ export default function Log() {
   );
 
   /* ---------- the saved entry, with Undo, on the first page of the comeback ---------- */
-  const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={undo} /> : null;
+  const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={from === 'talk' && params.made !== '1' ? undefined : undo} /> : null;
+  /* after how it feels: a go-ahead with a number first looks at what it really gave */
+  const afterNow = () => {
+    const x = ev ? goAheadBefore(snap.days, date, ev.time, Date.now()) : null;
+    if (x && x.talk.e != null && x.talk.a && x.talk.a.g == null) {
+      setGaveId(x.talk.id);
+      go('slGave');
+    } else go('slBefore');
+  };
   /* the progress dots of a slip: the hold, now, just before, next time (all four filled at the finish) */
   const slDots = () => {
     const i = SL_DOT[step] ?? 0;
@@ -325,6 +376,7 @@ export default function Log() {
   const repeat = slipRepeat(snap.days, date, evId);
   /* saving the plan: a new pick replaces the one made a moment ago */
   const savePlan = (m: TalkMove | null, own?: string) => {
+    if (!m && !own) return;
     const t: Talk = {
       ...(plan || newTalk(Date.now())),
       p: 'change',
@@ -426,7 +478,9 @@ export default function Log() {
         <View style={{ opacity: lit ? 0 : 1 }} pointerEvents={lit ? 'none' : 'auto'}>
           {saved}
         </View>
-        <Hearth hold={hold} />
+        <FitArt min={0.55} stretch>
+          <Hearth hold={hold} />
+        </FitArt>
         <Appear key={lit ? 'lit' : 'low'} delay={lit ? 650 : 0} by={lit ? 10 : 0} duration={lit ? 420 : 0} style={s.words}>
           <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
             {w.h}
@@ -453,8 +507,6 @@ export default function Log() {
     dots = slDots();
     body = (
       <>
-        {/* a slip added in the entry sheet comes in here, so its Undo is here too */}
-        {from === 'entry' ? saved : null}
         <T v="title" style={s.h} accessibilityRole="header">
           How do you feel now?
         </T>
@@ -476,7 +528,7 @@ export default function Log() {
         </Dock>
       </>
     );
-    footer = <Link label="Skip" tone="muted" onPress={() => go('slBefore')} />;
+    footer = <Link label="Skip" tone="muted" onPress={afterNow} />;
   } else if (step === 'slNowSay') {
     /* the kind, true answer to how it feels, and their own record of it */
     const fa = (ev?.fa || 'okay') as RkFeel;
@@ -484,7 +536,7 @@ export default function Log() {
     const say = SLIP_NOW_SAYS[fa];
     const tn = toneOf(c, row[4]);
     const mine = slipNowLine(snap.days, evId, fa);
-    const next = () => go('slBefore');
+    const next = afterNow;
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
@@ -532,6 +584,47 @@ export default function Log() {
       </>
     );
     footer = fa === 'pull' ? null : <Link label="Pick another" tone="muted" onPress={goBack} />;
+  } else if (step === 'slGave') {
+    /* a go-ahead: what it was expected to give against what it really gave, in the person's own numbers. Seeing the gap lowers
+       the pull next time (Brewer and others 2011). */
+    const x = gaveId ? talkById(snap.days, gaveId) : null;
+    const moved = gaveId && gave != null ? talkEvidence(lookBackGave(snap.days, gaveId, gave)) : null;
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        <T v="title" style={s.h} accessibilityRole="header">
+          {'You expected ' + (x?.talk.e ?? 0) + '. What did it really give?'}
+        </T>
+        <Middle>
+          <SliderValue big value={gave} caption="out of 10" hint="Slide below to answer" />
+          {/* the room is kept for the line, so the number does not move when it comes */}
+          <View style={s.gapLine}>
+            {moved ? (
+              <Appear by={6} duration={220}>
+                <T style={s.center}>{talkEvidenceLine(moved)}</T>
+              </Appear>
+            ) : null}
+          </View>
+        </Middle>
+        <Dock>
+          <Slider label="How much it really gave" value={gave} lo="nothing" hi="everything" readout={false} onChange={setGave} />
+          {gave != null ? (
+            <Button
+              label="Next"
+              onPress={() => {
+                if (gaveId) update((s0) => ({ ...s0, days: lookBackGave(s0.days, gaveId, gave) }));
+                go('slBefore');
+              }}
+            />
+          ) : (
+            <View style={s.btnSpace} />
+          )}
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip" tone="muted" onPress={() => go('slBefore')} />;
   } else if (step === 'slBefore') {
     /* 3. just before: the situation, one tap (the same answers as after an urge, so they are counted together) */
     const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
@@ -565,26 +658,62 @@ export default function Log() {
     );
     footer = adding ? null : <Link label="Skip" tone="muted" onPress={() => go('slPlan')} />;
   } else if (step === 'slPlan') {
-    /* 4. next time: in that situation, what you will do instead */
-    const held = talkHeld(snap.days);
-    const moves = slipMoves(slWhen, slNight || slipMoment(ev?.time) === 'late', held);
+    /* 4. next time: a plan made already. Nothing to think of at the lowest moment, and one move, always the same, that Daybook
+       can bring back and open with a tap. */
     const mo = slipMoment(ev?.time);
+    const line = talkPlanLine({ n: SLIP_NEED[slWhen], m: [SLIP_LEAD], mo, ft: slWhen });
+    sky = slNight ? 'night' : 'sky';
+    title = 'Rekindle';
+    dots = slDots();
+    body = (
+      <>
+        {/* the plan is the heading, and the middle is the button it names */}
+        <T v="title" style={s.h} accessibilityRole="header">
+          {keepLast(line)}
+        </T>
+        <Middle>
+          <FitArt min={0.6}>
+            <SosBig />
+          </FitArt>
+          <T tone="muted" style={s.center}>
+            {'Daybook brings it back ' + talkBackWhen(mo, now) + '.'}
+          </T>
+        </Middle>
+        <Dock>
+          <Button label="That is my plan" onPress={() => savePlan(SLIP_LEAD)} />
+          <View style={{ alignItems: 'center' }}>
+            <Link label="Choose another" tone="muted" onPress={() => go('slOther')} />
+          </View>
+        </Dock>
+      </>
+    );
+    footer = (
+      <>
+        {repeat ? (
+          <Link
+            label="What therapy is like"
+            tone="muted"
+            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
+          />
+        ) : null}
+        <Link label="Skip" tone="muted" onPress={() => go('slDone')} />
+      </>
+    );
+  } else if (step === 'slOther') {
+    /* Choose another: the sentence is the heading, and each answer finishes it */
+    const held = talkHeld(snap.days);
+    const mo = slipMoment(ev?.time);
+    const moves = slipMoves(slWhen, slNight || mo === 'late', held);
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
         <T v="title" style={s.h} accessibilityRole="header">
-          Next time, what will you do instead?
-        </T>
-        <T style={[s.center, s.planT]}>
           {'When ' +
             TALK_WHEN[slWhen] +
             (slWhen !== 'late' && mo === 'late' ? ' late at night' : slWhen !== 'late' && mo === 'evening' ? ' in the evening' : '') +
-            ', I will …'}
-        </T>
-        <T tone="muted" style={s.center}>
-          Daybook brings it back when that time comes again.
+            ', I will\u00A0…'}
         </T>
         {ownPlan ? (
           /* the box and its button stay near the top, where the keyboard does not cover them */
@@ -607,7 +736,7 @@ export default function Log() {
                   id: m as string,
                   name: talkMoveName(m),
                   icon: MOVE_IC[m] || 'sparkle',
-                  tone: m === 'away' ? 'violet' : MOVE_TONE[j % MOVE_TONE.length],
+                  tone: MOVE_TONE[j % MOVE_TONE.length],
                   tag: talkHeldTag(held, m) || undefined,
                 }))
                 .concat({ id: 'own', name: 'Write my own', icon: 'pencil', tone: 'accent', tag: undefined })}
@@ -617,43 +746,24 @@ export default function Log() {
         )}
       </>
     );
-    footer = ownPlan ? null : (
-      <>
-        {repeat ? (
-          <Link
-            label="What therapy is like"
-            tone="muted"
-            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
-          />
-        ) : null}
-        <Link label="Skip" tone="muted" onPress={() => go('slDone')} />
-      </>
-    );
   } else if (step === 'slDone') {
-    /* the finish: the fire, still burning, and the plan to say once */
+    /* the finish: the fire, still burning, the plan, and one door for the next hour, which is the riskiest one. Using it is the
+       one small thing, so Today does not ask for it again. */
     const line = plan ? talkPlanLine(plan) : null;
+    const door = ev?.recovered ? null : slipNext(ev?.fa, slNight, (st.reasons || []).length > 0);
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
-        <Hearth hold={hold} />
+        <FitArt min={0.55} stretch>
+          <Hearth hold={hold} />
+        </FitArt>
         <View style={s.words}>
           <T v="title" style={s.h} accessibilityRole="header">
-            {line ? 'Your plan for next time' : 'You came back.'}
+            You came back.
           </T>
-          {line ? (
-            <>
-              <T v="h2" style={s.center}>
-                {'“' + line + '”'}
-              </T>
-              <T tone="muted" style={s.center}>
-                Say it once, out loud or in your head, so it comes back to you at the moment.
-              </T>
-            </>
-          ) : (
-            <T style={s.center}>Logged honestly, and looked at. That is how the next one gets easier.</T>
-          )}
+          <T style={s.center}>{line ? '“' + keepLast(line) + '”' : 'Logged honestly, and looked at. That is how the next one gets easier.'}</T>
           {gain ? (
             <T v="label" tone="mintText" style={s.center}>
               {'+' + gain + ' points'}
@@ -661,6 +771,22 @@ export default function Log() {
           ) : null}
         </View>
         <Dock>
+          {door ? (
+            <>
+              <T v="small" tone="muted" style={s.center}>
+                For the next hour
+              </T>
+              <Button
+                kind="ghost"
+                label={door.label}
+                onPress={() => {
+                  patch({ recovered: true });
+                  count('rk_small');
+                  openCare(door);
+                }}
+              />
+            </>
+          ) : null}
           <Button label="Done" kind="warm" onPress={closeAll} />
         </Dock>
       </>
@@ -675,7 +801,7 @@ export default function Log() {
       dots={dots}
       onBack={step !== 'q1' && hist.length ? goBack : null}
       onClose={close}
-      topRight={step === 'q1' ? undefined : <SosPill over />}
+      topRight={step === 'q1' || step === 'slPlan' ? undefined : <SosPill over />}
       footer={footer}>
       {body}
       {whenSheet}
@@ -683,8 +809,11 @@ export default function Log() {
   );
 }
 
+/* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line, and "I" stays with "will" */
+const keepLast = (line: string) => line.replace(', I will ', ', I\u00A0will ').replace(/ (\S+)$/, '\u00A0$1');
+
 /* "✓ Saved · Slipped at 11:40 PM  +10  Undo" */
-function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo: () => void }) {
+function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?: () => void }) {
   const c = useTheme();
   return (
     <View style={[s.pill, { backgroundColor: c.scBtn }]}>
@@ -692,16 +821,20 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo:
         <Icon name="check" size={14} color="#FFFFFF" />
       </View>
       <T v="label" style={{ flexShrink: 1 }}>
-        Saved · {text}
+        Saved · {text.replace(/ (AM|PM)/, '\u00A0$1')}
       </T>
       {gain ? (
         <T v="label" tone="mintText">
           +{gain}
         </T>
       ) : null}
-      <Pressable accessibilityRole="button" onPress={onUndo} hitSlop={10} style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
-      </Pressable>
+      {onUndo ? (
+        <Pressable accessibilityRole="button" onPress={onUndo} hitSlop={10} style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
+          <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
+        </Pressable>
+      ) : (
+        <View style={{ width: 8, minHeight: 36 }} />
+      )}
     </View>
   );
 }
@@ -711,7 +844,8 @@ const s = StyleSheet.create({
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },
-  planT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
+  gapLine: { alignSelf: 'stretch', minHeight: 64 },
+  btnSpace: { height: 52 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

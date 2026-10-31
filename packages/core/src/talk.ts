@@ -237,7 +237,9 @@ export type TalkMove =
   | 'kind'
   | 'tell'
   | 'move'
-  | 'light';
+  | 'light'
+  | 'sos'
+  | 'journal';
 /** another way to meet the need: [id, the words, how it reads after "I will"] */
 export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   walk: ['Walk it off', 'walk it off'],
@@ -263,7 +265,37 @@ export const TALK_MOVES: Record<TalkMove, [string, string]> = {
   tell: ['Tell one person I trust', 'tell one person I trust'],
   move: ['Five minutes of hard exercise', 'do five minutes of hard exercise'],
   light: ['Get outside, into some daylight', 'get outside into some daylight'],
+  /* Daybook's own: the plan names them first, and at its hour a tap opens them (TALK_DOORS) */
+  sos: ['Open SOS', 'open SOS'],
+  journal: ['Write it out in my journal', 'write it out in my journal'],
 };
+/** a door into Daybook's own care, one tap from a plan, a card or the finish of a comeback. feel: the word a journal entry
+    starts on, so it opens on the page, ready to write. */
+export interface CareDoor {
+  go: 'sos' | 'journal' | 'tool' | 'lesson';
+  id?: string;
+  feel?: string;
+  label: string;
+}
+/** the moves that are one of Daybook's own tools, and what opens them (the line a person reads when a plan comes back) */
+const TALK_DOORS: Partial<Record<TalkMove, CareDoor>> = {
+  sos: { go: 'sos', label: 'Open SOS' },
+  journal: { go: 'journal', label: 'Open my journal' },
+  write: { go: 'journal', label: 'Open my journal' },
+  name: { go: 'tool', id: 'feel', label: 'Name the feeling' },
+  breathe: { go: 'tool', id: 'breathe', label: 'Breathe' },
+  text: { go: 'tool', id: 'message', label: 'Reach a person' },
+  call: { go: 'tool', id: 'message', label: 'Reach a person' },
+  laugh: { go: 'tool', id: 'message', label: 'Reach a person' },
+  bed: { go: 'tool', id: 'bed', label: 'Go to bed' },
+  walk: { go: 'tool', id: 'move', label: 'Move' },
+  move: { go: 'tool', id: 'move', label: 'Move' },
+};
+/** the door of a plan: the first of its moves that is one of Daybook's own tools, or null */
+export function talkMoveDoor(m: readonly string[]): CareDoor | null {
+  for (const x of m) if (TALK_DOORS[x as TalkMove]) return TALK_DOORS[x as TalkMove]!;
+  return null;
+}
 /** after a slip, what was going on just before it, as the plan's "when" ("When it is late and I am in bed with my
     phone, I will ..."): the built-in answers to "What set it off?" (legacy TRIGGERS), and the urge itself for the rest */
 export type TalkWhen = 'late' | 'lonely' | 'bored' | 'stress' | 'tired' | 'scroll' | 'urge';
@@ -278,18 +310,20 @@ export const TALK_WHEN: Record<TalkWhen, string> = {
 };
 /** a move as it reads in the short plan for the hard hours, where nothing is in mind yet */
 export const talkMoveName = (k: TalkMove, prep = false) => (prep && k === 'block' ? 'Turn on a blocker before they start' : TALK_MOVES[k][0]);
+/* Daybook's own tools lead (the owner, October 31, 2026). What stays from outside it is the true answer to that need: a real
+   treat is a reward, and a person is closeness. */
 const NEED_MOVES: Record<TalkNeed, TalkMove[]> = {
-  relief: ['walk', 'shower', 'breathe', 'write'],
-  reward: ['treat', 'laugh', 'show'],
-  escape: ['name', 'text', 'people', 'show'],
-  rest: ['bed', 'nap', 'shower'],
-  close: ['text', 'call', 'people'],
-  bored: ['fill', 'out', 'hands'],
+  relief: ['sos', 'breathe', 'write', 'walk'],
+  reward: ['sos', 'treat', 'laugh', 'show'],
+  escape: ['sos', 'write', 'name', 'text'],
+  rest: ['bed', 'sos', 'nap'],
+  close: ['text', 'call', 'sos'],
+  bored: ['sos', 'fill', 'hands'],
 };
 /** the moves offered for a need: the ones that meet it, then the two that break the plan's earliest links. Given what
     the log has shown (talkHeld), the moves whose plan held before come first, the most held first. */
 export function talkMoves(need: TalkNeed | null, held: TalkHeld = {}): TalkMove[] {
-  const all = ((need ? NEED_MOVES[need] : ['walk', 'text', 'fill']) as TalkMove[]).concat(['away', 'block']);
+  const all = ((need ? NEED_MOVES[need] : ['sos', 'write', 'text']) as TalkMove[]).concat(['away', 'block']);
   const h = (m: TalkMove) => held[m]?.held || 0;
   const rate = (m: TalkMove) => h(m) / (held[m]?.n || 1);
   return all
@@ -624,16 +658,17 @@ export function talkLookAt(t: Pick<Talk, 't' | 'at'>, hard: TalkHard = []): numb
 }
 
 const p2 = (n: number) => String(n).padStart(2, '0');
+/** a clock time in the log day's order: after midnight, before the usual rollover (4 AM), is later than 11 PM */
+export const talkClockOrd = (c: string) => (c < p2(SINCE_ROLL) + ':00' ? '1' : '0') + c;
 /** a slip in the log after the talk-through at t on log day k: later that day (or with no time), or on a later day. A slip
     in the same minute is the one the talk-through came after (Talk it through right after logging a slip), not a new one.
     Times read in the log day's order: after midnight, before the usual rollover (4 AM), is later than 11 PM, so a plan made
     at 12:05 AM after a slip at 11:50 PM is not settled by that slip. */
 export function slipSince(days: Days, k: DayKey, t: number): boolean {
   const d = new Date(t);
-  const ord = (c: string) => (c < p2(SINCE_ROLL) + ':00' ? '1' : '0') + c;
-  const since = ord(p2(d.getHours()) + ':' + p2(d.getMinutes()));
+  const since = talkClockOrd(p2(d.getHours()) + ':' + p2(d.getMinutes()));
   return Object.keys(days).some(
-    (dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || ord(e.time) > since)),
+    (dk) => dk >= k && (days[dk]?.events || []).some((e) => e.outcome === 'slipped' && (dk !== k || !e.time || talkClockOrd(e.time) > since)),
   );
 }
 /** the rollover slipSince reads times by (it has no settings; 4 AM is the default, and nearly everyone keeps it) */

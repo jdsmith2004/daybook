@@ -324,6 +324,7 @@ export default function Today() {
         }>
         <LogLink />
         <NotifyBanner />
+        <WaitingPlan snap={snap} tk={tk} now={now} />
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
         {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
         {done ? (
@@ -341,7 +342,6 @@ export default function Today() {
           hero={calm ? pick.card : null}
           foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
-        <WaitingPlan snap={snap} tk={tk} now={now} />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}

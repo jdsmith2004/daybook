@@ -18,7 +18,13 @@
 
 ## When the day is finished (the owner, October 31, 2026)
 
-**Where it is:** drawn, waiting for the owner to pick. Picture: `docs/today-review/day-finished-options.png`, from the real web app with a prototype behind it. Nothing built or merged.
+**Where it is:** on hold until the wind-down redesign is finished, because it may change the answer. Nothing built or merged. The first three options are drawn in `docs/today-review/day-finished-options.png`, from the real web app.
+
+**The owner on those options (October 31, 2026):** none is a clear yes. A is the closest but "doesn't really look that good", and the current screen looks bad. A separate home screen is also hard to justify: on the usual routine, a finished day means the wind-down is done, so anyone on this screen has already said Goodnight and picked the phone back up. The owner is open to changing the day itself: bring the journal in, swap stops, or remove the wind-down entirely.
+
+**What the code says:** the wind-down counts as done once the phone-away time is set, and today runs until the rollover (4 AM by default). So the finished screen shows from Goodnight until 4 AM, unless the wind-down is switched off for that day. The check-in and the wind-down both end in the same Goodnight, so they are close to one stop already. The wind-down branch puts the flame to bed, big and asleep, with the person's own sentence (`bedWords`), so A's bigger flame and sentence would repeat it minutes later.
+
+**Next, once the wind-down session is finished:** read where it landed, then rethink the day's stops with agents in parallel. One maps what each stop feeds (points, quests, Sunday goals, pattern charts, routine settings). One looks for what the research and other apps support for evening routines and journaling. The design comes back here with pictures, and only then the finished screen. Dropping a stop can touch what a person has earned, so that work is _high_.
 
 **What the owner said:** "the all done you need to do that differently it just hides everything underneath the stupid box", and "can we think of a different thing to do when they finish??"
 

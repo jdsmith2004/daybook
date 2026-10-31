@@ -5,7 +5,20 @@ import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { normDay } from '../src/legacy/core.js';
 import { lessonPath } from '../src/lessons';
-import { hardHeld, keepHard, riskAlerts, riskAt, riskDay, riskLabel, riskLesson, riskPlanLabel, riskStartLabel, riskToKeep, riskWindow } from '../src/risk';
+import {
+  hardHeld,
+  keepHard,
+  riskAlerts,
+  riskAt,
+  riskDay,
+  riskLabel,
+  riskLesson,
+  riskPlanLabel,
+  riskStartLabel,
+  sosLead,
+  riskToKeep,
+  riskWindow,
+} from '../src/risk';
 import * as core from '../src/index';
 import { newTalk } from '../src/talk';
 import { saveTalk } from '../src/talk-log';
@@ -140,5 +153,23 @@ describe('the hard hours card, for someone doing well', () => {
     /* and the plan still turns the card calm */
     const today = saveTalk(d, tk, { ...newTalk(at('2026-10-13T21:30:00')), p: 'change', pr: 1 }, 1);
     expect(riskDay(today, st, tk, at('2026-10-13T21:40:00'))!.talked).toBe(at('2026-10-13T21:30:00'));
+  });
+});
+
+describe('the words that lead to SOS', () => {
+  let d = slip({}, '2026-10-05', '21:10');
+  d = slip(d, '2026-10-07', '22:40');
+  d = slip(d, '2026-10-09', '21:30');
+  const tk = '2026-10-13';
+  it('show until SOS has been opened once', () => {
+    expect(sosLead({}, st, tk, at('2026-10-13T10:00:00'), null)).toBe(true);
+    expect(sosLead({}, st, tk, at('2026-10-13T10:00:00'), at('2026-10-12T10:00:00'))).toBe(false);
+  });
+  it('come back around the hard hours, unless SOS was just open', () => {
+    const soon = at('2026-10-13T20:00:00');
+    expect(riskDay(d, st, tk, soon)?.phase).toBe('soon');
+    expect(sosLead(d, st, tk, soon, at('2026-10-12T10:00:00'))).toBe(true);
+    expect(sosLead(d, st, tk, soon, soon - 3600e3)).toBe(false);
+    expect(sosLead(d, st, tk, at('2026-10-13T10:00:00'), at('2026-10-12T10:00:00'))).toBe(false);
   });
 });

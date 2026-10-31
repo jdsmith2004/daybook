@@ -14,6 +14,9 @@ line on the left.
   warm color, never selected, its press opens SOS. The bar never minimizes. Android and the web keep the bar the app draws, with a round SOS and
   a fade above the bar so nothing is cut in half.
 
+- SOS is pushed on purpose: the word fills its circle, and "Feeling an urge? Tap SOS" sits on tinted glass just above it on Today until SOS has
+  been opened once, and again around the hard hours (core `sosLead`). It gives way to the reminders strip. iPhone only for now.
+
 **Open:**
 
 - Whether real hard hours notifications should be Time Sensitive, so they get through Focus. That needs an Apple capability on the app.

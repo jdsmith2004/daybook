@@ -250,3 +250,11 @@ export function firstPattern(days: Days, st: Settings, tk: DayKey): string | nul
     .replace(/\b12 PM\b/, 'noon');
   return who + ' came between ' + span + '. Your pattern is starting to show, and knowing when is half of being ready.';
 }
+
+/** whether Today leads to SOS with a few words above its button (components/sos-lead.tsx): until it has been opened once, so a person
+    knows what it is, and from two hours before the hard hours until they end, unless it was open in the last three hours */
+export function sosLead(days: Days, st: Settings, tk: DayKey, now: number, sosAt?: number | null): boolean {
+  if (sosAt == null) return true;
+  const r = riskDay(days, st, tk, now);
+  return !!r && (r.phase === 'soon' || r.phase === 'during') && now - sosAt > 3 * 3600e3;
+}

@@ -57,7 +57,8 @@ export function bigLayers(level: number, noLand?: boolean): { layers: EmblemLaye
   const whole = fireOf(level, !spark);
   /* embers keep their small size however close the figure is drawn */
   const fire = zoom > 1 ? { ...whole, embers: whole.embers.map((e) => ({ ...e, r: (e.r / zoom) * 1.5 })) } : whole;
-  /* on another sky: the glow has no frame to fade into, so it stays whole and clear of the drawing's edges, and the figure stands in the middle */
+  /* on another sky: the glow has no frame to fade into, so it stays whole and clear of the drawing's edges, and the figure stands in the middle.
+     Brought in close, the first forms' glow would grow past the top of the card and be cut off in a straight line, so it keeps the size of the later forms' */
   if (noLand) {
     const cut = l.glow.indexOf('</defs>');
     layers.glow =
@@ -65,7 +66,7 @@ export function bigLayers(level: number, noLand?: boolean): { layers: EmblemLaye
       l.glow
         .slice(cut)
         .replace(/<g mask="url\(#\w+\)">/, '<g>')
-        .replace(/(<circle cx="[\d.]+" cy="([\d.]+)" r=")([\d.]+)"/, (_, a: string, y: string, r: string) => a + Math.min(+r, +y, 120 - +y) + '"');
+        .replace(/(<circle cx="[\d.]+" cy="([\d.]+)" r=")([\d.]+)"/, (_, a: string, y: string, r: string) => a + Math.min(+r, +y, 120 - +y, 48 / zoom) + '"');
     return { layers, fire, zoom, dx: 0.5 - l.at.x, dy: 0.5 - l.at.y };
   }
   return zoom > 1 ? { layers, fire, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, fire, zoom, dx: 0, dy: 0 };

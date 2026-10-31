@@ -26,6 +26,7 @@ export * from './journal-entries';
 export * from './data';
 export * from './setup';
 export * from './emblem';
+export * from './flame-fire';
 export { flameFigureSvg } from './flame-art';
 export * from './sync';
 export * from './graduate';

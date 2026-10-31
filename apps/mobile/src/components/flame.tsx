@@ -1,26 +1,33 @@
-/* The flame spirit: one drawing for each of the 60 levels (packages/core, the emblem). With `alive`, the figure moves gently in
-   a way that fits its form (a fire flickers, the rising flame flickers and floats, the suns breathe slowly, the stars twinkle), and only the
-   figure: the drawing is split into layers (core emblemLayers), so its sky, its round frame and its hills stay still. Each
-   change of `pulse` (a tap on the flame) sends one slow bloom through it: the figure swells and settles, its glow brightens,
-   and a soft ring of light spreads out and fades. It is still under Reduce Motion, when locked, and in long lists (which
-   leave `alive` off). */
-import { emblemLayers, emblemScene, emblemXml, formOfLevel, type EmblemLayers } from '@daybook/core';
+/* The flame spirit: one drawing for each of the 60 levels (packages/core, the emblem). With `alive`, the fire in it moves the way fire does (the
+   owner, October 31, 2026: not the whole figure, like a moving emoji): the face and the body hold still and the tips of the flame lick, a sun's rays
+   lick out from its disc, a star's points reach and draw back (core flame-fire.ts, drawn by components/fire-layer). The drawing is split into layers
+   (core emblemLayers), so its sky, its round frame and its hills stay still, and the glow flickers with the fire. Each change of `pulse` (a tap on the
+   flame) makes the fire leap and sends one slow bloom through it: the figure swells a little and settles, its glow brightens, and a soft ring of light
+   spreads out and fades. It is still under Reduce Motion, when locked, and in long lists (which leave `alive` off). */
+import { emblemLayers, emblemScene, emblemXml, fireOf, formOfLevel, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
+import { FireLayer } from '@/components/fire-layer';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 
-/* [how far the figure grows, how long one breath takes, how much its glow dims, how far it sways (degrees), how far it
-   floats (a share of its size)] for each kind of form: a fire flickers and sways, the rising flame flickers and floats, the suns breathe and
-   drift, the stars twinkle and drift */
-const MOTION: [number, number, number, number, number][] = [
-  [0.035, 1100, 0.25, 1.6, 0.006],
-  [0.03, 1500, 0.25, 1.2, 0.02],
-  [0.03, 3200, 0.25, 0, 0.012],
-  [0.03, 2400, 0.35, 0, 0.012],
+/* [how long one flicker of the glow takes, how much it dims] for each kind of form: a fire, the rising flame, the suns, the stars */
+export const GLOW: [number, number][] = [
+  [1500, 0.25],
+  [1900, 0.25],
+  [3200, 0.25],
+  [2400, 0.35],
 ];
-const kindOf = (form: number) => (form <= 4 ? 0 : form === 5 ? 1 : form <= 9 ? 2 : 3);
+export const glowKind = (form: number) => (form <= 4 ? 0 : form === 5 ? 1 : form <= 9 ? 2 : 3);
+/** the drawing of what holds still, cut down to the area of the fire: a picture the size of the whole drawing would be most of it empty */
+export const stillIn = (xml: string, fire: Fire) => xml.replace('viewBox="0 0 120 120"', `viewBox="${fire.box.x} ${fire.box.y} ${fire.box.w} ${fire.box.h}"`);
+/** where that picture goes in the drawing, at `unit` points to each of its units */
+export const stillBox = (fire: Fire, unit: number) => ({
+  width: fire.box.w * unit,
+  height: fire.box.h * unit,
+  style: { position: 'absolute' as const, left: fire.box.x * unit, top: fire.box.y * unit },
+});
 /* the ring a tap sends out: a soft band of warm light, clear in the middle and at the edge */
 const RING =
   '<svg viewBox="0 0 100 100"><defs><radialGradient id="flameRing" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
@@ -59,8 +66,9 @@ function Living({ layers, level, size, label, pulse }: { layers: EmblemLayers; l
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
-  const [grow, ms, dim, sway, float] = MOTION[kindOf(formOfLevel(level))];
-  /* the idle breath: in and out on a sine, forever, slow enough to feel calm */
+  const [ms, dim] = GLOW[glowKind(formOfLevel(level))];
+  const fire = useMemo(() => fireOf(level), [level]);
+  /* the glow's flicker: in and out on a sine, forever */
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -87,18 +95,10 @@ function Living({ layers, level, size, label, pulse }: { layers: EmblemLayers; l
     return () => a.stop();
   }, [pulse, bloom, ring]);
   const origin = `${(layers.at.x * 100).toFixed(1)}% ${(layers.at.y * 100).toFixed(1)}%`;
+  /* the figure itself only moves to a tap */
   const fig = {
     transformOrigin: origin,
-    transform: [
-      { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [0, -float * size] }) },
-      { rotate: breath.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', sway + 'deg', -sway * 0.6 + 'deg'] }) },
-      {
-        scale: Animated.add(
-          breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }),
-          bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
-        ),
-      },
-    ],
+    transform: [{ scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }],
   };
   const glow = {
     transformOrigin: origin,
@@ -136,7 +136,8 @@ function Living({ layers, level, size, label, pulse }: { layers: EmblemLayers; l
         <SvgXml xml={RING} width={r * 2} height={r * 2} />
       </Animated.View>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fig]}>
-        <SvgXml xml={layers.fig} width={size} height={size} />
+        <FireLayer fire={fire} unit={size / 120} leap={pulse} />
+        <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, size / 120)} />
       </Animated.View>
       <SvgXml xml={layers.front} width={size} height={size} style={StyleSheet.absoluteFill} pointerEvents="none" />
     </View>

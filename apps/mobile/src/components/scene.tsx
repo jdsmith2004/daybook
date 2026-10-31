@@ -370,7 +370,7 @@ function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
 }
 
 const s = StyleSheet.create({
-  scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center' },
+  scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center', overflow: 'hidden' },
   pinned: { paddingHorizontal: 16, alignItems: 'center' },
   pinCol: { width: '100%', maxWidth: MAX_WIDTH, gap: 10, paddingTop: 6 },
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },

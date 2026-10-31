@@ -163,3 +163,14 @@ export function emblemLayers(level: number, soft = true): EmblemLayers | null {
     at: { x: c.x / 120, y: c.y / 120 },
   };
 }
+
+/* ---------- the flame asleep ---------- */
+/** the figure layer of emblemLayers with its eyes closed, for bedtime: two soft arcs where the eyes are. Every form has the one face, so the arcs
+    sit in the same place on all of them. It gets its own ids, so it can lie over the open-eyed figure and fade in as the eyes close. */
+export function figAsleep(fig: string): string {
+  const at = fig.indexOf('<g><circle cx="-17" cy="84"');
+  if (at < 0) return fig;
+  const [, end] = elementAt(fig, at);
+  const arc = (x: number) => `<path d="M${x - 12} 83Q${x} 94 ${x + 12} 83" fill="none" stroke="#8A2E0C" stroke-width="4.4" stroke-linecap="round"/>`;
+  return (fig.slice(0, at) + arc(-17) + arc(17) + fig.slice(end)).replace(/\b(em\d+c)/g, '$1z');
+}

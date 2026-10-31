@@ -189,7 +189,8 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         q.c = Math.min(50, q.c + 1);
         d.p = q;
       });
-      /* Good night: the phone away, and screens off on time when it is before the screens-off time (core phoneAway) */
+      /* Good night: the phone away, and screens off on time when it is before the screens-off time. Too early in the day it writes nothing (core phoneAway), and
+         the person still reaches the sleeping flame and keeps the urge and the calm move. */
       days = phoneAway(withDay(days, tk, day), tk, at, Date.now(), s.settings);
       const next = { ...s, days };
       gain = Math.max(0, gameCompute(days, s.settings, s.reviews, tk).pts - b0);

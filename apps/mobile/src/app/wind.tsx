@@ -1,75 +1,41 @@
-/* The wind-down: a short full-screen moment under the night sky, the same Goodnight screen the check-in ends with
-   (components/goodnight.tsx). "Tap this when you put your phone down": the big Goodnight button puts the phone away and
-   plays the going-to-bed moment. Above it, folded rows: today's check-in when it is still open (three quick numbers, which
-   end in Goodnight too), the wind-down list, and the plan for a loud night with SOS. Opened from Wind-down in "Your day"
-   and from Next up. */
-import { fmtClock, rhythm, windLine } from '@daybook/core';
+/* The wind-down: put your flame to bed. One act at the end of the day: the phone goes on its charger, away from the bed, and Goodnight puts the flame to
+   sleep where it stands (components/goodnight.tsx, NightPage). Today's check-in, when it is still open, the person's list and the plan for a loud night
+   sit quietly above the button. Opened from Wind-down in "Your day" and from Next up. Opened again after Goodnight, the flame is already asleep. Too early in
+   the day it still opens, and says when Goodnight does (core goodnightOpens). */
+import { clockOf, goodnightOpens, rhythm, windWhen } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
 
-import { GoingToBed, GoodnightButton, LoudFold, NightRow, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
-import { FitArt } from '@/components/fit';
-import { NightSky } from '@/components/night-sky';
-import { Dock, Middle, SceneFrame } from '@/components/scene';
-import { Button, T } from '@/components/ui';
+import { NightPage, NightRow, useGoodnight, type Bed } from '@/components/goodnight';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
-import { font } from '@/lib/theme';
 
 export default function Wind() {
   const { snap, tk, now } = useStore();
   const goodnight = useGoodnight();
   const [bed, setBed] = useState<Bed | null>(null);
-  const [fold, setFold] = useState<'wind' | 'loud' | null>(null);
+  const [opened] = useState(tk);
   const st = snap.settings;
-  if (!st) return <Redirect href="/" />;
-  if (bed) return <GoingToBed bed={bed} />;
   const p = snap.days[tk]?.p;
+  /* a wind-down left open overnight with no Goodnight is yesterday's: a new day does not ask for it */
+  const stale = tk !== opened && !bed;
+  useEffect(() => {
+    if (stale) close();
+  }, [stale]);
+  if (!st) return <Redirect href="/" />;
   const r = rhythm(snap.days, st, tk, now);
   const ci = r.stops.find((x) => x.k === 'evening' && !x.done);
-  const toggle = (f: 'wind' | 'loud') => setFold(fold === f ? null : f);
+  /* opened again later the same night: the phone is already away, so the flame is asleep */
+  const held: Bed | null = bed || (p && p.po ? { at: p.po, gain: 0, msg: '' } : null);
   return (
-    <SceneFrame
-      title="Wind-down"
-      sky="night"
-      onClose={close}
-      pin={
-        /* pinned to the bottom of the screen, so a row that opens above it never pushes it out of reach */
-        p && p.po ? (
-          <>
-            <T style={s.c}>Phone away at {fmtClock(p.po)}. Good night.</T>
-            <Button label="Done" onPress={close} />
-          </>
-        ) : (
-          <>
-            <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
-            <GoodnightButton onPress={() => setBed(goodnight(null))} />
-          </>
-        )
-      }>
-      <T v="title" style={s.c} accessibilityRole="header">
-        Time to wind down
-      </T>
-      <T style={s.c} tone="muted">
-        {windLine(st, r.leftToOff, p)}
-      </T>
-      {/* the night sky in the open middle; it gives way when a row opens, so the rows and Goodnight all fit */}
-      <Middle>
-        <FitArt drop={0.6}>
-          <NightSky />
-        </FitArt>
-      </Middle>
-      <Dock>
-        {ci ? <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers, then Goodnight" onPress={() => router.replace('/checkin')} /> : null}
-        <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
-        <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
-      </Dock>
-    </SceneFrame>
+    <NightPage
+      bed={held}
+      when={windWhen(st, r.leftToOff)}
+      opens={goodnightOpens(st, clockOf(now))}
+      onGoodnight={() => setBed(goodnight(null))}
+      rowAbove={
+        ci ? <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers, then Goodnight" onPress={() => router.replace('/checkin')} /> : null
+      }
+    />
   );
 }
-
-const s = StyleSheet.create({
-  c: { textAlign: 'center' },
-  tap: { fontFamily: font.bodySemi, marginTop: 4 },
-});

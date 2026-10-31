@@ -57,6 +57,111 @@ Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; i
 
 Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone away: the tool is the app), and the roughly 24 lessons whose "What to do" card names something outside the app and not about a slip (the lessons chat is in those files).
 
+## The shape of the day (the owner, October 31, 2026)
+
+**Where it is:** the owner likes it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+
+The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
+
+**The view:** three things a day is fine. What is wrong is what the day counts, what it pushes at night, what the check-in gives back, and what happens after day 49.
+
+**What the code says:** the three stops are the same on day 1 and day 300. An unread lesson stays the big card at 11 PM. The check-in's numbers change nothing on Today. There are 49 lessons, then "Read again" for 5 points. Nothing records how many people reach Goodnight.
+
+**What the research says** (no study tests this routine; nearly all of it is smoking and alcohol, read mostly from summaries): check-ins are not a treatment on their own (McCarthy 2015). Lower day-level confidence foreshadowed a next-day lapse, and daily stress did not (Shiffman, 305 smokers). More lessons did not mean more change (Rooke 2010). The one porn trial, Hands-off (Bothe 2022), lost 89% of its program group. Same-day coping after a lapse cut a second lapse that day (Kirchner, Shiffman).
+
+**What is drawn:**
+
+1. The lesson is the morning's card. The check-in is offered early and ends in Done, so bed holds only Goodnight.
+2. A confidence question takes the place of stress, and the check-in gives back one true line from the person's own log.
+3. An urge ridden out shows on the day's line.
+4. From the wind-down hour, Goodnight takes the card, and an unread lesson "can wait for tomorrow".
+5. After Goodnight there is no "All done": the flame sleeps on Today until morning, with "Cannot sleep?" under it. This is the "Asleep, and it asks" option in "When the day is finished" below.
+6. The night of a slip: one door for the next hour and Goodnight. The lesson and the check-in are gone until tomorrow.
+7. The morning after a low answer, a plan for tonight comes first, once. This is the first time an answer changes what Today offers.
+8. When the lessons are finished, the person's own words take the card, and re-reads stay in Learn.
+
+**Chosen over "Two stops" (below):** both end in the sleeping flame. Two stops puts the check-in straight before Goodnight, which is the shortest day. This one keeps it earlier, because for someone whose hard hours are at night, three numbers in bed with the phone in hand is the door to the danger. Its cost: a check-in not done by evening is more likely to be missed, and Pattern reads those numbers.
+
+**Risks:** the owner turned down a merged Bedtime on October 25 without saying why. "A reason to open at night" may be harm, since the phone is the means. Stress stops being asked, so its charts stop growing; old days keep theirs. The numbers in the pictures are drawn, and the line that comes back needs a rule for when it is true and hopeful, and for what shows when it is not. A long-term flame like the sun sits in a daytime sky at 11 PM on Today, as it does now.
+
+**Steps once chosen, in order:** the count for Goodnight and for switching a stop off, with the privacy page (_medium_). The wind-down merges, then the flame motion (_high_ for its points, already built). The rules on Today in `dayRhythm` and `stopTiles` (_medium_). The confidence question and the line that comes back (_high_: it touches what is stored and charted). Day 50 (_medium_). Each is shown on the simulator as a release build before any merge.
+
+**Helps Daybook earn or grow:** the line that comes back is what `patPreview` can lead with. A day that gets lighter, and a sleeping flame, are worth a rating and a short video. No ask is added.
+
+## The wind-down: put your flame to bed (the owner, October 31, 2026)
+
+The owner: "look at wind down, is it contributing to the app, what does the app need, give me your ideas or do a redesign and have me
+review it". **Where it is:** built on branch `claude/wind-down-review-f48cb9`, on the simulator "Daybook Wind" as a release build, **not merged:
+waiting for the owner's review.**
+
+**What was wrong.** The one big daily moment in the app had no flame in it: a moon icon in a tinted circle, three cards the same size, "0 of 5
+done" at the hardest hour of the day, a list that paid 10 points hidden in a fold while the act itself paid 5, the phone line buried first among five
+ticks (and ticked with the phone in hand), and a Done that went back to a bright Today with the phone still in bed. It was a chore on the list.
+Keep it, change its job: it is where the person does the one thing the research backs, and watches their flame rest.
+
+**What the research says** (direct evidence on this habit at bedtime is thin, so these are mostly from sleep and habit work):
+
+- The move is the phone out of reach, not a checklist. Bedtime use and a phone in the bedroom go with worse sleep (Carter 2016, a meta-analysis of
+  observational studies, odds about 2). No phone for 30 minutes before bed gave faster sleep, less arousal and better mood (He 2020, a pilot trial, n=38,
+  unblinded). Two weeks with no screens after 9 PM: earlier sleep (Perrault 2019, pre/post, n=569).
+- End of the day is when most say they use (about 71% of 488 students, self-report: PMC7835260). No study with time stamps was found.
+- Change the setting, do not resist in the moment: media desires had the highest rate of failed resistance (Hofmann 2012). If-then plans help, and the
+  measured size is probably inflated (Gollwitzer and Sheeran 2006). No trial of them for this habit was found.
+- Identity words beat action words in field trials (Bryan 2011, voting). Evidence for this habit: none. "Votes for your identity" is pop science.
+- Myths not to build on: "willpower runs out by night" (Hagger 2016, 23 labs, about zero) and "blue light is the problem" (Duraccio 2021, a trial: Night
+  Shift made no difference). So nothing here is a filter or a dim mode for its own sake.
+- Crafted apps: Apple's Wind Down is one object on a dim screen, one tap in, and only offers actions that help sleep. Pokemon Sleep and Finch make the
+  character going to sleep the nightly act. Not copied: Forest's tree that dies when you leave, Duolingo's guilt, any sleep score. No independent
+  evidence was found that tucking in a character helps people keep at it; that part is a bet on soul.
+
+**What was built:**
+
+1. **Medium. One page, one act (`NightPage`, components/goodnight.tsx; app/wind.tsx).** "Put your flame to bed. Phone on its charger, away from your
+   bed." The flame big, the check-in row only while it is open, Before bed and Thoughts loud? as two quiet ways in that open a sheet (nothing pushes the
+   flame), and Goodnight. The hint and the "0 of 5" are gone.
+2. **Medium. The flame falls asleep (components/night-flame.tsx, core `figAsleep`).** It blinks twice and its eyes close, where it stands. The light in
+   the small house goes out, the moon rises, z's drift up, and it breathes in for 4 and out for 6 on the one breath curve. It never gets smaller. All 60
+   levels have the same face, so this works for all of them. The Sunrise form, whose bottom fades, tucks behind the hill. With Reduce Motion, it is still.
+3. **Medium. The words say who they are becoming (core `bedWords`, `phoneNights`).** "Down at 10:17 PM. That is 21 nights." (a count that only grows, and
+   never "in a row"), then their own sentence from setup. After a slip today: "You came back to this tonight. That is the part that lasts."
+4. **Medium. No Done, and it stays.** The screen dims after about 9 seconds and any touch brings it back, so a person who picks the phone up at 2 AM
+   finds a sleeping flame and the plan for a loud night, not a bright Today. The X closes it. If the day turns over while it is open, the flame wakes on
+   "Good morning" with Start the day, as its new form if Goodnight took it to a new level. Opened again the same night, it is already asleep.
+5. **High (points). Goodnight is the wind-down (core `windCounts`, `phoneAway`).** It sets `p.wd`, on time or late, so Goodnight earns the 10 wind-down
+   points, and the quest, badges and Sunday goal count it. A late night counts because that is when it matters most; an afternoon nap does not. A tick
+   taken back later never takes it away. It only adds: nothing earned before changes, and no golden fixture changed. This changes what the owner saw on
+   October 25 only in part; see below.
+6. **Medium.** The check-in's last page has the same flame, and its Goodnight ends on the same page. SOS "Go to bed" ends there too.
+
+**Not the October 25 Bedtime.** The owner turned down a merged Bedtime screen then ("nope i don't like it just put it back"; branch `bedtime-redesign`)
+without saying why. That one merged the check-in into rows on one screen and guessed sleep. This one leaves the check-in as its own stop with its
+sliders, and guesses nothing. If the owner's reason was something else, it may apply here too: ask.
+
+**How it helps Daybook earn and grow.** A daily ending people want to see, a reason to open the app at night, and a picture worth showing: the flame
+falling asleep is the best short video the app has, and it fits a store image. The strongest paid line it opens is below (4).
+
+**Checked:** format, typecheck, all tests (3,024 core, 131 api), 14 of 14 story days. On the iPhone 17 Pro release build: the whole walk by hand (Today, Wind-down,
+Thoughts loud?, Done, Goodnight, the words), levels 1, 30 and 33. On the web: the same, Before bed ticks, the small phone (375 by 667), Reduce Motion, a
+slip day, the check-in's end, the morning. **Not checked:** a real phone, VoiceOver, Android.
+
+**Ideas for after this, in the order I would do them (none built):**
+
+1. **Plugging in is Goodnight.** _Medium; needs a real phone._ With `expo-battery`, the flame notices the charger: plug in, it settles, its eyes close. The
+   physical act the research backs becomes the button. The simulator has no charger, so it cannot be shown there. No word leaves the phone.
+2. **The flame asleep on Today until morning.** _Medium._ After Goodnight, Today's flame has its eyes closed, and it wakes on the first open of the new
+   day. Wait for the flame motion work to land first; it touches `hero.tsx` and `big-flame.tsx`.
+3. **The reminder offers the moment.** _Low._ The wind-down reminder is off by default and rarely seen. For someone whose hard hours are at night, offer it
+   once, warmly, from the hard-hours line on Today. Words say nothing of what Daybook is for.
+4. **Phone down, in Pattern.** _Medium; the paid line._ "On nights the phone went down, you logged 40% fewer urges the next day" from the person's own log,
+   once there is enough of it. A true line to lead `patPreview` with: this is what Daybook Pattern sells. Never a promise, and never when it is not true.
+5. **One line for tomorrow.** _Medium._ Five minutes writing a specific to-do list at bedtime meant falling asleep about 9 minutes faster (Scullin 2018, a
+   sleep-lab trial, n=57). It is also hope. Held back: the owner said on October 25 there were too many things to fill out at night.
+
+**Left for the merge (low):** words that still say checklist: `ROUTINE` "The checklist for the hour before screens go off." and the quest hint "Finish the
+wind-down checklist on 3 nights." in `legacy/core.js`. The golden fixtures hold them, so they change by hand with the fixtures, in one commit. A line in
+docs/design-standards.md, "Endings", for the night page. `FitArt` runs to its floor on a page with a Dock when anything overflows; the night page no longer
+uses it, and other pages may still hit it.
+
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
 **Where it is:** chosen, not built. Build it on its own branch and show the owner on the simulator before merging. Pictures: `docs/lessons-review/`

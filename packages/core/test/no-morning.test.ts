@@ -43,10 +43,11 @@ describe('from October 24', () => {
     const parts = core.dayPoints(days, k, st).parts.map((x) => [x.k, x.pts]);
     expect(parts).toEqual([
       ['lights', 5],
+      ['wind', 10],
       ['phone', 5],
     ]);
-    /* late: the phone away still counts, and nothing says late */
-    expect(core.dayPoints(core.phoneAway({}, k, '23:30', 1, st), k, st).parts.map((x) => x.k)).toEqual(['phone']);
+    /* late: the phone away and the wind-down still count, and nothing says late */
+    expect(core.dayPoints(core.phoneAway({}, k, '23:30', 1, st), k, st).parts.map((x) => x.k)).toEqual(['wind', 'phone']);
   });
 });
 

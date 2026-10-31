@@ -8,6 +8,7 @@
      at       the moment the demo log is seen at (default DEMO.at); scroll: how far down the screen to start
      zoom     the phone's width as a share of the shot's (default FRAME.width); a big phone runs off the bottom edge
      top      where the phone starts, as a share of the shot's height (default CAPTION.phoneTop)
+     playTop  the same on the Play sizes, where the caption takes more of the height
      pills    short facts under the caption, split by |, each with a check (only true ones: "Free|No account|No ads")
      pic      in place of the live app, a picture of it from the iPhone simulator (scripts/shots-ios.ts), for the iPhone sizes: only there is Apple's
               glass tab bar real (pic2, pic3 go with screen2, screen3)
@@ -178,7 +179,7 @@ function Pills({ list, bg, W, align }: { list: string[]; bg: Bg; W: number; alig
 }
 
 function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: Size; bg: Bg; W: number; H: number; screens: string[]; onReady: () => void }) {
-  const top = H * Number(p.top || CAPTION.phoneTop);
+  const top = H * Number((size.device === 'android' && p.playTop) || p.top || CAPTION.phoneTop);
   const caption = h(
     'div',
     { key: 'cap', style: { position: 'absolute', left: W * CAPTION.side, right: W * CAPTION.side, top: W * CAPTION.top } },
@@ -195,7 +196,9 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
       );
     return h('div', null, caption, at(-W * 0.05, top, -4, screens[0]), at(W - pw - W * 0.005, top + H * 0.07, 4, screens[1]));
   }
-  const pw = W * Number(p.zoom || FRAME.width);
+  /* a Play shot is shorter than the phone: the phone stands whole on it, at the usual width, so Android's own tab bar shows */
+  const android = size.device === 'android';
+  const pw = W * (android ? FRAME.width : Number(p.zoom || FRAME.width));
   return h(
     'div',
     null,
@@ -203,7 +206,7 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
     h(
       'div',
       { style: { position: 'absolute', left: (W - pw) / 2, top } },
-      <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} />,
+      <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} fit={android ? H - top - W * 0.05 : undefined} />,
     ),
   );
 }
@@ -287,13 +290,29 @@ function Flame({ width }: { width: number }) {
 }
 
 /* a phone with the real app inside: the app is laid out at the viewport size and scaled to fit the screen */
-function Phone({ width, device, screen, p, onReady }: { width: number; device: 'iphone' | 'android'; screen: string; p: Params; onReady: () => void }) {
+function Phone({
+  width,
+  device,
+  screen,
+  p,
+  onReady,
+  fit,
+}: {
+  width: number;
+  device: 'iphone' | 'android';
+  screen: string;
+  p: Params;
+  onReady: () => void;
+  /** the room for the whole phone, so it ends on the shot and its tab bar shows */
+  fit?: number;
+}) {
   const f = FRAME[device];
   const bez = width * f.bezel;
   const sw = width - bez * 2;
   const s = sw / FRAME.viewport.w;
   const pic = screen.endsWith('.png');
-  const sh = pic ? sw * FRAME.picRatio : FRAME.viewport.h * s;
+  const viewH = fit ? Math.min(FRAME.viewport.h, (fit - bez * 2) / s) : FRAME.viewport.h;
+  const sh = pic ? sw * FRAME.picRatio : viewH * s;
   const dark = p.theme === 'dark';
   const appBg = dark ? '#17142B' : '#FFF8EB';
   const ink = dark ? '#FFFFFF' : '#1A1530';
@@ -350,7 +369,7 @@ function Phone({ width, device, screen, p, onReady }: { width: number; device: '
             left: 0,
             top: status * s,
             width: FRAME.viewport.w,
-            height: FRAME.viewport.h - status,
+            height: viewH - status,
             border: 0,
             transform: `scale(${s})`,
             transformOrigin: '0 0',
@@ -376,19 +395,17 @@ function Phone({ width, device, screen, p, onReady }: { width: number; device: '
         },
       }),
     );
+  /* the shadow is its own blurred shape: a big box-shadow comes out in the picture with visible square patches around the phone */
+  const box: CSSProperties = { position: 'absolute', inset: 0, borderRadius: width * f.radius };
   return h(
     'div',
-    {
-      style: {
-        position: 'relative',
-        width,
-        height: sh + bez * 2,
-        borderRadius: width * f.radius,
-        background: f.body,
-        boxShadow: `${FRAME.shadow}, inset 0 0 0 ${Math.max(1, width * 0.006)}px ${f.edge}`,
-      },
-    },
-    h('div', { style: screenBox }, ...children),
+    { style: { position: 'relative', width, height: sh + bez * 2 } },
+    h('div', { style: { ...box, background: FRAME.shadow.color, transform: `translateY(${FRAME.shadow.y}px)`, filter: `blur(${FRAME.shadow.blur}px)` } }),
+    h(
+      'div',
+      { style: { ...box, background: f.body, boxShadow: `inset 0 0 0 ${Math.max(1, width * 0.006)}px ${f.edge}` } },
+      h('div', { style: screenBox }, ...children),
+    ),
   );
 }
 

@@ -10,6 +10,7 @@
       "theme": "light",
       "zoom": 0.84,
       "top": 0.2,
+      "playTop": 0.21,
       "sizes": ["ios69", "ios63", "play-phone"]
     },
     {
@@ -69,6 +70,7 @@
       "theme": "light",
       "zoom": 0.92,
       "top": 0.215,
+      "playTop": 0.245,
       "sizes": ["ios69", "ios63", "play-phone"]
     },
     {

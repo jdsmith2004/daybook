@@ -48,7 +48,8 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 - **One squiggle.** Every squiggly line is drawn with `SQUIGGLE` in `components/shapes.tsx` (thickness 5, one wiggle
   every 20 points, 2.25 deep, crawling 0.35 wiggles a second). Use `WavyRing` for a ring, `WavyLine` for a straight line,
   and `squigglePath` with `along` for any other path. Never pick new numbers for one screen.
-- **Squiggle means progress.** The part still to come is a plain, quiet line. The part done is the squiggle. It starts
+- **Squiggle means progress.** The part still to come is a plain, quiet line (on Your day, short round dashes, by the owner's choice,
+  October 31, 2026). The part done is the squiggle. It starts
   flat and eases in as the run starts (`envelope`), and it crawls forward slowly. A squiggle that only marks something,
   with no progress, uses `ease={false}`.
 - **Smooth, never ticking.** Anything that moves with time (a dot, a ring, a crawl) reads its position from a smooth clock

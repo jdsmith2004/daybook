@@ -262,6 +262,8 @@ export default function Today() {
   const slipLine = heroSlipLine(snap.days, st, tk, now);
   /* the day's next stop is the big card on the line (your-day.tsx); any other moment keeps its own card above the line */
   const calm = pick.card.k === 'calm';
+  /* one loud thing at a time: the hard hours card carries its own heads-up */
+  const hard = pick.card.k === 'hard-soon' || pick.card.k === 'hard-now';
   const size = sizeFor(slipLine ? NOTE_ROOM : 0);
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
@@ -311,6 +313,7 @@ export default function Today() {
           />
         }>
         <LogLink />
+        {hard ? null : <NotifyBanner />}
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
         {calm ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
         <YourDay
@@ -321,7 +324,6 @@ export default function Today() {
           foot={[note, pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
         <WaitingPlan snap={snap} tk={tk} now={now} />
-        <NotifyBanner />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}

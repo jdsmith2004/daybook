@@ -264,7 +264,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   rowT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   rowS: { fontFamily: font.body, fontSize: 13 },
-  foot: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, paddingLeft: RAIL + 8, paddingRight: 4 },
+  foot: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, paddingLeft: RAIL + 8, paddingRight: 4 },
   change: { minHeight: 44, justifyContent: 'center' },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
   wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },

@@ -18,7 +18,7 @@ import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
 
-const bell = (ink: string) =>
+export const bell = (ink: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10.2 20a2 2 0 0 0 3.6 0"/></svg>`;
 
 export function NotifyBanner() {
@@ -46,10 +46,17 @@ export function NotifyBanner() {
     say('Reminders are on. One short note a day.');
   };
 
+  /* the first sentence is the headline, so it reads at a glance */
+  const cut = ask.text.indexOf('. ');
+  const head = cut < 0 ? ask.text : ask.text.slice(0, cut + 1);
+  const more = cut < 0 ? '' : ask.text.slice(cut + 2);
   return (
     <View style={[s.wrap, { backgroundColor: c.sun }]} accessibilityRole="summary">
-      <SvgXml xml={bell(c.onSun)} width={22} height={22} />
-      <Text style={[s.text, { color: c.onSun }]}>{ask.text}</Text>
+      <SvgXml xml={bell(c.onSun)} width={26} height={26} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[s.head, { color: c.onSun }]}>{head}</Text>
+        {more ? <Text style={[s.text, { color: c.onSun }]}>{more}</Text> : null}
+      </View>
       <Pressable
         accessibilityRole="button"
         onPress={yes}
@@ -70,9 +77,10 @@ export function NotifyBanner() {
 }
 
 const s = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingLeft: 14, paddingRight: 8, borderRadius: 20, marginBottom: 12 },
-  text: { flex: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
-  btn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
-  btnT: { fontFamily: font.bodyBold, fontSize: 13 },
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingLeft: 14, paddingRight: 8, borderRadius: 20 },
+  head: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
+  text: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
+  btn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999 },
+  btnT: { fontFamily: font.bodyBold, fontSize: 15 },
   x: { padding: 4 },
 });

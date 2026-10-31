@@ -2,16 +2,20 @@
    leads with the time ("Your hard hours start at 11 PM.") and assumes nothing: the person may be doing well and have
    opened the app for the lesson. Its main button is today's lesson while it is not done (core riskLesson), with "Make a
    plan for tonight" (the short Talk it through, /talk?prep=1) as a quieter second; with the lesson done, the plan is the
-   main button. During the hours it stays, next to SOS. Once a plan is made, it turns calm ("You are ready"); a lesson
-   does not count as a plan. Afterwards, if they passed with no slip, it celebrates them. On a phone that has not allowed
-   notifications yet, it offers a heads-up for next time. */
+   main button. During the hours it stays, next to SOS. Coming up or now, it is the loudest thing on Today, in SOS's own color and
+   short enough to fit above the tab bar (the owner, October 30, 2026: hard to ignore). Once a plan is made, it turns calm ("You are
+   ready"); a lesson does not count as a plan. Afterwards, if they passed with no slip, it celebrates them. On a phone that has not
+   allowed notifications yet, it offers a heads-up for next time. */
 import { hardHeld, lmin, riskDay, riskLesson, riskPlanLabel, riskStartLabel, talkClock, type Snapshot } from '@daybook/core';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
+import { bell } from '@/components/notify-banner';
 import { Button, Card, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { allowReminders, remindersAllowed, remindersOffered } from '@/lib/reminders';
@@ -93,51 +97,65 @@ export function RiskCard({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
 
   /* coming up, or now: the time, today's lesson, and a short plan */
   const soon = r.phase === 'soon';
-  const say1 = soon
-    ? ls
-      ? 'Now, while it is quiet, is a good time for today’s lesson. A short plan helps too.'
-      : 'A short plan now, while it is quiet, makes the next hours easier.'
-    : ls
-      ? 'Today’s lesson is a good way to spend them. If it gets hard, SOS is one tap.'
-      : 'A short plan helps. If it gets hard, SOS is one tap.';
-  const openPlan = () => router.push({ pathname: '/talk', params: { prep: '1' } });
+  const openPlan = () => {
+    buzz('tap');
+    router.push({ pathname: '/talk', params: { prep: '1' } });
+  };
+  const openLesson = () => {
+    buzz('tap');
+    if (ls) router.push({ pathname: '/lesson/[id]', params: { id: ls.L.id } });
+  };
+  const loud = (label: string, onPress: () => void, main: boolean) => (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [s.loudBtn, { backgroundColor: main ? c.sosInk : c.sosSoft, opacity: pressed ? 0.8 : 1 }]}>
+      <Text style={[s.loudBtnT, { color: main ? c.sosLow : c.sosInk }]}>{label}</Text>
+    </Pressable>
+  );
   return (
     <Appear by={10}>
-      <Card style={{ backgroundColor: c.violetSoft }}>
-        <View style={s.head}>
+      <View style={s.loud}>
+        <LinearGradient colors={[c.sos, c.sosLow]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <View style={s.loudTop}>
           {/* coming up: how long until; now: when they end. They are hours, and they pass. */}
-          <T v="eyebrow" tone="violetText">
-            {soon ? 'In ' + left(r.a - now) : 'Until ' + talkClock(r.b)}
-          </T>
-          <T v="h2">{soon ? 'Your hard hours start at ' + at + '.' : 'You are in your hard hours.'}</T>
+          <Text style={[s.loudEb, { color: c.sosInk }]}>{soon ? 'In ' + left(r.a - now) : 'Until ' + talkClock(r.b)}</Text>
+          {remindersOffered && prefs.risk && allowed === false ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Get a heads-up on this phone next time"
+              hitSlop={6}
+              onPress={async () => {
+                buzz('tap');
+                const ok = await allowReminders();
+                setAllowed(ok);
+                say(ok ? 'Daybook will give you a heads-up before your hard hours.' : WORDS.notifyOff);
+              }}
+              style={({ pressed }) => [s.warn, { backgroundColor: c.sosSoft, opacity: pressed ? 0.7 : 1 }]}>
+              <SvgXml xml={bell(c.sosInk)} width={16} height={16} />
+              <Text style={[s.warnT, { color: c.sosInk }]}>Get a heads-up</Text>
+            </Pressable>
+          ) : null}
         </View>
-        <T v="small" tone="muted">
-          {r.win.line}
-        </T>
-        <T>{say1}</T>
-        {lessonBtn}
-        <Button label={plan} kind={ls ? 'ghost' : 'primary'} onPress={openPlan} />
-        {remindersOffered && prefs.risk && allowed === false ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={async () => {
-              buzz('tap');
-              const ok = await allowReminders();
-              setAllowed(ok);
-              say(ok ? 'Daybook will give you a heads-up before your hard hours.' : WORDS.notifyOff);
-            }}
-            style={s.link}>
-            <Text style={[s.linkT, { color: c.violetText }]}>Get a heads-up on this phone next time</Text>
-          </Pressable>
-        ) : null}
-      </Card>
+        <Text style={[s.loudH, { color: c.sosInk }]} accessibilityRole="header">
+          {soon ? 'Your hard hours start at ' + at + '.' : 'You are in your hard hours.'}
+        </Text>
+        {ls ? loud(ls.again ? 'Read it again' : 'Start today’s lesson', openLesson, true) : null}
+        {loud(plan, openPlan, !ls)}
+      </View>
     </Appear>
   );
 }
 
 const s = StyleSheet.create({
   head: { gap: 4 },
-  link: { alignSelf: 'center', minHeight: 44, justifyContent: 'center' },
   lessonLine: { textAlign: 'center' },
-  linkT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
+  loud: { borderRadius: 20, padding: 16, gap: 8, overflow: 'hidden' },
+  loudTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 32 },
+  loudEb: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  loudH: { fontFamily: font.display, fontSize: 22, lineHeight: 27, marginBottom: 4 },
+  loudBtn: { minHeight: 50, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  loudBtnT: { fontFamily: font.bodyBold, fontSize: 15 },
+  warn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingHorizontal: 12, borderRadius: 999 },
+  warnT: { fontFamily: font.bodySemi, fontSize: 13 },
 });

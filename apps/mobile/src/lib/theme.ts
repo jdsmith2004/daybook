@@ -50,7 +50,8 @@ const light = {
   nextSoft: 'rgba(255,255,255,0.2)',
   sos: '#D83A2E',
   sosInk: '#FFFFFF',
-  sosDeep: '#9E241B',
+  sosLow: '#B92B21',
+  sosDeep: '#8E1F17',
   sosSoft: 'rgba(255,255,255,0.24)',
   heroBottom: '#FFF1C4',
 };
@@ -103,7 +104,8 @@ const dark: Palette = {
   nextSoft: 'rgba(6,53,42,0.16)',
   sos: '#FF8A7E',
   sosInk: '#3A0D08',
-  sosDeep: '#C9524A',
+  sosLow: '#F2674F',
+  sosDeep: '#B8402F',
   sosSoft: 'rgba(58,13,8,0.16)',
   heroBottom: '#3B2C6E',
 };

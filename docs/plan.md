@@ -1,6 +1,6 @@
 # What is planned next
 
-## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built on branch claude/admiring-williams-999944, which carries claude/rekindle-flow-c29870; not merged until the owner has seen it on the simulator)
+## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
 
 The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of
 things that have nothing to do with it and never SOS or the journal; and "Next time, what will you do instead?" may not help at all.
@@ -47,7 +47,7 @@ Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; i
 - [x] **Medium.** The expected-against-real page, the new last page, Choose another, the finish's door, the Today card, the entry sheet, plans that open their tool. Tools first in Talk it through's moves.
 - [x] **Medium.** The words: the slip plan's starting step (with `normSettings`, and the golden fixtures by hand), My plan's stale line, the Sunday story, the faith page's line, and the slip lines of lessons 3, 5, 6 and 32.
 - [x] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
-- [ ] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
+- [x] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
 
 **Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip; a plan at its hour sits right under Already happened and Planning a slip?, and the hard-hours line then says "You have your plan."; the fire's glow reaches under the clock with no hard edge.
 

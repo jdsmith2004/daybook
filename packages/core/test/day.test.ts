@@ -157,6 +157,17 @@ describe('the night and the wind-down', () => {
       expect(core.rhythm(saved, st, k, nine).stops.find((x) => x.k === 'night')?.done).toBe(true);
       expect(core.phoneNights(saved)).toBe(1);
     });
+    it('does not finish Rekindle: a slip’s second mission waits for a real night, and one already saved keeps it', () => {
+      const slip = core.addEvent({}, k, 'slipped', '08:00', {}).days;
+      expect(core.rkOf(core.phoneAway(slip, k, '09:00', 1, st), k, st)?.m2).toBe(false);
+      expect(core.rkOf(core.phoneAway(slip, k, '22:15', 1, st), k, st)?.m2).toBe(true);
+      const saved = { ...slip, [k]: { ...slip[k], p: { ...core.blankP(), po: '09:00' } } };
+      expect(core.rkOf(saved, k, st)?.m2).toBe(true);
+    });
+    it('leaves what SOS Go to bed logged before it alone', () => {
+      const logged = core.addEvent({}, k, 'rode', '04:30', {}).days;
+      expect(core.phoneAway(logged, k, '04:30', 1, st)).toBe(logged);
+    });
     it('SOS Go to bed too early says when the phone went down and claims no night', () => {
       expect(core.bedWords({}, st, k, '04:30').line).toBe('Down at 4:30 AM.');
     });

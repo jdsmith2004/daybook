@@ -75,7 +75,7 @@ export function PullHint({ onPress, color }: { onPress: () => void; color?: stri
       onPress={onPress}
       style={({ pressed }) => [s.hint, { opacity: pressed ? 0.7 : 1 }]}>
       <Icon name="pencil" size={14} color={ink} />
-      <Text style={[s.hintT, { color: ink }]}>Pull down for your journal</Text>
+      <Text style={[s.hintT, { color: ink }]}>Pull down for journal</Text>
     </Pressable>
   );
 }

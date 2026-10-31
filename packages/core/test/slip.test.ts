@@ -85,17 +85,64 @@ describe('the pattern lines', () => {
 });
 
 describe('the plan for next time', () => {
-  it('offers four moves that fit what was going on, early bed at night, the device out of reach, and what held first', () => {
-    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'people', 'kind', 'away']);
-    expect(core.slipMoves('late', false)).toEqual(['away', 'bed', 'shower', 'breathe']);
-    expect(core.slipMoves('stress', false)[0]).toBe('walk');
-    /* late at night, going out is swapped for something that works at home, and early bed is offered */
-    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'kind', 'bed', 'away']);
-    expect(core.slipMoves('bored', true)).toEqual(['hands', 'show', 'move', 'bed', 'away']);
-    expect(core.slipMoves('lonely', false, { people: { held: 2, n: 3 } })[0]).toBe('people');
-    /* every situation's moves are real moves, with words */
+  it('leads with SOS, and Choose another offers what fits, Daybook first, at most four, with what held first', () => {
+    expect(core.SLIP_LEAD).toBe('sos');
+    expect(core.slipMoves('lonely', false)).toEqual(['text', 'call', 'journal', 'breathe']);
+    expect(core.slipMoves('late', false)).toEqual(['journal', 'bed', 'breathe', 'away']);
+    expect(core.slipMoves('stress', false)[0]).toBe('breathe');
+    /* late at night, what wakes the body becomes rest, and early bed is offered */
+    expect(core.slipMoves('bored', true)).toEqual(['bed', 'journal', 'hands']);
+    expect(core.slipMoves('lonely', true)).toEqual(['text', 'call', 'journal', 'bed']);
+    /* what held before comes first, even from an older plan; SOS is never listed, because it is the plan already */
+    expect(core.slipMoves('lonely', false, { walk: { held: 2, n: 3 } })[0]).toBe('walk');
+    expect(core.slipMoves('stress', false, { sos: { held: 5, n: 5 } })).not.toContain('sos');
+    /* every situation's moves are real moves, with words, and most of each list opens one of the tools */
     for (const w of Object.keys(core.TALK_WHEN) as core.TalkWhen[])
-      for (const night of [false, true]) for (const m of core.slipMoves(w, night)) expect(core.TALK_MOVES[m][0]).toBeTruthy();
+      for (const night of [false, true]) {
+        const l = core.slipMoves(w, night);
+        expect(l.length).toBeLessThanOrEqual(4);
+        for (const m of l) expect(core.TALK_MOVES[m][0]).toBeTruthy();
+        expect(l.filter((m) => core.talkMoveDoor([m])).length * 2).toBeGreaterThanOrEqual(l.length);
+      }
+  });
+
+  it('names one door for the next hour, from how it feels', () => {
+    expect(core.slipNext('pull', true, true)).toMatchObject({ go: 'sos' });
+    expect(core.slipNext('giveup', false, true)).toMatchObject({ go: 'tool', id: 'reasons' });
+    expect(core.slipNext('giveup', false, false)).toMatchObject({ go: 'lesson', id: 'l3' });
+    expect(core.slipNext('shame', true, true)).toMatchObject({ go: 'journal', feel: 'Ashamed' });
+    expect(core.slipNext('angry', false, true)).toMatchObject({ go: 'journal', feel: 'Angry' });
+    expect(core.slipNext('flat', true, true)).toMatchObject({ go: 'tool', id: 'bed' });
+    expect(core.slipNext('flat', false, true)).toMatchObject({ go: 'journal', feel: 'Empty' });
+    expect(core.slipNext(null, true, true)).toMatchObject({ go: 'tool', id: 'bed' });
+    expect(core.slipNext(undefined, false, true)).toMatchObject({ go: 'journal' });
+    /* the word it opens on is a word in the field of feelings */
+    for (const f of ['shame', 'angry', 'flat']) expect(core.feelPos(core.slipNext(f, false, true).feel)).not.toBeNull();
+  });
+
+  it('opens the tool a plan names, and nothing for a plan with none', () => {
+    expect(core.talkMoveDoor(['sos'])).toMatchObject({ go: 'sos' });
+    expect(core.talkMoveDoor(['away', 'breathe'])).toMatchObject({ go: 'tool', id: 'breathe' });
+    expect(core.talkMoveDoor(['write'])).toMatchObject({ go: 'journal' });
+    expect(core.talkMoveDoor(['away'])).toBeNull();
+    expect(core.talkMoveDoor([])).toBeNull();
+  });
+
+  it('says when the plan comes back the way a person would', () => {
+    const at = (h: number) => new Date(2026, 9, 20, h).getTime();
+    expect(core.talkBackWhen('late', at(14))).toBe('tonight');
+    expect(core.talkBackWhen('late', at(23))).toBe('tomorrow night');
+    expect(core.talkBackWhen('late', at(1))).toBe('tomorrow night');
+    expect(core.talkBackWhen('evening', at(14))).toBe('this evening');
+    expect(core.talkBackWhen('evening', at(19))).toBe('tomorrow evening');
+    expect(core.talkBackWhen(null, at(14))).toBe('tomorrow');
+  });
+
+  it("gives a slip plan saved with the old starting words the new ones, and leaves a person's own alone", () => {
+    const was = 'One small action within the hour: water, step outside, or text someone.';
+    const st = core.normSettings({ start: '2026-10-01', slipPlan: [was, 'Walk the dog.'] });
+    expect(st.slipPlan[0]).toMatch(/SOS/);
+    expect(st.slipPlan[1]).toBe('Walk the dog.');
   });
 
   it('reads the situation from the slip: a built-in answer, or the urge itself', () => {

@@ -1,5 +1,62 @@
 # What is planned next
 
+## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
+
+The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of
+things that have nothing to do with it and never SOS or the journal; and "Next time, what will you do instead?" may not help at all.
+
+**The purpose:** the person leaves believing they are still good, with the next hours and the next hard moment in Daybook's hands.
+
+**What the research supports** (the notes are in the chat; almost all of it is smoking or alcohol, and nothing tests a last screen after a slip):
+
+- Falling confidence and "feeling like giving up" speed up the next lapse (Shiffman 1996; Gwaltney 2005; Kirchner and others 2012). Guilt
+  alone does not. So the hope comes before any question, on every path.
+- Kindness after a failure raises the effort to improve (Breines and Chen 2012; Adams and Leary 2007). Observed shame predicted relapse (Randles and Tracy 2013).
+- The next hours are the risky ones (lab and real-time smoking data; no numbers for porn). Today's last page looks only at a far-off "next time".
+- One if-then plan works better than many (Verhoeven 2013), with a replacement and no "I will not" (Adriaanse 2011), from the person's own
+  cue. It is lab evidence, and nothing tests a plan made right after a lapse.
+- No study shows that "if the urge comes, open SOS" cuts lapses. That part is a judgment: it is one easy move, always the same, that Daybook can bring back and open with a tap.
+- Of 170 porn-recovery apps, diaries were the best-rated feature, and only 4% had a panic button (PMC9614626). The quit apps found have a counter and a reset, and no comeback.
+
+**The holes found:**
+
+- The look back asks up to three questions and shows a chart before anything kind, then asks how they feel a second time, and skips the hold. Closing partway writes no slip.
+- A new slip in the entry sheet skips the hold. Changing an entry to Slipped there reaches no Rekindle at all.
+- A slip logged from Already happened after a go-ahead still gets "Did you go ahead?" on Today later.
+- The last page offers five moves, none of them in the app, in the person's lowest moment.
+- My plan says the slip plan shows on Today after a slip. Nothing shows it.
+
+**The new flow,** one page per step, and the X keeps what was given:
+
+1. The hold, from every way in: Already happened, SOS, the pause, the entry sheet (new, or changed to Slipped) and the look back.
+2. How it feels now, and its answer.
+3. After a go-ahead with a number: "You expected 8. What did it really give?", one page, with their own record. "What did it cost?" and the second feelings page go.
+4. What was going on just before.
+5. **Next time, as a plan already made:** the sentence is the page's heading, "When I feel lonely or low late at night, I will open SOS.", with the SOS button itself big in the middle (a tap opens it) and when Daybook brings it back under it. That is my plan, or Choose another: its own page with the tools that fit that situation (the journal, Reach a person, Breathe, Go to bed, Move), what held before first, and the person's own words.
+6. The finish by the fire, "You came back.", with one door for the next hour chosen from how it feels: still pulled, SOS; like giving up, My reasons; ashamed or angry, the journal; late at night, Go to bed. Using it counts as the one small thing.
+
+A plan comes back at its hour as it does today, and now a tap opens its tool. Today's after-a-slip card and the entry sheet offer the same door, with "I did something else".
+
+Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; in the build the plan became the heading, because a heading above a quote said the same thing twice).
+
+**Business:** nothing locked, no ask nearby. It earns by keeping people, and a slip is when they leave. It also teaches SOS as the one reflex, and the journal gets used. Points rules do not change, and nothing earned drops.
+
+**Steps, with the effort each needs:**
+
+- [x] **High.** Core and flow: the look back saves the slip at once and hands to the hold; its Undo puts everything back; a go-ahead is settled once the hold is done, so it is never asked twice; the entry sheet's two paths reach the hold, and changing an entry keeps what it earned. Tests.
+- [x] **Medium.** The expected-against-real page, the new last page, Choose another, the finish's door, the Today card, the entry sheet, plans that open their tool. Tools first in Talk it through's moves.
+- [x] **Medium.** The words: the slip plan's starting step (with `normSettings`, and the golden fixtures by hand), My plan's stale line, the Sunday story, the faith page's line, and the slip lines of lessons 3, 5, 6 and 32.
+- [x] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
+- [x] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
+
+**Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip; a plan at its hour sits right under Already happened and Planning a slip?, and the hard-hours line then says "You have your plan."; the fire's glow reaches under the clock with no hard edge.
+
+**Gone for good:** the chart of expected against real, "What did it cost?" and the second feelings page.
+
+**Not checked yet:** VoiceOver and Android. A synced plan with the new `sos` or `journal` move on an older app version reads "do what I planned", since that version does not know those moves.
+
+Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone away: the tool is the app), and the roughly 24 lessons whose "What to do" card names something outside the app and not about a slip (the lessons chat is in those files).
+
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
 **Where it is:** chosen, not built. Build it on its own branch and show the owner on the simulator before merging. Pictures: `docs/lessons-review/`

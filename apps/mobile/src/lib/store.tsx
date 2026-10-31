@@ -100,7 +100,7 @@ interface StoreValue {
   apply: (c: Change | ((st: Settings) => Change)) => void;
   /** change anything: the function gets the whole log and gives back a new one (from the @daybook/core change functions).
       Only the records that changed are saved. Returns the new log. */
-  update: (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean }) => Snapshot;
+  update: (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean; noWin?: boolean }) => Snapshot;
   /** replace everything (a restored backup, or a first start) */
   replace: (snap: Snapshot, changed: RecordId[]) => Promise<void>;
   /** erase everything on this device */
@@ -368,7 +368,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const update = useCallback(
-    (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean }) => {
+    (fn: (s: Snapshot) => Snapshot, opts?: { takeBack?: boolean; noWin?: boolean }) => {
       const cur = snapRef.current;
       let next = fn(cur);
       if (next === cur) return cur;
@@ -412,9 +412,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       snapRef.current = next;
       setSnap(next);
       if (ids.length) persist(next, ids).catch(() => say(SAVE_FAILED));
-      /* what this change earned (legacy winNote): the points gained on the changed days; a slip logged is said quietly */
+      /* what this change earned (legacy winNote): the points gained on the changed days; a slip logged is said quietly. noWin: putting
+         an entry back as it was earned nothing new. */
       const keys = ids.filter((x) => x.startsWith('days/')).map((x) => x.slice(5));
-      if (keys.length && next.settings) {
+      if (!opts?.noWin && keys.length && next.settings) {
         const w = winGain(cur.days, next.days, next.settings, keys);
         const slips = (d: Snapshot['days']) => keys.reduce((a, k) => a + (d[k]?.events.filter((e) => e.outcome === 'slipped').length || 0), 0);
         const quiet = slips(next.days) > slips(cur.days);

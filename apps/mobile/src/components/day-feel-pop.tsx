@@ -10,11 +10,13 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
 import { Shape, type ShapeKind } from '@/components/shapes';
+import { LEAD_ROOM, useSosLeadOn } from '@/components/sos-lead';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
+import { TAB_TOP } from '@/lib/tab-room';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 /** each answer's look: a shape from cool to warm, calm for the low ones and bright for the high ones (a hard day is never painted red, as a warning) */
@@ -30,6 +32,7 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
   const c = useTheme();
   const { tk, update } = useStore();
   const reduce = useReducedMotion();
+  const lead = useSosLeadOn();
   const [picked, setPicked] = useState<DayFeelStep | null>(null);
   const v = useRef(new Animated.Value(0)).current;
   const gone = useRef(false);
@@ -69,6 +72,8 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
       style={[
         s.card,
         {
+          /* just above the tab bar and its SOS, and above the words over SOS when they show */
+          bottom: TAB_TOP + 8 + (lead ? LEAD_ROOM : 0),
           backgroundColor: c.surface,
           opacity: v,
           transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
@@ -144,7 +149,6 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    bottom: 44,
     maxWidth: 520,
     alignSelf: 'center',
     borderRadius: 28,

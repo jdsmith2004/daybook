@@ -9,6 +9,7 @@ import { Text } from '@/components/text';
 import { EntryRows } from '@/components/entry-rows';
 import { Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { openCare } from '@/lib/nav';
 import { useNow } from '@/lib/now';
 import { useSos } from '@/lib/sos';
 import { count } from '@/lib/pulse';
@@ -18,14 +19,14 @@ import { font, useTheme } from '@/lib/theme';
 /* the one small thing after a slip (the slip-day card on Today): it marks the day's slips as recovered */
 export function useLogActions() {
   const { update, say } = useStore();
-  const didSmall = (k: string) => {
+  const didSmall = (k: string, quiet = false) => {
     update((s) => {
       const day = changeDay(s.days[k], k, (d) => d.events.forEach((x) => x.outcome === 'slipped' && (x.recovered = true)));
       return { ...s, days: withDay(s.days, k, day) };
     });
     buzz('save');
     count('rk_small');
-    say('Good. That is the move.');
+    if (!quiet) say('Good. That is the move.');
   };
   return { didSmall };
 }
@@ -63,7 +64,7 @@ export function LogLink() {
 /* a plan talked through waits here, quietly, under SOS, until its moment has passed (core talkPlanNow): a changed plan, or
    a decide-later until its time (which opens the choice when tapped). Talk it through says "It waits on Today", and this
    is where. A plan for next time made after a slip shows here at its hour: from an hour before its moment until the
-   moment ends ("Your plan for tonight"). */
+   moment ends ("Your plan for tonight"). A plan that names one of Daybook's own tools opens it with a tap. */
 export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const w = talkPlanNow(snap.days, snap.settings, tk, now);
@@ -75,10 +76,10 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
         <Text style={[s.planH, { color: c.violetText }]}>{w.head}</Text>
         <Text style={[s.planT, { color: c.ink }]}>{w.line}</Text>
       </View>
-      {w.due === 'waiting' ? <Icon name="next" size={18} color={c.violetText} /> : null}
+      {w.due === 'waiting' || w.door ? <Icon name="next" size={18} color={c.violetText} /> : null}
     </>
   );
-  if (w.due !== 'waiting')
+  if (w.due !== 'waiting' && !w.door)
     return (
       <View style={[s.plan, { backgroundColor: c.surface }]} accessibilityLabel={w.head + '. ' + w.line}>
         {body}
@@ -87,10 +88,11 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={w.head + ' ' + w.line + ' Decide now.'}
+      accessibilityLabel={w.head + ' ' + w.line + (w.door ? ' ' + w.door.label + '.' : ' Decide now.')}
       onPress={() => {
         buzz('tap');
-        router.push(('/talk?decide=' + w.id) as '/talk');
+        if (w.door) openCare(w.door);
+        else router.push(('/talk?decide=' + w.id) as '/talk');
       }}
       style={({ pressed }) => [s.plan, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}>
       {body}

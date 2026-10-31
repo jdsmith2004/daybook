@@ -26,7 +26,10 @@ import { formWord } from './levels';
 import { openTile, stopTiles, type StopGo } from './day';
 import { comebackNow, rkComebackSay, safeName, tellStartDue } from './rekindle';
 import { firstPattern } from './risk';
+import { slipNext } from './slip';
+import { urNight } from './sos';
 import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
+import type { CareDoor } from './talk';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
 import { firstWeekDue } from './week';
@@ -67,6 +70,9 @@ export interface Moment {
   nx?: string;
   /** the name used in "and one more", when this moment waits behind another */
   one: string;
+  /** the day of a slip: what the main button opens, and the quiet way to say something else was done */
+  door?: CareDoor;
+  alt?: string;
 }
 
 export interface MomentPick {
@@ -104,16 +110,21 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 
   /* 4. the day of a slip */
   const today = days[tk];
-  if (sumDay(today).slipped && (today?.events || []).some((e) => e.outcome === 'slipped' && !e.recovered))
+  const open = (today?.events || []).filter((e) => e.outcome === 'slipped' && !e.recovered);
+  if (sumDay(today).slipped && open.length) {
+    const door = slipNext(open[open.length - 1].fa, urNight(new Date(now).getHours()), (st.reasons || []).length > 0);
     m(
       'slip-day',
       'After a slip',
       'Logged. That took honesty.',
-      'What you built stays. One small thing now: water, a step outside, or a text to someone.',
-      'I did one small thing',
+      'What you built stays. One small thing for the next hour.',
+      door.label,
       'small',
       'one small thing',
     );
+    out[out.length - 1].door = door;
+    out[out.length - 1].alt = 'I did something else';
+  }
 
   /* 5. a talk-through due; and a comeback that still has steps */
   const t = talkDueNow(days, st, tk, now);

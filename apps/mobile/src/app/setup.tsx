@@ -624,7 +624,7 @@ export default function Setup() {
     case 'tour': {
       const x = obSosLine(a);
       body = (
-        <Show st={st} art={<PicDay a={a} />} h="A day in Daybook" line="About five minutes a day. Each stop opens at its time.">
+        <Show st={st} art={<PicDay a={a} />} h="A day in Daybook" line="About five minutes a day, one stop at a time.">
           <Rich
             text={
               (a.when || []).length > 0
@@ -1776,7 +1776,7 @@ function Hold({ onDone, pledge }: { onDone: () => void; pledge?: string }) {
   const [label, setLabel] = useState('Hold to commit');
   const [wide, setWide] = useState(0);
   const done = useRef(false);
-  const tap2 = useRef(0);
+  const tap2 = useRef(false);
   const held = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finish = () => {
@@ -1836,8 +1836,9 @@ function Hold({ onDone, pledge }: { onDone: () => void; pledge?: string }) {
       }}
       onPress={() => {
         if (done.current || held.current) return;
-        if (Date.now() < tap2.current) return finish();
-        tap2.current = Date.now() + 4000;
+        /* the words say "tap again" for as long as they show, so a second tap always counts */
+        if (tap2.current) return finish();
+        tap2.current = true;
         setLabel('Keep holding, or tap again');
       }}
       onLayout={(e) => setWide(e.nativeEvent.layout.width)}

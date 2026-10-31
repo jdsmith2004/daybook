@@ -1,3 +1,4 @@
+import type { CareDoor } from '@daybook/core';
 import { router, useNavigation, useRoute } from 'expo-router';
 
 /* The root stack's state, kept by the layout (NavKeeper in app/_layout.tsx), so close() can see what is open. */
@@ -47,6 +48,15 @@ function leave(routes: Route[]) {
   else if (router.canDismiss()) router.dismissAll();
   else if (router.canGoBack()) router.back();
   else router.replace('/');
+}
+
+/** opens one of Daybook's own tools from a plan, a card or the finish of a comeback (core CareDoor). It sits over the page it
+    was opened from, and its X comes back there. */
+export function openCare(d: CareDoor) {
+  if (d.go === 'sos') router.push('/sos');
+  else if (d.go === 'journal') router.push({ pathname: '/journal', params: d.feel ? { feel: d.feel } : { new: '1' } });
+  else if (d.go === 'tool') router.push({ pathname: '/tool/[id]', params: { id: d.id! } });
+  else router.push({ pathname: '/lesson/[id]', params: { id: d.id!, at: 'care' } });
 }
 
 /** the X on a full-screen moment: one step back. A lesson opened a writing page, a trace opened from the sunrise, a lesson opened

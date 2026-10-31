@@ -69,7 +69,7 @@ export const PRACTICE: Record<string, PStep> = {
     mins: 1,
     items: [
       line('slip', 'Say it out loud: “One slip is data, not a reset. I do the next small thing.”'),
-      line('slip', 'Before bed, write one line: what came first, and what I will try next time.'),
+      line('slip', 'Before bed, write one line in my journal: what came first, and what I will try next time.'),
     ],
     ok: 'Your slip plan is ready.',
   },

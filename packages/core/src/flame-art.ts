@@ -4,7 +4,7 @@
    smile. It never wilts and it never goes backwards.
    The style: layers of red-orange, orange and gold, curling tips, a warm light up high and a deeper shade low down.
    The figure is drawn in its own box, 100 wide (x -50 to 50) and 120 tall (its base at y 120), then placed and scaled.
-   Class names name the parts for emblemLayers (em-fig is the figure, sn-glow its glow) and move them on the web. */
+   Class names name the parts for emblemLayers (em-fig is the figure, em-body what moves like fire inside it, sn-glow its glow). */
 
 let seq = 0;
 const f = (v: number) => String(Math.round(v * 10) / 10);
@@ -42,8 +42,26 @@ const HEART_S = 'M2 40C8 56 33 70 33 90C33 106 17 115 0 115C-17 115 -33 106 -33 
 /* the tiny flame (the spark): one soft tip */
 const OUT_T = 'M-6 4C22 22 50 54 48 84C46 106 26 120 0 120C-26 120 -48 106 -48 84C-48 58 -18 42 -6 4Z';
 const HEART_T = 'M-2 40C14 56 36 70 36 90C36 106 20 115 0 115C-20 115 -36 106 -36 90C-36 70 -14 56 -2 40Z';
-const SHAPES = { full: [OUT, MID, HEART], small: [OUT_S, '', HEART_S], tiny: [OUT_T, '', HEART_T] } as const;
-type Kind = keyof typeof SHAPES;
+export const SHAPES = { full: [OUT, MID, HEART], small: [OUT_S, '', HEART_S], tiny: [OUT_T, '', HEART_T] } as const;
+export type Kind = keyof typeof SHAPES;
+
+/* ---------- what is on fire ---------- */
+/** a part of a drawing that moves like fire, as the drawing placed it (flame-fire.ts turns these into the moving outlines) */
+export type FirePart =
+  | { t: 'flame'; kind: Kind; cx: number; by: number; k: number; lean: number; side: boolean }
+  | { t: 'sun'; cx: number; cy: number; r: number; n: number; len: number; turn: number }
+  | { t: 'star'; cx: number; cy: number; r: number }
+  | { t: 'ember'; x: number; y: number; r: number; delay: number; dur: number };
+let parts: FirePart[] | null = null;
+/** the parts of a level's drawing that move like fire, in the order they are drawn */
+export function firePartsOf(n: number): FirePart[] {
+  const L = clampL(n);
+  parts = [];
+  SCENES[emStage(L)]('x', tierOf(L), emStep(L));
+  const p = parts;
+  parts = null;
+  return p;
+}
 
 /** the gradients one drawing uses, made once each */
 function defsFor(id: string, sky?: string[]) {
@@ -93,13 +111,15 @@ function face(id: string, s = 1, cy = 84, rest = false) {
 function flameFig(id: string, kind: Kind, cx: number, by: number, k: number, o: { face?: boolean; delay?: number; lean?: number; rest?: boolean } = {}) {
   const [out, mid, heart] = SHAPES[kind];
   const lean = o.lean ? ` rotate(${o.lean} 0 120)` : '';
-  let g = `<g class="em-flame" style="animation-delay:${o.delay || 0}s"><g transform="translate(${f(cx)} ${f(by)}) scale(${k})${lean} translate(0 -120)">`;
-  g += `<path d="${out}" fill="url(#${id}fo)"/>`;
+  const side = o.face === false;
+  parts?.push({ t: 'flame', kind, cx, by, k, lean: o.lean || 0, side });
+  let g = `<g class="em-flame${side ? ' em-side' : ''}" style="animation-delay:${o.delay || 0}s"><g transform="translate(${f(cx)} ${f(by)}) scale(${k})${lean} translate(0 -120)">`;
+  g += `<g class="em-body"><path d="${out}" fill="url(#${id}fo)"/>`;
   g += `<g clip-path="url(#${id}co${kind})"><ellipse cx="46" cy="98" rx="26" ry="36" fill="url(#${id}rd)"/></g>`;
   if (mid) g += `<path d="${mid}" fill="url(#${id}fd)"/>`;
   g += `<path d="${heart}" fill="url(#${id}fi)"/>`;
-  g += `<g clip-path="url(#${id}ci${kind})"><rect x="-40" y="30" width="80" height="86" fill="url(#${id}bs)"/><ellipse cx="-4" cy="${kind === 'full' ? 60 : 72}" rx="22" ry="16" fill="url(#${id}hl)"/></g>`;
-  if (o.face !== false) g += kind === 'full' ? face(id, 1, 84, o.rest) : kind === 'small' ? face(id, 0.82, 88, o.rest) : face(id, 0.86, 88, o.rest);
+  g += `<g clip-path="url(#${id}ci${kind})"><rect x="-40" y="30" width="80" height="86" fill="url(#${id}bs)"/><ellipse cx="-4" cy="${kind === 'full' ? 60 : 72}" rx="22" ry="16" fill="url(#${id}hl)"/></g></g>`;
+  if (!side) g += kind === 'full' ? face(id, 1, 84, o.rest) : kind === 'small' ? face(id, 0.82, 88, o.rest) : face(id, 0.86, 88, o.rest);
   return g + '</g></g>';
 }
 /** a soft shadow on the ground under a figure */
@@ -107,7 +127,7 @@ const shadow = (id: string, cx: number, y: number, rx: number) =>
   `<ellipse cx="${f(cx)}" cy="${f(y)}" rx="${f(rx)}" ry="${f(rx * 0.16)}" fill="url(#${id}sh)"/>`;
 
 /** a flame tip pointing out from the sun's edge (up, before it is turned) */
-function tongue(r: number, len: number, bw: number) {
+export function tongue(r: number, len: number, bw: number) {
   return `M${f(-bw)} ${f(-r * 0.86)}C${f(-bw * 0.9)} ${f(-(r + len * 0.5))} ${f(-bw * 0.1)} ${f(-(r + len * 0.85))} ${f(bw * 0.3)} ${f(-(r + len))}C${f(bw * 0.45)} ${f(-(r + len * 0.6))} ${f(bw)} ${f(-(r + len * 0.35))} ${f(bw)} ${f(-r * 0.86)}Z`;
 }
 /** the sun: the same gold heart and face, with flame tips around it for rays. n tips, len their length */
@@ -115,6 +135,7 @@ function sunFig(id: string, cx: number, cy: number, r: number, o: { n?: number; 
   const n = o.n ?? 12,
     len = o.len ?? r * 0.42,
     turn = o.turn ?? 0;
+  parts?.push({ t: 'sun', cx, cy, r, n, len, turn });
   let tips = '',
     inner = '';
   for (let i = 0; i < n; i++) {
@@ -124,7 +145,7 @@ function sunFig(id: string, cx: number, cy: number, r: number, o: { n?: number; 
   }
   const s = r / 44;
   let g = `<g transform="translate(${f(cx)} ${f(cy)})">`;
-  g += `<g class="sn-rays" fill="url(#${id}fo)">${tips}</g><g fill="url(#${id}fd)">${inner}</g>`;
+  g += `<g class="em-body"><g class="sn-rays" fill="url(#${id}fo)">${tips}</g><g fill="url(#${id}fd)">${inner}</g></g>`;
   g += `<circle r="${f(r)}" fill="url(#${id}fi)"/>`;
   g += `<g transform="scale(${f(r / 40)})" clip-path="url(#${id}cs)"><rect x="-40" y="-10" width="80" height="50" fill="url(#${id}bs)"/><ellipse cx="-8" cy="-18" rx="24" ry="16" fill="url(#${id}hl)"/></g>`;
   g += `<g transform="scale(${f(s)}) translate(0 -88)">${face(id)}</g>`;
@@ -133,7 +154,8 @@ function sunFig(id: string, cx: number, cy: number, r: number, o: { n?: number; 
 /** a little star with the face: the north star's shape */
 function starFig(id: string, cx: number, cy: number, r: number) {
   const d = `M0 ${-r}Q${r * 0.16} ${-r * 0.16} ${r} 0Q${r * 0.16} ${r * 0.16} 0 ${r}Q${-r * 0.16} ${r * 0.16} ${-r} 0Q${-r * 0.16} ${-r * 0.16} 0 ${-r}Z`;
-  return `<g transform="translate(${f(cx)} ${f(cy)})"><path d="${d}" fill="url(#${id}fi)" stroke="#FFB224" stroke-width=".8"/><g transform="scale(${f(r / 70)}) translate(0 -80)">${face(id)}</g></g>`;
+  parts?.push({ t: 'star', cx, cy, r });
+  return `<g transform="translate(${f(cx)} ${f(cy)})"><g class="em-body"><path d="${d}" fill="url(#${id}fi)" stroke="#FFB224" stroke-width=".8"/></g><g transform="scale(${f(r / 70)}) translate(0 -80)">${face(id)}</g></g>`;
 }
 
 /* ---------- the scenery ---------- */
@@ -161,10 +183,10 @@ const glow = (id: string, cx: number, cy: number, r: number, ry?: number) =>
     : `<circle class="sn-glow" cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="url(#${id}go)"/>`;
 const sparks = (list: number[][]) =>
   list
-    .map(
-      (s) =>
-        `<circle class="em-up" cx="${f(s[0])}" cy="${f(s[1])}" r="${s[2]}" fill="#FFE27A" style="animation-delay:${s[3]}s;animation-duration:${s[4] || 3}s"/>`,
-    )
+    .map((s) => {
+      parts?.push({ t: 'ember', x: s[0], y: s[1], r: s[2], delay: s[3], dur: s[4] || 3 });
+      return `<circle class="em-up" cx="${f(s[0])}" cy="${f(s[1])}" r="${s[2]}" fill="#FFE27A" style="animation-delay:${s[3]}s;animation-duration:${s[4] || 3}s"/>`;
+    })
     .join('');
 const hill = (y: number, col: string, a: number, sh = 0) =>
   `<path d="M-2 ${y}C${24 + sh} ${y - a} ${46 + sh} ${y + a * 0.3} ${70 + sh} ${y - a * 0.6}S${104 + sh} ${y - a * 0.9} 122 ${y}V122H-2Z" fill="${col}"/>`;
@@ -241,10 +263,10 @@ const SCENES: ((id: string, t: number, st: number) => Scene)[] = [
       k = P([0.42, 0.48, 0.54], t);
     let h = stars(10) + hill(103, '#0F0A30', 6);
     h += glow(id, 60, by - 30, P([40, 48, 56], t), P([28, 34, 40], t));
+    h += log(34, 102, 82, 93) + log(86, 102, 38, 93);
     if (t >= 2)
       h +=
         flameFig(id, 'tiny', 42, 98, 0.15, { face: false, delay: 0.5, lean: -12 }) + flameFig(id, 'tiny', 78, 98, 0.15, { face: false, delay: 0.8, lean: 12 });
-    h += log(34, 102, 82, 93) + log(86, 102, 38, 93);
     if (st === 1) h += flameFig(id, 'tiny', 79, 96, 0.11, { face: false, delay: 0.7, lean: 16 });
     if (st === 3) h += `<ellipse cx="60" cy="105" rx="48" ry="7" fill="#FFB347" opacity=".24"/>`;
     h += fig(flameFig(id, 'full', 60, by, k, { delay: 0.1 }));
@@ -364,9 +386,10 @@ const SCENES: ((id: string, t: number, st: number) => Scene)[] = [
     if (st === 3) h += `<rect x="-2" y="100" width="124" height="3" fill="#FFB7A8" opacity=".45"/>`;
     return { sky: ['#2C2175', '#6A3C94', '#E0808C'], layers: h };
   },
-  /* 7 Sunrise: the flame, round now, comes up over the hills as the sun */
+  /* 7 Sunrise: the flame, round now, comes up over the hills as the sun. Only its rays and the foot of the disc are behind them, never its
+     face (the owner, October 31, 2026: the flame stays big) */
   (id, t, st) => {
-    const cy = P([90, 82, 74], t),
+    const cy = P([72, 68, 64], t),
       r = 20;
     let h = stars(P([3, 1, 0], t), 0.7);
     h += glow(id, 60, cy, P([42, 50, 58], t));

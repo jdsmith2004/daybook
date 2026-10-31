@@ -1,5 +1,6 @@
 /* Small entrance motions: things settle in once when they appear, and never loop. With Reduce Motion on, they start where they
    end. Built on React Native's Animated, like the breathing sun, so they run the same on iOS, Android and the web. */
+import { useIsFocused } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform } from 'react-native';
 
@@ -20,6 +21,16 @@ try {
 const askReduce = (): Promise<boolean> => (reduceNow !== null ? Promise.resolve(reduceNow) : AccessibilityInfo.isReduceMotionEnabled().catch(() => false));
 
 /** true when the person asked their device for less motion (false until known) */
+/** whether the screen this sits on is the one in front. True outside any screen: what is drawn over the whole app (a celebration) has no screen to hide it,
+    and there the hook below throws. */
+export function useOnScreen() {
+  try {
+    return useIsFocused();
+  } catch {
+    return true;
+  }
+}
+
 export function useReducedMotion() {
   const [r, setR] = useState(() => !!reduceNow);
   useEffect(() => {

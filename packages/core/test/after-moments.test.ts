@@ -69,3 +69,86 @@ describe('a look back on a go-ahead finds its slip', () => {
     expect(core.slipAfterTalk(own.days, k, t, '2026-11-11')).toEqual({ k: '2026-11-11', id: own.id });
   });
 });
+
+describe('every look back on a slip reaches the comeback', () => {
+  const k = '2026-11-10';
+  const open = (t: number, e: number | null = 8) => ({ ...core.newTalk(t), p: 'open' as const, e });
+  const went = { went: true, f: [], g: null, c: [] };
+  const at = (d: number, h: number, m = 0) => new Date(2026, 10, d, h, m).getTime();
+
+  it('planned before midnight and said after it, on the same log day: one slip, and it is found', () => {
+    const t = at(10, 23);
+    const talk = open(t);
+    const days = core.lookBack(core.saveTalk({}, k, talk, t), talk.id, went, k, at(11, 0, 30));
+    expect(days[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(1);
+    expect(core.slipAfterTalk(days, k, t, k)?.id).toBe(days[k].events[0].id);
+  });
+
+  it('a slip logged after midnight is the one looked back on, and no second one is written', () => {
+    const t = at(10, 23);
+    const talk = open(t);
+    const had = core.addEvent(core.saveTalk({}, k, talk, t), k, 'slipped', '00:10');
+    const days = core.lookBack(had.days, talk.id, went, k, at(11, 0, 30));
+    expect(days[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(1);
+    expect(core.slipAfterTalk(days, k, t, k)?.id).toBe(had.id);
+  });
+
+  it('Undo on the hold opens the look back again, with no slip left', () => {
+    const t = at(10, 20);
+    const talk = open(t);
+    const base = core.saveTalk({}, k, talk, t);
+    const days = core.lookBack(base, talk.id, went, k, at(10, 21));
+    const sl = core.slipAfterTalk(days, k, t, k)!;
+    const back = core.lookUndo(core.removeEvent(days, sl.k, sl.id), talk.id);
+    expect(back[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(0);
+    expect(core.talkById(back, talk.id)!.talk.a).toBeNull();
+    expect(core.talkDue(back, at(10, 22))?.due).toBe('look');
+  });
+
+  it('a slip held through Rekindle settles the go-ahead before it, so Today does not ask again, and no points move', () => {
+    const t = at(10, 20);
+    const talk = open(t);
+    const had = core.addEvent(core.saveTalk({}, k, talk, t), k, 'slipped', '21:00');
+    expect(core.talkDue(had.days, at(10, 22))?.due).toBe('look');
+    const pts0 = core.gameCompute(had.days, st, {}, k).pts;
+    const days = core.settleGoAhead(had.days, k, '21:00', k, at(10, 21, 5));
+    expect(core.talkDue(days, at(10, 22))).toBeNull();
+    expect(days[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(1);
+    expect(core.gameCompute(days, st, {}, k).pts).toBe(pts0);
+  });
+
+  it('a slip before the go-ahead, or long after it, does not settle it', () => {
+    const t = at(10, 20);
+    const talk = open(t);
+    const had = core.addEvent(core.saveTalk({}, k, talk, t), k, 'slipped', '19:00');
+    expect(core.goAheadBefore(had.days, k, '19:00', at(10, 21))).toBeNull();
+    const later = core.addEvent(core.saveTalk({}, k, talk, t), '2026-11-15', 'slipped', '21:00');
+    expect(core.goAheadBefore(later.days, '2026-11-15', '21:00', at(15, 21))).toBeNull();
+    /* said no to already: nothing to settle */
+    const no = core.lookBack(core.saveTalk({}, k, talk, t), talk.id, { ...went, went: false }, k, at(10, 21));
+    expect(core.goAheadBefore(no, k, '22:00', at(10, 22))).toBeNull();
+  });
+
+  it("keeps what it really gave, said after the hold, as the person's own numbers", () => {
+    const t = at(10, 20);
+    const talk = open(t, 8);
+    let days = core.lookBack(core.saveTalk({}, k, talk, t), talk.id, went, k, at(10, 21));
+    expect(core.talkEvidence(days).rows).toEqual([]);
+    expect(core.goAheadBefore(days, k, '21:00', at(10, 21))?.talk.id).toBe(talk.id);
+    days = core.lookBackGave(days, talk.id, 3, at(10, 21, 2));
+    expect(core.talkEvidence(days).rows).toEqual([{ e: 8, g: 3 }]);
+    expect(core.talkById(days, talk.id)!.talk.a!.went).toBe(true);
+    /* a slip is counted once, and the record survives a round through the log's cleaning */
+    expect(days[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(1);
+  });
+
+  it('a plan made after a slip comes back with the door to its tool', () => {
+    const t = at(10, 23);
+    const talk = { ...core.newTalk(t), p: 'change' as const, pr: 1 as const, n: 'close' as const, m: ['sos' as const], mo: 'late', ft: 'lonely' as const };
+    const days = core.saveTalk({}, k, talk, t);
+    expect(core.talkPlanLine(talk)).toBe('When I feel lonely or low late at night, I will open SOS.');
+    expect(core.talkPlanNow(days, st, '2026-11-11', at(11, 20, 30))).toMatchObject({ door: { go: 'sos' }, head: 'Your plan for tonight' });
+    const own = { ...talk, id: 'own', m: [], mx: ['Play guitar'] };
+    expect(core.talkPlanNow(core.saveTalk({}, k, own, t), st, '2026-11-11', at(11, 20, 30))?.door).toBeNull();
+  });
+});

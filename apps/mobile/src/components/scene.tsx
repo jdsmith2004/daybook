@@ -5,7 +5,7 @@ import { emblemLayers } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
@@ -79,8 +79,9 @@ export function SceneFrame({
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
       <ScrollView
         ref={scroll}
-        /* it starts under the clock, so a long page scrolls away beneath it and never through it */
-        style={{ marginTop: inset.top }}
+        /* it starts under the clock, so a long page scrolls away beneath it and never through it. The fire's short pages let their
+           glow reach past it, so the warmth has no hard edge under the clock. */
+        style={[{ marginTop: inset.top }, sky === 'ember' && Platform.OS !== 'web' && { overflow: 'visible' }]}
         onLayout={fit.onLayout}
         onContentSizeChange={fit.onContentSizeChange}
         contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : held ? 12 : inset.bottom + (SHORT ? 10 : 24) }]}

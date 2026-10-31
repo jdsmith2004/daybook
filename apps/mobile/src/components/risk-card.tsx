@@ -1,7 +1,7 @@
 /* Hard hours on Today (core: risk.ts): one quiet line under the next step, from two hours before the hours the log says are hardest
    until they end. In them, the next step is still the lesson or SOS (the owner, October 30, 2026), so this only says so, and offers the
    short plan (Talk it through, /talk?prep=1) until one is made. It assumes nothing: the person may well be doing fine. */
-import { riskDay, riskStartLabel, talkClock, type Snapshot } from '@daybook/core';
+import { riskDay, riskStartLabel, talkClock, talkPlanNow, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -19,7 +19,7 @@ export function HardLine({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
   return (
     <View style={s.row}>
       <Text style={[s.t, { color: c.muted }]}>{say}</Text>
-      {r.talked ? (
+      {r.talked || talkPlanNow(snap.days, st, tk, now) ? (
         <Text style={[s.t, { color: c.muted }]}>You have your plan.</Text>
       ) : (
         <Pressable

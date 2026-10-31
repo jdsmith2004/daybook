@@ -81,17 +81,31 @@ export function emblemScene(level: number, classes = false): EmblemScene {
   return { xml, sky, at, ground, land, ink: luminance(ground || sky[2]) > 0.19 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };
 }
 
-/* ---------- the flame in layers, so only the figure moves ---------- */
-/** the flame in four drawings laid over each other (in its own sky when soft, or in its round frame): the sky and what is behind the figure, the glow, the
-    figure (the spark, the torch, the rising flame, the sun), and what is in front of it (hills that a rising sun sits
-    behind). Each is a whole 120 by 120 drawing with its own ids, so they line up exactly. at: the figure's middle, as a
-    share of the width and height, for growing it in place. */
+/* ---------- the flame in layers, so only the fire moves ---------- */
+/** the flame in drawings laid over each other (in its own sky when soft, or in its round frame): the sky and what is behind the figure, the glow, the
+    small flames and embers around the figure (side), the figure (the spark, the torch, the rising flame, the sun), and what is in front of it (hills that
+    a rising sun sits behind). Each is a whole 120 by 120 drawing with its own ids, so they line up exactly. Those are the flame at rest. To move it, side
+    and fig give way to `fire` (flame-fire.ts: the outlines that lick) with `still` over it: what holds still, the face and a sun's disc.
+    at: the figure's middle, as a share of the width and height, for growing it in place. */
 export interface EmblemLayers {
   back: string;
   glow: string;
+  side: string;
   fig: string;
+  still: string;
   front: string;
   at: { x: number; y: number };
+}
+/** a drawing without the elements that start where `start` matches, and those elements */
+function cut(x: string, start: RegExp): [string, string] {
+  let rest = x,
+    gone = '';
+  for (let m = start.exec(rest); m; m = start.exec(rest)) {
+    const [a, b] = elementAt(rest, m.index);
+    gone += rest.slice(a, b);
+    rest = rest.slice(0, a) + rest.slice(b);
+  }
+  return [rest, gone];
 }
 const drop = (x: string) => x.replace(/ class="[^"]*"/g, '');
 /** the element that starts at i (a <g> with all it holds, or one self-closing tag), as [start, end] */
@@ -132,11 +146,20 @@ export function emblemLayers(level: number, soft = true): EmblemLayers | null {
   const c = /c[xy]="[\d.]+"/.test(g) ? { x: Number(/cx="([\d.]+)"/.exec(g)![1]), y: Number(/cy="([\d.]+)"/.exec(g)![1]) } : { x: 60, y: 60 };
   /* each layer gets its own ids (em7 becomes em7a, em7b, ...), so no drawing borrows another's */
   const own = (x: string, k: string) => drop(x).replace(/\b(em\d+)/g, '$1' + k);
+  /* the small flames and the embers move too, so they come out of the scenery */
+  const LOOSE = /<g class="em-flame em-side"|<circle class="em-up"/;
+  const [behind, sideA] = cut(before, LOOSE);
+  const [ahead, sideB] = cut(sc.slice(fe), LOOSE);
+  const figure = sc.slice(fi, fe);
+  const [held] = cut(figure, /<g class="em-body"/);
   return {
-    back: own(before + end, 'a'),
+    back: own(behind + end, 'a'),
     glow: g ? own(start + g + end, 'b') : '',
-    fig: own(start + sc.slice(fi, fe) + end, 'c'),
-    front: own(start + sc.slice(fe), 'd'),
+    side: sideA || sideB ? own(start + sideA + sideB + end, 'e') : '',
+    fig: own(start + figure + end, 'c'),
+    /* without the softened frame: the face is never near its edge, and react-native-svg loses a masked picture when it is cut down to the fire's area */
+    still: own(head + held + '</svg>', 'f'),
+    front: own(start + ahead, 'd'),
     at: { x: c.x / 120, y: c.y / 120 },
   };
 }

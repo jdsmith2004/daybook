@@ -1,5 +1,74 @@
 # What is planned next
 
+## Version 1.3.0: the final walkthrough (October 31, 2026)
+
+The new look of the lessons, the fire that moves at its tips, the wind-down rebuilt and the store pictures were merged together by the owner's word, and the public guides
+were corrected and merged. Walked on a release build on two iPhone sizes as a new person, someone 40 days in, someone on the day of a slip and someone about to graduate.
+
+**Found and fixed:** graduation came up blank on iPhone, because two saves undid each other forever (the store put its live copy back to the last rendered one after each
+render); the cap covered the eyes or floated off the head on most forms; a first lesson's glow was cut in a straight line; an off button in a lesson showed its words twice;
+"tap again" on the setup pledge stopped working after four seconds.
+
+**Not merged:** iPhone tips outside the United States (`claude/clever-villani-6a3f09`, commit e5dc2d0). It conflicts with the tip code since Daybook Pattern, and Daybook is
+offered in the United States only, where the web link is already right. Opening other countries is the owner's call, and this commit is the start of that work.
+
+## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
+
+The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of
+things that have nothing to do with it and never SOS or the journal; and "Next time, what will you do instead?" may not help at all.
+
+**The purpose:** the person leaves believing they are still good, with the next hours and the next hard moment in Daybook's hands.
+
+**What the research supports** (the notes are in the chat; almost all of it is smoking or alcohol, and nothing tests a last screen after a slip):
+
+- Falling confidence and "feeling like giving up" speed up the next lapse (Shiffman 1996; Gwaltney 2005; Kirchner and others 2012). Guilt
+  alone does not. So the hope comes before any question, on every path.
+- Kindness after a failure raises the effort to improve (Breines and Chen 2012; Adams and Leary 2007). Observed shame predicted relapse (Randles and Tracy 2013).
+- The next hours are the risky ones (lab and real-time smoking data; no numbers for porn). Today's last page looks only at a far-off "next time".
+- One if-then plan works better than many (Verhoeven 2013), with a replacement and no "I will not" (Adriaanse 2011), from the person's own
+  cue. It is lab evidence, and nothing tests a plan made right after a lapse.
+- No study shows that "if the urge comes, open SOS" cuts lapses. That part is a judgment: it is one easy move, always the same, that Daybook can bring back and open with a tap.
+- Of 170 porn-recovery apps, diaries were the best-rated feature, and only 4% had a panic button (PMC9614626). The quit apps found have a counter and a reset, and no comeback.
+
+**The holes found:**
+
+- The look back asks up to three questions and shows a chart before anything kind, then asks how they feel a second time, and skips the hold. Closing partway writes no slip.
+- A new slip in the entry sheet skips the hold. Changing an entry to Slipped there reaches no Rekindle at all.
+- A slip logged from Already happened after a go-ahead still gets "Did you go ahead?" on Today later.
+- The last page offers five moves, none of them in the app, in the person's lowest moment.
+- My plan says the slip plan shows on Today after a slip. Nothing shows it.
+
+**The new flow,** one page per step, and the X keeps what was given:
+
+1. The hold, from every way in: Already happened, SOS, the pause, the entry sheet (new, or changed to Slipped) and the look back.
+2. How it feels now, and its answer.
+3. After a go-ahead with a number: "You expected 8. What did it really give?", one page, with their own record. "What did it cost?" and the second feelings page go.
+4. What was going on just before.
+5. **Next time, as a plan already made:** the sentence is the page's heading, "When I feel lonely or low late at night, I will open SOS.", with the SOS button itself big in the middle (a tap opens it) and when Daybook brings it back under it. That is my plan, or Choose another: its own page with the tools that fit that situation (the journal, Reach a person, Breathe, Go to bed, Move), what held before first, and the person's own words.
+6. The finish by the fire, "You came back.", with one door for the next hour chosen from how it feels: still pulled, SOS; like giving up, My reasons; ashamed or angry, the journal; late at night, Go to bed. Using it counts as the one small thing.
+
+A plan comes back at its hour as it does today, and now a tap opens its tool. Today's after-a-slip card and the entry sheet offer the same door, with "I did something else".
+
+Picture: docs/rekindle-review/mock-new-pages.png (the mock the owner approved; in the build the plan became the heading, because a heading above a quote said the same thing twice).
+
+**Business:** nothing locked, no ask nearby. It earns by keeping people, and a slip is when they leave. It also teaches SOS as the one reflex, and the journal gets used. Points rules do not change, and nothing earned drops.
+
+**Steps, with the effort each needs:**
+
+- [x] **High.** Core and flow: the look back saves the slip at once and hands to the hold; its Undo puts everything back; a go-ahead is settled once the hold is done, so it is never asked twice; the entry sheet's two paths reach the hold, and changing an entry keeps what it earned. Tests.
+- [x] **Medium.** The expected-against-real page, the new last page, Choose another, the finish's door, the Today card, the entry sheet, plans that open their tool. Tools first in Talk it through's moves.
+- [x] **Medium.** The words: the slip plan's starting step (with `normSettings`, and the golden fixtures by hand), My plan's stale line, the Sunday story, the faith page's line, and the slip lines of lessons 3, 5, 6 and 32.
+- [x] **Low.** docs/design-standards.md ("A slip always reaches the comeback"), the App Store image 03-slip.
+- [x] **Medium.** Web and iOS simulator, light, dark, Reduce Motion; a release build shown to the owner. Not merged before that.
+
+**Also changed while checking it:** the fire on the hold and the finish gives up height on a small phone, so the hold button stays on the screen at 320 by 568 (it had fallen under the fold); a sentence's last word stays with the one before it; Undo of an entry changed to Slipped says only "Changed back.", with no points notice; the entry sheet offers the next-hour door only on today's slip; a plan at its hour sits right under Already happened and Planning a slip?, and the hard-hours line then says "You have your plan."; the fire's glow reaches under the clock with no hard edge.
+
+**Gone for good:** the chart of expected against real, "What did it cost?" and the second feelings page.
+
+**Not checked yet:** VoiceOver and Android. A synced plan with the new `sos` or `journal` move on an older app version reads "do what I planned", since that version does not know those moves.
+
+Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone away: the tool is the app), and the roughly 24 lessons whose "What to do" card names something outside the app and not about a slip (the lessons chat is in those files).
+
 ## The shape of the day (the owner, October 31, 2026)
 
 **Narrowed by the owner (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). Asked which parts still stand, the owner kept three, all _medium_, on a branch from main and shown on the simulator as a release build before any merge:
@@ -42,8 +111,7 @@ The owner: "Is that the right thing to have them do? Is that what's going to hel
 ## The wind-down: put your flame to bed (the owner, October 31, 2026)
 
 The owner: "look at wind down, is it contributing to the app, what does the app need, give me your ideas or do a redesign and have me
-review it". **Where it is:** built on branch `claude/wind-down-review-f48cb9`, on the simulator "Daybook Wind" as a release build, **not merged:
-waiting for the owner's review.**
+review it". **Where it is:** merged for 1.3.0 by the owner's word (October 31, 2026).
 
 **What was wrong.** The one big daily moment in the app had no flame in it: a moon icon in a tinted circle, three cards the same size, "0 of 5
 done" at the hardest hour of the day, a list that paid 10 points hidden in a fold while the act itself paid 5, the phone line buried first among five
@@ -115,8 +183,8 @@ uses it, and other pages may still hit it.
 
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
-**Where it is:** chosen, not built. Build it on its own branch and show the owner on the simulator before merging. Pictures: `docs/lessons-review/`
-(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from).
+**Where it is:** merged for 1.3.0 by the owner's word (October 31, 2026). Pictures: `docs/lessons-review/`
+(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from; `built-day.png`, `built-night.png` and `built-small-phone.png` are what was built).
 
 **What the owner chose:** A and C together, with two cards kept from C.
 
@@ -125,9 +193,65 @@ uses it, and other pages may still hit it.
 - Kept from C: the full sun answer card (dark Next, flame) and the solid violet number card (giant sun yellow number, no sky, no flame, yellow Next).
 - Questions: bright pressable answers with a lip, fixed in place. The flame sits between the question and the answers and says the comment. The right answer turns green and the rest go quiet. A wrong pick lets the person try another, and they can move on after any pick.
 - At night the journey ends at a warm dawn, not bright day.
-- Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
+- How it is built: a palette override through `useTheme` (`PaletteOverride`, `lib/lesson-look.ts`), one flame that glides (`components/lesson-flame.tsx`), and short beats per lesson and card (core `lesson-beats.ts`), with the original words one tap away as More. "Behind this" notes stay as they are.
+- Choices made while building: Back moved up beside the progress line, so Next is full width as in the pictures. More sits just above Next on a card, and in the flame's bubble on a question, so Next never moves. The Next after a wrong pick stays on, as the plan says (the picture greys it). The "Part 1 of 3" line on the cover is gone. A real picture (a chain, a wave, a loop) stays on its card. A safety line stays on its card and never moves to More.
 
-**Open from the same walk:** what happens when the day is finished. Today the card is gone and a few words sit above the line. The owner wants something different.
+**From the same walk:** what happens when the day is finished was looked at and left as it is: see "When the day is finished" below.
+
+## When the day is finished (the owner, October 31, 2026)
+
+**Decided (the owner, October 31, 2026): "none it's good as is."** The day stays Lesson, Check-in, Wind-down, and Today after a finished day stays as it is, with no asleep flame on Today and no new row. Nothing was built. This covers the idea of a sleeping flame on Today too, so it does not come back with the flame motion work without the owner asking. The wind-down rebuild is a separate review and is not settled by this. Everything below is the record of what was looked at, kept so it is not worked out again.
+
+The first three options are in `docs/today-review/day-finished-options.png`; the newer ones are below.
+
+**The owner on those options (October 31, 2026):** none is a clear yes. A is the closest but "doesn't really look that good", and the current screen looks bad. A separate home screen is also hard to justify: on the usual routine, a finished day means the wind-down is done, so anyone on this screen has already said Goodnight and picked the phone back up. The owner is open to changing the day itself: bring the journal in, swap stops, or remove the wind-down entirely.
+
+**What the code says:** the wind-down counts as done once the phone-away time is set, and today runs until the rollover (4 AM by default). So the finished screen shows from Goodnight until 4 AM, unless the wind-down is switched off for that day. The check-in and the wind-down both end in the same Goodnight, so they are close to one stop already. The wind-down branch puts the flame to bed, big and asleep, with the person's own sentence (`bedWords`), so A's bigger flame and sentence would repeat it minutes later.
+
+**The wind-down session finished (merged for 1.3.0).** It keeps the wind-down and changes its job: the flame falls asleep on Goodnight and the page stays, dim, so someone who picks up the phone at 2 AM finds that page. Today is reached only through its X, or on a new open if the app was closed. So the question moved from "what does a finished day show" to "what should the day be".
+
+**What each option costs (code map):** the stops on the line are built for today only (`dayRhythm`, `stopTiles`). Points, badges and Sunday goals read the raw day records, so changing the line cannot change an old day or anything earned, and no golden fixture moves as long as `rhythm()` is left alone. Making the journal a stop costs more: its entries live outside the days and it counts toward nothing. The same is true of the wind-down's scoring: on `main` Goodnight sets only the phone-away time, and the wind-down branch makes it count.
+
+**What the research says** (no trial of any of this exists for porn; full notes with links are outside the repo, in the session's notes folder as `day-stops-research.md`):
+
+- A short daily check-in is safe and mildly useful, and long forms, not frequent ones, are what wear people down (Buu 2020, McCarthy 2015, Eisele 2022). Moderate.
+- It works better when it feeds something back: monitoring with goals or feedback beat monitoring alone (Michie 2009, Harkin 2016). Moderate to strong, mostly outside addiction. Pattern is that feedback, and its comparisons need check-ins, so a daily check-in stays.
+- Journaling helps a little on average, and the benefit faded by a month in addiction treatment (Frattaroli 2006, Meshberg-Cohen 2014). Writing more often did worse in one gratitude study (Lyubomirsky 2005). So it stays a choice, and is not a duty at night. Moderate that the effect is small.
+- Fewer required things is a reasonable inference and no more: mental health apps keep very few people (Baumel 2019), a missed day barely hurts a habit (Lally 2010), and nothing compares one daily task with three. I Am Sober, the closest rival, has two bookends. No app found has three stops in a row. Weak.
+- An intact streak raises later activity and a broken one lowers it, less so when it can be repaired (Silverman and Barasch 2023). Unfinished tasks nagging at people (Zeigarnik) is not supported (Ghibellini and Meier 2025). So a day should be finished by a small amount, and a miss should cost nothing.
+
+**The options for the day** (`docs/today-review/day-stops-options.png`, drawn at 2 PM with the lesson done):
+
+- **Two stops (recommended).** Lesson, then Goodnight. The Goodnight stop opens the check-in with its own sliders, one thing at a time, which already ends in bed. It is the shortest day that keeps Pattern fed and the one act the wind-down research backs. The journal is a quiet way in on the night page, for those who want it, with no points. **The risk:** the owner turned down a merged Bedtime on October 25 without saying why. That one put the check-in into rows on one screen and guessed sleep; this keeps the screens apart and joins only the stops on the line. If the reason was that these should be two things, this is wrong too.
+- **Keep three.** Lesson, Check-in, Wind-down, with the new wind-down. The safest, and the most to do in a day.
+- **The lesson is the day.** One stop, so the day is finished by the small minimum the research favors, and in daytime the finished screen makes sense. Tonight is offered in a quiet row. **The cost:** with no pull toward the evening, check-ins and nights will fall, and Pattern and the phone-down habit go with them.
+- **Journal in.** Lesson, Journal, Goodnight. The owner's idea, and the warmest. Not recommended: it costs the sliders Pattern reads, needs the most code, and asks for writing at night, when the owner said on October 25 there was too much to fill out.
+
+**The options for after Goodnight** (`docs/today-review/day-night-options.png`), which hold for any of the days above. The sleeping flame was drawn with the wind-down branch's art:
+
+- **Asleep, and it asks (recommended).** The flame's eyes are closed and the page is dark until the first open of the new day, with one low row: "Cannot sleep?", to the plan for a loud night. The person here is awake with their phone, so this is the care they need, and a sleeping flame says "rest" without a word of shame.
+- **Asleep on Today.** The same, with the day's line on its side in place of the row.
+- **Nothing special.** Today stays as it is, with no words. Goodnight is the moment. The least to build, and it leaves a bright page at midnight.
+
+All of these replace the "Flame takes the day" option above, which was the same screen zoomed in. Where a finished day is reached in daylight (the wind-down switched off), the words stay plain and the page light.
+
+**The order it would have taken (not happening, see Decided above):** the wind-down merges first, then the flame motion, since both touch `big-flame.tsx` and `hero.tsx`. The stops are _medium_: `dayRhythm`, `stopTiles`, the words and the Goodnight stop. If the journal or a points rule changes, that part is _high_. Then a release build on the simulator for the owner, before any merge.
+
+**What the owner said:** "the all done you need to do that differently it just hides everything underneath the stupid box", and "can we think of a different thing to do when they finish??"
+
+**What the options are judged by:** a finished day is proof of who the person is becoming, and the flame getting stronger is the picture of it. It must not feel like a reward from a game. Already happened, Planning a slip? and SOS stay in plain reach, and nothing sits on top of anything.
+
+- **A. The flame takes the day (recommended).** The line through the day lies on its side: the same marks and the same squiggle in one row under the two quiet buttons, each stop still one tap. The sky takes the room that frees, so the flame goes from 315 to 393 points wide on a 393-point iPhone. The person's own sentence grows on the sky, with "Today proved it." under it. There is no box and nothing to close. Coming back from the last stop, the flame swells to its new size and blooms once, in place.
+- **B. A finish screen.** A full-screen moment, once a day, with a button to close it. Not recommended, though it was part of the first idea: the evening already ends in Goodnight (`goodnight.tsx`, the moon and the stars), so this is a second ending in a row, with one more tap at bedtime.
+- **C. Tomorrow on the line.** Nothing folds, and a fourth stop names tomorrow's lesson. Hides the least and gives a pull back tomorrow, but the flame does not change, so a finished day looks like any other.
+
+**Words chosen for A, to correct if wrong:** with a sentence, that sentence and then "Today proved it.", adding "Rest well." only at night. With no sentence, "You showed up today." and "That is who you are now." After a slip that day, "A hard day, and you finished it.", never "proved it".
+
+**A risk in A:** the flame is back at its usual size the next morning, when the day's stops come back. It happens overnight with the app closed, so it should read as a new day, but it needs a look on the simulator.
+
+**Helps Daybook earn or grow:** a home screen worth opening at the end of the day. No ask is added.
+
+**The steps A would have taken (not happening):** the words as a rule in core with tests; the sizing in `today-size.ts`; the line on its side in `your-day.tsx`; the swell on return, with a still version for Reduce Motion. All _medium_. Then a release build on the simulator for the owner, before any merge.
 
 ## The home screen (the owner, October 30, 2026)
 

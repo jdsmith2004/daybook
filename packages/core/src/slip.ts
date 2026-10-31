@@ -11,14 +11,16 @@
    3. And now: how it feels a few minutes later, answered kindly and truly. Noticing what it really gave lowers its pull
       next time (Brewer and others 2011; Taylor and others 2021); shame predicts relapse, and kindness after a failure
       makes people try harder (Randles and Tracy 2013; Breines and Chen 2012).
-   4. Next time: one if-then plan from the feeling ("When I feel lonely late at night, I will text someone."), read back
-      once, and asked about the next morning (Gollwitzer and Sheeran 2006, d = 0.65). It is saved as an after-slip
-      talk-through (talk.ts, pr 1, with the feeling word as fw), so Today and the look back work as they always have.
+   4. Next time: one if-then plan, made already ("When I feel lonely late at night, I will open SOS."), from what was going on,
+      and one tap to keep it (Gollwitzer and Sheeran 2006, d = 0.65; one plan works better than many, Verhoeven 2013; rebuilt
+      October 31, 2026, docs/plan.md). It is saved as an after-slip talk-through (talk.ts, pr 1, with the situation as ft), so
+      Today and the look back work as they always have.
+   5. The next hour: one door, from how it feels (slipNext).
    The feeling before (fb) and after (fa) are kept on the slip itself (normEvent), on the device like the rest of the log. */
 import { addDays, clockOf, eventsOf } from './legacy/core.js';
 import { FEEL_TRIG, FEELINGS, feelFam, type FeelFam } from './feelings';
 import { RK_FEELS, type RkFeel } from './rekindle-learn';
-import { TALK_WHEN, type TalkHeld, type TalkMove, type TalkNeed, type TalkWhen } from './talk';
+import { talkClockOrd, TALK_WHEN, type CareDoor, type TalkHeld, type TalkMove, type TalkNeed, type TalkWhen } from './talk';
 import type { Clock, DayEvent, DayKey, Days } from './types';
 
 /** where a feeling word sits in the field (FEELINGS), or null for a word that is not one */
@@ -54,39 +56,58 @@ export const SLIP_NEED: Record<TalkWhen, TalkNeed> = {
   urge: 'relief',
 };
 
-/** the moves that fit each situation, best first: four each */
+/** the plan after a slip is made already: at that moment, open SOS. One easy move, always the same, that Daybook can bring back
+    and open with a tap (the owner, October 31, 2026; docs/plan.md). The research favors one plan over a list of them. */
+export const SLIP_LEAD: TalkMove = 'sos';
+/** "Choose another": what else fits each situation, Daybook's own tools first, then what only the outside world can give */
 const WHEN_MOVES: Record<TalkWhen, TalkMove[]> = {
   /* the phone in bed is the situation itself: put it somewhere else */
-  late: ['away', 'bed', 'shower', 'breathe'],
-  /* people, in the plainest ways to reach them */
-  lonely: ['text', 'call', 'people', 'kind'],
+  late: ['journal', 'bed', 'breathe', 'away'],
+  /* a person */
+  lonely: ['text', 'call', 'journal', 'breathe'],
   /* something real to do */
-  bored: ['fill', 'hands', 'out', 'move'],
+  bored: ['move', 'journal', 'hands', 'fill'],
   /* turn the alarm down, then get it out of the head */
-  stress: ['walk', 'breathe', 'shower', 'write'],
+  stress: ['breathe', 'journal', 'move'],
   /* rest */
-  tired: ['bed', 'nap', 'away', 'shower'],
+  tired: ['bed', 'breathe', 'journal'],
   /* the screen is the slope: step off it */
-  scroll: ['away', 'out', 'hands', 'move'],
-  /* the urge came on its own: distance, and a change of state */
-  urge: ['away', 'walk', 'shower', 'text'],
+  scroll: ['move', 'journal', 'away'],
+  /* the urge came on its own */
+  urge: ['breathe', 'journal', 'text', 'move'],
 };
 
-/* late at night, the moves that mean going out become ones that work at home at that hour */
-const NIGHT_SWAP: Partial<Record<TalkMove, TalkMove>> = { people: 'text', out: 'show', walk: 'shower', fill: 'hands', light: 'kind' };
-/** the moves offered for the plan: the situation's four (late at night, the ones that mean going out swap for ones that
-    work at home, and early bed takes the last place when it is not there), then the device out of reach when it is not
-    there yet. Moves whose plan held before come first, the most held first (talkHeld). The plan page adds the person's
-    own words after them. */
+/* late at night, a move that wakes the body or means going out becomes rest */
+const NIGHT_SWAP: Partial<Record<TalkMove, TalkMove>> = { move: 'bed', walk: 'bed', fill: 'hands', out: 'bed', people: 'text', light: 'bed' };
+/** the moves under "Choose another": the situation's (late at night, ones that fit that hour, with early bed among them), and
+    what held for this person before, whatever the situation, first and most held first. At most four; the page adds the
+    person's own words after them. */
 export function slipMoves(when: TalkWhen, night: boolean, held: TalkHeld = {}): TalkMove[] {
-  let base = WHEN_MOVES[when].slice();
-  if (night) {
-    base = [...new Set(base.map((m) => NIGHT_SWAP[m] || m))];
-    if (base.indexOf('bed') < 0) base = base.slice(0, 3).concat('bed');
-  }
-  const all = [...new Set(base.concat('away'))];
+  const swap = (l: TalkMove[]) => (night ? l.map((m) => NIGHT_SWAP[m] || m) : l);
+  let base = [...new Set(swap(WHEN_MOVES[when]))];
+  if (night && base.indexOf('bed') < 0) base = base.slice(0, 3).concat('bed');
   const h = (m: TalkMove) => held[m]?.held || 0;
-  return all.slice().sort((a, b) => h(b) - h(a) || all.indexOf(a) - all.indexOf(b));
+  const own = swap((Object.keys(held) as TalkMove[]).filter((m) => h(m) > 0 && m !== SLIP_LEAD));
+  const all = [...new Set(base.concat(own))];
+  return all
+    .sort((a, b) => h(b) - h(a) || all.indexOf(a) - all.indexOf(b))
+    .filter((m) => m !== SLIP_LEAD)
+    .slice(0, 4);
+}
+
+/** the word a journal entry starts on, from how it feels now: they said it already, so the page opens ready to write */
+const NOW_FEEL: Partial<Record<RkFeel, string>> = { shame: 'Ashamed', angry: 'Angry', flat: 'Empty', giveup: 'Discouraged' };
+/** the lesson for "I already blew it" */
+const SNOWBALL_LESSON = 'l3';
+/** the one door for the next hour, the riskiest one after a slip: from how it feels now. Still pulled, SOS. Like giving up, the
+    person's own reasons, or the lesson on that very thought. Ashamed or angry, the journal. Otherwise bed late at night, and
+    the journal in the day. */
+export function slipNext(fa: RkFeel | string | null | undefined, late: boolean, hasReasons: boolean): CareDoor {
+  if (fa === 'pull') return { go: 'sos', label: 'Open SOS' };
+  if (fa === 'giveup')
+    return hasReasons ? { go: 'tool', id: 'reasons', label: 'Read my reasons' } : { go: 'lesson', id: SNOWBALL_LESSON, label: 'Why one slip snowballs' };
+  if (late && fa !== 'shame' && fa !== 'angry') return { go: 'tool', id: 'bed', label: 'Go to bed' };
+  return { go: 'journal', feel: NOW_FEEL[fa as RkFeel], label: 'Write it out in my journal' };
 }
 
 /** when a slip was, as the plan's moment: late at night (9 PM to 5 AM) or in the evening (5 PM to 9 PM); other hours,
@@ -187,7 +208,7 @@ export const SLIP_NOW_SAYS: Record<RkFeel, { h: string; t: string }> = {
   },
   okay: {
     h: 'Good. Calm is the best time to learn.',
-    t: 'You can look at this clearly now. One more tap turns it into a plan for next time.',
+    t: 'You can look at this clearly now, and that is how next time gets easier.',
   },
 };
 
@@ -206,9 +227,9 @@ export function feelTrigOf(fam: FeelFam | null | undefined): string | null {
     moment on, from its day k to tk, as talk-log.ts lookBack finds it (it writes one when none was logged). null when there
     is none. */
 export function slipAfterTalk(days: Days, k: DayKey, t: number, tk: DayKey): { k: DayKey; id: string } | null {
-  const since = clockOf(t);
+  const since = talkClockOrd(clockOf(t));
   for (let d = k, n = 0; d <= tk && n < 9; d = addDays(d, 1), n++) {
-    const e = (days[d]?.events || []).find((x) => x.outcome === 'slipped' && (d !== k || !x.time || x.time >= since));
+    const e = (days[d]?.events || []).find((x) => x.outcome === 'slipped' && (d !== k || !x.time || talkClockOrd(x.time) >= since));
     if (e) return { k: d, id: e.id };
   }
   return null;

@@ -277,7 +277,7 @@ const DEEP: Record<StoryDeepId, Omit<StoryDeep, 'id'>> = {
     paras: [
       'Some slips this week came close together. That pattern has a name, and it can be undone.',
       'After a slip, “I already blew it” is the risky thought. Psychologists call it the abstinence violation effect: one slip feels like proof, and proof makes the next one easier.',
-      'The way out is the next good move. Log it, be kind to yourself, and do one small thing: water, a walk, or a text.',
+      'The way out is the next good move. Log it, be kind to yourself, and do one small thing: SOS if it still pulls, or a few lines in your journal.',
     ],
     src: ['larimer'],
     l: 'l3',

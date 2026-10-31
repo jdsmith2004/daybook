@@ -153,11 +153,13 @@ const URGE_PLAN=[
 ];
 const SLIP_STEPS=[
  'Log it in 30 seconds. No hiding.',
- 'One small action within the hour: water, step outside, or text someone.',
+ 'One small thing within the hour: SOS if it still pulls, or a few lines in my journal.',
  'No big decisions tonight, and no "I blew it" verdicts.',
  'Tomorrow: check in as usual. Nothing resets. Ask what the trigger was and what to change.',
  'If I want to, tell my safe person: "I slipped."'
 ];
+/* the starting slip plan once named things outside Daybook. A plan saved with those words gets the new ones (normSettings). */
+const SLIP_WAS={'One small action within the hour: water, step outside, or text someone.':'One small thing within the hour: SOS if it still pulls, or a few lines in my journal.'};
 const SLIP_MAX=8,SLIP_LEN=200;
 const HELP_STEPS=[
  "Find my employer's EAP number (benefits portal or HR) and save it in my phone",
@@ -302,7 +304,7 @@ function normSettings(s){
  /* the starting plan once said "I'm" and "what's". A plan saved with those words gets the new ones, so it still reads as the starting plan. */
  else o.plan=o.plan.map(r=>r&&typeof r==='object'?Object.assign({},r,{when:PLAN_WAS[r.when]||r.when,then:PLAN_WAS[r.then]||r.then}):r);
  /* the slip plan: the person's own steps. Empty is allowed on purpose; a save with no list at all gets the starter plan. */
- o.slipPlan=Array.isArray(o.slipPlan)?cleanList(o.slipPlan,[],SLIP_MAX,SLIP_LEN):SLIP_STEPS.slice();
+ o.slipPlan=Array.isArray(o.slipPlan)?cleanList(o.slipPlan,[],SLIP_MAX,SLIP_LEN).map(x=>SLIP_WAS[x]||x):SLIP_STEPS.slice();
  const t=o.therapist||{};
  o.therapist={names:[0,1,2].map(i=>String((t.names&&t.names[i])||'')),checks:THERAPIST_CRIT.map((_,r)=>[0,1,2].map(c=>!!(t.checks&&t.checks[r]&&t.checks[r][c])))};
  ['goal','why','loop','rule','safePerson','becoming','ask'].forEach(k=>{if(typeof o[k]!=='string')o[k]=d[k]});
@@ -1530,7 +1532,7 @@ const LESSONS=[
     fact:{s:'Study · people quitting smoking · Kirchner et al., 2012',i:[0]}},
    {k:'text',q:1,e:'move',el:'What to do',art:['shield',{}],
     h:'After a slip, protect your confidence and do the next small thing.',
-    b:[bL(['Log it in 30 seconds. Honest, not harsh.','Do one small thing within the hour: water, a walk, a text.','Make no big decisions tonight, and check in tomorrow as usual.']),bP('Nothing resets. One slip is one event.')]},
+    b:[bL(['Log it in 30 seconds. Honest, not harsh.','Do one small thing within the hour: SOS if it still pulls, or a few lines in your journal.','Make no big decisions tonight, and check in tomorrow as usual.']),bP('Nothing resets. One slip is one event.')]},
    {k:'choose',q:1,e:'check',el:'Check it',h:'You slipped last night. This morning, what best keeps it from snowballing?',ask:'Pick the best move.',a:2,
     c:[['Plan a fresh start for next Monday','A clean start feels good, but it turns the days until Monday into throwaways. That is the snowball in disguise.'],
        ['Skip today’s check-in so you do not have to face it','Hiding from it is how one slip turns into many. Showing up today is what stops the snowball.'],
@@ -1646,7 +1648,7 @@ const LESSONS=[
     fact:{s:'Experiment · college women · Adams & Leary, 2007',i:[0]}},
    {k:'text',q:1,e:'move',el:'What to do',art:['icon',{ic:'chat'}],
     h:'After a slip, talk to yourself the way you would to a friend.',
-    b:[bQ('That was hard. It happened. What do I need now?'),bP('Then do the next small thing: water, air, sleep, a text. Kind and practical beats harsh and stuck.')]},
+    b:[bQ('That was hard. It happened. What do I need now?'),bP('Then do the next small thing: SOS, a few lines in your journal, or sleep. Kind and practical beats harsh and stuck.')]},
    {k:'choose',q:1,e:'check',el:'Check it',h:'A friend tells you they slipped again and feel awful. What would help them most?',ask:'Pick the best answer.',a:1,
     c:[['“You need to try harder.”','Many people grew up with that voice. It sounds tough, but the experiment points the other way: kindness helps people get back on track.'],
        ['“That happens. Thanks for telling me. What do you need?”','Yes. Kind and practical. Now say the same thing to yourself after a slip.'],

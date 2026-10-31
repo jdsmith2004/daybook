@@ -52,13 +52,16 @@ export function FlameSky({
   const [pulse, setPulse] = useState(0);
   const top = height - flame - foot;
   const drawn = <BigFlame level={level} size={flame} pulse={pulse} />;
+  /* the gradient's box takes in the whole drawing, which can stand past the edges of a short sky: iOS paints a gradient black when a location is past 1 */
+  const from = Math.min(0, top);
+  const box = Math.max(height, top + flame) - from;
   return (
     <View style={[s.sky, { height }]}>
       {/* the sky lines up with the drawing's own, so the drawing melts into it */}
       <LinearGradient
         colors={sc.sky}
-        locations={sc.at.map((o) => Math.max(0, top + o * flame) / height) as [number, number, number]}
-        style={StyleSheet.absoluteFill}
+        locations={sc.at.map((o) => (top + o * flame - from) / box) as [number, number, number]}
+        style={{ position: 'absolute', left: 0, right: 0, top: from, height: box }}
       />
       {sc.stars
         ? STARS.map(([x, y, r], i) => (

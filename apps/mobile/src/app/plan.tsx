@@ -429,7 +429,7 @@ function Plans({ place }: { place: Place }) {
           icon="heart"
           tone="coral"
           title="If I slip"
-          sub={editSlip ? undefined : 'A slip is data, not a reset. After you log one, these show on Today.'}
+          sub={editSlip ? undefined : 'A slip is data, not a reset. These are yours to change.'}
           onLayout={place('slip')}>
           {editSlip ? (
             <Appear by={4} duration={180} style={{ gap: 12 }}>

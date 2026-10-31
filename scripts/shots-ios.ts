@@ -94,7 +94,7 @@ for (const [file, { screen, theme }] of want) {
     /* it was not running */
   }
   sim('launch', id, BUNDLE, '-shotsScreen', screen);
-  wait(screen === '/' ? 5 : 8);
+  wait(screen === '/' ? 8 : 12);
   sim('io', id, 'screenshot', join(out, file));
   console.log('  ' + file);
 }

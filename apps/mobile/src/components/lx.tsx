@@ -18,7 +18,8 @@ export function Next({ label, onPress, noIcon, off }: { label: string; onPress: 
       style={({ pressed }) => [
         s.next,
         off
-          ? { backgroundColor: c.lip }
+          ? /* no shadow while it is off: on a see-through fill the words themselves would cast one, and read twice */
+            { backgroundColor: c.lip, shadowOpacity: 0 }
           : {
               backgroundColor: c.accent,
               shadowColor: c.accentDeep,

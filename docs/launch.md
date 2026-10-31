@@ -103,9 +103,9 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
 
-  > SOS is now one guided ride that keeps going until the urge passes, with a new shape puzzle and the reason behind
-  > every move. After a slip, Daybook helps you name the feeling underneath, see what it really gave you, and make one
-  > plan for next time. Tips on iPhone open right away, and the web tip opens in one tap.
+  > A new home: your flame big in its sky, and your day as one line from morning to night, with the next step always
+  > obvious. SOS sits in its own circle by Apple's new glass tab bar, one tap away. After a slip, Daybook walks you
+  > through coming back and helps you make one plan for next time, in a single sentence.
 
 - **Description:**
 
@@ -142,8 +142,8 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Copyright:** 2026 Jeff Smith
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
-- **Screenshots:** the six in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
-  (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same six from
+- **Screenshots:** the seven in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
+  (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same seven from
   `store-assets/ios63/` (1206 × 2622) there. Download them from GitHub on whichever computer you are using.
 - **Header and search results** (new in App Store Connect for iOS 27; optional, and reviewed like the rest): the header
   is `store-assets/ios-header/01-header.png` (3840 × 1646, 21:9) and the search card `store-assets/ios-search/01-search.png`
@@ -380,7 +380,7 @@ they would be Play in-app products, and that is a separate piece of work.
    - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
      is free, with nothing to unlock." (no tips on Android).
    - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), the feature graphic
-     `store-assets/play-feature/01-feature.png` (1024 × 500), and the six phone screenshots in `store-assets/play-phone/`
+     `store-assets/play-feature/01-feature.png` (1024 × 500), and the seven phone screenshots in `store-assets/play-phone/`
      (1080 × 1920), all made by `npm run shots`. The Android ones show no tip button, as the Android app has none.
    - **Category:** Health & Fitness. **Contact email:** jeffreydsmith.cs@gmail.com. **Privacy policy:**
      https://d3c9g6kent5bsr.cloudfront.net/privacy.html

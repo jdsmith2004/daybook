@@ -92,7 +92,8 @@ describe('talking it through', () => {
     expect(talkNeedWord(null)).toBe('it');
   });
   it('offers moves for the need, then the two that break the earliest links', () => {
-    expect(talkMoves('close')).toEqual(['text', 'call', 'people', 'away', 'block']);
+    expect(talkMoves('close')).toEqual(['text', 'call', 'sos', 'away', 'block']);
+    expect(talkMoves('relief')[0]).toBe('sos');
   });
 });
 
@@ -305,12 +306,12 @@ describe('moves that held before', () => {
   });
   it('offers the moves that held first, the most held first, then the rest in their usual order', () => {
     const held = { walk: { held: 2, n: 3 }, away: { held: 3, n: 4 }, breathe: { held: 0, n: 2 } };
-    expect(talkMoves('relief', held)).toEqual(['away', 'walk', 'shower', 'breathe', 'write', 'block']);
-    expect(talkMoves('relief', { write: { held: 1, n: 1 }, shower: { held: 1, n: 2 } })).toEqual(['write', 'shower', 'walk', 'breathe', 'away', 'block']);
-    expect(talkMoves('relief')).toEqual(['walk', 'shower', 'breathe', 'write', 'away', 'block']);
+    expect(talkMoves('relief', held)).toEqual(['away', 'walk', 'sos', 'breathe', 'write', 'block']);
+    expect(talkMoves('relief', { write: { held: 1, n: 1 }, walk: { held: 1, n: 2 } })).toEqual(['write', 'walk', 'sos', 'breathe', 'away', 'block']);
+    expect(talkMoves('relief')).toEqual(['sos', 'breathe', 'write', 'walk', 'away', 'block']);
   });
   it('never offers a move for another need just because it held', () => {
-    expect(talkMoves('rest', { walk: { held: 4, n: 4 } })).toEqual(['bed', 'nap', 'shower', 'away', 'block']);
+    expect(talkMoves('rest', { walk: { held: 4, n: 4 } })).toEqual(['bed', 'sos', 'nap', 'away', 'block']);
   });
   it('tags a move that held, and says nothing about one that did not', () => {
     const held = { walk: { held: 3, n: 4 }, away: { held: 1, n: 1 }, breathe: { held: 0, n: 2 } };

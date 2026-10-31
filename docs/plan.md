@@ -3,7 +3,7 @@
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
 **Where it is:** built on branch `claude/lessons-look-790694`, not merged until the owner has seen it on the simulator. Pictures: `docs/lessons-review/`
-(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from).
+(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from; `built-day.png`, `built-night.png` and `built-small-phone.png` are what was built).
 
 **What the owner chose:** A and C together, with two cards kept from C.
 

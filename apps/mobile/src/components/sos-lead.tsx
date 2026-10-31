@@ -17,6 +17,9 @@ import { useStore } from '@/lib/store';
 import { TAB_TOP } from '@/lib/tab-room';
 import { font, useTheme } from '@/lib/theme';
 
+/** how far the words reach above the tab bar, at the top of their bob */
+export const LEAD_ROOM = 48;
+
 /** whether the words show now. One ask at a time: the reminders strip goes first, and it fills the room these words would sit in. iPhone only. */
 export function useSosLeadOn() {
   const { snap, tk, now } = useStore();

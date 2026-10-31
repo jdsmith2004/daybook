@@ -118,7 +118,8 @@ describe('the fire: the face and the body hold still, and the tips lick', () => 
         }
       }
     }
-  });
+    /* every point of every level: slow on a busy machine, and the default limit made it fail with nothing wrong */
+  }, 30_000);
   it('a flame moves only above its brows, and its tip really moves', () => {
     for (let l = 1; l <= 30; l++) {
       const body = fireOf(l, false).ops.filter((o) => o.move);

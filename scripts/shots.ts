@@ -8,7 +8,7 @@
    The iPhone sizes show pictures from the simulator (npm run shots:ios, store-assets/ios-screens), since Apple's glass tab bar exists only there.
    Android and the web draw their own bar, so the Play sizes still run the app live. */
 import { execFileSync } from 'node:child_process';
-import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +31,7 @@ interface Scene {
   scroll?: number;
   zoom?: number;
   top?: number;
+  playTop?: number;
   pills?: string;
 }
 
@@ -117,7 +118,7 @@ for (const sc of scenes) {
     const errs: string[] = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     const q = new URLSearchParams({ size: key });
-    for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll', 'zoom', 'top', 'pills'] as const)
+    for (const k of ['screen', 'screen2', 'screen3', 'caption', 'sub', 'bg', 'theme', 'at', 'scroll', 'zoom', 'top', 'playTop', 'pills'] as const)
       if (sc[k] != null) q.set(k, String(sc[k]));
     if (size.device === 'iphone' || key.startsWith('ios-'))
       (['screen', 'screen2', 'screen3'] as const).forEach((k, i) => {
@@ -143,6 +144,31 @@ for (const sc of scenes) {
     }
     await ctx.close();
   }
+}
+/* the small copies on the About page (public/shots), from the 6.9-inch shots: same names and size, so the page and its links stay as they are */
+const WEB: Record<string, string> = {
+  '01-today': '01-today',
+  '02-sos': '02-sos',
+  '04-grow': '03-grow',
+  '05-pattern': '04-pattern',
+  '06-learn': '05-learn',
+  '07-private': '06-private',
+};
+const webPage = await browser.newPage();
+for (const [from, to] of Object.entries(WEB)) {
+  const src = join(out, 'ios69', from + '.png');
+  if (!existsSync(src)) continue;
+  const url = await webPage.evaluate(async (data) => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + data;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 1300;
+    canvas.getContext('2d')!.drawImage(img, 0, 0, 600, 1300);
+    return canvas.toDataURL('image/webp', 0.8);
+  }, readFileSync(src).toString('base64'));
+  writeFileSync(join(app, 'public/shots', to + '.webp'), Buffer.from(url.split(',')[1], 'base64'));
 }
 await browser.close();
 server.close();

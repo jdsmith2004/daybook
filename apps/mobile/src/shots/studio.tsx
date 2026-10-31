@@ -8,6 +8,7 @@
      at       the moment the demo log is seen at (default DEMO.at); scroll: how far down the screen to start
      zoom     the phone's width as a share of the shot's (default FRAME.width); a big phone runs off the bottom edge
      top      where the phone starts, as a share of the shot's height (default CAPTION.phoneTop)
+     playTop  the same on the Play sizes, where the caption takes more of the height
      pills    short facts under the caption, split by |, each with a check (only true ones: "Free|No account|No ads")
      pic      in place of the live app, a picture of it from the iPhone simulator (scripts/shots-ios.ts), for the iPhone sizes: only there is Apple's
               glass tab bar real (pic2, pic3 go with screen2, screen3)
@@ -178,7 +179,7 @@ function Pills({ list, bg, W, align }: { list: string[]; bg: Bg; W: number; alig
 }
 
 function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: Size; bg: Bg; W: number; H: number; screens: string[]; onReady: () => void }) {
-  const top = H * Number(p.top || CAPTION.phoneTop);
+  const top = H * Number((size.device === 'android' && p.playTop) || p.top || CAPTION.phoneTop);
   const caption = h(
     'div',
     { key: 'cap', style: { position: 'absolute', left: W * CAPTION.side, right: W * CAPTION.side, top: W * CAPTION.top } },
@@ -394,19 +395,17 @@ function Phone({
         },
       }),
     );
+  /* the shadow is its own blurred shape: a big box-shadow comes out in the picture with visible square patches around the phone */
+  const box: CSSProperties = { position: 'absolute', inset: 0, borderRadius: width * f.radius };
   return h(
     'div',
-    {
-      style: {
-        position: 'relative',
-        width,
-        height: sh + bez * 2,
-        borderRadius: width * f.radius,
-        background: f.body,
-        boxShadow: `${FRAME.shadow}, inset 0 0 0 ${Math.max(1, width * 0.006)}px ${f.edge}`,
-      },
-    },
-    h('div', { style: screenBox }, ...children),
+    { style: { position: 'relative', width, height: sh + bez * 2 } },
+    h('div', { style: { ...box, background: FRAME.shadow.color, transform: `translateY(${FRAME.shadow.y}px)`, filter: `blur(${FRAME.shadow.blur}px)` } }),
+    h(
+      'div',
+      { style: { ...box, background: f.body, boxShadow: `inset 0 0 0 ${Math.max(1, width * 0.006)}px ${f.edge}` } },
+      h('div', { style: screenBox }, ...children),
+    ),
   );
 }
 

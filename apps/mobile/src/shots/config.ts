@@ -74,7 +74,7 @@ export const FRAME = {
   picRatio: 2622 / 1206,
   iphone: { bezel: 0.034, radius: 0.15, body: '#12101E', edge: '#3A3550', island: true, statusH: 50, homeBar: true },
   android: { bezel: 0.03, radius: 0.1, body: '#16141F', edge: '#3A3550', island: false, statusH: 34, homeBar: false },
-  shadow: '0 40px 90px rgba(10,6,40,.45)',
+  shadow: { y: 40, blur: 45, color: 'rgba(10,6,40,.45)' },
 };
 
 /** the day and time the demo log is seen at (scenes may set their own time on the same day) */

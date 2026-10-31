@@ -70,7 +70,7 @@ The bundle ID (iOS, in `app.json`) and package name (Android) cannot change afte
 
 `npm run shots` makes every store image from the real app, with no outside tool: the App Store screenshots (iPhone
 6.9-inch), the App Store header and search-results images, and the Google Play screenshots and feature graphic. They land
-in `store-assets/<size>/NN-name.png` at the exact pixel size each store asks for.
+in `store-assets/<size>/NN-name.png` at the exact pixel size each store asks for. It also writes the small copies on the About page (`apps/mobile/public/shots`).
 
 How it works: it builds the web app with `EXPO_PUBLIC_SHOTS=1`, which turns on screenshot mode (`apps/mobile/src/shots`).
 In that mode the app runs on a made-up demo log (`demo.ts`) kept in memory, with the clock starting at the same moment

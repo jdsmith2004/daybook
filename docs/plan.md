@@ -164,8 +164,8 @@ uses it, and other pages may still hit it.
 
 ## Lessons that do not look made by AI (the owner, October 30, 2026)
 
-**Where it is:** chosen, not built. Build it on its own branch and show the owner on the simulator before merging. Pictures: `docs/lessons-review/`
-(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from).
+**Where it is:** built on branch `claude/lessons-look-790694`, not merged until the owner has seen it on the simulator. Pictures: `docs/lessons-review/`
+(`lesson-combo.png` and `lesson-questions.png` are the choice; `lesson-A.png` and `lesson-C.png` are where it came from; `built-day.png`, `built-night.png` and `built-small-phone.png` are what was built).
 
 **What the owner chose:** A and C together, with two cards kept from C.
 
@@ -174,7 +174,8 @@ uses it, and other pages may still hit it.
 - Kept from C: the full sun answer card (dark Next, flame) and the solid violet number card (giant sun yellow number, no sky, no flame, yellow Next).
 - Questions: bright pressable answers with a lip, fixed in place. The flame sits between the question and the answers and says the comment. The right answer turns green and the rest go quiet. A wrong pick lets the person try another, and they can move on after any pick.
 - At night the journey ends at a warm dawn, not bright day.
-- Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
+- How it is built: a palette override through `useTheme` (`PaletteOverride`, `lib/lesson-look.ts`), one flame that glides (`components/lesson-flame.tsx`), and short beats per lesson and card (core `lesson-beats.ts`), with the original words one tap away as More. "Behind this" notes stay as they are.
+- Choices made while building: Back moved up beside the progress line, so Next is full width as in the pictures. More sits just above Next on a card, and in the flame's bubble on a question, so Next never moves. The Next after a wrong pick stays on, as the plan says (the picture greys it). The "Part 1 of 3" line on the cover is gone. A real picture (a chain, a wave, a loop) stays on its card. A safety line stays on its card and never moves to More.
 
 **From the same walk:** what happens when the day is finished was looked at and left as it is: see "When the day is finished" below.
 

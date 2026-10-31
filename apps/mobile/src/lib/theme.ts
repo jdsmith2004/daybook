@@ -150,12 +150,16 @@ const night: Palette = {
 };
 /** a dark scene sets this, so everything inside it (cards, buttons, sheets) takes the night colors */
 export const NightContext = createContext(false);
+/** a screen that paints its own world (a lesson's sky, its sun card): everything inside takes these colors. null goes back to the theme. */
+export const PaletteOverride = createContext<(Palette & { scheme: 'light' | 'dark' }) | null>(null);
 
 export function useTheme(): Palette & { scheme: 'light' | 'dark' } {
   const pref = useThemePref();
   const os = useColorScheme();
   const sys = pref !== 'auto' ? pref : os === 'dark' ? 'dark' : 'light';
   const forced = useContext(NightContext);
+  const over = useContext(PaletteOverride);
+  if (over) return over;
   return forced ? { ...night, scheme: 'dark' } : { ...palettes[sys], scheme: sys };
 }
 

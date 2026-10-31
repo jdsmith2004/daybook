@@ -27,7 +27,7 @@ const FULL_K = 0.48;
 const MID_Y = 0.55;
 
 /** the layers without the picture's own sky and stars, and how close to draw it: [zoom, shift x, shift y] as shares of the box */
-export function bigLayers(level: number): { layers: EmblemLayers; fire: Fire; zoom: number; dx: number; dy: number } | null {
+export function bigLayers(level: number, noLand?: boolean): { layers: EmblemLayers; fire: Fire; zoom: number; dx: number; dy: number } | null {
   const l = emblemLayers(level, true);
   if (!l) return null;
   /* the spark, the kindling and the campfire are drawn smaller than the rest: closer, up to the campfire's size */
@@ -41,7 +41,7 @@ export function bigLayers(level: number): { layers: EmblemLayers; fire: Fire; zo
       : x;
   const clean = (x: string) =>
     fine(
-      x
+      (noLand ? x.replace(/<path d="M-2 [^"]*V122H-2Z" fill="#[0-9A-Fa-f]{6}"\/>|<rect x="-2"[^>]*\/>|<ellipse cx="60" cy="108"[^>]*\/>/g, '') : x)
         .replace(/<rect x="0" y="0" width="120" height="120" fill="url\(#em\w+sk\)"\/>/, '')
         .replace(/<circle cx="[\d.]+" cy="[\d.]+" r="[\d.]+" fill="#fff" opacity="[\d.]+"\/>/g, ''),
     );
@@ -57,14 +57,38 @@ export function bigLayers(level: number): { layers: EmblemLayers; fire: Fire; zo
   const whole = fireOf(level, !spark);
   /* embers keep their small size however close the figure is drawn */
   const fire = zoom > 1 ? { ...whole, embers: whole.embers.map((e) => ({ ...e, r: (e.r / zoom) * 1.5 })) } : whole;
+  /* on another sky: the glow has no frame to fade into, so it stays whole and clear of the drawing's edges, and the figure stands in the middle */
+  if (noLand) {
+    const cut = l.glow.indexOf('</defs>');
+    layers.glow =
+      l.glow.slice(0, cut) +
+      l.glow
+        .slice(cut)
+        .replace(/<g mask="url\(#\w+\)">/, '<g>')
+        .replace(/(<circle cx="[\d.]+" cy="([\d.]+)" r=")([\d.]+)"/, (_, a: string, y: string, r: string) => a + Math.min(+r, +y, 120 - +y) + '"');
+    return { layers, fire, zoom, dx: 0.5 - l.at.x, dy: 0.5 - l.at.y };
+  }
   return zoom > 1 ? { layers, fire, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, fire, zoom, dx: 0, dy: 0 };
 }
 
-export const BigFlame = memo(function BigFlame({ level, size, pulse = 0, label }: { level: number; size: number; pulse?: number; label?: string }) {
+export const BigFlame = memo(function BigFlame({
+  level,
+  size,
+  pulse = 0,
+  label,
+  noLand,
+}: {
+  level: number;
+  size: number;
+  pulse?: number;
+  label?: string;
+  /** on a sky that is not its own (a lesson): without the drawing's own hills, which would not match */
+  noLand?: boolean;
+}) {
   const still = useReducedMotion();
   const { snap } = useStore();
   const grad = !!gradOf(snap.settings);
-  const b = useMemo(() => bigLayers(level), [level]);
+  const b = useMemo(() => bigLayers(level, noLand), [level, noLand]);
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;

@@ -239,7 +239,7 @@ export function BigNumber({ n, s }: { n: string | number; s?: string }) {
 }
 
 /* a whole number counts up from zero; anything else (a word, "1 in 4") shows as it is */
-function useCount(n: string | number) {
+export function useCount(n: string | number) {
   const to = /^\d{1,6}$/.test(String(n)) ? Number(n) : null;
   const still = useReducedMotion();
   const [x, setX] = useState(0);

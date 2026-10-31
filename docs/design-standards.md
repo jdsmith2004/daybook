@@ -97,10 +97,14 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
   ride's It passed, the 10-minute pause's It passed (from SOS or on its own) and Already happened, I rode it out all use
   `RodeOut` (`components/rode-out.tsx`): the flame with its burst, confetti, how long it took, how many have been ridden
   out, what helped (the moves of an SOS, or what you did) and what set it off, each one tap or none.
-- **A slip always reaches the comeback.** I slipped in SOS, the pause, Already happened, the entry sheet and an eyes-open
-  go-ahead in Talk it through all go on to Rekindle (`app/log.tsx`), so every one ends warm, with the flame and a plan for
-  next time. A slip from the entry sheet or the go-ahead's look back starts at how it feels now, with no hold. SOS opens
-  over Rekindle (`SosPill over`, "Open SOS"), and its X and its ending come back to the same page.
+- **A slip always reaches the comeback, from its first page.** Every way in starts at the hold: I slipped in SOS, the pause, Already
+  happened, the entry sheet (a new slip, or an entry changed to Slipped) and "I went ahead" in Talk it through's look back. The hold
+  comes before any question, because hope comes first. SOS opens over Rekindle (`SosPill over`, "Open SOS"), and its X and its ending
+  come back to the same page.
+- **Next time is a plan already made, and the plan is Daybook.** Nobody is asked to think of something at their lowest moment. The plan
+  is one sentence from what was going on ("... I will open SOS"), one tap to keep, with "Choose another" on its own page. When a plan
+  comes back on Today, a tap opens its tool. After a slip, one door for the next hour (core `slipNext`), never a list of things to try,
+  and never water or a step outside: name Daybook's tools first, and what is outside only where it is the true answer (a person, sleep).
 - **Done is always in reach.** On an ending with a long card, Done is pinned at the bottom (`SceneFrame`'s `pin`) while
   the card scrolls, on the smallest phone too. Confetti is clipped to the screen, so the page never scrolls sideways.
 - **A long run is never "down to embers".** After a slip, the words lead with what is permanent ("Your 39 days are yours

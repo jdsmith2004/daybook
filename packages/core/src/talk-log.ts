@@ -13,10 +13,14 @@ import {
   talkAfterSlip,
   talkById,
   talkClock,
+  talkClockOrd,
   talkDue,
   talkPlanLine,
   talksOf,
+  talkMoveDoor,
   talkUntilLine,
+  TALK_OPEN_FOR,
+  type CareDoor,
   type Talk,
   type TalkAfter,
   type TalkHard,
@@ -70,11 +74,11 @@ export function lookBack(days: Days, id: string, after: Omit<TalkAfter, 't'>, tk
     ),
   );
   if (after.went) {
-    const since = clockOf(talk.t);
+    const since = talkClockOrd(clockOf(talk.t));
     const between: DayKey[] = [];
     for (let k = x.k; k <= tk && between.length < 8; k = addDays(k, 1)) between.push(k);
     if (between.indexOf(tk) < 0) between.push(tk);
-    const logged = between.some((k) => (out[k]?.events || []).some((e) => e.outcome === 'slipped' && (k !== x.k || !e.time || e.time >= since)));
+    const logged = between.some((k) => (out[k]?.events || []).some((e) => e.outcome === 'slipped' && (k !== x.k || !e.time || talkClockOrd(e.time) >= since)));
     const same = tk <= x.k;
     if (!logged)
       out = addEvent(
@@ -87,6 +91,36 @@ export function lookBack(days: Days, id: string, after: Omit<TalkAfter, 't'>, tk
       ).days;
   }
   return out;
+}
+
+/** "I went ahead" was a mis-tap: the look back is open again. (The slip it wrote, if any, is taken back by removeEvent.) */
+export function lookUndo(days: Days, id: string, now = Date.now()): Days {
+  const x = talkById(days, id);
+  return x && x.talk.a ? saveTalk(days, x.k, { ...x.talk, a: null }, now) : days;
+}
+
+/** the go-ahead the slip entry on day k (clock time) came after: an eyes-open choice from the last three days, not said no to.
+    Whether it was already answered by "I went ahead" or not. null when there is none. */
+export function goAheadBefore(days: Days, k: DayKey, time: string | null | undefined, now: number): { k: DayKey; talk: Talk } | null {
+  const all = talksOf(days);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const { k: tk0, talk: t } = all[i];
+    if (t.p !== 'open' || now - t.t >= TALK_OPEN_FOR || (t.a && !t.a.went) || tk0 > k) continue;
+    if (tk0 === k && time && talkClockOrd(time) < talkClockOrd(clockOf(t.t))) continue;
+    return all[i];
+  }
+  return null;
+}
+/** a slip held through Rekindle answers the go-ahead before it, so Today never asks "Did you go ahead?" about a slip already
+    looked at. The slip is in the log already, so lookBack writes no other. */
+export function settleGoAhead(days: Days, k: DayKey, time: string | null | undefined, tk: DayKey, now = Date.now()): Days {
+  const x = goAheadBefore(days, k, time, now);
+  return x && !x.talk.a ? lookBack(days, x.talk.id, { went: true, f: [], g: null, c: [] }, tk, now) : days;
+}
+/** what a go-ahead really gave, said after the hold (0 to 10) */
+export function lookBackGave(days: Days, id: string, g: number, now = Date.now()): Days {
+  const x = talkById(days, id);
+  return x && x.talk.a ? saveTalk(days, x.k, { ...x.talk, a: { ...x.talk.a, g } }, now) : days;
 }
 
 /** the hard hours around now (from three days back to tomorrow), as times, for talkDue */
@@ -157,23 +191,32 @@ export function talkPlanNow(
   st: Settings | null,
   tk: DayKey,
   now: number,
-): { id: string; due: 'plan' | 'waiting'; head: string; line: string } | null {
+): { id: string; due: 'plan' | 'waiting'; head: string; line: string; door: CareDoor | null } | null {
   const d = talkDueNow(days, st, tk, now);
   if (!d) return null;
   const t = d.talk;
-  if (d.due === 'waiting') return { id: t.id, due: 'waiting', head: 'You decide at ' + talkClock(t.at!) + '.', line: talkUntilLine(t) };
+  if (d.due === 'waiting') return { id: t.id, due: 'waiting', head: 'You decide at ' + talkClock(t.at!) + '.', line: talkUntilLine(t), door: null };
   if (d.due !== 'plan') return null;
   if (talkForNext(t)) {
     const m = talkNextMoment(t);
     if (now < m.start - HOUR || now >= m.end) return null;
-    return { id: t.id, due: 'plan', head: talkNextHead(m.mo), line: talkPlanLine(t) };
+    return { id: t.id, due: 'plan', head: talkNextHead(m.mo), line: talkPlanLine(t), door: talkMoveDoor(t.m) };
   }
   if (now >= talkMomentAt(t) + 2 * HOUR) return null;
-  return { id: t.id, due: 'plan', head: 'Your plan', line: talkPlanLine(t) };
+  return { id: t.id, due: 'plan', head: 'Your plan', line: talkPlanLine(t), door: talkMoveDoor(t.m) };
 }
 /** the words over a plan made after a slip, at its moment */
 export const talkNextHead = (mo: 'late' | 'evening' | null): string =>
   mo === 'late' ? 'Your plan for tonight' : mo === 'evening' ? 'Your plan for this evening' : 'Your plan for next time';
+
+/** when a plan made after a slip comes back, as it reads on the page that makes it: "tonight", "tomorrow evening", "tomorrow" */
+export function talkBackWhen(mo: 'late' | 'evening' | null, now: number): string {
+  if (!mo) return 'tomorrow';
+  const start = new Date(talkNextMoment({ t: now, mo }).start);
+  /* in the small hours, the night to come is tomorrow's, the way a person says it */
+  const later = start.toDateString() !== new Date(now).toDateString() || new Date(now).getHours() < 5;
+  return mo === 'late' ? (later ? 'tomorrow night' : 'tonight') : later ? 'tomorrow evening' : 'this evening';
+}
 
 /** the plan made after a slip whose moment is still to come, for the note at its start (nudges.ts): only the latest
     talk-through, and only while it is unanswered and no slip has been logged since. Null when there is none. */

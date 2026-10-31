@@ -17,7 +17,7 @@
    no slip in mind. No signs, no research, no paths: what usually makes these hours hard (the needs), what to do instead
    (the moves), and the moment (their start, while it is still ahead), saved as a change plan (marked pr, so it never
    counts as a sign of when it gets hard).
-   (Right after a slip, the comeback in log.tsx makes its own if-then plan from the feeling named: core slip.ts.)
+   (Right after a slip, the comeback in log.tsx makes its own if-then plan from what was going on: core slip.ts.)
    Making a plan earns its points as always; they show on Today, not here. */
 import {
   gameCompute,
@@ -25,9 +25,7 @@ import {
   messageTexts,
   newTalk,
   saveTalk,
-  TALK_AFTER_FEEL,
   TALK_CARDS,
-  TALK_COST,
   TALK_FEEL,
   TALK_HARD_MOMENT,
   TALK_HARD_NEEDS,
@@ -44,12 +42,12 @@ import {
   talkCard,
   talkClock,
   talkEvidence,
-  talkEvidenceLine,
   talkHeld,
   talkHardMoment,
   talkHeldTag,
   talkMomentsNow,
   talkMomentTime,
+  talkMoveDoor,
   talkMoveName,
   talkMoveWords,
   talkMoves,
@@ -92,7 +90,7 @@ import { TalkArtView } from '@/components/talk-art';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
-import { close, closeAll } from '@/lib/nav';
+import { close, closeAll, openCare } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { play } from '@/lib/sound';
@@ -118,9 +116,6 @@ type Step =
   | 'oReady'
   | 'done'
   | 'lWent'
-  | 'lFeel'
-  | 'lGave'
-  | 'lCost'
   | 'lEnd';
 
 const NEED_TONE: Record<TalkNeed, string> = { relief: 'sky', reward: 'sun', escape: 'coral', rest: 'violet', close: 'mint', bored: 'accent' };
@@ -148,6 +143,8 @@ const MOVE_IC: Record<TalkMove, string> = {
   tell: 'chat',
   move: 'bolt',
   light: 'sun',
+  sos: 'life',
+  journal: 'pencil',
 };
 
 export default function TalkIt() {
@@ -196,14 +193,6 @@ export default function TalkIt() {
   const [ci, setCi] = useState(0);
   const [remind, setRemind] = useState(remindersOffered);
   const [reminded, setReminded] = useState(false);
-  const [after, setAfter] = useState<{ went: boolean; f: string[]; g: number | null; c: string[]; fx: string[]; cx: string[] }>({
-    went: false,
-    f: [],
-    g: null,
-    c: [],
-    fx: [],
-    cx: [],
-  });
   /* the step where an answer in the person's own words is being typed */
   const [own, setOwn] = useState<Step | null>(null);
   /* going ahead is saved as soon as it is chosen (it waits for a look back from then on) */
@@ -305,18 +294,28 @@ export default function TalkIt() {
     setDir(1);
     setStep('done');
   };
-  /* the slip a go-ahead looked back on, and the points before it: the comeback goes on from it */
-  const [slipped, setSlipped] = useState<{ k: string; id: string; pts0: number } | null>(null);
-  const finishLook = (a: typeof after) => {
-    const pts0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
-    const days = update((s0) => ({ ...s0, days: lookBack(s0.days, talk.id, a, tk) })).days;
-    const sl = a.went ? slipAfterTalk(days, day, talk.t, tk) : null;
-    setSlipped(sl ? { ...sl, pts0 } : null);
-    buzz(a.went ? 'save' : 'lit');
-    if (!a.went) play('chime');
+  /* "It held", or "I chose something else": a calm move, and the good ending */
+  const choseOther = () => {
+    update((s0) => ({ ...s0, days: lookBack(s0.days, talk.id, { went: false, f: [], g: null, c: [] }, tk) }));
+    buzz('lit');
+    play('chime');
     setHist([]);
     setDir(1);
     setStep('lEnd');
+  };
+  /* "I went ahead": saved at once, so a closed screen loses nothing, and straight on to the hold: the first thing after a slip
+     is always "you are still good". A slip already logged since the talk-through is the one looked back on. */
+  const wentAhead = () => {
+    const pts0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
+    const had = slipAfterTalk(snap.days, day, talk.t, tk);
+    const days = update((s0) => ({ ...s0, days: lookBack(s0.days, talk.id, { went: true, f: [], g: null, c: [] }, tk) })).days;
+    const sl = had || slipAfterTalk(days, day, talk.t, tk);
+    buzz('save');
+    if (!sl) return closeAll();
+    router.replace({
+      pathname: '/log',
+      params: { date: sl.k, evId: sl.id, outcome: 'slipped', from: 'talk', talk: talk.id, made: had ? '0' : '1', pts0: String(pts0) },
+    });
   };
 
   let body: React.ReactNode;
@@ -845,6 +844,8 @@ export default function TalkIt() {
   } else if (step === 'done') {
     const wait = talk.p === 'wait';
     const texting = talk.m.indexOf('text') >= 0;
+    /* a plan for right now, or something to do until the time to decide, opens its tool from here */
+    const door = !texting && (wait || talk.mo === 'now') ? talkMoveDoor(talk.m) : null;
     body = (
       <>
         <Finish
@@ -870,7 +871,8 @@ export default function TalkIt() {
         {/* a plan to text someone starts with a text already written */}
         <Dock>
           {texting ? <SafeTextButton body={messageTexts(st)[1]} /> : null}
-          <Button label="Done" kind={texting ? 'ghost' : 'primary'} onPress={closeAll} />
+          {door ? <Button label={door.label} onPress={() => openCare(door)} /> : null}
+          <Button label="Done" kind={texting || door ? 'ghost' : 'primary'} onPress={closeAll} />
         </Dock>
       </>
     );
@@ -901,162 +903,21 @@ export default function TalkIt() {
             icon={change ? 'check' : 'sun'}
             tone={change ? 'mint' : 'violet'}
             title={change ? 'Yes, it held' : 'Yes, I went ahead'}
-            onPress={() => {
-              if (change) finishLook({ ...after, went: false });
-              else {
-                setAfter({ ...after, went: true });
-                go('lFeel');
-              }
-            }}
+            onPress={change ? choseOther : wentAhead}
           />
           <Answer
             icon={change ? 'leaf' : 'check'}
             tone={change ? 'violet' : 'mint'}
             title={change ? 'No, I went ahead' : 'No, I chose something else'}
-            onPress={() => {
-              if (change) {
-                setAfter({ ...after, went: true });
-                go('lFeel');
-              } else finishLook({ ...after, went: false });
-            }}
+            onPress={change ? wentAhead : choseOther}
           />
         </Dock>
       </>
     );
-  } else if (step === 'lFeel') {
-    body = (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Right now, how do you feel?
-        </T>
-        <T style={s.c} tone="muted">
-          Just notice. Pick any that fit.
-        </T>
-        {own === 'lFeel' ? (
-          ownField('Like: numb', (t) => setAfter({ ...after, fx: addOwn(after.fx, t) }))
-        ) : (
-          <Dock>
-            <ChipWrap>
-              {TALK_AFTER_FEEL.map(([k, w]) => (
-                <AnswerChip key={k} label={w} tone="violet" on={after.f.indexOf(k) >= 0} onPress={() => setAfter({ ...after, f: toggle(after.f, k) })} />
-              ))}
-              {after.fx.map((t) => (
-                <AnswerChip key={'own' + t} label={t} tone="violet" on onPress={() => setAfter({ ...after, fx: after.fx.filter((x) => x !== t) })} />
-              ))}
-              {after.fx.length < 3 ? <OwnChip onPress={() => setOwn('lFeel')} /> : null}
-            </ChipWrap>
-            {next('lGave', after.f.length + after.fx.length > 0)}
-          </Dock>
-        )}
-      </>
-    );
-  } else if (step === 'lGave') {
-    body = (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          {talk.n ? 'How much ' + needWord + ' did it actually give you?' : 'How much of what you needed did it actually give you?'}
-        </T>
-        {talk.e != null ? (
-          <T style={s.c} tone="muted">
-            Before, you expected {talk.e} out of 10.
-          </T>
-        ) : null}
-        <View style={s.middle}>
-          <SliderValue big value={after.g} caption="out of 10, really" hint="Slide below to answer" />
-        </View>
-        <Dock>
-          <Slider label="How much it really gave" value={after.g} lo="nothing" hi="everything" readout={false} onChange={(n) => setAfter({ ...after, g: n })} />
-          {next('lCost', after.g != null)}
-        </Dock>
-      </>
-    );
-  } else if (step === 'lCost') {
-    body = (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          What did it cost?
-        </T>
-        <T style={s.c} tone="muted">
-          Not to judge it. Just to see it.
-        </T>
-        {own === 'lCost' ? (
-          ownField('Like: a good morning', (t) => setAfter({ ...after, c: after.c.filter((x) => x !== 'none'), cx: addOwn(after.cx, t) }))
-        ) : (
-          <Dock>
-            <ChipWrap>
-              {TALK_COST.map(([k, w]) => (
-                <AnswerChip
-                  key={k}
-                  label={w}
-                  tone="sun"
-                  on={after.c.indexOf(k) >= 0}
-                  onPress={() =>
-                    setAfter({
-                      ...after,
-                      c:
-                        k === 'none'
-                          ? ['none']
-                          : toggle(
-                              after.c.filter((x) => x !== 'none'),
-                              k,
-                            ),
-                      cx: k === 'none' ? [] : after.cx,
-                    })
-                  }
-                />
-              ))}
-              {after.cx.map((t) => (
-                <AnswerChip key={'own' + t} label={t} tone="sun" on onPress={() => setAfter({ ...after, cx: after.cx.filter((x) => x !== t) })} />
-              ))}
-              {after.cx.length < 3 ? <OwnChip onPress={() => setOwn('lCost')} /> : null}
-            </ChipWrap>
-            {after.c.length + after.cx.length ? (
-              <Appear by={10} duration={220}>
-                <Button label="Next" onPress={() => finishLook(after)} />
-              </Appear>
-            ) : (
-              <View style={s.btnSpace} />
-            )}
-          </Dock>
-        )}
-      </>
-    );
   } else {
-    /* lEnd */
-    const went = after.went;
+    /* lEnd: it held, or something else was chosen */
     const ev = talkEvidence(snap.days);
-    body = went ? (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Thank you for looking at it honestly.
-        </T>
-        <View style={s.middle}>
-          {ev.rows.length ? <Evidence rows={ev.rows} /> : null}
-          <Appear delay={300} by={8}>
-            <T style={s.c}>{talkEvidenceLine(ev)}</T>
-          </Appear>
-          <Appear delay={460} by={8}>
-            <T style={[s.c, s.warm]}>It is in your log as a slip: data, not a reset. Nothing you built is gone.</T>
-          </Appear>
-        </View>
-        <Dock>
-          {slipped ? (
-            <Button
-              label="Next"
-              onPress={() =>
-                /* on into Rekindle at the feeling before it: the slip is saved already, so there is nothing to hold */
-                router.replace({
-                  pathname: '/log',
-                  params: { date: slipped.k, evId: slipped.id, outcome: 'slipped', step: 'slNow', from: 'talk', pts0: String(slipped.pts0) },
-                })
-              }
-            />
-          ) : (
-            <Button label="Done" onPress={closeAll} />
-          )}
-        </Dock>
-      </>
-    ) : (
+    body = (
       <>
         <Finish
           level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
@@ -1079,7 +940,7 @@ export default function TalkIt() {
 
   /* the progress dots follow the questions of the part you are in (the closing screens have none) */
   const flow: Step[] = look
-    ? ['lWent', 'lFeel', 'lGave', 'lCost']
+    ? []
     : prep
       ? ['need', 'cMoves', 'cWhen']
       : [
@@ -1111,42 +972,6 @@ export default function TalkIt() {
   );
 }
 
-/* expected against what it really gave, each time looked back on, with the numbers on the bars */
-function Evidence({ rows }: { rows: { e: number; g: number }[] }) {
-  const c = useTheme();
-  const H = 96;
-  const bar = (v: number, color: string, delay: number, faint?: boolean) => (
-    <View style={s.evCol}>
-      <Text style={[s.evN, { color: c.muted }]}>{v}</Text>
-      <Appear delay={delay} by={0} style={[s.evBar, { height: Math.max(4, (v / 10) * H), backgroundColor: color, opacity: faint ? 0.55 : 1 }]}>
-        <View />
-      </Appear>
-    </View>
-  );
-  return (
-    <View style={[s.ev, { backgroundColor: c.surface }]}>
-      <View style={s.evBars}>
-        {rows.map((r, i) => (
-          <View key={i} style={s.evPair}>
-            {bar(r.e, c.coral, 150 + i * 90, true)}
-            {bar(r.g, c.sun, 230 + i * 90)}
-          </View>
-        ))}
-      </View>
-      <View style={s.evKey}>
-        <View style={[s.evSw, { backgroundColor: c.coral, opacity: 0.55 }]} />
-        <T v="small" tone="muted">
-          expected
-        </T>
-        <View style={[s.evSw, { backgroundColor: c.sun, marginLeft: 12 }]} />
-        <T v="small" tone="muted">
-          what it gave
-        </T>
-      </View>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
@@ -1163,12 +988,4 @@ const s = StyleSheet.create({
   /* one card on the research page: its heading, its picture, its words, with room between them */
   readItem: { alignSelf: 'stretch', gap: 10, marginTop: 16 },
   planT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
-  ev: { alignSelf: 'stretch', padding: 16, borderRadius: 20, gap: 10 },
-  evBars: { height: 122, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 18 },
-  evCol: { alignItems: 'center', gap: 4 },
-  evN: { fontFamily: font.bodyBold, fontSize: 13, fontVariant: ['tabular-nums'] },
-  evPair: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  evBar: { width: 22, borderRadius: 7 },
-  evKey: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  evSw: { width: 12, height: 12, borderRadius: 4 },
 });

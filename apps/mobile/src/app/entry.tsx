@@ -1,6 +1,6 @@
 /* One entry: add one (rode it out or slipped, and when), or open one to change what happened, the time, what set it off, what
-   helped, a small step after a slip, a note, or delete it. A slip added here goes on to Rekindle at how it feels now, with
-   no hold (docs/design-standards.md: a slip always reaches the comeback). Ported from the legacy sheetEvent and its actions. */
+   helped, a small step after a slip, a note, or delete it. A slip added here, or an entry changed to a slip, goes on to Rekindle
+   from the hold (docs/design-standards.md: a slip always reaches the comeback). Ported from the legacy sheetEvent and its actions. */
 import {
   addEvent,
   addOption,
@@ -17,6 +17,8 @@ import {
   patchEvent,
   phaseOf,
   removeEvent,
+  slipNext,
+  urNight,
   urSosLines,
   whenEntry,
   whenFromEntry,
@@ -38,6 +40,7 @@ import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { buzz } from '@/lib/feel';
+import { openCare } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
@@ -77,7 +80,7 @@ export default function Entry() {
       buzz('save');
       if (v === 'slipped') {
         closeSheet();
-        router.push({ pathname: '/log', params: { date: at.key, evId: nid, outcome: 'slipped', step: 'slNow', from: 'entry', pts0: String(pts0) } });
+        router.push({ pathname: '/log', params: { date: at.key, evId: nid, outcome: 'slipped', from: 'entry', pts0: String(pts0) } });
         return;
       }
       setDate(at.key);
@@ -151,6 +154,7 @@ export default function Entry() {
     );
   };
   const sos = urSosLines(e);
+  const door = slipNext(e.fa, urNight(new Date(now).getHours()), (st.reasons || []).length > 0);
   return (
     <SheetFrame title={(rode ? 'Rode it out' : 'Slipped') + (e.time ? ' · ' + fmtClock(e.time) : '')} scrollRef={scroll}>
       {fresh ? (
@@ -177,10 +181,13 @@ export default function Entry() {
           on={!rode}
           onPress={() => {
             if (!rode) return;
-            /* a slip has no pause or "what I did", so they go; a mis-tap gets them back with Undo */
-            const was = { outcome: e.outcome, paused: e.paused, did: e.did, recovered: e.recovered };
+            /* a slip has no pause or "what I did", so they go; a mis-tap gets them back with Undo on the hold */
+            const was = { paused: e.paused, did: e.did, recovered: e.recovered };
+            const pts0 = gameCompute(snap.days, st, snap.reviews, tk).pts;
             patch({ outcome: 'slipped', paused: null, did: null });
-            if (e.paused != null || e.did) say('Changed to Slipped.', () => patch(was));
+            buzz('save');
+            closeSheet();
+            router.push({ pathname: '/log', params: { date, evId: e.id, outcome: 'slipped', from: 'change', was: JSON.stringify(was), pts0: String(pts0) } });
           }}
         />
       </View>
@@ -229,10 +236,18 @@ export default function Entry() {
       ) : (
         <View style={[s.care, { backgroundColor: c.sunSoft }]}>
           <T>Nothing resets. One small step within the hour keeps the snowball from starting.</T>
-          <T v="small" tone="muted">
-            Water, step outside, or text someone.
-          </T>
           <View style={s.chips}>
+            {e.recovered ? null : (
+              <Chip
+                label={door.label}
+                on={false}
+                onPress={() => {
+                  patch({ recovered: true });
+                  closeSheet();
+                  openCare(door);
+                }}
+              />
+            )}
             <Chip
               label={e.recovered ? '✓ I did one small thing' : 'I did one small thing'}
               on={!!e.recovered}

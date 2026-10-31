@@ -14,7 +14,7 @@ import { addDays, feelAt, fmtDate, jnDayLabel, jnEdit, jnLogs, jnRemove, jnStart
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Keyboard,
@@ -78,7 +78,7 @@ type Step =
   | { k: 'write'; id: string; fresh: boolean };
 
 export default function JournalScreen() {
-  const params = useLocalSearchParams<{ pane?: string }>();
+  const params = useLocalSearchParams<{ pane?: string; feel?: string; new?: string }>();
   /* the Pattern tab was called Journal until October 2026: an old link to one of its sections goes there */
   useEffect(() => {
     if (params.pane) router.replace({ pathname: '/pattern', params: { pane: params.pane } });
@@ -86,18 +86,20 @@ export default function JournalScreen() {
   if (params.pane) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Journal />
+      <Journal feel={params.feel} fresh={params.new === '1'} />
     </GestureHandlerRootView>
   );
 }
 
-function Journal() {
+/* feel: opened from a door after a slip, where the feeling was just named, so it opens on the page, ready to write. fresh: it
+   opens on the four colors, for a new entry. */
+function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
   const { height: H, width: W } = useWindowDimensions();
   const reduce = useReducedMotion();
   const sos = useSos();
   const { snap, tk, update } = useStore();
   const [start] = useState(takeJournalStart);
-  const [step, setStep] = useState<Step>({ k: 'list' });
+  const [step, setStep] = useState<Step>({ k: fresh ? 'quad' : 'list' });
   /* where the list was (the day picked, the filter, how far down), so coming back from an entry lands in the same place */
   const place = useRef<Place>({ on: tk, filter: 'all', y: 0 });
 
@@ -154,6 +156,20 @@ function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [close],
   );
+
+  const opened = useRef(false);
+  useLayoutEffect(() => {
+    if (opened.current || !feel) return;
+    opened.current = true;
+    let id = '';
+    update((s0) => {
+      const r0 = jnStart(s0.journal || {}, tk, feel);
+      id = r0.id;
+      return { ...s0, journal: r0.jn };
+    });
+    setStep({ k: 'write', id, fresh: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ---------- the steps ---------- */
   const startEntry = (q: (typeof FEEL_QUADS)[number], at?: FeelFrom) => setStep({ k: 'grid', start: { r: q.r, c: q.c }, from: at, id: null });

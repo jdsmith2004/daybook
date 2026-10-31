@@ -62,7 +62,13 @@ describe('a slip, and the day after', () => {
   /* Day 1 October 18: the slip ends a 3-day run, so there is no run question */
   const short = normSettings({ ...st, day1: '2026-10-18' });
   it('the night of it: one small thing, and the card goes once it is done', () => {
-    expect(pickMoment(d, st, {}, '2026-10-21', at(21, 23, 30)).card).toMatchObject({ k: 'slip-day', h: 'Logged. That took honesty.', go: 'small' });
+    const card = pickMoment(d, st, {}, '2026-10-21', at(21, 23, 30)).card;
+    expect(card).toMatchObject({ k: 'slip-day', h: 'Logged. That took honesty.', go: 'small', alt: 'I did something else' });
+    /* one of Daybook's own doors, and nothing from outside it */
+    expect(card.door).toMatchObject({ go: 'tool', id: 'bed' });
+    expect(card.btn).toBe(card.door!.label);
+    expect(card.p).not.toMatch(/water|step outside|text/i);
+    expect(pickMoment(d, st, {}, '2026-10-21', at(21, 14)).card.door).toMatchObject({ go: 'journal' });
     const done = withDay(
       d,
       '2026-10-21',

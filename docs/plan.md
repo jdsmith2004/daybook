@@ -2,7 +2,9 @@
 
 ## The shape of the day (the owner, October 31, 2026)
 
-**Where it is:** the owner likes it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+**On hold (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). That rules out the sleeping flame on Today, the "Cannot sleep?" row and the stop renamed Goodnight, and it may cover more of this. Ask the owner which parts still stand before building any of it.
+
+**Where it is:** the owner liked it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
 
 The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
 

@@ -159,37 +159,45 @@ const REACH = { full: 26, small: 30, tiny: 32 } as const;
 /* each layer inside the last moves less and a little later, so the colors slide over each other */
 const LAYER = [
   { share: 1, phase: 0 },
-  { share: 0.78, phase: 1.15 },
-  { share: 0.58, phase: 2.3 },
+  { share: 0.78, phase: 0.7 },
+  { share: 0.58, phase: 1.4 },
 ];
 /** how the phase changes with height: the wave travels up */
-const RISE_PHASE = 0.07;
+const RISE_PHASE = 0.035;
 /** how far apart two tips' phases are, in radians (the golden angle, so no two line up): tips side by side move on their own */
 const TIP_PHASE = 2.399;
 /* how a flame moves for each of the forms that are flames: [across, along, speed]. Small ones flicker faster. */
 const FLAME_MOTION: Record<'full' | 'small' | 'tiny', [number, number, number]> = {
-  tiny: [5, 11, 1.25],
-  small: [5.5, 12, 1.15],
-  full: [5, 13, 1],
+  tiny: [4, 8.5, 1.15],
+  small: [4.5, 9, 1.08],
+  full: [4, 9.5, 1],
 };
 
-/** which tip of an outline each of its points belongs to: the tips are the corners higher than the corners on each side of them */
-function tipsOf(local: number[]): number[] {
-  const corners: [number, number][] = [];
-  for (let i = 0; i < local.length - 2; i += 6) corners.push([local[i], local[i + 1]]);
-  const tips = corners.filter((c, i) => c[1] < corners[(i + 1) % corners.length][1] && c[1] < corners[(i + corners.length - 1) % corners.length][1]);
+/** which tongue of an outline each of its points belongs to. A tongue's tip is a corner higher than the corners on each side of it, and the tongue runs along the
+    outline from the low corner before its tip to the low corner after it, so both its edges move as one (by nearness, an edge split in two and kinked at the shoulder). */
+export function tipsOf(local: number[]): number[] {
+  const corners: number[] = [];
+  for (let i = 0; i < local.length - 2; i += 6) corners.push(local[i + 1]);
+  const n = corners.length;
+  const tips = corners.flatMap((y, i) => (y < corners[(i + 1) % n] && y < corners[(i + n - 1) % n] ? [i] : []));
+  /* the low corner after each tip, on the way to the next one */
+  const valleys = tips.map((t, k) => {
+    const end = k + 1 < tips.length ? tips[k + 1] : tips[0] + n;
+    let low = t + 1;
+    for (let c = t + 1; c < end; c++) if (corners[c % n] > corners[low % n]) low = c;
+    return low % n;
+  });
   const of: number[] = [];
-  for (let i = 0; i < local.length; i += 2) {
-    let best = 0,
-      most = Infinity;
-    tips.forEach((t, n) => {
-      const d = Math.hypot(local[i] - t[0], local[i + 1] - t[1]);
-      if (d < most) {
-        most = d;
-        best = n;
-      }
-    });
-    of.push(best);
+  for (let p = 0; p < local.length / 2; p++) {
+    /* each corner is three points along the outline; the closing point is the first one again */
+    const at = (p % (n * 3)) / 3;
+    let tongue = tips.length - 1;
+    for (let k = tips.length - 1; k >= 0; k--) {
+      const from = valleys[(k + tips.length - 1) % tips.length];
+      const to = valleys[k];
+      if (from < to ? at > from && at <= to : at > from || at <= to) tongue = k;
+    }
+    of.push(tongue);
   }
   return of;
 }
@@ -210,7 +218,7 @@ function flameOps(p: Extract<ReturnType<typeof firePartsOf>[number], { t: 'flame
   };
   const axis: [number, number] = [sin, -cos];
   const [ac, al, sp] = FLAME_MOTION[p.kind];
-  const speed = p.side ? sp * 1.35 : sp;
+  const speed = p.side ? sp * 1.25 : sp;
   const ops: FireOp[] = [];
   const outline = (d: string, layer: number, paint: FirePaint): number => {
     const local = pointsOf(d);
@@ -338,7 +346,7 @@ function sunOps(p: Extract<ReturnType<typeof firePartsOf>[number], { t: 'sun' }>
       ...ring(p.len, p.r * 0.3, 0, 0, p.len),
       across: p.len * 0.2,
       along: p.len * 0.42,
-      speed: 0.62,
+      speed: 0.75,
       paint: radial([
         [foot, '#E5421A', 1],
         [(foot + 1) / 2, '#FF6B1E', 1],
@@ -351,7 +359,7 @@ function sunOps(p: Extract<ReturnType<typeof firePartsOf>[number], { t: 'sun' }>
       ...ring(p.len * 0.55, p.r * 0.26, 180 / p.n, 1.7, p.len * 0.55),
       across: p.len * 0.14,
       along: p.len * 0.34,
-      speed: 0.74,
+      speed: 0.85,
       paint: radial([
         [foot, '#FF8C1E', 1],
         [1, '#FFB234', 1],
@@ -404,7 +412,7 @@ function starOps(p: Extract<ReturnType<typeof firePartsOf>[number], { t: 'star' 
       move,
       across: r * 0.035,
       along: r * 0.15,
-      speed: 0.55,
+      speed: 0.7,
       paint: { t: 'rad', cx: p.cx - r + 0.44 * 2 * r, cy: p.cy - r + 0.28 * 2 * r, rx: 1.6 * r, ry: 1.6 * r, stops: HEART },
       clip: -1,
       line: { width: 0.8, color: '#FFB224' },
@@ -413,12 +421,13 @@ function starOps(p: Extract<ReturnType<typeof firePartsOf>[number], { t: 'star' 
   ];
 }
 
-/* the sways and licks added together, in radians a second. None is a multiple of another, so the fire never comes back to where it was. */
-const W1 = 5.3;
-const W2 = 9.1;
-const W3 = 21.7;
-const W4 = 7.3;
-const W5 = 16.3;
+/* the sways and licks added together, in radians a second. None is a multiple of another, so the fire never comes back to where it was. It burns calmly
+   (the owner, October 31, 2026: too fast at first): a sway takes about two seconds and a lick a second and a half, and the quick ones are only a shiver on top. */
+const W1 = 3.1;
+const W2 = 5.3;
+const W3 = 11.9;
+const W4 = 4.3;
+const W5 = 9.7;
 
 /** an outline's control points at a moment (t in seconds). amp: how hard the fire is burning, 1 at rest and FIRE_LEAP at the top of a tap. */
 export function fireMove(op: FireOp, t: number, amp: number): number[] {
@@ -436,9 +445,9 @@ export function fireMove(op: FireOp, t: number, amp: number): number[] {
       continue;
     }
     const ph = move[j + 1];
-    const sway = Math.sin(T * W1 + ph) + 0.55 * Math.sin(T * W2 + ph * 1.7 + 1.3) + 0.2 * Math.sin(T * W3 + ph * 2.3 + 0.7);
+    const sway = Math.sin(T * W1 + ph) + 0.55 * Math.sin(T * W2 + ph * 1.7 + 1.3) + 0.12 * Math.sin(T * W3 + ph * 2.3 + 0.7);
     /* the lick reaches further than it draws back: real tips shoot up and fall away */
-    const lick = 0.5 + 0.5 * Math.sin(T * W4 + ph * 0.9 + 2) + 0.28 * Math.sin(T * W5 + ph * 1.4);
+    const lick = 0.5 + 0.5 * Math.sin(T * W4 + ph * 0.9 + 2) + 0.18 * Math.sin(T * W5 + ph * 1.4);
     const c = op.across * sway * w * amp;
     const l = op.along * lick * w * w * amp;
     const ax = move[j + 2];
@@ -484,7 +493,7 @@ export function fireOf(level: number, sides = true): Fire {
   for (const o of ops) {
     /* a shape that is clipped by another stays inside it */
     if (o.clip >= 0) continue;
-    const most = (o.across * 1.75 + o.along * 1.28) * FIRE_LEAP;
+    const most = (o.across * 1.67 + o.along * 1.18) * FIRE_LEAP;
     for (let i = 0; i < o.pts.length; i += 2) reach(o.pts[i], o.pts[i + 1], (o.move ? o.move[i * 2] : 0) * most);
   }
   for (const e of embers) {

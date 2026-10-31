@@ -14,8 +14,8 @@ import { NATIVE, useReducedMotion } from '@/lib/motion';
 
 /* [how long one flicker of the glow takes, how much it dims] for each kind of form: a fire, the rising flame, the suns, the stars */
 export const GLOW: [number, number][] = [
-  [1100, 0.25],
   [1500, 0.25],
+  [1900, 0.25],
   [3200, 0.25],
   [2400, 0.35],
 ];

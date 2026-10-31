@@ -1,8 +1,8 @@
 /* The flame in its own sky, for the top of Today (emblem.ts emblemScene), and the icon calendar (flame-art.ts). */
 import { describe, expect, it } from 'vitest';
 import { emblemLayers, emblemScene, emblemXml } from '../src/emblem';
-import { firePartsOf, type FirePart } from '../src/flame-art';
-import { FIRE_LEAP, fireMove, fireOf, type FireOp } from '../src/flame-fire';
+import { firePartsOf, SHAPES, type FirePart } from '../src/flame-art';
+import { FIRE_LEAP, fireMove, fireOf, tipsOf, type FireOp } from '../src/flame-fire';
 import { ICON_CALENDAR, ICON_LOOKS, iconLookFor } from '../src/flame-art';
 
 describe('the flame in its own sky', () => {
@@ -71,6 +71,21 @@ describe('the flame in layers, so only the figure moves', () => {
 });
 
 describe('the fire: the face and the body hold still, and the tips lick', () => {
+  it('a tongue moves as one: it changes to the next only at a low corner of the outline, never partway down an edge', () => {
+    for (const d of Object.values(SHAPES).flat().filter(Boolean) as string[]) {
+      const pts = (d.match(/-?\d*\.?\d+/g) || []).map(Number);
+      const of = tipsOf(pts);
+      const y = (p: number) => pts[p * 2 + 1];
+      const count = (pts.length - 2) / 2;
+      for (let p = 0; p < count; p++) {
+        const q = (p + 1) % count;
+        if (of[p] === of[q]) continue;
+        expect(p % 3).toBe(0);
+        expect(y(p)).toBeGreaterThan(y((p + 3) % count));
+        expect(y(p)).toBeGreaterThan(y((p + count - 3) % count));
+      }
+    }
+  });
   const moved = (op: FireOp, t: number) => {
     const p = fireMove(op, t, FIRE_LEAP);
     return op.pts.map((v, i) => Math.abs(v - p[i]));

@@ -96,7 +96,13 @@ npm run shots -- --size ios69    # one size
 of `BACKGROUNDS`), `theme` (`light` or `dark`), and if needed `at` (the demo moment, like `2026-10-17T21:30:00`) and
 `scroll` (pixels down the screen). Files are numbered in the order of `shots.json`. Captions only describe what the app
 really does. The frame, fonts, colors and caption layout are all in `config.ts`, so a style change there updates every
-image. To look at one by hand: `EXPO_PUBLIC_SHOTS=1 npx expo start --web` in `apps/mobile`, then open
+image.
+
+**The look of the set:** one sunrise. The skies in `BACKGROUNDS` go from night to full sun in the order of the set, and each shot's edges drift
+half way to its neighbor's sky, with one line of hills across them all, so side by side they are one picture. No two shots share a layout: `zoom`,
+`top`, `tilt`, `below` (the words under the phone), `hero` (a level's flame rising behind the phone) and `forms` (a rising row of the flame's forms)
+are the ways to change it. Captions stay at 3 to 5 words, big enough to read at 40% (search shows them about that small). Never a price or "Free"
+(App Review 2.3.7), and the first three shots carry the set. To look at one by hand: `EXPO_PUBLIC_SHOTS=1 npx expo start --web` in `apps/mobile`, then open
 `/shots?size=ios69&screen=/&caption=Hello`.
 
 ## Working from a computer signed in to another GitHub account

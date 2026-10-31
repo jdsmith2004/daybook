@@ -3,18 +3,20 @@
    Everything about the look is in config.ts. URL params:
      size     a key of SIZES (ios69, ios63, play-phone, play-feature, ios-header, ios-search)
      screen   the app path to show, like / or /learn (screen2, screen3: more phones in the wide layouts)
-     caption  the headline; sub: a smaller line under it
+     caption  the headline; sub: a smaller line under it; head: the headline's size, as a share of the width (default CAPTION.head)
      bg       a key of BACKGROUNDS; theme: light or dark (the app's own theme inside the phone)
+     pan      this shot's place in the set, so the hills run on across the edges; bgL, bgR: the skies of the shots on either side, for the sky to drift into
      at       the moment the demo log is seen at (default DEMO.at); scroll: how far down the screen to start
      zoom     the phone's width as a share of the shot's (default FRAME.width); a big phone runs off the bottom edge
      top      where the phone starts, as a share of the shot's height (default CAPTION.phoneTop)
      playTop  the same on the Play sizes, where the caption takes more of the height
-     pills    short facts under the caption, split by |, each with a check (only true ones: "Free|No account|No ads")
+     tilt     the phone turned this many degrees; below: the words under the phone, which hangs from the top of the shot
+     forms    the flame's forms in a rising row above the phone, as a comma list of levels
+     hero     the flame of this level, big, rising behind the phone
      pic      in place of the live app, a picture of it from the iPhone simulator (scripts/shots-ios.ts), for the iPhone sizes: only there is Apple's
               glass tab bar real (pic2, pic3 go with screen2, screen3)
-     In a phone shot, screen2 is a second phone in front of the first, a little lower and to the right.
    When the image is ready to capture, window.__shotsReady is true (scripts/shots.ts waits for it). */
-import { flameFigureSvg } from '@daybook/core';
+import { emblemLayers, flameFigureSvg } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { createElement as h, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
@@ -58,27 +60,15 @@ export default function Studio() {
     }
   }, [loaded, screens.length]);
   const onReady = () => setLoaded((n) => n + 1);
-  const page: CSSProperties = {
-    position: 'fixed',
-    left: 0,
-    top: 0,
-    width: W,
-    height: H,
-    overflow: 'hidden',
-    background: `linear-gradient(180deg, ${bg.sky[0]} 0%, ${bg.sky[1]} 55%, ${bg.sky[2]} 100%)`,
-    zIndex: 9999,
-  };
-  const glow = h('div', {
-    style: {
-      position: 'absolute',
-      left: '50%',
-      top: size.kind === 'phone' ? '62%' : '55%',
-      width: Math.max(W, H) * 1.1,
-      height: Math.max(W, H) * 1.1,
-      transform: 'translate(-50%, -50%)',
-      background: `radial-gradient(circle, ${bg.glow} 0%, rgba(0,0,0,0) 60%)`,
-    },
-  });
+  const page: CSSProperties = { position: 'fixed', left: 0, top: 0, width: W, height: H, overflow: 'hidden', background: bg.sky[1], zIndex: 9999 };
+  const pan = Number(p.pan || 0);
+  const left = BACKGROUNDS[p.bgL || ''];
+  const right = BACKGROUNDS[p.bgR || ''];
+  /* the sky: this shot's own in the middle, half way to each neighbor at the edges, so two shots side by side are one picture */
+  const land = [
+    left ? <Land key="l" bg={left} W={W} H={H} pan={pan} mask="linear-gradient(90deg, rgba(0,0,0,.5), rgba(0,0,0,0) 45%)" /> : null,
+    right ? <Land key="r" bg={right} W={W} H={H} pan={pan} mask="linear-gradient(90deg, rgba(0,0,0,0) 55%, rgba(0,0,0,.5))" /> : null,
+  ];
   const stars = bg.stars
     ? STARS.map(([x, y, r], i) =>
         h('div', {
@@ -102,7 +92,32 @@ export default function Studio() {
     ) : (
       <WideShot p={p} bg={bg} W={W} H={H} screens={screens} device={size.device || 'iphone'} onReady={onReady} />
     );
-  return h('div', { style: page, 'data-shot': p.size || 'ios69' }, glow, stars, body);
+  return h('div', { style: page, 'data-shot': p.size || 'ios69' }, <Land bg={bg} W={W} H={H} pan={pan} />, stars, land, body);
+}
+
+/* one sky and its hills. The hills are one line across the whole set, so they meet at the edges of every shot. */
+function Land({ bg, W, H, pan, mask }: { bg: Bg; W: number; H: number; pan: number; mask?: string }) {
+  const crest = (x: number, base: number, a: number, b: number) => H * base + W * (a * Math.sin((pan + x) * b) + (a / 2) * Math.sin((pan + x) * b * 2.3 + 1));
+  const hill = (base: number, a: number, b: number) => {
+    const pts = Array.from({ length: 41 }, (_, i) => `${(i / 40) * W} ${crest(i / 40, base, a, b).toFixed(1)}`);
+    return `M${pts.join('L')}L${W} ${H}L0 ${H}Z`;
+  };
+  return h(
+    'div',
+    {
+      style: {
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(in oklch 180deg, ${bg.sky[0]} 0%, ${bg.sky[1]} 52%, ${bg.sky[2]} 100%)`,
+        maskImage: mask,
+        WebkitMaskImage: mask,
+      },
+    },
+    <svg width={W} height={H} style={{ position: 'absolute', inset: 0 }}>
+      <path d={hill(0.8, 0.05, 1.7)} fill={bg.hill[0]} />
+      <path d={hill(0.88, 0.04, 2.4)} fill={bg.hill[1]} />
+    </svg>,
+  );
 }
 
 function Caption({ p, bg, W, align = 'center', scale = 1 }: { p: Params; bg: Bg; W: number; align?: 'center' | 'left'; scale?: number }) {
@@ -115,7 +130,7 @@ function Caption({ p, bg, W, align = 'center', scale = 1 }: { p: Params; bg: Bg;
           {
             style: {
               fontFamily: FONTS.head,
-              fontSize: W * CAPTION.head * scale,
+              fontSize: W * Number(p.head || CAPTION.head) * scale,
               lineHeight: 1.08,
               color: bg.ink,
               letterSpacing: -0.3,
@@ -142,72 +157,97 @@ function Caption({ p, bg, W, align = 'center', scale = 1 }: { p: Params; bg: Bg;
           p.sub,
         )
       : null,
-    p.pills ? <Pills list={p.pills.split('|')} bg={bg} W={W * scale} align={align} /> : null,
-  );
-}
-
-/* the facts under the caption: small pills, each with a check */
-function Pills({ list, bg, W, align }: { list: string[]; bg: Bg; W: number; align: 'center' | 'left' }) {
-  const fs = W * CAPTION.pill;
-  const check = `<svg viewBox="0 0 16 16" width="${fs * 0.9}" height="${fs * 0.9}"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="${bg.ink}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  return h(
-    'div',
-    { style: { display: 'flex', flexWrap: 'wrap', justifyContent: align === 'center' ? 'center' : 'flex-start', gap: fs * 0.5, marginTop: fs * 0.3 } },
-    list.map((t) =>
-      h(
-        'div',
-        {
-          key: t,
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: fs * 0.35,
-            padding: `${fs * 0.42}px ${fs * 0.75}px ${fs * 0.42}px ${fs * 0.6}px`,
-            borderRadius: 999,
-            background: bg.pill,
-            fontFamily: FONTS.body,
-            fontSize: fs,
-            lineHeight: 1,
-            color: bg.ink,
-          },
-        },
-        h('span', { style: { display: 'flex' }, dangerouslySetInnerHTML: { __html: check } }),
-        t,
-      ),
-    ),
   );
 }
 
 function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: Size; bg: Bg; W: number; H: number; screens: string[]; onReady: () => void }) {
-  const top = H * Number((size.device === 'android' && p.playTop) || p.top || CAPTION.phoneTop);
+  /* a Play shot is shorter than the phone: the phone stands whole on it, at the usual width, with the words over it, so Android's own tab bar shows */
+  const android = size.device === 'android';
+  const top = H * Number((android && p.playTop) || p.top || CAPTION.phoneTop);
+  const below = !android && p.below;
   const caption = h(
     'div',
-    { key: 'cap', style: { position: 'absolute', left: W * CAPTION.side, right: W * CAPTION.side, top: W * CAPTION.top } },
+    {
+      key: 'cap',
+      style: {
+        position: 'absolute',
+        left: W * CAPTION.side,
+        right: W * CAPTION.side,
+        ...(below ? { bottom: W * CAPTION.top } : { top: W * CAPTION.top }),
+        zIndex: 2,
+      },
+    },
     <Caption p={p} bg={bg} W={W} />,
   );
-  /* two phones: the first behind on the left, the second in front, lower and to the right, each turned a little */
-  if (screens.length >= 2) {
-    const pw = W * Number(p.zoom || FRAME.pair);
-    const at = (left: number, y: number, turn: number, screen: string) =>
-      h(
-        'div',
-        { key: screen, style: { position: 'absolute', left, top: y, transform: `rotate(${turn}deg)`, transformOrigin: '50% 0' } },
-        <Phone width={pw} device={size.device || 'iphone'} screen={screen} p={p} onReady={onReady} />,
-      );
-    return h('div', null, caption, at(-W * 0.05, top, -4, screens[0]), at(W - pw - W * 0.005, top + H * 0.07, 4, screens[1]));
-  }
-  /* a Play shot is shorter than the phone: the phone stands whole on it, at the usual width, so Android's own tab bar shows */
-  const android = size.device === 'android';
-  const pw = W * (android ? FRAME.width : Number(p.zoom || FRAME.width));
+  const pw = W * (android ? 0.72 : Number(p.zoom || FRAME.width));
+  const levels = (p.forms || '').split(',').filter(Boolean).map(Number);
   return h(
     'div',
     null,
     caption,
+    p.hero && !android ? <Hero level={Number(p.hero)} W={W} y={top - W * 0.68} /> : null,
+    levels.length ? <Forms levels={levels} W={W} y={W * CAPTION.top + W * CAPTION.head * 1.2 * Number(p.lines || 2) + W * 0.05} /> : null,
     h(
       'div',
-      { style: { position: 'absolute', left: (W - pw) / 2, top } },
+      {
+        style: {
+          position: 'absolute',
+          left: (W - pw) / 2,
+          top,
+          transform: !android && p.tilt ? `rotate(${p.tilt}deg)` : undefined,
+          transformOrigin: '50% 20%',
+        },
+      },
       <Phone width={pw} device={size.device || 'iphone'} screen={screens[0] || '/'} p={p} onReady={onReady} fit={android ? H - top - W * 0.05 : undefined} />,
     ),
+  );
+}
+
+/* the flame itself, big, rising behind the phone. Only its figure and glow: the sky stays the shot's. */
+function Hero({ level, W, y }: { level: number; W: number; y: number }) {
+  const l = useMemo(() => emblemLayers(level, true), [level]);
+  const size = W * 1.06;
+  if (!l) return null;
+  return h(
+    'div',
+    { style: { position: 'absolute', left: (W - size) / 2, top: y, width: size, height: size } },
+    [l.glow, l.fig].map((svg, i) =>
+      h('div', {
+        key: i,
+        style: { position: 'absolute', inset: 0 },
+        dangerouslySetInnerHTML: { __html: svg.replace('<svg ', '<svg width="100%" height="100%" ') },
+      }),
+    ),
+  );
+}
+
+/* the flame's real forms, rising from left to right, only the figures on the shot's own sky: the last is the biggest */
+function Forms({ levels, W, y }: { levels: number[]; W: number; y: number }) {
+  const n = levels.length;
+  const layers = useMemo(() => levels.map((l) => emblemLayers(l, true)), [levels.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const big = W * 0.46;
+  const small = W * 0.2;
+  const sizes = levels.map((_, i) => small + (big - small) * (i / (n - 1)) ** 1.3);
+  const gap = (W * 1.02 - sizes.reduce((a, b) => a + b, 0)) / (n - 1);
+  let x = -W * 0.01;
+  return h(
+    'div',
+    null,
+    layers.map((l, i) => {
+      const at = x;
+      x += sizes[i] + gap;
+      return l ? (
+        <div key={i} style={{ position: 'absolute', left: at, top: y + big - sizes[i], width: sizes[i], height: sizes[i] }}>
+          {[l.glow, l.fig].map((svg, j) =>
+            h('div', {
+              key: j,
+              style: { position: 'absolute', inset: 0 },
+              dangerouslySetInnerHTML: { __html: svg.replace('<svg ', '<svg width="100%" height="100%" ') },
+            }),
+          )}
+        </div>
+      ) : null;
+    }),
   );
 }
 

@@ -34,12 +34,11 @@ import { Text } from '@/components/text';
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
-import { FitArt } from '@/components/fit';
 import { YesNo } from '@/components/form';
 import { Fold, GoingToBed, GoodnightButton, LoudFold, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
-import { NightSky } from '@/components/night-sky';
+import { NightMiddle } from '@/components/night-flame';
 import { TalkDoor } from '@/components/talk-card';
-import { Dock, Finish, Middle, SceneFrame } from '@/components/scene';
+import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -222,12 +221,8 @@ export default function Checkin() {
         <T style={s.c} tone="muted">
           {windLine(st, r.leftToOff, snap.days[tk]?.p)}
         </T>
-        {/* the night sky in the open middle; it steps aside on a short phone or when a row opens, so Goodnight stays in reach */}
-        <Middle>
-          <FitArt drop={0.55}>
-            <NightSky />
-          </FitArt>
-        </Middle>
+        {/* the flame in the open middle, as big as the room the rows leave it */}
+        <NightMiddle level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} asleep={false} />
         <Dock>
           {form.md != null && form.md <= 3 ? <TalkDoor line="A heavy day is a state, not who you are. Talk it through before tonight." /> : null}
           {more}
@@ -254,7 +249,7 @@ export default function Checkin() {
     if (tonight)
       pin = (
         <>
-          <T style={[s.c, s.tap]}>Tap this when you put your phone down.</T>
+          <T style={[s.c, s.tap]}>Phone on its charger, away from your bed.</T>
           <GoodnightButton onPress={sayGoodnight} />
           {any ? (
             <View style={s.saveLink}>

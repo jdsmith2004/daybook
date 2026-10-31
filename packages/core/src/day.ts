@@ -47,6 +47,13 @@ export function windLine(st: Settings, leftToOff: number, p: Play | null | undef
   if (left <= 0 && left > -300) return `Your screens-off time (${off}) has passed.${p && p.po ? '' : ' Phone away?'}`;
   return `Your screens-off time is ${off}. Change it in Settings.`;
 }
+/** the few words at the top of the wind-down: when screens go off, and past that time, that it is not too late */
+export function windWhen(st: Settings, leftToOff: number): string {
+  const off = fmtClock(st.screensOff);
+  if (leftToOff > 0 && leftToOff <= 600) return `Screens off at ${off} · in ${fmtLeft(leftToOff)}`;
+  if (leftToOff <= 0 && leftToOff > -300) return `Past ${off}. Goodnight still counts.`;
+  return `Screens off at ${off}`;
+}
 
 /* ---------- the evening check-in ---------- */
 /* Three quick numbers since October 24, 2026: mood (md), urges (u) and stress (s), then Goodnight (sayGoodnight). Sleep,
@@ -349,7 +356,8 @@ export function windToggle(days: Days, st: Settings, tk: DayKey, i: number, now 
         if (k >= 0) p.w.splice(k, 1);
         else p.w.push(i);
         p.w = p.w.filter((x) => x < n);
-        p.wd = p.w.length >= n;
+        /* a Goodnight that counted stays counted, however the list is ticked afterwards */
+        p.wd = p.w.length >= n || (!!p.po && windCounts(st, p.po));
         d.p = p;
       },
       now,
@@ -367,8 +375,31 @@ export function offOnTime(st: Pick<Settings, 'screensOff' | 'rollover'>, at: str
   const left = rel(st.screensOff) - rel(at);
   return left >= 0 && left <= OFF_EARLY_MIN;
 }
+/** Good night at `at` counts as the wind-down: any time from OFF_EARLY_MIN before the screens-off time until the new day, on time or late, since
+    the phone going down late is when it matters most. A nap in the afternoon does not. */
+export function windCounts(st: Pick<Settings, 'screensOff' | 'rollover'>, at: string): boolean {
+  const roll = (st.rollover ?? 4) * 60;
+  const rel = (t: string) => (((+t.slice(0, 2) * 60 + +t.slice(3, 5) - roll) % 1440) + 1440) % 1440;
+  if (!isTime(at) || !isTime(st.screensOff)) return false;
+  return rel(st.screensOff) - rel(at) <= OFF_EARLY_MIN;
+}
+/** how many nights the phone has gone down, ever. It only grows: a night without it takes nothing away, and nothing says "in a row". */
+export function phoneNights(days: Days): number {
+  return Object.values(days).filter((d) => !!d?.p?.po).length;
+}
+/** the words once the flame is asleep: the phone-away time and the nights so far, then the person's own sentence about who they are becoming. After a
+    slip today, the first thing is that they are still here. */
+export function bedWords(days: Days, st: Pick<Settings, 'becoming'> | null, tk: DayKey, at: string): { line: string; own: string } {
+  const n = phoneNights(days);
+  const when = at ? `Down at ${fmtClock(at)}. ` : '';
+  const line = when + (n <= 1 ? 'That is your first night.' : `That is ${n} nights.`);
+  const own = String(st?.becoming || '').trim();
+  if (sumDay(days[tk]).slipped) return { line, own: 'You came back to this tonight. That is the part that lasts.' };
+  return { line, own: own || 'Rest well. Tomorrow is a fresh day.' };
+}
 /** Good night: the phone goes away at `at` (p.po). With the settings, it is also screens off on time that night when it
-    comes before the screens-off time (offOnTime), so the "Screens off on time" points, quest and Sunday goal count it.
+    comes before the screens-off time (offOnTime), so the "Screens off on time" points, quest and Sunday goal count it, and it
+    is the wind-down that night (windCounts), so the wind-down's points, quest, badges and Sunday goal count it too.
     Nothing asks the next morning whether it stayed away, and a late Good night never writes "late". */
 export function phoneAway(days: Days, tk: DayKey, at: string, now = Date.now(), st?: Settings | null): Days {
   return withDay(
@@ -380,6 +411,7 @@ export function phoneAway(days: Days, tk: DayKey, at: string, now = Date.now(), 
       (d) => {
         const p = d.p || blankP();
         p.po = at;
+        if (st && windCounts(st, at)) p.wd = true;
         d.p = p;
         if (st && offOnTime(st, at)) (d.checkin || (d.checkin = blankCheckin())).so = 'Y';
       },

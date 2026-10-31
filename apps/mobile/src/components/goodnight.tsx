@@ -1,18 +1,28 @@
-/* Goodnight: the end of the evening, under the night sky. One big button low on the screen ("Tap this when you put your
-   phone down") saves tonight's check-in and puts the phone away in one tap (core sayGoodnight), and then the going-to-bed
-   moment plays: the light in a small house goes out, the moon comes up, the stars come in, and a few slow z's drift up.
-   Above the button, folded rows keep the rest in reach without crowding it: the wind-down list, and the plan for a loud
-   night (the one picked in SOS "Go to bed", or slow breathing) with a way into SOS. Used by the end of the check-in
-   (app/checkin.tsx), the wind-down (app/wind.tsx) and Good night after SOS "Go to bed" (app/night.tsx). With Reduce
-   Motion on, the moment is still: the light is out, the moon is up, and nothing moves. */
-import { bedPlans, checkinAnswered, checkinSaveText, clockOf, fmtClock, gameCompute, sayGoodnight, windToggle, type CheckinForm } from '@daybook/core';
+/* Goodnight: the end of the evening, under the night sky, with the person's own flame big in the middle (components/night-flame.tsx). One big button low
+   on the screen saves tonight's check-in when there is one and puts the phone away in one tap (core sayGoodnight), and it is the wind-down too (core
+   windCounts). Then the flame falls asleep where it stands, the words say what counted and who the person is becoming, and the screen dims and stays
+   there, so a person who picks the phone up at 2 AM finds a sleeping flame and the plan for a loud night. There is no Done: the X closes it, and a new
+   day wakes the flame. Used by the wind-down (app/wind.tsx), the end of the check-in (app/checkin.tsx) and Good night after SOS "Go to bed" (app/night.tsx). */
+import {
+  bedPlans,
+  bedWords,
+  checkinAnswered,
+  checkinSaveText,
+  clockOf,
+  gameCompute,
+  phoneNights,
+  sayGoodnight,
+  fmtClock,
+  windToggle,
+  type CheckinForm,
+} from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Svg, { Defs, Ellipse, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { FitArt } from '@/components/fit';
+import { NightMiddle } from '@/components/night-flame';
 import { Dock, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
@@ -20,7 +30,7 @@ import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
-import { font, MAX_WIDTH, nightInk, useTheme } from '@/lib/theme';
+import { font, nightInk, useTheme } from '@/lib/theme';
 
 /** what Goodnight did: the phone-away time, the points it earned, and the words after saving the check-in (none when there
     was nothing to save) */
@@ -147,14 +157,8 @@ export function WindFold({ open, onToggle }: { open: boolean; onToggle: () => vo
   const st = snap.settings;
   if (!st || !st.wind.length) return null;
   const p = snap.days[tk]?.p;
-  const n = st.wind.filter((_, i) => !!p && p.w.indexOf(i) >= 0).length;
   return (
-    <Fold
-      icon="check"
-      title="Wind-down list"
-      sub={n >= st.wind.length ? 'All ' + n + ' done' : n + ' of ' + st.wind.length + ' done'}
-      open={open}
-      onToggle={onToggle}>
+    <Fold icon="check" title="Before bed" open={open} onToggle={onToggle}>
       {st.wind.map((t, i) => (
         <WindItem
           key={i}
@@ -209,235 +213,285 @@ function WindItem({ label, on, onPress }: { label: string; on: boolean; onPress:
   );
 }
 
-/** after Goodnight: the going-to-bed moment, then the words, the plan for a loud night, and Done */
-export function GoingToBed({ bed, plan, extra }: { bed: Bed; plan?: string; extra?: ReactNode }) {
-  const [loud, setLoud] = useState(false);
+/** the wind-down list in the sheet: the phone line is left out, since the page already says it */
+function BeforeBed() {
+  const { snap, tk, update } = useStore();
+  const st = snap.settings;
+  if (!st) return null;
+  const p = snap.days[tk]?.p;
   return (
-    <SceneFrame title="Good night" sky="night" onClose={close}>
-      {/* the moment and its words fill the open middle; the plan and Done sit low, under the thumb */}
-      <View style={s.mid}>
-        <FitArt drop={0.45}>
-          <BedArt />
-        </FitArt>
-        <Appear delay={WORDS} duration={600} by={6}>
-          <T v="title" style={s.c} accessibilityRole="header">
-            Phone down. Good night.
-          </T>
-        </Appear>
-        <Appear delay={WORDS + 250} duration={600} by={6} style={{ alignItems: 'center', gap: 6 }}>
-          <T style={s.c}>{bed.at ? `Phone away at ${fmtClock(bed.at)}. ` : ''}That counts. Rest well. Tomorrow is a fresh day.</T>
-          {bed.msg ? (
-            <T v="small" tone="muted" style={s.c}>
-              {bed.msg}
+    <>
+      {st.wind.map((t, i) =>
+        PHONE_LINE.test(t) ? null : (
+          <WindItem
+            key={i}
+            label={t}
+            on={!!p && p.w.indexOf(i) >= 0}
+            onPress={() => {
+              update((s0) => ({ ...s0, days: windToggle(s0.days, s0.settings!, tk, i) }));
+              buzz('tap');
+            }}
+          />
+        ),
+      )}
+    </>
+  );
+}
+const PHONE_LINE = /^phone goes on its charger/i;
+
+/** the plan for a loud night in the sheet: the picked one first (`plan`, from SOS "Go to bed"), then the others, and SOS */
+function LoudPlan({ plan, onSos }: { plan?: string; onSos: () => void }) {
+  const { snap } = useStore();
+  return (
+    <>
+      {plan ? <T v="label">{plan}</T> : null}
+      {bedPlans(snap.settings)
+        .filter((p) => !plan || !plan.startsWith(p[1]))
+        .map((p) => (
+          <View key={p[0]} style={{ gap: 1 }}>
+            <T v="label">{p[1]}</T>
+            <T v="small" tone="muted">
+              {p[2]}
             </T>
-          ) : null}
-          {bed.gain ? (
-            <T v="label" style={[s.c, { color: '#8CF0CE' }]}>
-              {'+' + bed.gain + ' points'}
-            </T>
-          ) : null}
-        </Appear>
-      </View>
-      <Dock>
-        <LoudFold open={loud} onToggle={() => setLoud(!loud)} plan={plan} />
-        {extra}
-        <Button label="Done" onPress={close} />
-      </Dock>
-    </SceneFrame>
+          </View>
+        ))}
+      <Button kind="ghost" icon="life" label="Urge right now? Open SOS" onPress={onSos} />
+    </>
   );
 }
 
-/* the going-to-bed moment, on one clock: the light goes out at about 0.8 s, the moon is up by 2.3 s, the stars come in
-   after it, and the z's start once the house is dark. The words come in as the moon settles. */
-const RUN = 2600;
-const WORDS = 1500;
-/* drawn on a 320 by 210 board, scaled to the width of the phone */
-const W = 320;
-const H = 210;
-/* the window of the house, where the light goes out */
-const WIN = { x: 223, y: 134, w: 12, h: 10 };
-/* a few stars, placed by hand so the sky is the same every night: [x, y, size, how long one twinkle takes] */
-const STARS: [number, number, number, number][] = [
-  [16, 26, 3, 3400],
-  [40, 104, 2, 4200],
-  [150, 16, 3, 3800],
-  [176, 70, 2, 3000],
-  [214, 30, 4, 4600],
-  [250, 84, 2, 3600],
-  [278, 18, 3, 4400],
-  [302, 62, 2, 3200],
-  [128, 100, 2, 4000],
-  [10, 140, 2, 3900],
-];
+/** a sheet over the night, so opening a list never pushes the flame or the button */
+function NightSheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
+  const c = useTheme();
+  const inset = useSafeAreaInsets();
+  return (
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={s.sheetWrap}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close" style={[StyleSheet.absoluteFill, s.sheetDim]} onPress={onClose} />
+        <View style={[s.sheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 16 }]}>
+          <View style={s.handle} />
+          <T v="h2" accessibilityRole="header">
+            {title}
+          </T>
+          {children}
+          <Button label="Done" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
-/** the going-to-bed moment: a small house on a hill whose light goes out, the moon rising, stars and slow z's */
-export function BedArt() {
+/** a quiet way in, low on the page: an icon beside its words, one tap */
+function NightChip({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.chip, pressed && { opacity: 0.75 }]}>
+      <Icon name={icon} size={18} color={nightInk.ink} />
+      <T v="label">{label}</T>
+    </Pressable>
+  );
+}
+
+/* the going-to-bed beats: the words come in as the moon settles, and a while after that the screen goes dim, like a phone left on a nightstand */
+const WORDS = 1700;
+const DIM_AFTER = 9000;
+const DIM_FOR = 7000;
+const DIM_TO = 0.62;
+
+/** the one night page, before and after Goodnight, so the flame falls asleep where it stands. With `bed` it is asleep (it plays the moment when it opens).
+    `onGoodnight` is what the button does while it is awake. */
+export function NightPage({
+  bed,
+  when,
+  onGoodnight,
+  plan,
+  rowAbove,
+  extra,
+}: {
+  bed: Bed | null;
+  /** the few words in the top bar while it is awake (core windWhen) */
+  when?: string;
+  onGoodnight?: () => void;
+  /** the plan picked in SOS "Go to bed" */
+  plan?: string;
+  /** a row above the quiet ways in, while it is awake (the check-in, when it is still open) */
+  rowAbove?: ReactNode;
+  /** a row low on the page once it is asleep */
+  extra?: ReactNode;
+}) {
+  const { snap, tk } = useStore();
+  const st = snap.settings;
   const reduce = useReducedMotion();
-  const { width } = useWindowDimensions();
-  /* as wide as the page allows (a 16 point gutter each side), never more than a little over its own size */
-  const k = Math.max(0.8, Math.min(1.15, (Math.min(width, MAX_WIDTH) - 32) / W));
-  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
-  const zz = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (reduce) {
-      v.setValue(1);
+  const [sheet, setSheet] = useState<'list' | 'loud' | null>(null);
+  const asleep = !!bed;
+  /* a day that turned over while this page was open: the flame wakes up */
+  const [night] = useState(tk);
+  const morning = asleep && tk !== night;
+  const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
+  /* what Goodnight earned can take it to a new level: it falls asleep as the flame it was, and wakes as the new one */
+  const [held] = useState(level);
+  /* the dark part of the moment: any touch brings the screen back up, and it goes dim again */
+  const dim = useRef(new Animated.Value(0)).current;
+  const dimTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settle = useCallback(() => {
+    if (dimTimer.current) clearTimeout(dimTimer.current);
+    if (!asleep || morning) {
+      dim.stopAnimation();
+      dim.setValue(0);
       return;
     }
-    v.setValue(0);
-    const run = Animated.timing(v, { toValue: 1, duration: RUN, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE });
-    const breathe = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 3200, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-        Animated.timing(glow, { toValue: 0, duration: 3200, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-      ]),
+    dimTimer.current = setTimeout(
+      () =>
+        reduce
+          ? dim.setValue(DIM_TO)
+          : Animated.timing(dim, { toValue: DIM_TO, duration: DIM_FOR, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }).start(),
+      DIM_AFTER,
     );
-    const drift = Animated.loop(Animated.timing(zz, { toValue: 1, duration: 4800, easing: Easing.linear, useNativeDriver: NATIVE }));
-    run.start();
-    breathe.start();
-    drift.start();
+  }, [asleep, morning, reduce, dim]);
+  useEffect(() => {
+    settle();
     return () => {
-      run.stop();
-      breathe.stop();
-      drift.stop();
+      if (dimTimer.current) clearTimeout(dimTimer.current);
     };
-  }, [reduce, v, glow, zz]);
-  const light = v.interpolate({ inputRange: [0, 0.26, 0.4, 1], outputRange: [1, 1, 0.05, 0.05] });
-  const moonIn = v.interpolate({ inputRange: [0, 0.3, 0.88, 1], outputRange: [0, 0, 1, 1] });
+  }, [settle]);
+  const wake = () => {
+    dim.stopAnimation();
+    dim.setValue(0);
+    settle();
+    return false;
+  };
+  /* the low part of the page keeps its height when it empties, so the flame stays exactly where it was */
+  const [low, setLow] = useState(0);
+  const words = bed && st ? bedWords(snap.days, st, night, bed.at) : null;
+  const hasList = !!st && st.wind.some((t) => !PHONE_LINE.test(t));
+  const closeThen = (go: () => void) => {
+    setSheet(null);
+    go();
+  };
   return (
-    <View style={{ width: W * k, height: H * k }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <View style={[s.art, { left: (W * k - W) / 2, top: (H * k - H) / 2, transform: [{ scale: k }] }]}>
-        {STARS.map(([x, y, r, ms], i) => (
-          <Star
-            key={i}
-            x={x}
-            y={y}
-            r={r}
-            ms={ms}
-            delay={i * 370}
-            still={reduce}
-            come={v.interpolate({ inputRange: [0, 0.5 + i * 0.04, 0.62 + i * 0.04, 1], outputRange: [0, 0, 1, 1] })}
-          />
-        ))}
-        {/* the moon comes up from behind the hill, its glow breathing slowly */}
-        <Animated.View style={[s.moonAt, { opacity: moonIn, transform: [{ translateY: moonIn.interpolate({ inputRange: [0, 1], outputRange: [56, 0] }) }] }]}>
-          <Animated.View
-            style={[
-              s.halo,
-              {
-                opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.6] }),
-                transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }],
-              },
-            ]}
-          />
-          <View style={s.moon}>
-            <Icon name="moon" size={46} color="#FFE27A" />
+    <View style={s.root} onStartShouldSetResponderCapture={wake}>
+      <SceneFrame title={morning ? 'A new day' : asleep ? 'Good night' : when || 'Wind-down'} sky={morning ? 'violet' : 'night'} onClose={close}>
+        {morning && bed ? (
+          <Appear duration={600} by={6} style={[s.words, s.top]}>
+            <T v="title" style={s.c} accessibilityRole="header">
+              Good morning.
+            </T>
+            <T style={s.c}>{words ? words.line : ''}</T>
+            <T v="label" style={s.c}>
+              {words ? words.own : ''}
+            </T>
+          </Appear>
+        ) : words && bed ? (
+          <Appear delay={reduce ? 0 : WORDS} duration={600} by={6} style={[s.words, s.top]}>
+            <T v="title" style={s.c} accessibilityRole="header">
+              Phone down. Good night.
+            </T>
+            <T style={s.c}>{words.line}</T>
+            <T v="label" style={[s.c, { color: '#FFE27A' }]}>
+              {words.own}
+            </T>
+            {bed.msg ? (
+              <T v="small" tone="muted" style={s.c}>
+                {bed.msg}
+              </T>
+            ) : null}
+            {bed.gain ? (
+              <T v="label" style={[s.c, { color: '#8CF0CE' }]}>
+                {'+' + bed.gain + ' points'}
+              </T>
+            ) : null}
+          </Appear>
+        ) : (
+          <View style={[s.words, s.top]}>
+            <T v="title" style={s.c} accessibilityRole="header">
+              Put your flame to bed
+            </T>
+            <T style={s.c}>Phone on its charger, away from your bed.</T>
           </View>
-        </Animated.View>
-        {/* two soft hills that fade into the sky at the bottom, with no edge, and the house on the far one */}
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient id="bedHill" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#2A2272" stopOpacity={1} />
-              <Stop offset="1" stopColor="#2A2272" stopOpacity={0} />
-            </LinearGradient>
-            <LinearGradient id="bedNear" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#1A1450" stopOpacity={1} />
-              <Stop offset="1" stopColor="#1A1450" stopOpacity={0} />
-            </LinearGradient>
-          </Defs>
-          <Path d="M0 210C50 168 120 148 185 150S290 168 320 210Z" fill="url(#bedHill)" />
-          <Ellipse cx={231} cy={158} rx={30} ry={5} fill="#2A2272" />
-          {/* the house: a roof, the walls, a door, and the window (lit by the light above it) */}
-          <Path d="M207 130L231 109L255 130Z" fill="#433A9E" />
-          <Rect x={212} y={128} width={38} height={30} fill="#332B85" />
-          <Rect x={WIN.x} y={WIN.y} width={WIN.w} height={WIN.h} rx={2} fill="#1A1550" />
-          <Rect x={239} y={143} width={7} height={15} rx={1.5} fill="#1A1550" />
-          <Path d="M40 210C100 184 170 176 230 184S300 198 320 210Z" fill="url(#bedNear)" />
-        </Svg>
-        {/* the light in the window, and its warm glow, going out */}
-        <Animated.View style={[s.spill, s.spillWide, { opacity: light }]} />
-        <Animated.View style={[s.spill, { opacity: light }]} />
-        <Animated.View style={[s.win, { opacity: light }]} />
-        <Zs t={zz} come={v.interpolate({ inputRange: [0, 0.45, 0.62, 1], outputRange: [0, 0, 1, 1] })} still={reduce} />
-      </View>
+        )}
+        <NightMiddle level={morning ? level : held} asleep={asleep} grew={!!bed?.gain} awakeNow={morning} />
+        <View style={[s.low, low ? { minHeight: low } : null]} onLayout={asleep ? undefined : (e) => setLow(e.nativeEvent.layout.height)}>
+          <Dock>
+            {morning ? (
+              <Button label="Start the day" onPress={close} />
+            ) : asleep ? (
+              <>
+                {extra}
+                <View style={s.chips}>
+                  <NightChip icon="shield" label="Thoughts loud?" onPress={() => setSheet('loud')} />
+                </View>
+              </>
+            ) : (
+              <>
+                {rowAbove}
+                <View style={s.chips}>
+                  {hasList ? <NightChip icon="check" label="Before bed" onPress={() => setSheet('list')} /> : null}
+                  <NightChip icon="shield" label="Thoughts loud?" onPress={() => setSheet('loud')} />
+                </View>
+                <GoodnightButton onPress={onGoodnight || close} />
+              </>
+            )}
+          </Dock>
+        </View>
+        <NightSheet open={sheet === 'list'} title="Before bed" onClose={() => setSheet(null)}>
+          <BeforeBed />
+        </NightSheet>
+        <NightSheet open={sheet === 'loud'} title="If the thoughts get loud" onClose={() => setSheet(null)}>
+          <LoudPlan plan={plan} onSos={() => closeThen(() => router.push('/sos'))} />
+        </NightSheet>
+      </SceneFrame>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, { opacity: dim }]} />
     </View>
   );
 }
 
-/* three small z's, one after another, drifting up from the roof and fading. With Reduce Motion on they rest in place. */
-function Zs({ t, come, still }: { t: Animated.Value; come: Animated.AnimatedInterpolation<number>; still: boolean }) {
-  return (
-    <Animated.View style={[s.zs, { opacity: come }]}>
-      {[0, 1, 2].map((i) => {
-        const size = 13 + i * 3;
-        if (still)
-          return (
-            <Text key={i} style={[s.z, { fontSize: size, left: 8 + i * 9, top: 30 - i * 14, opacity: 0.75 - i * 0.15 }]}>
-              z
-            </Text>
-          );
-        const p = Animated.modulo(Animated.add(t, i / 3), 1);
-        return (
-          <Animated.Text
-            key={i}
-            style={[
-              s.z,
-              {
-                fontSize: size,
-                left: i * 5,
-                opacity: p.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0, 0.85, 0.5, 0] }),
-                transform: [
-                  { translateY: p.interpolate({ inputRange: [0, 1], outputRange: [36, -8] }) },
-                  { translateX: p.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 10, 16] }) },
-                ],
-              },
-            ]}>
-            z
-          </Animated.Text>
-        );
-      })}
-    </Animated.View>
-  );
-}
-
-function Star({
-  x,
-  y,
-  r,
-  ms,
-  delay,
-  still,
-  come,
-}: {
-  x: number;
-  y: number;
-  r: number;
-  ms: number;
-  delay: number;
-  still: boolean;
-  come: Animated.AnimatedInterpolation<number>;
-}) {
-  const v = useRef(new Animated.Value(0.8)).current;
-  useEffect(() => {
-    if (still) return v.setValue(0.8);
-    const a = Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay % 1600),
-        Animated.timing(v, { toValue: 1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-        Animated.timing(v, { toValue: 0.35, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-      ]),
-    );
-    a.start();
-    return () => a.stop();
-  }, [still, v, ms, delay]);
-  return <Animated.View style={[s.star, { left: x, top: y, width: r, height: r, borderRadius: r / 2, opacity: Animated.multiply(v, come) }]} />;
+/** after Goodnight in the check-in and after SOS "Go to bed": the same page, asleep */
+export function GoingToBed({ bed, plan, extra }: { bed: Bed; plan?: string; extra?: ReactNode }) {
+  return <NightPage bed={bed} plan={plan} extra={extra} />;
 }
 
 const MOON_INK = '#1A1250';
 const s = StyleSheet.create({
+  root: { flex: 1 },
   c: { textAlign: 'center' },
-  mid: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 14 },
+  words: { alignSelf: 'stretch', alignItems: 'center', gap: 6 },
+  /* room for the words once it is asleep, kept before too, so the flame falls asleep exactly where it stands */
+  top: { minHeight: 112 },
+  low: { alignSelf: 'stretch', marginTop: 'auto', justifyContent: 'flex-end' },
+  dim: { backgroundColor: '#05030F' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    flexGrow: 1,
+    flexBasis: 140,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  sheetWrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  sheetDim: { backgroundColor: 'rgba(8,5,30,0.5)' },
+  sheet: {
+    alignSelf: 'stretch',
+    maxWidth: 560,
+    width: '100%',
+    marginHorizontal: 'auto',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 12,
+  },
+  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 4, backgroundColor: 'rgba(255,255,255,0.22)' },
   gn: {
     alignSelf: 'stretch',
     minHeight: 68,
@@ -459,23 +513,4 @@ const s = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 4 },
   box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   itemT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  art: { position: 'absolute', width: W, height: H },
-  star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  moonAt: { position: 'absolute', left: 36, top: 14, width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
-  halo: { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,226,122,0.16)' },
-  moon: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)' },
-  win: { position: 'absolute', left: WIN.x, top: WIN.y, width: WIN.w, height: WIN.h, borderRadius: 2, backgroundColor: '#FFD66B' },
-  /* a soft glow without a blur: two faint circles around the window */
-  spill: {
-    position: 'absolute',
-    left: WIN.x + WIN.w / 2 - 15,
-    top: WIN.y + WIN.h / 2 - 15,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,214,107,0.13)',
-  },
-  spillWide: { left: WIN.x + WIN.w / 2 - 26, top: WIN.y + WIN.h / 2 - 26, width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,214,107,0.06)' },
-  zs: { position: 'absolute', left: 250, top: 62, width: 60, height: 60 },
-  z: { position: 'absolute', left: 0, top: 0, fontFamily: font.display, color: '#CFC8F2' },
 });

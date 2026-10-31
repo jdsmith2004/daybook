@@ -110,6 +110,41 @@ describe('the night and the wind-down', () => {
     d = core.windToggle(d, st, '2026-10-15', 0, 99);
     expect(d['2026-10-15'].p?.wd).toBe(false);
   });
+  it('Goodnight is the wind-down, on time or late, and stays counted however the list is ticked; a nap in the afternoon is not', () => {
+    const on = core.phoneAway({}, '2026-10-15', '22:15', 1, st);
+    expect(on['2026-10-15'].p?.wd).toBe(true);
+    expect(core.phoneAway({}, '2026-10-15', '01:30', 1, st)['2026-10-15'].p?.wd).toBe(true);
+    expect(core.phoneAway({}, '2026-10-15', '13:00', 1, st)['2026-10-15'].p?.wd).toBeFalsy();
+    const ticked = core.windToggle(on, st, '2026-10-15', 0, 2);
+    expect(core.windToggle(ticked, st, '2026-10-15', 0, 3)['2026-10-15'].p?.wd).toBe(true);
+  });
+  it('the nights the phone went down only grow, and nothing says in a row', () => {
+    let d = core.phoneAway({}, '2026-10-13', '22:00', 1, st);
+    expect(core.bedWords(d, st, '2026-10-13', '22:00').line).toBe('Down at 10:00 PM. That is your first night.');
+    d = core.phoneAway(d, '2026-10-15', '23:10', 2, st);
+    expect(core.phoneNights(d)).toBe(2);
+    expect(core.bedWords(d, st, '2026-10-15', '23:10').line).toBe('Down at 11:10 PM. That is 2 nights.');
+  });
+  it('the last words are the person’s own sentence, and after a slip today that they came back to this', () => {
+    const me = { ...st, becoming: 'I am someone who keeps my word.' };
+    expect(core.bedWords({}, me, '2026-10-15', '').own).toBe('I am someone who keeps my word.');
+    expect(core.bedWords({}, { ...st, becoming: '' }, '2026-10-15', '').own).toBe('Rest well. Tomorrow is a fresh day.');
+    const slip = core.addEvent({}, '2026-10-15', 'slipped', '20:00', {}).days;
+    expect(core.bedWords(slip, me, '2026-10-15', '').own).toBe('You came back to this tonight. That is the part that lasts.');
+  });
+  it('past the screens-off time, the wind-down says Goodnight still counts', () => {
+    expect(core.windWhen(st, 43)).toContain('in 43 min');
+    expect(core.windWhen(st, -10)).toContain('Goodnight still counts');
+    expect(core.windWhen(st, 900)).not.toContain(' in ');
+  });
+  it('every form can close its eyes', () => {
+    for (let n = 1; n <= 60; n++) {
+      const fig = core.emblemLayers(n, true)!.fig;
+      const closed = core.figAsleep(fig);
+      expect(closed).not.toBe(fig);
+      expect(closed).not.toContain('#4A1A0A');
+    }
+  });
   it('a day choice that matches the usual routine is not kept', () => {
     let d = core.routineDay({}, st, '2026-10-15', 'reach', true, 1);
     expect(d['2026-10-15'].p?.ov).toEqual({ reach: true });

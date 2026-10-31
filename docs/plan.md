@@ -14,7 +14,27 @@
 - At night the journey ends at a warm dawn, not bright day.
 - Plan: a palette override through `useTheme`, and an overlay file of short beats per lesson and card, with the original words one tap away as "more". "Behind this" notes stay as they are.
 
-**Open from the same walk:** what happens when the day is finished. Today the card is gone and a few words sit above the line. The owner wants something different.
+**Open from the same walk:** what happens when the day is finished: see "When the day is finished" below.
+
+## When the day is finished (the owner, October 31, 2026)
+
+**Where it is:** drawn, waiting for the owner to pick. Picture: `docs/today-review/day-finished-options.png`, from the real web app with a prototype behind it. Nothing built or merged.
+
+**What the owner said:** "the all done you need to do that differently it just hides everything underneath the stupid box", and "can we think of a different thing to do when they finish??"
+
+**What the options are judged by:** a finished day is proof of who the person is becoming, and the flame getting stronger is the picture of it. It must not feel like a reward from a game. Already happened, Planning a slip? and SOS stay in plain reach, and nothing sits on top of anything.
+
+- **A. The flame takes the day (recommended).** The line through the day lies on its side: the same marks and the same squiggle in one row under the two quiet buttons, each stop still one tap. The sky takes the room that frees, so the flame goes from 315 to 393 points wide on a 393-point iPhone. The person's own sentence grows on the sky, with "Today proved it." under it. There is no box and nothing to close. Coming back from the last stop, the flame swells to its new size and blooms once, in place.
+- **B. A finish screen.** A full-screen moment, once a day, with a button to close it. Not recommended, though it was part of the first idea: the evening already ends in Goodnight (`goodnight.tsx`, the moon and the stars), so this is a second ending in a row, with one more tap at bedtime.
+- **C. Tomorrow on the line.** Nothing folds, and a fourth stop names tomorrow's lesson. Hides the least and gives a pull back tomorrow, but the flame does not change, so a finished day looks like any other.
+
+**Words chosen for A, to correct if wrong:** with a sentence, that sentence and then "Today proved it.", adding "Rest well." only at night. With no sentence, "You showed up today." and "That is who you are now." After a slip that day, "A hard day, and you finished it.", never "proved it".
+
+**A risk in A:** the flame is back at its usual size the next morning, when the day's stops come back. It happens overnight with the app closed, so it should read as a new day, but it needs a look on the simulator.
+
+**Helps Daybook earn or grow:** a home screen worth opening at the end of the day. No ask is added.
+
+**Steps once picked:** the words as a rule in core with tests; the sizing in `today-size.ts`; the line on its side in `your-day.tsx`; the swell on return, with a still version for Reduce Motion. All _medium_. Then a release build on the simulator for the owner, before any merge.
 
 ## The home screen (the owner, October 30, 2026)
 

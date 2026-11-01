@@ -43,7 +43,7 @@ export function SheetFrame({
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[s.scroll, { paddingTop: (card ? 0 : inset.top) + 12, paddingBottom: inset.bottom + 28 }]}>
+        contentContainerStyle={[s.scroll, { paddingTop: (card ? 0 : inset.top) + 16, paddingBottom: inset.bottom + 28 }]}>
         <Appear webOnly by={24} style={s.col}>
           <View style={s.head}>
             <View style={{ flex: 1, gap: 2 }}>

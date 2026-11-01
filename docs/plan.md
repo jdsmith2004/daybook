@@ -85,7 +85,7 @@ Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone
 2. On the night of a slip, the lesson and the check-in go quiet, leaving only the night's one step. Nothing earned changes.
 3. A count of Goodnights finished, in `PULSE_KEYS` and on the privacy page in the same change. The server refuses a new name until the sync service is deployed, so it needs a deploy to count.
 
-**Built, not merged (claude/day-shape-c29870):** all three. Picture: `docs/today-review/day-night-rules.png`. A slip night whose Goodnight is done says "Rest well." and not "All done", since the lesson and check-in were set aside, not done. On the iPhone, the card sat under two rows and behind the tab bar on a normal night, so the owner chose (November 1, 2026) to order the line as what is done, then the card, then what is still open (core `lineOrder`).
+**Built and merged, November 1, 2026 (after 1.3.0 build 7, so it ships in the next build):** all three. Picture: `docs/today-review/day-night-rules.png`. A slip night whose Goodnight is done says "Rest well." and not "All done", since the lesson and check-in were set aside, not done. On the iPhone, the card sat under two rows and behind the tab bar on a normal night, so the owner chose (November 1, 2026) to order the line as what is done, then the card, then what is still open (core `lineOrder`). Still open: until the Sunday review is done on a Sunday night, it holds the big card and Wind-down stays a row.
 
 The rest below is not being built: no sleeping flame on Today, no "Cannot sleep?" row, the stop keeps the name Wind-down, the check-in is unchanged, and no confidence question, day 50 or switch for turning a stop off. It stays as the record.
 

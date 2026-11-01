@@ -2,11 +2,13 @@
 
 ## The journal in Obsidian (the owner, November 1, 2026; on branch claude/obsidian-9ae9f4, not merged)
 
-The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one quiet line in the data part of the settings, on an iPhone only, and it is free with no count. It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.
+The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.
 
 **What the owner decided:** one note per entry. They pick the exact folder inside the iCloud vault they built, and notes land directly in it (no `Daybook/` subfolder). The tags on every note start as `daybook` and `journal`, and they can be changed; a change reaches every entry and every note, so they stay the same across all of them. Extra tags per entry are one tap once used, and renaming one renames it everywhere. Daybook writes and Obsidian reads: an edit in Obsidian does not come back. This was explained to the owner and not yet argued over, so it can still change.
 
 **A warning given to the owner:** the vault on the work Mac is a git repository that syncs through a work GitHub account. A recovery journal must never land there. The folder is picked on the iPhone, in a personal iCloud vault.
+
+**The look:** the page belongs to the journal, so it has the journal's night and the light of the newest entry's feeling. Its one thing is the person's newest entry, shown as the note Obsidian will show, and the tags below change it as they change. A tag is edited where it stands, so no button sits behind the keyboard. The file name, links and tags are real.
 
 **How it works:**
 

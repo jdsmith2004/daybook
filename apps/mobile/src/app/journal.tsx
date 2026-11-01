@@ -66,7 +66,7 @@ import {
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
-import { JournalTags } from '@/components/journal-tags';
+import { JournalTags, NewTagSheet } from '@/components/journal-tags';
 import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon, InkContext, T } from '@/components/ui';
 import { WhenSheet } from '@/components/when';
@@ -558,6 +558,7 @@ function WritePage({
   const { snap, tk, now, update } = useStore();
   const notes = useNotes();
   const [picking, setPicking] = useState(false);
+  const [newTag, setNewTag] = useState(false);
   const e = snap.journal![id];
   const look = entryLook(e);
   /* what else was felt that day, named somewhere else in the app (a slip, an urge, Name the feeling), so reading a day
@@ -777,7 +778,7 @@ function WritePage({
             <View style={{ height: 8 }} />
           ) : (
             <View style={[s.foot, { paddingBottom: Math.max(inset.bottom, 12) }]}>
-              {notes.on ? <JournalTags id={id} /> : null}
+              {notes.on ? <JournalTags id={id} onNew={() => setNewTag(true)} /> : null}
               <Appear by={12} duration={260}>
                 <Pressable
                   accessibilityRole="button"
@@ -797,6 +798,7 @@ function WritePage({
           )}
         </View>
       </KeyboardAvoidingView>
+      {notes.on ? <NewTagSheet id={id} open={newTag} onClose={() => setNewTag(false)} /> : null}
       <WhenSheet
         open={picking}
         value={whenOf(e.at)}

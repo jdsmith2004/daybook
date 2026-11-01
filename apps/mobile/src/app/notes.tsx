@@ -1,48 +1,127 @@
-/* Copy journal to a folder (core journal-notes.ts; lib/notes.ts does the copying). A quiet sheet from the data part of the
-   settings, on an iPhone only. Before a folder is picked it says what this does; after, it shows the folder and the tags on
-   every note. A change to a tag changes it on every entry and every note, so the spelling stays the same across them. */
-import { changeSettings, cleanTag, cleanTags, jnRenameTag, jnTagCounts, jnTagsOf } from '@daybook/core';
-import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+/* Obsidian: the journal, copied to a folder in the person's vault (core journal-notes.ts; lib/notes.ts does the copying). A row
+   in Settings on an iPhone, and nowhere else: it is not marketed, and nobody meets it who does not go looking.
 
-import { Field, Link } from '@/components/choices';
+   It is a page of the journal, so it has the journal's night and the light of the newest entry's feeling, and the one thing on
+   it is a note, the person's newest, as Obsidian will show it. The tags below it change that note as they change. A tag is
+   edited where it stands, so nothing is hidden by the keyboard, and a change reaches every entry and every note, so the
+   spelling stays the same across them. */
+import { changeSettings, cleanTag, cleanTags, jnList, jnNoteFile, jnNoteTags, jnRenameTag, jnTagCounts, jnTagsOf, type JEntry } from '@daybook/core';
+import { Redirect } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+
+import { Link } from '@/components/choices';
+import { entryLook, feelColor, JN, Light } from '@/components/journal';
 import { Rows } from '@/components/link-card';
 import { Dock } from '@/components/scene';
 import { SheetFrame, SheetH } from '@/components/sheet';
-import { Button, Icon, T } from '@/components/ui';
+import { Text, TextInput } from '@/components/text';
+import { Button, Icon, InkContext, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { pickNoteFolder, stopNotes, useNotes } from '@/lib/notes';
 import { useStore } from '@/lib/store';
-import { useTheme } from '@/lib/theme';
+import { font, NightContext, nightInk, PaletteOverride, useSkyTheme, useTheme } from '@/lib/theme';
 
-const TITLE = 'Copy journal to a folder';
+const INK = { ink: nightInk.ink, muted: nightInk.muted };
+/** shown until there is an entry with words to show */
+const SAMPLE: JEntry = { id: 'sample00', d: '2026-11-01', at: new Date(2026, 10, 1, 8, 30).getTime(), w: 'Calm', t: 'A few honest lines, just for you.', u: 0 };
 
 export default function Notes() {
   const notes = useNotes();
-  const { snap, update, say } = useStore();
-  const [sure, setSure] = useState(false);
-  const pick = async () => {
-    buzz('tap');
-    try {
-      await pickNoteFolder();
-    } catch {
-      say('That folder could not be opened. Try another one.');
-    }
-  };
+  const { snap } = useStore();
+  const { width: W } = useWindowDimensions();
+  const base = useSkyTheme('paper');
+  /* the journal's night, with the bar's color for the lists, so a list sits on the page the way New entry does */
+  const look = useMemo(() => ({ ...base, bg: 'transparent', surface: JN.bar, line: 'rgba(235, 235, 245, 0.12)' }), [base]);
   /* an old link on a device with no way to do it */
   if (!notes.can) return <Redirect href="/" />;
-  if (!notes.on) {
-    return (
-      <SheetFrame title={TITLE}>
-        <T>Each entry becomes a Markdown note in a folder you pick, such as one in your Obsidian vault. Your entries stay in Daybook too.</T>
-        <T tone="muted">Daybook writes only its own notes there. Your other files are left alone.</T>
-        <Dock>
-          <Button label="Pick a folder" onPress={pick} />
-        </Dock>
-      </SheetFrame>
-    );
+  const newest = jnList(snap.journal).find((e) => e.t.trim()) ?? SAMPLE;
+  return (
+    <NightContext.Provider value={true}>
+      <InkContext.Provider value={INK}>
+        <NightPage look={look} color={entryLook(newest).color} width={W}>
+          {notes.on ? <On newest={newest} /> : <Off newest={newest} />}
+        </NightPage>
+      </InkContext.Provider>
+    </NightContext.Provider>
+  );
+}
+
+function NightPage({
+  look,
+  color,
+  width,
+  children,
+}: {
+  look: React.ContextType<typeof PaletteOverride>;
+  color: string;
+  width: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <PaletteOverride.Provider value={look}>
+      <StatusBar style="light" />
+      <View style={s.page}>
+        <Light colors={[color]} w={width * 1.9} h={610} strength={0.42} style={{ left: -width * 0.4, top: -250 }} />
+        {children}
+      </View>
+    </PaletteOverride.Provider>
+  );
+}
+
+/** the person's newest entry, as the note Obsidian will show. It has no edge but its fill, and no heading: it is the page's one thing */
+function NotePreview({ e }: { e: JEntry }) {
+  const { snap } = useStore();
+  const tags = jnNoteTags(e, jnTagsOf(snap.settings));
+  return (
+    <View style={s.note} accessible accessibilityLabel={`A note in your vault: ${e.w}, ${e.d}. Tags: ${tags.join(', ')}.`}>
+      <Text style={s.noteFile} numberOfLines={1}>
+        {jnNoteFile(e).replace(/\.md$/, '')}
+      </Text>
+      <Text style={s.noteLinks}>
+        <Text style={{ color: feelColor(e.w) }}>{e.w}</Text>
+        <Text style={s.noteDot}>{'  ·  '}</Text>
+        {e.d}
+      </Text>
+      <Text style={s.noteBody} numberOfLines={3}>
+        {e.t.trim()}
+      </Text>
+      <Text style={s.noteTags}>{tags.map((t) => '#' + t).join('  ')}</Text>
+    </View>
+  );
+}
+
+function Off({ newest }: { newest: JEntry }) {
+  const { say } = useStore();
+  return (
+    <SheetFrame title="Obsidian" sub="Each journal entry becomes a note in your vault.">
+      <View style={s.middle}>
+        <NotePreview e={newest} />
+      </View>
+      <Dock>
+        <T v="small" tone="muted" style={s.c}>
+          Next, go to iCloud Drive, then Obsidian, and open the folder in your vault. Daybook writes only its own notes there.
+        </T>
+        <Button label="Pick a folder" onPress={() => pick(say)} />
+      </Dock>
+    </SheetFrame>
+  );
+}
+
+async function pick(say: (m: string) => void) {
+  buzz('tap');
+  try {
+    if (await pickNoteFolder()) buzz('save');
+  } catch {
+    say('That folder could not be opened. Try another one.');
   }
+}
+
+function On({ newest }: { newest: JEntry }) {
+  const notes = useNotes();
+  const { snap, update, say } = useStore();
+  const [sure, setSure] = useState(false);
   const every = jnTagsOf(snap.settings);
   const others = jnTagCounts(snap.journal, every);
   const setEvery = (list: string[], rename?: [string, string]) =>
@@ -52,128 +131,121 @@ export default function Notes() {
       journal: rename ? jnRenameTag(s0.journal || {}, rename[0], rename[1]) : s0.journal,
     }));
   const renameOther = (from: string, to: string) => update((s0) => ({ ...s0, journal: jnRenameTag(s0.journal || {}, from, to) }));
+  const place = notes.name + '  ·  ' + (notes.count === 1 ? '1 note' : notes.count + ' notes');
   return (
-    <SheetFrame title={TITLE}>
-      <View style={{ gap: 2 }}>
-        <T v="h2">{notes.name}</T>
-        <T tone={notes.lost ? undefined : 'muted'} v="small">
-          {notes.lost
-            ? 'Daybook cannot reach this folder right now. It tries again each time the app opens. If it keeps saying this, pick the folder again.'
-            : notes.count === 1
-              ? '1 note'
-              : notes.count + ' notes'}
+    <SheetFrame title="Obsidian" sub={place}>
+      {notes.lost ? <T>Daybook cannot reach this folder right now. It tries again each time the app opens. If this stays, pick the folder again.</T> : null}
+      {notes.kept ? (
+        <T tone="muted" v="small">
+          {notes.kept === 1
+            ? 'One note was changed outside Daybook, so it was kept beside the new one.'
+            : notes.kept + ' notes were changed outside Daybook, so they were kept beside the new ones.'}
         </T>
-        {notes.kept ? (
-          <T tone="muted" v="small">
-            {notes.kept === 1
-              ? 'One note was changed outside Daybook, so it was kept beside the new one.'
-              : notes.kept + ' notes were changed outside Daybook, so they were kept beside the new ones.'}
-          </T>
-        ) : null}
+      ) : null}
+      <NotePreview e={newest} />
+
+      <View style={s.group}>
+        <SheetH title="On every note" />
+        <Rows>
+          {every.map((t) => (
+            <TagRow
+              key={t}
+              tag={t}
+              onSave={(to) =>
+                setEvery(
+                  every.map((x) => (x === t ? to : x)),
+                  [t, to],
+                )
+              }
+              onRemove={() => setEvery(every.filter((x) => x !== t))}
+            />
+          ))}
+          <AddRow onAdd={(t) => setEvery([...every, t])} />
+        </Rows>
+        <T tone="muted" v="small">
+          The feeling goes on too. Tap a tag to rename it, and every note follows.
+        </T>
       </View>
 
-      <SheetH title="On every note" />
-      <Rows>
-        {every.map((t) => (
-          <TagRow
-            key={t}
-            tag={t}
-            onSave={(to) =>
-              setEvery(
-                every.map((x) => (x === t ? to : x)),
-                [t, to],
-              )
-            }
-            onRemove={() => setEvery(every.filter((x) => x !== t))}
-          />
-        ))}
-        <AddRow onAdd={(t) => setEvery([...every, t])} />
-      </Rows>
-      <T tone="muted" v="small">
-        The feeling goes on too, such as #feeling/calm.
-      </T>
-
       {others.length ? (
-        <>
+        <View style={s.group}>
           <SheetH title="On some entries" />
           <Rows>
             {others.map((o) => (
-              <TagRow key={o.tag} tag={o.tag} aside={String(o.n)} onSave={(to) => renameOther(o.tag, to)} onRemove={() => renameOther(o.tag, '')} />
+              <TagRow key={o.tag} tag={o.tag} count={o.n} onSave={(to) => renameOther(o.tag, to)} onRemove={() => renameOther(o.tag, '')} />
             ))}
           </Rows>
-        </>
+        </View>
       ) : null}
 
       <Dock>
-        <Button label="Pick another folder" kind="ghost" onPress={pick} />
-        <Link
-          label={sure ? 'Tap again to stop. The notes stay in the folder.' : 'Stop copying'}
-          onPress={() => {
-            buzz('tap');
-            if (!sure) return setSure(true);
-            setSure(false);
-            void stopNotes();
-          }}
-        />
+        <Button label="Change folder" kind="ghost" onPress={() => pick(say)} />
+        <View style={s.c2}>
+          <Link
+            label={sure ? 'Tap again to stop. The notes stay.' : 'Stop copying'}
+            onPress={() => {
+              buzz('tap');
+              if (!sure) return setSure(true);
+              setSure(false);
+              void stopNotes();
+            }}
+          />
+        </View>
       </Dock>
     </SheetFrame>
   );
 }
 
-/** one tag: a tap opens it to rename it or take it off */
-function TagRow({ tag, aside, onSave, onRemove }: { tag: string; aside?: string; onSave: (to: string) => void; onRemove: () => void }) {
+/** one tag, editable where it stands. Its name is saved when the keyboard goes away; taking it off takes two taps, since it
+    leaves every note */
+function TagRow({ tag, count, onSave, onRemove }: { tag: string; count?: number; onSave: (to: string) => void; onRemove: () => void }) {
   const c = useTheme();
-  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(tag);
-  if (!open) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={'Tag ' + tag + (aside ? ', on ' + aside + ' entries' : '') + '. Change it'}
-        onPress={() => {
-          buzz('tap');
-          setDraft(tag);
-          setOpen(true);
-        }}
-        style={({ pressed }) => [s.row, { borderBottomColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
-        <T v="label" style={{ flex: 1 }}>
-          {'#' + tag}
-        </T>
-        {aside ? <T tone="muted">{aside}</T> : null}
-        <Icon name="pencil" size={15} color={c.muted} />
-      </Pressable>
-    );
-  }
-  const clean = cleanTag(draft);
-  const save = () => {
-    setOpen(false);
+  const [typing, setTyping] = useState(false);
+  const [sure, setSure] = useState(false);
+  const gone = useRef(false);
+  const commit = () => {
+    setTyping(false);
+    setSure(false);
+    if (gone.current) return;
+    const clean = cleanTag(draft);
     if (clean && clean !== tag) onSave(clean);
+    else setDraft(tag);
   };
   return (
-    <View style={[s.edit, { borderBottomColor: c.line }]}>
-      <Field
-        label={'Rename ' + tag}
-        hideLabel
-        autoFocus
+    <View style={[s.row, { borderBottomColor: c.line }]}>
+      <Text style={s.hash}>#</Text>
+      <TextInput
+        accessibilityLabel={'Tag ' + tag + (count ? ', on ' + count + (count === 1 ? ' entry' : ' entries') : '')}
+        value={draft}
+        onChangeText={setDraft}
+        onFocus={() => setTyping(true)}
+        onEndEditing={commit}
         autoCapitalize="none"
         autoCorrect={false}
         maxLength={40}
-        value={draft}
-        onChangeText={setDraft}
         returnKeyType="done"
-        onSubmitEditing={save}
+        keyboardAppearance="dark"
+        selectionColor={JN.accent}
+        style={s.input}
       />
-      <View style={s.editBar}>
-        <Link
-          label="Take it off"
-          tone="danger"
+      {typing ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={sure ? 'Tap again to take ' + tag + ' off' : 'Take ' + tag + ' off'}
+          hitSlop={8}
           onPress={() => {
-            setOpen(false);
+            buzz('tap');
+            if (!sure) return setSure(true);
+            gone.current = true;
             onRemove();
           }}
-        />
-        <Link label={clean && clean !== tag ? 'Save as #' + clean : 'Close'} onPress={save} />
-      </View>
+          style={s.off}>
+          {sure ? <Text style={s.offT}>Take off</Text> : <Icon name="x" size={17} color={JN.quiet} />}
+        </Pressable>
+      ) : count ? (
+        <Text style={s.count}>{count}</Text>
+      ) : null}
     </View>
   );
 }
@@ -181,38 +253,51 @@ function TagRow({ tag, aside, onSave, onRemove }: { tag: string; aside?: string;
 function AddRow({ onAdd }: { onAdd: (t: string) => void }) {
   const c = useTheme();
   const [draft, setDraft] = useState('');
-  const clean = cleanTag(draft);
   const add = () => {
+    const clean = cleanTag(draft);
+    setDraft('');
     if (!clean) return;
     buzz('tap');
     onAdd(clean);
-    setDraft('');
   };
   return (
-    <View style={[s.edit, { borderBottomColor: c.line }]}>
-      <Field
-        label="Add a tag"
-        hideLabel
+    <View style={[s.row, { borderBottomColor: c.line }]}>
+      <Icon name="plus" size={15} color={JN.quiet} />
+      <TextInput
+        accessibilityLabel="Add a tag"
+        placeholder="Add a tag"
+        placeholderTextColor={JN.quiet}
+        value={draft}
+        onChangeText={setDraft}
+        onEndEditing={add}
         autoCapitalize="none"
         autoCorrect={false}
         maxLength={40}
-        placeholder="Add a tag"
-        value={draft}
-        onChangeText={setDraft}
         returnKeyType="done"
-        onSubmitEditing={add}
+        keyboardAppearance="dark"
+        selectionColor={JN.accent}
+        style={s.input}
       />
-      {clean ? (
-        <View style={s.editBar}>
-          <Link label={'Add #' + clean} onPress={add} />
-        </View>
-      ) : null}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  row: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderBottomWidth: 1 },
-  edit: { paddingHorizontal: 16, paddingVertical: 12, gap: 4, borderBottomWidth: 1 },
-  editBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  page: { flex: 1, backgroundColor: JN.paper, overflow: 'hidden' },
+  middle: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
+  c: { textAlign: 'center' },
+  c2: { alignItems: 'center' },
+  group: { gap: 8, marginTop: 8 },
+  note: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.07)' },
+  noteFile: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: JN.quiet },
+  noteLinks: { fontFamily: font.display, fontSize: 22, lineHeight: 28, color: JN.accent },
+  noteDot: { color: JN.quiet },
+  noteBody: { fontFamily: font.body, fontSize: 17, lineHeight: 25, color: JN.page },
+  noteTags: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 20, color: JN.accent },
+  row: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, borderBottomWidth: 1 },
+  hash: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: JN.quiet },
+  input: { flex: 1, minHeight: 44, paddingVertical: 0, fontFamily: font.bodySemi, fontSize: 15, color: JN.ink },
+  off: { minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  offT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: '#FF9A8D' },
+  count: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20, color: JN.quiet },
 });

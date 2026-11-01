@@ -49,7 +49,7 @@ import { OnOff, Reveal, Stepper } from '@/components/form';
 import { confirmUnlock, lockOffered } from '@/components/lock';
 import { SyncBody } from '@/components/sync-card';
 import { B } from '@/components/help-bits';
-import { Rows } from '@/components/link-card';
+import { LinkCard, Rows } from '@/components/link-card';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
 import { useNotes } from '@/lib/notes';
@@ -618,6 +618,14 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               )
             : null}
 
+          {notes.can ? (
+            <LinkCard
+              icon="pencil"
+              title="Obsidian"
+              sub={notes.on ? 'Copying your journal to ' + notes.name : 'Copy your journal to your vault'}
+              onPress={() => router.push('/notes')}
+            />
+          ) : null}
           {sec(
             'data',
             'copy',
@@ -637,9 +645,6 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                     <Act label="Save a full backup (JSON)" onPress={() => save('json')} />
                     <Act label="Restore from a backup…" onPress={restore} disabled={busy} />
                   </>
-                ) : null}
-                {notes.can ? (
-                  <Act label={notes.on ? 'Copying journal to ' + notes.name : 'Copy journal to a folder…'} onPress={() => router.push('/notes')} />
                 ) : null}
                 {wipe ? null : <Act danger icon="trash" label="Delete everything…" onPress={() => setWipe(true)} />}
               </View>

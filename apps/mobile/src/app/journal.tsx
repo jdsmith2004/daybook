@@ -17,6 +17,7 @@ import {
   jnDayLabel,
   JN_NO_FEEL,
   jnEdit,
+  mdContinue,
   jnLogs,
   jnRemove,
   jnStart,
@@ -599,7 +600,19 @@ function WritePage({
     latest.current = e.t;
     setText(e.t);
   }, [e.t]);
-  const onChange = (t: string) => {
+  /* the words as typed, when return carried a list on: the text box tells of them a second time, and that is not a new change */
+  const carried = useRef<string | null>(null);
+  const onChange = (typed: string) => {
+    if (typed === carried.current) return;
+    carried.current = null;
+    /* with Markdown, return carries a list on */
+    const more = notes.on ? mdContinue(latest.current, typed, caret.current) : null;
+    if (more) {
+      carried.current = typed;
+      caret.current = more.caret;
+      setStartAt(more.caret);
+    }
+    const t = more ? more.text : typed;
     latest.current = t;
     setText(t);
     clearTimeout(timer.current);
@@ -643,6 +656,12 @@ function WritePage({
     page.current?.scrollToEnd({ animated: true });
   };
 
+  /* the text box has it by then, and from there the caret is the person's */
+  useEffect(() => {
+    if (startAt == null) return;
+    const t = setTimeout(() => setStartAt(null), 120);
+    return () => clearTimeout(t);
+  }, [startAt]);
   /** a tap on a line in the formatted words: the caret goes to the end of that line */
   const writeAt = (line: number) => {
     const t = latest.current;
@@ -792,7 +811,6 @@ function WritePage({
                 selection={startAt != null ? { start: startAt, end: startAt } : undefined}
                 onSelectionChange={(ev) => {
                   caret.current = ev.nativeEvent.selection.end;
-                  if (startAt != null) setStartAt(null);
                 }}
                 onContentSizeChange={() => {
                   /* writing at the end keeps the newest line in sight as the page grows */

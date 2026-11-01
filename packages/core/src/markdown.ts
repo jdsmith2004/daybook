@@ -329,3 +329,27 @@ export function mdToggleTask(text: string, line: number): string {
   lines[line] = m[1] + (m[2] === ' ' ? 'x' : ' ') + m[3];
   return lines.join('\n');
 }
+
+/** what return does in a list or a quote, as in Obsidian: the next line starts the same way, a task unticked and a number one on.
+    Return on an empty item ends the list. Null when the change was not one return, or the line is not one of these */
+export function mdContinue(prev: string, next: string, after?: number): { text: string; caret: number } | null {
+  if (next.length !== prev.length + 1) return null;
+  /* beside another line break the text alone cannot say where return was pressed. `after` is the caret just after it (iOS tells of
+     the caret before the text), or it counts as the earlier place */
+  const pressedAt = (i: number) => next[i] === '\n' && prev.slice(0, i) === next.slice(0, i) && prev.slice(i) === next.slice(i + 1);
+  let at = 0;
+  if (after != null && after > 0 && pressedAt(after - 1)) at = after - 1;
+  else {
+    while (at < prev.length && prev[at] === next[at]) at++;
+    if (!pressedAt(at)) return null;
+    while (at > 0 && prev[at - 1] === '\n') at--;
+  }
+  const start = prev.lastIndexOf('\n', at - 1) + 1;
+  const line = prev.slice(start, at);
+  const m = /^(\s*)(?:([-*+]) \[[ xX]\] |([-*+]) |(\d+)([.)]) |> ?)(.*)$/.exec(line);
+  if (!m) return null;
+  if (!m[6].trim()) return { text: prev.slice(0, start) + prev.slice(at), caret: start };
+  const lead = m[2] ? `${m[2]} [ ] ` : m[3] ? `${m[3]} ` : m[4] ? `${+m[4] + 1}${m[5]} ` : '> ';
+  const add = '\n' + m[1] + lead;
+  return { text: prev.slice(0, at) + add + prev.slice(at), caret: at + add.length };
+}

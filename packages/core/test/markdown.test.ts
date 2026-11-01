@@ -1,6 +1,6 @@
 /* Markdown for journal entries (markdown.ts): it reads the way Obsidian reads it, and it never changes a character of the words. */
 import { describe, expect, it } from 'vitest';
-import { mdBlocks, mdInline, mdPlain, mdSource, mdToggleTask } from '../src/markdown';
+import { mdBlocks, mdContinue, mdInline, mdPlain, mdSource, mdToggleTask } from '../src/markdown';
 
 const shown = (s: string) =>
   mdInline(s)
@@ -184,5 +184,34 @@ describe('ticking a task', () => {
   it('leaves anything else alone', () => {
     expect(mdToggleTask('words', 0)).toBe('words');
     expect(mdToggleTask('words', 9)).toBe('words');
+  });
+});
+
+describe('return in a list', () => {
+  const press = (t: string, at = t.length) => mdContinue(t, t.slice(0, at) + '\n' + t.slice(at));
+  it('starts the next item the same way', () => {
+    expect(press('- one')).toEqual({ text: '- one\n- ', caret: 8 });
+    expect(press('  * one')?.text).toBe('  * one\n  * ');
+    expect(press('- [x] done')?.text).toBe('- [x] done\n- [ ] ');
+    expect(press('9. nine')?.text).toBe('9. nine\n10. ');
+    expect(press('> said')?.text).toBe('> said\n> ');
+  });
+  it('carries on in the middle of the words too', () => {
+    const r = press('- one\nafter', 5);
+    expect(r).toEqual({ text: '- one\n- \nafter', caret: 8 });
+  });
+  it('goes by the caret when the text cannot say', () => {
+    expect(mdContinue('- one\n', '- one\n\n', 7)).toBeNull();
+    expect(mdContinue('- one\n', '- one\n\n', 6)?.text).toBe('- one\n- \n');
+  });
+  it('ends the list on an empty item', () => {
+    expect(press('- one\n- ')).toEqual({ text: '- one\n', caret: 6 });
+    expect(press('- [ ] ')).toEqual({ text: '', caret: 0 });
+  });
+  it('leaves everything else to the keyboard', () => {
+    expect(press('plain words')).toBeNull();
+    expect(mdContinue('- one', '- one more')).toBeNull();
+    expect(mdContinue('- one', '- on')).toBeNull();
+    expect(mdContinue('- one', '- one!')).toBeNull();
   });
 });

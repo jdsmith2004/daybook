@@ -13,8 +13,7 @@ const SKY_MIN = 300;
 const BELOW = 16 + 48 + 16 + 116 + 8 + 52 + 8 + 52 + 34;
 /** the tab bar, without the home indicator's room. Inside the iPhone's own bar the bottom safe area already counts it. */
 const TABS = Platform.OS === 'ios' ? 0 : 62;
-/** the date and the words under it, and the number and the level along the bottom */
-const HEAD = 88;
+/** the number and the level along the bottom */
 export const FOOT = 86;
 /** the room a quiet line above the card takes */
 export const NOTE_ROOM = 26;
@@ -24,8 +23,8 @@ export const LEAD_ROOM = 30;
 /** the sky's height and the flame's drawing inside it, for a screen this tall and wide. extra: a quiet line above the card */
 export function todaySize(height: number, width: number, top: number, bottom: number, extra = 0): { sky: number; flame: number } {
   const sky = Math.round(Math.max(SKY_MIN, Math.min(SKY_MAX, height - BELOW - TABS - bottom - extra)));
-  /* the drawing has room around the figure, so its top runs up under the date */
-  const flame = Math.round(Math.min(width, sky - top - HEAD - FOOT + 80));
+  /* the drawing has room around the figure, so its top runs up to the clock and no further */
+  const flame = Math.round(Math.min(width, sky - top - FOOT + 18));
   return { sky, flame };
 }
 

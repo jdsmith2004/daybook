@@ -136,7 +136,7 @@ export interface Settings {
   loop: string;
   rule: string;
   safePerson: string;
-  /** who I am becoming: one sentence in the person's own words, from the end of setup or My plan. Today and SOS show it. */
+  /** who I am becoming: one sentence in the person's own words, from the end of setup or My plan. My plan, the weekly review and Good night show it. */
   becoming: string;
   ask: string;
   safety: boolean[];

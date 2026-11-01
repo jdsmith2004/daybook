@@ -1,17 +1,14 @@
 /* The top of Today: your flame in its own sky (core: emblemScene), from edge to edge and under the clock, with stars at night
-   and its own hills carried on across the page. The date and who I am becoming are written on the sky; your one number sits low
-   on the left (core: heroNumber), your level on the right, and the bar to the next form along the bottom edge. The flame is the
+   and its own hills carried on across the page. Nothing is written over the flame (the owner, November 1, 2026): your one number
+   sits low on the left (core: heroNumber), your level on the right, and the bar to the next form along the bottom edge. The flame is the
    biggest thing on the screen (lib/today-size.ts; CLAUDE.md, "The flame is the heart of the app"). The one next step hangs right
    under it (core pickMoment, moment-card.tsx), so what you do and what it grows are one picture. The flame moves in a way that
    fits its form and the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it
    and it says hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while
    the app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills to
    where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
-   On the left of the sky, a small ring of seven: this week's lesson days (core lessonWeek); a tap opens the sheet that says how
-   it fills (app/lessons-week.tsx). It only fills, and a slip never touches it. A lesson finished lights its day at the same moment
-   the flame blooms, so each one is seen feeding the flame.
    Under the number, the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation. */
-import { CHEERS, emblemScene, heroNumber, lessonWeek, type GameState, type LessonWeek, type Snapshot } from '@daybook/core';
+import { CHEERS, emblemScene, formOfLevel, heroNumber, type GameState, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +18,7 @@ import { Text } from '@/components/text';
 
 /** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
 const ON_ART = 1.15;
-import Svg, { Path, SvgXml } from 'react-native-svg';
+import { SvgXml } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
@@ -32,6 +29,8 @@ import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { FOOT } from '@/lib/today-size';
 
+/** how far a form stands below the hills' line, as a share of its drawing: the torch and the beacon are tall and narrow enough to pass between the words; the kindling's and the campfire's logs are wide, so they stay clear above them */
+const SINK: Record<number, number> = { 1: -0.02, 2: 0, 3: 0.11, 4: 0.08 };
 /** the star field was drawn for a sky this tall, and spreads with the real one */
 const STAR_SKY = 262;
 
@@ -43,7 +42,6 @@ export function Hero({
   sky,
   flame,
   title,
-  head,
   action,
 }: {
   g: GameState;
@@ -53,14 +51,12 @@ export function Hero({
   /** the sky's height and the flame's drawing (lib/today-size.ts) */
   sky: number;
   flame: number;
-  /** the date */
+  /** the date, said by a screen reader */
   title: string;
-  /** what is written under the date (it reads the sky's ink from skyInk) */
-  head?: React.ReactNode;
   /** a small button at the top right */
   action?: React.ReactNode;
 }) {
-  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} head={head} action={action} />;
+  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} />;
 }
 
 /** the colors of the words on the sky at this level */
@@ -105,7 +101,6 @@ function Sky({
   height,
   flame,
   title,
-  head,
   action,
 }: {
   g: GameState;
@@ -115,7 +110,6 @@ function Sky({
   height: number;
   flame: number;
   title: string;
-  head?: React.ReactNode;
   action?: React.ReactNode;
 }) {
   const c = useTheme();
@@ -126,10 +120,10 @@ function Sky({
   const inset = useSafeAreaInsets();
   const SCENE_H = height;
   const FLAME = flame;
-  /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock */
-  const FLAME_TOP = SCENE_H - FLAME - FOOT + 18;
+  /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock. The tall, narrow forms stand
+     lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
+  const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
   const h = heroNumber(snap.days, snap.settings!, tk, now);
-  const week = useMemo(() => lessonWeek(snap.days, tk), [snap.days, tk]);
   const { light, ink, soft, glass } = skyInk(lvl.n);
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
@@ -156,11 +150,8 @@ function Sky({
   };
   /* the flame grows in front of you: what was last seen here, and the bar from there to now, once any celebration that
      came with it is closed */
-  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts, ring: week.n });
+  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts });
   const bar = useRef(new Animated.Value(lvl.frac)).current;
-  /* the ring's day, lit with the bloom: the ring shows what was seen until then */
-  const [ringSeen, setRingSeen] = useState(week.n);
-  const ringPop = useRef(new Animated.Value(1)).current;
   const busy = useCelebrating();
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
@@ -168,14 +159,13 @@ function Sky({
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
-      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts, ring: week.n };
-      if (week.n < was.ring || (week.n > was.ring && g.pts <= was.pts)) setRingSeen(week.n);
+      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts };
       if (g.pts > was.pts && !dueRef.current) {
         bar.setValue(lvl.n > was.n ? 0 : was.frac);
         dueRef.current = true;
         setDue(true);
       } else if (!dueRef.current) bar.setValue(lvl.frac);
-    }, [g.pts, lvl.n, lvl.frac, bar, week.n]),
+    }, [g.pts, lvl.n, lvl.frac, bar]),
   );
   useEffect(() => {
     if (!due || busy) return;
@@ -185,18 +175,9 @@ function Sky({
     else Animated.timing(bar, { toValue: lvl.frac, duration: 1100, delay: 350, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     setPulse((p) => p + 1);
     setGrew(true);
-    setRingSeen(week.n);
-    if (!reduce && week.n > ringSeen)
-      Animated.sequence([
-        Animated.delay(350),
-        Animated.timing(ringPop, { toValue: 1.18, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
-        Animated.timing(ringPop, { toValue: 1, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-      ]).start();
     AccessibilityInfo.announceForAccessibility('Your flame grew.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [due, busy, reduce, bar, lvl.frac]);
-  /* the ring shows the days seen here so far: a new lesson day lights with the bloom */
-  const shown = ringSeen >= week.n ? week : { ...week, n: ringSeen };
   useEffect(() => {
     if (!grew) return;
     const t = setTimeout(() => setGrew(false), 2800);
@@ -248,43 +229,16 @@ function Sky({
           />
         ) : null}
       </Pressable>
-      {/* the flame first, so what is written on the sky lies over it and takes the tap */}
       <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
-        <Pressable accessibilityRole="button" accessibilityLabel={`Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${title}. Your flame, level ${lvl.n}. Tap to say hi.`} onPress={hello}>
           <BigFlame level={lvl.n} size={FLAME} pulse={pulse} />
         </Pressable>
       </View>
-      <View style={[s.head, { top: inset.top + 10 }]} pointerEvents="box-none">
-        <View style={s.headRow} pointerEvents="box-none">
-          <View style={{ flex: 1 }} pointerEvents="box-none">
-            <Text accessibilityRole="header" maxFontSizeMultiplier={ON_ART} style={[s.date, { color: ink }]}>
-              {title}
-            </Text>
-          </View>
+      {action ? (
+        <View style={[s.action, { top: inset.top + 10 }]} pointerEvents="box-none">
           {action}
         </View>
-        {head}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Lessons this week: ${week.n} of 7 days. Tap to see how it fills.`}
-          onPress={() => {
-            buzz('tap');
-            router.push('/lessons-week');
-          }}
-          style={({ pressed }) => [s.ring, pressed && { opacity: 0.8 }]}>
-          <Animated.View style={{ transform: [{ scale: ringPop }] }}>
-            <WeekRing
-              week={shown}
-              lit={c.sun}
-              dim={light ? 'rgba(255,255,255,0.2)' : 'rgba(31,26,74,0.14)'}
-              now={light ? 'rgba(255,255,255,0.42)' : 'rgba(31,26,74,0.3)'}
-            />
-          </Animated.View>
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.ringN, { color: ink }]}>
-            {shown.n} of 7
-          </Text>
-        </Pressable>
-      </View>
+      ) : null}
       {h ? (
         <Pressable
           accessibilityRole="button"
@@ -347,47 +301,10 @@ function Sky({
   );
 }
 
-/* ---------- the week's lesson days: seven arcs, Monday at the top, going round ---------- */
-const RING = 34;
-const RING_W = 4;
-function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
-  const p = (a: number) => [cx + r * Math.cos(((a - 90) * Math.PI) / 180), cy + r * Math.sin(((a - 90) * Math.PI) / 180)];
-  const [x0, y0] = p(a0);
-  const [x1, y1] = p(a1);
-  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
-}
-/** the week's days, n of them lit (the first n lit days; a newer one waits for the bloom) */
-function WeekRing({ week, lit, dim, now }: { week: LessonWeek; lit: string; dim: string; now: string }) {
-  const r = (RING - RING_W) / 2;
-  const step = 360 / 7;
-  let left = week.n;
-  return (
-    <View style={{ width: RING, height: RING, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
-        {week.days.map((d, i) => {
-          const on = d.on && left-- > 0;
-          return (
-            <Path
-              key={d.k}
-              d={arc(RING / 2, RING / 2, r, i * step + 5, (i + 1) * step - 5)}
-              stroke={on ? lit : d.today ? now : dim}
-              strokeWidth={RING_W}
-              strokeLinecap="round"
-              fill="none"
-            />
-          );
-        })}
-      </Svg>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   sky: { overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  head: { position: 'absolute', left: 16, right: 16, gap: 2 },
-  headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  date: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  action: { position: 'absolute', right: 16 },
   flame: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   num: { position: 'absolute', left: 16, bottom: 18, maxWidth: '58%' },
   eb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
@@ -411,6 +328,4 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  ring: { alignSelf: 'flex-start', alignItems: 'flex-start', gap: 4, marginTop: 8, minWidth: 44, minHeight: 44 },
-  ringN: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
 });

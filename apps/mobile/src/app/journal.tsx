@@ -112,8 +112,6 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
   useEffect(() => {
     if (reduce) shown.value = withTiming(1, { duration: 220 });
     else y.value = withSpring(0, OPEN);
-    /* once the journal has been opened, Today stops showing how to find it */
-    if (!sos.mem.jnSeen) sos.setMem((m) => ({ ...m, jnSeen: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const closing = useRef(false);

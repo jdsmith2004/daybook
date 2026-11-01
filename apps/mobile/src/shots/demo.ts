@@ -26,7 +26,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
-  /* a lesson looked at again on four days this week, so the ring of lesson days on Today is part lit */
+  /* a lesson looked at again on four days this week, so the ring of lesson days is part lit */
   const RECENT = ['2026-10-12', '2026-10-13', '2026-10-15', '2026-10-16'];
   let id = 0;
   const ev = (time: string, outcome: 'rode' | 'slipped', trigger: string) => ({

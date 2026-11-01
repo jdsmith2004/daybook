@@ -569,7 +569,7 @@ export const setLearn = (st: Settings, fn: (l: Settings['learn']) => void, now =
 /** a lesson was finished or read again on this day (the day's lesson stop is done) */
 export const lessonDoneOn = (p: Play | null | undefined) => !!p && ((p.ls && p.ls.length > 0) || (p.lv && p.lv.length > 0));
 
-/* ---------- the week's lesson days: the ring of seven on Today ---------- */
+/* ---------- the week's lesson days: the ring of seven (from Learn) ---------- */
 export interface LessonWeek {
   /** Monday to Sunday: a lesson done that day, and which one is today */
   days: { k: DayKey; on: boolean; today: boolean }[];

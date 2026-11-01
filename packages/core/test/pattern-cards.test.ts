@@ -4,7 +4,20 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, normSettings } from '../src/legacy/core.js';
 import { addEvent } from '../src/mutate';
-import { dayStep, moodStep, patDoing, patChunks, patFeels, patFelt, patLeads, patPeriod, patRangeLabel, patRideCols, patRideSay } from '../src/pattern-cards';
+import {
+  dayStep,
+  moodStep,
+  patDoing,
+  patChunks,
+  patFeels,
+  patFelt,
+  patLeads,
+  patPeriod,
+  patRangeLabel,
+  patRideCols,
+  patRideSay,
+  spreadCircles,
+} from '../src/pattern-cards';
 import { patGaps, patKeys, patWhen } from '../src/pattern';
 import type { DayKey, Days } from '../src/types';
 
@@ -356,5 +369,52 @@ describe('what was named', () => {
   it('with nothing named, says nothing', () => {
     const f = patFeels(undefined, base(), patPeriod('7', base(), st, TK), TK);
     expect(f).toMatchObject({ n: 0, head: '', line: '', fresh: '', words: [], kinds: 0 });
+  });
+});
+
+describe('spreadCircles', () => {
+  const clear = (l: { x: number; y: number; r: number }[], gap: number) => {
+    for (let i = 0; i < l.length; i++)
+      for (let j = i + 1; j < l.length; j++) expect(Math.hypot(l[i].x - l[j].x, l[i].y - l[j].y)).toBeGreaterThanOrEqual(l[i].r + l[j].r + gap - 0.5);
+  };
+
+  it('parts shapes that overlap and keeps them in the square', () => {
+    const out = spreadCircles(
+      [
+        { x: 200, y: 200, r: 30 },
+        { x: 225, y: 200, r: 24 },
+        { x: 250, y: 200, r: 30 },
+      ],
+      300,
+      10,
+    );
+    clear(out, 10);
+    for (const p of out) {
+      expect(p.x - p.r).toBeGreaterThanOrEqual(0);
+      expect(p.x + p.r).toBeLessThanOrEqual(300);
+    }
+  });
+
+  it('leaves alone what touches nothing', () => {
+    const list = [
+      { x: 40, y: 40, r: 20 },
+      { x: 200, y: 200, r: 20 },
+    ];
+    expect(spreadCircles(list, 300, 10)).toEqual(list);
+  });
+
+  it('parts two on the same spot, the same way every time', () => {
+    const list = [
+      { x: 100, y: 100, r: 20 },
+      { x: 100, y: 100, r: 20 },
+    ];
+    const a = spreadCircles(list, 300);
+    clear(a, 0);
+    expect(spreadCircles(list, 300)).toEqual(a);
+    expect(a[0].x).toBeLessThan(a[1].x);
+  });
+
+  it('pulls one that starts over the edge back in', () => {
+    expect(spreadCircles([{ x: 295, y: 5, r: 20 }], 300)).toEqual([{ x: 280, y: 20, r: 20 }]);
   });
 });

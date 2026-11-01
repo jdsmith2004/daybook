@@ -9,7 +9,17 @@
    - TwoNumbers: two numbers side by side, slip days and days with no slip
    One warm accent, the flame's, carries what was won. Everything else stays in the card's quiet colors, with its words on the
    chart and no legend. Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
-import { FEEL_QUADS, type DayFeelStep, type DayKey, type PatDiff, type PatFeels, type PatFeltDay, type PatHour, type PatWhen } from '@daybook/core';
+import {
+  FEEL_QUADS,
+  spreadCircles,
+  type DayFeelStep,
+  type DayKey,
+  type PatDiff,
+  type PatFeels,
+  type PatFeltDay,
+  type PatHour,
+  type PatWhen,
+} from '@daybook/core';
 import { useState, type ReactNode } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -36,7 +46,8 @@ function useInk() {
   };
 }
 
-/** the room left for a chart in a card, as a size to draw at */
+/** the room left for a chart in a card, as a size to draw at. The chart floats inside it: on a phone a card with no set height takes its size from
+    what is in it, so a chart in the flow would make the room bigger, and the chart drawn for that room bigger again, without end */
 export function Room({ min = 180, children }: { min?: number; children: (w: number, h: number) => ReactNode }) {
   const [z, setZ] = useState({ w: 0, h: 0 });
   return (
@@ -46,7 +57,7 @@ export function Room({ min = 180, children }: { min?: number; children: (w: numb
         const { width, height } = e.nativeEvent.layout;
         setZ({ w: Math.round(width), h: Math.round(height) });
       }}>
-      {z.w ? children(z.w, z.h) : null}
+      <View style={StyleSheet.absoluteFill}>{z.w ? children(z.w, z.h) : null}</View>
     </View>
   );
 }
@@ -365,9 +376,10 @@ export function Moments({ cols, H, w, label }: { cols: MomentCol[]; H: number; w
 /* ---------- what was named ---------- */
 const FIELD = 12;
 const SKY_WORDS = 18;
-function Lit({ r, c, size, cell, i }: { r: number; c: number; size: number; cell: number; i: number }) {
+const SKY_APART = 16;
+function Lit({ r, c, size, x, y, i }: { r: number; c: number; size: number; x: number; y: number; i: number }) {
   return (
-    <Pop delay={200 + i * 90} style={{ position: 'absolute', left: c * cell + cell / 2 - size / 2, top: r * cell + cell / 2 - size / 2 }}>
+    <Pop delay={200 + i * 90} style={{ position: 'absolute', left: x - size / 2, top: y - size / 2 }}>
       <Shape kind={feelKind(r, c)} size={size} color={FEEL_COLORS[r][c]} />
     </Pop>
   );
@@ -381,17 +393,20 @@ export function FeelSky({ quads, words, w, h, label }: { quads: PatFeels['quads'
   /* a word named once is small; it grows with each time, up to five */
   const sizeOf = (n: number) => cell * (0.9 + 0.3 * Math.min(n, 5));
   /* each word sits under its shape, or else over it, wherever it does not touch another one; with no room it is left to the numbers under the card */
-  const taken = words.map((x) => {
-    const z = sizeOf(x.n);
-    return { x: x.c * cell + cell / 2 - z / 2, y: x.r * cell + cell / 2 - z / 2, w: z, h: z };
-  });
+  /* neighbors on the field would run together into one blob, so they step apart, with room for a word between them */
+  const at = spreadCircles(
+    words.map((x) => ({ x: x.c * cell + cell / 2, y: x.r * cell + cell / 2, r: sizeOf(x.n) / 2 })),
+    side,
+    SKY_APART,
+  );
+  const taken = at.map((p) => ({ x: p.x - p.r, y: p.y - p.r, w: p.r * 2, h: p.r * 2 }));
   const hits = (a: { x: number; y: number; w: number; h: number }) =>
     a.x < 0 || a.x + a.w > side || taken.some((b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h);
   const named = words.slice(0, 8).map((x, i) => {
     const z = sizeOf(x.n);
     const lw = x.w.length * 7 + 10;
-    const cx = x.c * cell + cell / 2;
-    const cy = x.r * cell + cell / 2;
+    const cx = at[i].x;
+    const cy = at[i].y;
     for (const y of [cy + z / 2 + 1, cy - z / 2 - 16]) {
       const left = Math.max(0, Math.min(side - lw, cx - lw / 2));
       const box = { x: left, y, w: lw, h: 15 };
@@ -410,25 +425,34 @@ export function FeelSky({ quads, words, w, h, label }: { quads: PatFeels['quads'
         <Text style={[s.ax, { color: k.ax }]}>{corner('yellow')}</Text>
       </View>
       <View style={{ width: side, height: side }}>
-        {dim.map(([r, c]) => (
-          <View
-            key={r + '-' + c}
-            style={[
-              s.abs,
-              {
-                left: c * cell + cell / 2 - 1.5,
-                top: r * cell + cell / 2 - 1.5,
-                width: 3,
-                height: 3,
-                borderRadius: 1.5,
-                backgroundColor: FEEL_COLORS[r][c],
-                opacity: 0.35,
-              },
-            ]}
-          />
-        ))}
+        {/* the faint field stays out from under the words and shapes */}
+        {dim
+          .filter(
+            ([r, c]) =>
+              !taken.some(
+                (b) =>
+                  c * cell + cell / 2 > b.x - 3 && c * cell + cell / 2 < b.x + b.w + 3 && r * cell + cell / 2 > b.y - 3 && r * cell + cell / 2 < b.y + b.h + 3,
+              ),
+          )
+          .map(([r, c]) => (
+            <View
+              key={r + '-' + c}
+              style={[
+                s.abs,
+                {
+                  left: c * cell + cell / 2 - 1.5,
+                  top: r * cell + cell / 2 - 1.5,
+                  width: 3,
+                  height: 3,
+                  borderRadius: 1.5,
+                  backgroundColor: FEEL_COLORS[r][c],
+                  opacity: 0.35,
+                },
+              ]}
+            />
+          ))}
         {words.map((x, i) => (
-          <Lit key={x.w} r={x.r} c={x.c} size={sizeOf(x.n)} cell={cell} i={i} />
+          <Lit key={x.w} r={x.r} c={x.c} size={sizeOf(x.n)} x={at[i].x} y={at[i].y} i={i} />
         ))}
         {named.map((x) =>
           x ? (

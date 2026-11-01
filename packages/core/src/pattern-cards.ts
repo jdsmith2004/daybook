@@ -389,3 +389,43 @@ export function patLeads(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN:
   const r = patDiffs(days, keys);
   return { ...r, list: r.cleanN >= LEADS_MIN && r.slipN >= LEADS_MIN ? r.list.filter((d) => LEADS.includes(d.k)) : [] };
 }
+
+/** room for round things that want to sit too close: each is pushed away from the ones it touches, as little as it takes, and stays inside the square.
+    What does not touch anything stays where it was. Same answer every time */
+export function spreadCircles(list: { x: number; y: number; r: number }[], side: number, gap = 0): { x: number; y: number; r: number }[] {
+  const out = list.map((p) => ({ ...p }));
+  const inside = (p: { x: number; y: number; r: number }) => {
+    p.x = Math.max(p.r, Math.min(side - p.r, p.x));
+    p.y = Math.max(p.r, Math.min(side - p.r, p.y));
+  };
+  out.forEach(inside);
+  for (let round = 0; round < 80; round++) {
+    let moved = false;
+    for (let i = 0; i < out.length; i++)
+      for (let j = i + 1; j < out.length; j++) {
+        const a = out[i];
+        const b = out[j];
+        const want = a.r + b.r + gap;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let d = Math.hypot(dx, dy);
+        if (d >= want - 0.01) continue;
+        /* two on the same spot part sideways, the same way each time */
+        if (d < 0.01) {
+          dx = 1;
+          dy = 0;
+          d = 1;
+        }
+        const push = (want - Math.hypot(b.x - a.x, b.y - a.y)) / 2;
+        a.x -= (dx / d) * push;
+        a.y -= (dy / d) * push;
+        b.x += (dx / d) * push;
+        b.y += (dy / d) * push;
+        inside(a);
+        inside(b);
+        moved = true;
+      }
+    if (!moved) break;
+  }
+  return out;
+}

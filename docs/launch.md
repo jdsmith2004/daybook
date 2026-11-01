@@ -103,9 +103,9 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 - **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
 
-  > A new home: your flame big in its sky, and your day as one line from morning to night, with the next step always
-  > obvious. SOS sits in its own circle by Apple's new glass tab bar, one tap away. After a slip, Daybook walks you
-  > through coming back and helps you make one plan for next time, in a single sentence.
+  > Your flame is bigger, in a clear sky, with nothing written over it. Lessons have a new look, and the fire moves at its
+  > tips. The wind-down now ends by putting your flame to bed. After a slip, every way in leads you back through Rekindle,
+  > and your plan for next time can name the tools already in Daybook.
 
 - **Description:**
 

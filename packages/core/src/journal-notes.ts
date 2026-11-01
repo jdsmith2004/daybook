@@ -1,12 +1,13 @@
-/* Journal entries as Markdown notes, in a folder the person picks (their Obsidian vault, on iCloud). Daybook writes and
-   Obsidian reads: one note per entry, one way. It is off until a folder is picked, and the phone's side is lib/notes.ts.
+/* Journal entries as Markdown notes, in a folder the person picks (their Obsidian vault, on iCloud): one note per entry, both
+   ways. This file is the way out, and journal-notes-in.ts the way back. It is off until a folder is picked, and the phone's
+   side is lib/notes.ts.
 
    The tags are one list on every note (Settings.jnTags), so a change to it changes every note, plus the feeling
    (feeling/calm) and whatever was picked for the entry alone (JEntry.tags).
 
-   A note's words are never lost to Daybook. A file that is not what Daybook last wrote there (changed in Obsidian, or
-   already there when a folder is picked again) is moved aside before writing, and kept instead of deleted. Only files
-   Daybook wrote are ever touched: the ledger says which, and it stays on this device. Checked by test/journal-notes.test.ts. */
+   A note's words are never lost to Daybook. A file that is not what Daybook last saw there, when the entry changed too, is
+   moved aside before writing, and kept instead of deleted. Only notes in the ledger are ever touched, and the ledger stays on
+   this device. Checked by test/journal-notes.test.ts. */
 import { cleanTag, cleanTags } from './legacy/core.js';
 import type { JEntry, Journal } from './journal-entries';
 import { nextU } from './actions';
@@ -17,6 +18,9 @@ export const JN_TAGS = ['daybook', 'journal'];
 /** the tags on every note */
 export const jnTagsOf = (st: Pick<Settings, 'jnTags'> | null | undefined): string[] => st?.jnTags ?? JN_TAGS;
 
+/** the word an entry has when a note came in with no feeling named. The person can name one by tapping it, as on any entry */
+export const JN_NO_FEEL = 'Note';
+
 /** more entries than this gone at once is not a person deleting entries (a log replaced by the account's, or everything
     erased), so their notes stay in the folder */
 export const NOTE_REMOVE_MAX = 5;
@@ -25,7 +29,8 @@ export const NOTE_REMOVE_MAX = 5;
 export const jnFeelTag = (w: string) => 'feeling/' + cleanTag(w);
 
 /** every tag on an entry's note, in the order the note lists them */
-export const jnNoteTags = (e: Pick<JEntry, 'w' | 'tags'>, every: string[]): string[] => cleanTags([...every, jnFeelTag(e.w), ...(e.tags || [])]);
+export const jnNoteTags = (e: Pick<JEntry, 'w' | 'tags'>, every: string[]): string[] =>
+  cleanTags([...every, ...(e.w === JN_NO_FEEL ? [] : [jnFeelTag(e.w)]), ...(e.tags || [])]);
 
 const two = (n: number) => String(n).padStart(2, '0');
 
@@ -46,11 +51,11 @@ export function jnNoteText(e: JEntry, every: string[]): string {
     ...jnNoteTags(e, every).map((x) => '  - ' + x),
     `date: ${e.d}`,
     `time: "${two(t.getHours())}:${two(t.getMinutes())}"`,
-    `feeling: "[[${e.w}]]"`,
+    ...(e.w === JN_NO_FEEL ? [] : [`feeling: "[[${e.w}]]"`]),
     `daybook_id: ${e.id}`,
     '---',
     '',
-    `[[${e.w}]] · [[${e.d}]]`,
+    e.w === JN_NO_FEEL ? `[[${e.d}]]` : `[[${e.w}]] · [[${e.d}]]`,
     '',
   ];
   const q = e.q ? ['> ' + e.q.replace(/\s*\n\s*/g, ' '), ''] : [];
@@ -71,19 +76,33 @@ export function noteHash(text: string): string {
   return h.toString(36) + '-' + text.length.toString(36);
 }
 
-/** what Daybook wrote for an entry: the file, and the mark of its text */
+/** a note this device keeps in step with an entry */
 export interface NoteMark {
   f: string;
+  /** the mark of the file's text when last seen */
   h: string;
+  /** the mark of the note as the entry would write it, when last in step. Missing means the same as h */
+  e?: string;
+  /** the file's modified time when last read, so an unchanged file is not read again */
+  m?: number;
+  /** the file name is the person's own, so it never changes */
+  o?: boolean;
+  /** the file left the folder (deleted or moved in Obsidian): the entry stays, and the note is not written back */
+  g?: boolean;
 }
-/** what Daybook has written to this folder, by entry id. It stays on this device. */
+/** the notes this device keeps in step, by entry id. It stays on this device. */
 export type NoteLedger = Record<string, NoteMark>;
 
 export const normLedger = (v: unknown): NoteLedger => {
   const out: NoteLedger = {};
   if (!v || typeof v !== 'object') return out;
-  for (const [id, m] of Object.entries(v as Record<string, { f?: unknown; h?: unknown }>)) {
-    if (m && typeof m.f === 'string' && typeof m.h === 'string') out[id] = { f: m.f, h: m.h };
+  for (const [id, m] of Object.entries(v as Record<string, Partial<Record<keyof NoteMark, unknown>>>)) {
+    if (!m || typeof m.f !== 'string' || typeof m.h !== 'string') continue;
+    out[id] = { f: m.f, h: m.h };
+    if (typeof m.e === 'string') out[id].e = m.e;
+    if (typeof m.m === 'number') out[id].m = m.m;
+    if (m.o === true) out[id].o = true;
+    if (m.g === true) out[id].g = true;
   }
   return out;
 };
@@ -100,10 +119,12 @@ export function jnNotePlan(jn: Journal | undefined, every: string[], ledger: Not
   const plan: NotePlan = { write: [], remove: [], letGo: [] };
   const all = jn || {};
   for (const e of Object.values(all)) {
-    const { file, text } = jnNote(e, every);
-    const h = noteHash(text);
     const was = ledger[e.id];
-    if (was && was.f === file && was.h === h) continue;
+    if (was?.g) continue;
+    const text = jnNoteText(e, every);
+    const file = was?.o ? was.f : jnNoteFile(e);
+    const h = noteHash(text);
+    if (was && was.f === file && (was.e ?? was.h) === h) continue;
     plan.write.push({ id: e.id, f: file, text, h, ...(was ? { was } : null) });
   }
   const gone = Object.keys(ledger).filter((id) => !all[id]);
@@ -131,7 +152,30 @@ export interface NoteRun {
   failed: boolean;
 }
 
+const FRONT = /^---\n([\s\S]*?)\n?---(?:\n|$)/;
+const KNOWN_KEYS = new Set(['tags', 'tag', 'date', 'time', 'feeling', 'daybook_id']);
+/** a note's frontmatter, split into its keys, each with its own lines */
+export function frontKeys(text: string): { key: string; lines: string[] }[] {
+  const m = FRONT.exec(text.replace(/\r\n?/g, '\n').replace(/^\uFEFF/, ''));
+  const out: { key: string; lines: string[] }[] = [];
+  if (!m) return out;
+  for (const line of m[1].split('\n')) {
+    const k = /^([^\s:#][^:]*):/.exec(line);
+    if (k) out.push({ key: k[1].trim(), lines: [line] });
+    else if (out.length) out[out.length - 1].lines.push(line);
+  }
+  return out;
+}
+/** the entry's note, with the frontmatter keys the person has in the file that the entry knows nothing of */
+function keepExtras(text: string, source: string | null): string {
+  if (source == null) return text;
+  const extra = frontKeys(source).filter((k) => !KNOWN_KEYS.has(k.key.toLowerCase()));
+  if (!extra.length) return text;
+  return text.replace(/\n---\n/, '\n' + extra.flatMap((k) => k.lines).join('\n') + '\n---\n');
+}
+
 /** the name a changed file moves to: "2026-10-30 0915 k3f9 (edited).md", then (edited 2), and so on */
+export const isAsideName = (f: string) => / \(edited(?: \d+)?\)\.md$/.test(f);
 async function asideName(file: string, io: NoteFolderIO): Promise<string> {
   const base = file.replace(/\.md$/, '');
   for (let n = 1; n < 100; n++) {
@@ -148,24 +192,25 @@ export async function runNotePlan(plan: NotePlan, ledger: NoteLedger, io: NoteFo
   try {
     for (const w of plan.write) {
       const cur = await io.read(w.f);
+      const old = w.was && w.was.f !== w.f ? await io.read(w.was.f) : null;
+      /* what the person keeps in the note's frontmatter that Daybook has no use for stays there */
+      const text = keepExtras(w.text, cur ?? old);
+      const h = noteHash(text);
       if (cur != null) {
-        const h = noteHash(cur);
+        const ch = noteHash(cur);
         /* someone's own words in the way: they move aside, and the entry's note takes the name */
-        if (h !== w.h && !(w.was && w.was.f === w.f && w.was.h === h)) {
+        if (ch !== h && !(w.was && w.was.f === w.f && w.was.h === ch)) {
           await io.move(w.f, await asideName(w.f, io));
           out.kept++;
         }
       }
-      if (cur == null || noteHash(cur) !== w.h) await io.write(w.f, w.text);
+      if (cur == null || noteHash(cur) !== h) await io.write(w.f, text);
       /* the time changed, so the note has a new name: the old file goes, unless someone changed it */
-      if (w.was && w.was.f !== w.f) {
-        const old = await io.read(w.was.f);
-        if (old != null) {
-          if (noteHash(old) === w.was.h) await io.remove(w.was.f);
-          else out.kept++;
-        }
+      if (w.was && w.was.f !== w.f && old != null) {
+        if (noteHash(old) === w.was.h) await io.remove(w.was.f);
+        else out.kept++;
       }
-      out.ledger[w.id] = { f: w.f, h: w.h };
+      out.ledger[w.id] = { f: w.f, h, e: w.h, ...(w.was?.o ? { o: true } : null) };
       out.wrote++;
     }
     for (const r of plan.remove) {

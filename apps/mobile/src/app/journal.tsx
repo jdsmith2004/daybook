@@ -15,6 +15,7 @@ import {
   feelAt,
   fmtDate,
   jnDayLabel,
+  JN_NO_FEEL,
   jnEdit,
   jnLogs,
   jnRemove,
@@ -577,6 +578,7 @@ function WritePage({
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const flush = useCallback(() => {
     clearTimeout(timer.current);
+    timer.current = undefined;
     const t = latest.current;
     update((s0) => {
       const cur = s0.journal?.[id];
@@ -586,6 +588,12 @@ function WritePage({
   }, [id, update]);
   /* whatever is on the page is saved when it closes, however it closes */
   useEffect(() => () => flush(), [flush]);
+  /* a change from elsewhere (the note, changed in Obsidian) reaches the open page, unless words are waiting to be saved */
+  useEffect(() => {
+    if (timer.current || e.t === latest.current) return;
+    latest.current = e.t;
+    setText(e.t);
+  }, [e.t]);
   const onChange = (t: string) => {
     latest.current = t;
     setText(t);
@@ -668,6 +676,8 @@ function WritePage({
   };
 
   const word = e.w.toLowerCase();
+  /* a note from Obsidian can come in with no feeling; a tap on the word names one */
+  const named = e.w !== JN_NO_FEEL;
   return (
     <View style={{ flex: 1 }}>
       {/* a calm, plain dark page, like Journal's, with the feeling's own light coming down softly from the top: the same
@@ -730,15 +740,15 @@ function WritePage({
             {/* the feeling's word, and the nudge with the word in its color; a tap on it names it again */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Feeling: ${e.w}.${f ? ' ' + f.how + '.' : ''}`}
+              accessibilityLabel={named ? `Feeling: ${e.w}.${f ? ' ' + f.how + '.' : ''}` : 'No feeling named yet.'}
               accessibilityHint="Opens the feelings to change it"
-              onPress={() => look.pos && onFeel(look.pos.r, look.pos.c)}
+              onPress={() => onFeel(look.pos?.r ?? 6, look.pos?.c ?? 6)}
               style={({ pressed }) => [s.feel, { opacity: pressed ? 0.75 : 1 }]}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={s.word} maxFontSizeMultiplier={1.25} numberOfLines={1}>
                   {e.w}
                 </Text>
-                {blank ? (
+                {blank && named ? (
                   <Text style={s.nudge}>
                     Explore why you might be feeling <Text style={[s.nudge, s.nudgeW, { color: look.color }]}>{word}</Text>
                   </Text>
@@ -763,7 +773,7 @@ function WritePage({
               keyboardAppearance="dark"
               selectionColor={JN.accent}
               cursorColor={JN.accent}
-              accessibilityLabel={`Your entry. Explore why you might be feeling ${word}.`}
+              accessibilityLabel={named ? `Your entry. Explore why you might be feeling ${word}.` : 'Your entry.'}
               style={s.input}
             />
             {also.length ? <Text style={s.also}>{alsoLine(also)}</Text> : null}
@@ -804,7 +814,7 @@ function WritePage({
         value={whenOf(e.at)}
         now={now}
         roll={snap.settings?.rollover ?? 4}
-        title={'When did you feel ' + word + '?'}
+        title={named ? 'When did you feel ' + word + '?' : 'When did this happen?'}
         onClose={() => setPicking(false)}
         onSave={(w) => {
           setPicking(false);

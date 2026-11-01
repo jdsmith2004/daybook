@@ -41,7 +41,7 @@ const Q_MAX = 160;
 /** an entry id, as makeId writes them */
 export const isJnId = (id: string) => /^[0-9a-z]{4,24}$/.test(id);
 /** a feeling word, the way a slip's feeling is checked (normEvent) */
-const isWord = (w: unknown): w is string => typeof w === 'string' && /^[A-Za-z][A-Za-z ]{0,23}$/.test(w);
+export const isWord = (w: unknown): w is string => typeof w === 'string' && /^[A-Za-z][A-Za-z ]{0,23}$/.test(w);
 
 /** an entry, cleaned up, or null when it is not one (no feeling, no day, no start time) */
 export function normJEntry(v: unknown, id: string): JEntry | null {
@@ -147,7 +147,7 @@ export interface JDay {
 }
 
 /** a clock time on a log day, in ms: a time before the day's rollover (4 AM) belongs to the night after it */
-function onDay(k: DayKey, clock: string | null, rollover = 4): number {
+export function onDay(k: DayKey, clock: string | null, rollover = 4): number {
   const [y, m, d] = k.split('-').map(Number);
   const [h, mi] = clock && /^\d{1,2}:\d{2}$/.test(clock) ? clock.split(':').map(Number) : [12, 0];
   return new Date(y, m - 1, d + (h < rollover ? 1 : 0), h, mi).getTime();

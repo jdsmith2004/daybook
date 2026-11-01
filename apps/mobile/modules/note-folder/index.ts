@@ -8,6 +8,8 @@ export interface NoteFolderModule {
   /** the kept folder's name, or null when none is kept or it is gone */
   folder(): Promise<string | null>;
   forget(): Promise<void>;
+  /** the notes directly in the folder */
+  list(): Promise<{ name: string; mod: number; made?: number; size?: number }[]>;
   read(name: string): Promise<string | null>;
   write(name: string, text: string): Promise<void>;
   remove(name: string): Promise<void>;

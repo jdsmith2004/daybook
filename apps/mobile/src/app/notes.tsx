@@ -1,14 +1,26 @@
-/* Obsidian: the journal, copied to a folder in the person's vault (core journal-notes.ts; lib/notes.ts does the copying). A row
-   in Settings on an iPhone, and nowhere else: it is not marketed, and nobody meets it who does not go looking.
+/* Obsidian: the journal and a folder in the person's vault, kept in step both ways (core journal-notes.ts and journal-notes-in.ts;
+   lib/notes.ts runs it). A row in Settings on an iPhone, and nowhere else: it is not marketed, and nobody meets it who does not go looking.
 
    It is a page of the journal, so it has the journal's night and the light of the newest entry's feeling, and the one thing on
    it is a note, the person's newest, as Obsidian will show it. The tags below it change that note as they change. A tag is
    edited where it stands, so nothing is hidden by the keyboard, and a change reaches every entry and every note, so the
    spelling stays the same across them. */
-import { changeSettings, cleanTag, cleanTags, jnList, jnNoteFile, jnNoteTags, jnRenameTag, jnTagCounts, jnTagsOf, type JEntry } from '@daybook/core';
+import {
+  changeSettings,
+  cleanTag,
+  cleanTags,
+  JN_NO_FEEL,
+  jnList,
+  jnNoteFile,
+  jnNoteTags,
+  jnRenameTag,
+  jnTagCounts,
+  jnTagsOf,
+  type JEntry,
+} from '@daybook/core';
 import { Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Link } from '@/components/choices';
@@ -19,7 +31,7 @@ import { SheetFrame, SheetH } from '@/components/sheet';
 import { Text, TextInput } from '@/components/text';
 import { Button, Icon, InkContext, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { pickNoteFolder, stopNotes, useNotes } from '@/lib/notes';
+import { pickNoteFolder, stopNotes, syncNotes, useNotes } from '@/lib/notes';
 import { useStore } from '@/lib/store';
 import { font, NightContext, nightInk, PaletteOverride, useSkyTheme, useTheme } from '@/lib/theme';
 
@@ -80,8 +92,8 @@ function NotePreview({ e }: { e: JEntry }) {
         {jnNoteFile(e).replace(/\.md$/, '')}
       </Text>
       <Text style={s.noteLinks}>
-        <Text style={{ color: feelColor(e.w) }}>{e.w}</Text>
-        <Text style={s.noteDot}>{'  ·  '}</Text>
+        {e.w !== JN_NO_FEEL ? <Text style={{ color: feelColor(e.w) }}>{e.w}</Text> : null}
+        {e.w !== JN_NO_FEEL ? <Text style={s.noteDot}>{'  ·  '}</Text> : null}
         {e.d}
       </Text>
       <Text style={s.noteBody} numberOfLines={3}>
@@ -95,13 +107,13 @@ function NotePreview({ e }: { e: JEntry }) {
 function Off({ newest }: { newest: JEntry }) {
   const { say } = useStore();
   return (
-    <SheetFrame title="Obsidian" sub="Each journal entry becomes a note in your vault.">
+    <SheetFrame title="Obsidian" sub="Each journal entry becomes a note in your vault. A note you tag #daybook comes back as an entry.">
       <View style={s.middle}>
         <NotePreview e={newest} />
       </View>
       <Dock>
         <T v="small" tone="muted" style={s.c}>
-          Next, go to iCloud Drive, then Obsidian, and open the folder in your vault. Daybook writes only its own notes there.
+          Next, go to iCloud Drive, then Obsidian, and open the folder in your vault. Daybook reads only that folder, and keeps only notes with the tag.
         </T>
         <Button label="Pick a folder" onPress={() => pick(say)} />
       </Dock>
@@ -131,6 +143,8 @@ function On({ newest }: { newest: JEntry }) {
       journal: rename ? jnRenameTag(s0.journal || {}, rename[0], rename[1]) : s0.journal,
     }));
   const renameOther = (from: string, to: string) => update((s0) => ({ ...s0, journal: jnRenameTag(s0.journal || {}, from, to) }));
+  /* a note just written in Obsidian is here by the time this page is looked at */
+  useEffect(() => syncNotes(true), []);
   const place = notes.name + '  ·  ' + (notes.count === 1 ? '1 note' : notes.count + ' notes');
   return (
     <SheetFrame title="Obsidian" sub={place}>
@@ -138,8 +152,22 @@ function On({ newest }: { newest: JEntry }) {
       {notes.kept ? (
         <T tone="muted" v="small">
           {notes.kept === 1
-            ? 'One note was changed outside Daybook, so it was kept beside the new one.'
-            : notes.kept + ' notes were changed outside Daybook, so they were kept beside the new ones.'}
+            ? 'One note was changed in both places, so the Obsidian copy was kept beside it.'
+            : notes.kept + ' notes were changed in both places, so the Obsidian copies were kept beside them.'}
+        </T>
+      ) : null}
+      {notes.gone ? (
+        <T tone="muted" v="small">
+          {notes.gone === 1
+            ? 'One note left this folder. Its entry stays in your journal.'
+            : notes.gone + ' notes left this folder. Their entries stay in your journal.'}
+        </T>
+      ) : null}
+      {notes.tooLong ? (
+        <T tone="muted" v="small">
+          {notes.tooLong === 1
+            ? 'One note is too long for the journal, so it stays in Obsidian.'
+            : notes.tooLong + ' notes are too long for the journal, so they stay in Obsidian.'}
         </T>
       ) : null}
       <NotePreview e={newest} />
@@ -163,7 +191,9 @@ function On({ newest }: { newest: JEntry }) {
           <AddRow onAdd={(t) => setEvery([...every, t])} />
         </Rows>
         <T tone="muted" v="small">
-          The feeling goes on too. Tap a tag to rename it, and every note follows.
+          {(every.length
+            ? 'A note in this folder with #' + every[0] + ' comes into your journal, and a change on either side reaches the other. '
+            : 'With no tag here, new notes stay out of your journal. ') + 'The feeling goes on too. Tap a tag to rename it, and every note follows.'}
         </T>
       </View>
 
@@ -182,7 +212,7 @@ function On({ newest }: { newest: JEntry }) {
         <Button label="Change folder" kind="ghost" onPress={() => pick(say)} />
         <View style={s.c2}>
           <Link
-            label={sure ? 'Tap again to stop. The notes stay.' : 'Stop copying'}
+            label={sure ? 'Tap again to stop. The notes stay.' : 'Stop syncing'}
             onPress={() => {
               buzz('tap');
               if (!sure) return setSure(true);

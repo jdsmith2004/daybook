@@ -622,7 +622,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             <LinkCard
               icon="pencil"
               title="Obsidian"
-              sub={notes.on ? 'Copying your journal to ' + notes.name : 'Copy your journal to your vault'}
+              sub={notes.on ? 'Syncing your journal with ' + notes.name : 'Sync your journal with your vault'}
               onPress={() => router.push('/notes')}
             />
           ) : null}

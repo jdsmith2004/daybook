@@ -1,7 +1,7 @@
 // One folder the person picked, kept across launches with a security-scoped bookmark (expo-file-system can pick a folder on
 // iOS, but its access ends with the launch). Every file call is coordinated, because the folder is usually in iCloud Drive,
-// where a file can be away or being synced. It only ever takes a plain file name ending in .md, so it cannot reach out of
-// the folder, into a subfolder, or at any other kind of file. The rules for what to write are in core journal-notes.ts.
+// where a file can be away or being synced. It only ever lists or takes a plain file name ending in .md, so it cannot reach
+// out of the folder, into a subfolder, or at any other kind of file. The rules are in core journal-notes.ts and journal-notes-in.ts.
 import ExpoModulesCore
 import UIKit
 import UniformTypeIdentifiers
@@ -49,6 +49,32 @@ public final class NoteFolderModule: Module {
       UserDefaults.standard.removeObject(forKey: bookmarkKey)
     }.runOnQueue(files)
 
+    /// the notes directly in the folder. A note iCloud keeps away has only a stand-in file: it is listed by its real name, and asked for
+    AsyncFunction("list") { () -> [[String: Any]] in
+      try self.withFolder { folder in
+        try self.coordinated(reading: folder) { u in
+          let keys: Set<URLResourceKey> = [.contentModificationDateKey, .creationDateKey, .fileSizeKey, .isRegularFileKey]
+          let items = try FileManager.default.contentsOfDirectory(at: u, includingPropertiesForKeys: Array(keys), options: [])
+          var out: [[String: Any]] = []
+          for item in items {
+            var name = item.lastPathComponent
+            if name.hasPrefix("."), name.hasSuffix(".icloud") {
+              name = String(name.dropFirst().dropLast(".icloud".count))
+              try? FileManager.default.startDownloadingUbiquitousItem(at: item)
+            }
+            guard (try? self.checked(name)) != nil else { continue }
+            let values = try? item.resourceValues(forKeys: keys)
+            guard values?.isRegularFile != false else { continue }
+            var file: [String: Any] = ["name": name, "mod": (values?.contentModificationDate?.timeIntervalSince1970 ?? 0) * 1000]
+            if let made = values?.creationDate { file["made"] = made.timeIntervalSince1970 * 1000 }
+            if !item.lastPathComponent.hasPrefix("."), let size = values?.fileSize { file["size"] = size }
+            out.append(file)
+          }
+          return out
+        }
+      }
+    }.runOnQueue(files)
+
     /// a file's text, or null when it is not there
     AsyncFunction("read") { (name: String) -> String? in
       let file = try self.checked(name)
@@ -56,7 +82,8 @@ public final class NoteFolderModule: Module {
         let url = folder.appendingPathComponent(file)
         return try self.coordinated(reading: url) { u in
           guard FileManager.default.fileExists(atPath: u.path) else { return nil }
-          return try String(contentsOf: u, encoding: .utf8)
+          /// a file in some other encoding still reads, and only a note with the tag is ever kept
+          return String(decoding: try Data(contentsOf: u), as: UTF8.self)
         }
       }
     }.runOnQueue(files)

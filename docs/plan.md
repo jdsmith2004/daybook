@@ -10,18 +10,19 @@ Where the rest went: the journal still opens by pulling Today down, and from Mor
 
 ## The listing: few people see it, and few tap (the owner, November 1, 2026)
 
-The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. **Proposed, waiting on the owner's yes:**
+The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. Asked whether "porn" should go in the name: "Keep porn out of it", so it stays off the purchase list. **Decided:**
 
-- **Name:** `Daybook: Quit Porn, Stay Free`. The home screen still says Daybook. This reverses the earlier choice in `docs/launch.md` to keep "porn" out of the name so that it stays off the purchase list, so it is the owner's call.
-- **Subtitle:** `Private, research-based help`. App Review 2.3.7 bars unverifiable claims in a subtitle. "Research-based" is true of the lessons and the tools; nothing has tested Daybook itself.
-- **First picture's caption:** `Quit porn. Stay free.` Also change the search picture's line, which says "changing a habit" and never names porn.
-- **Stop announcing shame everywhere the listing says it:** the description's first line and the About page's title and headline. The app keeps treating people that way.
+- **Name:** `Daybook: Quit and Stay Free`. The home screen still says Daybook.
+- **Subtitle:** stays `Private help to quit porn`, so the search card still says what the app is for. App Review 2.3.7 bars unverifiable claims in a subtitle.
+- **First picture:** `Quit and stay free`, with `Built on research. No ads.` under it. "Built on research" is true of the lessons and the tools; nothing has tested Daybook itself.
+- **Search picture:** `Quit and stay free`, with `private help built on research` under it. It used to say "changing a habit".
+- **"Without shame" leaves the listing and the public pages:** the description's first line, About, the guides, support and the testers page. The app keeps treating people that way.
 
 **The numbers (App Analytics, October 2 to 31):** 137 impressions, 126 of them from search, down from about 60 on October 26 to about 10 a day. 11 page views. 3 first-time downloads and 1 redownload, some of them the owner's. So 8% of impressions tap (exact 95% range 4% to 14%), about 1 in 4 who open the page download (6% to 61%), and 2.2% of impressions download (0.5% to 6.3%). A vendor figure of about 3.8% for impressions to downloads is inside that range. Apple's own benchmark says it has too little data.
 
-**What that means.** The sample cannot show the listing is failing. The clearest problem is traffic: at 10 impressions a day, even 10% is one download a day. The name is the heaviest search field by vendor consensus, and "porn" is not in it today, so the case for the change is reach first and the first impression second. No study tests shame words in a store listing: dropping them is a judgment, supported by research on shame as a barrier to seeking help. Telling 1% from 4% between two listings takes about 425 impressions each. Apple's page tests cover icons and pictures, not the name.
+**What that means.** The sample cannot show the listing is failing. The clearest problem is traffic: at 10 impressions a day, even 10% is one download a day. The name is the heaviest search field by vendor consensus, and "porn" stays out of it by the owner's choice, so the words people search for rest on the subtitle and keywords. Traffic stays the thing to watch after this ships. No study tests shame words in a store listing: dropping them is a judgment, supported by research on shame as a barrier to seeking help. Telling 1% from 4% between two listings takes about 425 impressions each. Apple's page tests cover icons and pictures, not the name.
 
-**Still to check.** Whether impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Apple shows no per-keyword numbers. Competitors' exact wording on a phone, since research could not open their listing pages. **After the yes:** update the name, subtitle, description, `shots.json`, `about.html` and `docs/launch.md`, retake the first pictures and the search picture, and put them in the draft. Google Play's listing has the same name and words.
+**Still to check.** Whether impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Apple shows no per-keyword numbers. Competitors' exact wording on a phone, since research could not open their listing pages. Google Play's listing still has to change when it is next touched: `docs/launch.md` has the new words.
 
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 

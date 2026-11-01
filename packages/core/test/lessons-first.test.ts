@@ -93,6 +93,24 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
     });
   });
 
+  it('the line puts what is done first, then the big card, then what is still open', () => {
+    const tile = (k: string, done = false) => ({ k, done }) as core.StopTile;
+    const keys = (done: string[], big: string | null) =>
+      core
+        .lineOrder(
+          ['lesson', 'evening', 'night'].map((k) => tile(k, done.includes(k))),
+          big,
+        )
+        .map((t) => t.k);
+    expect(keys([], 'night')).toEqual(['night', 'lesson', 'evening']);
+    expect(keys(['evening'], 'night')).toEqual(['evening', 'night', 'lesson']);
+    expect(keys(['lesson'], 'night')).toEqual(['lesson', 'night', 'evening']);
+    /* by day the card is already in its place, and with no card the day keeps its order */
+    expect(keys([], 'lesson')).toEqual(['lesson', 'evening', 'night']);
+    expect(keys(['lesson'], 'evening')).toEqual(['lesson', 'evening', 'night']);
+    expect(keys(['lesson'], null)).toEqual(['lesson', 'evening', 'night']);
+  });
+
   it('a day with the lesson switched off has no lesson stop to put first', () => {
     const off = core.routineDay({}, st, tk, 'lesson', false);
     expect(core.nextUp(off, st, tk, at(tk + 'T19:00')).k).toBe('evening');

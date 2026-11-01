@@ -347,6 +347,13 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   });
   return { tiles, cur: r.cur, done: tiles.filter((t) => t.done).length };
 }
+/** the order of the line on Today: what is done, then the big card, then what is still open, so the next step is never pushed down
+    under rows that are not next (the owner, November 1, 2026). With no big card, the day's own order. */
+export function lineOrder(tiles: StopTile[], big: string | null): StopTile[] {
+  const card = tiles.find((t) => t.k === big);
+  if (!card) return tiles;
+  return [...tiles.filter((t) => t.done && t !== card), card, ...tiles.filter((t) => !t.done && t !== card)];
+}
 
 /* ---------- the wind-down ---------- */
 export function windToggle(days: Days, st: Settings, tk: DayKey, i: number, now = Date.now()): Days {

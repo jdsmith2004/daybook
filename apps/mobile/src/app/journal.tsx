@@ -68,6 +68,7 @@ import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
 import { JournalTags, NewTagSheet } from '@/components/journal-tags';
+import { NoteSource, NoteText } from '@/components/note-text';
 import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon, InkContext, T } from '@/components/ui';
 import { WhenSheet } from '@/components/when';
@@ -560,6 +561,10 @@ function WritePage({
   const notes = useNotes();
   const [picking, setPicking] = useState(false);
   const [newTag, setNewTag] = useState(false);
+  /* with Obsidian on the words are Markdown: formatted to read, and a tap goes back to the marks to write. With it off, nothing changes */
+  const [editing, setEditing] = useState(false);
+  /* where the caret starts when a line was tapped, until the text box has taken it */
+  const [startAt, setStartAt] = useState<number | null>(null);
   const e = snap.journal![id];
   const look = entryLook(e);
   /* what else was felt that day, named somewhere else in the app (a slip, an urge, Name the feeling), so reading a day
@@ -628,6 +633,7 @@ function WritePage({
   useWebGrow(input, text, W);
   /* a tap below the words carries on at the end of them. iOS and Android put the caret there; the web leaves it at the start */
   const writeOn = () => {
+    setEditing(true);
     input.current?.focus();
     if (Platform.OS !== 'web') return;
     const el = input.current as unknown as HTMLTextAreaElement | null;
@@ -635,6 +641,21 @@ function WritePage({
     el?.setSelectionRange?.(n, n);
     caret.current = n;
     page.current?.scrollToEnd({ animated: true });
+  };
+
+  /** a tap on a line in the formatted words: the caret goes to the end of that line */
+  const writeAt = (line: number) => {
+    const t = latest.current;
+    const lead = t.length - t.trimStart().length;
+    setStartAt(
+      lead +
+        t
+          .trim()
+          .split('\n')
+          .slice(0, line + 1)
+          .join('\n').length,
+    );
+    setEditing(true);
   };
 
   const done = () => {
@@ -756,26 +777,38 @@ function WritePage({
               </View>
             </Pressable>
             <View style={s.rule} />
-            <TextInput
-              ref={input}
-              value={text}
-              onChangeText={onChange}
-              multiline
-              scrollEnabled={false}
-              onSelectionChange={(ev) => (caret.current = ev.nativeEvent.selection.end)}
-              onContentSizeChange={() => {
-                /* writing at the end keeps the newest line in sight as the page grows */
-                if (caret.current >= latest.current.length) page.current?.scrollToEnd({ animated: true });
-              }}
-              textAlignVertical="top"
-              placeholder="Start anywhere…"
-              placeholderTextColor="rgba(235, 235, 245, 0.3)"
-              keyboardAppearance="dark"
-              selectionColor={JN.accent}
-              cursorColor={JN.accent}
-              accessibilityLabel={named ? `Your entry. Explore why you might be feeling ${word}.` : 'Your entry.'}
-              style={s.input}
-            />
+            {notes.on && !editing && text.trim() ? (
+              <NoteText text={text} onChange={onChange} onWrite={writeAt} />
+            ) : (
+              <TextInput
+                ref={input}
+                {...(notes.on ? null : { value: text })}
+                autoFocus={notes.on && editing}
+                onFocus={() => setEditing(true)}
+                onBlur={() => setEditing(false)}
+                onChangeText={onChange}
+                multiline
+                scrollEnabled={false}
+                selection={startAt != null ? { start: startAt, end: startAt } : undefined}
+                onSelectionChange={(ev) => {
+                  caret.current = ev.nativeEvent.selection.end;
+                  if (startAt != null) setStartAt(null);
+                }}
+                onContentSizeChange={() => {
+                  /* writing at the end keeps the newest line in sight as the page grows */
+                  if (caret.current >= latest.current.length) page.current?.scrollToEnd({ animated: true });
+                }}
+                textAlignVertical="top"
+                placeholder="Start anywhere…"
+                placeholderTextColor="rgba(235, 235, 245, 0.3)"
+                keyboardAppearance="dark"
+                selectionColor={JN.accent}
+                cursorColor={JN.accent}
+                accessibilityLabel={named ? `Your entry. Explore why you might be feeling ${word}.` : 'Your entry.'}
+                style={s.input}>
+                {notes.on ? <NoteSource text={text} /> : null}
+              </TextInput>
+            )}
             {also.length ? <Text style={s.also}>{alsoLine(also)}</Text> : null}
             <Pressable
               accessible={false}

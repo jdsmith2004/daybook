@@ -6,7 +6,7 @@
    as seven little lights. New entry is a bar floating low, where the thumb is. Also here: how far down the journal was
    already pulled when it opens, so it carries on from the thumb. An entry starts with the app's own four colors
    (QuadBubbles in tools/feel.tsx). */
-import { feelPos, jnPos, type JDay, type JEntry, type JFeel, type JLog } from '@daybook/core';
+import { feelPos, jnPos, mdPlain, type JDay, type JEntry, type JFeel, type JLog } from '@daybook/core';
 import { memo, useId } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -18,6 +18,7 @@ import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { Icon } from '@/components/ui';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
+import { useNotes } from '@/lib/notes';
 import { font, nightInk } from '@/lib/theme';
 
 /* ---------- opening it ---------- */
@@ -401,6 +402,7 @@ export const DayLogs = memo(function DayLogs({
   onColors: (key: string, cs: LogColor[]) => void;
 }) {
   const many = logs.length > 1;
+  const md = useNotes().on;
   return (
     <View style={s.day}>
       <Text style={s.dayName} accessibilityRole="header">
@@ -418,7 +420,7 @@ export const DayLogs = memo(function DayLogs({
             </View>
             {l.entry ? (
               <Text style={s.text} numberOfLines={3}>
-                {l.entry.t.trim()}
+                {md ? mdPlain(l.entry.t) : l.entry.t.trim()}
               </Text>
             ) : l.open ? (
               <Text style={s.add}>Add a few words</Text>

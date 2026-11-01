@@ -26,6 +26,7 @@ export * from './journal';
 export * from './journal-entries';
 export * from './journal-notes';
 export * from './journal-notes-in';
+export * from './markdown';
 export * from './data';
 export * from './setup';
 export * from './emblem';

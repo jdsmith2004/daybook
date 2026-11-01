@@ -16,6 +16,7 @@ import {
   jnRenameTag,
   jnTagCounts,
   jnTagsOf,
+  mdPlain,
   type JEntry,
 } from '@daybook/core';
 import { Redirect } from 'expo-router';
@@ -97,7 +98,7 @@ function NotePreview({ e }: { e: JEntry }) {
         {e.d}
       </Text>
       <Text style={s.noteBody} numberOfLines={3}>
-        {e.t.trim()}
+        {mdPlain(e.t)}
       </Text>
       <Text style={s.noteTags}>{tags.map((t) => '#' + t).join('  ')}</Text>
     </View>

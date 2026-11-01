@@ -3,6 +3,8 @@
    runs or shows for anyone else. What it knows of the folder stays on this device, under the same keys "Delete everything"
    clears. A note goes out a few seconds after a change, when the app opens, and when it goes away. Notes come in when the app
    opens or comes back, since iOS gives an app no way to hear of them sooner. */
+import { InstrumentSans_400Regular_Italic } from '@expo-google-fonts/instrument-sans/400Regular_Italic';
+import { InstrumentSans_700Bold_Italic } from '@expo-google-fonts/instrument-sans/700Bold_Italic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   applyNotePull,
@@ -17,6 +19,7 @@ import {
   type NoteSeen,
   type Snapshot,
 } from '@daybook/core';
+import { loadAsync } from 'expo-font';
 import { useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
@@ -184,6 +187,10 @@ export function NoteCopy() {
   const { snap, ready, current, update } = useStore();
   const tags = jnTagsOf(snap.settings).join(' ');
   store = { current, update };
+  /* Markdown's two fonts, for the people who use it, and nobody else */
+  useEffect(() => {
+    if (on) void loadAsync({ InstrumentSans_400Regular_Italic, InstrumentSans_700Bold_Italic }).catch(() => undefined);
+  }, [on]);
   useEffect(() => {
     if (!on || !ready) return;
     const t = setTimeout(() => syncNotes(false), QUIET_MS);

@@ -57,7 +57,7 @@ import {
   type Settings,
   srcNote,
 } from '@daybook/core';
-import { Redirect, router, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
@@ -79,7 +79,7 @@ import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { lessonLook, PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
-import { close, closeAll } from '@/lib/nav';
+import { close, closeAll, useHoldsBar } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
@@ -848,11 +848,11 @@ function Shell({
   children: ReactNode;
 }) {
   const c = look.c;
-  const focused = useIsFocused();
+  const holdsBar = useHoldsBar();
   return (
     <PaletteOverride.Provider value={c}>
       <View style={{ flex: 1, backgroundColor: c.bg }}>
-        {focused ? <StatusBar style={look.bar} /> : null}
+        {holdsBar ? <StatusBar style={look.bar} /> : null}
         <LessonBackdrop look={look} />
         <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
           <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>

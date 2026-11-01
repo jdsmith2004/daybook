@@ -61,7 +61,7 @@ import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
-import { sheetOnTop } from '@/lib/nav';
+import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
@@ -139,6 +139,7 @@ export default function Today() {
      enough has opened already. It opens once: after that, or when this open cannot ask, it waits for tomorrow. */
   const firstOpen = useFirstOpen();
   const focused = useIsFocused();
+  const holdsBar = useHoldsBar();
   const focusRef = useRef(focused);
   focusRef.current = focused;
   /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
@@ -271,7 +272,7 @@ export default function Today() {
   const ink = skyInk(g.level.n);
   return (
     <View style={{ flex: 1 }}>
-      {focused ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
+      {holdsBar ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <Screen
         scrollRef={scroll}
         title={title}

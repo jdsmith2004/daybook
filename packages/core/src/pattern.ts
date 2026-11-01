@@ -1,7 +1,7 @@
 /* Your pattern (Journal): what the log says, as a few plain answers, each with one clear graph behind it.
    - Are slips getting further apart? The clean days before each slip, and the stretch going now. And, week by week, how
      many hard moments were ridden out: that shows the climb even while slips still happen.
-   - When does it happen? A 24-hour clock and the days of the week, with the hard hours that Today uses (risk.ts), so
+   - When does it happen? The 24 hours in a row and the days of the week, with the hard hours that Today uses (risk.ts), so
      the two never disagree.
    - What sets it off? Each trigger, how often it comes, and how often it ends in a slip.
    - What is different on hard days? Check-in answers on slip days against days with no slip, only where the
@@ -14,7 +14,7 @@ import { talkAfterSlip, talksOf, TALK_NEEDS, type TalkNeed } from './talk';
 import { plural } from './view';
 import type { DayKey, Days, Settings } from './types';
 
-export type PatRange = '30' | '90' | 'all';
+export type PatRange = '7' | '30' | '90' | 'all';
 const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const dateOf = (k: DayKey) => {
   const [y, m, d] = k.split('-').map(Number);
@@ -23,7 +23,7 @@ const dateOf = (k: DayKey) => {
 /** the days in a range, oldest first */
 export function patKeys(range: PatRange, days: Days, st: Settings, tk: DayKey): DayKey[] {
   const first = logStart(days, st);
-  const lo = range === 'all' ? first : addDays(tk, range === '30' ? -29 : -89);
+  const lo = range === 'all' ? first : addDays(tk, range === '7' ? -6 : range === '30' ? -29 : -89);
   const out: DayKey[] = [];
   for (let k = lo < first ? first : lo; k <= tk; k = addDays(k, 1)) out.push(k);
   return out;
@@ -36,6 +36,8 @@ export interface PatGaps {
   /** clean days since the last slip day (or since the start), still going. Today counts while it has no slip, the way the
       run does (Current run in Days and My numbers), so the two never disagree on one page. */
   now: number;
+  /** the longest stretch in the whole log, the one going now included: what was earned stays */
+  longest: number;
   /** slip days in all */
   slips: number;
   trend: 'apart' | 'closer' | 'steady' | null;
@@ -47,11 +49,13 @@ export interface PatGaps {
 export function patGaps(days: Days, st: Settings, tk: DayKey): PatGaps {
   const runs: number[] = [];
   let run = 0;
+  let longest = 0;
   for (let k = logStart(days, st); k <= tk; k = addDays(k, 1)) {
     if (sumDay(days[k]).slipped > 0) {
       runs.push(run);
       run = 0;
     } else run++;
+    longest = Math.max(longest, run);
   }
   const avg = (l: number[]) => Math.round((l.reduce((a, b) => a + b, 0) / l.length) * 10) / 10;
   let trend: PatGaps['trend'] = null;
@@ -67,7 +71,7 @@ export function patGaps(days: Days, st: Settings, tk: DayKey): PatGaps {
     const last = gaps[gaps.length - 1];
     trend = late >= early * 1.25 + 0.5 && last > early ? 'apart' : late <= early * 0.8 - 0.5 && last < early ? 'closer' : 'steady';
   }
-  return { runs: runs.slice(-10), now: run, slips: runs.length, trend, early, late };
+  return { runs: runs.slice(-10), now: run, longest, slips: runs.length, trend, early, late };
 }
 
 /* ---------- ridden out, week by week ---------- */
@@ -124,6 +128,8 @@ export interface PatWhen {
   /** the hardest day of the week, when one stands out */
   day: { d: number; name: string; n: number; of: number; slips: boolean } | null;
 }
+/** before the days of the week say anything: this many days in the range */
+export const WEEKDAY_DAYS = 28;
 export function patWhen(days: Days, st: Settings, keys: DayKey[], tk: DayKey): PatWhen {
   const hours: PatHour[] = Array.from({ length: 24 }, (_, h) => ({ h, rode: 0, slipped: 0 }));
   const week = WEEKDAY.map((name, d) => ({ d, name, rode: 0, slipped: 0 }));
@@ -152,13 +158,14 @@ export function patWhen(days: Days, st: Settings, keys: DayKey[], tk: DayKey): P
   const a = wk ? riskWindow(days, st, wk) : null;
   const b = we ? riskWindow(days, st, we) : null;
   const same = !!a && !!b && a.start === b.start;
-  /* a day stands out with at least 3 slips (or 6 entries) and half again its share */
+  /* a day stands out with at least 4 slips (or 6 entries) and two in five of them, over enough days to tell a pattern from
+     chance: with seven days to fall on, 3 of 6 slips on one day happens by luck about one time in four */
   const pick = (f: (x: (typeof week)[number]) => number, min: number, slips: boolean) => {
     const tot = week.reduce((s, x) => s + f(x), 0);
     const top = week.slice().sort((x, y) => f(y) - f(x))[0];
-    return f(top) >= min && f(top) >= (tot / 7) * 1.5 ? { d: top.d, name: top.name, n: f(top), of: tot, slips } : null;
+    return keys.length >= WEEKDAY_DAYS && f(top) >= min && f(top) >= tot * 0.4 ? { d: top.d, name: top.name, n: f(top), of: tot, slips } : null;
   };
-  const day = pick((x) => x.slipped, 3, true) || pick((x) => x.rode + x.slipped, 6, false);
+  const day = pick((x) => x.slipped, 4, true) || pick((x) => x.rode + x.slipped, 6, false);
   return { hours, week, timed, hard: { weekdays: a, weekends: same ? null : b, same }, day };
 }
 

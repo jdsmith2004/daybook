@@ -1,5 +1,56 @@
 # What is planned next
 
+## New charts on Pattern, one card at a time (the owner, November 1, 2026; on branch `claude/graphs-739555`, not merged until the owner has seen it on the simulator)
+
+The owner asked for new charts, with How We Feel's insights page as inspiration for the look and not something to copy, then asked for research: are these good and worth it, or are they shoved down people's throats? Then, looking at them: the goal is to see "if I'm getting better, if I'm getting worse, how I'm doing, if I'm stable, and to inspire me", but not every chart has to show a trend, and "I just don't think they look as good as they could". So there were three rounds of research: whether charts help people change, how accurately each form reads, and how the books and the best apps make a chart look good. Twelve cards became at most eight, and six for most people.
+
+**How it works:** one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under them. Week, Month and All sit under the cards, where the thumb is. Each card opens with its answer in a few big words ("Getting better"), a plain line under that, and one chart that proves it. A card with nothing behind it is left out. No new reminder or nudge points here: the tab waits to be opened.
+
+**The cards, and why each is free or paid.** The free ones show a person changing, which keeps hope going and makes the free side generous. The paid ones explain why, which is the deeper insight worth charging for. The Hard hours card on Today, the heads-ups and every care tool stay free.
+
+| Card                            | Free or paid    | The chart                                                                                                                                                                 | Why                                                                                                                                                                                                                                               |
+| ------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How you are doing               | Free, and first | No-slip days added up over the days shown, over the same line from the period before: above it is better. Says getting better, holding strong, steady or a harder stretch | The owner's question. The line can only climb and a slip is a flat step, so it shows a harder stretch honestly with no cliff, and what was earned stays on the chart. All lays the latest month over the first. Seen in Gentler Streak and Strava |
+| How your days felt              | Free            | A calendar where each day is the shape and color of its answer on Today; a day with no answer is a small dot; on a long log, a shape for each week                        | Reads the check-in's mood, then the morning question, so it works for nearly everyone and slip days count. Rare logging looks fine. Seen in How We Feel and Daylio, drawn with Daybook's own shapes                                               |
+| Riding it out                   | Free            | Each hard moment ridden out is a small flame, in a pile for its stretch; a slip is a small ring on top                                                                    | The flame is the heart of the app, and every win feeds it. Logging and feedback are what the evidence backs. The answer is a tally that only adds up. Past what fits, a flame stands for more than one                                            |
+| What you have felt              | Free            | The field of feelings a person picks from, faint, with what they named lit up where it lives, sized by how often, with its word                                           | Naming feelings more finely goes with less drinking (Kashdan 2010, in alcohol, not porn). Waits for 5 named feelings                                                                                                                              |
+| When does it happen?            | Paid            | The day in 12 two-hour columns from 6 AM with the hard hours marked behind them; the days of the week only when one truly stands out                                      | Replaces the clock, and the week card merges in                                                                                                                                                                                                   |
+| What sets it off?               | Paid            | A thin bar for each trigger, with "3 of 5 ridden out" on its line; what the pull was after is a sentence here                                                             | The separate needs card merges in                                                                                                                                                                                                                 |
+| What is different on hard days? | Paid            | Two numbers side by side, from the whole log                                                                                                                              | Only sleep, screens off and reaching out, with 5 check-in days on each side                                                                                                                                                                       |
+| What helps you                  | Paid            | A thin bar for each SOS tool                                                                                                                                              | Same data as before                                                                                                                                                                                                                               |
+
+**The look, and where it came from:**
+
+- **One warm accent, the flame's color, for what was won; everything else stays quiet.** "Gray everything, then color the one thing" (Knaflic, Wilke). A slip is a quiet gray-lavender, never amber or red. This chart set does not use the Journal's teal and amber. The day and feeling cards keep their own colors, which people already know from picking them.
+- **No empty tracks and no thick capsules.** Marks are thin, with a gap about equal to the bar, and radii are small (Datawrapper, Wilke; the exact numbers are our judgment, since no source gave them).
+- **Labels on the chart, and no legend where the words can say it.**
+- **Two sizes of words in a chart, and one big answer over it** (Apple's chart talks, Datawrapper).
+- **Charts drawn from what the app is made of,** after looking at about 60 store pictures from Gentler Streak, How We Feel, Daylio, Bevel, Oura, Finch, Quitzilla, Screen Time and others.
+
+**Cut or changed because of the research:**
+
+- **The 24-hour clock is gone,** here and in the weekly review. The strongest result: a plain row of hours was the most accurate, fastest and best liked in a study of 92 people, and a 12-hour radial chart was worst (Waldner 2019). The row starts at 6 AM so a night is never cut in two.
+- **The overlapping circles are gone,** though the owner's mockup had them. Area is the weakest way to show an amount, and overlap reads as if the feelings belong together. The field of feelings replaces them, which keeps the color and has position that means something.
+- **The streak and gap bars are gone, by the owner's call.** The longest stretch stays as a line of words, and the gaps stay in the numbers under the card. This goes against the first research pass, which suggested a longest and current stretch; the owner saw it and said it does not show a trend.
+- **A soft trend line through the day's marks was tried and removed,** by the owner: not every chart has to show a trend.
+- **The check-ins sparklines are cut.** No claim, no scale, and mood now lives in How your days felt. Urges and stress over time stay on each week and day.
+- **Hard days no longer shows mood, stress or urges.** A slip moves those too, so the log cannot say which came first. **This goes partly against the research,** which said to cut the card. It stays, narrowed, because sleep and screens can be acted on and it is part of what Daybook Pattern sells.
+- **Nothing claims a pattern from too little.** A hardest weekday needs 28 days and 4 slips (or 6 entries) that make up two in five, because 3 of 6 slips on one weekday happens by luck about one time in four. The same rule now guards the line the Daybook Pattern ask leads with. A few answers say "4 days answered" and never "mostly".
+- **No "log more to unlock" lines.** They make logging a chore.
+- **Every column in a range is the same length,** so a two-day stretch never stands beside a seven-day one.
+
+**How sure this is:** no study tests charts in a porn-quitting app, and the research passes read mostly abstracts and summaries; the books themselves (Tufte, Few, Knaflic) were not read in full. Logging with feedback is well backed (Harkin 2016, 138 trials, mostly health goals; Michie 2009). Reading accuracy by chart shape is well replicated (Cleveland and McGill, Heer and Bostock). The thresholds and sizes above are our judgment. Mood tracking has reported harms in depression and bipolar (JMIR Mental Health 2025), which is a reason not to push this page at anyone. A calendar of shapes and a field of feelings read less exactly than bars; they stay because each has its counts in words beside it, and they are what make these look like Daybook. The store pictures are polished marketing, not real logs.
+
+**How this helps Daybook earn or grow:** the free cards are why a person keeps logging and speaks well of the app, and the flames and the field are the pictures worth showing in the store. The paid cards show their own chart faded with the ask under it, and the ask is not made in the hours after a slip or an SOS.
+
+**Steps, with effort:**
+
+1. New rules in `packages/core/src/pattern-cards.ts`, with tests. _Medium._ Done.
+2. The deck and the charts. _Medium._ Done.
+3. A look on the web: full log, thin log, first week, locked, slips getting closer, slip today, Week and All, light and dark. _Medium._ Done.
+4. A look on the iOS simulator in a release build, then shown to the owner. _Medium._
+5. Merge once the owner says so. _Low._
+
 ## Today's sky, cleared (the owner, November 1, 2026)
 
 The owner, looking at the store picture: too much text, it covers the flame, and the flame sits too high. Gone from the sky: the date, the "I am ..." line, "Pull for journal", "Still Saturday's log" and the ring of seven. Kept: Support, the count, the level. The flame is about a tenth bigger on a tall iPhone, the torch and the beacon stand lower, between the number and the level, and a short message now sits right under the clock, above the flame.

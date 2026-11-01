@@ -20,7 +20,7 @@ import { TAB_TOP } from '@/lib/tab-room';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 /** each answer's look: a shape from cool to warm, calm for the low ones and bright for the high ones (a hard day is never painted red, as a warning) */
-const LOOK: Record<DayFeelStep, { kind: ShapeKind; tone: (c: Palette) => [string, string] }> = {
+export const DAY_FEEL_LOOK: Record<DayFeelStep, { kind: ShapeKind; tone: (c: Palette) => [string, string] }> = {
   1: { kind: 'puffy', tone: (c) => [c.violet, c.violetText] },
   2: { kind: 'oval', tone: (c) => [c.sky, c.skyText] },
   3: { kind: 'circle', tone: (c) => [c.mint, c.mintText] },
@@ -82,7 +82,7 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
       {a && picked ? (
         <>
           <View style={s.head}>
-            <Shape kind={LOOK[picked].kind} size={30} color={LOOK[picked].tone(c)[0]} />
+            <Shape kind={DAY_FEEL_LOOK[picked].kind} size={30} color={DAY_FEEL_LOOK[picked].tone(c)[0]} />
             <Text style={[s.say, { color: c.ink }]}>{a.say}</Text>
             {a.help ? <CloseX onPress={close} /> : null}
           </View>
@@ -111,7 +111,7 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
           </View>
           <View style={s.row}>
             {DAY_FEEL.map((x) => {
-              const [bg, ink] = LOOK[x.n].tone(c);
+              const [bg, ink] = DAY_FEEL_LOOK[x.n].tone(c);
               return (
                 <Pressable
                   key={x.n}
@@ -121,7 +121,7 @@ export function DayFeelPop({ onDone }: { onDone: () => void }) {
                   onPress={() => pick(x.n)}
                   hitSlop={4}
                   style={({ pressed }) => [s.opt, { transform: [{ scale: pressed ? 0.92 : 1 }] }]}>
-                  <Shape kind={LOOK[x.n].kind} size={40} color={bg} />
+                  <Shape kind={DAY_FEEL_LOOK[x.n].kind} size={40} color={bg} />
                   <Text style={[s.word, { color: ink }]} numberOfLines={1} adjustsFontSizeToFit>
                     {x.w}
                   </Text>

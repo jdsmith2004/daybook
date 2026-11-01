@@ -1,7 +1,7 @@
 /* The screenshot studio (dev only, web only, EXPO_PUBLIC_SHOTS=1): one store image at its exact size. The real app runs in a
    phone-sized frame (an iframe of this same build, on the demo log), with a caption above it on a brand background.
    Everything about the look is in config.ts. URL params:
-     size     a key of SIZES (ios69, ios63, play-phone, play-feature, ios-header, ios-search)
+     size     a key of SIZES (ios69, ios63, duo-outer, duo-inner, play-phone, play-feature, ios-header, ios-search)
      screen   the app path to show, like / or /learn (screen2, screen3: more phones in the wide layouts)
      caption  the headline; sub: a smaller line under it; head: the headline's size, as a share of the width (default CAPTION.head)
      bg       a key of BACKGROUNDS; theme: light or dark (the app's own theme inside the phone)
@@ -12,7 +12,7 @@
      playTop  the same on the Play sizes, where the caption takes more of the height
      tilt     the phone turned this many degrees; below: the words under the phone, which hangs from the top of the shot
      forms    the flame's forms in a rising row above the phone, as a comma list of levels
-     hero     the flame of this level, big, rising behind the phone
+     hero     the flame of this level, big, rising behind the phone; heroSize: its size, as a share of the width (default 1.06)
      pic      in place of the live app, a picture of it from the iPhone simulator (scripts/shots-ios.ts), for the iPhone sizes: only there is Apple's
               glass tab bar real (pic2, pic3 go with screen2, screen3)
    When the image is ready to capture, window.__shotsReady is true (scripts/shots.ts waits for it). */
@@ -185,7 +185,7 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
     'div',
     null,
     caption,
-    p.hero && !android ? <Hero level={Number(p.hero)} W={W} y={top - W * 0.68} /> : null,
+    p.hero && !android ? <Hero level={Number(p.hero)} size={W * Number(p.heroSize || 1.06)} W={W} top={top} /> : null,
     levels.length ? <Forms levels={levels} W={W} y={W * CAPTION.top + W * CAPTION.head * 1.2 * Number(p.lines || 2) + W * 0.05} /> : null,
     h(
       'div',
@@ -204,13 +204,12 @@ function PhoneShot({ p, size, bg, W, H, screens, onReady }: { p: Params; size: S
 }
 
 /* the flame itself, big, rising behind the phone. Only its figure and glow: the sky stays the shot's. */
-function Hero({ level, W, y }: { level: number; W: number; y: number }) {
+function Hero({ level, size, W, top }: { level: number; size: number; W: number; top: number }) {
   const l = useMemo(() => emblemLayers(level, true), [level]);
-  const size = W * 1.06;
   if (!l) return null;
   return h(
     'div',
-    { style: { position: 'absolute', left: (W - size) / 2, top: y, width: size, height: size } },
+    { style: { position: 'absolute', left: (W - size) / 2, top: top - size * 0.64, width: size, height: size } },
     [l.glow, l.fig].map((svg, i) =>
       h('div', {
         key: i,

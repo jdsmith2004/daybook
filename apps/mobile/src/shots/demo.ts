@@ -1,5 +1,5 @@
-/* The made-up log the screenshot studio shows (dev only): someone about two months in. They started on August 11, set a quit
-   date a week later, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in every evening and
+/* The made-up log the screenshot studio shows (dev only): someone about six weeks in, whose flame is still a flame. They started on September 8, the day
+   they set as their quit date, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in most evenings and
    did a lesson now and then. Every value is fixed, so every shot is the same each time. Nothing here is anyone's real data. */
 import { defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, type Days } from '@daybook/core';
 
@@ -15,18 +15,18 @@ const day = (s: string, n: number) => {
 /** the device's storage as the app would find it (key to JSON text), for the demo person, seen at the moment at (ms).
     theme: the app's theme choice */
 export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'light'): Record<string, string> {
-  const start = '2026-08-11';
+  const start = '2026-09-08';
   const st = {
     ...defaultSettings(start),
-    day1: '2026-08-18',
-    becoming: 'I am someone who keeps my word to myself.',
+    day1: '2026-09-08',
+    becoming: 'I am free of this.',
     reasons: ['Being fully present with the people I love', 'Clear mornings and steady energy'],
     menu: ['A brisk two-minute walk', 'Cold water on my face', 'Text a friend', 'Ten pushups'],
     u: 1792194562327,
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
-  /* a lesson looked at again on four days this week, so the ring of lesson days on Today is part lit */
+  /* a lesson looked at again on four days this week, so the ring of lesson days is part lit */
   const RECENT = ['2026-10-12', '2026-10-13', '2026-10-15', '2026-10-16'];
   let id = 0;
   const ev = (time: string, outcome: 'rode' | 'slipped', trigger: string) => ({
@@ -34,7 +34,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     time,
     outcome,
     trigger,
-    paused: outcome === 'rode',
+    paused: false,
     did: outcome === 'rode' ? ['Went for a walk'] : null,
     recovered: false,
     note: '',
@@ -43,22 +43,23 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     const d = day(start, i);
     if (d >= DEMO.day) break;
     const events = [];
-    if (i % 3 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
+    if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
     /* the one slip, with what was going on before it and how it felt after (the studio opens its comeback pages on it) */
     if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
     o['daybook:days/' + d] = {
       d,
       events,
-      checkin: { m: 6 + (i % 4), c: 6, e: 6 + (i % 3), s: 4 - (i % 3), h: 7, so: 'Y', ro: 'N', n: '', done: true, at: 0 },
+      checkin:
+        i % 5 === 4 ? null : { m: 6 + (i % 4), c: 6, e: 6 + (i % 3), s: 4 - (i % 3), h: 7, so: i % 3 === 0 ? 'Y' : 'N', ro: 'N', n: '', done: true, at: 0 },
       p: {
         w: [],
-        wd: i % 2 === 0,
+        wd: false,
         r: false,
-        c: i % 3,
+        c: 0,
         m: false,
         tl: [],
         po: null,
-        ls: i % 4 === 0 && lessons.length ? [lessons.shift()] : [],
+        ls: i % 5 === 0 && lessons.length ? [lessons.shift()] : [],
         lv: RECENT.includes(d) ? ['l2'] : [],
         ov: {},
       },

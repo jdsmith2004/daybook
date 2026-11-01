@@ -477,7 +477,7 @@ export const PRACTICE: Record<string, PStep> = {
   /* ---------- Becoming someone new ---------- */
   l37: {
     h: 'Write who you are becoming.',
-    p: 'Pick a sentence, or change the words. Today shows it under the date, and SOS opens with it.',
+    p: 'Pick a sentence, or change the words. It sits at the top of My plan, and Good night ends on it.',
     mins: 1,
     items: [
       line('be', 'I am someone who keeps my word to myself.'),
@@ -700,7 +700,7 @@ export function itemAdd(st: Settings, it: PItem): ItemResult {
   return {
     ok: true,
     st: changeSettings(st, (s) => void (s[k] = text.slice(0, itemLen(it)))),
-    toast: it.k === 'be' ? 'Saved. Today shows it under the date.' : 'Saved. SOS shows it to you first.',
+    toast: it.k === 'be' ? 'Saved. It sits at the top of My plan.' : 'Saved. SOS shows it to you first.',
     was,
   };
 }

@@ -1,5 +1,13 @@
 # What is planned next
 
+## Today's sky, cleared (the owner, November 1, 2026)
+
+The owner, looking at the store picture: too much text, it covers the flame, and the flame sits too high. Gone from the sky: the date, the "I am ..." line, "Pull for journal", "Still Saturday's log" and the ring of seven. Kept: Support, the count, the level. The flame is about a tenth bigger on a tall iPhone, the torch and the beacon stand lower, between the number and the level, and a short message now sits right under the clock, above the flame.
+
+Where the rest went: the journal still opens by pulling Today down, and from More; the lessons ring is a row on Learn; who I am becoming is at the top of My plan, in the weekly review and on Good night. What got harder to find: nothing on Today now teaches the pull to the journal, and nothing says a day before the rollover hour is still logged as yesterday.
+
+**Where it is (November 1, 2026):** merged and live on the web. Build 1.3.0 (7) is uploaded to App Store Connect, with the autumn icon. Not submitted: App Store Connect is signed out in Chrome. Once the owner signs in: upload `store-assets/ios69` and `ios63`, hold the Duo pictures, choose build 7, paste What's New from `docs/launch.md`, and submit. The owner's "build and submit" covers this and replaces the TestFlight walk for this release.
+
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 
 The new look of the lessons, the fire that moves at its tips, the wind-down rebuilt and the store pictures were merged together by the owner's word, and the public guides

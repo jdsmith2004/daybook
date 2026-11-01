@@ -37,7 +37,10 @@ interface Scene {
   forms?: string;
   lines?: number;
   hero?: string;
+  heroSize?: number;
   head?: number;
+  /** what changes on the iPhone Duo sizes */
+  duo?: Partial<Scene>;
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -141,9 +144,12 @@ for (const sc of scenes) {
       'forms',
       'lines',
       'hero',
+      'heroSize',
       'head',
-    ] as const)
-      if (sc[k] != null) q.set(k, String(sc[k]));
+    ] as const) {
+      const v = (key.startsWith('duo-') ? sc.duo?.[k] : undefined) ?? sc[k];
+      if (v != null && v !== false) q.set(k, String(v));
+    }
     if (size.device === 'iphone' || key.startsWith('ios-'))
       (['screen', 'screen2', 'screen3'] as const).forEach((k, i) => {
         if (!sc[k]) return;

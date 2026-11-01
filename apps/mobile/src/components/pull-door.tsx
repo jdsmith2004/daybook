@@ -7,7 +7,7 @@
    so the touch itself is followed while the page is at the top, and the page is moved down with the same give an iOS page
    has (screen.tsx). Both give one number, how far it is pulled, in points. */
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -64,26 +64,8 @@ export function PullDoor({ pull, armed, top }: { pull: Animated.AnimatedInterpol
   );
 }
 
-/** under Today's title until the journal has been opened once: where it is, and a tap opens it too */
-export function PullHint({ onPress, color }: { onPress: () => void; color?: string }) {
-  const c = useTheme();
-  const ink = color || c.muted;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Open your journal. You can also pull Today down."
-      onPress={onPress}
-      style={({ pressed }) => [s.hint, { opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name="pencil" size={14} color={ink} />
-      <Text style={[s.hintT, { color: ink }]}>Pull for journal</Text>
-    </Pressable>
-  );
-}
-
 const s = StyleSheet.create({
   door: { position: 'absolute', left: 0, right: 0, height: DOOR_H, alignItems: 'center', justifyContent: 'center', gap: 7 },
   disc: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   say: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 17 },
-  hint: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, paddingVertical: 4, marginTop: 2 },
-  hintT: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 17 },
 });

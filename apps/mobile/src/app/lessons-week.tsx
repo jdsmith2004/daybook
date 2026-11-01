@@ -1,14 +1,11 @@
-/* Your lessons this week: what the small ring on the flame's sky counts, and how it fills (core lessonWeek). Opened from the
-   ring on Today. Monday to Sunday, one part for each day a lesson is finished; a slip never takes one away. */
+/* Your lessons this week: how the week's ring fills (core lessonWeek). Opened from Learn. Monday to Sunday, one part for each day a lesson is finished; a slip never takes one away. */
 import { fmtDate, lessonWeek, type LessonWeek } from '@daybook/core';
-import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { Dock } from '@/components/scene';
-import { closeSheet, SheetFrame } from '@/components/sheet';
+import { SheetFrame } from '@/components/sheet';
 import { Text } from '@/components/text';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -19,7 +16,7 @@ export default function LessonsWeek() {
   return (
     <SheetFrame title="Your lessons this week">
       <T>Each day you finish a lesson lights one part of this ring, Monday to Sunday. A slip never takes one away. It starts fresh on Monday.</T>
-      {/* the open middle is the ring itself, big: the small one on Today's sky is what this page explains */}
+      {/* the open middle is the ring itself, big */}
       <View style={s.mid}>
         <BigRing week={week} />
       </View>
@@ -42,15 +39,6 @@ export default function LessonsWeek() {
           </View>
         ))}
       </View>
-      <Dock>
-        <Button
-          label="Go to Learn"
-          onPress={() => {
-            closeSheet();
-            router.navigate('/learn');
-          }}
-        />
-      </Dock>
     </SheetFrame>
   );
 }

@@ -1,12 +1,11 @@
-/* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with the date and who I
-   am becoming written on it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the
-   app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
+/* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with nothing written over
+   it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
    do is plain at a glance. When a bigger moment has the next step (a pause, the day of a slip, a talk-through, days
    away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
    SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS
    or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the line until its moment has passed (core talkPlanNow).
    The sky takes the room the rest does not need (lib/today-size.ts). Pulling the page down past its top opens the journal
-   (app/journal.tsx), and until it has been opened once, a line under the title says so. Graduation (graduate.ts) is recorded here the
+   (app/journal.tsx). Graduation (graduate.ts) is recorded here the
    first time it is earned, and its celebration opens. */
 import {
   accountAsk,
@@ -25,14 +24,12 @@ import {
   lessonPathFor,
   lessonsDone,
   lessonsLocked,
-  fmtClock,
   fmtDate,
   gameCompute,
   gradInfo,
   keepHard,
   riskToKeep,
   graduate,
-  p2,
   firstPattern,
   heroSlipLine,
   nudgeCard,
@@ -46,7 +43,7 @@ import {
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { AppState, Platform, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
@@ -57,12 +54,10 @@ import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { Hero, skyInk } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
-import { PullHint } from '@/components/pull-door';
 import { HardLine } from '@/components/risk-card';
 import { Screen } from '@/components/screen';
 import { useSosLeadOn } from '@/components/sos-lead';
 import { LogLink, WaitingPlan } from '@/components/today-log';
-import { T } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
@@ -251,8 +246,6 @@ export default function Today() {
   const lead = useSosLeadOn();
 
   if (!st || !g) return <Welcome />;
-  const early = new Date(now).getHours() < st.rollover;
-  const be = String(st.becoming || '').trim();
   const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
     pause: !!sos.timer,
     back: due && !askAgain ? due.n : null,
@@ -276,21 +269,6 @@ export default function Today() {
   const size = sizeFor((slipLine ? NOTE_ROOM : 0) + (lead ? LEAD_ROOM : 0));
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
-  const head = (
-    <>
-      {be ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Who I am becoming: ${be} Opens My plan.`} onPress={() => router.push('/plan')}>
-          <Text style={[s.be, { color: ink.soft }]}>{be}</Text>
-        </Pressable>
-      ) : null}
-      {sos.mem.jnSeen ? null : <PullHint color={ink.soft} onPress={() => router.push('/journal')} />}
-      {early ? (
-        <T v="small" style={{ color: ink.soft }}>
-          Still {fmtDate(tk, { weekday: 'long' })}’s log until {fmtClock(p2(st.rollover) + ':00')}
-        </T>
-      ) : null}
-    </>
-  );
   return (
     <View style={{ flex: 1 }}>
       {focused ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
@@ -316,7 +294,6 @@ export default function Today() {
             sky={size.sky}
             flame={size.flame}
             title={title}
-            head={head}
             action={
               tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
             }
@@ -354,7 +331,6 @@ export default function Today() {
 }
 
 const s = StyleSheet.create({
-  be: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 20 },
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },
   done: { gap: 2, paddingHorizontal: 4 },
   doneH: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },

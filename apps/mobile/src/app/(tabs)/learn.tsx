@@ -20,6 +20,7 @@ import {
   lessonNo,
   lessonOpen,
   lessonsDone,
+  lessonWeek,
   lessonsLocked,
   lessonPathFor,
   lessonTimeline,
@@ -378,6 +379,7 @@ function LessonsPane({
         </Collapse>
       ) : null}
 
+      <LinkCard icon="check" title="Your lessons this week" sub={`${lessonWeek(snap.days, tk).n} of 7 days`} onPress={() => router.push('/lessons-week')} />
       <LinkCard
         icon="compass"
         title="What I have learned"

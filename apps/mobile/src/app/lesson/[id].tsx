@@ -143,7 +143,7 @@ export default function LessonScreen() {
   const fit = useFitRoom();
   /* a new card starts at its top, set as it comes in (it is still clear then): the old card never jumps before it goes */
   useLayoutEffect(() => scroll.current?.scrollTo({ y: 0, animated: false }), [stage, i]);
-  /* the first time a lesson lights a day on the ring on Today (core lessonWeek), the last card says what the ring is. Once
+  /* the first time a lesson lights a day on the week's ring (core lessonWeek, app/lessons-week.tsx), the last card says what the ring is. Once
      per phone (kept with SOS's memory); fixed when the lesson opens, so the line stays while this lesson is on screen. */
   const sos = useSos();
   const [ringNote] = useState(() => !sos.mem.ringNote);
@@ -586,7 +586,7 @@ export default function LessonScreen() {
           {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
         {prac ? null : <T style={s.p}>The practice stays in Learn whenever you want it.</T>}
-        {ringLit ? <T style={s.p}>That lit today on your lessons ring, on the flame in Today. One part for each day you do a lesson this week.</T> : null}
+        {ringLit ? <T style={s.p}>That lit today on your lessons ring, in Learn. One part for each day you do a lesson this week.</T> : null}
         {/* the end of a lesson is the flame's moment */}
         <FlameSlot size={SHORT ? 330 : 420} min={150} />
         {due && pair ? (

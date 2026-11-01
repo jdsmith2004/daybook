@@ -8,7 +8,7 @@
    Each entry is its own record (journal/<id>, data.ts), so two devices writing on the same day never overwrite each
    other's words, and a long entry never pushes a day past the size a record may have. The entry belongs to the log day
    it was started on (d). */
-import { addDays, fmtDate, isKey } from './legacy/core.js';
+import { addDays, cleanTags, fmtDate, isKey } from './legacy/core.js';
 import { nextU } from './actions';
 import { makeId } from './mutate';
 import { feelPos } from './slip';
@@ -26,6 +26,9 @@ export interface JEntry {
   t: string;
   /** the question that was showing when it was written, kept so reading it back makes sense */
   q?: string;
+  /** the tags picked for this entry alone (journal-notes.ts). Kept when empty, so an empty list means they were taken off,
+      and a missing one means the copy came from an app that cannot see them (mergeRemote keeps them) */
+  tags?: string[];
   u: number;
 }
 /** every entry, by id */
@@ -54,6 +57,7 @@ export function normJEntry(v: unknown, id: string): JEntry | null {
     u: typeof o.u === 'number' && Number.isFinite(o.u) ? o.u : 0,
   };
   if (typeof o.q === 'string' && o.q.trim()) out.q = o.q.trim().slice(0, Q_MAX);
+  if (Array.isArray(o.tags)) out.tags = cleanTags(o.tags);
   return out;
 }
 
@@ -63,8 +67,14 @@ export function jnStart(jn: Journal, d: DayKey, w: string, now = Date.now()): { 
   return { jn: { ...jn, [id]: { id, d, at: now, w, t: '', u: nextU(null, now) } }, id };
 }
 
-/** writes into an entry: its words, the question it answers, or a feeling named again */
-export function jnEdit(jn: Journal, id: string, patch: { t?: string; q?: string | null; w?: string }, now = Date.now()): Journal {
+/** writes into an entry: its words, the question it answers, a feeling named again, its tags, or when it happened (the
+    moment, with the log day it falls on) */
+export function jnEdit(
+  jn: Journal,
+  id: string,
+  patch: { t?: string; q?: string | null; w?: string; tags?: string[]; when?: { at: number; d: DayKey } },
+  now = Date.now(),
+): Journal {
   const cur = jn[id];
   if (!cur) return jn;
   const next: JEntry = { ...cur, u: nextU(cur, now) };
@@ -72,6 +82,11 @@ export function jnEdit(jn: Journal, id: string, patch: { t?: string; q?: string 
   if (patch.w != null && isWord(patch.w)) next.w = patch.w;
   if (patch.q === null) delete next.q;
   else if (patch.q != null && patch.q.trim()) next.q = patch.q.trim().slice(0, Q_MAX);
+  if (patch.tags) next.tags = cleanTags(patch.tags);
+  if (patch.when && Number.isFinite(patch.when.at) && isKey(patch.when.d)) {
+    next.at = patch.when.at;
+    next.d = patch.when.d;
+  }
   return { ...jn, [id]: next };
 }
 

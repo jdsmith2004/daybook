@@ -289,6 +289,15 @@ function normLearn(l){
  if(Object.keys(back).length)out.back=back;
  return out;
 }
+/* a journal tag, as Obsidian takes one: lower case, no spaces, letters, numbers, - _ and /, and never only numbers (journal-notes.ts) */
+function cleanTag(v){
+ if(typeof v!=='string')return '';
+ const t=v.trim().toLowerCase().replace(/^#+/,'').replace(/\s+/g,'-').replace(/[^\p{L}\p{N}_\/-]/gu,'').replace(/\/+/g,'/').replace(/^[\/-]+|[\/-]+$/g,'').slice(0,40);
+ return /[^\d\/]/.test(t)?t:'';
+}
+function cleanTags(v){
+ return Array.isArray(v)?[...new Set(v.map(cleanTag).filter(Boolean))].slice(0,20):[];
+}
 function normSettings(s){
  const d=defaultSettings(isKey(s&&s.start)?s.start:keyOfDate(new Date()));
  const o=Object.assign({},d,s||{});
@@ -319,6 +328,8 @@ function normSettings(s){
  o.menu=cleanList(o.menu,MENU_DEFAULT,24,100);if(!o.menu.length)o.menu=MENU_DEFAULT.slice();
  o.wind=cleanList(o.wind,WIND_DEFAULT,10,100);if(!o.wind.length)o.wind=WIND_DEFAULT.slice();
  o.celebrate=o.celebrate!==false;
+ /* jnTags: the tags on every journal note. No list yet means the starting ones (journal-notes.ts); empty is allowed on purpose. */
+ if(o.jnTags!==undefined)o.jnTags=cleanTags(o.jnTags);
  o.seen=normSeen(o.seen);
  o.opts=normOpts(o.opts);
  /* how days are counted: strict (no slip), gentle (one slip or fewer), or step (the step-down plan: longer stretches between slips, fewer each week).
@@ -3152,6 +3163,8 @@ export {
   normSeen,
   normLearn,
   normSettings,
+  cleanTag,
+  cleanTags,
   normEvent,
   normCheckin,
   pEmpty,

@@ -10,7 +10,23 @@
    ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
    goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
    that helps most. */
-import { addDays, feelAt, fmtDate, jnDayLabel, jnEdit, jnLogs, jnRemove, jnStart, jnTimeline, type FEEL_QUADS, type JFeel, type JLog } from '@daybook/core';
+import {
+  addDays,
+  feelAt,
+  fmtDate,
+  jnDayLabel,
+  jnEdit,
+  jnLogs,
+  jnRemove,
+  jnStart,
+  jnTimeline,
+  whenEntry,
+  whenMs,
+  whenOf,
+  type FEEL_QUADS,
+  type JFeel,
+  type JLog,
+} from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -50,11 +66,14 @@ import {
 import { Dock, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
 import { Text, TextInput } from '@/components/text';
+import { JournalTags } from '@/components/journal-tags';
 import { FEEL_COLORS, FeelGrid, feelKind, QuadBubbles, type FeelFrom } from '@/components/tools/feel';
 import { Icon, InkContext, T } from '@/components/ui';
+import { WhenSheet } from '@/components/when';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
+import { useNotes } from '@/lib/notes';
 import { useSos } from '@/lib/sos';
 import { useAccount } from '@/lib/sync';
 import { useStore } from '@/lib/store';
@@ -536,7 +555,9 @@ function WritePage({
 }) {
   const inset = useSafeAreaInsets();
   const { width: W } = useWindowDimensions();
-  const { snap, tk, update } = useStore();
+  const { snap, tk, now, update } = useStore();
+  const notes = useNotes();
+  const [picking, setPicking] = useState(false);
   const e = snap.journal![id];
   const look = entryLook(e);
   /* what else was felt that day, named somewhere else in the app (a slip, an urge, Name the feeling), so reading a day
@@ -665,9 +686,23 @@ function WritePage({
                 <Icon name="back" color={JN.ink} />
               </Pressable>
             </View>
-            <Text style={s.when} numberOfLines={1}>
-              {jnDayLabel(e.d, tk) + '  ·  ' + entryTime(e.at)}
-            </Text>
+            {/* the moment it happened; a tap changes it, the same sheet as logging an urge */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={jnDayLabel(e.d, tk) + ', ' + entryTime(e.at)}
+              accessibilityHint="Changes when this happened"
+              onPress={() => {
+                buzz('tap');
+                Keyboard.dismiss();
+                setPicking(true);
+              }}
+              hitSlop={8}
+              style={({ pressed }) => [s.whenBtn, { opacity: pressed ? 0.6 : 1 }]}>
+              <Text style={s.when} numberOfLines={1}>
+                {jnDayLabel(e.d, tk) + '  ·  ' + entryTime(e.at)}
+              </Text>
+              <Icon name="down" size={11} color="rgba(235, 235, 245, 0.45)" />
+            </Pressable>
             <View style={s.topDone}>
               {typing ? (
                 <Appear by={0} duration={180}>
@@ -742,6 +777,7 @@ function WritePage({
             <View style={{ height: 8 }} />
           ) : (
             <View style={[s.foot, { paddingBottom: Math.max(inset.bottom, 12) }]}>
+              {notes.on ? <JournalTags id={id} /> : null}
               <Appear by={12} duration={260}>
                 <Pressable
                   accessibilityRole="button"
@@ -761,6 +797,20 @@ function WritePage({
           )}
         </View>
       </KeyboardAvoidingView>
+      <WhenSheet
+        open={picking}
+        value={whenOf(e.at)}
+        now={now}
+        roll={snap.settings?.rollover ?? 4}
+        title={'When did you feel ' + word + '?'}
+        onClose={() => setPicking(false)}
+        onSave={(w) => {
+          setPicking(false);
+          if (!w) return;
+          const when = { at: whenMs(w), d: whenEntry(w, snap.settings?.rollover ?? 4).key };
+          update((s0) => ({ ...s0, journal: jnEdit(s0.journal || {}, id, { when }) }));
+        }}
+      />
     </View>
   );
 }
@@ -843,7 +893,8 @@ const s = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: -4 },
   feel: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22 },
   word: { fontFamily: font.display, fontSize: 28, lineHeight: 31, color: JN.ink },
-  when: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: 'rgba(235, 235, 245, 0.45)' },
+  whenBtn: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  when: { flexShrink: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: 'rgba(235, 235, 245, 0.45)' },
   input: {
     marginTop: 14,
     paddingTop: 4,

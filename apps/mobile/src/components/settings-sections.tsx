@@ -52,6 +52,7 @@ import { B } from '@/components/help-bits';
 import { Rows } from '@/components/link-card';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
+import { useNotes } from '@/lib/notes';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { forgetDrafts } from '@/lib/drafts';
 import {
@@ -197,6 +198,7 @@ const COUNT_HOW = {
 /** every settings section, as one list of rows that open. `open` opens one ("s-count"), and `onOpenLayout` tells where it is. */
 export function SettingsSections({ open: asked, onOpenLayout }: { open?: string; onOpenLayout?: (y: number) => void }) {
   const { snap, tk, now, apply, replace, erase, say, dirty, hooks, current } = useStore();
+  const notes = useNotes();
   const sos = useSos();
   const sync = useSync();
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
@@ -635,6 +637,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                     <Act label="Save a full backup (JSON)" onPress={() => save('json')} />
                     <Act label="Restore from a backup…" onPress={restore} disabled={busy} />
                   </>
+                ) : null}
+                {notes.can ? (
+                  <Act label={notes.on ? 'Copying journal to ' + notes.name : 'Copy journal to a folder…'} onPress={() => router.push('/notes')} />
                 ) : null}
                 {wipe ? null : <Act danger icon="trash" label="Delete everything…" onPress={() => setWipe(true)} />}
               </View>

@@ -21,6 +21,7 @@ import { Toast } from '@/components/toast';
 import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
+import { NoteCopy } from '@/lib/notes';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
@@ -156,6 +157,7 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <WebChrome bg={c.bg} />
       <Reminders />
+      <NoteCopy />
       <NavKeeper />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>

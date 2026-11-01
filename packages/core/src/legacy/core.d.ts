@@ -27,6 +27,8 @@ export function weekRange(k: number, st: Settings): [DayKey, DayKey];
 /* ---------- the data model ---------- */
 export function defaultSettings(startKey: DayKey): Settings;
 export function normSettings(s: unknown): Settings;
+export function cleanTag(v: unknown): string;
+export function cleanTags(v: unknown): string[];
 export function normEvent(e: unknown): DayEvent;
 export function normCheckin(c: unknown): Checkin | null;
 export function normP(p: unknown): Play | null;

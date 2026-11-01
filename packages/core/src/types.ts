@@ -205,6 +205,8 @@ export interface Settings {
   /** the day a moment of earned value last carried a tip ask (see support.ts). Optional. */
   tipMo?: DayKey | null;
   /** the supporter record on this device (supporter.ts). Optional, so older records need no change. */
+  /** the tags on every journal note; none saved means the starting ones (journal-notes.ts) */
+  jnTags?: string[];
   sup?: Supporter | null;
   /** Daybook Pattern on this device (supporter.ts). Optional, so older records need no change. */
   pat?: PatRec | null;

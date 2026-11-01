@@ -210,8 +210,20 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
         snap.days[p.key] = theirs;
       } else delete snap.days[p.key];
     } else if (p.kind === 'journal') {
-      if (r.data) jn[p.key] = r.data as JEntry;
-      else delete jn[p.key];
+      if (r.data) {
+        /* tags are the one thing an older app version drops from an entry, the way it drops the newer parts of a day
+           (keepNewer): a copy with no list at all keeps this device's, and the mended entry is sent back */
+        const theirs = r.data as JEntry;
+        const had = jn[p.key]?.tags;
+        if (had && !theirs.tags) {
+          const u = r.u + 1;
+          jn[p.key] = { ...theirs, tags: had, u };
+          d[r.id] = u;
+          changed.add(r.id);
+          continue;
+        }
+        jn[p.key] = theirs;
+      } else delete jn[p.key];
     } else if (r.data) snap.reviews[p.key] = r.data as Snapshot['reviews'][string];
     else delete snap.reviews[p.key];
     delete d[r.id];

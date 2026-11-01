@@ -1,5 +1,26 @@
 # What is planned next
 
+## The journal in Obsidian (the owner, November 1, 2026; on branch claude/obsidian-9ae9f4, not merged)
+
+The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one quiet line in the data part of the settings, on an iPhone only, and it is free with no count. It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.
+
+**What the owner decided:** one note per entry. They pick the exact folder inside the iCloud vault they built, and notes land directly in it (no `Daybook/` subfolder). The tags on every note start as `daybook` and `journal`, and they can be changed; a change reaches every entry and every note, so they stay the same across all of them. Extra tags per entry are one tap once used, and renaming one renames it everywhere. Daybook writes and Obsidian reads: an edit in Obsidian does not come back. This was explained to the owner and not yet argued over, so it can still change.
+
+**A warning given to the owner:** the vault on the work Mac is a git repository that syncs through a work GitHub account. A recovery journal must never land there. The folder is picked on the iPhone, in a personal iCloud vault.
+
+**How it works:**
+
+- Core `journal-notes.ts`, tested with a folder in memory: `jnNote`, `jnNotePlan`, `runNotePlan`. A file is named `2026-10-30 0915 k3f9.md`, sorted by time and the same when the words or feeling change; changing when it happened renames it. Frontmatter holds the tags (with `feeling/calm`), the date, the time, the feeling and the id. The body links `[[Calm]]` and `[[2026-10-30]]`, which finds the Daily Note by name.
+- Words are never lost: a file that is not what Daybook last wrote moves aside to `... (edited).md` before Daybook writes, and is kept rather than deleted. More than five entries gone at once (a log replaced, or everything erased) leaves every note there. Daybook touches only files in its own ledger, and the native module takes only plain file names ending in `.md`.
+- `apps/mobile/modules/note-folder` is a small iOS module: a security-scoped bookmark, because `expo-file-system` picks a folder but loses access when the app closes, and coordinated file calls with a 20 second limit, because iCloud can hold a file. It needs a full binary, not an over-the-air update. On the web, on Android and on an older install the module is absent, and nothing shows. Android can come later if anyone asks.
+- `JEntry.tags` rides in the same `journal/<id>` record, and `Settings.jnTags` in the settings record. An empty list means taken off, and a missing one means an older app dropped it, so `mergeRemote` keeps this device's and sends it back.
+- **Account:** nothing new on the server. Records are in DynamoDB; S3 only holds the website. But the sync function cleans records with core, so the function must be deployed with this change or it strips tags: merge with `[deploy]`.
+- **Changing when it happened:** the time at the top of an entry opens `WhenSheet`, the same sheet as logging an urge, rather than a second picker. No count or award depends on a journal entry's day, so moving one takes nothing away.
+
+**Steps (Opus effort):** core rules and tests (high, done). Native module (high, done). Sheet and journal page (medium, done). Simulator check (medium). The owner's iPhone test, then merge with `[deploy]`.
+
+**Not tested until the owner's iPhone:** real iCloud Drive, a real vault, files away in iCloud, Obsidian picking up a new note. The simulator has no iCloud account in this setup.
+
 ## Today's sky, cleared (the owner, November 1, 2026)
 
 The owner, looking at the store picture: too much text, it covers the flame, and the flame sits too high. Gone from the sky: the date, the "I am ..." line, "Pull for journal", "Still Saturday's log" and the ring of seven. Kept: Support, the count, the level. The flame is about a tenth bigger on a tall iPhone, the torch and the beacon stand lower, between the number and the level, and a short message now sits right under the clock, above the flame.

@@ -27,6 +27,7 @@ export const SHEETS = [
   'tip',
   'month',
   'recheck',
+  'notes',
 ];
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */

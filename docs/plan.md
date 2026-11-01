@@ -6,7 +6,20 @@ The owner, looking at the store picture: too much text, it covers the flame, and
 
 Where the rest went: the journal still opens by pulling Today down, and from More; the lessons ring is a row on Learn; who I am becoming is at the top of My plan, in the weekly review and on Good night. What got harder to find: nothing on Today now teaches the pull to the journal, and nothing says a day before the rollover hour is still logged as yesterday.
 
-**Where it is (November 1, 2026):** merged and live on the web. Build 1.3.0 (7) is uploaded to App Store Connect, with the autumn icon. Not submitted: App Store Connect is signed out in Chrome. Once the owner signs in: upload `store-assets/ios69` and `ios63`, hold the Duo pictures, choose build 7, paste What's New from `docs/launch.md`, and submit. The owner's "build and submit" covers this and replaces the TestFlight walk for this release.
+**Where it is (November 1, 2026):** merged and live on the web. Version 1.3.0 is a saved draft in App Store Connect, **not submitted**, by the owner's word: more changes and a new build come first. In the draft: build 7, What's New, the new `ios63` and `ios69` pictures and the new search picture. The header picture stays as it was, and the Duo pictures are held. Release is set to automatic after approval, as 1.2.1 was, though `docs/launch.md` says manual. When the new build is up: choose it in place of build 7, and update What's New if the changes call for it.
+
+## The listing: 132 views, 1 real download (the owner, November 1, 2026)
+
+The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. **Proposed, waiting on the owner's yes:**
+
+- **Name:** `Daybook: Quit Porn, Stay Free`. The home screen still says Daybook. This reverses the earlier choice in `docs/launch.md` to keep "porn" out of the name so that it stays off the purchase list, so it is the owner's call.
+- **Subtitle:** `Private, research-based help`. App Review 2.3.7 bars unverifiable claims in a subtitle. "Research-based" is true of the lessons and the tools; nothing has tested Daybook itself.
+- **First picture's caption:** `Quit porn. Stay free.` Also change the search picture's line, which says "changing a habit" and never names porn.
+- **Stop announcing shame everywhere the listing says it:** the description's first line and the About page's title and headline. The app keeps treating people that way.
+
+**What the evidence says.** 1 of 132 is 0.76%, with an exact 95% range of 0.02% to 4.15%. At a 4% rate, a result this low comes up about 3% of the time, so it probably is low, but it cannot say which part is to blame. No study tests shame words in a store listing: dropping them is a judgment, supported by research on shame as a barrier to seeking help. Telling 1% from 4% between two listings takes about 425 impressions each. Apple's page tests cover icons and pictures, not the name.
+
+**Still to check.** Whether 132 is impressions or page views, and the sources, in App Analytics. Whether the impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Competitors' exact wording on a phone, since research could not open their listing pages. **After the yes:** update the name, subtitle, description, `shots.json`, `about.html` and `docs/launch.md`, retake the first pictures and the search picture, and put them in the draft. Google Play's listing has the same name and words.
 
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 

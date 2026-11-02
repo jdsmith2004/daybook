@@ -1,9 +1,8 @@
 /* When it happened (core: when.ts). A pill shows the day and time an entry is logged for ("Today · 9:47 PM"); a tap opens a
    sheet from the bottom to change it. The moment picked sits big at the top and is always what Save saves, even while a wheel
-   is still turning. Under it: three quick picks, the days of the last month in a row, and a wheel each for the hour, the minute
+   is still turning. Under it: a row of quick picks, the days of the last month in a row, and a wheel each for the hour, the minute
    and AM or PM that roll round like a phone's own clock. Nothing is ever refused: a clock time still to come means the last time
-   the clock said it (core whenPast). A time after midnight is kept with the day before, and the sheet says so. Days before the
-   person started Daybook are not offered: the log begins on their first day. */
+   the clock said it (core whenPast). A time after midnight is kept with the day before, and the sheet says so. */
 import {
   whenClock,
   whenCountsFor,
@@ -28,7 +27,6 @@ import { BIG_MAX, Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
-import { useStore } from '@/lib/store';
 import { font, MAX_WIDTH, useTheme } from '@/lib/theme';
 
 /** the day and time an entry is logged for, as a pill; a tap changes it */
@@ -127,24 +125,23 @@ function WhenBody({
 }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  /* the first day the log can hold: the day the person started */
-  const from = useStore().snap.settings?.start || '';
   /* the clock is read once, when the sheet opens, so "Just now" does not move away under the finger */
   const [at] = useState(now);
   /* what the wheels say; `shown`, what it means, is what the page says and what Save saves */
   const [w, setW] = useState<When>(() => (whenFuture(value, now) ? whenOf(now) : value));
-  const shown = whenPast(w, at, roll, from);
+  const shown = whenPast(w, at, roll);
+  /* the whole last month, also before the person started: a slip from before setup is still theirs to log (the owner, November 2, 2026) */
   const days = useMemo(() => {
-    const list = whenDays(at).filter((d, i) => i === 0 || !from || d >= from || d === value.day);
+    const list = whenDays(at);
     if (list.indexOf(value.day) < 0) list.push(value.day);
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const quick = whenQuick(at, roll).filter((q) => q.id === 'now' || !from || q.w.day >= from);
+  const quick = whenQuick(at, roll);
   /* once a wheel stops on a moment that means something else (just ahead of now), it turns to it */
   const settle = () =>
     setW((x) => {
-      const p = whenPast(x, at, roll, from);
+      const p = whenPast(x, at, roll);
       return p.h !== x.h || p.m !== x.m ? p : x;
     });
   const under = whenCountsFor(shown, roll);
@@ -177,7 +174,7 @@ function WhenBody({
       {/* the room is kept, so nothing moves when the line comes */}
       <Text style={[s.note, { color: c.muted }]}>{under || ' '}</Text>
 
-      <View style={s.quick}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickRow} contentContainerStyle={s.quick}>
         {quick.map((q) => {
           const on = whenSame(q.w, shown);
           return (
@@ -194,7 +191,7 @@ function WhenBody({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       <DayRow
         days={days}
@@ -559,7 +556,8 @@ const s = StyleSheet.create({
   big: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   note: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, minHeight: 18, paddingHorizontal: 16, marginTop: 2 },
   /* the words of the first pick line up with the moment above them */
-  quick: { flexDirection: 'row', gap: 4, paddingHorizontal: 4, marginTop: 4 },
+  quickRow: { flexGrow: 0, marginTop: 4 },
+  quick: { gap: 4, paddingHorizontal: 4 },
   q: { minHeight: 44, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   qT: { fontFamily: font.bodySemi, fontSize: 15 },
   dayRow: { flexGrow: 0, marginTop: 8 },

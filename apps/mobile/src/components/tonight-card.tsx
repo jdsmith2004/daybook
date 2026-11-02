@@ -14,7 +14,7 @@ import { buzz } from '@/lib/feel';
 import { font } from '@/lib/theme';
 
 const q = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
-export const TN = (q?.get('tn') || 'a') as 'a' | 'b' | 'c';
+export const TN = (q?.get('tn') || 'd') as 'a' | 'b' | 'c' | 'd' | 'e';
 
 const CREAM = '#F6EFE2';
 const CREAM2 = 'rgba(246,239,226,0.62)';
@@ -53,12 +53,14 @@ function More({ n, color }: { n: number; color: string }) {
 }
 
 /* a: the evening as an arc from 6 PM to 2 AM; the hard hours in gold on it, and a dot for now */
-function Arc({ start, now }: { start: number; now: number }) {
-  const W = 300;
-  const H = 158;
+function Arc({ start, now, w = 300 }: { start: number; now: number; w?: number }) {
+  const k = w / 300;
+  const W = w;
+  const H = 158 * k;
   const cx = W / 2;
-  const cy = 146;
-  const R = 128;
+  const cy = 146 * k;
+  const R = 128 * k;
+  const sw = Math.max(8, 14 * k);
   const from = 18;
   const span = 8;
   const pt = (h: number) => {
@@ -79,20 +81,94 @@ function Arc({ start, now }: { start: number; now: number }) {
   return (
     <Svg width={W} height={H}>
       <Defs>
-        <RadialGradient id="glow" cx={pt(s0 + 1)[0]} cy={pt(s0 + 1)[1]} r={90} gradientUnits="userSpaceOnUse">
+        <RadialGradient id="glow" cx={pt(s0 + 1)[0]} cy={pt(s0 + 1)[1]} r={90 * k} gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor={GOLD} stopOpacity={0.35} />
           <Stop offset="1" stopColor={GOLD} stopOpacity={0} />
         </RadialGradient>
       </Defs>
       <Rect width={W} height={H} fill="url(#glow)" />
-      <Path d={arc(from, from + span)} stroke="rgba(169,155,255,0.22)" strokeWidth={14} strokeLinecap="round" fill="none" />
-      <Path d={arc(s0, s0 + 2)} stroke={GOLD} strokeWidth={14} strokeLinecap="round" fill="none" />
-      {inArc ? <Circle cx={nx} cy={ny} r={9} fill={CREAM} stroke={INK} strokeWidth={4} /> : null}
+      <Path d={arc(from, from + span)} stroke="rgba(169,155,255,0.22)" strokeWidth={sw} strokeLinecap="round" fill="none" />
+      <Path d={arc(s0, s0 + 2)} stroke={GOLD} strokeWidth={sw} strokeLinecap="round" fill="none" />
+      {inArc ? <Circle cx={nx} cy={ny} r={Math.max(6, 9 * k)} fill={CREAM} stroke={INK} strokeWidth={Math.max(3, 4 * k)} /> : null}
     </Svg>
   );
 }
 
+const soonOf = (start: number, now: number) => {
+  const d = new Date(now);
+  const left = start - d.getHours();
+  return left > 0 && left <= 6 ? 'In ' + (left === 1 ? 'an hour' : left + ' hours') : left <= 0 && left > -2 ? 'Now' : 'Tonight';
+};
+
+/* d and e: the arc, smaller, over the plan in the person's own words, on the dusk with its ember. d puts the arc beside the hours,
+   e holds the hours inside a smaller arc */
+function Dusk() {
+  return (
+    <>
+      <LinearGradient colors={['#231E5E', '#3B2468', '#5A2C5E']} locations={[0, 0.6, 1]} style={StyleSheet.absoluteFill} />
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+        <Defs>
+          <RadialGradient id="ember" cx="85%" cy="105%" r="70%">
+            <Stop offset="0" stopColor="#F0906C" stopOpacity={0.55} />
+            <Stop offset="1" stopColor="#F0906C" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#ember)" />
+      </Svg>
+    </>
+  );
+}
+function Said({ lines }: { lines: Line[] }) {
+  return (
+    <View style={{ gap: 12, paddingHorizontal: 16 }}>
+      {lines.map((p, i) => (
+        <Pressable key={i} onPress={() => open('/plan')} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          <View style={s.bubble}>
+            <Text style={[s.when, { color: '#6A5A8E' }]}>{whenOf(p.when)}</Text>
+            <Text style={[s.then, { color: INK }]}>{p.then}</Text>
+          </View>
+          <View style={[s.tail, i % 2 ? { right: 28 } : { left: 28 }]} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+function ArcSide({ start, label, lines, more, now }: P) {
+  return (
+    <View style={s.wrap}>
+      <Dusk />
+      <View style={s.dHead}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[s.arcSub, { color: LAV }]}>{soonOf(start, now)}</Text>
+          <Text style={[s.dBig, { color: GOLD }]}>{label}</Text>
+        </View>
+        <Arc start={start} now={now} w={116} />
+      </View>
+      <Said lines={lines} />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>{more ? <More n={more} color={CREAM} /> : null}</View>
+    </View>
+  );
+}
+function ArcTop({ start, label, lines, more, now }: P) {
+  return (
+    <View style={s.wrap}>
+      <Dusk />
+      <View style={s.eBox}>
+        <Arc start={start} now={now} w={196} />
+        <View style={s.eIn}>
+          <Text style={[s.arcSub, { color: LAV }]}>{soonOf(start, now)}</Text>
+          <Text style={[s.dBig, { color: GOLD }]}>{label}</Text>
+        </View>
+      </View>
+      <Said lines={lines} />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>{more ? <More n={more} color={CREAM} /> : null}</View>
+    </View>
+  );
+}
+
 export function TonightCard({ start, label, lines, more, now }: P) {
+  if (TN === 'd') return <ArcSide start={start} label={label} lines={lines} more={more} now={now} />;
+  if (TN === 'e') return <ArcTop start={start} label={label} lines={lines} more={more} now={now} />;
   if (TN === 'b') return <Bubbles start={start} label={label} lines={lines} more={more} now={now} />;
   if (TN === 'c') return <Block start={start} label={label} lines={lines} more={more} now={now} />;
   const d = new Date(now);
@@ -198,6 +274,10 @@ const s = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 },
   moreT: { fontFamily: font.bodySemi, fontSize: 15 },
   bHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, paddingBottom: 16 },
+  dHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
+  dBig: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  eBox: { alignItems: 'center', paddingTop: 16, height: 130 },
+  eIn: { position: 'absolute', top: 64, alignItems: 'center' },
   bTitle: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
   bSub: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   bubble: { backgroundColor: '#FFF6E8', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, gap: 2 },

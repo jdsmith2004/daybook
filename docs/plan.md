@@ -106,6 +106,10 @@ gold with a glow, a dot for now, "In 2 hours" or "Now" over the hours; my pick),
 bubbles over a dusk that warms to an ember), **a block of color** (a lavender block with a moon and the hours, the plan beside it).
 Picture: docs/today-review/tonight-looks.png (`components/tonight-card.tsx`, `&tn=a|b|c`). My plan itself went to its own session.
 
+The owner liked the arc and the bubbles, and asked for a smaller arc combined with the bubbles. Two ways (`&tn=d`, `&tn=e`): the
+hours big in gold with a small arc of the evening beside them, or the hours held inside a smaller arc on top; both over the plan in
+the cream bubbles on the dusk with its ember. Picture: docs/today-review/tonight-arc-words.png.
+
 Picture: docs/today-review/today-below.png (morning, after an urge, before the hard hours, nothing written yet). Prototype only, behind
 `?below=1` (`components/today-below.tsx`). For a real build: the rules go to core with tests; the line under the lesson ("Your hard hours
 start at 9 PM. Make a plan") and "1 logged today" in the foot say what these sections now say, so they go; light theme not drawn yet.

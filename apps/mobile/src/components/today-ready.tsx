@@ -110,11 +110,6 @@ function Horizon({ w, start, nowAt }: { w: number; start: number | null; nowAt: 
   const ground = pts.join(' ') + ` L ${w} ${SKY_H} L 0 ${SKY_H} Z`;
   const a = start == null ? 0 : ((start - FROM + 24) % 24) / SPAN;
   const b = a + 2 / SPAN;
-  const seg: string[] = [];
-  for (let i = 0; i <= 12; i++) {
-    const x = a + ((b - a) * i) / 12;
-    seg.push((i ? 'L' : 'M') + (x * w).toFixed(1) + ' ' + ridge(x).toFixed(1));
-  }
   const gx = ((a + b) / 2) * w;
   const now = Math.max(0, Math.min(1, nowAt));
   return (
@@ -138,7 +133,6 @@ function Horizon({ w, start, nowAt }: { w: number; start: number | null; nowAt: 
       ))}
       {start != null ? <Rect x={0} y={0} width={w} height={SKY_H} fill="url(#hglow)" /> : null}
       <Path d={ground} fill={GROUND} />
-      {start != null ? <Path d={seg.join(' ')} stroke="#FFC85A" strokeWidth={5} strokeLinecap="round" fill="none" /> : null}
       <Circle cx={now * w} cy={ridge(now)} r={6} fill="#FFFFFF" stroke="#FF8A3D" strokeWidth={3} />
     </Svg>
   );
@@ -146,55 +140,34 @@ function Horizon({ w, start, nowAt }: { w: number; start: number | null; nowAt: 
 
 function WeekLine({ snap, tk }: { snap: Snapshot; tk: string }) {
   const c = useTheme();
-  const [w, setW] = useState(0);
   const days = weekOf(snap, tk);
   const wl = weekLine(snap, tk);
-  const step = w / 7;
-  const y = 22;
-  const xs = days.map((_, i) => step * i + step / 2);
+  const on = c.scheme === 'dark' ? '#10163A' : '#FFFFFF';
   const words = ['No days', 'One day', 'Two days', 'Three days', 'Four days', 'Five days', 'Six days', 'Seven days'][wl.clean];
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 4 }}>
         <Text style={[s.weekH, { color: c.ink }]}>{words} with no slip this week.</Text>
-        <T tone="muted">{wl.rode ? (wl.rode === 1 ? 'And one urge ridden out.' : 'And ' + wl.rode + ' urges ridden out.') : 'Every one of them counts.'}</T>
+        {wl.rode ? <T tone="muted">{wl.rode === 1 ? 'And one urge ridden out.' : 'And ' + wl.rode + ' urges ridden out.'}</T> : null}
       </View>
-      <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: 64 }}>
-        {w ? (
-          <Svg width={w} height={44}>
-            <Path
-              d={squigglePath(
-                [
-                  [xs[0], y],
-                  [xs[6], y],
-                ],
-                0,
-                xs[6] - xs[0],
-                SQUIGGLE.amp,
-                SQUIGGLE.wavelength,
-              )}
-              stroke={c.sun2}
-              strokeWidth={SQUIGGLE.stroke}
-              strokeLinecap="round"
-              fill="none"
-            />
-            {days.map((d, i) =>
-              d.st === 'slip' ? (
-                <Circle key={d.k} cx={xs[i]} cy={y} r={8} fill={c.bg} stroke={c.slip} strokeWidth={3} />
-              ) : d.st === 'clean' ? (
-                <Circle key={d.k} cx={xs[i]} cy={y} r={d.today ? 13 : 9} fill={d.today ? c.sun : c.sun2} stroke={c.bg} strokeWidth={3} />
-              ) : (
-                <Circle key={d.k} cx={xs[i]} cy={y} r={6} fill={c.bg} stroke={c.line} strokeWidth={2} />
-              ),
-            )}
-          </Svg>
-        ) : null}
-        <View style={s.wdays}>
+      <View style={{ gap: 6 }}>
+        <View style={s.wrow}>
           {days.map((d) => (
             <Text key={d.k} style={[s.wday, { color: d.today ? c.ink : c.muted }]}>
-              {d.today ? 'Today' : d.d}
+              {d.d}
             </Text>
           ))}
+        </View>
+        <View style={s.wrow}>
+          {days.map((d) => {
+            const bg = d.st === 'clean' ? c.mint : d.st === 'slip' ? c.slip : c.surface2;
+            const ink = d.st === 'clean' || d.st === 'slip' ? on : c.muted;
+            return (
+              <View key={d.k} style={[s.wcell, { backgroundColor: bg, borderColor: d.today ? c.ink : bg }]}>
+                <Text style={[s.wnum, { color: ink }]}>{+d.k.slice(8)}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
     </View>
@@ -204,7 +177,6 @@ function WeekLine({ snap, tk }: { snap: Snapshot; tk: string }) {
 function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
   const st = snap.settings!;
   const win = riskWindow(snap.days, st, tk);
-  const moves = (st.menu || []).slice(0, 3);
   const [w, setW] = useState(0);
   const d = new Date();
   const nowAt = ((d.getHours() + d.getMinutes() / 60 - FROM + 24) % 24) / SPAN;
@@ -229,23 +201,12 @@ function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
             <Text style={[s.tick, { color: nightInk.muted }]}>2 AM</Text>
             {win && w ? <Text style={[s.tick, s.hardT, { left: (a + 1 / SPAN) * w - 20 - 80 }]}>{inIt ? 'Hard hours, now' : win.label}</Text> : null}
           </View>
-          <View style={s.planHead}>
-            <Text style={[s.planH, { color: nightInk.ink }]}>When an urge comes</Text>
-            <Pressable onPress={sos} accessibilityRole="button" accessibilityLabel="Open SOS" style={({ pressed }) => pressed && { opacity: 0.8 }}>
-              <RoundSos size={58} />
-            </Pressable>
-          </View>
-          {moves.map((m, i) => (
-            <Text key={m} style={[s.planMove, { color: nightInk.ink, borderTopColor: 'rgba(255,255,255,0.12)', borderTopWidth: i ? 1 : 0 }]}>
-              {m}
-            </Text>
-          ))}
-          <Pressable
-            onPress={practice}
-            accessibilityRole="button"
-            hitSlop={10}
-            style={({ pressed }) => [{ alignSelf: 'flex-start', marginTop: 12 }, pressed && { opacity: 0.6 }]}>
-            <Text style={[s.link, { color: '#FFD98A' }]}>Calm right now? Practice it once</Text>
+          <Pressable onPress={sos} accessibilityRole="button" accessibilityLabel="Open SOS" style={({ pressed }) => [s.planHead, pressed && { opacity: 0.85 }]}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={[s.planH, { color: nightInk.ink }]}>Feeling an urge?</Text>
+              <Text style={[s.p, { color: nightInk.muted }]}>SOS walks you through it, one step at a time.</Text>
+            </View>
+            <RoundSos size={58} />
           </Pressable>
         </View>
       </View>
@@ -318,11 +279,13 @@ const s = StyleSheet.create({
   scene: { borderRadius: 28, overflow: 'hidden' },
   clock: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2, marginBottom: 20 },
   hardT: { position: 'absolute', width: 160, textAlign: 'center', color: '#FFD98A', top: 0 },
-  planHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  planHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   planH: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   planMove: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, paddingVertical: 12 },
   weekH: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
-  wdays: { flexDirection: 'row', position: 'absolute', left: 0, right: 0, bottom: 0 },
+  wrow: { flexDirection: 'row', gap: 6 },
+  wcell: { flex: 1, aspectRatio: 1, borderRadius: 12, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  wnum: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
   wday: { flex: 1, textAlign: 'center', fontFamily: font.bodySemi, fontSize: 12, lineHeight: 16 },
   more: { gap: 40, marginTop: 24, paddingBottom: 24 },
   sec: { gap: 12 },

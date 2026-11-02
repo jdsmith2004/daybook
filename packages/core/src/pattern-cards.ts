@@ -390,16 +390,258 @@ export function patLeads(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN:
   return { ...r, list: r.cleanN >= LEADS_MIN && r.slipN >= LEADS_MIN ? r.list.filter((d) => LEADS.includes(d.k)) : [] };
 }
 
-/** room for round things that want to sit too close: each is pushed away from the ones it touches, as little as it takes, and stays inside the square.
+/* ---------- the hillside ---------- */
+/** how many points a ridge is drawn from: enough to follow a log, few enough to stay a soft line */
+const RIDGE_POINTS = 40;
+/** how many days can each have a star of their own */
+const STAR_DAYS = 60;
+export interface PatRidge {
+  /** for each point, oldest first: the share of recent days with no slip, 0 to 1 */
+  now: number[];
+  /** the same for the period before, or null when there is nothing to compare with */
+  then: number[] | null;
+  /** a star for each day, or on a long log each stretch, with no slip, by its place along the ridge from 0 to 1 */
+  stars: number[];
+}
+/** The hill on the first card: how many of the recent days had no slip, day by day. A slip is a dip that fills back in, so it never
+    drops to nothing, and the top of the hill reads as getting better, holding or a harder stretch at a glance. It looks back a
+    week, or a month on the whole log, and only as far as the log goes. */
+export function patRidge(days: Days, per: PatPeriod, st: Settings): PatRidge {
+  const first = logStart(days, st);
+  const long = per.keys.length >= ALL_CMP * 2;
+  const back = long ? ALL_CMP : 7;
+  const noSlip = (k: DayKey) => !sumDay(days[k]).slipped;
+  const line = (ks: DayKey[]) => {
+    const last = per.keys[per.keys.length - 1];
+    const out = ks.map((k) => {
+      /* near the start of a log there are not enough days to look back on, so it looks ahead instead: one good first day is not a peak to fall from */
+      let from = addDays(k, 1 - back);
+      if (from < first) from = first;
+      let to = k;
+      let n = 0;
+      let clean = 0;
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        n++;
+        if (noSlip(d)) clean++;
+        if (d === to && n < back && to < last) to = addDays(to, 1);
+      }
+      return n ? clean / n : 1;
+    });
+    if (out.length <= RIDGE_POINTS) return out;
+    return Array.from({ length: RIDGE_POINTS }, (_, i) => out[Math.round((i / (RIDGE_POINTS - 1)) * (out.length - 1))]);
+  };
+  const stretch = Math.ceil(per.keys.length / STAR_DAYS);
+  const stars: number[] = [];
+  for (let i = 0; i < per.keys.length; i += stretch) {
+    if (per.keys.slice(i, i + stretch).every(noSlip)) stars.push(per.keys.length > 1 ? (i + (stretch - 1) / 2) / (per.keys.length - 1) : 1);
+  }
+  const compare = per.than !== 'in your first month' && per.then && per.then.length === per.keys.length;
+  return { now: line(per.keys), then: compare ? line(per.then!) : null, stars };
+}
+
+/* ---------- one flame made of many ---------- */
+/** the outline of the app's flame, in its 24 by 24 drawing */
+const FLAME_EDGE: [number, number][] = [
+  [12.0, 1.5],
+  [12.5, 2.8],
+  [13.4, 4.2],
+  [14.4, 5.5],
+  [15.5, 6.9],
+  [16.6, 8.5],
+  [17.5, 10.1],
+  [18.2, 12.0],
+  [18.4, 14.1],
+  [18.3, 15.3],
+  [17.9, 16.5],
+  [17.3, 17.7],
+  [16.5, 18.6],
+  [15.6, 19.4],
+  [14.4, 20.0],
+  [13.2, 20.4],
+  [12.0, 20.5],
+  [10.8, 20.4],
+  [9.6, 20.0],
+  [8.4, 19.4],
+  [7.5, 18.6],
+  [6.7, 17.7],
+  [6.1, 16.5],
+  [5.7, 15.3],
+  [5.6, 14.1],
+  [5.8, 12.4],
+  [6.3, 11.0],
+  [7.0, 9.8],
+  [8.0, 8.7],
+  [8.3, 9.9],
+  [8.8, 10.8],
+  [9.4, 11.4],
+  [10.1, 11.8],
+  [10.0, 9.3],
+  [10.3, 6.8],
+  [10.9, 4.1],
+  [11.4, 2.8],
+];
+const FLAME_LEFT = 5.6;
+const FLAME_TOP = 1.5;
+const FLAME_W = 12.8;
+const FLAME_H = 19;
+const inFlame = (x: number, y: number) => {
+  let inside = false;
+  for (let i = 0, j = FLAME_EDGE.length - 1; i < FLAME_EDGE.length; j = i++) {
+    const [xi, yi] = FLAME_EDGE[i];
+    const [xj, yj] = FLAME_EDGE[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+export interface FlameSpark {
+  x: number;
+  y: number;
+  /** how tall this small flame stands */
+  size: number;
+  /** how close to the hot heart of the big flame it sits: 1 at the heart, 0 at the edge */
+  heat: number;
+}
+/** past this, a small flame stands for more than one moment */
+export const SPARKS_MAX = 140;
+/** the places for `n` small flames that together make one big one, as big as fits in w by h. The first places are nearest the heart. Same answer every time. */
+export function flameSparks(n: number, w: number, h: number): FlameSpark[] {
+  if (n <= 0 || w <= 0 || h <= 0) return [];
+  const heartX = 12;
+  const heartY = 14.4;
+  /* the rows of a brick wall around the heart, closer and closer until there is room for all of them */
+  const places = (cell: number, phase: number) => {
+    const out: [number, number][] = [];
+    const dy = cell * 0.74;
+    const dx = cell * 0.7;
+    const rows = Math.ceil(FLAME_H / dy) + 2;
+    const cols = Math.ceil(FLAME_W / dx) + 1;
+    for (let r = -rows; r <= rows; r++)
+      for (let c = -cols; c <= cols; c++) {
+        const x = heartX + (c + (r % 2 ? 0.5 : 0)) * dx;
+        const y = heartY + (r + phase) * dy;
+        if (inFlame(x, y)) out.push([x, y]);
+      }
+    return out;
+  };
+  const far = (p: [number, number]) => Math.hypot((p[0] - heartX) / FLAME_W, (p[1] - heartY) / FLAME_H);
+  /* a big flame sits on a wide foot, so the walls are tried a little higher and lower, for the biggest one whose bottom row is not a lone flame */
+  let cell = 0;
+  let chosen: [number, number][] = [];
+  let most = 1;
+  let footed = false;
+  for (const phase of [0, 0.25, 0.5, 0.75]) {
+    let c = FLAME_H * 0.8;
+    let at = places(c, phase);
+    while (at.length < n && c > 0.2) {
+      c *= 0.985;
+      at = places(c, phase);
+    }
+    /* what is left over goes from the far edge of the wall */
+    const sorted = at.slice().sort((a, b) => far(a) - far(b));
+    const some = sorted.slice(0, n);
+    const low = Math.max(...some.map((p) => p[1]));
+    const foot = n < 4 || some.filter((p) => p[1] > low - 0.01).length >= 2;
+    if ((foot && !footed) || (foot === footed && c > cell)) {
+      cell = c;
+      chosen = some;
+      most = far(sorted[sorted.length - 1]) || 1;
+      footed = foot;
+    }
+  }
+  /* a lone flame stands as tall as the room allows */
+  const size = n === 1 ? FLAME_H * 0.9 : Math.min(cell * 1.3, FLAME_H * 0.5);
+  /* the small flames at the edge reach out past the big one's outline by half their size, and stay in the room */
+  const unit = Math.min(w / (FLAME_W + size), h / (FLAME_H + size));
+  const left = (w - FLAME_W * unit) / 2;
+  const top = (h - FLAME_H * unit) / 2;
+  return chosen.map((p) => ({
+    x: left + (p[0] - FLAME_LEFT) * unit,
+    y: top + (p[1] - FLAME_TOP) * unit,
+    size: size * unit,
+    heat: 1 - far(p) / most,
+  }));
+}
+
+/* ---------- things in a mosaic ---------- */
+export interface MosaicBlock {
+  i: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+/** the share no block goes under, so its words fit: the words beside it say the real number */
+const BLOCK_FLOOR = 0.07;
+/** the room divided into a block for each amount, the biggest first and as near to square as it can get. The rows are laid along the short side. */
+export function mosaic(values: number[], W: number, H: number): MosaicBlock[] {
+  const list = values.map((v, i) => ({ v, i })).filter((x) => x.v > 0);
+  if (!list.length || W <= 0 || H <= 0) return [];
+  const raw = list.reduce((a, x) => a + x.v, 0);
+  const lifted = list.map((x) => ({ i: x.i, v: Math.max(x.v, raw * BLOCK_FLOOR) })).sort((a, b) => b.v - a.v || a.i - b.i);
+  const total = lifted.reduce((a, x) => a + x.v, 0);
+  const area = W * H;
+  const items = lifted.map((x) => ({ i: x.i, a: (x.v / total) * area }));
+  const out: MosaicBlock[] = [];
+  let x = 0;
+  let y = 0;
+  let w = W;
+  let h = H;
+  const worst = (row: number[], side: number) => {
+    const sum = row.reduce((a, b) => a + b, 0);
+    return Math.max(...row.map((a) => Math.max((side * side * a) / (sum * sum), (sum * sum) / (side * side * a))));
+  };
+  for (let n = 0; n < items.length; ) {
+    const side = Math.min(w, h);
+    let end = n + 1;
+    while (
+      end < items.length &&
+      worst(
+        items.slice(n, end + 1).map((t) => t.a),
+        side,
+      ) <=
+        worst(
+          items.slice(n, end).map((t) => t.a),
+          side,
+        )
+    )
+      end++;
+    const row = items.slice(n, end);
+    const sum = row.reduce((a, t) => a + t.a, 0);
+    const thick = sum / side;
+    let along = 0;
+    for (const t of row) {
+      const len = t.a / thick;
+      out.push(w >= h ? { i: t.i, x, y: y + along, w: thick, h: len } : { i: t.i, x: x + along, y, w: len, h: thick });
+      along += len;
+    }
+    if (w >= h) {
+      x += thick;
+      w -= thick;
+    } else {
+      y += thick;
+      h -= thick;
+    }
+    n = end;
+  }
+  return out;
+}
+
+/* ---------- round things in a room ---------- */
+export interface RoomCircle {
+  x: number;
+  y: number;
+  r: number;
+}
+/** room for round things that want to sit too close: each is pushed away from the ones it touches, as little as it takes, and stays inside the room.
     What does not touch anything stays where it was. Same answer every time */
-export function spreadCircles(list: { x: number; y: number; r: number }[], side: number, gap = 0): { x: number; y: number; r: number }[] {
+export function spreadCircles(list: RoomCircle[], w: number, h: number, gap = 0): RoomCircle[] {
   const out = list.map((p) => ({ ...p }));
-  const inside = (p: { x: number; y: number; r: number }) => {
-    p.x = Math.max(p.r, Math.min(side - p.r, p.x));
-    p.y = Math.max(p.r, Math.min(side - p.r, p.y));
+  const inside = (p: RoomCircle) => {
+    p.x = Math.max(p.r, Math.min(w - p.r, p.x));
+    p.y = Math.max(p.r, Math.min(h - p.r, p.y));
   };
   out.forEach(inside);
-  for (let round = 0; round < 80; round++) {
+  for (let round = 0; round < 200; round++) {
     let moved = false;
     for (let i = 0; i < out.length; i++)
       for (let j = i + 1; j < out.length; j++) {
@@ -428,4 +670,31 @@ export function spreadCircles(list: { x: number; y: number; r: number }[], side:
     if (!moved) break;
   }
   return out;
+}
+/** how much of the room the feelings together fill, at most: round things leave gaps, so past this they cannot all sit apart */
+const FIELD_FILL = 0.66;
+/** feelings as round things in the room: each near where it lives on the field (u and v, 0 to 1), sized by how often it was named and at least `min` across
+    to hold its word, all together as big as the room allows with none over another. When they cannot all fit at that, the least they may be gives way first. */
+export function feelBubbles(list: { u: number; v: number; n: number; min?: number }[], w: number, h: number, gap = 4): RoomCircle[] {
+  if (!list.length || w <= 0 || h <= 0) return [];
+  const weight = list.map((x) => Math.sqrt(0.6 + Math.min(x.n, 12)));
+  const sum = weight.reduce((a, v) => a + v * v, 0);
+  /* a few feelings do not stretch to fill a room: one word is not a planet */
+  const top = (Math.min(w, h) * 0.34) / Math.max(...weight);
+  const apart = (l: RoomCircle[]) => l.every((a, i) => l.slice(i + 1).every((b) => Math.hypot(a.x - b.x, a.y - b.y) >= a.r + b.r + gap - 0.5));
+  let fill = FIELD_FILL;
+  let least = 1;
+  for (;;) {
+    const unit = Math.min(Math.sqrt((w * h * fill) / (Math.PI * sum)), top);
+    const out = spreadCircles(
+      /* the small nudge is so that feelings in one row can step out of it, up and down and not only along it */
+      list.map((x, i) => ({ x: x.u * w, y: x.v * h + ((i % 3) - 1) * 2, r: Math.max(weight[i] * unit, ((x.min || 0) / 2) * least) })),
+      w,
+      h,
+      gap,
+    );
+    if (least < 0.2 || apart(out)) return out;
+    fill = Math.max(0.1, fill - 0.03);
+    if (fill < 0.4) least *= 0.92;
+  }
 }

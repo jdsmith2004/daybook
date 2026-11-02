@@ -16,6 +16,10 @@ import {
   patRangeLabel,
   patRideCols,
   patRideSay,
+  patRidge,
+  feelBubbles,
+  flameSparks,
+  mosaic,
   spreadCircles,
 } from '../src/pattern-cards';
 import { patGaps, patKeys, patWhen } from '../src/pattern';
@@ -386,6 +390,7 @@ describe('spreadCircles', () => {
         { x: 250, y: 200, r: 30 },
       ],
       300,
+      300,
       10,
     );
     clear(out, 10);
@@ -400,7 +405,7 @@ describe('spreadCircles', () => {
       { x: 40, y: 40, r: 20 },
       { x: 200, y: 200, r: 20 },
     ];
-    expect(spreadCircles(list, 300, 10)).toEqual(list);
+    expect(spreadCircles(list, 300, 300, 10)).toEqual(list);
   });
 
   it('parts two on the same spot, the same way every time', () => {
@@ -408,13 +413,147 @@ describe('spreadCircles', () => {
       { x: 100, y: 100, r: 20 },
       { x: 100, y: 100, r: 20 },
     ];
-    const a = spreadCircles(list, 300);
+    const a = spreadCircles(list, 300, 300);
     clear(a, 0);
-    expect(spreadCircles(list, 300)).toEqual(a);
+    expect(spreadCircles(list, 300, 300)).toEqual(a);
     expect(a[0].x).toBeLessThan(a[1].x);
   });
 
   it('pulls one that starts over the edge back in', () => {
-    expect(spreadCircles([{ x: 295, y: 5, r: 20 }], 300)).toEqual([{ x: 280, y: 20, r: 20 }]);
+    expect(spreadCircles([{ x: 295, y: 5, r: 20 }], 300, 300)).toEqual([{ x: 280, y: 20, r: 20 }]);
+  });
+});
+
+describe('patRidge', () => {
+  const dayOff = (back: number[]): Days => {
+    const d = base();
+    for (const b of back) d[addDays(TK, -b)] = { events: [{ id: 's' + b, outcome: 'slipped', time: '22:00' }], u: 1 } as unknown as Days[string];
+    return d;
+  };
+  it('stays at the top with no slip, and a star for every day', () => {
+    const r = patRidge(base(), patPeriod('30', base(), st, TK), st);
+    expect(r.now.every((v) => v === 1)).toBe(true);
+    expect(r.stars.length).toBe(30);
+    expect(r.then!.length).toBe(30);
+  });
+  it('a slip is a dip that fills back in, and that day has no star', () => {
+    const d = dayOff([15]);
+    const r = patRidge(d, patPeriod('30', d, st, TK), st);
+    expect(Math.min(...r.now)).toBeCloseTo(6 / 7);
+    expect(r.now[r.now.length - 1]).toBe(1);
+    expect(r.stars.length).toBe(29);
+  });
+  it('at the start of a log it looks ahead, so a first day is never a peak to fall from', () => {
+    const d: Days = { '2026-10-28': { events: [{ id: 'a', outcome: 'slipped', time: '22:00' }], u: 1 } as unknown as Days[string] };
+    const r = patRidge(d, patPeriod('all', d, late, TK), late);
+    expect(r.now.every((v) => v === 4 / 5)).toBe(true);
+    expect(r.then).toBe(null);
+  });
+  it('a long log is a soft line with no period behind it', () => {
+    const d = dayOff([15, 100, 200]);
+    const r = patRidge(d, patPeriod('all', d, st, TK), st);
+    expect(r.now.length).toBe(40);
+    expect(r.then).toBe(null);
+    expect(r.stars.length).toBeLessThanOrEqual(60);
+  });
+});
+
+describe('flameSparks', () => {
+  it('gives exactly as many as asked, inside the room, the same each time', () => {
+    for (const n of [1, 2, 3, 5, 8, 18, 40, 77, 140]) {
+      const out = flameSparks(n, 360, 300);
+      expect(out.length).toBe(n);
+      for (const p of out) {
+        expect(p.x).toBeGreaterThanOrEqual(0);
+        expect(p.x).toBeLessThanOrEqual(360);
+        expect(p.y).toBeGreaterThanOrEqual(0);
+        expect(p.y).toBeLessThanOrEqual(300);
+      }
+      expect(flameSparks(n, 360, 300)).toEqual(out);
+    }
+  });
+  it('the small flames get smaller as there are more of them', () => {
+    expect(flameSparks(100, 360, 300)[0].size).toBeLessThan(flameSparks(10, 360, 300)[0].size);
+    expect(flameSparks(10, 360, 300)[0].size).toBeLessThan(flameSparks(1, 360, 300)[0].size);
+  });
+  it('a big flame stands on a wide foot, not on one small flame', () => {
+    for (const n of [8, 18, 39, 77]) {
+      const out = flameSparks(n, 360, 300);
+      const low = Math.max(...out.map((p) => p.y));
+      expect(out.filter((p) => p.y > low - 0.5).length).toBeGreaterThanOrEqual(2);
+    }
+  });
+  it('nothing for nothing', () => {
+    expect(flameSparks(0, 360, 300)).toEqual([]);
+  });
+});
+
+describe('mosaic', () => {
+  it('fills the room exactly, with no block over another', () => {
+    const out = mosaic([7, 6, 5, 3, 2, 1], 360, 300);
+    expect(out.length).toBe(6);
+    expect(out.reduce((a, b) => a + b.w * b.h, 0)).toBeCloseTo(360 * 300);
+    for (let i = 0; i < out.length; i++)
+      for (let j = i + 1; j < out.length; j++) {
+        const a = out[i];
+        const b = out[j];
+        expect(a.x + a.w <= b.x + 0.01 || b.x + b.w <= a.x + 0.01 || a.y + a.h <= b.y + 0.01 || b.y + b.h <= a.y + 0.01).toBe(true);
+      }
+  });
+  it('the biggest thing has the biggest block', () => {
+    const out = mosaic([1, 9, 3], 360, 300);
+    const area = (i: number) => {
+      const b = out.find((x) => x.i === i)!;
+      return b.w * b.h;
+    };
+    expect(area(1)).toBeGreaterThan(area(2));
+    expect(area(2)).toBeGreaterThan(area(0));
+  });
+  it('a small thing still has room for its words', () => {
+    const out = mosaic([100, 1], 360, 300);
+    const small = out.find((x) => x.i === 1)!;
+    expect(small.w * small.h).toBeGreaterThan(360 * 300 * 0.05);
+  });
+  it('leaves out what is not there', () => {
+    expect(mosaic([0, 0], 360, 300)).toEqual([]);
+    expect(mosaic([3, 0], 360, 300).map((x) => x.i)).toEqual([0]);
+  });
+});
+
+describe('feelBubbles', () => {
+  it('keeps them apart and in the room, however many', () => {
+    const list = Array.from({ length: 14 }, (_, i) => ({ u: 0.7 + (i % 4) / 15, v: 0.6 + (i % 3) / 10, n: 1 + (i % 5) }));
+    const out = feelBubbles(list, 360, 280);
+    for (let i = 0; i < out.length; i++)
+      for (let j = i + 1; j < out.length; j++) expect(Math.hypot(out[i].x - out[j].x, out[i].y - out[j].y)).toBeGreaterThanOrEqual(out[i].r + out[j].r);
+    for (const p of out) {
+      expect(p.x - p.r).toBeGreaterThanOrEqual(-0.5);
+      expect(p.x + p.r).toBeLessThanOrEqual(360.5);
+      expect(p.y - p.r).toBeGreaterThanOrEqual(-0.5);
+      expect(p.y + p.r).toBeLessThanOrEqual(280.5);
+    }
+  });
+  it('makes room for a word, and gives way when there is no room', () => {
+    const one = feelBubbles([{ u: 0.5, v: 0.5, n: 1, min: 200 }], 360, 280);
+    expect(one[0].r).toBe(100);
+    const many = feelBubbles(
+      Array.from({ length: 20 }, (_, i) => ({ u: i / 20, v: 0.5, n: 1, min: 120 })),
+      360,
+      280,
+    );
+    for (let i = 0; i < many.length; i++)
+      for (let j = i + 1; j < many.length; j++)
+        expect(Math.hypot(many[i].x - many[j].x, many[i].y - many[j].y)).toBeGreaterThanOrEqual(many[i].r + many[j].r - 1);
+  });
+  it('what was named more is bigger', () => {
+    const out = feelBubbles(
+      [
+        { u: 0.2, v: 0.5, n: 1 },
+        { u: 0.8, v: 0.5, n: 6 },
+      ],
+      360,
+      280,
+    );
+    expect(out[1].r).toBeGreaterThan(out[0].r);
   });
 });

@@ -1,33 +1,40 @@
-/* Your pattern's charts (core: pattern.ts, pattern-cards.ts). They are drawn from what the app is made of, not from a chart
-   kit, and quiet enough that the one thing a card is about stands out (docs/plan.md has the research behind this):
-   - Ahead: no-slip days added up against the period before, a line that can only climb, a slip being a flat step
-   - DayShapes: a calendar where each day is the shape and color of its answer on Today, and a day with no answer is a small dot
-   - Moments: each hard moment ridden out is a small flame, and a slip is a small ring, never an alarm
-   - FeelSky: the field of feelings a person names from, faint, with what they named lit up where it lives on it
-   - Hours: the day in a row from 6 AM, so a night is never cut in two, with the hard hours marked behind it
-   - Ranks: a thin bar for each thing, with its words on the line above
-   - TwoNumbers: two numbers side by side, slip days and days with no slip
-   One warm accent, the flame's, carries what was won. Everything else stays in the card's quiet colors, with its words on the
-   chart and no legend. Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
+/* Your pattern's pictures (core: pattern.ts, pattern-cards.ts). Each card is a scene of its own at night, never one chart kit with new words, and
+   each is drawn from what the app is made of (docs/plan.md has the reasons):
+   - Hillside: how many recent days had no slip, as a hill you walked over, with your flame standing at today, a star over each day with no slip, and
+     the period before as a dotted line. A slip is a dip that fills back in
+   - DayShapes: a calendar where each day is the shape and color of its answer on Today; a day with no answer is a small dim dot
+   - MomentFlame: every hard moment ridden out is a small flame, and together they make one big one; a slip is a small ring at its foot, never an alarm
+   - FeelField: what was named, as big shapes with the word inside, in the color and shape it has when it is picked
+   - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
+   - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
+   - Pairs: days with no slip beside slip days, a pair for each answer
+   Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
 import {
-  FEEL_QUADS,
-  spreadCircles,
+  feelBubbles,
+  flameSparks,
+  mosaic,
+  SPARKS_MAX,
   type DayFeelStep,
   type DayKey,
   type PatDiff,
   type PatFeels,
   type PatFeltDay,
   type PatHour,
+  type PatRidge,
   type PatWhen,
 } from '@daybook/core';
-import { useState, type ReactNode } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { LinearGradient as Fade } from 'expo-linear-gradient';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
-import Svg, { Circle, G, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { BigFlame } from '@/components/big-flame';
 import { useChartColors, useGrow } from '@/components/charts';
-import { Shape, type ShapeKind } from '@/components/shapes';
+import { SVG_HIDE, type ShapeKind } from '@/components/shapes';
 import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
+import { shapePath, type AnyShape } from '@/lib/m3-shapes';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font } from '@/lib/theme';
 
 function useWidth(): [number, (e: { nativeEvent: { layout: { width: number } } }) => void] {
@@ -45,6 +52,18 @@ function useInk() {
     hush: k.c.scheme === 'dark' ? 'rgba(189,181,230,0.5)' : 'rgba(98,90,133,0.42)',
   };
 }
+
+/** the sky behind each card, top to bottom: night in every theme, like Today's */
+export const CARD_SKY: Record<string, [string, string]> = {
+  apart: ['#0C0A2A', '#1B1040'],
+  felt: ['#0E0C24', '#0E0C24'],
+  ride: ['#120A24', '#2B1022'],
+  named: ['#0E0C24', '#17132F'],
+  when: ['#0C0A2A', '#120E38'],
+  what: ['#120E30', '#120E30'],
+  days: ['#120E30', '#17123A'],
+  helps: ['#0B1530', '#0E1C36'],
+};
 
 /** the room left for a chart in a card, as a size to draw at. The chart floats inside it: on a phone a card with no set height takes its size from
     what is in it, so a chart in the flow would make the room bigger, and the chart drawn for that room bigger again, without end */
@@ -82,42 +101,179 @@ function Rise({ h, w, delay, children }: { h: number; w: number; delay: number; 
   );
 }
 
+/** in and out on a slow sine, forever; still with Reduce Motion on */
+function useBreath(ms: number) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduce, v, ms]);
+  return v;
+}
+
+/** a shape lit from above, the way a thing is lit by the sky, not a flat sticker */
+function LitShape({ kind, size, color }: { kind: ShapeKind; size: number; color: string }) {
+  const d = useMemo(() => shapePath(kind as AnyShape, size), [kind, size]);
+  const pad = Math.ceil(size * 0.2);
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg
+        width={size + 2 * pad}
+        height={size + 2 * pad}
+        viewBox={-pad + ' ' + -pad + ' ' + (size + 2 * pad) + ' ' + (size + 2 * pad)}
+        style={{ position: 'absolute', left: -pad, top: -pad }}
+        {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="lit" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.42} />
+            <Stop offset="0.55" stopColor="#FFFFFF" stopOpacity={0} />
+            <Stop offset="1" stopColor="#1A0B3A" stopOpacity={0.22} />
+          </LinearGradient>
+        </Defs>
+        <Path d={d} fill={color} />
+        <Path d={d} fill="url(#lit)" />
+      </Svg>
+    </View>
+  );
+}
+
 /* ---------- how you are doing ---------- */
-const LINE_TOP = 8;
-const LINE_WORDS = 24;
-const LINE_RIGHT = 12;
-/** a person's no-slip days added up, over the same count from the period before. Above that line is better than last time */
-export function Ahead({
-  now,
-  then,
+const place = (i: number) => {
+  const x = Math.sin(i * 12.9898 + 4.1) * 43758.5453;
+  return x - Math.floor(x);
+};
+/** a soft line: a few passes of a small blur, so a week that looks back reads as a hill and not as steps */
+const softened = (l: number[]) => {
+  let out = l;
+  for (let p = 0; p < 5; p++) out = out.map((v, i) => (i && i < out.length - 1 ? (out[i - 1] + 2 * v + out[i + 1]) / 4 : v));
+  return out;
+};
+const smooth = (pts: [number, number][]) => {
+  let d = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[Math.max(0, i - 1)];
+    const b = pts[i];
+    const c = pts[i + 1];
+    const e = pts[Math.min(pts.length - 1, i + 2)];
+    d +=
+      'C' +
+      (b[0] + (c[0] - a[0]) / 6).toFixed(1) +
+      ' ' +
+      (b[1] + (c[1] - a[1]) / 6).toFixed(1) +
+      ' ' +
+      (c[0] - (e[0] - b[0]) / 6).toFixed(1) +
+      ' ' +
+      (c[1] - (e[1] - b[1]) / 6).toFixed(1) +
+      ' ' +
+      c[0].toFixed(1) +
+      ' ' +
+      c[1].toFixed(1);
+  }
+  return d;
+};
+const STAR = (x: number, y: number, r: number) =>
+  `M${x} ${y - r}Q${x + r * 0.18} ${y - r * 0.18} ${x + r} ${y}Q${x + r * 0.18} ${y + r * 0.18} ${x} ${y + r}Q${x - r * 0.18} ${y + r * 0.18} ${x - r} ${y}Q${x - r * 0.18} ${y - r * 0.18} ${x} ${y - r}Z`;
+/** the hill of the last days, with your flame standing at today and a star over each day with no slip */
+export function Hillside({
+  ridge,
   than,
   first,
+  level,
+  sky,
+  note,
   w,
   h,
   label,
 }: {
-  now: number[];
-  then: number[] | null;
+  ridge: PatRidge;
   than: string;
   first: string;
+  level: number;
+  /** the color the hill fades into at its foot */
+  sky: string;
+  /** a line at the foot of the hill */
+  note?: string;
   w: number;
   h: number;
   label: string;
 }) {
   const k = useInk();
-  const v = useGrow(80, 1000);
+  const v = useGrow(80, 1100);
+  const lit = useGrow(500, 900);
+  const flameIn = useGrow(800, 600);
+  const breath = useBreath(2600);
+  const now = softened(ridge.now);
   const n = now.length;
-  const top = Math.max(1, n);
-  const H = h - LINE_TOP - LINE_WORDS;
-  const iw = w - LINE_RIGHT;
-  const X = (i: number) => (n > 1 ? (i / (n - 1)) * iw : iw);
-  const Y = (c: number) => LINE_TOP + (1 - c / top) * H;
-  const path = (l: number[]) => l.map((c, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(c).toFixed(1)).join('');
-  const a = now[n - 1] ?? 0;
-  const b = then ? then[n - 1] : null;
+  const FL = Math.round(Math.min(148, h * 0.5));
+  /* today stands in from the edge, so the flame is whole */
+  const end = w - FL * 0.5 - 4;
+  const top = Math.max(h * 0.36, FL * 0.95);
+  const floor = h + 8;
+  const X = (i: number, of = n) => (of > 1 ? (i / (of - 1)) * end : end);
+  /* ground is never ruled with a straight edge: a swell of a few points under everything, far smaller than one day's dip */
+  const swell = (x: number) => 3 * Math.sin((x / w) * 8.2 + 0.6) + 2 * Math.sin((x / w) * 17 + 2);
+  const Y = (a: number, x = 0) => top + (1 - a) * (floor - top) + swell(x);
+  const pts = now.map((a, i): [number, number] => [X(i), Y(a, X(i))]);
+  if (n === 1) pts.unshift([0, Y(now[0], 0)]);
+  const last = pts[pts.length - 1];
+  const onward = (x: number): [number, number] => [x, Y(now[n - 1], x)];
+  const line = smooth([...pts, onward((end + w) / 2), onward(w + 6)]);
+  const hill = line + `L${w + 6} ${h}L0 ${h}Z`;
+  const then = ridge.then ? softened(ridge.then) : null;
+  const was = then ? smooth(then.map((a, i): [number, number] => [X(i, then.length), Y(a, X(i, then.length))])) : null;
+  const heightAt = (u: number) => {
+    const at = u * (n - 1);
+    const a = Math.floor(at);
+    const b = Math.min(n - 1, a + 1);
+    return Y(now[a] + (now[b] - now[a]) * (at - a), u * end);
+  };
+  const stars = ridge.stars.map((u, i) => {
+    const ground = heightAt(u);
+    const up = Math.max(10, ground - 16);
+    return {
+      x: Math.max(4, Math.min(w - 4, u * end + (place(i) - 0.5) * (end / Math.max(ridge.stars.length, 8)))),
+      y: 6 + place(i + 40) * (up - 6),
+      r: 1 + place(i + 80) * 1.1,
+      big: i % 6 === 2,
+      /* the nearer to today, the brighter */
+      o: 0.4 + 0.6 * u,
+    };
+  });
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <View style={[s.abs, { left: 0, right: 0, top: Y(0), height: 1, backgroundColor: k.grid }]} />
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: lit }]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          {stars.map((t, i) =>
+            t.big ? (
+              <Path key={i} d={STAR(t.x, t.y, 4.5)} fill="#FFF3CF" opacity={t.o} />
+            ) : (
+              <Circle key={i} cx={t.x} cy={t.y} r={t.r} fill="#FFF3CF" opacity={t.o * 0.85} />
+            ),
+          )}
+        </Svg>
+      </Animated.View>
+      {/* the warm light the flame throws on the night around it */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(flameIn, breath.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1] })) }]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          <Defs>
+            <RadialGradient id="hearth" cx={end} cy={last[1] - FL * 0.25} r={Math.min(w * 0.62, last[1] - FL * 0.25)} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FFB347" stopOpacity={0.42} />
+              <Stop offset="0.5" stopColor="#F2704F" stopOpacity={0.12} />
+              <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={w} height={h} fill="url(#hearth)" />
+        </Svg>
+      </Animated.View>
       <Animated.View
         style={{
           position: 'absolute',
@@ -127,32 +283,59 @@ export function Ahead({
           transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }],
         }}>
         <Animated.View style={{ width: w, height: h, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [w, 0] }) }] }}>
-          <Svg width={w} height={h}>
-            {then ? <Path d={path(then)} stroke={k.hush} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" /> : null}
-            {n > 1 ? <Path d={path(now)} stroke={k.win} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" /> : null}
-            <Circle cx={X(n - 1)} cy={Y(a)} r={10} fill={k.win} opacity={0.22} />
-            <Circle cx={X(n - 1)} cy={Y(a)} r={5} fill={k.win} />
+          <Svg width={w} height={h} {...SVG_HIDE}>
+            <Defs>
+              <RadialGradient id="ground" cx={end} cy={last[1]} r={w * 0.95} gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#F59A4A" stopOpacity={0.95} />
+                <Stop offset="0.28" stopColor="#B6505A" stopOpacity={0.75} />
+                <Stop offset="0.62" stopColor="#5A2F86" stopOpacity={0.55} />
+                <Stop offset="1" stopColor="#3A2A7E" stopOpacity={0.35} />
+              </RadialGradient>
+              <LinearGradient id="foot" x1="0" y1={top + (h - top) * 0.25} x2="0" y2={h} gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor={sky} stopOpacity={0} />
+                <Stop offset="1" stopColor={sky} stopOpacity={1} />
+              </LinearGradient>
+              <LinearGradient id="rim" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#7566DE" />
+                <Stop offset="0.6" stopColor="#D58AA8" />
+                <Stop offset="0.9" stopColor="#FFD27A" />
+              </LinearGradient>
+            </Defs>
+            <Path d={hill} fill="#231A5C" />
+            <Path d={hill} fill="url(#ground)" />
+            <Path d={hill} fill="url(#foot)" />
+            <Path d={line} stroke="url(#rim)" strokeWidth={2.5} strokeLinecap="round" fill="none" />
+            {was ? <Path d={was} stroke={k.c.ink} strokeOpacity={0.7} strokeWidth={2} strokeDasharray="0.1 6" strokeLinecap="round" fill="none" /> : null}
           </Svg>
         </Animated.View>
       </Animated.View>
-      {/* the lines run up to the right, so the top left is always open */}
-      <View style={[s.abs, { left: 0, top: 2, gap: 2 }]}>
-        <View style={s.aheadKey}>
-          <View style={[s.aheadSwatch, { backgroundColor: k.win }]} />
-          <Text style={[s.dl, { color: k.c.ink }]}>{a} now</Text>
-        </View>
-        {b != null ? (
-          <View style={s.aheadKey}>
-            <View style={[s.aheadSwatch, { backgroundColor: k.hush }]} />
-            <Text style={[s.dl, { fontFamily: font.body, color: k.ax }]}>
-              {b} {than.replace(/^in /, '')}
-            </Text>
+      {/* the flame: its feet on the hill */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: end - FL / 2,
+          top: last[1] - FL * 0.93,
+          opacity: flameIn,
+          transform: [{ scale: flameIn.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }],
+        }}>
+        <BigFlame level={level} size={FL} />
+      </Animated.View>
+      {note ? (
+        <Text numberOfLines={2} style={[s.abs, { left: 16, right: 16, bottom: 14, fontFamily: font.body, fontSize: 13, lineHeight: 18, color: k.c.muted }]}>
+          {note}
+        </Text>
+      ) : null}
+      <View style={[s.between, s.abs, { left: 16, right: 16, bottom: note ? 62 : 14, alignItems: 'center' }]}>
+        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        {was ? (
+          <View style={s.keyItem}>
+            <Svg width={18} height={4} {...SVG_HIDE}>
+              <Path d="M2 2H16" stroke={k.c.ink} strokeOpacity={0.7} strokeWidth={2} strokeDasharray="0.1 6" strokeLinecap="round" />
+            </Svg>
+            <Text style={[s.ax, { color: k.c.muted }]}>{than.replace(/^in /, '').replace(/^t/, 'T')}</Text>
           </View>
         ) : null}
-      </View>
-      <View style={[s.between, s.abs, { left: 0, right: 0, top: h - 16 }]}>
-        <Text style={[s.ax, { color: k.ax }]}>{first}</Text>
-        <Text style={[s.ax, { color: k.ax }]}>Today</Text>
+        <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
       </View>
     </View>
   );
@@ -161,40 +344,13 @@ export function Ahead({
 /* ---------- how each day felt ---------- */
 const STEP_WORD: Record<DayFeelStep, string> = { 5: 'Great', 4: 'Good', 3: 'Okay', 2: 'Low', 1: 'Rough' };
 const WEEK_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const CAL_GAP = 4;
 const weekdayOf = (k: DayKey) => {
   const [y, m, d] = k.split('-').map(Number);
   return (new Date(y, m - 1, d).getDay() + 6) % 7;
 };
-/** one place in the calendar: the shape of its answer, or a small dot for a day with none */
-function DayMark({
-  m,
-  size,
-  on,
-  look,
-  i,
-  delay,
-}: {
-  m: PatFeltDay;
-  size: number;
-  on: boolean;
-  look: (n: DayFeelStep) => { kind: ShapeKind; color: string };
-  i: number;
-  delay: number;
-}) {
-  const k = useInk();
-  const at = m.n ? look(m.n) : null;
-  return (
-    <Pop delay={120 + i * delay} style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {at ? (
-        <Shape kind={at.kind} size={size - 2} color={at.color} />
-      ) : (
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: k.hush, opacity: on ? 1 : 0.6 }} />
-      )}
-    </Pop>
-  );
-}
-/** the range as a calendar, each day in the shape and color of its answer. A long log is a shape for each week, in reading order */
+const CAL_SIDE = 16;
+const DAY_KEY = 34;
+/** the range in the shapes of its answers: a week is seven of them at the height of how the day felt, a month is a calendar, and a long log is a shape for each week */
 export function DayShapes({
   marks,
   weeks,
@@ -215,58 +371,130 @@ export function DayShapes({
   label: string;
 }) {
   const k = useInk();
-  const KEY = 28;
-  const room = h - KEY;
-  const line = !weeks && marks.length <= 7;
-  /* a week is one row. A month is a calendar, so its head says the days. A long log fills the room in reading order */
-  let cols = 7;
-  if (weeks) {
-    cols = 7;
-    while (cols < 16 && Math.ceil(marks.length / cols) * ((w - (cols - 1) * CAL_GAP) / cols + CAL_GAP) > room) cols++;
-  }
-  const pad = !weeks && !line && marks.length ? weekdayOf(marks[0].k) : 0;
-  const rows = Math.ceil((marks.length + pad) / cols);
-  const head = !weeks && !line ? 20 : 0;
-  const size = Math.floor(Math.min((w - (cols - 1) * CAL_GAP) / cols, 46, line ? 46 : (room - head - (rows - 1) * CAL_GAP) / Math.max(rows, 1)));
-  const grid = cols * size + (cols - 1) * CAL_GAP;
-  const places: (PatFeltDay | null)[] = [...Array.from({ length: pad }, () => null), ...marks];
-  return (
-    <View style={{ width: w, height: h, justifyContent: 'space-between' }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: line ? 'center' : 'flex-end', paddingBottom: 10 }}>
-        {head ? (
-          <View style={{ flexDirection: 'row', gap: CAL_GAP, height: head, width: grid }}>
-            {WEEK_LETTERS.map((l, i) => (
-              <Text key={i} style={[s.ax, { width: size, textAlign: 'center', color: k.ax }]}>
-                {l}
-              </Text>
-            ))}
+  const W = w - CAL_SIDE * 2;
+  /* the key takes a second line when its words do not fit on one */
+  const keyWidth = ([5, 4, 3, 2, 1] as DayFeelStep[]).reduce((a, n) => a + (by[n - 1] ? 34 + (STEP_WORD[n].length + String(by[n - 1]).length) * 6.6 : 0), 0);
+  const keyH = keyWidth > W ? DAY_KEY + 18 : DAY_KEY;
+  const room = h - keyH;
+  const dim = 'rgba(189,181,230,0.16)';
+  const key = (
+    <View style={[s.key, { position: 'absolute', left: CAL_SIDE, right: CAL_SIDE, bottom: 12, justifyContent: 'center', columnGap: 12 }]}>
+      {([5, 4, 3, 2, 1] as DayFeelStep[]).map((n) =>
+        by[n - 1] ? (
+          <View key={n} style={s.keyItem}>
+            <LitShape kind={look(n).kind} size={14} color={look(n).color} />
+            <Text style={[s.ax, { color: k.c.muted }]}>
+              {STEP_WORD[n]} {by[n - 1]}
+            </Text>
           </View>
-        ) : null}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: CAL_GAP, width: grid }}>
-          {places.map((m, i) =>
-            m ? (
-              <View key={m.k} style={{ alignItems: 'center' }}>
-                <DayMark m={m} size={size} on={m.k === tk} look={look} i={i} delay={line ? 60 : 16} />
-                {line ? <Text style={[s.ax, { marginTop: 6, color: m.k === tk ? k.c.ink : k.ax }]}>{WEEK_LETTERS[weekdayOf(m.k)]}</Text> : null}
-              </View>
+        ) : null,
+      )}
+    </View>
+  );
+  if (!weeks && marks.length <= 7) {
+    /* a week: seven big shapes, four over three, each over its day */
+    const top = Math.min(4, marks.length);
+    const low = marks.length - top;
+    const NAME = 22;
+    const GAP = 10;
+    const size = Math.floor(Math.min((W - 3 * GAP) / 4, (room - (low ? 2 : 1) * NAME - (low ? GAP : 0)) / (low ? 2 : 1)));
+    const one = (m: PatFeltDay, i: number) => {
+      const at = m.n ? look(m.n) : null;
+      return (
+        <View key={m.k} style={{ width: size, alignItems: 'center' }}>
+          <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+            {at ? (
+              <Pop delay={120 + i * 70} style={{ width: size, height: size }}>
+                <LitShape kind={at.kind} size={size} color={at.color} />
+              </Pop>
             ) : (
-              <View key={'pad' + i} style={{ width: size, height: size }} />
-            ),
-          )}
+              <View style={{ width: size * 0.3, height: size * 0.3, borderRadius: size, backgroundColor: dim }} />
+            )}
+          </View>
+          <Text style={[s.ax, { height: NAME, paddingTop: 4, color: m.k === tk ? k.c.ink : k.c.muted, fontFamily: m.k === tk ? font.bodyBold : font.body }]}>
+            {m.k === tk ? 'Today' : WEEK_LETTERS[weekdayOf(m.k)]}
+          </Text>
+        </View>
+      );
+    };
+    return (
+      <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+        <View style={{ height: room, alignItems: 'center', justifyContent: 'center', gap: GAP }}>
+          <View style={{ flexDirection: 'row', gap: GAP }}>{marks.slice(0, top).map((m, i) => one(m, i))}</View>
+          {low ? <View style={{ flexDirection: 'row', gap: GAP }}>{marks.slice(top).map((m, i) => one(m, top + i))}</View> : null}
+        </View>
+        {key}
+      </View>
+    );
+  }
+  if (weeks) {
+    /* a shape for each week, in reading order, as big as fits */
+    let cols = 3;
+    const gap = 6;
+    while (cols < 16 && Math.ceil(marks.length / cols) * ((W - (cols - 1) * gap) / cols + gap) > room) cols++;
+    const size = Math.floor((W - (cols - 1) * gap) / cols);
+    return (
+      <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, paddingHorizontal: CAL_SIDE, height: room, alignContent: 'center' }}>
+          {marks.map((m, i) => {
+            const at = m.n ? look(m.n) : null;
+            return (
+              <Pop key={m.k} delay={100 + i * 14} style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                {at ? (
+                  <LitShape kind={at.kind} size={size} color={at.color} />
+                ) : (
+                  <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size, backgroundColor: dim }} />
+                )}
+              </Pop>
+            );
+          })}
+        </View>
+        {key}
+      </View>
+    );
+  }
+  /* a month: the real calendar, each day with its date under it */
+  const pad = marks.length ? weekdayOf(marks[0].k) : 0;
+  const rows = Math.ceil((marks.length + pad) / 7);
+  const cw = W / 7;
+  const HEAD = 22;
+  const rowH = Math.min((room - HEAD) / Math.max(rows, 1), 72);
+  const size = Math.floor(Math.min(cw - 5, rowH - 19));
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <View style={{ position: 'absolute', left: CAL_SIDE, right: CAL_SIDE, bottom: keyH }}>
+        <View style={{ flexDirection: 'row', height: HEAD }}>
+          {WEEK_LETTERS.map((l, i) => (
+            <Text key={i} style={[s.ax, { width: cw, textAlign: 'center', color: k.c.muted }]}>
+              {l}
+            </Text>
+          ))}
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {Array.from({ length: pad }, (_, i) => (
+            <View key={'pad' + i} style={{ width: cw, height: rowH }} />
+          ))}
+          {marks.map((m, i) => {
+            const at = m.n ? look(m.n) : null;
+            const today = m.k === tk;
+            return (
+              <View key={m.k} style={{ width: cw, height: rowH, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 3 }}>
+                <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                  {at ? (
+                    <Pop delay={120 + i * 18} style={{ width: size, height: size }}>
+                      <LitShape kind={at.kind} size={size} color={at.color} />
+                    </Pop>
+                  ) : (
+                    <View style={{ width: size * 0.42, height: size * 0.42, borderRadius: size, backgroundColor: dim }} />
+                  )}
+                </View>
+                <Text style={[s.date, { color: today ? k.c.ink : k.c.muted, fontFamily: today ? font.bodyBold : font.body }]}>{Number(m.k.slice(8))}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
-      <View style={s.key}>
-        {([5, 4, 3, 2, 1] as DayFeelStep[]).map((n) =>
-          by[n - 1] ? (
-            <View key={n} style={s.keyItem}>
-              <Shape kind={look(n).kind} size={13} color={look(n).color} />
-              <Text style={[s.ax, { color: k.ax }]}>
-                {STEP_WORD[n]} {by[n - 1]}
-              </Text>
-            </View>
-          ) : null,
-        )}
-      </View>
+      {key}
     </View>
   );
 }
@@ -276,203 +504,259 @@ export function DayShapes({
 const FLAME = 'M12 1.5c.9 3.6 6.4 6.7 6.4 12.6a6.4 6.4 0 0 1-12.8 0c0-2.4 1-4 2.4-5.4.3 1.8 1.1 2.7 2.1 3.1C9.7 8.6 10.3 5 12 1.5z';
 /** the small bright heart of a flame */
 const FLAME_CORE = 'M12 11.4c.5 1.7 3 3 3 5.4a3 3 0 0 1-6 0c0-1.2.5-2 1.2-2.7.2.8.5 1.2 1 1.4-.1-1.4 0-2.8.8-4.1z';
-export interface MomentCol {
-  label: string;
-  rode: number;
-  slipped: number;
-}
-function MomentColumn({
-  c,
-  per,
-  size,
-  step,
-  cw,
-  H,
-  i,
-  few,
-  today,
-}: {
-  c: MomentCol;
-  per: number;
-  size: number;
-  step: number;
-  cw: number;
-  H: number;
-  i: number;
-  few: boolean;
-  today: boolean;
-}) {
+const HEAT: [number, number, number][] = [
+  [226, 66, 44],
+  [247, 112, 44],
+  [255, 165, 60],
+  [255, 214, 110],
+];
+const heatColor = (t: number) => {
+  const at = Math.max(0, Math.min(0.999, t)) * (HEAT.length - 1);
+  const i = Math.floor(at);
+  const u = at - i;
+  const c = HEAT[i].map((v, j) => Math.round(v + (HEAT[i + 1][j] - v) * u));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+};
+const MOMENT_FOOT = 34;
+/** every hard moment ridden out is a small flame, and together they make one big one: it only ever grows. A slip is a small ring at its foot. */
+export function MomentFlame({ rode, slipped, w, h, label }: { rode: number; slipped: number; w: number; h: number; label: string }) {
   const k = useInk();
-  const flames = Math.round(c.rode / per);
-  const rings = Math.round(c.slipped / per);
-  const y = (j: number) => H - (j + 1) * step + (step - size) / 2;
+  const v = useGrow(100, 1100);
+  const breath = useBreath(1900);
+  const room = h - MOMENT_FOOT - 4;
+  const per = Math.max(1, Math.ceil(rode / SPARKS_MAX));
+  const sparks = useMemo(() => flameSparks(Math.round(rode / per), w - 32, room), [rode, per, w, room]);
+  const rings = Math.min(slipped, 8);
+  const under = sparks.length >= 8 ? Math.min((w - 32 - sparks[0].size) / 12.8, (room - sparks[0].size) / 19) : 0;
   return (
-    <View style={{ width: cw, alignItems: 'center' }}>
-      <Pop delay={80 + i * 60} style={{ width: cw, height: H }}>
-        <Svg width={cw} height={H}>
-          {Array.from({ length: flames }, (_, j) => (
-            <G key={j} transform={`translate(${cw / 2 - 12 * (size / 19)} ${y(j) - 1.5 * (size / 19)}) scale(${size / 19})`}>
-              <Path d={FLAME} fill={k.win} />
-              <Path d={FLAME_CORE} fill={k.core} />
-            </G>
-          ))}
-          {Array.from({ length: rings }, (_, j) => (
-            <Circle key={'r' + j} cx={cw / 2} cy={y(flames + j) + size / 2} r={size * 0.26} stroke={k.ax} strokeWidth={2} fill="none" />
-          ))}
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(v, breath.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] })) }]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          <Defs>
+            <RadialGradient id="fire" cx={w / 2} cy={room * 0.62} r={room * 0.62} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FF9A3C" stopOpacity={0.5} />
+              <Stop offset="0.45" stopColor="#E2452C" stopOpacity={0.16} />
+              <Stop offset="1" stopColor="#E2452C" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={w} height={h} fill="url(#fire)" />
         </Svg>
-      </Pop>
-      {few ? <Text style={[s.ax, { marginTop: 8, color: today ? k.c.ink : k.ax }]}>{c.label}</Text> : null}
-    </View>
-  );
-}
-/** how tall everything Moments adds under its columns stands */
-export const MOMENT_FOOT = 26 + 21;
-/** each hard moment ridden out as a small flame, standing in a column for its stretch, with a slip as a small ring on top. What is won piles up. */
-export function Moments({ cols, H, w, label }: { cols: MomentCol[]; H: number; w: number; label: string }) {
-  const k = useInk();
-  const n = cols.length;
-  const most = Math.max(1, ...cols.map((c) => c.rode + c.slipped));
-  const cw = w / Math.max(n, 1);
-  const widest = Math.min(cw * 1.3, 34);
-  /* the flames grow to fill the room, and past what fits each one stands for more than one moment */
-  const fit = Math.max(1, Math.floor(H / 14));
-  const per = Math.max(1, Math.ceil(most / fit));
-  const rows = Math.ceil(most / per);
-  const step = Math.min(widest + 3, H / Math.max(rows, 1));
-  const size = Math.min(widest, step - 1);
-  const few = n <= 7;
-  return (
-    <View accessible accessibilityRole="image" accessibilityLabel={label}>
-      <View style={{ flexDirection: 'row', height: H + 26 }}>
-        {cols.map((c, i) => (
-          <MomentColumn key={i} c={c} per={per} size={size} step={step} cw={cw} H={H} i={i} few={few} today={c.label === 'Today'} />
-        ))}
+      </Animated.View>
+      <View style={{ position: 'absolute', left: 0, top: 0, width: w, height: room + 6, overflow: 'hidden' }}>
+        <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [room + 6, 0] }) }] }}>
+          <View style={{ width: w, height: room + 6, overflow: 'hidden' }}>
+            <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-(room + 6), 0] }) }] }}>
+              <Svg width={w} height={room + 6} {...SVG_HIDE}>
+                {/* the big flame under the small ones, so what shows between them is fire and not night */}
+                {under ? (
+                  <G transform={`translate(${16 + (w - 32 - 12.8 * under) / 2 - 5.6 * under} ${(room - 19 * under) / 2 - 1.5 * under}) scale(${under})`}>
+                    <Path d={FLAME} fill="#D9482B" />
+                  </G>
+                ) : null}
+                {/* the heart on top, so the tongues at the edge lick out from under it */}
+                {sparks
+                  .slice()
+                  .reverse()
+                  .map((p, i) => {
+                    const z = p.size / 19;
+                    return (
+                      <G key={i} transform={`translate(${16 + p.x - 12 * z} ${p.y - 11 * z}) scale(${z})`}>
+                        <Path d={FLAME} fill={heatColor(p.heat * 0.72 + 0.1)} />
+                        <Path d={FLAME_CORE} fill={heatColor(p.heat * 0.5 + 0.5)} />
+                      </G>
+                    );
+                  })}
+              </Svg>
+            </Animated.View>
+          </View>
+        </Animated.View>
       </View>
-      <View style={[s.abs, { left: 0, right: 0, top: H, height: 1, backgroundColor: k.grid }]} />
-      {few ? null : (
-        <View style={[s.between, s.abs, { left: 0, right: 0, top: H + 8 }]}>
-          <Text style={[s.ax, { color: k.ax }]}>{cols[0]?.label}</Text>
-          <Text style={[s.ax, { color: k.ax }]}>{cols[n - 1]?.label}</Text>
-        </View>
-      )}
-      <View style={[s.key, { marginTop: 4 }]}>
-        <View style={s.keyItem}>
-          <Svg width={13} height={13} viewBox="0 0 24 24">
-            <Path d={FLAME} fill={k.win} />
+      <View style={[s.abs, { left: 16, right: 16, bottom: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }]}>
+        {per > 1 ? <Text style={[s.ax, { color: k.c.muted }]}>Each small flame is {per} moments.</Text> : null}
+        {per > 1 && slipped ? <Text style={[s.ax, { color: k.c.muted }]}> </Text> : null}
+        {rings ? (
+          <Svg width={rings * 13} height={12} {...SVG_HIDE}>
+            {Array.from({ length: rings }, (_, i) => (
+              <Circle key={i} cx={6 + i * 13} cy={6} r={4} stroke={k.c.muted} strokeWidth={1.5} fill="none" />
+            ))}
           </Svg>
-          <Text style={[s.ax, { color: k.ax }]}>{per > 1 ? per + ' ridden out' : 'Ridden out'}</Text>
-        </View>
-        <View style={s.keyItem}>
-          <Svg width={13} height={13}>
-            <Circle cx={6.5} cy={6.5} r={4} stroke={k.ax} strokeWidth={2} fill="none" />
-          </Svg>
-          <Text style={[s.ax, { color: k.ax }]}>{per > 1 ? per + ' slips' : 'A slip'}</Text>
-        </View>
+        ) : null}
+        {slipped ? <Text style={[s.ax, { color: k.c.muted }]}>{slipped === 1 ? '1 slip' : slipped + ' slips'}</Text> : null}
       </View>
     </View>
   );
 }
 
 /* ---------- what was named ---------- */
-const FIELD = 12;
-const SKY_WORDS = 18;
-const SKY_APART = 16;
-function Lit({ r, c, size, x, y, i }: { r: number; c: number; size: number; x: number; y: number; i: number }) {
+/** the most words the field shows; the rest are in the numbers under the card */
+const FIELD_MAX = 14;
+const FIELD_N = 12;
+const INK = '#1C2030';
+function Floating({ i, x, y, size, children }: { i: number; x: number; y: number; size: number; children: ReactNode }) {
+  const breath = useBreath(2600 + (i % 5) * 420);
   return (
-    <Pop delay={200 + i * 90} style={{ position: 'absolute', left: x - size / 2, top: y - size / 2 }}>
-      <Shape kind={feelKind(r, c)} size={size} color={FEEL_COLORS[r][c]} />
+    <Pop delay={140 + i * 70} style={{ position: 'absolute', left: x - size / 2, top: y - size / 2, width: size, height: size }}>
+      <Animated.View style={{ transform: [{ translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] }) }] }}>{children}</Animated.View>
     </Pop>
   );
 }
-/** the field of feelings, the one a person picks from, faint, with what they named lit up where it lives and its word beside it */
-export function FeelSky({ quads, words, w, h, label }: { quads: PatFeels['quads']; words: PatFeels['words']; w: number; h: number; label: string }) {
-  const k = useInk();
-  const side = Math.min(w, h - SKY_WORDS * 2);
-  const cell = side / FIELD;
-  const dim = Array.from({ length: FIELD * FIELD }, (_, i) => [Math.floor(i / FIELD), i % FIELD]);
-  /* a word named once is small; it grows with each time, up to five */
-  const sizeOf = (n: number) => cell * (0.9 + 0.3 * Math.min(n, 5));
-  /* each word sits under its shape, or else over it, wherever it does not touch another one; with no room it is left to the numbers under the card */
-  /* neighbors on the field would run together into one blob, so they step apart, with room for a word between them */
-  const at = spreadCircles(
-    words.map((x) => ({ x: x.c * cell + cell / 2, y: x.r * cell + cell / 2, r: sizeOf(x.n) / 2 })),
-    side,
-    SKY_APART,
+/** what was named, each in its own shape and color, big enough to hold its word, near where it lives on the field */
+export function FeelField({ words, w, h, label }: { words: PatFeels['words']; w: number; h: number; label: string }) {
+  const shown = words.slice(0, FIELD_MAX);
+  const side = 12;
+  const at = useMemo(
+    () =>
+      feelBubbles(
+        /* a spiky shape holds a word only in its middle */
+        shown.map((x) => ({
+          u: (x.c + 0.5) / FIELD_N,
+          v: (x.r + 0.5) / FIELD_N,
+          n: x.n,
+          min: (x.w.length * 7 + 18) * (String(feelKind(x.r, x.c)).includes('jag') ? 1.35 : 1.05),
+        })),
+        w - side * 2,
+        h - side,
+      ),
+    [shown, w, h],
   );
-  const taken = at.map((p) => ({ x: p.x - p.r, y: p.y - p.r, w: p.r * 2, h: p.r * 2 }));
-  const hits = (a: { x: number; y: number; w: number; h: number }) =>
-    a.x < 0 || a.x + a.w > side || taken.some((b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h);
-  const named = words.slice(0, 8).map((x, i) => {
-    const z = sizeOf(x.n);
-    const lw = x.w.length * 7 + 10;
-    const cx = at[i].x;
-    const cy = at[i].y;
-    for (const y of [cy + z / 2 + 1, cy - z / 2 - 16]) {
-      const left = Math.max(0, Math.min(side - lw, cx - lw / 2));
-      const box = { x: left, y, w: lw, h: 15 };
-      if (y >= 0 && y + 15 <= side && !hits(box)) {
-        taken.push(box);
-        return { w: x.w, left, y, width: lw, i };
-      }
-    }
-    return null;
-  });
-  const corner = (id: string) => quads.find((x) => x.q === id)?.word;
   return (
-    <View style={{ width: w, height: h, alignItems: 'center', justifyContent: 'flex-end' }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <View style={[s.between, { width: side, height: SKY_WORDS }]}>
-        <Text style={[s.ax, { color: k.ax }]}>{corner('red')}</Text>
-        <Text style={[s.ax, { color: k.ax }]}>{corner('yellow')}</Text>
-      </View>
-      <View style={{ width: side, height: side }}>
-        {/* the faint field stays out from under the words and shapes */}
-        {dim
-          .filter(
-            ([r, c]) =>
-              !taken.some(
-                (b) =>
-                  c * cell + cell / 2 > b.x - 3 && c * cell + cell / 2 < b.x + b.w + 3 && r * cell + cell / 2 > b.y - 3 && r * cell + cell / 2 < b.y + b.h + 3,
-              ),
-          )
-          .map(([r, c]) => (
-            <View
-              key={r + '-' + c}
-              style={[
-                s.abs,
-                {
-                  left: c * cell + cell / 2 - 1.5,
-                  top: r * cell + cell / 2 - 1.5,
-                  width: 3,
-                  height: 3,
-                  borderRadius: 1.5,
-                  backgroundColor: FEEL_COLORS[r][c],
-                  opacity: 0.35,
-                },
-              ]}
-            />
-          ))}
-        {words.map((x, i) => (
-          <Lit key={x.w} r={x.r} c={x.c} size={sizeOf(x.n)} x={at[i].x} y={at[i].y} i={i} />
-        ))}
-        {named.map((x) =>
-          x ? (
-            <Pop key={x.w} delay={260 + x.i * 90} style={{ position: 'absolute', left: x.left, top: x.y, width: x.width }}>
-              <Text numberOfLines={1} style={[s.ax, { textAlign: 'center', color: k.c.ink }]}>
-                {x.w}
-              </Text>
-            </Pop>
-          ) : null,
-        )}
-      </View>
-      <View style={[s.between, { width: side, height: SKY_WORDS, alignItems: 'flex-end' }]}>
-        <Text style={[s.ax, { color: k.ax }]}>{corner('blue')}</Text>
-        <Text style={[s.ax, { color: k.ax }]}>{corner('green')}</Text>
-      </View>
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      {shown.map((x, i) => {
+        const d = at[i].r * 2;
+        const body = d * (String(feelKind(x.r, x.c)).includes('jag') ? 0.68 : 0.86);
+        const big = d >= 104 && x.w.length * 8.6 <= body;
+        const fs = big ? 17 : x.w.length * 7 <= body ? 13 : 12;
+        return (
+          <Floating key={x.w} i={i} x={side + at[i].x} y={at[i].y} size={d}>
+            <LitShape kind={feelKind(x.r, x.c)} size={d} color={FEEL_COLORS[x.r][x.c]} />
+            <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+              {x.w.length * (fs === 12 ? 6.2 : 7) <= body ? (
+                <Text numberOfLines={1} style={{ fontFamily: font.bodySemi, fontSize: fs, color: INK }}>
+                  {x.w}
+                </Text>
+              ) : null}
+            </View>
+          </Floating>
+        );
+      })}
     </View>
   );
 }
 
-/* ---------- the hours of the day ---------- */
+/* ---------- the day as a sky ---------- */
+const DAY_START = 6;
+const SKY_COLS = 12;
+const SKY_WORDS = 30;
+const ampmOf = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
+/* the sky through a day from 6 AM: dawn, the bright middle of the day, dusk, the deep of the night and the first light again */
+const SKY_STOPS: [number, string][] = [
+  [0, '#8A5C9E'],
+  [0.12, '#5E7BC8'],
+  [0.3, '#5B93D8'],
+  [0.46, '#C26A7E'],
+  [0.56, '#5A3580'],
+  [0.72, '#1A1450'],
+  [0.9, '#241B62'],
+  [1, '#6A4A92'],
+];
+/** the entries of the day standing in its sky: the sky says what time it is at a glance, so the words under it can stay few */
+export function DaySky({ hours, hard, w, h, sky }: { hours: PatHour[]; hard: PatWhen['hard']; w: number; h: number; sky: string }) {
+  const k = useInk();
+  const H = h - SKY_WORDS;
+  const slot = w / SKY_COLS;
+  const bw = Math.round(slot * 0.68);
+  const cols = Array.from({ length: SKY_COLS }, (_, i) => {
+    const a = hours[(DAY_START + i * 2) % 24];
+    const b = hours[(DAY_START + i * 2 + 1) % 24];
+    return { h: a.h, rode: a.rode + b.rode, slipped: a.slipped + b.slipped };
+  });
+  const top = Math.max(4, ...cols.map((x) => x.rode + x.slipped));
+  const room = H - 40;
+  const busiest = cols.slice().sort((a, b) => b.rode + b.slipped - (a.rode + a.slipped))[0];
+  const hardAt = hard.weekdays || hard.weekends;
+  const hardX = hardAt ? (((hardAt.start - DAY_START + 24) % 24) / 24) * w : 0;
+  return (
+    <View
+      style={{ width: w, height: h }}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={busiest.rode + busiest.slipped ? 'Entries through the day, most around ' + ampmOf(busiest.h) : 'Entries through the day'}>
+      <Svg width={w} height={H + 1} style={s.abs} {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="dayline" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+            {SKY_STOPS.map(([o, c]) => (
+              <Stop key={o} offset={String(o)} stopColor={c} />
+            ))}
+          </LinearGradient>
+          <LinearGradient id="dayfade" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={sky} stopOpacity={1} />
+            <Stop offset="0.7" stopColor={sky} stopOpacity={0.38} />
+            <Stop offset="1" stopColor={sky} stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={H} fill="url(#dayline)" />
+        <Rect width={w} height={H} fill="url(#dayfade)" />
+      </Svg>
+      {hardAt ? (
+        <View style={[s.abs, { left: Math.max(8, Math.min(w - 8 - (slot + 68), hardX - 34)), width: slot + 68, top: 0, alignItems: 'center' }]}>
+          <Text style={[s.ax, { color: k.c.ink }]}>Hard hours</Text>
+          <View style={{ width: slot, height: 3, borderRadius: 2, marginTop: 4, backgroundColor: k.core }} />
+        </View>
+      ) : null}
+      {cols.map((x, i) => {
+        const t = x.rode + x.slipped;
+        if (!t) return null;
+        const bar = Math.max(bw, (t / top) * room);
+        const quiet = Math.round((x.slipped / t) * bar);
+        return (
+          <View key={i} style={[s.abs, { left: i * slot + (slot - bw) / 2, top: H - bar }]}>
+            <Rise h={bar} w={bw} delay={60 + i * 45}>
+              <Svg width={bw} height={bar} {...SVG_HIDE}>
+                <Defs>
+                  <LinearGradient id={'bar' + i} x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor="#FFF0C4" />
+                    <Stop offset="0.45" stopColor="#FFB347" />
+                    <Stop offset="1" stopColor="#F26A2E" />
+                  </LinearGradient>
+                </Defs>
+                {quiet ? <Rect width={bw} height={quiet + bw} rx={bw / 2} fill="rgba(219,213,245,0.55)" /> : null}
+                {bar - quiet > 0 ? (
+                  <Rect y={quiet ? quiet + 2 : 0} width={bw} height={bar - quiet + bw} rx={quiet ? 2 : bw / 2} fill={`url(#bar${i})`} />
+                ) : null}
+              </Svg>
+            </Rise>
+          </View>
+        );
+      })}
+      <View style={[s.abs, { left: 0, right: 0, top: H, height: 1, backgroundColor: 'rgba(255,255,255,0.22)' }]} />
+      {(
+        [
+          [0, '6 AM'],
+          [0.25, 'Noon'],
+          [0.5, '6 PM'],
+          [0.75, 'Midnight'],
+        ] as [number, string][]
+      ).map(([u, l]) => (
+        <View
+          key={l}
+          style={[s.keyItem, s.abs, { left: u ? u * w - 32 : 12, width: u ? 64 : undefined, justifyContent: u ? 'center' : 'flex-start', top: H + 8 }]}>
+          {l === 'Noon' ? (
+            <Svg width={12} height={12} {...SVG_HIDE}>
+              <Circle cx={6} cy={6} r={4} fill={k.core} />
+            </Svg>
+          ) : l === 'Midnight' ? (
+            <Svg width={12} height={12} viewBox="0 0 24 24" {...SVG_HIDE}>
+              <Path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill={k.c.muted} />
+            </Svg>
+          ) : null}
+          <Text style={[s.ax, { color: k.c.muted }]}>{l}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/* ---------- the hours of the day, in the week's review ---------- */
 /** the row starts here, so a night stays in one piece: most hard hours are at night */
 const DAY_FROM = 6;
 /** two hours to a column, the size of the hard hours: a single hour says more than a few entries know */
@@ -610,69 +894,156 @@ export function WeekRow({ week, on, H }: { week: { d: number; name: string; rode
   );
 }
 
-/* ---------- things in order ---------- */
+/* ---------- things in a mosaic ---------- */
 export interface Rank {
   label: string;
-  /** the words at the end of its line */
+  /** the words under its name */
   note: string;
-  /** the part that was won, and the part that was not */
-  win: number;
-  hush: number;
+  /** the same in a narrow block */
+  short: string;
+  /** how often */
+  n: number;
 }
-function RankRow({ r, top, i }: { r: Rank; top: number; i: number }) {
-  const k = useInk();
-  const v = useGrow(80 + i * 70);
-  const t = r.win + r.hush;
-  return (
-    <View style={{ gap: 6 }} accessible accessibilityLabel={r.label + ': ' + r.note}>
-      <View style={s.rankTop}>
-        <Text numberOfLines={1} style={[s.dl, { flex: 1, color: k.c.ink }]}>
-          {r.label}
-        </Text>
-        <Text style={[s.ax, { color: k.ax }]}>{r.note}</Text>
-      </View>
-      <Animated.View
-        style={{ flexDirection: 'row', gap: 2, height: 8, width: `${Math.max(3, (t / top) * 100)}%`, transformOrigin: 'left', transform: [{ scaleX: v }] }}>
-        {r.win ? <View style={{ flex: r.win, borderRadius: 4, backgroundColor: k.win }} /> : null}
-        {r.hush ? <View style={{ flex: r.hush, borderRadius: 4, backgroundColor: k.hush }} /> : null}
-      </Animated.View>
-    </View>
+type Tile = [string, string];
+/** a sunset for what sets it off, biggest first, and the cool of a clear morning for what helps */
+export const TILES: Record<'warm' | 'cool', Tile[]> = {
+  warm: [
+    ['#FFC94D', '#2B1A00'],
+    ['#FF9F45', '#2B1400'],
+    ['#F4744E', '#2B0B00'],
+    ['#D2557A', '#FFF4F7'],
+    ['#9550B4', '#FBF3FF'],
+    ['#5F48AE', '#F4F0FF'],
+  ],
+  cool: [
+    ['#5EE0B5', '#06352A'],
+    ['#45C7C9', '#04302F'],
+    ['#4CA6E0', '#04233A'],
+    ['#5C86E6', '#F2F5FF'],
+    ['#6E6BDD', '#F4F3FF'],
+    ['#7B57C8', '#F7F2FF'],
+  ],
+};
+const MOSAIC_SIDE = 12;
+const MOSAIC_GAP = 4;
+/** a block for each thing, the biggest first. What takes up the most room in the picture is what comes up the most */
+export function Mosaic({ items, tone, w, h }: { items: Rank[]; tone: 'warm' | 'cool'; w: number; h: number }) {
+  const W = w - MOSAIC_SIDE * 2;
+  const H = h - MOSAIC_SIDE;
+  const blocks = useMemo(
+    () =>
+      mosaic(
+        items.map((r) => r.n),
+        W,
+        H,
+      ),
+    [items, W, H],
   );
-}
-/** a thin bar for each thing, biggest first, with its words on the line above. No track and no key: the words say it */
-export function Ranks({ items }: { items: Rank[] }) {
-  const top = Math.max(1, ...items.map((x) => x.win + x.hush));
   return (
-    <View style={{ gap: 16 }}>
-      {items.map((r, i) => (
-        <RankRow key={r.label} r={r} top={top} i={i} />
-      ))}
+    <View style={{ width: w, height: h }}>
+      {blocks.map((b, rank) => {
+        const r = items[b.i];
+        const [fill, ink] = TILES[tone][Math.min(rank, 5)];
+        const bw = b.w - MOSAIC_GAP;
+        const bh = b.h - MOSAIC_GAP;
+        const big = bw >= 150 && bh >= 96;
+        return (
+          <Pop
+            key={r.label}
+            delay={80 + rank * 70}
+            style={{ position: 'absolute', left: MOSAIC_SIDE + b.x + MOSAIC_GAP / 2, top: b.y + MOSAIC_GAP / 2, width: bw, height: bh }}>
+            <View
+              accessible
+              accessibilityLabel={r.label + ': ' + r.note}
+              style={{ flex: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: fill, padding: bw < 84 ? 8 : 12, justifyContent: 'space-between' }}>
+              <Fade colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)', 'rgba(26,11,58,0.12)']} style={StyleSheet.absoluteFill} />
+              <Text
+                numberOfLines={bw < 100 ? 4 : 3}
+                style={{
+                  fontFamily: big ? font.display : font.bodySemi,
+                  fontSize: big ? 22 : bw < 84 ? 13 : 15,
+                  lineHeight: big ? 26 : bw < 84 ? 16 : 19,
+                  color: ink,
+                }}>
+                {r.label}
+              </Text>
+              {bh >= 72 ? (
+                <Text numberOfLines={1} style={{ fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 15, color: ink, opacity: 0.82 }}>
+                  {bw < 120 ? r.short : r.note}
+                </Text>
+              ) : null}
+            </View>
+          </Pop>
+        );
+      })}
     </View>
   );
 }
 
 /* ---------- slip days against days with no slip ---------- */
-/** each answer as two numbers side by side. A difference this plain needs no drawing */
-export function TwoNumbers({ list }: { list: PatDiff[] }) {
+const fmtDiff = (d: PatDiff, v: number) => (d.unit === 'pct' ? Math.round(v * 100) + '%' : String(Math.round(v * 10) / 10) + (d.unit === 'h' ? ' h' : ''));
+function PairBar({ d, which, delay, H, w }: { d: PatDiff; which: 'clean' | 'slip'; delay: number; H: number; w: number }) {
   const k = useInk();
-  const fmt = (d: PatDiff, v: number) => (d.unit === 'pct' ? Math.round(v * 100) + '%' : String(Math.round(v * 10) / 10) + (d.unit === 'h' ? ' h' : ''));
+  const top = Math.max(d.clean, d.slip) || 1;
+  const v = which === 'clean' ? d.clean : d.slip;
+  const bar = Math.max(w, (v / top) * (H - 40));
   return (
-    <View style={{ gap: 24 }}>
-      {list.map((d) => (
-        <View key={d.k} style={{ gap: 8 }} accessible accessibilityLabel={d.line}>
-          <Text style={[s.dl, { color: k.c.ink }]}>{d.label}</Text>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ flex: 1 }}>
-              <Text style={[s.big, { color: k.win }]}>{fmt(d, d.clean)}</Text>
-              <Text style={[s.ax, { color: k.ax }]}>Days with no slip</Text>
+    <View style={{ width: w, height: H, justifyContent: 'flex-end', alignItems: 'center' }}>
+      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink }}>
+        {fmtDiff(d, v)}
+      </Text>
+      <Rise h={bar} w={w} delay={delay}>
+        <Svg width={w} height={bar} {...SVG_HIDE}>
+          <Defs>
+            <LinearGradient id="clean" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFF0C4" />
+              <Stop offset="0.45" stopColor="#FFB347" />
+              <Stop offset="1" stopColor="#F26A2E" />
+            </LinearGradient>
+            <LinearGradient id="slip" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#CFC8F2" />
+              <Stop offset="1" stopColor="#6E62B8" />
+            </LinearGradient>
+          </Defs>
+          <Rect width={w} height={bar + w} rx={w / 2} fill={`url(#${which})`} />
+        </Svg>
+      </Rise>
+    </View>
+  );
+}
+/** each answer as a pair standing side by side, days with no slip beside slip days, each pair to its own scale: it is the difference inside a pair that counts */
+export function Pairs({ list, w, h }: { list: PatDiff[]; w: number; h: number }) {
+  const k = useInk();
+  const KEY = 30;
+  const NAME = 44;
+  const H = h - KEY - NAME;
+  const slot = (w - 32) / Math.max(list.length, 1);
+  const bw = Math.floor(Math.min((slot - 20) / 2, 72));
+  return (
+    <View style={{ width: w, height: h, paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {list.map((d, i) => (
+          <View key={d.k} style={{ width: slot, alignItems: 'center' }} accessible accessibilityLabel={d.line}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <PairBar d={d} which="clean" delay={80 + i * 120} H={H} w={bw} />
+              <PairBar d={d} which="slip" delay={150 + i * 120} H={H} w={bw} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[s.big, { color: k.c.ink }]}>{fmt(d, d.slip)}</Text>
-              <Text style={[s.ax, { color: k.ax }]}>Slip days</Text>
-            </View>
+            <Text numberOfLines={2} style={[s.ax, { height: NAME, paddingTop: 8, paddingHorizontal: 4, textAlign: 'center', color: k.c.ink }]}>
+              {d.label}
+            </Text>
           </View>
+        ))}
+      </View>
+      <View style={[s.key, { justifyContent: 'center', columnGap: 16 }]}>
+        <View style={s.keyItem}>
+          <View style={[s.keyDot, { backgroundColor: k.win }]} />
+          <Text style={[s.ax, { color: k.c.muted }]}>Days with no slip</Text>
         </View>
-      ))}
+        <View style={s.keyItem}>
+          <View style={[s.keyDot, { backgroundColor: '#A99FE0' }]} />
+          <Text style={[s.ax, { color: k.c.muted }]}>Slip days</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -683,10 +1054,6 @@ const s = StyleSheet.create({
   key: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   keyDot: { width: 8, height: 8, borderRadius: 4 },
-  aheadKey: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  aheadSwatch: { width: 12, height: 3, borderRadius: 2 },
-  rankTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  big: { fontFamily: font.display, fontSize: 28, lineHeight: 34, fontVariant: ['tabular-nums'] },
   ax: { fontFamily: font.body, fontSize: 12 },
-  dl: { fontFamily: font.bodySemi, fontSize: 15 },
+  date: { fontSize: 11, lineHeight: 14, marginTop: 2 },
 });

@@ -1,18 +1,20 @@
 /* The cards on Pattern: one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under
-   them that says where you are. A chart grows when its card first comes in, not while it is out of sight. A card that is locked
-   shows the person's own chart faded, with the ask under it (components/support.tsx). */
+   them that says where you are. Each is a scene of its own, in its own night sky in either theme, with its picture running out to
+   the card's edges. A chart grows when its card first comes in, not while it is out of sight. A card that is locked shows the
+   person's own chart faded, with the ask under it (components/support.tsx). */
 import { LinearGradient } from 'expo-linear-gradient';
 import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChartOn } from '@/components/charts';
+import { CARD_SKY } from '@/components/pattern-charts';
 import { LockAsk } from '@/components/support';
 import { Text } from '@/components/text';
-import { Card, T } from '@/components/ui';
+import { T } from '@/components/ui';
 import { NATIVE } from '@/lib/motion';
 import { tabRoom } from '@/lib/tab-room';
-import { font, useTheme } from '@/lib/theme';
+import { font, nightInk, palettes, PaletteOverride, useTheme } from '@/lib/theme';
 
 export interface DeckCard {
   id: string;
@@ -32,6 +34,8 @@ export interface DeckHandle {
   show: (i: number) => void;
 }
 
+/* a card's words stay light in either theme: its sky is night */
+const NIGHT = { ...palettes.dark, ink: nightInk.ink, muted: nightInk.muted, scheme: 'dark' as const };
 const GAP = 8;
 /* the title, the sections, the ruler and the range, which the card leaves room for */
 const ABOVE = 212;
@@ -102,29 +106,39 @@ export function Deck({
           contentContainerStyle={s.row}>
           {cards.map((d, i) => {
             const shut = locked(d.id);
+            const sky = CARD_SKY[d.id] || CARD_SKY.what;
             return (
-              <Card key={d.id} style={[{ width: W, minHeight: H }, SNAP_CARD]}>
-                <View style={{ gap: 4 }}>
-                  <T v="label" tone="muted" accessibilityRole="header">
-                    {d.title}
-                  </T>
-                  {!shut && d.head ? <Text style={[s.head, { color: c.ink }]}>{d.head}</Text> : null}
-                  {shut ? null : d.say}
-                </View>
-                <ChartOn.Provider value={i <= Math.max(seen, index)}>
-                  <View key={from} style={s.chart}>
-                    {shut ? (
-                      <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                        <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
-                        <LinearGradient colors={[c.surface + '00', c.surface]} style={s.fade} />
-                      </View>
-                    ) : (
-                      d.chart
-                    )}
+              <PaletteOverride.Provider key={d.id} value={NIGHT}>
+                <View style={[s.card, { width: W, minHeight: H, backgroundColor: sky[1] }, SNAP_CARD]}>
+                  <LinearGradient colors={sky} style={StyleSheet.absoluteFill} />
+                  <View style={s.words}>
+                    <T v="small" tone="muted" accessibilityRole="header">
+                      {d.title}
+                    </T>
+                    {!shut && d.head ? <Text style={[s.head, { color: NIGHT.ink }]}>{d.head}</Text> : null}
+                    {shut ? null : d.say}
                   </View>
-                </ChartOn.Provider>
-                {shut ? quiet ? null : <LockAsk /> : d.foot}
-              </Card>
+                  <ChartOn.Provider value={i <= Math.max(seen, index)}>
+                    <View key={from} style={s.chart}>
+                      {shut ? (
+                        <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                          <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
+                          <LinearGradient colors={[sky[1] + '00', sky[1]]} style={s.fade} />
+                        </View>
+                      ) : (
+                        d.chart
+                      )}
+                    </View>
+                  </ChartOn.Provider>
+                  {shut && !quiet ? (
+                    <View style={s.foot}>
+                      <LockAsk />
+                    </View>
+                  ) : !shut && d.foot ? (
+                    <View style={s.foot}>{d.foot}</View>
+                  ) : null}
+                </View>
+              </PaletteOverride.Provider>
             );
           })}
         </Animated.ScrollView>
@@ -162,8 +176,11 @@ const BLUR = (WEB ? { filter: 'blur(3px)' } : null) as ViewStyle | null;
 const s = StyleSheet.create({
   scroll: { marginHorizontal: -16 },
   row: { paddingHorizontal: 16, gap: GAP },
-  head: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
-  chart: { flex: 1, justifyContent: 'flex-end', marginTop: 4 },
+  card: { borderRadius: 20, overflow: 'hidden' },
+  words: { padding: 16, paddingBottom: 8, gap: 4 },
+  foot: { paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
+  head: { fontFamily: font.display, fontSize: 34, lineHeight: 40 },
+  chart: { flex: 1, justifyContent: 'flex-end' },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 120 },
   ruler: { alignItems: 'center', marginTop: -2, marginBottom: -8 },
   tickHit: { height: 44, alignItems: 'center', justifyContent: 'center' },
@@ -174,7 +191,7 @@ const s = StyleSheet.create({
 /** the plain line under a card's answer */
 export function Say({ children }: { children: ReactNode }) {
   return (
-    <T v="label" style={{ fontFamily: font.body }}>
+    <T v="body" style={{ color: NIGHT.muted }}>
       {children}
     </T>
   );

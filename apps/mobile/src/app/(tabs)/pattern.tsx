@@ -24,6 +24,8 @@ import {
   patPeriod,
   patRangeLabel,
   patRideCols,
+  patRidge,
+  gameCompute,
   patRideSay,
   patRideOut,
   patSlipTrig,
@@ -53,7 +55,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { NumbersTable } from '@/components/charts';
 import { DAY_FEEL_LOOK } from '@/components/day-feel-pop';
-import { Ahead, DayShapes, FeelSky, HOUR_WORDS, Hours, HoursKey, MOMENT_FOOT, Moments, Ranks, Room, TwoNumbers, WeekRow } from '@/components/pattern-charts';
+import { CARD_SKY, DaySky, DayShapes, FeelField, Hillside, HoursKey, MomentFlame, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
 import { Deck, Say, type DeckCard, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -244,7 +246,22 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       : '';
   const topTrig = trig.list.slice(0, 6);
   const trigLine = slipTrig ? slipTrig.line : patTriggerLines(trig.list, null)[0] || '';
-  const rideRank = (r: { label: string; win: number; hush: number }, none: string) => ({ ...r, note: r.win + ' of ' + (r.win + r.hush) + ' ' + none });
+  const trigItems: Rank[] = trig.list.length
+    ? topTrig.map((r) => ({
+        label: r.t,
+        n: r.rode + r.slipped,
+        note: r.rode + ' of ' + (r.rode + r.slipped) + ' ridden out',
+        short: r.rode + ' of ' + (r.rode + r.slipped),
+      }))
+    : needs.map((x) => ({ label: x.name, n: x.count, note: plural(x.count, 'time'), short: plural(x.count, 'time') }));
+  /* the answer that differs most leads the card on hard days */
+  const widest = leads.list
+    .slice()
+    .sort((a, b) => Math.abs(b.clean - b.slip) / (Math.max(b.clean, b.slip) || 1) - Math.abs(a.clean - a.slip) / (Math.max(a.clean, a.slip) || 1))[0];
+  const ridge = patRidge(snap.days, per, st);
+  const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
+  const rodeAll = rideCols.reduce((a, x) => a + x.rode, 0);
+  const slipAll = rideCols.reduce((a, x) => a + x.slipped, 0);
 
   const cards: DeckCard[] = [];
   /* the first card, for the question this page is here to answer. It stays after a slip: one slip is a flat step, which is worth seeing then */
@@ -256,14 +273,21 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       say: <Say>{doing.line}</Say>,
       chart: (
         <Room>
-          {(w, h) => <Ahead now={doing.now} then={doing.then} than={doing.than} first={doing.first} w={w} h={h} label={doing.head + '. ' + doing.line} />}
+          {(w, h) => (
+            <Hillside
+              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (g.longest >= 2 ? ' Longest stretch: ' + g.longest + ' days.' : '') : undefined}
+              ridge={ridge}
+              than={doing.than}
+              first={doing.first}
+              level={level}
+              sky={CARD_SKY.apart[1]}
+              w={w}
+              h={h}
+              label={doing.head + '. ' + doing.line}
+            />
+          )}
         </Room>
       ),
-      foot: g.slips ? (
-        <T v="small" tone="muted">
-          {patNowLine(g, tk, lastSlip || null)} {g.longest >= 2 ? 'Longest stretch: ' + g.longest + ' days.' : ''}
-        </T>
-      ) : null,
       numbers: g.slips ? (
         <NumbersTable
           cap="No-slip days before each slip"
@@ -302,7 +326,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       title: 'Riding it out',
       head: rideSay.head,
       say: rideSay.line ? <Say>{rideSay.line}</Say> : null,
-      chart: <Room>{(w, h) => <Moments cols={rideCols} w={w} H={h - MOMENT_FOOT} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
+      chart: <Room>{(w, h) => <MomentFlame rode={rodeAll} slipped={slipAll} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
       numbers: (
         <NumbersTable
           cap="Entries"
@@ -324,7 +348,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             {feels.fresh}
           </Say>
         ) : null,
-      chart: <Room>{(w, h) => <FeelSky quads={feels.quads} words={feels.words} w={w} h={h} label={feels.head + '. ' + feels.line} />}</Room>,
+      chart: <Room>{(w, h) => <FeelField words={feels.words} w={w} h={h} label={feels.head + '. ' + feels.line} />}</Room>,
       foot:
         feels.kinds >= 3 ? (
           <T v="small" tone="muted">
@@ -359,10 +383,14 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       ),
       chart: when.timed ? (
         <Room min={when.day ? 240 : 180}>
-          {(_, h) => (
-            <View style={{ gap: 16 }}>
-              <Hours hours={when.hours} hard={when.hard} H={h - HOUR_WORDS - (when.day ? WEEK_ROW + 16 : 0)} />
-              {when.day ? <WeekRow week={WEEK_ORDER.map((d) => when.week[d])} on={when.day.d} H={WEEK_ROW - 20} /> : null}
+          {(w, h) => (
+            <View style={{ gap: 12 }}>
+              <DaySky hours={when.hours} hard={when.hard} w={w} h={h - (when.day ? WEEK_ROW + 12 : 0)} sky={CARD_SKY.when[0]} />
+              {when.day ? (
+                <View style={{ paddingHorizontal: 16 }}>
+                  <WeekRow week={WEEK_ORDER.map((d) => when.week[d])} on={when.day.d} H={WEEK_ROW - 20} />
+                </View>
+              ) : null}
             </View>
           )}
         </Room>
@@ -391,13 +419,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             ))}
           </>
         ) : null,
-      chart: trig.list.length ? (
-        <Ranks items={topTrig.map((r) => rideRank({ label: r.t, win: r.rode, hush: r.slipped }, 'ridden out'))} />
-      ) : needs.length ? (
-        <Ranks items={needs.map((x) => ({ label: x.name, note: plural(x.count, 'time'), win: x.count, hush: 0 }))} />
-      ) : (
-        <View />
-      ),
+      chart: trigItems.length ? <Room>{(w, h) => <Mosaic items={trigItems} tone="warm" w={w} h={h} />}</Room> : <View />,
       foot: trig.none ? (
         <T v="small" tone="muted">
           {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
@@ -415,7 +437,9 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
     cards.push({
       id: 'days',
       title: 'What is different on hard days?',
-      chart: <TwoNumbers list={leads.list} />,
+      head: widest?.label,
+      say: widest ? <Say>{widest.line}</Say> : null,
+      chart: <Room>{(w, h) => <Pairs list={leads.list} w={w} h={h} />}</Room>,
       foot: (
         <T v="small" tone="muted">
           Your whole log: {plural(leads.cleanN, 'check-in day')} with no slip and {leads.slipN} with one.
@@ -433,7 +457,25 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
           </Say>
         ) : null,
-      chart: works.length ? <Ranks items={works.slice(0, 6).map((x) => rideRank({ label: x.name, win: x.passed, hush: x.not }, 'it passed'))} /> : <View />,
+      chart: works.length ? (
+        <Room>
+          {(w, h) => (
+            <Mosaic
+              items={works.slice(0, 6).map((x) => ({
+                label: x.name,
+                n: x.passed + x.not,
+                note: x.passed + ' of ' + (x.passed + x.not) + ' it passed',
+                short: x.passed + ' of ' + (x.passed + x.not),
+              }))}
+              tone="cool"
+              w={w}
+              h={h}
+            />
+          )}
+        </Room>
+      ) : (
+        <View />
+      ),
       foot: works.length ? (
         <T v="small" tone="muted">
           SOS tools over the last four months. SOS uses this to choose what to suggest.

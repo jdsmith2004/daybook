@@ -21,7 +21,6 @@ export * from './lesson-map';
 export * from './section-art';
 export * from './day';
 export * from './plan';
-export * from './plan-read';
 export * from './miles';
 export * from './journal';
 export * from './journal-entries';

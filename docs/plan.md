@@ -49,18 +49,14 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 3. Calm moves, the wind-down and the words that steady me: fold each into the part it serves on the one page, instead of a Lists tab? Recommended: yes.
 4. My own check-in answers (removing an answer you added): move to Settings? Recommended: yes; it is upkeep, not the plan.
 
-**The owner's pick (November 2, 2026):** "oh i like b but i want them to read it like a lesson and it should have visuals and the first talking and stuff as well like the lessons". So the page is B, and C becomes the way to read it:
+**The owner's pick (November 2, 2026):** first "oh i like b but i want them to read it like a lesson", then "i actualy want just b it should be colored chapters". So My plan is B alone: a night top with the big flame and who I am becoming, then the chapters, each in its own color (When it hits, Why, If I slip, My people, Getting ready), each showing its best line. When it hits shows tonight's two lines (core `planTonight`, shared with Today). A chapter opens full screen in its color, with every line big; tap a line to change it. Read my plan (the lesson-style reading) was built and then taken out on that word.
 
-- **My plan** is B: a night top with the big flame and who I am becoming, then the chapters, each in its own color (When it hits, Why, If I slip, My people), each showing its best line. When it hits shows tonight's two lines (core `planTonight`, shared with Today). A low "Read my plan" button starts the reading.
-- **Read my plan** is a lesson: full-screen cards, one thought each, on the lesson sky that goes from night to dawn, the person's own flame gliding card to card and talking in its cream bubble, a picture on each card, Next low. It walks who I am becoming, tonight's lines, a reason and my note, If I slip and my person, and ends on the dawn.
-- **A chapter** opens full screen in its color, with every line big; tap a line to change it in a sheet of the same color, Add at the bottom.
 - The three smaller questions had no answer, so I took the recommendations: What I learned moves to Learn, the lists go into the chapter they serve (calm moves and the wind-down in When it hits, the words that steady me in Why), and my own check-in answers move to Settings. Each is easy to undo.
 
 **Built on the branch (November 2, 2026), not merged:**
 
-- `app/plan/index.tsx`: the flame's own sky (`FlameSky`, the person's level) with who I am becoming and one true line from the log; then the chapters in their colors (`lib/plan-look.ts`): When it hits with tonight's two lines and the hard hours, Why and If I slip side by side, My people, Getting ready. Read my plan is the one filled button, held low.
+- `app/plan/index.tsx`: the flame's own sky (`FlameSky`, the person's level) with who I am becoming and one true line from the log; then the chapters in their colors (`lib/plan-look.ts`): When it hits with tonight's two lines and the hard hours, Why and If I slip side by side, My people, Getting ready.
 - `app/plan/[part].tsx`: a chapter opened, the page in its color with the cards as a soft glass of it. The editors are the ones that worked before (if-then lines, reasons, the slip steps, the safe person, the lists, the checklists).
-- `app/plan/read.tsx`: Read my plan, built from the lesson's own `Shell`, `Bubble`, `FlameSlot`, `LessonArt` and `Next`; the cards and the flame's words are core `planRead` (tested). Tonight's lines are sun cards.
 - Core `planTonight` is shared with Today. Today merged first, so this branch keeps main's copy; both `test/plan.test.ts` and `test/today-below.test.ts` pass on it. What I learned is `app/learned.tsx`, reached from Learn; my own check-in answers are in Settings. Every old link (`pane`, `sub`, `to`, `fresh`, `add`, `book`, `help/playbook`) lands in the right place.
 - Checked on the web, light and dark, and in a release build on the iPhone 17 Pro simulator: `docs/plan-review/iphone-my-plan.png`, `iphone-read-my-plan.png`.
 

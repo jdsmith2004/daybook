@@ -35,7 +35,6 @@ export function Screen({
   top,
   bare,
   backdrop,
-  foot,
 }: {
   eyebrow?: string;
   title: string;
@@ -61,8 +60,6 @@ export function Screen({
   bare?: boolean;
   /** a picture behind the whole page that stays put while it scrolls (a chapter of My plan is its color) */
   backdrop?: ReactNode;
-  /** the one main button, held low over the page where the thumb is (My plan's Read my plan) */
-  foot?: ReactNode;
 }) {
   const c = useTheme();
   const safe = useSafeAreaInsets();
@@ -102,7 +99,7 @@ export function Screen({
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[
         s.content,
-        { paddingTop: top ? 0 : inset.top + (back ? 8 : 16), paddingBottom: (back ? inset.bottom + 32 : tabRoom(inset.bottom) + 32) + (foot ? 72 : 0) },
+        { paddingTop: top ? 0 : inset.top + (back ? 8 : 16), paddingBottom: back ? inset.bottom + 32 : tabRoom(inset.bottom) + 32 },
       ]}>
       {top ? <View style={s.top}>{top}</View> : null}
       <Appear webOnly style={[s.col, top ? { marginTop: 16 } : null, hidden ? { opacity: 0 } : null]}>
@@ -157,13 +154,6 @@ export function Screen({
       {pull.on && !pull.ios ? <Animated.View style={{ flex: 1, transform: [{ translateY: pull.value }] }}>{page}</Animated.View> : page}
       {bar}
       {pull.on ? <PullDoor pull={pull.value} armed={pull.armed} top={inset.top} /> : null}
-      {foot ? (
-        <View pointerEvents="box-none" style={[s.foot, { bottom: inset.bottom + 12 }]}>
-          <View pointerEvents="box-none" style={s.col}>
-            {foot}
-          </View>
-        </View>
-      ) : null}
       {overlay ? (
         <View pointerEvents="box-none" style={[s.over, { top: inset.top + 8 }, hidden ? { opacity: 0 } : null]}>
           <View pointerEvents="box-none" style={s.col}>
@@ -182,7 +172,6 @@ const s = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   over: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
-  foot: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   back: {
     flexDirection: 'row',
     alignItems: 'center',

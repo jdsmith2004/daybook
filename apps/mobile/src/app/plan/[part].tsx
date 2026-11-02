@@ -375,7 +375,7 @@ function Why({ fresh, add }: { fresh?: string; add?: string }) {
           onSave={set('note')}
         />
         <T v="small" tone="muted">
-          SOS and Read my plan show it to you.
+          SOS and My reasons show it to you first.
         </T>
         <VoiceRecorder />
       </PageSec>

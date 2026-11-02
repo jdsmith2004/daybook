@@ -1,7 +1,7 @@
 /* My plan: the person's own page, to read on a hard night and to change on a calm day. The flame stands big in its sky with
    who I am becoming beside it; under it each part of the plan is a chapter in its own color (lib/plan-look.ts), showing its
    best line, and a tap opens it (plan/[part]). When it hits leads with the two lines that fit tonight (core planTonight, the
-   same two Today shows). Read my plan, held low, reads it all as a short lesson (plan/read).
+   same two Today shows).
    The old tabs still work as links: ?pane=plans&sub=slip opens If I slip, ?pane=learned opens What I have learned. */
 import {
   gameCompute,
@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlameSky } from '@/components/flame-sky';
 import { skyInk } from '@/components/hero';
 import { Screen } from '@/components/screen';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
 import { chapterPalette, CHAPTERS, partFor, type Part } from '@/lib/plan-look';
@@ -120,8 +120,7 @@ export default function MyPlan() {
             ) : null}
           </Pressable>
         </FlameSky>
-      }
-      foot={<Button label="Read my plan" icon="book" onPress={() => router.push('/plan/read')} />}>
+      }>
       {holdsBar ? <StatusBar style={past ? (base.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <Chapter part="urge" onPress={open('urge')}>
         <View style={s.chHead}>

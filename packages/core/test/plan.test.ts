@@ -160,29 +160,3 @@ describe('the lines for tonight', () => {
     ]);
   });
 });
-
-describe('read my plan', () => {
-  const kinds = (cs: core.PlanCard[]) => cs.map((c) => c.k);
-  it('a new person: becoming with hopeful words, two lines, the slip steps and the end', () => {
-    const cs = core.planRead({}, base, {}, '2026-10-01');
-    expect(kinds(cs)).toEqual(['becoming', 'line', 'line', 'reason', 'slip', 'end']);
-    expect(cs[0]).toMatchObject({ h: 'I am becoming someone who is free of this.', proof: '' });
-    expect(cs[1].say).toBe('When an urge hits, this is your move.');
-    expect((cs[4] as { steps: string[] }).steps.length).toBe(3);
-  });
-  it('their own words, a note and their person, with a true line from the log', () => {
-    let st = core.setField(base, 'becoming', '  I keep my word to myself. ');
-    st = core.setField(st, 'note', 'It always passes.');
-    st = core.setField(st, 'safePerson', 'Dan');
-    const d = addEvent({}, '2026-10-12', 'rode', '21:00', {}, 1).days;
-    const cs = core.planRead(d, st, {}, '2026-10-13');
-    expect(kinds(cs)).toEqual(['becoming', 'line', 'line', 'reason', 'note', 'slip', 'person', 'end']);
-    expect(cs[0]).toMatchObject({ h: 'I keep my word to myself.', proof: 'You are someone who rides out urges. 1 time.' });
-    expect(cs[6]).toMatchObject({ name: 'Dan' });
-  });
-  it('shows a different reason each day', () => {
-    const st = core.changeSettings(base, (s) => void (s.reasons = ['One', 'Two']));
-    const r = (k: string) => (core.planRead({}, st, {}, k).find((c) => c.k === 'reason') as { h: string }).h;
-    expect(r('2026-10-13')).not.toBe(r('2026-10-14'));
-  });
-});

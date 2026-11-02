@@ -18,6 +18,8 @@ import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import { whatsNewItems } from '@/lib/whats-new';
 
+/* the flame's own orange, as the big flame draws it, in both themes */
+const FLAME = '#F07A2E';
 const COUNT = ['', '', 'two new things', 'three new things'];
 
 export default function WhatsNew() {
@@ -69,7 +71,7 @@ export default function WhatsNew() {
 }
 
 /* a small drawing of the part each new thing is about, at its own size: the week's seven days, the person's sentence,
-   the turning wheel, or the flame */
+   the turning wheel, the hill of the first chart, the glass bar with SOS, or the flame */
 function ItemArt({ k }: { k: NewArt }) {
   const c = useTheme();
   if (k === 'week')
@@ -91,6 +93,24 @@ function ItemArt({ k }: { k: NewArt }) {
       </Svg>
     );
   }
+  if (k === 'chart')
+    return (
+      <Svg width={40} height={32} viewBox="0 0 40 32">
+        <Path d="M1 30C8 30 10 14 20 12s14 6 19 4v14z" fill={c.mint} opacity={0.35} />
+        <Path d="M1 30C8 30 10 14 20 12s14 6 19 4" stroke={c.mint} strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Path d="M33 14c1 2 3 3 3 5a3 3 0 0 1-6 0c0-1.5 1-2 1.5-3 .5 1 1 1 1.5 1-.3-1 0-2 0-3z" fill={FLAME} />
+      </Svg>
+    );
+  if (k === 'tabs')
+    return (
+      <Svg width={40} height={32} viewBox="0 0 40 32">
+        <Rect x={0} y={10} width={27} height={14} rx={7} fill={c.ink} opacity={0.14} />
+        <Circle cx={7} cy={17} r={2} fill={c.ink} />
+        <Circle cx={13.5} cy={17} r={2} fill={c.ink} opacity={0.4} />
+        <Circle cx={20} cy={17} r={2} fill={c.ink} opacity={0.4} />
+        <Circle cx={34} cy={17} r={6} fill={c.coral} />
+      </Svg>
+    );
   if (k === 'when')
     return (
       <Svg width={40} height={32} viewBox="0 0 40 32">
@@ -103,7 +123,8 @@ function ItemArt({ k }: { k: NewArt }) {
     );
   return (
     <Svg width={40} height={32} viewBox="0 0 40 32">
-      <Path d="M20 2c3 6 10 10 10 18a10 10 0 0 1-20 0c0-5 3-7 4-11 2 3 3 4 4 4-1-4 0-8 2-11z" fill={c.accent} />
+      <Path d="M20 2c3 6 10 10 10 18a10 10 0 0 1-20 0c0-5 3-7 4-11 2 3 3 4 4 4-1-4 0-8 2-11z" fill={FLAME} />
+      <Path d="M20 17c1.5 2.5 4 4 4 7a4 4 0 0 1-8 0c0-2.5 2-4 4-7z" fill="#FFC832" />
     </Svg>
   );
 }

@@ -85,3 +85,14 @@ it('every entry is short, plain and has no contractions, with one to five items'
   expect([...vs].sort((a, b) => core.verCmp(b, a))).toEqual(vs);
   expect(core.verCmp(vs[vs.length - 1], core.NEW_BASE)).toBe(1);
 });
+
+it('an item for the iPhone only gives its place to the next one elsewhere', () => {
+  const l = [{ v: '1.4.0', items: [item('a'), { ...item('glass'), ios: true }, item('c'), item('d')] }];
+  expect(core.whatsNew('1.3.0', '1.4.0', near({ ios: true }), l)).toEqual({ k: 'show', items: [item('a'), { ...item('glass'), ios: true }, item('c')] });
+  expect(core.whatsNew('1.3.0', '1.4.0', near({ ios: false }), l)).toEqual({ k: 'show', items: [item('a'), item('c'), item('d')] });
+});
+
+it('the first entry leads with the home page, the charts and the glass bar', () => {
+  expect(core.newSince(core.NEW_BASE, '1.3.1', core.WHATS_NEW, true).map((x) => x.art)).toEqual(['flame', 'chart', 'tabs']);
+  expect(core.newSince(core.NEW_BASE, '1.3.1', core.WHATS_NEW, false).map((x) => x.art)).toEqual(['flame', 'chart', 'week']);
+});

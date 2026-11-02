@@ -14,10 +14,12 @@ the person came back, and while a page, a sheet, a celebration, Welcome back or 
 skipped: only what is new since the last one seen, newest first, three at most. A build with no entry shows nothing.
 The day-feel question does not come on the same open.
 
-**The words (1.3.1, the owner said yes):** A Sunday review that reads your week. Your plan for next time, in your words.
-When it happened, in a moment. Left out on purpose: the new setup (people updating already did it) and the Obsidian
-journal (not marketed, by the owner's word above). The two lines were tightened after the first picture, so no line ends
-on one word.
+**The words (1.3.1), by the owner's correction:** the first page speaks to people coming from 1.2.1, the version live
+in the store, so it leads with what 1.3.0 changed: the redesigned home page, the new charts and the glass tab bar
+("that's the main stuff i wanna say"). Today, built around your flame. New charts on Pattern. A glass bar at the bottom
+(iPhone only: Android and the web draw their own bar, so there the Sunday review that reads your week takes its place).
+Your plan for next time, in your words, stands next in line. Left out on purpose: the new setup (people updating already did
+it) and the Obsidian journal (not marketed, by the owner's word above).
 
 **The page (`app/whats-new.tsx`):** the person's own flame, big, says "I learned three new things." in its bubble and
 leaps once; the three things rise in under it one by one, each with a small drawing of its part (the week's bars, the
@@ -25,7 +27,7 @@ person's sentence, the turning wheel); Continue at the bottom, and the X. No Not
 
 **The release step:** docs/launch.md, step 5, now says to write the entry for the build's exact version first.
 
-Pictures: `docs/whats-new/web-light.jpg` (web, light), `docs/whats-new/iphone.png` (a release build on the Daybook Craft
+Pictures: `docs/whats-new/web-light.jpg` (web, light, where the Sunday review stands in for the glass bar), `docs/whats-new/iphone.png` (a release build on the Daybook Craft
 simulator, after setting the version seen back to 1.3.0).
 
 **Steps (Opus effort):** rules and tests (medium, done), the page (medium, done), the release step (low, done), the web and

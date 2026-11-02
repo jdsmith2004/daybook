@@ -10,34 +10,37 @@ import { tipQuiet } from './support';
 import type { Days, Settings } from './types';
 
 /** the picture beside an item: the flame by default, or a small drawing of the part it is about */
-export type NewArt = 'flame' | 'week' | 'plan' | 'when';
+export type NewArt = 'flame' | 'chart' | 'tabs' | 'week' | 'plan' | 'when';
 
 export interface NewItem {
   t: string;
   line: string;
   art?: NewArt;
+  /** only on an iPhone (the glass tab bar is Apple's own; Android and the web draw their own bar) */
+  ios?: boolean;
 }
 
-/** newest version first. Each version names what people would notice most, in the order the page shows them. */
+/** newest version first. Each version names what people would notice most, in the order the page shows them: the first three show,
+    and the rest stand in when one is not for this phone. The first entry speaks to people coming from 1.2.1, the version
+    live before it, so it leads with what 1.3.0 changed (the owner, November 2, 2026). */
 export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
   {
     v: '1.3.1',
     items: [
+      { t: 'Today, built around your flame', line: 'Your flame is bigger, in a clear sky, with your next step right under it.', art: 'flame' },
+      { t: 'New charts on Pattern', line: 'One big card at a time: how you are doing, how your days felt, and what helps you.', art: 'chart' },
+      {
+        t: 'A glass bar at the bottom',
+        line: 'The tabs sit on glass now, the way the iPhone draws its own, with SOS in its own circle.',
+        art: 'tabs',
+        ios: true,
+      },
       {
         t: 'A Sunday review that reads your week',
         line: 'It says how your week really went, in plain numbers, and gives one step for next week.',
         art: 'week',
       },
-      {
-        t: 'Your plan for next time, in your words',
-        line: 'After a slip, Rekindle ends on your own sentence, and the flame reminds you of it.',
-        art: 'plan',
-      },
-      {
-        t: 'When it happened, in a moment',
-        line: 'The new day and time picker turns like the clock and reaches back a whole month.',
-        art: 'when',
-      },
+      { t: 'Your plan for next time, in your words', line: 'After a slip, Rekindle ends on your own sentence, and the flame reminds you of it.', art: 'plan' },
     ],
   },
 ];
@@ -59,11 +62,12 @@ export function verCmp(a: string, b: string): number {
 }
 
 /** what was added after `seen`, up to and including `now`: the newest version first, NEW_MAX items at most */
-export function newSince(seen: string, now: string, list = WHATS_NEW): NewItem[] {
+export function newSince(seen: string, now: string, list = WHATS_NEW, ios = true): NewItem[] {
   return [...list]
     .filter((e) => verCmp(e.v, seen) > 0 && verCmp(e.v, now) <= 0)
     .sort((a, b) => verCmp(b.v, a.v))
     .flatMap((e) => e.items)
+    .filter((x) => ios || !x.ios)
     .slice(0, NEW_MAX);
 }
 
@@ -78,6 +82,8 @@ export interface NewNear {
   back: boolean;
   /** something else is on the screen or about to open: a page, a sheet, a celebration, Welcome back, graduation */
   busy: boolean;
+  /** an iPhone (or iPad), where the items marked ios belong */
+  ios?: boolean;
 }
 
 /** what to do on this open: `keep` records the version with nothing shown, `show` opens the page (and records the version
@@ -90,7 +96,7 @@ export function whatsNew(seen: string | null, now: string, near: NewNear, list =
   if (!near.st) return seen === now ? { k: 'none' } : { k: 'keep' };
   const from = seen ?? NEW_BASE;
   if (verCmp(from, now) >= 0) return seen === now ? { k: 'none' } : { k: 'keep' };
-  const items = newSince(from, now, list);
+  const items = newSince(from, now, list, near.ios ?? true);
   if (!items.length) return { k: 'keep' };
   if (near.busy || near.back || newQuiet(near.days, near.st, near.now, near.sos)) return { k: 'wait' };
   return { k: 'show', items };

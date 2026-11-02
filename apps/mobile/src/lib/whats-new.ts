@@ -8,7 +8,7 @@ import { gradInfo, urLastAt, whatsNew, type NewItem } from '@daybook/core';
 import Constants from 'expo-constants';
 import { router, usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { noteSheet, useCelebrating } from '@/components/celebrate';
 import { sheetOnTop } from '@/lib/nav';
@@ -59,7 +59,10 @@ export function useWhatsNew() {
   const st = snap.settings;
   const busy = path !== '/' || celebrating || (!!st && gradInfo(snap.days, st, tk).ready);
   const ver = appVersion();
-  const step = !ready || seen === undefined ? null : whatsNew(seen, ver, { st, days: snap.days, now, sos: urLastAt(sos.mem) ?? null, back, busy });
+  const step =
+    !ready || seen === undefined
+      ? null
+      : whatsNew(seen, ver, { st, days: snap.days, now, sos: urLastAt(sos.mem) ?? null, back, busy, ios: Platform.OS === 'ios' });
   const late = useRef<() => boolean>(() => false);
   late.current = () => Date.now() - openAt > WINDOW || celebrating || sheetOnTop();
 

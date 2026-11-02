@@ -4,7 +4,7 @@
 
 **The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."
 
-**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged, waiting for the owner to see them on the simulator. Nothing else is built. Five questions for the owner are below, and steps 3 to 7 wait on them.
+**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. Five questions for the owner are below, and steps 3 to 7 wait on them.
 
 ### The honest read of the 49 lessons
 
@@ -48,7 +48,7 @@ Strength: Strong means several trials or a meta-analysis; Moderate, a few trials
 
 **The review question goes, all of it.** The learning science does favor spaced recall, but for remembering facts, and what has to stick here is the person's own reason, plan and cue, which that question never touches. Nothing earned depends on it: it gave no points and no record, and it was only ever held in the screen's memory. It comes out of both places, the start of a lesson and the welcome back. If recall comes back at all, it is one form only: "Last week you wrote: phone on the kitchen counter. Did you get to do it?" That is the deed check below, and it is not a quiz.
 
-**The flame already matches.** Every lesson card draws the person's own form at their own level, the same as Today. I looked at all twelve forms on the cover, a question, the sun card and the Done card (`docs/lessons-review/flame-forms-a.png`, `-b`, `-c`). Eleven look good as they are. So there is nothing to build, apart from three small things I found: the Torch's handle runs through the words on the Done card (fixed on the branch); Constellation (level 51) is drawn smaller than the Full Sun before it, on Today as well; and the North Star (level 56) fades into the yellow answer card. The last two are about a year in for most people, so they wait.
+**The flame already matches.** Every lesson card draws the person's own form at their own level, the same as Today. I looked at all twelve forms on the cover, a question, the sun card and the Done card (`docs/lessons-review/flame-forms-a.png`, `-b`, `-c`). So there is nothing to build, and eight of the twelve look good untouched. I found three small things: the Torch's handle and the Beacon's tower run through the words on the Done card, the Beacon only at iPhone size (fixed on the branch; those three pictures are from before the fix); Constellation (level 51) is drawn smaller than the Full Sun before it, on Today as well; and the North Star (level 56) fades into the yellow answer card. The last two are about a year in for most people, so they wait.
 
 **What a good question is here.** Six rules:
 
@@ -120,7 +120,7 @@ Setup needs one small change. The question stays where it is, with the same answ
 
 Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` says for a rebuild.
 
-1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle no longer runs through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
+1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
 2. **Medium.** Rewrite every question to the six rules, keeping the ones listed above. Faith lessons wait for question 1. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves.
 3. **High.** The path, after questions 3 and 4. A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`.
 4. **High.** The deed: a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip.
@@ -130,7 +130,7 @@ Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` sa
 
 ### Not verified
 
-The research agents could not open every source, and those are marked in the files in `docs/lessons-research/`. Numbers for new lessons get read from the source when the lesson is written. Almost all the porn research is on Western men, so the new lessons should not assume a reader's sex. The word counts above (73, 85, 27) are estimates until the steps are written. The flame pictures are from the web build; the fix is checked on the simulator.
+The research agents could not open every source, and those are marked in the files in `docs/lessons-research/`. Numbers for new lessons get read from the source when the lesson is written. Almost all the porn research is on Western men, so the new lessons should not assume a reader's sex. The word counts above (73, 85, 27) are estimates until the steps are written. The twelve forms were looked at on the web build. On the simulator, in a release build, I walked two lessons as someone at level 25: lesson 2 opens on its own first card, and the Beacon is clear of the words. The Torch's fix and the welcome back were seen on the web only, and nothing on Android.
 
 ## New charts on Pattern, one card at a time (the owner, November 1, 2026; on main)
 

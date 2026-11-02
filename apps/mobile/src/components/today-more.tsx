@@ -6,13 +6,15 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { Icon, T } from '@/components/ui';
+import { ReadyLook } from '@/components/today-ready';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
-export function protoDir(): 'a' | 'b' | 'c' | null {
+export type Dir = 'a' | 'b' | 'c' | 'b1' | 'b2' | 'b3';
+export function protoDir(): Dir | null {
   if (typeof window === 'undefined' || !window.location) return null;
-  const m = /[?&]dir=([abc])\b/.exec(window.location.search);
-  return m ? (m[1] as 'a' | 'b' | 'c') : null;
+  const m = /[?&]dir=(a|b[123]?|c)\b/.exec(window.location.search);
+  return m ? (m[1] as Dir) : null;
 }
 
 const sos = () => {
@@ -66,7 +68,7 @@ function Fire({ size, lit }: { size: number; lit: boolean }) {
 }
 
 /* the week as seven flames: lit for a day with no slip, small for the day of a slip (the fire is never out), a spark under each urge ridden out */
-function WeekFlames({ snap, tk, level }: { snap: Snapshot; tk: string; level: number }) {
+export function WeekFlames({ snap, tk, level }: { snap: Snapshot; tk: string; level: number }) {
   const c = useTheme();
   const w = weekOf(snap, tk);
   return (
@@ -94,7 +96,7 @@ function WeekFlames({ snap, tk, level }: { snap: Snapshot; tk: string; level: nu
   );
 }
 
-function weekLine(snap: Snapshot, tk: string) {
+export function weekLine(snap: Snapshot, tk: string) {
   const w = weekOf(snap, tk);
   const clean = w.filter((x) => x.st === 'clean').length;
   const rode = w.reduce((a, x) => a + x.rode, 0);
@@ -222,8 +224,9 @@ function FlameWeek({ snap, tk, level }: { snap: Snapshot; tk: string; level: num
   );
 }
 
-export function TodayMore({ dir, snap, tk, level }: { dir: 'a' | 'b' | 'c'; snap: Snapshot; tk: string; level: number }) {
+export function TodayMore({ dir, snap, tk, level }: { dir: Dir; snap: Snapshot; tk: string; level: number }) {
   if (!snap.settings) return null;
+  if (dir === 'b1' || dir === 'b2' || dir === 'b3') return <ReadyLook look={dir} snap={snap} tk={tk} level={level} />;
   if (dir === 'a') return <Becoming snap={snap} tk={tk} level={level} />;
   if (dir === 'b') return <Ready snap={snap} tk={tk} level={level} />;
   return <FlameWeek snap={snap} tk={tk} level={level} />;

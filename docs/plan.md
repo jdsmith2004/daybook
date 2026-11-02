@@ -6,6 +6,12 @@
 
 **Where it is:** three directions drawn from the real web app with the demo person (a throwaway prototype on branch `claude/gifted-chaum-b1e538`), waiting for the owner to pick one. Nothing is merged. Pictures: `docs/today-review/today-more-options.png` and `docs/today-review/sos-moments.png`.
 
+**The owner, later the same day:** "I like the b idea but i don't like how it looks", and "I also like the motivational quote" (direction A's sentence, "I am free of this." with the first reason). What was wrong with B's look, as I see it: it was a template (a plain card, numbered outline circles, a big salmon pill and a centered link) that read like a form, had none of the app's skies or shapes, and its button fought the yellow lesson card. Three new looks, each opening with the sentence, then the plan, then the week (`docs/today-review/today-ready-looks.png`):
+
+1. **Words first.** No card: the sentence big, the first move as the answer to "When an urge comes", the others as one quiet line, and the round SOS (the tab bar's own, with its lip) beside one line.
+2. **Tonight's sky (recommended).** The sentence sits in a small sky of the evening, 6 PM to 2 AM, with the hard hours glowing in it and now marked. Under it, "When an urge comes" with the round SOS at its side, the three moves with a small flame each, and the practice link. The gradient carries the time of day, so it is not decoration, and it is the look with the most life.
+3. **Moves as shapes.** Each move is a shape to touch (the app's cookie, clover and flower), and any of them starts SOS, then a row with the round SOS. The most playful, but a person's moves are their own words, often long, and they end up in small type.
+
 **Why Today feels empty.** Today is built to fit one screen: the sky takes every point the rest does not need (`lib/today-size.ts`), and nothing sits under Your day. So there is nothing to scroll to, and on a calm day the page is the flame, two buttons and three stops. The fix keeps all of that exactly as it is, the flame the same size, and adds a part below it that the page scrolls to.
 
 **What could move onto Today, by the one test (does it help the person become someone free of the habit, and is the next step still obvious):**

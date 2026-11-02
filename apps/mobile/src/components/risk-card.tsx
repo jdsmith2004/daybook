@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { buzz } from '@/lib/feel';
+import { SCENE } from '@/lib/scene-proto';
 import { font, useTheme } from '@/lib/theme';
 
 export function HardLine({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
@@ -14,12 +15,14 @@ export function HardLine({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
   const st = snap.settings;
   const r = st ? riskDay(snap.days, st, tk, now) : null;
   if (!r || (r.phase !== 'soon' && r.phase !== 'during')) return null;
+  /* PROTOTYPE: in the scene mockups the scene says it, on its ground */
+  if (SCENE && r.phase === 'during') return null;
   const say =
     r.phase === 'soon' ? 'Your hard hours start at ' + riskStartLabel(r.win.start) + '.' : 'You are in your hard hours, until ' + talkClock(r.b) + '.';
   return (
     <View style={s.row}>
       <Text style={[s.t, { color: c.muted }]}>{say}</Text>
-      {r.phase === 'during' ? (
+      {r.phase === 'during' && SCENE ? null : r.phase === 'during' ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open SOS"

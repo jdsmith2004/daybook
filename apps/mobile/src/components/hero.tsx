@@ -8,7 +8,7 @@
    the app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills to
    where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
    Under the number, the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation. */
-import { CHEERS, emblemScene, formOfLevel, heroNumber, type GameState, type Snapshot } from '@daybook/core';
+import { CHEERS, emblemScene, formOfLevel, heroNumber, riskDay, riskStartLabel, talkClock, type GameState, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -18,7 +18,8 @@ import { Text } from '@/components/text';
 
 /** the words on the flame's picture stay close to their size: the picture does not grow with the phone's text size */
 const ON_ART = 1.15;
-import { SvgXml } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop, SvgXml } from 'react-native-svg';
+import { LAY2, SCENE, skyAt } from '@/lib/scene-proto';
 
 import { BigFlame } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
@@ -43,6 +44,7 @@ export function Hero({
   flame,
   title,
   action,
+  ground,
 }: {
   g: GameState;
   snap: Snapshot;
@@ -55,8 +57,10 @@ export function Hero({
   title: string;
   /** a small button at the top right */
   action?: React.ReactNode;
+  /** PROTOTYPE: what stands on the scene's ground under the number */
+  ground?: React.ReactNode;
 }) {
-  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} />;
+  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} ground={ground} />;
 }
 
 /** the colors of the words on the sky at this level */
@@ -102,6 +106,7 @@ function Sky({
   flame,
   title,
   action,
+  ground,
 }: {
   g: GameState;
   snap: Snapshot;
@@ -111,6 +116,7 @@ function Sky({
   flame: number;
   title: string;
   action?: React.ReactNode;
+  ground?: React.ReactNode;
 }) {
   const c = useTheme();
   const { say } = useStore();
@@ -122,7 +128,12 @@ function Sky({
   const FLAME = flame;
   /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock. The tall, narrow forms stand
      lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
-  const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
+  const LIFT = LAY2 && ground ? 64 : 0;
+  const FLAME_TOP = SCENE_H - FLAME - FOOT - LIFT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
+  /* PROTOTYPE: the scene is the real day, and it glows in the hard hours */
+  const ds = SCENE ? skyAt(new Date(now).getHours()) : null;
+  const risk = SCENE && snap.settings ? riskDay(snap.days, snap.settings, tk, now) : null;
+  const hard = risk && (risk.phase === 'soon' || risk.phase === 'during') ? risk.phase : null;
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const { light, ink, soft, glass } = skyInk(lvl.n);
   /* the sky is alive: three slow twinkles shared by the stars */
@@ -187,10 +198,22 @@ function Sky({
     <View style={[s.sky, { height: SCENE_H }]}>
       {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
       <LinearGradient
-        colors={sc.sky}
-        locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
+        colors={ds ? ds.sky : sc.sky}
+        locations={ds ? ds.at : (sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number])}
         style={StyleSheet.absoluteFill}
       />
+      {hard ? (
+        <Svg width="100%" height={SCENE_H} style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Defs>
+            <RadialGradient id="hardglow" cx="50%" cy={SCENE_H - FOOT - LIFT - 10} rx="75%" ry={SCENE_H * 0.5} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FFB45A" stopOpacity={hard === 'during' ? 0.8 : 0.4} />
+              <Stop offset="0.5" stopColor="#E8606A" stopOpacity={hard === 'during' ? 0.3 : 0.14} />
+              <Stop offset="1" stopColor="#E8606A" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height={SCENE_H} fill="url(#hardglow)" />
+        </Svg>
+      ) : null}
       {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
       <Pressable
         accessibilityRole="button"
@@ -200,7 +223,7 @@ function Sky({
           router.push('/miles');
         }}
         style={StyleSheet.absoluteFill}>
-        {sc.stars
+        {(ds ? ds.stars : sc.stars)
           ? STARS.map(([x, y, r], i) => (
               <Animated.View
                 key={i}
@@ -244,7 +267,7 @@ function Sky({
           accessibilityRole="button"
           accessibilityLabel={h.say + ' Opens your days.'}
           onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
-          style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
+          style={({ pressed }) => [s.num, { bottom: 18 + LIFT }, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
             {h.eb}
           </Text>
@@ -269,21 +292,45 @@ function Sky({
           ) : null}
         </Pressable>
       ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
-        onPress={() => router.push('/points')}
-        style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
-        <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
-          Level {lvl.n} · {lvl.name} ›
-        </Text>
-        {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
-        {lvl.next ? (
+      {hard === 'during' && risk ? (
+        <View style={[s.lv, { bottom: 18 + LIFT, gap: 6 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
-            {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+            Hard hours, until {talkClock(risk.b)}
           </Text>
-        ) : null}
-      </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Feeling an urge? Open SOS"
+            onPress={() => {
+              buzz('tap');
+              router.push('/sos');
+            }}
+            style={({ pressed }) => [s.sosGo, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.sosGoT, { color: c.sosInk }]}>
+              Feeling an urge?
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
+          onPress={() => router.push('/points')}
+          style={({ pressed }) => [s.lv, { bottom: 18 + LIFT }, pressed && { opacity: 0.8 }]}>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
+            Level {lvl.n} · {lvl.name} ›
+          </Text>
+          {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
+          {hard === 'soon' && risk ? (
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
+              Hard hours from {riskStartLabel(risk.win.start)}
+            </Text>
+          ) : lvl.next ? (
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
+              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+            </Text>
+          ) : null}
+        </Pressable>
+      )}
       {grew ? (
         <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
           <Icon name="star" size={13} color={ink} />
@@ -292,6 +339,7 @@ function Sky({
           </Text>
         </View>
       ) : null}
+      {LAY2 && ground ? <View style={s.ground}>{ground}</View> : null}
       <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
         <Animated.View
           style={{ width: bar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }), height: '100%', backgroundColor: c.sun }}
@@ -316,6 +364,9 @@ const s = StyleSheet.create({
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
+  sosGo: { minHeight: 44, paddingHorizontal: 18, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  sosGoT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  ground: { position: 'absolute', left: 16, right: 16, bottom: 18 },
   /* just over the level it belongs to, clear of the flame's face */
   grew: {
     position: 'absolute',

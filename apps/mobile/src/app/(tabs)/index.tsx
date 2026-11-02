@@ -61,6 +61,8 @@ import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { protoDir, TodayMore } from '@/components/today-more';
+import { LAY2 } from '@/lib/scene-proto';
+import { useWindowDimensions } from 'react-native';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -246,6 +248,7 @@ export default function Today() {
   const scrolled = useRef(0);
   const sizeFor = useTodaySize();
   const lead = useSosLeadOn();
+  const { height: winH, width: winW } = useWindowDimensions();
 
   if (!st || !g) return <Welcome />;
   const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
@@ -268,7 +271,9 @@ export default function Today() {
   const calm = pick.card.k === 'calm';
   /* the day is done: no box, a few words over the line, so all of it shows */
   const done = pick.card.k === 'done';
-  const size = sizeFor((slipLine ? NOTE_ROOM : 0) + (lead ? LEAD_ROOM : 0));
+  const size0 = sizeFor((slipLine ? NOTE_ROOM : 0) + (lead ? LEAD_ROOM : 0));
+  /* PROTOTYPE: the scene fills the screen above the lesson, with the care buttons on its ground */
+  const size = LAY2 ? { sky: winH - 250, flame: Math.min(winW, winH - 250 - 200) } : size0;
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n);
   return (
@@ -296,12 +301,13 @@ export default function Today() {
             sky={size.sky}
             flame={size.flame}
             title={title}
+            ground={LAY2 ? <LogLink /> : undefined}
             action={
               tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
             }
           />
         }>
-        <LogLink />
+        {LAY2 ? null : <LogLink />}
         <NotifyBanner />
         <WaitingPlan snap={snap} tk={tk} now={now} />
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}

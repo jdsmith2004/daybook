@@ -55,8 +55,13 @@ function landOf(xml: string): string | null {
     if (Number(m[1]) >= 90) parts.push(`<rect x="-1000" y="${m[1]}" width="2120" height="400" fill="${m[2]}"/>`);
   return parts.length ? parts.join('') : null;
 }
+/** PROTOTYPE (Today's scene mockups, docs/plan.md): when set, the drawing's own sky is left clear, so the page's sky shows through */
+export const protoSky: { clear: boolean; land: string[] | null } = { clear: false, land: null };
+
 export function emblemScene(level: number, classes = false): EmblemScene {
   let xml = emblemXml(level, false, classes);
+  if (protoSky.clear)
+    xml = xml.replace(/(id="em\d+sk"[^>]*>)((?:<stop[^>]*\/>)+)/, (_m, a: string, b: string) => a + b.replace(/<stop /g, '<stop stop-opacity="0" '));
   const sk = /id="em\d+sk"[^>]*>((?:<stop[^>]*\/>)+)/.exec(xml);
   const stops = sk ? [...sk[1].matchAll(/stop-color="(#[0-9A-Fa-f]{6})"/g)].map((m) => m[1]) : [];
   const offs = sk ? [...sk[1].matchAll(/offset="([\d.]+)"/g)].map((m) => Number(m[1])) : [];
@@ -75,7 +80,15 @@ export function emblemScene(level: number, classes = false): EmblemScene {
       )
       .replace(/<circle cx="60" cy="60" r="5\d(?:\.\d+)?" fill="none"[^>]*\/>/g, '');
   }
-  const land = landOf(xml);
+  let land = landOf(xml);
+  if (protoSky.land && land) {
+    const fills = [...new Set([...land.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((m) => m[1]))];
+    fills.forEach((f, i) => {
+      const to = protoSky.land![Math.min(i, protoSky.land!.length - 1)];
+      xml = xml.split(f).join(to);
+      land = land!.split(f).join(to);
+    });
+  }
   /* the words sit on the frontmost ground, and take whichever ink reads best on it (dark ink is #14112E) */
   const ground = land ? [...land.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].pop()![1] : null;
   return { xml, sky, at, ground, land, ink: luminance(ground || sky[2]) > 0.19 ? 'dark' : 'light', stars: luminance(sky[0]) < 0.08 };

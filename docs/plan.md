@@ -25,6 +25,18 @@
 
 **The owner's fourth look:** the evening sky is better than one sky, "but still a no", and the gap under Change was too big. Tightened (`docs/today-review/today-sky-tightened.png`): the gap is the page's normal 16, the card's corners are 20 like the others, SOS in the scene is one line and one red "Open SOS" button (no subtitle, no second round SOS), and the week is one sentence over seven letter squares. Waiting on what still reads as a no.
 
+**A new idea, by the owner's wish for more mockups (the main session's idea, November 2, 2026):** the owner said no to every block under the flame ("it doesn't feel like it adds, it's just tacky"); the one thing they liked was the hard-hours sky. So nothing is added below the flame: the flame's own scene becomes the real day. Seven pictures from the web app with a throwaway prototype (`?scene=1`), in `docs/today-review/today-scene-day.png` and `today-scene-night.png`:
+
+1. **Morning**: a dawn sky and green hills, nothing about urges.
+2. **Afternoon**: a plain blue day.
+3. **Before the hard hours**: the evening darkens and warms at the horizon, and the level's small line says "Hard hours from 9 PM".
+4. **In the hard hours**: the night glows behind the flame, and on the ground beside it "Hard hours, until 11:00 PM" over a red "Feeling an urge?" button that opens SOS. The line under the lesson steps aside, since the scene says it.
+5. **In them, all on the ground**: the scene fills the screen above the lesson, with Already happened and Planning a slip? on its ground under the flame.
+6. **No pattern yet**: before the hard hours are known, just the night: no glow, no button.
+7. **The morning after a slip**: the same sunrise as any morning, the flame as big.
+
+Open in all of them: the flame's own forms bring their own hills, which this prototype recolors for the day, so a real build needs day and night colors for each form's land; and the light theme is not drawn.
+
 **Why Today feels empty.** Today is built to fit one screen: the sky takes every point the rest does not need (`lib/today-size.ts`), and nothing sits under Your day. So there is nothing to scroll to, and on a calm day the page is the flame, two buttons and three stops. The fix keeps all of that exactly as it is, the flame the same size, and adds a part below it that the page scrolls to.
 
 **What could move onto Today, by the one test (does it help the person become someone free of the habit, and is the next step still obvious):**

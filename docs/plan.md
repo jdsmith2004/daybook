@@ -27,6 +27,13 @@ account). Apple's guidelines say nothing against a required setup that asks for 
   privacy page and feedback stay open; closing SOS brings setup back.
 - Fixed on the way: Rekindle's own-trigger save made a person look set up before setup; the setup lost its place after a back gesture.
 
+**After the owner's first look (November 2):** setup suggests the tracking week to everyone except "Take back my nights" (which still
+starts with nights); "Quit, starting tomorrow" stays one tap away, and how days count is unchanged (gentle, or step down when it is daily).
+The screens-off time and the check-in time are set on Rekindle's hour, minute and AM/PM wheels (`ClockWheels` in `components/when.tsx`),
+in five-minute steps, with no 24-hour typing. To share the wheels, `claude/rekindle-plan-when` is merged into this branch, so merging
+this branch to main brings Rekindle's Next time page and day and time control with it: merge Rekindle first (or both together, once the
+owner has seen both).
+
 **Not done:** the account and reminder pages show only on a phone (not checked on the web).
 
 **The rest of the app against the lesson look (an audit of every main screen, light and dark, November 2).** Nothing small was worth

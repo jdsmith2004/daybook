@@ -18,7 +18,8 @@ import {
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,7 +28,7 @@ import { skyInk } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useBackLabel, useOverModal } from '@/lib/nav';
+import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
 import { chapterPalette, CHAPTERS, partFor, type Part } from '@/lib/plan-look';
 import { useStore } from '@/lib/store';
 import { font, PaletteOverride, useTheme } from '@/lib/theme';
@@ -39,6 +40,10 @@ export default function MyPlan() {
   const inset = useSafeAreaInsets();
   const over = useOverModal();
   const backLabel = useBackLabel('More');
+  const holdsBar = useHoldsBar();
+  const base = useTheme();
+  /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
+  const [past, setPast] = useState(false);
   const ask = partFor(params.pane, params.sub, params.to, params.fresh);
   /* an old link to one of the tabs opens its chapter over this page, so Back lands here */
   const went = useRef(false);
@@ -80,6 +85,9 @@ export default function MyPlan() {
     <Screen
       title="My plan"
       bare
+      onScroll={(y) => {
+        if (y > sky - 60 !== past) setPast(y > sky - 60);
+      }}
       top={
         <FlameSky level={level} height={sky} flame={flame} foot={10} right={-flame * 0.16}>
           <View style={[s.head, { top: top + 4 }]} pointerEvents="box-none">
@@ -114,6 +122,7 @@ export default function MyPlan() {
         </FlameSky>
       }
       foot={<Button label="Read my plan" icon="book" onPress={() => router.push('/plan/read')} />}>
+      {holdsBar ? <StatusBar style={past ? (base.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <Chapter part="urge" onPress={open('urge')}>
         <View style={s.chHead}>
           <T style={s.chTitle}>When it hits</T>

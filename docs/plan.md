@@ -20,7 +20,7 @@ arc" with the plan in bubbles, and asked that it say hard hours. What is built:
 
 Earns and grows: nothing here is locked or asks for anything; it makes the free side feel generous and makes Today worth opening in
 the evening. My plan itself is being redesigned in its own session; it may use `planTonight` too. Picture:
-docs/today-review/today-built.png. Light theme checked. Waiting: the owner sees a release build on the simulator, then merge.
+docs/today-review/today-built.png. Light theme checked. Merged November 2, 2026, once the owner had seen it on the simulator.
 
 ## The Sunday review fits the week (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
 

@@ -34,6 +34,75 @@ simulator, after setting the version seen back to 1.3.0).
 simulator look (done). Merged once the owner had seen it. The entry is numbered 1.3.1: if the next build is another number,
 the entry is renamed with it. Check main again before merging, in case Today or the lessons land first and earn a place.
 
+## The end of a lesson: a real celebration, then the path (the owner, November 2, 2026; planned, not built)
+
+The owner: "instead of forcing them into the next lesson after they finish have a big celebration genuinely make it really nice and satisfying (research how duolingo does this and use them heavily for inspiration) haptics, visuals movement etc... then it should drop them in the lessons screen and move them to the next lesson and they can press start if they'd like exactly like duoling". The research is in the side-session notes folder (lesson-finish-research.md). No source gave Duolingo's exact timings, sounds or haptics, so the timings below are a starting point to tune on a phone.
+
+**What Duolingo does:** "Lesson complete!" with three stat cards that pop in one after another while their numbers count up, a burst, and a full-width Continue at the bottom. On the first lesson of the day the streak screen follows: a full-screen flame and a counter ticking up. Then the path, with the finished node turned gold and the next one bobbing with a Start bubble; a tap opens a small card with Start. Its sound team treats sound, haptics and motion as one instrument played together. Duolingo also chains daily goal, league and chest screens, which people find tiring; Daybook leaves that out.
+
+**The sequence for Daybook** (about 6 seconds if watched; any tap moves on; nothing moves on by itself):
+
+1. The last card fades out over a warm sky, with one light haptic.
+2. The flame alone, big and centered, breathes in and glows, with a soft chime: "Lesson done." and one line in the flame's voice about who the person is becoming.
+3. The lessons-this-week ring sweeps to its new fill, one tick haptic for each part, a fuller one and a bloom if it closes; the points roll up. A new level is the one long, rare moment: the flame grows into its next form.
+4. One small rise of embers (no confetti rain). A badge, if one was earned, slides up as one card.
+5. Continue fades in, full width, at the bottom.
+6. Continue lands on Learn with the path already at the next lesson: the finished lesson fills in with a small pop and a light haptic, the next one breathes, and a Start bubble shows. A tap on it opens its card with Start. Leaving is fine.
+
+**Guardrails:** Reduce Motion gets fades only; no sound on a silent phone; a quieter version on the day of a slip; no "come back tomorrow" pressure, no streak-loss words, no tip or account ask in this flow, no random prizes. It reuses the celebration host, the week ring, points and levels.
+
+**Steps** (effort): 1. Map the lesson's finish, the celebration host and the Learn path today (low, a subagent). 2. The celebration screen with motion, haptics and sound (high: it is the peak of the app's daily loop). 3. Landing on Learn at the next lesson, the fill and the Start bubble (high). 4. Check on the iPhone simulator at real speed, Reduce Motion and the short iPhone, and show the owner a release build (medium).
+
+## My plan, rebuilt from the ground up (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
+
+The owner: "our goals and plan screen i don't like i think it needs a whole session and alot of thought to make it better use the rest of the app (onboarding, lessons, journal, how we feel) as inspiration". They like gradients, color and rich themes.
+
+**The purpose.** My plan is the page a person reads on a hard night, and it helps them not slip; on a calm day it is where they rehearse and change it. It also says who they are becoming, so every visit grows that identity. Today it reads like a settings list: four tabs (Why, Plans, Lists, Learned), the same heading-and-white-card on every part, twelve if-then lines given equal weight, and the flame nowhere on it.
+
+**What the research supports** (full notes in the side-session notes folder, plan-research-science.md and plan-research-design.md):
+
+- If-then plans work (Gollwitzer and Sheeran 2006, d = .65 over 94 tests), less strongly for stopping a habit than starting one (Adriaanse 2011). They work because the cue is specific and the plan lives in memory, so the page's real job is rehearsal on calm days and a short read on hard ones.
+- Craving narrows attention: in a hot moment show one or two lines, not twelve. Pick them by the hour (the person's hard hours), keep the rest one tap away. That fewer lines work better is reasoning, not a measured result.
+- Identity in "I am" form, backed by one true line from the person's own log (identity grows from acts; "I do not" beats "I cannot").
+- The person's own reasons, shown big, with their own words; generic reasons do less.
+- A short, calm slip plan that ends in action and kindness is what fights the "I blew it" spiral (Marlatt's abstinence violation effect).
+- From How We Feel, Headspace and Duolingo: one sentence huge on a living color field; the mascot holds the page; one color per meaning; tap the sentence to change it, in a sheet of the same color; nothing scored or counted down. Quit-porn apps keep their "why" pages as plain lists, so a beautiful one is open ground.
+
+**Three directions** (mockups from the real flame, not the app yet):
+
+- **A. One sky, read like a letter** (`docs/plan-review/a-one-sky.png`). One page on a sky that follows the clock and warms from night to dawn as you scroll, like a lesson. The flame stands big at the top with who you are becoming and one proof line from the log; under it, the two lines for this hour ("Tonight, 10 PM to 1 AM"), then All my lines. Below: Why I am doing this (reasons in big type, the note in the flame's cream bubble with the voice note), If I slip, my safe person, the words that steady me, calm moves and the wind-down, and at the end Getting ready (the safety net and next small steps). No tabs, no cards; tap a sentence and it opens in a sheet.
+- **B. Colored chapters** (`docs/plan-review/b-colored-chapters.png`). A night hero with the flame and the becoming line, then each part as a chapter in its own color (When it hits ember and biggest, Why gold, If I slip sea green, My people rose), each showing its best line; tap one and it opens full screen in its color. The most color, but it is a stack of gradient cards, which "The look" warns against, and the flame shrinks to a corner.
+- **C. Read it like a lesson** (`docs/plan-review/c-read-like-a-lesson.png`). My plan opens as a short deck of full-screen cards on the lesson sky, one thought each, with the flame gliding card to card; "Change my plan" opens an edit page. Best for the hot moment, but the deck is the lesson's pattern again (sameness) and editing lives on a second, plainer page.
+
+**Recommendation: A**, with B's colors: each part keeps its own color on the sky (If in sun, then in mint, slip numbers in sun, people on the rose of the dawn) and its sheet takes that color. It is one page that is both the hard-night read and the place to change things, the flame is the biggest thing on it, and a sky that turns to dawn as you read is a picture of the point of the page. By day the sky is Today's day sky and the label names the next hard hours; with no hard hours known yet it shows the first two lines.
+
+**Questions for the owner** (each with a recommendation):
+
+1. Which direction? Recommended: A.
+2. What I learned (finished lessons' takeaways and the checkpoint writing): move it to Learn, where it is made? Recommended: yes; old links that open it go there.
+3. Calm moves, the wind-down and the words that steady me: fold each into the part it serves on the one page, instead of a Lists tab? Recommended: yes.
+4. My own check-in answers (removing an answer you added): move to Settings? Recommended: yes; it is upkeep, not the plan.
+
+**The owner's pick (November 2, 2026):** first "oh i like b but i want them to read it like a lesson", then "i actualy want just b it should be colored chapters". So My plan is B alone: a night top with the big flame and who I am becoming, then the chapters, each in its own color (When it hits, Why, If I slip, My people, Getting ready), each showing its best line. When it hits shows tonight's two lines (core `planTonight`, shared with Today). A chapter opens full screen in its color, with every line big; tap a line to change it. Read my plan (the lesson-style reading) was built and then taken out on that word.
+
+- The three smaller questions had no answer, so I took the recommendations: What I learned moves to Learn, the lists go into the chapter they serve (calm moves and the wind-down in When it hits, the words that steady me in Why), and my own check-in answers move to Settings. Each is easy to undo.
+
+**Built and merged (November 2, 2026):**
+
+- `app/plan/index.tsx`: the flame's own sky (`FlameSky`, the person's level) with who I am becoming and one true line from the log; then the chapters in their colors (`lib/plan-look.ts`): When it hits with tonight's two lines and the hard hours, Why and If I slip side by side, My people, Getting ready.
+- `app/plan/[part].tsx`: a chapter opened, the page in its color with the cards as a soft glass of it. The editors are the ones that worked before (if-then lines, reasons, the slip steps, the safe person, the lists, the checklists).
+- Core `planTonight` is shared with Today. Today merged first, so this branch keeps main's copy; both `test/plan.test.ts` and `test/today-below.test.ts` pass on it. What I learned is `app/learned.tsx`, reached from Learn; my own check-in answers are in Settings. Every old link (`pane`, `sub`, `to`, `fresh`, `add`, `book`, `help/playbook`) lands in the right place.
+- Checked on the web, light and dark, and in a release build on the iPhone 17 Pro simulator: `docs/plan-review/iphone-my-plan.png`.
+
+**Data:** nothing in the settings changes shape. `plan` stays a list of `{ when, then }`, and `reasons`, `becoming`, `why`, `goal`, `loop`, `rule`, `note`, `slipPlan`, `safety`, `help`, `menu`, `wind` and `words` stay as they are, so no `normSettings` change. The "lines for tonight" pick should be one core function shared with Today, which shows the same two lines.
+
+**Steps once the owner picks** (effort):
+
+1. Core: the lines-for-now pick and the proof line, with tests (medium).
+2. The page: sky, flame, becoming, tonight's lines, the parts in order, sheets to change each part (medium).
+3. Moves: Learned to Learn and own answers to Settings, with every old link (`pane`, `sub`, `to`, `fresh`, `add`) still landing in the right place (medium).
+4. Check on the web and the iOS simulator in light, dark, by day and night, Reduce Motion and large text; craft checklist on pictures; a release build for the owner (medium).
+
 ## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
 
 The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on

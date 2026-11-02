@@ -129,6 +129,8 @@ const NAMES: Record<string, string> = {
   learn: 'Learn',
   more: 'More',
   plan: 'My plan',
+  'plan/index': 'My plan',
+  learned: 'Back',
   settings: 'Settings',
   miles: 'Milestones',
   reasons: 'My reasons',

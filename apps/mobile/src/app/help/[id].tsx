@@ -36,7 +36,7 @@ const urgePlan = () => router.push({ pathname: '/plan', params: { pane: 'plans',
 export default function HelpPageRoute() {
   const { id, sub } = useLocalSearchParams<{ id: string; sub?: string }>();
   if (id === 'plan') return <Redirect href={{ pathname: '/plan', params: { pane: 'plans', ...(sub ? { sub } : {}) } }} />;
-  if (id === 'playbook') return <Redirect href={{ pathname: '/plan', params: { pane: 'learned' } }} />;
+  if (id === 'playbook') return <Redirect href="/learned" />;
   if (id === 'sources') return <Sources />;
   if (!(id in HELP_PAGES)) return <Redirect href="/help" />;
   const pg = HELP_PAGES[id as HelpPage];

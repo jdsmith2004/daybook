@@ -1,5 +1,50 @@
 # What is planned next
 
+## Setup as good as a lesson, and nothing around it (the owner, November 2, 2026; on branch setup-like-lessons, not merged)
+
+**What the owner asked for:** setup should be as good an experience as the lessons: the flame talking and coaching, the constant
+movement, the same look. A person who forces their way past it should be blocked from everything until it is done.
+
+**What the owner decided:** the block leaves SOS open (never lock care); setup keeps every page and question, since it is "a really nice
+combo of learning and questions", and only the design changes; the flame says "I", sparingly. Work at Opus medium, all of it.
+
+**What the research held up** (two cheap agents, November 2): nothing proves a long setup hurts if every screen answers the person (Finch
+and Noom run 30 or more screens; a Finch critique is that later questions never reflect earlier ones). If-then plans have the best evidence
+(d = .65 over 94 tests). The account ask belongs after value (Duolingo's sign-up moved later, about 20% more daily users, by their own
+account). Apple's guidelines say nothing against a required setup that asks for no login and lets every question be skipped (5.1.1 v and x).
+
+**What was built (medium):**
+
+- The lesson player's frame, progress line, question and answers moved to `components/lesson-parts.tsx`; the lesson and the setup both use
+  them. Setup is one sky from night to day across its three acts, one flame that glides from page to page, a dash for each act at the top.
+- The flame talks: what the small line under a question used to say is now its bubble, in its own voice (core `obSay`), and it answers
+  every one-tap pick (core `obReply`: aim, years, faith, tried). Picks on those pages no longer move on by themselves, so the answer can be
+  read; the five self-check statements still do.
+- Answers are the lesson's paper, green when picked. The hours are the violet card; the kind word after the self-check, the slip page and
+  the finish are the sun. The finish uses the same flame, at its biggest.
+- Before setup there are no tabs: the page before setup is the setup's night sky with the flame, Keep going (or Start setup), sign in, a
+  backup, and SOS. Any other page goes back to it (`SetupGate`). SOS, its tools, Talk it through, Rekindle, good night, signing in, the
+  privacy page and feedback stay open; closing SOS brings setup back.
+- Fixed on the way: Rekindle's own-trigger save made a person look set up before setup; the setup lost its place after a back gesture.
+
+**Not done:** the account and reminder pages show only on a phone (not checked on the web).
+
+**The rest of the app against the lesson look (an audit of every main screen, light and dark, November 2).** Nothing small was worth
+changing in this work: the small items the audit raised were either by design (the review's "tap the right side" line explains something
+the page cannot show) or already fine (the wind-down's quiet button). The real gap is one structural thing, for the owner to decide:
+the full-screen flows still run on `SceneFrame` with the older pastel skies, no talking flame and their own answer cards, while lessons and
+setup now share `lesson-parts`. In order of how much it shows:
+
+1. **The evening check-in** (`app/checkin.tsx`): a pastel sky with no flame at all; the 0 to 10 page is an empty dashed circle until the
+   slider moves. The flame could ask the question in its bubble, on the lesson sky. _Medium._
+2. **Talk it through and Already happened** (`app/talk.tsx`, `app/log.tsx`, `ChoiceRows` in `components/slip.tsx`): white cards with an icon
+   in a shape and an empty checkbox, not the paper answers; the flame is a small medallion. The Rekindle session is changing these pages
+   now, so this waits for it. _Medium, after that work lands._
+3. **The Sunday review start** (`app/review.tsx`): a small flame in a circle on a pastel sky. _Medium._
+4. **Points, Growth and a badge** (`app/points.tsx`, `app/growth.tsx`, `app/badge/[id].tsx`): the flame shrunk to a medallion on cream, the
+   opposite of "the flame gets bigger". _Medium._
+5. **The wind-down** is already a night sky with a big flame; unifying its sky with the lesson sky is optional. _Low priority._
+
 ## New charts on Pattern, one card at a time (the owner, November 1, 2026; on main)
 
 The owner asked for new charts, with How We Feel's insights page as inspiration for the look and not something to copy, then asked for research: are these good and worth it, or are they shoved down people's throats? Then, looking at them: the goal is to see "if I'm getting better, if I'm getting worse, how I'm doing, if I'm stable, and to inspire me", but not every chart has to show a trend, and "I just don't think they look as good as they could". So there were three rounds of research: whether charts help people change, how accurately each form reads, and how the books and the best apps make a chart look good. Twelve cards became at most eight, and six for most people.

@@ -395,14 +395,20 @@ export default function LessonScreen() {
               <LenBtn
                 on={pref === 'q'}
                 title="Quick"
-                sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+                sub={L.v === 3 ? 'The turn, what to do, one check' : L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
                 mins="1–2 min"
                 onPress={() => start('q')}
               />
               <LenBtn
                 on={pref !== 'q'}
                 title="Full"
-                sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
+                sub={
+                  L.v === 3
+                    ? 'Adds a question and what is behind the turn'
+                    : L.v === 2
+                      ? 'Adds a guess and the science behind it'
+                      : 'Adds the evidence and why it works'
+                }
                 mins="3–5 min"
                 onPress={() => start('f')}
               />

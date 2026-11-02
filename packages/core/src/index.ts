@@ -51,6 +51,7 @@ export * from './pattern-offer';
 export * from './sunday';
 export * from './when';
 export * from './sunday-story';
+export * from './sunday-read';
 export * from './calendar';
 export * from './hero';
 export * from './week';

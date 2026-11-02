@@ -73,6 +73,59 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 3. Moves: Learned to Learn and own answers to Settings, with every old link (`pane`, `sub`, `to`, `fresh`, `add`) still landing in the right place (medium).
 4. Check on the web and the iOS simulator in light, dark, by day and night, Reduce Motion and large text; craft checklist on pictures; a release build for the owner (medium).
 
+## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
+
+The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on
+`claude/gifted-chaum-b1e538`, docs/today-review there), the owner picked all three of these, then the Tonight look "hours inside the
+arc" with the plan in bubbles, and asked that it say hard hours. What is built:
+
+- **Today so far:** each entry logged today, with a shape like a badge (mint scallop and a wave for an urge ridden out). It opens the
+  entry. "1 logged today" left the quiet line under Your day, since this shows it.
+- **Tonight** (`components/tonight-card.tsx`): a dusk card that warms to an ember, a night card in both themes. The hard hours sit
+  inside a small arc of the evening (6 PM to 2 AM), gold with a glow, a dot for now, "Hard hours · in an hour" or "· now" over them.
+  Under it the two lines of the urge plan that fit tonight (core `planTonight`: the bed or late line when the hours are late, then the
+  trigger that comes most, slips counting three times) in the lessons' cream bubbles. At the bottom, "Make a plan for tonight" (Talk it
+  through, ready for tonight) from two hours before while there is none, otherwise "Your whole plan". Before the hard hours are known,
+  the same dusk with a moon and "If it gets hard tonight"; with no plan, one bubble to make one. The hard-hours line under the lesson
+  (`risk-card.tsx`) is gone; this card says it.
+- **Who you are becoming:** the sentence from setup, big in the flame's gold, and under it one true line from the log (core
+  `rodeProof`: "You rode out an urge Tuesday at 9:30 PM. 8 times now."). Without a sentence, "Write it in one sentence", into My plan.
+
+Earns and grows: nothing here is locked or asks for anything; it makes the free side feel generous and makes Today worth opening in
+the evening. My plan itself is being redesigned in its own session; it may use `planTonight` too. Picture:
+docs/today-review/today-built.png. Light theme checked. Merged November 2, 2026, once the owner had seen it on the simulator.
+
+## The Sunday review fits the week (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
+
+The owner: a week with slips on 4 of 5 days got "one missed day barely matters", so it said the same thing every week and did not push them to do better. **The bug:** `storyTeach('days')` gave the "missing a single day" line (Lally) to any week with a slip, and nothing else on the review changed with the shape of the week. The slips screen also always said "how one slip stays one slip". Now covered by `test/sunday-read.test.ts`, "never says one missed day barely matters on a week with a slip on 4 of 5 days".
+
+**What it said before, for every week:** the seven days showed the days with no slip (or the days logged, when none), the days, and the longest stretch inside the week. The science under it was the 66 days line on a clean week and "One missed day barely matters" on every other week. The slips screen always said "one slip stays one slip". Only the long view's trend line changed with the week (best, up, same, or "A harder week, and ... Hard weeks are part of every climb"). The longer card changed with the hardest pattern. There was no step: the goal page offered goals from "What to change", in the same order every time.
+
+**Now (core `sunday-read.ts`, `weekRead`):** each week is read as one kind, and the seven days screen says it in plain numbers, with what held under it. The science line fits the kind. A new last screen, "Next week", gives one step from the person's own pattern, with one tap to keep it as the week's if-then plan (it then shows on Today and in SOS, and the done page has them say it once). The goals that fit the step come first on the goal page.
+
+| The week                                           | The line                                      | What held (the quiet line under it)                                                                                                                       | Science on the days screen                                                                                                                               |
+| -------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clean                                              | Not one slip all week.                        | You rode out 3 urges to get here. / Last week had 2 days with a slip. / This is what free looks like, one day at a time.                                  | 66 days (Lally)                                                                                                                                          |
+| Quiet (no slips, almost nothing logged)            | No slips logged, and not much else.           | 2 of 7 days have anything in the log.                                                                                                                     | 66 days; the longer card is "Why looking back works", not "clean"                                                                                        |
+| First slip after 7 days or more (1 or 2 slip days) | 1 of 7 days had a slip, the first in 23 days. | Those 23 days happened, and nothing takes them back. (The in-week "longest stretch" is hidden here, since it would undersell the run.)                    | One missed day barely matters (Lally)                                                                                                                    |
+| One slip                                           | 1 of 7 days had a slip. The other 6 did not.  | One slip is one event, not the week. / You rode out 5 urges too.                                                                                          | One missed day barely matters (Lally)                                                                                                                    |
+| A few (under half the days)                        | 3 of 7 days had a slip, and 4 did not.        | Down from 5 last week. That is the direction. / Up from 1 last week. Next week gets one clear change.                                                     | Slips gather around a few hours and feelings; a plan for those changes the next week (Larimer)                                                           |
+| Most (half or more)                                | 4 of 5 days had a slip. A hard week.          | You rode out 1 urge and logged every slip honestly. Next week can be different. / Still fewer than last week's 7. Keep going.                             | Those whose confidence dropped after a slip slipped again sooner. A hard week is a reason to change one thing, not to stop believing you can. (Kirchner) |
+| Every day                                          | Every day this week had a slip.               | And you rode out 1 urge. That skill is real, and next week can be different. / You opened Daybook and told the truth anyway. That is where change starts. | the same as most                                                                                                                                         |
+| A first week                                       | (by its slips, as above)                      | Your first week, and it is clean. / Your first week, logged honestly. Now you can see the pattern, and that is where change starts.                       | by its slips                                                                                                                                             |
+
+On most and every day, the slips screen says: "After a slip, “I already blew it” is the thought that brings the next one. Seeing each slip as one event, not a verdict, is how a run of them stops."
+
+**The step ("Next week"):** titled "Keep what worked" on a clean week, "One thing to change" on most and every day, and "One thing for next week" otherwise. When: the hard hours, if half or more of this week's slips fell in them; else what set the slips off (half or more); else the weekend; else "an urge hits". Then: the phone in another room on late nights with slips while the phone was mostly in reach; else the tool that worked (twice or more, or every time); for loneliness, the safe person by name; else the move that fits; else breathing. Under it, what the log saw, in numbers. Examples: "When it gets to 10 PM, open SOS and start Breathe." with "All 4 slips this week came between 10 PM and midnight." and "Breathe worked the time you used it." / "When you feel stressed, open SOS and start Breathe." / "When you feel lonely or low, text Sam." / "When the weekend comes, plan your day the night before." / on a quiet week, "Check in each night, even on a quiet day."
+
+**Hope and honesty, checked against CLAUDE.md:** a hard week is named, never waved off, and never called a failure or a reset (a test checks every line for "fail", "reset", "blew", "start over"). Nothing that was earned is shown as lost; the long stretch before a slip is named as kept. The push is one step, not guilt. No case broke the rules, so there was nothing to push back on. One choice made for the owner: the step is a new screen at the end, which makes the review one screen longer. It could instead sit on the goal page; the new screen was chosen because the push should be seen before the person picks a goal, and "One thing to know" then "One thing to change" read as a pair.
+
+**Does it help Daybook:** a review that sees the person's real week is a reason to keep coming back on Sundays, and a plan kept from it brings them back to SOS during the week. Nothing is locked.
+
+Pictures (web, made-up logs): `docs/weekly-review/hard-week-and-long-stretch.png` (4 of 5 days, its step, and the first slip in 23 days), `docs/weekly-review/clean-week.png`, `docs/weekly-review/hard-week-dark.png`, and on the iPhone 17 Pro simulator (a release build, a made-up week with slips on 5 of 7 days): `docs/weekly-review/iphone-hard-week.png`.
+
+**Steps (Opus effort):** week kinds, words and step in core, with tests (medium, done). The seven days screen and the Next week screen (medium, done). Web check, and saving the step as the plan (done: it shows on the done page as "When it gets to 10 PM, I will open SOS and start Breathe."). Simulator check (done). Merge once the owner has seen it, since the words change.
+
 ## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 
 The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.
@@ -442,6 +495,32 @@ rules: no right answer where it is about the person.
 8. **Put it to work.** Write your first hour after a slip, with the one sentence you will pray first.
 9. **The closing line.** "Father, I am turning back again. Thank you that the way is open." _[Plain: "God, I am turning back
    again. Thank you that the way is open."]_
+
+### Every lesson turns something over (the owner, November 2, 2026)
+
+The owner read the two God lessons and said they were good but "just saying stuff i already know": a lesson should change how
+a person sees the problem, the way David A. Bednar or Jordan Peterson come at a familiar thing from a new side. The redrafts
+(Where art thou?, and Built for coming back) were approved, and so was the standard for all lessons: rewrite every one in
+place, with visuals where they help, a flip card, lines back to earlier lessons as a natural part of the thought (never a
+review at the start), and a true line from the person's own log. More lessons will be added later, so the shape is a format,
+not a one-off.
+
+**The shape** (core `lesson-turns.ts`): a moment the person knows, a question only they can answer, the turn (a card that
+turns over from "You may think" to "Look again", and the night sky becomes the sun), one or more cards behind it with a
+picture, a line from their own log (counted on the phone), what to do, and a check. A turned lesson replaces the old one in
+place, so its id, section and place on the path stay and nothing done or earned moves. Its questions are written the
+thinking way from the start.
+
+**Built on `lessons-steps` as a pilot, for the owner to see first:** lessons 1, 2 and 3. The turns: feeling ready follows the
+first steps, not the other way round (self-perception); a strong urge means a well-practiced habit, not a real want (wanting
+and liking, Berridge and Robinson); the slip does not wreck the day, "I already blew it" does (the milkshake study, Herman and
+Mack, and Marlatt). Three new pictures: steps that fill up feeling ready, wanting climbing past liking, twelve days with one
+slip that read 11 of 12. Lesson 3 builds on lesson 2's wave. Pictures in `docs/lessons-review/turn-*.png`.
+
+**The rest, once the owner has seen the pilot** (medium): the other 44 lessons and the 12 God lessons, in the order of the
+path. Sonnet agents find each lesson's turn (the belief, the surprising fact or distinction, and its source); the writing is
+done on Opus, since the voice is what makes it work. New picture kinds only where a lesson's turn needs one, each shown to
+the owner before it is reused.
 
 ### Not verified
 

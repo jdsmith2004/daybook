@@ -1,23 +1,10 @@
 /* My plan: my reasons, my slip plan and my urge plan. Each change is a pure function on the settings, with the word to show,
    following the legacy reasonSave, reasonAdd, reasonMove, reasonRemove, lessonReasonSave, slipSave and the data-plan input.
    Checked by test/plan.test.ts. */
-import {
-  addDays,
-  cleanReason,
-  eventsOf,
-  REASON_MAX,
-  reasonCat,
-  reasonGuess,
-  sameReason,
-  SLIP_STEPS,
-  slipClean,
-  URGE_PLAN,
-  WORDS_LEN,
-  trigText,
-  WORDS_MAX,
-} from './legacy/core.js';
+import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, URGE_PLAN, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
 import { changeSettings, type Change } from './actions';
-import { riskWindow } from './risk';
+import { addDays, eventsOf, trigText } from './legacy/core.js';
+import { RISK_DAYS, riskWindow } from './risk';
 import type { DayKey, Days, Settings } from './types';
 
 export const RIDEAS: [string, string][] = [
@@ -174,37 +161,6 @@ export function planEdit(st: Settings, i: number, when: string, then: string): S
   return changeSettings(st, (s) => void (s.plan[i] = { when: w, then: t }));
 }
 
-/** the two lines of the urge plan that fit tonight, for Today and My plan: a line about bed or late at night when the hard
-    hours are in the evening or the small hours, then the line for the trigger logged most in the last 60 days (a slip counts
-    3, an urge 1), then the rest in plan order. A trigger is an id, so a line fits it by the words of its label ("Stressed
-    or anxious" fits "I am stressed after work"). Each "then" is cut to its first sentence. */
-export function planTonight(days: Days, st: Settings, tk: DayKey): { when: string; then: string }[] {
-  const rows = (st.plan || []).filter((p) => !planBlank(p) && (p.then || '').trim());
-  const win = riskWindow(days, st, tk);
-  const out: typeof rows = [];
-  const add = (words: string[]) => {
-    const r = rows.find((p) => !out.includes(p) && words.some((w) => new RegExp('\\b' + w + '\\b', 'i').test(p.when)));
-    if (r) out.push(r);
-  };
-  if (win && (win.start >= 20 || win.start < 4)) add(['bed', 'night', 'late']);
-  const tally: Record<string, number> = {};
-  eventsOf(days, addDays(tk, -59)).forEach((e) => {
-    if (e.trigger && e.trigger !== 'other') tally[e.trigger] = (tally[e.trigger] || 0) + (e.outcome === 'slipped' ? 3 : 1);
-  });
-  Object.keys(tally)
-    .sort((a, b) => tally[b] - tally[a])
-    .forEach((id) => out.length < 2 && add(trigWords(trigText(id, st.opts))));
-  rows.forEach((p) => out.length < 2 && !out.includes(p) && out.push(p));
-  return out.map((p) => ({ when: p.when, then: p.then.trim().split(/(?<=[.!?])\s+/)[0] }));
-}
-const NOT_WORDS = ['and', 'the', 'after', 'other', 'with', 'from'];
-/** the words of a trigger's label that can name a moment in a plan line */
-const trigWords = (label: string) =>
-  String(label || '')
-    .toLowerCase()
-    .split(/[^a-z]+/)
-    .filter((w) => w.length >= 3 && NOT_WORDS.indexOf(w) < 0);
-
 /** one of my own answers (a trigger or what I did) put back after Remove (Undo): shown again if it was only hidden, else
     put back at the place it had */
 export function optionRestore(st: Settings, kind: 'trig' | 'did', o: { id: string; t: string }, i: number): Settings {
@@ -353,3 +309,54 @@ export function playbookText(
 /** the therapist fit check: a name for column c (legacy data-tname), and one check (legacy thr) */
 export const setTherapistName = (st: Settings, c: number, v: string) => changeSettings(st, (s) => void (s.therapist.names[c] = v));
 export const toggleTherapist = (st: Settings, r: number, c: number) => changeSettings(st, (s) => void (s.therapist.checks[r][c] = !s.therapist.checks[r][c]));
+
+/* ---------- tonight's lines, for Today ---------- */
+/* the given triggers (TRIGGERS) and the words of the plan's starting line for each */
+const TRIG_WORDS: Record<string, RegExp> = {
+  late: /\b(bed|night|late)\b/i,
+  lonely: /\b(lonely|low|alone)\b/i,
+  bored: /\b(bored|idle)\b/i,
+  stress: /\b(stress\w*|anxious)\b/i,
+  tired: /\b(tired|exhausted)\b/i,
+  scroll: /\b(scroll\w*|gaming|phone)\b/i,
+};
+const firstSentence = (t: string) => t.trim().split(/(?<=[.!?])\s+/)[0];
+/** the two lines of the urge plan that fit tonight, for the Tonight card on Today: the one for bed or late at night when the hard
+    hours are late, then the one for the feeling that comes before a slip most often (or an urge, with no slips), then the rest in
+    plan order; each "then" cut to its first sentence. Empty when no line has a situation and something to do. */
+export function planTonight(days: Days, st: Settings, tk: DayKey, n = 2): { when: string; then: string }[] {
+  const rows = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim());
+  const out: typeof rows = [];
+  const add = (fits: (when: string) => boolean) => {
+    const r = rows.find((p) => fits(p.when) && !out.includes(p));
+    if (r && out.length < n) out.push(r);
+  };
+  const win = riskWindow(days, st, tk);
+  if (win && (win.start >= 20 || win.start < 4)) add((w) => TRIG_WORDS.late.test(w));
+  const tally: Record<string, number> = {};
+  for (const e of eventsOf(days, addDays(tk, -(RISK_DAYS - 1)))) {
+    if (e.key > tk || !e.trigger || e.trigger === 'other') continue;
+    tally[e.trigger] = (tally[e.trigger] || 0) + (e.outcome === 'slipped' ? 3 : 1);
+  }
+  Object.keys(tally)
+    .sort((a, b) => tally[b] - tally[a] || (a < b ? -1 : 1))
+    .forEach((t) => {
+      /* a trigger of its own is matched by its words; the given ones by the words of the starting line they go with */
+      const re =
+        TRIG_WORDS[t] ||
+        new RegExp(
+          '\\b' +
+            String(trigText(t, st.opts) || '')
+              .trim()
+              .replace(/[^\w\s]/g, '')
+              .split(/\s+/)
+              .filter((x) => x.length > 2)
+              .join('|') +
+            '\\b',
+          'i',
+        );
+      if (re.source !== '\\b\\b') add((w) => re.test(w));
+    });
+  rows.forEach((p) => out.length < n && !out.includes(p) && out.push(p));
+  return out.map((p) => ({ when: p.when.trim(), then: firstSentence(p.then) }));
+}

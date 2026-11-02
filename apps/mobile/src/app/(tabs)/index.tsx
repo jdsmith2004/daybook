@@ -54,9 +54,9 @@ import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { Hero, skyInk } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
-import { HardLine } from '@/components/risk-card';
 import { Screen } from '@/components/screen';
 import { useSosLeadOn } from '@/components/sos-lead';
+import { TodayBelow } from '@/components/today-below';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
@@ -259,7 +259,7 @@ export default function Today() {
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
-  /* one quiet line under the next step: what was logged today, and the week's goal from Sunday */
+  /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
   /* the quiet lines under the next step take their room from the sky */
   const slipLine = heroSlipLine(snap.days, st, tk, now);
@@ -312,7 +312,6 @@ export default function Today() {
           </View>
         ) : null}
         <YourDay
-          note={<HardLine snap={snap} tk={tk} now={now} />}
           footOff={Platform.OS === 'ios' && atRest}
           snap={snap}
           tk={tk}
@@ -320,6 +319,7 @@ export default function Today() {
           hero={calm ? pick.card : null}
           foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
+        <TodayBelow snap={snap} tk={tk} now={now} />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}

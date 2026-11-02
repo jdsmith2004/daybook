@@ -60,6 +60,7 @@ import { useSosLeadOn } from '@/components/sos-lead';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
+import { protoDir, TodayMore } from '@/components/today-more';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -322,6 +323,7 @@ export default function Today() {
         />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
+        {protoDir() ? <TodayMore dir={protoDir()!} snap={snap} tk={tk} level={g.level.n} /> : null}
         {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
         {tip ? <TipCard /> : null}
         <HomeScreenCard />

@@ -19,7 +19,19 @@ export function HardLine({ snap, tk, now }: { snap: Snapshot; tk: string; now: n
   return (
     <View style={s.row}>
       <Text style={[s.t, { color: c.muted }]}>{say}</Text>
-      {r.talked || talkPlanNow(snap.days, st, tk, now) ? (
+      {r.phase === 'during' ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open SOS"
+          hitSlop={14}
+          onPress={() => {
+            buzz('tap');
+            router.push('/sos');
+          }}
+          style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <Text style={[s.go, { color: c.sos }]}>Open SOS</Text>
+        </Pressable>
+      ) : r.talked || talkPlanNow(snap.days, st, tk, now) ? (
         <Text style={[s.t, { color: c.muted }]}>You have your plan.</Text>
       ) : (
         <Pressable

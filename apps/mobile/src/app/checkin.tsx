@@ -27,9 +27,9 @@ import {
   type DayKey,
   type RateKey,
 } from '@daybook/core';
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 
@@ -192,6 +192,20 @@ export default function Checkin() {
         </View>
         <Dock>
           <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} readout={false} onChange={(n) => set({ ...form, [step]: n })} />
+          {step === 'u' && v != null && v >= 7 ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                buzz('tap');
+                router.push('/sos');
+              }}
+              hitSlop={10}
+              style={({ pressed }) => [{ alignSelf: 'center', paddingVertical: 4 }, pressed && { opacity: 0.6 }]}>
+              <T v="label" style={{ color: c.sos }}>
+                Strong right now? Open SOS. Your answers wait here.
+              </T>
+            </Pressable>
+          ) : null}
           {v != null ? (
             <Appear by={10} duration={240}>
               <Button label="Next" onPress={next} />

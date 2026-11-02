@@ -1,5 +1,55 @@
 # What is planned next
 
+## Today with more in it, and SOS that comes up more (the owner, November 2, 2026)
+
+**The ask, in the owner's words:** "the sos feeling an urge should come up more on the app and also I think the today needs more it should let me scroll or something, rn it just feels empty... maybe we could move something in the app to be on the home screen".
+
+**Where it is:** three directions drawn from the real web app with the demo person (a throwaway prototype on branch `claude/gifted-chaum-b1e538`), waiting for the owner to pick one. Nothing is merged. Pictures: `docs/today-review/today-more-options.png` and `docs/today-review/sos-moments.png`.
+
+**Why Today feels empty.** Today is built to fit one screen: the sky takes every point the rest does not need (`lib/today-size.ts`), and nothing sits under Your day. So there is nothing to scroll to, and on a calm day the page is the flame, two buttons and three stops. The fix keeps all of that exactly as it is, the flame the same size, and adds a part below it that the page scrolls to.
+
+**What could move onto Today, by the one test (does it help the person become someone free of the habit, and is the next step still obvious):**
+
+- Kept: the person's own plan for an urge (the moves they chose in setup, `st.menu`), with their hard hours. Making an if-then plan is one of the best-supported tools there is (Gollwitzer and Sheeran 2006, 94 studies), and seeing it every day is how it gets used. It also puts SOS one tap from the page every day, not only in the tab bar.
+- Kept: the week, drawn as seven small fires, an ember on the day of a slip and a dot under each urge ridden out. It holds what was earned (no count that drops to zero) and reads in two seconds.
+- Kept: a practice ride while calm (`/sos?practice=1`, now only in Learn's tools). Practice on a calm day carried over to real cravings (Lopez, Ochsner and Kober 2022).
+- Possible: who I am becoming, the person's own sentence. It is the goal itself, but it already has three homes (My plan, the weekly review, Good night), so it is direction A's.
+- Possible: the urges ridden out, as a list. True and hopeful, but it repeats Pattern.
+- Left off: My numbers, the Pattern cards and the month. They are for looking back, they would turn Today into a dashboard, and the deeper ones are what the supporter and Daybook Pattern asks sell.
+
+**The three directions** (all keep the top of Today exactly as it is):
+
+1. **Who you are becoming.** Their own sentence and their first reason, the week of fires, then "Urges you rode out" with the last three and the count, and "When the next one comes, open SOS". Three parts, the most to read; closest to the identity goal.
+2. **Ready when it comes (recommended).** One card, "When an urge comes": when theirs come most often, their three moves in their own words, one red Open SOS button and "Calm right now? Practice once". Under it, the week of fires and one line. It answers both asks with one thing, it is the person's own words, and it leads to SOS every day without nagging, because it is a plan, not a warning.
+3. **The flame's week.** One card: the week of fires and one big line ("6 days with no slip this week, and 1 urge ridden out"), then one SOS row. The smallest change, and the most flame, but SOS is only a row.
+
+**SOS that comes up more** (the same for every direction; pictures in `sos-moments.png`):
+
+- In the hard hours, the line under the next step says "Open SOS" while they last (before them it still offers the short plan).
+- The words over the SOS button ("Feeling an urge? Tap SOS"), now only on iPhone, come to Android and the web, and also show from the wind-down hour until the day ends, once a night, gone for three hours after SOS is opened (core `sosLead`).
+- In the check-in, urges at 7 or more show one line under the slider: "Strong right now? Open SOS". The check-in waits as a draft.
+- Pattern's "When does it happen?" card gets one line that opens SOS.
+- After their branches merge: the SOS pill in a lesson's top bar and in the journal. Both files are being changed on other branches now (`setup-like-lessons`, `lessons-no-review`, and the journal work), so this waits rather than clash.
+- Not changed: the heads-up before the hard hours still opens Today, where the words over SOS and the hard-hours line are now waiting.
+
+**Questions for the owner:**
+
+1. Which direction? I recommend 2, Ready when it comes.
+2. The SOS moments: all of them? I recommend yes, the lessons and journal ones once those branches are merged.
+3. Scrolling has to be found. On a tall iPhone the sky is already at its largest with room to spare, so the top of the new part can peek over the tab bar without the flame getting any smaller. On a small phone it cannot peek without shrinking the flame, so there it does not. I recommend that, and no shrinking.
+
+**Steps once chosen, in order** (each one commit, on a branch, shown on the simulator as a release build before any merge):
+
+1. _Medium._ Core: the week of fires (`weekFires`) and the urge plan's words (`urgePlan`), with unit tests. Nothing stored changes.
+2. _Medium._ Today's new part, the peek, and the craft checklist on pictures of it, light and dark, small and tall phones.
+3. _Medium._ SOS in the hard-hours line, the words over SOS on every platform and at night (core `sosLead`, with tests).
+4. _Medium._ The check-in line and the Pattern line.
+5. _Low, later._ The SOS pill in lessons and the journal, once those branches are on main.
+
+**Helps Daybook earn or grow:** a Today that people scroll and come back to, and a week of fires that makes a good store picture and short video. No ask is added, and the week's line can lead into Pattern, where the deeper pages are what the supporter ask sells.
+
+**Risks:** more on Today is the thing the October 22 review warned about, so the new part is one card and one line, not a list. A plan that says the same three moves every day can go unseen; once a person has used SOS, the moves could come from what helped them most (later, not now). A red button on Today every day must never read as a warning; it sits low, under the day, and the words are a plan, not "Danger".
+
 ## Lessons that teach people how to quit (the owner, November 1, 2026)
 
 **The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."

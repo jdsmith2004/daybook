@@ -92,6 +92,21 @@ It is on since October 28, 2026 (the role was made when the bootstrap stack was 
 3. To read the counts: sign in to the app, open Stats in More, and copy the account id it shows. Add it as the
    repository secret `DAYBOOK_OWNER_SUB` and deploy again. Only that account can read them.
 
+### Feedback to your inbox
+
+Each note from the app's Ideas page (`app/feedback.tsx`) is kept in the pulse table and also emailed to you, at most
+`DAILY_MAIL` (30) a day; past that it is still kept and shows on Stats. The email goes through an SNS topic,
+`daybook-feedback`, made by the bootstrap stack with your email subscribed (`feedback_email`, or `alert_email` when
+empty). SNS sends from AWS's own address, so Gmail trusts it, and the first 1,000 emails a month are free. To set it up:
+
+1. Apply the bootstrap stack (`cd infra/bootstrap && terraform apply`). It adds the topic, your email on it, and
+   `sns:Publish` on that one topic for the `daybook-app-pulse` role.
+2. Click "Confirm subscription" in the email AWS sends. Nothing arrives until you do.
+3. Deploy once (`[deploy]`): the function gets the topic's address as `FEEDBACK_TOPIC`. Before the topic exists, an email
+   fails quietly and the note is only kept.
+
+The emails have an unsubscribe link at the bottom. If it is ever clicked, apply the bootstrap stack again and confirm again.
+
 ## Tips: the Stripe key and the sync gate
 
 Tips (services/api `supporter.ts`) need nothing new in `infra/app` beyond what deploys make: one open route,

@@ -36,6 +36,12 @@ variable "alert_email" {
   type        = string
 }
 
+variable "feedback_email" {
+  description = "Where the app's feedback is emailed (the daybook-feedback topic). Empty: alert_email. Put it in terraform.tfvars (kept out of git), never in this file."
+  type        = string
+  default     = ""
+}
+
 variable "monthly_budget_usd" {
   description = "Send an alert when the month's AWS bill is on track to pass this."
   type        = number

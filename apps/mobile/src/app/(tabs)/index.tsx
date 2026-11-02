@@ -47,6 +47,7 @@ import { AppState, Platform, StyleSheet, View, type ScrollViewInstance } from 'r
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
+import { FeedbackTop } from '@/components/feedback-top';
 import { TIP_URL, TipCard, TipTop } from '@/components/support';
 import { HomeScreenCard } from '@/components/home-screen';
 import { MomentCard } from '@/components/moment-card';
@@ -295,6 +296,7 @@ export default function Today() {
             sky={size.sky}
             flame={size.flame}
             title={title}
+            lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
             action={
               tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
             }

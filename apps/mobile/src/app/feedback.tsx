@@ -1,6 +1,7 @@
-/* Send feedback: a few words to the person who builds Daybook, with no name and no email unless the person adds one to get
-   a reply (core feedbackClean, services/api pulse.ts). The box and its Send button stay together at the top, where the
-   keyboard does not cover them. */
+/* Ideas and feedback: any idea or change, straight to the person who builds Daybook (the owner, November 2, 2026), with no
+   name and no email unless the person adds one to get a reply (core feedbackClean, services/api pulse.ts, which keeps it
+   and emails it to the owner). Reached from the Ideas button at the top left of Today and from More. The box and its Send
+   button stay together at the top, where the keyboard does not cover them. */
 import { FEEDBACK_LEN } from '@daybook/core';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -32,9 +33,10 @@ export default function Feedback() {
   };
   if (sent)
     return (
-      <SheetFrame title="Thank you" sub="It went straight to the person who builds Daybook.">
+      <SheetFrame title="Thank you">
         <T>
-          Every note is read. {r.trim() ? 'If a reply helps, it will come to the address you gave.' : 'You did not leave an address, so it stays anonymous.'}
+          It is with me now. I read every note, and I will do my very best with yours.{' '}
+          {r.trim() ? 'When there is news about it, it will come to the address you gave.' : 'You did not leave an address, so it stays anonymous.'}
         </T>
         <Dock>
           <Button label="Done" onPress={closeSheet} />
@@ -42,7 +44,11 @@ export default function Feedback() {
       </SheetFrame>
     );
   return (
-    <SheetFrame title="Send feedback" sub="What helps, what does not, what is missing. No name and no email are sent.">
+    <SheetFrame title="Your idea">
+      <T>
+        Any idea, any change, anything that would make Daybook better for you. It comes straight to me, the person who builds Daybook, and I will do my very
+        best to make it happen.
+      </T>
       <Field
         label="Your words"
         hideLabel
@@ -51,14 +57,14 @@ export default function Feedback() {
         maxLength={FEEDBACK_LEN}
         value={t}
         onChangeText={setT}
-        placeholder="Like: the sunrise check helped, but I did not know what the flames meant."
+        placeholder="Like: I wish I could see my whole week at a glance."
         style={{ minHeight: 140 }}
       />
       <Field
-        label="To get a reply (optional)"
+        label="Your email, to hear back (optional)"
         value={r}
         onChangeText={setR}
-        placeholder="An email address, only if you want an answer"
+        placeholder="Only if you want a reply"
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
@@ -78,7 +84,7 @@ export default function Feedback() {
         </>
       ) : null}
       <T v="small" tone="muted">
-        Do not include anything you would not want read. Feedback is kept for 180 days.
+        No name is sent, and no email unless you type one. Notes are kept for 180 days.
       </T>
     </SheetFrame>
   );

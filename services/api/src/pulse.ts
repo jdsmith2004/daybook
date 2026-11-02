@@ -2,7 +2,8 @@
    a role that can touch nothing else, so this open door (no sign-in) can never reach anyone's log.
 
    POST /pulse            { p, v, days: [{ d, c: { name: n } }] }   adds one device's counts to the totals of those days
-   POST /pulse/feedback   { t, r?, p, v }                           keeps the words (and a reply address, if one is given)
+   POST /pulse/feedback   { t, r?, p, v }                           keeps the words (and a reply address, if one is given),
+                                                                    and emails them to the owner (feedbackMail), DAILY_MAIL a day
    GET  /pulse?from=&to=                                            the totals and the feedback; signed in as the owner only
 
    Kept: totals per day and platform (pk "c", sk "<day>#<platform>", one number per count name, and how many batches
@@ -17,6 +18,8 @@ export const PULSE_BODY = 16_000;
 /** batches and feedback the server takes in a day, in all; past it, it says no until tomorrow (UTC) */
 export const DAILY_BATCHES = 20_000;
 export const DAILY_FEEDBACK = 500;
+/** feedback emailed to the owner in a day; past it, it is still kept and shows on Stats, so no one can flood the inbox */
+export const DAILY_MAIL = 30;
 /** how long feedback is kept */
 export const FEEDBACK_KEEP = 180 * 24 * 3600_000;
 
@@ -34,12 +37,36 @@ export interface Feedback {
 }
 export interface PulseStore {
   /** adds to today's count of `what`; false when it would pass `max` */
-  allow(what: 'batch' | 'feedback', day: string, max: number): Promise<boolean>;
+  allow(what: 'batch' | 'feedback' | 'mail', day: string, max: number): Promise<boolean>;
   /** adds counts to the totals of one day and platform, and one to its batches, and one to the version's batches */
   add(day: string, p: string, v: string, c: Record<string, number>): Promise<void>;
   keepFeedback(f: Feedback, ttl: number): Promise<void>;
   totals(from: string, to: string): Promise<Totals[]>;
   feedback(limit: number): Promise<Feedback[]>;
+}
+
+/** sends one note to the owner's inbox (pulse-index.ts: an SNS topic with the owner's email on it) */
+export type Mailer = (subject: string, text: string) => Promise<void>;
+
+/** the email for one note: only what the person sent (the words, a reply address if they typed one, the platform and the
+    app's version), never anything about who or where they are */
+export function feedbackMail(f: Feedback): { subject: string; text: string } {
+  /* an SNS subject is plain ASCII on one line, under 100 characters */
+  const one = f.t
+    .replace(/\s+/g, ' ')
+    .replace(/[^\x20-\x7e]/g, '')
+    .trim();
+  const subject = 'Daybook idea: ' + (one.length > 60 ? one.slice(0, 57).trimEnd() + '...' : one || '(see the note)');
+  const where = { ios: 'iPhone', android: 'Android', web: 'the web' }[f.p] || f.p;
+  const text = [
+    f.t,
+    '',
+    '---',
+    f.r ? 'Reply to: ' + f.r : 'No reply address was left.',
+    'Sent from ' + where + ', Daybook ' + f.v + ', at ' + new Date(f.at).toISOString().slice(0, 16).replace('T', ' ') + ' UTC.',
+    'Every note is also on Stats in the app.',
+  ].join('\n');
+  return { subject, text };
 }
 
 type Res = APIGatewayProxyStructuredResultV2;
@@ -54,7 +81,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** the sign-in, when API Gateway checked one (GET only) */
 type Event = APIGatewayProxyEventV2 & { requestContext: { authorizer?: { jwt?: { claims?: Record<string, unknown> } } } };
 
-export function makePulseHandler(store: PulseStore, owner: string, clock: () => number = Date.now) {
+export function makePulseHandler(store: PulseStore, owner: string, clock: () => number = Date.now, mail: Mailer | null = null) {
   return async function handler(event: Event): Promise<Res> {
     const method = event.requestContext.http.method;
     const path = event.rawPath || event.requestContext.http.path || '';
@@ -86,7 +113,13 @@ export function makePulseHandler(store: PulseStore, owner: string, clock: () => 
       const f = feedbackClean(body);
       if (!f) return json(400, { error: 'Write something first.' });
       if (!(await store.allow('feedback', today, DAILY_FEEDBACK))) return json(429, { error: 'Too much feedback today. Try again tomorrow.' });
-      await store.keepFeedback({ at: now, ...f }, now + FEEDBACK_KEEP);
+      const kept = { at: now, ...f };
+      await store.keepFeedback(kept, now + FEEDBACK_KEEP);
+      /* the note is kept either way, so an email that fails (the topic not made yet, a hiccup) is not the person's failure */
+      if (mail && (await store.allow('mail', today, DAILY_MAIL))) {
+        const m = feedbackMail(kept);
+        await mail(m.subject, m.text).catch(() => undefined);
+      }
       return json(200, { ok: true });
     }
 

@@ -2,7 +2,7 @@
    daily ceilings hold, and only the owner can read. */
 import { describe, expect, it } from 'vitest';
 
-import { DAILY_BATCHES, makePulseHandler, MemoryPulseStore, PULSE_BODY } from '../src/pulse';
+import { DAILY_BATCHES, DAILY_MAIL, feedbackMail, makePulseHandler, MemoryPulseStore, PULSE_BODY } from '../src/pulse';
 
 const NOW = Date.parse('2026-10-22T15:00:00Z');
 const OWNER = 'owner-sub';
@@ -61,6 +61,46 @@ describe('feedback', () => {
     expect(store.kept[0]).toMatchObject({ at: NOW, t: 'The sunrise check helped.', r: null, p: 'ios' });
     expect(JSON.stringify(store.kept)).not.toMatch(/203\.0/);
     expect((await h(post('/pulse/feedback', { t: '' }))).statusCode).toBe(400);
+  });
+
+  it('emails the owner only what the person sent, DAILY_MAIL a day, and keeps every note even when the email fails', async () => {
+    const store = new MemoryPulseStore();
+    const sent: { subject: string; text: string }[] = [];
+    let fail = false;
+    const h = makePulseHandler(
+      store,
+      OWNER,
+      () => NOW,
+      async (subject, text) => {
+        if (fail) throw new Error('topic not made yet');
+        sent.push({ subject, text });
+      },
+    );
+    const body = { t: 'A dark mode for the lessons, please.\nThank you!', r: 'me@example.com', p: 'ios', v: '1.3.0', log: 'secret', id: 'x' };
+    expect((await h(post('/pulse/feedback', body))).statusCode).toBe(200);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].subject).toBe('Daybook idea: A dark mode for the lessons, please. Thank you!');
+    expect(sent[0].text).toContain('A dark mode for the lessons, please.\nThank you!');
+    expect(sent[0].text).toContain('Reply to: me@example.com');
+    expect(sent[0].text).toContain('Daybook 1.3.0');
+    expect(sent[0].text).not.toMatch(/secret|203\.0/);
+    fail = true;
+    expect((await h(post('/pulse/feedback', { t: 'Still kept', p: 'web', v: '1.3.0' }))).statusCode).toBe(200);
+    expect(store.kept).toHaveLength(2);
+    fail = false;
+    for (let i = 2; i < DAILY_MAIL + 5; i++) await h(post('/pulse/feedback', { t: 'Note ' + i, p: 'web', v: '1.3.0' }));
+    expect(sent).toHaveLength(DAILY_MAIL - 1);
+    expect(store.kept).toHaveLength(DAILY_MAIL + 5);
+  });
+
+  it('gives SNS a plain one-line subject under 100 characters', () => {
+    const f = { at: NOW, t: 'Café 🔥 ' + 'x'.repeat(200), r: null, p: 'android', v: '1.3.0' };
+    const m = feedbackMail(f);
+    expect(m.subject).toMatch(/^[\x20-\x7e]+$/);
+    expect(m.subject.length).toBeLessThan(100);
+    expect(m.text).toContain('Café 🔥');
+    expect(m.text).toContain('No reply address was left.');
+    expect(feedbackMail({ ...f, t: '🔥🔥' }).subject).toBe('Daybook idea: (see the note)');
   });
 });
 

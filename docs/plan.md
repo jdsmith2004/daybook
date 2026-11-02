@@ -1,5 +1,33 @@
 # What is planned next
 
+## Ideas and feedback, straight to the owner's inbox (the owner, November 2, 2026; on a feature branch)
+
+The owner asked for an app feedback page at the top left, inviting any idea or change, sent straight to their email, and
+how to see the reviews the app already gets.
+
+**What was already there:** a feedback sheet (`app/feedback.tsx`), reached only from More and one link in setup. It sends
+to the pulse function, which keeps each note 180 days; the owner reads them on Stats. Nothing reached an inbox.
+`SUPPORT_EMAIL` was already the owner's address.
+
+**Decided (the owner chose every recommendation):**
+
+- Delivery by an SNS email topic, not SES. SES would have to send "from" a gmail.com address through Amazon, which Gmail
+  treats as spoofed; SNS sends from AWS's own address. About $0 (the first 1,000 emails a month are free). The topic, the
+  owner's email on it and `sns:Publish` for the pulse role are in `infra/bootstrap`; the function gets the topic's ARN
+  from `infra/app`. The pulse function (not sync) carries it, since it already is the open feedback door with a role that
+  cannot reach anyone's log. Helps the person (their idea is read and acted on); helps Daybook (ideas and goodwill, and
+  people who feel heard rate and tip).
+- At most 30 emails a day (`DAILY_MAIL`); past that a note is still kept and shows on Stats. The email holds only the words,
+  the reply address if typed, the platform and the app version.
+- The sheet: a warm invitation in the owner's voice, one big box, an optional email to hear back, Send.
+- An Ideas pill at the top left of Today's sky, in the same glass as Support at the top right, always shown.
+- No weekly review digest for now. Reviews are read in App Store Connect, Apps, Daybook, Ratings and Reviews (or the App
+  Store Connect app), and answered with Reply there.
+
+**Steps:** the API and tests (high, done); bootstrap topic and permission (high, done; applied by the owner's sign-in);
+the sheet's words and the Ideas button (medium); the privacy page, testers page and README (low, done); a test note end
+to end after the owner confirms the subscription.
+
 ## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 
 The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.

@@ -69,7 +69,7 @@ import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
 import { SetupFirst } from '@/components/welcome';
 import { useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font, useTheme, palettes } from '@/lib/theme';
 
 type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -239,7 +239,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const hard = when.hard.weekdays || when.hard.weekends;
   const doing = patDoing(snap.days, per);
   const rideSay = patRideSay(ride, rideCols);
-  const look = (n: DayFeelStep) => ({ kind: DAY_FEEL_LOOK[n].kind, color: DAY_FEEL_LOOK[n].tone(c)[0] });
+  /* the cards are night in either theme, so the shapes take their night colors */
+  const look = (n: DayFeelStep) => ({ kind: DAY_FEEL_LOOK[n].kind, color: DAY_FEEL_LOOK[n].tone(palettes.dark)[0] });
   const needLine =
     needs[0] && needs[0].count >= 3
       ? 'When you talked it through, the pull was mostly after ' + talkNeedWord(needs[0].n) + ': ' + plural(needs[0].count, 'time') + '.'

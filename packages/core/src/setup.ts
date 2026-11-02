@@ -758,6 +758,11 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     some: 'I will bring it in now and then.',
     no: 'That is fine. The lessons stay practical.',
   },
+  creed: {
+    lds: 'Then I will speak of Heavenly Father and the Savior, in the words you know.',
+    christian: 'Then I will lean on the Bible and on Jesus Christ, in the words you know.',
+    other: 'Then I will speak of God plainly, in words your faith can hold.',
+  },
   tried: {
     t0: 'A first try, with a plan. That is a strong place to start.',
     t1: 'Each try taught you something. This time you have me.',

@@ -67,6 +67,17 @@ describe('the kind of week, named honestly', () => {
     expect(x.read.says).toBe('1 of 7 days had a slip, the first in 24 days.');
     expect(x.read.held).toBe('Those 24 days happened, and nothing takes them back.');
   });
+  it('two slips after a long stretch are named as two, never as one missed day', () => {
+    const d = log([
+      ['2026-09-20', 'slipped', '22:00'],
+      [day(0), 'slipped', '22:00'],
+      [day(5), 'slipped', '22:00'],
+    ]);
+    const x = read(d);
+    expect(x.read.kind).toBe('few');
+    expect(x.read.says).toBe('2 of 7 days had a slip, and 5 did not.');
+    expect(storyTeach('days', { kind: x.read.kind })!.t).not.toMatch(/one missed day/i);
+  });
   it('a few slip days, better than last week', () => {
     const d = log([
       ...[0, 1, 2, 3, 4].map((i): E => ['2026-10-0' + (5 + i), 'slipped', '12:00']),

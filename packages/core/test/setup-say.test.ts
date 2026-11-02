@@ -1,7 +1,7 @@
 /* What the flame says in the setup: a line for the pages that need one, an answer for every one-tap pick, short enough for its bubble, and in
    the app's words (no contractions, none of the usual tells of machine writing). */
 import { describe, expect, it } from 'vitest';
-import { OB_AIM, OB_FAITH, OB_PAGES, OB_REPLY, OB_TRIED, OB_YEARS, obReply, obSay } from '../src/index';
+import { OB_AIM, OB_CREED, OB_FAITH, OB_PAGES, OB_REPLY, OB_TRIED, OB_YEARS, obReply, obSay } from '../src/index';
 
 const CONTRACTION = /\b\w+(?:n['’]t|['’](?:re|ve|ll|d|m))\b|\b(?:it|that|there|here|what|who|he|she|let)['’]s\b/i;
 const TELLS = /[—–;]|\b(?:journey|truly|deeply|you got this|you have got this|unlock|embrace|game[- ]changer)\b/i;
@@ -21,6 +21,7 @@ describe('the flame in the setup', () => {
       ['aim', OB_AIM],
       ['years', OB_YEARS],
       ['faith', OB_FAITH],
+      ['creed', OB_CREED],
       ['tried', OB_TRIED],
     ];
     for (const [k, list] of lists) for (const o of list) expect(obReply(k, String(o[0])), k + ' ' + o[0]).toBeTruthy();

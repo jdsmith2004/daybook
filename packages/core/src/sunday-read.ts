@@ -244,7 +244,7 @@ export function weekRead(
     ? 'quiet'
     : !S
       ? 'clean'
-      : S <= 2 && gap != null && gap >= 7 && S * 2 < D
+      : S === 1 && gap != null && gap >= 7 && D > 1
         ? 'after'
         : S === 1 && D > 1
           ? 'one'

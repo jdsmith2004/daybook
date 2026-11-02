@@ -162,6 +162,8 @@ export default function Setup() {
   };
   useEffect(() => stopLit, []);
   const until = useRef(0);
+  /* the phone's permission question is open: Remind me and Not now wait for it, so one answer moves on once */
+  const asking = useRef(false);
   const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
   const pg = P[i];
@@ -514,8 +516,8 @@ export default function Setup() {
       body = (
         <>
           <Head h={pg.h!} sub={voice ? undefined : pg.sub} />
-          {/* the tiles are the thing, so they sit low, with the flame just above them */}
-          <Middle>{null}</Middle>
+          {/* the tiles are the thing, so they sit low, with the flame just above them (an open middle only when it fits) */}
+          {pg.list!.length > 6 ? null : <Middle>{null}</Middle>}
           <Say text={voice} />
           <IconTiles
             list={pg.list!}
@@ -1009,9 +1011,11 @@ export default function Setup() {
       /* when to check in, with the phone's one permission prompt: the question at the top, the time and what the
          notification will look like in the middle, the times low, Remind me at the bottom (core nudges.ts) */
       const yes = async () => {
-        if (busy()) return;
+        if (busy() || asking.current) return;
+        asking.current = true;
         until.current = Date.now() + 1500;
-        const ok = await allowReminders();
+        const ok = await allowReminders().catch(() => false);
+        asking.current = false;
         until.current = 0;
         if (ok) {
           setReminderPrefs({ ...rem, checkin: true, checkinAt: remAt, review: true });
@@ -1025,7 +1029,7 @@ export default function Setup() {
       };
       /* not now: nothing is turned on, but the time picked is kept for the ask on Today */
       const notNow = () => {
-        if (busy()) return;
+        if (busy() || asking.current) return;
         setReminderPrefs({ ...rem, checkinAt: remAt });
         go(1);
       };
@@ -1430,7 +1434,12 @@ function IconTiles({ list, cols, cur, onPick }: { list: ObOpt[]; cols: number; c
       {list.map((it) => {
         const sel = on(it[0]);
         return (
-          <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={tall ? s.tall : s.wide}>
+          <Answer
+            key={it[0]}
+            sel={sel}
+            right={sel}
+            onPress={() => onPick(it[0])}
+            style={tall ? (list.length > 6 ? { ...s.tall, ...s.short } : s.tall) : s.wide}>
             {typeof it[2] === 'string' ? <Icon name={it[2]} size={24} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
             <AnswerText right={sel} center={tall}>
               {it[1]}
@@ -1933,6 +1942,7 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   tall: { flexBasis: '46%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 88, paddingLeft: 8, paddingRight: 8 },
+  short: { minHeight: 72 },
   tallT: { flex: 0, textAlign: 'center', fontSize: 15, lineHeight: 20 },
   tick: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

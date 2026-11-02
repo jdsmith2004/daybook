@@ -3,7 +3,9 @@
    Checked by test/plan.test.ts. */
 import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, URGE_PLAN, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
 import { changeSettings, type Change } from './actions';
-import type { Settings } from './types';
+import { addDays, eventsOf, trigText } from './legacy/core.js';
+import { RISK_DAYS, riskWindow } from './risk';
+import type { DayKey, Days, Settings } from './types';
 
 export const RIDEAS: [string, string][] = [
   ['Being fully present with the people I love', 'rel'],
@@ -307,3 +309,54 @@ export function playbookText(
 /** the therapist fit check: a name for column c (legacy data-tname), and one check (legacy thr) */
 export const setTherapistName = (st: Settings, c: number, v: string) => changeSettings(st, (s) => void (s.therapist.names[c] = v));
 export const toggleTherapist = (st: Settings, r: number, c: number) => changeSettings(st, (s) => void (s.therapist.checks[r][c] = !s.therapist.checks[r][c]));
+
+/* ---------- tonight's lines, for Today ---------- */
+/* the given triggers (TRIGGERS) and the words of the plan's starting line for each */
+const TRIG_WORDS: Record<string, RegExp> = {
+  late: /\b(bed|night|late)\b/i,
+  lonely: /\b(lonely|low|alone)\b/i,
+  bored: /\b(bored|idle)\b/i,
+  stress: /\b(stress\w*|anxious)\b/i,
+  tired: /\b(tired|exhausted)\b/i,
+  scroll: /\b(scroll\w*|gaming|phone)\b/i,
+};
+const firstSentence = (t: string) => t.trim().split(/(?<=[.!?])\s+/)[0];
+/** the two lines of the urge plan that fit tonight, for the Tonight card on Today: the one for bed or late at night when the hard
+    hours are late, then the one for the feeling that comes before a slip most often (or an urge, with no slips), then the rest in
+    plan order; each "then" cut to its first sentence. Empty when no line has a situation and something to do. */
+export function planTonight(days: Days, st: Settings, tk: DayKey, n = 2): { when: string; then: string }[] {
+  const rows = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim());
+  const out: typeof rows = [];
+  const add = (fits: (when: string) => boolean) => {
+    const r = rows.find((p) => fits(p.when) && !out.includes(p));
+    if (r && out.length < n) out.push(r);
+  };
+  const win = riskWindow(days, st, tk);
+  if (win && (win.start >= 20 || win.start < 4)) add((w) => TRIG_WORDS.late.test(w));
+  const tally: Record<string, number> = {};
+  for (const e of eventsOf(days, addDays(tk, -(RISK_DAYS - 1)))) {
+    if (e.key > tk || !e.trigger || e.trigger === 'other') continue;
+    tally[e.trigger] = (tally[e.trigger] || 0) + (e.outcome === 'slipped' ? 3 : 1);
+  }
+  Object.keys(tally)
+    .sort((a, b) => tally[b] - tally[a] || (a < b ? -1 : 1))
+    .forEach((t) => {
+      /* a trigger of its own is matched by its words; the given ones by the words of the starting line they go with */
+      const re =
+        TRIG_WORDS[t] ||
+        new RegExp(
+          '\\b' +
+            String(trigText(t, st.opts) || '')
+              .trim()
+              .replace(/[^\w\s]/g, '')
+              .split(/\s+/)
+              .filter((x) => x.length > 2)
+              .join('|') +
+            '\\b',
+          'i',
+        );
+      if (re.source !== '\\b\\b') add((w) => re.test(w));
+    });
+  rows.forEach((p) => out.length < n && !out.includes(p) && out.push(p));
+  return out.map((p) => ({ when: p.when.trim(), then: firstSentence(p.then) }));
+}

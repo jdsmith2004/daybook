@@ -173,11 +173,11 @@ describe('the standing row', () => {
     expect(standRow(d, st, {}, '2026-10-16', at(16, 18), 'Spark')!.big).toBe('1 day');
     expect(standRow(d, g, {}, '2026-10-16', at(16, 18), 'Spark')!.big).not.toMatch(/^0/);
   });
-  it('a quieter line: what was logged today, and the week’s goal from Sunday', () => {
+  it('a quieter line: the week’s goal from Sunday (today’s entries are in Today so far)', () => {
     const d = addEvent({}, '2026-10-20', 'rode', '09:00', {}, 1).days;
     const sun = { 's2026-10-18': { sun: { w: [], c: [], g: { t: 'Phone out of the bedroom, 5 nights', k: 'phone' as const, n: 5 } } } } as never;
     const r = standRow(d, st, sun, '2026-10-20', at(20, 10), 'Spark')!;
-    expect(r.note).toMatch(/^1 logged today · \d of 5 nights this week$/);
+    expect(r.note).toMatch(/^\d of 5 nights this week$/);
     expect(standRow({}, st, {}, '2026-10-20', at(20, 10), 'Spark')!.note).toBe('');
   });
   it('stepping down: this stretch, with the best beside it', () => {

@@ -1,6 +1,6 @@
 # What is planned next
 
-## What's new after an update (the owner, November 2, 2026; on branch claude/whats-new, not merged)
+## What's new after an update (the owner, November 2, 2026; merged November 2, 2026 on the owner's word, after the simulator look)
 
 The owner: "when people update we need a what's new one page visual that briefly tells them what was added", and it shows
 only once, only to people updating, and then never again.
@@ -31,8 +31,30 @@ Pictures: `docs/whats-new/web-light.jpg` (web, light, where the Sunday review st
 simulator, after setting the version seen back to 1.3.0).
 
 **Steps (Opus effort):** rules and tests (medium, done), the page (medium, done), the release step (low, done), the web and
-simulator look (done). Merge once the owner has seen it. The entry is numbered 1.3.1: if the next build is another number,
+simulator look (done). Merged once the owner had seen it. The entry is numbered 1.3.1: if the next build is another number,
 the entry is renamed with it. Check main again before merging, in case Today or the lessons land first and earn a place.
+
+## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
+
+The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on
+`claude/gifted-chaum-b1e538`, docs/today-review there), the owner picked all three of these, then the Tonight look "hours inside the
+arc" with the plan in bubbles, and asked that it say hard hours. What is built:
+
+- **Today so far:** each entry logged today, with a shape like a badge (mint scallop and a wave for an urge ridden out). It opens the
+  entry. "1 logged today" left the quiet line under Your day, since this shows it.
+- **Tonight** (`components/tonight-card.tsx`): a dusk card that warms to an ember, a night card in both themes. The hard hours sit
+  inside a small arc of the evening (6 PM to 2 AM), gold with a glow, a dot for now, "Hard hours · in an hour" or "· now" over them.
+  Under it the two lines of the urge plan that fit tonight (core `planTonight`: the bed or late line when the hours are late, then the
+  trigger that comes most, slips counting three times) in the lessons' cream bubbles. At the bottom, "Make a plan for tonight" (Talk it
+  through, ready for tonight) from two hours before while there is none, otherwise "Your whole plan". Before the hard hours are known,
+  the same dusk with a moon and "If it gets hard tonight"; with no plan, one bubble to make one. The hard-hours line under the lesson
+  (`risk-card.tsx`) is gone; this card says it.
+- **Who you are becoming:** the sentence from setup, big in the flame's gold, and under it one true line from the log (core
+  `rodeProof`: "You rode out an urge Tuesday at 9:30 PM. 8 times now."). Without a sentence, "Write it in one sentence", into My plan.
+
+Earns and grows: nothing here is locked or asks for anything; it makes the free side feel generous and makes Today worth opening in
+the evening. My plan itself is being redesigned in its own session; it may use `planTonight` too. Picture:
+docs/today-review/today-built.png. Light theme checked. Merged November 2, 2026, once the owner had seen it on the simulator.
 
 ## The Sunday review fits the week (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
 
@@ -460,6 +482,17 @@ slip that read 11 of 12. Lesson 3 builds on lesson 2's wave. Pictures in `docs/l
 path. Sonnet agents find each lesson's turn (the belief, the surprising fact or distinction, and its source); the writing is
 done on Opus, since the voice is what makes it work. New picture kinds only where a lesson's turn needs one, each shown to
 the owner before it is reused.
+
+**Done on `lessons-steps` (November 2, 2026): all 49 lessons are turned.** Lesson 2 moved to the white bear study (pushing a
+thought away brings it back), since wanting and liking is lesson 33's. Lessons 4 to 49 were researched four batches at a time
+on Sonnet, written on Opus, and read one by one before they went in; no two lessons share a turn or a study. Two titles
+changed: lesson 31 is "Come back as you are", lesson 41 "The picture and what it gives". The own-log line can now also show
+the busiest hours, the most common reason, and the days that held in the last 30. Eight new pictures, waiting for the
+owner's yes (pictures in `docs/lessons-review/new-picture-*.png`): a path that dips one missed day and climbs on (21),
+what memory keeps against what the log keeps (40), blocks filling the picture screen (42), two rooms with the habit left
+behind (10), "I cannot" argued with against "I do not" (38), closeness built in turns (8), the father running down the road
+(31), and the way on past a side gate (49). Still to do: the owner sees it on the simulator before it merges; the 12 God
+lessons, with the faith voices, after a legal read or the Church's permission.
 
 ### Not verified
 

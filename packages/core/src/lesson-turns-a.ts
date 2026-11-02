@@ -435,7 +435,7 @@ export const TURNS_A: Record<string, Turn> = {
       {
         h: 'Hooked in Vietnam, most soldiers did not go back to it at home.',
         p: 'Most people treated for heroin in the US at the time went back within a year. The soldiers had left the room.',
-        art: ['icon', { ic: 'phone' }],
+        art: ['rooms', {}],
         fact: { s: 'Study · US Vietnam veterans · Robins, reviewed by Hall & Weier, 2017', i: [0] },
         more: 'During the Vietnam War, many US soldiers used heroin, and many showed signs of being hooked. Lee Robins and her team followed them after they came home. Most did not go back to it, while most people treated for heroin in the US at the time did. Many things changed at once for the soldiers: the war, the price, the people around them. A big part of it was that the whole setting the habit lived in was gone.',
       },
@@ -761,7 +761,7 @@ export const TURNS_A: Record<string, Turn> = {
       {
         h: 'People who said “I do not” picked the healthy snack more often.',
         p: 'Those told to say “I cannot” gave in more. Two small words changed what they did.',
-        art: ['icon', { ic: 'flag' }],
+        art: ['rule', {}],
         fact: { s: 'Experiments · Patrick & Hagtvedt, 2012', i: [0] },
         more: 'In one experiment, people practised saying no to a temptation in one of two ways, “I do not” or “I cannot.” On the way out they chose a snack, and the “I do not” group chose the healthy one more often. The researchers found that “I do not” felt like determination, and “I cannot” felt like being deprived.',
       },

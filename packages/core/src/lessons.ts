@@ -25,6 +25,9 @@ export type Art =
   | ['ready', Record<string, never>]
   | ['want', Record<string, never>]
   | ['dots', Record<string, never>]
+  /** a path that dips one day and climbs on, memory against the log, blocks filling the picture screen, two rooms, a rule
+      against a fact, closeness in turns, the road home, and a side gate passed by */
+  | ['path' | 'memory' | 'screen' | 'rooms' | 'rule' | 'turns' | 'home' | 'gate', Record<string, never>]
   /** one of the moving research pictures from Talk it through (talk.ts) or Rekindle (rekindle-learn.ts), by its key */
   | ['research', { k: string }];
 export interface Guess {

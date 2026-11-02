@@ -164,7 +164,7 @@ export const TURNS_C: Record<string, Turn> = {
       {
         h: 'In one study, one missed day barely dented a new habit.',
         p: 'People built a daily habit for 12 weeks. A single miss made little difference. Many misses did.',
-        art: ['icon', { ic: 'calendar' }],
+        art: ['path', {}],
         fact: { s: 'Study · 96 volunteers · Lally et al., 2010', i: [0] },
         more: 'Volunteers each picked one small daily habit, like a glass of water with lunch or a walk, and rated how automatic it felt for 84 days. Missing a single day made little difference to how automatic the habit became. Missing many days, even spread out, lowered how far it got.',
       },
@@ -232,7 +232,7 @@ export const TURNS_C: Record<string, Turn> = {
       {
         h: 'People chose more cold-water pain, since it ended a bit milder.',
         p: 'Their memory kept the worst moment and the end, and dropped how long it lasted.',
-        art: ['icon', { ic: 'check' }],
+        art: ['memory', {}],
         fact: { s: 'Study · Kahneman and colleagues, 1993', i: [0] },
         more: 'Volunteers held a hand in painfully cold water for 60 seconds. Another time they held it for 90 seconds, where the last 30 were a little less cold. Asked which one to repeat, most chose the longer one. Memory had kept the peak and the ending, and dropped the length. Doctors later found the same in patients after painful procedures.',
       },
@@ -694,7 +694,7 @@ export const TURNS_C: Record<string, Turn> = {
       {
         h: 'After a car crash, a block game meant fewer flashbacks.',
         p: 'Patients who played for 20 minutes in the hospital had fewer intrusive memories that week.',
-        art: ['icon', { ic: 'sparkle' }],
+        art: ['screen', {}],
         fact: { s: 'Trial · 71 patients · Iyadurai et al., 2018', i: [0] },
         more: 'In an Oxford emergency room, 71 people who had just been in a road accident either played Tetris for 20 minutes or wrote down what they had done that day. Over the next week, the players had fewer intrusive memories. It was a small first trial, and it shows how much of the mind’s eye a simple puzzle takes up.',
       },

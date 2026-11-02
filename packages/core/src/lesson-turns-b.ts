@@ -506,7 +506,7 @@ export const TURNS_B: Record<string, Turn> = {
       {
         h: 'The son turned toward home, and his father ran the rest.',
         p: 'He had a speech ready about being unworthy. His father cut it short with a robe, a ring and a feast.',
-        art: ['icon', { ic: 'heart' }],
+        art: ['home', {}],
         fact: { s: 'Scripture · Luke 15:11-24', i: [0] },
         more: 'Jesus tells of a young man who takes his inheritance, spends it all, and ends up feeding pigs, hungry enough to envy them. He decides to go home and ask to be a hired hand. His father sees him from far off and runs to him. Before the son can finish his speech, the father calls for the best robe, a ring and a feast, because his son was lost and is found.',
       },
@@ -573,7 +573,7 @@ export const TURNS_B: Record<string, Turn> = {
       {
         h: 'Strangers grew closer in 45 minutes, by taking turns.',
         p: 'Each question went a little deeper. They felt closer than pairs who only made small talk.',
-        art: ['icon', { ic: 'heart' }],
+        art: ['turns', {}],
         fact: { s: 'Study · Aron et al., 1997', i: [0] },
         more: 'In a lab, researchers paired up students who had never met. Some pairs took turns with questions that grew a little more personal, from what would make a perfect day toward what they valued most. Other pairs made small talk. After about 45 minutes, the pairs who took turns sharing felt closer. The closeness came from what they did, a little at a time.',
       },

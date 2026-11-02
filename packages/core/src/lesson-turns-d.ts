@@ -657,7 +657,7 @@ export const TURNS_D: Record<string, Turn> = {
       {
         h: 'Among people who had quit smoking, the surest walked closer.',
         p: 'Those surest of their self control planned to avoid temptation less, and more of them smoked again.',
-        art: ['icon', { ic: 'flag' }],
+        art: ['gate', {}],
         fact: { s: 'Study · people who had quit smoking · Nordgren et al., 2009', i: [0] },
         more: 'In a study of people who had quit smoking for at least three weeks, researchers asked how strong their self control was, and how hard they would try to stay away from places where they would want to smoke. Those who rated their control highest planned to try least, and four months later more of them were smoking again. In other experiments, with hunger and tiredness, the same thing happened.',
       },

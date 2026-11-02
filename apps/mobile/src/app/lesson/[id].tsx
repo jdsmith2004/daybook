@@ -58,7 +58,7 @@ import {
   deedWords,
   lessonStep,
   lessonUnit,
-  lxGraded,
+  questionOf,
   nextAfter,
   type PItem,
   planRows,
@@ -457,30 +457,32 @@ export default function LessonScreen() {
       const ci = it.ci;
       const b = cardBeat(L, ci);
       if (card.k === 'choose') {
-        const gr = lxGraded(card);
+        /* the question's words: rewritten to make the person think (core lesson-questions.ts), or the card's own */
+        const q = questionOf(L, ci, card, b);
+        const gr = q.a != null;
         const pk = pick[ci] ?? null;
         const saved = card.sv ? ' Saved to My plan.' : '';
         body = (
           <Question
-            h={b.h || card.h}
-            list={b.o || card.c!.map((x) => x[0])}
-            best={gr ? card.a! : null}
+            h={q.h}
+            list={q.o}
+            best={gr ? q.a! : null}
             pk={pk}
             tried={tried[ci] || []}
-            comments={(b.c || card.c!.map((x) => x[1])).map((x) => x + saved)}
+            comments={q.c.map((x) => x + saved)}
             want={want}
-            onMore={b.c ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
+            onMore={b.c && !q.rewritten ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
             onPick={(j) => {
               setPick((p0) => ({ ...p0, [ci]: j }));
               setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-              if (card.sv)
-                apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
-              if (gr && j === card.a) setPulse((x) => x + 1);
+              if (card.sv) apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(q.o[j]).slice(0, 200))) });
+              if (!gr || j === q.a) setPulse((x) => x + 1);
               buzz('tap');
             }}
           />
         );
-        foot = <Next label={nextLabel} off={gr && pk == null} onPress={() => step(1)} />;
+        /* a rewritten question waits for an answer, any answer: it is the person's own */
+        foot = <Next label={nextLabel} off={(gr || q.rewritten) && pk == null} onPress={() => step(1)} />;
       } else if (card.k === 'guess') {
         const g = card.g!;
         const gs = gu[ci] || { v: null, lock: false };
@@ -1072,7 +1074,8 @@ function Opts({ list, best, pk, tried, onPick }: { list: string[]; best: number 
     <View style={{ gap: 8 }}>
       {list.map((o, j) => {
         const sel = pk === j;
-        const right = best == null ? sel : found && j === best;
+        /* an open question has no right answer: the one picked is outlined, never marked right */
+        const right = best != null && found && j === best;
         const quiet = !right && (found || (best != null && tried.indexOf(j) >= 0));
         return (
           <Pressable

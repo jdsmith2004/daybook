@@ -157,6 +157,11 @@ export interface Settings {
     /** lessons read before the path reached them whose welcome back was passed ("Keep going", lessons.ts lessonReach).
         A marker only: no points. Left out when empty. */
     back?: Record<string, 1>;
+    /** the steps' deeds (steps.ts), by step id: the day "I did it" was chosen, kept for good; the day "Not yet" was chosen; and the steps
+        already asked about once more. Each is left out when empty. */
+    did?: Record<string, DayKey>;
+    later?: Record<string, DayKey>;
+    asked?: Record<string, 1>;
   };
   words: string[];
   menu: string[];

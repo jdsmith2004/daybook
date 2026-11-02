@@ -1,4 +1,4 @@
-/* A lesson. One flow for every lesson: the cover (pick Quick or Full) > one recall question on the lesson before > the cards >
+/* A lesson. One flow for every lesson: the cover (pick Quick or Full) > the cards >
    Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Put it to work (core
    practice.ts) offers ready-made lines that go on the plan with one tap, right here, with Undo; a tool or page it opens comes
    back to the same step, as it was. Nothing on a card, and nothing on the practice step, can finish the lesson or send the
@@ -6,8 +6,11 @@
    Lessons open one at a time, in the order of the path (core lessonGate). A link to a lesson the path has not reached (a
    help page, My plan, the review, a nudge, a tool) opens its key idea instead: one card, with the tools it points to, that
    writes nothing and earns nothing. A lesson read before that rule, once the path reaches it, opens as a short welcome
-   back: the key idea, its own recall question (not asked again by the next lesson that day), then Keep going (core lessonReach: no points, nothing
-   counted twice) or Read it all again (?at=all, the full lesson). */
+   back: the key idea, then Keep going (core lessonReach: no points, nothing
+   counted twice) or Read it all again (?at=all, the full lesson).
+   The last lesson of a step ends with the step's deed, done in real life (core steps.ts): "I did it" or "Not yet, I will
+   come back", and the path goes on either way. The first lesson of the next step asks once more, before its cover, unless
+   the deed was done, was asked about already, or there was a slip today or yesterday. */
 import {
   type Block,
   type Beat,
@@ -21,6 +24,7 @@ import {
   fmtDate,
   type Go,
   guessFeedback,
+  lcheckAbout,
   lcheckWritten,
   type Lesson,
   lessonBeats,
@@ -30,6 +34,7 @@ import {
   lessonHasQuick,
   lessonKeyIdea,
   lessonLog,
+  lessonMine,
   lessonNo,
   itemAdd,
   itemHas,
@@ -39,17 +44,22 @@ import {
   lessonPractice,
   lessonPracticed,
   lessonReach,
-  lessonBackRecall,
-  lessonRecallOf,
   lessonSeq,
   lessonStats,
   lessonWalk,
   type LessonWalk,
   lfmt,
   LNOTE_LEN,
-  LUNITS,
-  lxGraded,
-  lxRcReply,
+  PATH_STEPS,
+  deedAfter,
+  deedAnswer,
+  deedAskBack,
+  deedDone,
+  deedSet,
+  deedWords,
+  lessonStep,
+  lessonUnit,
+  questionOf,
   nextAfter,
   type PItem,
   planRows,
@@ -59,7 +69,7 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Easing, Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -74,7 +84,8 @@ import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { lessonLook, type Look, type LookKind } from '@/lib/lesson-look';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { lessonLook, PAPER, PAPER_INK, PAPER_LIP, RIGHT, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
@@ -83,7 +94,8 @@ import { copyText } from '@/lib/words';
 import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@/lib/theme';
 
-type Stage = 'cover' | 'run' | 'practice' | 'practiced';
+/** deed: a step's deed, after its last lesson (core steps.ts) */
+type Stage = 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
 /** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
     not ask the same question again that day */
 const ASKED: Record<string, string> = {};
@@ -92,8 +104,6 @@ type Sheet =
   | { t: 'src'; i?: number | null }
   /** a card's original words, and on a question the original comment on the answer picked */
   | { t: 'more'; i: number; pk: number | null }
-  /** the recall question's original words */
-  | { t: 'rc'; of: string; pk: number | null }
   /** the lesson's one thing to keep, in full */
   | { t: 'key' };
 /** a line added on the practice step: the words that went on the plan (changed or not), and what a sentence replaced */
@@ -114,17 +124,19 @@ export default function LessonScreen() {
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
   const [i, setI] = useState(0);
   const [len, setLen] = useState<'q' | 'f'>('f');
-  const [rcOf, setRcOf] = useState<string | null>(null);
-  const [rc, setRc] = useState<number | null>(null);
-  const [rcTried, setRcTried] = useState<number[]>([]);
   const [pick, setPick] = useState<Record<number, number>>({});
   const [tried, setTried] = useState<Record<number, number[]>>({});
   const [gu, setGu] = useState<Record<number, { v: number | null; lock: boolean }>>({});
+  /* the turn cards turned over: the back stays up on the way back through the lesson */
+  const [flip, setFlip] = useState<Record<number, boolean>>({});
   const [gain, setGain] = useState(0);
   const [again, setAgain] = useState(false);
   const [rec, setRec] = useState(at === 'practiced');
   const [prac, setPrac] = useState(at === 'practiced');
   const [sheet, setSheet] = useState<Sheet | null>(null);
+  /* the step's deed: what was chosen at the end of this lesson, and whether the one ask back was answered as it opened */
+  const [deedA, setDeedA] = useState<'did' | 'later' | null>(null);
+  const [askedBack, setAskedBack] = useState(false);
   /* the practice step: what was added, opened and copied here, and the line whose words are being changed */
   const [got, setGot] = useState<Record<number, Got>>({});
   const [went, setWent] = useState<Record<number, boolean>>({});
@@ -179,7 +191,12 @@ export default function LessonScreen() {
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   const next = nextAfter(L, w);
-  const seq = lessonSeq(L, rcOf, len);
+  /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
+  const dk = care ? -1 : deedAfter(L, st);
+  const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
+  /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
+  const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
+  const seq = lessonSeq(L, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
   const beats = lessonBeats(L);
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
@@ -194,13 +211,14 @@ export default function LessonScreen() {
     p = (ix + 1) / seq.length;
     if (cur.t === 'card') {
       const cl = cardLook(cur.c, cardBeat(L, cur.ci));
-      lockKey = cl === 'guess' && !!gu[cur.ci]?.lock;
-      kind = cl === 'sun' ? 'sun' : cl === 'number' || lockKey ? 'violet' : 'sky';
+      lockKey = (cl === 'guess' && !!gu[cur.ci]?.lock) || (cl === 'flip' && !!flip[cur.ci]);
+      /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
+      kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
   } else if (stage !== 'cover') p = 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
-  const t = toneOf(c, LUNITS[L.u].tone);
+  const t = toneOf(c, lessonUnit(L).tone);
   const flameOn = kind !== 'violet' && !(stage === 'practice' && editing != null);
   let backBtn: (() => void) | undefined;
 
@@ -227,6 +245,7 @@ export default function LessonScreen() {
     if (to < 0 || to >= seq.length) return;
     const cur = seq[i];
     if (d > 0 && cur.t === 'card' && cur.c.k === 'guess' && !(gu[cur.ci] && gu[cur.ci].lock)) return;
+    if (d > 0 && cur.t === 'card' && cur.c.k === 'flip' && !flip[cur.ci]) return;
     setI(to);
     if (seq[to].t === 'done') record();
   };
@@ -236,6 +255,39 @@ export default function LessonScreen() {
   };
   const toStage = (s: Stage) => {
     setStage(s);
+  };
+  /* a deed's answer, at the end of the step or asked once more: "I did it" gives its points on today, kept for good */
+  const deedSave = (fn: (st0: Settings) => Settings) => {
+    let g = 0;
+    update((s0) => {
+      const b0 = gameCompute(s0.days, s0.settings!, s0.reviews, tk).rawPts;
+      const st1 = fn(s0.settings!);
+      g = Math.max(0, gameCompute(s0.days, st1, s0.reviews, tk).rawPts - b0);
+      return { ...s0, settings: st1 };
+    });
+    return g;
+  };
+  const chooseDeed = (a: 'did' | 'later') => {
+    const g = deedSave((st0) => deedSet(st0, dk, a, tk));
+    setDeedA(a);
+    if (a === 'did') {
+      setGain(g);
+      setPulse((x) => x + 1);
+      buzz('lit');
+    } else buzz('tap');
+    toStage('practiced');
+  };
+  const answerBack = (did: boolean) => {
+    const g = deedSave((st0) => deedAnswer(st0, askK, did, tk));
+    setAskedBack(true);
+    if (did) {
+      setPulse((x) => x + 1);
+      buzz('lit');
+      say((g > 0 ? '+' + g + ' points. ' : '') + 'Step ' + (askK + 1) + ', done for real.');
+    } else {
+      buzz('tap');
+      say('That is all right. It will be there when you are ready.');
+    }
   };
 
   /* the practice step. Nothing here finishes the lesson, and a tool or page it opens comes back to this same step. */
@@ -291,17 +343,31 @@ export default function LessonScreen() {
   let foot: ReactNode = null;
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
-  if (stage === 'cover') {
+  if (stage === 'cover' && askK >= 0) {
+    /* the one ask back, before the next step starts: two answers, and either way it is never asked again */
+    body = (
+      <>
+        <T v="small" tone="muted">
+          Before step {lessonStep(L) + 1}
+        </T>
+        <T style={s.h} accessibilityRole="header">
+          You were going to {PATH_STEPS[askK].back}. Did you get to?
+        </T>
+        <FlameSlot size={SHORT ? 260 : 330} min={120} />
+        <Dock>
+          <View style={{ gap: 12 }}>
+            <DeedBtn title="I did it" sub={'Step ' + (askK + 1) + ' lights up on your map.'} onPress={() => answerBack(true)} />
+            <DeedBtn title="Not yet" sub="Daybook will not ask again." onPress={() => answerBack(false)} />
+          </View>
+        </Dock>
+      </>
+    );
+  } else if (stage === 'cover') {
     const pref = st.learn.len;
     const start = (l: 'q' | 'f') => {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      /* the lesson before asked its own question on its welcome back today: not again */
-      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)), st);
-      setRcOf(P ? P.id : null);
-      setRc(null);
-      setRcTried([]);
       setStage('run');
       if (lessonHasQuick(L) && st.learn.len !== ln) apply({ st: changeSettings(st, (s0) => void (s0.learn.len = ln)) });
     };
@@ -309,7 +375,7 @@ export default function LessonScreen() {
       <>
         <FlameSlot size={SHORT ? 280 : 360} min={120} />
         <T v="small" tone="muted">
-          {n ? 'Lesson ' + n + ' of ' + w.path.length : LUNITS[L.u].name}
+          {n ? 'Lesson ' + n + ' · Step ' + (lessonStep(L) + 1) + ', ' + lessonUnit(L).name : lessonUnit(L).name}
         </T>
         <T style={s.h} accessibilityRole="header">
           {L.title}
@@ -327,14 +393,20 @@ export default function LessonScreen() {
               <LenBtn
                 on={pref === 'q'}
                 title="Quick"
-                sub={L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+                sub={L.v === 3 ? 'The turn, what to do, one check' : L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
                 mins="1–2 min"
                 onPress={() => start('q')}
               />
               <LenBtn
                 on={pref !== 'q'}
                 title="Full"
-                sub={L.v === 2 ? 'Adds a guess and the science behind it' : 'Adds the evidence and why it works'}
+                sub={
+                  L.v === 3
+                    ? 'Adds a question and what is behind the turn'
+                    : L.v === 2
+                      ? 'Adds a guess and the science behind it'
+                      : 'Adds the evidence and why it works'
+                }
                 mins="3–5 min"
                 onPress={() => start('f')}
               />
@@ -350,31 +422,7 @@ export default function LessonScreen() {
     prog = <Prog total={seq.length} i={ix} look={look} />;
     if (ix > 0) backBtn = () => step(-1);
     const nextLabel = seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next';
-    if (it.t === 'rc') {
-      const P = lessonById(rcOf)!;
-      const r = P.rc!;
-      const rb = lessonBeats(P)?.rc;
-      body = (
-        <Question
-          h={rb?.q || r.q}
-          list={rb?.o || r.c}
-          best={r.a}
-          pk={rc}
-          tried={rcTried}
-          comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
-          first="One from last time."
-          want={want}
-          onMore={rb ? () => setSheet({ t: 'rc', of: P.id, pk: rc }) : undefined}
-          onPick={(j) => {
-            setRc(j);
-            setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-            if (j === r.a) setPulse((x) => x + 1);
-            buzz('tap');
-          }}
-        />
-      );
-      foot = rc == null ? <Ghost label="Skip" onPress={() => step(1)} /> : <Next label="Next" onPress={() => step(1)} />;
-    } else if (it.t === 'done') {
+    if (it.t === 'done') {
       const pr = lessonPractice(L);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       const key = beats?.key || L.key;
@@ -407,6 +455,8 @@ export default function LessonScreen() {
       );
       foot = pr ? (
         <Next label="Put it to work" onPress={() => toStage('practice')} />
+      ) : deedNext ? (
+        <Next label="Next" onPress={() => toStage('deed')} />
       ) : next ? (
         <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
       ) : (
@@ -417,30 +467,32 @@ export default function LessonScreen() {
       const ci = it.ci;
       const b = cardBeat(L, ci);
       if (card.k === 'choose') {
-        const gr = lxGraded(card);
+        /* the question's words: rewritten to make the person think (core lesson-questions.ts), or the card's own */
+        const q = questionOf(L, ci, card, b);
+        const gr = q.a != null;
         const pk = pick[ci] ?? null;
         const saved = card.sv ? ' Saved to My plan.' : '';
         body = (
           <Question
-            h={b.h || card.h}
-            list={b.o || card.c!.map((x) => x[0])}
-            best={gr ? card.a! : null}
+            h={q.h}
+            list={q.o}
+            best={gr ? q.a! : null}
             pk={pk}
             tried={tried[ci] || []}
-            comments={(b.c || card.c!.map((x) => x[1])).map((x) => x + saved)}
+            comments={q.c.map((x) => x + saved)}
             want={want}
-            onMore={b.c ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
+            onMore={b.c && !q.rewritten ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
             onPick={(j) => {
               setPick((p0) => ({ ...p0, [ci]: j }));
               setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
-              if (card.sv)
-                apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(card.c![j][0]).slice(0, 200))) });
-              if (gr && j === card.a) setPulse((x) => x + 1);
+              if (card.sv) apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(q.o[j]).slice(0, 200))) });
+              if (!gr || j === q.a) setPulse((x) => x + 1);
               buzz('tap');
             }}
           />
         );
-        foot = <Next label={nextLabel} off={gr && pk == null} onPress={() => step(1)} />;
+        /* a rewritten question waits for an answer, any answer: it is the person's own */
+        foot = <Next label={nextLabel} off={(gr || q.rewritten) && pk == null} onPress={() => step(1)} />;
       } else if (card.k === 'guess') {
         const g = card.g!;
         const gs = gu[ci] || { v: null, lock: false };
@@ -494,6 +546,23 @@ export default function LessonScreen() {
               top();
             }}
           />
+        );
+      } else if (card.k === 'flip') {
+        const on = !!flip[ci];
+        const turn = () => {
+          if (on) return;
+          setFlip((x) => ({ ...x, [ci]: true }));
+          setPulse((x) => x + 1);
+          buzz('lit');
+        };
+        body = <FlipCard think={b.h || card.h} see={b.p || card.see || ''} on={on} want={want} onTurn={turn} />;
+        foot = on ? (
+          <View style={s.footCol}>
+            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
+            <Next label={nextLabel} onPress={() => step(1)} />
+          </View>
+        ) : (
+          <Next label="Turn it over" noIcon onPress={turn} />
         );
       } else {
         body =
@@ -564,23 +633,50 @@ export default function LessonScreen() {
           noIcon
           onPress={() => {
             if (acted) practiced();
-            toStage('practiced');
+            toStage(deedNext ? 'deed' : 'practiced');
           }}
         />
-        <Quiet label="Skip practice" onPress={() => toStage('practiced')} />
+        <Quiet label="Skip practice" onPress={() => toStage(deedNext ? 'deed' : 'practiced')} />
       </View>
+    );
+  } else if (stage === 'deed') {
+    /* the end of a step: its deed, done in real life. Nothing waits on the answer. */
+    prog = <Prog total={1} i={0} all look={look} />;
+    body = (
+      <>
+        <T v="small" tone="muted">
+          The end of step {dk + 1}, {PATH_STEPS[dk].name}
+        </T>
+        <T style={s.h} accessibilityRole="header">
+          Now do it for real
+        </T>
+        <Bubble text={deedWords(dk, st)} />
+        <FlameSlot size={SHORT ? 230 : 300} min={110} />
+        <Dock>
+          <View style={{ gap: 12 }}>
+            <DeedBtn title="I did it" sub={'Step ' + (dk + 1) + ' lights up on your map.'} onPress={() => chooseDeed('did')} />
+            <DeedBtn title="Not yet, I will come back" sub="Daybook asks once more, at the next step." onPress={() => chooseDeed('later')} />
+          </View>
+        </Dock>
+      </>
     );
   } else {
     const a = lessonPractice(L);
     const pair = lessonPairOf(L);
-    const due = pair && w.walked.has(pair.a.id) && !lcheckWritten(st, pair.n);
+    const due = pair && (w.walked.has(pair.a.id) || (w.path.indexOf(pair.a) < 0 && done.has(pair.a.id))) && !lcheckWritten(st, pair.n);
     prog = <Prog total={1} i={0} all look={look} />;
     body = (
       <>
         <T style={s.h} accessibilityRole="header">
-          {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
+          {deedA === 'did' ? 'You did step ' + (dk + 1) + '.' : prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
-        {prac ? null : <T style={s.p}>The practice stays in Learn whenever you want it.</T>}
+        {deedA === 'did' ? (
+          <T style={s.p}>
+            {PATH_STEPS[dk].name}, done in real life{gain > 0 ? ': +' + gain + ' points' : ''}.
+          </T>
+        ) : prac || deedA ? null : (
+          <T style={s.p}>The practice stays in Learn whenever you want it.</T>
+        )}
         {ringLit ? <T style={s.p}>That lit today on your lessons ring, in Learn. One part for each day you do a lesson this week.</T> : null}
         {/* the end of a lesson is the flame's moment */}
         <FlameSlot size={SHORT ? 330 : 420} min={150} />
@@ -588,7 +684,7 @@ export default function LessonScreen() {
           <Dock>
             <Route
               label="Write it out"
-              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, st) + ' and ' + lessonNo(pair.b, st)}
+              small={'3–5 min · a short checkpoint for ' + lcheckAbout(pair, st)}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
           </Dock>
@@ -661,7 +757,7 @@ function goTo(g: Go) {
 /* ---------- a lesson the path has not reached, and one read early ---------- */
 /** 'key': a lesson further on the path, opened from a link. Its key idea on one card, the tools it points to, and where it
     sits on the path; nothing is saved. 'back': a lesson read early, now Up next. A short welcome back: when it was read,
-    the flame, the key idea, its own recall question, then Keep going or Read it all again. */
+    the flame, the key idea, then Keep going or Read it all again. */
 function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'back' }) {
   const { snap, tk, apply } = useStore();
   const account = useAccount();
@@ -669,8 +765,6 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const look = lessonLook('sky', gate === 'back' ? 0.74 : 0.3, base.scheme);
   const inset = useSafeAreaInsets();
   const st = snap.settings!;
-  const [rc, setRc] = useState<number | null>(null);
-  const [rcTried, setRcTried] = useState<number[]>([]);
   const [went, setWent] = useState<Record<number, boolean>>({});
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
@@ -691,7 +785,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     body = (
       <>
         <T v="small" tone="muted">
-          Lesson {n} · {LUNITS[L.u].name}
+          Lesson {n} · {lessonUnit(L).name}
         </T>
         <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
           {L.title}
@@ -731,9 +825,6 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       </View>
     );
   } else {
-    const P = lessonBackRecall(L);
-    const r = P ? P.rc! : null;
-    const rb = P ? lessonBeats(P)?.rc : null;
     const keep = () => {
       apply((cur) => ({ st: lessonReach(cur, L.id) }));
       buzz('save');
@@ -749,30 +840,8 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {L.title}
         </T>
-        {r && P ? (
-          /* the flame says the key idea, then a comment on each answer */
-          <Question
-            head={<T style={[s.p, { fontFamily: font.bodySemi }]}>{rb?.q || r.q}</T>}
-            list={rb?.o || r.c}
-            best={r.a}
-            pk={rc}
-            tried={rcTried}
-            comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
-            first={said}
-            want={150}
-            onPick={(j) => {
-              setRc(j);
-              setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-              ASKED[L.id] = tk;
-              buzz('tap');
-            }}
-          />
-        ) : (
-          <>
-            <Bubble text={said} />
-            <FlameSlot size={SHORT ? 210 : 280} min={96} />
-          </>
-        )}
+        <Bubble text={said} />
+        <FlameSlot size={SHORT ? 210 : 280} min={96} />
       </>
     );
     foot = (
@@ -799,6 +868,21 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   );
 }
 /* ---------- small pieces ---------- */
+/** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
+function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        s.opt,
+        { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1, borderColor: 'transparent', gap: 2, transform: [{ translateY: pressed ? 2 : 0 }] },
+      ]}>
+      <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: PAPER_INK }}>{title}</Text>
+      <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{sub}</Text>
+    </Pressable>
+  );
+}
 function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
   const c = useTheme();
   const ink = on ? c.onSun : c.ink;
@@ -852,7 +936,7 @@ function NoteField({ L, note }: { L: Lesson; note: string }) {
 /* ---------- the blocks inside a card ---------- */
 function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings }) {
   const c = useTheme();
-  const { snap } = useStore();
+  const { snap, tk } = useStore();
   if (!bs || !bs.length) return null;
   return (
     <>
@@ -932,6 +1016,13 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
             </View>
           );
         }
+        if (b[0] === 'mine')
+          return (
+            <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
+              <Text style={[s.eye2, { color: c.muted }]}>From your log, on this phone</Text>
+              <T style={s.mine}>{lessonMine(b[1], snap.days, st, tk)}</T>
+            </View>
+          );
         if (b[0] === 'words') {
           const w = st.words || [];
           return (
@@ -956,10 +1047,18 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
-  const own = (card.b || []).filter((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words');
+  const own = (card.b || []).filter((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words' || x[0] === 'mine');
   const tone = look.art as Tone;
+  /* a card that builds on an earlier lesson names it, as part of the thought, not as a review */
+  const B = card.back ? lessonById(card.back) : null;
+  const bn = B ? lessonNo(B, st) : null;
   return (
     <>
+      {B ? (
+        <T v="small" tone="muted">
+          {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
+        </T>
+      ) : null}
       <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
         {h}
       </T>
@@ -983,6 +1082,71 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
       <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
     </>
+  );
+}
+/** a turn, as a flash card: what the person may think on the front of a ruled index card, lying on a small stack of them, and another
+    way to see it on the back. A tap on the card or on Turn it over flips it all the way over, lifting a little as it turns, and the
+    back is a different color, so it reads as the other side. The sky behind stays as it is. With Reduce Motion on, the back simply shows. */
+function FlipCard({ think, see, on, want, onTurn }: { think: string; see: string; on: boolean; want: number; onTurn: () => void }) {
+  const still = useReducedMotion();
+  const a = useRef(new Animated.Value(on ? 1 : 0)).current;
+  const [done, setDone] = useState(on);
+  useEffect(() => {
+    if (!on || done) return;
+    if (still) {
+      a.setValue(1);
+      return setDone(true);
+    }
+    Animated.timing(a, { toValue: 1, duration: 620, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start(() => setDone(true));
+  }, [on, done, still, a]);
+  const front = a.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const back = a.interpolate({ inputRange: [0, 1], outputRange: ['-180deg', '0deg'] });
+  /* the faces trade places at the edge, for Android, which does not hide a card's back side */
+  const frontOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [1, 1, 0, 0] });
+  const backOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [0, 0, 1, 1] });
+  const lift = a.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.07, 1] });
+  return (
+    <>
+      <View style={s.flipRoom}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={on ? 'Look again. ' + see : 'You may think: ' + think + '. Turn it over.'}
+          onPress={onTurn}
+          style={s.flipDeck}>
+          {/* the stack the card lies on */}
+          <View style={[s.flipUnder, { transform: [{ rotate: '4deg' }, { translateY: 10 }] }]} />
+          <View style={[s.flipUnder, { transform: [{ rotate: '-3deg' }, { translateY: 5 }] }]} />
+          <Animated.View style={{ transform: [{ scale: lift }] }}>
+            <Animated.View style={[s.flip, { opacity: frontOn, transform: [{ perspective: 1000 }, { rotateY: front }] }]}>
+              <IndexCard label="You may think" ink="rgba(27,31,75,0.6)" rule="#E8665A">
+                <Text style={s.flipT}>{think}</Text>
+              </IndexCard>
+            </Animated.View>
+            <Animated.View style={[s.flip, s.flipBack, { opacity: backOn, transform: [{ perspective: 1000 }, { rotateY: back }] }]}>
+              <IndexCard label="Look again" ink={RIGHT} rule={RIGHT}>
+                <Text style={[s.flipT, s.flipSee]}>{see}</Text>
+              </IndexCard>
+            </Animated.View>
+          </Animated.View>
+        </Pressable>
+      </View>
+      <FlameSlot size={want * 0.9} min={84} />
+    </>
+  );
+}
+/** one side of a flash card: a label above a colored rule, and faint ruled lines under the words, like an index card */
+function IndexCard({ label, ink, rule, children }: { label: string; ink: string; rule: string; children: ReactNode }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={s.flipRules} pointerEvents="none">
+        {Array.from({ length: 7 }, (_, k) => (
+          <View key={k} style={s.flipRule} />
+        ))}
+      </View>
+      <Text style={[s.flipEl, { color: ink }]}>{label}</Text>
+      <View style={{ height: 2, backgroundColor: rule, opacity: 0.8, marginTop: 10, marginBottom: 14, marginHorizontal: -24 }} />
+      {children}
+    </View>
   );
 }
 /** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
@@ -1041,7 +1205,7 @@ function SheetOver({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; 
 function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; st: Settings; onClose: () => void; onSrc: (i?: number) => void }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const t = toneOf(c, LUNITS[L.u].tone);
+  const t = toneOf(c, lessonUnit(L).tone);
   let title = 'Behind this lesson';
   let body: ReactNode;
   if (sheet.t === 'src') {
@@ -1089,16 +1253,6 @@ function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; 
   } else if (sheet.t === 'key') {
     title = L.ask || 'The one thing to keep';
     body = <T style={s.p}>{L.key}</T>;
-  } else if (sheet.t === 'rc') {
-    const r = lessonById(sheet.of)!.rc!;
-    title = r.q;
-    body =
-      sheet.pk != null ? (
-        <>
-          <T v="label">{r.c[sheet.pk]}</T>
-          <T style={s.p}>{lxRcReply(r, sheet.pk)}</T>
-        </>
-      ) : null;
   } else {
     const card = L.cards[sheet.i];
     const rv = card.k === 'guess' ? card.g!.rv : null;
@@ -1177,6 +1331,29 @@ const s = StyleSheet.create({
   line: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20 },
   number: { gap: 12, paddingTop: SHORT ? 8 : 40 },
   quote: { paddingVertical: 4 },
+  flipRoom: { flexGrow: 1, justifyContent: 'center', paddingVertical: 8 },
+  flipDeck: { marginHorizontal: 6 },
+  flipUnder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#ECE6F7', borderRadius: 16 },
+  flip: {
+    backgroundColor: PAPER,
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 24,
+    minHeight: SHORT ? 230 : 270,
+    backfaceVisibility: 'hidden',
+    shadowColor: PAPER_LIP,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 0,
+    shadowOpacity: 1,
+  },
+  flipBack: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#FFF3C4' },
+  flipRules: { position: 'absolute', left: -24, right: -24, top: 62, gap: 32 },
+  flipRule: { height: 1, backgroundColor: 'rgba(70,110,190,0.16)' },
+  flipEl: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  flipT: { fontFamily: font.display, fontSize: 28, lineHeight: 33, color: PAPER_INK },
+  flipSee: { fontSize: 22, lineHeight: 33 },
+  mine: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
   plan: { gap: 8, padding: 16, borderRadius: 20 },
   so: { gap: 4, marginTop: 8 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 28 },

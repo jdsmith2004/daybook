@@ -107,17 +107,10 @@ describe('lessons read early (before this rule)', () => {
     expect(core.lessonStop(d, st0(), k)).toMatchObject({ kind: 'next', L: L9, n: 9 });
     expect(core.lessonDue(d, st0(), k, true)).toBe(L9.id);
     expect(core.riskLesson(d, st0(), k, true)).toMatchObject({ L: L9, again: false });
-    /* the welcome back asks lesson 9's own question; lesson 10 then skips it when it was answered there today */
-    expect(core.lessonBackRecall(L9)).toBe(L9);
     expect(core.nextAfter(L9, w)).toBe(path[9]);
     const st2 = core.lessonReach(st0(), L9.id);
     const w2 = core.lessonWalk(d, st2);
     expect(w2.next).toBe(path[9]);
-    expect(core.lessonRecallOf(path[9], w2.done)).toBe(L9);
-    expect(core.lessonRecallOf(path[9], w2.done, new Set([L9.id]))).toBeNull();
-  });
-  it('every lesson has its own recall question, for its welcome back', () => {
-    path.forEach((L) => expect(core.lessonBackRecall(L)).toBe(L));
   });
   it('"Keep going" moves the path on, with no new points, no lesson day and the same level', () => {
     let d = days;
@@ -174,11 +167,10 @@ describe('when the order of the path changed (October 30, 2026)', () => {
   });
   it('every finished lesson stays done, open and on the map, and Up next is the first one not read', () => {
     const w = core.lessonWalk(days, st0());
-    expect(w.next?.id).toBe('l46');
+    expect(w.next?.id).toBe(path.find((L) => before.indexOf(L.id) < 0)!.id);
     expect(w.back).toBe(false);
-    expect(w.walked.size).toBe(before.length);
     before.forEach((id) => {
-      expect(w.walked.has(id)).toBe(true);
+      expect(w.done.has(id)).toBe(true);
       expect(core.lessonGate(core.lessonById(id)!, w)).toBe('open');
     });
     const all = core.lessonMap(w).lands.flatMap((l) => l.stones);
@@ -188,84 +180,117 @@ describe('when the order of the path changed (October 30, 2026)', () => {
         .map((s) => s.L.id)
         .sort(),
     ).toEqual([...before].sort());
-    expect(core.lessonGate(core.lessonById('l13')!, w)).toBe('key');
+    expect(core.lessonCount(w).done).toBe(before.length);
   });
-  it('after the new lesson, the path walks past what is done to what is not', () => {
-    const d = finish(days, core.lessonById('l46')!);
-    const w = core.lessonWalk(d, st0());
-    expect(w.next?.id).toBe('l37');
-    expect(core.nextAfter(core.lessonById('l37')!, w)?.id).toBe('l38');
-    expect(core.lessonsEarly(d).size).toBe(0);
-    /* the sections' done counts on Learn hold what was read */
-    expect(core.lessonTimeline(d, st0()).coming.find((x) => x.u === 7)).toBeUndefined();
-  });
-  it('someone who finished all 45 keeps them, and meets the four new ones', () => {
-    const w = core.lessonWalk(
-      rec(before, [
-        'l13',
-        'l14',
-        'l15',
-        'l16',
-        'l42',
-        'l43',
-        'l44',
-        'l45',
-        'l17',
-        'l18',
-        'l19',
-        'l20',
-        'l41',
-        'l37',
-        'l38',
-        'l39',
-        'l40',
-        'l21',
-        'l22',
-        'l23',
-        'l24',
-        'l25',
-        'l26',
-        'l27',
-        'l28',
-      ]),
-      st0(),
-    );
-    expect(w.early.size).toBe(0);
-    expect(w.walked.size).toBe(45);
-    expect(w.next?.id).toBe('l46');
-  });
-  it('a lesson opened out of turn in either order is still read early', () => {
+  it('a lesson opened out of turn in every order is still read early', () => {
     expect([...core.lessonsEarly(rec(['l1', 'l2'], ['l29']))]).toEqual(['l29']);
   });
 });
 
+describe('when the path became the twelve steps (November 2, 2026)', () => {
+  const [oldest, oct30] = core.lessonPathsBefore();
+  it('the past orders are what they were', () => {
+    expect(oldest.length).toBe(45);
+    expect(oct30.length).toBe(49);
+    expect(oct30.slice(0, 9).map((L) => L.id)).toEqual(['l1', 'l2', 'l3', 'l4', 'l46', 'l33', 'l34', 'l35', 'l36']);
+    expect(oldest.slice(0, 8).map((L) => L.id)).toEqual(['l1', 'l2', 'l3', 'l4', 'l33', 'l34', 'l35', 'l36']);
+  });
+  /* a person who walked k lessons of a past order, one a day, then opens the new path: nothing finished drops, nothing earned
+     moves, no welcome backs pile up, and Up next is the first lesson of the new path not read */
+  [
+    { name: 'October 30', order: oct30 },
+    { name: 'before October 30', order: oldest },
+  ].forEach(({ name, order }) =>
+    it(`someone partway through the order of ${name} keeps everything, at every point along it`, () => {
+      for (let k = 0; k <= order.length; k++) {
+        const read = order.slice(0, k).map((L) => L.id);
+        const d = rec(...read.map((id) => [id]));
+        const st = st0();
+        const w = core.lessonWalk(d, st);
+        expect(w.early.size).toBe(0);
+        expect(w.done.size).toBe(k);
+        expect(core.lessonCount(w).done).toBe(k);
+        expect(w.next).toBe(path.find((L) => read.indexOf(L.id) < 0) || null);
+        read.forEach((id) => expect(core.lessonGate(core.lessonById(id)!, w)).toBe('open'));
+        /* points come from the record, so they hold; one more lesson in the new order is not read early either */
+        if (w.next) expect(core.lessonsEarly(finish(d, w.next, core.addDays('2026-09-10', k + 1))).size).toBe(0);
+      }
+    }),
+  );
+  it('points, level and badges are the same in any order', () => {
+    const st = st0();
+    const a = rec(...oct30.slice(0, 20).map((L) => [L.id]));
+    const ids20 = oct30.slice(0, 20).map((L) => L.id);
+    const b = rec(...path.filter((L) => ids20.indexOf(L.id) >= 0).map((L) => [L.id]));
+    const k = '2026-10-15';
+    const ga = core.gameCompute(a, st, {}, k);
+    const gb = core.gameCompute(b, st, {}, k);
+    expect(gb.rawPts).toBe(ga.rawPts);
+    expect(gb.level.n).toBe(ga.level.n);
+  });
+  it('the two lessons off the path stay finished and counted, and open from Learn', () => {
+    const d = rec(ids(3), ['l26']);
+    const w = core.lessonWalk(d, st0());
+    expect(w.path.some((L) => core.OFF_PATH.indexOf(L.id) >= 0)).toBe(false);
+    expect(core.lessonCount(w)).toEqual({ done: 4, of: path.length + 1 });
+    expect(core.lessonGate(core.lessonById('l27')!, w)).toBe('open');
+    expect(core.lessonsEarly(d).size).toBe(0);
+  });
+});
+
 describe('checkpoints follow the path', () => {
-  it('each keeps its two lessons, one section, side by side on the path', () => {
+  it('each keeps its two lessons, the later one on the path, numbered in the order the path reaches them', () => {
     const order = core.lcheckOrder();
     expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: core.LCHECK_N }, (_, i) => i + 1));
     order.forEach((n, i) => {
       const p = core.lcheckPair(n)!;
       expect([p.a.id, p.b.id].sort()).toEqual([core.LESSONS[2 * n - 2].id, core.LESSONS[2 * n - 1].id].sort());
-      expect(p.a.u).toBe(p.b.u);
-      expect(core.lessonNo(p.b)).toBe(core.lessonNo(p.a) + 1);
+      /* since the twelve steps, the two can sit apart, and one can be off the path: then it is a */
+      expect(core.lessonNo(p.b)).toBeGreaterThan(core.lessonNo(p.a));
       expect(core.lcheckNo(n)).toBe(i + 1);
       expect(core.lessonPairOf(p.b)).toEqual(p);
       if (i) expect(core.lessonNo(p.b)).toBeGreaterThan(core.lessonNo(core.lcheckPair(order[i - 1])!.b));
     });
-    /* Skills for the moment comes before the faith section on the path, and faith before Shame and kindness, so their
-       checkpoints do too */
-    expect(core.lcheckNo(7)).toBeLessThan(core.lcheckNo(15));
-    expect(core.lcheckNo(15)).toBeLessThan(core.lcheckNo(3));
+    expect(core.lcheckAbout(core.lcheckPair(1)!)).toBe('lessons 1 and 2');
+    expect(core.lcheckAbout(core.lcheckPair(13)!)).toBe(
+      'lesson ' + core.lessonNo(core.lessonById('l25')!) + ' and “SMART Recovery: four points and a toolbox”',
+    );
   });
   it('the one due is the first on the path whose two lessons are reached and not written', () => {
     const st = st0();
     const upTo = (L: core.Lesson) => rec(path.slice(0, path.indexOf(L) + 1).map((x) => x.id));
     expect(core.lcheckDue(rec(ids(1)), st)).toBe(0);
     expect(core.lcheckDue(rec(ids(2)), st)).toBe(1);
-    /* through the faith section: the checkpoints of How it works and Skills for the moment written, so 15 is next, before 3 */
-    let w = st;
-    for (const n of [1, 2, 7, 8]) w = core.lwriteSave(w, n, 0, 'line ' + n, 1);
-    expect(core.lcheckDue(upTo(core.lessonById('l32')!), w)).toBe(15);
+    /* lessons 3 and 4 now sit in steps 1 and 3: their checkpoint waits until the path reaches lesson 4 */
+    let w = core.lwriteSave(st, 1, 0, 'line', 1);
+    expect(core.lcheckDue(upTo(core.lessonById('l3')!), w)).toBe(0);
+    /* lessons 9 and 10 (Change the setting, If this then that) come just before it, so theirs is first */
+    expect(core.lcheckDue(upTo(core.lessonById('l4')!), w)).toBe(5);
+    w = core.lwriteSave(w, 5, 0, 'line', 1);
+    expect(core.lcheckDue(upTo(core.lessonById('l4')!), w)).toBe(2);
+    w = core.lwriteSave(w, 2, 0, 'line', 1);
+    /* one off the path counts once it is finished */
+    const to25 = upTo(core.lessonById('l25')!);
+    expect(core.lcheckOrder().indexOf(13)).toBeGreaterThan(-1);
+    expect(
+      core.lcheckDue(to25, {
+        ...w,
+        learn: {
+          ...w.learn,
+          wr: Object.fromEntries(Array.from({ length: 16 }, (_, i) => ['c' + (i + 1), { a: ['x', '', ''], u: 1 }]).filter(([k]) => k !== 'c13')),
+        },
+      }),
+    ).toBe(0);
+    const with26 = { ...to25, '2026-12-30': core.normDay({ p: { ls: ['l26'] } }, '2026-12-30') };
+    expect(
+      core.lcheckDue(with26, {
+        ...w,
+        learn: {
+          ...w.learn,
+          wr: Object.fromEntries(Array.from({ length: 16 }, (_, i) => ['c' + (i + 1), { a: ['x', '', ''], u: 1 }]).filter(([k]) => k !== 'c13')),
+        },
+      }),
+    ).toBe(13);
     /* both lessons read early do not bring a checkpoint before the path reaches them */
     expect(core.lcheckDue(rec(ids(1), ['l29', 'l30']), st)).toBe(0);
   });
@@ -297,7 +322,7 @@ describe('the faith lessons follow the setup answer', () => {
     const mine = core.lessonPathFor(st);
     expect(mine).toEqual(path.filter((L) => !L.f));
     expect(mine.length).toBe(path.length - faithL.length);
-    const after = path.find((L, i) => i > path.indexOf(faithL[0]) && !L.f)!;
+    const after = path[path.length - 1];
     expect(core.lessonNo(after, st)).toBe(core.lessonNo(after) - faithL.length);
     expect(core.lessonNo(faithL[0], st)).toBe(0);
     expect(core.lessonWalk({}, st).path).toBe(mine);

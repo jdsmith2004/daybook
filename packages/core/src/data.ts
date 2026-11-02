@@ -73,7 +73,7 @@ export function readBackup(text: string): Snapshot {
 
 /** what the losing settings had earned, kept on the winning ones: graduation (the earlier date), the badges and level
     already seen, lessons practiced, lesson notes and checkpoint writing the winner does not have, and the better supporter
-    record, and the welcome backs passed on the lesson path */
+    record, the welcome backs passed on the lesson path, and the steps' deeds */
 export function keepEarned(win: Settings, lose: Settings): Settings {
   const out = JSON.parse(JSON.stringify(win)) as Settings;
   const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
@@ -91,6 +91,16 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   out.learn.wr = { ...lose.learn.wr, ...out.learn.wr };
   const back = { ...(lose.learn.back || {}), ...(out.learn.back || {}) };
   if (Object.keys(back).length) out.learn.back = back;
+  /* a deed done on either side stays done, on its earlier day; a step asked about on either side is not asked again */
+  const did = { ...(out.learn.did || {}) };
+  Object.entries(lose.learn.did || {}).forEach(([k, v]) => {
+    if (!did[k] || v < did[k]) did[k] = v;
+  });
+  if (Object.keys(did).length) out.learn.did = did;
+  const later = { ...(lose.learn.later || {}), ...(out.learn.later || {}) };
+  if (Object.keys(later).length) out.learn.later = later;
+  const asked = { ...(lose.learn.asked || {}), ...(out.learn.asked || {}) };
+  if (Object.keys(asked).length) out.learn.asked = asked;
   return keepPat(keepSup(out, lose.sup), lose.pat);
 }
 

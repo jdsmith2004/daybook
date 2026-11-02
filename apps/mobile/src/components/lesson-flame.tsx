@@ -1,6 +1,7 @@
 /* The one flame of a lesson. It is drawn once, behind the words, and glides from card to card to wherever the card has left room for it
    (FlameSlot), growing a little as the lesson goes on. It never leaves and comes back: on the violet number card it only fades. With
    Reduce Motion on, it is simply there. Bubble is what it says, in warm paper with a tail that points at it. */
+import { formOfLevel } from '@daybook/core';
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import { Animated, Pressable, StyleSheet, View, type ViewInstance, type ViewStyle } from 'react-native';
 
@@ -15,6 +16,11 @@ import { font } from '@/lib/theme';
 const DRAWN = 360;
 
 const ROOMY = 1.9;
+/** the Torch and the Beacon stand on a handle and a tower, drawn right to the foot of the box: they take a little less of the room and stand a little
+    higher, so the foot stays clear of the words under it */
+const ROOMY_TALL = 1.1;
+const LIFT_TALL = 0.1;
+const TALL_FORMS = [3, 4];
 
 interface Spot {
   x: number;
@@ -46,9 +52,10 @@ export function FlameStage({ level, on, pulse, children }: { level: number; on: 
       root,
       place: (s) => {
         /* the drawing leaves wide margins around the figure and its glow, so it may stand taller than its room */
-        const size = Math.min(s.size, s.h * ROOMY);
+        const tall = TALL_FORMS.indexOf(formOfLevel(level)) >= 0;
+        const size = Math.min(s.size, s.h * (tall ? ROOMY_TALL : ROOMY));
         const tx = (s.side ? s.x + s.w - s.h / 2 : s.x + s.w / 2) - DRAWN / 2;
-        const ty = s.y + s.h / 2 - DRAWN / 2;
+        const ty = s.y + s.h / 2 - DRAWN / 2 - (tall && !s.side ? size * LIFT_TALL : 0);
         const sc = size / DRAWN;
         if (!placed.current || still) {
           placed.current = true;
@@ -66,7 +73,7 @@ export function FlameStage({ level, on, pulse, children }: { level: number; on: 
         ]).start();
       },
     }),
-    [still, x, y, k, fade],
+    [level, still, x, y, k, fade],
   );
   useEffect(() => {
     if (!placed.current) return;

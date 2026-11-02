@@ -1,4 +1,4 @@
-/* The lessons as a map (core lesson-map): stepping stones on one path through a land for each section, top to bottom. Each
+/* The lessons as a map (core lesson-map): stepping stones on one path through a land for each step, top to bottom. Each
    land has its own sky and hills, its picture on a little hill (core section-art), trees, and flowers by day; in dark mode
    it is a warm evening, with stars and fireflies. Lessons open one at a time, in the order of the path (core lessonWalk):
    the lessons behind Up next are stones in their land's color with a check, on a road that glows gold, and one finished
@@ -11,7 +11,9 @@
    each land, and a trophy ends the path. Only the lands near the screen are drawn, to keep it light. The pin's bob and
    the ring's breathing are still under Reduce Motion. */
 import {
-  LUNITS,
+  PATH_STEPS,
+  deedDone,
+  lessonStep,
   lmin,
   lessonNo,
   MAP_W,
@@ -65,7 +67,7 @@ const LANDS: Record<'light' | 'dark', Record<string, { sky: [string, string]; hi
     sun: { sky: ['#3C2564', '#C0683E'], hill: '#E0953F' },
   },
 };
-const toneName = (u: number) => (LANDS.light[LUNITS[u].tone] ? LUNITS[u].tone : 'violet');
+const toneName = (u: number) => (PATH_STEPS[u] && LANDS.light[PATH_STEPS[u].tone] ? PATH_STEPS[u].tone : 'violet');
 export const landOf = (u: number, dark: boolean) => LANDS[dark ? 'dark' : 'light'][toneName(u)];
 export const useLandTone = (u: number) => toneOf(useTheme(), toneName(u));
 
@@ -143,7 +145,7 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
   x += tree(l.tree.x, l.tree.y, crown, o.dark ? mix(land.hill, '#000000', 0.3) : '#C49A70');
   const fx = right ? l.pic.x - 64 : l.pic.x + 34;
   const ex = right ? 26 : 336;
-  const ey = l.stones[2].y + 26;
+  const ey = l.third + 26;
   x += o.dark ? fireflies(fx, l.pic.y + 56, id) + fireflies(ex - 4, ey, id) : flowers(fx, l.pic.y + 48, stem) + flowers(ex, ey, stem);
   if (last)
     x += `<path transform="translate(${o.x0} ${l.bottom - 30}) scale(${w / MAP_W} 1)" d="M0 40C80 10 160 14 230 30S350 36 390 22L390 400L0 400Z" fill="${o.bg}"/>`;
@@ -382,12 +384,14 @@ export function Signpost({ l, at, y, k, gone }: { l: MapLand; at: { left: number
   }, [gone, still, v]);
   const t = useLandTone(l.u);
   const all = l.done === l.stones.length;
-  const u = LUNITS[l.u];
+  const u = PATH_STEPS[l.u];
+  /* the step's deed, done in real life (core steps.ts) */
+  const did = deedDone(useStore().snap.settings, l.u);
   return (
     <Animated.View
       accessible
       accessibilityRole="header"
-      accessibilityLabel={`Section ${l.k + 1}: ${u.name}. ${all ? 'All done.' : `${l.done} of ${l.stones.length} done.`}`}
+      accessibilityLabel={`Step ${l.u + 1}: ${u.name}. ${all ? 'All done.' : `${l.done} of ${l.stones.length} done.`}${did ? ' You did its step.' : ''}`}
       pointerEvents="none"
       style={{ position: 'absolute', ...at, top: y, zIndex: 4, maxWidth: 176 * k, opacity: v }}>
       <View
@@ -408,7 +412,10 @@ export function Signpost({ l, at, y, k, gone }: { l: MapLand; at: { left: number
           </View>
         ) : null}
         <View style={{ flexShrink: 1 }}>
-          <Text style={[s_.boardEye, { color: t.text }]}>Section {l.k + 1}</Text>
+          <Text style={[s_.boardEye, { color: t.text }]}>
+            Step {l.u + 1}
+            {did ? ' · You did it' : ''}
+          </Text>
           <Text style={[s_.boardT, { color: c.ink }]}>{u.name}</Text>
         </View>
         <View style={[s_.tip, { backgroundColor: c.surface, borderColor: t.ic, width: 18 * k, height: 18 * k, right: -9 * k, marginTop: -9 * k }]} />
@@ -522,7 +529,7 @@ export function Trophy({ x, y, k, all, total }: { x: number; y: number; k: numbe
 export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here: boolean; onPress: () => void }) {
   const c = useTheme();
   const t = useLandTone(l.u);
-  const u = LUNITS[l.u];
+  const u = PATH_STEPS[l.u];
   const n = l.stones.length;
   const rr = 17;
   const circ = 2 * Math.PI * rr;
@@ -531,7 +538,7 @@ export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${here ? 'You are in section' : 'Section'} ${l.k + 1}: ${u.name}, ${l.done} of ${n} done. Go to the next lesson.`}
+      accessibilityLabel={`${here ? 'You are on step' : 'Step'} ${l.u + 1}: ${u.name}, ${l.done} of ${n} done. Go to the next lesson.`}
       onPress={onPress}
       style={({ pressed }) => [s_.chip, { backgroundColor: c.surface, opacity: pressed ? 0.92 : 1 }]}>
       <View style={[s_.chipArt, { backgroundColor: t.soft }]}>
@@ -539,8 +546,8 @@ export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[s_.chipEye, { color: t.text }]} numberOfLines={1}>
-          {here ? 'You are in section ' : 'Section '}
-          {l.k + 1} of {of}
+          {here ? 'You are on step ' : 'Step '}
+          {l.u + 1} of {of}
         </Text>
         <Text style={[s_.chipT, { color: c.ink }]} numberOfLines={1}>
           {u.name}
@@ -840,7 +847,7 @@ export function LessonMapView({
           x={X(pick.x)}
           top={cardTop}
           onHeight={(h) => onCard?.(cardTop + h)}
-          t={toneOf(c, toneName(pick.L.u))}
+          t={toneOf(c, toneName(lessonStep(pick.L)))}
           when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}
           ahead={pick.state === 'todo' ? nx && nx.L : null}

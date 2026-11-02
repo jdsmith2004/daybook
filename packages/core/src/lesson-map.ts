@@ -1,10 +1,10 @@
-/* The lesson map on Learn: the lessons as stepping stones on one path, a land for each section, top to bottom in the order
-   of the path. Each land has its picture (section-art) on a little hill beside the stones and a small stand of trees; the
+/* The lesson map on Learn: the lessons as stepping stones on one path, a land for each of the twelve steps, top to bottom in
+   the order of the path. Each land has its picture (section-art) on a little hill beside the stones and a small stand of trees; the
    next lesson's name sits beside its stone, so the picture and the trees move out of its way. The map is laid out on a
    phone-wide page, MAP_W across; the app scales it to the screen. Lessons open one at a time, in the order of the path
    (lessons.ts lessonWalk): the stones behind Up next are done, Up next is the one bright stone, and every stone after it
    waits, quiet, also one read early (nothing finished ever shows past Up next). */
-import { walkOf, type Lesson, type LessonWalk } from './lessons';
+import { sectionsOf, walkOf, type Lesson, type LessonWalk } from './lessons';
 
 export const MAP_W = 390;
 /** room above a land's first stone (its hills and signpost), between stones, below its last stone, above the first land,
@@ -14,6 +14,8 @@ const STEP = 118;
 const TAIL = 80;
 const TOP = 40;
 const END_ROOM = 180;
+/** the fewest stones a land makes room for */
+const ROOM = 4;
 /** how far each stone steps to the side, in turn, so the path winds */
 const SWAY = [0, -56, 6, 52, 2];
 
@@ -29,7 +31,7 @@ export interface MapStone {
   state: StoneState;
 }
 export interface MapLand {
-  /** the section (LUNITS index) and its place on the path */
+  /** the step (its index in PATH_STEPS) and its place on the path */
   u: number;
   k: number;
   top: number;
@@ -43,6 +45,8 @@ export interface MapLand {
   /** the center of the picture, and the foot of the trees */
   pic: { x: number; y: number };
   tree: { x: number; y: number };
+  /** where a third stone stands, or would stand in a shorter land (the flowers on the far side) */
+  third: number;
 }
 export interface LessonMap {
   lands: MapLand[];
@@ -66,13 +70,8 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
   const nx = w.next;
   let y = TOP;
   let next: MapStone | null = null;
-  /* the person's path in its sections (lessonPathFor): a land holds lessons next to each other of one unit */
-  const sections: { u: number; lessons: Lesson[] }[] = [];
-  w.path.forEach((L) => {
-    const last = sections[sections.length - 1];
-    if (last && last.u === L.u) last.lessons.push(L);
-    else sections.push({ u: L.u, lessons: [L] });
-  });
+  /* the person's path in its steps (lessonPathFor): a land for each step */
+  const sections = sectionsOf(w.path);
   const lands = sections.map(({ u, lessons }, k): MapLand => {
     const top = y;
     const right = k % 2 === 0;
@@ -89,18 +88,22 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
       if (s.state === 'next') next = s;
       return s;
     });
-    y = stones[stones.length - 1].y + TAIL;
+    /* every land has room for at least ROOM stones, so a short step (one or two lessons) still holds its picture and its trees:
+       a place past its last stone is where the next stone would stand */
+    const slots = Math.max(stones.length, ROOM);
+    const slot = (a: number) => (a < stones.length ? stones[a].y : top + HEAD + a * STEP);
+    y = slot(slots - 1) + TAIL;
     /* the picture sits beside the first two stones, unless the next lesson is one of them: then beside the third and fourth */
     const n = stones.find((s) => s.state === 'next');
     const low = !!n && n.j < 2;
-    const at = (a: number) => (stones[a].y + stones[Math.min(a + 1, stones.length - 1)].y) / 2 + 14;
+    const at = (a: number) => (slot(a) + slot(Math.min(a + 1, slots - 1))) / 2 + 14;
     const side = right ? 296 : 94;
     const pic = { x: side, y: low ? at(2) : at(0) };
     /* the trees stand on the same side, beside a stone the picture does not cover and away from the next lesson's name */
-    const t = (low ? [0, 1] : [3, 4, 2]).find((a) => a < stones.length && (!n || a !== n.j))!;
-    const tree = { x: right ? 334 : 60, y: stones[t].y + 34 };
+    const t = (low ? [0, 1] : [3, 4, 2]).find((a) => a < slots && (!n || a !== n.j))!;
+    const tree = { x: right ? 334 : 60, y: slot(t) + 34 };
     const fin = stones.filter((s) => s.state === 'done').length;
-    return { u, k, top, bottom: y, right, stones, done: fin, ahead: !fin && !n, pic, tree };
+    return { u, k, top, bottom: y, right, stones, done: fin, ahead: !fin && !n, pic, tree, third: slot(2) };
   });
   const height = y + END_ROOM;
   const end = { x: MAP_W / 2, y: height - 90 };

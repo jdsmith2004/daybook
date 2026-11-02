@@ -7,6 +7,7 @@ import {
   blankP,
   changeSettings,
   gameCompute,
+  lcheckAbout,
   lcheckDue,
   lcheckNo,
   lcheckPair,
@@ -27,7 +28,9 @@ import {
   lessonWalk,
   LEARN_FREE,
   lfDate,
-  LUNITS,
+  OFF_PATH,
+  lessonById,
+  lessonUnit,
   type LessonMap,
   TOOL_IDS,
   TOOLS,
@@ -280,6 +283,7 @@ function LessonsPane({
   const open = (L: Lesson) => lessonOpen(L, done, account);
   const waiting = lessonsLocked(lessonPathFor(st), done, account);
   const [faith, setFaith] = useState(false);
+  const [more, setMore] = useState(false);
   /* the map's place in the pane and its scale arrive in either order; pass them on once both are known */
   const at = useRef({ y: -1, k: 0 });
   const tell = () => at.current.y >= 0 && at.current.k > 0 && onGeom({ y: at.current.y, k: at.current.k });
@@ -290,8 +294,7 @@ function LessonsPane({
           <View style={{ gap: 2 }}>
             <T v="h2">Write it out</T>
             <T v="small">
-              Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. About lessons {pair ? lessonNo(pair.a, st) : ''} and {pair ? lessonNo(pair.b, st) : ''}. 3
-              to 5 minutes, and only you see it.
+              Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. About {pair ? lcheckAbout(pair, st) : 'two lessons'}. 3 to 5 minutes, and only you see it.
             </T>
           </View>
           <Button label="Start writing" onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })} />
@@ -352,6 +355,15 @@ function LessonsPane({
         </Collapse>
       ) : null}
 
+      {/* the lessons on no step of the path (core steps.ts OFF_PATH): still here to find, and counted once finished */}
+      <Collapse title="Two more programs" sub="Not on the twelve steps. Here whenever you want them." icon="book" open={more} onToggle={() => setMore(!more)}>
+        <View>
+          {OFF_PATH.map(lessonById).map((L) =>
+            L ? <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} /> : null,
+          )}
+        </View>
+      </Collapse>
+
       {tl.past.length ? (
         <Collapse
           title="In the order you finished them"
@@ -366,7 +378,7 @@ function LessonsPane({
                 L={x.L}
                 done
                 side={i === tl.past.length - 1 ? 'Last · ' + lfDate(x.k, tk) : lfDate(x.k, tk)}
-                sub={(st.learn.prac && st.learn.prac[x.L.id] ? 'Practiced · ' : '') + LUNITS[x.L.u].name}
+                sub={(st.learn.prac && st.learn.prac[x.L.id] ? 'Practiced · ' : '') + lessonUnit(x.L).name}
               />
             ))}
           </View>
@@ -391,13 +403,13 @@ function LessonsPane({
 /** one lesson in the timeline: its number and title, a line under it, and the date or length at the side */
 function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; locked?: boolean; side: string; sub: string }) {
   const c = useTheme();
-  const t = toneOf(c, LUNITS[L.u].tone);
+  const t = toneOf(c, lessonUnit(L).tone);
   const { snap } = useStore();
   const no = lessonNo(L, snap.settings);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${no ? 'Lesson ' + no : 'Faith lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
+      accessibilityLabel={`${no ? 'Lesson ' + no : L.f ? 'Faith lesson' : 'Lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
       onPress={() => openLesson(L.id)}
       style={({ pressed }) => [s.row, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
       <View style={s.lrIc}>
@@ -411,7 +423,7 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
             {no}
           </T>
         ) : (
-          <Icon name="star" size={18} color={t.text} />
+          <Icon name={L.f ? 'star' : 'book'} size={18} color={t.text} />
         )}
       </View>
       <View style={{ flex: 1 }}>

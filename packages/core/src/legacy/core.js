@@ -4,6 +4,7 @@
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
+import { normCreed } from '../faith';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
 import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
@@ -2766,6 +2767,8 @@ function normOnb(o){
  if(!o||typeof o!=='object')return null;
  const a={},src=o.a&&typeof o.a==='object'?o.a:{},one=(k,list)=>{if(list.some(x=>x[0]===src[k]))a[k]=src[k]};
  one('aim',OB_AIM);one('freq',OB_FREQ);one('mins',OB_MINS);one('years',OB_YEARS);one('tried',OB_TRIED);one('faith',OB_FAITH);
+ /* which faith, after a Yes or a Somewhat (faith.ts) */
+ if(normCreed(src.creed))a.creed=src.creed;
  [0,1,2,3,4].forEach(i=>{const v=src['b'+i];if(v==='0'||v==='1'||v==='2')a['b'+i]=v});
  const many=(k,list)=>{if(Array.isArray(src[k]))a[k]=src[k].filter(v=>list.some(x=>x[0]===v)).slice(0,list.length)};
  many('costs',OB_COST);many('when',OB_WHEN);

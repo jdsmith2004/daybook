@@ -17,6 +17,7 @@ export * from './risk';
 export * from './lessons';
 export * from './lesson-questions';
 export * from './steps';
+export * from './faith';
 export * from './lesson-beats';
 export * from './practice';
 export * from './lesson-map';

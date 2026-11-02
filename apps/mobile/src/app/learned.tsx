@@ -46,7 +46,7 @@ export default function Learned() {
   );
   return (
     <Screen title="What I have learned" back="Learn">
-      <PageSec icon="book" tone="sky" title="What I have learned" aside={`${mine.length} of ${lessonCount(lessonWalk(snap.days, st)).of}`}>
+      <PageSec icon="book" tone="sky" title="From each lesson" aside={`${mine.length} of ${lessonCount(lessonWalk(snap.days, st)).of}`}>
         {mine.length ? (
           mine.map((L, j) => (
             <View key={L.id} style={{ gap: 12 }}>

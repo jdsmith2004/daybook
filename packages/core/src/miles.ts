@@ -2,10 +2,11 @@
    sheetGrowth and badgeDone. */
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
-import { addDays, computeMetrics, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import { addDays, computeMetrics, fmtDate, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
 import { rkComebackCount } from './rekindle';
 import { hardHeld } from './risk';
+import { eventRow } from './view';
 import { formOfLevel, LADDER_V, LEVELS, STEPS, type Level } from './levels';
 import { changeSettings } from './actions';
 import type { DayKey, Days, Reviews } from './types';
@@ -233,4 +234,18 @@ export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {
   for (let k = d1; k < tk; k = addDays(k, 1)) if (!slips.has(k) && dayKnown(days, st, k, tk) && !awaySlipDay(days, st, k, tk)) n++;
   const h = (n * H.yr) / 365;
   return h >= 1 ? obRnd(h) : null;
+}
+
+/** one true line from the log under "who you are becoming" on Today: the last urge ridden out in two weeks, as a moment ("You rode
+    out an urge Tuesday at 9:30 PM."), and the count of them all. When one was ridden out today, Today so far already shows it, so
+    the line says who that makes them. Null with none in two weeks. */
+export function rodeProof(days: Days, st: Settings, tk: DayKey): { t: string; n: string } | null {
+  const all = eventsOf(days).filter((e) => e.outcome === 'rode' && e.key <= tk);
+  if (!all.length) return null;
+  const n = all.length === 1 ? 'Your first.' : all.length + ' times now.';
+  const last = all[all.length - 1];
+  if (last.key === tk) return { t: 'You are someone who rides out urges:', n };
+  if (last.key < addDays(tk, -13)) return null;
+  const when = last.key === addDays(tk, -1) ? 'yesterday' : fmtDate(last.key, { weekday: 'long' });
+  return { t: 'You rode out an urge ' + when + (last.time ? ' at ' + eventRow(last, st).time : '') + '.', n };
 }

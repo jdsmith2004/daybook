@@ -34,6 +34,7 @@ export function Screen({
   pullDown,
   top,
   bare,
+  backdrop,
 }: {
   eyebrow?: string;
   title: string;
@@ -57,6 +58,8 @@ export function Screen({
   top?: ReactNode;
   /** the picture is still under the clock, so no band of the page color there */
   bare?: boolean;
+  /** a picture behind the whole page that stays put while it scrolls (a chapter of My plan is its color) */
+  backdrop?: ReactNode;
 }) {
   const c = useTheme();
   const safe = useSafeAreaInsets();
@@ -72,7 +75,10 @@ export function Screen({
   const page = (
     <Scroll
       ref={kb.ref}
-      style={[{ flex: 1, backgroundColor: c.bg }, pull.on && Platform.OS === 'web' ? ({ overscrollBehaviorY: 'contain' } as object) : null]}
+      style={[
+        { flex: 1, backgroundColor: backdrop ? 'transparent' : c.bg },
+        pull.on && Platform.OS === 'web' ? ({ overscrollBehaviorY: 'contain' } as object) : null,
+      ]}
       onLayout={onScroll ? (e) => onScroll(y.current, e.nativeEvent.layout.height) : undefined}
       onScroll={
         pull.ios
@@ -140,6 +146,11 @@ export function Screen({
     ) : null;
   return (
     <View onLayout={kb.onLayout} style={{ flex: 1 }} {...pull.touch}>
+      {backdrop ? (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          {backdrop}
+        </View>
+      ) : null}
       {pull.on && !pull.ios ? <Animated.View style={{ flex: 1, transform: [{ translateY: pull.value }] }}>{page}</Animated.View> : page}
       {bar}
       {pull.on ? <PullDoor pull={pull.value} armed={pull.armed} top={inset.top} /> : null}

@@ -377,8 +377,8 @@ function LessonsPane({
       <LinkCard
         icon="compass"
         title="What I have learned"
-        sub={n ? 'Your takeaways and notes, in My plan' : 'Fills in as you finish lessons'}
-        onPress={() => router.push({ pathname: '/plan', params: { pane: 'learned' } })}
+        sub={n ? 'Your takeaways and notes' : 'Fills in as you finish lessons'}
+        onPress={() => router.push('/learned')}
       />
       <T v="small" tone="muted">
         The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources. The faith

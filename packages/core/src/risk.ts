@@ -53,6 +53,16 @@ export function riskAt(k: DayKey, hour: number, roll: number, min = 0): number {
 const fmtH = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
 /** when the hard hours start, as it is said: "11 PM" */
 export const riskStartLabel = fmtH;
+/** how close the hard hours are, for the Tonight card on Today: "in 2 hours", "in 40 minutes", "now", or null while they are
+    far off or over */
+export function riskWhen(r: RiskDay, now: number): string | null {
+  if (r.phase === 'during') return 'now';
+  if (r.phase !== 'soon') return null;
+  const m = Math.max(1, Math.round((r.a - now) / 60000));
+  if (m < 60) return 'in ' + m + (m === 1 ? ' minute' : ' minutes');
+  const h = Math.round(m / 60);
+  return 'in ' + (h === 1 ? 'an hour' : h + ' hours');
+}
 /** the hard hours card's plan button: "Make a plan for tonight" (or "for today", for hard hours in the daytime) */
 export const riskPlanLabel = (start: number) => 'Make a plan for ' + (start >= 17 || start < 5 ? 'tonight' : 'today');
 /** "9 to 11 PM", "11 PM to 1 AM" */

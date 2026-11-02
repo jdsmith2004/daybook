@@ -87,6 +87,7 @@ const SKY: Record<StoryScreen, Sky> = {
   last: 'sun',
   long: 'sky',
   deep: 'violet',
+  next: 'sun',
 };
 const SRCS = SRC as unknown as Record<string, [string, string]>;
 const IF_TEACH = {
@@ -130,6 +131,8 @@ export default function Review() {
   const [itW, setItW] = useState<string | null>(() => saved?.it?.w || null);
   const [itT, setItT] = useState<string | null>(() => saved?.it?.t || null);
   const [note, setNote] = useState(() => saved?.nt || '');
+  /* the week's step, kept as the plan for the week (one tap on the last screen) */
+  const [keep, setKeep] = useState(false);
   const S = useMemo(
     () => (st ? story(snap.days, st, snap.reviews, sun, tk, Date.now(), gameCompute(snap.days, st, snap.reviews, tk).perDay) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,7 +147,8 @@ export default function Review() {
   const worked = sunWorked(S.w, st);
   const change = sunChange(S.w, st);
   const changeIds = change.filter((x) => ch.indexOf(x.t) >= 0).map((x) => x.id);
-  const goals = sunGoals(changeIds.length ? changeIds : change.slice(0, 1).map((x) => x.id), st);
+  /* the goals that fit the week's step come first */
+  const goals = sunGoals((S.read.step.c ? [S.read.step.c] : []).concat(changeIds.length ? changeIds : change.slice(0, 1).map((x) => x.id)), st);
   const goalKind = goal?.k ? SUN_GOALS[goal.k] : null;
 
   const next = () => {
@@ -162,7 +166,14 @@ export default function Review() {
     else if (i > 0) setI(i - 1);
   };
   /* the review as it stands, and saving it (again, for the extras: the points come once) */
-  const cur = (): SunReview => ({ ...(saved || {}), w, c: ch, g: goal, ...(last ? { last } : {}) });
+  const cur = (): SunReview => ({
+    ...(saved || {}),
+    w,
+    c: ch,
+    g: goal,
+    ...(last ? { last } : {}),
+    ...(keep && S.read.step.w ? { it: { w: S.read.step.w, t: S.read.step.t } } : {}),
+  });
   const store = (extra: Partial<SunReview> = {}) => update((s0) => ({ ...s0, reviews: saveSun(s0.reviews, sun, { ...cur(), ...extra }) }));
   const save = (g: SunGoal | null) => {
     setGoal(g);
@@ -188,8 +199,7 @@ export default function Review() {
 
   /* ---------- the story ---------- */
   if (!after) {
-    const slipDays = S.days.filter((d) => d.state === 'slip').length;
-    const teach = storyTeach(scr, { slipDays });
+    const teach = storyTeach(scr, { kind: S.read.kind });
     let main: React.ReactNode = null;
     if (scr === 'intro') {
       main = (
@@ -214,9 +224,19 @@ export default function Review() {
         <>
           {eyebrow('Your seven days')}
           <Big>{zero ? S.w.days : S.w.noSlip}</Big>
-          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{zero ? 'days you showed up and logged it' : 'days with no slip'}</T>
+          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>
+            {zero ? 'days you showed up and logged it' : S.w.noSlip === 1 ? 'day with no slip' : 'days with no slip'}
+          </T>
           <DaysRow days={S.days} />
-          {S.best >= 1 ? (
+          {/* the week, named in plain numbers, and what held (core sunday-read.ts) */}
+          <Appear delay={900} style={{ alignSelf: 'stretch', gap: 4 }}>
+            <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.read.says}</T>
+            <T tone="muted" style={[s.c, s.lead]}>
+              {S.read.held}
+            </T>
+          </Appear>
+          {/* after a long stretch, the stretch inside the week would undersell the run the line above names */}
+          {S.best >= 1 && S.read.kind !== 'after' ? (
             <Appear delay={1300}>
               <View style={[s.pill, { backgroundColor: c.surface }]}>
                 <Icon name="flame" size={16} color={c.sunText} />
@@ -412,6 +432,30 @@ export default function Review() {
           </View>
         </>
       );
+    } else if (scr === 'next') {
+      /* one step for next week, from the person's own pattern, and one tap to keep it as the week's plan */
+      const st0 = S.read.step;
+      main = (
+        <>
+          {eyebrow('Next week')}
+          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
+            {S.read.title}
+          </Text>
+          <Appear by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
+            <Icon name="compass" size={22} color={c.violetText} />
+            <Text style={[s.goalT, { color: c.ink }]}>{st0.line}</Text>
+          </Appear>
+          <View style={{ alignSelf: 'stretch', gap: 8 }}>
+            {st0.why.map((t, j) => (
+              <Appear key={t} delay={350 + j * 250}>
+                <T tone="muted" style={[s.c, s.lead]}>
+                  {t}
+                </T>
+              </Appear>
+            ))}
+          </View>
+        </>
+      );
     }
     body = (
       <>
@@ -422,7 +466,21 @@ export default function Review() {
         {teach ? (
           <Teach key={scr} teach={teach} folded={SHORT && (scr === 'ride' || scr === 'clock' || scr === 'help' || scr === 'base' || scr === 'long')} />
         ) : null}
-        <Dock>{scr === 'intro' ? <Button label="Start" onPress={next} /> : nextBtn}</Dock>
+        <Dock>
+          {scr === 'next' && S.read.step.w && !saved?.it ? (
+            <View style={s.row}>
+              <Chip
+                label={keep ? 'My plan for the week' : 'Make it my plan for the week'}
+                on={keep}
+                onPress={() => {
+                  buzz('tap');
+                  setKeep(!keep);
+                }}
+              />
+            </View>
+          ) : null}
+          {scr === 'intro' ? <Button label="Start" onPress={next} /> : nextBtn}
+        </Dock>
       </>
     );
   } else if (after === 'take') {

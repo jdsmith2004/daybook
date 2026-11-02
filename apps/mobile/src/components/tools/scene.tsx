@@ -400,7 +400,7 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
         {spinning ? 'Picking something…' : 'Try this one.'}
       </T>
       <T style={s.c} tone="muted">
-        From your calm-move menu. Change it in My plan, under Lists.
+        From your calm-move menu. Change it in My plan, under When it hits.
       </T>
       <Middle>{card('', pick || '…')}</Middle>
       <Dock>

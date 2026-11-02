@@ -60,7 +60,7 @@ export default function More() {
       </Pressable>
       <Rows>
         <LinkCard icon="pencil" title="Journal" sub="How you feel. Pull Today down to open it too." onPress={() => router.push('/journal')} />
-        <LinkCard icon="shield" title="My plan" sub="My reasons, plans, lists and what I learned" onPress={() => router.push('/plan')} />
+        <LinkCard icon="shield" title="My plan" sub="Who I am becoming, my reasons and what I do when it hits" onPress={() => router.push('/plan')} />
         <LinkCard icon="flag" title={phaseLabel(tk, st)} sub="Where I am, and how to change it" onPress={() => router.push('/mode')} />
       </Rows>
       <Rows>

@@ -940,7 +940,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
               {w.length ? (
                 w.map((x, j) => <T key={j}>{x}</T>)
               ) : (
-                <T>No words yet. A verse, a prayer, or a line that steadies you fills this. Add them in My plan, under Lists.</T>
+                <T>No words yet. A verse, a prayer, or a line that steadies you fills this. Add them in My plan, under Why.</T>
               )}
             </View>
           );

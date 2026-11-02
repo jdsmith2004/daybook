@@ -86,6 +86,12 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
 
 ## 5. Build and test (you, from any computer or phone)
 
+Before the build (Claude, on `main`): set the new version in `apps/mobile/app.json`, run `npm run icons -- --auto`
+(docs/icon-calendar.md), and write the **What's new** entry for that exact version at the top of `WHATS_NEW` in
+`packages/core/src/whats-new.ts`: the three changes a person updating would notice most (not setup, which they have
+already done), each a short title and one plain line, shown to the owner first. A build with no entry shows nothing, so a
+fix-only build can leave it out. The store's What's New box (step 6) says the same things in a sentence or two.
+
 1. On github.com/jdsmith2004/daybook: Actions, **App Store**, Run workflow, on `main`.
 2. It runs the checks, builds on Expo (the free queue can take a while), and sends the build to TestFlight. A green check
    means it is on its way. While it runs, the "Wait for the build" step prints the status every 30 seconds (the place in

@@ -92,7 +92,7 @@ export default function Lwrite() {
                     <T v="title" accessibilityRole="header">
                       That is in your plan.
                     </T>
-                    <T>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                    <T>You wrote it for yourself. It stays in What I have learned, under Learn, to read whenever you want.</T>
                   </>
                 )}
               </KeyboardRoom>
@@ -100,10 +100,10 @@ export default function Lwrite() {
             {fin ? (
               <View style={{ gap: 8 }}>
                 <Route
-                  label="Read it in My plan"
+                  label="See what I have learned"
                   onPress={() => {
                     closeAll();
-                    router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                    router.push('/learned');
                   }}
                 />
                 <Route

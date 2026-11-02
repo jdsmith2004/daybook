@@ -13,6 +13,7 @@ import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
 import { sunChange, sunLastGoal, sunWeek, type SunWeek } from './sunday';
+import { weekRead, WHEN_TRIG, type WeekKind, type WeekRead } from './sunday-read';
 import { plural } from './view';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
@@ -198,24 +199,38 @@ export function storyTrend(weeks: StoryWeek[]): { kind: StoryTrendKind; line: st
 }
 
 /* ---------- the science ---------- */
-export type StoryScreen = 'intro' | 'days' | 'ride' | 'clock' | 'trig' | 'help' | 'slips' | 'base' | 'last' | 'long' | 'deep';
+export type StoryScreen = 'intro' | 'days' | 'ride' | 'clock' | 'trig' | 'help' | 'slips' | 'base' | 'last' | 'long' | 'deep' | 'next';
 export interface StoryTeach {
   t: string;
   src: string[];
   /** the lesson to read for more */
   l: string;
 }
-/** one line of science for each screen, with its source and its lesson */
-export function storyTeach(screen: StoryScreen, o: { slipDays?: number } = {}): StoryTeach | null {
+/** one line of science for each screen, with its source and its lesson. The seven days and the slips fit the kind of week:
+    "one missed day barely matters" is said only when there was one, never on a week with a slip most days. */
+export function storyTeach(screen: StoryScreen, o: { kind?: WeekKind } = {}): StoryTeach | null {
+  const k = o.kind;
   switch (screen) {
     case 'days':
-      return o.slipDays
-        ? {
-            t: 'One missed day barely matters. In a study of people building a new daily habit, missing a single day made little difference to how it grew.',
-            src: ['lally'],
-            l: 'l21',
-          }
-        : { t: 'A new habit took about 66 days to feel automatic for the typical person. Every day like these is one of them.', src: ['lally'], l: 'l12' };
+      if (k === 'one' || k === 'after')
+        return {
+          t: 'One missed day barely matters. In a study of people building a new daily habit, missing a single day made little difference to how it grew.',
+          src: ['lally'],
+          l: 'l21',
+        };
+      if (k === 'few')
+        return {
+          t: 'Slips gather around a few hours and feelings. Relapse prevention starts by finding those moments, because a plan made for them is what changes the next week.',
+          src: ['larimer'],
+          l: 'l19',
+        };
+      if (k === 'most' || k === 'all')
+        return {
+          t: 'Among people quitting smoking, those whose confidence dropped after a slip slipped again sooner. A hard week is a reason to change one thing, not to stop believing you can.',
+          src: ['kirchner'],
+          l: 'l12',
+        };
+      return { t: 'A new habit took about 66 days to feel automatic for the typical person. Every day like these is one of them.', src: ['lally'], l: 'l12' };
     case 'ride':
       return {
         t: 'An urge rises, peaks, and passes. Smokers who learned to watch their urges rise and fall smoked fewer cigarettes, even though the urges stayed as strong.',
@@ -241,10 +256,22 @@ export function storyTeach(screen: StoryScreen, o: { slipDays?: number } = {}): 
         l: 'l40',
       };
     case 'slips':
+      return k === 'most' || k === 'all'
+        ? {
+            t: 'After a slip, “I already blew it” is the thought that brings the next one. Seeing each slip as one event, not a verdict, is how a run of them stops.',
+            src: ['larimer'],
+            l: 'l3',
+          }
+        : {
+            t: 'After a slip, “I blew it” is the risky thought. Seeing a slip as one event, not a verdict, is how one slip stays one slip.',
+            src: ['larimer'],
+            l: 'l3',
+          };
+    case 'next':
       return {
-        t: 'After a slip, “I blew it” is the risky thought. Seeing a slip as one event, not a verdict, is how one slip stays one slip.',
-        src: ['larimer'],
-        l: 'l3',
+        t: 'Across many studies, people who made if-then plans followed through on their goals more than people who only set the goal.',
+        src: ['gollwitzer'],
+        l: 'l9',
       };
     case 'base':
       return {
@@ -372,8 +399,9 @@ const DEEP: Record<StoryDeepId, Omit<StoryDeep, 'id'>> = {
   },
 };
 /** the one longer card, for the hardest pattern of the week */
-export function storyDeep(w: SunWeek, st: Settings, slips: { close: boolean }): StoryDeep {
+export function storyDeep(w: SunWeek, st: Settings, slips: { close: boolean }, quiet = false): StoryDeep {
   const pick = (id: StoryDeepId): StoryDeep => ({ id, ...DEEP[id] });
+  if (quiet) return pick('review');
   if (w.slipped >= 2 && slips.close) return pick('snowball');
   if (!w.slipped && w.days >= 5) return pick('clean');
   for (const c of sunChange(w, st)) {
@@ -406,14 +434,6 @@ export function storyHardDays(days: Days, tk: DayKey): { d: number; name: string
     .slice(0, 2)
     .sort((a, b) => (a.d || 7) - (b.d || 7));
 }
-const WHEN_TRIG: Record<string, string> = {
-  late: 'I am in bed late with my phone',
-  lonely: 'I feel lonely or low',
-  bored: 'I am bored and on my own',
-  stress: 'I feel stressed',
-  tired: 'I am tired',
-  scroll: 'I catch myself scrolling',
-};
 /** the moments an if-then plan can be for: the hard hours, the trigger that comes up most, the weekend, any urge */
 export function storyIfWhen(days: Days, st: Settings, tk: DayKey): string[] {
   const out: string[] = [];
@@ -470,6 +490,8 @@ export interface Story {
   trend: ReturnType<typeof storyTrend>;
   pts: number;
   deep: StoryDeep;
+  /** the kind of week, what to say about it, and the one step for next week */
+  read: WeekRead;
   screens: StoryScreen[];
 }
 /** everything the walk through the week shows, and which screens it has: one is left out when there is nothing to show */
@@ -484,6 +506,7 @@ export function story(days: Days, st: Settings, reviews: Reviews, sun: DayKey, t
   const last = sunLastGoal(days, reviews, sun, tk);
   const weeks = storyWeeks(days, st, sun, tk);
   const pts = weekKeys(sun).reduce((a, k) => a + (perDay[k] || 0), 0);
+  const read = weekRead(days, st, sun, tk, w, weeks, when);
   const screens: StoryScreen[] = ['intro', 'days'];
   if (w.rode) screens.push('ride');
   if (when.timed >= 2) screens.push('clock');
@@ -493,7 +516,7 @@ export function story(days: Days, st: Settings, reviews: Reviews, sun: DayKey, t
   if (base.any) screens.push('base');
   if (last) screens.push('last');
   if (weeks.length >= 2) screens.push('long');
-  screens.push('deep');
+  screens.push('deep', 'next');
   return {
     sun,
     w,
@@ -509,7 +532,8 @@ export function story(days: Days, st: Settings, reviews: Reviews, sun: DayKey, t
     weeks,
     trend: storyTrend(weeks),
     pts,
-    deep: storyDeep(w, st, slips),
+    deep: storyDeep(w, st, slips, read.kind === 'quiet'),
+    read,
     screens,
   };
 }

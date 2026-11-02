@@ -18,7 +18,9 @@ import {
   patRideSay,
   patRidge,
   feelBubbles,
-  flameSparks,
+  feelMap,
+  patFlow,
+  patRays,
   mosaic,
   spreadCircles,
 } from '../src/pattern-cards';
@@ -237,25 +239,6 @@ describe('how the days felt', () => {
   });
 });
 
-describe('the marks for how the days felt', () => {
-  it('a day with no answer stays blank', () => {
-    let d = withDf(base(), TK, 5);
-    d = withDf(d, addDays(TK, -6), 1);
-    const f = patFelt(d, patPeriod('7', d, st, TK), TK);
-    expect(f.weeks).toBe(false);
-    expect(f.marks.map((m) => m.n)).toEqual([1, null, null, null, null, null, 5]);
-  });
-  it('a month is a mark a day, and a long log is a mark a week, at the middle of its answers', () => {
-    let d = base();
-    for (let i = 0; i < 300; i++) d = withDf(d, addDays(TK, -i), i % 2 ? 4 : 2);
-    expect(patFelt(d, patPeriod('30', d, st, TK), TK).marks.length).toBe(30);
-    const all = patFelt(d, patPeriod('all', d, st, TK), TK);
-    expect(all.weeks).toBe(true);
-    expect(all.marks.length).toBe(44);
-    expect(all.marks[all.marks.length - 1].n).toBe(3);
-  });
-});
-
 describe('what is said about hard days', () => {
   const day = (d: Days, k: DayKey, slip: boolean, h: number): Days => {
     const out = slip ? addEvent(d, k, 'slipped', '22:00', { trigger: null }, 1).days : d;
@@ -424,6 +407,28 @@ describe('spreadCircles', () => {
   });
 });
 
+describe('how you are doing, with slips on most days', () => {
+  const allSlips = (rode: boolean): Days => {
+    const d = base();
+    for (let b = 0; b < 60; b++)
+      d[addDays(TK, -b)] = {
+        events: [{ id: 's' + b, outcome: 'slipped', time: '22:00' }, ...(rode && b < 3 ? [{ id: 'r' + b, outcome: 'rode', time: '08:00' }] : [])],
+        u: 1,
+      } as unknown as Days[string];
+    return d;
+  };
+  it('never says a count of nothing', () => {
+    const d = allSlips(false);
+    const c = patDoing(d, patPeriod('30', d, st, TK));
+    expect(c.head).toBe('You keep showing up');
+    expect(c.line).toBe('You logged these days honestly. That is where it starts.');
+  });
+  it('says what they did do', () => {
+    const d = allSlips(true);
+    expect(patDoing(d, patPeriod('30', d, st, TK)).line).toBe('You rode out 3 hard moments in these days, and every one counts.');
+  });
+});
+
 describe('patRidge', () => {
   const dayOff = (back: number[]): Days => {
     const d = base();
@@ -443,6 +448,12 @@ describe('patRidge', () => {
     expect(r.now[r.now.length - 1]).toBe(1);
     expect(r.stars.length).toBe(29);
   });
+  it('a day with a slip and a moment ridden out still has its star', () => {
+    const d = dayOff([15]);
+    d[addDays(TK, -15)].events.push({ id: 'r', outcome: 'rode', time: '08:00' } as never);
+    const r = patRidge(d, patPeriod('30', d, st, TK), st);
+    expect(r.stars.length).toBe(30);
+  });
   it('at the start of a log it looks ahead, so a first day is never a peak to fall from', () => {
     const d: Days = { '2026-10-28': { events: [{ id: 'a', outcome: 'slipped', time: '22:00' }], u: 1 } as unknown as Days[string] };
     const r = patRidge(d, patPeriod('all', d, late, TK), late);
@@ -458,33 +469,51 @@ describe('patRidge', () => {
   });
 });
 
-describe('flameSparks', () => {
-  it('gives exactly as many as asked, inside the room, the same each time', () => {
-    for (const n of [1, 2, 3, 5, 8, 18, 40, 77, 140]) {
-      const out = flameSparks(n, 360, 300);
-      expect(out.length).toBe(n);
-      for (const p of out) {
-        expect(p.x).toBeGreaterThanOrEqual(0);
-        expect(p.x).toBeLessThanOrEqual(360);
-        expect(p.y).toBeGreaterThanOrEqual(0);
-        expect(p.y).toBeLessThanOrEqual(300);
-      }
-      expect(flameSparks(n, 360, 300)).toEqual(out);
-    }
+describe('patFlow', () => {
+  it('each point says what share of the days around it felt which way, and they add up', () => {
+    let d = base();
+    d = withMood(d, addDays(TK, -20), 9);
+    d = withMood(d, addDays(TK, -2), 3);
+    const f = patFlow(d, patPeriod('30', d, st, TK).keys);
+    for (const p of f) expect(p.reduce((a, v) => a + v, 0)).toBeCloseTo(1);
+    expect(f[f.length - 1][moodStep(3) - 1]).toBeGreaterThan(0.9);
+    expect(f[0][moodStep(9) - 1]).toBeGreaterThan(0.9);
   });
-  it('the small flames get smaller as there are more of them', () => {
-    expect(flameSparks(100, 360, 300)[0].size).toBeLessThan(flameSparks(10, 360, 300)[0].size);
-    expect(flameSparks(10, 360, 300)[0].size).toBeLessThan(flameSparks(1, 360, 300)[0].size);
+  it('a stretch with no answer leaves no hole, and no answers at all is nothing', () => {
+    const d = withMood(base(), addDays(TK, -1), 5);
+    const f = patFlow(d, patPeriod('30', d, st, TK).keys);
+    expect(f.every((p) => Math.abs(p.reduce((a, v) => a + v, 0) - 1) < 1e-9)).toBe(true);
+    expect(patFlow(base(), patPeriod('30', base(), st, TK).keys)).toEqual([]);
   });
-  it('a big flame stands on a wide foot, not on one small flame', () => {
-    for (const n of [8, 18, 39, 77]) {
-      const out = flameSparks(n, 360, 300);
-      const low = Math.max(...out.map((p) => p.y));
-      expect(out.filter((p) => p.y > low - 0.5).length).toBeGreaterThanOrEqual(2);
-    }
+});
+
+describe('patRays', () => {
+  it('a ray for each ridden out and a tick for each slip, in the order they came', () => {
+    const cols = [
+      { from: 'a', label: '', rode: 2, slipped: 1 },
+      { from: 'b', label: '', rode: 1, slipped: 0 },
+    ];
+    expect(patRays(cols)).toEqual({ rays: ['rode', 'rode', 'slipped', 'rode'], per: 1 });
   });
-  it('nothing for nothing', () => {
-    expect(flameSparks(0, 360, 300)).toEqual([]);
+  it('past what fits, a ray stands for more than one, and nothing is lost to rounding', () => {
+    const r = patRays([{ from: 'a', label: '', rode: 500, slipped: 100 }]);
+    expect(r.per).toBe(5);
+    expect(r.rays.filter((x) => x === 'rode').length).toBe(100);
+    expect(r.rays.filter((x) => x === 'slipped').length).toBe(20);
+  });
+});
+
+describe('feelMap', () => {
+  it('every other feeling is a dot, and no dot sits under a named one', () => {
+    const named = [
+      { r: 2, c: 9, n: 3, min: 60 },
+      { r: 9, c: 2, n: 1, min: 60 },
+    ];
+    const m = feelMap(named, 12, 340, 300);
+    expect(m.named.length).toBe(2);
+    expect(m.dots.length).toBeLessThan(142);
+    expect(m.dots.length).toBeGreaterThan(40);
+    for (const p of m.dots) for (const b of m.named) expect(Math.hypot(p.x - b.x, p.y - b.y)).toBeGreaterThanOrEqual(b.r);
   });
 });
 

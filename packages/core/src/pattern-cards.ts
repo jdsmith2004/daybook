@@ -126,6 +126,25 @@ export function patRideSay(ride: { then: number; now: number } | null, cols: Pat
   return { head, line: '' };
 }
 
+/* ---------- the rays ---------- */
+/** past this, a ray stands for more than one moment */
+export const RAYS_MAX = 120;
+/** each hard moment of a range in the order it came, as a ray of light for one ridden out and a short dim tick for a slip. It adds up and never takes away */
+export function patRays(cols: PatRideCol[]): { rays: ('rode' | 'slipped')[]; per: number } {
+  const total = cols.reduce((a, c) => a + c.rode + c.slipped, 0);
+  const per = Math.max(1, Math.ceil(total / RAYS_MAX));
+  const rays: ('rode' | 'slipped')[] = [];
+  let a = 0;
+  let b = 0;
+  for (const c of cols) {
+    a += c.rode / per;
+    b += c.slipped / per;
+    for (; a >= 1 - 1e-9; a--) rays.push('rode');
+    for (; b >= 1 - 1e-9; b--) rays.push('slipped');
+  }
+  return { rays, per };
+}
+
 /* ---------- how you are doing ---------- */
 /** No-slip days added up, day by day, over the days shown, with the same count from the period before as a quiet line behind it.
     Above that line is better than last time. The line can only climb: a slip is a flat step, never a fall, and what was earned
@@ -162,14 +181,26 @@ export function patDoing(days: Days, per: PatPeriod): PatDoing {
     return {
       ...base,
       kind: null,
-      head: c === n ? 'Every day' : c + ' of ' + n + ' days',
-      line: c === n ? 'All of ' + days_ + ' had no slip.' : 'had no slip.',
+      head: c === n ? 'Every day' : c * 4 < n ? 'You keep showing up' : c + ' of ' + n + ' days',
+      line: c === n ? 'All of ' + days_ + ' had no slip.' : c * 4 < n ? 'You logged these days honestly. That is where it starts.' : 'had no slip.',
     };
   /* a change has to be more than a day or two */
   const move = Math.max(2, Math.round(n * 0.1));
   if (c >= t + move) return { ...base, kind: 'better', head: 'Getting better', line: what + ', up from ' + t + ' ' + per.than + '.' };
   if (c <= t - move)
     return { ...base, kind: 'harder', head: 'A harder stretch', line: what + ', down from ' + t + ' ' + per.than + '. That is a signal, not a verdict.' };
+  /* a person with few or no days like that hears what they did do: a count of nothing is not a finding, and it would take their hope for no gain */
+  if (c * 4 < n) {
+    const rode = per.recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
+    return {
+      ...base,
+      kind: 'steady',
+      head: 'You keep showing up',
+      line: rode
+        ? 'You rode out ' + plural(rode, 'hard moment') + ' in these days, and every one counts.'
+        : 'You logged these days honestly. That is where it starts.',
+    };
+  }
   const strong = c >= n * STRONG;
   return { ...base, kind: strong ? 'strong' : 'steady', head: strong ? 'Holding strong' : 'Steady', line: what + ', about the same as ' + per.than + '.' };
 }
@@ -191,25 +222,42 @@ export interface PatFeltCol {
   steps: [number, number, number, number, number];
   n: number;
 }
-/** one place on the chart of how the days felt: a day, or over a long log a week */
-export interface PatFeltDay {
-  k: DayKey;
-  /** the answer, or for a week the middle of its answers; null with none: not answering is not a bad day */
-  n: DayFeelStep | null;
-}
 export interface PatFelt extends PatSay {
   cols: PatFeltCol[];
-  /** each day, or on a long log each week */
-  marks: PatFeltDay[];
-  /** whether a mark is a week */
-  weeks: boolean;
   /** days at each step in the range, Rough first */
   by: [number, number, number, number, number];
   /** days with an answer in the range */
   n: number;
+  /** how the days felt as a flow across the range: for each point along it, the share at each step, Rough first. Empty with no answers */
+  flow: number[][];
 }
-/** up to this many days, each day has a mark of its own */
-const MARK_DAYS = 35;
+/** how many points a flow is drawn from */
+const FLOW_POINTS = 48;
+/** The days as a flow: each point along the range is what the days around it felt like, the nearest counting most, so a band of color widens as
+    days like it come more often. A day with no answer adds nothing and leaves no hole, because not answering is not a bad day. */
+export function patFlow(days: Days, keys: DayKey[]): number[][] {
+  const at: [number, DayFeelStep][] = [];
+  keys.forEach((k, i) => {
+    const n = dayStep(days[k]);
+    if (n) at.push([i, n]);
+  });
+  if (!at.length) return [];
+  const last = Math.max(1, keys.length - 1);
+  const wide = Math.max(1, keys.length / 12);
+  const points = Math.min(FLOW_POINTS, Math.max(2, keys.length));
+  return Array.from({ length: points }, (_, p) => {
+    const here = (p / (points - 1)) * last;
+    const near = [0, 0, 0, 0, 0];
+    /* a long way from any answer the weights all but vanish, so the nearest answer is what counts there */
+    const closest = Math.min(...at.map(([i]) => Math.abs(i - here)));
+    for (const [i, n] of at) {
+      const d = (Math.abs(i - here) - closest) / wide;
+      near[n - 1] += Math.exp((-d * d) / 2);
+    }
+    const sum = near.reduce((a, v) => a + v, 0);
+    return near.map((v) => v / sum);
+  });
+}
 /** at least this many answered days on a side before two periods are compared */
 const FELT_CMP = 5;
 export function patFelt(days: Days, per: PatPeriod, tk: DayKey): PatFelt {
@@ -227,21 +275,8 @@ export function patFelt(days: Days, per: PatPeriod, tk: DayKey): PatFelt {
   const n = cols.reduce((a, c) => a + c.n, 0);
   const by: PatFelt['by'] = [0, 0, 0, 0, 0];
   for (const c of cols) c.steps.forEach((v, i) => (by[i] += v));
-  const weeks = per.keys.length > MARK_DAYS;
-  const marks: PatFeltDay[] = weeks
-    ? weeksOf(per.keys).map((c) => {
-        const vals = c.map((k) => dayStep(days[k])).filter((v): v is DayFeelStep => !!v);
-        return { k: c[0], n: vals.length ? (Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) as DayFeelStep) : null };
-      })
-    : per.keys.map((k) => ({ k, n: dayStep(days[k]) }));
-  return { cols, marks, weeks, by, n, ...feltSay(days, per, n) };
+  return { cols, by, n, flow: patFlow(days, per.keys), ...feltSay(days, per, n) };
 }
-/** seven days at a time, counted back from today */
-const weeksOf = (keys: DayKey[]) => {
-  const out: DayKey[][] = [];
-  for (let end = keys.length; end > 0; end -= 7) out.unshift(keys.slice(Math.max(0, end - 7), end));
-  return out;
-};
 function feltSay(days: Days, per: PatPeriod, n: number): PatSay {
   if (!n) return { head: 'Nothing answered', line: 'A day with no answer stays blank here.' };
   const count = (ks: DayKey[]) => {
@@ -400,7 +435,7 @@ export interface PatRidge {
   now: number[];
   /** the same for the period before, or null when there is nothing to compare with */
   then: number[] | null;
-  /** a star for each day, or on a long log each stretch, with no slip, by its place along the ridge from 0 to 1 */
+  /** a star for each day, or on a long log each stretch, with a win in it, by its place along the ridge from 0 to 1 */
   stars: number[];
 }
 /** The hill on the first card: how many of the recent days had no slip, day by day. A slip is a dip that fills back in, so it never
@@ -430,136 +465,15 @@ export function patRidge(days: Days, per: PatPeriod, st: Settings): PatRidge {
     if (out.length <= RIDGE_POINTS) return out;
     return Array.from({ length: RIDGE_POINTS }, (_, i) => out[Math.round((i / (RIDGE_POINTS - 1)) * (out.length - 1))]);
   };
+  /* a star is a win: a day with no slip, or a hard moment ridden out on any day */
+  const won = (k: DayKey) => noSlip(k) || sumDay(days[k]).rode > 0;
   const stretch = Math.ceil(per.keys.length / STAR_DAYS);
   const stars: number[] = [];
   for (let i = 0; i < per.keys.length; i += stretch) {
-    if (per.keys.slice(i, i + stretch).every(noSlip)) stars.push(per.keys.length > 1 ? (i + (stretch - 1) / 2) / (per.keys.length - 1) : 1);
+    if (per.keys.slice(i, i + stretch).some(won)) stars.push(per.keys.length > 1 ? (i + (stretch - 1) / 2) / (per.keys.length - 1) : 1);
   }
   const compare = per.than !== 'in your first month' && per.then && per.then.length === per.keys.length;
   return { now: line(per.keys), then: compare ? line(per.then!) : null, stars };
-}
-
-/* ---------- one flame made of many ---------- */
-/** the outline of the app's flame, in its 24 by 24 drawing */
-const FLAME_EDGE: [number, number][] = [
-  [12.0, 1.5],
-  [12.5, 2.8],
-  [13.4, 4.2],
-  [14.4, 5.5],
-  [15.5, 6.9],
-  [16.6, 8.5],
-  [17.5, 10.1],
-  [18.2, 12.0],
-  [18.4, 14.1],
-  [18.3, 15.3],
-  [17.9, 16.5],
-  [17.3, 17.7],
-  [16.5, 18.6],
-  [15.6, 19.4],
-  [14.4, 20.0],
-  [13.2, 20.4],
-  [12.0, 20.5],
-  [10.8, 20.4],
-  [9.6, 20.0],
-  [8.4, 19.4],
-  [7.5, 18.6],
-  [6.7, 17.7],
-  [6.1, 16.5],
-  [5.7, 15.3],
-  [5.6, 14.1],
-  [5.8, 12.4],
-  [6.3, 11.0],
-  [7.0, 9.8],
-  [8.0, 8.7],
-  [8.3, 9.9],
-  [8.8, 10.8],
-  [9.4, 11.4],
-  [10.1, 11.8],
-  [10.0, 9.3],
-  [10.3, 6.8],
-  [10.9, 4.1],
-  [11.4, 2.8],
-];
-const FLAME_LEFT = 5.6;
-const FLAME_TOP = 1.5;
-const FLAME_W = 12.8;
-const FLAME_H = 19;
-const inFlame = (x: number, y: number) => {
-  let inside = false;
-  for (let i = 0, j = FLAME_EDGE.length - 1; i < FLAME_EDGE.length; j = i++) {
-    const [xi, yi] = FLAME_EDGE[i];
-    const [xj, yj] = FLAME_EDGE[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-};
-export interface FlameSpark {
-  x: number;
-  y: number;
-  /** how tall this small flame stands */
-  size: number;
-  /** how close to the hot heart of the big flame it sits: 1 at the heart, 0 at the edge */
-  heat: number;
-}
-/** past this, a small flame stands for more than one moment */
-export const SPARKS_MAX = 140;
-/** the places for `n` small flames that together make one big one, as big as fits in w by h. The first places are nearest the heart. Same answer every time. */
-export function flameSparks(n: number, w: number, h: number): FlameSpark[] {
-  if (n <= 0 || w <= 0 || h <= 0) return [];
-  const heartX = 12;
-  const heartY = 14.4;
-  /* the rows of a brick wall around the heart, closer and closer until there is room for all of them */
-  const places = (cell: number, phase: number) => {
-    const out: [number, number][] = [];
-    const dy = cell * 0.74;
-    const dx = cell * 0.7;
-    const rows = Math.ceil(FLAME_H / dy) + 2;
-    const cols = Math.ceil(FLAME_W / dx) + 1;
-    for (let r = -rows; r <= rows; r++)
-      for (let c = -cols; c <= cols; c++) {
-        const x = heartX + (c + (r % 2 ? 0.5 : 0)) * dx;
-        const y = heartY + (r + phase) * dy;
-        if (inFlame(x, y)) out.push([x, y]);
-      }
-    return out;
-  };
-  const far = (p: [number, number]) => Math.hypot((p[0] - heartX) / FLAME_W, (p[1] - heartY) / FLAME_H);
-  /* a big flame sits on a wide foot, so the walls are tried a little higher and lower, for the biggest one whose bottom row is not a lone flame */
-  let cell = 0;
-  let chosen: [number, number][] = [];
-  let most = 1;
-  let footed = false;
-  for (const phase of [0, 0.25, 0.5, 0.75]) {
-    let c = FLAME_H * 0.8;
-    let at = places(c, phase);
-    while (at.length < n && c > 0.2) {
-      c *= 0.985;
-      at = places(c, phase);
-    }
-    /* what is left over goes from the far edge of the wall */
-    const sorted = at.slice().sort((a, b) => far(a) - far(b));
-    const some = sorted.slice(0, n);
-    const low = Math.max(...some.map((p) => p[1]));
-    const foot = n < 4 || some.filter((p) => p[1] > low - 0.01).length >= 2;
-    if ((foot && !footed) || (foot === footed && c > cell)) {
-      cell = c;
-      chosen = some;
-      most = far(sorted[sorted.length - 1]) || 1;
-      footed = foot;
-    }
-  }
-  /* a lone flame stands as tall as the room allows */
-  const size = n === 1 ? FLAME_H * 0.9 : Math.min(cell * 1.3, FLAME_H * 0.5);
-  /* the small flames at the edge reach out past the big one's outline by half their size, and stay in the room */
-  const unit = Math.min(w / (FLAME_W + size), h / (FLAME_H + size));
-  const left = (w - FLAME_W * unit) / 2;
-  const top = (h - FLAME_H * unit) / 2;
-  return chosen.map((p) => ({
-    x: left + (p[0] - FLAME_LEFT) * unit,
-    y: top + (p[1] - FLAME_TOP) * unit,
-    size: size * unit,
-    heat: 1 - far(p) / most,
-  }));
 }
 
 /* ---------- things in a mosaic ---------- */
@@ -697,4 +611,28 @@ export function feelBubbles(list: { u: number; v: number; n: number; min?: numbe
     fill = Math.max(0.1, fill - 0.03);
     if (fill < 0.4) least *= 0.92;
   }
+}
+/** the whole field of feelings in the room: what was named, big enough to hold its word, and every other feeling a small dot where it lives, so the field fills the room and the named ones stand out of it */
+export function feelMap(
+  named: { r: number; c: number; n: number; min?: number }[],
+  size: number,
+  w: number,
+  h: number,
+): { named: RoomCircle[]; dots: (RoomCircle & { row: number; col: number })[] } {
+  const at = (v: number) => (v + 0.5) / size;
+  const big = feelBubbles(
+    named.map((x) => ({ u: at(x.c), v: at(x.r), n: x.n, min: x.min })),
+    w,
+    h,
+    3,
+  );
+  const taken = new Set(named.map((x) => x.r + ',' + x.c));
+  const cells: { row: number; col: number }[] = [];
+  for (let row = 0; row < size; row++) for (let col = 0; col < size; col++) if (!taken.has(row + ',' + col)) cells.push({ row, col });
+  const small = (Math.min(w, h) / size) * 0.2;
+  /* a dot under a big one is simply not there: the field stays an even field around them */
+  const dots = cells
+    .map((p) => ({ ...p, x: at(p.col) * w, y: at(p.row) * h, r: small }))
+    .filter((p) => big.every((b) => Math.hypot(p.x - b.x, p.y - b.y) >= b.r + small + 3));
+  return { named: big, dots };
 }

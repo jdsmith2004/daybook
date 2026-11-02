@@ -2,27 +2,14 @@
    each is drawn from what the app is made of (docs/plan.md has the reasons):
    - Hillside: how many recent days had no slip, as a hill you walked over, with your flame standing at today, a star over each day with no slip, and
      the period before as a dotted line. A slip is a dip that fills back in
-   - DayShapes: a calendar where each day is the shape and color of its answer on Today; a day with no answer is a small dim dot
-   - MomentFlame: every hard moment ridden out is a small flame, and together they make one big one; a slip is a small ring at its foot, never an alarm
-   - FeelField: what was named, as big shapes with the word inside, in the color and shape it has when it is picked
+   - DayFlow: how the days felt as bands of color across the range, each in the color of its answer on Today, widening as days like it come more often
+   - MomentSun: your flame in the middle, with a ray of light for each hard moment ridden out; a slip is a short dim tick, never an alarm
+   - FeelField: the whole field of feelings as soft dots, with what was named swelled up where it lives and its word inside
    - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
    - Pairs: days with no slip beside slip days, a pair for each answer
    Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
-import {
-  feelBubbles,
-  flameSparks,
-  mosaic,
-  SPARKS_MAX,
-  type DayFeelStep,
-  type DayKey,
-  type PatDiff,
-  type PatFeels,
-  type PatFeltDay,
-  type PatHour,
-  type PatRidge,
-  type PatWhen,
-} from '@daybook/core';
+import { feelMap, mosaic, type DayFeelStep, type PatDiff, type PatFeels, type PatHour, type PatRidge, type PatWhen } from '@daybook/core';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
@@ -216,7 +203,8 @@ export function Hillside({
   /* today stands in from the edge, so the flame is whole */
   const end = w - FL * 0.5 - 4;
   const top = Math.max(h * 0.36, FL * 0.95);
-  const floor = h + 8;
+  /* the ground never falls away: with no such days at all there is still a hill for the flame to stand on, clear of the words under it */
+  const floor = h * 0.74;
   const X = (i: number, of = n) => (of > 1 ? (i / (of - 1)) * end : end);
   /* ground is never ruled with a straight edge: a swell of a few points under everything, far smaller than one day's dip */
   const swell = (x: number) => 3 * Math.sin((x / w) * 8.2 + 0.6) + 2 * Math.sin((x / w) * 17 + 2);
@@ -343,245 +331,200 @@ export function Hillside({
 
 /* ---------- how each day felt ---------- */
 const STEP_WORD: Record<DayFeelStep, string> = { 5: 'Great', 4: 'Good', 3: 'Okay', 2: 'Low', 1: 'Rough' };
-const WEEK_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const weekdayOf = (k: DayKey) => {
-  const [y, m, d] = k.split('-').map(Number);
-  return (new Date(y, m - 1, d).getDay() + 6) % 7;
-};
-const CAL_SIDE = 16;
-const DAY_KEY = 34;
-/** the range in the shapes of its answers: a week is seven of them at the height of how the day felt, a month is a calendar, and a long log is a shape for each week */
-export function DayShapes({
-  marks,
-  weeks,
+const FLOW_FOOT = 28;
+/** a thing drawn from left to right when its card is reached */
+function Sweep({ w, h, duration = 1100, children }: { w: number; h: number; duration?: number; children: ReactNode }) {
+  const v = useGrow(80, duration);
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: w,
+        height: h,
+        overflow: 'hidden',
+        transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }],
+      }}>
+      <Animated.View style={{ width: w, height: h, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [w, 0] }) }] }}>
+        {children}
+      </Animated.View>
+    </Animated.View>
+  );
+}
+/** how the days felt as bands of color running across the range, the best at the top: a band widens as days like it come more often */
+export function DayFlow({
+  flow,
   by,
-  tk,
+  first,
+  sky,
   w,
   h,
   look,
   label,
 }: {
-  marks: PatFeltDay[];
-  weeks: boolean;
+  flow: number[][];
   by: number[];
-  tk: DayKey;
+  first: string;
+  /** the color showing between the bands */
+  sky: string;
   w: number;
   h: number;
   look: (n: DayFeelStep) => { kind: ShapeKind; color: string };
   label: string;
 }) {
   const k = useInk();
-  const W = w - CAL_SIDE * 2;
-  /* the key takes a second line when its words do not fit on one */
-  const keyWidth = ([5, 4, 3, 2, 1] as DayFeelStep[]).reduce((a, n) => a + (by[n - 1] ? 34 + (STEP_WORD[n].length + String(by[n - 1]).length) * 6.6 : 0), 0);
-  const keyH = keyWidth > W ? DAY_KEY + 18 : DAY_KEY;
-  const room = h - keyH;
-  const dim = 'rgba(189,181,230,0.16)';
-  const key = (
-    <View style={[s.key, { position: 'absolute', left: CAL_SIDE, right: CAL_SIDE, bottom: 12, justifyContent: 'center', columnGap: 12 }]}>
-      {([5, 4, 3, 2, 1] as DayFeelStep[]).map((n) =>
-        by[n - 1] ? (
-          <View key={n} style={s.keyItem}>
-            <LitShape kind={look(n).kind} size={14} color={look(n).color} />
-            <Text style={[s.ax, { color: k.c.muted }]}>
-              {STEP_WORD[n]} {by[n - 1]}
-            </Text>
-          </View>
-        ) : null,
-      )}
-    </View>
-  );
-  if (!weeks && marks.length <= 7) {
-    /* a week: seven big shapes, four over three, each over its day */
-    const top = Math.min(4, marks.length);
-    const low = marks.length - top;
-    const NAME = 22;
-    const GAP = 10;
-    const size = Math.floor(Math.min((W - 3 * GAP) / 4, (room - (low ? 2 : 1) * NAME - (low ? GAP : 0)) / (low ? 2 : 1)));
-    const one = (m: PatFeltDay, i: number) => {
-      const at = m.n ? look(m.n) : null;
-      return (
-        <View key={m.k} style={{ width: size, alignItems: 'center' }}>
-          <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-            {at ? (
-              <Pop delay={120 + i * 70} style={{ width: size, height: size }}>
-                <LitShape kind={at.kind} size={size} color={at.color} />
-              </Pop>
-            ) : (
-              <View style={{ width: size * 0.3, height: size * 0.3, borderRadius: size, backgroundColor: dim }} />
-            )}
-          </View>
-          <Text style={[s.ax, { height: NAME, paddingTop: 4, color: m.k === tk ? k.c.ink : k.c.muted, fontFamily: m.k === tk ? font.bodyBold : font.body }]}>
-            {m.k === tk ? 'Today' : WEEK_LETTERS[weekdayOf(m.k)]}
-          </Text>
-        </View>
-      );
-    };
-    return (
-      <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-        <View style={{ height: room, alignItems: 'center', justifyContent: 'center', gap: GAP }}>
-          <View style={{ flexDirection: 'row', gap: GAP }}>{marks.slice(0, top).map((m, i) => one(m, i))}</View>
-          {low ? <View style={{ flexDirection: 'row', gap: GAP }}>{marks.slice(top).map((m, i) => one(m, top + i))}</View> : null}
-        </View>
-        {key}
-      </View>
-    );
-  }
-  if (weeks) {
-    /* a shape for each week, in reading order, as big as fits */
-    let cols = 3;
-    const gap = 6;
-    while (cols < 16 && Math.ceil(marks.length / cols) * ((W - (cols - 1) * gap) / cols + gap) > room) cols++;
-    const size = Math.floor((W - (cols - 1) * gap) / cols);
-    return (
-      <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap, paddingHorizontal: CAL_SIDE, height: room, alignContent: 'center' }}>
-          {marks.map((m, i) => {
-            const at = m.n ? look(m.n) : null;
-            return (
-              <Pop key={m.k} delay={100 + i * 14} style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                {at ? (
-                  <LitShape kind={at.kind} size={size} color={at.color} />
-                ) : (
-                  <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size, backgroundColor: dim }} />
-                )}
-              </Pop>
-            );
-          })}
-        </View>
-        {key}
-      </View>
-    );
-  }
-  /* a month: the real calendar, each day with its date under it */
-  const pad = marks.length ? weekdayOf(marks[0].k) : 0;
-  const rows = Math.ceil((marks.length + pad) / 7);
-  const cw = W / 7;
-  const HEAD = 22;
-  const rowH = Math.min((room - HEAD) / Math.max(rows, 1), 72);
-  const size = Math.floor(Math.min(cw - 5, rowH - 19));
+  const H = h - FLOW_FOOT;
+  const n = flow.length;
+  /* a little past each edge, so a band never stops short of the card's */
+  const X = (i: number) => (n > 1 ? -4 + (i / (n - 1)) * (w + 8) : w / 2);
+  /* from the top: Great, then down to Rough */
+  const edge: number[][] = [flow.map(() => 0)];
+  for (let step = 4; step >= 0; step--) edge.push(flow.map((p, i) => edge[edge.length - 1][i] + p[step]));
+  const line = (e: number[]) => e.map((v, i): [number, number] => [X(i), v * H]);
+  const bands = ([5, 4, 3, 2, 1] as DayFeelStep[])
+    .map((step, b) => {
+      const up = line(edge[b]);
+      const down = line(edge[b + 1]);
+      const most = Math.max(...flow.map((p) => p[step - 1]));
+      if (most * H < 1) return null;
+      const rim = smooth(up);
+      const d = rim + smooth(down.slice().reverse()).replace(/^M/, 'L') + 'Z';
+      /* its word sits where the band is widest, if it fits there */
+      const wid = flow.findIndex((p) => p[step - 1] === most);
+      const at = { x: Math.max(16, Math.min(w - 92, X(wid) - 38)), y: ((edge[b][wid] + edge[b + 1][wid]) / 2) * H };
+      return { step, d, rim, top: b === 0, at, fits: most * H >= 26 };
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <View style={{ position: 'absolute', left: CAL_SIDE, right: CAL_SIDE, bottom: keyH }}>
-        <View style={{ flexDirection: 'row', height: HEAD }}>
-          {WEEK_LETTERS.map((l, i) => (
-            <Text key={i} style={[s.ax, { width: cw, textAlign: 'center', color: k.c.muted }]}>
-              {l}
+      <Sweep w={w} h={H}>
+        <Svg width={w} height={H} {...SVG_HIDE}>
+          <Defs>
+            <LinearGradient id="flowlit" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.14} />
+              <Stop offset="0.45" stopColor="#FFFFFF" stopOpacity={0} />
+              <Stop offset="1" stopColor="#1A0B3A" stopOpacity={0.42} />
+            </LinearGradient>
+            <LinearGradient id="flowair" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor={sky} stopOpacity={1} />
+              <Stop offset="0.14" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.62" stopColor={sky} stopOpacity={0} />
+              <Stop offset="1" stopColor={sky} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          {bands.map((x) => (
+            <G key={x.step}>
+              <Path d={x.d} fill={look(x.step).color} />
+              <Path d={x.d} fill="url(#flowlit)" />
+            </G>
+          ))}
+          {/* each band's upper edge catches the light, the way the hill's does */}
+          {bands.map((x) => (x.top ? null : <Path key={x.step} d={x.rim} stroke="#FFF6DF" strokeOpacity={0.7} strokeWidth={1.5} fill="none" />))}
+          <Rect width={w} height={H} fill="url(#flowair)" />
+        </Svg>
+        {bands.map((x) =>
+          x.fits ? (
+            <Text
+              key={x.step}
+              numberOfLines={1}
+              style={[s.abs, { left: x.at.x, top: x.at.y - 9, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: '#1C2030' }]}>
+              {STEP_WORD[x.step]} {by[x.step - 1]}
             </Text>
-          ))}
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {Array.from({ length: pad }, (_, i) => (
-            <View key={'pad' + i} style={{ width: cw, height: rowH }} />
-          ))}
-          {marks.map((m, i) => {
-            const at = m.n ? look(m.n) : null;
-            const today = m.k === tk;
-            return (
-              <View key={m.k} style={{ width: cw, height: rowH, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 3 }}>
-                <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                  {at ? (
-                    <Pop delay={120 + i * 18} style={{ width: size, height: size }}>
-                      <LitShape kind={at.kind} size={size} color={at.color} />
-                    </Pop>
-                  ) : (
-                    <View style={{ width: size * 0.42, height: size * 0.42, borderRadius: size, backgroundColor: dim }} />
-                  )}
-                </View>
-                <Text style={[s.date, { color: today ? k.c.ink : k.c.muted, fontFamily: today ? font.bodyBold : font.body }]}>{Number(m.k.slice(8))}</Text>
-              </View>
-            );
-          })}
-        </View>
+          ) : null,
+        )}
+      </Sweep>
+      <View style={[s.between, s.abs, { left: 16, right: 16, bottom: 6 }]}>
+        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
       </View>
-      {key}
     </View>
   );
 }
 
 /* ---------- the moments ridden out ---------- */
-/* drawn in 24 by 24, standing from 1.5 to 20.5 */
-const FLAME = 'M12 1.5c.9 3.6 6.4 6.7 6.4 12.6a6.4 6.4 0 0 1-12.8 0c0-2.4 1-4 2.4-5.4.3 1.8 1.1 2.7 2.1 3.1C9.7 8.6 10.3 5 12 1.5z';
-/** the small bright heart of a flame */
-const FLAME_CORE = 'M12 11.4c.5 1.7 3 3 3 5.4a3 3 0 0 1-6 0c0-1.2.5-2 1.2-2.7.2.8.5 1.2 1 1.4-.1-1.4 0-2.8.8-4.1z';
-const HEAT: [number, number, number][] = [
-  [226, 66, 44],
-  [247, 112, 44],
-  [255, 165, 60],
-  [255, 214, 110],
-];
-const heatColor = (t: number) => {
-  const at = Math.max(0, Math.min(0.999, t)) * (HEAT.length - 1);
-  const i = Math.floor(at);
-  const u = at - i;
-  const c = HEAT[i].map((v, j) => Math.round(v + (HEAT[i + 1][j] - v) * u));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
-};
-const MOMENT_FOOT = 34;
-/** every hard moment ridden out is a small flame, and together they make one big one: it only ever grows. A slip is a small ring at its foot. */
-export function MomentFlame({ rode, slipped, w, h, label }: { rode: number; slipped: number; w: number; h: number; label: string }) {
+const SUN_FOOT = 30;
+/** your flame in the middle, with a ray of light for each moment ridden out, in the order they came from the top around, the newest the longest. A slip is a short dim tick */
+export function MomentSun({
+  rays,
+  per,
+  level,
+  w,
+  h,
+  label,
+}: {
+  rays: ('rode' | 'slipped')[];
+  per: number;
+  level: number;
+  w: number;
+  h: number;
+  label: string;
+}) {
   const k = useInk();
-  const v = useGrow(100, 1100);
-  const breath = useBreath(1900);
-  const room = h - MOMENT_FOOT - 4;
-  const per = Math.max(1, Math.ceil(rode / SPARKS_MAX));
-  const sparks = useMemo(() => flameSparks(Math.round(rode / per), w - 32, room), [rode, per, w, room]);
-  const rings = Math.min(slipped, 8);
-  const under = sparks.length >= 8 ? Math.min((w - 32 - sparks[0].size) / 12.8, (room - sparks[0].size) / 19) : 0;
+  const v = useGrow(120, 1200);
+  const breath = useBreath(2200);
+  const room = h - SUN_FOOT;
+  const cx = w / 2;
+  const cy = room / 2;
+  const R = Math.min(w - 8, room) / 2;
+  const inner = R * 0.58;
+  const n = rays.length;
+  const FL = Math.round(inner * 1.7);
+  const thick = Math.max(2.5, Math.min(11, ((2 * Math.PI * inner) / Math.max(n, 1)) * 0.52));
+  const end = (i: number, r: number) => {
+    const a = -Math.PI / 2 + (i / Math.max(n, 1)) * 2 * Math.PI;
+    return (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1);
+  };
+  let lit = '';
+  let dim = '';
+  rays.forEach((kind, i) => {
+    if (kind === 'slipped') dim += 'M' + end(i, inner + 2) + 'L' + end(i, inner + thick + 8);
+    else lit += 'M' + end(i, inner + 2) + 'L' + end(i, inner + 8 + (R - inner - 8) * (0.62 + (0.38 * (i + 1)) / n + (place(i) - 0.5) * 0.1));
+  });
+  const slips = rays.filter((x) => x === 'slipped').length * per;
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(v, breath.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] })) }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(v, breath.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] })) }]}>
         <Svg width={w} height={h} {...SVG_HIDE}>
           <Defs>
-            <RadialGradient id="fire" cx={w / 2} cy={room * 0.62} r={room * 0.62} gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor="#FF9A3C" stopOpacity={0.5} />
-              <Stop offset="0.45" stopColor="#E2452C" stopOpacity={0.16} />
-              <Stop offset="1" stopColor="#E2452C" stopOpacity={0} />
+            <RadialGradient id="sunglow" cx={cx} cy={cy} r={R * 1.12} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FFB347" stopOpacity={0.5} />
+              <Stop offset="0.55" stopColor="#F2704F" stopOpacity={0.2} />
+              <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
             </RadialGradient>
           </Defs>
-          <Rect width={w} height={h} fill="url(#fire)" />
+          <Rect width={w} height={h} fill="url(#sunglow)" />
         </Svg>
       </Animated.View>
-      <View style={{ position: 'absolute', left: 0, top: 0, width: w, height: room + 6, overflow: 'hidden' }}>
-        <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [room + 6, 0] }) }] }}>
-          <View style={{ width: w, height: room + 6, overflow: 'hidden' }}>
-            <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-(room + 6), 0] }) }] }}>
-              <Svg width={w} height={room + 6} {...SVG_HIDE}>
-                {/* the big flame under the small ones, so what shows between them is fire and not night */}
-                {under ? (
-                  <G transform={`translate(${16 + (w - 32 - 12.8 * under) / 2 - 5.6 * under} ${(room - 19 * under) / 2 - 1.5 * under}) scale(${under})`}>
-                    <Path d={FLAME} fill="#D9482B" />
-                  </G>
-                ) : null}
-                {/* the heart on top, so the tongues at the edge lick out from under it */}
-                {sparks
-                  .slice()
-                  .reverse()
-                  .map((p, i) => {
-                    const z = p.size / 19;
-                    return (
-                      <G key={i} transform={`translate(${16 + p.x - 12 * z} ${p.y - 11 * z}) scale(${z})`}>
-                        <Path d={FLAME} fill={heatColor(p.heat * 0.72 + 0.1)} />
-                        <Path d={FLAME_CORE} fill={heatColor(p.heat * 0.5 + 0.5)} />
-                      </G>
-                    );
-                  })}
-              </Svg>
-            </Animated.View>
-          </View>
-        </Animated.View>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            opacity: v,
+            transform: [
+              { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) },
+              { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-24deg', '0deg'] }) },
+            ],
+          },
+        ]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          <Defs>
+            <RadialGradient id="ray" cx={cx} cy={cy} r={R} gradientUnits="userSpaceOnUse">
+              <Stop offset={String(inner / R)} stopColor="#FFF3CF" />
+              <Stop offset={String((inner + (R - inner) * 0.45) / R)} stopColor="#FFB347" />
+              <Stop offset="1" stopColor="#F2704F" stopOpacity={0.7} />
+            </RadialGradient>
+          </Defs>
+          {dim ? <Path d={dim} stroke={k.c.muted} strokeOpacity={0.55} strokeWidth={Math.max(2.5, thick * 0.7)} strokeLinecap="round" fill="none" /> : null}
+          {lit ? <Path d={lit} stroke="url(#ray)" strokeWidth={thick} strokeLinecap="round" fill="none" /> : null}
+        </Svg>
+      </Animated.View>
+      <View style={{ position: 'absolute', left: cx - FL / 2, top: cy - FL * 0.52 }}>
+        <BigFlame level={level} size={FL} />
       </View>
-      <View style={[s.abs, { left: 16, right: 16, bottom: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }]}>
-        {per > 1 ? <Text style={[s.ax, { color: k.c.muted }]}>Each small flame is {per} moments.</Text> : null}
-        {per > 1 && slipped ? <Text style={[s.ax, { color: k.c.muted }]}> </Text> : null}
-        {rings ? (
-          <Svg width={rings * 13} height={12} {...SVG_HIDE}>
-            {Array.from({ length: rings }, (_, i) => (
-              <Circle key={i} cx={6 + i * 13} cy={6} r={4} stroke={k.c.muted} strokeWidth={1.5} fill="none" />
-            ))}
-          </Svg>
-        ) : null}
-        {slipped ? <Text style={[s.ax, { color: k.c.muted }]}>{slipped === 1 ? '1 slip' : slipped + ' slips'}</Text> : null}
+      <View style={[s.abs, { left: 16, right: 16, bottom: 8, alignItems: 'center' }]}>
+        <Text style={[s.ax, { color: k.c.muted }]}>
+          {per > 1 ? 'Each ray is ' + per + ' moments.' + (slips ? ' ' : '') : ''}
+          {slips ? (slips === 1 ? '1 slip' : slips + ' slips') : ''}
+        </Text>
       </View>
     </View>
   );
@@ -596,41 +539,45 @@ function Floating({ i, x, y, size, children }: { i: number; x: number; y: number
   const breath = useBreath(2600 + (i % 5) * 420);
   return (
     <Pop delay={140 + i * 70} style={{ position: 'absolute', left: x - size / 2, top: y - size / 2, width: size, height: size }}>
-      <Animated.View style={{ transform: [{ translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [-2.5, 2.5] }) }] }}>{children}</Animated.View>
+      <Animated.View style={{ transform: [{ translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [-2, 2] }) }] }}>{children}</Animated.View>
     </Pop>
   );
 }
-/** what was named, each in its own shape and color, big enough to hold its word, near where it lives on the field */
+/** the whole field of feelings as soft dots, the one a person picks from, with what they named swelled up where it lives, its word inside */
 export function FeelField({ words, w, h, label }: { words: PatFeels['words']; w: number; h: number; label: string }) {
   const shown = words.slice(0, FIELD_MAX);
-  const side = 12;
+  const side = 10;
+  const W = w - side * 2;
+  const H = h - side * 2;
   const at = useMemo(
     () =>
-      feelBubbles(
-        /* a spiky shape holds a word only in its middle */
-        shown.map((x) => ({
-          u: (x.c + 0.5) / FIELD_N,
-          v: (x.r + 0.5) / FIELD_N,
-          n: x.n,
-          min: (x.w.length * 7 + 18) * (String(feelKind(x.r, x.c)).includes('jag') ? 1.35 : 1.05),
-        })),
-        w - side * 2,
-        h - side,
+      feelMap(
+        shown.map((x) => ({ r: x.r, c: x.c, n: x.n, min: x.w.length * 7 + 16 })),
+        FIELD_N,
+        W,
+        H,
       ),
-    [shown, w, h],
+    [shown, W, H],
   );
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        {at.dots.map((p) => (
+          <Circle key={p.row + '-' + p.col} cx={side + p.x} cy={side + p.y} r={p.r} fill={FEEL_COLORS[p.row][p.col]} opacity={0.42} />
+        ))}
+        {shown.map((x, i) => (
+          <Circle key={x.w} cx={side + at.named[i].x} cy={side + at.named[i].y} r={at.named[i].r + 5} fill={FEEL_COLORS[x.r][x.c]} opacity={0.2} />
+        ))}
+      </Svg>
       {shown.map((x, i) => {
-        const d = at[i].r * 2;
-        const body = d * (String(feelKind(x.r, x.c)).includes('jag') ? 0.68 : 0.86);
-        const big = d >= 104 && x.w.length * 8.6 <= body;
-        const fs = big ? 17 : x.w.length * 7 <= body ? 13 : 12;
+        const d = at.named[i].r * 2;
+        const big = d >= 96 && x.w.length * 8.6 <= d - 12;
+        const fs = big ? 17 : x.w.length * 7 <= d - 8 ? 13 : 12;
         return (
-          <Floating key={x.w} i={i} x={side + at[i].x} y={at[i].y} size={d}>
-            <LitShape kind={feelKind(x.r, x.c)} size={d} color={FEEL_COLORS[x.r][x.c]} />
+          <Floating key={x.w} i={i} x={side + at.named[i].x} y={side + at.named[i].y} size={d}>
+            <LitShape kind="circle" size={d} color={FEEL_COLORS[x.r][x.c]} />
             <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-              {x.w.length * (fs === 12 ? 6.2 : 7) <= body ? (
+              {x.w.length * (fs === 12 ? 6.2 : 7) <= d - 4 ? (
                 <Text numberOfLines={1} style={{ fontFamily: font.bodySemi, fontSize: fs, color: INK }}>
                   {x.w}
                 </Text>

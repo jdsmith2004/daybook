@@ -24,6 +24,7 @@ import {
   patPeriod,
   patRangeLabel,
   patRideCols,
+  patRays,
   patRidge,
   gameCompute,
   patRideSay,
@@ -55,7 +56,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { NumbersTable } from '@/components/charts';
 import { DAY_FEEL_LOOK } from '@/components/day-feel-pop';
-import { CARD_SKY, DaySky, DayShapes, FeelField, Hillside, HoursKey, MomentFlame, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
+import { CARD_SKY, DayFlow, DaySky, FeelField, Hillside, HoursKey, MomentSun, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
 import { Deck, Say, type DeckCard, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -261,8 +262,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
     .sort((a, b) => Math.abs(b.clean - b.slip) / (Math.max(b.clean, b.slip) || 1) - Math.abs(a.clean - a.slip) / (Math.max(a.clean, a.slip) || 1))[0];
   const ridge = patRidge(snap.days, per, st);
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
-  const rodeAll = rideCols.reduce((a, x) => a + x.rode, 0);
-  const slipAll = rideCols.reduce((a, x) => a + x.slipped, 0);
+  const sun = patRays(rideCols);
 
   const cards: DeckCard[] = [];
   /* the first card, for the question this page is here to answer. It stays after a slip: one slip is a flat step, which is worth seeing then */
@@ -305,14 +305,11 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       say: felt.line ? <Say>{felt.line}</Say> : null,
       chart: (
         <Room>
-          {(w, h) => <DayShapes marks={felt.marks} weeks={felt.weeks} by={felt.by} tk={tk} w={w} h={h} look={look} label={felt.head + '. ' + felt.line} />}
+          {(w, h) => (
+            <DayFlow flow={felt.flow} by={felt.by} first={doing.first} sky={CARD_SKY.felt[1]} w={w} h={h} look={look} label={felt.head + '. ' + felt.line} />
+          )}
         </Room>
       ),
-      foot: felt.weeks ? (
-        <T v="small" tone="muted">
-          Each shape is a week.
-        </T>
-      ) : null,
       numbers: (
         <NumbersTable
           cap="How the days felt"
@@ -327,7 +324,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       title: 'Riding it out',
       head: rideSay.head,
       say: rideSay.line ? <Say>{rideSay.line}</Say> : null,
-      chart: <Room>{(w, h) => <MomentFlame rode={rodeAll} slipped={slipAll} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
+      chart: <Room>{(w, h) => <MomentSun rays={sun.rays} per={sun.per} level={level} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
       numbers: (
         <NumbersTable
           cap="Entries"

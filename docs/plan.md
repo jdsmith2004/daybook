@@ -27,9 +27,9 @@ On most and every day, the slips screen says: "After a slip, “I already blew i
 
 **Does it help Daybook:** a review that sees the person's real week is a reason to keep coming back on Sundays, and a plan kept from it brings them back to SOS during the week. Nothing is locked.
 
-Pictures (web, made-up logs): `docs/weekly-review/hard-week-and-long-stretch.png` (4 of 5 days, its step, and the first slip in 23 days), `docs/weekly-review/clean-week.png`, `docs/weekly-review/hard-week-dark.png`.
+Pictures (web, made-up logs): `docs/weekly-review/hard-week-and-long-stretch.png` (4 of 5 days, its step, and the first slip in 23 days), `docs/weekly-review/clean-week.png`, `docs/weekly-review/hard-week-dark.png`, and on the iPhone 17 Pro simulator (a release build, a made-up week with slips on 5 of 7 days): `docs/weekly-review/iphone-hard-week.png`.
 
-**Steps (Opus effort):** week kinds, words and step in core, with tests (medium, done). The seven days screen and the Next week screen (medium, done). Web check (done). Simulator check (medium). Merge once the owner has seen it, since the words change.
+**Steps (Opus effort):** week kinds, words and step in core, with tests (medium, done). The seven days screen and the Next week screen (medium, done). Web check, and saving the step as the plan (done: it shows on the done page as "When it gets to 10 PM, I will open SOS and start Breathe."). Simulator check (done). Merge once the owner has seen it, since the words change.
 
 ## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 

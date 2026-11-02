@@ -25,7 +25,7 @@ export interface Beat {
 export interface LessonBeats {
   /** one for each card in the lesson, in the lesson's order */
   cards: Beat[];
-  /** the recall question this lesson asks the day after */
+  /** the old review question's short words, no longer asked: see Lesson.rc */
   rc?: { q?: string; o?: string[]; c: string[] };
   /** the one thing to keep, as the flame says it at the end */
   key: string;

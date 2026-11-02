@@ -1,6 +1,6 @@
 /* Lessons: the one order they are offered in (a section at a time), which are done, the path walked in that order (one
    lesson opens at a time: lessonWalk, lessonGate, the welcome back for a lesson read early), the cards of a Quick or Full
-   read, the recall question, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
+   read, and the checkpoints. The practice step at the end of each lesson is in practice.ts. The legacy helpers
    read the global Store; here the log and the settings are passed in. The lesson content itself (LESSONS, LUNITS, SRC,
    LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
 import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
@@ -74,6 +74,7 @@ export interface Lesson {
   key: string;
   np: string;
   cards: Card[];
+  /** the old review question, no longer asked (the owner, November 1, 2026). Kept only until the question rewrite, which reuses its best scenarios (docs/plan.md). */
   rc?: { q: string; c: string[]; a: number; r: string; cr?: string[] };
   scope?: string;
   /** [name: topic, url, who?, topic?] */
@@ -106,8 +107,7 @@ export function lessonsDone(days: Days): Set<string> {
 
 /* ---------- families: one hard idea, taught four ways ---------- */
 /** each hard idea is taught by a few lessons from different directions (the science, a scene, a practice, your own log). The
-    newer two are each a section of the path; the first two come back across sections, and each lesson's recall question
-    brings the one before it back */
+    newer two are each a section of the path; the first two come back across sections */
 export interface LessonFamily {
   id: string;
   name: string;
@@ -360,26 +360,13 @@ export const lessonCards = (L: Lesson, len: 'q' | 'f' | null) => {
   const all = lessonCore(L);
   return len === 'q' && lessonHasQuick(L) ? all.filter((c) => c.q === 1) : all;
 };
-/** the lesson before this one in the daily order, when it was finished and has a recall question, and this one is new.
-    asked: lessons whose own question was already answered today (on their welcome back), so it is not asked twice. */
-export function lessonRecallOf(L: Lesson, done: Set<string>, asked: Set<string> = new Set(), st?: Settings | null): Lesson | null {
-  const path = lessonPathFor(st);
-  const i = path.indexOf(L);
-  const P = i > 0 ? path[i - 1] : null;
-  return P && P.rc && done.has(P.id) && !done.has(L.id) && !asked.has(P.id) ? P : null;
-}
-/** the recall question on a welcome back: the lesson's own, about the lesson being welcomed back to */
-export const lessonBackRecall = (L: Lesson): Lesson | null => (L.rc ? L : null);
-export type SeqItem = { t: 'rc' } | { t: 'card'; c: Card; ci: number } | { t: 'done' };
-export function lessonSeq(L: Lesson, rcOf: string | null, len: 'q' | 'f' | null): SeqItem[] {
+export type SeqItem = { t: 'card'; c: Card; ci: number } | { t: 'done' };
+export function lessonSeq(L: Lesson, len: 'q' | 'f' | null): SeqItem[] {
   const out: SeqItem[] = [];
-  if (rcOf) out.push({ t: 'rc' });
   lessonCards(L, len).forEach((c) => out.push({ t: 'card', c, ci: L.cards.indexOf(c) }));
   out.push({ t: 'done' });
   return out;
 }
-/** each choice's comment on the recall question (older ones share one explanation) */
-export const lxRcReply = (r: NonNullable<Lesson['rc']>, j: number) => (r.cr && r.cr[j] ? r.cr[j] : (j === r.a ? 'Right. ' : 'Not quite. ') + r.r);
 export const lxGraded = (c: Card) => Number.isInteger(c.a);
 /** the words after a guess is locked in */
 export function guessFeedback(g: Guess, v: number): string {

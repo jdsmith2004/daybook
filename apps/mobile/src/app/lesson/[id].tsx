@@ -1,4 +1,4 @@
-/* A lesson. One flow for every lesson: the cover (pick Quick or Full) > one recall question on the lesson before > the cards >
+/* A lesson. One flow for every lesson: the cover (pick Quick or Full) > the cards >
    Done > Put it to work > Practiced. A lesson counts as finished only when the Done card is reached. Put it to work (core
    practice.ts) offers ready-made lines that go on the plan with one tap, right here, with Undo; a tool or page it opens comes
    back to the same step, as it was. Nothing on a card, and nothing on the practice step, can finish the lesson or send the
@@ -6,7 +6,7 @@
    Lessons open one at a time, in the order of the path (core lessonGate). A link to a lesson the path has not reached (a
    help page, My plan, the review, a nudge, a tool) opens its key idea instead: one card, with the tools it points to, that
    writes nothing and earns nothing. A lesson read before that rule, once the path reaches it, opens as a short welcome
-   back: the key idea, its own recall question (not asked again by the next lesson that day), then Keep going (core lessonReach: no points, nothing
+   back: the key idea, then Keep going (core lessonReach: no points, nothing
    counted twice) or Read it all again (?at=all, the full lesson). */
 import {
   type Block,
@@ -39,8 +39,6 @@ import {
   lessonPractice,
   lessonPracticed,
   lessonReach,
-  lessonBackRecall,
-  lessonRecallOf,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -49,7 +47,6 @@ import {
   LNOTE_LEN,
   LUNITS,
   lxGraded,
-  lxRcReply,
   nextAfter,
   type PItem,
   planRows,
@@ -89,16 +86,11 @@ import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@
 /** the color of quiet words low on the screen, where the sky is brightest */
 const LowInk = createContext('#FFFFFF');
 type Stage = 'cover' | 'run' | 'practice' | 'practiced';
-/** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
-    not ask the same question again that day */
-const ASKED: Record<string, string> = {};
 type Sheet =
   /** where the science comes from */
   | { t: 'src'; i?: number | null }
   /** a card's original words, and on a question the original comment on the answer picked */
   | { t: 'more'; i: number; pk: number | null }
-  /** the recall question's original words */
-  | { t: 'rc'; of: string; pk: number | null }
   /** the lesson's one thing to keep, in full */
   | { t: 'key' };
 /** a line added on the practice step: the words that went on the plan (changed or not), and what a sentence replaced */
@@ -119,9 +111,6 @@ export default function LessonScreen() {
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
   const [i, setI] = useState(0);
   const [len, setLen] = useState<'q' | 'f'>('f');
-  const [rcOf, setRcOf] = useState<string | null>(null);
-  const [rc, setRc] = useState<number | null>(null);
-  const [rcTried, setRcTried] = useState<number[]>([]);
   const [pick, setPick] = useState<Record<number, number>>({});
   const [tried, setTried] = useState<Record<number, number[]>>({});
   const [gu, setGu] = useState<Record<number, { v: number | null; lock: boolean }>>({});
@@ -184,7 +173,7 @@ export default function LessonScreen() {
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   const next = nextAfter(L, w);
-  const seq = lessonSeq(L, rcOf, len);
+  const seq = lessonSeq(L, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
   const beats = lessonBeats(L);
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
@@ -302,11 +291,6 @@ export default function LessonScreen() {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
       setLen(ln);
       setI(0);
-      /* the lesson before asked its own question on its welcome back today: not again */
-      const P = lessonRecallOf(L, done, new Set(Object.keys(ASKED).filter((x) => ASKED[x] === tk)), st);
-      setRcOf(P ? P.id : null);
-      setRc(null);
-      setRcTried([]);
       setStage('run');
       if (lessonHasQuick(L) && st.learn.len !== ln) apply({ st: changeSettings(st, (s0) => void (s0.learn.len = ln)) });
     };
@@ -355,31 +339,7 @@ export default function LessonScreen() {
     prog = <Prog total={seq.length} i={ix} look={look} />;
     if (ix > 0) backBtn = () => step(-1);
     const nextLabel = seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next';
-    if (it.t === 'rc') {
-      const P = lessonById(rcOf)!;
-      const r = P.rc!;
-      const rb = lessonBeats(P)?.rc;
-      body = (
-        <Question
-          h={rb?.q || r.q}
-          list={rb?.o || r.c}
-          best={r.a}
-          pk={rc}
-          tried={rcTried}
-          comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
-          first="One from last time."
-          want={want}
-          onMore={rb ? () => setSheet({ t: 'rc', of: P.id, pk: rc }) : undefined}
-          onPick={(j) => {
-            setRc(j);
-            setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-            if (j === r.a) setPulse((x) => x + 1);
-            buzz('tap');
-          }}
-        />
-      );
-      foot = rc == null ? <Ghost label="Skip" onPress={() => step(1)} /> : <Next label="Next" onPress={() => step(1)} />;
-    } else if (it.t === 'done') {
+    if (it.t === 'done') {
       const pr = lessonPractice(L);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       const key = beats?.key || L.key;
@@ -666,7 +626,7 @@ function goTo(g: Go) {
 /* ---------- a lesson the path has not reached, and one read early ---------- */
 /** 'key': a lesson further on the path, opened from a link. Its key idea on one card, the tools it points to, and where it
     sits on the path; nothing is saved. 'back': a lesson read early, now Up next. A short welcome back: when it was read,
-    the flame, the key idea, its own recall question, then Keep going or Read it all again. */
+    the flame, the key idea, then Keep going or Read it all again. */
 function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'back' }) {
   const { snap, tk, apply } = useStore();
   const account = useAccount();
@@ -674,8 +634,6 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const look = lessonLook('sky', gate === 'back' ? 0.74 : 0.3, base.scheme);
   const inset = useSafeAreaInsets();
   const st = snap.settings!;
-  const [rc, setRc] = useState<number | null>(null);
-  const [rcTried, setRcTried] = useState<number[]>([]);
   const [went, setWent] = useState<Record<number, boolean>>({});
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
@@ -736,9 +694,6 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       </View>
     );
   } else {
-    const P = lessonBackRecall(L);
-    const r = P ? P.rc! : null;
-    const rb = P ? lessonBeats(P)?.rc : null;
     const keep = () => {
       apply((cur) => ({ st: lessonReach(cur, L.id) }));
       buzz('save');
@@ -754,30 +709,8 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         <T style={[s.h, s.hsm]} accessibilityRole="header">
           {L.title}
         </T>
-        {r && P ? (
-          /* the flame says the key idea, then a comment on each answer */
-          <Question
-            head={<T style={[s.p, { fontFamily: font.bodySemi }]}>{rb?.q || r.q}</T>}
-            list={rb?.o || r.c}
-            best={r.a}
-            pk={rc}
-            tried={rcTried}
-            comments={rb?.c || r.c.map((_, j) => lxRcReply(r, j))}
-            first={said}
-            want={150}
-            onPick={(j) => {
-              setRc(j);
-              setRcTried((x) => (x.indexOf(j) < 0 ? x.concat(j) : x));
-              ASKED[L.id] = tk;
-              buzz('tap');
-            }}
-          />
-        ) : (
-          <>
-            <Bubble text={said} />
-            <FlameSlot size={SHORT ? 210 : 280} min={96} />
-          </>
-        )}
+        <Bubble text={said} />
+        <FlameSlot size={SHORT ? 210 : 280} min={96} />
       </>
     );
     foot = (
@@ -939,34 +872,28 @@ const BESIDE = SHORT ? 88 : 104;
     The room between is as tall as the longest comment needs from the first frame, so nothing moves. */
 function Question({
   h,
-  head,
   list,
   best,
   pk,
   tried,
   comments,
-  first,
   want,
   onMore,
   onPick,
 }: {
-  h?: string;
-  /** in place of the big line, when the screen already has one */
-  head?: ReactNode;
+  h: string;
   list: string[];
   best: number | null;
   pk: number | null;
   tried: number[];
   comments: string[];
-  /** what the flame says before anything is picked */
-  first?: string;
   want: number;
   onMore?: () => void;
   onPick: (j: number) => void;
 }) {
   const found = best != null && tried.indexOf(best) >= 0;
   const reply = (j: number) => comments[j] + (best != null && j !== best && !found ? ' Try another.' : '');
-  const said = pk != null ? reply(pk) : first || null;
+  const said = pk != null ? reply(pk) : null;
   const [room, setRoom] = useState({ w: 0, h: 0 });
   const [tall, setTall] = useState(0);
   const wide = Math.max(120, room.w - BESIDE + 8);
@@ -981,11 +908,9 @@ function Question({
   const flameTop = Math.min(top + tall - 12, Math.max(0, room.h - BESIDE));
   return (
     <>
-      {head || (
-        <T style={[s.h, s.hsm]} accessibilityRole="header">
-          {h}
-        </T>
-      )}
+      <T style={[s.h, s.hsm]} accessibilityRole="header">
+        {h}
+      </T>
       <View
         style={[s.room, { minHeight: Math.max(tall, BESIDE) + 8 }]}
         onLayout={(e) => setRoom({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -997,7 +922,7 @@ function Question({
         />
         {/* every comment, unseen, to learn how tall the longest is */}
         {room.w
-          ? comments.concat(first || []).map((x, j) => (
+          ? comments.map((x, j) => (
               <View
                 key={j}
                 style={[s.ghost, { width: wide }]}
@@ -1005,7 +930,7 @@ function Question({
                 pointerEvents="none"
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants">
-                <Bubble text={x + (x === first ? '' : ' Try another.')} tail="right" more={!!onMore} />
+                <Bubble text={x + ' Try another.'} tail="right" more={!!onMore} />
               </View>
             ))
           : null}
@@ -1325,16 +1250,6 @@ function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; 
   } else if (sheet.t === 'key') {
     title = L.ask || 'The one thing to keep';
     body = <T style={s.p}>{L.key}</T>;
-  } else if (sheet.t === 'rc') {
-    const r = lessonById(sheet.of)!.rc!;
-    title = r.q;
-    body =
-      sheet.pk != null ? (
-        <>
-          <T v="label">{r.c[sheet.pk]}</T>
-          <T style={s.p}>{lxRcReply(r, sheet.pk)}</T>
-        </>
-      ) : null;
   } else {
     const card = L.cards[sheet.i];
     const rv = card.k === 'guess' ? card.g!.rv : null;

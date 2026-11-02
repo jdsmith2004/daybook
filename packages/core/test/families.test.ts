@@ -1,5 +1,5 @@
 /* Lessons 33 to 45 and the lesson families: every lesson is whole, every claim names a source, the path goes a section at a
-   time, and recall follows the path. */
+   time. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Lesson } from '../src/lessons';
@@ -164,15 +164,13 @@ describe('families', () => {
     expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.LESSONS.length);
   });
 
-  it('recall asks about the lesson before this one on the path', () => {
-    const l2 = core.lessonById('l2')!;
-    const l46 = core.lessonById('l46')!;
-    const l33 = core.lessonById('l33')!;
-    expect(core.lessonRecallOf(core.lessonById('l3')!, new Set(['l1', 'l2']))).toBe(l2);
-    expect(core.lessonRecallOf(l33, new Set(['l1', 'l2', 'l3', 'l4', 'l46']))).toBe(l46);
-    expect(core.lessonRecallOf(core.lessonById('l37')!, new Set(['l36']))).toBe(core.lessonById('l36'));
-    expect(core.lessonRecallOf(core.lessonById('l13')!, new Set(['l40']))).toBe(core.lessonById('l40'));
-    expect(core.lessonRecallOf(core.lessonById('l29')!, new Set(['l45']))).toBe(core.lessonById('l45'));
+  it('a lesson starts on its first card: the review question is gone (the owner, November 1, 2026)', () => {
+    core.LESSONS.forEach((L: Lesson) => {
+      const seq = core.lessonSeq(L, 'f');
+      expect(seq[0]).toMatchObject({ t: 'card', ci: 0 });
+      expect(seq[seq.length - 1]).toEqual({ t: 'done' });
+      expect(seq.filter((x) => x.t === 'card').length).toBe(core.lessonCore(L).length);
+    });
   });
 
   it('checkpoints stop at the last written one, so the new lessons never offer one that is not there', () => {

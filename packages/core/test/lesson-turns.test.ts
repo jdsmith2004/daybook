@@ -48,12 +48,21 @@ describe('turned lessons', () => {
           { id: 'c', time: '23:30', outcome: 'rode' },
         ],
       },
+      '2026-10-03': { events: [{ id: 'd', time: '22:30', outcome: 'rode' }] },
     } as unknown as Days;
-    const kinds: core.MineKind[] = ['acted', 'rode', 'back'];
-    kinds.forEach((k) => [none, some].forEach((d) => expect(core.lessonMine(k, d)).not.toMatch(CONTRACTION)));
-    expect(core.lessonMine('rode', some)).toContain('2 urges');
-    expect(core.lessonMine('back', some)).toContain('1 slip,');
-    expect(core.lessonMine('acted', some)).toContain('3 honest entries');
-    expect(core.lessonMine('acted', none)).toContain('You opened this lesson');
+    const st = core.normSettings(core.defaultSettings('2026-10-01'));
+    const mine = (k: core.MineKind, d: Days, s0 = st) => core.lessonMine(k, d, s0, '2026-10-20');
+    const kinds: core.MineKind[] = ['acted', 'rode', 'back', 'hour', 'trigger', 'clean30'];
+    kinds.forEach((k) => [none, some].forEach((d) => expect(mine(k, d), k).not.toMatch(CONTRACTION)));
+    expect(mine('rode', some)).toContain('3 urges');
+    expect(mine('back', some)).toContain('1 slip,');
+    expect(mine('acted', some)).toContain('4 honest entries');
+    expect(mine('acted', none)).toContain('You opened this lesson');
+    expect(mine('hour', some)).toContain('Your busiest hours');
+    /* the log starts on October 1, and the slip on October 2 is the one day of 20 that did not hold */
+    expect(mine('clean30', some)).toBe('19 of your last 20 days had no slip in them. Those days stay yours.');
+    expect(mine('clean30', none, core.normSettings(core.defaultSettings('2026-10-17')))).toBe(
+      'You are 4 days in. In a few weeks, this counts the days that held.',
+    );
   });
 });

@@ -1162,7 +1162,7 @@ function NoteField({ L, note }: { L: Lesson; note: string }) {
 /* ---------- the blocks inside a card ---------- */
 function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings }) {
   const c = useTheme();
-  const { snap } = useStore();
+  const { snap, tk } = useStore();
   if (!bs || !bs.length) return null;
   return (
     <>
@@ -1246,7 +1246,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
           return (
             <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
               <Text style={[s.eye2, { color: c.muted }]}>From your log, on this phone</Text>
-              <T style={s.mine}>{lessonMine(b[1], snap.days)}</T>
+              <T style={s.mine}>{lessonMine(b[1], snap.days, st, tk)}</T>
             </View>
           );
         if (b[0] === 'words') {

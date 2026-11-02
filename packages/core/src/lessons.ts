@@ -569,7 +569,7 @@ export function lessonLog(days: Days, st: Settings) {
 }
 /** a true line from the person's own log, for a turn's "Your own log" card (lesson-turns.ts). Counted on the phone, never sent anywhere.
     With nothing logged yet, it says what to watch for instead. */
-export function lessonMine(k: MineKind, days: Days): string {
+export function lessonMine(k: MineKind, days: Days, st: Settings, tk: DayKey): string {
   const evs = eventsOf(days);
   const rode = evs.filter((e) => e.outcome === 'rode').length;
   const slips = evs.filter((e) => e.outcome === 'slipped').length;
@@ -580,6 +580,31 @@ export function lessonMine(k: MineKind, days: Days): string {
     return did.length
       ? 'So far: ' + did.join(' and ') + '. You did ' + (ls + evs.length === 1 ? 'that' : 'those') + ' before you felt ready.'
       : 'You opened this lesson. That is a step, and you took it before you felt ready.';
+  }
+  if (k === 'hour') {
+    const bw = evs.length >= 3 ? (busiestWindow(evs, st.rollover) as { label: string; n: number; total: number } | null) : null;
+    return bw
+      ? 'Your busiest hours are ' + bw.label + ': ' + bw.n + ' of your ' + bw.total + ' timed entries.'
+      : 'Log the time of the next few urges. Within a week or two, your hours start to show.';
+  }
+  if (k === 'trigger') {
+    const tt = evs.length >= 3 ? (topTrigger(evs, st.opts) as { t: string; n: number } | null) : null;
+    return tt
+      ? 'The reason you pick most is ' + tt.t.toLowerCase() + ', ' + n(tt.n, 'time', 'times') + '.'
+      : 'Pick a reason on the next few entries. Within a week or two, your most common one shows.';
+  }
+  if (k === 'clean30') {
+    const slipDays = new Set(evs.filter((e) => e.outcome === 'slipped').map((e) => e.key));
+    const from = addDays(tk, -29);
+    /* counted from the day they started, when that is less than 30 days ago */
+    const began = [st.start, Object.keys(days).sort()[0]].filter(Boolean).sort()[0] as DayKey | undefined;
+    const start = began && began > from ? began : from;
+    const span = Math.max(1, diffDays(tk, start) + 1);
+    let clean = 0;
+    for (let i = 0; i < span; i++) if (!slipDays.has(addDays(start, i))) clean++;
+    return span < 7
+      ? 'You are ' + n(span, 'day', 'days') + ' in. In a few weeks, this counts the days that held.'
+      : clean + ' of your last ' + span + ' days had no slip in them. Those days stay yours.';
   }
   if (k === 'rode')
     return rode

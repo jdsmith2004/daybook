@@ -20,7 +20,9 @@ import type { Beat, LessonBeats } from './lesson-beats';
 type Src = [string, string, string?, string?];
 /** an answer and what the flame says to it */
 type Opt = [string, string];
-export type MineKind = 'acted' | 'rode' | 'back';
+/** a line from the person's own log (lessons.ts lessonMine): what they did, urges ridden out, comebacks, their busiest hours, the
+    reason they pick most, and days with no slip in the last 30 */
+export type MineKind = 'acted' | 'rode' | 'back' | 'hour' | 'trigger' | 'clean30';
 
 export interface TurnCard {
   h: string;
@@ -107,6 +109,10 @@ const S = {
     'Berridge & Robinson (2016): liking, wanting, and the incentive-sensitization theory of addiction, American Psychologist',
     'https://doi.org/10.1037/amp0000059',
   ],
+  wegner: [
+    'Wegner, Schneider, Carter & White (1987): paradoxical effects of thought suppression, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.53.1.5',
+  ],
   bowen: ['Bowen & Marlatt (2009): “Surfing the urge,” a study with college smokers', 'https://pubmed.ncbi.nlm.nih.gov/20025372/'],
   herman: ['Herman & Mack (1975): restrained and unrestrained eating, Journal of Personality', 'https://doi.org/10.1111/j.1467-6494.1975.tb00727.x'],
   larimer: [
@@ -183,62 +189,61 @@ export const TURNS: Record<string, Turn> = {
     title: 'Urges are waves',
     ic: 'wave',
     ask: 'What do I do when an urge hits?',
-    key: 'An urge is a loud promise, not an order. It rises, peaks and passes, and you can outlast it.',
+    key: 'Pushing an urge away keeps it coming back. Name it, breathe, and watch it rise and pass.',
     np: 'Where I feel an urge first, and what I will do while it passes',
     hook: {
-      h: 'An urge hits, and it feels like it will only get stronger.',
-      say: 'Does a strong urge mean you need it?',
-      more: 'Most people think there are two choices when an urge hits: fight it or give in. This lesson is about why the urge is so loud, and a third choice.',
+      h: 'An urge hits, and you try hard to push it out of your head.',
+      say: 'Does pushing it away work?',
+      more: 'Most people think there are two choices when an urge hits: force it out or give in. This lesson is about why forcing it out backfires, and a third choice.',
     },
     ask1: {
-      h: 'Think of the last time you gave in. Ten minutes later, was it as good as the urge promised?',
+      h: 'When you try to force an urge out of your mind, what usually happens?',
       o: [
-        ['Not as good as it promised', 'That gap is worth noticing. The next cards explain where it comes from.'],
-        ['Good for a moment, then worse', 'Many people say the same. The promise and the result are not the same size.'],
-        ['About what I expected', 'Fair. Watch the next one closely and compare.'],
-        ['I do not remember feeling much', 'That is common. The urge felt huge, and what came after was small.'],
+        ['It goes away, then comes back', 'Many people notice that. The next cards explain why it comes back.'],
+        ['It gets louder the harder I push', 'That is common, and it is not weak willpower. It is how minds work.'],
+        ['Sometimes it works', 'Sometimes it does. Watch whether it returns later the same night.'],
+        ['I do not know yet', 'That is fair. Notice it the next time one comes.'],
       ],
     },
     flip: {
-      think: 'A strong urge means I really want this.',
-      see: 'A strong urge means the habit is well practiced. Your brain learned to want it far more than it enjoys it.',
-      more: 'How loud an urge is tells you how often the habit has been repeated, not how much you will enjoy giving in. That is why the urge can be huge and what comes after so small.',
+      think: 'I have to push the urge out of my head.',
+      see: 'Pushing a thought away keeps it coming back. Watching it rise and fall is what lets it pass.',
+      more: 'Trying not to think about something makes the mind check whether the thought is gone, and the checking brings it back. An urge you watch, without fighting it or obeying it, rises, peaks and falls on its own.',
     },
     deep: [
       {
-        h: 'Wanting and liking run on two different systems.',
-        p: 'Repeat a habit and the wanting grows louder, while the liking stays flat or fades.',
-        art: ['want', {}],
-        fact: { s: 'Research · Berridge & Robinson, 2016', i: [0] },
-        more: 'Brain researchers Kent Berridge and Terry Robinson found that the brain’s “wanting” and its “liking” are separate. In addiction, repetition makes the wanting stronger and stronger, while the pleasure itself does not grow with it. The urge is the wanting talking.',
+        h: 'People told not to think of a white bear could not stop.',
+        p: 'It kept coming back, and once the rule was lifted they thought of it even more.',
+        fact: { s: 'Study · Wegner and colleagues, 1987', i: [0] },
+        more: 'In a classic study, students were asked to talk through their thoughts for five minutes without thinking of a white bear, and to ring a bell each time they did. They kept ringing it. Students who had suppressed the thought first then thought of the bear more than anyone once they were allowed to.',
       },
       {
         h: 'college smokers learned to ride their urges, and smoked less.',
         n: '123',
-        p: 'Their urges stayed as strong as before. What they did with them changed.',
+        p: 'They did not push the urges away. They watched them, and what they did changed.',
         fact: { s: 'Study · 123 college smokers · Bowen & Marlatt, 2009', i: [1] },
         more: 'College students who smoked were taught urge surfing: notice the urge, breathe, and watch it rise and fall without acting. Their urges stayed as strong as everyone else’s, and over the next week they smoked significantly fewer cigarettes.',
       },
     ],
     mine: { h: 'Here is what your own urges have done.', k: 'rode' },
     move: {
-      h: 'When one hits, name it, breathe, and wait.',
-      l: ['Name it: “This is an urge. It passes.”', 'Breathe slowly, with a long breath out', 'Give it ten minutes, then notice'],
+      h: 'When one hits, name it, breathe, and watch.',
+      l: ['Name it: “This is an urge. It passes.”', 'Breathe slowly, with a long breath out', 'Give it ten minutes, and watch it fall'],
       more: 'Ten minutes is not a magic number. It is short enough to try, and long enough to watch a wave come down.',
     },
     check: {
       h: 'An urge hits hard while you are home alone. What gives you the best chance?',
       o: [
-        ['Name it, breathe, and wait ten minutes', 'Yes. You are not fighting it or obeying it. You are outlasting the promise.'],
-        ['Swear I will never give in again', 'A vow keeps all your attention on the urge. You only need to get past this one.'],
+        ['Name it, breathe, and watch it pass', 'Yes. You are not pushing it away or obeying it. You are letting it pass.'],
+        ['Force it out of my mind, hard', 'Pushing it away tends to bring it back. Watching it lets it fall.'],
         ['Give in so it stops bugging me', 'That ends this one and makes the next one louder. Each one outlasted turns it down.'],
         ['Stay busy online until it goes', 'Online keeps the trigger in your hand. Step away from the screen and let it pass.'],
       ],
       a: 0,
     },
     scope:
-      'The wanting and liking research comes from brain studies of addiction, mostly with drugs. The urge study followed college students who smoked, not people who use porn. What carries over is the pattern: an urge can stay strong while what you do with it changes.',
-    src: [S.berridge, S.bowen],
+      'The white bear study was about an ordinary thought, not an urge, and the urge study followed college students who smoked, not people who use porn. What carries over is the pattern: pushing a thought away tends to bring it back, and watching an urge without acting changed what people did.',
+    src: [S.wegner, S.bowen],
   },
 
   l3: {

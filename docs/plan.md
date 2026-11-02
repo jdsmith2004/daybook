@@ -1,5 +1,27 @@
 # What is planned next
 
+## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
+
+The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on
+`claude/gifted-chaum-b1e538`, docs/today-review there), the owner picked all three of these, then the Tonight look "hours inside the
+arc" with the plan in bubbles, and asked that it say hard hours. What is built:
+
+- **Today so far:** each entry logged today, with a shape like a badge (mint scallop and a wave for an urge ridden out). It opens the
+  entry. "1 logged today" left the quiet line under Your day, since this shows it.
+- **Tonight** (`components/tonight-card.tsx`): a dusk card that warms to an ember, a night card in both themes. The hard hours sit
+  inside a small arc of the evening (6 PM to 2 AM), gold with a glow, a dot for now, "Hard hours · in an hour" or "· now" over them.
+  Under it the two lines of the urge plan that fit tonight (core `planTonight`: the bed or late line when the hours are late, then the
+  trigger that comes most, slips counting three times) in the lessons' cream bubbles. At the bottom, "Make a plan for tonight" (Talk it
+  through, ready for tonight) from two hours before while there is none, otherwise "Your whole plan". Before the hard hours are known,
+  the same dusk with a moon and "If it gets hard tonight"; with no plan, one bubble to make one. The hard-hours line under the lesson
+  (`risk-card.tsx`) is gone; this card says it.
+- **Who you are becoming:** the sentence from setup, big in the flame's gold, and under it one true line from the log (core
+  `rodeProof`: "You rode out an urge Tuesday at 9:30 PM. 8 times now."). Without a sentence, "Write it in one sentence", into My plan.
+
+Earns and grows: nothing here is locked or asks for anything; it makes the free side feel generous and makes Today worth opening in
+the evening. My plan itself is being redesigned in its own session; it may use `planTonight` too. Picture:
+docs/today-review/today-built.png. Light theme checked. Waiting: the owner sees a release build on the simulator, then merge.
+
 ## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 
 The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.

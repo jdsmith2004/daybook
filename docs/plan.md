@@ -147,6 +147,42 @@ render); the cap covered the eyes or floated off the head on most forms; a first
 **Not merged:** iPhone tips outside the United States (`claude/clever-villani-6a3f09`, commit e5dc2d0). It conflicts with the tip code since Daybook Pattern, and Daybook is
 offered in the United States only, where the web link is already right. Opening other countries is the owner's call, and this commit is the start of that work.
 
+## Rekindle: the Next time page and the day and time control (the owner, November 1, 2026; on `claude/rekindle-plan-when`, not merged until the owner has seen it)
+
+The owner: the page that says "I will open SOS" "just looks like not well designed", and the control that changes when it happened "is kind of buggy. And it works well, but maybe we could improve the design a little bit."
+
+**Next time, the design choice.** The big red button was the problem: it looked like an alarm on a page about hope, it pulled against That is my plan, and the page had no spirit. The purpose stays what it was (a plan already made, in one easy move). The page is now three things:
+
+- The person's sentence, in two beats: the when quieter, "I will open SOS." in full ink, with SOS in its own color. Left, because it runs past two lines.
+- The flame, big, in the open middle, saying in a cream bubble "I will remind you tomorrow night." That is the same promise as "Daybook brings it back", said by the one who keeps it. It says "tonight", "this evening" or "tomorrow" by the plan's hour (core `talkBackWhen`).
+- That is my plan, with Choose another and Skip on one line under it.
+
+SOS is one tap away in the top bar, where it is on the rest of Rekindle, and it comes back to this page. `SosBig` is gone. This changes the middle of step 5 in the section below; the plan and its words do not change.
+
+**The control's bugs, reproduced on the simulator before the fix:**
+
+1. Save while a wheel was still turning threw the turn away: the wheel was on :26, and it saved 11:22. A wheel only told the sheet when it stopped.
+2. A slow drag let go with no flick stopped between two rows and stayed there.
+3. A day picked far back was off the row when the sheet opened, so no day looked picked (the row had a scroll reference nothing used).
+4. A time ahead of now was a dead end: a greyed button that read "Pick an earlier time". At 1 AM, reaching for 11:40 PM last night always landed there.
+5. The dim slid up with the sheet as one hard edged block, and the handle on top dragged nothing.
+6. The saved pill on the hold page left out the day after a slip moved to another one.
+
+Seen in the code or the pictures as well, and fixed: after midnight the note said "counts for yesterday" about the very day Today is on; numbers jumped between sizes as they crossed the band; the day row was cut off inside the sheet's margin; a morning's four quick picks wrapped to two rows; "Just now" could lose its mark when the minute changed.
+
+**The fix and the look:**
+
+- The row in the band counts from the moment it gets there, so the moment at the top is always what Save saves. A wheel always comes to rest on a row, and the numbers grow into the band smoothly, on the native side. The wheels roll round like a phone's own clock (on the web they end, to stay light).
+- Nothing is refused (core `whenPast`, tested). Just ahead of now, under an hour, is a slip of the finger, so it turns back to now. Further ahead today means the last time the clock said it: at 1 AM, 11:40 PM is yesterday, and the day row follows. A day tapped that would be ahead goes to now. Nothing goes before the log's first day.
+- The note names the day ("After midnight, so it counts for Sunday."). The row goes back a month instead of two weeks, and the month is gone from it (the moment says it).
+- Less on the sheet: the moment big at the top left with an X by it, as our other sheets have, no Cancel and no handle (the rule against a link that only closes). Quick picks are plain words, three at most. The days have no boxes, only the picked one is filled. The dim fades while the sheet rises. The pill has one icon and the same quiet fill as the saved pill.
+
+**Choices made on the owner's behalf, to look at:** the hour's limit between "back to now" and "the last time it said that"; "Yesterday" at 1 AM for 11:40 PM (true by the calendar, even though Today is still on that log day); keeping quick picks at all (one tap under stress is worth the row); and a hand-built wheel over Apple's own (`@expo/ui` has one, but Android and the web would still need this one, and it would drop the app's type).
+
+**Checked:** a release build on the iPhone 17 Pro simulator: Already happened, the hold's Change time and the entry sheet; light by day, dark by day and night; an earlier day, a time ahead, and 1:10 AM with the clock shifted. **The short iPhone:** a release build on the iPhone SE simulator (375 by 667): the sheet in light and dark fits with Save at the bottom, a time ahead rolls to yesterday, the saved pill names the day, and Next time keeps the flame big with both choices low. With Reduce Motion on, the sheet fades in instead of rising and works the same, and the flame's words on Next time are there at once. Not checked: Android, and haptics and speed on a real phone. Pictures: docs/rekindle-review/when-and-plan-before.png, when-after.png, plan-after.png, se-when-light.png, se-when-dark.png, se-plan.png.
+
+**Business:** nothing locked and no ask nearby. It earns by keeping people, and a slip is when they leave.
+
 ## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
 
 The owner: planning a slip and coming back to say it happened skips Rekindle, "the most important" part; the app suggests a ton of

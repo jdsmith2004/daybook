@@ -35,6 +35,18 @@ export function whenStart(key: DayKey, now: number, roll: number): When {
   return whenMs(w) > now ? whenOf(now) : w;
 }
 export const whenFuture = (w: When, now: number) => whenMs(w) > now + 60000;
+/** what a moment on the wheels means, since it has already happened. Just ahead of now is a slip of the finger, so it is now.
+    Further ahead today is the last time the clock said that: at 1 AM, 11:40 PM is last night. Nothing goes back before the log's
+    first day (from). */
+export function whenPast(w: When, now: number, roll: number, from?: DayKey | null): When {
+  const held = (x: When) => !from || whenEntry(x, roll).key >= from;
+  if (whenFuture(w, now)) {
+    const today = keyOfDate(new Date(now));
+    const last = { ...w, day: addDays(today, -1) };
+    return w.day === today && whenMs(w) - now > 3600000 && held(last) ? last : whenOf(now);
+  }
+  return held(w) || !from ? w : { day: from, h: roll, m: 0 };
+}
 
 /** "9:47 PM" */
 export function whenClock(w: When): string {
@@ -56,21 +68,29 @@ export function whenFiledUnder(w: When, roll: number): DayKey | null {
   return key === w.day ? null : key;
 }
 
+/** what the sheet says about a moment the log keeps under the day before: "After midnight, so it counts for Sunday." */
+export function whenCountsFor(w: When, roll: number): string | null {
+  const under = whenFiledUnder(w, roll);
+  if (!under) return null;
+  const [y, m, d] = under.split('-').map(Number);
+  return 'After midnight, so it counts for ' + new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' }) + '.';
+}
+
 /** the days to pick from: today first, then back, n in all */
-export function whenDays(now: number, n = 14): DayKey[] {
+export function whenDays(now: number, n = 30): DayKey[] {
   const today = keyOfDate(new Date(now));
   return Array.from({ length: n }, (_, i) => addDays(today, -i));
 }
-/** the quick picks: just now, an hour or two ago, and last night (in the morning and afternoon) */
+/** the quick picks, three so they keep to one row: just now, an hour ago, and last night in the morning and afternoon, or two hours ago */
 export function whenQuick(now: number, roll: number): { id: string; label: string; w: When }[] {
-  const out = [
+  const h = new Date(now).getHours();
+  return [
     { id: 'now', label: 'Just now', w: whenOf(now) },
     { id: '1h', label: '1 hour ago', w: whenOf(now - 3600000) },
-    { id: '2h', label: '2 hours ago', w: whenOf(now - 2 * 3600000) },
+    h >= roll && h < 18
+      ? { id: 'night', label: 'Last night', w: { day: addDays(keyOfDate(new Date(now)), -1), h: 23, m: 0 } }
+      : { id: '2h', label: '2 hours ago', w: whenOf(now - 2 * 3600000) },
   ];
-  const h = new Date(now).getHours();
-  if (h >= roll && h < 18) out.push({ id: 'night', label: 'Last night', w: { day: addDays(keyOfDate(new Date(now)), -1), h: 23, m: 0 } });
-  return out;
 }
 /** the same moment, to the minute */
 export const whenSame = (a: When, b: When) => a.day === b.day && a.h === b.h && a.m === b.m;

@@ -115,7 +115,7 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
   comes before any question, because hope comes first. SOS opens over Rekindle (`SosPill over`, "Open SOS"), and its X and its ending
   come back to the same page.
 - **Next time is a plan already made, and the plan is Daybook.** Nobody is asked to think of something at their lowest moment. The plan
-  is one sentence from what was going on ("... I will open SOS"), one tap to keep, with "Choose another" on its own page. When a plan
+  is one sentence from what was going on ("... I will open SOS"), the flame big under it saying when it comes back, one tap to keep, with "Choose another" on its own page. When a plan
   comes back on Today, a tap opens its tool. After a slip, one door for the next hour (core `slipNext`), never a list of things to try,
   and never water or a step outside: name Daybook's tools first, and what is outside only where it is the true answer (a person, sleep).
 - **Done is always in reach.** On an ending with a long card, Done is pinned at the bottom (`SceneFrame`'s `pin`) while

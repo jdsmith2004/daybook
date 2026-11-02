@@ -320,13 +320,13 @@ export default function Today() {
           </View>
         ) : null}
         <YourDay
-          note={<HardLine snap={snap} tk={tk} now={now} />}
+          note={BELOW ? null : <HardLine snap={snap} tk={tk} now={now} />}
           footOff={Platform.OS === 'ios' && atRest}
           snap={snap}
           tk={tk}
           now={now}
           hero={calm ? pick.card : null}
-          foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
+          foot={[note && !BELOW ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
         {BELOW ? <TodayBelow snap={snap} tk={tk} /> : null}
         <SyncStrip />

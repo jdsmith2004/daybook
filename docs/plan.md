@@ -93,6 +93,12 @@ bring up what the person already wrote in setup and what they already logged (it
 - **Who you are becoming:** the sentence from the end of setup, big, with one true line from the log ("Tuesday at 9:30 PM, you rode out
   an urge. You have done it 8 times."). Without the sentence, an invitation to write it.
 
+The owner then asked for it to look well designed and polished. Redrawn in the style of Journal and Milestones, then checked by an
+independent design review: each thing logged today gets a shape like a badge (mint for an urge ridden out); tonight is one card (its
+fill, one hairline above "Your whole plan"); the sentence is big in the flame's gold, with the proof line under it in plain text, the
+count in mint. One heading style, one left edge, no explaining subtitle. The line under the lesson about the hard hours and
+"1 logged today" are left out, since these sections say it now. Light theme drawn too.
+
 Picture: docs/today-review/today-below.png (morning, after an urge, before the hard hours, nothing written yet). Prototype only, behind
 `?below=1` (`components/today-below.tsx`). For a real build: the rules go to core with tests; the line under the lesson ("Your hard hours
 start at 9 PM. Make a plan") and "1 logged today" in the foot say what these sections now say, so they go; light theme not drawn yet.

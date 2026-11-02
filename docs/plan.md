@@ -62,7 +62,7 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 - `app/plan/[part].tsx`: a chapter opened, the page in its color with the cards as a soft glass of it. The editors are the ones that worked before (if-then lines, reasons, the slip steps, the safe person, the lists, the checklists).
 - `app/plan/read.tsx`: Read my plan, built from the lesson's own `Shell`, `Bubble`, `FlameSlot`, `LessonArt` and `Next`; the cards and the flame's words are core `planRead` (tested). Tonight's lines are sun cards.
 - Core `planTonight` is shared with Today. Today merged first, so this branch keeps main's copy; both `test/plan.test.ts` and `test/today-below.test.ts` pass on it. What I learned is `app/learned.tsx`, reached from Learn; my own check-in answers are in Settings. Every old link (`pane`, `sub`, `to`, `fresh`, `add`, `book`, `help/playbook`) lands in the right place.
-- Checked on the web, light and dark. Pictures and the iPhone check follow.
+- Checked on the web, light and dark, and in a release build on the iPhone 17 Pro simulator: `docs/plan-review/iphone-my-plan.png`, `iphone-read-my-plan.png`.
 
 **Data:** nothing in the settings changes shape. `plan` stays a list of `{ when, then }`, and `reasons`, `becoming`, `why`, `goal`, `loop`, `rule`, `note`, `slipPlan`, `safety`, `help`, `menu`, `wind` and `words` stay as they are, so no `normSettings` change. The "lines for tonight" pick should be one core function shared with Today, which shows the same two lines.
 

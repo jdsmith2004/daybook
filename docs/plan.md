@@ -12,6 +12,13 @@
 2. **Tonight's sky (recommended).** The sentence sits in a small sky of the evening, 6 PM to 2 AM, with the hard hours glowing in it and now marked. Under it, "When an urge comes" with the round SOS at its side, the three moves with a small flame each, and the practice link. The gradient carries the time of day, so it is not decoration, and it is the look with the most life.
 3. **Moves as shapes.** Each move is a shape to touch (the app's cookie, clover and flower), and any of them starts SOS, then a row with the round SOS. The most playful, but a person's moves are their own words, often long, and they end up in small type.
 
+**The owner's pick, the same day:** Tonight's sky, with two notes: the hard hours are needed but did not fit (a box laid over a chart line), "below that still looks bad", and "make sure this doesn't look like AI". What changed (`docs/today-review/today-tonight.png`):
+
+- The evening is the horizon itself: 6 PM at the left, 2 AM at the right, along the ridge of a hill. The hard hours are a warm glow on that stretch of the hill, with the ridge lit, and now is a small mark on the ridge. Under the ridge only "6 PM", "2 AM" and the hard hours ("9 to 11 PM", or "Hard hours, now"). No box, no chart axis. Before the hard hours are known, the hill has no glow.
+- The sky is an evening (navy into ember at the horizon), not a purple gradient, which the craft checklist names as the most common AI tell.
+- The plan sits on the ground of the same scene, as the number sits on the ground of Today's sky: "When an urge comes" with the round SOS beside it, the three moves as plain lines, and "Calm right now? Practice it once". One picture, not a heading, a list and a button stacked.
+- The week drops the little fires (they read as emoji, which the checklist names) for the app's own squiggle, which already means progress: one mark a day, Today bigger, the day of a slip an open ring, and the line runs straight through it. Over it, one sentence: "Seven days with no slip this week." and "And one urge ridden out."
+
 **Why Today feels empty.** Today is built to fit one screen: the sky takes every point the rest does not need (`lib/today-size.ts`), and nothing sits under Your day. So there is nothing to scroll to, and on a calm day the page is the flame, two buttons and three stops. The fix keeps all of that exactly as it is, the flame the same size, and adds a part below it that the page scrolls to.
 
 **What could move onto Today, by the one test (does it help the person become someone free of the habit, and is the next step still obvious):**

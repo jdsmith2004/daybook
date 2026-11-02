@@ -26,7 +26,7 @@ const practice = () => {
   router.push({ pathname: '/sos', params: { practice: '1' } });
 };
 
-function weekOf(snap: Snapshot, tk: string) {
+export function weekOf(snap: Snapshot, tk: string) {
   const st = snap.settings!;
   const out: { k: string; d: string; st: string; rode: number; today: boolean }[] = [];
   for (let i = 6; i >= 0; i--) {

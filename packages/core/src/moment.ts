@@ -3,7 +3,7 @@
 
     1. a pause in progress (the slim banner)
     2. the hard hours are never the card (the owner, October 30, 2026): the next step in them is still the lesson or SOS, and Today
-       says the hours in one quiet line under the card (risk-card.tsx)
+       says the hours in the Tonight card under Your day (tonight-card.tsx)
     3. there is no "morning after" card (the owner, October 24, 2026): coming back is the sunrise check, and Today marks it
        by itself (sunriseDue, srDone). The count asks nothing after a slip (the owner, October 30, 2026).
     4. the day of a slip, after it: one small thing
@@ -243,8 +243,8 @@ export interface StandRow {
   big: string;
   /** one line under it: "with no slip · a Torch" */
   line: string;
-  /** a quieter line, when there is something: "1 logged today · 2 of 5 nights this week" (the Sunday goal, Monday to
-      Saturday). Empty when there is nothing. */
+  /** a quieter line, when there is something: "2 of 5 nights this week" (the Sunday goal, Monday to Saturday). Today's entries
+      are in Today so far, under it. Empty when there is nothing. */
   note: string;
   /** all of it, for a screen reader */
   say: string;
@@ -254,11 +254,10 @@ export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
   const f = formWord(form);
-  /* today's entries (the rest is in Pattern, Days) and the week's goal, set on Sunday, while it can still be counted */
-  const n = sumDay(days[tk]).n;
+  /* the week's goal, set on Sunday, while it can still be counted */
   const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk);
   const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';
-  const note = [n ? n + ' logged today' : '', goal].filter(Boolean).join(' · ');
+  const note = goal;
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {
     const l = [...line.filter(Boolean), f].join(' · ');
     return { big, line: l, note, say: big + ', ' + l + '.' + (note ? ' ' + note + '.' : '') };

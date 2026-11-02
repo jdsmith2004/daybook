@@ -406,8 +406,13 @@ export function DayFlow({
             </LinearGradient>
             <LinearGradient id="flowair" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
               <Stop offset="0" stopColor={sky} stopOpacity={1} />
-              <Stop offset="0.14" stopColor={sky} stopOpacity={0} />
-              <Stop offset="0.62" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.05" stopColor={sky} stopOpacity={0.62} />
+              <Stop offset="0.11" stopColor={sky} stopOpacity={0.24} />
+              <Stop offset="0.18" stopColor={sky} stopOpacity={0.05} />
+              <Stop offset="0.26" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.58" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.7" stopColor={sky} stopOpacity={0.14} />
+              <Stop offset="0.85" stopColor={sky} stopOpacity={0.6} />
               <Stop offset="1" stopColor={sky} stopOpacity={1} />
             </LinearGradient>
           </Defs>

@@ -1,5 +1,37 @@
 # What is planned next
 
+## What's new after an update (the owner, November 2, 2026; on branch claude/whats-new, not merged)
+
+The owner: "when people update we need a what's new one page visual that briefly tells them what was added", and it shows
+only once, only to people updating, and then never again.
+
+**The rules (core `whats-new.ts`, checked by test/whats-new.test.ts):** the last version seen is kept on the device
+(`daybook.seenVersion`, never synced, never in a backup). After an update it opens once, on an open where nothing else comes
+first, in the first seconds of that open, with Today in front. It is kept as seen the moment it opens. A new install and
+anyone before or during setup get the version kept as seen, so they never see it. Someone with a log and no version kept
+updated from 1.3.0. It waits for a later open in the 3 hours after an SOS, for the rest of a day with a slip, on the day
+the person came back, and while a page, a sheet, a celebration, Welcome back or graduation is up. Several versions
+skipped: only what is new since the last one seen, newest first, three at most. A build with no entry shows nothing.
+The day-feel question does not come on the same open.
+
+**The words (1.3.1, the owner said yes):** A Sunday review that reads your week. Your plan for next time, in your words.
+When it happened, in a moment. Left out on purpose: the new setup (people updating already did it) and the Obsidian
+journal (not marketed, by the owner's word above). The two lines were tightened after the first picture, so no line ends
+on one word.
+
+**The page (`app/whats-new.tsx`):** the person's own flame, big, says "I learned three new things." in its bubble and
+leaps once; the three things rise in under it one by one, each with a small drawing of its part (the week's bars, the
+person's sentence, the turning wheel); Continue at the bottom, and the X. No Not now.
+
+**The release step:** docs/launch.md, step 5, now says to write the entry for the build's exact version first.
+
+Pictures: `docs/whats-new/web-light.jpg` (web, light), `docs/whats-new/iphone.png` (a release build on the Daybook Craft
+simulator, after setting the version seen back to 1.3.0).
+
+**Steps (Opus effort):** rules and tests (medium, done), the page (medium, done), the release step (low, done), the web and
+simulator look (done). Merge once the owner has seen it. The entry is numbered 1.3.1: if the next build is another number,
+the entry is renamed with it. Check main again before merging, in case Today or the lessons land first and earn a place.
+
 ## The Sunday review fits the week (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
 
 The owner: a week with slips on 4 of 5 days got "one missed day barely matters", so it said the same thing every week and did not push them to do better. **The bug:** `storyTeach('days')` gave the "missing a single day" line (Lally) to any week with a slip, and nothing else on the review changed with the shape of the week. The slips screen also always said "how one slip stays one slip". Now covered by `test/sunday-read.test.ts`, "never says one missed day barely matters on a week with a slip on 4 of 5 days".

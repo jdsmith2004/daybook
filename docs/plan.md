@@ -1,6 +1,6 @@
 # What is planned next
 
-## The Sunday review fits the week (the owner, November 2, 2026; on branch claude/weekly-review-weeks, not merged)
+## The Sunday review fits the week (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
 
 The owner: a week with slips on 4 of 5 days got "one missed day barely matters", so it said the same thing every week and did not push them to do better. **The bug:** `storyTeach('days')` gave the "missing a single day" line (Lally) to any week with a slip, and nothing else on the review changed with the shape of the week. The slips screen also always said "how one slip stays one slip". Now covered by `test/sunday-read.test.ts`, "never says one missed day barely matters on a week with a slip on 4 of 5 days".
 

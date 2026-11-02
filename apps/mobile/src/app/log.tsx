@@ -14,7 +14,7 @@
    3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
       alone): the same answers as "What set it off?" after an urge, so slips and urges are counted together.
    4. Next time: a plan made already, from what was going on: "When it is late and I am in bed with my phone, I will open SOS."
-      One tap keeps it, saved as an after-slip talk-through (pr 1, ft), which comes back on Today at its hour, where a tap opens
+      The flame says when it comes back. One tap keeps it, saved as an after-slip talk-through (pr 1, ft), which comes back on Today at its hour, where a tap opens
       the tool (core talkPlanNow), and is asked about once that hour has passed. Choose another is its own page: the tools that
       fit, and the person's own words. Then the finish, by the fire, with one door for the next hour (core slipNext).
    Every slip starts at the hold, however it came (the owner, October 31, 2026): SOS and the 10-minute pause save it themselves,
@@ -72,6 +72,8 @@ import {
   TALK_WHEN,
   talkPlanLine,
   urNight,
+  whenClock,
+  whenDayWord,
   whenEntry,
   whenFromEntry,
   whenLabel,
@@ -95,7 +97,8 @@ import { Flame } from '@/components/flame';
 import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
-import { ChoiceRows, SosBig } from '@/components/slip';
+import { Bubble } from '@/components/lesson-flame';
+import { ChoiceRows } from '@/components/slip';
 import { HelpFoot } from '@/components/help-foot';
 import { OwnField } from '@/components/own';
 import { RodeOut } from '@/components/rode-out';
@@ -354,7 +357,15 @@ export default function Log() {
   );
 
   /* ---------- the saved entry, with Undo, on the first page of the comeback ---------- */
-  const saved = ev ? <SavedPill text={entryLabel(ev)} gain={gain} onUndo={from === 'talk' && params.made !== '1' ? undefined : undo} /> : null;
+  /* moved to another day, it says which */
+  const savedMoment = ev?.time && date !== tk ? whenFromEntry(date, ev.time, roll) : null;
+  const saved = ev ? (
+    <SavedPill
+      text={savedMoment ? whenDayWord(savedMoment.day, now) + ', ' + whenClock(savedMoment) : entryLabel(ev)}
+      gain={gain}
+      onUndo={from === 'talk' && params.made !== '1' ? undefined : undo}
+    />
+  ) : null;
   /* after how it feels: a go-ahead with a number first looks at what it really gave */
   const afterNow = () => {
     const x = ev ? goAheadBefore(snap.days, date, ev.time, Date.now()) : null;
@@ -659,46 +670,51 @@ export default function Log() {
     footer = adding ? null : <Link label="Skip" tone="muted" onPress={() => go('slPlan')} />;
   } else if (step === 'slPlan') {
     /* 4. next time: a plan made already. Nothing to think of at the lowest moment, and one move, always the same, that Daybook
-       can bring back and open with a tap. */
+       can bring back and open with a tap. The person's sentence at the top, in two beats, the when and then what they do; in the
+       open middle the flame, big, promising to bring it back (the owner, November 1, 2026: the button that filled this page
+       looked like an alarm, and competed with That is my plan). SOS itself stays in the top bar, as on every page here. */
     const mo = slipMoment(ev?.time);
-    const line = talkPlanLine({ n: SLIP_NEED[slWhen], m: [SLIP_LEAD], mo, ft: slWhen });
+    const [whenPart, thenPart] = talkPlanLine({ n: SLIP_NEED[slWhen], m: [SLIP_LEAD], mo, ft: slWhen }).split(', I will ');
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
     dots = slDots();
     body = (
       <>
-        {/* the plan is the heading, and the middle is the button it names */}
-        <T v="title" style={s.h} accessibilityRole="header">
-          {keepLast(line)}
+        <T v="title" style={s.plan} accessibilityRole="header">
+          <T v="title" tone="muted">
+            {whenPart + ','}
+          </T>
+          {'\nI\u00A0will '}
+          {thenPart.replace(/SOS\.$/, '')}
+          <T v="title" style={{ color: c.sos }}>
+            SOS
+          </T>
+          .
         </T>
         <Middle>
-          <FitArt min={0.6}>
-            <SosBig />
+          <Appear delay={350} by={8} duration={320}>
+            <Bubble text={'I will remind you ' + talkBackWhen(mo, now) + '.'} />
+          </Appear>
+          <FitArt min={0.5}>
+            <Flame level={Math.max(1, g.level.n)} size={210} alive />
           </FitArt>
-          <T tone="muted" style={s.center}>
-            {'Daybook brings it back ' + talkBackWhen(mo, now) + '.'}
-          </T>
         </Middle>
         <Dock>
           <Button label="That is my plan" onPress={() => savePlan(SLIP_LEAD)} />
-          <View style={{ alignItems: 'center' }}>
+          <View style={s.planLinks}>
             <Link label="Choose another" tone="muted" onPress={() => go('slOther')} />
+            <Link label="Skip" tone="muted" onPress={() => go('slDone')} />
           </View>
         </Dock>
       </>
     );
-    footer = (
-      <>
-        {repeat ? (
-          <Link
-            label="What therapy is like"
-            tone="muted"
-            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
-          />
-        ) : null}
-        <Link label="Skip" tone="muted" onPress={() => go('slDone')} />
-      </>
-    );
+    footer = repeat ? (
+      <Link
+        label="What therapy is like"
+        tone="muted"
+        onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
+      />
+    ) : null;
   } else if (step === 'slOther') {
     /* Choose another: the sentence is the heading, and each answer finishes it */
     const held = talkHeld(snap.days);
@@ -801,7 +817,7 @@ export default function Log() {
       dots={dots}
       onBack={step !== 'q1' && hist.length ? goBack : null}
       onClose={close}
-      topRight={step === 'q1' || step === 'slPlan' ? undefined : <SosPill over />}
+      topRight={step === 'q1' ? undefined : <SosPill over />}
       footer={footer}>
       {body}
       {whenSheet}
@@ -841,6 +857,8 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?
 
 const s = StyleSheet.create({
   h: { textAlign: 'center' },
+  plan: { alignSelf: 'stretch' },
+  planLinks: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   center: { textAlign: 'center' },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },

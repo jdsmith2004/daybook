@@ -38,10 +38,12 @@ const whenOf = (w: string) => 'When ' + w.replace(/^when\s+/i, '');
 const FROM = 18;
 const SPAN = 8;
 function Arc({ start, now, w }: { start: number; now: number; w: number }) {
+  /* room above the arc, so its glow fades out before the edge of the drawing */
+  const PAD = 28;
   const k = w / 300;
-  const H = 158 * k;
+  const H = 158 * k + PAD;
   const cx = w / 2;
-  const cy = 146 * k;
+  const cy = 146 * k + PAD;
   const R = 128 * k;
   const sw = 10;
   const pt = (h: number) => {
@@ -62,7 +64,7 @@ function Arc({ start, now, w }: { start: number; now: number; w: number }) {
   return (
     <Svg width={w} height={H} {...SVG_HIDE}>
       <Defs>
-        <RadialGradient id="tnGlow" cx={gx} cy={gy} r={60} gradientUnits="userSpaceOnUse">
+        <RadialGradient id="tnGlow" cx={gx} cy={gy} r={52} gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor={N.gold} stopOpacity={0.35} />
           <Stop offset="1" stopColor={N.gold} stopOpacity={0} />
         </RadialGradient>
@@ -132,10 +134,10 @@ export function TonightCard({
       </Svg>
       {r ? (
         <View style={s.arcBox} accessible accessibilityLabel={'Hard hours, ' + r.win.label + (near ? ', ' + near : '')}>
-          <Arc start={r.win.start} now={now} w={200} />
+          <Arc start={r.win.start} now={now} w={244} />
           <View style={s.arcIn}>
             <Text style={[s.small, { color: N.lav }]}>{'Hard hours' + (near ? ' · ' + near : '')}</Text>
-            <Text style={[s.big, { color: N.gold }]}>{r.win.label}</Text>
+            <Text style={[s.big, { color: N.gold }, r.win.label.length > 10 && s.bigLong]}>{r.win.label}</Text>
           </View>
         </View>
       ) : (
@@ -170,12 +172,13 @@ export function TonightCard({
 
 const s = StyleSheet.create({
   wrap: { borderRadius: 24, overflow: 'hidden' },
-  arcBox: { alignItems: 'center', paddingTop: 16, height: 134 },
-  arcIn: { position: 'absolute', top: 64, alignItems: 'center' },
+  arcBox: { alignItems: 'center', height: 160 },
+  arcIn: { position: 'absolute', top: 88, alignItems: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   title: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   big: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  bigLong: { fontSize: 22, lineHeight: 28, marginTop: 3, marginBottom: 3 },
   bubbles: { gap: 12, paddingHorizontal: 16 },
   bubble: { backgroundColor: N.cream, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, gap: 2 },
   tail: { position: 'absolute', bottom: -6, width: 14, height: 14, backgroundColor: N.cream, transform: [{ rotate: '45deg' }], borderRadius: 2 },

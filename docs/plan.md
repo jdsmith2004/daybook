@@ -19,7 +19,7 @@ The owner: "instead of forcing them into the next lesson after they finish have 
 
 **Steps** (effort): 1. Map the lesson's finish, the celebration host and the Learn path today (low, a subagent). 2. The celebration screen with motion, haptics and sound (high: it is the peak of the app's daily loop). 3. Landing on Learn at the next lesson, the fill and the Start bubble (high). 4. Check on the iPhone simulator at real speed, Reduce Motion and the short iPhone, and show the owner a release build (medium).
 
-## My plan, rebuilt from the ground up (the owner, November 2, 2026; on branch claude/xenodochial-panini-ff574d, being built)
+## My plan, rebuilt from the ground up (the owner, November 2, 2026; merged November 2, 2026, once the owner had seen it on the simulator)
 
 The owner: "our goals and plan screen i don't like i think it needs a whole session and alot of thought to make it better use the rest of the app (onboarding, lessons, journal, how we feel) as inspiration". They like gradients, color and rich themes.
 
@@ -53,7 +53,7 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 
 - The three smaller questions had no answer, so I took the recommendations: What I learned moves to Learn, the lists go into the chapter they serve (calm moves and the wind-down in When it hits, the words that steady me in Why), and my own check-in answers move to Settings. Each is easy to undo.
 
-**Built on the branch (November 2, 2026), not merged:**
+**Built and merged (November 2, 2026):**
 
 - `app/plan/index.tsx`: the flame's own sky (`FlameSky`, the person's level) with who I am becoming and one true line from the log; then the chapters in their colors (`lib/plan-look.ts`): When it hits with tonight's two lines and the hard hours, Why and If I slip side by side, My people, Getting ready.
 - `app/plan/[part].tsx`: a chapter opened, the page in its color with the cards as a soft glass of it. The editors are the ones that worked before (if-then lines, reasons, the slip steps, the safe person, the lists, the checklists).

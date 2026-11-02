@@ -1,6 +1,6 @@
 # What is planned next
 
-## New charts on Pattern, one card at a time (the owner, November 1, 2026; on branch `claude/graphs-739555`, not merged until the owner has seen it on the simulator)
+## New charts on Pattern, one card at a time (the owner, November 1, 2026; on main)
 
 The owner asked for new charts, with How We Feel's insights page as inspiration for the look and not something to copy, then asked for research: are these good and worth it, or are they shoved down people's throats? Then, looking at them: the goal is to see "if I'm getting better, if I'm getting worse, how I'm doing, if I'm stable, and to inspire me", but not every chart has to show a trend, and "I just don't think they look as good as they could". So there were three rounds of research: whether charts help people change, how accurately each form reads, and how the books and the best apps make a chart look good. Twelve cards became at most eight, and six for most people.
 
@@ -52,8 +52,9 @@ The owner asked for new charts, with How We Feel's insights page as inspiration 
 1. New rules in `packages/core/src/pattern-cards.ts`, with tests. _Medium._ Done.
 2. The deck and the charts. _Medium._ Done.
 3. A look on the web: full log, thin log, first week, locked, slips getting closer, slip today, Week and All, light and dark. _Medium._ Done.
-4. A look on the iOS simulator in a release build, then shown to the owner. _Medium._ First set: not good enough. Second set: cards 1, 5 and 6 good. Third pass at 2, 3 and 4: 2 and 4 good; 3 liked in idea but could not be read; a row of flames looked like clip art; the owner picked fireflies from sketches. All six shown together November 1, 2026, waiting on the owner.
-5. Merge once the owner says so. _Low._
+4. A look on the iOS simulator in a release build, then shown to the owner. _Medium._ First set: not good enough. Second set: cards 1, 5 and 6 good. Third pass at 2, 3 and 4: 2 and 4 good; 3 liked in idea but could not be read; a row of flames looked like clip art; the owner picked fireflies from sketches. All six seen on the simulator and approved November 1, 2026. Done.
+5. Merge once the owner says so. _Low._ Done, November 1, 2026.
+6. Open, for the owner: the hill for someone slipping on most days stays as it is unless the owner picks another measure (hours between slips is the leading idea).
 
 ## Today's sky, cleared (the owner, November 1, 2026)
 

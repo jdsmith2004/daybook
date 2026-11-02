@@ -328,8 +328,8 @@ export function extraLocked(
   return !extraOpen(st, extra, o.now, o.from === undefined ? PATTERN_FROM : o.from);
 }
 
-/** the parts of Journal, Pattern. The pattern in one look, how the days felt and what was named, whether slips are getting
-    further apart and the riding out, and My numbers stay free: they show a person changing, and that is what makes the free
+/** the parts of Journal, Pattern. The pattern in one look, how the days felt and what was named, how you are doing
+    and the riding out, and My numbers stay free: they show a person changing, and that is what makes the free
     side generous. The rest (when, what sets it off, hard days, what helps) explains why, and is the deeper part a tip opens. */
 export type PatPart = 'look' | 'felt' | 'apart' | 'when' | 'what' | 'days' | 'helps' | 'numbers';
 export const PAT_FREE: PatPart[] = ['look', 'felt', 'apart', 'numbers'];

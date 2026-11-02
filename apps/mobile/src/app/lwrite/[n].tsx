@@ -100,10 +100,10 @@ export default function Lwrite() {
             {fin ? (
               <View style={{ gap: 8 }}>
                 <Route
-                  label="Read it in My plan"
+                  label="See what I have learned"
                   onPress={() => {
                     closeAll();
-                    router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                    router.push('/learned');
                   }}
                 />
                 <Route

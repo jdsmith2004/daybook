@@ -174,7 +174,32 @@ function WeekLine({ snap, tk }: { snap: Snapshot; tk: string }) {
   );
 }
 
+function WeekStrip({ snap, tk }: { snap: Snapshot; tk: string }) {
+  const c = useTheme();
+  const days = weekOf(snap, tk);
+  const wl = weekLine(snap, tk);
+  const on = c.scheme === 'dark' ? '#10163A' : '#FFFFFF';
+  return (
+    <View style={{ gap: 8 }}>
+      <T v="label">
+        {wl.clean} of 7 days with no slip{wl.rode ? (wl.rode === 1 ? ', and one urge ridden out.' : ', and ' + wl.rode + ' urges ridden out.') : '.'}
+      </T>
+      <View style={s.wrow}>
+        {days.map((x) => {
+          const bg = x.st === 'clean' ? c.mint : x.st === 'slip' ? c.slip : c.surface2;
+          return (
+            <View key={x.k} style={[s.wsq, { backgroundColor: bg, borderColor: x.today ? c.ink : bg }]}>
+              <Text style={[s.wl, { color: x.st === 'clean' || x.st === 'slip' ? on : c.muted }]}>{x.d}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
+  const c = useTheme();
   const st = snap.settings!;
   const win = riskWindow(snap.days, st, tk);
   const [w, setW] = useState(0);
@@ -183,7 +208,7 @@ function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
   const a = win ? ((win.start - FROM + 24) % 24) / SPAN : 0;
   const inIt = win && nowAt >= a && nowAt < a + 2 / SPAN;
   return (
-    <View style={s.more}>
+    <View style={[s.more, { marginTop: 0, gap: 32 }]}>
       <View style={s.scene}>
         <View>
           <LinearGradient colors={['#0E1238', '#1F2160', '#7A3F6E', '#E0785E']} locations={[0, 0.45, 0.8, 1]} style={StyleSheet.absoluteFill} />
@@ -201,16 +226,15 @@ function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
             <Text style={[s.tick, { color: nightInk.muted }]}>2 AM</Text>
             {win && w ? <Text style={[s.tick, s.hardT, { left: (a + 1 / SPAN) * w - 20 - 80 }]}>{inIt ? 'Hard hours, now' : win.label}</Text> : null}
           </View>
-          <Pressable onPress={sos} accessibilityRole="button" accessibilityLabel="Open SOS" style={({ pressed }) => [s.planHead, pressed && { opacity: 0.85 }]}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={[s.planH, { color: nightInk.ink }]}>Feeling an urge?</Text>
-              <Text style={[s.p, { color: nightInk.muted }]}>SOS walks you through it, one step at a time.</Text>
-            </View>
-            <RoundSos size={58} />
-          </Pressable>
+          <View style={s.planHead}>
+            <Text style={[s.planH, { color: nightInk.ink, flex: 1 }]}>Feeling an urge?</Text>
+            <Pressable onPress={sos} accessibilityRole="button" style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
+              <Text style={[s.sosPillT, { color: c.sosInk }]}>Open SOS</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
-      <WeekLine snap={snap} tk={tk} />
+      <WeekStrip snap={snap} tk={tk} />
     </View>
   );
 }
@@ -358,7 +382,9 @@ const s = StyleSheet.create({
   sosLine: { flexDirection: 'row', gap: 6, alignItems: 'center', alignSelf: 'flex-start' },
   wsq: { flex: 1, height: 32, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   wl: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
-  scene: { borderRadius: 28, overflow: 'hidden' },
+  scene: { borderRadius: 20, overflow: 'hidden' },
+  sosPill: { minHeight: 44, paddingHorizontal: 20, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  sosPillT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
   clock: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2, marginBottom: 20 },
   hardT: { position: 'absolute', width: 160, textAlign: 'center', color: '#FFD98A', top: 0 },
   planHead: { flexDirection: 'row', alignItems: 'center', gap: 16 },

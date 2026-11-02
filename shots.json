@@ -3,8 +3,8 @@
     {
       "name": "today",
       "screen": "/",
-      "caption": "Quit without shame",
-      "sub": "No account. No ads.",
+      "caption": "Quit and stay free",
+      "sub": "Built on research. No ads.",
       "bg": "night",
       "theme": "light",
       "top": 0.362,
@@ -121,7 +121,7 @@
       "name": "feature",
       "screen": "/",
       "caption": "Daybook",
-      "sub": "Quit without shame. Keep going after a hard day.",
+      "sub": "Quit and stay free. Keep going after a hard day.",
       "bg": "plum",
       "theme": "light",
       "sizes": ["play-feature"]
@@ -137,8 +137,8 @@
       "screen": "/",
       "screen2": "/learn",
       "screen3": "/growth",
-      "caption": "A private, honest companion",
-      "sub": "for changing a habit, one day at a time",
+      "caption": "Quit and stay free",
+      "sub": "private help built on research",
       "bg": "plum",
       "theme": "light",
       "sizes": ["ios-search"]

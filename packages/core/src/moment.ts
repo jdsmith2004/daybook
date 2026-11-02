@@ -12,7 +12,7 @@
     8. the Sunday review, Sunday and Monday
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
        three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
-   10. a calm day: the day's next stop; everything done: "All done. Rest well."
+   10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
    11. the five questions again, every 30 days (recheck.ts): low on purpose, so they wait behind the day's next stop as "and one
        more", and are the card once the day's stops are done. They never push the lesson off the flame.
 
@@ -210,6 +210,9 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
   if (cur) return out;
   if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
+  else if (sumDay(today).slipped && d.tiles.length)
+    /* the night of a slip: what was left of the day went quiet (day.ts dayRhythm), so it does not say everything is done */
+    m('done', 'Tonight', 'Rest well.', 'You came back to this tonight. That is the part that lasts.', null, null, 'the day');
   else
     m(
       'done',

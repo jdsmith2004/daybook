@@ -1,6 +1,6 @@
 # What is planned next
 
-## The journal in Obsidian (the owner, November 1, 2026; on branch claude/obsidian-9ae9f4, not merged)
+## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 
 The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.
 
@@ -24,9 +24,411 @@ The owner has started using Obsidian, synced by iCloud, and will not journal in 
 - **Account:** nothing new on the server. Records are in DynamoDB; S3 only holds the website. But the sync function cleans records with core, so the function must be deployed with this change or it strips tags: merge with `[deploy]`.
 - **Changing when it happened:** the time at the top of an entry opens `WhenSheet`, the same sheet as logging an urge, rather than a second picker. No count or award depends on a journal entry's day, so moving one takes nothing away.
 
-**Steps (Opus effort):** core rules and tests (high, done). Native module (high, done). Sheet and journal page (medium, done). The way back: rules, module, app (high, done). Markdown: rules and reading (medium, done). Typing with Markdown on the simulator (medium, done; autocorrect and dictation wait for the iPhone, since the simulator does not autocorrect). Simulator check (medium). The owner's iPhone test, then merge with `[deploy]`.
+**Steps (Opus effort):** core rules and tests (high, done). Native module (high, done). Sheet and journal page (medium, done). The way back: rules, module, app (high, done). Markdown: rules and reading (medium, done). Typing with Markdown on the simulator (medium, done; autocorrect and dictation wait for the iPhone, since the simulator does not autocorrect). Simulator check (medium, done). Merged with `[deploy]` on the owner's word, November 2, 2026. The owner's iPhone test is still to come.
 
 **Not tested until the owner's iPhone:** real iCloud Drive, a real vault, files away in iCloud, Obsidian picking up a new note, a note written on the Mac reaching the phone, autocorrect and dictation while Markdown colors the words. The simulator has no iCloud account in this setup.
+
+## Setup as good as a lesson, and nothing around it (the owner, November 2, 2026; merged once the owner had seen it on the simulator)
+
+**What the owner asked for:** setup should be as good an experience as the lessons: the flame talking and coaching, the constant
+movement, the same look. A person who forces their way past it should be blocked from everything until it is done.
+
+**What the owner decided:** the block leaves SOS open (never lock care); setup keeps every page and question, since it is "a really nice
+combo of learning and questions", and only the design changes; the flame says "I", sparingly. Work at Opus medium, all of it.
+
+**What the research held up** (two cheap agents, November 2): nothing proves a long setup hurts if every screen answers the person (Finch
+and Noom run 30 or more screens; a Finch critique is that later questions never reflect earlier ones). If-then plans have the best evidence
+(d = .65 over 94 tests). The account ask belongs after value (Duolingo's sign-up moved later, about 20% more daily users, by their own
+account). Apple's guidelines say nothing against a required setup that asks for no login and lets every question be skipped (5.1.1 v and x).
+
+**What was built (medium):**
+
+- The lesson player's frame, progress line, question and answers moved to `components/lesson-parts.tsx`; the lesson and the setup both use
+  them. Setup is one sky from night to day across its three acts, one flame that glides from page to page, a dash for each act at the top.
+- The flame talks: what the small line under a question used to say is now its bubble, in its own voice (core `obSay`), and it answers
+  every one-tap pick (core `obReply`: aim, years, faith, tried). Picks on those pages no longer move on by themselves, so the answer can be
+  read; the five self-check statements still do.
+- Answers are the lesson's paper, green when picked. The hours are the violet card; the kind word after the self-check, the slip page and
+  the finish are the sun. The finish uses the same flame, at its biggest.
+- Before setup there are no tabs: the page before setup is the setup's night sky with the flame, Keep going (or Start setup), sign in, a
+  backup, and SOS. Any other page goes back to it (`SetupGate`). SOS, its tools, Talk it through, Rekindle, good night, signing in, the
+  privacy page and feedback stay open; closing SOS brings setup back.
+- Fixed on the way: Rekindle's own-trigger save made a person look set up before setup; the setup lost its place after a back gesture.
+
+**After the owner's first look (November 2):** setup suggests the tracking week to everyone except "Take back my nights" (which still
+starts with nights); "Quit, starting tomorrow" stays one tap away, and how days count is unchanged (gentle, or step down when it is daily).
+The screens-off time and the check-in time are set on Rekindle's hour, minute and AM/PM wheels (`ClockWheels` in `components/when.tsx`),
+in five-minute steps, with no 24-hour typing. To share the wheels, `claude/rekindle-plan-when` is merged into this branch, so merging
+this branch to main brought Rekindle's Next time page and day and time control with it. Both went to main together once the owner had
+seen both, after two fixes from the owner's look at the control: the days run in calendar order with today at the right end (core
+`whenDays`), and on the web a wheel turned by a quick pick lands on the right row.
+
+**Not done:** the account and reminder pages show only on a phone (not checked on the web).
+
+**The rest of the app against the lesson look (an audit of every main screen, light and dark, November 2).** Nothing small was worth
+changing in this work: the small items the audit raised were either by design (the review's "tap the right side" line explains something
+the page cannot show) or already fine (the wind-down's quiet button). The real gap is one structural thing, for the owner to decide:
+the full-screen flows still run on `SceneFrame` with the older pastel skies, no talking flame and their own answer cards, while lessons and
+setup now share `lesson-parts`. In order of how much it shows:
+
+1. **The evening check-in** (`app/checkin.tsx`): a pastel sky with no flame at all; the 0 to 10 page is an empty dashed circle until the
+   slider moves. The flame could ask the question in its bubble, on the lesson sky. _Medium._
+2. **Talk it through and Already happened** (`app/talk.tsx`, `app/log.tsx`, `ChoiceRows` in `components/slip.tsx`): white cards with an icon
+   in a shape and an empty checkbox, not the paper answers; the flame is a small medallion. The Rekindle session is changing these pages
+   now, so this waits for it. _Medium, after that work lands._
+3. **The Sunday review start** (`app/review.tsx`): a small flame in a circle on a pastel sky. _Medium._
+4. **Points, Growth and a badge** (`app/points.tsx`, `app/growth.tsx`, `app/badge/[id].tsx`): the flame shrunk to a medallion on cream, the
+   opposite of "the flame gets bigger". _Medium._
+5. **The wind-down** is already a night sky with a big flame; unifying its sky with the lesson sky is optional. _Low priority._
+
+## Lessons that teach people how to quit (the owner, November 1, 2026)
+
+**The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."
+
+**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. The owner answered five questions on November 2, 2026: God goes deep for those who choose it, the God lessons follow the owner's own faith as a Latter-day Saint, other Christians get a Bible-only version, the path never locks on a deed but asks once more, and the lessons move to the twelve steps. What the Church teaches, its recovery program, what may be quoted and the research on Latter-day Saints are in `docs/lessons-research/latter-day-saint.md`. Question 5 is below, and step 7 waits on it. The high steps, 3 (the path) and 4 (the deeds), are built on branch `lessons-steps`, which sits on top of `lessons-no-review`, not merged; a release build is on the iPhone 16 Pro simulator for the owner to see. A preview of the question rewrite is below, before the steps.
+
+### The honest read of the 49 lessons
+
+The lessons are good reading, and the science and the voice hold up. They are not yet a way of quitting, for four reasons.
+
+1. **Finishing a lesson means reading it.** A lesson counts as done at the Done card, before Put it to work, and Put it to work can be skipped. Of the 49 practice steps, 8 ask the person to write anything. The rest offer a ready-made line to tap. Nothing on the path ever asks whether the person did the thing.
+2. **The questions test whether you noticed the lesson's words, not whether you can do it.** There are 147: 49 review, 48 "Check it", 47 "Make a guess", 2 sliders and 1 open pick. The owner is right about them, and it can be measured. With four answers, the right one would be the longest about 1 time in 4 by chance. On the review question it is the longest **43 times out of 49**. On "Check it" it is 29 of 48. A person can pass by tapping the longest, calmest answer, and the wrong ones often answer themselves ("Think about how weak you are", "Throw the phone across the room", "Decide I am bad at this"). "Good guess" appears 47 times, on a guess about a study the person has never heard of.
+3. **The tools that matter most come late.** At a lesson a day, tell one person is day 28, the if-then plan is day 32, change the setting is day 33, the first link in the chain is day 36, and what therapy is like is day 48. Across 93 popular mental health apps, median use after 30 days is 3.3 percent (Baumel 2019). Most people who leave will leave before they reach these. Setup does build a first if-then and a screens-off time, so it is not nothing, but the teaching comes a month after the need.
+4. **God is talked about, not talked to.** The four faith lessons sit together as their own land at 22 to 25, and they are written from outside, by a researcher describing religion: "More AA involvement went with more spiritual practice." Forgiveness is argued from a study of students who put off studying. No lesson says God is not done with you. The note behind them says they "are not religious teaching." That is what the owner feels is missing, and the owner is right.
+
+**Strongest, because a person can use them tonight:** Urges are waves (l2), If this, then that (l9), Thoughts are not orders (l16), The first link in the chain (l17), Thoughts that give permission (l18), Crowd out the picture (l42), Come back to the room (l43), Play it forward (l44), Secrets are heavy (l7), Your partner and the truth (l47), Sex after porn (l48), When values and habits clash (l22), Guilt, shame, and God (l31), Day 30, 60, 90 (l49). The last three of those carry something few apps will say.
+
+**Weakest, because they describe and do not teach:** SMART Recovery (l26) and Mindfulness and relapse prevention (l27) are reports on programs, and their tools repeat what lessons already teach; SOBER is the fifth way of pausing in the path. The 12 steps in plain words (l25) describes the very thing the owner wants the path to be. What to call it (l11) and What getting better looks like (l12) quote definitions. Wanting to be loved (l8) is kind and true but asks for little. Missing a day (l21) is mostly about the app's own check-in. Catch the autopilot (l35) and Your log is your evidence (l40) repeat their neighbors. What getting free feels like (l46) is good, but its guess is about a therapy trial, not about flat days.
+
+**Questions that already work, to copy:** which if-then would hold at 1 AM (l9, because the person learns what makes a plan good), the slip your partner has no way of knowing about (l47), the phone back by the bed on day 75 (l49), "better check with porn that everything still works" (l48), close your eyes or look around (l43), crushing guilt but rare use (l22), and the open pick in Secrets are heavy (l7), which has no wrong answer and hands over the words to use. The surprises in Why it is hard to stop (the signal, not the picture) and Fewer fights (strong people resist less) are worth keeping too.
+
+### What the research supports, and how strongly
+
+Strength: Strong means several trials or a meta-analysis; Moderate, a few trials or good follow-up studies; Weak, pilots or surveys. **The honest headline: research on quitting porn is thin** (Antons 2022: 24 studies, 4 randomized, about 95 percent men, mostly low quality). So what follows mostly borrows from smoking, alcohol and general habit work. Daybook should keep teaching it with confidence, and should never promise a result.
+
+| Finding                                                                                                                                                                                                                                                                                                    | Strength                                                    | What it means for the lessons                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Long self-help programs lose people: Hands-off, the closest thing to Daybook, about 12 percent reached module 6 (Bőthe 2021).                                                                                                                                                                              | Weak, and it matches every app                              | Put what matters most first.                                                                                                        |
+| If-then plans help follow-through: d = .65 across 94 tests, likely smaller; g about .31 for alcohol and tobacco. One plan beat three, and paper beat online.                                                                                                                                               | Moderate                                                    | Make it early. One rehearsed plan, in their own words.                                                                              |
+| Changing the setting works before any urge appears. Strong self-control looks like fewer fights (Hofmann 2012, Duckworth 2016).                                                                                                                                                                            | Moderate as an idea, no porn trial                          | Teach it in the first two weeks, with a deed that same night.                                                                       |
+| Riding an urge: the urge does not shrink, but what people do changes (Bowen and Marlatt 2009).                                                                                                                                                                                                             | Weak to Moderate                                            | Say so plainly. l2 already does.                                                                                                    |
+| ACT, noticing thoughts and acting on values: viewing down 93 percent against 21 percent (Crosby and Twohig 2016, 28 men, nearly all Latter-day Saints). Beliefs were not challenged.                                                                                                                       | Weak to Moderate, and the only therapy trial on porn itself | Values work is the missing half. Faith-friendly by its nature.                                                                      |
+| What decides the next lapse is a drop in confidence, not guilt (Kirchner 2012).                                                                                                                                                                                                                            | Moderate, smoking                                           | Plan for the slip before the first slip. Build confidence from the record.                                                          |
+| A broken streak lowers later effort, more so with self-blame (Silverman and Barasch 2023).                                                                                                                                                                                                                 | Moderate, not addiction                                     | Keep the slip lessons early.                                                                                                        |
+| Other people carry most of the effect in 12-step: social ties and confidence do the work, spirituality a real but partial share (Kelly 2011: 14 to 28 percent; Kelly 2017). Facilitated AA beat CBT on staying abstinent at a year (Cochrane 2020, alcohol only, that result rests on 2 studies).          | Strong for alcohol, no trial for porn                       | Tell one person is the step that matters most and the one an app cannot do.                                                         |
+| **Nothing shows a person must finish all twelve steps.** The evidence is about attendance, a sponsor, service and who you spend time with. One small survey links more steps done to less negative feeling (Wnuk 2023, 80 people).                                                                         | Weak                                                        | The real lesson of the steps: recovery is things you do, in order, with other people, that cost something. Reading is not recovery. |
+| Moral incongruence: in religious people, feeling addicted tracks moral disapproval more than hours of use, and feeling addicted predicts later struggle with God (Grubbs 2017, 2019). Seeing God as punishing goes with worse adjustment (Ano 2005; Bockrath 2021). No study has tested grace against law. | Moderate                                                    | **The biggest risk in bringing God in.** Done with a frown, it can make people worse. Grace comes first, and it must be real.       |
+| Therapy adapted to a person's faith works as well as standard therapy for distress and better for spiritual well-being (Captari 2018).                                                                                                                                                                     | Moderate                                                    | Faith is safe to bring in when it is the person's choice.                                                                           |
+| Good questions: multiple choice only teaches when the wrong answers are real competitors (Little and Bjork 2014). Feedback nearly doubles the effect of testing (Rowland 2014: .73 against .39). Guess first helps only when the true answer follows (Richland 2009).                                      | Strong for memory, Weak for behavior                        | The owner's complaint has a name. "Walk outside or watch porn" retrieves nothing.                                                   |
+| A question with one acceptable answer invites pushback: confrontation raised resistance, and resistance predicted worse outcomes a year later (Miller 1993, small trial). People are moved more by reasons they say themselves (Magill 2018).                                                              | Moderate, and applying it to quiz questions is my inference | Ask what only they can answer. Get their words.                                                                                     |
+| Seeing your own record helps: d = .40 (Harkin 2016). Tailoring to the person helps a little, and more when it keeps updating (Noar 2007, Krebs 2010).                                                                                                                                                      | Strong, small effects                                       | Use the log in questions.                                                                                                           |
+| Good apps: one obvious next step, each unit named for what you can do after it, review built into the path, each lesson ending in one act, slips as a topic. Nobody has compared 49 lessons with 100 or 365.                                                                                               | Company reports, Baumel 2019                                | 50 to 90 lessons, if each teaches something different.                                                                              |
+| Not supported, so never taught as fact: a number of days to rewire the brain, "shame causes relapse" as settled, suppression always backfires, the noun trick for identity (failed to replicate), porn causing erection problems, a flatline as a normal stage.                                            |                                                             | Worth checking new lessons against.                                                                                                 |
+
+### My recommendations
+
+**The review question goes, all of it.** The learning science does favor spaced recall, but for remembering facts, and what has to stick here is the person's own reason, plan and cue, which that question never touches. Nothing earned depends on it: it gave no points and no record, and it was only ever held in the screen's memory. It comes out of both places, the start of a lesson and the welcome back. If recall comes back at all, it is one form only: "Last week you wrote: phone on the kitchen counter. Did you get to do it?" That is the deed check below, and it is not a quiz.
+
+**The flame already matches.** Every lesson card draws the person's own form at their own level, the same as Today. I looked at all twelve forms on the cover, a question, the sun card and the Done card (`docs/lessons-review/flame-forms-a.png`, `-b`, `-c`). So there is nothing to build, and eight of the twelve look good untouched. I found three small things: the Torch's handle and the Beacon's tower run through the words on the Done card, the Beacon only at iPhone size (fixed on the branch; those three pictures are from before the fix); Constellation (level 51) is drawn smaller than the Full Sun before it, on Today as well; and the North Star (level 56) fades into the yellow answer card. The last two are about a year in for most people, so they wait.
+
+**What a good question is here.** Six rules:
+
+1. Ask only what the person cannot already answer, or what only they can answer. If the right answer is obvious, delete the question.
+2. Every answer is something a real person would pick at 11 PM. No straw answers. Two or three are enough.
+3. The comment names what each choice costs and what it gives. No "Not quite" and no "Good guess".
+4. Guess first only when the real answer follows and would change what they do. A fact that changes nothing is lesson text, not a question.
+5. Use their own record and their own words whenever there are any. "I do not know yet" is always a fair answer.
+6. On values and choices, there is no right answer. Show what follows.
+
+All of this fits the question card as it is: it already takes an open pick with no right answer, and the slider. No new design.
+
+| Lesson                  | Today                                                                       | Rewritten                                                                                                                                                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Urges are waves         | An urge hits hard while you are home alone. What gives you the best chance? | Ten minutes into riding it out, the urge is stronger than when you started. What is going on? "This is not working for me" / "It has not peaked yet" / "I should get out of this room now". The comment says it rises before it falls, and leaving the room is good at any point. |
+| Why one slip snowballs  | You slipped last night. What best keeps it from snowballing?                | You slipped Friday night. Saturday a friend asks you to dinner. "Stay in and get back on track" / "Go, and say nothing" / "Go, and tell them it was a hard week". Each comment says what that choice costs and gives.                                                             |
+| Late and low            | It is 12:40 AM. What helps most?                                            | Think of your last hard night. Which was louder? Tired / Alone / Both / Something else. The answer puts the matching line on their plan, and their log shows beside it.                                                                                                           |
+| Why groups help         | You are nervous about your first group. What is the best way to start?      | What would stop you from going once this month? "Someone might see me" / "I do not know where to find one" / "My problem is not bad enough" / "I would not know what to say". No wrong answer, and each one gets the real fix.                                                    |
+| Who you are becoming    | You have gone two weeks but still think, "I am an addict." What fits best?  | In a group, everyone says "I am an addict." It helps them. It does not sit right with you. "Say it anyway" / "Leave the group" / "Stay, in my own words".                                                                                                                         |
+| God and a plan          | You prayed, and the urge is still there. What is the best next step?        | You prayed, and it came back an hour later. What do you think that means? "God did not hear me" / "I did not mean it enough" / "God wants me to suffer through this" / "Being tempted is not the same as falling". Each is met with grace and with the next move.                 |
+| Thoughts are not orders | At midnight you think, "Just this once." What is the best response?         | Write the thought that shows up first, word for word. The flame says it back: "I am having the thought that \_\_\_."                                                                                                                                                              |
+
+**The path: twelve steps, each ending in something done.** This is the heart of the plan. The owner's instinct is right about what makes the steps powerful. It is not the number. The steps are deeds, in order, and they cost something. I would keep twelve because it gives the path the shape the owner wants, and it falls out naturally. Here is where I disagree: **the app must not say a person has to do all twelve to truly recover.** The evidence does not show it, and it would make a skipped step feel like failure, against "hope first". What the app says is plainer and just as firm: these are what getting free is made of.
+
+Nothing new to manage. The map on Learn stays. Its ten lands become twelve steps. The cover and Today say "Step 4, Close the door" where they say the section now. Lessons move, and each step's last lesson ends with its deed.
+
+| Step                          | In a sentence                                                        | The deed, done in real life                                                 | Lessons there now                      | New lessons                                                                          | Closest in the 12 steps |
+| ----------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------- |
+| 1. Tell the truth             | What it gives me, what it costs, what I want.                        | Write those three lines.                                                    | l1, l2, l3, l22                        | What it gave, what it took. Draw your line (red, yellow, green).                     | 1                       |
+| 2. Stop counting on willpower | It was never going to be enough. Here is why, and that is good news. | Name what you lean on: God, a person, a plan.                               | l33, l34, l20, l46                     | Why pushing it away brings it back                                                   | 2                       |
+| 3. Close the door             | Do not win the fight. Have fewer of them.                            | Phone out of the bedroom tonight. Filter on, and someone else has the code. | l10, l9, l4                            | Clean it out. A filter that holds. The side doors (reels, feeds).                    | Every program           |
+| 4. Decide                     | Who I am becoming.                                                   | Write the sentence, and say it out loud.                                    | l37, l38, l39                          | What you stand for (values)                                                          | 3                       |
+| 5. Know your pattern          | The honest inventory, strengths included. Never a sin list.          | Walk one slip back, and write the chain and what you did right.             | l17, l18, l19, l35, l41                | Good days are risky too. Walk it back.                                               | 4                       |
+| 6. Tell one person            | The one step an app cannot do, and it says so.                       | Send the sentence to a real person.                                         | l7, l8, l28, l11                       | Who to tell. If it goes badly.                                                       | 5                       |
+| 7. Get up faster              | Coming back is the skill.                                            | Write your first hour after a slip, in your words.                          | l5, l6, l21, l40, l12                  | The first hour. When slips come close together.                                      | 10                      |
+| 8. Ride it better             | The tools, each tried on a real urge.                                | Use one on a real urge and log it.                                          | l13, l14, l15, l16, l42, l43, l44, l45 | See the obstacle first (WOOP).                                                       | none                    |
+| 9. Fill the empty hour        | Meet the need the habit was meeting.                                 | Put one real thing in your hardest hour, and do it.                         | l23, l36, l24                          | Wants and shoulds. Sleep as a plan. A friend, on purpose. What to do with anger.     | 6, 7                    |
+| 10. Make it right             | Repair, with care, and never where it would hurt someone.            | Make one repair.                                                            | l47, l48                               | Who did it touch. One repair.                                                        | 8, 9                    |
+| 11. Keep a daily practice     | Honest each night, quiet each morning.                               | Seven nights of honest looking back.                                        | l25 (reworked)                         | Five minutes at night. A morning minute. When you were wrong, say so today.          | 10, 11                  |
+| 12. Give it away              | You keep it by handing it on.                                        | Do one real thing for someone else.                                         | l49                                    | Helping helps the helper. Your story, when you are ready. What to do on a good year. | 12                      |
+
+The order takes the research's order (reason, pattern, setting, plan, urge, slip plan before the first slip) and the 12-step order, and where they disagree it puts first what helps soonest. The first eight free lessons then hold the wave, the slip, what it costs and why it is hard. Change the setting moves from day 33 to about day 12, and the if-then plan from day 32 to about day 13. Tell one person stays near day 28, since the inventory comes first as it does in the 12 steps, but now it has a deed. Why one slip snowballs stays at lesson 3, so the slip plan comes before the first slip for most people. This changes the owner's order of October 30 (first week How it works and Why it is hard to stop), so it is a question below.
+
+l26 and l27 leave the path but stay in Learn, finished and counted, the same way faith lessons do for someone who said No. No lesson is deleted.
+
+**How a deed works, kept simple.** The last lesson of a step ends with its deed, on the same Put it to work page. Two choices: "I did it" and "Not yet, I will come back." The first lights the land on the map and is the biggest thing the flame gets from a lesson (every win shows on the flame). The second lets the path go on, and the next step's first lesson asks once more: "You were going to tell one person. Did you get to?" It never asks after a slip, and it never asks a third time on its own. Nothing is locked: SOS, Already happened, the plan and the lessons all stay open. A locked path loses people, and "hope first" rules it out.
+
+**How many lessons.** Not "a ton" for its own sake, and here is my pushback. Most people leave early whatever the count, and a lesson that repeats another makes the path feel like reading again. A lesson stays only if it names one skill, ends in one act, adds something new, and leaves a gap if taken out. Those rules give about **73 lessons, or 85 with God lessons: about twelve weeks at a lesson a day**, a step a week. That is real depth, about 27 new ones. If people finish the path and want more, that is the moment to write more, and a yearly walk through the steps again is free.
+
+**God.** I recommend it goes deep for those who choose it, and stays out of the way for those who do not. A Yes in setup should change the path, not one line. Each of the twelve steps gets its own God lesson, written to God's person and not about them, and the four faith lessons move to the steps where they belong (God and a plan to Close the door, Guilt, shame and God to Tell one person, Forgiveness to Get up faster, A pause for prayer to Ride it better), so faith stops being a land you pass through. A short closing line ends each lesson, a prayer to say or a verse tied to that lesson's skill. A prayer can go on their words that steady them, so it shows up in SOS's Your words with nothing new built.
+
+**God lessons from Latter-day Saint beliefs (the owner, November 2, 2026: "I'm a latter day saint so off of my beliefs").** The lessons speak of Heavenly Father, Jesus Christ and His Atonement, repentance as turning to Christ again, and each person's divine identity. They stay true to what the Church itself teaches on pornography, and that teaching already agrees with Daybook's rules: the Church says to measure success "by how consistently we turn to Christ" rather than by days in a row, to keep guilt ("I did a bad thing") and drop shame ("I am a bad person"), and that calling oneself addicted "can be harmful and misleading if it isn't true". The Church's own recovery program, Healing through the Savior, has twelve principles, and eleven of them land on Daybook's twelve steps (its two amends principles share step 10, and it has no step for riding an urge), so each God lesson takes the principle of its step:
+
+| Step                         | The program's principle                           | The God lesson                                                    | Scripture (to be checked against the text when written) |
+| ---------------------------- | ------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| 1 Tell the truth             | Honesty                                           | Come as you are: He already knows, and still calls you His        | Psalm 139:1-3                                           |
+| 2 Stop counting on willpower | Hope                                              | Weakness made strong                                              | Ether 12:27                                             |
+| 3 Close the door             | Trust in God                                      | A way out is always made                                          | 1 Corinthians 10:13                                     |
+| 4 Decide                     | Change of Heart                                   | A mighty change, one day at a time                                | Mosiah 5:2                                              |
+| 5 Know your pattern          | Truth                                             | Search me, instead of a list of sins                              | Psalm 139:23-24                                         |
+| 6 Tell one person            | Confession                                        | Bring it into the light; a bishop is there to help, not to punish | James 5:16                                              |
+| 7 Get up faster              | Humility                                          | As often as they repented, they were forgiven                     | Moroni 6:8, D&C 58:42                                   |
+| 8 Ride it better             | None: the program has no step for the urge itself | Being tempted is not falling: He knows it from the inside         | Alma 7:11-12, Hebrews 4:15                              |
+| 9 Fill the empty hour        | Personal Revelation                               | Feast on the words of Christ                                      | 2 Nephi 32:3                                            |
+| 10 Make it right             | Prepare to Make Amends, Make Amends               | Leave your gift at the altar                                      | Matthew 5:23-24                                         |
+| 11 Keep a daily practice     | Daily Accountability                              | Pray always, and come off the conqueror                           | D&C 10:5                                                |
+| 12 Give it away              | Service                                           | Mourn with those who mourn, comfort those who need it             | Mosiah 18:9, 2 Corinthians 1:4                          |
+
+Three things only a Latter-day Saint gets, because they are real parts of that life: the bishop named as one of the people to tell at step 6 (encouraged, the Church's own handbook says counseling is usually enough for pornography, so the app never says it is required or that a council follows); the weekly sacrament as a fresh start in step 7; and the Church's free recovery meetings (open to anyone, in person and online, with meetings for spouses) as a deed at step 6 or 12, with a link to the meeting finder. Linking out to real people is the strongest thing the 12-step research found, and Daybook builds no group of its own.
+
+Quoting, kept safe (not legal advice). Scripture in short verses only, from the King James Bible and the early public-domain text of the Book of Mormon and Doctrine and Covenants, never the Church's headings or footnotes. Church manuals, the program guide and conference talks are for personal, noncommercial use, so they are put in Daybook's own words and named, never quoted, unless the owner asks the Church for permission (about 45 days). The app says "Latter-day Saint" and "The Church of Jesus Christ of Latter-day Saints", never "Mormon" or "LDS", uses no Church logo, and says plainly that Daybook is not made by the Church.
+
+The biggest risk is the one this faith knows best. Among people who attend worship often, including a Latter-day Saint sample, viewing feels compulsive at lower amounts, and shame drives the feeling of addiction. So l22 stays early and comes first, and the Church's own levels (turning away from what you happened to see is not sin; occasional is not compulsive) are taught plainly. The best trial on porn there is, Crosby and Twohig's, was done with Latter-day Saint men, and it worked by acceptance, not by fighting harder: that is the voice of these lessons.
+
+The rules that keep it from hurting anyone. God is never disappointed in them on the screen, and a slip is never a spiritual failure. Being tempted is not a fall. Never "pray harder". No prayer streak, no points for prayer, no verse of the day that has nothing to do with what they just did. l22 stays early, so the person who rarely watches and is crushed by guilt hears that it is a different problem. It does not tell them what is right or wrong. And no AI sponsor, ever.
+
+Setup needs one small change. The question stays where it is, with the same answers. Its line "It only changes which lessons come up" becomes true to what it now does. One row in Settings lets a person change the answer later. Yes gets the God lessons and the closing line. Somewhat gets the God lessons only. No gets none, and nothing else changes: every care tool is the same for everyone. Daybook does not become a faith app. For someone who said No, the deed at Step 2 is simply "a person, a plan, or what you stand for".
+
+**Does this help Daybook earn and grow?** Yes, three ways. A path that does something for people is what brings ratings and tips, and each finished step is a moment of earned value, the right time for the warm ask (never after a slip). The first eight free lessons become the ones that help most, which is what makes people stay. And one app with a real choice about God is rare: the research found the usual pattern is two separate products. That is worth saying in the listing.
+
+### Questions for the owner
+
+1. **How central should God be?** Answered (the owner, November 2, 2026): **deep, by choice.** Yes in setup gets a God lesson in every step and a closing line on each lesson; Somewhat gets the God lessons only; No gets none, and every care tool is the same for all. The options were: (a) Deep for those who choose it, as above: one question, then God in every step (recommended). (b) For everyone, so Daybook openly becomes a faith-rooted app. It would mean more to believers, and it would turn away many others and risks the moral-conflict harm above. (c) Keep it light: just rewrite the four faith lessons.
+2. **Which God, in words?** Answered (the owner, November 2, 2026): from the owner's own faith, as a Latter-day Saint (see above). The options were: (a) Christian by name, Jesus and Scripture, for those who choose it, if that is the owner's faith and the owner stands behind it. "Yes" would then get one follow-up: Christian, or another faith, which gets the plain "God" version with no Scripture (recommended). (b) Plain "God" for everyone, no Scripture and no Jesus. It covers more people and means less to each. I cannot choose this one for the owner.
+3. **Does the path wait for the deed?** Answered (the owner, November 2, 2026): **no lock, it asks once more.** The options were: (a) No lock: "I did it" or "Not yet", and it asks once more (recommended). (b) A real gate: the next step opens only after "I did it", which is closer to the 12 steps and will stop some people for good at Tell one person. (c) No asking at all.
+4. **May I change the order you set on October 30?** Answered (the owner, November 2, 2026): **yes, to the twelve steps.** The options were: (a) Yes, to the twelve steps above, so the first two weeks hold what helps soonest (recommended). (b) Keep your order, and only rename the sections.
+5. **About 73 lessons (85 with God), or more?** (a) That count, and more only after people finish the path (recommended). (b) Keep writing until 150 or more, knowing some will repeat.
+6. **What does a Christian who is not a Latter-day Saint, or someone of another faith, see?** Answered (the owner, November 2, 2026): **a Bible-only version.** Yes or Somewhat in setup gets one more question: Latter-day Saint, another Christian faith, or another faith. The options were: (a) Yes in setup gets one more question: Latter-day Saint, another Christian faith, or another faith. Latter-day Saints get everything above. Other Christians get the same lessons with Bible verses only and without the bishop, the sacrament and the Church's meetings. Another faith gets a plain "God" version with no Scripture. The lessons are written once, with a few lines marked for each (recommended). (b) Everyone who says Yes gets the Latter-day Saint lessons. (c) Only Latter-day Saints get God lessons; everyone else gets the plain version.
+
+### A preview of the question rewrite (for the owner, November 2, 2026)
+
+**The owner approved this approach (November 2, 2026):** "that looks good just make sure it's insightful i like this aproach where it's not phishing for answers its asking questions that provoke thought and improve engagement throughout the lesson." So step 2 rewrites every question this way, and the bar for each one is: does it make the person think about their own life, and would they want to answer it? A question that only checks whether they read the card is cut or rewritten.
+
+The owner asked to see some rewrites before step 2 starts. Seven, from the lessons people meet first, and one God lesson in the
+Latter-day Saint voice. Each follows the six rules above; the comment is what the flame says when that answer is picked.
+
+**Lesson 1, You do not need to feel ready. The guess.** Today: "What do you think mixed feelings about quitting usually mean?"
+The right answer is the one that sounds like the lesson. Rewritten, a question only they can answer, with no right answer:
+
+> Part of you does not want to quit. What is that part holding on to?
+>
+> - **My one way to unwind.** That is a real need. Step 9 is about meeting it another way, so you do not lose it.
+> - **Something that is only mine.** Then the goal is a life you do not have to hide, and that can be yours too.
+> - **A way to not feel alone.** Then people are part of the answer, not only stopping. Step 6 is built for this.
+> - **I do not know yet.** That is honest. Your log will start to show it within a couple of weeks.
+
+**Lesson 1. Check it.** Today: "What is the best next move?", with "Take one small step, even while unsure" as the right one.
+Rewritten, three real choices, each with what it costs and what it gives:
+
+> It is day three, and part of you still is not sure. What do you do tonight?
+>
+> - **Wait until I feel sure.** It feels safer, and it costs the very days that build the sureness. Ready usually comes after starting.
+> - **One small thing, still unsure.** This is how most people start. Tonight it costs five minutes, and it counts.
+> - **Promise myself: never again.** It feels strong tonight. A promise that big is hard to keep while you are unsure, and breaking it hurts. A small step is easier to repeat.
+
+**Lesson 3, Why one slip snowballs. Check it.** Today: "What best keeps it from snowballing?" Rewritten as a real Saturday:
+
+> You slipped Friday night. On Saturday a friend asks you to dinner.
+>
+> - **Stay in and get back on track.** It feels responsible. But home alone is where "why bother" grows, and it costs the evening that would help most.
+> - **Go, and say nothing.** This works. Being with someone quiets the "why bother" thought, even if they never know.
+> - **Go, and tell them it was a hard week.** The strongest of the three, if they are safe. It costs one hard sentence, and you leave with someone on your side.
+
+**Lesson 4, When values and habits clash. Check it.** Today the right answer is the longest one ("Look at the values clash,
+with someone calm"). Rewritten, the person names their own weight:
+
+> After you watch, what weighs on you most?
+>
+> - **That I could not stop.** That is about control. Steps 3 and 8 are built for it.
+> - **That it goes against what I believe.** That is a values clash, and for many people it hurts more than the habit. A calm talk with someone you trust, or a faith leader, helps most.
+> - **Both, about the same.** Many people feel both. Each needs its own help: tools for control, care for the clash.
+> - **I do not know yet.** That is fair. Notice it next time, and write one line.
+
+**Lesson 5, Wanting is not liking. The guess.** Today: "Why can the pull be strong when the pleasure is small?" Rewritten with
+the slider the app already has, from their own life:
+
+> Last time you gave in, how good did it actually feel? (0 to 10)
+>
+> After: "Now think of how strong the pull was just before. If the pull was the bigger number, that gap is wanting. It is a
+> signal, and it is not a need."
+
+**Lesson 9, Change the setting. Check it.** Today: a made-up person whose slips happen in bed. Rewritten from their own log
+(it needs one small piece of code: their busiest hour and place, which the app already works out):
+
+> Your log says your hardest hour is 11 PM to 1 AM, in bed. What will you change there tonight?
+>
+> - **My phone charges outside the bedroom.** This changes the exact place the habit leans on. It costs a little comfort, and it does the most. (It is also step 3's deed.)
+> - **I move to another room after 11.** Good, if that room is hard to slip in. Pick one without a screen.
+> - **I put a filter on.** It adds a pause, and alone it is easy to get around. Pair it with the phone leaving the room.
+> - **Something else.** Write it on your plan, so it is there tonight.
+
+**God and a plan, in the Latter-day Saint voice. Check it.** Today: "You prayed for help tonight, and the urge is still
+there. What is the best next step?" Rewritten:
+
+> You prayed, and it came back an hour later. What do you think that means?
+>
+> - **Heavenly Father did not hear me.** He heard you. The Savior knows temptation from the inside (Alma 7:11-12). The pull coming back is not His answer.
+> - **I did not mean it enough.** You meant it. Prayer is not a test you pass by trying harder. Pray again, then do one thing: leave the room, or text someone.
+> - **Being tempted is not the same as falling.** Yes. The pull is not a sin. What you do in the next ten minutes is yours, and you are not doing it alone.
+
+The Bible-only version names Hebrews 4:15 instead of Alma.
+
+### The steps, with the effort each needs
+
+Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` says for a rebuild.
+
+1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
+2. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6. As built: 87 questions on the 45 lessons outside the faith lessons (core `lesson-questions.ts`), 56 open and 31 with one best answer; an open pick is outlined, never marked right; a rewritten question waits for an answer. Written by four agents in parallel from one brief, then read and corrected. The old review words (`rc`) are still in the lesson data, unused.
+3. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`. As built: the steps live in core `steps.ts` (their lessons, deed, words and picture); the first eight are l1, l2, l3, l22, l33, l34, l20, l46; change the setting is lesson 9 and the if-then plan lesson 10; the four faith lessons sit inside steps 3, 6, 7 and 8, never last, so a step ends the same for everyone; the path has 47 lessons. Both past orders still count, tested from every point along each. Checkpoints keep their pairs and writing; several pairs now sit in different steps, so one is due once both its lessons are reached. Two new pictures: a door shut for the night (step 3) and one candle lighting another (step 12). The golden fixtures changed by hand in one way: the lesson numbers and 49 to 47.
+4. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip. As built: `settings.learn.did`, `later` and `asked` by step id; a deed is worth 30 points (a lesson is 10), counted in the total like quests, so it never moves; sync keeps the earlier day. The deed shows after the last lesson of a step (after Put it to work, or in its place), on two paper answers; the signpost on the map says "Step 3 · You did it". The ask back opens before the next step's first lesson, never on the day of a slip or the day after. Rereading a step's last lesson offers the deed again, which is how someone who said Not yet twice can still record it.
+5. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone. As built: core `faith.ts` (the voice: lds, christian, plain), the setup page "Which faith is yours?" after a Yes or a Somewhat, a Settings section, Faith in the lessons, and the privacy page. The closing line and the Learn note wait for step 6.
+6. **Medium. Two lessons drafted for the owner to read (below); not built.** Rewrite the four faith lessons in God's voice and write the twelve God lessons from Latter-day Saint beliefs, with their beats, their prayers and the lines marked for each answer: the Book of Mormon, Doctrine and Covenants, the bishop, the sacrament and the Church's meetings for Latter-day Saints only; Bible verses for other Christians; no Scripture for another faith. Each verse is checked against the text. Before they ship: a lawyer's read on the Book of Mormon and Doctrine and Covenants text, or the Church's permission. These need the owner's eye more than anything else here, and the owner knows this faith better than any source. The voice is the part that most needs the owner, so two are drafted first; the other ten, the four rewrites and the code that shows each voice follow once the owner says the voice is right.
+7. **Medium.** Write the new lessons, a step at a time, each with its beats and its act, and rework the weakest ones (l8, l12, l21, l25, l35, l40, l46). `docs/lessons-research/` has what each can stand on.
+
+### Two God lessons, drafted for the owner to read first (November 2, 2026)
+
+Before all twelve are built into the app, these two show the voice. Each is written in the Latter-day Saint voice; lines in
+_[Bible-only: ...]_ are what another Christian sees instead, and _[Plain: ...]_ is what someone of another faith sees. Scripture
+is quoted in short verses only, from the King James Bible and the Book of Mormon (each verse to be checked against the text
+before it ships). Church teaching is put in Daybook's own words and named, never quoted. The questions follow the approved
+rules: no right answer where it is about the person.
+
+#### Step 1, Tell the truth: Come as you are
+
+1. **Sound familiar?** You have prayed about this so many times that you feel ashamed to bring it up again.
+2. **A question.** When you think of praying about this tonight, what do you expect?
+   - _That He is tired of hearing it._ That is shame talking. He has never once been tired of you.
+   - _That I have to clean up first._ Then you would never come. He asks you to come as you are, now.
+   - _Some relief, honestly._ Hold on to that. It is closer to the truth than the fear is.
+   - _I do not know yet._ That is fair. You can find out tonight, in one plain sentence.
+3. **The answer.** Heavenly Father already knows all of it, and He is not keeping a count against you. You are His child, before
+   this and after it. _[Bible-only: God already knows all of it ... You are His child.]_ _[Plain: God already knows all of it,
+   and does not turn away.]_
+4. **Scripture.** "O Lord, thou hast searched me, and known me ... thou understandest my thought afar off." (Psalm 139:1-2) He
+   knew this before you said a word. Telling Him is not news to Him. It is how you stop carrying it alone.
+   _[Plain: Many faiths teach that God knows a person fully. Telling the truth is how you stop carrying it alone.]_
+5. **What the Church teaches.** The Church's own guidance on pornography draws a line between guilt and shame. Guilt says "I did
+   something wrong," and it can lead you home. Shame says "I am bad," and it makes you hide. Your divine identity does not change
+   with what you did last night. _[Bible-only: The son who came home (Luke 15:20): "when he was yet a great way off, his father
+   saw him, and had compassion." He ran to him before a word was said.]_ _[Plain: Guilt says "I did something wrong" and can lead
+   you back. Shame says "I am bad" and makes you hide. The first is worth listening to. The second is not true.]_
+6. **What to do.** Tonight, pray plainly. Tell Him exactly what happened, with no cleaning up. Then do one small thing.
+7. **Check it.** You slipped an hour ago. Which prayer sounds most like you?
+   - _"I am sorry. I will never do it again."_ Sincere, and a promise that big is heavy to carry. Tonight, just tell Him the truth.
+   - _"Here I am. Help me with the next hour."_ Honest and small. That is a prayer you can say again tomorrow.
+   - _Nothing. I feel too far away._ That feeling is real, and it is not where He is. One sentence is enough.
+8. **Put it to work.** Write one honest sentence you could say to Him tonight. It stays on your phone.
+9. **The closing line.** "Father, here I am, as I am. Help me take the next small step." _[Plain: "God, here I am, as I am. Help
+   me take the next small step."]_
+
+#### Step 7, Get up faster: As often as they repented
+
+1. **Sound familiar?** You slipped again, the same week you had prayed for help. It feels like you have used up your chances.
+2. **A question.** After a slip, how long does it usually take you to turn back to God?
+   - _Right away, the same night._ That is a strength. Keep it plain: tell Him, and do the next small thing.
+   - _A few days, once I feel worthy._ Waiting to feel worthy keeps you away when you need Him most.
+   - _Until I have a clean streak again._ Then the count decides when you may come. It was never meant to.
+   - _I do not know yet._ That is fair. Notice it after the next hard night.
+3. **The answer.** There is no limit on coming back. Repentance is turning toward Christ again, as many times as it takes, and the
+   Atonement of Jesus Christ is there each time. _[Bible-only: There is no limit on coming back. His mercy is new each time you
+   turn.]_ _[Plain: There is no limit on coming back to God.]_
+4. **Scripture.** "As oft as they repented and sought forgiveness, with real intent, they were forgiven." (Moroni 6:8) And: "He
+   who has repented of his sins, the same is forgiven, and I, the Lord, remember them no more." (Doctrine and Covenants 58:42)
+   _[Bible-only: "His compassions fail not. They are new every morning." (Lamentations 3:22-23)]_ _[Plain: Many faiths teach that
+   mercy is new each morning.]_
+5. **What the Church teaches.** The Church's own guidance says to measure your progress by how consistently you turn to Christ,
+   not by a count of days in a row. Each Sunday, the sacrament is a time to renew your covenants and begin again.
+   _[Bible-only: What counts is turning back, and turning back again.]_ _[Plain: What counts is turning back, and turning back
+   again.]_
+6. **What to do.** In the first hour after a slip: pray one sentence, log it honestly, and do the next small thing from your plan.
+   If it is a pattern, talk with your bishop; he is there to help you, not to punish you. _[Bible-only and Plain: If it is a
+   pattern, talk with someone you trust.]_
+7. **Check it.** It is Saturday night, and you slipped. Tomorrow is Sunday. What do you do?
+   - _Stay home tomorrow. I am not worthy._ It feels honest, and it keeps you from the very help you need.
+   - _Go, and keep my head down._ Going is the turn. You do not have to feel ready to be there.
+   - _Go, and talk with my bishop soon._ The strongest of the three, if it has become a pattern. One hard talk, and help.
+8. **Put it to work.** Write your first hour after a slip, with the one sentence you will pray first.
+9. **The closing line.** "Father, I am turning back again. Thank you that the way is open." _[Plain: "God, I am turning back
+   again. Thank you that the way is open."]_
+
+### Not verified
+
+The research agents could not open every source, and those are marked in the files in `docs/lessons-research/`. Numbers for new lessons get read from the source when the lesson is written. Almost all the porn research is on Western men, so the new lessons should not assume a reader's sex. The word counts above (73, 85, 27) are estimates until the steps are written. The twelve forms were looked at on the web build. On the simulator, in a release build, I walked two lessons as someone at level 25: lesson 2 opens on its own first card, and the Beacon is clear of the words. The Torch's fix and the welcome back were seen on the web only, and nothing on Android.
+
+## New charts on Pattern, one card at a time (the owner, November 1, 2026; on main)
+
+The owner asked for new charts, with How We Feel's insights page as inspiration for the look and not something to copy, then asked for research: are these good and worth it, or are they shoved down people's throats? Then, looking at them: the goal is to see "if I'm getting better, if I'm getting worse, how I'm doing, if I'm stable, and to inspire me", but not every chart has to show a trend, and "I just don't think they look as good as they could". So there were three rounds of research: whether charts help people change, how accurately each form reads, and how the books and the best apps make a chart look good. Twelve cards became at most eight, and six for most people.
+
+**The second try (same day).** The owner looked at the first set on the simulator: "they look like thrown together AI charts". That was right, and the reason was plain side by side: one template six times (small label, bold line, sentence, a thin flat chart floating on the same purple card), each chart correct and none of them made on purpose. So every card was drawn again, as a scene of its own. Of that second set the owner called the hill, the sky and the mosaic good, the calendar and the flame of flames bad, and the feelings middling, so those three were drawn a third time. What they liked has atmosphere and light and fills the card; what they did not was flat shapes on black. This section describes what stands now. The research below still holds for what each card says; it was too timid about how a card looks.
+
+**How it works:** one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under them. Week, Month and All sit under the cards, where the thumb is. Each card opens with its answer in a few big words ("Getting better"), a plain line under that, and one picture that runs out to the card's edges. Each card has its own night sky, in light mode too, because saturated color only glows on the dark (How We Feel's real secret, more than its shapes). A card with nothing behind it is left out. No new reminder or nudge points here: the tab waits to be opened.
+
+**The cards, and why each is free or paid.** The free ones show a person changing, which keeps hope going and makes the free side generous. The paid ones explain why, which is the deeper insight worth charging for. The Hard hours card on Today, the heads-ups and every care tool stay free.
+
+| Card                            | Free or paid    | The picture                                                                                                                                                                                                                                                                    | Why                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How you are doing               | Free, and first | A hill you walked over: its height is how many of the last 7 days had no slip (30 on a long log). The person's own flame stands at today and lights the ground. A star for each day with a win in it: no slip, or a hard moment ridden out. The period before is a dotted line | The owner's question, at a glance: climbing, holding or a harder stretch. A slip is a dip that fills back in, the measure CLAUDE.md asks for over a count that resets. The ground never falls away, so someone slipping every day still has a hill for the flame to stand on and stars for what they rode out, and the card never says "0 of the last 30". It says "You keep showing up" |
+| How your days felt              | Free            | Bands of color running across the range, one for each answer, Great at the top: a band widens as days like it come more often                                                                                                                                                  | Replaces a calendar of shapes, which the owner did not like; the Days tab already has a calendar. "More good days" is now something you can see. Reads the check-in's mood, then the morning question, so it works for nearly everyone and slip days count. A day with no answer leaves no hole                                                                                          |
+| Riding it out                   | Free            | The person's flame, big, with a plain row under it of how many they rode out in each stretch of days, the count over each. Slips are left to the numbers under the card                                                                                                        | The owner's pick, after the sun (could not be read), a row of flames (clip art) and fireflies (hard to read: lights have no height to compare). The flame keeps the soul and the row keeps the count the owner liked. A few moments do not fill the row: the scale starts at 5                                                                                                           |
+| What you have felt              | Free            | The whole field of feelings as soft dots, with what was named swelled into a glowing circle where it lives, its word inside                                                                                                                                                    | The owner called the shapes version middling. Naming feelings more finely goes with less drinking (Kashdan 2010, in alcohol, not porn). Waits for 5 named feelings. Shows the 14 most named; all are in the numbers under the card                                                                                                                                                       |
+| When does it happen?            | Paid            | The day from 6 AM as a sky, from dawn through midday and dusk to midnight, with the entries standing in it and the hard hours marked. The days of the week only when one truly stands out                                                                                      | The sky says what time it is before any word does, and a row reads better than a clock (Waldner 2019)                                                                                                                                                                                                                                                                                    |
+| What sets it off?               | Paid            | A mosaic in sunset colors: what comes up most takes up the most room, with its words inside                                                                                                                                                                                    | The separate needs card merges in. Fills the card and reads at a glance. A block never goes under 7% so its words fit; the note in it has the true number                                                                                                                                                                                                                                |
+| What is different on hard days? | Paid            | A pair of bars for each answer, days with no slip beside slip days, each pair to its own scale. The answer that differs most leads                                                                                                                                             | Only sleep, screens off and reaching out, with 5 check-in days on each side                                                                                                                                                                                                                                                                                                              |
+| What helps you                  | Paid            | The same mosaic, in the cool colors of a morning                                                                                                                                                                                                                               | Same data as before                                                                                                                                                                                                                                                                                                                                                                      |
+
+**What makes them look made on purpose (the checklist for any new card):**
+
+- **No two cards share a form.** Sameness was the whole problem.
+- **The picture fills the card and runs to its edges.** A chart floating in a box of empty space is the look of a chart kit.
+- **Light and depth.** Shapes are lit from above, the fire glows and breathes, the hill is lit by the flame. No flat fills on a flat card, and no gradient that means nothing.
+- **Marks are big.** Thin bars and 8 point lines were the research's advice and they looked timid. A phone held in one hand wants something you can read from your lap.
+- **Built from the app's own things:** the flame, the feeling colors, the colors of the day's answers, the sky.
+- **Words on the picture, a key only where words cannot go.**
+- **A slip is quiet everywhere:** a dip, a dim ring, a pale cap. Never amber or red.
+
+**Cut or changed because of the research (these still hold):**
+
+- **The 24-hour clock is gone,** here and in the weekly review. The strongest result: a plain row of hours was the most accurate, fastest and best liked in a study of 92 people, and a 12-hour radial chart was worst (Waldner 2019). The row starts at 6 AM so a night is never cut in two.
+- **The streak and gap bars are gone, by the owner's call.** The longest stretch stays as a line of words, and the gaps stay in the numbers under the card.
+- **A trend line through the day's marks was tried and removed,** by the owner: not every chart has to show a trend.
+- **The check-ins sparklines are cut.** No claim, no scale, and mood now lives in How your days felt. Urges and stress over time stay on each week and day.
+- **Hard days no longer shows mood, stress or urges.** A slip moves those too, so the log cannot say which came first. **This goes partly against the research,** which said to cut the card. It stays, narrowed, because sleep and screens can be acted on and it is part of what Daybook Pattern sells.
+- **Nothing claims a pattern from too little.** A hardest weekday needs 28 days and 4 slips (or 6 entries) that make up two in five. The same rule guards the line the Daybook Pattern ask leads with. A few answers say "4 days answered" and never "mostly".
+- **No "log more to unlock" lines.** They make logging a chore.
+
+**Where this goes against the research, on purpose:** area and shape read less exactly than a bar or a line (Cleveland and McGill), and the feelings and the mosaic lean on them. They stay because each has its count in words and a table under the card, and the first round proved that the most accurate form is not what makes a person want to look. The hill's height and the height of the bars are fair readings. For someone slipping on most days, the hill barely moves as they improve; a fairer measure for them is an open question for the owner (hours between slips is the leading idea).
+
+**How sure this is:** no study tests charts in a porn-quitting app, and the research passes read mostly abstracts and summaries; the books themselves (Tufte, Few, Knaflic) were not read in full. Logging with feedback is well backed (Harkin 2016, 138 trials, mostly health goals; Michie 2009). Reading accuracy by chart shape is well replicated (Cleveland and McGill, Heer and Bostock). The thresholds and sizes above are our judgment. Mood tracking has reported harms in depression and bipolar (JMIR Mental Health 2025), which is a reason not to push this page at anyone. A calendar of shapes and a field of feelings read less exactly than bars; they stay because each has its counts in words beside it, and they are what make these look like Daybook. The store pictures are polished marketing, not real logs.
+
+**How this helps Daybook earn or grow:** the free cards are why a person keeps logging and speaks well of the app, and the flames and the field are the pictures worth showing in the store. The paid cards show their own chart faded with the ask under it, and the ask is not made in the hours after a slip or an SOS.
+
+**Steps, with effort:**
+
+1. New rules in `packages/core/src/pattern-cards.ts`, with tests. _Medium._ Done.
+2. The deck and the charts. _Medium._ Done.
+3. A look on the web: full log, thin log, first week, locked, slips getting closer, slip today, Week and All, light and dark. _Medium._ Done.
+4. A look on the iOS simulator in a release build, then shown to the owner. _Medium._ First set: not good enough. Second set: cards 1, 5 and 6 good. Third pass at 2, 3 and 4: 2 and 4 good; 3 liked in idea but could not be read; a row of flames looked like clip art; the owner picked fireflies from sketches. All six merged November 1, 2026 with fireflies; on seeing it in use the owner did not like it, so card 3 is being replaced by the flame with counts. Done.
+5. Merge once the owner says so. _Low._ Done, November 1, 2026.
+6. Open, for the owner: the hill for someone slipping on most days stays as it is unless the owner picks another measure (hours between slips is the leading idea).
 
 ## Today's sky, cleared (the owner, November 1, 2026)
 
@@ -34,7 +436,33 @@ The owner, looking at the store picture: too much text, it covers the flame, and
 
 Where the rest went: the journal still opens by pulling Today down, and from More; the lessons ring is a row on Learn; who I am becoming is at the top of My plan, in the weekly review and on Good night. What got harder to find: nothing on Today now teaches the pull to the journal, and nothing says a day before the rollover hour is still logged as yesterday.
 
-**Where it is (November 1, 2026):** merged and live on the web. Build 1.3.0 (7) is uploaded to App Store Connect, with the autumn icon. Not submitted: App Store Connect is signed out in Chrome. Once the owner signs in: upload `store-assets/ios69` and `ios63`, hold the Duo pictures, choose build 7, paste What's New from `docs/launch.md`, and submit. The owner's "build and submit" covers this and replaces the TestFlight walk for this release.
+**Where it is (November 1, 2026):** merged and live on the web. Version 1.3.0 with build 8 was submitted to App Review on the night of November 1, by the owner's word, and shows Waiting for Review. It carries the autumn icon, a What's New that names the new Pattern, the new `ios63` and `ios69` pictures and the new search picture, and the review note now says the first eight lessons. The header picture stays as it was, and the Duo pictures are held. Release is set to automatic after approval, as 1.2.1 was, though `docs/launch.md` says manual, so it goes live when Apple approves it.
+
+## The listing: few people see it, and few tap (the owner, November 1, 2026)
+
+The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. Asked whether "porn" should go in the name: "Keep porn out of it", so it stays off the purchase list. **Decided:**
+
+- **Name:** `Daybook: Quit and Stay Free`. The home screen still says Daybook.
+- **Subtitle:** stays `Private help to quit porn`, so the search card still says what the app is for. App Review 2.3.7 bars unverifiable claims in a subtitle.
+- **First picture:** `Quit and stay free`, with `Built on research. No ads.` under it. "Built on research" is true of the lessons and the tools; nothing has tested Daybook itself.
+- **Search picture:** `Quit and stay free`, with `private help built on research` under it. It used to say "changing a habit".
+- **"Without shame" leaves the listing and the public pages:** the description's first line, About, the guides, support and the testers page. The app keeps treating people that way.
+
+**The numbers (App Analytics, October 2 to 31):** 137 impressions, 126 of them from search, down from about 60 on October 26 to about 10 a day. 11 page views. 3 first-time downloads and 1 redownload, some of them the owner's. So 8% of impressions tap (exact 95% range 4% to 14%), about 1 in 4 who open the page download (6% to 61%), and 2.2% of impressions download (0.5% to 6.3%). A vendor figure of about 3.8% for impressions to downloads is inside that range. Apple's own benchmark says it has too little data.
+
+**What that means.** The sample cannot show the listing is failing. The clearest problem is traffic: at 10 impressions a day, even 10% is one download a day. The name is the heaviest search field by vendor consensus, and "porn" stays out of it by the owner's choice, so the words people search for rest on the subtitle and keywords. Traffic stays the thing to watch after this ships. No study tests shame words in a store listing: dropping them is a judgment, supported by research on shame as a barrier to seeking help. Telling 1% from 4% between two listings takes about 425 impressions each. Apple's page tests cover icons and pictures, not the name.
+
+**Still to check.** Whether impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Apple shows no per-keyword numbers. Competitors' exact wording on a phone, since research could not open their listing pages. Google Play's listing still has to change when it is next touched: `docs/launch.md` has the new words.
+
+## Version 1.3.0: the QA before the new build (November 1, 2026)
+
+The owner approved the build and the submission, with one QA session first. Walked on a release build as a new person, someone on the day of a slip, a mid-way log, a long log with a tip and a full log, in both themes, with one read of the code since build 7.
+
+**Found and fixed:** the rings on the Sunday review's foundations page were squeezed on top of each other; the first card could say "0 of the last 7 days" when the week before was better, against its own rule; slips a person said they had while away, and days away that Daybook does not know, counted as no-slip days on the first card, and unknown days could read as a harder stretch; "Longest stretch" on the hill could differ from "Longest run" lower on the page; a sentence about riding out opened the wrong card; "No reason picked" showed for a stretch with no entries, and "chose something else 0 times" on What helps you; the review's hours chart ran past its card in a wide browser; "Hard hours" could run off the screen for morning hours; a log of exactly 7 days labeled its first day "7 days ago" and not Day 1; someone who sleeps by day lost their lesson and check-in to the night rules through their waking hours.
+
+**Left as it is:** the hill's left label says "7 days ago" and "30 days ago" when the first day shown is 6 or 29 days back, which reads naturally and matches the store picture. "0 of 1 slips" in My numbers stays, because the golden tests freeze those words.
+
+**Merged by the owner's word for this build:** Riding it out as the flame with a plain row of counts. **Not in this build:** Obsidian, which waits for the owner's iPhone test.
 
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 
@@ -47,6 +475,42 @@ render); the cap covered the eyes or floated off the head on most forms; a first
 
 **Not merged:** iPhone tips outside the United States (`claude/clever-villani-6a3f09`, commit e5dc2d0). It conflicts with the tip code since Daybook Pattern, and Daybook is
 offered in the United States only, where the web link is already right. Opening other countries is the owner's call, and this commit is the start of that work.
+
+## Rekindle: the Next time page and the day and time control (the owner, November 1, 2026; merged with setup once the owner had seen it on the simulator)
+
+The owner: the page that says "I will open SOS" "just looks like not well designed", and the control that changes when it happened "is kind of buggy. And it works well, but maybe we could improve the design a little bit."
+
+**Next time, the design choice.** The big red button was the problem: it looked like an alarm on a page about hope, it pulled against That is my plan, and the page had no spirit. The purpose stays what it was (a plan already made, in one easy move). The page is now three things:
+
+- The person's sentence, in two beats: the when quieter, "I will open SOS." in full ink, with SOS in its own color. Left, because it runs past two lines.
+- The flame, big, in the open middle, saying in a cream bubble "I will remind you tomorrow night." That is the same promise as "Daybook brings it back", said by the one who keeps it. It says "tonight", "this evening" or "tomorrow" by the plan's hour (core `talkBackWhen`).
+- That is my plan, with Choose another and Skip on one line under it.
+
+SOS is one tap away in the top bar, where it is on the rest of Rekindle, and it comes back to this page. `SosBig` is gone. This changes the middle of step 5 in the section below; the plan and its words do not change.
+
+**The control's bugs, reproduced on the simulator before the fix:**
+
+1. Save while a wheel was still turning threw the turn away: the wheel was on :26, and it saved 11:22. A wheel only told the sheet when it stopped.
+2. A slow drag let go with no flick stopped between two rows and stayed there.
+3. A day picked far back was off the row when the sheet opened, so no day looked picked (the row had a scroll reference nothing used).
+4. A time ahead of now was a dead end: a greyed button that read "Pick an earlier time". At 1 AM, reaching for 11:40 PM last night always landed there.
+5. The dim slid up with the sheet as one hard edged block, and the handle on top dragged nothing.
+6. The saved pill on the hold page left out the day after a slip moved to another one.
+
+Seen in the code or the pictures as well, and fixed: after midnight the note said "counts for yesterday" about the very day Today is on; numbers jumped between sizes as they crossed the band; the day row was cut off inside the sheet's margin; a morning's four quick picks wrapped to two rows; "Just now" could lose its mark when the minute changed.
+
+**The fix and the look:**
+
+- The row in the band counts from the moment it gets there, so the moment at the top is always what Save saves. A wheel always comes to rest on a row, and the numbers grow into the band smoothly, on the native side. The wheels roll round like a phone's own clock (on the web they end, to stay light).
+- Nothing is refused (core `whenPast`, tested). Just ahead of now, under an hour, is a slip of the finger, so it turns back to now. Further ahead today means the last time the clock said it: at 1 AM, 11:40 PM is yesterday, and the day row follows. A day tapped that would be ahead goes to now. The whole last month is offered to everyone, also before the person started (the owner, November 2, 2026, after trying it on a person who had finished setup that day: "it needs to let me log in the past"). That reverses "the day strip offers days before the person started", listed as a small fault in an earlier review. A log there does not change the gentle or strict count (Day 1 holds); on step down a slip there truly is the last slip, so its hours count from it.
+- The note names the day ("After midnight, so it counts for Sunday."). The row goes back a month instead of two weeks, and the month is gone from it (the moment says it).
+- Less on the sheet: the moment big at the top left with an X by it, as our other sheets have, no Cancel and no handle (the rule against a link that only closes). Quick picks are plain words in one row that scrolls sideways: Just now, 1, 2 and 3 hours ago, and Last night from the rollover to 6 PM (the owner, November 2: "quick options 1 hour two hours ago etc"). The days have no boxes, only the picked one is filled. The dim fades while the sheet rises. The pill has one icon and the same quiet fill as the saved pill.
+
+**Choices made on the owner's behalf, to look at:** the hour's limit between "back to now" and "the last time it said that"; "Yesterday" at 1 AM for 11:40 PM (true by the calendar, even though Today is still on that log day); keeping quick picks at all (one tap under stress is worth the row); and a hand-built wheel over Apple's own (`@expo/ui` has one, but Android and the web would still need this one, and it would drop the app's type).
+
+**Checked:** a release build on the iPhone 17 Pro simulator: Already happened, the hold's Change time and the entry sheet; light by day, dark by day and night; an earlier day, a time ahead, and 1:10 AM with the clock shifted. **The short iPhone:** a release build on the iPhone SE simulator (375 by 667): the sheet in light and dark fits with Save at the bottom, a time ahead rolls to yesterday, the saved pill names the day, and Next time keeps the flame big with both choices low. With Reduce Motion on, the sheet fades in instead of rising and works the same, and the flame's words on Next time are there at once. Not checked: Android, and haptics and speed on a real phone. Pictures: docs/rekindle-review/when-and-plan-before.png, when-after.png, plan-after.png, se-when-light.png, se-when-dark.png, se-plan.png.
+
+**Business:** nothing locked and no ask nearby. It earns by keeping people, and a slip is when they leave.
 
 ## After a slip: every way in reaches Rekindle, and the plan names Daybook's own tools (the owner, October 31, 2026; built, and merged once the owner had seen it on the simulator)
 
@@ -107,7 +571,17 @@ Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone
 
 ## The shape of the day (the owner, October 31, 2026)
 
-**Where it is:** the owner likes it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+**Narrowed by the owner (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). Asked which parts still stand, the owner kept three, all _medium_, on a branch from main and shown on the simulator as a release build before any merge:
+
+1. At night, Goodnight takes the big card instead of an unread lesson (`dayRhythm`, `stopTiles`).
+2. On the night of a slip, the lesson and the check-in go quiet, leaving only the night's one step. Nothing earned changes.
+3. A count of Goodnights finished, in `PULSE_KEYS` and on the privacy page in the same change. The server refuses a new name until the sync service is deployed, so it needs a deploy to count.
+
+**Built and merged, November 1, 2026 (after 1.3.0 build 7, so it ships in the next build):** all three. Picture: `docs/today-review/day-night-rules.png`. A slip night whose Goodnight is done says "Rest well." and not "All done", since the lesson and check-in were set aside, not done. On the iPhone, the card sat under two rows and behind the tab bar on a normal night, so the owner chose (November 1, 2026) to order the line as what is done, then the card, then what is still open (core `lineOrder`). Still open: until the Sunday review is done on a Sunday night, it holds the big card and Wind-down stays a row.
+
+The rest below is not being built: no sleeping flame on Today, no "Cannot sleep?" row, the stop keeps the name Wind-down, the check-in is unchanged, and no confidence question, day 50 or switch for turning a stop off. It stays as the record.
+
+**Where it is:** the owner liked it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
 
 The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
 
@@ -767,7 +1241,7 @@ Each is marked with the effort it needs. **Owner decision** marks a choice that 
     - The check-in's "More about today" fold pushes Goodnight off the screen.
     - The feelings field's title sits over the bubbles.
 20. Small behaviors:
-    - The "When did it happen?" day strip offers days before the person started.
+    - The "When did it happen?" day strip offers days before the person started. (Kept on purpose: the owner wants the past open, November 2, 2026.)
     - "Ashamed" quietly sets a slip's trigger to stress.
     - Goodnight at 8:32 PM ticks the wind-down when screens-off is 11:00 PM (possibly intended).
 21. On the web, a tip opens Stripe in the same tab, so the person leaves Daybook. Open it in a new tab. _Medium (payments)._

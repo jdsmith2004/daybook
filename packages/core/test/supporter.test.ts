@@ -171,7 +171,7 @@ describe('locks', () => {
     expect(supPerks().map((p) => p.id)).toEqual(['sync', 'stats']);
   });
   it('the pattern in one look, the gaps between slips and My numbers stay free; the deeper parts lock', () => {
-    for (const p of ['look', 'apart', 'numbers'] as const) expect(patPartOpen(p, true)).toBe(true);
+    for (const p of ['look', 'felt', 'apart', 'numbers'] as const) expect(patPartOpen(p, true)).toBe(true);
     for (const p of ['when', 'what', 'days', 'helps'] as const) {
       expect(patPartOpen(p, true)).toBe(false);
       expect(patPartOpen(p, false)).toBe(true);

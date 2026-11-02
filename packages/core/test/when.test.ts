@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   whenClock,
+  whenCountsFor,
   whenDays,
   whenDayWord,
   whenEntry,
@@ -11,6 +12,7 @@ import {
   whenLabel,
   whenMs,
   whenOf,
+  whenPast,
   whenQuick,
   whenStart,
 } from '../src/when';
@@ -53,11 +55,44 @@ describe('the words', () => {
     expect(whenDayWord('2026-10-15', NOW)).toBe('Thu, Oct 15');
   });
   it('offer the days back from today, and quick picks that fit the hour', () => {
-    expect(whenDays(NOW, 3)).toEqual(['2026-10-18', '2026-10-17', '2026-10-16']);
-    expect(whenQuick(NOW, ROLL).map((q) => q.label)).toEqual(['Just now', '1 hour ago', '2 hours ago']);
+    expect(whenDays(NOW, 3)).toEqual(['2026-10-16', '2026-10-17', '2026-10-18']);
+    expect(whenQuick(NOW, ROLL).map((q) => q.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', '3 hours ago']);
+    expect(whenQuick(NOW, ROLL)[3].w).toEqual({ day: '2026-10-18', h: 18, m: 47 });
     const morning = new Date(2026, 9, 19, 10, 15).getTime();
     const q = whenQuick(morning, ROLL);
-    expect(q.map((x) => x.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', 'Last night']);
-    expect(whenEntry(q[3].w, ROLL)).toEqual({ key: '2026-10-18', time: '23:00' });
+    expect(q.map((x) => x.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', '3 hours ago', 'Last night']);
+    expect(whenEntry(q[4].w, ROLL)).toEqual({ key: '2026-10-18', time: '23:00' });
+  });
+  it('say which day a moment after midnight counts for, by name', () => {
+    expect(whenCountsFor({ day: '2026-10-18', h: 1, m: 30 }, ROLL)).toBe('After midnight, so it counts for Saturday.');
+    expect(whenCountsFor({ day: '2026-10-18', h: 4, m: 0 }, ROLL)).toBeNull();
+    expect(whenCountsFor({ day: '2026-10-18', h: 21, m: 47 }, ROLL)).toBeNull();
+  });
+});
+
+describe('a moment on the wheels', () => {
+  /* 1:10 AM on Monday, before the rollover: the person is still on Sunday's log day */
+  const SMALL = new Date(2026, 9, 19, 1, 10).getTime();
+  it('stays as it is when it has already happened', () => {
+    const w = { day: '2026-10-17', h: 23, m: 40 };
+    expect(whenPast(w, NOW, ROLL)).toEqual(w);
+    expect(whenPast({ day: '2026-10-18', h: 21, m: 47 }, NOW, ROLL)).toEqual({ day: '2026-10-18', h: 21, m: 47 });
+  });
+  it('goes back to now when it is just ahead of it', () => {
+    expect(whenPast({ day: '2026-10-18', h: 22, m: 10 }, NOW, ROLL)).toEqual({ day: '2026-10-18', h: 21, m: 47 });
+    expect(whenPast({ day: '2026-10-19', h: 1, m: 40 }, SMALL, ROLL)).toEqual({ day: '2026-10-19', h: 1, m: 10 });
+  });
+  it('means the last time the clock said it when it is further ahead today', () => {
+    /* at 1:10 AM, 11:40 PM is an hour and a half ago, on Sunday: where the person's log day already is */
+    const last = whenPast({ day: '2026-10-19', h: 23, m: 40 }, SMALL, ROLL);
+    expect(last).toEqual({ day: '2026-10-18', h: 23, m: 40 });
+    expect(whenEntry(last, ROLL)).toEqual({ key: '2026-10-18', time: '23:40' });
+  });
+  it('does not go back before the first day of the log', () => {
+    /* started on Sunday: last night is still fine; started today, last night is not there, so it is now */
+    expect(whenPast({ day: '2026-10-19', h: 23, m: 40 }, SMALL, ROLL, '2026-10-18')).toEqual({ day: '2026-10-18', h: 23, m: 40 });
+    expect(whenPast({ day: '2026-10-18', h: 23, m: 40 }, NOW, ROLL, '2026-10-18')).toEqual({ day: '2026-10-18', h: 21, m: 47 });
+    /* 1:30 AM on the first calendar day counts for the day before it, so it moves up to the first moment of the log */
+    expect(whenPast({ day: '2026-10-18', h: 1, m: 30 }, NOW, ROLL, '2026-10-18')).toEqual({ day: '2026-10-18', h: 4, m: 0 });
   });
 });

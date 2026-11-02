@@ -29,6 +29,7 @@ import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
+import { count } from '@/lib/pulse';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
 
@@ -47,14 +48,18 @@ export function useGoodnight() {
     const at = clockOf(Date.now());
     let gain = 0;
     let msg = '';
+    let first = false;
     update((s0) => {
       if (!s0.settings) return s0;
       const b0 = gameCompute(s0.days, s0.settings, s0.reviews, tk).pts;
       const days = sayGoodnight(s0.days, tk, form, at, Date.now(), s0.settings);
       if (form && checkinAnswered(form)) msg = checkinSaveText(days, s0.settings, tk, tk);
       gain = Math.max(0, gameCompute(days, s0.settings, s0.reviews, tk).pts - b0);
+      /* once a night, and only one that counted: too early in the day, Goodnight writes nothing */
+      first = !s0.days[tk]?.p?.po && !!days[tk]?.p?.po;
       return { ...s0, days };
     });
+    if (first) count('goodnight');
     buzz('save');
     return { at, gain, msg };
   };

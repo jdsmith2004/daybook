@@ -16,6 +16,7 @@ import {
   patMonthOpen,
   patOffer,
   patPreview,
+  PATTERN_FROM,
   SUPPORT_URL,
   SUP_SYNC_WORDS,
   tipAnswered,
@@ -185,27 +186,26 @@ export function UnlockCard({ extra }: { extra: 'stats' | 'sync' }) {
   );
 }
 
-/** the card on the locked part of Pattern, once Daybook Pattern is on sale: the line from the person's own log and the way in.
-    With nothing true to say yet, or at a moment when nothing is asked, only a kind word: no price and no button. */
-export function PatternCard() {
-  const c = useTheme();
+/** the ask on a locked card of Pattern, sitting right on that card: once Daybook Pattern is on sale the line from the person's own
+    log and the way in (with nothing true to say yet, or at a moment when nothing is asked, only a kind word: no price and no
+    button); before that, what a tip opens. */
+export function LockAsk() {
   const { snap, tk } = useStore();
   const offer = usePatOffer();
+  if (PATTERN_FROM == null)
+    return (
+      <>
+        <T v="small">{TIP_WORDS.lock.stats.p}</T>
+        <Button label={TIP_WORDS.lock.btn} onPress={openTip} />
+      </>
+    );
   const w = PAT_WORDS.card;
   const quiet = !offer && !!snap.settings && patPreview(snap.days, snap.settings, tk);
   return (
-    <Card style={{ backgroundColor: c.sunSoft, borderColor: c.sunSoft }}>
-      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-        <View style={[s.lock, { backgroundColor: c.sun }]}>
-          <Icon name="lock" size={18} color={c.onSun} />
-        </View>
-        <T v="h2" style={{ flex: 1 }}>
-          {w.h}
-        </T>
-      </View>
-      <T v="small">{offer || (quiet ? w.rest : w.soon)}</T>
+    <>
+      <T style={{ fontFamily: font.bodySemi }}>{offer || (quiet ? w.rest : w.soon)}</T>
       {offer ? <Button label={w.go} onPress={openPattern} /> : null}
-    </Card>
+    </>
   );
 }
 

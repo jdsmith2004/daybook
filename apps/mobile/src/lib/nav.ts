@@ -1,5 +1,8 @@
 import type { CareDoor } from '@daybook/core';
-import { router, useNavigation, useRoute } from 'expo-router';
+import { router, useIsFocused, useNavigation, useRootNavigationState, useRoute } from 'expo-router';
+import { Platform } from 'react-native';
+
+import { useTheme } from '@/lib/theme';
 
 /* The root stack's state, kept by the layout (NavKeeper in app/_layout.tsx), so close() can see what is open. */
 type Route = { key: string; name: string; state?: { index?: number; routes: Route[] } };
@@ -30,12 +33,35 @@ export const SHEETS = [
   'notes',
 ];
 
+/** from iOS 26 a sheet is a card below the status bar with the page it opened from still whole behind the clock. Older iPhones shrink that page
+    away from the clock, and on Android a sheet fills the screen, so there the clock sits on something else. */
+const SHEET_SHOWS_PAGE = Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26;
+
+/** the page behind the clock: the one on top of the root stack once the sheets are left out, followed down to the screen showing in it */
+function underSheets(st: State | undefined): Route | undefined {
+  const routes = openRoutes(st);
+  let r = routes.findLast((x) => !SHEETS.includes(x.name));
+  while (r?.state) r = r.state.routes[r.state.index ?? r.state.routes.length - 1];
+  return r;
+}
+
+/** whether the status bar is this screen's to color, for a screen that colors it from what it draws at the top: while it is in focus, and in the light
+    theme while only sheets sit over it, so a sheet does not leave dark words on a night sky. In the dark theme iOS dims the page behind a sheet so far
+    that even a day sky goes dark, and the theme's light words are the ones that read. */
+export function useHoldsBar(): boolean {
+  const focused = useIsFocused();
+  const route = useRoute();
+  const root = useRootNavigationState() as unknown as State;
+  const { scheme } = useTheme();
+  return focused || (SHEET_SHOWS_PAGE && scheme === 'light' && underSheets(root)?.key === route.key);
+}
+
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */
 const SCENE = /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
 
 /** the routes open now, bottom to top (Expo Router keeps the app's stack inside one "__root" route) */
-function openRoutes(): Route[] {
-  let st = rootState();
+function openRoutes(from: State | undefined = rootState()): Route[] {
+  let st = from;
   while (st && st.routes.length === 1 && st.routes[0].name === '__root' && st.routes[0].state) st = st.routes[0].state;
   return st ? st.routes.slice(0, (st.index ?? st.routes.length - 1) + 1) : [];
 }

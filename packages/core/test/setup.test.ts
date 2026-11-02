@@ -105,11 +105,15 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
 });
 
 describe('the goal it suggests', () => {
-  it('"Quit for good" starts tomorrow, on a first try too; wanting to understand the pattern starts with a tracking week', () => {
-    expect(core.obSuggest({ aim: 'quit', tried: 't0' })).toBe('now');
-    expect(core.obSuggest({ aim: 'quit', tried: 't1' })).toBe('now');
+  it('suggests the tracking week first for most people, and nights first to someone who wants their nights back', () => {
+    expect(core.obSuggest({ aim: 'quit', tried: 't0' })).toBe('week');
+    expect(core.obSuggest({ aim: 'quit', tried: 't2', freq: 'f4' })).toBe('week');
+    expect(core.obSuggest({ aim: 'less', when: ['late'] })).toBe('week');
     expect(core.obSuggest({ aim: 'learn', tried: 't0' })).toBe('week');
+    expect(core.obSuggest({ aim: 'nights' })).toBe('nights');
     expect(core.obSuggest({})).toBe('week');
+    /* "Quit, starting tomorrow" is still there for anyone who picks it */
+    expect(core.obGoal({ aim: 'quit', goal: 'now' }, null, '2026-11-02' as core.DayKey).id).toBe('now');
   });
 });
 

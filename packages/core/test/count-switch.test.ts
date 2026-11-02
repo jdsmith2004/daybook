@@ -43,7 +43,7 @@ describe('setup picks how days count from how often', () => {
         for (const years of ['y0', 'y3'])
           for (const tried of ['t0', 't2']) expect(['week', 'now', 'nights']).toContain(core.obSuggest({ aim, freq, years, tried }));
     /* an old answer of "step" or "less" falls back to the suggestion */
-    expect(core.obGoal({ goal: 'step', aim: 'quit' }, null, tk).id).toBe('now');
+    expect(core.obGoal({ goal: 'step', aim: 'quit' }, null, tk).id).toBe('week');
     expect(core.obGoal({ goal: 'less' }, null, tk).id).toBe('week');
   });
 
@@ -54,7 +54,7 @@ describe('setup picks how days count from how often', () => {
     expect(gi.more.paras.join(' ')).toContain('Daybook moves you to counting days by itself.');
     expect(gi.more.keys).toEqual(['gujar', 'lindson']);
     /* "Quit, starting tomorrow" explains a clear line, so in step down the step-down why takes its place */
-    expect(core.obGoalInfo({ freq: 'f3', aim: 'quit' }, null, tk).more.keys).toEqual(['lindson']);
+    expect(core.obGoalInfo({ freq: 'f3', aim: 'quit', goal: 'now' }, null, tk).more.keys).toEqual(['lindson']);
     expect(core.obGoalInfo({ freq: 'f2', aim: 'quit' }, null, tk).soft).toContain('A slip takes one day off, never all of them.');
   });
 

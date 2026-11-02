@@ -1,9 +1,24 @@
 /* My plan: my reasons, my slip plan and my urge plan. Each change is a pure function on the settings, with the word to show,
    following the legacy reasonSave, reasonAdd, reasonMove, reasonRemove, lessonReasonSave, slipSave and the data-plan input.
    Checked by test/plan.test.ts. */
-import { cleanReason, REASON_MAX, reasonCat, reasonGuess, sameReason, SLIP_STEPS, slipClean, URGE_PLAN, WORDS_LEN, WORDS_MAX } from './legacy/core.js';
+import {
+  addDays,
+  cleanReason,
+  eventsOf,
+  REASON_MAX,
+  reasonCat,
+  reasonGuess,
+  sameReason,
+  SLIP_STEPS,
+  slipClean,
+  URGE_PLAN,
+  WORDS_LEN,
+  trigText,
+  WORDS_MAX,
+} from './legacy/core.js';
 import { changeSettings, type Change } from './actions';
-import type { Settings } from './types';
+import { riskWindow } from './risk';
+import type { DayKey, Days, Settings } from './types';
 
 export const RIDEAS: [string, string][] = [
   ['Being fully present with the people I love', 'rel'],
@@ -158,6 +173,37 @@ export function planEdit(st: Settings, i: number, when: string, then: string): S
   if (w === r.when && t === r.then) return st;
   return changeSettings(st, (s) => void (s.plan[i] = { when: w, then: t }));
 }
+
+/** the two lines of the urge plan that fit tonight, for Today and My plan: a line about bed or late at night when the hard
+    hours are in the evening or the small hours, then the line for the trigger logged most in the last 60 days (a slip counts
+    3, an urge 1), then the rest in plan order. A trigger is an id, so a line fits it by the words of its label ("Stressed
+    or anxious" fits "I am stressed after work"). Each "then" is cut to its first sentence. */
+export function planTonight(days: Days, st: Settings, tk: DayKey): { when: string; then: string }[] {
+  const rows = (st.plan || []).filter((p) => !planBlank(p) && (p.then || '').trim());
+  const win = riskWindow(days, st, tk);
+  const out: typeof rows = [];
+  const add = (words: string[]) => {
+    const r = rows.find((p) => !out.includes(p) && words.some((w) => new RegExp('\\b' + w + '\\b', 'i').test(p.when)));
+    if (r) out.push(r);
+  };
+  if (win && (win.start >= 20 || win.start < 4)) add(['bed', 'night', 'late']);
+  const tally: Record<string, number> = {};
+  eventsOf(days, addDays(tk, -59)).forEach((e) => {
+    if (e.trigger && e.trigger !== 'other') tally[e.trigger] = (tally[e.trigger] || 0) + (e.outcome === 'slipped' ? 3 : 1);
+  });
+  Object.keys(tally)
+    .sort((a, b) => tally[b] - tally[a])
+    .forEach((id) => out.length < 2 && add(trigWords(trigText(id, st.opts))));
+  rows.forEach((p) => out.length < 2 && !out.includes(p) && out.push(p));
+  return out.map((p) => ({ when: p.when, then: p.then.trim().split(/(?<=[.!?])\s+/)[0] }));
+}
+const NOT_WORDS = ['and', 'the', 'after', 'other', 'with', 'from'];
+/** the words of a trigger's label that can name a moment in a plan line */
+const trigWords = (label: string) =>
+  String(label || '')
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 3 && NOT_WORDS.indexOf(w) < 0);
 
 /** one of my own answers (a trigger or what I did) put back after Remove (Undo): shown again if it was only hidden, else
     put back at the place it had */

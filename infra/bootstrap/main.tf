@@ -10,6 +10,7 @@
  *      an outside account, a way into the table
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
  *      this account
+ *   5. the feedback topic: each note sent from the app's feedback page is emailed to you (feedback_email, or alert_email)
  */
 data "aws_caller_identity" "me" {}
 data "aws_partition" "p" {}
@@ -291,6 +292,11 @@ resource "aws_iam_role_policy" "pulse" {
         Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = ["arn:${local.arn}:logs:${var.region}:${local.account}:log-group:/aws/lambda/daybook-pulse:*"]
       },
+      {
+        Effect   = "Allow"
+        Action   = ["sns:Publish"]
+        Resource = [aws_sns_topic.feedback.arn]
+      },
     ]
   })
 }
@@ -438,6 +444,23 @@ resource "aws_iam_role_policy" "deploy" {
       }
     ]
   })
+}
+
+/* ---------- 3d. the feedback topic ----------
+   The pulse function publishes each note sent from the app's feedback page here (services/api/src/pulse-index.ts), at most
+   DAILY_MAIL a day, and SNS emails it to you. It comes from AWS's own address, so Gmail trusts it, and it costs nothing at
+   this size (the first 1,000 emails a month are free). After the first apply, AWS sends a "Confirm subscription" email:
+   click it once, or nothing arrives. Its footer has an unsubscribe link; if it is ever clicked, apply this stack again and
+   confirm again. The infra/app stack puts this topic's ARN on the function, so the name must stay daybook-feedback. */
+resource "aws_sns_topic" "feedback" {
+  name         = "daybook-feedback"
+  display_name = "Daybook"
+}
+
+resource "aws_sns_topic_subscription" "feedback" {
+  topic_arn = aws_sns_topic.feedback.arn
+  protocol  = "email"
+  endpoint  = coalesce(var.feedback_email, var.alert_email)
 }
 
 /* ---------- 4. the budget alert ---------- */

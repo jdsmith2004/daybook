@@ -42,7 +42,8 @@ export function FlameSky({
   flame: number;
   /** how far above the bottom edge the drawing's foot stands */
   foot: number;
-  /** stand the flame to the right of the sky, as far in from the edge as this, with room for words on its left */
+  /** stand the flame to the right of the sky, as far in from the edge as this (less than 0: past it), with room for words on its
+      left. An offset, not a padding: a padding below 0 is dropped on iOS and the web alike */
   right?: number;
   /** a tap on the flame blooms it. Off where the whole picture is one button. */
   tappable?: boolean;
@@ -77,7 +78,7 @@ export function FlameSky({
           pointerEvents="none"
         />
       ) : null}
-      <View style={[s.flame, { top }, right != null ? { alignItems: 'flex-end', paddingRight: right } : null]} pointerEvents="box-none">
+      <View style={[s.flame, { top }, right != null ? { alignItems: 'flex-end', right } : null]} pointerEvents="box-none">
         {tappable ? (
           <Pressable
             accessibilityRole="button"

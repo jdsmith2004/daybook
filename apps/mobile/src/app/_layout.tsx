@@ -30,6 +30,7 @@ import { useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
+import { useWhatsNew } from '@/lib/whats-new';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -97,6 +98,12 @@ function SetupGate() {
   useEffect(() => {
     if (shut) router.replace('/');
   }, [shut, top]);
+  return null;
+}
+
+/* What's new after an update: once, on an open where nothing else comes first (lib/whats-new.ts) */
+function WhatsNewGate() {
+  useWhatsNew();
   return null;
 }
 
@@ -178,12 +185,27 @@ function Shell() {
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />
-          {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, the evening check-in, going deeper, the wind-down, good night, a lesson */}
-          {['sos', 'tool/[id]', 'log', 'checkin', 'talk', 'review', 'wind', 'night', 'lesson/[id]', 'lwrite/[n]', 'setup', 'graduated', 'week', 'back'].map(
-            (name) => (
-              <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-            ),
-          )}
+          {/* the full-screen moments: SOS and its tools, logging, Rekindle, the sunrise check, the evening check-in, going deeper, the wind-down, good night, a lesson, an idea, what is new */}
+          {[
+            'sos',
+            'tool/[id]',
+            'log',
+            'checkin',
+            'talk',
+            'review',
+            'wind',
+            'night',
+            'lesson/[id]',
+            'lwrite/[n]',
+            'setup',
+            'graduated',
+            'week',
+            'back',
+            'whats-new',
+            'feedback',
+          ].map((name) => (
+            <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+          ))}
           {/* the journal comes down over Today like a shade, and moves itself (app/journal.tsx), so Today stays under it */}
           <Stack.Screen name="journal" options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }} />
           {/* the sheets: one thing, over everything */}
@@ -192,6 +214,7 @@ function Shell() {
           ))}
         </Stack>
         <CelebrateHost />
+        <WhatsNewGate />
         <Toast />
       </LockGate>
     </ThemeProvider>

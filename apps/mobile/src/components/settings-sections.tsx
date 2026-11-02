@@ -35,12 +35,15 @@ import {
   nudgeResume,
   lessonAt,
   lessonLast,
+  OB_CREED,
+  setFaith,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
+import { OwnAnswers } from '@/components/own-answers';
 import { Link } from '@/components/choices';
 import { DateStep } from '@/components/date-step';
 import { SYNC_NEED_SHORT } from '@/components/support';
@@ -83,7 +86,7 @@ import { useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
-type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'look' | 'sos' | 'remind' | 'lock' | 'data';
+type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'answers' | 'data';
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -304,7 +307,11 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
     (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.') +
     ' Never once today’s is done.';
 
+  const ownN = st.opts.trig.filter((o) => !o.off).length + st.opts.did.filter((o) => !o.off).length;
+  const ownSub = ownN ? ownN + (ownN === 1 ? ' answer' : ' answers') + ' added on check-ins' : 'Words you add on a check-in';
   const routineOn = ROUTINE.filter((x: { k: string }) => st.routine[x.k]).length;
+  const fa = (st.onb && st.onb.a && (st.onb.a.faith as string)) || '';
+  const cr = (st.onb && st.onb.a && (st.onb.a.creed as string)) || '';
   const themeWord = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto';
   return (
     <>
@@ -423,6 +430,40 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               </Field>
             </>,
           )}
+
+          {/* the setup's faith answers (core faith.ts): whether lessons speak of God, and in which faith's words */}
+          {st.onb
+            ? sec(
+                'faith',
+                'star',
+                'Faith in the lessons',
+                fa === 'no' ? 'Off' : (OB_CREED.find((x) => x[0] === cr) || [null, 'On'])[1],
+                <>
+                  <Field label="Does faith play a part in this for you?" hint="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">
+                    <Chips label="Faith">
+                      {(
+                        [
+                          ['big', 'Yes'],
+                          ['some', 'Somewhat'],
+                          ['no', 'No'],
+                        ] as ['big' | 'some' | 'no', string][]
+                      ).map(([v, l]) => (
+                        <Chip key={v} label={l} on={fa === v} onPress={() => apply({ st: setFaith(st, v) })} />
+                      ))}
+                    </Chips>
+                  </Field>
+                  {fa === 'no' ? null : (
+                    <Field label="Which faith is yours?" hint="The lessons that speak of God use its words.">
+                      <Chips label="Which faith">
+                        {OB_CREED.map(([v, l]) => (
+                          <Chip key={v} label={l} on={cr === v} onPress={() => apply({ st: setFaith(st, fa === 'some' ? 'some' : 'big', v) })} />
+                        ))}
+                      </Chips>
+                    </Field>
+                  )}
+                </>,
+              )
+            : null}
 
           {sec(
             'look',
@@ -626,6 +667,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               onPress={() => router.push('/notes')}
             />
           ) : null}
+          {sec('answers', 'pencil', 'My own answers', ownSub, <OwnAnswers />)}
           {sec(
             'data',
             'copy',

@@ -1,6 +1,9 @@
 /* My plan: reasons and the slip plan, following the legacy actions word for word. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
+import { addEvent } from '../src/mutate';
+import { riskWindow } from '../src/risk';
+import type { Days } from '../src/types';
 
 const base = core.normSettings({ v: 1, start: '2026-10-01', rollover: 4, screensOff: '23:00', reasons: ['Sleep well'], u: 1 });
 
@@ -118,5 +121,42 @@ describe('Undo for removals', () => {
     expect(core.optionRestore(gone, 'trig', o, 0).opts.trig[0].t).toBe('Late night scrolling');
     const hidden = core.changeSettings(made.st, (s) => void (s.opts.trig.find((x) => x.id === id)!.off = true));
     expect(core.optionRestore(hidden, 'trig', o, 0).opts.trig.find((x) => x.id === id)!.off).toBeUndefined();
+  });
+});
+
+describe('the lines for tonight', () => {
+  /* 2026-10-12 is a Monday */
+  const log = (days: Days, k: string, outcome: 'slipped' | 'rode', time: string, trigger: string | null = null) =>
+    addEvent(days, k, outcome, time, { trigger }, 1).days;
+  it('with nothing logged, the first two lines in plan order, each cut to its first sentence', () => {
+    expect(core.planTonight({}, base, '2026-10-13')).toEqual([
+      { when: 'I am in bed late at night', then: 'Get up and leave the room for 10 minutes.' },
+      { when: 'I am lonely or low', then: 'Text or call one person.' },
+    ]);
+  });
+  it('leads with the line for the trigger logged most, a slip counting more than an urge', () => {
+    let d = log({}, '2026-10-05', 'rode', '15:00', 'bored');
+    d = log(d, '2026-10-06', 'rode', '15:00', 'bored');
+    d = log(d, '2026-10-07', 'slipped', '15:00', 'stress');
+    expect(core.planTonight(d, base, '2026-10-13').map((r) => r.when)).toEqual(['I am stressed or anxious', 'I am bored or idle']);
+  });
+  it('when the hard hours are late, the line about bed comes first', () => {
+    let d = log({}, '2026-10-05', 'slipped', '22:10', 'stress');
+    d = log(d, '2026-10-07', 'slipped', '22:40', 'stress');
+    d = log(d, '2026-10-09', 'slipped', '23:05', 'stress');
+    expect(riskWindow(d, base, '2026-10-13')!.start).toBeGreaterThanOrEqual(20);
+    expect(core.planTonight(d, base, '2026-10-13').map((r) => r.when)).toEqual(['I am in bed late at night', 'I am stressed or anxious']);
+  });
+  it('skips blank lines and lines with no then, and fits my own trigger by its words', () => {
+    let st = core.setPlanRow(base, 0, 'then', '');
+    for (const i of [1, 2, 3]) st = (core.planRemove(st, i) as { st: typeof st }).st;
+    st = (core.planAdd(st, 'I am at work', 'Take a walk.') as { st: typeof st }).st;
+    st = (core.planAdd(st, 'I come home from a fight with Sam', 'Call Ann. Then walk.') as { st: typeof st }).st;
+    st = core.changeSettings(st, (s) => void s.opts.trig.push({ id: 'u_fight1', t: 'A fight' }));
+    const d = log({}, '2026-10-05', 'slipped', '15:00', 'u_fight1');
+    expect(core.planTonight(d, st, '2026-10-13')).toEqual([
+      { when: 'I come home from a fight with Sam', then: 'Call Ann.' },
+      { when: 'I am at work', then: 'Take a walk.' },
+    ]);
   });
 });

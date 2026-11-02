@@ -2,7 +2,7 @@
    typed (settings.learn.wr). It earns no points: it is for the person, not for a score. The route's n is the checkpoint's
    own record (c1 to c16, always about the same two lessons); the number shown is its place on the path (core lcheckNo).
    Ported from the legacy SCENES.lwrite. */
-import { LCHECKS, lcheckNo, lcheckPair, lessonNo, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
+import { LCHECKS, lcheckAbout, lcheckNo, lcheckPair, lessonNo, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -38,9 +38,7 @@ export default function Lwrite() {
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted">
-            {C && A && B
-              ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(A, st) ? ' · lessons ' + lessonNo(A, st) + ' and ' + lessonNo(B, st) : '')
-              : 'Checkpoint'}
+            {C && A && B ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(B, st) ? ' · ' + lcheckAbout(pair!, st) : '') : 'Checkpoint'}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />
@@ -92,7 +90,7 @@ export default function Lwrite() {
                     <T v="title" accessibilityRole="header">
                       That is in your plan.
                     </T>
-                    <T>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                    <T>You wrote it for yourself. It stays in What I have learned, under Learn, to read whenever you want.</T>
                   </>
                 )}
               </KeyboardRoom>
@@ -100,10 +98,10 @@ export default function Lwrite() {
             {fin ? (
               <View style={{ gap: 8 }}>
                 <Route
-                  label="Read it in My plan"
+                  label="See what I have learned"
                   onPress={() => {
                     closeAll();
-                    router.push({ pathname: '/plan', params: { pane: 'learned' } });
+                    router.push('/learned');
                   }}
                 />
                 <Route

@@ -3,6 +3,9 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { TURNS, turnLesson } from '../lesson-turns';
+import { DEED_PTS, deedCount, normDeeds } from '../steps';
+import { normCreed } from '../faith';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
 import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
@@ -289,6 +292,8 @@ function normLearn(l){
  /* back: welcome backs passed on the path (lessons.ts lessonReach), kept only when there is one */
  const out={notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f')?o.len:'',prac,picks,wr};
  if(Object.keys(back).length)out.back=back;
+ /* did, later, asked: the steps' deeds (steps.ts), each kept only when there is one */
+ Object.assign(out,normDeeds(o));
  return out;
 }
 /* a journal tag, as Obsidian takes one: lower case, no spaces, letters, numbers, - _ and /, and never only numbers (journal-notes.ts) */
@@ -958,7 +963,8 @@ function totalPoints(days,st,reviews,today){
  const cw=weekOf(today,st);let qd=0;
  for(let k=0;k<=cw;k++)questsFor(days,st,k).forEach(q=>{if(q.done)qd++});
  let rv=0;Object.keys(reviews||{}).forEach(id=>{const r=reviews[id];if(r&&r.a&&Object.keys(r.a).some(f=>r.a[f]&&String(r.a[f]).trim()))rv++});
- return {pts:pts+qd*15+rv*20+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0),perDay,quests:qd,reviews:rv};
+ /* the steps' deeds, done in real life (steps.ts), counted like the quests and reviews */
+ return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0),perDay,quests:qd,reviews:rv};
 }
 function gameStats(days,st,reviews,today){
  const S={entries:0,rode:0,slips:0,pauses:0,recovered:0,lateRide:0,checkins:0,reachDays:0,lightsYes:0,windDays:0,calm:0,morning:0,tools:0,
@@ -2706,6 +2712,8 @@ const LESSONS=[
 ];
 /* lessons 33 to 40 live in lessons-more.ts */
 LESSONS.push(...lessonsMore(SRC));
+/* lessons rewritten around a turn replace their old selves in place (lesson-turns.ts) */
+LESSONS.forEach((L,i)=>{if(TURNS[L.id])LESSONS[i]=turnLesson(TURNS[L.id],L).L});
 
 
 /* ------------------------------------------------------------------------------------------------
@@ -2775,6 +2783,8 @@ function normOnb(o){
  if(!o||typeof o!=='object')return null;
  const a={},src=o.a&&typeof o.a==='object'?o.a:{},one=(k,list)=>{if(list.some(x=>x[0]===src[k]))a[k]=src[k]};
  one('aim',OB_AIM);one('freq',OB_FREQ);one('mins',OB_MINS);one('years',OB_YEARS);one('tried',OB_TRIED);one('faith',OB_FAITH);
+ /* which faith, after a Yes or a Somewhat (faith.ts) */
+ if(normCreed(src.creed))a.creed=src.creed;
  [0,1,2,3,4].forEach(i=>{const v=src['b'+i];if(v==='0'||v==='1'||v==='2')a['b'+i]=v});
  const many=(k,list)=>{if(Array.isArray(src[k]))a[k]=src[k].filter(v=>list.some(x=>x[0]===v)).slice(0,list.length)};
  many('costs',OB_COST);many('when',OB_WHEN);

@@ -37,6 +37,7 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { OB_CREED } from './faith';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
@@ -48,6 +49,8 @@ export interface SetupAnswers {
   years?: string;
   tried?: string;
   faith?: string;
+  /** which faith, after a Yes or a Somewhat (faith.ts) */
+  creed?: string;
   costs?: string[];
   ownCost?: string;
   when?: string[];
@@ -280,11 +283,26 @@ export const OB_PAGES: ObPage[] = [
     key: 'faith',
     list: OB_FAITH,
     h: 'Does faith play a part in this for you?',
-    sub: 'It only changes which lessons come up.',
+    sub: 'Yes or Somewhat adds lessons that speak of God. Every tool stays the same.',
     cols: 1,
     auto: 1,
     keep: 1,
     art: 'star',
+  },
+  /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
+  {
+    id: 'creed',
+    s: 'you',
+    k: 'tiles',
+    key: 'creed',
+    list: OB_CREED,
+    h: 'Which faith is yours?',
+    sub: 'The lessons that speak of God use its words.',
+    cols: 1,
+    auto: 1,
+    keep: 1,
+    art: 'star',
+    need: (a) => a.faith === 'big' || a.faith === 'some',
   },
   { id: 'b0', s: 'you', k: 'bps', n: 0 },
   { id: 'b1', s: 'you', k: 'bps', n: 1 },
@@ -751,3 +769,18 @@ export const obReply = (key: string, id: string | null | undefined): string | nu
 
 /* the lists the pages use, re-exported here so the app takes everything about the setup from one place */
 export { OB_AIM, OB_COST, OB_FAITH, OB_FREQ, OB_MINS, OB_TRIED, OB_WHEN, OB_YEARS };
+
+/** Settings: change the setup's faith answers (faith.ts). No leaves the God lessons out; Yes or Somewhat brings them in, in
+    the words of the faith chosen. Only for someone who has a setup record. */
+export function setFaith(st: Settings, faith: 'big' | 'some' | 'no', creed?: string, now = Date.now()): Settings {
+  if (!st.onb) return st;
+  return changeSettings(
+    st,
+    (s) => {
+      const a = (s.onb!.a || (s.onb!.a = {})) as SetupAnswers;
+      a.faith = faith;
+      if (creed && OB_CREED.some((x) => x[0] === creed)) a.creed = creed;
+    },
+    now,
+  );
+}

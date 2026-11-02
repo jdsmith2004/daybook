@@ -43,6 +43,7 @@ export function Hero({
   flame,
   title,
   action,
+  lead,
 }: {
   g: GameState;
   snap: Snapshot;
@@ -55,8 +56,10 @@ export function Hero({
   title: string;
   /** a small button at the top right */
   action?: React.ReactNode;
+  /** a small button at the top left */
+  lead?: React.ReactNode;
 }) {
-  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} />;
+  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} lead={lead} />;
 }
 
 /** the colors of the words on the sky at this level */
@@ -102,6 +105,7 @@ function Sky({
   flame,
   title,
   action,
+  lead,
 }: {
   g: GameState;
   snap: Snapshot;
@@ -111,6 +115,7 @@ function Sky({
   flame: number;
   title: string;
   action?: React.ReactNode;
+  lead?: React.ReactNode;
 }) {
   const c = useTheme();
   const { say } = useStore();
@@ -234,6 +239,11 @@ function Sky({
           <BigFlame level={lvl.n} size={FLAME} pulse={pulse} />
         </Pressable>
       </View>
+      {lead ? (
+        <View style={[s.lead, { top: inset.top + 10 }]} pointerEvents="box-none">
+          {lead}
+        </View>
+      ) : null}
       {action ? (
         <View style={[s.action, { top: inset.top + 10 }]} pointerEvents="box-none">
           {action}
@@ -305,6 +315,7 @@ const s = StyleSheet.create({
   sky: { overflow: 'hidden' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   action: { position: 'absolute', right: 16 },
+  lead: { position: 'absolute', left: 16 },
   flame: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   num: { position: 'absolute', left: 16, bottom: 18, maxWidth: '58%' },
   eb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },

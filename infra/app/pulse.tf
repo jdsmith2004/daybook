@@ -54,6 +54,8 @@ resource "aws_lambda_function" "pulse" {
       OWNER                               = var.owner_sub
       NODE_OPTIONS                        = "--enable-source-maps"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
+      # made by infra/bootstrap (the owner's apply); until then a publish fails quietly and the note is only kept
+      FEEDBACK_TOPIC = "arn:${data.aws_partition.p.partition}:sns:${var.region}:${var.aws_account_id}:daybook-feedback"
     }
   }
   logging_config {

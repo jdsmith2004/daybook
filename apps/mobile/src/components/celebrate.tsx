@@ -58,6 +58,10 @@ const busySub = (f: () => void) => (busySubs.add(f), () => void busySubs.delete(
 /* when a sheet last opened, so Today's day-feel question never comes on an open that already showed one */
 let sheetAt = 0;
 export const celebrationSheetAt = () => sheetAt;
+/** another moment that stands for a sheet on this open (What's new, lib/whats-new.ts) */
+export const noteSheet = () => {
+  sheetAt = Date.now();
+};
 export const useCelebrating = () =>
   useSyncExternalStore(
     busySub,

@@ -1,8 +1,11 @@
 /* A picture for each section of the lessons, of what the section is about, for the lesson map on Learn: a wave (urges are
    waves), a bell (the cue comes first), a mended heart, a map with the way marked, first light over the hills, a leaf on a
-   long breath out, a close look at the first link in a chain, a sprout, a home with the lights on, and people side by side.
+   long breath out, a close look at the first link in a chain, a sprout, a home with the lights on, people side by side, a door
+   shut for the night, and one candle lighting another.
    Flat and soft, in the app's colors, drawn on a 120 by 120 square. Each takes an id prefix, so the gradients of two
    pictures on one page never share a name. */
+
+import { PATH_STEPS } from './steps';
 
 const star = (x: number, y: number, r: number, c: string) =>
   `<path d="M${x} ${y - r}Q${x + r * 0.18} ${y - r * 0.18} ${x + r} ${y}Q${x + r * 0.18} ${y + r * 0.18} ${x} ${y + r}Q${x - r * 0.18} ${y + r * 0.18} ${x - r} ${y}Q${x - r * 0.18} ${y - r * 0.18} ${x} ${y - r}Z" fill="${c}"/>`;
@@ -118,6 +121,37 @@ ${shadow(104, 46)}
 <path d="M53 102V86C53 80 67 80 67 86V102Z" fill="#B5372A"/>
 <path d="M81 22C77 18 83 14 79 10M87 20C84 16 89 13 86 9" fill="none" stroke="#C9C1E8" stroke-width="2.5" stroke-linecap="round"/>`,
 
+  /* close the door: the door shut for the night, the phone left outside it, warm light at the edge */
+  door: (id) => `<defs>
+<linearGradient id="${id}1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF8A74"/><stop offset="1" stop-color="#E5503F"/></linearGradient></defs>
+${shadow(108, 42)}
+<rect x="30" y="16" width="60" height="92" rx="5" fill="#B5372A"/>
+<rect x="36" y="22" width="48" height="86" fill="#FFE27A"/>
+<path d="M84 106L104 113L90 113L82 106Z" fill="#FFE27A" opacity=".55"/>
+<rect x="36" y="22" width="44" height="86" rx="2" fill="url(#${id}1)"/>
+<rect x="42" y="30" width="32" height="30" rx="4" fill="none" stroke="#fff" stroke-width="2.5" opacity=".35"/>
+<rect x="42" y="68" width="32" height="32" rx="4" fill="none" stroke="#fff" stroke-width="2.5" opacity=".35"/>
+<circle cx="73" cy="64" r="3.5" fill="#FFC832"/>
+<rect x="11" y="94" width="13" height="19" rx="3" fill="#2A2350" opacity=".8"/>
+<rect x="13.5" y="97" width="8" height="12" rx="1.5" fill="#4A4170"/>
+${star(104, 26, 6.5, '#FFC832')}${star(16, 40, 4.5, '#FFC832')}`,
+
+  /* give it away: one candle lights another, and keeps its own flame */
+  candles: (id) => `<defs>
+<linearGradient id="${id}1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF8A74"/><stop offset="1" stop-color="#D9412F"/></linearGradient>
+<radialGradient id="${id}2" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFE27A" stop-opacity=".9"/><stop offset="1" stop-color="#FFE27A" stop-opacity="0"/></radialGradient></defs>
+${shadow(108, 44)}
+<circle cx="42" cy="44" r="22" fill="url(#${id}2)"/><circle cx="78" cy="38" r="15" fill="url(#${id}2)"/>
+<rect x="30" y="60" width="24" height="46" rx="6" fill="url(#${id}1)"/>
+<rect x="66" y="54" width="24" height="52" rx="6" fill="url(#${id}1)"/>
+<path d="M36 66V94M72 60V92" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".4"/>
+<path d="M42 60V53M78 54V48" stroke="#5A3A00" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M42 30C51 40 50 50 42 54C34 50 33 40 42 30Z" fill="#FFB020"/>
+<path d="M42 40C46 45 46 50 42 52C38 50 38 45 42 40Z" fill="#FFE27A"/>
+<path d="M78 34C83 40 83 46 78 48C73 46 73 40 78 34Z" fill="#FFB020"/>
+<path d="M78 40C80 43 80 46 78 47C76 46 76 43 78 40Z" fill="#FFE27A"/>
+${star(104, 22, 6, '#FFC832')}${star(16, 28, 5, '#FFC832')}`,
+
   /* well-known programs: people together, side by side */
   group: () => `${shadow(106, 46)}
 <circle cx="30" cy="52" r="11" fill="#FF8A74"/><path d="M12 100C12 76 20 66 30 66C40 66 48 76 48 100Z" fill="#E5503F"/>
@@ -128,19 +162,8 @@ ${shadow(104, 46)}
 ${star(18, 26, 5.5, '#FFC832')}${star(104, 28, 5, '#FFC832')}`,
 };
 
-/** the picture for each section (by its LUNITS index) */
-export const SECTION_ART: Record<number, string> = {
-  0: 'wave',
-  1: 'heart',
-  2: 'map',
-  3: 'leaf',
-  4: 'chain',
-  5: 'house',
-  6: 'group',
-  7: 'sunrise',
-  8: 'bell',
-  9: 'sprout',
-};
+/** the picture for each step of the path (by its index in PATH_STEPS) */
+export const SECTION_ART: Record<number, string> = Object.fromEntries(PATH_STEPS.map((x, k) => [k, x.art]));
 
 /** a section's picture without its outer svg (to place inside another drawing), on a 120 by 120 square */
 export const sectionArtInner = (u: number, id: string): string => (ART[SECTION_ART[u]] || ART.wave)(id);

@@ -80,6 +80,16 @@ The owner: "Quit Without Shame" makes a person feel the shame it names, and the 
 
 **Still to check.** Whether impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Apple shows no per-keyword numbers. Competitors' exact wording on a phone, since research could not open their listing pages. Google Play's listing still has to change when it is next touched: `docs/launch.md` has the new words.
 
+## Version 1.3.0: the QA before the new build (November 1, 2026)
+
+The owner approved the build and the submission, with one QA session first. Walked on a release build as a new person, someone on the day of a slip, a mid-way log, a long log with a tip and a full log, in both themes, with one read of the code since build 7.
+
+**Found and fixed:** the rings on the Sunday review's foundations page were squeezed on top of each other; the first card could say "0 of the last 7 days" when the week before was better, against its own rule; slips a person said they had while away, and days away that Daybook does not know, counted as no-slip days on the first card, and unknown days could read as a harder stretch; "Longest stretch" on the hill could differ from "Longest run" lower on the page; a sentence about riding out opened the wrong card; "No reason picked" showed for a stretch with no entries, and "chose something else 0 times" on What helps you; the review's hours chart ran past its card in a wide browser; "Hard hours" could run off the screen for morning hours; a log of exactly 7 days labeled its first day "7 days ago" and not Day 1; someone who sleeps by day lost their lesson and check-in to the night rules through their waking hours.
+
+**Left as it is:** the hill's left label says "7 days ago" and "30 days ago" when the first day shown is 6 or 29 days back, which reads naturally and matches the store picture. "0 of 1 slips" in My numbers stays, because the golden tests freeze those words.
+
+**Merged by the owner's word for this build:** Riding it out as the flame with a plain row of counts. **Not in this build:** Obsidian, which waits for the owner's iPhone test.
+
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 
 The new look of the lessons, the fire that moves at its tips, the wind-down rebuilt and the store pictures were merged together by the owner's word, and the public guides

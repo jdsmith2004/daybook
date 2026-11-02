@@ -8,6 +8,7 @@
      difference is big enough to mean something.
    Everything is worked out on the device, from the person's own log. */
 import { addDays, diffDays, eventsOf, optText, sumDay } from './legacy/core.js';
+import { awaySlipDay, dayKnown } from './away';
 import { logStart } from './log-start';
 import { riskWindow, type RiskWindow } from './risk';
 import { talkAfterSlip, talksOf, TALK_NEEDS, type TalkNeed } from './talk';
@@ -51,10 +52,11 @@ export function patGaps(days: Days, st: Settings, tk: DayKey): PatGaps {
   let run = 0;
   let longest = 0;
   for (let k = logStart(days, st); k <= tk; k = addDays(k, 1)) {
-    if (sumDay(days[k]).slipped > 0) {
+    /* a slip the person said they had while away ends a stretch too; a day away that Daybook does not know neither adds to one nor ends it (away.ts) */
+    if (sumDay(days[k]).slipped > 0 || awaySlipDay(days, st, k, tk)) {
       runs.push(run);
       run = 0;
-    } else run++;
+    } else if (dayKnown(days, st, k, tk)) run++;
     longest = Math.max(longest, run);
   }
   const avg = (l: number[]) => Math.round((l.reduce((a, b) => a + b, 0) / l.length) * 10) / 10;
@@ -335,7 +337,7 @@ export function patDiffs(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN:
 }
 
 /* ---------- in one look ---------- */
-export type PatGo = 'apart' | 'when' | 'what' | 'days';
+export type PatGo = 'apart' | 'ride' | 'when' | 'what' | 'days';
 /** up to three plain sentences, each one pointing at the graph behind it */
 export function patInsights(g: PatGaps, ride: { then: number; now: number } | null, when: PatWhen, trig: PatTrigger[]): { t: string; go: PatGo }[] {
   const out: { t: string; go: PatGo }[] = [];
@@ -345,7 +347,7 @@ export function patInsights(g: PatGaps, ride: { then: number; now: number } | nu
       go: 'apart',
     });
   else if (ride && ride.now >= ride.then + 0.15)
-    out.push({ t: 'You ride out ' + inTen(ride.now) + ' hard moments now, up from ' + inTen(ride.then) + '.', go: 'apart' });
+    out.push({ t: 'You ride out ' + inTen(ride.now) + ' hard moments now, up from ' + inTen(ride.then) + '.', go: 'ride' });
   else if (g.now >= 7 && g.slips) out.push({ t: g.now + ' days with no slip since your last one.', go: 'apart' });
   const hw = when.hard.weekdays || when.hard.weekends;
   if (hw) {
@@ -362,7 +364,8 @@ export function patInsights(g: PatGaps, ride: { then: number; now: number } | nu
 /** the stretch going now, in words */
 export function patNowLine(g: PatGaps, tk: DayKey, last: DayKey | null): string {
   if (!g.slips) return 'No slip logged yet. Every day here counts.';
-  const ago = last ? diffDays(tk, last) : 0;
+  /* no last entry: the slips were ones the person said they had while away, with no day of their own to name */
+  const ago = last ? diffDays(tk, last) : null;
   if (ago === 0 || !g.now) return 'Your last slip was today. The next stretch starts now.';
   if (ago === 1) return 'Your last slip was yesterday. Today is day 1 of the next stretch.';
   return 'Now: ' + plural(g.now, 'clean day') + ' since your last slip, and counting.';

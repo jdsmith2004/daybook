@@ -162,3 +162,16 @@ describe('the week’s lesson days: a ring of seven', () => {
     expect(core.lessonWeek(d, '2026-10-19').n).toBe(0);
   });
 });
+
+describe('a person who sleeps by day', () => {
+  const st = core.normSettings({ start: '2026-10-01', day1: '2026-10-01', screensOff: '08:00', rollover: 4 });
+  const tk = '2026-10-20';
+  const at = (s: string) => new Date(s).getTime();
+  it('keeps the lesson open in the waking hours long after the time their night opened', () => {
+    expect(core.stopTiles({}, st, tk, at(tk + 'T17:00')).cur).toBe('lesson');
+  });
+  it('keeps the rest of the day after a slip in those hours', () => {
+    const d = { [tk]: { d: tk, events: [{ id: 's', outcome: 'slipped', time: '16:30' }], u: 1 } } as unknown as Days;
+    expect(core.stopTiles(d, st, tk, at(tk + 'T17:00')).tiles.map((x: { k: string }) => x.k)).toContain('lesson');
+  });
+});

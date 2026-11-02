@@ -25,7 +25,7 @@ import {
   spreadCircles,
 } from '../src/pattern-cards';
 import { patGaps, patKeys, patWhen } from '../src/pattern';
-import type { DayKey, Days } from '../src/types';
+import type { DayKey, Days, Settings } from '../src/types';
 
 const TK = '2026-11-01';
 const st = normSettings({ start: '2026-01-01', day1: '2026-01-01' });
@@ -132,7 +132,7 @@ describe('how you are doing', () => {
     return d;
   };
   const range = (a: number, b: number, by: number) => Array.from({ length: Math.ceil((b - a) / by) }, (_, i) => a + i * by);
-  const at = (d: Days, r: '7' | '30' | 'all' = '30') => patDoing(d, patPeriod(r, d, st, TK));
+  const at = (d: Days, r: '7' | '30' | 'all' = '30') => patDoing(d, patPeriod(r, d, st, TK), st);
   it('says getting better against the month before, with both numbers', () => {
     const c = at(slips([3, ...range(30, 44, 2)]));
     expect(c.kind).toBe('better');
@@ -162,10 +162,10 @@ describe('how you are doing', () => {
   });
   it('with nothing to compare, says what is there', () => {
     const young = normSettings({ start: '2026-10-20', day1: '2026-10-20' });
-    const clean = patDoing({}, patPeriod('all', {}, young, TK));
+    const clean = patDoing({}, patPeriod('all', {}, young, TK), young);
     expect(clean).toMatchObject({ kind: null, then: null, head: 'Every day', line: 'All of your 13 days so far had no slip.' });
     const d = addEvent({}, '2026-10-25', 'slipped', '22:00', { trigger: null }, 1).days;
-    expect(patDoing(d, patPeriod('all', d, young, TK))).toMatchObject({ head: '12 of 13 days', line: 'had no slip.' });
+    expect(patDoing(d, patPeriod('all', d, young, TK), young)).toMatchObject({ head: '12 of 13 days', line: 'had no slip.' });
   });
   it('All lays the latest month over the first', () => {
     const c = at(slips(range(280, 298, 1)), 'all');
@@ -426,13 +426,45 @@ describe('how you are doing, with slips on most days', () => {
   };
   it('never says a count of nothing', () => {
     const d = allSlips(false);
-    const c = patDoing(d, patPeriod('30', d, st, TK));
+    const c = patDoing(d, patPeriod('30', d, st, TK), st);
     expect(c.head).toBe('You keep showing up');
     expect(c.line).toBe('You logged these days honestly. That is where it starts.');
   });
+  it('never says a count of nothing after a better stretch either', () => {
+    const d = allSlips(false);
+    for (let b = 7; b < 14; b++) d[addDays(TK, -b)] = { events: [], u: 1 } as unknown as Days[string];
+    const c = patDoing(d, patPeriod('7', d, st, TK), st);
+    expect(c.head).toBe('You keep showing up');
+    expect(c.line).not.toMatch(/^0 of/);
+  });
   it('says what they did do', () => {
     const d = allSlips(true);
-    expect(patDoing(d, patPeriod('30', d, st, TK)).line).toBe('You rode out 3 hard moments in these days, and every one counts.');
+    expect(patDoing(d, patPeriod('30', d, st, TK), st).line).toBe('You rode out 3 hard moments in these days, and every one counts.');
+  });
+});
+
+describe('days away, on the first card', () => {
+  /* opened every day but the fifteen days before the last two, with the rule on */
+  const away = { ...st, awayFrom: addDays(TK, -40) } as Settings;
+  const opened = () => {
+    const d: Days = {};
+    for (let b = 0; b < 40; b++) if (b < 2 || b > 16) d[addDays(TK, -b)] = { events: [], p: { o: true }, u: 1 } as unknown as Days[string];
+    return d;
+  };
+  it('does not count unknown days as no-slip days, or read them as a fall', () => {
+    const d = opened();
+    const c = patDoing(d, patPeriod('30', d, away, TK), away);
+    expect(c.kind).toBe('steady');
+    expect(c.line).toMatch(/days away not known yet\. Nothing is guessed\.$/);
+    expect(c.head).not.toBe('Every day');
+  });
+  it('counts the slips the person said they had', () => {
+    const d = opened();
+    const answered = { ...away, away: [{ from: addDays(TK, -16), to: addDays(TK, -2), n: 5 }] } as unknown as Settings;
+    const c = patDoing(d, patPeriod('30', d, answered, TK), answered);
+    expect(c.now[c.now.length - 1]).toBe(25);
+    expect(patGaps(d, answered, TK).slips).toBe(5);
+    expect(patGaps(d, answered, TK).now).toBe(2);
   });
 });
 

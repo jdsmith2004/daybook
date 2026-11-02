@@ -8,6 +8,7 @@
    and the card that reads how a day felt uses what nearly everyone answers: the check-in's mood, or else the day's one
    question (day-feel.ts). */
 import { addDays, fmtDate, sumDay } from './legacy/core.js';
+import { awaySlipDay, dayKnown } from './away';
 import { dayFeelOf, type DayFeelStep } from './day-feel';
 import { FEEL_MID } from './feelings';
 import { jnTimeline, type Journal } from './journal-entries';
@@ -161,10 +162,13 @@ export interface PatDoing extends PatSay {
   /** the first day, for its label */
   first: string;
 }
-export function patDoing(days: Days, per: PatPeriod): PatDoing {
+/** a day that can be said to have had no slip: not a slip logged, not one the person said they had while away, and not a day away that Daybook does not know (away.ts) */
+const noSlipOn = (days: Days, st: Settings, tk: DayKey, k: DayKey) => !sumDay(days[k]).slipped && dayKnown(days, st, k, tk) && !awaySlipDay(days, st, k, tk);
+export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
+  const tk = per.keys[per.keys.length - 1];
   const sum = (ks: DayKey[]) => {
     let n = 0;
-    return ks.map((k) => (n += sumDay(days[k]).slipped ? 0 : 1));
+    return ks.map((k) => (n += noSlipOn(days, st, tk, k) ? 1 : 0));
   };
   const now = sum(per.recent);
   const n = now.length;
@@ -173,8 +177,20 @@ export function patDoing(days: Days, per: PatPeriod): PatDoing {
   const t = then ? then[n - 1] : 0;
   const days_ = n === 7 || n === 30 ? 'the last ' + n + ' days' : 'your ' + n + ' days so far';
   const what = c + ' of ' + days_ + ' had no slip';
-  const first = n === 7 ? '7 days ago' : n === 30 ? (per.than === 'in your first month' ? 'Day 1' : '30 days ago') : 'Day 1';
+  /* with nothing before these days, the first of them is where the log starts */
+  const first = !per.then ? 'Day 1' : n === 7 ? '7 days ago' : n === 30 ? (per.than === 'in your first month' ? 'Day 1' : '30 days ago') : 'Day 1';
   const base = { now, then, than: per.than, first };
+  /* days away that Daybook does not know are not slips, so they never read as a fall */
+  const unknown = per.recent.filter((k) => !dayKnown(days, st, k, tk)).length;
+  if (unknown) {
+    const few = c * 4 < n;
+    return {
+      ...base,
+      kind: 'steady',
+      head: few ? 'You keep showing up' : c + ' of ' + n + ' days',
+      line: (few ? '' : 'had no slip. ') + plural(unknown, 'day') + ' away not known yet. Nothing is guessed.',
+    };
+  }
   if (!then)
     return {
       ...base,
@@ -185,8 +201,6 @@ export function patDoing(days: Days, per: PatPeriod): PatDoing {
   /* a change has to be more than a day or two */
   const move = Math.max(2, Math.round(n * 0.1));
   if (c >= t + move) return { ...base, kind: 'better', head: 'Getting better', line: what + ', up from ' + t + ' ' + per.than + '.' };
-  if (c <= t - move)
-    return { ...base, kind: 'harder', head: 'A harder stretch', line: what + ', down from ' + t + ' ' + per.than + '. That is a signal, not a verdict.' };
   /* a person with few or no days like that hears what they did do: a count of nothing is not a finding, and it would take their hope for no gain */
   if (c * 4 < n) {
     const rode = per.recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
@@ -199,6 +213,8 @@ export function patDoing(days: Days, per: PatPeriod): PatDoing {
         : 'You logged these days honestly. That is where it starts.',
     };
   }
+  if (c <= t - move)
+    return { ...base, kind: 'harder', head: 'A harder stretch', line: what + ', down from ' + t + ' ' + per.than + '. That is a signal, not a verdict.' };
   const strong = c >= n * STRONG;
   return { ...base, kind: strong ? 'strong' : 'steady', head: strong ? 'Holding strong' : 'Steady', line: what + ', about the same as ' + per.than + '.' };
 }
@@ -443,22 +459,25 @@ export function patRidge(days: Days, per: PatPeriod, st: Settings): PatRidge {
   const first = logStart(days, st);
   const long = per.keys.length >= ALL_CMP * 2;
   const back = long ? ALL_CMP : 7;
-  const noSlip = (k: DayKey) => !sumDay(days[k]).slipped;
+  const last = per.keys[per.keys.length - 1];
+  const noSlip = (k: DayKey) => noSlipOn(days, st, last, k);
   const line = (ks: DayKey[]) => {
-    const last = per.keys[per.keys.length - 1];
     const out = ks.map((k) => {
       /* near the start of a log there are not enough days to look back on, so it looks ahead instead: one good first day is not a peak to fall from */
       let from = addDays(k, 1 - back);
       if (from < first) from = first;
       let to = k;
       let n = 0;
+      let known = 0;
       let clean = 0;
       for (let d = from; d <= to; d = addDays(d, 1)) {
         n++;
+        /* a day away that Daybook does not know is no part of the height, so the hill does not fall for it */
+        if (dayKnown(days, st, d, last)) known++;
         if (noSlip(d)) clean++;
         if (d === to && n < back && to < last) to = addDays(to, 1);
       }
-      return n ? clean / n : 1;
+      return known ? clean / known : 1;
     });
     if (out.length <= RIDGE_POINTS) return out;
     return Array.from({ length: RIDGE_POINTS }, (_, i) => out[Math.round((i / (RIDGE_POINTS - 1)) * (out.length - 1))]);

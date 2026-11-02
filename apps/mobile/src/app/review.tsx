@@ -70,7 +70,7 @@ import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
 import { useStore } from '@/lib/store';
-import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
+import { font, MAX_WIDTH, toneOf, useTheme, type Sky } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
 
 type After = 'take' | 'goal' | 'done' | 'more' | 'xIt' | 'xHard' | 'xNote';
@@ -253,7 +253,7 @@ export default function Review() {
           </Text>
           <FitArt stretch>
             <View style={[s.card, { backgroundColor: c.surface, alignItems: 'center', paddingVertical: 8 }]}>
-              <View style={{ width: win.width - 72, paddingVertical: 8 }}>
+              <View style={{ width: Math.min(win.width, MAX_WIDTH + 40) - 72, paddingVertical: 8 }}>
                 <Hours hours={S.when.hours} hard={S.when.hard} H={120} />
               </View>
             </View>
@@ -323,7 +323,7 @@ export default function Review() {
           <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
             What holds the rest up
           </Text>
-          <FitArt>
+          <FitArt stretch>
             <Rings base={b} />
           </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>

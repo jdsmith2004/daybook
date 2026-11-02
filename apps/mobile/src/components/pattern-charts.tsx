@@ -748,6 +748,8 @@ const DAY_FROM = 6;
 const HOUR_COLS = 12;
 /** how tall the words under Hours stand, to take from the room for the columns */
 export const HOUR_WORDS = 26;
+/** room the words Hard hours need beside their band */
+const HARD_WORD = 76;
 const ampm = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
 /** entries through the day, with the hard hours marked behind them */
 export function Hours({ hours, hard, H }: { hours: PatHour[]; hard: PatWhen['hard']; H: number }) {
@@ -784,6 +786,7 @@ export function Hours({ hours, hard, H }: { hours: PatHour[]; hard: PatWhen['har
       />
     );
   };
+  const hardAt = hard.weekdays || hard.weekends ? ((((hard.weekdays || hard.weekends)!.start - DAY_FROM + 24) % 24) / 24) * w : 0;
   return (
     <View
       onLayout={onLayout}
@@ -797,7 +800,8 @@ export function Hours({ hours, hard, H }: { hours: PatHour[]; hard: PatWhen['har
           {hard.weekends ? band(hard.weekends.start, k.c.violet) : null}
           <View style={[s.abs, { left: 0, right: 0, top: H, height: 1, backgroundColor: k.grid }]} />
           {hard.weekdays || hard.weekends ? (
-            <Text style={[s.ax, s.abs, { top: 0, right: w - ((((hard.weekdays || hard.weekends)!.start - DAY_FROM + 24) % 24) / 24) * w + 6, color: k.ax }]}>
+            /* beside the band: to its left, or to its right when it sits too near the start of the day for the words to fit */
+            <Text style={[s.ax, s.abs, { top: 0, color: k.ax }, hardAt < HARD_WORD ? { left: hardAt + w / 12 + 6 } : { right: w - hardAt + 6 }]}>
               Hard hours
             </Text>
           ) : null}

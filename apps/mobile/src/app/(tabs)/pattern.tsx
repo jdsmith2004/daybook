@@ -5,6 +5,7 @@
    a way into the tip sheet, or once Daybook Pattern is on sale the sheet for that. A card with nothing behind it yet is left out: named feelings
    above all, which many people log only now and then. Nothing here asks to be looked at. */
 import {
+  computeMetrics,
   FEELS_MIN,
   bpsRow,
   bpsScores,
@@ -182,7 +183,7 @@ function DaysPane() {
 }
 
 /* ---------- your pattern ---------- */
-const GO_IC: Record<PatGo, string> = { apart: 'sunrise', when: 'timer', what: 'bolt', days: 'heart' };
+const GO_IC: Record<PatGo, string> = { apart: 'sunrise', ride: 'wave', when: 'timer', what: 'bolt', days: 'heart' };
 const RANGES: [PatRange, string][] = [
   ['7', 'Week'],
   ['30', 'Month'],
@@ -237,7 +238,9 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const trigAll = patTriggers(snap.days, st, allPer.keys, tk).list.length > 0;
   const needsAll = patNeeds(snap.days, allPer.keys).length > 0;
   const hard = when.hard.weekdays || when.hard.weekends;
-  const doing = patDoing(snap.days, per);
+  const doing = patDoing(snap.days, per, st);
+  /* the same longest run as My numbers, lower on this page */
+  const longest = computeMetrics(snap.days, st, tk).longest;
   const rideSay = patRideSay(ride, rideCols);
   /* the cards are night in either theme, so the shapes take their night colors */
   const look = (n: DayFeelStep) => ({ kind: DAY_FEEL_LOOK[n].kind, color: DAY_FEEL_LOOK[n].tone(palettes.dark)[0] });
@@ -274,7 +277,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         <Room>
           {(w, h) => (
             <Hillside
-              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (g.longest >= 2 ? ' Longest stretch: ' + g.longest + ' days.' : '') : undefined}
+              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (longest >= 2 ? ' Longest stretch: ' + longest + ' days.' : '') : undefined}
               ridge={ridge}
               than={doing.than}
               first={doing.first}
@@ -406,11 +409,11 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
     cards.push({
       id: 'what',
       title: 'What sets it off?',
-      head: topTrig[0]?.t || needs[0]?.name || 'No reason picked',
+      head: topTrig[0]?.t || needs[0]?.name || (trig.none ? 'No reason picked' : 'A quiet stretch'),
       say:
-        trigLine || needLine ? (
+        trigLine || needLine || !trig.none ? (
           <>
-            {[trigLine, needLine].filter(Boolean).map((l) => (
+            {(trigLine || needLine ? [trigLine, needLine] : ['No hard moments logged in these days.']).filter(Boolean).map((l) => (
               <Say key={l}>{l}</Say>
             ))}
           </>
@@ -447,12 +450,11 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       id: 'helps',
       title: 'What helps you',
       head: works[0]?.name,
-      say:
-        ev.chose + ev.went ? (
-          <Say>
-            You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
-          </Say>
-        ) : null,
+      say: ev.chose ? (
+        <Say>
+          You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
+        </Say>
+      ) : null,
       chart: works.length ? (
         <Room>
           {(w, h) => (

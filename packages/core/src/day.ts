@@ -220,10 +220,16 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
     owner, October 31, 2026). A check-in or wind-down that has started meanwhile still says "Open now". On the night of a slip, what is
     not done of the lesson and the check-in is gone until tomorrow, and only the wind-down is left; what was done stays on the line.
     The legacy rhythm itself stays as it was (the golden tests read it). */
+/** the longest a night can run from the time it opens, however far off the new day is */
+const NIGHT_LONGEST_MIN = 9 * 60;
 export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): ReturnType<typeof rhythm> {
   const r = rhythm(days, st, tk, nowMs);
   const night = r.stops.find((x) => x.k === 'night');
-  if (night && night.started) {
+  /* someone who sleeps by day has hours between the time their night opens and the new day that are really their day, and those are not its night */
+  const rollMin = (st.rollover ?? 4) * 60;
+  const nowLocal = new Date(nowMs);
+  const nowRel = (((nowLocal.getHours() * 60 + nowLocal.getMinutes() - rollMin) % 1440) + 1440) % 1440;
+  if (night && night.started && nowRel - night.startRel < NIGHT_LONGEST_MIN) {
     if (sumDay(days[tk]).slipped) return { ...r, stops: r.stops.filter((x) => x.done || x.k === 'night'), cur: night.done ? null : 'night' };
     if (!night.done) return r;
   }

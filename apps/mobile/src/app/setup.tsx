@@ -1,7 +1,10 @@
-/* How Daybook works: the setup, and the walk-through that can be opened again any time. Three acts, each with its own color;
-   the bar at the top shows how far you are in the whole setup. One question per page, every question can be skipped, and
-   single-choice pages move on by themselves after a tap. A new person's plan is built from their answers. Opened again, nothing
-   changes until the last page, where the person ticks which changes to keep. Ported from the legacy SCENES.onb. */
+/* How Daybook works: the setup, and the walk-through that can be opened again any time. It is built like a lesson, from the lesson's
+   own parts (components/lesson-parts.tsx; the owner, November 2, 2026): one sky that goes from night to day across the three acts, one
+   flame that glides from page to page and coaches the person in its bubble (core obSay, obReply), answers on paper low on the screen,
+   the hours on the violet card and the kind words on the sun. The line at the top has a dash for each act. One question per page, every
+   question can be skipped; the flame answers a one-tap question and Next goes on, and the quick checks move on by themselves. A new
+   person's plan is built from their answers. Opened again, nothing changes until the last page, where the person ticks which changes
+   to keep. Ported from the legacy SCENES.onb. */
 import {
   accountLater,
   BE_LEN,
@@ -32,6 +35,8 @@ import {
   obHeard,
   obLast,
   obPages,
+  obReply,
+  obSay,
   obPrefill,
   obReasonList,
   obReasonOpts,
@@ -53,7 +58,6 @@ import {
   SETUP_PTS,
   toRecords,
   type ObOpt,
-  type ObPage,
   type RecordId,
   type Settings,
   type SetupAnswers,
@@ -65,7 +69,8 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -73,12 +78,13 @@ import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
 import { Field } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
-import { FitArt, SHORT } from '@/components/fit';
-import { FlameMedallion } from '@/components/flame-medallion';
+import { FitArt, SHORT, useFitRoom } from '@/components/fit';
 import { LessonArt } from '@/components/lesson-art';
+import { Bubble, FlameSlot } from '@/components/lesson-flame';
+import { Answer, AnswerText, BESIDE, Prog, Question, Shell } from '@/components/lesson-parts';
 import { Ghost, Next, Rich, Route } from '@/components/lx';
-import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
-import { PicCurve, PicDay, PicDial, PicHeart, PicSlip, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
+import { Dock, Middle } from '@/components/scene';
+import { PicCurve, PicDay, PicDial, PicSlip, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
 import { useClock } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
 import { TIP_ON } from '@/components/support';
@@ -97,14 +103,20 @@ import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-
 import { useSos } from '@/lib/sos';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
+import { lessonLook, PAPER_INK, type LookKind } from '@/lib/lesson-look';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
-import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Sky, type Tone } from '@/lib/theme';
+import { font, MAX_WIDTH, nightInk, skies, toneOf, useTheme, type Tone } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 
 type Flow = SetupFlow;
 
 export default function Setup() {
-  const c = useTheme();
+  const base = useTheme();
+  const inset = useSafeAreaInsets();
+  const scroll = useRef<ScrollViewInstance>(null);
+  const fit = useFitRoom();
+  /* the flame leaps when it answers a pick, and when the plan is committed */
+  const [pulse, setPulse] = useState(0);
   const win = useWindowDimensions();
   const { snap, tk, replace, say, current, apply } = useStore();
   const sync = useSync();
@@ -155,7 +167,16 @@ export default function Setup() {
   const pg = P[i];
   const a = f.a;
   const sec = OB_SECS.find((x) => x[0] === pg.s) || OB_SECS[0];
+  /* one sky for the whole setup, as in a lesson: night at the first page, day (a warm dawn at night) at the plan. The number of hours is the
+     violet card; the kind word after the five statements, the slip and the finish are the sun. */
+  const kind: LookKind = pg.k === 'hours' ? 'violet' : pg.k === 'heard' || pg.k === 'slip' || pg.k === 'done' ? 'sun' : 'sky';
+  const p = P.length > 1 ? i / (P.length - 1) : 1;
+  const look = lessonLook(kind, p, base.scheme);
+  const c = look.c;
   const t = toneOf(c, sec[2]);
+  /* the flame grows a little as the setup goes on */
+  const want = (SHORT ? 200 : 240) + (SHORT ? 40 : 70) * p;
+  const voice = obSay(pg.id, f.redo);
   /* the flame as it is now: a spark for a new person, the grown form on a walk-through */
   const flameLevel = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
 
@@ -195,14 +216,11 @@ export default function Setup() {
       ...(typeof patch === 'function' ? patch(x) : patch),
     }));
   const setA = (patch: SetupAnswers) => set((x) => ({ a: { ...x.a, ...patch } }));
-  /* which way the pages slide: forward from the right, Back from the left, and the first one just fades in */
-  const [dir, setDir] = useState<-1 | 0 | 1>(0);
   const go = (d: number) => {
     if (litTimer.current) {
       stopLit();
       setLit(false);
     }
-    setDir(d < 0 ? -1 : 1);
     setF((x) => {
       const PP = obPages(x.a, env);
       const cur = PP[x.i];
@@ -217,7 +235,6 @@ export default function Setup() {
   const later = () => {
     const at = i;
     until.current = Date.now() + 420;
-    setDir(1);
     setTimeout(() => {
       setF((x) => {
         if (x.i !== at) return x;
@@ -237,7 +254,6 @@ export default function Setup() {
     setupKeep.flow = null;
     if (!quiet) buzz('lit');
     until.current = Date.now() + 700;
-    setDir(1);
     setF((x) => ({
       ...x,
       saved: true,
@@ -252,6 +268,7 @@ export default function Setup() {
     if (litTimer.current || f.saved) return;
     buzz('lit');
     setLit(true);
+    setPulse((x) => x + 1);
     litTimer.current = setTimeout(() => {
       litTimer.current = null;
       save(true);
@@ -284,11 +301,11 @@ export default function Setup() {
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
-      <View key="s">
+      <View key="s" style={s.footOne}>
         <Ghost label={label} onPress={() => !busy() && go(1)} />
       </View>
     ) : (
-      <View key="n">
+      <View key="n" style={s.footOne}>
         <Next label={label} onPress={() => !busy() && go(1)} off={false} />
       </View>
     );
@@ -297,6 +314,13 @@ export default function Setup() {
     setA({ [key]: v });
     buzz('tap');
     if (auto) later();
+  };
+  /* a one-tap question the flame answers: the pick stays, the flame leaps and says its piece, and Next goes on */
+  const answer = (key: string, v: string) => {
+    if (busy()) return;
+    if (a[key] !== v) setPulse((x) => x + 1);
+    setA({ [key]: v });
+    buzz('tap');
   };
 
   let body: ReactNode = null;
@@ -316,12 +340,8 @@ export default function Setup() {
       const prev = st && st.onb;
       body = f.redo ? (
         <>
-          <Head h="Walk through it again." sub="Nothing changes until the last page." />
-          <Middle>
-            <FitArt min={0.5}>
-              <FlameMedallion level={flameLevel} size={220} label="Your flame" />
-            </FitArt>
-          </Middle>
+          <Head h="Walk through it again." />
+          <Talk text={voice} want={want} />
           {prev && prev.at ? (
             <T v="small" tone="muted" style={s.c}>
               Last time:{' '}
@@ -337,12 +357,8 @@ export default function Setup() {
       ) : (
         <>
           <Head h="Quit porn, one honest day at a time." sub="A plan built from your answers, a short lesson a day, and help when urges hit." />
-          <Middle>
-            {/* the first thing a new person sees: the flame, big and alive, the same one they will watch grow */}
-            <FitArt min={0.5}>
-              <FlameMedallion level={1} size={240} label="Your flame" />
-            </FitArt>
-          </Middle>
+          {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will watch grow. */}
+          <Talk text={voice} want={want} />
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
           <SosRow />
           <View style={s.links}>
@@ -380,6 +396,7 @@ export default function Setup() {
               })}
             </View>
           </Middle>
+          <Say text={voice} />
         </>
       );
       foot = nextBtn('Next');
@@ -387,20 +404,25 @@ export default function Setup() {
     }
     case 'tiles':
     case 'years': {
+      /* a question the flame answers, as in a lesson: the question at the top, the flame and what it says in the middle, the answers low */
       const key = pg.key!;
+      const list = pg.list!;
+      const at = list.findIndex((x) => x[0] === a[key]);
       body = (
         <>
-          <Head h={pg.h!} sub={pg.sub} />
-          <QArt pg={pg} t={t} level={flameLevel} />
-          <IconTiles
-            list={pg.list!}
-            cols={pg.k === 'years' ? 1 : pg.cols || 1}
-            cur={a[key] as string}
-            t={t}
-            years={pg.k === 'years'}
-            onPick={(v) => pick(key, v, !!pg.auto)}
+          <Question
+            h={pg.h!}
+            list={list.map((x) => x[1])}
+            best={null}
+            retry={false}
+            pk={at >= 0 ? at : null}
+            tried={[]}
+            comments={list.map((x) => obReply(key, x[0]) || '')}
+            first={voice || pg.sub}
+            want={want}
+            onPick={(j) => answer(key, list[j][0])}
           />
-          {lastLine(key, pg.list!)}
+          {lastLine(key, list)}
         </>
       );
       foot = nextBtn(ans(a[key]) ? 'Next' : 'Skip', !ans(a[key]));
@@ -412,7 +434,7 @@ export default function Setup() {
       const idx = list.findIndex((x) => x[0] === a[key]);
       body = (
         <>
-          <Head h={pg.h!} sub={pg.sub} />
+          <Head h={pg.h!} sub={voice ? undefined : pg.sub} />
           <Middle>
             <SlideShow
               grow={key === 'freq' ? 1.12 : 1.3}
@@ -421,6 +443,7 @@ export default function Setup() {
               words={idx >= 0 ? obCap(String(list[idx][3])) : null}
             />
           </Middle>
+          <Say text={voice} />
           <Slider
             label={pg.h!}
             value={idx >= 0 ? idx : null}
@@ -444,42 +467,25 @@ export default function Setup() {
       body = (
         <>
           <Head h="In the last 6 months, how often is this true for you?" small />
-          {/* the statement, big, in the middle; the three answers low, as one row */}
+          {/* the statement, big, in the middle; the flame listens beside it, and the three answers sit low, as one row. A pick moves on by
+              itself: this is a quick check, and the flame does not comment on it. */}
           <Middle>
             <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
           </Middle>
+          <Say text={voice} />
           <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
             {OB_BPS_C.map(([id, label], j) => {
               const on = v === id;
               return (
-                <Pressable
-                  key={id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: on }}
-                  accessibilityLabel={label}
-                  onPress={() => pick('b' + pg.n, id, true)}
-                  style={({ pressed }) => [
-                    s.freq,
-                    {
-                      backgroundColor: on ? t.soft : c.surface,
-                      borderColor: on ? t.ic : 'transparent',
-                      shadowColor: c.lip,
-                      transform: [{ translateY: pressed ? 3 : 0 }],
-                    },
-                  ]}>
-                  <FreqDot n={j} col={t.ic} />
-                  <Text style={[s.freqT, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit>
+                <Answer key={id} sel={on} right={on} label={label} onPress={() => pick('b' + pg.n, id, true)} style={s.freq}>
+                  <FreqDot n={j} col={on ? '#FFFFFF' : PAPER_INK} />
+                  <AnswerText right={on} center>
                     {label}
-                  </Text>
-                </Pressable>
+                  </AnswerText>
+                </Answer>
               );
             })}
           </View>
-          {pg.n === 0 ? (
-            <T v="small" tone="muted" style={s.c}>
-              Only you see your answers. A quick, tested check.
-            </T>
-          ) : null}
         </>
       );
       foot = nextBtn(v != null ? 'Next' : 'Skip', v == null);
@@ -487,10 +493,14 @@ export default function Setup() {
     }
     case 'heard': {
       const h = obHeard(a);
+      /* the sun card: the flame itself says the kind word, big */
       body = (
-        <Show st={st} art={<PicHeart />} h={h.h} line={h.line} more={h.more}>
-          {h.line2 ? <Rich text={h.line2} st={st} style={[s.p, s.c]} /> : null}
-        </Show>
+        <>
+          <Head h={h.h} />
+          <Talk text={plain(h.line)} want={want} />
+          {h.line2 ? <Rich text={h.line2} st={st} style={s.p} /> : null}
+          {h.more ? <More more={h.more} /> : null}
+        </>
       );
       foot = nextBtn('Keep going');
       break;
@@ -501,14 +511,14 @@ export default function Setup() {
       const own = pg.own ? String(a[pg.own] || '').trim() : '';
       body = (
         <>
-          <Head h={pg.h!} sub={pg.sub} />
-          {/* the tiles are the thing: no picture, so they sit low */}
+          <Head h={pg.h!} sub={voice ? undefined : pg.sub} />
+          {/* the tiles are the thing, so they sit low, with the flame just above them */}
           <Middle>{null}</Middle>
+          <Say text={voice} />
           <IconTiles
             list={pg.list!}
             cols={pg.cols || 2}
             cur={arr}
-            t={t}
             onPick={(v) => {
               const k = arr.indexOf(v);
               setA({
@@ -534,36 +544,36 @@ export default function Setup() {
     case 'guess': {
       body = (
         <>
-          <Head h="How many hours a year do you think you spend on porn?" sub="Guess first. Then see your number." />
+          <Head h="How many hours a year do you think you spend on porn?" />
           <Middle>
-            <Text style={[s.huge, { color: t.text }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
+            <Text style={[s.huge, { color: c.ink }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
             <T tone="muted">hours a year</T>
           </Middle>
+          <Say text={voice} />
           <View style={s.grid3}>
             {OB_GUESS.map((n) => (
               <Opt
                 key={n}
                 on={f.hg === n}
-                t={t}
-                style={{
-                  flexBasis: '30%',
-                  flexGrow: 1,
-                  justifyContent: 'center',
-                }}
+                style={s.third}
                 onPress={() => {
                   if (busy()) return;
                   set({ hg: n });
                   buzz('tap');
                   later();
                 }}>
-                <Text style={[s.optT, { color: c.ink, textAlign: 'center', flex: 0 }]}>{n === 800 ? '800+' : n}</Text>
+                {(on) => (
+                  <AnswerText right={on} center>
+                    {n === 800 ? '800+' : n}
+                  </AnswerText>
+                )}
               </Opt>
             ))}
           </View>
         </>
       );
       foot = (
-        <View key="n">
+        <View key="n" style={s.footOne}>
           <Next
             label="Just show me"
             onPress={() => {
@@ -583,7 +593,7 @@ export default function Setup() {
         <>
           {/* the payoff of the first act: the number, big, with what it means under it and the comparisons low */}
           <Middle>
-            <Hours to={R.yr} color={t.text} />
+            <Hours to={R.yr} color={c.sun} />
             <T tone="muted">hours a year at your pace</T>
             <Appear delay={HOURS_VERDICT}>
               <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
@@ -600,7 +610,7 @@ export default function Setup() {
             {R.rows.map((r, j) => (
               <Appear key={r[0]} delay={HOURS_ROWS + j * 120}>
                 <View style={s.eq}>
-                  <Icon name={r[0]} size={20} color={t.text} />
+                  <Icon name={r[0]} size={20} color={c.sun} />
                   <Rich text={r[1]} st={st} style={{ flex: 1 }} />
                 </View>
               </Appear>
@@ -632,7 +642,7 @@ export default function Setup() {
                 : 'When an urge hits, tap SOS: slow breathing starts on its own, then one thing to try.'
             }
             st={st}
-            style={[s.p, s.c]}
+            style={s.p}
           />
         </Show>
       );
@@ -649,28 +659,17 @@ export default function Setup() {
       const custom = isTime(a.so) && OB_SO.indexOf(a.so as string) < 0;
       body = (
         <>
-          <Head h="What time should your screens go off at night?" sub="An hour before, a short wind-down starts." />
-          <Middle>
-            <FitArt min={0.5} drop={0.5}>
-              <ShapePic id="bed" ic="moon" t={t} size={120} />
-            </FitArt>
-          </Middle>
+          <Head h="What time should your screens go off at night?" />
+          <Middle>{null}</Middle>
+          <Say text={voice} />
           <View style={s.grid3}>
             {OB_SO.concat(custom ? [a.so as string] : []).map((x) => (
-              <Opt
-                key={x}
-                on={a.so === x}
-                t={t}
-                style={{
-                  flexBasis: '45%',
-                  flexGrow: 1,
-                  justifyContent: 'center',
-                }}
-                onPress={() => pick('so', x, true)}>
-                {a.so === x ? <Icon name="check" size={18} color={t.text} /> : null}
-                <Text style={[s.optTime, { color: c.ink }]} numberOfLines={1}>
-                  {fmtClock(x)}
-                </Text>
+              <Opt key={x} on={a.so === x} style={s.half} onPress={() => pick('so', x, true)}>
+                {(on) => (
+                  <AnswerText right={on} center>
+                    {fmtClock(x)}
+                  </AnswerText>
+                )}
               </Opt>
             ))}
           </View>
@@ -696,21 +695,22 @@ export default function Setup() {
         <>
           <Head h="Which starting point fits you best?" />
           <Middle>{null}</Middle>
-          <View style={{ gap: 10 }}>
+          <Say text={voice} />
+          <View style={{ gap: 8 }}>
             {goals.map((g) => (
-              <Opt key={g.id} on={v === g.id} t={t} onPress={() => pick('goal', g.id, false)}>
-                <Icon name={g.ic} size={24} color={t.text} />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={[s.optT, { color: c.ink }]}>{g.t}</Text>
-                  <T v="small" tone="muted">
-                    {g.s}
-                  </T>
-                  {g.id === sug ? (
-                    <T v="small" tone="mintText" style={{ fontFamily: font.bodyBold }}>
-                      Suggested for you
-                    </T>
-                  ) : null}
-                </View>
+              <Opt key={g.id} on={v === g.id} onPress={() => pick('goal', g.id, false)}>
+                {(on) => (
+                  <View style={s.optRow}>
+                    <Icon name={g.ic} size={24} color={on ? '#FFFFFF' : PAPER_INK} />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AnswerText right={on}>{g.t}</AnswerText>
+                      <Text style={[s.optSub, { color: on ? '#FFFFFF' : PAPER_INK }]}>
+                        {g.s}
+                        {g.id === sug ? <Text style={{ fontFamily: font.bodyBold }}> Suggested for you.</Text> : null}
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </Opt>
             ))}
           </View>
@@ -726,39 +726,25 @@ export default function Setup() {
       const rs = a.rs || [];
       body = (
         <>
-          <Head h="What do you want your life to look like instead?" sub="Pick what matters most. It shows up on hard nights." />
+          <Head h="What do you want your life to look like instead?" />
           <Middle>{null}</Middle>
+          <Say text={voice} />
           <View style={s.pills}>
             {obReasonOpts(a, st, f.redo).map((x) => {
               const on = rs.indexOf(x) >= 0;
               return (
-                <Pressable
+                <Answer
                   key={x}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
+                  sel={on}
+                  right={on}
                   onPress={() => {
                     if (!on && rs.length >= REASON_MAX) return;
                     setA({ rs: on ? rs.filter((y) => y !== x) : rs.concat(x) });
                     buzz('tap');
                   }}
-                  style={[
-                    s.pill,
-                    {
-                      backgroundColor: on ? t.soft : c.surface,
-                      borderColor: on ? t.ic : 'transparent',
-                    },
-                  ]}>
-                  {on ? <Icon name="check" size={16} color={t.text} /> : null}
-                  <Text
-                    style={{
-                      fontFamily: font.bodySemi,
-                      fontSize: 15,
-                      color: on ? t.text : c.ink,
-                      flexShrink: 1,
-                    }}>
-                    {x}
-                  </Text>
-                </Pressable>
+                  style={s.pill}>
+                  <AnswerText right={on}>{x}</AnswerText>
+                </Answer>
               );
             })}
           </View>
@@ -774,22 +760,21 @@ export default function Setup() {
       const cur = obThenPick(a, st, f.redo, tp);
       body = (
         <>
-          <Head h={`When ${T0[2]}, what will you do instead?`} sub="A plan made ahead is easier to follow." />
+          <Head h={`When ${T0[2]}, what will you do instead?`} />
           <Middle>{null}</Middle>
-          <View style={{ gap: 10 }}>
+          <Say text={voice} />
+          <View style={{ gap: 8 }}>
             {obThenOpts(a, st, f.redo, tp).map((x) => (
               <Opt
                 key={x}
                 on={cur === x}
-                t={t}
                 onPress={() => {
                   if (busy()) return;
                   setA({ then: x, thenT: tp, thenOwn: '' });
                   buzz('tap');
                   later();
                 }}>
-                {cur === x ? <Icon name="check" size={18} color={t.text} /> : null}
-                <Text style={[s.optT, { color: c.ink }]}>{x}</Text>
+                {(on) => <AnswerText right={on}>{x}</AnswerText>}
               </Opt>
             ))}
           </View>
@@ -827,16 +812,12 @@ export default function Setup() {
       /* the text box stays near the top, where the keyboard leaves it in sight */
       body = (
         <>
-          <Head h="Who could be your safe person?" sub="Someone calm you could tell when you slip. A first name is enough." />
+          <Head h="Who could be your safe person?" />
           <Field label="Their name" maxLength={80} placeholder="A first name" defaultValue={a.person || ''} onChangeText={(v) => setA({ person: v })} />
           <T v="small" tone="muted" style={s.c}>
             Only you see the name. Daybook never contacts anyone. You can skip this.
           </T>
-          <Middle>
-            <FitArt min={0.5} drop={0.5}>
-              <ShapePic id="message" ic="chat" t={t} size={110} />
-            </FitArt>
-          </Middle>
+          <Talk text={voice} want={want * 0.75} />
         </>
       );
       foot = nextBtn(has ? 'Next' : 'Skip', !has);
@@ -848,7 +829,7 @@ export default function Setup() {
       /* the text box near the top; the starter sentences low */
       body = (
         <>
-          <Head h="Who are you becoming?" sub="One sentence about the person you are growing into. Daybook shows it to you on hard days." />
+          <Head h="Who are you becoming?" />
           <Field
             key={'be' + (own ? 1 : 0)}
             label="Write my own"
@@ -857,25 +838,20 @@ export default function Setup() {
             defaultValue={own}
             onChangeText={(v) => setA({ be: v })}
           />
-          <Middle>
-            <FitArt min={0.5} drop={0.6}>
-              <ShapePic id="surprise" ic="star" t={t} size={96} />
-            </FitArt>
-          </Middle>
-          <View style={{ gap: 10 }}>
+          <Middle>{null}</Middle>
+          <Say text={voice} />
+          <View style={{ gap: 8 }}>
             {OB_BE.map((x) => (
               <Opt
                 key={x}
                 on={cur === x}
-                t={t}
                 onPress={() => {
                   if (busy()) return;
                   setA({ be: x });
                   buzz('tap');
                   later();
                 }}>
-                {cur === x ? <Icon name="check" size={18} color={t.text} /> : null}
-                <Text style={[s.optT, { color: c.ink }]}>{x}</Text>
+                {(on) => <AnswerText right={on}>{x}</AnswerText>}
               </Opt>
             ))}
           </View>
@@ -899,14 +875,15 @@ export default function Setup() {
         body = (
           <>
             <Head h="Here is your plan." />
+            {SHORT ? null : <Bubble text={voice || ''} />}
             <Middle>
-              {/* the flame first, big and alive, with Day 1 beside it; then the plan builds itself, row by row, top to bottom.
-                  On a short phone the flame gives up room before Hold to commit leaves the screen. */}
+              {/* the flame first, big and alive, with Day 1 beside it; then the plan builds itself, row by row, top to bottom. When the
+                  hold is done the flame leaps. On a short phone the flame gives up room before Hold to commit leaves the screen. */}
               <FitArt min={SHORT ? 0.7 : 0.9}>
                 <Appear by={12} delay={PLAN_AT} duration={320}>
                   <View style={s.day1}>
-                    <PlanFlame lit={lit} size={SHORT ? 100 : 132} />
-                    <View style={{ gap: 2 }}>
+                    <FlameSlot size={SHORT ? 150 : 200} min={SHORT ? 96 : 120} style={s.planFlame} />
+                    <View style={{ gap: 2, flex: 1 }} accessible accessibilityLabel={lit ? 'Your flame, lit. Day 1.' : undefined}>
                       <T v="label" tone="muted">
                         Day 1
                       </T>
@@ -944,7 +921,7 @@ export default function Setup() {
           </>
         );
         foot = (
-          <View key="h">
+          <View key="h" style={s.footOne}>
             <Appear delay={PLAN_AT + planRows * PLAN_STEP + 150}>
               <Hold onDone={commit} pledge={SHORT ? PLEDGE : undefined} />
             </Appear>
@@ -955,9 +932,8 @@ export default function Setup() {
         body = !ch.length ? (
           <>
             <Head h="Your plan already matches." />
-            <Middle>
-              <T style={[s.p, s.c]}>Nothing in your answers changes your goal, reasons, or plan. Your self-check is saved, so next time you can compare.</T>
-            </Middle>
+            <T style={[s.p, s.c]}>Nothing in your answers changes your goal, reasons, or plan. Your self-check is saved, so next time you can compare.</T>
+            <Talk text={null} want={want} />
           </>
         ) : (
           <>
@@ -1009,13 +985,11 @@ export default function Setup() {
                 })}
               </View>
             </Middle>
-            <T v="small" tone="muted" style={s.c}>
-              Your self-check answers are saved either way, so next time you can compare.
-            </T>
+            <Say text="Your self-check answers are saved either way, so next time you can compare." />
           </>
         );
         foot = (
-          <View key="s">
+          <View key="s" style={s.footOne}>
             <Next label={ch.length ? 'Save what is ticked' : 'Finish'} noIcon onPress={save} />
           </View>
         );
@@ -1048,7 +1022,7 @@ export default function Setup() {
       };
       body = (
         <>
-          <Head h="When should Daybook check in with you?" sub="One short reminder a day, so the check-in becomes part of your evening." />
+          <Head h="When should Daybook check in with you?" />
           <Middle>
             <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
               <Text style={[s.remBig, { color: c.ink }]}>{fmtClock(remAt)}</Text>
@@ -1068,20 +1042,22 @@ export default function Setup() {
               </View>
             </View>
           </Middle>
+          <Say text={voice} />
           <View style={s.grid3}>
             {OB_REMIND.map((x) => (
               <Opt
                 key={x}
                 on={remAt === x}
-                t={t}
-                style={{ flexBasis: '30%', flexGrow: 1, justifyContent: 'center', paddingHorizontal: 8 }}
+                style={s.third}
                 onPress={() => {
                   setRemAt(x);
                   buzz('tap');
                 }}>
-                <Text style={[s.optTime, { color: c.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                  {fmtClock(x)}
-                </Text>
+                {(on) => (
+                  <AnswerText right={on} center>
+                    {fmtClock(x)}
+                  </AnswerText>
+                )}
               </Opt>
             ))}
           </View>
@@ -1091,7 +1067,7 @@ export default function Setup() {
         </>
       );
       foot = (
-        <View key="f" style={{ gap: 6 }}>
+        <View key="f" style={[s.footOne, { gap: 6 }]}>
           <Next key="n" label="Remind me" onPress={yes} off={false} />
           <Ghost label="Not now" onPress={notNow} />
         </View>
@@ -1104,11 +1080,8 @@ export default function Setup() {
       body = (
         <>
           <Head h="Your plan is ready. Make it yours." />
-          <Middle>
-            <FitArt min={0.6}>
-              <FlameMedallion level={2} size={200} label="Your flame" />
-            </FitArt>
-          </Middle>
+          {/* the flame has just grown a level from the plan: it says so, big */}
+          <Talk text={voice} want={want} />
           <View style={{ gap: 8 }}>
             {[
               'Every lesson open, not just the first ' + LEARN_FREE,
@@ -1124,7 +1097,7 @@ export default function Setup() {
         </>
       );
       foot = (
-        <View key="f" style={{ gap: 4 }}>
+        <View key="f" style={[s.footOne, { gap: 4 }]}>
           <Next label="Make my free account" noIcon onPress={() => !busy() && sync.signInNow({ why: 'setup' })} off={false} />
           <TextLink
             label="Keep it on this phone"
@@ -1150,14 +1123,12 @@ export default function Setup() {
                 ' Your answers are kept, so the next walk-through can show how things moved.'
               }
             />
-            <Middle>
-              <FlameMedallion level={flameLevel} size={200} label="Your flame" />
-            </Middle>
+            <Talk text={null} want={want} />
             <Route label="Read my plan" onPress={() => !busy() && router.replace('/plan')} />
           </>
         );
         foot = (
-          <View key="d">
+          <View key="d" style={s.footOne}>
             <Next label="Done" noIcon onPress={() => !busy() && close()} />
           </View>
         );
@@ -1175,17 +1146,26 @@ export default function Setup() {
   }
 
   const fin = pg.k === 'done';
-  /* one bar for the whole setup; its title is the act, and a screen reader hears the page number */
-  const frac = fin ? 1 : (i + 1) / P.length;
+  /* the line at the top: one dash for each of the three acts, the one we are in filling as it goes; a screen reader hears the act and the page */
+  const act = Math.max(0, OB_SECS.indexOf(sec));
+  const inAct = P.filter((x) => x.s === sec[0]);
+  const actFrac = (inAct.indexOf(pg) + 1) / inAct.length;
   const barLabel = fin ? 'Setup complete' : (f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + sec[1] + ': page ' + (i + 1) + ' of ' + P.length;
   return (
-    <SceneFrame
-      title={sec[1]}
-      sky={sec[2] as Sky}
-      bar={{ frac, label: barLabel, color: fin ? c.mint : t.ic }}
-      bare
-      onBack={noBack ? null : () => !f.saved && go(-1)}
+    <Shell
+      look={look}
+      level={flameLevel}
+      /* the violet card is the number alone, as in a lesson */
+      flameOn={kind !== 'violet'}
+      pulse={pulse}
+      inset={inset}
+      scroll={scroll}
+      fit={fit}
+      bodyKey={pg.id}
+      prog={<Prog total={OB_SECS.length} i={act} frac={actFrac} all={fin} look={look} label={barLabel} />}
+      onBack={noBack ? undefined : () => !f.saved && go(-1)}
       onClose={exit}
+      foot={foot}
       topRight={
         /* help is one tap away on every page; the setup waits underneath, where it was left */
         <Pressable
@@ -1197,14 +1177,35 @@ export default function Setup() {
           <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
         </Pressable>
       }>
-      <Stage key={pg.id} dir={dir}>
-        {/* every page fills the width, and its Dock sits at the bottom */}
-        <View style={[s.page, SHORT && pg.k === 'review' && s.pageShort]}>
-          {body}
-          {foot ? <Dock>{foot}</Dock> : null}
+      {body}
+    </Shell>
+  );
+}
+
+/** markdown bold off, for words the flame says in its bubble */
+const plain = (x: string) => x.replace(/\*\*/g, '');
+
+/** the flame big in the open middle, saying something above it (or nothing) */
+function Talk({ text, want }: { text: string | null; want: number }) {
+  return (
+    <>
+      {text ? <Bubble text={text} /> : null}
+      <FlameSlot size={want} min={SHORT ? 110 : 140} />
+    </>
+  );
+}
+/** the flame beside what it says, low on the page above the answers: the lesson's flame once an answer is picked. With no words, it stands
+    on its own at the right. */
+function Say({ text }: { text: string | null }) {
+  return (
+    <View style={[s.say, !text && { minHeight: BESIDE * 0.8 }]}>
+      {text ? (
+        <View style={{ marginRight: BESIDE - 8 }}>
+          <Bubble text={text} tail="right" />
         </View>
-      </Stage>
-    </SceneFrame>
+      ) : null}
+      <FlameSlot size={BESIDE * 1.9} min={0} side style={StyleSheet.absoluteFill} />
+    </View>
   );
 }
 
@@ -1301,10 +1302,7 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
   }, [done, sec, onDone]);
   return (
     <>
-      <Head
-        h={done ? 'You just rode one out.' : 'Try it now. Thirty seconds of slow breathing.'}
-        sub={done ? 'That is the whole skill. SOS does this with you, any time.' : 'This is what SOS starts with. Breathe with the shape.'}
-      />
+      <Head h={done ? 'You just rode one out.' : 'Try it now. Thirty seconds of slow breathing.'} />
       <Middle>
         <ToolTimer
           p={gone / BREATHE_SECS}
@@ -1316,6 +1314,7 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
           ink={c.accentText}
         />
       </Middle>
+      <Say text={done ? 'That is the whole skill. SOS does this with you, any time.' : obSay('breathe')} />
     </>
   );
 }
@@ -1370,13 +1369,14 @@ function Show({
 }) {
   return (
     <>
-      <Head h={h} sub={line ? <Rich text={line} st={st} style={[s.p, s.c]} /> : undefined} />
+      <Head h={h} />
       {children}
       <Middle>
         <FitArt min={0.5} stretch>
           {art}
         </FitArt>
       </Middle>
+      <Say text={line ? plain(line) : null} />
       {more ? <More more={more} /> : null}
     </>
   );
@@ -1388,16 +1388,16 @@ function Head({ h, sub, small }: { h: string; sub?: ReactNode; small?: boolean }
   return (
     <View style={s.head}>
       {small ? (
-        <T tone="muted" style={[s.c, s.p]} accessibilityRole="header">
+        <T tone="muted" style={s.p} accessibilityRole="header">
           {h}
         </T>
       ) : (
-        <T v="title" style={[s.c, SHORT ? s.titleShort : s.title26]} accessibilityRole="header">
+        <T v="title" style={SHORT ? s.titleShort : s.title26} accessibilityRole="header">
           {h}
         </T>
       )}
       {typeof sub === 'string' ? (
-        <T tone="muted" style={[s.c, s.p]}>
+        <T tone="muted" style={s.p}>
           {sub}
         </T>
       ) : (
@@ -1410,25 +1410,9 @@ function Head({ h, sub, small }: { h: string; sub?: ReactNode; small?: boolean }
 function ShapePic({ id, ic, t, size }: { id: string; ic: string; t: Tone; size: number }) {
   return <ToolShape id={id} ic={ic} size={size} iconSize={Math.round(size * 0.42)} color={t.ic} ink={t.ink} />;
 }
-/* which shape each one-tap page wears, and each act */
-const PAGE_SHAPE: Record<string, string> = { years: 'pause', faith: 'breathe', tried: 'surprise' };
+/* which shape each act wears */
 const ACT_SHAPE: Record<string, string> = { you: 'curious', hour: 'breathe', plan: 'surprise' };
 const ACT_TIME: Record<string, string> = { you: 'about 3 minutes', hour: 'about 2 minutes', plan: 'about 3 minutes' };
-/* the open middle of a one-tap page: the flame (alive) on the first question, else a shape with the page's icon */
-function QArt({ pg, t, level }: { pg: ObPage; t: Tone; level: number }) {
-  if (!pg.art) return <Middle>{null}</Middle>;
-  return (
-    <Middle>
-      <FitArt min={0.5} drop={0.5}>
-        {pg.art === 'flame' ? (
-          <FlameMedallion level={level} size={170} label="Your flame" />
-        ) : (
-          <ShapePic id={PAGE_SHAPE[pg.id] || 'pause'} ic={pg.art} t={t} size={110} />
-        )}
-      </FitArt>
-    </Middle>
-  );
-}
 /* how often, as a circle: empty for Never, half for Occasionally, full for Very often */
 function FreqDot({ n, col }: { n: number; col: string }) {
   return (
@@ -1438,91 +1422,29 @@ function FreqDot({ n, col }: { n: number; col: string }) {
     </Svg>
   );
 }
-function Opt({ on, t, onPress, children, style }: { on: boolean; t: Tone; onPress: () => void; children: ReactNode; style?: object }) {
-  const c = useTheme();
+/** an answer on paper, as in a lesson: picked, it turns green. children: what it says, given whether it is picked */
+function Opt({ on, onPress, children, style }: { on: boolean; onPress: () => void; children: (on: boolean) => ReactNode; style?: object }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.opt,
-        {
-          borderColor: on ? t.ic : 'transparent',
-          backgroundColor: on ? t.soft : c.surface,
-          shadowColor: c.lip,
-          transform: [{ translateY: pressed ? 3 : 0 }],
-        },
-        style,
-      ]}>
-      {children}
-    </Pressable>
+    <Answer sel={on} right={on} onPress={onPress} style={{ ...s.optIn, ...style }}>
+      {children(on)}
+    </Answer>
   );
 }
-function IconTiles({
-  list,
-  cols,
-  cur,
-  t,
-  onPick,
-  years,
-}: {
-  list: ObOpt[];
-  cols: number;
-  cur: string | string[] | undefined;
-  t: Tone;
-  onPick: (v: string) => void;
-  years?: boolean;
-}) {
-  const c = useTheme();
-  const on = (x: string) => (Array.isArray(cur) ? cur.indexOf(x) >= 0 : cur === x);
-  /* two across: tall tiles, the icon over the words, as in the legacy setup */
-  const tall = cols === 2 && !years;
+/** the tiles of a question with more than one answer: paper, two across, the icon over the words. Picked, a tile turns green. */
+function IconTiles({ list, cols, cur, onPick }: { list: ObOpt[]; cols: number; cur: string[] | undefined; onPick: (v: string) => void }) {
+  const on = (x: string) => !!cur && cur.indexOf(x) >= 0;
+  const tall = cols === 2;
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-      {list.map((it, j) => {
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {list.map((it) => {
         const sel = on(it[0]);
         return (
-          <Pressable
-            key={it[0]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: sel }}
-            onPress={() => onPick(it[0])}
-            style={({ pressed }) => [
-              s.tile,
-              tall ? s.tall : null,
-              cols === 2 ? { flexBasis: '46%', flexGrow: 1 } : { flexBasis: '100%' },
-              {
-                borderColor: sel ? t.ic : 'transparent',
-                backgroundColor: sel ? t.soft : c.surface,
-                shadowColor: c.lip,
-                transform: [{ translateY: pressed ? 3 : 0 }],
-              },
-            ]}>
-            {years ? (
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
-                {[0, 1, 2, 3].map((q) => (
-                  <View
-                    key={q}
-                    style={{
-                      width: 6,
-                      height: 8 + q * 5,
-                      borderRadius: 2,
-                      backgroundColor: q <= j ? t.ic : c.line,
-                    }}
-                  />
-                ))}
-              </View>
-            ) : typeof it[2] === 'string' ? (
-              <Icon name={it[2]} size={24} color={t.text} />
-            ) : null}
-            <Text style={[s.optT, tall && s.tallT, { color: sel ? t.text : c.ink }]}>{it[1]}</Text>
-            {sel ? (
-              <View style={tall ? [s.tick, { backgroundColor: t.ic }] : null}>
-                <Icon name="check" size={tall ? 13 : 18} color={tall ? t.ink : t.text} />
-              </View>
-            ) : null}
-          </Pressable>
+          <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={tall ? s.tall : s.wide}>
+            {typeof it[2] === 'string' ? <Icon name={it[2]} size={24} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
+            <AnswerText right={sel} center={tall}>
+              {it[1]}
+            </AnswerText>
+          </Answer>
         );
       })}
     </View>
@@ -1531,8 +1453,8 @@ function IconTiles({
 function Soft({ icon, text }: { icon: string; text: string }) {
   const c = useTheme();
   return (
-    <View style={[s.soft, { backgroundColor: c.mintSoft }]}>
-      <Icon name={icon} size={20} color={c.mintText} />
+    <View style={[s.soft, { backgroundColor: c.surface }]}>
+      <Icon name={icon} size={20} color={c.ink} />
       <Rich text={text} st={null} style={{ flex: 1 }} />
     </View>
   );
@@ -1620,27 +1542,6 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
 const PLAN_AT = 200;
 const PLEDGE = 'I will log honestly, slips included.';
 const PLAN_STEP = 90;
-/** the flame on the review page: big and alive from the first moment, the same one as on the first page. It is a quiet flame
-    until the hold is done; then it pops on a spring and one slow bloom of light goes through it. With Reduce Motion on it is still. */
-function PlanFlame({ lit, size }: { lit: boolean; size: number }) {
-  const reduce = useReducedMotion();
-  const pop = useRef(new Animated.Value(1)).current;
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (!lit || reduce) return pop.setValue(1);
-    pop.setValue(0.82);
-    Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
-  }, [lit, reduce, pop]);
-  return (
-    <Animated.View style={{ transform: [{ scale: pop }] }}>
-      <FlameMedallion level={1} size={size} pulse={lit ? 1 : 0} label={lit ? 'Your flame, lit' : 'Your flame'} />
-    </Animated.View>
-  );
-}
 /** "Level 1 → Level 2": the bar fills over about a second as the page shows (Reduce Motion: full at once). It is only a picture of
     what setup already gives (SETUP_PTS points, which is the first level up: core levels.ts), so it is full. */
 function LevelBar() {
@@ -1909,22 +1810,21 @@ function Cheer() {
       <Confetti key={rain} big rain />
       <Head h={W.h} sub={W.sub} />
       {step === 'ask' ? (
-        <T v="label" style={[s.c, s.cheerQ]} accessibilityRole="header">
+        <T v="label" style={s.cheerQ} accessibilityRole="header">
           {W.q}
         </T>
       ) : step === 'no' ? (
         <Appear>
           <View style={{ gap: 6, alignSelf: 'stretch' }}>
-            <T v="label" style={[s.c, s.cheerQ]} accessibilityRole="header" accessibilityLiveRegion="polite">
+            <T v="label" style={s.cheerQ} accessibilityRole="header" accessibilityLiveRegion="polite">
               {W.noH}
             </T>
-            <T tone="muted" style={s.c}>
-              {W.noLine}
-            </T>
+            <T tone="muted">{W.noLine}</T>
           </View>
         </Appear>
       ) : null}
-      <Finish level={2} alive always size={SHORT ? 150 : 196} zoom={2.6} tone="sun" />
+      {/* the setup's one flame, at its biggest: it has just grown a level */}
+      <FlameSlot size={SHORT ? 260 : 340} min={SHORT ? 140 : 180} />
       <Appear delay={500}>
         <LevelBar />
       </Appear>
@@ -1973,6 +1873,15 @@ const s = StyleSheet.create({
   lockB: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
   lockW: { fontFamily: font.body, fontSize: 12, lineHeight: 16, alignSelf: 'flex-start' },
   c: { textAlign: 'center' },
+  footOne: { flex: 1 },
+  say: { alignSelf: 'stretch', justifyContent: 'center', minHeight: BESIDE },
+  optIn: { paddingLeft: 16, paddingRight: 38 },
+  optRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 22 },
+  optSub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
+  third: { flexBasis: '30%', flexGrow: 1, alignItems: 'center', paddingLeft: 8, paddingRight: 8 },
+  half: { flexBasis: '45%', flexGrow: 1, alignItems: 'center', paddingLeft: 8, paddingRight: 8 },
+  wide: { flexBasis: '100%', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  planFlame: { flexGrow: 0, width: SHORT ? 96 : 120, height: SHORT ? 96 : 120 },
   page: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   /* the review page on a short phone: the plan, the flame and Hold to commit all on one screen */
   pageShort: { gap: 8 },
@@ -1999,18 +1908,7 @@ const s = StyleSheet.create({
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: 16 },
   p: { fontSize: SHORT ? 15 : 17, lineHeight: SHORT ? 21 : 24 },
   quoteT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center', paddingHorizontal: 8 },
-  freq: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderRadius: 20,
-    borderWidth: 2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
+  freq: { flex: 1, alignItems: 'center', gap: 8, paddingVertical: 12, paddingLeft: 4, paddingRight: 4 },
   freqT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   opt: {
     flexDirection: 'row',
@@ -2041,7 +1939,7 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 0,
   },
-  tall: { flexDirection: 'column', justifyContent: 'center', gap: 8, minHeight: 88, paddingHorizontal: 8 },
+  tall: { flexBasis: '46%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 88, paddingLeft: 8, paddingRight: 8 },
   tallT: { flex: 0, textAlign: 'center', fontSize: 15, lineHeight: 20 },
   tick: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

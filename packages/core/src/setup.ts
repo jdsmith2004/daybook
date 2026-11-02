@@ -690,5 +690,68 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
   return x ? 'Last time: ' + x[1] : '';
 };
 
+/* ---------- what the flame says ---------- */
+/** The flame coaches the person through the setup, as it does in a lesson (the owner, November 2, 2026). It speaks as "I", sparingly,
+    in a cream bubble. On most pages it says what the small line under the question used to say, so nothing new is asked of anyone;
+    on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
+const OB_SAY: Record<string, string> = {
+  hello: 'I am your flame. I grow every time you show up.',
+  how: 'I will be with you through all three.',
+  aim: 'Pick the closest one. Whatever you choose, I am with you.',
+  years: 'Your best guess is fine.',
+  freq: 'Rough is fine. Only you see this.',
+  mins: 'Count from when you start until you stop.',
+  faith: 'It only changes which lessons come up.',
+  b0: 'Only you see your answers. A quick, tested check.',
+  costs: 'Tap all that apply.',
+  guess: 'Guess first. Then see your number.',
+  when: 'Tap all that apply. I will get ready for these.',
+  breathe: 'Breathe with me. This is what SOS starts with.',
+  person: 'Someone calm you could tell when you slip. A first name is enough.',
+  tried: 'There is no wrong answer here.',
+  goal: 'I picked the one that fits your answers. Any of them works.',
+  reasons: 'Pick what matters most. I will show them to you on hard nights.',
+  ifthen: 'A plan made ahead is easier to follow.',
+  so: 'An hour before, a short wind-down starts.',
+  becoming: 'One sentence about who you are growing into. I will show it to you on hard days.',
+  review: 'This plan is yours. Hold, and I will light up.',
+  remind: 'One short reminder a day, so the check-in becomes part of your evening.',
+  account: 'Look at me now. You did that.',
+};
+/** a walk-through: the flame has grown, and says so */
+const OB_SAY_REDO: Record<string, string> = {
+  hello: 'Look how far I have come with you. Nothing changes until the last page.',
+};
+/** what the flame says first on a page, or null */
+export const obSay = (id: string, redo = false): string | null => (redo && OB_SAY_REDO[id]) || OB_SAY[id] || null;
+
+/** the flame's answer to a one-tap pick, by the question's key and the answer's id */
+export const OB_REPLY: Record<string, Record<string, string>> = {
+  aim: {
+    quit: 'Quit for good. Then that is what we build toward, one day at a time.',
+    less: 'Less is a real start. Every hour you take back counts.',
+    nights: 'Nights are where it pulls hardest for most people. We start there.',
+    learn: 'Good. Knowing your pattern is how you get ahead of it.',
+  },
+  years: {
+    y0: 'You are catching it early. That is a real head start.',
+    y1: 'A few years makes a habit, and habits change.',
+    y2: 'That is a long time to carry this. You are here now, and that matters.',
+    y3: 'All these years, and you are still fighting for yourself. That says a lot about you.',
+  },
+  faith: {
+    big: 'Then your faith will be part of this. Some lessons are written for it.',
+    some: 'I will bring it in now and then.',
+    no: 'That is fine. The lessons stay practical.',
+  },
+  tried: {
+    t0: 'A first try, with a plan. That is a strong place to start.',
+    t1: 'Each try taught you something. This time you have me.',
+    t2: 'You keep coming back. That is the part that wins in the end.',
+  },
+};
+/** the flame's answer to a pick, or null */
+export const obReply = (key: string, id: string | null | undefined): string | null => (id && OB_REPLY[key]?.[id]) || null;
+
 /* the lists the pages use, re-exported here so the app takes everything about the setup from one place */
 export { OB_AIM, OB_COST, OB_FAITH, OB_FREQ, OB_MINS, OB_TRIED, OB_WHEN, OB_YEARS };

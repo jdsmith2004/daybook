@@ -1,6 +1,6 @@
 # What is planned next
 
-## Every switch in Change shows on Your day (the owner, November 2, 2026; branch `claude/routine-stops`, not merged)
+## Every switch in Change shows on Your day (the owner, November 2, 2026; merged November 2, 2026, after the simulator look)
 
 The owner: "it asks if i want calm move on or off but when i switch it nothing happens", and for the journal: "it should be a toggle
 then it would be a box on the home screen i could press". Calm move and Reached out were parts of the routine (daily wins) with no stop,
@@ -15,7 +15,7 @@ never the big card, a done one stays when switched off, and on the night of a sl
 **Medium, done:** in `your-day.tsx`, Calm move opens Learn on the tools, Reach out marks today with a tap (`reachMark`; done, it
 says Reached out and stays), Journal opens the journal, and `snap.journal` is passed to `stopTiles`. Journal has the heart icon. The
 line measures its rows again when its stops change (on the web a row that only moves did not report its new place). The Change sheet
-and Settings list Journal from `ROUTINE` with no change. Waiting: the owner's look on the simulator, then merge.
+and Settings list Journal from `ROUTINE` with no change. Merged once the owner had seen it on the simulator.
 
 ## Ideas and feedback, straight to the owner's inbox (the owner, November 2, 2026; merged November 2, 2026 on the owner's word)
 

@@ -19,7 +19,9 @@ to the pulse function, which keeps each note 180 days; the owner reads them on S
   people who feel heard rate and tip).
 - At most 30 emails a day (`DAILY_MAIL`); past that a note is still kept and shows on Stats. The email holds only the words,
   the reply address if typed, the platform and the app version.
-- The sheet: a warm invitation in the owner's voice, one big box, an optional email to hear back, Send.
+- The page, like a lesson (the owner's second ask, the same day): a full-screen page on the warm sun sky, the box near the
+  top, and the person's own flame below it saying the invitation in a bubble ("the person who made me" will do their very
+  best), leaping when the note is sent; an optional email to hear back; Send low.
 - An Ideas pill at the top left of Today's sky, in the same glass as Support at the top right, always shown.
 - No weekly review digest for now. Reviews are read in App Store Connect, Apps, Daybook, Ratings and Reviews (or the App
   Store Connect app), and answered with Reply there.

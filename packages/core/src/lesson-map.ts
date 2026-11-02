@@ -45,6 +45,8 @@ export interface MapLand {
   /** the center of the picture, and the foot of the trees */
   pic: { x: number; y: number };
   tree: { x: number; y: number };
+  /** where a third stone stands, or would stand in a shorter land (the flowers on the far side) */
+  third: number;
 }
 export interface LessonMap {
   lands: MapLand[];
@@ -101,7 +103,7 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
     const t = (low ? [0, 1] : [3, 4, 2]).find((a) => a < slots && (!n || a !== n.j))!;
     const tree = { x: right ? 334 : 60, y: slot(t) + 34 };
     const fin = stones.filter((s) => s.state === 'done').length;
-    return { u, k, top, bottom: y, right, stones, done: fin, ahead: !fin && !n, pic, tree };
+    return { u, k, top, bottom: y, right, stones, done: fin, ahead: !fin && !n, pic, tree, third: slot(2) };
   });
   const height = y + END_ROOM;
   const end = { x: MAP_W / 2, y: height - 90 };

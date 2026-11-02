@@ -145,7 +145,7 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
   x += tree(l.tree.x, l.tree.y, crown, o.dark ? mix(land.hill, '#000000', 0.3) : '#C49A70');
   const fx = right ? l.pic.x - 64 : l.pic.x + 34;
   const ex = right ? 26 : 336;
-  const ey = l.stones[2].y + 26;
+  const ey = l.third + 26;
   x += o.dark ? fireflies(fx, l.pic.y + 56, id) + fireflies(ex - 4, ey, id) : flowers(fx, l.pic.y + 48, stem) + flowers(ex, ey, stem);
   if (last)
     x += `<path transform="translate(${o.x0} ${l.bottom - 30}) scale(${w / MAP_W} 1)" d="M0 40C80 10 160 14 230 30S350 36 390 22L390 400L0 400Z" fill="${o.bg}"/>`;

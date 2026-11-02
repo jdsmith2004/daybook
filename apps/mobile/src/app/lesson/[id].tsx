@@ -943,18 +943,18 @@ function Prog({ total, i, all, look }: { total: number; i: number; all?: boolean
     </View>
   );
 }
-/** one answer to a step's deed: a plain choice, neither one marked as the right one */
+/** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
 function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
-  const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [s.len, { backgroundColor: c.accentSoft, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: c.ink }}>{title}</Text>
-        <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: c.ink }}>{sub}</Text>
-      </View>
+      style={({ pressed }) => [
+        s.opt,
+        { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1, borderColor: 'transparent', gap: 2, transform: [{ translateY: pressed ? 2 : 0 }] },
+      ]}>
+      <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: PAPER_INK }}>{title}</Text>
+      <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{sub}</Text>
     </Pressable>
   );
 }

@@ -51,7 +51,7 @@ export default function WhatsNew() {
       </View>
       <View style={s.list}>
         {items.map((x, i) => (
-          <Appear key={x.t} delay={500 + i * 160} by={12}>
+          <Appear key={x.t} delay={500 + i * 160} by={12} style={s.wide}>
             <View style={s.row} accessible accessibilityLabel={x.t + '. ' + x.line}>
               <View style={s.art}>
                 <ItemArt k={x.art ?? 'flame'} />
@@ -132,7 +132,8 @@ function ItemArt({ k }: { k: NewArt }) {
 const s = StyleSheet.create({
   say: { maxWidth: 300 },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
-  list: { gap: 16, paddingTop: 8, paddingBottom: 8 },
+  list: { alignSelf: 'stretch', gap: 16, paddingTop: 8, paddingBottom: 8 },
+  wide: { alignSelf: 'stretch' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   art: { width: 40, paddingTop: 2 },
   words: { flex: 1, gap: 2 },

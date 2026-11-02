@@ -51,7 +51,6 @@ import { ToolGrid } from '@/components/tool-grid';
 import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
-import { SetupFirst } from '@/components/welcome';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -147,13 +146,8 @@ export default function Learn() {
     if (aimed.current) setTimeout(() => aim(true), 300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.walked]);
-  if (!snap.settings)
-    return (
-      <SetupFirst
-        title="Learn"
-        line="Short lessons wait here, one a day. Setup asks a few things that decide which ones come up first, then lesson 1 is ready."
-      />
-    );
+  /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
+  if (!snap.settings) return null;
   const land = view.focus >= 0 ? m.lands[view.focus] : null;
   return (
     <Screen

@@ -201,9 +201,11 @@ export default function Setup() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  /* the place is kept as it changes, not only on the X: a back gesture or the browser's Back leaves without it, and setup must pick up there */
   useEffect(() => {
+    setupKeep.flow = !f.saved && pg.k !== 'done' ? { ...f, i } : null;
     if (!f.redo) storeSetup(f.saved || pg.k === 'done' ? null : f);
-  }, [f, pg.k]);
+  }, [f, i, pg.k]);
   /* the anonymous counts: how far a new person got (core pulse.ts), a basic count sent without asking */
   useEffect(() => {
     if (!f.redo) countSetup(OB_PAGES.indexOf(pg), pg.k === 'done');

@@ -52,7 +52,8 @@ export function Shell({
   level: number;
   flameOn: boolean;
   pulse: number;
-  onClose: () => void;
+  /** the X; with none, the page has no X (the page before setup, which is where the X would go back to) */
+  onClose?: () => void;
   onBack?: () => void;
   prog?: ReactNode;
   /** beside the X: the SOS pill in setup */
@@ -83,9 +84,11 @@ export function Shell({
               ) : null}
               <View style={{ flex: 1 }}>{prog}</View>
               {topRight}
-              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn }]}>
-                <Icon name="x" color={c.ink} />
-              </Pressable>
+              {onClose ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={[s.x, { backgroundColor: c.scBtn }]}>
+                  <Icon name="x" color={c.ink} />
+                </Pressable>
+              ) : null}
             </View>
             <ScrollView
               ref={scroll}

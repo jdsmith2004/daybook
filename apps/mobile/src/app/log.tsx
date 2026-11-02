@@ -282,7 +282,8 @@ export default function Log() {
       return;
     }
     const id = r.id;
-    update((s) => ({ ...s, settings: r.st, days: evId ? patchEvent(s.days, date, evId, { trigger: id }) : s.days }));
+    /* before setup the list is not kept, as apply does: a slip logged then must not make the person look set up */
+    update((s) => (s.settings ? { ...s, settings: r.st, days: evId ? patchEvent(s.days, date, evId, { trigger: id }) : s.days } : s));
     setAdding(false);
     buzz('tap');
     go('slPlan');

@@ -14,7 +14,6 @@ import { Screen } from '@/components/screen';
 import { SettingsSections } from '@/components/settings-sections';
 import { TipRow } from '@/components/support';
 import { Icon, T } from '@/components/ui';
-import { SetupFirst } from '@/components/welcome';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 
@@ -24,7 +23,8 @@ export default function More() {
   const scroll = useRef<ScrollViewInstance>(null);
   const { width } = useWindowDimensions();
   const st = snap.settings;
-  if (!st) return <SetupFirst title="More" line="Your plan, your badges and settings live here once setup has built your plan." />;
+  /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
+  if (!st) return null;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
   const shown = shownBadges(g.badges, st);
   const got = shown.filter((b) => badgeDone(b, st)).length;

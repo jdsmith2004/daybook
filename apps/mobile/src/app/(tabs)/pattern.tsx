@@ -68,7 +68,6 @@ import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
-import { SetupFirst } from '@/components/welcome';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -89,7 +88,8 @@ export default function Pattern() {
   const scroll = useRef<ScrollViewInstance>(null);
   const inset = useSafeAreaInsets();
   const [paneY, setPaneY] = useState(0);
-  if (!st) return <SetupFirst title="Pattern" line="Everything you log shows up here by itself: urges ridden out, slips, and how each day went." />;
+  /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
+  if (!st) return null;
   const cw = Math.max(0, weekOf(tk, st));
   return (
     <Screen title="Pattern" scrollRef={scroll}>

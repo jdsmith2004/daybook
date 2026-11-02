@@ -1,43 +1,38 @@
-/* Before setup: the setup opens by itself, and it is hard to miss. Closing it shows this page, which only goes back into it
-   (or signs a returning person in). The setup opens again whenever this page comes back into view after something else was
-   on top (SOS, a tool, a log), and whenever Daybook comes back from the background. Only the setup's own X keeps this page
-   up, until the next time. Every question in the setup can be skipped, so the way through is never blocked.
-   Ported from the legacy viewWelcome. */
+/* Before setup: the whole app is this one page (the owner, November 2, 2026: until setup is done, nothing else works as normal). There
+   are no tabs; every other page leads back here (app/_layout.tsx, SetupGate). It is the setup's own sky at night with the flame, big, saying
+   that the plan is a few minutes away, one button back into the setup, and SOS, which always works (CLAUDE.md, never lock care). The setup
+   opens by itself whenever this page comes into view after something else was on top (SOS, a tool, a log) and whenever Daybook comes back
+   from the background. Only the setup's own X keeps this page up, until the next time. Every question in the setup can be skipped, so
+   the way through is never blocked. A returning person signs in or brings back a backup from here. Ported from the legacy viewWelcome. */
 import { defaultSettings, readBackup, restoreBackup, toRecords, type RecordId } from '@daybook/core';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { AppState, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Link } from '@/components/choices';
-import { FlameMedallion } from '@/components/flame-medallion';
-import { Screen } from '@/components/screen';
+import { SHORT, useFitRoom } from '@/components/fit';
+import { HelpLine } from '@/components/help-line';
+import { Bubble, FlameSlot } from '@/components/lesson-flame';
+import { lessonText, Quiet, Shell } from '@/components/lesson-parts';
+import { Next } from '@/components/lx';
+import { SosPill } from '@/components/sos-pill';
 import { ErasedNote } from '@/components/sync-card';
-import { Button, Card, T } from '@/components/ui';
+import { T } from '@/components/ui';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
+import { lessonLook } from '@/lib/lesson-look';
 import { setupKeep } from '@/lib/setup-keep';
-import { HelpLine } from '@/components/help-line';
-import { restoredWords, WORDS } from '@/lib/words';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
-
-/* Learn, Journal and More before setup: what setup opens here, the way into it, and that SOS works now */
-export function SetupFirst({ title, line }: { title: string; line: string }) {
-  return (
-    <Screen title={title}>
-      <Card>
-        <T style={{ fontSize: 17, lineHeight: 24 }}>{line}</T>
-        <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
-        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-          SOS works now, with no setup.
-        </T>
-      </Card>
-    </Screen>
-  );
-}
+import { useTheme } from '@/lib/theme';
+import { restoredWords, WORDS } from '@/lib/words';
 
 export function Welcome() {
-  const { tk, replace, say, snap, current } = useStore();
+  const { tk, replace, say, current } = useStore();
+  const base = useTheme();
+  const inset = useSafeAreaInsets();
+  const scroll = useRef<ScrollViewInstance>(null);
+  const fit = useFitRoom();
   const [busy, setBusy] = useState(false);
   const sync = useSync();
   const restore = async () => {
@@ -65,8 +60,8 @@ export function Welcome() {
       setBusy(false);
     }
   };
-  /* Someone signed in (who just deleted everything) stays on this page, where they can bring their log back. Everyone else
-     sees the setup whenever this page comes into view, unless the setup itself was just closed with its X. */
+  /* Someone signed in (who just deleted everything, or whose log is still on its way) stays on this page, where they can bring their log
+     back. Everyone else sees the setup whenever this page comes into view, unless the setup itself was just closed with its X. */
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
   const [focused, setFocused] = useState(false);
   useFocusEffect(
@@ -91,40 +86,58 @@ export function Welcome() {
     });
     return () => sub.remove();
   }, [focused, sync.loaded, signedIn]);
+  const started = !!setupKeep.flow && setupKeep.flow.i > 0;
   return (
-    <Screen title="Quit porn, one honest day at a time.">
-      <ErasedNote />
-      <View style={{ gap: 16 }}>
-        <View style={{ alignItems: 'center', gap: 16, paddingVertical: 8 }}>
-          <FlameMedallion level={1} size={240} label="Your flame" />
-          <T tone="muted" style={{ textAlign: 'center', fontSize: 17, lineHeight: 24 }}>
-            About 8 minutes builds your plan, from your own answers. Every question can be skipped.
-          </T>
+    <Shell
+      look={lessonLook('sky', 0, base.scheme)}
+      level={1}
+      flameOn
+      pulse={0}
+      inset={inset}
+      scroll={scroll}
+      fit={fit}
+      bodyKey="welcome"
+      topRight={<SosPill label="SOS. Help with an urge right now. No setup needed." over />}
+      foot={
+        <View style={s.foot}>
+          <Next label={started ? 'Keep going' : 'Start setup'} onPress={() => router.push('/setup')} />
+          {sync.status.k === 'off' || sync.status.k === 'on' || sync.status.k === 'busy' ? null : (
+            <Quiet label="I already have an account: sign in" onPress={() => sync.signInNow({ why: 'in' })} />
+          )}
+          {BACKUP_FILES ? <Quiet label={busy ? 'Bringing it back…' : 'I have a backup file'} onPress={() => !busy && restore()} /> : null}
         </View>
-        <Button label={setupKeep.flow ? 'Continue setup' : 'Start setup'} onPress={() => router.push('/setup')} />
-        {signedIn ? (
-          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-            You are signed in, so what you log now syncs to your account.
+      }>
+      <ErasedNote />
+      <T style={lessonText.h} accessibilityRole="header">
+        {started ? 'Your plan is waiting.' : 'Quit porn, one honest day at a time.'}
+      </T>
+      <Bubble
+        text={
+          started
+            ? 'We stopped part way. A few more minutes, and your plan is built from your answers.'
+            : 'I am your flame. About 8 minutes builds your plan, from your own answers. Every question can be skipped.'
+        }
+      />
+      <FlameSlot size={SHORT ? 260 : 330} min={SHORT ? 140 : 180} />
+      {signedIn ? (
+        <T v="small" tone="muted">
+          You are signed in, so what you log now syncs to your account.
+        </T>
+      ) : null}
+      {sync.status.k === 'busy' ? <T tone="muted">{sync.status.what}</T> : null}
+      {sync.status.k === 'error' ? (
+        <View style={{ gap: 8 }}>
+          <T v="small" tone="danger">
+            {sync.status.msg}
           </T>
-        ) : null}
-        {sync.status.k === 'off' || sync.status.k === 'on' ? null : sync.status.k === 'busy' ? (
-          <T tone="muted" style={{ textAlign: 'center' }}>
-            {sync.status.what}
-          </T>
-        ) : (
-          <Link label="I already have an account: sign in" onPress={() => sync.signInNow({ why: 'in' })} />
-        )}
-        {sync.status.k === 'error' ? (
-          <>
-            <T v="small" tone="danger" style={{ textAlign: 'center' }}>
-              {sync.status.msg}
-            </T>
-            <Button label="Try again" kind="ghost" onPress={sync.syncNow} />
-            <HelpLine subject="Daybook: sync" center />
-          </>
-        ) : null}
-        {BACKUP_FILES ? <Button label="I already have a backup file" kind="ghost" icon="up" onPress={restore} disabled={busy} /> : null}
-      </View>
-    </Screen>
+          <Quiet label="Try again" onPress={sync.syncNow} />
+          <HelpLine subject="Daybook: sync" center />
+        </View>
+      ) : null}
+    </Shell>
   );
 }
+
+const s = StyleSheet.create({
+  foot: { flex: 1, gap: 4 },
+});

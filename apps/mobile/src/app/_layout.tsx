@@ -7,7 +7,7 @@ import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bo
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
 import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan } from '@daybook/core';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef, type ErrorBoundaryProps } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -84,6 +84,21 @@ function NavKeeper() {
   return null;
 }
 
+/* Before setup, nothing else in the app works as normal (the owner, November 2, 2026): the tabs wait behind the welcome page
+   ((tabs)/_layout.tsx), and any other page, reached by a link, a notification or a typed address, goes back to it. SOS stays open, with
+   what it opens (its tools, Talk it through, I slipped into Rekindle, the bedtime tool's good night), because care is never locked
+   (CLAUDE.md); so do the setup itself, signing in, saying what would help, and the privacy page. When SOS closes, the setup comes back. */
+const OPEN_BEFORE_SETUP = new Set(['(tabs)', 'setup', 'sos', 'tool', 'talk', 'log', 'night', 'account', 'feedback', 'privacy', 'shots', '+not-found']);
+function SetupGate() {
+  const { ready, snap } = useStore();
+  const top = useSegments()[0] as string | undefined;
+  const shut = ready && !snap.settings && !!top && !OPEN_BEFORE_SETUP.has(top);
+  useEffect(() => {
+    if (shut) router.replace('/');
+  }, [shut, top]);
+  return null;
+}
+
 /* on the web, the page behind the app and the browser's bars take the app's background, so Safari does not frame a dark app in white */
 function WebChrome({ bg }: { bg: string }) {
   useEffect(() => {
@@ -157,6 +172,7 @@ function Shell() {
       <WebChrome bg={c.bg} />
       <Reminders />
       <NavKeeper />
+      <SetupGate />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
           <Stack.Screen name="(tabs)" />

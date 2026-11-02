@@ -9,9 +9,10 @@ import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
 import type { DayKey, Days, Play, Settings } from './types';
+import type { MineKind } from './lesson-turns';
 
 /* ---------- the shapes ---------- */
-export type Block = ['p', string] | ['q', string] | ['l', string[]] | ['plan'] | ['rbox'] | ['mylog'] | ['words'];
+export type Block = ['p', string] | ['q', string] | ['l', string[]] | ['plan'] | ['rbox'] | ['mylog'] | ['words'] | ['mine', MineKind];
 export type Art =
   | ['icon', { ic?: string }]
   | ['chain', { n?: string[]; i?: string[] }]
@@ -20,6 +21,10 @@ export type Art =
   | ['snow', { a?: string; b?: string; al?: string }]
   | ['loop', { n?: string[]; c?: string }]
   | ['shield', Record<string, never>]
+  /** the pictures behind a turn (lesson-turns.ts): steps that fill up feeling ready, wanting outgrowing liking, one slip in a row of days */
+  | ['ready', Record<string, never>]
+  | ['want', Record<string, never>]
+  | ['dots', Record<string, never>]
   /** one of the moving research pictures from Talk it through (talk.ts) or Rekindle (rekindle-learn.ts), by its key */
   | ['research', { k: string }];
 export interface Guess {
@@ -36,7 +41,8 @@ export interface Guess {
   rv?: { h?: string; b?: string };
 }
 export interface Card {
-  k: 'text' | 'choose' | 'guess' | 'try';
+  /** flip: a turn (lesson-turns.ts), h on the front and see on the back */
+  k: 'text' | 'choose' | 'guess' | 'try' | 'flip';
   q?: 1;
   e?: string;
   el?: string;
@@ -52,6 +58,10 @@ export interface Card {
   p?: string;
   g?: Guess;
   go?: Go[];
+  /** on a flip card: what is on the back */
+  see?: string;
+  /** an earlier lesson this card builds on, by id */
+  back?: string;
 }
 export interface Go {
   t: string;
@@ -556,6 +566,28 @@ export function lessonLog(days: Days, st: Settings) {
   const tt = topTrigger(evs, st.opts) as { t: string; n: number } | null;
   const bw = busiestWindow(evs, st.rollover);
   return { few: false as const, n: evs.length, rode, tt, bw };
+}
+/** a true line from the person's own log, for a turn's "Your own log" card (lesson-turns.ts). Counted on the phone, never sent anywhere.
+    With nothing logged yet, it says what to watch for instead. */
+export function lessonMine(k: MineKind, days: Days): string {
+  const evs = eventsOf(days);
+  const rode = evs.filter((e) => e.outcome === 'rode').length;
+  const slips = evs.filter((e) => e.outcome === 'slipped').length;
+  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many);
+  if (k === 'acted') {
+    const ls = lessonsDone(days).size;
+    const did = [ls ? n(ls, 'lesson read', 'lessons read') : '', evs.length ? n(evs.length, 'honest entry', 'honest entries') : ''].filter(Boolean);
+    return did.length
+      ? 'So far: ' + did.join(' and ') + '. You did ' + (ls + evs.length === 1 ? 'that' : 'those') + ' before you felt ready.'
+      : 'You opened this lesson. That is a step, and you took it before you felt ready.';
+  }
+  if (k === 'rode')
+    return rode
+      ? 'You have ridden out ' + n(rode, 'urge', 'urges') + ' here. ' + (rode === 1 ? 'It ended.' : 'Every one of them ended.')
+      : 'Next urge, log it when it starts, then notice when it ends. Every wave does.';
+  return slips
+    ? 'You have logged ' + n(slips, 'slip', 'slips') + ', and you came back after ' + (slips === 1 ? 'it' : 'every one') + '. You are here, reading this.'
+    : 'No slips logged. If one comes, the thought to watch for is “I already blew it.”';
 }
 /** the note on the Behind this sheet */
 export function srcNote(L: Lesson): string {

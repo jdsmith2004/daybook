@@ -18,73 +18,6 @@ export interface LessonQ {
 
 /* in the order of the path */
 export const QUESTIONS: Record<string, Record<number, LessonQ>> = {
-  l1: {
-    1: {
-      h: 'Part of you wants to quit, and part of you does not. What does that mixed feeling tell you?',
-      o: ['That I do not really want to quit', 'That I should wait until I feel sure', 'That I am more hooked than most', 'I do not know yet'],
-      c: [
-        'A common fear. Wanting it and doubting it can both be true at once.',
-        'It feels careful. It also costs the days that would build the sureness.',
-        'Anyone changing a habit has mixed feelings. They do not measure how hooked you are.',
-        'That is fair. The next card shows what most people find.',
-      ],
-    },
-    6: {
-      h: 'It is day three, and part of you still is not sure. What do you do tonight?',
-      o: ['Wait until I feel completely sure', 'One small thing, still unsure', 'Promise myself: never again'],
-      c: [
-        'It feels safer, and it costs the days that build the sureness.',
-        'This is how most people start. Five minutes tonight, and it counts.',
-        'Strong tonight, hard to keep while unsure. A small step is easier to repeat.',
-      ],
-      a: 1,
-    },
-  },
-  l2: {
-    1: {
-      h: 'Think of the last strong urge you did not act on right away. What did it do?',
-      o: ['It kept building, and I gave in', 'It faded once I got busy', 'It rose, peaked, and faded', 'I do not remember one yet'],
-      c: [
-        'Giving in ended it before you saw the peak pass. The next card shows the other way.',
-        'So you have already seen one pass. It can fade even without the busy part.',
-        'You have already ridden one out. That is the whole skill, done once.',
-        'That is fair. The next one you wait out will show you.',
-      ],
-    },
-    5: {
-      h: 'An urge hits hard while you are home alone. Which part of the ten minutes will be hardest for you?',
-      o: ['Naming it, instead of arguing', 'Breathing slowly while it pulls', 'Staying away from the screen', 'Waiting the full ten minutes'],
-      c: [
-        'Naming takes one second. Say it out loud if it helps: this is a wave.',
-        'Slow is hard when it is loud. Make each breath out longer than the breath in.',
-        'That is the honest one. Put the phone in another room first, then start the clock.',
-        'Then set a timer and watch the wave. Each minute you wait is one it did not win.',
-      ],
-    },
-  },
-  l3: {
-    1: {
-      h: 'After a slip, what do you usually tell yourself?',
-      o: ['I blew it, so tonight is gone', 'I will start fresh on Monday', 'Something harsh about myself', 'Nothing much. I just move on'],
-      c: [
-        'That one turns one slip into a whole night. The next card is about this exact thought.',
-        'It feels hopeful, and it turns the days before Monday into throwaways.',
-        'It feels like taking it seriously. It also drains the confidence you need tomorrow.',
-        'That is a strength. Notice whether the night really stays one event.',
-      ],
-    },
-    5: {
-      h: 'You slipped last night. It is morning now. What do you do first?',
-      o: ['Log it, then check in as usual', 'Plan a fresh start for next Monday', 'Skip the check-in today', 'Be hard on myself so it sticks'],
-      c: [
-        'Thirty seconds, honest, not harsh. Your day keeps going, and so does your confidence.',
-        'A clean start feels good, and it hands the days before Monday to the snowball.',
-        'It spares you a hard minute. Hiding is how one slip turns into many.',
-        'It feels serious. A drop in confidence is what brought the next slip sooner.',
-      ],
-      a: 0,
-    },
-  },
   l22: {
     1: {
       h: 'After you watch, what weighs on you most?',
@@ -1059,8 +992,17 @@ export const QUESTIONS: Record<string, Record<number, LessonQ>> = {
 
 /** the question a choose card asks: the rewrite when there is one, else the beat's words over the card's own */
 export function questionOf(L: Lesson, ci: number, card: Card, b: Beat): LessonQ & { rewritten: boolean } {
-  const q = QUESTIONS[L.id] && QUESTIONS[L.id][ci];
+  const q = L.v !== 3 && QUESTIONS[L.id] && QUESTIONS[L.id][ci];
   if (q) return { ...q, rewritten: true };
+  /* a turned lesson's questions are written that way already (lesson-turns.ts) */
+  if (L.v === 3)
+    return {
+      h: card.h,
+      o: (card.c || []).map((x) => x[0]),
+      c: (card.c || []).map((x) => x[1]),
+      a: Number.isInteger(card.a) ? card.a : undefined,
+      rewritten: true,
+    };
   return {
     h: b.h || card.h,
     o: b.o || (card.c || []).map((x) => x[0]),

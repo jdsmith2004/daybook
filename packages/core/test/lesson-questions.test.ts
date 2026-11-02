@@ -8,10 +8,14 @@ const MAX = { question: 125, answer: 62, comment: 92 };
 const CONTRACTION = /\b\w+(?:n['’]t|['’](?:re|ve|ll|d|m))\b|\b(?:it|that|there|here|what|who|he|she|let)['’]s\b/i;
 const SCOLD = /\b(good guess|not quite|correct|wrong answer)\b|^(right|wrong)[.!]/i;
 const all = Object.entries(core.QUESTIONS).flatMap(([id, qs]) => Object.entries(qs).map(([ci, q]) => ({ L: core.lessonById(id)!, ci: Number(ci), q })));
+/* a turned lesson writes its questions this way from the start (lesson-turns.ts), and they are held to the same rules */
+const turned = core.LESSONS.filter((L) => L.v === 3).flatMap((L) =>
+  L.cards.flatMap((c, ci) => (c.k === 'choose' ? [{ L, ci, q: core.questionOf(L, ci, c, core.cardBeat(L, ci)) }] : [])),
+);
 
 describe('the rewritten questions', () => {
   it('every question outside the faith lessons has one', () => {
-    core.LESSONS.filter((L) => !L.f).forEach((L) =>
+    core.LESSONS.filter((L) => !L.f && L.v !== 3).forEach((L) =>
       L.cards.forEach((c, i) => {
         if (c.k === 'choose') expect(core.QUESTIONS[L.id]?.[i], `${L.id} card ${i}`).toBeTruthy();
       }),
@@ -24,7 +28,7 @@ describe('the rewritten questions', () => {
     });
   });
   it('fits the screen: two to four answers, a comment for each, and the limits', () => {
-    all.forEach(({ L, ci, q }) => {
+    [...all, ...turned].forEach(({ L, ci, q }) => {
       const at = `${L.id} card ${ci}: `;
       expect(q.o.length, at).toBeGreaterThanOrEqual(2);
       expect(q.o.length, at).toBeLessThanOrEqual(4);
@@ -38,7 +42,7 @@ describe('the rewritten questions', () => {
     });
   });
   it('speaks plainly and never scolds', () => {
-    all.forEach(({ L, ci, q }) =>
+    [...all, ...turned].forEach(({ L, ci, q }) =>
       [q.h, ...q.o, ...q.c].forEach((w) => {
         expect(w, `${L.id} card ${ci}`).not.toMatch(CONTRACTION);
         expect(w, `${L.id} card ${ci}`).not.toMatch(SCOLD);

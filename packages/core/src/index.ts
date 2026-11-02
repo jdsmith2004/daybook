@@ -19,6 +19,7 @@ export * from './lesson-questions';
 export * from './steps';
 export * from './faith';
 export * from './lesson-beats';
+export * from './lesson-turns';
 export * from './practice';
 export * from './lesson-map';
 export * from './section-art';

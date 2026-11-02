@@ -3,6 +3,7 @@
    lesson needs its beats here; test/lesson-beats.test.ts fails without them, and holds them to the limits and the words rules. A card is one
    of: a question, the sun card (the answer), the number card (the science, when it has a number), or the sky. */
 import type { Card, Lesson } from './lessons';
+import { TURNS, turnLesson } from './lesson-turns';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -32,14 +33,19 @@ export interface LessonBeats {
 }
 export type BeatBook = Record<string, LessonBeats>;
 
-export const lessonBeats = (L: Lesson): LessonBeats | null => BOOK[L.id] || null;
+/* a turned lesson (lesson-turns.ts) brings its own short words */
+let TURNED: BeatBook | null = null;
+const turned = () => TURNED || (TURNED = Object.fromEntries(Object.values(TURNS).map((T) => [T.id, turnLesson(T, { id: T.id } as Lesson).beats])));
+const bookOf = (L: Lesson): LessonBeats | null => (L.v === 3 && turned()[L.id]) || BOOK[L.id] || null;
+export const lessonBeats = (L: Lesson): LessonBeats | null => bookOf(L);
 /** a card's beat, when it has one */
-export const cardBeat = (L: Lesson, ci: number): Beat => BOOK[L.id]?.cards[ci] || {};
+export const cardBeat = (L: Lesson, ci: number): Beat => bookOf(L)?.cards[ci] || {};
 
-export type CardLook = 'question' | 'guess' | 'number' | 'sun' | 'sky';
+export type CardLook = 'question' | 'guess' | 'number' | 'sun' | 'sky' | 'flip';
 /** which picture a card is drawn as */
 export function cardLook(card: Card, beat: Beat): CardLook {
   if (card.k === 'choose') return 'question';
+  if (card.k === 'flip') return 'flip';
   if (card.k === 'guess') return 'guess';
   if (beat.n || (card.art && card.art[0] === 'big')) return 'number';
   return card.e === 'answer' ? 'sun' : 'sky';

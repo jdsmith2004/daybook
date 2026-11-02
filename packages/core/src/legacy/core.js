@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { TURNS, turnLesson } from '../lesson-turns';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { normCreed } from '../faith';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
@@ -2698,6 +2699,8 @@ const LESSONS=[
 ];
 /* lessons 33 to 40 live in lessons-more.ts */
 LESSONS.push(...lessonsMore(SRC));
+/* lessons rewritten around a turn replace their old selves in place (lesson-turns.ts) */
+LESSONS.forEach((L,i)=>{if(TURNS[L.id])LESSONS[i]=turnLesson(TURNS[L.id],L).L});
 
 
 /* ------------------------------------------------------------------------------------------------

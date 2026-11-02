@@ -9,6 +9,8 @@ import {
   openTile,
   ROUTINE,
   routineChanged,
+  logicalKey,
+  reachMark,
   routineDay,
   routineOn,
   stopTiles,
@@ -41,6 +43,10 @@ export function openStop(go: StopGo, id?: string) {
     if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
     return;
   }
+  /* the any-time stops: a calm move is picked on Learn's tools, the journal opens itself (reaching out is marked in place, Row) */
+  if (go === 'calm') return router.navigate({ pathname: '/learn', params: { pane: 'tools' } });
+  if (go === 'journal') return router.push('/journal');
+  if (go === 'reach') return;
   router.push(go === 'checkin' ? '/checkin' : '/wind');
 }
 /** Next up names a stop by its key (evening, night; the lesson opens itself) */
@@ -83,7 +89,7 @@ export function YourDay({
 }) {
   const c = useTheme();
   const st = snap.settings!;
-  const r = stopTiles(snap.days, st, tk, now);
+  const r = stopTiles(snap.days, st, tk, now, snap.journal);
   const account = useAccount();
   /* the stop that is next, as the card at the top opens it (a re-read in place of a lesson that waits behind an account) */
   const open = openTile(snap.days, st, tk, now, !!account);
@@ -98,7 +104,17 @@ export function YourDay({
     <View>
       {heroShown ? null : <View style={s.noteTop}>{note}</View>}
       {n ? (
-        <Stops tiles={lineOrder(r.tiles, big)} big={big} hero={hero} note={note} tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)} />
+        /* a new set or order of stops measures its rows afresh: on the web a row that only moves does not report its place again */
+        <Stops
+          key={lineOrder(r.tiles, big)
+            .map((t) => t.k)
+            .join(' ')}
+          tiles={lineOrder(r.tiles, big)}
+          big={big}
+          hero={hero}
+          note={note}
+          tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)}
+        />
       ) : (
         <T tone="muted" style={{ paddingHorizontal: 4 }}>
           Nothing is switched on for today. Tap Change to turn parts of the day back on.
@@ -315,14 +331,23 @@ function Hero({ m, t }: { m: BigCard; t: StopTile }) {
 const STOP_SHAPE: Partial<Record<StopTile['sky'], ShapeKind>> = { sky: 'cookie9', violet: 'cookie12', night: 'sunny', sun: 'flower' };
 function Row({ t, glass }: { t: StopTile; glass?: boolean }) {
   const c = useTheme();
+  const { update } = useStore();
+  /* Reach out is marked with a tap; once done it stays done (what was earned stays earned) */
+  const reach = () => {
+    if (t.done) return;
+    buzz('save');
+    update((s0) => ({ ...s0, days: reachMark(s0.days, logicalKey(Date.now(), s0.settings!.rollover), Date.now()) }));
+  };
   const L = lookOf(t.sky, c);
   const ink = glass ? nightInk.ink : c.ink;
   const muted = glass ? nightInk.muted : c.muted;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + ' Opens it.'}
-      onPress={() => openStop(t.go, t.id)}
+      accessibilityLabel={
+        t.title + ': ' + t.line + '. ' + (t.done ? 'Done.' : t.right + '.') + (t.go === 'reach' ? (t.done ? '' : ' Tap to mark it.') : ' Opens it.')
+      }
+      onPress={() => (t.go === 'reach' ? reach() : openStop(t.go, t.id))}
       style={({ pressed }) => [s.row, { backgroundColor: glass ? nightInk.btn : c.surface, opacity: pressed ? 0.7 : 1 }]}>
       <Icon name={t.ic} size={20} color={glass ? ink : t.done ? c.muted : t.sky === 'night' ? c.accentText : L.ink} />
       <Text style={[s.rowT, { color: t.done ? muted : ink }]}>

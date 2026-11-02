@@ -8,13 +8,14 @@ so their switches changed only the count behind the scenes.
 
 **High, done:** Journal is a part of the routine (`ROUTINE` in core.js, off at first; the golden fixtures' normalized routine gained
 `journal: false` by hand, the one intended change). It is never a daily win, so no ring, points or level change (tested). `stopTiles`
-adds the any-time stops after the lesson: Calm move (done by a calm move today), Reached out (`reachToggle` marks today, the same
-reach the wins count), Journal (done with an entry today; `stopTiles` takes the journal as a fifth argument). They say "Any time", are
+adds the any-time stops after the lesson: Calm move (done by a calm move today), Reached out (`reachMark` marks today, the same
+reach the wins count, one way, since earned stays earned), Journal (done with an entry today; `stopTiles` takes the journal as a fifth argument). They say "Any time", are
 never the big card, a done one stays when switched off, and on the night of a slip only done ones stay. Tests: `routine-stops.test.ts`.
 
-**Medium, left:** in `your-day.tsx`, open each new stop (`openStop`: calm to the tools, reach marks with `reachToggle` and a buzz,
-journal to `/journal`), pass `snap.journal` to `stopTiles`, check the icons and rows, the Change sheet's words, and Settings' routine
-list (Journal shows there too). Then pictures, the craft checklist, the simulator, and the owner's look before merging.
+**Medium, done:** in `your-day.tsx`, Calm move opens Learn on the tools, Reach out marks today with a tap (`reachMark`; done, it
+says Reached out and stays), Journal opens the journal, and `snap.journal` is passed to `stopTiles`. Journal has the heart icon. The
+line measures its rows again when its stops change (on the web a row that only moves did not report its new place). The Change sheet
+and Settings list Journal from `ROUTINE` with no change. Waiting: the owner's look on the simulator, then merge.
 
 ## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
 

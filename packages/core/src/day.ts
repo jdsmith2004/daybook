@@ -291,7 +291,7 @@ function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | u
   const say = {
     calm: { ic: 'wave', title: 'Calm move', open: 'A tool or a 10-minute pause', did: 'Done today', btn: 'Pick a tool' },
     reach: { ic: 'chat', title: 'Reached out', open: 'Text, call, or talk to a person', did: 'Reached someone today', btn: 'I reached out' },
-    journal: { ic: 'pencil', title: 'Journal', open: 'A few words about the day', did: 'Written today', btn: 'Write' },
+    journal: { ic: 'heart', title: 'Journal', open: 'A few words about the day', did: 'Written today', btn: 'Write' },
   };
   /* the night of a slip leaves only the wind-down open (dayRhythm); what was done stays */
   return ANY_TIME.filter((k) => done[k] || (!slipNight && routineOn(st, p, k))).map((k) => ({
@@ -301,7 +301,8 @@ function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | u
     cur: false,
     sky: 'sun' as const,
     ic: say[k].ic,
-    title: say[k].title,
+    /* to do, it says the thing to do; done, what was done */
+    title: k === 'reach' && !done[k] ? 'Reach out' : say[k].title,
     line: done[k] ? say[k].did : say[k].open,
     right: done[k] ? '' : 'Any time',
     eyebrow: say[k].title + (done[k] ? ' · done' : ' · any time'),
@@ -517,9 +518,10 @@ export function routineDay(days: Days, st: Settings, tk: DayKey, k: string, want
     ),
   );
 }
-/** "Reached out" on Today: tapping the stop marks today (p.r), and tapping it again takes the mark off. A yes from the check-in
-    (ro) stays as it is. */
-export function reachToggle(days: Days, tk: DayKey, now = Date.now()): Days {
+/** "Reach out" on Today: a tap marks today (p.r), the same reach the daily wins count. It only marks: what was earned stays earned,
+    so there is no taking it off. */
+export function reachMark(days: Days, tk: DayKey, now = Date.now()): Days {
+  if (days[tk]?.p?.r) return days;
   return withDay(
     days,
     tk,
@@ -528,7 +530,7 @@ export function reachToggle(days: Days, tk: DayKey, now = Date.now()): Days {
       tk,
       (d) => {
         const p = d.p || blankP();
-        p.r = !p.r;
+        p.r = true;
         d.p = p;
       },
       now,

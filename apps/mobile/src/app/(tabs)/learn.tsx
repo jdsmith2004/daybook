@@ -67,6 +67,10 @@ const CLEAR = TAB_TOP + 8;
 export default function Learn() {
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'tools' ? 'tools' : 'lessons');
+  /* Today's Calm move opens the tools, also when Learn is already open on the lessons */
+  useEffect(() => {
+    if (params.pane === 'tools') setPane('tools');
+  }, [params.pane]);
   const { snap } = useStore();
   const inset = useSafeAreaInsets();
   const scroll = useRef<ScrollViewInstance>(null);

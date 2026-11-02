@@ -2,7 +2,7 @@
    out and the journal are stops with no time of day. The journal is never a daily win, so switching it takes nothing earned. */
 import { describe, expect, it } from 'vitest';
 import { normSettings, ROUTINE_KEYS, winsOf, winTally, dayPoints, gameCompute } from '../src/legacy/core.js';
-import { reachToggle, routineDay, stopTiles } from '../src/day';
+import { reachMark, routineDay, stopTiles } from '../src/day';
 import { jnStart } from '../src/journal-entries';
 import { addEvent } from '../src/mutate';
 import type { Days, Settings } from '../src/types';
@@ -48,18 +48,20 @@ describe('the any-time stops', () => {
 });
 
 describe('reached out', () => {
-  it('a tap marks today, and another takes it off; it is the same reach the daily wins count', () => {
-    const d = reachToggle({}, tk, 1);
+  it('a tap marks today, the same reach the daily wins count, and a second tap takes nothing away', () => {
+    const before = stopTiles({}, { ...st, routine: { ...st.routine, reach: true } }, tk, at(12)).tiles.find((x) => x.k === 'reach')!;
+    expect(before).toMatchObject({ title: 'Reach out', done: false });
+    const d = reachMark({}, tk, 1);
     expect(winsOf(d, tk, st).reach).toBe(true);
-    expect(stopTiles(d, st, tk, at(12)).tiles.find((x) => x.k === 'reach')).toMatchObject({ done: true, line: 'Reached someone today' });
-    expect(winsOf(reachToggle(d, tk, 2), tk, st).reach).toBe(false);
+    expect(stopTiles(d, st, tk, at(12)).tiles.find((x) => x.k === 'reach')).toMatchObject({ title: 'Reached out', done: true, line: 'Reached someone today' });
+    expect(reachMark(d, tk, 2)).toBe(d);
   });
 });
 
 describe('the journal takes nothing earned', () => {
   it('switching it on or off changes no win, ring or points', () => {
     let d: Days = addEvent({}, tk, 'rode', '10:00', { paused: true }, 1).days;
-    d = reachToggle(d, tk, 2);
+    d = reachMark(d, tk, 2);
     const on = routineDay(d, st, tk, 'journal', true, 3);
     for (const x of [d, on]) {
       expect(winTally(winsOf(x, tk, st))).toEqual(winTally(winsOf(d, tk, st)));

@@ -16,11 +16,11 @@ import { font } from '@/lib/theme';
 const DRAWN = 360;
 
 const ROOMY = 1.9;
-/** the Torch stands on a long handle, drawn right to the foot of its box: it takes a little less of the room and stands a little higher, so the handle
-    stays clear of the words under it */
-const ROOMY_TORCH = 1.5;
-const LIFT_TORCH = 0.14;
-const TORCH_FORM = 3;
+/** the Torch and the Beacon stand on a handle and a tower, drawn right to the foot of the box: they take a little less of the room and stand a little
+    higher, so the foot stays clear of the words under it */
+const ROOMY_TALL = 1.1;
+const LIFT_TALL = 0.1;
+const TALL_FORMS = [3, 4];
 
 interface Spot {
   x: number;
@@ -52,10 +52,10 @@ export function FlameStage({ level, on, pulse, children }: { level: number; on: 
       root,
       place: (s) => {
         /* the drawing leaves wide margins around the figure and its glow, so it may stand taller than its room */
-        const torch = formOfLevel(level) === TORCH_FORM;
-        const size = Math.min(s.size, s.h * (torch ? ROOMY_TORCH : ROOMY));
+        const tall = TALL_FORMS.indexOf(formOfLevel(level)) >= 0;
+        const size = Math.min(s.size, s.h * (tall ? ROOMY_TALL : ROOMY));
         const tx = (s.side ? s.x + s.w - s.h / 2 : s.x + s.w / 2) - DRAWN / 2;
-        const ty = s.y + s.h / 2 - DRAWN / 2 - (torch && !s.side ? size * LIFT_TORCH : 0);
+        const ty = s.y + s.h / 2 - DRAWN / 2 - (tall && !s.side ? size * LIFT_TALL : 0);
         const sc = size / DRAWN;
         if (!placed.current || still) {
           placed.current = true;

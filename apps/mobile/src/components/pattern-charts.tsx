@@ -1,249 +1,992 @@
-/* Your pattern's graphs (core: pattern.ts). Each answers one question at a glance, in the Journal's two outcome colors
-   (teal: rode it out, amber: slipped) and violet for the hard hours:
-   - Gaps: a bar for the no-slip days before each slip, the stretch going now as an open bar, and a trend line
-   - RideWeeks: each week as one column, the share ridden out in teal
-   - Clock: a 24-hour clock, midnight at the top, a wedge for each hour, the hard hours as a violet band
-   - WeekRow: the days of the week, Monday first, the hardest one marked
-   - DiffDots: slip days against days with no slip, as two dots on one line, with its sentence under it
-   They grow in once, and with Reduce Motion on they are simply there. */
-import type { PatDiff, PatGaps, PatHour, PatWeek, PatWhen, RiskWindow } from '@daybook/core';
-import { useState } from 'react';
+/* Your pattern's pictures (core: pattern.ts, pattern-cards.ts). Each card is a scene of its own at night, never one chart kit with new words, and
+   each is drawn from what the app is made of (docs/plan.md has the reasons):
+   - Hillside: how many recent days had no slip, as a hill you walked over, with your flame standing at today, a star over each day with no slip, and
+     the period before as a dotted line. A slip is a dip that fills back in
+   - DayFlow: how the days felt as bands of color across the range, each in the color of its answer on Today, widening as days like it come more often
+   - Fireflies: a light for each moment ridden out, gathered over its stretch of days with the count over them; a strong one burns bigger, and a slip is a quiet dot under the ground, never an alarm
+   - FeelField: the whole field of feelings as soft dots, with what was named swelled up where it lives and its word inside
+   - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
+   - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
+   - Pairs: days with no slip beside slip days, a pair for each answer
+   Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
+import {
+  feelMap,
+  mosaic,
+  patLights,
+  type DayFeelStep,
+  type PatDiff,
+  type PatFeels,
+  type PatHour,
+  type PatLight,
+  type PatRideCol,
+  type PatRidge,
+  type PatWhen,
+} from '@daybook/core';
+import { LinearGradient as Fade } from 'expo-linear-gradient';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { useChartColors } from '@/components/charts';
-import { useOnce } from '@/components/talk-art';
-import { T } from '@/components/ui';
-import { NATIVE } from '@/lib/motion';
-import { font } from '@/lib/theme';
+import { BigFlame } from '@/components/big-flame';
+import { useChartColors, useGrow } from '@/components/charts';
+import { SVG_HIDE, type ShapeKind } from '@/components/shapes';
+import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
+import { shapePath, type AnyShape } from '@/lib/m3-shapes';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { font, nightInk } from '@/lib/theme';
 
 function useWidth(): [number, (e: { nativeEvent: { layout: { width: number } } }) => void] {
   const [w, setW] = useState(0);
   return [w, (e) => setW(Math.round(e.nativeEvent.layout.width))];
 }
 
-/** a column that rises from the floor */
-function Rise({ h, w, delay, children, style }: { h: number; w: number; delay: number; children: React.ReactNode; style?: object }) {
-  const v = useOnce(delay, 650, NATIVE, Easing.out(Easing.cubic));
+/** the colors of the charts: the flame's warm color for what was won, and a quiet one for a slip */
+function useInk() {
+  const k = useChartColors();
+  return {
+    ...k,
+    win: k.c.scheme === 'dark' ? '#FFB347' : '#E77F12',
+    core: k.c.scheme === 'dark' ? '#FFE08A' : '#FFC24D',
+    hush: k.c.scheme === 'dark' ? 'rgba(189,181,230,0.5)' : 'rgba(98,90,133,0.42)',
+  };
+}
+
+/** the sky behind each card, top to bottom: night in every theme, like Today's */
+export const CARD_SKY: Record<string, [string, string]> = {
+  apart: ['#0C0A2A', '#1B1040'],
+  felt: ['#0E0C24', '#0E0C24'],
+  ride: ['#0E1230', '#17112F'],
+  named: ['#0E0C24', '#17132F'],
+  when: ['#0C0A2A', '#120E38'],
+  what: ['#120E30', '#120E30'],
+  days: ['#120E30', '#17123A'],
+  helps: ['#0B1530', '#0E1C36'],
+};
+
+/** the room left for a chart in a card, as a size to draw at. The chart floats inside it: on a phone a card with no set height takes its size from
+    what is in it, so a chart in the flow would make the room bigger, and the chart drawn for that room bigger again, without end */
+export function Room({ min = 180, children }: { min?: number; children: (w: number, h: number) => ReactNode }) {
+  const [z, setZ] = useState({ w: 0, h: 0 });
   return (
-    <View style={[{ width: w, height: h, overflow: 'hidden', borderRadius: Math.min(8, w / 2) }, style]}>
+    <View
+      style={{ flex: 1, minHeight: min }}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setZ({ w: Math.round(width), h: Math.round(height) });
+      }}>
+      <View style={StyleSheet.absoluteFill}>{z.w ? children(z.w, z.h) : null}</View>
+    </View>
+  );
+}
+
+/** a thing that pops in when its card is reached */
+function Pop({ delay, style, children }: { delay: number; style?: object; children: ReactNode }) {
+  const v = useGrow(delay, 420);
+  return (
+    <Animated.View style={[style, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/** a column that rises from the floor */
+function Rise({ h, w, delay, children }: { h: number; w: number; delay: number; children: ReactNode }) {
+  const v = useGrow(delay);
+  return (
+    <View style={{ width: w, height: h, overflow: 'hidden', borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
       <Animated.View style={{ flex: 1, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [h, 0] }) }] }}>{children}</Animated.View>
     </View>
   );
 }
 
-/* ---------- the stretches between slips ---------- */
-export function Gaps({ g }: { g: PatGaps }) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
-  const H = 120;
-  const vals = g.runs.concat(g.slips ? [g.now] : []);
-  const max = Math.max(1, ...vals);
-  const n = vals.length;
-  const gap = n > 8 ? 6 : 10;
-  const bw = w ? Math.min(34, (w - gap * (n - 1)) / Math.max(n, 1)) : 0;
-  const total = n * bw + (n - 1) * gap;
-  const x0 = (w - total) / 2;
-  const X = (i: number) => x0 + i * (bw + gap) + bw / 2;
-  const Y = (v: number) => 18 + H - (v / max) * H;
-  /* the trend: a straight line fit through the gaps between slips (not the first stretch, not the open one) */
-  let trend: [number, number, number, number] | null = null;
-  if (g.trend && g.runs.length >= 4) {
-    const pts = g.runs.slice(1).map((v, i) => [i + 1, v]);
-    const mx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
-    const my = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-    const b =
-      pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) /
-      Math.max(
-        1e-9,
-        pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0),
-      );
-    const at = (i: number) => Math.max(0, my + b * (i - mx));
-    const i1 = g.runs.length - 1;
-    trend = [X(1), Y(at(1)), X(i1), Y(at(i1))];
+/** in and out on a slow sine, forever; still with Reduce Motion on */
+function useBreath(ms: number) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduce, v, ms]);
+  return v;
+}
+
+/** a shape lit from above, the way a thing is lit by the sky, not a flat sticker */
+function LitShape({ kind, size, color }: { kind: ShapeKind; size: number; color: string }) {
+  const d = useMemo(() => shapePath(kind as AnyShape, size), [kind, size]);
+  const pad = Math.ceil(size * 0.2);
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg
+        width={size + 2 * pad}
+        height={size + 2 * pad}
+        viewBox={-pad + ' ' + -pad + ' ' + (size + 2 * pad) + ' ' + (size + 2 * pad)}
+        style={{ position: 'absolute', left: -pad, top: -pad }}
+        {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="lit" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.42} />
+            <Stop offset="0.55" stopColor="#FFFFFF" stopOpacity={0} />
+            <Stop offset="1" stopColor="#1A0B3A" stopOpacity={0.22} />
+          </LinearGradient>
+        </Defs>
+        <Path d={d} fill={color} />
+        <Path d={d} fill="url(#lit)" />
+      </Svg>
+    </View>
+  );
+}
+
+/* ---------- how you are doing ---------- */
+const place = (i: number) => {
+  const x = Math.sin(i * 12.9898 + 4.1) * 43758.5453;
+  return x - Math.floor(x);
+};
+/** a soft line: a few passes of a small blur, so a week that looks back reads as a hill and not as steps */
+const softened = (l: number[]) => {
+  let out = l;
+  for (let p = 0; p < 5; p++) out = out.map((v, i) => (i && i < out.length - 1 ? (out[i - 1] + 2 * v + out[i + 1]) / 4 : v));
+  return out;
+};
+const smooth = (pts: [number, number][]) => {
+  let d = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[Math.max(0, i - 1)];
+    const b = pts[i];
+    const c = pts[i + 1];
+    const e = pts[Math.min(pts.length - 1, i + 2)];
+    d +=
+      'C' +
+      (b[0] + (c[0] - a[0]) / 6).toFixed(1) +
+      ' ' +
+      (b[1] + (c[1] - a[1]) / 6).toFixed(1) +
+      ' ' +
+      (c[0] - (e[0] - b[0]) / 6).toFixed(1) +
+      ' ' +
+      (c[1] - (e[1] - b[1]) / 6).toFixed(1) +
+      ' ' +
+      c[0].toFixed(1) +
+      ' ' +
+      c[1].toFixed(1);
   }
+  return d;
+};
+const STAR = (x: number, y: number, r: number) =>
+  `M${x} ${y - r}Q${x + r * 0.18} ${y - r * 0.18} ${x + r} ${y}Q${x + r * 0.18} ${y + r * 0.18} ${x} ${y + r}Q${x - r * 0.18} ${y + r * 0.18} ${x - r} ${y}Q${x - r * 0.18} ${y - r * 0.18} ${x} ${y - r}Z`;
+/** the hill of the last days, with your flame standing at today and a star over each day with no slip */
+export function Hillside({
+  ridge,
+  than,
+  first,
+  level,
+  sky,
+  note,
+  w,
+  h,
+  label,
+}: {
+  ridge: PatRidge;
+  than: string;
+  first: string;
+  level: number;
+  /** the color the hill fades into at its foot */
+  sky: string;
+  /** a line at the foot of the hill */
+  note?: string;
+  w: number;
+  h: number;
+  label: string;
+}) {
+  const k = useInk();
+  const v = useGrow(80, 1100);
+  const lit = useGrow(500, 900);
+  const flameIn = useGrow(800, 600);
+  const breath = useBreath(2600);
+  const now = softened(ridge.now);
+  const n = now.length;
+  const FL = Math.round(Math.min(148, h * 0.5));
+  /* today stands in from the edge, so the flame is whole */
+  const end = w - FL * 0.5 - 4;
+  const top = Math.max(h * 0.36, FL * 0.95);
+  /* the ground never falls away: with no such days at all there is still a hill for the flame to stand on, clear of the words under it */
+  const floor = h * 0.74;
+  const X = (i: number, of = n) => (of > 1 ? (i / (of - 1)) * end : end);
+  /* ground is never ruled with a straight edge: a swell of a few points under everything, far smaller than one day's dip */
+  const swell = (x: number) => 3 * Math.sin((x / w) * 8.2 + 0.6) + 2 * Math.sin((x / w) * 17 + 2);
+  const Y = (a: number, x = 0) => top + (1 - a) * (floor - top) + swell(x);
+  const pts = now.map((a, i): [number, number] => [X(i), Y(a, X(i))]);
+  if (n === 1) pts.unshift([0, Y(now[0], 0)]);
+  const last = pts[pts.length - 1];
+  const onward = (x: number): [number, number] => [x, Y(now[n - 1], x)];
+  const line = smooth([...pts, onward((end + w) / 2), onward(w + 6)]);
+  const hill = line + `L${w + 6} ${h}L0 ${h}Z`;
+  const then = ridge.then ? softened(ridge.then) : null;
+  const was = then ? smooth(then.map((a, i): [number, number] => [X(i, then.length), Y(a, X(i, then.length))])) : null;
+  const heightAt = (u: number) => {
+    const at = u * (n - 1);
+    const a = Math.floor(at);
+    const b = Math.min(n - 1, a + 1);
+    return Y(now[a] + (now[b] - now[a]) * (at - a), u * end);
+  };
+  const stars = ridge.stars.map((u, i) => {
+    const ground = heightAt(u);
+    const up = Math.max(10, ground - 16);
+    return {
+      x: Math.max(4, Math.min(w - 4, u * end + (place(i) - 0.5) * (end / Math.max(ridge.stars.length, 8)))),
+      y: 6 + place(i + 40) * (up - 6),
+      r: 1 + place(i + 80) * 1.1,
+      big: i % 6 === 2,
+      /* the nearer to today, the brighter */
+      o: 0.4 + 0.6 * u,
+    };
+  });
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: lit }]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          {stars.map((t, i) =>
+            t.big ? (
+              <Path key={i} d={STAR(t.x, t.y, 4.5)} fill="#FFF3CF" opacity={t.o} />
+            ) : (
+              <Circle key={i} cx={t.x} cy={t.y} r={t.r} fill="#FFF3CF" opacity={t.o * 0.85} />
+            ),
+          )}
+        </Svg>
+      </Animated.View>
+      {/* the warm light the flame throws on the night around it */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(flameIn, breath.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1] })) }]}>
+        <Svg width={w} height={h} {...SVG_HIDE}>
+          <Defs>
+            <RadialGradient id="hearth" cx={end} cy={last[1] - FL * 0.25} r={Math.min(w * 0.62, last[1] - FL * 0.25)} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FFB347" stopOpacity={0.42} />
+              <Stop offset="0.5" stopColor="#F2704F" stopOpacity={0.12} />
+              <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={w} height={h} fill="url(#hearth)" />
+        </Svg>
+      </Animated.View>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          width: w,
+          height: h,
+          overflow: 'hidden',
+          transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }],
+        }}>
+        <Animated.View style={{ width: w, height: h, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [w, 0] }) }] }}>
+          <Svg width={w} height={h} {...SVG_HIDE}>
+            <Defs>
+              <RadialGradient id="ground" cx={end} cy={last[1]} r={w * 0.95} gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#F59A4A" stopOpacity={0.95} />
+                <Stop offset="0.28" stopColor="#B6505A" stopOpacity={0.75} />
+                <Stop offset="0.62" stopColor="#5A2F86" stopOpacity={0.55} />
+                <Stop offset="1" stopColor="#3A2A7E" stopOpacity={0.35} />
+              </RadialGradient>
+              <LinearGradient id="foot" x1="0" y1={top + (h - top) * 0.25} x2="0" y2={h} gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor={sky} stopOpacity={0} />
+                <Stop offset="1" stopColor={sky} stopOpacity={1} />
+              </LinearGradient>
+              <LinearGradient id="rim" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#7566DE" />
+                <Stop offset="0.6" stopColor="#D58AA8" />
+                <Stop offset="0.9" stopColor="#FFD27A" />
+              </LinearGradient>
+            </Defs>
+            <Path d={hill} fill="#231A5C" />
+            <Path d={hill} fill="url(#ground)" />
+            <Path d={hill} fill="url(#foot)" />
+            <Path d={line} stroke="url(#rim)" strokeWidth={2.5} strokeLinecap="round" fill="none" />
+            {was ? <Path d={was} stroke={k.c.ink} strokeOpacity={0.7} strokeWidth={2} strokeDasharray="0.1 6" strokeLinecap="round" fill="none" /> : null}
+          </Svg>
+        </Animated.View>
+      </Animated.View>
+      {/* the flame: its feet on the hill */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: end - FL / 2,
+          top: last[1] - FL * 0.93,
+          opacity: flameIn,
+          transform: [{ scale: flameIn.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }],
+        }}>
+        <BigFlame level={level} size={FL} />
+      </Animated.View>
+      {note ? (
+        <Text numberOfLines={2} style={[s.abs, { left: 16, right: 16, bottom: 14, fontFamily: font.body, fontSize: 13, lineHeight: 18, color: k.c.muted }]}>
+          {note}
+        </Text>
+      ) : null}
+      <View style={[s.between, s.abs, { left: 16, right: 16, bottom: note ? 62 : 14, alignItems: 'center' }]}>
+        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        {was ? (
+          <View style={s.keyItem}>
+            <Svg width={18} height={4} {...SVG_HIDE}>
+              <Path d="M2 2H16" stroke={k.c.ink} strokeOpacity={0.7} strokeWidth={2} strokeDasharray="0.1 6" strokeLinecap="round" />
+            </Svg>
+            <Text style={[s.ax, { color: k.c.muted }]}>{than.replace(/^in /, '').replace(/^t/, 'T')}</Text>
+          </View>
+        ) : null}
+        <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
+      </View>
+    </View>
+  );
+}
+
+/* ---------- how each day felt ---------- */
+const STEP_WORD: Record<DayFeelStep, string> = { 5: 'Great', 4: 'Good', 3: 'Okay', 2: 'Low', 1: 'Rough' };
+const FLOW_FOOT = 28;
+/** a thing drawn from left to right when its card is reached */
+function Sweep({ w, h, duration = 1100, children }: { w: number; h: number; duration?: number; children: ReactNode }) {
+  const v = useGrow(80, duration);
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: w,
+        height: h,
+        overflow: 'hidden',
+        transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }],
+      }}>
+      <Animated.View style={{ width: w, height: h, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [w, 0] }) }] }}>
+        {children}
+      </Animated.View>
+    </Animated.View>
+  );
+}
+/** how the days felt as bands of color running across the range, the best at the top: a band widens as days like it come more often */
+export function DayFlow({
+  flow,
+  by,
+  first,
+  sky,
+  w,
+  h,
+  look,
+  label,
+}: {
+  flow: number[][];
+  by: number[];
+  first: string;
+  /** the color showing between the bands */
+  sky: string;
+  w: number;
+  h: number;
+  look: (n: DayFeelStep) => { kind: ShapeKind; color: string };
+  label: string;
+}) {
+  const k = useInk();
+  const H = h - FLOW_FOOT;
+  const n = flow.length;
+  /* a little past each edge, so a band never stops short of the card's */
+  const X = (i: number) => (n > 1 ? -4 + (i / (n - 1)) * (w + 8) : w / 2);
+  /* from the top: Great, then down to Rough */
+  const edge: number[][] = [flow.map(() => 0)];
+  for (let step = 4; step >= 0; step--) edge.push(flow.map((p, i) => edge[edge.length - 1][i] + p[step]));
+  const line = (e: number[]) => e.map((v, i): [number, number] => [X(i), v * H]);
+  const bands = ([5, 4, 3, 2, 1] as DayFeelStep[])
+    .map((step, b) => {
+      const up = line(edge[b]);
+      const down = line(edge[b + 1]);
+      const most = Math.max(...flow.map((p) => p[step - 1]));
+      if (most * H < 1) return null;
+      const rim = smooth(up);
+      const d = rim + smooth(down.slice().reverse()).replace(/^M/, 'L') + 'Z';
+      /* its word sits where the band is widest, if it fits there */
+      const wid = flow.findIndex((p) => p[step - 1] === most);
+      const at = { x: Math.max(16, Math.min(w - 92, X(wid) - 38)), y: ((edge[b][wid] + edge[b + 1][wid]) / 2) * H };
+      return { step, d, rim, top: b === 0, at, fits: most * H >= 26 };
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Sweep w={w} h={H}>
+        <Svg width={w} height={H} {...SVG_HIDE}>
+          <Defs>
+            <LinearGradient id="flowlit" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.14} />
+              <Stop offset="0.45" stopColor="#FFFFFF" stopOpacity={0} />
+              <Stop offset="1" stopColor="#1A0B3A" stopOpacity={0.42} />
+            </LinearGradient>
+            <LinearGradient id="flowair" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor={sky} stopOpacity={1} />
+              <Stop offset="0.05" stopColor={sky} stopOpacity={0.62} />
+              <Stop offset="0.11" stopColor={sky} stopOpacity={0.24} />
+              <Stop offset="0.18" stopColor={sky} stopOpacity={0.05} />
+              <Stop offset="0.26" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.58" stopColor={sky} stopOpacity={0} />
+              <Stop offset="0.7" stopColor={sky} stopOpacity={0.14} />
+              <Stop offset="0.85" stopColor={sky} stopOpacity={0.6} />
+              <Stop offset="1" stopColor={sky} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          {bands.map((x) => (
+            <G key={x.step}>
+              <Path d={x.d} fill={look(x.step).color} />
+              <Path d={x.d} fill="url(#flowlit)" />
+            </G>
+          ))}
+          {/* each band's upper edge catches the light, the way the hill's does */}
+          {bands.map((x) => (x.top ? null : <Path key={x.step} d={x.rim} stroke="#FFF6DF" strokeOpacity={0.7} strokeWidth={1.5} fill="none" />))}
+          <Rect width={w} height={H} fill="url(#flowair)" />
+        </Svg>
+        {/* a word low on a band sits in the fade into the night, so it turns light */}
+        {bands.map((x) =>
+          x.fits ? (
+            <Text
+              key={x.step}
+              numberOfLines={1}
+              style={[
+                s.abs,
+                { left: x.at.x, top: x.at.y - 9, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: x.at.y > H * 0.62 ? nightInk.ink : '#1C2030' },
+              ]}>
+              {STEP_WORD[x.step]} {by[x.step - 1]}
+            </Text>
+          ) : null,
+        )}
+      </Sweep>
+      <View style={[s.between, s.abs, { left: 16, right: 16, bottom: 6 }]}>
+        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
+      </View>
+    </View>
+  );
+}
+
+/* ---------- the moments ridden out ---------- */
+const FLY_TOP = 30;
+/** the lights over one stretch of days, coming up out of the ground and then glowing and fading a little, each stretch at its own pace */
+function FlyColumn({ i, list, x, ground, w, h }: { i: number; list: PatLight[]; x: number; ground: number; w: number; h: number }) {
+  const grow = useGrow(120 + i * 70, 700);
+  const breath = useBreath(1700 + place(i) * 1500);
+  const crowded = list.length > 12;
+  return (
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          opacity: Animated.multiply(grow, breath.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] })),
+          transform: [{ translateY: grow.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+        },
+      ]}>
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Defs>
+          <RadialGradient id={'fly' + i} cx="50%" cy="50%" rx="50%" ry="50%" fx="50%" fy="50%">
+            <Stop offset="0" stopColor="#FFE9A0" stopOpacity={0.95} />
+            <Stop offset="0.24" stopColor="#FFC95C" stopOpacity={0.52} />
+            <Stop offset="0.56" stopColor="#FF9A3D" stopOpacity={0.14} />
+            <Stop offset="1" stopColor="#FF9A3D" stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient id={'flyheart' + i} cx="50%" cy="50%" rx="50%" ry="50%" fx="50%" fy="50%">
+            <Stop offset="0" stopColor="#FFFDF2" />
+            <Stop offset="0.65" stopColor="#FFF0B8" />
+            <Stop offset="1" stopColor="#FFD97A" stopOpacity={0.75} />
+          </RadialGradient>
+        </Defs>
+        {list.map((l, m) => (
+          <Circle key={m} cx={x + l.x} cy={ground - l.y} r={l.r * (crowded ? 4.4 : 5.7)} fill={'url(#fly' + i + ')'} />
+        ))}
+        {list.map((l, m) => (
+          <Circle key={m} cx={x + l.x} cy={ground - l.y} r={l.r} fill={'url(#flyheart' + i + ')'} />
+        ))}
+      </Svg>
+    </Animated.View>
+  );
+}
+/** a firefly for each moment ridden out, gathered over its stretch of days at dusk with the count over them: more moments gather higher, and a strong one burns bigger. A slip is a quiet dot under the ground, and takes no light away */
+export function Fireflies({ cols, w, h, label }: { cols: PatRideCol[]; w: number; h: number; label: string }) {
+  const k = useInk();
+  const words = useGrow(620, 500);
+  const n = Math.max(cols.length, 1);
+  const colW = w / n;
+  const mid = (i: number) => colW * (i + 0.5);
+  const slips = cols.reduce((a, c) => a + c.slipped, 0);
+  const anySized = cols.some((c) => c.strong || c.low);
+  /* the words under it stay clear of the dates: two lines when they will not fit on one */
+  const two = anySized || (slips > 0 && w < 330);
+  const ground = h - (two ? 88 : 72);
+  const room = ground - FLY_TOP;
+  const { per, lights, tops, sized } = useMemo(() => patLights(cols, colW, room), [cols, colW, room]);
+  const stars = useMemo(
+    () => Array.from({ length: 22 }, (_, i) => ({ x: place(i + 40) * w, y: place(i * 3 + 40) * ground * 0.55, r: 0.5 + place(i * 5) * 0.9 })),
+    [w, ground],
+  );
+  const hill = useMemo(() => {
+    const at = (u: number, up: number): [number, number] => [u * w, ground + up];
+    return smooth([at(-0.02, 6), at(0.22, -5), at(0.5, 3), at(0.8, -7), at(1.02, 2)]) + 'L' + (w + 8) + ' ' + h + 'L-8 ' + h + 'Z';
+  }, [w, h, ground]);
+  const dotGap = n > 7 ? 7 : 10;
+  const inRow = Math.max(1, Math.floor((colW - 4) / dotGap));
+  const showN = (i: number) => n <= 8 || (n - 1 - i) % 2 === 0;
+  const every = n > 7 ? 3 : 1;
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="dusk" x1="0" y1="0" x2="0" y2={ground} gradientUnits="userSpaceOnUse">
+            <Stop offset="0.25" stopColor="#3B2A5C" stopOpacity={0} />
+            <Stop offset="1" stopColor="#4A3468" stopOpacity={0.9} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={ground + 8} fill="url(#dusk)" />
+        {stars.map((t, i) => (
+          <Circle key={i} cx={t.x} cy={t.y} r={t.r} fill="#FFFFFF" fillOpacity={0.2 + place(i * 7) * 0.45} />
+        ))}
+        <Path d={hill} fill="#100B26" />
+      </Svg>
+      {cols.map((_, i) => {
+        const list = lights.filter((l) => l.col === i);
+        return list.length ? <FlyColumn key={i} i={i} list={list} x={mid(i)} ground={ground} w={w} h={h} /> : null;
+      })}
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        {cols.map((c, i) => {
+          const shown = Math.min(c.slipped, inRow * 2);
+          return Array.from({ length: shown }, (_, m) => {
+            const row = Math.floor(m / inRow);
+            const across = Math.min(inRow, shown - row * inRow);
+            return (
+              <Circle
+                key={i + '-' + m}
+                cx={mid(i) + (m - row * inRow - (across - 1) / 2) * dotGap}
+                cy={ground + 14 + row * 7}
+                r={2.2}
+                fill={k.c.muted}
+                fillOpacity={0.55}
+              />
+            );
+          });
+        })}
+      </Svg>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: words }]} pointerEvents="none">
+        {cols.map((c, i) =>
+          c.rode && showN(i) ? (
+            <Text key={i} style={[s.flyN, { color: k.c.ink, left: mid(i) - 24, top: ground - tops[i] - (n > 8 ? 24 : 34), fontSize: n > 8 ? 12 : 15 }]}>
+              {c.rode}
+            </Text>
+          ) : null,
+        )}
+      </Animated.View>
+      {cols.map((c, i) =>
+        (n - 1 - i) % every === 0 ? (
+          <Text
+            key={i}
+            numberOfLines={1}
+            style={[s.ax, s.flyDate, { color: i === n - 1 ? k.c.ink : k.c.muted, left: Math.max(2, Math.min(w - 62, mid(i) - 30)), top: ground + 30 }]}>
+            {c.label}
+          </Text>
+        ) : null,
+      )}
+      <View style={[s.abs, { left: 16, right: 16, bottom: 8, alignItems: 'center' }]}>
+        <Text style={[s.ax, { color: k.c.muted, textAlign: 'center' }]}>
+          {per > 1 ? 'Each light is ' + per + ' you rode out.' : 'Each light is one you rode out.'}
+          {two ? '\n' : ' '}
+          {sized ? 'Bigger was stronger.' + (slips ? ' ' : '') : ''}
+          {slips ? 'A dot is a slip.' : ''}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ---------- what was named ---------- */
+/** the most words the field shows; the rest are in the numbers under the card */
+const FIELD_MAX = 14;
+const FIELD_N = 12;
+const INK = '#1C2030';
+function Floating({ i, x, y, size, children }: { i: number; x: number; y: number; size: number; children: ReactNode }) {
+  const breath = useBreath(2600 + (i % 5) * 420);
+  return (
+    <Pop delay={140 + i * 70} style={{ position: 'absolute', left: x - size / 2, top: y - size / 2, width: size, height: size }}>
+      <Animated.View style={{ transform: [{ translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [-2, 2] }) }] }}>{children}</Animated.View>
+    </Pop>
+  );
+}
+/** the whole field of feelings as soft dots, the one a person picks from, with what they named swelled up where it lives, its word inside */
+export function FeelField({ words, w, h, label }: { words: PatFeels['words']; w: number; h: number; label: string }) {
+  const shown = words.slice(0, FIELD_MAX);
+  const side = 10;
+  const W = w - side * 2;
+  const H = h - side * 2;
+  const at = useMemo(
+    () =>
+      feelMap(
+        shown.map((x) => ({ r: x.r, c: x.c, n: x.n, min: x.w.length * 7 + 16 })),
+        FIELD_N,
+        W,
+        H,
+      ),
+    [shown, W, H],
+  );
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        {at.dots.map((p) => (
+          <Circle key={p.row + '-' + p.col} cx={side + p.x} cy={side + p.y} r={p.r} fill={FEEL_COLORS[p.row][p.col]} opacity={0.42} />
+        ))}
+        {shown.map((x, i) => (
+          <Circle key={x.w} cx={side + at.named[i].x} cy={side + at.named[i].y} r={at.named[i].r + 5} fill={FEEL_COLORS[x.r][x.c]} opacity={0.2} />
+        ))}
+      </Svg>
+      {shown.map((x, i) => {
+        const d = at.named[i].r * 2;
+        const big = d >= 96 && x.w.length * 8.6 <= d - 12;
+        const fs = big ? 17 : x.w.length * 7 <= d - 8 ? 13 : 12;
+        return (
+          <Floating key={x.w} i={i} x={side + at.named[i].x} y={side + at.named[i].y} size={d}>
+            <LitShape kind="circle" size={d} color={FEEL_COLORS[x.r][x.c]} />
+            <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+              {x.w.length * (fs === 12 ? 6.2 : 7) <= d - 4 ? (
+                <Text numberOfLines={1} style={{ fontFamily: font.bodySemi, fontSize: fs, color: INK }}>
+                  {x.w}
+                </Text>
+              ) : null}
+            </View>
+          </Floating>
+        );
+      })}
+    </View>
+  );
+}
+
+/* ---------- the day as a sky ---------- */
+const DAY_START = 6;
+const SKY_COLS = 12;
+const SKY_WORDS = 30;
+const ampmOf = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
+/* the sky through a day from 6 AM: dawn, the bright middle of the day, dusk, the deep of the night and the first light again */
+const SKY_STOPS: [number, string][] = [
+  [0, '#8A5C9E'],
+  [0.12, '#5E7BC8'],
+  [0.3, '#5B93D8'],
+  [0.46, '#C26A7E'],
+  [0.56, '#5A3580'],
+  [0.72, '#1A1450'],
+  [0.9, '#241B62'],
+  [1, '#6A4A92'],
+];
+/** the entries of the day standing in its sky: the sky says what time it is at a glance, so the words under it can stay few */
+export function DaySky({ hours, hard, w, h, sky }: { hours: PatHour[]; hard: PatWhen['hard']; w: number; h: number; sky: string }) {
+  const k = useInk();
+  const H = h - SKY_WORDS;
+  const slot = w / SKY_COLS;
+  const bw = Math.round(slot * 0.68);
+  const cols = Array.from({ length: SKY_COLS }, (_, i) => {
+    const a = hours[(DAY_START + i * 2) % 24];
+    const b = hours[(DAY_START + i * 2 + 1) % 24];
+    return { h: a.h, rode: a.rode + b.rode, slipped: a.slipped + b.slipped };
+  });
+  const top = Math.max(4, ...cols.map((x) => x.rode + x.slipped));
+  const room = H - 40;
+  const busiest = cols.slice().sort((a, b) => b.rode + b.slipped - (a.rode + a.slipped))[0];
+  const hardAt = hard.weekdays || hard.weekends;
+  const hardX = hardAt ? (((hardAt.start - DAY_START + 24) % 24) / 24) * w : 0;
+  return (
+    <View
+      style={{ width: w, height: h }}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={busiest.rode + busiest.slipped ? 'Entries through the day, most around ' + ampmOf(busiest.h) : 'Entries through the day'}>
+      <Svg width={w} height={H + 1} style={s.abs} {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="dayline" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+            {SKY_STOPS.map(([o, c]) => (
+              <Stop key={o} offset={String(o)} stopColor={c} />
+            ))}
+          </LinearGradient>
+          <LinearGradient id="dayfade" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={sky} stopOpacity={1} />
+            <Stop offset="0.7" stopColor={sky} stopOpacity={0.38} />
+            <Stop offset="1" stopColor={sky} stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={H} fill="url(#dayline)" />
+        <Rect width={w} height={H} fill="url(#dayfade)" />
+      </Svg>
+      {hardAt ? (
+        <View style={[s.abs, { left: Math.max(8, Math.min(w - 8 - (slot + 68), hardX - 34)), width: slot + 68, top: 0, alignItems: 'center' }]}>
+          <Text style={[s.ax, { color: k.c.ink }]}>Hard hours</Text>
+          <View style={{ width: slot, height: 3, borderRadius: 2, marginTop: 4, backgroundColor: k.core }} />
+        </View>
+      ) : null}
+      {cols.map((x, i) => {
+        const t = x.rode + x.slipped;
+        if (!t) return null;
+        const bar = Math.max(bw, (t / top) * room);
+        const quiet = Math.round((x.slipped / t) * bar);
+        return (
+          <View key={i} style={[s.abs, { left: i * slot + (slot - bw) / 2, top: H - bar }]}>
+            <Rise h={bar} w={bw} delay={60 + i * 45}>
+              <Svg width={bw} height={bar} {...SVG_HIDE}>
+                <Defs>
+                  <LinearGradient id={'bar' + i} x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0" stopColor="#FFF0C4" />
+                    <Stop offset="0.45" stopColor="#FFB347" />
+                    <Stop offset="1" stopColor="#F26A2E" />
+                  </LinearGradient>
+                </Defs>
+                {quiet ? <Rect width={bw} height={quiet + bw} rx={bw / 2} fill="rgba(219,213,245,0.55)" /> : null}
+                {bar - quiet > 0 ? (
+                  <Rect y={quiet ? quiet + 2 : 0} width={bw} height={bar - quiet + bw} rx={quiet ? 2 : bw / 2} fill={`url(#bar${i})`} />
+                ) : null}
+              </Svg>
+            </Rise>
+          </View>
+        );
+      })}
+      <View style={[s.abs, { left: 0, right: 0, top: H, height: 1, backgroundColor: 'rgba(255,255,255,0.22)' }]} />
+      {(
+        [
+          [0, '6 AM'],
+          [0.25, 'Noon'],
+          [0.5, '6 PM'],
+          [0.75, 'Midnight'],
+        ] as [number, string][]
+      ).map(([u, l]) => (
+        <View
+          key={l}
+          style={[s.keyItem, s.abs, { left: u ? u * w - 32 : 12, width: u ? 64 : undefined, justifyContent: u ? 'center' : 'flex-start', top: H + 8 }]}>
+          {l === 'Noon' ? (
+            <Svg width={12} height={12} {...SVG_HIDE}>
+              <Circle cx={6} cy={6} r={4} fill={k.core} />
+            </Svg>
+          ) : l === 'Midnight' ? (
+            <Svg width={12} height={12} viewBox="0 0 24 24" {...SVG_HIDE}>
+              <Path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill={k.c.muted} />
+            </Svg>
+          ) : null}
+          <Text style={[s.ax, { color: k.c.muted }]}>{l}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/* ---------- the hours of the day, in the week's review ---------- */
+/** the row starts here, so a night stays in one piece: most hard hours are at night */
+const DAY_FROM = 6;
+/** two hours to a column, the size of the hard hours: a single hour says more than a few entries know */
+const HOUR_COLS = 12;
+/** how tall the words under Hours stand, to take from the room for the columns */
+export const HOUR_WORDS = 26;
+const ampm = (h: number) => (h % 12 || 12) + (h < 12 ? ' AM' : ' PM');
+/** entries through the day, with the hard hours marked behind them */
+export function Hours({ hours, hard, H }: { hours: PatHour[]; hard: PatWhen['hard']; H: number }) {
+  const k = useInk();
+  const [w, onLayout] = useWidth();
+  const slotW = w / HOUR_COLS;
+  const bw = Math.round(slotW * 0.56);
+  const cols = Array.from({ length: HOUR_COLS }, (_, i) => {
+    const a = hours[(DAY_FROM + i * 2) % 24];
+    const b = hours[(DAY_FROM + i * 2 + 1) % 24];
+    return { h: a.h, rode: a.rode + b.rode, slipped: a.slipped + b.slipped };
+  });
+  /* one entry is not a full column */
+  const top = Math.max(4, ...cols.map((x) => x.rode + x.slipped));
+  const busiest = cols.slice().sort((a, b) => b.rode + b.slipped - (a.rode + a.slipped))[0];
+  const band = (start: number, color: string) => {
+    const left = (((start - DAY_FROM + 24) % 24) / 24) * w;
+    return (
+      <View
+        key={color}
+        style={[
+          s.abs,
+          {
+            left,
+            top: 0,
+            width: Math.min(w / 12, w - left),
+            height: H,
+            backgroundColor: color,
+            opacity: 0.18,
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+          },
+        ]}
+      />
+    );
+  };
   return (
     <View
       onLayout={onLayout}
-      style={{ height: H + 44 }}
+      style={{ height: H + HOUR_WORDS }}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={'No-slip days before each slip, oldest first: ' + g.runs.join(', ') + (g.slips ? '. Now: ' + g.now : '')}>
-      {w
-        ? vals.map((v, i) => {
-            const open = g.slips > 0 && i === n - 1;
-            const h = Math.max(5, (v / max) * H);
+      accessibilityLabel={busiest.rode + busiest.slipped ? 'Entries through the day, most around ' + ampm(busiest.h) : 'Entries through the day'}>
+      {w ? (
+        <>
+          {hard.weekdays ? band(hard.weekdays.start, k.acc) : null}
+          {hard.weekends ? band(hard.weekends.start, k.c.violet) : null}
+          <View style={[s.abs, { left: 0, right: 0, top: H, height: 1, backgroundColor: k.grid }]} />
+          {hard.weekdays || hard.weekends ? (
+            <Text style={[s.ax, s.abs, { top: 0, right: w - ((((hard.weekdays || hard.weekends)!.start - DAY_FROM + 24) % 24) / 24) * w + 6, color: k.ax }]}>
+              Hard hours
+            </Text>
+          ) : null}
+          {cols.map((x, i) => {
+            const t = x.rode + x.slipped;
+            if (!t) return null;
+            const h = Math.max(6, (t / top) * H);
             return (
-              <View key={i} style={[s.abs, { left: X(i) - bw / 2, top: 18 + H - h - 18, width: bw, alignItems: 'center' }]}>
-                <Text style={[s.n, { color: open ? k.acc : k.ax }]}>{v}</Text>
-                {open ? (
-                  <View style={[s.open, { width: bw, height: h, borderColor: k.acc, backgroundColor: k.c.accentSoft }]} />
-                ) : (
-                  <Rise h={h} w={bw} delay={120 + i * 70}>
-                    <View style={{ flex: 1, backgroundColor: k.rode }} />
-                  </Rise>
-                )}
-                {open ? <Text style={[s.now, { color: k.acc }]}>now</Text> : null}
+              <View key={i} style={[s.abs, { left: i * slotW + (slotW - bw) / 2, top: H - h }]}>
+                <Rise h={h} w={bw} delay={60 + i * 45}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    {x.slipped ? <View style={{ flex: x.slipped, backgroundColor: k.hush }} /> : null}
+                    {x.rode ? <View style={{ flex: x.rode, backgroundColor: k.win }} /> : null}
+                  </View>
+                </Rise>
               </View>
             );
-          })
-        : null}
-      {w && trend ? (
-        <Svg width={w} height={H + 44} style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Line x1={trend[0]} y1={trend[1]} x2={trend[2]} y2={trend[3]} stroke={k.acc} strokeWidth={3} strokeDasharray="6 6" strokeLinecap="round" />
-        </Svg>
+          })}
+          {(
+            [
+              [6, '6 AM'],
+              [12, 'Noon'],
+              [18, '6 PM'],
+              [0, 'Midnight'],
+            ] as [number, string][]
+          ).map(([h, l], i) => (
+            <Text key={h} style={[s.ax, s.abs, { left: (i * w) / 4, top: H + 8, color: k.ax }]}>
+              {l}
+            </Text>
+          ))}
+        </>
       ) : null}
     </View>
   );
 }
-
-/* ---------- ridden out, week by week ---------- */
-export function RideWeeks({ weeks }: { weeks: PatWeek[] }) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
-  const H = 96;
-  const n = weeks.length;
-  const gap = n > 10 ? 5 : 8;
-  const bw = w ? Math.min(30, (w - gap * (n - 1)) / Math.max(n, 1)) : 0;
+/** what the two colors of a column are */
+export function HoursKey() {
+  const k = useInk();
   return (
-    <View onLayout={onLayout} style={{ gap: 6 }}>
-      <View style={[s.row, { height: H, gap }]}>
-        {w
-          ? weeks.map((x, i) => {
-              const t = x.rode + x.slipped;
-              if (!t) return <View key={i} style={[s.empty, { width: bw, height: 8, borderColor: k.grid }]} />;
-              return (
-                <Rise key={i} h={H} w={bw} delay={100 + i * 55}>
-                  <View style={{ flex: x.slipped, backgroundColor: k.slip }} />
-                  <View style={{ flex: x.rode, backgroundColor: k.rode }} />
-                </Rise>
-              );
-            })
-          : null}
+    <View style={s.key}>
+      <View style={s.keyItem}>
+        <View style={[s.keyDot, { backgroundColor: k.win }]} />
+        <Text style={[s.ax, { color: k.ax }]}>Ridden out</Text>
       </View>
-      <View style={s.between}>
-        <Text style={[s.ax, { color: k.ax }]}>{n > 1 ? n + ' weeks ago' : ''}</Text>
-        <Text style={[s.ax, { color: k.ax }]}>this week</Text>
+      <View style={s.keyItem}>
+        <View style={[s.keyDot, { backgroundColor: k.hush }]} />
+        <Text style={[s.ax, { color: k.ax }]}>Slipped</Text>
       </View>
     </View>
   );
 }
-
-/* ---------- the 24-hour clock ---------- */
-const TAU = Math.PI * 2;
-const pol = (cx: number, cy: number, r: number, a: number) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-/** a ring sector between two radii and two angles */
-function sector(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
-  const [x0, y0] = pol(cx, cy, r1, a0);
-  const [x1, y1] = pol(cx, cy, r1, a1);
-  const [x2, y2] = pol(cx, cy, r0, a1);
-  const [x3, y3] = pol(cx, cy, r0, a0);
-  const big = a1 - a0 > Math.PI ? 1 : 0;
-  const f = (v: number) => v.toFixed(1);
-  return `M${f(x0)} ${f(y0)}A${r1} ${r1} 0 ${big} 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A${r0} ${r0} 0 ${big} 0 ${f(x3)} ${f(y3)}Z`;
-}
-const ang = (h: number) => (h / 24) * TAU - Math.PI / 2;
-export function Clock({ hours, hard }: { hours: PatHour[]; hard: PatWhen['hard'] }) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
-  const v = useOnce(100, 900, NATIVE, Easing.out(Easing.cubic));
-  const D = Math.min(w, 300);
-  const cx = D / 2;
-  const cy = D / 2;
-  const R = D / 2 - 46;
-  const r0 = R * 0.38;
-  const max = Math.max(1, ...hours.map((x) => x.rode + x.slipped));
-  const top = hours.slice().sort((a, b) => b.rode + b.slipped - (a.rode + a.slipped))[0];
-  const band = (win: RiskWindow, color: string, r: number) => <Path d={sector(cx, cy, r, r + 7, ang(win.start), ang(win.start + 2))} fill={color} />;
-  const lbl = (h: number, t: string) => {
-    const [x, y] = pol(cx, cy, R + 16, ang(h));
-    return (
-      <SvgText key={h} x={x} y={y + 4} fontSize={12} fill={k.ax} textAnchor={h === 6 ? 'start' : h === 18 ? 'end' : 'middle'} fontFamily={font.bodySemi}>
-        {t}
-      </SvgText>
-    );
-  };
+/** the days of the week, only when one stands out: a short row under the hours */
+export function WeekRow({ week, on, H }: { week: { d: number; name: string; rode: number; slipped: number }[]; on?: number; H: number }) {
+  const k = useInk();
+  const top = Math.max(1, ...week.map((x) => x.rode + x.slipped));
   return (
-    <View onLayout={onLayout} style={{ alignItems: 'center' }}>
-      {w ? (
-        <Animated.View
-          style={{
-            opacity: v,
-            transform: [
-              { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
-              { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-25deg', '0deg'] }) },
-            ],
-          }}>
-          <Svg width={D} height={D}>
-            <Circle cx={cx} cy={cy} r={R} stroke={k.grid} strokeWidth={1} fill="none" />
-            <Circle cx={cx} cy={cy} r={r0} stroke={k.grid} strokeWidth={1} fill="none" />
-            {hard.weekdays ? band(hard.weekdays, k.acc, R + 3) : null}
-            {hard.weekends ? band(hard.weekends, k.c.violet, R + 3) : null}
-            {hours.map((x) => {
-              if (!x.rode) return null;
-              const span = R - r0 - 2;
-              return <Path key={x.h} d={sector(cx, cy, r0 + 1, r0 + 1 + (x.rode / max) * span, ang(x.h) + 0.02, ang(x.h + 1) - 0.02)} fill={k.rode} />;
-            })}
-            {hours.map((x) => {
-              if (!x.slipped) return null;
-              const a0 = ang(x.h) + 0.02;
-              const a1 = ang(x.h + 1) - 0.02;
-              const span = R - r0 - 2;
-              const r1 = r0 + 1 + (x.rode / max) * span;
-              return <Path key={'s' + x.h} d={sector(cx, cy, r1, r1 + (x.slipped / max) * span, a0, a1)} fill={k.slip} />;
-            })}
-            {lbl(0, '12 AM')}
-            {lbl(6, '6 AM')}
-            {lbl(12, '12 PM')}
-            {lbl(18, '6 PM')}
-            {top && top.rode + top.slipped ? (
-              <>
-                <SvgText x={cx} y={cy - 4} fontSize={11} fill={k.ax} textAnchor="middle" fontFamily={font.bodySemi}>
-                  Most at
-                </SvgText>
-                <SvgText x={cx} y={cy + 16} fontSize={17} fill={k.c.ink} textAnchor="middle" fontFamily={font.display}>
-                  {(top.h % 12 || 12) + (top.h < 12 ? ' AM' : ' PM')}
-                </SvgText>
-              </>
-            ) : null}
-          </Svg>
-        </Animated.View>
-      ) : (
-        <View style={{ height: 300 }} />
-      )}
-    </View>
-  );
-}
-
-/* ---------- the days of the week ---------- */
-export function WeekRow({ week, hard }: { week: PatWhen['week']; hard: number | null }) {
-  const k = useChartColors();
-  const H = 70;
-  const order = [1, 2, 3, 4, 5, 6, 0];
-  const max = Math.max(1, ...week.map((x) => x.rode + x.slipped));
-  return (
-    <View style={[s.row, { gap: 8, justifyContent: 'space-between' }]}>
-      {order.map((d, i) => {
-        const x = week[d];
+    <View
+      style={{ flexDirection: 'row' }}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={'Entries by day of the week. ' + week.map((x) => x.name + ' ' + (x.rode + x.slipped)).join(', ')}>
+      {week.map((x, i) => {
         const t = x.rode + x.slipped;
-        const h = Math.max(4, (t / max) * H);
-        const on = hard === d;
+        const h = t ? Math.max(4, (t / top) * H) : 0;
         return (
-          <View key={d} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-            <Text style={[s.n, { color: on ? k.c.ink : k.ax }]}>{t}</Text>
+          <View key={x.d} style={{ flex: 1, alignItems: 'center' }}>
             <View style={{ height: H, justifyContent: 'flex-end' }}>
-              {t ? (
-                <Rise h={h} w={22} delay={100 + i * 60}>
-                  <View style={{ flex: x.slipped, backgroundColor: k.slip }} />
-                  <View style={{ flex: x.rode, backgroundColor: k.rode }} />
+              {h ? (
+                <Rise h={h} w={16} delay={200 + i * 45}>
+                  <View style={{ flex: 1, backgroundColor: x.d === on ? k.win : k.hush }} />
                 </Rise>
-              ) : (
-                <View style={[s.empty, { width: 22, height: 4, borderColor: k.grid }]} />
-              )}
+              ) : null}
             </View>
-            <Text style={[s.day, { color: on ? k.c.ink : k.ax, fontFamily: on ? font.bodyBold : font.bodySemi }]}>{x.name.slice(0, 3)}</Text>
+            <Text style={[s.ax, { marginTop: 4, color: x.d === on ? k.c.ink : k.ax }]}>{x.name.slice(0, 1)}</Text>
           </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/* ---------- things in a mosaic ---------- */
+export interface Rank {
+  label: string;
+  /** the words under its name */
+  note: string;
+  /** the same in a narrow block */
+  short: string;
+  /** how often */
+  n: number;
+}
+type Tile = [string, string];
+/** a sunset for what sets it off, biggest first, and the cool of a clear morning for what helps */
+export const TILES: Record<'warm' | 'cool', Tile[]> = {
+  warm: [
+    ['#FFC94D', '#2B1A00'],
+    ['#FF9F45', '#2B1400'],
+    ['#F4744E', '#2B0B00'],
+    ['#D2557A', '#FFF4F7'],
+    ['#9550B4', '#FBF3FF'],
+    ['#5F48AE', '#F4F0FF'],
+  ],
+  cool: [
+    ['#5EE0B5', '#06352A'],
+    ['#45C7C9', '#04302F'],
+    ['#4CA6E0', '#04233A'],
+    ['#5C86E6', '#F2F5FF'],
+    ['#6E6BDD', '#F4F3FF'],
+    ['#7B57C8', '#F7F2FF'],
+  ],
+};
+const MOSAIC_SIDE = 12;
+const MOSAIC_GAP = 4;
+/** a block for each thing, the biggest first. What takes up the most room in the picture is what comes up the most */
+export function Mosaic({ items, tone, w, h }: { items: Rank[]; tone: 'warm' | 'cool'; w: number; h: number }) {
+  const W = w - MOSAIC_SIDE * 2;
+  const H = h - MOSAIC_SIDE;
+  const blocks = useMemo(
+    () =>
+      mosaic(
+        items.map((r) => r.n),
+        W,
+        H,
+      ),
+    [items, W, H],
+  );
+  return (
+    <View style={{ width: w, height: h }}>
+      {blocks.map((b, rank) => {
+        const r = items[b.i];
+        const [fill, ink] = TILES[tone][Math.min(rank, 5)];
+        const bw = b.w - MOSAIC_GAP;
+        const bh = b.h - MOSAIC_GAP;
+        const big = bw >= 150 && bh >= 96;
+        return (
+          <Pop
+            key={r.label}
+            delay={80 + rank * 70}
+            style={{ position: 'absolute', left: MOSAIC_SIDE + b.x + MOSAIC_GAP / 2, top: b.y + MOSAIC_GAP / 2, width: bw, height: bh }}>
+            <View
+              accessible
+              accessibilityLabel={r.label + ': ' + r.note}
+              style={{ flex: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: fill, padding: bw < 84 ? 8 : 12, justifyContent: 'space-between' }}>
+              <Fade colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)', 'rgba(26,11,58,0.12)']} style={StyleSheet.absoluteFill} />
+              <Text
+                numberOfLines={bw < 100 ? 4 : 3}
+                style={{
+                  fontFamily: big ? font.display : font.bodySemi,
+                  fontSize: big ? 22 : bw < 84 ? 13 : 15,
+                  lineHeight: big ? 26 : bw < 84 ? 16 : 19,
+                  color: ink,
+                }}>
+                {r.label}
+              </Text>
+              {bh >= 72 ? (
+                <Text numberOfLines={1} style={{ fontFamily: font.bodyMedium, fontSize: 12, lineHeight: 15, color: ink, opacity: 0.82 }}>
+                  {bw < 120 ? r.short : r.note}
+                </Text>
+              ) : null}
+            </View>
+          </Pop>
         );
       })}
     </View>
@@ -251,53 +994,81 @@ export function WeekRow({ week, hard }: { week: PatWhen['week']; hard: number | 
 }
 
 /* ---------- slip days against days with no slip ---------- */
-export function DiffDots({ list }: { list: PatDiff[] }) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
+const fmtDiff = (d: PatDiff, v: number) => (d.unit === 'pct' ? Math.round(v * 100) + '%' : String(Math.round(v * 10) / 10) + (d.unit === 'h' ? ' h' : ''));
+function PairBar({ d, which, delay, H, w }: { d: PatDiff; which: 'clean' | 'slip'; delay: number; H: number; w: number }) {
+  const k = useInk();
+  const top = Math.max(d.clean, d.slip) || 1;
+  const v = which === 'clean' ? d.clean : d.slip;
+  const bar = Math.max(w, (v / top) * (H - 40));
   return (
-    <View onLayout={onLayout} style={{ gap: 24 }}>
-      {list.map((d) => {
-        const top = d.unit === 'pct' ? 1 : d.unit === 'h' ? Math.max(10, Math.ceil(Math.max(d.clean, d.slip))) : 10;
-        const X = (v: number) => 10 + (v / top) * (w - 20);
-        const fmt = (v: number) => (d.unit === 'pct' ? Math.round(v * 100) + '%' : String(Math.round(v * 10) / 10) + (d.unit === 'h' ? ' h' : ''));
-        const a = X(d.clean);
-        const b = X(d.slip);
-        return (
-          <View key={d.k} style={{ gap: 6 }} accessible accessibilityLabel={d.line}>
-            <Text style={[s.dl, { color: k.c.ink }]}>{d.label}</Text>
-            <View style={{ height: 34 }}>
-              {w ? (
-                <Svg width={w} height={34}>
-                  <Line x1={10} y1={12} x2={w - 10} y2={12} stroke={k.grid} strokeWidth={2} strokeLinecap="round" />
-                  <Line x1={a} y1={12} x2={b} y2={12} stroke={k.ax} strokeWidth={3} strokeLinecap="round" />
-                  <Circle cx={a} cy={12} r={8} fill={k.rode} />
-                  <Circle cx={b} cy={12} r={8} fill={k.slip} />
-                  <SvgText x={a} y={32} fontSize={12} fill={k.rode} textAnchor="middle" fontFamily={font.bodyBold}>
-                    {fmt(d.clean)}
-                  </SvgText>
-                  <SvgText x={b} y={32} fontSize={12} fill={k.slip} textAnchor="middle" fontFamily={font.bodyBold}>
-                    {fmt(d.slip)}
-                  </SvgText>
-                </Svg>
-              ) : null}
+    <View style={{ width: w, height: H, justifyContent: 'flex-end', alignItems: 'center' }}>
+      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink }}>
+        {fmtDiff(d, v)}
+      </Text>
+      <Rise h={bar} w={w} delay={delay}>
+        <Svg width={w} height={bar} {...SVG_HIDE}>
+          <Defs>
+            <LinearGradient id="clean" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFF0C4" />
+              <Stop offset="0.45" stopColor="#FFB347" />
+              <Stop offset="1" stopColor="#F26A2E" />
+            </LinearGradient>
+            <LinearGradient id="slip" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#CFC8F2" />
+              <Stop offset="1" stopColor="#6E62B8" />
+            </LinearGradient>
+          </Defs>
+          <Rect width={w} height={bar + w} rx={w / 2} fill={`url(#${which})`} />
+        </Svg>
+      </Rise>
+    </View>
+  );
+}
+/** each answer as a pair standing side by side, days with no slip beside slip days, each pair to its own scale: it is the difference inside a pair that counts */
+export function Pairs({ list, w, h }: { list: PatDiff[]; w: number; h: number }) {
+  const k = useInk();
+  const KEY = 30;
+  const NAME = 44;
+  const H = h - KEY - NAME;
+  const slot = (w - 32) / Math.max(list.length, 1);
+  const bw = Math.floor(Math.min((slot - 20) / 2, 72));
+  return (
+    <View style={{ width: w, height: h, paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {list.map((d, i) => (
+          <View key={d.k} style={{ width: slot, alignItems: 'center' }} accessible accessibilityLabel={d.line}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <PairBar d={d} which="clean" delay={80 + i * 120} H={H} w={bw} />
+              <PairBar d={d} which="slip" delay={150 + i * 120} H={H} w={bw} />
             </View>
-            <T>{d.line}</T>
+            <Text numberOfLines={2} style={[s.ax, { height: NAME, paddingTop: 8, paddingHorizontal: 4, textAlign: 'center', color: k.c.ink }]}>
+              {d.label}
+            </Text>
           </View>
-        );
-      })}
+        ))}
+      </View>
+      <View style={[s.key, { justifyContent: 'center', columnGap: 16 }]}>
+        <View style={s.keyItem}>
+          <View style={[s.keyDot, { backgroundColor: k.win }]} />
+          <Text style={[s.ax, { color: k.c.muted }]}>Days with no slip</Text>
+        </View>
+        <View style={s.keyItem}>
+          <View style={[s.keyDot, { backgroundColor: '#A99FE0' }]} />
+          <Text style={[s.ax, { color: k.c.muted }]}>Slip days</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   abs: { position: 'absolute' },
-  row: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
   between: { flexDirection: 'row', justifyContent: 'space-between' },
-  n: { fontFamily: font.bodyBold, fontSize: 13, fontVariant: ['tabular-nums'], marginBottom: 4 },
-  now: { fontFamily: font.bodyBold, fontSize: 12, marginTop: 4 },
-  open: { borderWidth: 2, borderStyle: 'dashed', borderRadius: 8 },
-  empty: { borderTopWidth: 2, borderStyle: 'dotted' },
+  key: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
+  keyItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  keyDot: { width: 8, height: 8, borderRadius: 4 },
   ax: { fontFamily: font.body, fontSize: 12 },
-  day: { fontSize: 12 },
-  dl: { fontFamily: font.bodySemi, fontSize: 15 },
+  flyN: { position: 'absolute', width: 48, textAlign: 'center', fontFamily: font.bodySemi },
+  flyDate: { position: 'absolute', width: 60, textAlign: 'center' },
+  date: { fontSize: 11, lineHeight: 14, marginTop: 2 },
 });

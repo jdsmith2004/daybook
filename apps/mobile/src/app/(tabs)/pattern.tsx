@@ -1,22 +1,32 @@
-/* Pattern (the tab was called Journal until the journal itself came, October 2026): what happened. Days (the month and every day), Your pattern (a few plain answers, each with the graph behind
-   it: are slips getting further apart, when it happens, what sets it off, what is different on hard days, what helps),
+/* Pattern (the tab was called Journal until the journal itself came, October 2026): what happened. Days (the month and every day), Your pattern (one big card at a time, swiped sideways, each
+   with a plain answer over its chart: how you are doing, how the days felt, riding it out, what was felt, when it happens, what sets it off, what is different on hard days, what helps),
    Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without the
-   pattern open, Pattern shows its first part (the one look, the gaps between slips, My numbers) and the rest faded behind a
-   card that opens the tip sheet, or once Daybook Pattern is on sale the sheet for that (core supporter.ts, patPartOpen). */
+   pattern open, the cards that show a person changing stay open (core supporter.ts, PAT_FREE), and each of the others shows its chart faded, with
+   a way into the tip sheet, or once Daybook Pattern is on sale the sheet for that. A card with nothing behind it yet is left out: named feelings
+   above all, which many people log only now and then. Nothing here asks to be looked at. */
 import {
+  FEELS_MIN,
   bpsRow,
   bpsScores,
   daysList,
   fmtDate,
   fmtHour,
-  inTen,
   myNumbers,
-  patDiffs,
+  DOING_MIN,
+  patDoing,
+  patFeels,
+  patFelt,
   patGaps,
   patInsights,
-  patKeys,
+  patLeads,
   patNeeds,
   patNowLine,
+  patPeriod,
+  patRangeLabel,
+  patRideCols,
+  patRidge,
+  gameCompute,
+  patRideSay,
   patRideOut,
   patSlipTrig,
   patTriggerLines,
@@ -24,12 +34,12 @@ import {
   patWeeks,
   patWhen,
   plural,
-  logRateKeys,
   PATTERN_FROM,
-  ratingOf,
   talkEvidence,
+  talkNeedWord,
   urWorks,
   weekOf,
+  type DayFeelStep,
   type PatGo,
   type PatRange,
 } from '@daybook/core';
@@ -37,28 +47,29 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
-import { useEffect, useRef, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Platform, Pressable, StyleSheet, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { EmptyChart, FeelTiles, HBars, Legend, NumbersTable } from '@/components/charts';
-import { Clock, DiffDots, Gaps, RideWeeks, WeekRow } from '@/components/pattern-charts';
+import { NumbersTable } from '@/components/charts';
+import { DAY_FEEL_LOOK } from '@/components/day-feel-pop';
+import { CARD_SKY, DayFlow, DaySky, FeelField, Fireflies, Hillside, HoursKey, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
+import { Deck, Say, type DeckCard, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
 import { TodaySoFar } from '@/components/today-log';
 import { SundayCard } from '@/components/sunday-card';
-import { MonthCard, PatternCard, UnlockCard, useLocked, useOpenMonths } from '@/components/support';
-import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
+import { Button, Card, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
 import { SetupFirst } from '@/components/welcome';
 import { useStore } from '@/lib/store';
-import { font, useTheme } from '@/lib/theme';
+import { font, useTheme, palettes } from '@/lib/theme';
 
 type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -172,15 +183,36 @@ function DaysPane() {
 
 /* ---------- your pattern ---------- */
 const GO_IC: Record<PatGo, string> = { apart: 'sunrise', when: 'timer', what: 'bolt', days: 'heart' };
+const RANGES: [PatRange, string][] = [
+  ['7', 'Week'],
+  ['30', 'Month'],
+  ['all', 'All'],
+];
+/* the cards the free side keeps (core PAT_FREE: felt, apart): they show a person changing. The rest explain why, and are what a tip or Daybook Pattern opens */
+const FREE_CARDS = ['felt', 'ride', 'apart', 'named'];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+/* how tall the days of the week stand under the hours */
+const WEEK_ROW = 64;
 function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const c = useTheme();
   const { snap, tk, now } = useStore();
   const st = snap.settings!;
-  const [range, setRange] = useState<PatRange>('90');
-  const [ys, setYs] = useState<Partial<Record<PatGo, number>>>({});
-  const locked = useLocked('stats');
+  const [range, setRange] = useState<PatRange>('30');
+  const [index, setIndex] = useState(0);
+  const [deckY, setDeckY] = useState(0);
+  const deck = useRef<DeckHandle>(null);
+  const isLocked = useLocked('stats');
+  /* never an ask in the hours after an SOS or a slip */
+  const quiet = useQuietAsks();
   const openMonths = useOpenMonths();
-  const keys = patKeys(range, snap.days, st, tk);
+  const per = useMemo(() => patPeriod(range, snap.days, st, tk), [range, snap.days, st, tk]);
+  const allPer = useMemo(() => patPeriod('all', snap.days, st, tk), [snap.days, st, tk]);
+  const keys = per.keys;
+  const felt = useMemo(() => patFelt(snap.days, per, tk), [snap.days, per, tk]);
+  const feels = useMemo(() => patFeels(snap.journal, snap.days, per, tk), [snap.journal, snap.days, per, tk]);
+  /* whether a card is there at all goes by the whole log, so a quiet week does not make the cards jump */
+  const feltAll = useMemo(() => patFelt(snap.days, allPer, tk).n, [snap.days, allPer, tk]);
+  const namedAll = useMemo(() => patFeels(snap.journal, snap.days, allPer, tk).n, [snap.journal, snap.days, allPer, tk]);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
     .filter((k) => k <= tk && (snap.days[k]?.events || []).some((e) => e.outcome === 'slipped'))
@@ -188,49 +220,269 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
     .pop();
   const weeks = patWeeks(snap.days, keys, range === 'all' ? 26 : 13);
   const ride = patRideOut(weeks);
+  const rideCols = patRideCols(snap.days, keys, tk);
   const when = patWhen(snap.days, st, keys, tk);
   const trig = patTriggers(snap.days, st, keys, tk);
   /* what came before the last slips, once it is a real pattern (the last six slips, whatever the range) */
   const slipTrig = patSlipTrig(snap.days, st, tk);
   const needs = patNeeds(snap.days, keys);
-  const diffs = patDiffs(snap.days, keys);
+  /* slip days are few, so this one reads the whole log whatever the range */
+  const leads = patLeads(snap.days, allPer.keys);
   const ins = patInsights(g, ride, when, trig.list);
   const works = urWorks(snap.days, tk);
   const ev = talkEvidence(snap.days);
   const nums = myNumbers(snap.days, st, tk, now);
-  /* the ratings this log holds: mood, urges and stress, and the older ones on a log that has them (core logRateKeys) */
-  const series = logRateKeys(snap.days).map((id) => ({
-    id,
-    name: ratingOf(id).name,
-    vals: keys.map((k) => {
-      const ci = snap.days[k]?.checkin;
-      return ci && typeof ci[id] === 'number' ? (ci[id] as number) : null;
-    }),
-  }));
-  const anyRating = series.some((x) => x.vals.some((v) => v != null));
-  const at = (k: PatGo) => (e: { nativeEvent: { layout: { y: number } } }) => {
-    if (locked) return;
-    const y = e.nativeEvent.layout.y;
-    setYs((o) => (o[k] === y ? o : { ...o, [k]: y }));
-  };
+  const whenAll = patWhen(snap.days, st, allPer.keys, tk);
+  const anyEntry = whenAll.week.some((d) => d.rode + d.slipped);
+  const trigAll = patTriggers(snap.days, st, allPer.keys, tk).list.length > 0;
+  const needsAll = patNeeds(snap.days, allPer.keys).length > 0;
   const hard = when.hard.weekdays || when.hard.weekends;
-  const trendLine =
-    g.trend === 'apart'
-      ? 'Getting further apart: about ' + g.late + ' no-slip days between slips lately, up from ' + g.early + '.'
-      : g.trend === 'closer'
-        ? 'Lately they have come closer together: about ' +
-          g.late +
-          ' days between slips, down from ' +
-          g.early +
-          '. That is a signal, not a verdict. The hours and triggers below show where to aim.'
-        : g.trend === 'steady'
-          ? 'About the same so far: around ' + g.late + ' no-slip days between slips.'
-          : 'A trend shows once there are four slips to compare.';
-  const rideLine = ride
-    ? ride.now > ride.then + 0.05
-      ? 'You ride out ' + inTen(ride.now) + ' hard moments now, up from ' + inTen(ride.then) + '.'
-      : 'You ride out about ' + inTen(ride.now) + ' hard moments lately.'
-    : '';
+  const doing = patDoing(snap.days, per);
+  const rideSay = patRideSay(ride, rideCols);
+  /* the cards are night in either theme, so the shapes take their night colors */
+  const look = (n: DayFeelStep) => ({ kind: DAY_FEEL_LOOK[n].kind, color: DAY_FEEL_LOOK[n].tone(palettes.dark)[0] });
+  const needLine =
+    needs[0] && needs[0].count >= 3
+      ? 'When you talked it through, the pull was mostly after ' + talkNeedWord(needs[0].n) + ': ' + plural(needs[0].count, 'time') + '.'
+      : '';
+  const topTrig = trig.list.slice(0, 6);
+  const trigLine = slipTrig ? slipTrig.line : patTriggerLines(trig.list, null)[0] || '';
+  const trigItems: Rank[] = trig.list.length
+    ? topTrig.map((r) => ({
+        label: r.t,
+        n: r.rode + r.slipped,
+        note: r.rode + ' of ' + (r.rode + r.slipped) + ' ridden out',
+        short: r.rode + ' of ' + (r.rode + r.slipped),
+      }))
+    : needs.map((x) => ({ label: x.name, n: x.count, note: plural(x.count, 'time'), short: plural(x.count, 'time') }));
+  /* the answer that differs most leads the card on hard days */
+  const widest = leads.list
+    .slice()
+    .sort((a, b) => Math.abs(b.clean - b.slip) / (Math.max(b.clean, b.slip) || 1) - Math.abs(a.clean - a.slip) / (Math.max(a.clean, a.slip) || 1))[0];
+  const ridge = patRidge(snap.days, per, st);
+  const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
+
+  const cards: DeckCard[] = [];
+  /* the first card, for the question this page is here to answer. It stays after a slip: one slip is a flat step, which is worth seeing then */
+  if (allPer.keys.length >= DOING_MIN)
+    cards.push({
+      id: 'apart',
+      title: 'How you are doing',
+      head: doing.head,
+      say: <Say>{doing.line}</Say>,
+      chart: (
+        <Room>
+          {(w, h) => (
+            <Hillside
+              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (g.longest >= 2 ? ' Longest stretch: ' + g.longest + ' days.' : '') : undefined}
+              ridge={ridge}
+              than={doing.than}
+              first={doing.first}
+              level={level}
+              sky={CARD_SKY.apart[1]}
+              w={w}
+              h={h}
+              label={doing.head + '. ' + doing.line}
+            />
+          )}
+        </Room>
+      ),
+      numbers: g.slips ? (
+        <NumbersTable
+          cap="No-slip days before each slip"
+          head={['Slip', 'No-slip days before']}
+          rows={g.runs.map((r, i) => [String(i + 1), String(r)]).reverse()}
+        />
+      ) : null,
+    });
+  if (feltAll)
+    cards.push({
+      id: 'felt',
+      title: 'How your days felt',
+      head: felt.head,
+      say: felt.line ? <Say>{felt.line}</Say> : null,
+      chart: (
+        <Room>
+          {(w, h) => (
+            <DayFlow flow={felt.flow} by={felt.by} first={doing.first} sky={CARD_SKY.felt[1]} w={w} h={h} look={look} label={felt.head + '. ' + felt.line} />
+          )}
+        </Room>
+      ),
+      numbers: (
+        <NumbersTable
+          cap="How the days felt"
+          head={['From', 'Good or great', 'Okay', 'Low or rough']}
+          rows={felt.cols.map((x) => [fmtD(x.from), String(x.steps[3] + x.steps[4]), String(x.steps[2]), String(x.steps[0] + x.steps[1])]).reverse()}
+        />
+      ),
+    });
+  if (anyEntry)
+    cards.push({
+      id: 'ride',
+      title: 'Riding it out',
+      head: rideSay.head,
+      say: rideSay.line ? <Say>{rideSay.line}</Say> : null,
+      chart: <Room>{(w, h) => <Fireflies cols={rideCols} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
+      numbers: (
+        <NumbersTable
+          cap="Entries"
+          head={['From', 'Rode it out', 'Slipped']}
+          rows={rideCols.map((w) => [fmtD(w.from), String(w.rode), String(w.slipped)]).reverse()}
+        />
+      ),
+    });
+  if (namedAll >= FEELS_MIN)
+    cards.push({
+      id: 'named',
+      title: 'What you have felt',
+      head: feels.n ? feels.head : 'Nothing named',
+      say:
+        feels.line || feels.fresh ? (
+          <Say>
+            {feels.line}
+            {feels.line && feels.fresh ? ' ' : ''}
+            {feels.fresh}
+          </Say>
+        ) : null,
+      chart: <Room>{(w, h) => <FeelField words={feels.words} w={w} h={h} label={feels.head + '. ' + feels.line} />}</Room>,
+      foot:
+        feels.kinds >= 3 ? (
+          <T v="small" tone="muted">
+            {feels.kinds} different words named so far.
+          </T>
+        ) : null,
+      numbers: feels.n ? <NumbersTable cap="What you named" head={['Feeling', 'Times']} rows={feels.words.map((x) => [x.w, String(x.n)])} /> : null,
+    });
+  if (whenAll.timed)
+    cards.push({
+      id: 'when',
+      title: 'When does it happen?',
+      head: hard
+        ? (when.hard.same || !when.hard.weekends ? '' : when.hard.weekdays ? 'Weekdays ' : 'Weekends ') + hard.label
+        : when.timed
+          ? 'No hard hours yet'
+          : 'No times logged',
+      say: (
+        <>
+          {hard ? <Say>{hard.line}</Say> : null}
+          {when.hard.weekdays && when.hard.weekends ? (
+            <Say>
+              Weekends: {when.hard.weekends.label}. {when.hard.weekends.line}
+            </Say>
+          ) : null}
+          {when.day ? (
+            <Say>
+              {when.day.name}s are the hardest: {when.day.n} of {when.day.slips ? plural(when.day.of, 'slip') : when.day.of + ' entries'}.
+            </Say>
+          ) : null}
+        </>
+      ),
+      chart: when.timed ? (
+        <Room min={when.day ? 240 : 180}>
+          {(w, h) => (
+            <View style={{ gap: 12 }}>
+              <DaySky hours={when.hours} hard={when.hard} w={w} h={h - (when.day ? WEEK_ROW + 12 : 0)} sky={CARD_SKY.when[0]} />
+              {when.day ? (
+                <View style={{ paddingHorizontal: 16 }}>
+                  <WeekRow week={WEEK_ORDER.map((d) => when.week[d])} on={when.day.d} H={WEEK_ROW - 20} />
+                </View>
+              ) : null}
+            </View>
+          )}
+        </Room>
+      ) : (
+        <View />
+      ),
+      foot: when.timed ? <HoursKey /> : null,
+      numbers: (
+        <NumbersTable
+          cap="Entries by hour"
+          head={['Hour', 'Rode it out', 'Slipped']}
+          rows={when.hours.filter((b) => b.rode + b.slipped).map((b) => [fmtHour(b.h) + ' to ' + fmtHour((b.h + 1) % 24), String(b.rode), String(b.slipped)])}
+        />
+      ),
+    });
+  if (trigAll || needsAll)
+    cards.push({
+      id: 'what',
+      title: 'What sets it off?',
+      head: topTrig[0]?.t || needs[0]?.name || 'No reason picked',
+      say:
+        trigLine || needLine ? (
+          <>
+            {[trigLine, needLine].filter(Boolean).map((l) => (
+              <Say key={l}>{l}</Say>
+            ))}
+          </>
+        ) : null,
+      chart: trigItems.length ? <Room>{(w, h) => <Mosaic items={trigItems} tone="warm" w={w} h={h} />}</Room> : <View />,
+      foot: trig.none ? (
+        <T v="small" tone="muted">
+          {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
+        </T>
+      ) : null,
+      numbers: (
+        <NumbersTable
+          cap="Entries by what set them off"
+          head={['Reason', 'Rode it out', 'Slipped']}
+          rows={trig.list.map((r) => [r.t, String(r.rode), String(r.slipped)])}
+        />
+      ),
+    });
+  if (leads.list.length)
+    cards.push({
+      id: 'days',
+      title: 'What is different on hard days?',
+      head: widest?.label,
+      say: widest ? <Say>{widest.line}</Say> : null,
+      chart: <Room>{(w, h) => <Pairs list={leads.list} w={w} h={h} />}</Room>,
+      foot: (
+        <T v="small" tone="muted">
+          Your whole log: {plural(leads.cleanN, 'check-in day')} with no slip and {leads.slipN} with one.
+        </T>
+      ),
+    });
+  if (works.length || ev.chose + ev.went)
+    cards.push({
+      id: 'helps',
+      title: 'What helps you',
+      head: works[0]?.name,
+      say:
+        ev.chose + ev.went ? (
+          <Say>
+            You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
+          </Say>
+        ) : null,
+      chart: works.length ? (
+        <Room>
+          {(w, h) => (
+            <Mosaic
+              items={works.slice(0, 6).map((x) => ({
+                label: x.name,
+                n: x.passed + x.not,
+                note: x.passed + ' of ' + (x.passed + x.not) + ' it passed',
+                short: x.passed + ' of ' + (x.passed + x.not),
+              }))}
+              tone="cool"
+              w={w}
+              h={h}
+            />
+          )}
+        </Room>
+      ) : (
+        <View />
+      ),
+      foot: works.length ? (
+        <T v="small" tone="muted">
+          SOS tools over the last four months. SOS uses this to choose what to suggest.
+        </T>
+      ) : null,
+    });
+  const shut = (id: string) => isLocked && !FREE_CARDS.includes(id);
+  /* a sentence opens the card behind it */
+  const cardOf = (go: PatGo) => cards.findIndex((x) => x.id === go);
+  const cur = Math.min(index, Math.max(0, cards.length - 1));
+  const showing = cards[cur];
   const numbers = (
     <Card>
       <T v="h2">My numbers</T>
@@ -251,18 +503,32 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   );
   return (
     <>
-      <View style={s.chips} accessibilityLabel="Time range">
-        {(
-          [
-            ['30', '30 days'],
-            ['90', '90 days'],
-            ['all', 'All'],
-          ] as [PatRange, string][]
-        ).map(([k, l]) => (
-          <Chip key={k} label={l} on={range === k} onPress={() => setRange(k)} />
-        ))}
-      </View>
-      {/* the one thing on this page: what the log says, in plain sentences, each with its graph further down */}
+      {cards.length ? (
+        <View onLayout={(e) => setDeckY(e.nativeEvent.layout.y)}>
+          {/* the range sits under the cards, where the thumb is */}
+          <Deck deckRef={deck} cards={cards} index={cur} onIndex={setIndex} locked={shut} quiet={quiet} from={range} />
+          <View style={s.range}>
+            <View style={s.rangeTabs} accessibilityRole="tablist" accessibilityLabel="Time range">
+              {RANGES.map(([id, l]) => (
+                <Pressable
+                  key={id}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: range === id }}
+                  onPress={() => setRange(id)}
+                  style={({ pressed }) => [s.rangeTab, { opacity: pressed ? 0.6 : 1 }]}>
+                  <T style={{ fontFamily: range === id ? font.bodyBold : font.bodySemi, color: range === id ? c.ink : c.muted }}>{l}</T>
+                </Pressable>
+              ))}
+            </View>
+            <T v="small" tone="muted">
+              {patRangeLabel(keys, tk)}
+            </T>
+          </View>
+        </View>
+      ) : null}
+      {showing?.numbers && !shut(showing.id) ? <View key={showing.id}>{showing.numbers}</View> : null}
+
+      {/* what the log says, in plain sentences; each opens the card with its chart */}
       <Card>
         <T v="h2" accessibilityRole="header">
           In one look
@@ -274,11 +540,15 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityHint="Shows the graph behind it"
-                  onPress={() => ys[x.go] != null && onGo(ys[x.go]!)}
+                  disabled={cardOf(x.go) < 0}
+                  onPress={() => {
+                    deck.current?.show(cardOf(x.go));
+                    onGo(deckY);
+                  }}
                   style={({ pressed }) => [s.ins, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }, { opacity: pressed ? 0.7 : 1 }]}>
                   <Icon name={GO_IC[x.go]} size={22} color={c.accentText} />
                   <T style={s.insT}>{x.t}</T>
-                  <Icon name="down" size={16} color={c.muted} />
+                  {cardOf(x.go) < 0 ? null : <Icon name="up" size={16} color={c.muted} />}
                 </Pressable>
               </Appear>
             ))}
@@ -290,295 +560,20 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         )}
       </Card>
 
-      <View onLayout={at('apart')}>
-        <Block title="Are slips getting further apart?">
-          {g.slips ? (
-            <>
-              <T style={{ fontFamily: font.bodySemi }}>{trendLine}</T>
-              <T>{patNowLine(g, tk, lastSlip || null)}</T>
-              {/* all zeros draw an empty chart: the words above already say it */}
-              {g.now > 0 || g.runs.some((r) => r > 0) ? (
-                <>
-                  <Gaps g={g} />
-                  <T v="small" tone="muted">
-                    No-slip days before each slip, oldest on the left. The open bar is the stretch going now.
-                  </T>
-                </>
-              ) : null}
-              <NumbersTable
-                cap="No-slip days before each slip"
-                head={['Slip', 'No-slip days before']}
-                rows={g.runs.map((r, i) => [String(i + 1), String(r)]).reverse()}
-              />
-            </>
-          ) : (
-            <EmptyChart text={patNowLine(g, tk, null)} />
-          )}
-          {weeks.some((w) => w.rode + w.slipped) ? (
-            <>
-              <T v="label" style={{ marginTop: 12 }}>
-                Ridden out, week by week
-              </T>
-              {rideLine ? <T>{rideLine}</T> : null}
-              <Legend
-                items={[
-                  ['rode', 'Rode it out'],
-                  ['slip', 'Slipped'],
-                ]}
-              />
-              <RideWeeks weeks={weeks} />
-              <NumbersTable
-                cap="Entries each week"
-                head={['Week from', 'Rode it out', 'Slipped']}
-                rows={weeks.map((w) => [fmtD(w.from), String(w.rode), String(w.slipped)]).reverse()}
-              />
-            </>
-          ) : null}
-        </Block>
-      </View>
-
-      {locked ? numbers : null}
+      {numbers}
       {/* a plan that has ended keeps the months that finished while it was active, so they stay outside the lock */}
-      {locked && PATTERN_FROM != null && openMonths.length ? <MonthCard /> : null}
-      <Deep locked={locked} onY={(y) => setYs((o) => (o.when === y ? o : { ...o, when: y, what: y, days: y }))}>
-        {PATTERN_FROM != null && !locked ? <MonthCard /> : null}
-        <View onLayout={at('when')}>
-          <Block title="When does it happen?" count={when.timed ? when.timed + ' with a time' : ''}>
-            {when.timed ? (
-              <>
-                {when.hard.weekdays ? (
-                  <T>
-                    <Text style={{ fontFamily: font.bodySemi }}>
-                      {when.hard.same ? 'Hard hours: ' : 'Weekdays: '}
-                      {when.hard.weekdays.label}.
-                    </Text>{' '}
-                    {when.hard.weekdays.line}
-                  </T>
-                ) : null}
-                {when.hard.weekends ? (
-                  <T>
-                    <Text style={{ fontFamily: font.bodySemi }}>Weekends: {when.hard.weekends.label}.</Text> {when.hard.weekends.line}
-                  </T>
-                ) : null}
-                <Legend
-                  items={(
-                    [
-                      ['rode', 'Rode it out'],
-                      ['slip', 'Slipped'],
-                    ] as ['rode' | 'slip' | 'win', string][]
-                  ).concat(hard ? [['win', 'Your hard hours']] : [])}
-                />
-                <Clock hours={when.hours} hard={when.hard} />
-                <T v="small" tone="muted">
-                  {hard
-                    ? 'The same hard hours Today watches for, from the last 60 days.'
-                    : 'Hard hours show up once one two-hour stretch holds two slips or six urges.'}
-                </T>
-                <T v="label" style={{ marginTop: 12 }}>
-                  Days of the week
-                </T>
-                {when.day ? (
-                  <T>
-                    {when.day.name}s are the hardest: {when.day.n} of {when.day.slips ? plural(when.day.of, 'slip') : when.day.of + ' entries'}.
-                  </T>
-                ) : null}
-                <WeekRow week={when.week} hard={when.day ? when.day.d : null} />
-                <NumbersTable
-                  cap="Entries by hour"
-                  head={['Hour', 'Rode it out', 'Slipped']}
-                  rows={when.hours
-                    .filter((b) => b.rode + b.slipped)
-                    .map((b) => [fmtHour(b.h) + ' to ' + fmtHour((b.h + 1) % 24), String(b.rode), String(b.slipped)])}
-                />
-              </>
-            ) : (
-              <EmptyChart text="Your clock fills in after you log an entry with a time." />
-            )}
-          </Block>
-        </View>
-
-        <View onLayout={at('what')}>
-          <Block title="What sets it off?">
-            {slipTrig ? <T style={{ fontFamily: font.bodySemi }}>{slipTrig.line}</T> : null}
-            {trig.list.length ? (
-              <>
-                {patTriggerLines(trig.list, slipTrig?.k).map((l) => (
-                  <T key={l} style={{ fontFamily: font.bodySemi }}>
-                    {l}
-                  </T>
-                ))}
-                <Legend
-                  items={[
-                    ['rode', 'Rode it out'],
-                    ['slip', 'Slipped'],
-                  ]}
-                />
-                <HBars
-                  items={trig.list.map((r) => ({
-                    label: r.t,
-                    segs: [
-                      [r.rode, 'rode'],
-                      [r.slipped, 'slip'],
-                    ] as [number, 'rode' | 'slip'][],
-                  }))}
-                />
-                {trig.none ? (
-                  <T v="small" tone="muted">
-                    {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
-                  </T>
-                ) : null}
-                <NumbersTable
-                  cap="Entries by what set them off"
-                  head={['Reason', 'Rode it out', 'Slipped']}
-                  rows={trig.list.map((r) => [r.t, String(r.rode), String(r.slipped)])}
-                />
-              </>
-            ) : (
-              <EmptyChart text="Pick a reason when you log an entry, and this shows what sets it off." />
-            )}
-            {needs.length ? (
-              <>
-                <T v="label" style={{ marginTop: 12 }}>
-                  What the pull was after
-                </T>
-                <HBars
-                  items={needs.map((x) => ({ label: x.name, segs: [[x.count, 'acc']] as [number, 'acc'][] }))}
-                  unit={(n) => (n === 1 ? 'time' : 'times')}
-                />
-                <T v="small" tone="muted">
-                  From Talk it through.
-                </T>
-              </>
-            ) : null}
-          </Block>
-        </View>
-
-        <View onLayout={at('days')}>
-          <Block title="What is different on hard days?">
-            {diffs.list.length ? (
-              <>
-                <Legend
-                  items={[
-                    ['rode', 'Days with no slip'],
-                    ['slip', 'Slip days'],
-                  ]}
-                />
-                <DiffDots list={diffs.list} />
-                <T v="small" tone="muted">
-                  From {plural(diffs.cleanN, 'check-in day')} with no slip and {diffs.slipN} with one.
-                </T>
-              </>
-            ) : (
-              <T tone="muted">
-                {diffs.cleanN >= 3 && diffs.slipN >= 3
-                  ? 'No big differences so far between your check-ins on slip days and on days with no slip.'
-                  : 'This needs check-ins on at least three slip days and three days with no slip. It waits until it means something.'}
-              </T>
-            )}
-            {anyRating ? (
-              <>
-                <T v="label" style={{ marginTop: 12 }}>
-                  Your check-ins over time
-                </T>
-                <FeelTiles keys={keys} series={series} />
-              </>
-            ) : null}
-          </Block>
-        </View>
-
-        <Block title="What helps you">
-          {works.length || ev.chose + ev.went ? (
-            <>
-              {works.length ? (
-                <>
-                  <Legend
-                    items={[
-                      ['rode', 'It passed after'],
-                      ['slip', 'Still strong or slipped after'],
-                    ]}
-                  />
-                  <HBars
-                    items={works.map((x) => ({
-                      label: x.name,
-                      segs: [
-                        [x.passed, 'rode'],
-                        [x.not, 'slip'],
-                      ] as [number, 'rode' | 'slip'][],
-                    }))}
-                    unit={(n) => (n === 1 ? 'try' : 'tries')}
-                  />
-                  <T v="small" tone="muted">
-                    SOS tools over the last four months. SOS uses this to choose what to suggest.
-                  </T>
-                </>
-              ) : null}
-              {ev.chose + ev.went ? (
-                <T style={{ fontFamily: font.bodySemi }}>
-                  You talked it through and chose something else {plural(ev.chose, 'time')} out of {ev.chose + ev.went}.
-                </T>
-              ) : null}
-            </>
-          ) : (
-            <EmptyChart text="After a few SOS uses or talk-throughs, this shows what helps you most." />
-          )}
-        </Block>
-      </Deep>
-
-      {locked ? null : numbers}
+      {PATTERN_FROM != null && (!isLocked || openMonths.length) ? <MonthCard /> : null}
     </>
   );
 }
 
-/** the deeper part of the pattern: as it is for a supporter; otherwise its first part, faded behind a card that opens it */
-function Deep({ locked, onY, children }: { locked: boolean; onY: (y: number) => void; children: React.ReactNode }) {
-  const c = useTheme();
-  /* never an ask in the hours after an SOS or a slip */
-  const quiet = useQuietAsks();
-  if (!locked) return <>{children}</>;
-  return (
-    <View onLayout={(e) => onY(e.nativeEvent.layout.y)} style={{ gap: 14 }}>
-      <View style={s.peek} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <View style={[{ gap: 14, opacity: 0.55 }, PEEK_BLUR]}>{children}</View>
-        <LinearGradient colors={[c.bg + '00', c.bg]} style={s.peekFade} />
-      </View>
-      {quiet ? null : PATTERN_FROM != null ? <PatternCard /> : <UnlockCard extra="stats" />}
-    </View>
-  );
-}
-/* a soft blur on the web; a phone shows the fade alone */
-const PEEK_BLUR = (Platform.OS === 'web' ? { filter: 'blur(3px)' } : null) as ViewStyle | null;
-
-function Block({ title, count, sub, children }: { title: string; count?: string; sub?: string; children: React.ReactNode }) {
-  return (
-    <Card>
-      <View style={s.between}>
-        <T v="h2" style={{ flex: 1 }}>
-          {title}
-        </T>
-        {count ? (
-          <T v="small" tone="muted">
-            {count}
-          </T>
-        ) : null}
-      </View>
-      {sub ? (
-        <T v="small" tone="muted">
-          {sub}
-        </T>
-      ) : null}
-      {children}
-    </Card>
-  );
-}
-
 const s = StyleSheet.create({
-  between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   day: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderTopWidth: 1, minHeight: 56 },
   ins: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: 44 },
   insT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   statB: { fontFamily: font.display, fontSize: 28, lineHeight: 34, minWidth: 56 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  peek: { maxHeight: 250, overflow: 'hidden' },
-  peekFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 150 },
+  range: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  rangeTabs: { flexDirection: 'row', gap: 16 },
+  rangeTab: { minHeight: 44, justifyContent: 'center' },
 });

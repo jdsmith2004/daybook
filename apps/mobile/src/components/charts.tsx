@@ -2,18 +2,39 @@
    the same two outcome colors everywhere (teal: rode it out, amber: slipped), and violet for everything else. Every chart has its
    numbers as a table underneath, for anyone who would rather read them (and for screen readers). Drawn at the width shown. */
 import { fmtDate, fmtHour, type DayKey } from '@daybook/core';
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Icon, T } from '@/components/ui';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 export function useChartColors() {
   const c = useTheme();
   const dark = c.scheme === 'dark';
   return { rode: dark ? '#22A89A' : '#0F8F83', slip: dark ? '#D27903' : c.slip, acc: dark ? '#8A7DFA' : c.accent, grid: c.line, ax: c.muted, c };
+}
+
+/** whether a chart has been reached yet: on Pattern's cards a chart waits off to the side and grows when its card comes in */
+export const ChartOn = createContext(true);
+/** 0 to 1, once, when the chart is reached (at once with Reduce Motion on) */
+export function useGrow(delay: number, duration = 650) {
+  const on = useContext(ChartOn);
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) {
+      v.setValue(1);
+      return;
+    }
+    if (!on) return;
+    const a = Animated.timing(v, { toValue: 1, duration, delay, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE });
+    a.start();
+    return () => a.stop();
+  }, [on, reduce, v, delay, duration]);
+  return v;
 }
 
 /** a nice top and step for an axis from 0 */
@@ -159,182 +180,6 @@ export function DayColumns({
       ) : (
         <View style={{ height }} />
       )}
-    </View>
-  );
-}
-
-/** the check-in's ratings, each in its own small chart, 0 to 10 */
-export function FeelTiles({ keys, series }: { keys: DayKey[]; series: { id: string; name: string; vals: (number | null)[] }[] }) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
-  const cols = w >= 460 ? 2 : 1;
-  const tw = cols === 2 ? (w - 12) / 2 : w;
-  const h = 96;
-  const pad = 8;
-  const n = keys.length;
-  return (
-    <View
-      onLayout={onLayout}
-      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}
-      accessible
-      accessibilityLabel="Daily ratings from 0 to 10. The numbers are in the table below.">
-      {w
-        ? series.map((sr) => {
-            const X = (i: number) => (n <= 1 ? tw / 2 : pad + (i / (n - 1)) * (tw - pad * 2));
-            const Y = (v: number) => 10 + (1 - v / 10) * (h - 22);
-            const have = sr.vals.map((v, i) => [v, i] as [number | null, number]).filter((x) => x[0] != null);
-            let solid = '';
-            let pale = '';
-            const runs: number[][] = [];
-            have.forEach(([, i]) => {
-              const last = runs[runs.length - 1];
-              if (last && i - last[last.length - 1] <= 3) last.push(i);
-              else runs.push([i]);
-            });
-            runs.forEach((r) => {
-              if (r.length > 1) {
-                for (let q = 1; q < r.length; q++) {
-                  const seg = `M${X(r[q - 1]).toFixed(1)} ${Y(sr.vals[r[q - 1]]!).toFixed(1)}L${X(r[q]).toFixed(1)} ${Y(sr.vals[r[q]]!).toFixed(1)}`;
-                  if (r[q] - r[q - 1] === 1) solid += seg;
-                  else pale += seg;
-                }
-              }
-            });
-            const lastI = have.length ? have[have.length - 1][1] : -1;
-            const lastV = lastI >= 0 ? sr.vals[lastI] : null;
-            return (
-              <View key={sr.id} style={{ width: tw, gap: 2 }}>
-                <View style={s.between}>
-                  <T v="label">{sr.name}</T>
-                  <T v="small" tone="muted">
-                    {lastV == null ? '–' : 'Last ' + lastV}
-                  </T>
-                </View>
-                <Svg width={tw} height={h}>
-                  <Line x1={0} x2={tw} y1={h - 12} y2={h - 12} stroke={k.grid} strokeWidth={1.5} />
-                  <Line x1={0} x2={tw} y1={Y(5)} y2={Y(5)} stroke={k.grid} strokeWidth={1} strokeDasharray="3 4" />
-                  {pale ? <Path d={pale} stroke={k.acc} strokeOpacity={0.4} strokeWidth={2.5} fill="none" strokeLinecap="round" /> : null}
-                  {solid ? <Path d={solid} stroke={k.acc} strokeWidth={2.5} fill="none" strokeLinecap="round" /> : null}
-                  {sr.vals.map((v, i) => {
-                    if (v == null) return null;
-                    const lone = (i === 0 || sr.vals[i - 1] == null) && (i === n - 1 || sr.vals[i + 1] == null);
-                    const end = i === lastI;
-                    return have.length <= 14 || lone || end ? <Circle key={i} cx={X(i)} cy={Y(v)} r={end || have.length <= 14 ? 4 : 3} fill={k.acc} /> : null;
-                  })}
-                </Svg>
-              </View>
-            );
-          })
-        : null}
-    </View>
-  );
-}
-
-/** entries by hour of the day, with the busiest two hours marked */
-export function HourChart({
-  bins,
-  bw,
-  height = 176,
-}: {
-  bins: { h: number; rode: number; slipped: number }[];
-  bw: { start: number; end: number } | null;
-  height?: number;
-}) {
-  const k = useChartColors();
-  const [w, onLayout] = useWidth();
-  const L = 26;
-  const R = 6;
-  const T0 = 10;
-  const B = 34;
-  const iw = Math.max(10, w - L - R);
-  const ih = height - T0 - B;
-  const max = Math.max(...bins.map((b) => b.rode + b.slipped), 0);
-  const sc = scale(max);
-  const step = iw / 24;
-  const bwid = barW(step);
-  const px = ih / sc.top;
-  const base = T0 + ih;
-  const win = bw ? bins.findIndex((b) => b.h === bw.start) : -1;
-  return (
-    <View onLayout={onLayout} accessible accessibilityLabel="Entries by hour of the day, rode it out and slipped. The numbers are in the table below.">
-      {w ? (
-        <Svg width={w} height={height}>
-          {win >= 0 ? <Rect x={L + step * win} y={T0} width={step * 2} height={ih} fill={k.acc} opacity={0.12} rx={6} /> : null}
-          {grid(L, L + iw, T0, ih, sc, k.grid, k.ax)}
-          {bins.map((b, i) => {
-            const x = L + step * (i + 0.5) - bwid / 2;
-            const parts = (
-              [
-                [b.rode, k.rode],
-                [b.slipped, k.slip],
-              ] as [number, string][]
-            ).filter((q) => q[0] > 0);
-            let cum = 0;
-            return (
-              <G key={i}>
-                {parts.map((q, j) => {
-                  const top = base - (cum + q[0]) * px;
-                  const hh = q[0] * px - (j ? 2 : 0);
-                  cum += q[0];
-                  if (hh <= 0.5) return null;
-                  return j === parts.length - 1 ? (
-                    <Path key={j} d={topPath(x, top, bwid, hh, 3)} fill={q[1]} />
-                  ) : (
-                    <Rect key={j} x={x} y={top} width={bwid} height={hh} fill={q[1]} />
-                  );
-                })}
-              </G>
-            );
-          })}
-          {[0, 6, 12, 18].map((i) => (
-            <SvgText key={i} x={L + step * i} y={height - 18} fontSize={11} fill={k.ax} textAnchor="start" fontFamily={font.body}>
-              {fmtHour(bins[i].h)}
-            </SvgText>
-          ))}
-        </Svg>
-      ) : (
-        <View style={{ height }} />
-      )}
-    </View>
-  );
-}
-
-/** horizontal bars: a label, a stacked bar, and the total */
-export function HBars({ items, unit }: { items: { label: string; dim?: boolean; segs: [number, 'rode' | 'slip' | 'acc'][] }[]; unit?: (n: number) => string }) {
-  const k = useChartColors();
-  const max = Math.max(...items.map((it) => it.segs.reduce((a, q) => a + q[0], 0)), 1);
-  return (
-    <View style={{ gap: 10 }}>
-      {items.map((it, i) => {
-        const tot = it.segs.reduce((a, q) => a + q[0], 0);
-        return (
-          <View key={i} style={{ gap: 4 }} accessible accessibilityLabel={`${it.label}: ${tot}${unit ? ' ' + unit(tot) : ''}`}>
-            <View style={s.between}>
-              <T v="small" tone={it.dim ? 'muted' : 'ink'} style={{ fontFamily: font.bodySemi, flex: 1 }}>
-                {it.label}
-              </T>
-              <T v="small" tone="muted">
-                {tot}
-                {unit ? ' ' + unit(tot) : ''}
-              </T>
-            </View>
-            <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', backgroundColor: k.c.surface2 }}>
-              {it.segs.map((q, j) =>
-                q[0] > 0 ? (
-                  <View
-                    key={j}
-                    style={{
-                      width: `${(q[0] / max) * 100}%`,
-                      backgroundColor: q[1] === 'rode' ? k.rode : q[1] === 'slip' ? k.slip : k.acc,
-                      marginLeft: j ? 2 : 0,
-                    }}
-                  />
-                ) : null,
-              )}
-            </View>
-          </View>
-        );
-      })}
     </View>
   );
 }

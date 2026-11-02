@@ -59,7 +59,7 @@ import { CountUp } from '@/components/count-up';
 import { Flame } from '@/components/flame';
 import { Rows } from '@/components/link-card';
 import { OwnChip, OwnField } from '@/components/own';
-import { Clock } from '@/components/pattern-charts';
+import { Hours } from '@/components/pattern-charts';
 import { SourceLine } from '@/components/research';
 import { Big, DaysRow, GoalDots, HelpList, RideWave, Rings, StoryBars, Teach, TrigBars, WeekBars } from '@/components/review-art';
 import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
@@ -253,8 +253,8 @@ export default function Review() {
           </Text>
           <FitArt stretch>
             <View style={[s.card, { backgroundColor: c.surface, alignItems: 'center', paddingVertical: 8 }]}>
-              <View style={{ width: Math.min(250, win.width - 72) }}>
-                <Clock hours={S.when.hours} hard={S.when.hard} />
+              <View style={{ width: win.width - 72, paddingVertical: 8 }}>
+                <Hours hours={S.when.hours} hard={S.when.hard} H={120} />
               </View>
             </View>
           </FitArt>

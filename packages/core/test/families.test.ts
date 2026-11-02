@@ -36,11 +36,15 @@ it('the "Thirty-two lessons" badge still asks for 32, so nobody loses it when le
 
 describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
   it('follows the lesson standard: hook, guess, answer, the science, a move, and a check', () => {
-    expect(L.v).toBe(2);
     expect(core.LUNITS[L.u]).toBeTruthy();
     expect(L.cards.map((c) => c.e)).toEqual(expect.arrayContaining(['hook', 'predict', 'answer', 'proof', 'move', 'check']));
     expect(L.cards[0].e).toBe('hook');
     expect(L.cards[L.cards.length - 1].e).toBe('check');
+    expect(core.lessonPractice(L)).toBeTruthy();
+    expect(L.scope).toBeTruthy();
+    /* a lesson turned around one belief (lesson-turns.ts) has its own standard, in lesson-turns.test.ts */
+    if (L.v === 3) return;
+    expect(L.v).toBe(2);
     L.cards
       .filter((c) => c.k === 'choose')
       .forEach((c) => {
@@ -50,8 +54,6 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
       });
     expect(L.rc && L.rc.c.length === 4 && L.rc.cr && L.rc.cr.length === 4).toBe(true);
     expect(L.rc!.a).toBeLessThan(4);
-    expect(core.lessonPractice(L)).toBeTruthy();
-    expect(L.scope).toBeTruthy();
   });
 
   it('every source is filled in, and every science card points at one', () => {
@@ -60,8 +62,9 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
       expect(name).toBeTruthy();
       expect(url).toMatch(/^https:\/\//);
     });
+    /* in a turned lesson a card behind the turn can be a thought or a line back to an earlier lesson, with no study under it */
     L.cards
-      .filter((c) => c.e === 'proof')
+      .filter((c) => c.e === 'proof' && (L.v !== 3 || c.fact))
       .forEach((c) => {
         expect(c.fact && c.fact.i && c.fact.i.length).toBeTruthy();
         c.fact!.i!.forEach((i) => expect(L.src[i]).toBeTruthy());
@@ -100,9 +103,9 @@ describe('the four lessons added October 30, 2026', () => {
   });
   it('say so plainly where nothing is known or promised', () => {
     const say = (id: string) => words(core.lessonById(id)!).join(' ');
-    expect(say('l46')).toMatch(/no fixed timeline/);
+    expect(say('l46')).toMatch(/nobody can give you a date/i);
     expect(say('l47')).toMatch(/nobody can promise/i);
-    expect(say('l48')).toMatch(/has not been measured well/);
+    expect(say('l48')).toMatch(/nobody can say how long/i);
   });
   it('finishing the last lesson ends the path', () => {
     const w = core.walkOf(new Set(core.lessonPath().map((L) => L.id)));

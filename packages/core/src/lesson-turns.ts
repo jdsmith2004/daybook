@@ -15,6 +15,10 @@
    same way, with a new id. */
 import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
+import { TURNS_A } from './lesson-turns-a';
+import { TURNS_B } from './lesson-turns-b';
+import { TURNS_C } from './lesson-turns-c';
+import { TURNS_D } from './lesson-turns-d';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -122,7 +126,8 @@ const S = {
   kirchner: ['Kirchner, Shiffman & Wileyto (2012): relapse dynamics in people quitting smoking', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3296289'],
 } satisfies Record<string, Src>;
 
-export const TURNS: Record<string, Turn> = {
+/* lessons 1 to 3, the pilot the owner approved; the rest are in lesson-turns-a to -d, in path order within each */
+const FIRST: Record<string, Turn> = {
   l1: {
     id: 'l1',
     title: 'You do not need to feel ready',
@@ -312,3 +317,5 @@ export const TURNS: Record<string, Turn> = {
     src: [S.herman, S.larimer, S.kirchner],
   },
 };
+
+export const TURNS: Record<string, Turn> = { ...FIRST, ...TURNS_A, ...TURNS_B, ...TURNS_C, ...TURNS_D };

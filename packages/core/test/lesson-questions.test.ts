@@ -54,11 +54,9 @@ describe('the rewritten questions', () => {
     const longest = graded.filter(({ q }) => q.o[q.a!].length === Math.max(...q.o.map((o) => o.length)));
     expect(longest.length).toBeLessThanOrEqual(Math.ceil(graded.length / 3));
   });
-  it('the lesson shows the rewrite, and a card without one keeps its own words', () => {
-    const { L, ci, q } = all[0];
-    expect(core.questionOf(L, ci, L.cards[ci], core.cardBeat(L, ci))).toMatchObject({ h: q.h, rewritten: true });
-    const F = core.LESSONS.find((x) => x.f && x.cards.some((c) => c.k === 'choose'))!;
-    const fi = F.cards.findIndex((c) => c.k === 'choose');
-    expect(core.questionOf(F, fi, F.cards[fi], core.cardBeat(F, fi)).rewritten).toBe(false);
+  it('a turned lesson shows its own questions, held to the same rules', () => {
+    expect(turned.length).toBeGreaterThan(0);
+    const { L, ci } = turned[0];
+    expect(core.questionOf(L, ci, L.cards[ci], core.cardBeat(L, ci))).toMatchObject({ h: L.cards[ci].h, rewritten: true });
   });
 });

@@ -1,5 +1,24 @@
 # What is planned next
 
+## The end of a lesson: a real celebration, then the path (the owner, November 2, 2026; planned, not built)
+
+The owner: "instead of forcing them into the next lesson after they finish have a big celebration genuinely make it really nice and satisfying (research how duolingo does this and use them heavily for inspiration) haptics, visuals movement etc... then it should drop them in the lessons screen and move them to the next lesson and they can press start if they'd like exactly like duoling". The research is in the side-session notes folder (lesson-finish-research.md). No source gave Duolingo's exact timings, sounds or haptics, so the timings below are a starting point to tune on a phone.
+
+**What Duolingo does:** "Lesson complete!" with three stat cards that pop in one after another while their numbers count up, a burst, and a full-width Continue at the bottom. On the first lesson of the day the streak screen follows: a full-screen flame and a counter ticking up. Then the path, with the finished node turned gold and the next one bobbing with a Start bubble; a tap opens a small card with Start. Its sound team treats sound, haptics and motion as one instrument played together. Duolingo also chains daily goal, league and chest screens, which people find tiring; Daybook leaves that out.
+
+**The sequence for Daybook** (about 6 seconds if watched; any tap moves on; nothing moves on by itself):
+
+1. The last card fades out over a warm sky, with one light haptic.
+2. The flame alone, big and centered, breathes in and glows, with a soft chime: "Lesson done." and one line in the flame's voice about who the person is becoming.
+3. The lessons-this-week ring sweeps to its new fill, one tick haptic for each part, a fuller one and a bloom if it closes; the points roll up. A new level is the one long, rare moment: the flame grows into its next form.
+4. One small rise of embers (no confetti rain). A badge, if one was earned, slides up as one card.
+5. Continue fades in, full width, at the bottom.
+6. Continue lands on Learn with the path already at the next lesson: the finished lesson fills in with a small pop and a light haptic, the next one breathes, and a Start bubble shows. A tap on it opens its card with Start. Leaving is fine.
+
+**Guardrails:** Reduce Motion gets fades only; no sound on a silent phone; a quieter version on the day of a slip; no "come back tomorrow" pressure, no streak-loss words, no tip or account ask in this flow, no random prizes. It reuses the celebration host, the week ring, points and levels.
+
+**Steps** (effort): 1. Map the lesson's finish, the celebration host and the Learn path today (low, a subagent). 2. The celebration screen with motion, haptics and sound (high: it is the peak of the app's daily loop). 3. Landing on Learn at the next lesson, the fill and the Start bubble (high). 4. Check on the iPhone simulator at real speed, Reduce Motion and the short iPhone, and show the owner a release build (medium).
+
 ## My plan, rebuilt from the ground up (the owner, November 2, 2026; on branch claude/xenodochial-panini-ff574d, being built)
 
 The owner: "our goals and plan screen i don't like i think it needs a whole session and alot of thought to make it better use the rest of the app (onboarding, lessons, journal, how we feel) as inspiration". They like gradients, color and rich themes.

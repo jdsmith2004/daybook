@@ -37,6 +37,14 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 - **A chapter** opens full screen in its color, with every line big; tap a line to change it in a sheet of the same color, Add at the bottom.
 - The three smaller questions had no answer, so I took the recommendations: What I learned moves to Learn, the lists go into the chapter they serve (calm moves and the wind-down in When it hits, the words that steady me in Why), and my own check-in answers move to Settings. Each is easy to undo.
 
+**Built on the branch (November 2, 2026), not merged:**
+
+- `app/plan/index.tsx`: the flame's own sky (`FlameSky`, the person's level) with who I am becoming and one true line from the log; then the chapters in their colors (`lib/plan-look.ts`): When it hits with tonight's two lines and the hard hours, Why and If I slip side by side, My people, Getting ready. Read my plan is the one filled button, held low.
+- `app/plan/[part].tsx`: a chapter opened, the page in its color with the cards as a soft glass of it. The editors are the ones that worked before (if-then lines, reasons, the slip steps, the safe person, the lists, the checklists).
+- `app/plan/read.tsx`: Read my plan, built from the lesson's own `Shell`, `Bubble`, `FlameSlot`, `LessonArt` and `Next`; the cards and the flame's words are core `planRead` (tested). Tonight's lines are sun cards.
+- Core `planTonight` is shared with Today. What I learned is `app/learned.tsx`, reached from Learn; my own check-in answers are in Settings. Every old link (`pane`, `sub`, `to`, `fresh`, `add`, `book`, `help/playbook`) lands in the right place.
+- Checked on the web, light and dark. Pictures and the iPhone check follow.
+
 **Data:** nothing in the settings changes shape. `plan` stays a list of `{ when, then }`, and `reasons`, `becoming`, `why`, `goal`, `loop`, `rule`, `note`, `slipPlan`, `safety`, `help`, `menu`, `wind` and `words` stay as they are, so no `normSettings` change. The "lines for tonight" pick should be one core function shared with Today, which shows the same two lines.
 
 **Steps once the owner picks** (effort):

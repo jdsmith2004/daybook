@@ -31,7 +31,19 @@ export const PULSE_ACTIVE = ['act_0', 'act_1', 'act_2_6', 'act_7_13', 'act_14_29
 /** how soon the app was opened again after a slip */
 export const PULSE_BACK = ['back_1', 'back_2_3', 'back_4_7', 'back_8'] as const;
 /** what was used, by name */
-export const PULSE_USE = ['sos', 'talk_done', 'lesson_done', 'checkin', 'sunrise', 'rk_small', 'rk_phone', 'urge_logged', 'slip_logged', 'feedback'] as const;
+export const PULSE_USE = [
+  'sos',
+  'talk_done',
+  'lesson_done',
+  'checkin',
+  'sunrise',
+  'rk_small',
+  'rk_phone',
+  'goodnight',
+  'urge_logged',
+  'slip_logged',
+  'feedback',
+] as const;
 /** the counts sent without asking: the app was opened that day, and how far setup got */
 export const pulseBasic = (k: string): boolean => (PULSE_ACTIVE as readonly string[]).includes(k) || k.startsWith('setup_');
 const toolKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id);
@@ -67,6 +79,7 @@ export function pulseMeaning(k: string): string {
     sunrise: 'Finished the sunrise check',
     rk_small: 'Did a Rekindle small thing',
     rk_phone: 'Put the phone away for a Rekindle night',
+    goodnight: 'Said Goodnight in the wind-down',
     urge_logged: 'Logged an urge',
     slip_logged: 'Logged a slip',
     feedback: 'Sent feedback',

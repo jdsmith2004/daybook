@@ -215,11 +215,18 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   return withDay(days, tk, day);
 }
 /* ---------- lessons first ---------- */
-/** the day's stops (legacy rhythm), with today's lesson always the open one until it is done (docs/plan.md, "Lessons
-    first", C1): the lesson is Next up all day, and a check-in or wind-down that has started meanwhile still says "Open
-    now". The legacy rhythm itself stays as it was (the golden tests read it). */
+/** the day's stops (legacy rhythm), with today's lesson the open one until it is done (docs/plan.md, "Lessons first", C1), or
+    until the night opens: from then the wind-down is the open one, and an unread lesson steps aside and says "Still open" (the
+    owner, October 31, 2026). A check-in or wind-down that has started meanwhile still says "Open now". On the night of a slip, what is
+    not done of the lesson and the check-in is gone until tomorrow, and only the wind-down is left; what was done stays on the line.
+    The legacy rhythm itself stays as it was (the golden tests read it). */
 export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): ReturnType<typeof rhythm> {
   const r = rhythm(days, st, tk, nowMs);
+  const night = r.stops.find((x) => x.k === 'night');
+  if (night && night.started) {
+    if (sumDay(days[tk]).slipped) return { ...r, stops: r.stops.filter((x) => x.done || x.k === 'night'), cur: night.done ? null : 'night' };
+    if (!night.done) return r;
+  }
   const ls = r.stops.find((x) => x.k === 'lesson');
   if (!ls || ls.done || r.cur === 'lesson') return r;
   const stops = r.stops.map((x) =>
@@ -339,6 +346,13 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
     };
   });
   return { tiles, cur: r.cur, done: tiles.filter((t) => t.done).length };
+}
+/** the order of the line on Today: what is done, then the big card, then what is still open, so the next step is never pushed down
+    under rows that are not next (the owner, November 1, 2026). With no big card, the day's own order. */
+export function lineOrder(tiles: StopTile[], big: string | null): StopTile[] {
+  const card = tiles.find((t) => t.k === big);
+  if (!card) return tiles;
+  return [...tiles.filter((t) => t.done && t !== card), card, ...tiles.filter((t) => !t.done && t !== card)];
 }
 
 /* ---------- the wind-down ---------- */

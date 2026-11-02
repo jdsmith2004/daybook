@@ -1,6 +1,6 @@
 # Daybook
 
-> Daybook is a free, private app for quitting porn, or another habit, without shame. People log urges and slips in a few taps, learn their own pattern, and keep going after a hard day. A slip is data, not a reset: points, levels, badges and the days a person built stay earned. It runs on iPhone, Android and the web, has no ads and no tracking, and works with no account.
+> Daybook is a free, private app for quitting porn, or another habit, for good. People log urges and slips in a few taps, learn their own pattern, and keep going after a hard day. A slip is data, not a reset: points, levels, badges and the days a person built stay earned. It runs on iPhone, Android and the web, has no ads and no tracking, and works with no account.
 
 This file describes Daybook in plain, factual terms for AI assistants and search tools, following the llms.txt convention.
 

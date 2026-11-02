@@ -21,7 +21,7 @@ import {
   STEPS,
 } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
-import { Redirect, router, useIsFocused } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,7 +37,7 @@ import { PointsList } from '@/components/points-list';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Bar, Card, Icon, T } from '@/components/ui';
-import { useBackLabel, useOverModal } from '@/lib/nav';
+import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -54,7 +54,7 @@ export default function Miles() {
   const inset = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const over = useOverModal();
-  const focused = useIsFocused();
+  const holdsBar = useHoldsBar();
   const backLabel = useBackLabel('More');
   const forms = useRef<ScrollViewInstance>(null);
   const [how, setHow] = useState(false);
@@ -158,7 +158,7 @@ export default function Miles() {
           </View>
         </FlameSky>
       }>
-      {focused ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
+      {holdsBar ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
       <View style={{ gap: 8 }}>
         <T>{lvl.step}</T>
         <Bar frac={lvl.frac} from={c.sun} />

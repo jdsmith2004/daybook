@@ -4,7 +4,19 @@
    progress), the rest quiet dashes. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
    and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
    the stops here are all rows. "Change" turns parts of today on or off, in a sheet. */
-import { openTile, ROUTINE, routineChanged, routineDay, routineOn, stopTiles, type Moment, type Snapshot, type StopGo, type StopTile } from '@daybook/core';
+import {
+  lineOrder,
+  openTile,
+  ROUTINE,
+  routineChanged,
+  routineDay,
+  routineOn,
+  stopTiles,
+  type Moment,
+  type Snapshot,
+  type StopGo,
+  type StopTile,
+} from '@daybook/core';
 import { router, useIsFocused } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -86,7 +98,7 @@ export function YourDay({
     <View>
       {heroShown ? null : <View style={s.noteTop}>{note}</View>}
       {n ? (
-        <Stops tiles={r.tiles} big={big} hero={hero} note={note} tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)} />
+        <Stops tiles={lineOrder(r.tiles, big)} big={big} hero={hero} note={note} tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)} />
       ) : (
         <T tone="muted" style={{ paddingHorizontal: 4 }}>
           Nothing is switched on for today. Tap Change to turn parts of the day back on.

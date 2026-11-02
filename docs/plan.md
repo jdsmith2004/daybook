@@ -61,7 +61,23 @@ The owner, looking at the store picture: too much text, it covers the flame, and
 
 Where the rest went: the journal still opens by pulling Today down, and from More; the lessons ring is a row on Learn; who I am becoming is at the top of My plan, in the weekly review and on Good night. What got harder to find: nothing on Today now teaches the pull to the journal, and nothing says a day before the rollover hour is still logged as yesterday.
 
-**Where it is (November 1, 2026):** merged and live on the web. Build 1.3.0 (7) is uploaded to App Store Connect, with the autumn icon. Not submitted: App Store Connect is signed out in Chrome. Once the owner signs in: upload `store-assets/ios69` and `ios63`, hold the Duo pictures, choose build 7, paste What's New from `docs/launch.md`, and submit. The owner's "build and submit" covers this and replaces the TestFlight walk for this release.
+**Where it is (November 1, 2026):** merged and live on the web. Version 1.3.0 is a saved draft in App Store Connect, **not submitted**, by the owner's word: more changes and a new build come first. In the draft: build 7, What's New, the new `ios63` and `ios69` pictures and the new search picture. The header picture stays as it was, and the Duo pictures are held. Release is set to automatic after approval, as 1.2.1 was, though `docs/launch.md` says manual. When the new build is up: choose it in place of build 7, and update What's New if the changes call for it.
+
+## The listing: few people see it, and few tap (the owner, November 1, 2026)
+
+The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. Asked whether "porn" should go in the name: "Keep porn out of it", so it stays off the purchase list. **Decided:**
+
+- **Name:** `Daybook: Quit and Stay Free`. The home screen still says Daybook.
+- **Subtitle:** stays `Private help to quit porn`, so the search card still says what the app is for. App Review 2.3.7 bars unverifiable claims in a subtitle.
+- **First picture:** `Quit and stay free`, with `Built on research. No ads.` under it. "Built on research" is true of the lessons and the tools; nothing has tested Daybook itself.
+- **Search picture:** `Quit and stay free`, with `private help built on research` under it. It used to say "changing a habit".
+- **"Without shame" leaves the listing and the public pages:** the description's first line, About, the guides, support and the testers page. The app keeps treating people that way.
+
+**The numbers (App Analytics, October 2 to 31):** 137 impressions, 126 of them from search, down from about 60 on October 26 to about 10 a day. 11 page views. 3 first-time downloads and 1 redownload, some of them the owner's. So 8% of impressions tap (exact 95% range 4% to 14%), about 1 in 4 who open the page download (6% to 61%), and 2.2% of impressions download (0.5% to 6.3%). A vendor figure of about 3.8% for impressions to downloads is inside that range. Apple's own benchmark says it has too little data.
+
+**What that means.** The sample cannot show the listing is failing. The clearest problem is traffic: at 10 impressions a day, even 10% is one download a day. The name is the heaviest search field by vendor consensus, and "porn" stays out of it by the owner's choice, so the words people search for rest on the subtitle and keywords. Traffic stays the thing to watch after this ships. No study tests shame words in a store listing: dropping them is a judgment, supported by research on shame as a barrier to seeking help. Telling 1% from 4% between two listings takes about 425 impressions each. Apple's page tests cover icons and pictures, not the name.
+
+**Still to check.** Whether impressions come from people looking for something else: `journal`, `sober`, `clean` and `habit` are in the keywords. Apple shows no per-keyword numbers. Competitors' exact wording on a phone, since research could not open their listing pages. Google Play's listing still has to change when it is next touched: `docs/launch.md` has the new words.
 
 ## Version 1.3.0: the final walkthrough (October 31, 2026)
 
@@ -134,7 +150,17 @@ Left on purpose: what the SOS tools tell a person to do (walk, cold water, phone
 
 ## The shape of the day (the owner, October 31, 2026)
 
-**Where it is:** the owner likes it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
+**Narrowed by the owner (October 31, 2026):** four hours after liking this, the owner said of the finished day, in another session: "none it's good as is" (see "When the day is finished"). Asked which parts still stand, the owner kept three, all _medium_, on a branch from main and shown on the simulator as a release build before any merge:
+
+1. At night, Goodnight takes the big card instead of an unread lesson (`dayRhythm`, `stopTiles`).
+2. On the night of a slip, the lesson and the check-in go quiet, leaving only the night's one step. Nothing earned changes.
+3. A count of Goodnights finished, in `PULSE_KEYS` and on the privacy page in the same change. The server refuses a new name until the sync service is deployed, so it needs a deploy to count.
+
+**Built and merged, November 1, 2026 (after 1.3.0 build 7, so it ships in the next build):** all three. Picture: `docs/today-review/day-night-rules.png`. A slip night whose Goodnight is done says "Rest well." and not "All done", since the lesson and check-in were set aside, not done. On the iPhone, the card sat under two rows and behind the tab bar on a normal night, so the owner chose (November 1, 2026) to order the line as what is done, then the card, then what is still open (core `lineOrder`). Still open: until the Sunday review is done on a Sunday night, it holds the big card and Wind-down stays a row.
+
+The rest below is not being built: no sleeping flame on Today, no "Cannot sleep?" row, the stop keeps the name Wind-down, the check-in is unchanged, and no confidence question, day 50 or switch for turning a stop off. It stays as the record.
+
+**Where it is:** the owner liked it as drawn (October 31, 2026), so the check-in stays earlier and ends in Done. Nothing built or merged. The pictures predate the updated tab bar, which is not part of this. Pictures: `docs/today-review/day-shape-1-the-day.png`, `day-shape-2-the-night.png` and `day-shape-3-hard-and-long.png`, from the real web app with a throwaway prototype, on top of the wind-down branch.
 
 The owner: "Is that the right thing to have them do? Is that what's going to help them the most? Should we do something different?"
 

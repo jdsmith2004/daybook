@@ -66,6 +66,17 @@ export default function MyPlan() {
   const flame = Math.max(160, Math.round(Math.min(width * 0.8, sky - top - 28)));
   const be = String(st.becoming || '').trim();
   const proof = [...identityLines(snap.days, st, snap.reviews, tk), ...recordLines(snap.days, st, tk)][0];
+  /* the sentence stands left of the flame, never on it. The flame stands far right (SHIFT of its box past the edge), and every form's
+     drawing starts at least ART of the way into its box (the sun at about 0.26, the torch 0.3), so the words have the room up to there. The largest size that fits that room and
+     the sky's height above the ground is used; a sentence too long for any of them sits under the sky instead, full width. */
+  const SHIFT = 0.26;
+  const ART = 0.22;
+  const col = Math.max(120, width + flame * SHIFT - flame + flame * ART - 16 - 12);
+  const room = sky - (top + 56) - 96;
+  const fit = (size: number, n: string) => Math.ceil((n.length * size * 0.56) / col) * size * 1.2;
+  const text = be || 'Write who you are becoming';
+  const proofH = proof ? fit(13, proof.who + ' ' + proof.n) * 1.1 : 0;
+  const beSize = [28, 24, 20].find((z) => 18 + fit(z, text) + proofH <= room) ?? null;
   const open = (p: Part) => () => {
     buzz('tap');
     router.push({ pathname: '/plan/[part]', params: { part: p } });
@@ -81,6 +92,29 @@ export default function MyPlan() {
   const ready = m.safety + m.help;
   const readyOf = SAFETY.length + HELP_STEPS.length;
 
+  const onSky = !!beSize;
+  const becoming = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Opens Why I am doing this"
+      onPress={open('why')}
+      style={onSky ? [s.be, { top: top + 56, width: col }] : s.beBelow}>
+      <T v="eyebrow" style={{ color: onSky ? ink.soft : base.muted }}>
+        Who I am becoming
+      </T>
+      <T
+        style={[s.beT, { color: onSky ? ink.ink : base.ink, fontSize: beSize ?? 24, lineHeight: Math.round((beSize ?? 24) * 1.2) }]}
+        accessibilityRole="header">
+        {be || 'Write who you are becoming'}
+      </T>
+      {proof ? (
+        <T v="small" style={{ color: onSky ? ink.soft : base.muted }}>
+          {proof.who} {proof.n}.
+        </T>
+      ) : null}
+    </Pressable>
+  );
+
   return (
     <Screen
       title="My plan"
@@ -89,7 +123,7 @@ export default function MyPlan() {
         if (y > sky - 60 !== past) setPast(y > sky - 60);
       }}
       top={
-        <FlameSky level={level} height={sky} flame={flame} foot={10} right={-flame * 0.16}>
+        <FlameSky level={level} height={sky} flame={flame} foot={10} right={-flame * SHIFT}>
           <View style={[s.head, { top: top + 4 }]} pointerEvents="box-none">
             <Pressable
               accessibilityRole="button"
@@ -102,26 +136,11 @@ export default function MyPlan() {
               </T>
             </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityHint="Opens Why I am doing this"
-            onPress={open('why')}
-            style={[s.be, { top: top + 56, width: Math.min(width * 0.5, 280) }]}>
-            <T v="eyebrow" style={{ color: ink.soft }}>
-              Who I am becoming
-            </T>
-            <T style={[s.beT, { color: ink.ink }]} accessibilityRole="header">
-              {be || 'Write who you are becoming'}
-            </T>
-            {proof ? (
-              <T v="small" style={{ color: ink.soft }}>
-                {proof.who} {proof.n}.
-              </T>
-            ) : null}
-          </Pressable>
+          {beSize ? becoming : null}
         </FlameSky>
       }>
       {holdsBar ? <StatusBar style={past ? (base.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
+      {beSize ? null : becoming}
       <Chapter part="urge" onPress={open('urge')}>
         <View style={s.chHead}>
           <T style={s.chTitle}>When it hits</T>
@@ -206,6 +225,7 @@ const s = StyleSheet.create({
   head: { position: 'absolute', left: 16, right: 16 },
   back: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start', minHeight: 44, minWidth: 44, marginLeft: -4 },
   be: { position: 'absolute', left: 16, gap: 6 },
+  beBelow: { gap: 6, paddingHorizontal: 4, paddingBottom: 8 },
   beT: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34 },
   ch: { borderRadius: 20, overflow: 'hidden' },
   chIn: { padding: 16, gap: 12 },

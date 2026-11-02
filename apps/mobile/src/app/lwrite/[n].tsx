@@ -2,7 +2,7 @@
    typed (settings.learn.wr). It earns no points: it is for the person, not for a score. The route's n is the checkpoint's
    own record (c1 to c16, always about the same two lessons); the number shown is its place on the path (core lcheckNo).
    Ported from the legacy SCENES.lwrite. */
-import { LCHECKS, lcheckNo, lcheckPair, lessonNo, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
+import { LCHECKS, lcheckAbout, lcheckNo, lcheckPair, lessonNo, LWRITE_LEN, lwriteOf, lwriteSave } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -38,9 +38,7 @@ export default function Lwrite() {
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted">
-            {C && A && B
-              ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(A, st) ? ' · lessons ' + lessonNo(A, st) + ' and ' + lessonNo(B, st) : '')
-              : 'Checkpoint'}
+            {C && A && B ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(B, st) ? ' · ' + lcheckAbout(pair!, st) : '') : 'Checkpoint'}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />

@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
 import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
@@ -287,6 +288,8 @@ function normLearn(l){
  /* back: welcome backs passed on the path (lessons.ts lessonReach), kept only when there is one */
  const out={notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f')?o.len:'',prac,picks,wr};
  if(Object.keys(back).length)out.back=back;
+ /* did, later, asked: the steps' deeds (steps.ts), each kept only when there is one */
+ Object.assign(out,normDeeds(o));
  return out;
 }
 function normSettings(s){
@@ -945,7 +948,8 @@ function totalPoints(days,st,reviews,today){
  const cw=weekOf(today,st);let qd=0;
  for(let k=0;k<=cw;k++)questsFor(days,st,k).forEach(q=>{if(q.done)qd++});
  let rv=0;Object.keys(reviews||{}).forEach(id=>{const r=reviews[id];if(r&&r.a&&Object.keys(r.a).some(f=>r.a[f]&&String(r.a[f]).trim()))rv++});
- return {pts:pts+qd*15+rv*20+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0),perDay,quests:qd,reviews:rv};
+ /* the steps' deeds, done in real life (steps.ts), counted like the quests and reviews */
+ return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0),perDay,quests:qd,reviews:rv};
 }
 function gameStats(days,st,reviews,today){
  const S={entries:0,rode:0,slips:0,pauses:0,recovered:0,lateRide:0,checkins:0,reachDays:0,lightsYes:0,windDays:0,calm:0,morning:0,tools:0,

@@ -7,7 +7,10 @@
    help page, My plan, the review, a nudge, a tool) opens its key idea instead: one card, with the tools it points to, that
    writes nothing and earns nothing. A lesson read before that rule, once the path reaches it, opens as a short welcome
    back: the key idea, then Keep going (core lessonReach: no points, nothing
-   counted twice) or Read it all again (?at=all, the full lesson). */
+   counted twice) or Read it all again (?at=all, the full lesson).
+   The last lesson of a step ends with the step's deed, done in real life (core steps.ts): "I did it" or "Not yet, I will
+   come back", and the path goes on either way. The first lesson of the next step asks once more, before its cover, unless
+   the deed was done, was asked about already, or there was a slip today or yesterday. */
 import {
   type Block,
   type Beat,
@@ -21,6 +24,7 @@ import {
   fmtDate,
   type Go,
   guessFeedback,
+  lcheckAbout,
   lcheckWritten,
   type Lesson,
   lessonBeats,
@@ -45,7 +49,15 @@ import {
   type LessonWalk,
   lfmt,
   LNOTE_LEN,
-  LUNITS,
+  PATH_STEPS,
+  deedAfter,
+  deedAnswer,
+  deedAskBack,
+  deedDone,
+  deedSet,
+  deedWords,
+  lessonStep,
+  lessonUnit,
   lxGraded,
   nextAfter,
   type PItem,
@@ -85,7 +97,8 @@ import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@
 
 /** the color of quiet words low on the screen, where the sky is brightest */
 const LowInk = createContext('#FFFFFF');
-type Stage = 'cover' | 'run' | 'practice' | 'practiced';
+/** deed: a step's deed, after its last lesson (core steps.ts) */
+type Stage = 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
 type Sheet =
   /** where the science comes from */
   | { t: 'src'; i?: number | null }
@@ -119,6 +132,9 @@ export default function LessonScreen() {
   const [rec, setRec] = useState(at === 'practiced');
   const [prac, setPrac] = useState(at === 'practiced');
   const [sheet, setSheet] = useState<Sheet | null>(null);
+  /* the step's deed: what was chosen at the end of this lesson, and whether the one ask back was answered as it opened */
+  const [deedA, setDeedA] = useState<'did' | 'later' | null>(null);
+  const [askedBack, setAskedBack] = useState(false);
   /* the practice step: what was added, opened and copied here, and the line whose words are being changed */
   const [got, setGot] = useState<Record<number, Got>>({});
   const [went, setWent] = useState<Record<number, boolean>>({});
@@ -173,6 +189,11 @@ export default function LessonScreen() {
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   const next = nextAfter(L, w);
+  /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
+  const dk = care ? -1 : deedAfter(L, st);
+  const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
+  /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
+  const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
   const seq = lessonSeq(L, len);
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
   const beats = lessonBeats(L);
@@ -194,7 +215,7 @@ export default function LessonScreen() {
   } else if (stage !== 'cover') p = 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
-  const t = toneOf(c, LUNITS[L.u].tone);
+  const t = toneOf(c, lessonUnit(L).tone);
   const flameOn = kind !== 'violet' && !(stage === 'practice' && editing != null);
   let backBtn: (() => void) | undefined;
 
@@ -230,6 +251,39 @@ export default function LessonScreen() {
   };
   const toStage = (s: Stage) => {
     setStage(s);
+  };
+  /* a deed's answer, at the end of the step or asked once more: "I did it" gives its points on today, kept for good */
+  const deedSave = (fn: (st0: Settings) => Settings) => {
+    let g = 0;
+    update((s0) => {
+      const b0 = gameCompute(s0.days, s0.settings!, s0.reviews, tk).rawPts;
+      const st1 = fn(s0.settings!);
+      g = Math.max(0, gameCompute(s0.days, st1, s0.reviews, tk).rawPts - b0);
+      return { ...s0, settings: st1 };
+    });
+    return g;
+  };
+  const chooseDeed = (a: 'did' | 'later') => {
+    const g = deedSave((st0) => deedSet(st0, dk, a, tk));
+    setDeedA(a);
+    if (a === 'did') {
+      setGain(g);
+      setPulse((x) => x + 1);
+      buzz('lit');
+    } else buzz('tap');
+    toStage('practiced');
+  };
+  const answerBack = (did: boolean) => {
+    const g = deedSave((st0) => deedAnswer(st0, askK, did, tk));
+    setAskedBack(true);
+    if (did) {
+      setPulse((x) => x + 1);
+      buzz('lit');
+      say((g > 0 ? '+' + g + ' points. ' : '') + 'Step ' + (askK + 1) + ', done for real.');
+    } else {
+      buzz('tap');
+      say('That is all right. It will be there when you are ready.');
+    }
   };
 
   /* the practice step. Nothing here finishes the lesson, and a tool or page it opens comes back to this same step. */
@@ -285,7 +339,26 @@ export default function LessonScreen() {
   let foot: ReactNode = null;
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
-  if (stage === 'cover') {
+  if (stage === 'cover' && askK >= 0) {
+    /* the one ask back, before the next step starts: two answers, and either way it is never asked again */
+    body = (
+      <>
+        <T v="small" tone="muted">
+          Before step {lessonStep(L) + 1}
+        </T>
+        <T style={s.h} accessibilityRole="header">
+          You were going to {PATH_STEPS[askK].back}. Did you get to?
+        </T>
+        <FlameSlot size={SHORT ? 260 : 330} min={120} />
+        <Dock>
+          <View style={{ gap: 12 }}>
+            <DeedBtn title="I did it" sub={'Step ' + (askK + 1) + ' lights up on your map.'} onPress={() => answerBack(true)} />
+            <DeedBtn title="Not yet" sub="Daybook will not ask again." onPress={() => answerBack(false)} />
+          </View>
+        </Dock>
+      </>
+    );
+  } else if (stage === 'cover') {
     const pref = st.learn.len;
     const start = (l: 'q' | 'f') => {
       const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
@@ -298,7 +371,7 @@ export default function LessonScreen() {
       <>
         <FlameSlot size={SHORT ? 280 : 360} min={120} />
         <T v="small" tone="muted">
-          {n ? 'Lesson ' + n + ' of ' + w.path.length : LUNITS[L.u].name}
+          {n ? 'Lesson ' + n + ' · Step ' + (lessonStep(L) + 1) + ', ' + lessonUnit(L).name : lessonUnit(L).name}
         </T>
         <T style={s.h} accessibilityRole="header">
           {L.title}
@@ -372,6 +445,8 @@ export default function LessonScreen() {
       );
       foot = pr ? (
         <Next label="Put it to work" onPress={() => toStage('practice')} />
+      ) : deedNext ? (
+        <Next label="Next" onPress={() => toStage('deed')} />
       ) : next ? (
         <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
       ) : (
@@ -529,23 +604,50 @@ export default function LessonScreen() {
           noIcon
           onPress={() => {
             if (acted) practiced();
-            toStage('practiced');
+            toStage(deedNext ? 'deed' : 'practiced');
           }}
         />
-        <Quiet label="Skip practice" onPress={() => toStage('practiced')} />
+        <Quiet label="Skip practice" onPress={() => toStage(deedNext ? 'deed' : 'practiced')} />
       </View>
+    );
+  } else if (stage === 'deed') {
+    /* the end of a step: its deed, done in real life. Nothing waits on the answer. */
+    prog = <Prog total={1} i={0} all look={look} />;
+    body = (
+      <>
+        <T v="small" tone="muted">
+          The end of step {dk + 1}, {PATH_STEPS[dk].name}
+        </T>
+        <T style={s.h} accessibilityRole="header">
+          Now do it for real
+        </T>
+        <Bubble text={deedWords(dk, st)} />
+        <FlameSlot size={SHORT ? 230 : 300} min={110} />
+        <Dock>
+          <View style={{ gap: 12 }}>
+            <DeedBtn title="I did it" sub={'Step ' + (dk + 1) + ' lights up on your map.'} onPress={() => chooseDeed('did')} />
+            <DeedBtn title="Not yet, I will come back" sub="Daybook asks once more, at the next step." onPress={() => chooseDeed('later')} />
+          </View>
+        </Dock>
+      </>
     );
   } else {
     const a = lessonPractice(L);
     const pair = lessonPairOf(L);
-    const due = pair && w.walked.has(pair.a.id) && !lcheckWritten(st, pair.n);
+    const due = pair && (w.walked.has(pair.a.id) || (w.path.indexOf(pair.a) < 0 && done.has(pair.a.id))) && !lcheckWritten(st, pair.n);
     prog = <Prog total={1} i={0} all look={look} />;
     body = (
       <>
         <T style={s.h} accessibilityRole="header">
-          {prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
+          {deedA === 'did' ? 'You did step ' + (dk + 1) + '.' : prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
         </T>
-        {prac ? null : <T style={s.p}>The practice stays in Learn whenever you want it.</T>}
+        {deedA === 'did' ? (
+          <T style={s.p}>
+            {PATH_STEPS[dk].name}, done in real life{gain > 0 ? ': +' + gain + ' points' : ''}.
+          </T>
+        ) : prac || deedA ? null : (
+          <T style={s.p}>The practice stays in Learn whenever you want it.</T>
+        )}
         {ringLit ? <T style={s.p}>That lit today on your lessons ring, in Learn. One part for each day you do a lesson this week.</T> : null}
         {/* the end of a lesson is the flame's moment */}
         <FlameSlot size={SHORT ? 330 : 420} min={150} />
@@ -553,7 +655,7 @@ export default function LessonScreen() {
           <Dock>
             <Route
               label="Write it out"
-              small={'3–5 min · a short checkpoint for lessons ' + lessonNo(pair.a, st) + ' and ' + lessonNo(pair.b, st)}
+              small={'3–5 min · a short checkpoint for ' + lcheckAbout(pair, st)}
               onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
             />
           </Dock>
@@ -654,7 +756,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
     body = (
       <>
         <T v="small" tone="muted">
-          Lesson {n} · {LUNITS[L.u].name}
+          Lesson {n} · {lessonUnit(L).name}
         </T>
         <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
           {L.title}
@@ -839,6 +941,21 @@ function Prog({ total, i, all, look }: { total: number; i: number; all?: boolean
         <View key={j} style={[s.progI, { backgroundColor: all || j <= i ? look.dashOn : look.dashOff }]} />
       ))}
     </View>
+  );
+}
+/** one answer to a step's deed: a plain choice, neither one marked as the right one */
+function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [s.len, { backgroundColor: c.accentSoft, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: c.ink }}>{title}</Text>
+        <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: c.ink }}>{sub}</Text>
+      </View>
+    </Pressable>
   );
 }
 function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
@@ -1202,7 +1319,7 @@ function SheetOver({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; 
 function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; st: Settings; onClose: () => void; onSrc: (i?: number) => void }) {
   const c = useTheme();
   const inset = useSafeAreaInsets();
-  const t = toneOf(c, LUNITS[L.u].tone);
+  const t = toneOf(c, lessonUnit(L).tone);
   let title = 'Behind this lesson';
   let body: ReactNode;
   if (sheet.t === 'src') {

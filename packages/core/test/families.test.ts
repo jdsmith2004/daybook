@@ -84,10 +84,10 @@ describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
 
 describe('the four lessons added October 30, 2026', () => {
   it('sit where they are meant to on the path: the hope lesson early, the long view last', () => {
-    expect(core.lessonNo(core.lessonById('l46')!)).toBe(5);
-    expect(core.lessonById('l47')!.u).toBe(1);
-    expect(core.lessonById('l48')!.u).toBe(1);
-    expect(core.lessonNo(core.lessonById('l49')!)).toBe(core.LESSONS.length);
+    expect(core.lessonNo(core.lessonById('l46')!)).toBe(8);
+    expect(core.lessonStep(core.lessonById('l47')!)).toBe(9);
+    expect(core.lessonStep(core.lessonById('l48')!)).toBe(9);
+    expect(core.lessonNo(core.lessonById('l49')!)).toBe(core.lessonPath().length);
   });
   it('each has a practice step that can put a line on the plan', () => {
     ['l46', 'l47', 'l48', 'l49'].forEach((id) => {
@@ -122,25 +122,25 @@ describe('families', () => {
     expect(core.lessonFamily(core.lessonById('l1')!)).toBeNull();
   });
 
-  it('the path goes one section at a time, each section once: identity in week 2, the tools in weeks 2 and 3, then faith', () => {
+  it('the path is the twelve steps, each once, in order, and every lesson is on one step or off the path (November 2, 2026)', () => {
     const ids = core.lessonPath().map((L) => L.id);
-    expect(ids.slice().sort()).toEqual(core.LESSON_IDS.slice().sort());
-    const units = core.lessonSections().map((x) => x.u);
-    expect(new Set(units).size).toBe(units.length);
-    expect(units).toEqual(core.UNIT_ORDER);
-    expect(ids.slice(0, 9)).toEqual(['l1', 'l2', 'l3', 'l4', 'l46', 'l33', 'l34', 'l35', 'l36']);
-    expect(ids.slice(9, 13)).toEqual(['l37', 'l38', 'l39', 'l40']);
-    expect(ids.slice(13, 21)).toEqual(['l13', 'l14', 'l15', 'l16', 'l42', 'l43', 'l44', 'l45']);
-    expect(ids.slice(21, 25)).toEqual(['l29', 'l30', 'l31', 'l32']);
-    expect(core.lessonNo(core.lessonById('l29')!)).toBe(22);
-    /* partners and sex after porn close the section on shame and closeness; the long view closes the path */
-    expect(ids.slice(25, 31)).toEqual(['l5', 'l6', 'l7', 'l8', 'l47', 'l48']);
+    expect([...ids, ...core.OFF_PATH].sort()).toEqual(core.LESSON_IDS.slice().sort());
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(core.lessonSections().map((x) => x.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
+    /* the first eight, open without an account: the truth, then why willpower is not enough */
+    expect(ids.slice(0, 8)).toEqual(['l1', 'l2', 'l3', 'l22', 'l33', 'l34', 'l20', 'l46']);
+    /* the strongest tools come early: change the setting and the if-then plan in the second week */
+    expect(core.lessonNo(core.lessonById('l10')!)).toBe(9);
+    expect(core.lessonNo(core.lessonById('l9')!)).toBe(10);
     expect(ids[ids.length - 1]).toBe('l49');
+    /* the faith lessons sit inside the steps, not in a land of their own */
+    core.LESSONS.filter((L) => L.f).forEach((L) => expect(core.lessonStep(L)).toBeGreaterThan(-1));
+    core.lessonSections().forEach((x) => expect(x.lessons.every((L) => L.f)).toBe(false));
   });
 
   it('sections next to each other on the path have different colors', () => {
     /* the accent and violet tints look alike, so they count as one color here */
-    const tones = core.lessonSections().map((x) => core.LUNITS[x.u].tone.replace('accent', 'violet'));
+    const tones = core.lessonSections().map((x) => core.PATH_STEPS[x.u].tone.replace('accent', 'violet'));
     tones.slice(1).forEach((t, i) => expect(t).not.toBe(tones[i]));
   });
 
@@ -158,10 +158,10 @@ describe('families', () => {
     ]);
     /* l2 and l33 were finished before the path reached them: Up next is l2, as a welcome back, and l33 waits */
     expect(tl.next?.id).toBe('l2');
-    expect(tl.coming[0]).toMatchObject({ u: 0, n: 5, done: 1 });
-    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l4', 'l46']);
-    expect(tl.coming[1]).toMatchObject({ u: 8, done: 0 });
-    expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.LESSONS.length);
+    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 1 });
+    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l22']);
+    expect(tl.coming[1]).toMatchObject({ u: 1, done: 0 });
+    expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.lessonPath().length);
   });
 
   it('a lesson starts on its first card: the review question is gone (the owner, November 1, 2026)', () => {

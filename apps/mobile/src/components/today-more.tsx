@@ -10,10 +10,10 @@ import { ReadyLook } from '@/components/today-ready';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
-export type Dir = 'a' | 'b' | 'c' | 'b1' | 'b2' | 'b3';
+export type Dir = 'a' | 'b' | 'c' | 'b1' | 'b2' | 'b3' | 'b4';
 export function protoDir(): Dir | null {
   if (typeof window === 'undefined' || !window.location) return null;
-  const m = /[?&]dir=(a|b[123]?|c)\b/.exec(window.location.search);
+  const m = /[?&]dir=(a|b[1234]?|c)\b/.exec(window.location.search);
   return m ? (m[1] as Dir) : null;
 }
 
@@ -226,7 +226,7 @@ function FlameWeek({ snap, tk, level }: { snap: Snapshot; tk: string; level: num
 
 export function TodayMore({ dir, snap, tk, level }: { dir: Dir; snap: Snapshot; tk: string; level: number }) {
   if (!snap.settings) return null;
-  if (dir === 'b1' || dir === 'b2' || dir === 'b3') return <ReadyLook look={dir} snap={snap} tk={tk} level={level} />;
+  if (dir === 'b1' || dir === 'b2' || dir === 'b3' || dir === 'b4') return <ReadyLook look={dir} snap={snap} tk={tk} level={level} />;
   if (dir === 'a') return <Becoming snap={snap} tk={tk} level={level} />;
   if (dir === 'b') return <Ready snap={snap} tk={tk} level={level} />;
   return <FlameWeek snap={snap} tk={tk} level={level} />;

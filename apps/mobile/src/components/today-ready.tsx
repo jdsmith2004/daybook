@@ -215,6 +215,79 @@ function Tonight({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
   );
 }
 
+/* 4: one sky. No card and no second sky: the sentence on the page, tonight as a plain bar with the hard hours inside it, one SOS
+   line, and the week as a quiet strip. */
+function Plain({ snap, tk }: { snap: Snapshot; tk: string; level: number }) {
+  const c = useTheme();
+  const st = snap.settings!;
+  const win = riskWindow(snap.days, st, tk);
+  const d = new Date();
+  const nowAt = ((d.getHours() + d.getMinutes() / 60 - FROM + 24) % 24) / SPAN;
+  const a = win ? ((win.start - FROM + 24) % 24) / SPAN : 0;
+  const days = weekOf(snap, tk);
+  const wl = weekLine(snap, tk);
+  const on = c.scheme === 'dark' ? '#10163A' : '#FFFFFF';
+  return (
+    <View style={[s.more, { gap: 32 }]}>
+      <View style={{ gap: 8 }}>
+        <Text style={[s.quote, { color: c.ink }]}>{st.becoming}</Text>
+        {st.reasons?.[0] ? <T tone="muted">For {lower(st.reasons[0])}.</T> : null}
+      </View>
+      {win ? (
+        <View style={{ gap: 8 }}>
+          <View style={[s.bar, { backgroundColor: c.surface }]}>
+            <View
+              style={[
+                s.barHard,
+                { left: `${a * 100}%`, width: `${(2 / SPAN) * 100}%`, backgroundColor: c.scheme === 'dark' ? 'rgba(255,200,90,0.24)' : c.sunSoft },
+              ]}>
+              <Text style={[s.barT, { color: c.coralText }]}>{win.label}</Text>
+            </View>
+          </View>
+          {nowAt >= 0 && nowAt <= 1 ? <View style={[s.barNow, { left: `${nowAt * 100}%`, backgroundColor: c.ink }]} /> : null}
+          <View style={s.barEnds}>
+            <T v="small" tone="muted">
+              6 PM
+            </T>
+            <T v="small" tone="muted">
+              Your hard hours
+            </T>
+            <T v="small" tone="muted">
+              2 AM
+            </T>
+          </View>
+        </View>
+      ) : null}
+      {win && nowAt >= a - 2 / SPAN && nowAt < a + 2 / SPAN ? null : (
+        <Pressable
+          onPress={sos}
+          accessibilityRole="button"
+          accessibilityLabel="Open SOS"
+          hitSlop={8}
+          style={({ pressed }) => [s.sosLine, pressed && { opacity: 0.6 }]}>
+          <T>Feeling an urge?</T>
+          <Text style={[s.link, { color: c.sos }]}>Open SOS</Text>
+        </Pressable>
+      )}
+      <View style={{ gap: 8 }}>
+        <T v="label">
+          {wl.clean} of 7 days with no slip{wl.rode ? (wl.rode === 1 ? ', and one urge ridden out.' : ', and ' + wl.rode + ' urges ridden out.') : '.'}
+        </T>
+        <View style={s.wrow}>
+          {days.map((x) => {
+            const bg = x.st === 'clean' ? c.mint : x.st === 'slip' ? c.slip : c.surface2;
+            return (
+              <View key={x.k} style={[s.wsq, { backgroundColor: bg, borderColor: x.today ? c.ink : bg }]}>
+                <Text style={[s.wl, { color: x.st === 'clean' || x.st === 'slip' ? on : c.muted }]}>{x.d}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 /* 3: the moves as shapes. Each move is a shape you can touch, and any of them starts SOS. */
 const iconOf = (m: string) =>
   /walk|run|move|outside/i.test(m)
@@ -269,13 +342,22 @@ function Shapes({ snap, tk, level }: { snap: Snapshot; tk: string; level: number
   );
 }
 
-export function ReadyLook({ look, snap, tk, level }: { look: 'b1' | 'b2' | 'b3'; snap: Snapshot; tk: string; level: number }) {
+export function ReadyLook({ look, snap, tk, level }: { look: 'b1' | 'b2' | 'b3' | 'b4'; snap: Snapshot; tk: string; level: number }) {
+  if (look === 'b4') return <Plain snap={snap} tk={tk} level={level} />;
   if (look === 'b1') return <Words snap={snap} tk={tk} level={level} />;
   if (look === 'b2') return <Tonight snap={snap} tk={tk} level={level} />;
   return <Shapes snap={snap} tk={tk} level={level} />;
 }
 
 const s = StyleSheet.create({
+  bar: { height: 36, borderRadius: 12, overflow: 'hidden' },
+  barHard: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  barT: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  barNow: { position: 'absolute', top: 40, width: 8, height: 8, borderRadius: 4, marginLeft: -4 },
+  barEnds: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  sosLine: { flexDirection: 'row', gap: 6, alignItems: 'center', alignSelf: 'flex-start' },
+  wsq: { flex: 1, height: 32, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  wl: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   scene: { borderRadius: 28, overflow: 'hidden' },
   clock: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2, marginBottom: 20 },
   hardT: { position: 'absolute', width: 160, textAlign: 'center', color: '#FFD98A', top: 0 },

@@ -62,7 +62,7 @@ The owner, looking at the store picture: too much text, it covers the flame, and
 
 Where the rest went: the journal still opens by pulling Today down, and from More; the lessons ring is a row on Learn; who I am becoming is at the top of My plan, in the weekly review and on Good night. What got harder to find: nothing on Today now teaches the pull to the journal, and nothing says a day before the rollover hour is still logged as yesterday.
 
-**Where it is (November 1, 2026):** merged and live on the web. Version 1.3.0 is a saved draft in App Store Connect, **not submitted**, by the owner's word: more changes and a new build come first. In the draft: build 7, What's New, the new `ios63` and `ios69` pictures and the new search picture. The header picture stays as it was, and the Duo pictures are held. Release is set to automatic after approval, as 1.2.1 was, though `docs/launch.md` says manual. When the new build is up: choose it in place of build 7, and update What's New if the changes call for it.
+**Where it is (November 1, 2026):** merged and live on the web. Version 1.3.0 with build 8 was submitted to App Review on the night of November 1, by the owner's word, and shows Waiting for Review. It carries the autumn icon, a What's New that names the new Pattern, the new `ios63` and `ios69` pictures and the new search picture, and the review note now says the first eight lessons. The header picture stays as it was, and the Duo pictures are held. Release is set to automatic after approval, as 1.2.1 was, though `docs/launch.md` says manual, so it goes live when Apple approves it.
 
 ## The listing: few people see it, and few tap (the owner, November 1, 2026)
 

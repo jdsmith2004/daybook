@@ -283,6 +283,7 @@ export const TURNS: Record<string, Turn> = {
       {
         h: 'An urge after a slip is still a wave.',
         p: 'It rises, peaks and passes like any other. The slip did not take away your skill.',
+        art: ['wave', {}],
         back: 'l2',
       },
     ],

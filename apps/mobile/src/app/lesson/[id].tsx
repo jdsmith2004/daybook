@@ -34,6 +34,7 @@ import {
   lessonHasQuick,
   lessonKeyIdea,
   lessonLog,
+  lessonMine,
   lessonNo,
   itemAdd,
   itemHas,
@@ -69,7 +70,7 @@ import {
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Animated, Easing, Linking, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,6 +87,7 @@ import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { lessonLook, PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
 import { close, closeAll, useHoldsBar } from '@/lib/nav';
@@ -127,6 +129,8 @@ export default function LessonScreen() {
   const [pick, setPick] = useState<Record<number, number>>({});
   const [tried, setTried] = useState<Record<number, number[]>>({});
   const [gu, setGu] = useState<Record<number, { v: number | null; lock: boolean }>>({});
+  /* the turn cards turned over: the back stays up on the way back through the lesson */
+  const [flip, setFlip] = useState<Record<number, boolean>>({});
   const [gain, setGain] = useState(0);
   const [again, setAgain] = useState(false);
   const [rec, setRec] = useState(at === 'practiced');
@@ -209,8 +213,9 @@ export default function LessonScreen() {
     p = (ix + 1) / seq.length;
     if (cur.t === 'card') {
       const cl = cardLook(cur.c, cardBeat(L, cur.ci));
-      lockKey = cl === 'guess' && !!gu[cur.ci]?.lock;
-      kind = cl === 'sun' ? 'sun' : cl === 'number' || lockKey ? 'violet' : 'sky';
+      lockKey = (cl === 'guess' && !!gu[cur.ci]?.lock) || (cl === 'flip' && !!flip[cur.ci]);
+      /* a turn is the night sky until it is turned over, then the sun: the moment the view changes */
+      kind = cl === 'sun' || (cl === 'flip' && lockKey) ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
   } else if (stage !== 'cover') p = 1;
   const look = lessonLook(kind, p, base.scheme);
@@ -242,6 +247,7 @@ export default function LessonScreen() {
     if (to < 0 || to >= seq.length) return;
     const cur = seq[i];
     if (d > 0 && cur.t === 'card' && cur.c.k === 'guess' && !(gu[cur.ci] && gu[cur.ci].lock)) return;
+    if (d > 0 && cur.t === 'card' && cur.c.k === 'flip' && !flip[cur.ci]) return;
     setI(to);
     if (seq[to].t === 'done') record();
   };
@@ -536,6 +542,23 @@ export default function LessonScreen() {
               top();
             }}
           />
+        );
+      } else if (card.k === 'flip') {
+        const on = !!flip[ci];
+        const turn = () => {
+          if (on) return;
+          setFlip((x) => ({ ...x, [ci]: true }));
+          setPulse((x) => x + 1);
+          buzz('lit');
+        };
+        body = <FlipCard think={b.h || card.h} see={b.p || card.see || ''} on={on} want={want} onTurn={turn} />;
+        foot = on ? (
+          <View style={s.footCol}>
+            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
+            <Next label={nextLabel} onPress={() => step(1)} />
+          </View>
+        ) : (
+          <Next label="Turn it over" noIcon onPress={turn} />
         );
       } else {
         body =
@@ -1213,6 +1236,13 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
             </View>
           );
         }
+        if (b[0] === 'mine')
+          return (
+            <View key={k} style={[s.plan, { backgroundColor: c.surface }]}>
+              <Text style={[s.eye2, { color: c.muted }]}>From your log, on this phone</Text>
+              <T style={s.mine}>{lessonMine(b[1], snap.days)}</T>
+            </View>
+          );
         if (b[0] === 'words') {
           const w = st.words || [];
           return (
@@ -1237,10 +1267,18 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
-  const own = (card.b || []).filter((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words');
+  const own = (card.b || []).filter((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words' || x[0] === 'mine');
   const tone = look.art as Tone;
+  /* a card that builds on an earlier lesson names it, as part of the thought, not as a review */
+  const B = card.back ? lessonById(card.back) : null;
+  const bn = B ? lessonNo(B, st) : null;
   return (
     <>
+      {B ? (
+        <T v="small" tone="muted">
+          {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
+        </T>
+      ) : null}
       <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
         {h}
       </T>
@@ -1263,6 +1301,40 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       ) : null}
       {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
       <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
+    </>
+  );
+}
+/** a turn: what the person may think on the front of a paper card, and another way to see it on the back. A tap on the card or on Turn it
+    over turns it, edge on and back, and the sky behind it becomes the sun. With Reduce Motion on, the back simply shows. */
+function FlipCard({ think, see, on, want, onTurn }: { think: string; see: string; on: boolean; want: number; onTurn: () => void }) {
+  const still = useReducedMotion();
+  const [face, setFace] = useState(on);
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!on || face) return;
+    if (still) return setFace(true);
+    Animated.timing(a, { toValue: 1, duration: 170, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }).start(() => {
+      setFace(true);
+      a.setValue(-1);
+      Animated.timing(a, { toValue: 0, duration: 260, easing: Easing.out(Easing.back(1.4)), useNativeDriver: NATIVE }).start();
+    });
+  }, [on, face, still, a]);
+  const rot = a.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-90deg', '0deg', '90deg'] });
+  return (
+    <>
+      <View style={s.flipRoom}>
+        <Animated.View style={{ transform: [{ perspective: 900 }, { rotateY: rot }] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={face ? 'Look again. ' + see : 'You may think: ' + think + '. Turn it over.'}
+            onPress={onTurn}
+            style={[s.flip, { shadowColor: PAPER_LIP }]}>
+            <Text style={[s.flipEl, { color: face ? RIGHT : 'rgba(27,31,75,0.62)' }]}>{face ? 'Look again' : 'You may think'}</Text>
+            <Text style={[s.flipT, face && s.flipSee]}>{face ? see : think}</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+      <FlameSlot size={want * 0.9} min={84} />
     </>
   );
 }
@@ -1473,6 +1545,22 @@ const s = StyleSheet.create({
   optT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   optTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
   quote: { paddingVertical: 4 },
+  flipRoom: { flexGrow: 1, justifyContent: 'center', paddingVertical: 8 },
+  flip: {
+    backgroundColor: PAPER,
+    borderRadius: 28,
+    padding: 24,
+    gap: 12,
+    minHeight: SHORT ? 200 : 240,
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 0,
+    shadowOpacity: 1,
+  },
+  flipEl: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  flipT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, color: PAPER_INK },
+  flipSee: { fontSize: 22, lineHeight: 29 },
+  mine: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
   plan: { gap: 8, padding: 16, borderRadius: 20 },
   so: { gap: 4, marginTop: 8 },
   fact: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 28 },

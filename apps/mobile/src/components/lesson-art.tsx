@@ -227,6 +227,119 @@ function Loop({ t, o, st }: { t: Tone; o: { n?: string[]; c?: string }; st: Sett
   );
 }
 
+/* ---------- the pictures behind a turn (core lesson-turns.ts) ---------- */
+
+/* three small steps, and the feeling of being ready filling a third with each one: the step comes first */
+function Ready({ t }: { t: Tone }) {
+  const c = useTheme();
+  return (
+    <View style={{ width: 300, maxWidth: '100%', gap: 10 }} accessible accessibilityLabel="Each small step fills a little more of the feeling of being ready">
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8 }}>
+        {['One step', 'Another', 'Another'].map((x, i) => (
+          <ReadyStep key={i} i={i} label={x} t={t} />
+        ))}
+      </View>
+      <Text style={{ fontFamily: font.bodyBold, fontSize: 13, color: c.muted, marginTop: 4 }}>Feeling ready</Text>
+      <View style={{ flexDirection: 'row', height: 18, borderRadius: 9, backgroundColor: t.soft, overflow: 'hidden' }}>
+        {[0, 1, 2].map((i) => (
+          <ReadyFill key={i} i={i} t={t} />
+        ))}
+      </View>
+    </View>
+  );
+}
+function ReadyStep({ i, label, t }: { i: number; label: string; t: Tone }) {
+  const c = useTheme();
+  const v = useAppear(200 + i * 650, 380, Easing.out(Easing.back(1.6)));
+  return (
+    <Animated.View style={[{ alignItems: 'center', gap: 6, width: 84 }, pop(v, 0.6)]}>
+      <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: t.ic, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name="check" size={24} color={t.ink} />
+      </View>
+      <Text style={{ fontFamily: font.bodyBold, fontSize: 13, color: c.muted }}>{label}</Text>
+    </Animated.View>
+  );
+}
+function ReadyFill({ i, t }: { i: number; t: Tone }) {
+  const v = useAppear(420 + i * 650, 420);
+  return <Animated.View style={{ flex: 1, backgroundColor: t.ic, opacity: v }} />;
+}
+
+/* wanting climbs with each repeat while liking stays flat: two lines, the flat one first */
+function Want({ t }: { t: Tone }) {
+  const c = useTheme();
+  const like = useAppear(150, 420);
+  const want = useAppear(750, 700);
+  const lbl = (x: number, y: number, s: string, fill: string, anchor: 'start' | 'middle' | 'end' = 'end') => (
+    <SvgText x={x} y={y} fontSize={13} fontWeight="700" fill={fill} textAnchor={anchor} fontFamily={font.bodyBold}>
+      {s}
+    </SvgText>
+  );
+  const box = { position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 };
+  return (
+    <View style={{ width: 320, maxWidth: '100%', height: 170 }} accessible accessibilityLabel="With each repeat, wanting climbs while liking stays flat">
+      <Svg width="100%" height={170} viewBox="0 0 330 170" style={box}>
+        <Path d="M20 146 H310" stroke={c.line} strokeWidth={3} strokeLinecap="round" />
+        {lbl(165, 166, 'Each time it is repeated', c.muted, 'middle')}
+      </Svg>
+      <Animated.View style={[box, rise(like, 6)]}>
+        <Svg width="100%" height={170} viewBox="0 0 330 170">
+          <Path d="M20 112 C120 112 210 118 300 122" fill="none" stroke={c.muted} strokeWidth={4} strokeLinecap="round" />
+          {lbl(300, 140, 'Liking', c.muted)}
+        </Svg>
+      </Animated.View>
+      <Animated.View style={[box, rise(want, 14)]}>
+        <Svg width="100%" height={170} viewBox="0 0 330 170">
+          <Path d="M20 118 C120 114 210 78 300 26" fill="none" stroke={t.ic} strokeWidth={6} strokeLinecap="round" />
+          {lbl(300, 16, 'Wanting', t.ic)}
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+}
+
+/* twelve days, one with a slip in it: the days after keep coming, and the count reads 11 of 12, not ruined */
+const DOTS = 12;
+const SLIP_AT = 7;
+function Dots({ t }: { t: Tone }) {
+  const c = useTheme();
+  const end = useAppear(150 + DOTS * 110 + 250, 420);
+  return (
+    <View
+      style={{ width: '100%', maxWidth: 330, gap: 14, alignItems: 'center' }}
+      accessible
+      accessibilityLabel="Twelve days, one with a slip. Not ruined: 11 of 12">
+      <View style={{ flexDirection: 'row', gap: 7 }}>
+        {Array.from({ length: DOTS }, (_, i) => (
+          <Dot key={i} i={i} t={t} />
+        ))}
+      </View>
+      <Animated.View style={[{ flexDirection: 'row', alignItems: 'baseline', gap: 16 }, rise(end)]}>
+        <Text style={{ fontFamily: font.display, fontSize: 20, color: c.muted, textDecorationLine: 'line-through' }}>Ruined</Text>
+        <Text style={{ fontFamily: font.displayBold, fontSize: 34, lineHeight: 40, color: t.ic }}>11 of 12</Text>
+      </Animated.View>
+    </View>
+  );
+}
+function Dot({ i, t }: { i: number; t: Tone }) {
+  const c = useTheme();
+  const v = useAppear(150 + i * 110, 300, Easing.out(Easing.back(1.8)));
+  const slip = i === SLIP_AT;
+  return (
+    <View style={{ alignItems: 'center', gap: 6, width: 20 }}>
+      <Animated.View
+        style={[
+          { width: 20, height: 20, borderRadius: 10, backgroundColor: slip ? 'transparent' : t.ic, borderWidth: slip ? 3 : 0, borderColor: t.ic },
+          pop(v, 0.3),
+        ]}
+      />
+      <Text style={{ fontFamily: font.bodyBold, fontSize: 11, lineHeight: 14, color: c.muted, width: 60, textAlign: 'center', opacity: slip ? 1 : 0 }}>
+        One slip
+      </Text>
+    </View>
+  );
+}
+
 export function BigNumber({ n, s }: { n: string | number; s?: string }) {
   const c = useTheme();
   const shown = useCount(n);
@@ -268,6 +381,9 @@ export function LessonArt({ art, ic, t, st }: { art: Art; ic: string; t: Tone; s
   if (k === 'wave') return <Wave t={t} al={(opts as { al?: string }).al} />;
   if (k === 'big') return <BigNumber n={(opts as { n: string }).n} s={(opts as { s?: string }).s} />;
   if (k === 'shield') return <LxShield t={t} />;
+  if (k === 'ready') return <Ready t={t} />;
+  if (k === 'want') return <Want t={t} />;
+  if (k === 'dots') return <Dots t={t} />;
   if (k === 'research') {
     const key = (opts as { k: string }).k;
     return TALK_CARDS.some((x) => x.k === key) ? <TalkArtView k={key as TalkArt} /> : <RkArtView k={key as RkArt} />;

@@ -128,9 +128,9 @@ Seen in the code or the pictures as well, and fixed: after midnight the note sai
 **The fix and the look:**
 
 - The row in the band counts from the moment it gets there, so the moment at the top is always what Save saves. A wheel always comes to rest on a row, and the numbers grow into the band smoothly, on the native side. The wheels roll round like a phone's own clock (on the web they end, to stay light).
-- Nothing is refused (core `whenPast`, tested). Just ahead of now, under an hour, is a slip of the finger, so it turns back to now. Further ahead today means the last time the clock said it: at 1 AM, 11:40 PM is yesterday, and the day row follows. A day tapped that would be ahead goes to now. Nothing goes before the log's first day.
+- Nothing is refused (core `whenPast`, tested). Just ahead of now, under an hour, is a slip of the finger, so it turns back to now. Further ahead today means the last time the clock said it: at 1 AM, 11:40 PM is yesterday, and the day row follows. A day tapped that would be ahead goes to now. The whole last month is offered to everyone, also before the person started (the owner, November 2, 2026, after trying it on a person who had finished setup that day: "it needs to let me log in the past"). That reverses "the day strip offers days before the person started", listed as a small fault in an earlier review. A log there does not change the gentle or strict count (Day 1 holds); on step down a slip there truly is the last slip, so its hours count from it.
 - The note names the day ("After midnight, so it counts for Sunday."). The row goes back a month instead of two weeks, and the month is gone from it (the moment says it).
-- Less on the sheet: the moment big at the top left with an X by it, as our other sheets have, no Cancel and no handle (the rule against a link that only closes). Quick picks are plain words, three at most. The days have no boxes, only the picked one is filled. The dim fades while the sheet rises. The pill has one icon and the same quiet fill as the saved pill.
+- Less on the sheet: the moment big at the top left with an X by it, as our other sheets have, no Cancel and no handle (the rule against a link that only closes). Quick picks are plain words in one row that scrolls sideways: Just now, 1, 2 and 3 hours ago, and Last night from the rollover to 6 PM (the owner, November 2: "quick options 1 hour two hours ago etc"). The days have no boxes, only the picked one is filled. The dim fades while the sheet rises. The pill has one icon and the same quiet fill as the saved pill.
 
 **Choices made on the owner's behalf, to look at:** the hour's limit between "back to now" and "the last time it said that"; "Yesterday" at 1 AM for 11:40 PM (true by the calendar, even though Today is still on that log day); keeping quick picks at all (one tap under stress is worth the row); and a hand-built wheel over Apple's own (`@expo/ui` has one, but Android and the web would still need this one, and it would drop the app's type).
 
@@ -867,7 +867,7 @@ Each is marked with the effort it needs. **Owner decision** marks a choice that 
     - The check-in's "More about today" fold pushes Goodnight off the screen.
     - The feelings field's title sits over the bubbles.
 20. Small behaviors:
-    - The "When did it happen?" day strip offers days before the person started.
+    - The "When did it happen?" day strip offers days before the person started. (Kept on purpose: the owner wants the past open, November 2, 2026.)
     - "Ashamed" quietly sets a slip's trigger to stress.
     - Goodnight at 8:32 PM ticks the wind-down when screens-off is 11:00 PM (possibly intended).
 21. On the web, a tip opens Stripe in the same tab, so the person leaves Daybook. Open it in a new tab. _Medium (payments)._

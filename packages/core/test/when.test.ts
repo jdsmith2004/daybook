@@ -56,11 +56,12 @@ describe('the words', () => {
   });
   it('offer the days back from today, and quick picks that fit the hour', () => {
     expect(whenDays(NOW, 3)).toEqual(['2026-10-18', '2026-10-17', '2026-10-16']);
-    expect(whenQuick(NOW, ROLL).map((q) => q.label)).toEqual(['Just now', '1 hour ago', '2 hours ago']);
+    expect(whenQuick(NOW, ROLL).map((q) => q.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', '3 hours ago']);
+    expect(whenQuick(NOW, ROLL)[3].w).toEqual({ day: '2026-10-18', h: 18, m: 47 });
     const morning = new Date(2026, 9, 19, 10, 15).getTime();
     const q = whenQuick(morning, ROLL);
-    expect(q.map((x) => x.label)).toEqual(['Just now', '1 hour ago', 'Last night']);
-    expect(whenEntry(q[2].w, ROLL)).toEqual({ key: '2026-10-18', time: '23:00' });
+    expect(q.map((x) => x.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', '3 hours ago', 'Last night']);
+    expect(whenEntry(q[4].w, ROLL)).toEqual({ key: '2026-10-18', time: '23:00' });
   });
   it('say which day a moment after midnight counts for, by name', () => {
     expect(whenCountsFor({ day: '2026-10-18', h: 1, m: 30 }, ROLL)).toBe('After midnight, so it counts for Saturday.');

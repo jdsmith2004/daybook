@@ -81,16 +81,18 @@ export function whenDays(now: number, n = 30): DayKey[] {
   const today = keyOfDate(new Date(now));
   return Array.from({ length: n }, (_, i) => addDays(today, -i));
 }
-/** the quick picks, three so they keep to one row: just now, an hour ago, and last night in the morning and afternoon, or two hours ago */
+/** the quick picks, in a row that scrolls: just now, one to three hours ago, and last night in the morning and afternoon (the owner,
+    November 2, 2026: "quick options 1 hour two hours ago etc") */
 export function whenQuick(now: number, roll: number): { id: string; label: string; w: When }[] {
   const h = new Date(now).getHours();
-  return [
+  const out = [
     { id: 'now', label: 'Just now', w: whenOf(now) },
     { id: '1h', label: '1 hour ago', w: whenOf(now - 3600000) },
-    h >= roll && h < 18
-      ? { id: 'night', label: 'Last night', w: { day: addDays(keyOfDate(new Date(now)), -1), h: 23, m: 0 } }
-      : { id: '2h', label: '2 hours ago', w: whenOf(now - 2 * 3600000) },
+    { id: '2h', label: '2 hours ago', w: whenOf(now - 2 * 3600000) },
+    { id: '3h', label: '3 hours ago', w: whenOf(now - 3 * 3600000) },
   ];
+  if (h >= roll && h < 18) out.push({ id: 'night', label: 'Last night', w: { day: addDays(keyOfDate(new Date(now)), -1), h: 23, m: 0 } });
+  return out;
 }
 /** the same moment, to the minute */
 export const whenSame = (a: When, b: When) => a.day === b.day && a.h === b.h && a.m === b.m;

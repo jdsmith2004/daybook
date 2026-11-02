@@ -113,7 +113,9 @@ const ROUTINE=[
  {k:'calm',name:'Calm move',sub:'Finish a tool or a 10-minute pause.',on:true},
  {k:'reach',name:'Reached out',sub:'Text, call, or talk to a person.',on:false},
  {k:'checkin',name:'Check-in',sub:'The short evening check-in.',on:true},
- {k:'wind',name:'Wind-down',sub:'The checklist for the hour before screens go off.',on:true}
+ {k:'wind',name:'Wind-down',sub:'The checklist for the hour before screens go off.',on:true},
+ /* a stop on Your day only (core day.ts): never a daily win, so switching it changes no ring or points */
+ {k:'journal',name:'Journal',sub:'A few words about the day, in your journal.',on:false}
 ];
 const ROUTINE_KEYS=ROUTINE.map(r=>r.k);
 const ROUTINE_KEPT=ROUTINE_GONE.concat(ROUTINE);

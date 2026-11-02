@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Days } from '../src/index';
+/* the stops with a time of day; the any-time ones (calm move, reached out, the journal) have their own tests in routine-stops.test.ts */
+const timed = (t: { k: string }) => !['calm', 'reach', 'journal'].includes(t.k);
 
 /* 2026-10-14 is a Wednesday; the tests run in America/Chicago time */
 const tk = '2026-10-14';
@@ -24,7 +26,7 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
 
   it('a check-in or wind-down that has opened meanwhile still says it is open', () => {
     const d = core.stopTiles({}, st, tk, at(tk + 'T19:00'));
-    expect(d.tiles.map((x) => [x.k, x.state, x.cur])).toEqual([
+    expect(d.tiles.filter(timed).map((x) => [x.k, x.state, x.cur])).toEqual([
       ['lesson', 'now', true],
       ['evening', 'now', false],
       ['night', 'later', false],
@@ -44,7 +46,7 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
   it('from the time the night opens, the wind-down is the open stop and the lesson says it is still open', () => {
     const d = core.stopTiles({}, st, tk, at(tk + 'T22:30'));
     expect(d.cur).toBe('night');
-    expect(d.tiles.map((x) => [x.k, x.state])).toEqual([
+    expect(d.tiles.filter(timed).map((x) => [x.k, x.state])).toEqual([
       ['lesson', 'due'],
       ['evening', 'due'],
       ['night', 'now'],
@@ -66,19 +68,24 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
 
     it('leaves only the wind-down', () => {
       const d = core.stopTiles(slipped({}), st, tk, at(tk + 'T22:30'));
-      expect(d.tiles.map((x) => x.k)).toEqual(['night']);
+      expect(d.tiles.filter(timed).map((x) => x.k)).toEqual(['night']);
       expect(d.cur).toBe('night');
     });
 
     it('leaves the whole day open before the night', () => {
-      expect(core.stopTiles(slipped({}), st, tk, at(tk + 'T21:00')).tiles.map((x) => x.k)).toEqual(['lesson', 'evening', 'night']);
+      expect(
+        core
+          .stopTiles(slipped({}), st, tk, at(tk + 'T21:00'))
+          .tiles.filter(timed)
+          .map((x) => x.k),
+      ).toEqual(['lesson', 'evening', 'night']);
     });
 
     it('keeps what was done on the line and takes nothing earned', () => {
       const read = finish({}, tk, tk + 'T12:00');
       const before = core.gameCompute(slipped(read), st, {}, tk).pts;
       const d = core.stopTiles(slipped(read), st, tk, at(tk + 'T22:30'));
-      expect(d.tiles.map((x) => [x.k, x.done])).toEqual([
+      expect(d.tiles.filter(timed).map((x) => [x.k, x.done])).toEqual([
         ['lesson', true],
         ['night', false],
       ]);
@@ -172,6 +179,11 @@ describe('a person who sleeps by day', () => {
   });
   it('keeps the rest of the day after a slip in those hours', () => {
     const d = { [tk]: { d: tk, events: [{ id: 's', outcome: 'slipped', time: '16:30' }], u: 1 } } as unknown as Days;
-    expect(core.stopTiles(d, st, tk, at(tk + 'T17:00')).tiles.map((x: { k: string }) => x.k)).toContain('lesson');
+    expect(
+      core
+        .stopTiles(d, st, tk, at(tk + 'T17:00'))
+        .tiles.filter(timed)
+        .map((x: { k: string }) => x.k),
+    ).toContain('lesson');
   });
 });

@@ -1,5 +1,21 @@
 # What is planned next
 
+## Every switch in Change shows on Your day (the owner, November 2, 2026; branch `claude/routine-stops`, not merged)
+
+The owner: "it asks if i want calm move on or off but when i switch it nothing happens", and for the journal: "it should be a toggle
+then it would be a box on the home screen i could press". Calm move and Reached out were parts of the routine (daily wins) with no stop,
+so their switches changed only the count behind the scenes.
+
+**High, done:** Journal is a part of the routine (`ROUTINE` in core.js, off at first; the golden fixtures' normalized routine gained
+`journal: false` by hand, the one intended change). It is never a daily win, so no ring, points or level change (tested). `stopTiles`
+adds the any-time stops after the lesson: Calm move (done by a calm move today), Reached out (`reachToggle` marks today, the same
+reach the wins count), Journal (done with an entry today; `stopTiles` takes the journal as a fifth argument). They say "Any time", are
+never the big card, a done one stays when switched off, and on the night of a slip only done ones stay. Tests: `routine-stops.test.ts`.
+
+**Medium, left:** in `your-day.tsx`, open each new stop (`openStop`: calm to the tools, reach marks with `reachToggle` and a buzz,
+journal to `/journal`), pass `snap.journal` to `stopTiles`, check the icons and rows, the Change sheet's words, and Settings' routine
+list (Journal shows there too). Then pictures, the craft checklist, the simulator, and the owner's look before merging.
+
 ## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
 
 The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on

@@ -18,15 +18,18 @@ import {
   minToClock,
   reachedOn,
   rhythm,
+  routineOn,
   ROUTINE_KEYS,
   streaks,
   sumDay,
+  winsOf,
   type RhythmStop,
 } from './legacy/core.js';
 import { lessonOpen } from './accounts';
 import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
+import type { Journal } from './journal-entries';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
 
 /** the short status on the right of a stop */
@@ -248,7 +251,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'calm' | 'reach' | 'journal';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -274,7 +277,43 @@ export interface StopTile {
 }
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
-export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): { tiles: StopTile[]; cur: string | null; done: number } {
+/* Parts of the routine with no time of day (calm move, reached out, the journal) are stops too, so every switch in "Change" shows on
+   the line (the owner, November 2, 2026: "when i switch it nothing happens"). They sit after the lesson, say "Any time", and are never
+   the big card, so the next step is still the lesson, the check-in or the wind-down. Done when the day holds one, and a done one
+   stays on the line even when switched off, the way a done lesson does. */
+const ANY_TIME = ['calm', 'reach', 'journal'] as const;
+function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | undefined, slipNight: boolean): StopTile[] {
+  const d = days[tk];
+  const p = d?.p;
+  const w = winsOf(days, tk, st);
+  const wrote = Object.values(journal || {}).some((e) => e.d === tk);
+  const done: Record<(typeof ANY_TIME)[number], boolean> = { calm: !!w.calm, reach: !!w.reach, journal: wrote };
+  const say = {
+    calm: { ic: 'wave', title: 'Calm move', open: 'A tool or a 10-minute pause', did: 'Done today', btn: 'Pick a tool' },
+    reach: { ic: 'chat', title: 'Reached out', open: 'Text, call, or talk to a person', did: 'Reached someone today', btn: 'I reached out' },
+    journal: { ic: 'pencil', title: 'Journal', open: 'A few words about the day', did: 'Written today', btn: 'Write' },
+  };
+  /* the night of a slip leaves only the wind-down open (dayRhythm); what was done stays */
+  return ANY_TIME.filter((k) => done[k] || (!slipNight && routineOn(st, p, k))).map((k) => ({
+    k,
+    state: done[k] ? ('done' as const) : ('later' as const),
+    done: done[k],
+    cur: false,
+    sky: 'sun' as const,
+    ic: say[k].ic,
+    title: say[k].title,
+    line: done[k] ? say[k].did : say[k].open,
+    right: done[k] ? '' : 'Any time',
+    eyebrow: say[k].title + (done[k] ? ' · done' : ' · any time'),
+    head: say[k].title,
+    body: say[k].open,
+    chips: [],
+    btn: say[k].btn,
+    go: k,
+  }));
+}
+
+export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, journal?: Journal): { tiles: StopTile[]; cur: string | null; done: number } {
   const r = dayRhythm(days, st, tk, nowMs);
   const p = days[tk]?.p;
   const ls = lessonStop(days, st, tk);
@@ -351,7 +390,13 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number): 
       go: 'wind',
     };
   });
-  return { tiles, cur: r.cur, done: tiles.filter((t) => t.done).length };
+  /* after the lesson (or first, with no lesson stop), before the evening */
+  const at = tiles.findIndex((t) => t.k !== 'lesson');
+  const all = [...tiles];
+  const night = r.stops.find((x) => x.k === 'night');
+  const slipNight = !!night && !!night.started && sumDay(days[tk]).slipped > 0;
+  all.splice(at < 0 ? all.length : at, 0, ...anyTimeTiles(days, st, tk, journal, slipNight));
+  return { tiles: all, cur: r.cur, done: all.filter((t) => t.done).length };
 }
 /** the order of the line on Today: what is done, then the big card, then what is still open, so the next step is never pushed down
     under rows that are not next (the owner, November 1, 2026). With no big card, the day's own order. */
@@ -466,6 +511,24 @@ export function routineDay(days: Days, st: Settings, tk: DayKey, k: string, want
         if (want === usual) delete ov[k];
         else ov[k] = want;
         p.ov = ov;
+        d.p = p;
+      },
+      now,
+    ),
+  );
+}
+/** "Reached out" on Today: tapping the stop marks today (p.r), and tapping it again takes the mark off. A yes from the check-in
+    (ro) stays as it is. */
+export function reachToggle(days: Days, tk: DayKey, now = Date.now()): Days {
+  return withDay(
+    days,
+    tk,
+    changeDay(
+      days[tk],
+      tk,
+      (d) => {
+        const p = d.p || blankP();
+        p.r = !p.r;
         d.p = p;
       },
       now,

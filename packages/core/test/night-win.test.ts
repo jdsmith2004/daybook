@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { DayEvent, Days, Settings } from '../src/types';
+/* the stops with a time of day; the any-time ones (calm move, reached out, the journal) have their own tests in routine-stops.test.ts */
+const timed = (t: { k: string }) => !['calm', 'reach', 'journal'].includes(t.k);
 
 const st: Settings = core.normSettings({ start: '2026-10-25', day1: '2026-11-01' });
 const D = '2026-11-10'; // a Tuesday
@@ -79,7 +81,12 @@ describe('last night’s win', () => {
 
   it('has its own card on Today, not a morning stop (the morning stop was retired)', () => {
     const now = new Date(2026, 10, 11, 7, 30).getTime();
-    expect(core.stopTiles(day(D, [sos()]), st, M, now).tiles.map((x) => x.k)).toEqual(['lesson', 'evening', 'night']);
+    expect(
+      core
+        .stopTiles(day(D, [sos()]), st, M, now)
+        .tiles.filter(timed)
+        .map((x) => x.k),
+    ).toEqual(['lesson', 'evening', 'night']);
   });
 });
 

@@ -79,7 +79,7 @@ import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
 import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
-import { Prog, Question, Quiet, Shell } from '@/components/lesson-parts';
+import { Answer, Prog, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
@@ -871,16 +871,10 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
 /** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
 function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.opt,
-        { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1, borderColor: 'transparent', gap: 2, transform: [{ translateY: pressed ? 2 : 0 }] },
-      ]}>
+    <Answer sel={false} right={false} onPress={onPress} style={{ gap: 2 }}>
       <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: PAPER_INK }}>{title}</Text>
       <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{sub}</Text>
-    </Pressable>
+    </Answer>
   );
 }
 function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {

@@ -370,6 +370,32 @@ rules: no right answer where it is about the person.
 9. **The closing line.** "Father, I am turning back again. Thank you that the way is open." _[Plain: "God, I am turning back
    again. Thank you that the way is open."]_
 
+### Every lesson turns something over (the owner, November 2, 2026)
+
+The owner read the two God lessons and said they were good but "just saying stuff i already know": a lesson should change how
+a person sees the problem, the way David A. Bednar or Jordan Peterson come at a familiar thing from a new side. The redrafts
+(Where art thou?, and Built for coming back) were approved, and so was the standard for all lessons: rewrite every one in
+place, with visuals where they help, a flip card, lines back to earlier lessons as a natural part of the thought (never a
+review at the start), and a true line from the person's own log. More lessons will be added later, so the shape is a format,
+not a one-off.
+
+**The shape** (core `lesson-turns.ts`): a moment the person knows, a question only they can answer, the turn (a card that
+turns over from "You may think" to "Look again", and the night sky becomes the sun), one or more cards behind it with a
+picture, a line from their own log (counted on the phone), what to do, and a check. A turned lesson replaces the old one in
+place, so its id, section and place on the path stay and nothing done or earned moves. Its questions are written the
+thinking way from the start.
+
+**Built on `lessons-steps` as a pilot, for the owner to see first:** lessons 1, 2 and 3. The turns: feeling ready follows the
+first steps, not the other way round (self-perception); a strong urge means a well-practiced habit, not a real want (wanting
+and liking, Berridge and Robinson); the slip does not wreck the day, "I already blew it" does (the milkshake study, Herman and
+Mack, and Marlatt). Three new pictures: steps that fill up feeling ready, wanting climbing past liking, twelve days with one
+slip that read 11 of 12. Lesson 3 builds on lesson 2's wave. Pictures in `docs/lessons-review/turn-*.png`.
+
+**The rest, once the owner has seen the pilot** (medium): the other 44 lessons and the 12 God lessons, in the order of the
+path. Sonnet agents find each lesson's turn (the belief, the surprising fact or distinction, and its source); the writing is
+done on Opus, since the voice is what makes it work. New picture kinds only where a lesson's turn needs one, each shown to
+the owner before it is reused.
+
 ### Not verified
 
 The research agents could not open every source, and those are marked in the files in `docs/lessons-research/`. Numbers for new lessons get read from the source when the lesson is written. Almost all the porn research is on Western men, so the new lessons should not assume a reader's sex. The word counts above (73, 85, 27) are estimates until the steps are written. The twelve forms were looked at on the web build. On the simulator, in a release build, I walked two lessons as someone at level 25: lesson 2 opens on its own first card, and the Beacon is clear of the words. The Torch's fix and the welcome back were seen on the web only, and nothing on Android.

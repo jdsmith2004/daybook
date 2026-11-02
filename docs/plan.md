@@ -1,6 +1,6 @@
 # What is planned next
 
-## My plan, rebuilt from the ground up (the owner, November 2, 2026; on branch claude/xenodochial-panini-ff574d, not built yet)
+## My plan, rebuilt from the ground up (the owner, November 2, 2026; on branch claude/xenodochial-panini-ff574d, being built)
 
 The owner: "our goals and plan screen i don't like i think it needs a whole session and alot of thought to make it better use the rest of the app (onboarding, lessons, journal, how we feel) as inspiration". They like gradients, color and rich themes.
 
@@ -29,6 +29,13 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 2. What I learned (finished lessons' takeaways and the checkpoint writing): move it to Learn, where it is made? Recommended: yes; old links that open it go there.
 3. Calm moves, the wind-down and the words that steady me: fold each into the part it serves on the one page, instead of a Lists tab? Recommended: yes.
 4. My own check-in answers (removing an answer you added): move to Settings? Recommended: yes; it is upkeep, not the plan.
+
+**The owner's pick (November 2, 2026):** "oh i like b but i want them to read it like a lesson and it should have visuals and the first talking and stuff as well like the lessons". So the page is B, and C becomes the way to read it:
+
+- **My plan** is B: a night top with the big flame and who I am becoming, then the chapters, each in its own color (When it hits, Why, If I slip, My people), each showing its best line. When it hits shows tonight's two lines (core `planTonight`, shared with Today). A low "Read my plan" button starts the reading.
+- **Read my plan** is a lesson: full-screen cards, one thought each, on the lesson sky that goes from night to dawn, the person's own flame gliding card to card and talking in its cream bubble, a picture on each card, Next low. It walks who I am becoming, tonight's lines, a reason and my note, If I slip and my person, and ends on the dawn.
+- **A chapter** opens full screen in its color, with every line big; tap a line to change it in a sheet of the same color, Add at the bottom.
+- The three smaller questions had no answer, so I took the recommendations: What I learned moves to Learn, the lists go into the chapter they serve (calm moves and the wind-down in When it hits, the words that steady me in Why), and my own check-in answers move to Settings. Each is easy to undo.
 
 **Data:** nothing in the settings changes shape. `plan` stays a list of `{ when, then }`, and `reasons`, `becoming`, `why`, `goal`, `loop`, `rule`, `note`, `slipPlan`, `safety`, `help`, `menu`, `wind` and `words` stay as they are, so no `normSettings` change. The "lines for tonight" pick should be one core function shared with Today, which shows the same two lines.
 

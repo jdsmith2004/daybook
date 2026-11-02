@@ -20,7 +20,7 @@ import {
   feelBubbles,
   feelMap,
   patFlow,
-  patFlames,
+  patLights,
   mosaic,
   spreadCircles,
 } from '../src/pattern-cards';
@@ -108,11 +108,18 @@ describe('the riding out', () => {
     expect(cols.length).toBe(7);
     expect(cols[6]).toMatchObject({ label: 'Today', rode: 1, slipped: 1 });
   });
+  it('counts how many ridden out were strong, and only those ridden out', () => {
+    const d = {
+      [TK]: { events: [{ outcome: 'rode', st: 'high' }, { outcome: 'rode', st: 'low' }, { outcome: 'rode' }, { outcome: 'slipped', st: 'high' }], u: 1 },
+    } as unknown as Days;
+    expect(patRideCols(d, [TK], TK)[0]).toMatchObject({ rode: 3, slipped: 1, strong: 1, low: 1 });
+  });
   it('leads with the wins, and never a share a slip can drag down', () => {
     const col = (rode: number, slipped: number) => ({ from: TK, label: '', rode, slipped });
     expect(patRideSay({ then: 0.5, now: 0.8 }, [col(8, 2)])).toEqual({ head: '8 ridden out', line: 'You ride out 8 in 10 hard moments now, up from 5 in 10.' });
     expect(patRideSay({ then: 0.8, now: 0.8 }, [col(8, 2)]).line).toBe('You ride out about 8 in 10 hard moments, and it is holding.');
     expect(patRideSay({ then: 0.8, now: 0.5 }, [col(5, 5)])).toEqual({ head: '5 ridden out', line: '' });
+    expect(patRideSay(null, [{ ...col(5, 0), strong: 3 }]).line).toBe('3 of them were strong, and you still got through.');
     expect(patRideSay(null, [col(0, 2)]).head + patRideSay(null, [col(0, 2)]).line).not.toMatch(/\d/);
     expect(patRideSay(null, [col(0, 0)]).head).toBe('A quiet stretch');
   });
@@ -487,19 +494,55 @@ describe('patFlow', () => {
   });
 });
 
-describe('patFlames', () => {
-  const col = (rode: number, slipped = 0) => ({ from: 'a', label: '', rode, slipped });
-  it('more moments ridden out stand taller, and the most stand at the top of the room', () => {
-    expect(patFlames([col(10), col(20)], 300)).toEqual([150, 300]);
+describe('patLights', () => {
+  const col = (rode: number, slipped = 0, strong = 0, low = 0) => ({ from: 'a', label: '', rode, slipped, strong, low });
+  const inCol = (p: ReturnType<typeof patLights>, c: number) => p.lights.filter((l) => l.col === c).length;
+  it('a light for each moment, and more moments gather higher', () => {
+    const p = patLights([col(2), col(5)], 70, 300);
+    expect(p.per).toBe(1);
+    expect(inCol(p, 0)).toBe(2);
+    expect(inCol(p, 1)).toBe(5);
+    expect(p.tops[1]).toBeGreaterThan(p.tops[0]);
   });
   it('a few moments do not fill the card', () => {
-    expect(patFlames([col(2)], 300)).toEqual([120]);
+    expect(patLights([col(1)], 70, 300).tops[0]).toBeLessThan(150);
   });
-  it('one moment among many still shows, and none stands for none', () => {
-    expect(patFlames([col(1), col(200), col(0)], 300)).toEqual([30, 300, 0]);
+  it('however many there are, they stay in the room and within the most drawn', () => {
+    for (const [n, w] of [
+      [14, 70],
+      [34, 70],
+      [60, 28],
+      [900, 28],
+      [5000, 28],
+    ]) {
+      const p = patLights([col(1), col(n)], w, 300);
+      expect(p.tops[1]).toBeLessThanOrEqual(300);
+      expect(p.lights.length).toBeLessThanOrEqual(161);
+      expect(inCol(p, 0)).toBe(1);
+      expect(inCol(p, 1)).toBe(Math.ceil(n / p.per));
+    }
   });
-  it('a slip changes nothing', () => {
-    expect(patFlames([col(3, 9)], 300)).toEqual(patFlames([col(3, 0)], 300));
+  it('a light stands for more than one only past what fits', () => {
+    expect(patLights([col(30), col(30), col(30), col(30), col(30)], 70, 300).per).toBe(1);
+    expect(
+      patLights(
+        Array.from({ length: 13 }, () => col(50)),
+        28,
+        300,
+      ).per,
+    ).toBeGreaterThan(1);
+  });
+  it('a strong moment burns bigger, and sizes mean nothing when SOS never asked', () => {
+    const sized = patLights([col(4, 0, 1, 1)], 70, 300);
+    expect(sized.sized).toBe(true);
+    const rs = sized.lights.map((l) => l.r).sort((a, b) => a - b);
+    expect(rs[3]).toBeGreaterThan(rs[2]);
+    expect(rs[0]).toBeLessThan(rs[1]);
+    expect(patLights([col(4)], 70, 300).sized).toBe(false);
+  });
+  it('a slip changes nothing, and nothing ridden out is no light', () => {
+    expect(patLights([col(3, 9)], 70, 300).lights).toEqual(patLights([col(3, 0)], 70, 300).lights);
+    expect(patLights([col(0, 4)], 70, 300).lights).toEqual([]);
   });
 });
 

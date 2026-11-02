@@ -3,7 +3,7 @@
    - Hillside: how many recent days had no slip, as a hill you walked over, with your flame standing at today, a star over each day with no slip, and
      the period before as a dotted line. A slip is a dip that fills back in
    - DayFlow: how the days felt as bands of color across the range, each in the color of its answer on Today, widening as days like it come more often
-   - FlameRow: a flame for each stretch of days, taller for more moments ridden out, with the count over it; a slip is a quiet dot under the ground, never an alarm
+   - Fireflies: a light for each moment ridden out, gathered over its stretch of days with the count over them; a strong one burns bigger, and a slip is a quiet dot under the ground, never an alarm
    - FeelField: the whole field of feelings as soft dots, with what was named swelled up where it lives and its word inside
    - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
@@ -12,11 +12,12 @@
 import {
   feelMap,
   mosaic,
-  patFlames,
+  patLights,
   type DayFeelStep,
   type PatDiff,
   type PatFeels,
   type PatHour,
+  type PatLight,
   type PatRideCol,
   type PatRidge,
   type PatWhen,
@@ -55,7 +56,7 @@ function useInk() {
 export const CARD_SKY: Record<string, [string, string]> = {
   apart: ['#0C0A2A', '#1B1040'],
   felt: ['#0E0C24', '#0E0C24'],
-  ride: ['#120A24', '#2B1022'],
+  ride: ['#0E1230', '#17112F'],
   named: ['#0E0C24', '#17132F'],
   when: ['#0C0A2A', '#120E38'],
   what: ['#120E30', '#120E30'],
@@ -461,111 +462,91 @@ export function DayFlow({
 }
 
 /* ---------- the moments ridden out ---------- */
-const ROW_FOOT = 72;
-const ROW_TOP = 28;
-/** a tongue of fire standing on the ground at the bottom middle of a box w by h, its tip leaning a little one way */
-function tongue(w: number, h: number, lean: number) {
-  const m = w / 2;
-  const P = (x: number, y: number) => (m + x * w).toFixed(1) + ' ' + (h - y * h).toFixed(1);
-  return [
-    'M' + P(0, 0),
-    'C' + P(0.5, 0) + ' ' + P(0.56, 0.18) + ' ' + P(0.45, 0.38),
-    'C' + P(0.34, 0.57) + ' ' + P(0.16 + lean * 0.4, 0.76) + ' ' + P(lean, 1),
-    'C' + P(lean * 0.3 - 0.2, 0.8) + ' ' + P(-0.38, 0.64) + ' ' + P(-0.46, 0.42),
-    'C' + P(-0.54, 0.2) + ' ' + P(-0.46, 0) + ' ' + P(0, 0) + 'Z',
-  ].join('');
-}
-/** one flame, coming up out of the ground and then moving a little, each at its own pace */
-function RowFlame({ i, x, ground, w, h }: { i: number; x: number; ground: number; w: number; h: number }) {
-  const grow = useGrow(120 + i * 80, 760);
-  const breath = useBreath(1300 + place(i) * 900);
-  const lean = (place(i + 3) - 0.5) * 0.24;
+const FLY_TOP = 30;
+/** the lights over one stretch of days, coming up out of the ground and then glowing and fading a little, each stretch at its own pace */
+function FlyColumn({ i, list, x, ground, w, h }: { i: number; list: PatLight[]; x: number; ground: number; w: number; h: number }) {
+  const grow = useGrow(120 + i * 70, 700);
+  const breath = useBreath(1700 + place(i) * 1500);
+  const crowded = list.length > 12;
   return (
     <Animated.View
-      style={{
-        position: 'absolute',
-        left: x - w / 2,
-        top: ground - h,
-        width: w,
-        height: h,
-        transform: [{ translateY: grow.interpolate({ inputRange: [0, 1], outputRange: [h / 2, 0] }) }, { scaleY: grow }],
-      }}>
-      <Animated.View
-        style={{
-          width: w,
-          height: h,
-          transform: [
-            { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [h * 0.015, -h * 0.015] }) },
-            { scaleY: breath.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) },
-          ],
-        }}>
-        <Svg width={w} height={h} style={{ overflow: 'visible' }} {...SVG_HIDE}>
-          <Defs>
-            <LinearGradient id={'fireout' + i} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#FF9A3D" />
-              <Stop offset="1" stopColor="#E8503F" />
-            </LinearGradient>
-            <LinearGradient id={'firemid' + i} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#FFD27A" />
-              <Stop offset="1" stopColor="#FF9A3D" />
-            </LinearGradient>
-          </Defs>
-          <Path d={tongue(w, h, lean)} fill={'url(#fireout' + i + ')'} />
-          <G x={w * 0.17} y={h * 0.3}>
-            <Path d={tongue(w * 0.66, h * 0.7, lean * 0.6)} fill={'url(#firemid' + i + ')'} />
-          </G>
-          <G x={w * 0.32} y={h * 0.6}>
-            <Path d={tongue(w * 0.36, h * 0.4, lean * 0.3)} fill="#FFF3CF" />
-          </G>
-        </Svg>
-      </Animated.View>
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          opacity: Animated.multiply(grow, breath.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] })),
+          transform: [{ translateY: grow.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+        },
+      ]}>
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Defs>
+          <RadialGradient id={'fly' + i} cx="50%" cy="50%" rx="50%" ry="50%" fx="50%" fy="50%">
+            <Stop offset="0" stopColor="#FFE9A0" stopOpacity={0.95} />
+            <Stop offset="0.24" stopColor="#FFC95C" stopOpacity={0.52} />
+            <Stop offset="0.56" stopColor="#FF9A3D" stopOpacity={0.14} />
+            <Stop offset="1" stopColor="#FF9A3D" stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient id={'flyheart' + i} cx="50%" cy="50%" rx="50%" ry="50%" fx="50%" fy="50%">
+            <Stop offset="0" stopColor="#FFFDF2" />
+            <Stop offset="0.65" stopColor="#FFF0B8" />
+            <Stop offset="1" stopColor="#FFD97A" stopOpacity={0.75} />
+          </RadialGradient>
+        </Defs>
+        {list.map((l, m) => (
+          <Circle key={m} cx={x + l.x} cy={ground - l.y} r={l.r * (crowded ? 4.4 : 5.7)} fill={'url(#fly' + i + ')'} />
+        ))}
+        {list.map((l, m) => (
+          <Circle key={m} cx={x + l.x} cy={ground - l.y} r={l.r} fill={'url(#flyheart' + i + ')'} />
+        ))}
+      </Svg>
     </Animated.View>
   );
 }
-/** a flame for each stretch of days, standing taller for more moments ridden out, with the count over it. A slip is a quiet dot under the ground, and never takes anything from the flame */
-export function FlameRow({ cols, w, h, label }: { cols: PatRideCol[]; w: number; h: number; label: string }) {
+/** a firefly for each moment ridden out, gathered over its stretch of days at dusk with the count over them: more moments gather higher, and a strong one burns bigger. A slip is a quiet dot under the ground, and takes no light away */
+export function Fireflies({ cols, w, h, label }: { cols: PatRideCol[]; w: number; h: number; label: string }) {
   const k = useInk();
-  const glow = useBreath(2400);
-  const words = useGrow(700, 500);
-  const side = 10;
+  const words = useGrow(620, 500);
   const n = Math.max(cols.length, 1);
-  const colW = (w - side * 2) / n;
-  const ground = h - ROW_FOOT;
-  const room = ground - ROW_TOP;
-  const tall = patFlames(cols, room);
-  const mid = (i: number) => side + colW * (i + 0.5);
-  const wide = (t: number) => Math.min(colW * 0.94, 76, t * 0.72);
+  const colW = w / n;
+  const mid = (i: number) => colW * (i + 0.5);
   const slips = cols.reduce((a, c) => a + c.slipped, 0);
-  const dot = 5;
-  const gap = n > 7 ? 7 : 10;
-  const inRow = Math.max(1, Math.floor((colW - 4) / gap));
+  const anySized = cols.some((c) => c.strong || c.low);
+  /* the words under it stay clear of the dates: two lines when they will not fit on one */
+  const two = anySized || (slips > 0 && w < 330);
+  const ground = h - (two ? 88 : 72);
+  const room = ground - FLY_TOP;
+  const { per, lights, tops, sized } = useMemo(() => patLights(cols, colW, room), [cols, colW, room]);
+  const stars = useMemo(
+    () => Array.from({ length: 22 }, (_, i) => ({ x: place(i + 40) * w, y: place(i * 3 + 40) * ground * 0.55, r: 0.5 + place(i * 5) * 0.9 })),
+    [w, ground],
+  );
+  const hill = useMemo(() => {
+    const at = (u: number, up: number): [number, number] => [u * w, ground + up];
+    return smooth([at(-0.02, 6), at(0.22, -5), at(0.5, 3), at(0.8, -7), at(1.02, 2)]) + 'L' + (w + 8) + ' ' + h + 'L-8 ' + h + 'Z';
+  }, [w, h, ground]);
+  const dotGap = n > 7 ? 7 : 10;
+  const inRow = Math.max(1, Math.floor((colW - 4) / dotGap));
+  const showN = (i: number) => n <= 8 || (n - 1 - i) % 2 === 0;
   const every = n > 7 ? 3 : 1;
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) }]}>
-        <Svg width={w} height={h} {...SVG_HIDE}>
-          <Defs>
-            <LinearGradient id="rowground" x1="0" y1={ground - room * 0.7} x2="0" y2={ground} gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor="#F2704F" stopOpacity={0} />
-              <Stop offset="1" stopColor="#F2704F" stopOpacity={0.22} />
-            </LinearGradient>
-            {tall.map((t, i) =>
-              t ? (
-                <RadialGradient key={i} id={'rowglow' + i} cx={mid(i)} cy={ground - t * 0.3} r={Math.max(colW * 0.9, t * 0.8)} gradientUnits="userSpaceOnUse">
-                  <Stop offset="0" stopColor="#FFB347" stopOpacity={0.4} />
-                  <Stop offset="0.55" stopColor="#F2704F" stopOpacity={0.13} />
-                  <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
-                </RadialGradient>
-              ) : null,
-            )}
-          </Defs>
-          <Rect x={0} y={0} width={w} height={ground} fill="url(#rowground)" />
-          {tall.map((t, i) => (t ? <Rect key={i} x={0} y={0} width={w} height={ground} fill={'url(#rowglow' + i + ')'} /> : null))}
-        </Svg>
-      </Animated.View>
-      {tall.map((t, i) => (t ? <RowFlame key={i} i={i} x={mid(i)} ground={ground} w={wide(t)} h={t} /> : null))}
       <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
-        <Path d={'M0 ' + (ground + 0.5) + 'H' + w} stroke="#FFB347" strokeOpacity={0.35} strokeWidth={1} />
+        <Defs>
+          <LinearGradient id="dusk" x1="0" y1="0" x2="0" y2={ground} gradientUnits="userSpaceOnUse">
+            <Stop offset="0.25" stopColor="#3B2A5C" stopOpacity={0} />
+            <Stop offset="1" stopColor="#4A3468" stopOpacity={0.9} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={ground + 8} fill="url(#dusk)" />
+        {stars.map((t, i) => (
+          <Circle key={i} cx={t.x} cy={t.y} r={t.r} fill="#FFFFFF" fillOpacity={0.2 + place(i * 7) * 0.45} />
+        ))}
+        <Path d={hill} fill="#100B26" />
+      </Svg>
+      {cols.map((_, i) => {
+        const list = lights.filter((l) => l.col === i);
+        return list.length ? <FlyColumn key={i} i={i} list={list} x={mid(i)} ground={ground} w={w} h={h} /> : null;
+      })}
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
         {cols.map((c, i) => {
           const shown = Math.min(c.slipped, inRow * 2);
           return Array.from({ length: shown }, (_, m) => {
@@ -574,34 +555,42 @@ export function FlameRow({ cols, w, h, label }: { cols: PatRideCol[]; w: number;
             return (
               <Circle
                 key={i + '-' + m}
-                cx={mid(i) + (m - row * inRow - (across - 1) / 2) * gap}
-                cy={ground + 10 + row * gap}
-                r={dot / 2}
+                cx={mid(i) + (m - row * inRow - (across - 1) / 2) * dotGap}
+                cy={ground + 14 + row * 7}
+                r={2.2}
                 fill={k.c.muted}
-                fillOpacity={0.65}
+                fillOpacity={0.55}
               />
             );
           });
         })}
       </Svg>
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: words }]} pointerEvents="none">
-        {tall.map((t, i) =>
-          t ? (
-            <Text key={i} style={[s.rowN, { color: k.c.ink, left: mid(i) - 24, top: ground - t - 24 }]}>
-              {cols[i].rode}
+        {cols.map((c, i) =>
+          c.rode && showN(i) ? (
+            <Text key={i} style={[s.flyN, { color: k.c.ink, left: mid(i) - 24, top: ground - tops[i] - (n > 8 ? 24 : 34), fontSize: n > 8 ? 12 : 15 }]}>
+              {c.rode}
             </Text>
           ) : null,
         )}
       </Animated.View>
       {cols.map((c, i) =>
         (n - 1 - i) % every === 0 ? (
-          <Text key={i} numberOfLines={1} style={[s.ax, s.rowDate, { color: i === n - 1 ? k.c.ink : k.c.muted, left: mid(i) - 30, top: ground + 30 }]}>
+          <Text
+            key={i}
+            numberOfLines={1}
+            style={[s.ax, s.flyDate, { color: i === n - 1 ? k.c.ink : k.c.muted, left: Math.max(2, Math.min(w - 62, mid(i) - 30)), top: ground + 30 }]}>
             {c.label}
           </Text>
         ) : null,
       )}
       <View style={[s.abs, { left: 16, right: 16, bottom: 8, alignItems: 'center' }]}>
-        <Text style={[s.ax, { color: k.c.muted }]}>Taller flame, more ridden out.{slips ? ' A dot is a slip.' : ''}</Text>
+        <Text style={[s.ax, { color: k.c.muted, textAlign: 'center' }]}>
+          {per > 1 ? 'Each light is ' + per + ' you rode out.' : 'Each light is one you rode out.'}
+          {two ? '\n' : ' '}
+          {sized ? 'Bigger was stronger.' + (slips ? ' ' : '') : ''}
+          {slips ? 'A dot is a slip.' : ''}
+        </Text>
       </View>
     </View>
   );
@@ -1079,7 +1068,7 @@ const s = StyleSheet.create({
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   keyDot: { width: 8, height: 8, borderRadius: 4 },
   ax: { fontFamily: font.body, fontSize: 12 },
-  rowN: { position: 'absolute', width: 48, textAlign: 'center', fontSize: 15, fontFamily: font.bodySemi },
-  rowDate: { position: 'absolute', width: 60, textAlign: 'center' },
+  flyN: { position: 'absolute', width: 48, textAlign: 'center', fontFamily: font.bodySemi },
+  flyDate: { position: 'absolute', width: 60, textAlign: 'center' },
   date: { fontSize: 11, lineHeight: 14, marginTop: 2 },
 });

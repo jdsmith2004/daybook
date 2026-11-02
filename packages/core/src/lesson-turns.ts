@@ -20,6 +20,8 @@ import { TURNS_A } from './lesson-turns-a';
 import { TURNS_B } from './lesson-turns-b';
 import { TURNS_C } from './lesson-turns-c';
 import { TURNS_D } from './lesson-turns-d';
+import { GOD_A } from './lesson-turns-god-a';
+import { GOD_B } from './lesson-turns-god-b';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -329,3 +331,6 @@ const FIRST: Record<string, Turn> = {
 };
 
 export const TURNS: Record<string, Turn> = { ...FIRST, ...TURNS_A, ...TURNS_B, ...TURNS_C, ...TURNS_D };
+/** the twelve God lessons, one for each step (g1 to g12), for people who said faith plays a part. Written, not yet on the path:
+    where each sits in its step, and the order for people already partway along, come next (docs/plan.md). */
+export const GOD: Record<string, Turn> = { ...GOD_A, ...GOD_B };

@@ -4,7 +4,7 @@
 
 **The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."
 
-**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. The owner answered five questions on November 2, 2026: God goes deep for those who choose it, the God lessons follow the owner's own faith as a Latter-day Saint, other Christians get a Bible-only version, the path never locks on a deed but asks once more, and the lessons move to the twelve steps. What the Church teaches, its recovery program, what may be quoted and the research on Latter-day Saints are in `docs/lessons-research/latter-day-saint.md`. Question 5 is below, and step 7 waits on it.
+**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. The owner answered five questions on November 2, 2026: God goes deep for those who choose it, the God lessons follow the owner's own faith as a Latter-day Saint, other Christians get a Bible-only version, the path never locks on a deed but asks once more, and the lessons move to the twelve steps. What the Church teaches, its recovery program, what may be quoted and the research on Latter-day Saints are in `docs/lessons-research/latter-day-saint.md`. Question 5 is below, and step 7 waits on it. The high steps, 3 (the path) and 4 (the deeds), are built on branch `lessons-steps`, which sits on top of `lessons-no-review`, not merged; a release build is on the iPhone 16 Pro simulator for the owner to see. A preview of the question rewrite is below, before the steps.
 
 ### The honest read of the 49 lessons
 
@@ -138,14 +138,85 @@ Setup needs one small change. The question stays where it is, with the same answ
 5. **About 73 lessons (85 with God), or more?** (a) That count, and more only after people finish the path (recommended). (b) Keep writing until 150 or more, knowing some will repeat.
 6. **What does a Christian who is not a Latter-day Saint, or someone of another faith, see?** Answered (the owner, November 2, 2026): **a Bible-only version.** Yes or Somewhat in setup gets one more question: Latter-day Saint, another Christian faith, or another faith. The options were: (a) Yes in setup gets one more question: Latter-day Saint, another Christian faith, or another faith. Latter-day Saints get everything above. Other Christians get the same lessons with Bible verses only and without the bishop, the sacrament and the Church's meetings. Another faith gets a plain "God" version with no Scripture. The lessons are written once, with a few lines marked for each (recommended). (b) Everyone who says Yes gets the Latter-day Saint lessons. (c) Only Latter-day Saints get God lessons; everyone else gets the plain version.
 
+### A preview of the question rewrite (for the owner, November 2, 2026)
+
+The owner asked to see some rewrites before step 2 starts. Seven, from the lessons people meet first, and one God lesson in the
+Latter-day Saint voice. Each follows the six rules above; the comment is what the flame says when that answer is picked.
+
+**Lesson 1, You do not need to feel ready. The guess.** Today: "What do you think mixed feelings about quitting usually mean?"
+The right answer is the one that sounds like the lesson. Rewritten, a question only they can answer, with no right answer:
+
+> Part of you does not want to quit. What is that part holding on to?
+>
+> - **My one way to unwind.** That is a real need. Step 9 is about meeting it another way, so you do not lose it.
+> - **Something that is only mine.** Then the goal is a life you do not have to hide, and that can be yours too.
+> - **A way to not feel alone.** Then people are part of the answer, not only stopping. Step 6 is built for this.
+> - **I do not know yet.** That is honest. Your log will start to show it within a couple of weeks.
+
+**Lesson 1. Check it.** Today: "What is the best next move?", with "Take one small step, even while unsure" as the right one.
+Rewritten, three real choices, each with what it costs and what it gives:
+
+> It is day three, and part of you still is not sure. What do you do tonight?
+>
+> - **Wait until I feel sure.** It feels safer, and it costs the very days that build the sureness. Ready usually comes after starting.
+> - **One small thing, still unsure.** This is how most people start. Tonight it costs five minutes, and it counts.
+> - **Promise myself: never again.** It feels strong tonight. A promise that big is hard to keep while you are unsure, and breaking it hurts. A small step is easier to repeat.
+
+**Lesson 3, Why one slip snowballs. Check it.** Today: "What best keeps it from snowballing?" Rewritten as a real Saturday:
+
+> You slipped Friday night. On Saturday a friend asks you to dinner.
+>
+> - **Stay in and get back on track.** It feels responsible. But home alone is where "why bother" grows, and it costs the evening that would help most.
+> - **Go, and say nothing.** This works. Being with someone quiets the "why bother" thought, even if they never know.
+> - **Go, and tell them it was a hard week.** The strongest of the three, if they are safe. It costs one hard sentence, and you leave with someone on your side.
+
+**Lesson 4, When values and habits clash. Check it.** Today the right answer is the longest one ("Look at the values clash,
+with someone calm"). Rewritten, the person names their own weight:
+
+> After you watch, what weighs on you most?
+>
+> - **That I could not stop.** That is about control. Steps 3 and 8 are built for it.
+> - **That it goes against what I believe.** That is a values clash, and for many people it hurts more than the habit. A calm talk with someone you trust, or a faith leader, helps most.
+> - **Both, about the same.** Many people feel both. Each needs its own help: tools for control, care for the clash.
+> - **I do not know yet.** That is fair. Notice it next time, and write one line.
+
+**Lesson 5, Wanting is not liking. The guess.** Today: "Why can the pull be strong when the pleasure is small?" Rewritten with
+the slider the app already has, from their own life:
+
+> Last time you gave in, how good did it actually feel? (0 to 10)
+>
+> After: "Now think of how strong the pull was just before. If the pull was the bigger number, that gap is wanting. It is a
+> signal, and it is not a need."
+
+**Lesson 9, Change the setting. Check it.** Today: a made-up person whose slips happen in bed. Rewritten from their own log
+(it needs one small piece of code: their busiest hour and place, which the app already works out):
+
+> Your log says your hardest hour is 11 PM to 1 AM, in bed. What will you change there tonight?
+>
+> - **My phone charges outside the bedroom.** This changes the exact place the habit leans on. It costs a little comfort, and it does the most. (It is also step 3's deed.)
+> - **I move to another room after 11.** Good, if that room is hard to slip in. Pick one without a screen.
+> - **I put a filter on.** It adds a pause, and alone it is easy to get around. Pair it with the phone leaving the room.
+> - **Something else.** Write it on your plan, so it is there tonight.
+
+**God and a plan, in the Latter-day Saint voice. Check it.** Today: "You prayed for help tonight, and the urge is still
+there. What is the best next step?" Rewritten:
+
+> You prayed, and it came back an hour later. What do you think that means?
+>
+> - **Heavenly Father did not hear me.** He heard you. The Savior knows temptation from the inside (Alma 7:11-12). The pull coming back is not His answer.
+> - **I did not mean it enough.** You meant it. Prayer is not a test you pass by trying harder. Pray again, then do one thing: leave the room, or text someone.
+> - **Being tempted is not the same as falling.** Yes. The pull is not a sin. What you do in the next ten minutes is yours, and you are not doing it alone.
+
+The Bible-only version names Hebrews 4:15 instead of Alma.
+
 ### The steps, with the effort each needs
 
 Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` says for a rebuild.
 
 1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
 2. **Medium.** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6.
-3. **High.** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`.
-4. **High.** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip.
+3. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`. As built: the steps live in core `steps.ts` (their lessons, deed, words and picture); the first eight are l1, l2, l3, l22, l33, l34, l20, l46; change the setting is lesson 9 and the if-then plan lesson 10; the four faith lessons sit inside steps 3, 6, 7 and 8, never last, so a step ends the same for everyone; the path has 47 lessons. Both past orders still count, tested from every point along each. Checkpoints keep their pairs and writing; several pairs now sit in different steps, so one is due once both its lessons are reached. Two new pictures: a door shut for the night (step 3) and one candle lighting another (step 12). The golden fixtures changed by hand in one way: the lesson numbers and 49 to 47.
+4. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip. As built: `settings.learn.did`, `later` and `asked` by step id; a deed is worth 30 points (a lesson is 10), counted in the total like quests, so it never moves; sync keeps the earlier day. The deed shows after the last lesson of a step (after Put it to work, or in its place), on two paper answers; the signpost on the map says "Step 3 · You did it". The ask back opens before the next step's first lesson, never on the day of a slip or the day after. Rereading a step's last lesson offers the deed again, which is how someone who said Not yet twice can still record it.
 5. **Medium.** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone.
 6. **Medium.** Rewrite the four faith lessons in God's voice and write the twelve God lessons from Latter-day Saint beliefs, with their beats, their prayers and the lines marked for each answer: the Book of Mormon, Doctrine and Covenants, the bishop, the sacrament and the Church's meetings for Latter-day Saints only; Bible verses for other Christians; no Scripture for another faith. Each verse is checked against the text. Before they ship: a lawyer's read on the Book of Mormon and Doctrine and Covenants text, or the Church's permission. These need the owner's eye more than anything else here, and the owner knows this faith better than any source.
 7. **Medium.** Write the new lessons, a step at a time, each with its beats and its act, and rework the weakest ones (l8, l12, l21, l25, l35, l40, l46). `docs/lessons-research/` has what each can stand on.

@@ -21,7 +21,6 @@ import {
   OB_BPS_C,
   OB_GUESS,
   OB_SECS,
-  OB_SO,
   NUDGE_WORDS,
   OB_THEN,
   obBecoming,
@@ -84,6 +83,7 @@ import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, AnswerText, BESIDE, Prog, Question, Shell } from '@/components/lesson-parts';
 import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { Dock, Middle } from '@/components/scene';
+import { ClockWheels } from '@/components/when';
 import { PicCurve, PicDay, PicDial, PicSlip, PicTries, PicWeek, whenIcon } from '@/components/setup-art';
 import { useClock } from '@/components/shapes';
 import { Slider, SliderValue } from '@/components/slider';
@@ -658,34 +658,37 @@ export default function Setup() {
       break;
     }
     case 'so': {
-      const custom = isTime(a.so) && OB_SO.indexOf(a.so as string) < 0;
+      /* three wheels like the phone's own clock, starting on the usual 11 PM; Next keeps what they show, Skip keeps nothing */
+      const so = isTime(a.so) ? (a.so as string) : SO_USUAL;
       body = (
         <>
           <Head h="What time should your screens go off at night?" />
           <Middle>{null}</Middle>
           <Say text={voice} />
-          <View style={s.grid3}>
-            {OB_SO.concat(custom ? [a.so as string] : []).map((x) => (
-              <Opt key={x} on={a.so === x} style={s.half} onPress={() => pick('so', x, true)}>
-                {(on) => (
-                  <AnswerText right={on} center>
-                    {fmtClock(x)}
-                  </AnswerText>
-                )}
-              </Opt>
-            ))}
-          </View>
-          <Field
-            label="Or type your own time (24-hour, like 22:15)"
-            maxLength={5}
-            keyboardType="numbers-and-punctuation"
-            placeholder="22:15"
-            defaultValue={custom ? (a.so as string) : ''}
-            onChangeText={(v) => isTime(v) && setA({ so: v })}
-          />
+          <ClockWheels {...hm(so)} step={5} onChange={(h, m) => setA({ so: clockOf(h, m) })} />
         </>
       );
-      foot = nextBtn(a.so ? 'Next' : 'Skip', !a.so);
+      foot = (
+        <View key="f" style={[s.footOne, { gap: 6 }]}>
+          <Next
+            key="n"
+            label="Next"
+            onPress={() => {
+              if (busy()) return;
+              setA({ so });
+              go(1);
+            }}
+          />
+          <Ghost
+            label="Skip this one"
+            onPress={() => {
+              if (busy()) return;
+              setA({ so: undefined });
+              go(1);
+            }}
+          />
+        </View>
+      );
       break;
     }
     case 'goal': {
@@ -900,7 +903,11 @@ export default function Setup() {
                 {[
                   <PlanRow key="g" icon="flag" l="Goal" v={g.t} first />,
                   <View key="sp" style={[s.planRow, { borderTopColor: c.line, gap: 10 }]}>
-                    <PlanBit icon="moon" l="Screens off" v={isTime(a.so) ? fmtClock(a.so as string) : fmtClock('23:00') + ' (the usual; change it any time)'} />
+                    <PlanBit
+                      icon="moon"
+                      l="Screens off"
+                      v={isTime(a.so) ? fmtClock(a.so as string) : fmtClock(SO_USUAL) + ' (the usual; change it any time)'}
+                    />
                     <PlanBit icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
                   </View>,
                   th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
@@ -1027,12 +1034,11 @@ export default function Setup() {
           <Head h="When should Daybook check in with you?" />
           <Middle>
             <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
-              <Text style={[s.remBig, { color: c.ink }]}>{fmtClock(remAt)}</Text>
               {/* what it will look like on a locked screen: plain words that say nothing about what Daybook is for */}
               <View
                 style={[s.lock, { backgroundColor: skies.light.night[0] }]}
                 accessible
-                accessibilityLabel="A reminder will look like this: Daybook. Check in. Under a minute.">
+                accessibilityLabel={'At ' + fmtClock(remAt) + ', a reminder will look like this: Daybook. Check in. Under a minute.'}>
                 <View style={[s.lockIc, { backgroundColor: c.accent }]}>
                   <Icon name="flame" size={16} color={c.accentInk} />
                 </View>
@@ -1040,29 +1046,12 @@ export default function Setup() {
                   <Text style={[s.lockT, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.t}</Text>
                   <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.b}</Text>
                 </View>
-                <Text style={[s.lockW, { color: nightInk.muted }]}>now</Text>
+                <Text style={[s.lockW, { color: nightInk.muted }]}>{fmtClock(remAt)}</Text>
               </View>
             </View>
           </Middle>
           <Say text={voice} />
-          <View style={s.grid3}>
-            {OB_REMIND.map((x) => (
-              <Opt
-                key={x}
-                on={remAt === x}
-                style={s.third}
-                onPress={() => {
-                  setRemAt(x);
-                  buzz('tap');
-                }}>
-                {(on) => (
-                  <AnswerText right={on} center>
-                    {fmtClock(x)}
-                  </AnswerText>
-                )}
-              </Opt>
-            ))}
-          </View>
+          <ClockWheels {...hm(remAt)} step={5} onChange={(h, m) => setRemAt(clockOf(h, m))} />
           <T v="small" tone="muted" style={s.c}>
             Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Never at night.
           </T>
@@ -1777,7 +1766,10 @@ function Hold({ onDone, pledge }: { onDone: () => void; pledge?: string }) {
 }
 
 /** the reminder times the setup offers */
-const OB_REMIND = ['17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+/** the screens-off time the wheels start on, and what the plan says when the question was skipped */
+const SO_USUAL = '23:00';
+const hm = (x: string) => ({ h: Number(x.slice(0, 2)), m: Number(x.slice(3, 5)) });
+const clockOf = (h: number, m: number) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 
 /* The end of a new person's setup: a celebration, like the end of a game's first level. "You finished setup!" big at the
    top, the flame big and alive in the middle with its burst of shapes, confetti falling over the whole page, and the level
@@ -1868,7 +1860,6 @@ function Cheer() {
 }
 
 const s = StyleSheet.create({
-  remBig: { fontFamily: font.display, fontSize: 46, lineHeight: 52 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
   lockIc: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   lockT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

@@ -64,15 +64,11 @@ export interface SetupAnswers {
   [k: string]: unknown;
 }
 
-/** the goal the setup suggests (legacy obSuggest). "Quit for good" starts tomorrow, on a first try too: someone ready to quit
-    tonight is not told to wait a week (the owner, October 18). The tracking week is for someone who wants to understand the
-    pattern first, or did not say. How days count is not a goal any more (obMode): "Step down first" and "Cut way back first"
-    are gone, so "Use it a lot less" gets the same start as no answer (the owner, October 21). */
+/** the goal the setup suggests (legacy obSuggest). The tracking week first, for most people (the owner, November 2, 2026): seven
+    days of logging with nothing to fail, then Day 1, set knowing the hard hours. Only "Take back my nights" starts with nights.
+    "Quit, starting tomorrow" is still offered to everyone, one tap away. How days count is not part of the goal (obMode). */
 export function obSuggest(a: SetupAnswers): string {
-  if (a.aim === 'learn') return 'week';
-  if (a.aim === 'nights') return 'nights';
-  if (a.aim === 'quit') return 'now';
-  return (a.when || []).indexOf('late') >= 0 ? 'nights' : 'week';
+  return a.aim === 'nights' ? 'nights' : 'week';
 }
 
 /** how days count from the start, from how often the person said it happens: about once a day or more starts in step down

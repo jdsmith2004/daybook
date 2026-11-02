@@ -313,6 +313,49 @@ function DayRow({ days, day, now, onPick }: { days: DayKey[]; day: DayKey; now: 
   );
 }
 
+/** a clock time alone, with no day: the same three wheels (the setup's screens-off and check-in times). `step` is the minutes
+    between rows; a time between two rows shows the nearest one. */
+export function ClockWheels({ h, m, step = 1, onChange }: { h: number; m: number; step?: number; onChange: (h: number, m: number) => void }) {
+  const c = useTheme();
+  const mins = useMemo(() => MINS.filter((_, i) => i % step === 0), [step]);
+  const mi = Math.round(m / step) % mins.length;
+  const now = useRef({ h, m });
+  now.current = { h, m };
+  const set = (nh: number, nm: number) => {
+    now.current = { h: nh, m: nm };
+    onChange(nh, nm);
+  };
+  return (
+    <View style={s.wheels}>
+      <View style={[s.band, { backgroundColor: c.accentSoft }]} pointerEvents="none" />
+      <Wheel
+        label="Hour"
+        items={HOURS}
+        copies={HOUR_COPIES}
+        index={h % 12}
+        onChange={(i) => set(i + (now.current.h >= 12 ? 12 : 0), now.current.m)}
+        onSettle={() => {}}
+      />
+      <Text style={[s.colon, { color: c.ink }]}>:</Text>
+      <Wheel
+        label="Minute"
+        items={mins}
+        copies={step === 1 ? MIN_COPIES : HOUR_COPIES}
+        index={mi}
+        onChange={(i) => set(now.current.h, i * step)}
+        onSettle={() => {}}
+      />
+      <Wheel
+        label="AM or PM"
+        items={HALF}
+        index={h >= 12 ? 1 : 0}
+        onChange={(i) => set((now.current.h % 12) + (i ? 12 : 0), now.current.m)}
+        onSettle={() => {}}
+      />
+    </View>
+  );
+}
+
 const ITEM = SHORT ? 36 : 40;
 const VIS = 5;
 const mod = (i: number, n: number) => ((i % n) + n) % n;

@@ -126,23 +126,15 @@ export function patRideSay(ride: { then: number; now: number } | null, cols: Pat
   return { head, line: '' };
 }
 
-/* ---------- the rays ---------- */
-/** past this, a ray stands for more than one moment */
-export const RAYS_MAX = 120;
-/** each hard moment of a range in the order it came, as a ray of light for one ridden out and a short dim tick for a slip. It adds up and never takes away */
-export function patRays(cols: PatRideCol[]): { rays: ('rode' | 'slipped')[]; per: number } {
-  const total = cols.reduce((a, c) => a + c.rode + c.slipped, 0);
-  const per = Math.max(1, Math.ceil(total / RAYS_MAX));
-  const rays: ('rode' | 'slipped')[] = [];
-  let a = 0;
-  let b = 0;
-  for (const c of cols) {
-    a += c.rode / per;
-    b += c.slipped / per;
-    for (; a >= 1 - 1e-9; a--) rays.push('rode');
-    for (; b >= 1 - 1e-9; b--) rays.push('slipped');
-  }
-  return { rays, per };
+/* ---------- the flames ---------- */
+/** a stretch with few moments does not fill the card: the scale starts as if one stretch had this many */
+const FLAMES_LOW = 5;
+/** the shortest a flame is drawn, so that one moment among many still shows as a flame */
+const FLAME_LEAST = 30;
+/** how tall the flame over each column stands: taller for more moments ridden out, none for none. Slips never change it */
+export function patFlames(cols: PatRideCol[], room: number): number[] {
+  const top = Math.max(FLAMES_LOW, ...cols.map((c) => c.rode));
+  return cols.map((c) => (c.rode ? Math.max(FLAME_LEAST, (c.rode / top) * room) : 0));
 }
 
 /* ---------- how you are doing ---------- */

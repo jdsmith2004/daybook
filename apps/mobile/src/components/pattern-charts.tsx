@@ -3,13 +3,24 @@
    - Hillside: how many recent days had no slip, as a hill you walked over, with your flame standing at today, a star over each day with no slip, and
      the period before as a dotted line. A slip is a dip that fills back in
    - DayFlow: how the days felt as bands of color across the range, each in the color of its answer on Today, widening as days like it come more often
-   - MomentSun: your flame in the middle, with a ray of light for each hard moment ridden out; a slip is a short dim tick, never an alarm
+   - FlameRow: a flame for each stretch of days, taller for more moments ridden out, with the count over it; a slip is a quiet dot under the ground, never an alarm
    - FeelField: the whole field of feelings as soft dots, with what was named swelled up where it lives and its word inside
    - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
    - Pairs: days with no slip beside slip days, a pair for each answer
    Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
-import { feelMap, mosaic, type DayFeelStep, type PatDiff, type PatFeels, type PatHour, type PatRidge, type PatWhen } from '@daybook/core';
+import {
+  feelMap,
+  mosaic,
+  patFlames,
+  type DayFeelStep,
+  type PatDiff,
+  type PatFeels,
+  type PatHour,
+  type PatRideCol,
+  type PatRidge,
+  type PatWhen,
+} from '@daybook/core';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
@@ -450,90 +461,147 @@ export function DayFlow({
 }
 
 /* ---------- the moments ridden out ---------- */
-const SUN_FOOT = 30;
-/** your flame in the middle, with a ray of light for each moment ridden out, in the order they came from the top around, the newest the longest. A slip is a short dim tick */
-export function MomentSun({
-  rays,
-  per,
-  level,
-  w,
-  h,
-  label,
-}: {
-  rays: ('rode' | 'slipped')[];
-  per: number;
-  level: number;
-  w: number;
-  h: number;
-  label: string;
-}) {
+const ROW_FOOT = 72;
+const ROW_TOP = 28;
+/** a tongue of fire standing on the ground at the bottom middle of a box w by h, its tip leaning a little one way */
+function tongue(w: number, h: number, lean: number) {
+  const m = w / 2;
+  const P = (x: number, y: number) => (m + x * w).toFixed(1) + ' ' + (h - y * h).toFixed(1);
+  return [
+    'M' + P(0, 0),
+    'C' + P(0.5, 0) + ' ' + P(0.56, 0.18) + ' ' + P(0.45, 0.38),
+    'C' + P(0.34, 0.57) + ' ' + P(0.16 + lean * 0.4, 0.76) + ' ' + P(lean, 1),
+    'C' + P(lean * 0.3 - 0.2, 0.8) + ' ' + P(-0.38, 0.64) + ' ' + P(-0.46, 0.42),
+    'C' + P(-0.54, 0.2) + ' ' + P(-0.46, 0) + ' ' + P(0, 0) + 'Z',
+  ].join('');
+}
+/** one flame, coming up out of the ground and then moving a little, each at its own pace */
+function RowFlame({ i, x, ground, w, h }: { i: number; x: number; ground: number; w: number; h: number }) {
+  const grow = useGrow(120 + i * 80, 760);
+  const breath = useBreath(1300 + place(i) * 900);
+  const lean = (place(i + 3) - 0.5) * 0.24;
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        left: x - w / 2,
+        top: ground - h,
+        width: w,
+        height: h,
+        transform: [{ translateY: grow.interpolate({ inputRange: [0, 1], outputRange: [h / 2, 0] }) }, { scaleY: grow }],
+      }}>
+      <Animated.View
+        style={{
+          width: w,
+          height: h,
+          transform: [
+            { translateY: breath.interpolate({ inputRange: [0, 1], outputRange: [h * 0.015, -h * 0.015] }) },
+            { scaleY: breath.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1.03] }) },
+          ],
+        }}>
+        <Svg width={w} height={h} style={{ overflow: 'visible' }} {...SVG_HIDE}>
+          <Defs>
+            <LinearGradient id={'fireout' + i} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FF9A3D" />
+              <Stop offset="1" stopColor="#E8503F" />
+            </LinearGradient>
+            <LinearGradient id={'firemid' + i} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFD27A" />
+              <Stop offset="1" stopColor="#FF9A3D" />
+            </LinearGradient>
+          </Defs>
+          <Path d={tongue(w, h, lean)} fill={'url(#fireout' + i + ')'} />
+          <G x={w * 0.17} y={h * 0.3}>
+            <Path d={tongue(w * 0.66, h * 0.7, lean * 0.6)} fill={'url(#firemid' + i + ')'} />
+          </G>
+          <G x={w * 0.32} y={h * 0.6}>
+            <Path d={tongue(w * 0.36, h * 0.4, lean * 0.3)} fill="#FFF3CF" />
+          </G>
+        </Svg>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+/** a flame for each stretch of days, standing taller for more moments ridden out, with the count over it. A slip is a quiet dot under the ground, and never takes anything from the flame */
+export function FlameRow({ cols, w, h, label }: { cols: PatRideCol[]; w: number; h: number; label: string }) {
   const k = useInk();
-  const v = useGrow(120, 1200);
-  const breath = useBreath(2200);
-  const room = h - SUN_FOOT;
-  const cx = w / 2;
-  const cy = room / 2;
-  const R = Math.min(w - 8, room) / 2;
-  const inner = R * 0.58;
-  const n = rays.length;
-  const FL = Math.round(inner * 1.7);
-  const thick = Math.max(2.5, Math.min(11, ((2 * Math.PI * inner) / Math.max(n, 1)) * 0.52));
-  const end = (i: number, r: number) => {
-    const a = -Math.PI / 2 + (i / Math.max(n, 1)) * 2 * Math.PI;
-    return (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1);
-  };
-  let lit = '';
-  let dim = '';
-  rays.forEach((kind, i) => {
-    if (kind === 'slipped') dim += 'M' + end(i, inner + 2) + 'L' + end(i, inner + thick + 8);
-    else lit += 'M' + end(i, inner + 2) + 'L' + end(i, inner + 8 + (R - inner - 8) * (0.62 + (0.38 * (i + 1)) / n + (place(i) - 0.5) * 0.1));
-  });
-  const slips = rays.filter((x) => x === 'slipped').length * per;
+  const glow = useBreath(2400);
+  const words = useGrow(700, 500);
+  const side = 10;
+  const n = Math.max(cols.length, 1);
+  const colW = (w - side * 2) / n;
+  const ground = h - ROW_FOOT;
+  const room = ground - ROW_TOP;
+  const tall = patFlames(cols, room);
+  const mid = (i: number) => side + colW * (i + 0.5);
+  const wide = (t: number) => Math.min(colW * 0.94, 76, t * 0.72);
+  const slips = cols.reduce((a, c) => a + c.slipped, 0);
+  const dot = 5;
+  const gap = n > 7 ? 7 : 10;
+  const inRow = Math.max(1, Math.floor((colW - 4) / gap));
+  const every = n > 7 ? 3 : 1;
   return (
     <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(v, breath.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] })) }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) }]}>
         <Svg width={w} height={h} {...SVG_HIDE}>
           <Defs>
-            <RadialGradient id="sunglow" cx={cx} cy={cy} r={R * 1.12} gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor="#FFB347" stopOpacity={0.5} />
-              <Stop offset="0.55" stopColor="#F2704F" stopOpacity={0.2} />
-              <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
-            </RadialGradient>
+            <LinearGradient id="rowground" x1="0" y1={ground - room * 0.7} x2="0" y2={ground} gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#F2704F" stopOpacity={0} />
+              <Stop offset="1" stopColor="#F2704F" stopOpacity={0.22} />
+            </LinearGradient>
+            {tall.map((t, i) =>
+              t ? (
+                <RadialGradient key={i} id={'rowglow' + i} cx={mid(i)} cy={ground - t * 0.3} r={Math.max(colW * 0.9, t * 0.8)} gradientUnits="userSpaceOnUse">
+                  <Stop offset="0" stopColor="#FFB347" stopOpacity={0.4} />
+                  <Stop offset="0.55" stopColor="#F2704F" stopOpacity={0.13} />
+                  <Stop offset="1" stopColor="#F2704F" stopOpacity={0} />
+                </RadialGradient>
+              ) : null,
+            )}
           </Defs>
-          <Rect width={w} height={h} fill="url(#sunglow)" />
+          <Rect x={0} y={0} width={w} height={ground} fill="url(#rowground)" />
+          {tall.map((t, i) => (t ? <Rect key={i} x={0} y={0} width={w} height={ground} fill={'url(#rowglow' + i + ')'} /> : null))}
         </Svg>
       </Animated.View>
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            opacity: v,
-            transform: [
-              { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.72, 1] }) },
-              { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ['-24deg', '0deg'] }) },
-            ],
-          },
-        ]}>
-        <Svg width={w} height={h} {...SVG_HIDE}>
-          <Defs>
-            <RadialGradient id="ray" cx={cx} cy={cy} r={R} gradientUnits="userSpaceOnUse">
-              <Stop offset={String(inner / R)} stopColor="#FFF3CF" />
-              <Stop offset={String((inner + (R - inner) * 0.45) / R)} stopColor="#FFB347" />
-              <Stop offset="1" stopColor="#F2704F" stopOpacity={0.7} />
-            </RadialGradient>
-          </Defs>
-          {dim ? <Path d={dim} stroke={k.c.muted} strokeOpacity={0.55} strokeWidth={Math.max(2.5, thick * 0.7)} strokeLinecap="round" fill="none" /> : null}
-          {lit ? <Path d={lit} stroke="url(#ray)" strokeWidth={thick} strokeLinecap="round" fill="none" /> : null}
-        </Svg>
+      {tall.map((t, i) => (t ? <RowFlame key={i} i={i} x={mid(i)} ground={ground} w={wide(t)} h={t} /> : null))}
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        <Path d={'M0 ' + (ground + 0.5) + 'H' + w} stroke="#FFB347" strokeOpacity={0.35} strokeWidth={1} />
+        {cols.map((c, i) => {
+          const shown = Math.min(c.slipped, inRow * 2);
+          return Array.from({ length: shown }, (_, m) => {
+            const row = Math.floor(m / inRow);
+            const across = Math.min(inRow, shown - row * inRow);
+            return (
+              <Circle
+                key={i + '-' + m}
+                cx={mid(i) + (m - row * inRow - (across - 1) / 2) * gap}
+                cy={ground + 10 + row * gap}
+                r={dot / 2}
+                fill={k.c.muted}
+                fillOpacity={0.65}
+              />
+            );
+          });
+        })}
+      </Svg>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: words }]} pointerEvents="none">
+        {tall.map((t, i) =>
+          t ? (
+            <Text key={i} style={[s.rowN, { color: k.c.ink, left: mid(i) - 24, top: ground - t - 24 }]}>
+              {cols[i].rode}
+            </Text>
+          ) : null,
+        )}
       </Animated.View>
-      <View style={{ position: 'absolute', left: cx - FL / 2, top: cy - FL * 0.52 }}>
-        <BigFlame level={level} size={FL} />
-      </View>
+      {cols.map((c, i) =>
+        (n - 1 - i) % every === 0 ? (
+          <Text key={i} numberOfLines={1} style={[s.ax, s.rowDate, { color: i === n - 1 ? k.c.ink : k.c.muted, left: mid(i) - 30, top: ground + 30 }]}>
+            {c.label}
+          </Text>
+        ) : null,
+      )}
       <View style={[s.abs, { left: 16, right: 16, bottom: 8, alignItems: 'center' }]}>
-        <Text style={[s.ax, { color: k.c.muted }]}>
-          {per > 1 ? 'Each ray is ' + per + ' moments.' + (slips ? ' ' : '') : ''}
-          {slips ? (slips === 1 ? '1 slip' : slips + ' slips') : ''}
-        </Text>
+        <Text style={[s.ax, { color: k.c.muted }]}>Taller flame, more ridden out.{slips ? ' A dot is a slip.' : ''}</Text>
       </View>
     </View>
   );
@@ -1011,5 +1079,7 @@ const s = StyleSheet.create({
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   keyDot: { width: 8, height: 8, borderRadius: 4 },
   ax: { fontFamily: font.body, fontSize: 12 },
+  rowN: { position: 'absolute', width: 48, textAlign: 'center', fontSize: 15, fontFamily: font.bodySemi },
+  rowDate: { position: 'absolute', width: 60, textAlign: 'center' },
   date: { fontSize: 11, lineHeight: 14, marginTop: 2 },
 });

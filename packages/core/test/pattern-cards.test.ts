@@ -20,7 +20,7 @@ import {
   feelBubbles,
   feelMap,
   patFlow,
-  patRays,
+  patFlames,
   mosaic,
   spreadCircles,
 } from '../src/pattern-cards';
@@ -487,19 +487,19 @@ describe('patFlow', () => {
   });
 });
 
-describe('patRays', () => {
-  it('a ray for each ridden out and a tick for each slip, in the order they came', () => {
-    const cols = [
-      { from: 'a', label: '', rode: 2, slipped: 1 },
-      { from: 'b', label: '', rode: 1, slipped: 0 },
-    ];
-    expect(patRays(cols)).toEqual({ rays: ['rode', 'rode', 'slipped', 'rode'], per: 1 });
+describe('patFlames', () => {
+  const col = (rode: number, slipped = 0) => ({ from: 'a', label: '', rode, slipped });
+  it('more moments ridden out stand taller, and the most stand at the top of the room', () => {
+    expect(patFlames([col(10), col(20)], 300)).toEqual([150, 300]);
   });
-  it('past what fits, a ray stands for more than one, and nothing is lost to rounding', () => {
-    const r = patRays([{ from: 'a', label: '', rode: 500, slipped: 100 }]);
-    expect(r.per).toBe(5);
-    expect(r.rays.filter((x) => x === 'rode').length).toBe(100);
-    expect(r.rays.filter((x) => x === 'slipped').length).toBe(20);
+  it('a few moments do not fill the card', () => {
+    expect(patFlames([col(2)], 300)).toEqual([120]);
+  });
+  it('one moment among many still shows, and none stands for none', () => {
+    expect(patFlames([col(1), col(200), col(0)], 300)).toEqual([30, 300, 0]);
+  });
+  it('a slip changes nothing', () => {
+    expect(patFlames([col(3, 9)], 300)).toEqual(patFlames([col(3, 0)], 300));
   });
 });
 

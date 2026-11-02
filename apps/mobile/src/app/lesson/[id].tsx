@@ -214,8 +214,8 @@ export default function LessonScreen() {
     if (cur.t === 'card') {
       const cl = cardLook(cur.c, cardBeat(L, cur.ci));
       lockKey = (cl === 'guess' && !!gu[cur.ci]?.lock) || (cl === 'flip' && !!flip[cur.ci]);
-      /* a turn is the night sky until it is turned over, then the sun: the moment the view changes */
-      kind = cl === 'sun' || (cl === 'flip' && lockKey) ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
+      /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
+      kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
   } else if (stage !== 'cover') p = 1;
   const look = lessonLook(kind, p, base.scheme);
@@ -1095,7 +1095,8 @@ function Question({
   );
 }
 
-/** the answers: bright, with a lip you can press, fixed in place. The right one turns green and the rest go quiet. A wrong pick shows as picked, and
+/** the answers: bright, with a lip you can press, fixed in place. The right one turns green and the rest go quiet; on a question with no
+    best answer, the one picked turns green. A wrong pick shows as picked, and
     the others stay bright to try. Every one stays tappable, so its comment can be read. */
 function Opts({ list, best, pk, tried, onPick }: { list: string[]; best: number | null; pk: number | null; tried: number[]; onPick: (j: number) => void }) {
   const found = best != null && tried.indexOf(best) >= 0;
@@ -1103,8 +1104,8 @@ function Opts({ list, best, pk, tried, onPick }: { list: string[]; best: number 
     <View style={{ gap: 8 }}>
       {list.map((o, j) => {
         const sel = pk === j;
-        /* an open question has no right answer: the one picked is outlined, never marked right */
-        const right = best != null && found && j === best;
+        /* an open question has no wrong answer: the one picked turns green, whichever it is (the owner, November 2, 2026) */
+        const right = best == null ? sel : found && j === best;
         const quiet = !right && (found || (best != null && tried.indexOf(j) >= 0));
         return (
           <Pressable
@@ -1310,38 +1311,69 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
     </>
   );
 }
-/** a turn: what the person may think on the front of a paper card, and another way to see it on the back. A tap on the card or on Turn it
-    over turns it, edge on and back, and the sky behind it becomes the sun. With Reduce Motion on, the back simply shows. */
+/** a turn, as a flash card: what the person may think on the front of a ruled index card, lying on a small stack of them, and another
+    way to see it on the back. A tap on the card or on Turn it over flips it all the way over, lifting a little as it turns, and the
+    back is a different color, so it reads as the other side. The sky behind stays as it is. With Reduce Motion on, the back simply shows. */
 function FlipCard({ think, see, on, want, onTurn }: { think: string; see: string; on: boolean; want: number; onTurn: () => void }) {
   const still = useReducedMotion();
-  const [face, setFace] = useState(on);
-  const a = useRef(new Animated.Value(0)).current;
+  const a = useRef(new Animated.Value(on ? 1 : 0)).current;
+  const [done, setDone] = useState(on);
   useEffect(() => {
-    if (!on || face) return;
-    if (still) return setFace(true);
-    Animated.timing(a, { toValue: 1, duration: 170, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }).start(() => {
-      setFace(true);
-      a.setValue(-1);
-      Animated.timing(a, { toValue: 0, duration: 260, easing: Easing.out(Easing.back(1.4)), useNativeDriver: NATIVE }).start();
-    });
-  }, [on, face, still, a]);
-  const rot = a.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-90deg', '0deg', '90deg'] });
+    if (!on || done) return;
+    if (still) {
+      a.setValue(1);
+      return setDone(true);
+    }
+    Animated.timing(a, { toValue: 1, duration: 620, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start(() => setDone(true));
+  }, [on, done, still, a]);
+  const front = a.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const back = a.interpolate({ inputRange: [0, 1], outputRange: ['-180deg', '0deg'] });
+  /* the faces trade places at the edge, for Android, which does not hide a card's back side */
+  const frontOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [1, 1, 0, 0] });
+  const backOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [0, 0, 1, 1] });
+  const lift = a.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.07, 1] });
   return (
     <>
       <View style={s.flipRoom}>
-        <Animated.View style={{ transform: [{ perspective: 900 }, { rotateY: rot }] }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={face ? 'Look again. ' + see : 'You may think: ' + think + '. Turn it over.'}
-            onPress={onTurn}
-            style={[s.flip, { shadowColor: PAPER_LIP }]}>
-            <Text style={[s.flipEl, { color: face ? RIGHT : 'rgba(27,31,75,0.62)' }]}>{face ? 'Look again' : 'You may think'}</Text>
-            <Text style={[s.flipT, face && s.flipSee]}>{face ? see : think}</Text>
-          </Pressable>
-        </Animated.View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={on ? 'Look again. ' + see : 'You may think: ' + think + '. Turn it over.'}
+          onPress={onTurn}
+          style={s.flipDeck}>
+          {/* the stack the card lies on */}
+          <View style={[s.flipUnder, { transform: [{ rotate: '4deg' }, { translateY: 10 }] }]} />
+          <View style={[s.flipUnder, { transform: [{ rotate: '-3deg' }, { translateY: 5 }] }]} />
+          <Animated.View style={{ transform: [{ scale: lift }] }}>
+            <Animated.View style={[s.flip, { opacity: frontOn, transform: [{ perspective: 1000 }, { rotateY: front }] }]}>
+              <IndexCard label="You may think" ink="rgba(27,31,75,0.6)" rule="#E8665A">
+                <Text style={s.flipT}>{think}</Text>
+              </IndexCard>
+            </Animated.View>
+            <Animated.View style={[s.flip, s.flipBack, { opacity: backOn, transform: [{ perspective: 1000 }, { rotateY: back }] }]}>
+              <IndexCard label="Look again" ink={RIGHT} rule={RIGHT}>
+                <Text style={[s.flipT, s.flipSee]}>{see}</Text>
+              </IndexCard>
+            </Animated.View>
+          </Animated.View>
+        </Pressable>
       </View>
       <FlameSlot size={want * 0.9} min={84} />
     </>
+  );
+}
+/** one side of a flash card: a label above a colored rule, and faint ruled lines under the words, like an index card */
+function IndexCard({ label, ink, rule, children }: { label: string; ink: string; rule: string; children: ReactNode }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={s.flipRules} pointerEvents="none">
+        {Array.from({ length: 7 }, (_, k) => (
+          <View key={k} style={s.flipRule} />
+        ))}
+      </View>
+      <Text style={[s.flipEl, { color: ink }]}>{label}</Text>
+      <View style={{ height: 2, backgroundColor: rule, opacity: 0.8, marginTop: 10, marginBottom: 14, marginHorizontal: -24 }} />
+      {children}
+    </View>
   );
 }
 /** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
@@ -1552,20 +1584,27 @@ const s = StyleSheet.create({
   optTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
   quote: { paddingVertical: 4 },
   flipRoom: { flexGrow: 1, justifyContent: 'center', paddingVertical: 8 },
+  flipDeck: { marginHorizontal: 6 },
+  flipUnder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#ECE6F7', borderRadius: 16 },
   flip: {
     backgroundColor: PAPER,
-    borderRadius: 28,
-    padding: 24,
-    gap: 12,
-    minHeight: SHORT ? 200 : 240,
-    justifyContent: 'center',
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 24,
+    minHeight: SHORT ? 230 : 270,
+    backfaceVisibility: 'hidden',
+    shadowColor: PAPER_LIP,
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 0,
     shadowOpacity: 1,
   },
-  flipEl: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  flipT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, color: PAPER_INK },
-  flipSee: { fontSize: 22, lineHeight: 29 },
+  flipBack: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#FFF3C4' },
+  flipRules: { position: 'absolute', left: -24, right: -24, top: 62, gap: 32 },
+  flipRule: { height: 1, backgroundColor: 'rgba(70,110,190,0.16)' },
+  flipEl: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  flipT: { fontFamily: font.display, fontSize: 28, lineHeight: 33, color: PAPER_INK },
+  flipSee: { fontSize: 22, lineHeight: 33 },
   mine: { fontFamily: font.display, fontSize: 20, lineHeight: 27 },
   plan: { gap: 8, padding: 16, borderRadius: 20 },
   so: { gap: 4, marginTop: 8 },

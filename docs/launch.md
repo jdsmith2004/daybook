@@ -16,7 +16,7 @@ for more: past that, builds wait for the next month), and free GitHub Actions an
 | Decision               | Suggested                                                   | Why                                                                                                                                                       |
 | ---------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`)   | It can never change once step 3 runs. Tell Claude before then if you want another.                                                                        |
-| Name on the App Store  | Daybook: Quit and Stay Free                                 | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                                 |
+| Name on the App Store  | Daybook: Master Yourself                                    | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                                 |
 | Where it is offered    | The United States only, for now                             | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                                         |
 | Tip service            | Apple in-app purchase first, three Stripe links second      | Kind $5, Generous $10, Amazing $20 (core `supporter.ts`); a tip of $5 or more makes a supporter. The statement says JEFFREY until Stripe accepts DAYBOOK. |
 | Support email          | jeffreydsmith.cs@gmail.com (the owner's choice, October 19) | On the support, privacy and terms pages. A Daybook-only address can replace it later: change `SUPPORT_EMAIL` and the three pages.                         |
@@ -73,7 +73,7 @@ The first iPhone build needs your Apple sign-in once, to make the signing certif
 
 ## 4. The App Store record (you or Claude in Chrome, about 10 minutes; done October 19)
 
-Made as "Daybook: Quit Without Shame", now "Daybook: Quit and Stay Free" (the owner, November 1, 2026), free, United States only. Its Apple ID is `ascAppId` in `apps/mobile/eas.json`. Before
+Made as "Daybook: Quit Without Shame", then "Daybook: Quit and Stay Free" (the owner, November 1, 2026), now "Daybook: Master Yourself" (the owner, November 2, 2026, from 1.3.1), free, United States only. Its Apple ID is `ascAppId` in `apps/mobile/eas.json`. Before
 the first build, the Account Holder accepts the updated Apple Developer Program License Agreement in App Store Connect
 (Apple refuses uploads until then).
 
@@ -101,8 +101,8 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 ## 6. The listing (Claude drafts, you or Claude in Chrome paste)
 
-- **Name:** Daybook: Quit and Stay Free
-- **Subtitle:** Private help to quit porn
+- **Name:** Daybook: Master Yourself
+- **Subtitle:** Quit porn, live your potential
 - **Category:** Health & Fitness. Second: Lifestyle.
 - **Keywords:** `addiction,pornfree,recovery,urges,relapse,habit,tracker,clean,sober,journal,accountability,sobriety`
   (no other app's name or trademark, by the store's rules)
@@ -227,7 +227,7 @@ costs money or is unclear. Tell me what you did at each step and anything that d
 
 1. Business (Agreements, Tax, and Banking): tell me the status of the Paid Apps agreement, bank
    account and tax forms. If any is not Active, STOP and show me; tips cannot be reviewed without it.
-2. Apps → Daybook: Quit and Stay Free → TestFlight: tell me the newest build (version and build
+2. Apps → Daybook: Master Yourself → TestFlight: tell me the newest build (version and build
    number) and its status. It must say Ready to Submit / Testing, and be the one I tested.
 3. Monetization → In-App Purchases: check the three tips exist exactly as in step 6 ("In-app
    purchases": daybook.tip.kind, daybook.tip.generous, daybook.tip.amazing; Non-Consumable; $5, $10,
@@ -366,7 +366,7 @@ they would be Play in-app products, and that is a separate piece of work.
 1. **The developer account (only you).** play.google.com/console: sign up. It costs **$25, once**, and Google checks your
    identity (and asks for a phone and maybe a document). Choose **personal** unless you have a registered business.
    Claude in Chrome never pays or types identity details.
-2. **The app.** In the Play Console: Create app. Name: Daybook: Quit and Stay Free. Default language: English (United
+2. **The app.** In the Play Console: Create app. Name: Daybook: Master Yourself. Default language: English (United
    States). App, Free. Accept the declarations yourself.
 3. **The key for the button (you, about 10 minutes).** It lets the workflow upload builds. It is a secret: it goes only into
    GitHub, never into a chat, a commit or a file in this repository.
@@ -385,7 +385,7 @@ they would be Play in-app products, and that is a separate piece of work.
    Google asks for, kept opted in for the days it asks. Ask people you trust; the testers' list is private.
 6. **The listing and the forms (Claude drafts, you or Claude in Chrome paste).** Main store listing, plus every page in
    Policy, App content:
-   - **App name:** Daybook: Quit and Stay Free
+   - **App name:** Daybook: Master Yourself
    - **Short description** (80 letters at most): Private help to quit porn. Log urges and slips, and keep going.
    - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
      is free, with nothing to unlock." (no tips on Android).

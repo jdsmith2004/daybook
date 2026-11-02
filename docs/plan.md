@@ -687,8 +687,8 @@ Where the rest went: the journal still opens by pulling Today down, and from Mor
 
 The owner: "Quit Without Shame" makes a person feel the shame it names, and the listing should say Daybook is science-based. Asked whether "porn" should go in the name: "Keep porn out of it", so it stays off the purchase list. **Decided:**
 
-- **Name:** `Daybook: Quit and Stay Free`. The home screen still says Daybook.
-- **Subtitle:** stays `Private help to quit porn`, so the search card still says what the app is for. App Review 2.3.7 bars unverifiable claims in a subtitle.
+- **Name:** `Daybook: Master Yourself` (was `Daybook: Quit and Stay Free` until 1.3.1, the owner, November 2, 2026). The home screen still says Daybook.
+- **Subtitle:** `Quit porn, live your potential` (the owner wanted it about reaching their fullest potential; 30 letters is the limit), so the search card still says what the app is for. App Review 2.3.7 bars unverifiable claims in a subtitle.
 - **First picture:** `Quit and stay free`, with `Built on research. No ads.` under it. "Built on research" is true of the lessons and the tools; nothing has tested Daybook itself.
 - **Search picture:** `Quit and stay free`, with `private help built on research` under it. It used to say "changing a habit".
 - **"Without shame" leaves the listing and the public pages:** the description's first line, About, the guides, support and the testers page. The app keeps treating people that way.

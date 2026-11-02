@@ -81,12 +81,12 @@ describe('the week, screen by screen', () => {
   });
   it('picks its screens, leaving out what has nothing to show', () => {
     const x = story(d, st, {}, SUN, SUN, END, { '2026-10-12': 20, '2026-10-17': 15, '2026-10-01': 99 });
-    expect(x.screens).toEqual(['intro', 'days', 'ride', 'clock', 'trig', 'help', 'slips', 'long', 'deep']);
+    expect(x.screens).toEqual(['intro', 'days', 'ride', 'clock', 'trig', 'help', 'slips', 'long', 'deep', 'next']);
     expect(x.pts).toBe(35);
     expect(x.deep.id).toBe('snowball');
     const quiet = story({}, st, {}, SUN, SUN, END, {});
-    expect(quiet.screens).toEqual(['intro', 'days', 'long', 'deep']);
-    expect(quiet.deep.id).toBe('clean');
+    expect(quiet.screens).toEqual(['intro', 'days', 'long', 'deep', 'next']);
+    expect(quiet.deep.id).toBe('review');
   });
 });
 
@@ -109,14 +109,15 @@ describe('the long view, kindly', () => {
 
 describe('the science', () => {
   it('gives every look-back screen one line, a source and a lesson', () => {
-    for (const k of ['days', 'ride', 'clock', 'trig', 'help', 'slips', 'base', 'last'] as const) {
+    for (const k of ['days', 'ride', 'clock', 'trig', 'help', 'slips', 'base', 'last', 'next'] as const) {
       const t = storyTeach(k)!;
       expect(t.t.length).toBeGreaterThan(40);
       expect(t.src.length).toBeGreaterThan(0);
       expect(t.l).toMatch(/^l\d+$/);
       expect(t.t).not.toMatch(/n’t|n't|’re|’ll|’ve/);
     }
-    expect(storyTeach('days', { slipDays: 2 })!.l).toBe('l21');
+    expect(storyTeach('days', { kind: 'one' })!.l).toBe('l21');
+    expect(storyTeach('days', { kind: 'most' })!.l).not.toBe('l21');
   });
   it('picks the longer card for the hardest pattern', () => {
     const lonely = addEvent({}, '2026-10-16', 'slipped', '20:00', { trigger: 'lonely' }, 1).days;

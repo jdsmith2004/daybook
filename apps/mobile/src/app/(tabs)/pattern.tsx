@@ -55,7 +55,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { NumbersTable } from '@/components/charts';
 import { DAY_FEEL_LOOK } from '@/components/day-feel-pop';
-import { CARD_SKY, DayFlow, DaySky, FeelField, Fireflies, Hillside, HoursKey, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
+import { CARD_SKY, DayFlow, DaySky, FeelField, FlameCounts, Hillside, HoursKey, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
 import { Deck, Say, type DeckCard, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -322,7 +322,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       title: 'Riding it out',
       head: rideSay.head,
       say: rideSay.line ? <Say>{rideSay.line}</Say> : null,
-      chart: <Room>{(w, h) => <Fireflies cols={rideCols} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
+      chart: <Room>{(w, h) => <FlameCounts cols={rideCols} level={level} w={w} h={h} label={rideSay.head + '. ' + rideSay.line} />}</Room>,
       numbers: (
         <NumbersTable
           cap="Entries"

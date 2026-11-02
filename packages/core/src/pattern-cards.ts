@@ -95,9 +95,8 @@ export interface PatRideCol {
   label: string;
   rode: number;
   slipped: number;
-  /** how many of those ridden out were strong, or low, at the start; only SOS asks, so most moments are neither */
+  /** how many of those ridden out were strong at the start; only SOS asks */
   strong?: number;
-  low?: number;
 }
 /** the hard moments of a range, as columns */
 export function patRideCols(days: Days, keys: DayKey[], tk: DayKey): PatRideCol[] {
@@ -108,9 +107,7 @@ export function patRideCols(days: Days, keys: DayKey[], tk: DayKey): PatRideCol[
       col.rode += s.rode;
       col.slipped += s.slipped;
       for (const e of days[k]?.events || []) {
-        if (e.outcome !== 'rode') continue;
-        if (e.st === 'high') col.strong = (col.strong || 0) + 1;
-        if (e.st === 'low') col.low = (col.low || 0) + 1;
+        if (e.outcome === 'rode' && e.st === 'high') col.strong = (col.strong || 0) + 1;
       }
     }
     return col;
@@ -135,78 +132,15 @@ export function patRideSay(ride: { then: number; now: number } | null, cols: Pat
   return { head, line: strong > 1 ? strong + ' of them were strong, and you still got through.' : '' };
 }
 
-/* ---------- the lights ---------- */
-/** a stretch with few moments does not fill the card: the scale starts as if one stretch had this many */
-const LIGHTS_LOW = 5;
-/** the most lights drawn in all, how close they may crowd and how far apart they stand at most */
-const LIGHTS_MOST = 160;
-const LIGHTS_CLOSE = 10;
-const LIGHTS_APART = 54;
-/** what one light may stand for, once they no longer fit one to a moment */
-const LIGHTS_PER = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-export interface PatLight {
-  /** which column, how far from its middle and how far above the ground */
-  col: number;
-  x: number;
-  y: number;
-  /** the radius of its bright middle */
-  r: number;
-}
-export interface PatLights {
-  /** how many moments one light stands for: 1 until they no longer fit */
-  per: number;
-  lights: PatLight[];
-  /** how high each column's lights reach */
-  tops: number[];
-  /** whether any size here means something: only SOS asks how strong it was */
-  sized: boolean;
-}
-const shuffled = (i: number) => {
-  const x = Math.sin(i * 12.9898 + 4.1) * 43758.5453;
-  return x - Math.floor(x);
-};
-/** how many across a column keeps the lights furthest apart, with the tallest column just fitting the room */
-function lightGrid(most: number, colW: number, room: number) {
-  let best = { across: 1, unit: 0, dx: 0, dy: 0 };
-  for (let across = 1; across <= 8; across++) {
-    const dx = (colW * 0.92) / across;
-    const dy = room / Math.ceil(most / across);
-    const unit = Math.min(dx / 1.15, dy, LIGHTS_APART);
-    if (unit > best.unit) best = { across, unit, dx, dy: Math.min(dy, unit * 1.4, LIGHTS_APART) };
-  }
-  return best;
-}
-/** each moment ridden out as a light over its stretch of days, gathered from the ground up, so a taller gathering is more moments. A strong moment burns bigger.
-    A light stands for more than one only when they no longer fit, and one moment always shows. Slips take nothing from it */
-export function patLights(cols: PatRideCol[], colW: number, room: number): PatLights {
-  const most = Math.max(LIGHTS_LOW, ...cols.map((c) => c.rode));
-  const sum = cols.reduce((a, c) => a + c.rode, 0);
-  const per =
-    LIGHTS_PER.find((p) => sum / p <= LIGHTS_MOST && lightGrid(Math.ceil(most / p), colW, room).unit >= LIGHTS_CLOSE) ?? LIGHTS_PER[LIGHTS_PER.length - 1];
-  const { across, unit, dx, dy } = lightGrid(Math.ceil(most / per), colW, room);
-  const sized = cols.some((c) => c.strong || c.low);
-  const lights: PatLight[] = [];
-  const tops = cols.map((c, col) => {
-    const count = Math.ceil(c.rode / per);
-    /* the strong ones and the low ones fall among the rest, not in a block */
-    const order = Array.from({ length: count }, (_, m) => m).sort((a, b) => shuffled(col * 53 + a) - shuffled(col * 53 + b));
-    const strong = new Set(order.slice(0, Math.ceil((c.strong || 0) / per)));
-    const low = new Set(order.slice(strong.size, strong.size + Math.ceil((c.low || 0) / per)));
-    let top = 0;
-    for (let m = 0; m < count; m++) {
-      const seed = col * 31 + m;
-      const row = Math.floor(m / across);
-      const inRow = Math.min(across, count - row * across);
-      const size = !sized ? 0.8 + shuffled(seed + 4) * 0.3 : strong.has(m) ? 1.4 : low.has(m) ? 0.65 : 0.95;
-      const r = Math.max(1.5, unit * 0.2 * size);
-      const x = (m - row * across - (inRow - 1) / 2) * dx + (shuffled(seed) - 0.5) * (across === 1 ? colW * 0.42 : dx * 0.35);
-      const y = Math.max(r + 2, unit * 0.3 + row * dy + (shuffled(seed + 9) - 0.5) * dy * 0.45);
-      lights.push({ col, x, y, r });
-      top = Math.max(top, y + r);
-    }
-    return top;
-  });
-  return { per, lights, tops, sized };
+/* ---------- the counts under the flame ---------- */
+/** a stretch with few moments does not fill the row: the scale starts as if one stretch had this many */
+const BARS_LOW = 5;
+/** the shortest a bar is drawn, so that one moment among many still shows */
+const BAR_LEAST = 8;
+/** how tall the bar for each column stands: taller for more moments ridden out, none for none. Slips never change it */
+export function patRideBars(cols: PatRideCol[], room: number): number[] {
+  const top = Math.max(BARS_LOW, ...cols.map((c) => c.rode));
+  return cols.map((c) => (c.rode ? Math.max(BAR_LEAST, (c.rode / top) * room) : 0));
 }
 
 /* ---------- how you are doing ---------- */

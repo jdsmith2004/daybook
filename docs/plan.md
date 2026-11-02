@@ -81,6 +81,22 @@ Open in all of them: the flame's own forms bring their own hills, which this pro
 
 **Risks:** more on Today is the thing the October 22 review warned about, so the new part is one card and one line, not a list. A plan that says the same three moves every day can go unseen; once a person has used SOS, the moves could come from what helped them most (later, not now). A red button on Today every day must never read as a warning; it sits low, under the day, and the words are a plan, not "Danger".
 
+### Under Your day: the person's own words and record (the owner, November 2, 2026)
+
+The owner: the top of Today is fine; what goes below it must be really useful, not extra space. Picked "all three" of these, which
+bring up what the person already wrote in setup and what they already logged (it lives in My plan and Journal now):
+
+- **Today so far:** the day's entries, once something is logged (TodaySoFar from Journal, as a plain list).
+- **If it gets hard tonight:** the hard hours, and the two lines of the urge plan that fit them (the one for late at night when the
+  hours are late, and the one for the feeling that comes before a slip most often), each cut to its first sentence, then "Your whole plan".
+  With no plan: "Make a plan for tonight", into Talk it through. If-then plans are among the best-supported tools in habit change.
+- **Who you are becoming:** the sentence from the end of setup, big, with one true line from the log ("Tuesday at 9:30 PM, you rode out
+  an urge. You have done it 8 times."). Without the sentence, an invitation to write it.
+
+Picture: docs/today-review/today-below.png (morning, after an urge, before the hard hours, nothing written yet). Prototype only, behind
+`?below=1` (`components/today-below.tsx`). For a real build: the rules go to core with tests; the line under the lesson ("Your hard hours
+start at 9 PM. Make a plan") and "1 logged today" in the foot say what these sections now say, so they go; light theme not drawn yet.
+
 ## Lessons that teach people how to quit (the owner, November 1, 2026)
 
 **The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."

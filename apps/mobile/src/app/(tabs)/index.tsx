@@ -61,6 +61,7 @@ import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { YourDay } from '@/components/your-day';
 import { protoDir, TodayMore } from '@/components/today-more';
+import { BELOW, TodayBelow } from '@/components/today-below';
 import { LAY2 } from '@/lib/scene-proto';
 import { useWindowDimensions } from 'react-native';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
@@ -327,6 +328,7 @@ export default function Today() {
           hero={calm ? pick.card : null}
           foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
+        {BELOW ? <TodayBelow snap={snap} tk={tk} /> : null}
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         {protoDir() ? <TodayMore dir={protoDir()!} snap={snap} tk={tk} level={g.level.n} /> : null}

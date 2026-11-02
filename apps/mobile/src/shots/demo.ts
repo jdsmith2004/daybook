@@ -24,6 +24,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     menu: ['A brisk two-minute walk', 'Cold water on my face', 'Text a friend', 'Ten pushups'],
     u: 1792194562327,
   };
+  /* PROTOTYPE (?below=1&today=1): an urge ridden out this afternoon */
+  const qs = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
   /* a lesson looked at again on four days this week, so the ring of lesson days is part lit */
@@ -66,6 +68,14 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       u: 1,
     };
   }
+  if (qs?.get('today') === '1')
+    o['daybook:days/' + DEMO.day] = {
+      d: DEMO.day,
+      events: [{ ...ev('13:10', 'rode', 'Bored'), st: 'high', m: 6, did: ['Cold water on my face'] }],
+      checkin: null,
+      p: { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: [], lv: [], ov: {} },
+      u: 1,
+    };
   /* the hard hours already passed are kept, as the app would have kept them the evening they passed, so no note pops up */
   const sn = normSettings(st);
   let days: Days = {};

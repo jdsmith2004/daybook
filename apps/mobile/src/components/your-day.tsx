@@ -277,10 +277,12 @@ function DayLine({ tiles, mids, curKey, glass }: { tiles: StopTile[]; mids: (num
               SQUIGGLE.wavelength,
               sec * SQUIGGLE.speed * Math.PI * 2,
             );
-            return <Path key={t.k} d={d} stroke={c.sun2} strokeWidth={SQUIGGLE.stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
+            /* its own key: on iOS a Path that was the dashed stretch keeps its dashes when it becomes the squiggle, since a prop
+               taken away is not cleared, and the squiggle is drawn in short broken strokes (the owner's phone, November 2, 2026) */
+            return <Path key={t.k + '-done'} d={d} stroke={c.sun2} strokeWidth={SQUIGGLE.stroke} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
           }
           const q = dashed(at[i] + MARK / 2 + AIR, at[i + 1] - MARK / 2 - AIR);
-          return <Path key={t.k} d={q.d} stroke={quiet} strokeWidth={DASH.stroke} strokeLinecap="round" strokeDasharray={q.dash} fill="none" />;
+          return <Path key={t.k + '-open'} d={q.d} stroke={quiet} strokeWidth={DASH.stroke} strokeLinecap="round" strokeDasharray={q.dash} fill="none" />;
         })}
       </Svg>
       {tiles.map((t, i) => (

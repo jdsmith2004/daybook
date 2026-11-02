@@ -1,5 +1,44 @@
 # What is planned next
 
+## My plan, rebuilt from the ground up (the owner, November 2, 2026; on branch claude/xenodochial-panini-ff574d, not built yet)
+
+The owner: "our goals and plan screen i don't like i think it needs a whole session and alot of thought to make it better use the rest of the app (onboarding, lessons, journal, how we feel) as inspiration". They like gradients, color and rich themes.
+
+**The purpose.** My plan is the page a person reads on a hard night, and it helps them not slip; on a calm day it is where they rehearse and change it. It also says who they are becoming, so every visit grows that identity. Today it reads like a settings list: four tabs (Why, Plans, Lists, Learned), the same heading-and-white-card on every part, twelve if-then lines given equal weight, and the flame nowhere on it.
+
+**What the research supports** (full notes in the side-session notes folder, plan-research-science.md and plan-research-design.md):
+
+- If-then plans work (Gollwitzer and Sheeran 2006, d = .65 over 94 tests), less strongly for stopping a habit than starting one (Adriaanse 2011). They work because the cue is specific and the plan lives in memory, so the page's real job is rehearsal on calm days and a short read on hard ones.
+- Craving narrows attention: in a hot moment show one or two lines, not twelve. Pick them by the hour (the person's hard hours), keep the rest one tap away. That fewer lines work better is reasoning, not a measured result.
+- Identity in "I am" form, backed by one true line from the person's own log (identity grows from acts; "I do not" beats "I cannot").
+- The person's own reasons, shown big, with their own words; generic reasons do less.
+- A short, calm slip plan that ends in action and kindness is what fights the "I blew it" spiral (Marlatt's abstinence violation effect).
+- From How We Feel, Headspace and Duolingo: one sentence huge on a living color field; the mascot holds the page; one color per meaning; tap the sentence to change it, in a sheet of the same color; nothing scored or counted down. Quit-porn apps keep their "why" pages as plain lists, so a beautiful one is open ground.
+
+**Three directions** (mockups from the real flame, not the app yet):
+
+- **A. One sky, read like a letter** (`docs/plan-review/a-one-sky.png`). One page on a sky that follows the clock and warms from night to dawn as you scroll, like a lesson. The flame stands big at the top with who you are becoming and one proof line from the log; under it, the two lines for this hour ("Tonight, 10 PM to 1 AM"), then All my lines. Below: Why I am doing this (reasons in big type, the note in the flame's cream bubble with the voice note), If I slip, my safe person, the words that steady me, calm moves and the wind-down, and at the end Getting ready (the safety net and next small steps). No tabs, no cards; tap a sentence and it opens in a sheet.
+- **B. Colored chapters** (`docs/plan-review/b-colored-chapters.png`). A night hero with the flame and the becoming line, then each part as a chapter in its own color (When it hits ember and biggest, Why gold, If I slip sea green, My people rose), each showing its best line; tap one and it opens full screen in its color. The most color, but it is a stack of gradient cards, which "The look" warns against, and the flame shrinks to a corner.
+- **C. Read it like a lesson** (`docs/plan-review/c-read-like-a-lesson.png`). My plan opens as a short deck of full-screen cards on the lesson sky, one thought each, with the flame gliding card to card; "Change my plan" opens an edit page. Best for the hot moment, but the deck is the lesson's pattern again (sameness) and editing lives on a second, plainer page.
+
+**Recommendation: A**, with B's colors: each part keeps its own color on the sky (If in sun, then in mint, slip numbers in sun, people on the rose of the dawn) and its sheet takes that color. It is one page that is both the hard-night read and the place to change things, the flame is the biggest thing on it, and a sky that turns to dawn as you read is a picture of the point of the page. By day the sky is Today's day sky and the label names the next hard hours; with no hard hours known yet it shows the first two lines.
+
+**Questions for the owner** (each with a recommendation):
+
+1. Which direction? Recommended: A.
+2. What I learned (finished lessons' takeaways and the checkpoint writing): move it to Learn, where it is made? Recommended: yes; old links that open it go there.
+3. Calm moves, the wind-down and the words that steady me: fold each into the part it serves on the one page, instead of a Lists tab? Recommended: yes.
+4. My own check-in answers (removing an answer you added): move to Settings? Recommended: yes; it is upkeep, not the plan.
+
+**Data:** nothing in the settings changes shape. `plan` stays a list of `{ when, then }`, and `reasons`, `becoming`, `why`, `goal`, `loop`, `rule`, `note`, `slipPlan`, `safety`, `help`, `menu`, `wind` and `words` stay as they are, so no `normSettings` change. The "lines for tonight" pick should be one core function shared with Today, which shows the same two lines.
+
+**Steps once the owner picks** (effort):
+
+1. Core: the lines-for-now pick and the proof line, with tests (medium).
+2. The page: sky, flame, becoming, tonight's lines, the parts in order, sheets to change each part (medium).
+3. Moves: Learned to Learn and own answers to Settings, with every old link (`pane`, `sub`, `to`, `fresh`, `add`) still landing in the right place (medium).
+4. Check on the web and the iOS simulator in light, dark, by day and night, Reduce Motion and large text; craft checklist on pictures; a release build for the owner (medium).
+
 ## The journal in Obsidian (the owner, November 1, 2026; merged November 2, 2026 on the owner's word)
 
 The owner has started using Obsidian, synced by iCloud, and will not journal in Daybook unless entries reach it. It helps the person only when they keep a vault, and it costs everyone else nothing: it is off until a folder is picked, it is one row in Settings called Obsidian, on an iPhone only, and it is free with no count. It is not marketed: nothing in the store listing, the site or What's New (the owner, November 1, 2026). It does not help Daybook earn; it keeps the owner writing in the app. The one change everybody gets is changing when a journal entry happened.

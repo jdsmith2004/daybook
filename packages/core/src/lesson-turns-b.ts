@@ -45,8 +45,7 @@ const S = {
     'https://doi.org/10.1177/1948550618765069',
   ],
   luke: ['Luke 15:11-24, the parable of the lost son', 'https://www.biblegateway.com/passage/?search=Luke+15%3A11-24&version=NIV'],
-  genesis: ['Genesis 3:8-9, the man and the woman hide in the garden', 'https://www.biblegateway.com/passage/?search=Genesis+3%3A8-9&version=NIV'],
-  malachi: ['Malachi 3:7, “Return to me, and I will return to you”', 'https://www.biblegateway.com/passage/?search=Malachi+3%3A7&version=NIV'],
+  malachi: ['Malachi 3:7 (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/ot/mal/3?lang=eng'],
   ano: [
     'Ano & Vasconcelles (2005): religious coping and psychological adjustment to stress, a meta-analysis, Journal of Clinical Psychology',
     'https://pubmed.ncbi.nlm.nih.gov/15503316/',
@@ -511,15 +510,15 @@ export const TURNS_B: Record<string, Turn> = {
         more: 'Jesus tells of a young man who takes his inheritance, spends it all, and ends up feeding pigs, hungry enough to envy them. He decides to go home and ask to be a hired hand. His father sees him from far off and runs to him. Before the son can finish his speech, the father calls for the best robe, a ring and a feast, because his son was lost and is found.',
       },
       {
-        h: 'They hid. God came looking for them, asking, “Where are you?”',
-        p: 'Shame told them to hide in the trees. God came looking for them anyway.',
-        fact: { s: 'Scripture · Genesis 3:8-9 · Malachi 3:7', i: [1, 2] },
-        more: 'In Genesis, after the man and woman eat from the tree, they hear God walking in the garden and hide among the trees. The first thing shame does is hide. The first thing God does is call out, “Where are you?” It is a question that comes looking. The prophet Malachi carries the same promise: “Return to me, and I will return to you.”',
+        h: 'He says, “Return unto me, and I will return unto you.”',
+        p: 'The way back is not a climb you make alone. You turn, and He is already coming toward you.',
+        fact: { s: 'Scripture · Malachi 3:7', i: [1] },
+        more: 'Through the prophet Malachi, the Lord speaks to a people who had wandered for a long time: “Return unto me, and I will return unto you.” The promise is not that they would earn their way back first. It is that turning is met. The father in the story Jesus told did the same: the son turned, and the father ran.',
       },
       {
         h: 'Seeing God as punishing went with a harder time under stress.',
         p: 'Turning to God for strength and comfort went with doing better.',
-        fact: { s: 'Meta-analysis · 49 studies · Ano & Vasconcelles, 2005', i: [3] },
+        fact: { s: 'Meta-analysis · 49 studies · Ano & Vasconcelles, 2005', i: [2] },
         more: 'A review of 49 studies looked at how people lean on faith in hard times. Those who saw a hardship as God punishing them or leaving them tended to struggle more. Those who turned to God for strength, comfort and help tended to do better. How you picture God in a hard moment goes with how you come through it.',
       },
     ],
@@ -539,8 +538,8 @@ export const TURNS_B: Record<string, Turn> = {
       a: 1,
     },
     scope:
-      'The parable and the garden story are read in many traditions, and Daybook does not speak for any church. The review of religious coping covered adults facing many kinds of stress, not porn. Together they point the same hopeful way: you can turn toward God as you are, and you do not walk the whole road alone.',
-    src: [S.luke, S.genesis, S.malachi, S.ano],
+      'The parable and Malachi’s promise are read in many traditions, and Daybook does not speak for any church. The review of religious coping covered adults facing many kinds of stress, not porn. Together they point the same hopeful way: you can turn toward God as you are, and you do not walk the whole road alone.',
+    src: [S.luke, S.malachi, S.ano],
   },
 
   l8: {

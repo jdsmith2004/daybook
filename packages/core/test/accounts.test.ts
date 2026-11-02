@@ -15,7 +15,10 @@ it('without an account, the first lessons on the path are open, and finished one
   expect(core.lessonOpen(after, new Set(), false)).toBe(false);
   expect(core.lessonOpen(after, new Set([after.id]), false)).toBe(true);
   expect(core.lessonOpen(after, new Set(), true)).toBe(true);
-  expect(core.lessonsLocked(core.LESSONS, new Set(), false)).toBe(core.LESSONS.length - core.LEARN_FREE);
+  /* the God lessons of the free steps (steps 1 and 2) are free too */
+  expect(core.lessonOpen(core.lessonById('g2')!, new Set(), false)).toBe(true);
+  expect(core.lessonOpen(core.lessonById('g3')!, new Set(), false)).toBe(false);
+  expect(core.lessonsLocked(core.LESSONS, new Set(), false)).toBe(core.LESSONS.length - core.LEARN_FREE - 2);
   expect(core.lessonsLocked(core.LESSONS, new Set(), true)).toBe(0);
 });
 

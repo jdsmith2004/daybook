@@ -18,9 +18,10 @@ const words = (L: Lesson): string[] => {
   return out;
 };
 
-it('there are 49 lessons, and the ids match the lesson list', () => {
+it('there are 49 lessons and the twelve God lessons, and the ids match the lesson list', () => {
   expect(core.LESSONS.map((L) => L.id)).toEqual(core.LESSON_IDS);
-  expect(core.LESSON_IDS).toHaveLength(49);
+  expect(core.LESSON_IDS).toHaveLength(61);
+  expect(core.LESSON_IDS.slice(49)).toEqual(core.PATH_STEPS.map((s) => s.god));
   expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41', 'l42', 'l43', 'l44', 'l45', 'l46', 'l47', 'l48', 'l49']);
 });
 
@@ -127,7 +128,7 @@ describe('families', () => {
 
   it('the path is the twelve steps, each once, in order, and every lesson is on one step or off the path (November 2, 2026)', () => {
     const ids = core.lessonPath().map((L) => L.id);
-    expect([...ids, ...core.OFF_PATH].sort()).toEqual(core.LESSON_IDS.slice().sort());
+    expect([...ids, ...core.OFF_PATH, ...core.PATH_STEPS.map((s) => s.god)].sort()).toEqual(core.LESSON_IDS.slice().sort());
     expect(new Set(ids).size).toBe(ids.length);
     expect(core.lessonSections().map((x) => x.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
     /* the first eight, open without an account: the truth, then why willpower is not enough */

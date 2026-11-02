@@ -15,10 +15,13 @@
    same way, with a new id. */
 import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
+import type { FaithVoice } from './faith';
 import { TURNS_A } from './lesson-turns-a';
 import { TURNS_B } from './lesson-turns-b';
 import { TURNS_C } from './lesson-turns-c';
 import { TURNS_D } from './lesson-turns-d';
+import { GOD_A } from './lesson-turns-god-a';
+import { GOD_B } from './lesson-turns-god-b';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -59,7 +62,15 @@ export interface Turn {
   check: { h: string; o: Opt[]; a?: number };
   scope: string;
   src: Src[];
+  /** a God lesson's closing line: a short prayer to say, on its own card after the check */
+  close?: string;
+  /** a God lesson speaks in the Latter-day Saint voice; another Christian faith and another faith replace whole parts (faith.ts) */
+  vo?: Partial<Record<Exclude<FaithVoice, 'lds'>, VoicePart>>;
 }
+/** the parts of a God lesson that change with its voice: each one given here replaces the Latter-day Saint part whole */
+export type VoicePart = Partial<Pick<Turn, 'hook' | 'ask1' | 'flip' | 'deep' | 'mine' | 'move' | 'check' | 'scope' | 'src' | 'close'>>;
+/** a turn in one voice */
+export const turnIn = (T: Turn, voice: FaithVoice | null): Turn => (voice && voice !== 'lds' && T.vo && T.vo[voice] ? { ...T, ...T.vo[voice] } : T);
 
 const more = (s?: string): Block[] | undefined => (s ? [['p', s]] : undefined);
 
@@ -83,6 +94,7 @@ export function turnLesson(T: Turn, was: Lesson): { L: Lesson; beats: LessonBeat
   if (T.mine) add({ k: 'text', q: 1, e: 'mine', el: 'Your own log', h: T.mine.h, b: [['mine', T.mine.k]] }, { h: T.mine.h });
   add({ k: 'text', q: 1, e: 'move', el: 'What to do', art: ['icon', { ic: T.ic }], h: T.move.h, b: more(T.move.more) }, { h: T.move.h, l: T.move.l });
   add({ k: 'choose', q: 1, e: 'check', el: 'Check it', h: T.check.h, a: T.check.a, c: T.check.o }, { h: T.check.h, c: T.check.o.map((x) => x[1]) });
+  if (T.close) add({ k: 'text', q: 1, e: 'close', el: 'A prayer to say', art: ['icon', { ic: T.ic }], h: T.close }, { h: T.close });
   const L: Lesson = {
     ...was,
     v: 3,
@@ -319,3 +331,6 @@ const FIRST: Record<string, Turn> = {
 };
 
 export const TURNS: Record<string, Turn> = { ...FIRST, ...TURNS_A, ...TURNS_B, ...TURNS_C, ...TURNS_D };
+/** the twelve God lessons, one for each step (g1 to g12), for people who said faith plays a part. Written, not yet on the path:
+    where each sits in its step, and the order for people already partway along, come next (docs/plan.md). */
+export const GOD: Record<string, Turn> = { ...GOD_A, ...GOD_B };

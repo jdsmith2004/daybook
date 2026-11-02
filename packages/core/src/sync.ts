@@ -113,6 +113,13 @@ export function keepNewer(day: Day, had: Day | undefined): Day {
   const events = day.events.map((e) => (e.outcome === 'slipped' && before.get(e.id)?.outcome === 'slipped' ? fill(e, before.get(e.id), EV_KEEP) : e));
   const checkin = day.checkin ? fill(day.checkin, had.checkin, CI_KEEP) : day.checkin;
   let p = day.p ? fill(day.p, had.p, P_KEEP) : day.p;
+  /* a God lesson finished (g1 to g12, November 2026): an older app does not know its id and drops it from the day's lessons,
+     and with nothing else done that day, the whole play record. A finished lesson is never taken off, so it comes back. */
+  const god = (had.p?.ls || []).filter((id) => /^g\d+$/.test(id) && !(p?.ls || []).includes(id));
+  if (god.length) {
+    p = p ? { ...p, ls: [...(p.ls || []), ...god] } : had.p;
+    filled = true;
+  }
   if (p && p.tt && had.p?.tt) {
     const talks = new Map(had.p.tt.map((t) => [t.id, t]));
     const tt = p.tt.map((t) => fill(t, talks.get(t.id), TALK_KEEP));

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
-import { TURNS, turnLesson } from '../lesson-turns';
+import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { normCreed } from '../faith';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
@@ -100,7 +100,8 @@ function optList(kind,opts,o){
 const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message','reasons','move','bed','thought','forward','stack'];
 /* the lessons keep their ids forever: a finished lesson is saved by id, on the day it was finished */
 /* l1 to l32 are here; l33 on are in lessons-more.ts */
-const LESSON_IDS=Array.from({length:49},(_,i)=>'l'+(i+1)),LNOTE_LEN=400;
+/* l1 to l49, then the twelve God lessons, g1 to g12 (lesson-turns.ts GOD) */
+const LESSON_IDS=[...Array.from({length:49},(_,i)=>'l'+(i+1)),...Array.from({length:12},(_,i)=>'g'+(i+1))],LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -2714,6 +2715,9 @@ const LESSONS=[
 LESSONS.push(...lessonsMore(SRC));
 /* lessons rewritten around a turn replace their old selves in place (lesson-turns.ts) */
 LESSONS.forEach((L,i)=>{if(TURNS[L.id])LESSONS[i]=turnLesson(TURNS[L.id],L).L});
+/* the God lessons come last, in the faith section, in the Latter-day Saint voice (lesson-beats.ts lessonVoiced gives the others).
+   They sit on the path only for someone who said faith plays a part (lessons.ts godOn, steps.ts god). */
+Object.values(GOD).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,u:7,f:1,tag:T.ask}).L));
 
 
 /* ------------------------------------------------------------------------------------------------

@@ -518,6 +518,17 @@ path. Sonnet agents find each lesson's turn (the belief, the surprising fact or 
 done on Opus, since the voice is what makes it work. New picture kinds only where a lesson's turn needs one, each shown to
 the owner before it is reused.
 
+**Done on `lessons-steps` (November 2, 2026): all 49 lessons are turned.** Lesson 2 moved to the white bear study (pushing a
+thought away brings it back), since wanting and liking is lesson 33's. Lessons 4 to 49 were researched four batches at a time
+on Sonnet, written on Opus, and read one by one before they went in; no two lessons share a turn or a study. Two titles
+changed: lesson 31 is "Come back as you are", lesson 41 "The picture and what it gives". The own-log line can now also show
+the busiest hours, the most common reason, and the days that held in the last 30. Eight new pictures, waiting for the
+owner's yes (pictures in `docs/lessons-review/new-picture-*.png`): a path that dips one missed day and climbs on (21),
+what memory keeps against what the log keeps (40), blocks filling the picture screen (42), two rooms with the habit left
+behind (10), "I cannot" argued with against "I do not" (38), closeness built in turns (8), the father running down the road
+(31), and the way on past a side gate (49). Still to do: the owner sees it on the simulator before it merges; the 12 God
+lessons, with the faith voices, after a legal read or the Church's permission.
+
 ### Not verified
 
 The research agents could not open every source, and those are marked in the files in `docs/lessons-research/`. Numbers for new lessons get read from the source when the lesson is written. Almost all the porn research is on Western men, so the new lessons should not assume a reader's sex. The word counts above (73, 85, 27) are estimates until the steps are written. The twelve forms were looked at on the web build. On the simulator, in a release build, I walked two lessons as someone at level 25: lesson 2 opens on its own first card, and the Beacon is clear of the words. The Torch's fix and the welcome back were seen on the web only, and nothing on Android.

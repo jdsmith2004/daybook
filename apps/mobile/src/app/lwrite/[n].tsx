@@ -92,7 +92,7 @@ export default function Lwrite() {
                     <T v="title" accessibilityRole="header">
                       That is in your plan.
                     </T>
-                    <T>You wrote it for yourself. It stays in My plan, under Learned, to read whenever you want.</T>
+                    <T>You wrote it for yourself. It stays in What I have learned, under Learn, to read whenever you want.</T>
                   </>
                 )}
               </KeyboardRoom>

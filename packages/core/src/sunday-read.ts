@@ -246,7 +246,7 @@ export function weekRead(
       ? 'clean'
       : S <= 2 && gap != null && gap >= 7 && S * 2 < D
         ? 'after'
-        : S === 1
+        : S === 1 && D > 1
           ? 'one'
           : S === D
             ? 'all'
@@ -301,7 +301,7 @@ export function weekRead(
             : 'You logged every slip honestly. Next week can be different.';
       break;
     case 'all':
-      says = D === 7 ? 'Every day this week had a slip.' : 'All ' + D + ' days had a slip.';
+      says = D === 7 ? 'Every day this week had a slip.' : D === 1 ? 'The one day so far had a slip.' : 'All ' + D + ' days had a slip.';
       held = R
         ? 'And ' + rodeLine + '. That skill is real, and next week can be different.'
         : 'You opened Daybook and told the truth anyway. That is where change starts.';

@@ -40,6 +40,11 @@ describe('the kind of week, named honestly', () => {
     expect(x.read.says).toBe('Every day this week had a slip.');
     expect(x.read.held).toBe('And you rode out 1 urge. That skill is real, and next week can be different.');
   });
+  it('a week one day old, with a slip on it, reads plainly', () => {
+    const x = read(log([[MON, 'slipped', '13:00']]), MON);
+    expect(x.read.kind).toBe('all');
+    expect(x.read.says).toBe('The one day so far had a slip.');
+  });
   it('one slip is named as one, and the other days count', () => {
     const d = log([
       ['2026-10-09', 'slipped', '22:00'],

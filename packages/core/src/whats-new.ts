@@ -25,12 +25,12 @@ export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
     items: [
       {
         t: 'A Sunday review that reads your week',
-        line: 'It says how the week really went, in plain numbers, and ends with one step for next week from your own pattern.',
+        line: 'It says how your week really went, in plain numbers, and gives one step for next week.',
         art: 'week',
       },
       {
         t: 'Your plan for next time, in your words',
-        line: 'After a slip, Rekindle ends on your own sentence, and the flame reminds you when the hour comes.',
+        line: 'After a slip, Rekindle ends on your own sentence, and the flame reminds you of it.',
         art: 'plan',
       },
       {

@@ -57,7 +57,7 @@ export function useHoldsBar(): boolean {
 }
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */
-const SCENE = /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back)$/;
+const SCENE = /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back|whats-new)$/;
 
 /** the routes open now, bottom to top (Expo Router keeps the app's stack inside one "__root" route) */
 function openRoutes(from: State | undefined = rootState()): Route[] {

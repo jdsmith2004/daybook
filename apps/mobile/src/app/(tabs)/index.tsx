@@ -328,7 +328,7 @@ export default function Today() {
           hero={calm ? pick.card : null}
           foot={[note && !BELOW ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
         />
-        {BELOW ? <TodayBelow snap={snap} tk={tk} /> : null}
+        {BELOW ? <TodayBelow snap={snap} tk={tk} now={now} /> : null}
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
         {protoDir() ? <TodayMore dir={protoDir()!} snap={snap} tk={tk} level={g.level.n} /> : null}

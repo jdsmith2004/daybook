@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
+import { TonightCard } from '@/components/tonight-card';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
@@ -60,7 +61,7 @@ function planTonight(snap: Snapshot, tk: string) {
   return out.map((p) => ({ when: p.when, then: p.then.trim().split(/(?<=[.!?])\s+/)[0] }));
 }
 
-export function TodayBelow({ snap, tk }: { snap: Snapshot; tk: string }) {
+export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: string; now: number }) {
   const c = useTheme();
   const st = snap.settings!;
   const evs = sortedEvents(snap.days[tk], st.rollover);
@@ -100,37 +101,40 @@ export function TodayBelow({ snap, tk }: { snap: Snapshot; tk: string }) {
         </View>
       ) : null}
 
-      <View style={[s.card, { backgroundColor: c.surface }]}>
-        <View style={s.cardHead}>
-          <Icon name="moon" size={20} color={c.ink} />
-          <Text style={[s.cardH, { color: c.ink }]}>{win ? 'Tonight, ' + win.label : 'If it gets hard tonight'}</Text>
-        </View>
-        {plan.length ? (
-          plan.map((p, i) => (
-            <Pressable key={i} accessibilityRole="button" onPress={() => go('/plan')} style={({ pressed }) => [s.line, { opacity: pressed ? 0.8 : 1 }]}>
-              <T v="small" tone="muted">
-                When {p.when.replace(/^when\s+/i, '').replace(/^I am\b/, 'I am')}
-              </T>
-              <T style={[s.then, { color: c.ink }]}>{p.then}</T>
+      {win && plan.length ? <TonightCard start={win.start} label={win.label} lines={plan} more={all > plan.length ? all : 0} now={now} /> : null}
+      {win && plan.length ? null : (
+        <View style={[s.card, { backgroundColor: c.surface }]}>
+          <View style={s.cardHead}>
+            <Icon name="moon" size={20} color={c.ink} />
+            <Text style={[s.cardH, { color: c.ink }]}>{win ? 'Tonight, ' + win.label : 'If it gets hard tonight'}</Text>
+          </View>
+          {plan.length ? (
+            plan.map((p, i) => (
+              <Pressable key={i} accessibilityRole="button" onPress={() => go('/plan')} style={({ pressed }) => [s.line, { opacity: pressed ? 0.8 : 1 }]}>
+                <T v="small" tone="muted">
+                  When {p.when.replace(/^when\s+/i, '').replace(/^I am\b/, 'I am')}
+                </T>
+                <T style={[s.then, { color: c.ink }]}>{p.then}</T>
+              </Pressable>
+            ))
+          ) : (
+            <Pressable accessibilityRole="button" onPress={() => go('/talk')} style={({ pressed }) => [s.line, { opacity: pressed ? 0.8 : 1 }]}>
+              <T style={[s.then, { color: c.ink }]}>Make a plan, while it is calm</T>
             </Pressable>
-          ))
-        ) : (
-          <Pressable accessibilityRole="button" onPress={() => go('/talk')} style={({ pressed }) => [s.line, { opacity: pressed ? 0.8 : 1 }]}>
-            <T style={[s.then, { color: c.ink }]}>Make a plan, while it is calm</T>
-          </Pressable>
-        )}
-        {plan.length && all > plan.length ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => go('/plan')}
-            style={({ pressed }) => [s.foot, { borderTopColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
-            <T v="label" tone="accentText" style={{ flex: 1 }}>
-              Your whole plan
-            </T>
-            <Icon name="next" size={16} color={c.accentText} />
-          </Pressable>
-        ) : null}
-      </View>
+          )}
+          {plan.length && all > plan.length ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => go('/plan')}
+              style={({ pressed }) => [s.foot, { borderTopColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
+              <T v="label" tone="accentText" style={{ flex: 1 }}>
+                Your whole plan
+              </T>
+              <Icon name="next" size={16} color={c.accentText} />
+            </Pressable>
+          ) : null}
+        </View>
+      )}
 
       <Pressable accessibilityRole="button" onPress={() => go('/plan')} style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
         <T v="small" tone="muted">

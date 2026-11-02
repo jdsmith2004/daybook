@@ -99,6 +99,13 @@ fill, one hairline above "Your whole plan"); the sentence is big in the flame's 
 count in mint. One heading style, one left edge, no explaining subtitle. The line under the lesson about the hard hours and
 "1 logged today" are left out, since these sections say it now. Light theme drawn too.
 
+The owner found the Tonight card bland ("i like gradients colors beautiful design themes"). After research on Headspace, Calm,
+How We Feel, Apple Sleep and Weather, and Duolingo (one hero element per card, one accent, radial glows rather than washes, a time
+window drawn as a shape), three looks, all a night card in both themes: **the evening arc** (6 PM to 2 AM as an arc, the hard hours in
+gold with a glow, a dot for now, "In 2 hours" or "Now" over the hours; my pick), **in your own words** (the plan in the lessons' cream
+bubbles over a dusk that warms to an ember), **a block of color** (a lavender block with a moon and the hours, the plan beside it).
+Picture: docs/today-review/tonight-looks.png (`components/tonight-card.tsx`, `&tn=a|b|c`). My plan itself went to its own session.
+
 Picture: docs/today-review/today-below.png (morning, after an urge, before the hard hours, nothing written yet). Prototype only, behind
 `?below=1` (`components/today-below.tsx`). For a real build: the rules go to core with tests; the line under the lesson ("Your hard hours
 start at 9 PM. Make a plan") and "1 logged today" in the foot say what these sections now say, so they go; light theme not drawn yet.

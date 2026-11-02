@@ -134,7 +134,7 @@ function WhenBody({
   const days = useMemo(() => {
     const list = whenDays(at);
     if (list.indexOf(value.day) < 0) list.push(value.day);
-    return list;
+    return list.sort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const quick = whenQuick(at, roll);
@@ -244,18 +244,19 @@ function WhenBody({
   );
 }
 
-/** the days, today first, running off the sheet's edge: the day of the week over the date. The month is in the moment above. */
+/** the days in calendar order, today at the right end and earlier days off the left edge: the day of the week over the date. The month is in the moment above. */
 function DayRow({ days, day, now, onPick }: { days: DayKey[]; day: DayKey; now: number; onPick: (d: DayKey) => void }) {
   const c = useTheme();
   const ref = useRef<ScrollViewInstance>(null);
   const spots = useRef(new Map<DayKey, { x: number; w: number }>());
   const room = useRef(0);
+  const wide = useRef(0);
   const placed = useRef(false);
   /* the picked day is always in view, also when it is picked from elsewhere, or is far back when the sheet opens */
   const show = (animated: boolean) => {
     const p = spots.current.get(day);
-    if (!p || !room.current) return false;
-    ref.current?.scrollTo({ x: Math.max(0, p.x + p.w / 2 - room.current / 2), animated });
+    if (!p || !room.current || !wide.current) return false;
+    ref.current?.scrollTo({ x: Math.max(0, Math.min(wide.current - room.current, p.x + p.w / 2 - room.current / 2)), animated });
     return true;
   };
   /* the first time, once both the row and the day are measured, whichever comes last */
@@ -277,10 +278,13 @@ function DayRow({ days, day, now, onPick }: { days: DayKey[]; day: DayKey; now: 
         room.current = e.nativeEvent.layout.width;
         place();
       }}
-      onContentSizeChange={place}
+      onContentSizeChange={(w) => {
+        wide.current = w;
+        place();
+      }}
       accessibilityRole="radiogroup"
       accessibilityLabel="Day">
-      {days.map((k, i) => {
+      {days.map((k) => {
         const on = k === day;
         const [y, m, d] = k.split('-').map(Number);
         const word = whenDayWord(k, now);
@@ -300,7 +304,7 @@ function DayRow({ days, day, now, onPick }: { days: DayKey[]; day: DayKey; now: 
             }}
             style={({ pressed }) => [s.day, { backgroundColor: on ? c.accent : 'transparent', opacity: pressed ? 0.7 : 1 }]}>
             <Text style={[s.dayW, { color: on ? c.accentInk : c.muted }]}>
-              {i < 2 ? word : new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' })}
+              {word === 'Today' || word === 'Yesterday' ? word : new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' })}
             </Text>
             <Text style={[s.dayN, { color: on ? c.accentInk : c.ink }]}>{d}</Text>
           </Pressable>
@@ -418,6 +422,8 @@ function Wheel({
   };
   /* the nearest copy of a row, going round the short way */
   const nearest = (i: number) => {
+    /* one copy (the web): the row itself, never past the end */
+    if (copies === 1) return clamp(i);
     const from = turning.current ?? at.current;
     let d = mod(i - from, n);
     if (copies > 1 && d > n / 2) d -= n;
@@ -561,7 +567,7 @@ const s = StyleSheet.create({
   q: { minHeight: 44, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   qT: { fontFamily: font.bodySemi, fontSize: 15 },
   dayRow: { flexGrow: 0, marginTop: 8 },
-  days: { gap: 4, paddingHorizontal: 8 },
+  days: { gap: 4, paddingHorizontal: 16 },
   day: { minWidth: 52, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 20, alignItems: 'center' },
   dayW: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   dayN: { fontFamily: font.display, fontSize: 20, lineHeight: 24 },

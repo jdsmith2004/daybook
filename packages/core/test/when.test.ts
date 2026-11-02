@@ -55,7 +55,7 @@ describe('the words', () => {
     expect(whenDayWord('2026-10-15', NOW)).toBe('Thu, Oct 15');
   });
   it('offer the days back from today, and quick picks that fit the hour', () => {
-    expect(whenDays(NOW, 3)).toEqual(['2026-10-18', '2026-10-17', '2026-10-16']);
+    expect(whenDays(NOW, 3)).toEqual(['2026-10-16', '2026-10-17', '2026-10-18']);
     expect(whenQuick(NOW, ROLL).map((q) => q.label)).toEqual(['Just now', '1 hour ago', '2 hours ago', '3 hours ago']);
     expect(whenQuick(NOW, ROLL)[3].w).toEqual({ day: '2026-10-18', h: 18, m: 47 });
     const morning = new Date(2026, 9, 19, 10, 15).getTime();

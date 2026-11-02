@@ -76,10 +76,10 @@ export function whenCountsFor(w: When, roll: number): string | null {
   return 'After midnight, so it counts for ' + new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' }) + '.';
 }
 
-/** the days to pick from: today first, then back, n in all */
+/** the days to pick from, in calendar order: the oldest first and today last, n in all */
 export function whenDays(now: number, n = 30): DayKey[] {
   const today = keyOfDate(new Date(now));
-  return Array.from({ length: n }, (_, i) => addDays(today, -i));
+  return Array.from({ length: n }, (_, i) => addDays(today, i - n + 1));
 }
 /** the quick picks, in a row that scrolls: just now, one to three hours ago, and last night in the morning and afternoon (the owner,
     November 2, 2026: "quick options 1 hour two hours ago etc") */

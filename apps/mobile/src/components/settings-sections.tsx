@@ -11,7 +11,7 @@ import {
   minToClock,
   readBackup,
   restoreBackup,
-  ROUTINE,
+  ROUTINE_SHOWN,
   setCelebrate,
   setCleanAuto,
   setCountMode,
@@ -309,7 +309,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
 
   const ownN = st.opts.trig.filter((o) => !o.off).length + st.opts.did.filter((o) => !o.off).length;
   const ownSub = ownN ? ownN + (ownN === 1 ? ' answer' : ' answers') + ' added on check-ins' : 'Words you add on a check-in';
-  const routineOn = ROUTINE.filter((x: { k: string }) => st.routine[x.k]).length;
+  const routineOn = ROUTINE_SHOWN.filter((x: { k: string }) => st.routine[x.k]).length;
   const fa = (st.onb && st.onb.a && (st.onb.a.faith as string)) || '';
   const cr = (st.onb && st.onb.a && (st.onb.a.creed as string)) || '';
   const themeWord = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto';
@@ -339,12 +339,12 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             'routine',
             'check',
             'My daily routine',
-            routineOn + ' of ' + ROUTINE.length + ' parts on',
+            routineOn + ' of ' + ROUTINE_SHOWN.length + ' parts on',
             <>
               <T v="small" tone="muted">
                 A part switched off leaves Today, and still earns its points if you do it. To skip one for a single day, do that from Today.
               </T>
-              {ROUTINE.map((x) => (
+              {ROUTINE_SHOWN.map((x) => (
                 <OnOff key={x.k} name={x.name} sub={x.sub} on={!!st.routine[x.k]} onPick={(on) => apply({ st: setRoutine(st, x.k, on) })} />
               ))}
               <T v="small" tone="muted">

@@ -17,6 +17,11 @@ says Reached out and stays), Journal opens the journal, and `snap.journal` is pa
 line measures its rows again when its stops change (on the web a row that only moves did not report its new place). The Change sheet
 and Settings list Journal from `ROUTINE` with no change. Merged once the owner had seen it on the simulator.
 
+**Then (the owner, November 2, 2026):** "remove calm move, that's part of SOS, and the journal should take them right into the emotion
+picker". Calm move is no longer a switch (`ROUTINE_SHOWN` in day.ts, used by Change and Settings) or a stop; it still counts as a daily
+win when done, so nothing earned moves, and an old choice about it is left in place and not counted as a change. The Journal stop opens
+`/journal?new=1`, the four colors of a new entry.
+
 ## Ideas and feedback, straight to the owner's inbox (the owner, November 2, 2026; merged November 2, 2026 on the owner's word)
 
 The owner asked for an app feedback page at the top left, inviting any idea or change, sent straight to their email, and

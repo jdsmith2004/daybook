@@ -7,7 +7,7 @@
 import {
   lineOrder,
   openTile,
-  ROUTINE,
+  ROUTINE_SHOWN,
   routineChanged,
   logicalKey,
   reachMark,
@@ -43,9 +43,8 @@ export function openStop(go: StopGo, id?: string) {
     if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
     return;
   }
-  /* the any-time stops: a calm move is picked on Learn's tools, the journal opens itself (reaching out is marked in place, Row) */
-  if (go === 'calm') return router.navigate({ pathname: '/learn', params: { pane: 'tools' } });
-  if (go === 'journal') return router.push('/journal');
+  /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */
+  if (go === 'journal') return router.push({ pathname: '/journal', params: { new: '1' } });
   if (go === 'reach') return;
   router.push(go === 'checkin' ? '/checkin' : '/wind');
 }
@@ -383,7 +382,7 @@ function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () 
             Skip what does not fit today. This is for today only, and anything you already did stays counted.
           </T>
           <View style={{ gap: 2 }}>
-            {ROUTINE.map((x) => (
+            {ROUTINE_SHOWN.map((x) => (
               <OnOff
                 key={x.k}
                 name={x.name}

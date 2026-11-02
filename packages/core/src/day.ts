@@ -18,6 +18,7 @@ import {
   minToClock,
   reachedOn,
   rhythm,
+  ROUTINE,
   routineOn,
   ROUTINE_KEYS,
   streaks,
@@ -251,7 +252,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind' | 'calm' | 'reach' | 'journal';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -277,19 +278,18 @@ export interface StopTile {
 }
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
-/* Parts of the routine with no time of day (calm move, reached out, the journal) are stops too, so every switch in "Change" shows on
+/* Parts of the routine with no time of day (reached out, the journal) are stops too, so every switch in "Change" shows on
    the line (the owner, November 2, 2026: "when i switch it nothing happens"). They sit after the lesson, say "Any time", and are never
    the big card, so the next step is still the lesson, the check-in or the wind-down. Done when the day holds one, and a done one
    stays on the line even when switched off, the way a done lesson does. */
-const ANY_TIME = ['calm', 'reach', 'journal'] as const;
+const ANY_TIME = ['reach', 'journal'] as const;
 function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | undefined, slipNight: boolean): StopTile[] {
   const d = days[tk];
   const p = d?.p;
   const w = winsOf(days, tk, st);
   const wrote = Object.values(journal || {}).some((e) => e.d === tk);
-  const done: Record<(typeof ANY_TIME)[number], boolean> = { calm: !!w.calm, reach: !!w.reach, journal: wrote };
+  const done: Record<(typeof ANY_TIME)[number], boolean> = { reach: !!w.reach, journal: wrote };
   const say = {
-    calm: { ic: 'wave', title: 'Calm move', open: 'A tool or a 10-minute pause', did: 'Done today', btn: 'Pick a tool' },
     reach: { ic: 'chat', title: 'Reached out', open: 'Text, call, or talk to a person', did: 'Reached someone today', btn: 'I reached out' },
     journal: { ic: 'heart', title: 'Journal', open: 'A few words about the day', did: 'Written today', btn: 'Write' },
   };
@@ -537,10 +537,14 @@ export function reachMark(days: Days, tk: DayKey, now = Date.now()): Days {
     ),
   );
 }
+/** the parts of the routine a person can switch, in Change and Settings. Calm move is not one (the owner, November 2, 2026: "that's
+    part of SOS"): it still counts as a daily win when done, as it always has, so nothing earned moves, but it is never a stop or a
+    switch, and a day's old choice about it is left alone and never shown. */
+export const ROUTINE_SHOWN = ROUTINE.filter((x) => x.k !== 'calm');
 /** how many parts of today differ from the usual routine */
 export function routineChanged(st: Settings, p: Play | null | undefined): number {
   const ov = (p && p.ov) || {};
-  return ROUTINE_KEYS.filter((k) => typeof ov[k] === 'boolean' && ov[k] !== !!st.routine[k]).length;
+  return ROUTINE_SHOWN.map((x) => x.k).filter((k) => typeof ov[k] === 'boolean' && ov[k] !== !!st.routine[k]).length;
 }
 
 /* ---------- Next up, on the flame card ---------- */

@@ -3,7 +3,8 @@
    lesson needs its beats here; test/lesson-beats.test.ts fails without them, and holds them to the limits and the words rules. A card is one
    of: a question, the sun card (the answer), the number card (the science, when it has a number), or the sky. */
 import type { Card, Lesson } from './lessons';
-import { TURNS, turnLesson } from './lesson-turns';
+import type { FaithVoice } from './faith';
+import { GOD, TURNS, turnIn, turnLesson } from './lesson-turns';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -35,8 +36,25 @@ export type BeatBook = Record<string, LessonBeats>;
 
 /* a turned lesson (lesson-turns.ts) brings its own short words */
 let TURNED: BeatBook | null = null;
-const turned = () => TURNED || (TURNED = Object.fromEntries(Object.values(TURNS).map((T) => [T.id, turnLesson(T, { id: T.id } as Lesson).beats])));
-const bookOf = (L: Lesson): LessonBeats | null => (L.v === 3 && turned()[L.id]) || BOOK[L.id] || null;
+const turned = () =>
+  TURNED || (TURNED = Object.fromEntries([...Object.values(TURNS), ...Object.values(GOD)].map((T) => [T.id, turnLesson(T, { id: T.id } as Lesson).beats])));
+/* a God lesson in another faith's voice is its own lesson, with its own short words (lessonVoiced) */
+const VOICED = new Map<string, { L: Lesson; beats: LessonBeats }>();
+const VOICE_BEATS = new WeakMap<Lesson, LessonBeats>();
+const bookOf = (L: Lesson): LessonBeats | null => VOICE_BEATS.get(L) || (L.v === 3 && turned()[L.id]) || BOOK[L.id] || null;
+/** a lesson as this person reads it: a God lesson in the voice of their faith (faith.ts faithVoice), any other as it is */
+export function lessonVoiced(L: Lesson, voice: FaithVoice | null): Lesson {
+  const T = GOD[L.id];
+  if (!T || !voice || voice === 'lds' || !T.vo || !T.vo[voice]) return L;
+  const k = L.id + ':' + voice;
+  let v = VOICED.get(k);
+  if (!v) {
+    v = turnLesson(turnIn(T, voice), L);
+    VOICED.set(k, v);
+    VOICE_BEATS.set(v.L, v.beats);
+  }
+  return v.L;
+}
 export const lessonBeats = (L: Lesson): LessonBeats | null => bookOf(L);
 /** a card's beat, when it has one */
 export const cardBeat = (L: Lesson, ci: number): Beat => bookOf(L)?.cards[ci] || {};

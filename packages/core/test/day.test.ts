@@ -50,7 +50,8 @@ describe.each(logs)('$name', (fx) => {
       const done = core.lessonsDone(days);
       const nx = core.firstUndone(done);
       const stats = core.lessonStats(days);
-      core.LESSONS.forEach((L, i) => {
+      /* the recorded lessons only: the God lessons came later (lesson-turns.ts GOD) */
+      core.LESSONS.slice(0, e.day.lessons.length).forEach((L, i) => {
         [false, true].forEach((full, j) => {
           const r = core.lessonRow(L, done, nx && nx.id, st, stats, tk, full);
           const more = r.more ? 'The one thing to keep' + r.more.key + (r.more.note ? r.more.np + r.more.note : '') : '';

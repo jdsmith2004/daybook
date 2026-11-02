@@ -310,11 +310,20 @@ describe('checkpoints follow the path', () => {
 describe('the faith lessons follow the setup answer', () => {
   const path = core.lessonPath();
   const ans = (faith?: string) => core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: faith ? { faith } : {}, hist: [] } });
-  const faithL = core.LESSONS.filter((L) => L.f);
-  it('Yes, Somewhat and a skipped answer change nothing', () => {
-    for (const st of [ans('big'), ans('some'), ans(), core.normSettings(core.defaultSettings('2026-10-01'))]) {
+  const faithL = path.filter((L) => L.f);
+  it('a skipped answer changes nothing', () => {
+    for (const st of [ans(), core.normSettings(core.defaultSettings('2026-10-01'))]) {
       expect(core.faithOut(st)).toBe(false);
+      expect(core.godOn(st)).toBe(false);
       expect(core.lessonPathFor(st)).toBe(path);
+    }
+  });
+  it('Yes and Somewhat end each step in its God lesson, and keep the rest in order', () => {
+    for (const st of [ans('big'), ans('some')]) {
+      const mine = core.lessonPathFor(st);
+      expect(mine.filter((L) => !core.isGod(L))).toEqual(path);
+      expect(core.lessonSections(st).map((x) => x.lessons[x.lessons.length - 1].id)).toEqual(core.PATH_STEPS.map((s) => s.god));
+      expect(core.lessonNo(core.lessonById('g1')!, st)).toBe(5);
     }
   });
   it('No leaves them out, keeps the order, and numbers the path without them', () => {
@@ -348,6 +357,9 @@ describe('the faith lessons follow the setup answer', () => {
     /* finishing it does not make the path stop anywhere */
     expect(core.lessonsEarly(days, st).size).toBe(0);
   });
+  it('a re-read is never a God lesson for someone who did not choose them', () => {
+    for (let i = 0; i < 61; i++) expect(core.isGod(core.reviewPick(core.addDays('2026-10-01', i), ans()))).toBe(false);
+  });
   it('a re-read for a person who said No is never a faith lesson', () => {
     const st = ans('no');
     for (let i = 0; i < 60; i++) expect(core.reviewPick(core.addDays('2026-10-01', i), st).f).toBeFalsy();
@@ -360,4 +372,63 @@ describe('the faith lessons follow the setup answer', () => {
       .map((n) => core.lcheckNo(n, st));
     expect(nums).toEqual(nums.map((_, i) => i + 1));
   });
+});
+
+describe('the God lessons on the path (November 2, 2026)', () => {
+  const st = core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: { faith: 'big', creed: 'lds' }, hist: [] } });
+  const fin = (...ids: string[]) => ({ '2026-10-02': { p: { ls: ids } } }) as unknown as core.Days;
+  it('a new person meets each one in its place', () => {
+    const w = core.lessonWalk(fin('l1', 'l2', 'l3', 'l22'), st);
+    expect(w.next!.id).toBe('g1');
+    expect(core.lessonGate(core.lessonById('g1')!, w)).toBe('open');
+    expect(core.lessonGate(core.lessonById('g2')!, w)).toBe('key');
+  });
+  it('someone already further on is not sent back: the ones behind them open in full and wait to be read', () => {
+    const w = core.lessonWalk(fin('l1', 'l2', 'l3', 'l22', 'l33', 'l34', 'l20', 'l46', 'l10'), st);
+    expect(w.next!.id).toBe('l9');
+    expect([...w.passed]).toEqual(['g2', 'g1']);
+    expect(core.lessonGate(core.lessonById('g1')!, w)).toBe('open');
+    expect(core.lessonGate(core.lessonById('g3')!, w)).toBe('key');
+    expect(core.lessonCount(w)).toEqual({ done: 9, of: 61 - 2 });
+    const w2 = core.lessonWalk(fin('l1', 'l2', 'l3', 'l22', 'l33', 'l34', 'l20', 'l46', 'l10', 'g1'), st);
+    expect(w2.passed.has('g1')).toBe(false);
+    expect(core.lessonCount(w2)).toEqual({ done: 10, of: 59 });
+    expect(core.walkOf(w.done, st).next!.id).toBe('l9');
+  });
+  it('the step deed comes after the God lesson for those who read it, and after the step for everyone else', () => {
+    expect(core.deedAfter(core.lessonById('g1')!, st)).toBe(0);
+    expect(core.deedAfter(core.lessonById('l22')!, st)).toBe(-1);
+    expect(core.deedAfter(core.lessonById('l22')!, null)).toBe(0);
+  });
+  it('speak in the voice of the person’s faith', () => {
+    const g7 = core.lessonById('g7')!;
+    const close = (L: core.Lesson) => L.cards.find((c) => c.e === 'close')!.h;
+    expect(core.lessonVoiced(g7, 'lds')).toBe(g7);
+    expect(close(core.lessonVoiced(g7, 'plain'))).toMatch(/^God, /);
+    expect(core.lessonVoiced(g7, 'christian').cards.find((c) => c.k === 'flip')!.see).toMatch(/new every morning/);
+    expect(core.lessonVoiced(g7, 'plain')).toBe(core.lessonVoiced(g7, 'plain'));
+    const V = core.lessonVoiced(g7, 'plain');
+    expect(core.lessonBeats(V)!.cards.length).toBe(V.cards.length);
+    expect(core.lessonVoiced(core.lessonById('l1')!, 'plain')).toBe(core.lessonById('l1'));
+  });
+  it('a finished one is kept in the record, and is never taken off by an older app', () => {
+    const had = core.normDay(fin('l1', 'g1')['2026-10-02'], '2026-10-02');
+    expect(core.lessonsDone({ '2026-10-02': had }).has('g1')).toBe(true);
+    const older = { ...had, p: { ...had.p!, ls: ['l1'] } } as core.Day;
+    expect(core.keepNewer(older, had).p!.ls).toEqual(['l1', 'g1']);
+    expect(core.keepNewer({ ...had, p: null } as unknown as core.Day, had).p!.ls).toEqual(['l1', 'g1']);
+  });
+});
+
+it('a God lesson in another voice sits on the path where its own does', () => {
+  const st = core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: { faith: 'some', creed: 'other' }, hist: [] } });
+  const g1 = core.lessonById('g1')!;
+  const V = core.lessonVoiced(g1, core.faithVoice(st));
+  expect(V).not.toBe(g1);
+  const w = core.lessonWalk({ '2026-10-02': { p: { ls: ['l1', 'l2', 'l3', 'l22'] } } } as unknown as core.Days, st);
+  expect(core.lessonNo(V, st)).toBe(5);
+  expect(core.lessonGate(V, w)).toBe('open');
+  expect(core.nextAfter(V, w)!.id).toBe('l33');
+  expect(core.deedAfter(V, st)).toBe(0);
+  expect(core.lessonOpen(V, new Set(), false)).toBe(true);
 });

@@ -9,7 +9,7 @@ const turned = core.LESSONS.filter((L) => L.v === 3);
 
 describe('turned lessons', () => {
   it('replace the old lesson in place: same id, same section, same place', () => {
-    expect(turned.length).toBe(Object.keys(core.TURNS).length);
+    expect(turned.length).toBe(Object.keys(core.TURNS).length + Object.keys(core.GOD).length);
     Object.keys(core.TURNS).forEach((id) => {
       const L = core.lessonById(id)!;
       expect(L.v, id).toBe(3);
@@ -25,7 +25,8 @@ describe('turned lessons', () => {
     });
   });
   it('a card that builds on an earlier lesson names one already behind it on the path', () => {
-    const path = core.lessonPath();
+    /* the path with the God lessons on it, which holds every other lesson in the same order */
+    const path = core.lessonPathFor(core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: { faith: 'big' }, hist: [] } }));
     turned.forEach((L) =>
       L.cards.forEach((c) => {
         if (!c.back) return;

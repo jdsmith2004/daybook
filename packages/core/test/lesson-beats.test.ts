@@ -48,7 +48,8 @@ describe('lesson beats', () => {
           long(x.rv!.h, MAX.rvH);
           long(x.rv!.p, MAX.p);
         } else {
-          long(x.h, look === 'number' ? MAX.rvH : MAX.head);
+          /* a God lesson's closing prayer is said, not scanned, and may run longer (lesson-turns.ts close) */
+          long(x.h, look === 'number' ? MAX.rvH : card.e === 'close' ? MAX.p : MAX.head);
           long(x.say, MAX.say);
           long(x.p, MAX.p);
           (x.l || []).forEach((w) => long(w, MAX.line));

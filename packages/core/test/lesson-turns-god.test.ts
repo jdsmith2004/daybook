@@ -50,9 +50,9 @@ function words(T: Turn): [string, number][] {
 }
 
 describe('God lessons', () => {
-  it('are twelve, one for each step, and not on the path yet', () => {
-    expect(ids).toEqual(Array.from({ length: 12 }, (_, i) => 'g' + (i + 1)));
-    ids.forEach((id) => expect(core.lessonById(id), id).toBeFalsy());
+  it('are twelve, one for each step', () => {
+    expect(ids).toEqual(core.PATH_STEPS.map((s) => s.god));
+    ids.forEach((id) => expect(core.lessonById(id)?.v, id).toBe(3));
   });
   VOICES.forEach((v) =>
     describe('in the ' + v + ' voice', () => {

@@ -108,6 +108,9 @@ export interface Unit {
 /* ---------- which, and in what order ---------- */
 export const lessonById = (id: string | null | undefined) => LESSONS.find((l) => l.id === id) || null;
 export const lessonIndex = (L: Lesson) => LESSONS.indexOf(L);
+/** the lesson as it sits in LESSONS: a God lesson read in another voice (lesson-beats.ts lessonVoiced) is its own object, and
+    the path finds a lesson by the one in LESSONS */
+const own = (L: Lesson): Lesson => lessonById(L.id) || L;
 
 /** lessons finished, by id (from each day's p.ls) */
 export function lessonsDone(days: Days): Set<string> {
@@ -171,11 +174,29 @@ export function lessonPathsBefore(): Lesson[][] {
 /** the setup's "Does faith play a part?" answered No: the faith lessons leave this person's path (the owner, October 30,
     2026). Yes, Somewhat and a skipped answer change nothing: for them the faith lessons stay first-class on the path. */
 export const faithOut = (st: Settings | null | undefined) => !!(st && st.onb && st.onb.a && st.onb.a.faith === 'no');
+/** Yes or Somewhat to "Does faith play a part?": each step ends in its God lesson (steps.ts god; the owner, November 2, 2026).
+    A skipped answer, or one given before the question, does not: God comes in by the person's own choice, in Settings too. */
+export const godOn = (st: Settings | null | undefined) => {
+  const f = st && st.onb && st.onb.a && st.onb.a.faith;
+  return f === 'big' || f === 'some';
+};
+/** a God lesson (g1 to g12) */
+export const isGod = (L: Lesson) => /^g\d+$/.test(L.id);
 let NO_FAITH: { from: Lesson[]; list: Lesson[] } | null = null;
-/** this person's path: lessonPath, in its order, without the faith lessons when they answered No. A lesson off the path
-    keeps its id, opens in full from Learn (lessonGate), and stays finished and counted (lessonCount). */
+let WITH_GOD: { from: Lesson[]; list: Lesson[] } | null = null;
+/** this person's path: lessonPath, in its order, without the faith lessons when they answered No, and with each step's God
+    lesson last in it when they answered Yes or Somewhat. A lesson off the path keeps its id, opens in full from Learn
+    (lessonGate), and stays finished and counted (lessonCount). */
 export function lessonPathFor(st: Settings | null | undefined): Lesson[] {
   const path = lessonPath();
+  if (godOn(st)) {
+    if (!WITH_GOD || WITH_GOD.from !== path)
+      WITH_GOD = {
+        from: path,
+        list: PATH_STEPS.flatMap((s) => [...s.ids, s.god].map((id) => lessonById(id)).filter((L): L is Lesson => !!L)),
+      };
+    return WITH_GOD.list;
+  }
   if (!faithOut(st)) return path;
   if (!NO_FAITH || NO_FAITH.from !== path) NO_FAITH = { from: path, list: path.filter((L) => !L.f) };
   return NO_FAITH.list;
@@ -195,7 +216,7 @@ export const sectionsOf = (path: Lesson[]) => {
 export const lessonSections = (st?: Settings | null) => sectionsOf(lessonPathFor(st));
 /** the number a person sees for a lesson: its place on the path (so Up next after lesson 2 is lesson 3). lessonIndex
     stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
-export const lessonNo = (L: Lesson, st?: Settings | null) => lessonPathFor(st).indexOf(L) + 1;
+export const lessonNo = (L: Lesson, st?: Settings | null) => lessonPathFor(st).indexOf(own(L)) + 1;
 /** the first lesson on the path not finished. Up next is lessonWalk().next, which also stops at a lesson read early. */
 export const firstUndone = (done: Set<string>, st?: Settings | null) => lessonPathFor(st).find((l) => !done.has(l.id)) || null;
 
@@ -215,10 +236,11 @@ export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
   const path = lessonPathFor(st);
   const fin = new Set<string>();
   const early = new Set<string>();
-  /** every lesson before it on this path was finished */
+  /** every lesson before it on this path was finished. A God lesson is not waited for here: it came later, or is passed by
+      (godPassed), so finishing past one is never early. */
   const reached = (p: Lesson[], L: Lesson) => {
     const i = p.indexOf(L);
-    return i >= 0 && p.slice(0, i).every((x) => fin.has(x.id));
+    return i >= 0 && p.slice(0, i).every((x) => fin.has(x.id) || isGod(x));
   };
   lessonsInOrder(days).forEach(({ L }) => {
     /* a lesson off this person's path is never waited for, so it is never early */
@@ -233,7 +255,7 @@ const stepEnds = (st: Settings | null | undefined) =>
   sectionsOf(lessonPathFor(st)).map((x) => ({ k: x.u, first: x.lessons[0], last: x.lessons[x.lessons.length - 1] }));
 /** the step whose deed comes at the end of this lesson (its last lesson on this person's path), or -1 */
 export function deedAfter(L: Lesson, st: Settings | null | undefined): number {
-  const e = stepEnds(st).find((x) => x.last === L);
+  const e = stepEnds(st).find((x) => x.last === own(L));
   return e ? e.k : -1;
 }
 /** what a step's deed asks, in this person's words: no God for someone who said No to faith */
@@ -256,7 +278,7 @@ export function deedSet(st: Settings, k: number, a: 'did' | 'later', tk: DayKey,
     day of a slip or the day after. -1 when there is nothing to ask. */
 export function deedAskBack(L: Lesson, days: Days, st: Settings, tk: DayKey): number {
   const ends = stepEnds(st);
-  const i = ends.findIndex((x) => x.first === L);
+  const i = ends.findIndex((x) => x.first === own(L));
   if (i < 1) return -1;
   const prev = ends[i - 1];
   const done = lessonsDone(days);
@@ -295,25 +317,41 @@ export interface LessonWalk {
   back: boolean;
   /** this person's path (lessonPathFor) */
   path: Lesson[];
+  /** God lessons not finished in a part of the path already walked past (they came after the person was further on, or
+      faith was turned on later): they never hold the path back, open in full, and count once finished */
+  passed: Set<string>;
 }
 const stopsAt = (L: Lesson, done: Set<string>, early: Set<string>, reached: Set<string>) => !done.has(L.id) || (early.has(L.id) && !reached.has(L.id));
+/** the God lessons a person has walked past: unfinished, with a lesson after them on the path already finished */
+function godPassed(path: Lesson[], done: Set<string>): Set<string> {
+  const out = new Set<string>();
+  let later = false;
+  for (let i = path.length - 1; i >= 0; i--) {
+    const L = path[i];
+    if (isGod(L) && !done.has(L.id) && later) out.add(L.id);
+    if (done.has(L.id)) later = true;
+  }
+  return out;
+}
 /** where the person is on the path */
 export function lessonWalk(days: Days, st: Settings | null | undefined): LessonWalk {
   const done = lessonsDone(days);
   const early = lessonsEarly(days, st);
   const reached = lessonsReached(st);
   const path = lessonPathFor(st);
-  const at = path.findIndex((L) => stopsAt(L, done, early, reached));
+  const passed = godPassed(path, done);
+  const at = path.findIndex((L) => !passed.has(L.id) && stopsAt(L, done, early, reached));
   const next = at < 0 ? null : path[at];
-  const walked = new Set(path.filter((L, i) => at < 0 || i < at || (i > at && !stopsAt(L, done, early, reached))).map((L) => L.id));
-  return { done, early, reached, walked, next, back: !!next && done.has(next.id), path };
+  const walked = new Set(path.filter((L, i) => !passed.has(L.id) && (at < 0 || i < at || (i > at && !stopsAt(L, done, early, reached)))).map((L) => L.id));
+  return { done, early, reached, walked, next, back: !!next && done.has(next.id), path, passed };
 }
 /** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */
 export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
-  const next = firstUndone(done, st);
   const path = lessonPathFor(st);
-  const walked = new Set((next ? path.slice(0, path.indexOf(next)) : path).map((L) => L.id));
-  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path };
+  const passed = godPassed(path, done);
+  const next = path.find((L) => !passed.has(L.id) && !done.has(L.id)) || null;
+  const walked = new Set((next ? path.slice(0, path.indexOf(next)) : path).filter((L) => !passed.has(L.id)).map((L) => L.id));
+  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed };
 }
 /** "N of M done": the path, plus any lesson finished off it, which stays counted (a faith lesson read from Learn) */
 export function lessonCount(w: LessonWalk): { done: number; of: number } {
@@ -324,18 +362,20 @@ export function lessonCount(w: LessonWalk): { done: number; of: number } {
     ('back'); else as its key idea, until the path reaches it ('key'). The account rule (accounts.ts lessonOpen) sits on
     top of 'open'. */
 export type LessonGate = 'open' | 'back' | 'key';
-export function lessonGate(L: Lesson, w: LessonWalk): LessonGate {
+export function lessonGate(L0: Lesson, w: LessonWalk): LessonGate {
+  const L = own(L0);
   /* off this person's path: nothing to wait for, it opens from Learn when they choose it */
   if (w.path.indexOf(L) < 0) return 'open';
-  if (w.walked.has(L.id)) return 'open';
+  if (w.walked.has(L.id) || w.passed.has(L.id)) return 'open';
   if (w.next === L) return w.back ? 'back' : 'open';
   return 'key';
 }
 /** what comes after this lesson: Up next, counting this one as reached. The same Up next as Today and the map. */
-export function nextAfter(L: Lesson, w: LessonWalk): Lesson | null {
+export function nextAfter(L0: Lesson, w: LessonWalk): Lesson | null {
+  const L = own(L0);
   if (w.next !== L) return w.next;
   const path = w.path;
-  return path.slice(path.indexOf(L) + 1).find((x) => stopsAt(x, w.done, w.early, w.reached)) || null;
+  return path.slice(path.indexOf(L) + 1).find((x) => !w.passed.has(x.id) && stopsAt(x, w.done, w.early, w.reached)) || null;
 }
 /** "Keep going" on a welcome back: the path moves past a lesson read early. A plain marker in the settings: no points,
     no lesson day, nothing counted twice. */
@@ -415,7 +455,7 @@ export function lessonTimeline(days: Days, st: Settings | null = null) {
 }
 /** once every lesson is finished, the day's lesson is a quick re-read, one a day in turn */
 export const reviewPick = (tk: DayKey, st?: Settings | null) => {
-  const list = faithOut(st) ? LESSONS.filter((L) => !L.f) : LESSONS;
+  const list = LESSONS.filter((L: Lesson) => !(faithOut(st) && L.f) && !(isGod(L) && !godOn(st)));
   return list[Math.abs(diffDays(tk, '2026-01-01')) % list.length];
 };
 
@@ -623,11 +663,13 @@ export function srcNote(L: Lesson): string {
     'Checked ' +
     (L.chk || 'October 12, 2026') +
     '. ' +
-    (L.f
-      ? 'These summarize studies and well-known recovery programs, kept to what each source says. They are not religious teaching, and Daybook does not speak for any church or group.'
-      : L.u === 6
-        ? 'These summarize published studies and program materials, kept to what each source says.'
-        : 'These are summaries of studies, kept to what each one found.') +
+    (isGod(L)
+      ? 'Each source is kept to what it says, and scripture is named by its book, chapter and verse.'
+      : L.f
+        ? 'These summarize studies and well-known recovery programs, kept to what each source says. They are not religious teaching, and Daybook does not speak for any church or group.'
+        : L.u === 6
+          ? 'These summarize published studies and program materials, kept to what each source says.'
+          : 'These are summaries of studies, kept to what each one found.') +
     ' Daybook is a self-tracking tool, not medical care.'
   );
 }

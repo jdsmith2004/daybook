@@ -323,6 +323,129 @@ export const PRACTICE: Record<string, PStep> = {
     ok: 'You started again.',
   },
 
+  /* ---------- The God lessons (lesson-turns.ts GOD): said to God, in words every voice shares ---------- */
+  g1: {
+    h: 'Say where you are.',
+    p: 'Write the one honest sentence you will say tonight, with no cleaning up. Tap an example to start from it.',
+    mins: 1,
+    write: [
+      'I am hiding this, and I am tired of hiding.',
+      'I am half in the light. One person knows a little.',
+      'I do not know where I am yet, and I want to.',
+    ],
+    items: [line('words', 'God, here is where I am. Help me take one step toward you.')],
+    ok: 'You said where you are.',
+  },
+  g2: {
+    h: 'Bring the weak place, by name.',
+    p: 'Add a line that sends the weak moment to God and to your plan, instead of to more willpower.',
+    mins: 1,
+    items: [
+      plan('I feel too weak to fight this', 'Tell God plainly, “This is my weakness,” then do one thing on my plan.'),
+      line('words', 'God, here is my weakness. Help me lean on you tonight.'),
+    ],
+    ok: 'Your weak place has somewhere to go.',
+  },
+  g3: {
+    h: 'Find tonight’s early door.',
+    p: 'The way out is easiest an hour before your hardest time. Add the door you will walk through.',
+    mins: 1,
+    items: [
+      plan('it is an hour before my hardest time', 'Put my phone in the kitchen and go to bed. That is my way out tonight.'),
+      line('words', 'God, show me the way out tonight, and help me walk through it early.'),
+    ],
+    go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],
+    ok: 'Your early door is ready.',
+  },
+  g4: {
+    h: 'Say the decision.',
+    p: 'Decide with the heart you have. Keep the sentence where you will see it.',
+    mins: 1,
+    items: [line('be', 'I have decided. My heart is still coming.'), line('words', 'God, I have decided. Change my heart, a little more each day.')],
+    ok: 'You decided.',
+  },
+  g5: {
+    h: 'Ask to be shown one thing.',
+    p: 'Read one hard night from your log, then write one thing you see and one next step.',
+    mins: 3,
+    write: [
+      'It starts when I stay up alone after everyone is asleep. Next time I go to bed when they do.',
+      'Most of my hard nights come after a hard day at work. Next time I call someone on the drive home.',
+    ],
+    items: [line('words', 'God, show me what I need to see. Then lead me one step on.')],
+    ok: 'You looked, and found a step.',
+  },
+  g6: {
+    h: 'Tell one person one sentence.',
+    p: 'Not the whole story. One true sentence, to someone safe. Copy this to start, or write your own.',
+    mins: 2,
+    items: [
+      copy(
+        'To a friend or a faith leader',
+        'I have been struggling with something, and I do not want to carry it alone. Could we talk this week, and would you pray for me?',
+      ),
+    ],
+    go: [scene('Reach a person', 'message', 'chat')],
+    ok: 'Your sentence is ready to send.',
+  },
+  g7: {
+    h: 'Write your first words back.',
+    p: 'The first hour after a slip is when “I already ruined it” is loudest. Put your first words on your slip plan now.',
+    mins: 1,
+    items: [line('slip', 'Within the first hour, pray: “God, I slipped. I am turning back now.”')],
+    write: ['God, I slipped. I am turning back now.', 'I am coming back, as I am. Help me with the next hour.'],
+    ok: 'Your way back is written.',
+  },
+  g8: {
+    h: 'Have your words for the pull.',
+    p: 'Being tempted is not falling. Add the line for the moment the pull comes while you pray.',
+    mins: 1,
+    items: [
+      plan('a strong pull comes while I pray', 'Say “Tempted is not fallen,” keep praying, and ride it like a wave.'),
+      line('words', 'God, this pull is strong. Stay with me through this hour.'),
+    ],
+    go: [scene('Practice breathing', 'breathe', 'wind')],
+    ok: 'The next pull has an answer.',
+  },
+  g9: {
+    h: 'Feed the empty hour.',
+    p: 'Add a line for the hour you feel empty, so the hunger gets real food.',
+    mins: 1,
+    items: [
+      plan('I feel empty late at night', 'Name the hunger, ask God what would feed it, and do the first good thing.'),
+      line('menu', 'Read slowly until one line speaks to me, then do it'),
+    ],
+    ok: 'Your empty hour has a feast in it.',
+  },
+  g10: {
+    h: 'Choose one repair.',
+    p: 'One person, one true thing, and nothing asked back. Leave out any repair that would hurt them.',
+    mins: 2,
+    write: ['A friend I lied to, to cover the habit. I will own the lie and say sorry.', 'My family, for the evenings I was not really there.'],
+    go: [scene('Reach a person', 'message', 'chat')],
+    ok: 'You chose your repair.',
+  },
+  g11: {
+    h: 'Keep it small and daily.',
+    p: 'A few honest minutes, morning and night. Add them to your wind-down so they have a place.',
+    mins: 1,
+    items: [line('wind', 'A short prayer and a few honest lines before bed'), line('words', 'God, I will come to you again tomorrow, in a small way.')],
+    ok: 'Your small daily practice has a place.',
+  },
+  g12: {
+    h: 'Pass the comfort on.',
+    p: 'Think of one person carrying something heavy. You do not have to tell your whole story. Copy this to start.',
+    mins: 2,
+    items: [
+      copy(
+        'To someone who is struggling',
+        'I have been through something hard too. You are not alone in this, and it can get better. I am here if you want to talk.',
+      ),
+    ],
+    go: [scene('Reach a person', 'message', 'chat')],
+    ok: 'You passed it on.',
+  },
+
   /* ---------- Skills for the moment ---------- */
   l13: {
     h: 'Name it to tame it.',

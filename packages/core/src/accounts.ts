@@ -7,7 +7,7 @@
    with a slip, or the day after). "Not now" waits ACCT_WAIT days. Checked by test/accounts.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, diffDays, eventsOf, isKey } from './legacy/core.js';
-import { lessonPath, type Lesson } from './lessons';
+import { isGod, lessonPath, lessonStep, type Lesson } from './lessons';
 import { SUPPORT_MIN } from './supporter';
 import type { DayKey, Days, Settings } from './types';
 
@@ -22,9 +22,10 @@ export const ACCT_LEVEL = 6;
 /** the lessons open without an account */
 export const freeLessons = (): Lesson[] => lessonPath().slice(0, LEARN_FREE);
 
-/** whether a lesson can be read. `account` is true when signed in, or when this copy of Daybook has no accounts at all. */
+/** whether a lesson can be read. The God lesson of a step whose lessons are open without an account is open too, so a free
+    step is free whole. `account` is true when signed in, or when this copy of Daybook has no accounts at all. */
 export function lessonOpen(L: Lesson, done: Set<string>, account: boolean): boolean {
-  return account || done.has(L.id) || freeLessons().indexOf(L) >= 0;
+  return account || done.has(L.id) || freeLessons().some((x) => x.id === L.id) || (isGod(L) && lessonStep(L) <= lessonStep(freeLessons()[LEARN_FREE - 1]));
 }
 
 /** how many lessons are waiting behind an account */

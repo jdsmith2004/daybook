@@ -269,12 +269,78 @@ The Bible-only version names Hebrews 4:15 instead of Alma.
 Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` says for a rebuild.
 
 1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
-2. **Medium. Approach approved by the owner (November 2, 2026); next to build.** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6.
+2. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6. As built: 87 questions on the 45 lessons outside the faith lessons (core `lesson-questions.ts`), 56 open and 31 with one best answer; an open pick is outlined, never marked right; a rewritten question waits for an answer. Written by four agents in parallel from one brief, then read and corrected. The old review words (`rc`) are still in the lesson data, unused.
 3. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`. As built: the steps live in core `steps.ts` (their lessons, deed, words and picture); the first eight are l1, l2, l3, l22, l33, l34, l20, l46; change the setting is lesson 9 and the if-then plan lesson 10; the four faith lessons sit inside steps 3, 6, 7 and 8, never last, so a step ends the same for everyone; the path has 47 lessons. Both past orders still count, tested from every point along each. Checkpoints keep their pairs and writing; several pairs now sit in different steps, so one is due once both its lessons are reached. Two new pictures: a door shut for the night (step 3) and one candle lighting another (step 12). The golden fixtures changed by hand in one way: the lesson numbers and 49 to 47.
 4. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip. As built: `settings.learn.did`, `later` and `asked` by step id; a deed is worth 30 points (a lesson is 10), counted in the total like quests, so it never moves; sync keeps the earlier day. The deed shows after the last lesson of a step (after Put it to work, or in its place), on two paper answers; the signpost on the map says "Step 3 · You did it". The ask back opens before the next step's first lesson, never on the day of a slip or the day after. Rereading a step's last lesson offers the deed again, which is how someone who said Not yet twice can still record it.
-5. **Medium.** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone.
-6. **Medium.** Rewrite the four faith lessons in God's voice and write the twelve God lessons from Latter-day Saint beliefs, with their beats, their prayers and the lines marked for each answer: the Book of Mormon, Doctrine and Covenants, the bishop, the sacrament and the Church's meetings for Latter-day Saints only; Bible verses for other Christians; no Scripture for another faith. Each verse is checked against the text. Before they ship: a lawyer's read on the Book of Mormon and Doctrine and Covenants text, or the Church's permission. These need the owner's eye more than anything else here, and the owner knows this faith better than any source.
+5. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone. As built: core `faith.ts` (the voice: lds, christian, plain), the setup page "Which faith is yours?" after a Yes or a Somewhat, a Settings section, Faith in the lessons, and the privacy page. The closing line and the Learn note wait for step 6.
+6. **Medium. Two lessons drafted for the owner to read (below); not built.** Rewrite the four faith lessons in God's voice and write the twelve God lessons from Latter-day Saint beliefs, with their beats, their prayers and the lines marked for each answer: the Book of Mormon, Doctrine and Covenants, the bishop, the sacrament and the Church's meetings for Latter-day Saints only; Bible verses for other Christians; no Scripture for another faith. Each verse is checked against the text. Before they ship: a lawyer's read on the Book of Mormon and Doctrine and Covenants text, or the Church's permission. These need the owner's eye more than anything else here, and the owner knows this faith better than any source. The voice is the part that most needs the owner, so two are drafted first; the other ten, the four rewrites and the code that shows each voice follow once the owner says the voice is right.
 7. **Medium.** Write the new lessons, a step at a time, each with its beats and its act, and rework the weakest ones (l8, l12, l21, l25, l35, l40, l46). `docs/lessons-research/` has what each can stand on.
+
+### Two God lessons, drafted for the owner to read first (November 2, 2026)
+
+Before all twelve are built into the app, these two show the voice. Each is written in the Latter-day Saint voice; lines in
+_[Bible-only: ...]_ are what another Christian sees instead, and _[Plain: ...]_ is what someone of another faith sees. Scripture
+is quoted in short verses only, from the King James Bible and the Book of Mormon (each verse to be checked against the text
+before it ships). Church teaching is put in Daybook's own words and named, never quoted. The questions follow the approved
+rules: no right answer where it is about the person.
+
+#### Step 1, Tell the truth: Come as you are
+
+1. **Sound familiar?** You have prayed about this so many times that you feel ashamed to bring it up again.
+2. **A question.** When you think of praying about this tonight, what do you expect?
+   - _That He is tired of hearing it._ That is shame talking. He has never once been tired of you.
+   - _That I have to clean up first._ Then you would never come. He asks you to come as you are, now.
+   - _Some relief, honestly._ Hold on to that. It is closer to the truth than the fear is.
+   - _I do not know yet._ That is fair. You can find out tonight, in one plain sentence.
+3. **The answer.** Heavenly Father already knows all of it, and He is not keeping a count against you. You are His child, before
+   this and after it. _[Bible-only: God already knows all of it ... You are His child.]_ _[Plain: God already knows all of it,
+   and does not turn away.]_
+4. **Scripture.** "O Lord, thou hast searched me, and known me ... thou understandest my thought afar off." (Psalm 139:1-2) He
+   knew this before you said a word. Telling Him is not news to Him. It is how you stop carrying it alone.
+   _[Plain: Many faiths teach that God knows a person fully. Telling the truth is how you stop carrying it alone.]_
+5. **What the Church teaches.** The Church's own guidance on pornography draws a line between guilt and shame. Guilt says "I did
+   something wrong," and it can lead you home. Shame says "I am bad," and it makes you hide. Your divine identity does not change
+   with what you did last night. _[Bible-only: The son who came home (Luke 15:20): "when he was yet a great way off, his father
+   saw him, and had compassion." He ran to him before a word was said.]_ _[Plain: Guilt says "I did something wrong" and can lead
+   you back. Shame says "I am bad" and makes you hide. The first is worth listening to. The second is not true.]_
+6. **What to do.** Tonight, pray plainly. Tell Him exactly what happened, with no cleaning up. Then do one small thing.
+7. **Check it.** You slipped an hour ago. Which prayer sounds most like you?
+   - _"I am sorry. I will never do it again."_ Sincere, and a promise that big is heavy to carry. Tonight, just tell Him the truth.
+   - _"Here I am. Help me with the next hour."_ Honest and small. That is a prayer you can say again tomorrow.
+   - _Nothing. I feel too far away._ That feeling is real, and it is not where He is. One sentence is enough.
+8. **Put it to work.** Write one honest sentence you could say to Him tonight. It stays on your phone.
+9. **The closing line.** "Father, here I am, as I am. Help me take the next small step." _[Plain: "God, here I am, as I am. Help
+   me take the next small step."]_
+
+#### Step 7, Get up faster: As often as they repented
+
+1. **Sound familiar?** You slipped again, the same week you had prayed for help. It feels like you have used up your chances.
+2. **A question.** After a slip, how long does it usually take you to turn back to God?
+   - _Right away, the same night._ That is a strength. Keep it plain: tell Him, and do the next small thing.
+   - _A few days, once I feel worthy._ Waiting to feel worthy keeps you away when you need Him most.
+   - _Until I have a clean streak again._ Then the count decides when you may come. It was never meant to.
+   - _I do not know yet._ That is fair. Notice it after the next hard night.
+3. **The answer.** There is no limit on coming back. Repentance is turning toward Christ again, as many times as it takes, and the
+   Atonement of Jesus Christ is there each time. _[Bible-only: There is no limit on coming back. His mercy is new each time you
+   turn.]_ _[Plain: There is no limit on coming back to God.]_
+4. **Scripture.** "As oft as they repented and sought forgiveness, with real intent, they were forgiven." (Moroni 6:8) And: "He
+   who has repented of his sins, the same is forgiven, and I, the Lord, remember them no more." (Doctrine and Covenants 58:42)
+   _[Bible-only: "His compassions fail not. They are new every morning." (Lamentations 3:22-23)]_ _[Plain: Many faiths teach that
+   mercy is new each morning.]_
+5. **What the Church teaches.** The Church's own guidance says to measure your progress by how consistently you turn to Christ,
+   not by a count of days in a row. Each Sunday, the sacrament is a time to renew your covenants and begin again.
+   _[Bible-only: What counts is turning back, and turning back again.]_ _[Plain: What counts is turning back, and turning back
+   again.]_
+6. **What to do.** In the first hour after a slip: pray one sentence, log it honestly, and do the next small thing from your plan.
+   If it is a pattern, talk with your bishop; he is there to help you, not to punish you. _[Bible-only and Plain: If it is a
+   pattern, talk with someone you trust.]_
+7. **Check it.** It is Saturday night, and you slipped. Tomorrow is Sunday. What do you do?
+   - _Stay home tomorrow. I am not worthy._ It feels honest, and it keeps you from the very help you need.
+   - _Go, and keep my head down._ Going is the turn. You do not have to feel ready to be there.
+   - _Go, and talk with my bishop soon._ The strongest of the three, if it has become a pattern. One hard talk, and help.
+8. **Put it to work.** Write your first hour after a slip, with the one sentence you will pray first.
+9. **The closing line.** "Father, I am turning back again. Thank you that the way is open." _[Plain: "God, I am turning back
+   again. Thank you that the way is open."]_
 
 ### Not verified
 

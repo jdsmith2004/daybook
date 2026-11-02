@@ -134,7 +134,7 @@ Seen in the code or the pictures as well, and fixed: after midnight the note sai
 
 **Choices made on the owner's behalf, to look at:** the hour's limit between "back to now" and "the last time it said that"; "Yesterday" at 1 AM for 11:40 PM (true by the calendar, even though Today is still on that log day); keeping quick picks at all (one tap under stress is worth the row); and a hand-built wheel over Apple's own (`@expo/ui` has one, but Android and the web would still need this one, and it would drop the app's type).
 
-**Checked:** a release build on the iPhone 17 Pro simulator: Already happened, the hold's Change time and the entry sheet; light by day, dark by day and night; an earlier day, a time ahead, and 1:10 AM with the clock shifted. **The short iPhone:** seen at 375 by 667 in the web build; the release build on an iPhone SE still waits for access to that simulator. Pictures: docs/rekindle-review/when-and-plan-before.png, when-after.png, plan-after.png.
+**Checked:** a release build on the iPhone 17 Pro simulator: Already happened, the hold's Change time and the entry sheet; light by day, dark by day and night; an earlier day, a time ahead, and 1:10 AM with the clock shifted. **The short iPhone:** a release build on the iPhone SE simulator (375 by 667): the sheet in light and dark fits with Save at the bottom, a time ahead rolls to yesterday, the saved pill names the day, and Next time keeps the flame big with both choices low. Pictures: docs/rekindle-review/when-and-plan-before.png, when-after.png, plan-after.png, se-when-light.png, se-when-dark.png, se-plan.png.
 
 **Business:** nothing locked and no ask nearby. It earns by keeping people, and a slip is when they leave.
 

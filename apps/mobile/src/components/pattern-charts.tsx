@@ -22,7 +22,7 @@ import { SVG_HIDE, type ShapeKind } from '@/components/shapes';
 import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { shapePath, type AnyShape } from '@/lib/m3-shapes';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
-import { font } from '@/lib/theme';
+import { font, nightInk } from '@/lib/theme';
 
 function useWidth(): [number, (e: { nativeEvent: { layout: { width: number } } }) => void] {
   const [w, setW] = useState(0);
@@ -426,12 +426,16 @@ export function DayFlow({
           {bands.map((x) => (x.top ? null : <Path key={x.step} d={x.rim} stroke="#FFF6DF" strokeOpacity={0.7} strokeWidth={1.5} fill="none" />))}
           <Rect width={w} height={H} fill="url(#flowair)" />
         </Svg>
+        {/* a word low on a band sits in the fade into the night, so it turns light */}
         {bands.map((x) =>
           x.fits ? (
             <Text
               key={x.step}
               numberOfLines={1}
-              style={[s.abs, { left: x.at.x, top: x.at.y - 9, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: '#1C2030' }]}>
+              style={[
+                s.abs,
+                { left: x.at.x, top: x.at.y - 9, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: x.at.y > H * 0.62 ? nightInk.ink : '#1C2030' },
+              ]}>
               {STEP_WORD[x.step]} {by[x.step - 1]}
             </Text>
           ) : null,

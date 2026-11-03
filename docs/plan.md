@@ -4464,3 +4464,9 @@ under it, a key. A tap picks a week, and under it that week is told in full: the
 calendar draws them (a tap opens the day), the four counts, the average ratings, what the week shows, its Sunday review with
 Change, an older review's answers, and the first week's Day 1 choice. Weeks are Monday to Sunday, like the review (core
 `sunView`). Pictures: docs/weeks-redesign/d\*.jpg.
+
+**Round 2 (November 2, 2026):** the owner did not take D and asked for other ideas. In each of these, a tap on a week opens a
+page of its own with everything D shows under the graph, so Weeks itself only has to show the weeks:
+E. Chapters (the flame's sky, then each week as a thin strip of its days, its sentence and the person's own words from its
+review); F. A week per card (one tall card per week, swiped like Pattern); G. Line and list (no-slip days per week as one line,
+then each week as a row with its strip). Pictures: docs/weeks-redesign/e, f, g.

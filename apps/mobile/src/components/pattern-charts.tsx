@@ -343,6 +343,8 @@ export function Hillside({
 /* ---------- how each day felt ---------- */
 const STEP_WORD: Record<DayFeelStep, string> = { 5: 'Great', 4: 'Good', 3: 'Okay', 2: 'Low', 1: 'Rough' };
 const FLOW_FOOT = 28;
+/** room for a band's word and its count */
+const FLOW_WORD = 76;
 /** a thing drawn from left to right when its card is reached */
 function Sweep({ w, h, duration = 1100, children }: { w: number; h: number; duration?: number; children: ReactNode }) {
   const v = useGrow(80, duration);
@@ -399,10 +401,20 @@ export function DayFlow({
       if (most * H < 1) return null;
       const rim = smooth(up);
       const d = rim + smooth(down.slice().reverse()).replace(/^M/, 'L') + 'Z';
-      /* its word sits where the band is widest, if it fits there */
-      const wid = flow.findIndex((p) => p[step - 1] === most);
-      const at = { x: Math.max(16, Math.min(w - 92, X(wid) - 38)), y: ((edge[b][wid] + edge[b + 1][wid]) / 2) * H };
-      return { step, d, rim, top: b === 0, at, fits: most * H >= 26 };
+      /* its word sits where the band stays widest under the whole word, if it fits there: the place is chosen and measured at the same point,
+         so a word never lands on the band next to it */
+      let best = { i: 0, room: -1 };
+      flow.forEach((_, i) => {
+        const left = X(i) - FLOW_WORD / 2;
+        if (left < 16 || left + FLOW_WORD > w - 16) return;
+        let room = Infinity;
+        flow.forEach((p, j) => {
+          if (X(j) >= left && X(j) <= left + FLOW_WORD) room = Math.min(room, p[step - 1]);
+        });
+        if (room > best.room) best = { i, room };
+      });
+      const at = { x: X(best.i) - FLOW_WORD / 2, y: ((edge[b][best.i] + edge[b + 1][best.i]) / 2) * H };
+      return { step, d, rim, top: b === 0, at, fits: best.room * H >= 26 };
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
   return (

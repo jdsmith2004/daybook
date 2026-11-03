@@ -5,9 +5,12 @@
    The curve is like a ball thrown up: it speeds up gently, keeps an even pace through the middle (never a rush), and
    slows the same way into the turn, so the turn at the top and the bottom is soft and quick, never a dead stop. See
    docs/design-standards.md (Breathing). */
+import { breathTouch } from '@daybook/core';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
+
+import { breathTap } from '@/lib/feel';
 
 /** the dependency list Reanimated needs for an animated style on the web (on iOS and Android it reads the closure, and
     warns when given one) */
@@ -95,4 +98,37 @@ export function useBreathSeconds(on = true) {
     return () => cancelAnimationFrame(raf);
   }, [on]);
   return t;
+}
+
+/** the breath by touch (core breath-touch): while on, the phone taps through each breath in and out of `steps`, timed from
+    `start` (the same moment the shape's clock starts from), so a person can follow it with their eyes closed. Each round is
+    planned just before it starts, from the real time, so the taps never drift from the shape. With `until` (seconds), it
+    stops tapping there. */
+export function useBreathTouch(steps: Steps, start: number | null, on = true, until?: number) {
+  useEffect(() => {
+    if (!on || start == null || Platform.OS === 'web') return;
+    const plan = breathTouch(steps);
+    const taps: [number, 0 | 1 | 2][] = [];
+    let at = 0;
+    steps.forEach(([, dur], i) => {
+      for (const [ms, lv] of plan[i]) taps.push([at + ms, lv]);
+      at += dur * 1000;
+    });
+    const round = at;
+    const end = until == null ? Infinity : start + until * 1000;
+    const ids: ReturnType<typeof setTimeout>[] = [];
+    const queue = (k: number) => {
+      const base = start + k * round;
+      const now = Date.now();
+      for (const [ms, lv] of taps) {
+        const due = base + ms;
+        /* a tap already a moment late is dropped, not played out of step */
+        if (due >= end || due < now - 40) continue;
+        ids.push(setTimeout(() => breathTap(lv), Math.max(0, due - now)));
+      }
+      if (base + round < end) ids.push(setTimeout(() => queue(k + 1), Math.max(0, base + round - now - 400)));
+    };
+    queue(Math.max(0, Math.floor((Date.now() - start) / round)));
+    return () => ids.forEach(clearTimeout);
+  }, [steps, start, on, until]);
 }

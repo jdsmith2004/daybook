@@ -1,6 +1,6 @@
 /* Pattern (the tab was called Journal until the journal itself came, October 2026): what happened. Days (the month and every day), Your pattern (one big card at a time, swiped sideways, each
    with a plain answer over its chart: how you are doing, how the days felt, riding it out, what was felt, when it happens, what sets it off, what is different on hard days, what helps),
-   Weeks (the weekly look back). Days and Weeks are ported from the legacy viewJournal, daysBody and weekBody. Without the
+   Weeks (each week as a bar of its days, and the one picked told in full: components/weeks-pane.tsx). Days is ported from the legacy viewJournal and daysBody. Without the
    pattern open, the cards that show a person changing stay open (core supporter.ts, PAT_FREE), and each of the others shows its chart faded, with
    a way into the tip sheet, or once Daybook Pattern is on sale the sheet for that. A card with nothing behind it yet is left out: named feelings
    above all, which many people log only now and then. Nothing here asks to be looked at. */
@@ -38,7 +38,6 @@ import {
   talkEvidence,
   talkNeedWord,
   urWorks,
-  weekOf,
   type DayFeelStep,
   type PatGo,
   type PatRange,
@@ -65,8 +64,7 @@ import { DayLog } from '@/components/day-log';
 import { SundayCard } from '@/components/sunday-card';
 import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
 import { Card, Icon, T } from '@/components/ui';
-import { SundayList } from '@/components/sunday-list';
-import { WeekView } from '@/components/week-view';
+import { WeeksPane } from '@/components/weeks-pane';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -83,13 +81,11 @@ export default function Pattern() {
   }, [params.pane]);
   const { snap, tk } = useStore();
   const st = snap.settings;
-  const [week, setWeek] = useState<number | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   const inset = useSafeAreaInsets();
   const [paneY, setPaneY] = useState(0);
   /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
   if (!st) return null;
-  const cw = Math.max(0, weekOf(tk, st));
   return (
     <Screen title="Pattern" scrollRef={scroll}>
       <Segments
@@ -112,10 +108,7 @@ export default function Pattern() {
               <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
             </>
           ) : (
-            <>
-              <SundayList snap={snap} tk={tk} />
-              <WeekView k={week == null ? cw : week} onNav={setWeek} />
-            </>
+            <WeeksPane />
           )}
         </Appear>
       </View>
@@ -263,7 +256,16 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       chart: (
         <Room>
           {(w, h) => (
-            <DayFlow flow={felt.flow} by={felt.by} first={doing.first} sky={CARD_SKY.felt[1]} w={w} h={h} look={look} label={felt.head + '. ' + felt.line} />
+            <DayFlow
+              flow={felt.flow}
+              by={felt.by}
+              first={felt.flowFrom || doing.first}
+              sky={CARD_SKY.felt[1]}
+              w={w}
+              h={h}
+              look={look}
+              label={felt.head + '. ' + felt.line}
+            />
           )}
         </Room>
       ),

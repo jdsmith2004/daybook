@@ -1,5 +1,38 @@
 # What is planned next
 
+## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
+
+The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic
+would make a moment feel finished. Effort: medium (screens and small rules; nothing touches what a person earned).
+
+**What the research supports.** Slow breathing near six breaths a minute calms the body well (mostly studied with a picture or a
+sound as the pacer). Pacing it by touch is promising but early: the Stanford PIV studies found a pacer with a plain, strong
+breath out helped under stress (a small effect, d = .33), and Apple Watch Breathe guides with taps. No app publishes its exact
+pattern, so the spacing below is our own design. It is offered as a way to breathe with eyes closed, never as a treatment.
+
+**The pattern** (core `breath-touch.ts`). A breath in: a run of taps that come a little closer and a little firmer as the lungs
+fill (calm's 4 seconds: six taps, soft to firm, gaps 770 down to 560 ms). A hold: still. A breath out: one firm tap so the turn
+is plain, then fewer taps, wider apart and softer (calm's 6 seconds: five taps, gaps 950 up to 1,750 ms). The sigh's second
+sip keeps rising. Taps are never closer than 250 ms, and each step ends a third of a second before the next one starts, so it
+never feels like a buzz. `useBreathTouch` (lib/breath) plans each round from the real clock the shape uses, so they stay together.
+
+**Where it plays:** the Breathe tool (every pattern, for its whole time), the SOS sun's three breaths (in place of the one
+tap a breath), and setup's thirty seconds of breathing. Not on the 10-minute pause's beat: that is a wait, often with the phone
+put down, and ten minutes of taps would be a buzz in the pocket.
+
+**The phone's own setting wins.** iOS gives no haptics when System Haptics is off. On Android every buzz now goes through the
+system's haptic feedback (`performAndroidHapticsAsync`) instead of the vibrator, so it stays silent when touch feedback is off
+and feels like the phone's own clicks. Nothing plays on the web. There is no separate switch in the app: the phone's switch is it.
+
+**The rest of the app, mapped.** Almost every moment already has one: lesson answers, a lesson's end, the flame leveling up
+(celebrate), Rekindle's hold, saving a log, the setup picks, the sliders, the day and time wheels, each SOS tool's end. Built:
+a faint tick on the day stepper (Settings, Mode), like a wheel passing a day. Left alone on purpose: What is new (a page to read;
+a buzz on arrival would be noise), navigation, links and sheets opening (Apple's own advice: haptics for results, not for every
+tap).
+
+**Checked:** typecheck, tests (core `breath-touch.test.ts`), and the screens on the iOS simulator. The simulator cannot vibrate,
+so the feel itself (strength, spacing, Android) is checked only in the code until the owner feels it on a phone in TestFlight.
+
 ## Every switch in Change shows on Your day (the owner, November 2, 2026; merged November 2, 2026, after the simulator look)
 
 The owner: "it asks if i want calm move on or off but when i switch it nothing happens", and for the journal: "it should be a toggle
@@ -4435,3 +4468,43 @@ showed the app icon on both sides.
 - **The icon calendar** (`docs/icon-calendar.md`). Duolingo's seasonal and melting icons ship as the app's own icon in
   an update, for everyone (the melting look was tried and dropped). An app switching its own icon shows a pop-up each time, cannot do it while closed, and has
   been turned down in review, so Daybook does it Duolingo's way: `npm run icons -- --look <look>` before an update.
+
+## Weeks, rebuilt from its purpose (November 2, 2026, waits for the owner's pick)
+
+Weeks is for seeing, week after week, that you are changing: hope after a hard week, and nothing all or nothing. Today it is a
+stack of Sunday review cards and one week of four bare numbers. Research (How We Feel's weekly story, Apple's ring history and
+Screen Time's one sentence, Oura and Whoop comparing you to your own range, the fresh start effect, the abstinence violation
+effect) points to: one shape per week that reads before any number, newest first, a hard week drawn as embers and never red,
+and one plain sentence per week. Each week's words come from the Sunday review's own read (`weekRead`, core sunday-read.ts),
+so Weeks and the review always say the same thing. Weeks move to Monday to Sunday, the same weeks as the review.
+
+Three directions, drawn with the real parts on a made-up nine-week log (pictures in docs/weeks-redesign):
+
+- **A. Lit weeks (recommended).** The flame in its sky with the no-slip days kept ("48 days with no slip, in 9 weeks. They stay
+  yours."), one sentence of change since the first week, then every week as a row of seven: a lit flame for a day with no
+  slip, a small ember for a slip day. The week's sentence from `weekRead` under it, and its Sunday review as one line to open.
+- **B. One week, big.** The flame over one week's seven flames, the week's sentence large, its Sunday review, and a strip of
+  every week to pick from.
+- **C. The climb.** Weeks as stops on a path, each a flame sized by its no-slip days. Rejected as drawn: a hard week becomes a
+  small flame, which reads as loss, and the path echoes the lessons map.
+
+Effort: medium (a screen and words; no data changes).
+
+**The owner's word (November 2, 2026):** the little flames did not look good; the graph idea was liked but was hard to read;
+keep all the same information. **Built (D):** a graph of every week, "Days with no slip, each week": one bar per week of seven
+days, mint for no-slip days and amber for slip days (the Days calendar's colors), the count over each bar, the Monday's date
+under it, a key. A tap picks a week, and under it that week is told in full: the review's sentence, its seven days as the
+calendar draws them (a tap opens the day), the four counts, the average ratings, what the week shows, its Sunday review with
+Change, an older review's answers, and the first week's Day 1 choice. Weeks are Monday to Sunday, like the review (core
+`sunView`). Pictures: docs/weeks-redesign/d\*.jpg.
+
+**Round 2 (November 2, 2026):** the owner did not take D and asked for other ideas. In each of these, a tap on a week opens a
+page of its own with everything D shows under the graph, so Weeks itself only has to show the weeks:
+E. Chapters (the flame's sky, then each week as a thin strip of its days, its sentence and the person's own words from its
+review); F. A week per card (one tall card per week, swiped like Pattern); G. Line and list (no-slip days per week as one line,
+then each week as a row with its strip). Pictures: docs/weeks-redesign/e, f, g.
+
+**Built (G), the owner's pick (November 2, 2026):** Weeks is "Days with no slip, each week": what changed from the first week to
+last week (or, when that is not up, the no-slip days kept), the finished weeks as one line, and every week newest first as a
+row with its days as a strip. A tap opens the week's own page (app/weekly/[sun].tsx) with everything the old Weeks had. Checked
+on the web (dark and light) and on an iPhone 17 Pro simulator, release build. Pictures: docs/weeks-redesign/g-ios-\*.png.

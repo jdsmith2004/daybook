@@ -50,3 +50,9 @@ habit apps make the cell itself carry the day; date-range pickers join days into
 
 Under either: the count with all its figures, the graduation line, the week's goal, then the log as a warm thread down the
 left with each day's number big, how it went, and each entry with its time. Today is lit. Nothing is left out.
+
+## Built (the owner picked F, with no torch on the calendar)
+
+On branch days-redesign: `calendar-card.tsx` (the month), `today.tsx` (the count, as a section), `sunday-card.tsx` (the goal,
+as a section), `day-log.tsx` (the log, with today's entries in today's row; TodaySoFar is gone). The built-* pictures are the
+iPhone release build and the web. Not merged until the owner says yes.

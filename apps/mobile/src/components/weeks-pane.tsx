@@ -35,6 +35,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 import { Spark } from '@/components/charts';
 import { Text } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -120,20 +121,20 @@ export function WeeksPane() {
   );
 }
 
-/* ---------- the finished weeks as one line, read without a key: each dot is a week with its number over it, the scale
-   from 0 to 7 days at the side, the dates under its two ends ---------- */
-const LINE_H = 168;
+/* ---------- the finished weeks as one line on a scale of 0 to 7 days at the side; a dot touched says its week's days and
+   dates ---------- */
+const LINE_H = 176;
 const GUTTER = 22;
 function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
   const c = useTheme();
   const [w, setW] = useState(0);
-  const top = 26; /* room for the numbers over the dots */
-  const bot = 8;
-  const y7 = top;
-  const y0 = LINE_H - bot;
-  const x0 = GUTTER + 8;
-  const x1 = w - 8;
-  const pts = weeks.map((x, i): [number, number] => [x0 + (i / (weeks.length - 1)) * (x1 - x0), y0 - (x.noSlip / 7) * (y0 - y7)]);
+  const [pick, setPick] = useState<number | null>(null);
+  const y7 = 10;
+  const y0 = LINE_H - 10;
+  const x0 = GUTTER + 10;
+  const x1 = w - 10;
+  const yOf = (n: number) => y0 - (n / 7) * (y0 - y7);
+  const pts = weeks.map((x, i): [number, number] => [x0 + (i / (weeks.length - 1)) * (x1 - x0), yOf(x.noSlip)]);
   let d = '';
   pts.forEach(([x, y], i) => {
     if (!i) d = `M${x} ${y}`;
@@ -144,11 +145,11 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
     }
   });
   const area = d + ` L${pts[pts.length - 1][0]} ${y0} L${pts[0][0]} ${y0} Z`;
-  /* every week's number when they fit; past twelve weeks, the first, the last and the best */
-  const best = weeks.reduce((b, x, i) => (x.noSlip > weeks[b].noSlip ? i : b), 0);
-  const shown = (i: number) => weeks.length <= 12 || i === 0 || i === weeks.length - 1 || i === best;
+  const hit = Math.max(28, Math.min(44, (x1 - x0) / (weeks.length - 1)));
+  const tip = pick == null ? null : { x: pts[pick][0], y: pts[pick][1], wk: weeks[pick] };
+  const TIP_W = 116;
   return (
-    <View style={{ gap: 4 }} accessible accessibilityRole="image" accessibilityLabel={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}>
+    <View style={{ gap: 4 }} accessibilityLabel={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}>
       <View style={{ height: LINE_H }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
         {w ? (
           <>
@@ -164,32 +165,48 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
               <Path d={area} fill="url(#weeksFill)" />
               <Path d={d} stroke={c.mint} strokeWidth={3} fill="none" strokeLinecap="round" />
               {pts.map(([x, y], i) => (
-                <Circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 6 : 4} fill={c.bg} stroke={c.mint} strokeWidth={2.5} />
+                <Circle
+                  key={i}
+                  cx={x}
+                  cy={y}
+                  r={i === pick ? 7 : i === pts.length - 1 ? 6 : 4}
+                  fill={i === pick ? c.mint : c.bg}
+                  stroke={c.mint}
+                  strokeWidth={2.5}
+                />
               ))}
             </Svg>
-            <T v="small" tone="muted" style={[s.axis, { top: y7 - 9 }]}>
-              7
-            </T>
-            <T v="small" tone="muted" style={[s.axis, { top: y0 - 9 }]}>
-              0
-            </T>
-            {pts.map(([x, y], i) =>
-              shown(i) ? (
-                <Text
-                  key={i}
-                  style={[
-                    s.dotNum,
-                    {
-                      left: x - 16,
-                      top: y - 26,
-                      color: i === pts.length - 1 ? c.mint : c.ink,
-                      fontFamily: i === pts.length - 1 ? font.displayBold : font.display,
-                    },
-                  ]}>
-                  {weeks[i].noSlip}
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <T key={n} v="small" tone="muted" style={[s.axis, { top: yOf(n) - 9 }]}>
+                {n}
+              </T>
+            ))}
+            {pts.map(([x], i) => (
+              <Pressable
+                key={i}
+                accessibilityRole="button"
+                accessibilityLabel={`${sunRange(weeks[i].sun)}: ${weeks[i].noSlip} of 7 days with no slip`}
+                onPress={() => {
+                  buzz('tick');
+                  setPick(pick === i ? null : i);
+                }}
+                style={{ position: 'absolute', left: x - hit / 2, width: hit, top: 0, bottom: 0 }}
+              />
+            ))}
+            {tip ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  s.tip,
+                  { backgroundColor: c.ink, width: TIP_W, left: Math.max(0, Math.min(w - TIP_W, tip.x - TIP_W / 2)) },
+                  tip.y > 66 ? { top: tip.y - 60 } : { top: tip.y + 14 },
+                ]}>
+                <Text style={[s.tipNum, { color: c.bg }]}>
+                  {tip.wk.noSlip} {tip.wk.noSlip === 1 ? 'day' : 'days'}
                 </Text>
-              ) : null,
-            )}
+                <Text style={[s.tipWhen, { color: c.bg }]}>{sunRange(tip.wk.sun)}</Text>
+              </View>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -469,7 +486,9 @@ function Line({ label, text, strong }: { label: string; text: string; strong?: b
 const s = StyleSheet.create({
   head: { fontFamily: font.display, fontSize: 34, lineHeight: 41 },
   axis: { position: 'absolute', left: 0, width: GUTTER - 4, textAlign: 'right', lineHeight: 18 },
-  dotNum: { position: 'absolute', width: 32, textAlign: 'center', fontSize: 15, lineHeight: 20 },
+  tip: { position: 'absolute', borderRadius: 12, paddingVertical: 6, alignItems: 'center' },
+  tipNum: { fontFamily: font.display, fontSize: 17, lineHeight: 21 },
+  tipWhen: { fontFamily: font.body, fontSize: 13, lineHeight: 17, opacity: 0.8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, minHeight: 44 },
   strip: { flexDirection: 'row', gap: 4 },
   seg: { flex: 1, height: 10, borderRadius: 5 },

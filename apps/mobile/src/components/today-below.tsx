@@ -81,7 +81,7 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
 }
 
 const s = StyleSheet.create({
-  all: { gap: 32, paddingTop: 8 },
+  all: { gap: 32 },
   sec: { gap: 12 },
   moment: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 56 },
   be: { gap: 8, paddingBottom: 16 },

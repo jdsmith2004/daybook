@@ -12,7 +12,7 @@
    rebuilt"). */
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, {
   cancelAnimation,
   Easing,
@@ -31,13 +31,12 @@ import Svg, { Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz, knock } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 export const HOLD_MS = 1400;
-const WEB = Platform.OS === 'web';
-const knock = (s: Haptics.ImpactFeedbackStyle) => void (WEB ? null : Haptics.impactAsync(s).catch(() => undefined));
-const tick = () => void (WEB ? null : Haptics.selectionAsync().catch(() => undefined));
+const tick = () => buzz('tick');
 
 /* ---------- the hold ---------- */
 export interface HearthHold {

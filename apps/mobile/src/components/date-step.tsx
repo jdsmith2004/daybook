@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 export function DateStep({
@@ -25,6 +26,8 @@ export function DateStep({
   const step = (n: number) => {
     const next = addDays(cur, n);
     if (min && next < min) return;
+    /* the same faint click as a wheel passing a day */
+    buzz('tick');
     onPick(next);
   };
   const btn = (txt: string, n: number, a11y: string) => (

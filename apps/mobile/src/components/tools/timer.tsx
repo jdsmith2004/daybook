@@ -2,7 +2,7 @@
    (components/shapes WavyRing), and inside it a soft shape that keeps a beat (a hold and a letting go, a slow breath, a
    lively pulse), with what is happening and the time left big in the middle. With Reduce Motion the shape stays still,
    and the words (Hold, Let go; Breathe in, Breathe out) still keep the beat. See docs/design-standards.md. */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 
@@ -10,7 +10,7 @@ import { Shape, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { fmtMS } from '@/components/orb';
 import { T } from '@/components/ui';
-import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
+import { breathAt, useBreathClock, useBreathTouch, webDeps, type Steps } from '@/lib/breath';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
@@ -21,7 +21,21 @@ export const BEAT_BREATH: BeatOf = { dur: [4, 6], low: 0.8, kind: 'cookie9' };
 
 /** a soft shape that grows through the first part of the beat and eases back in the second, on the one breath curve
     (lib/breath) read from a clock every frame, so the turns are soft and it stays in step with the words */
-function Beat({ beat, sec, color, ink, children }: { beat: BeatOf; sec: number; color: string; ink: string; children: React.ReactNode }) {
+function Beat({
+  beat,
+  sec,
+  touch,
+  color,
+  ink,
+  children,
+}: {
+  beat: BeatOf;
+  sec: number;
+  touch?: number;
+  color: string;
+  ink: string;
+  children: React.ReactNode;
+}) {
   const reduce = useReducedMotion();
   const [a, b] = beat.dur;
   const first = sec % (a + b) < a;
@@ -33,6 +47,9 @@ function Beat({ beat, sec, color, ink, children }: { beat: BeatOf; sec: number; 
     [a, b],
   );
   const clock = useBreathClock(sec, !reduce);
+  /* a breathing beat can also be felt: the breath by touch, for `touch` seconds from when the beat started */
+  const [t0] = useState(() => Date.now() - sec * 1000);
+  useBreathTouch(steps, t0, touch != null, touch);
   const low = beat.low;
   const grow = useAnimatedStyle(
     () => {
@@ -58,6 +75,7 @@ export function ToolTimer({
   left,
   sec,
   beat,
+  touch,
   label,
   color,
   ink,
@@ -66,6 +84,8 @@ export function ToolTimer({
   left: number;
   sec: number;
   beat: BeatOf;
+  /** a breathing beat felt by touch for this many seconds (lib/breath useBreathTouch); leave it out for other beats */
+  touch?: number;
   /** a few words over the time: the move, or what the wait is */
   label: string;
   /** the ring's color, and the color of the beat's words */
@@ -76,7 +96,7 @@ export function ToolTimer({
   return (
     <View accessible accessibilityRole="timer" accessibilityLabel={label + '. ' + fmtMS(left) + ' left'}>
       <WavyRing size={RING} p={p} color={color} track={c.line} stroke={6}>
-        <Beat beat={beat} sec={sec} color={c.surface} ink={ink}>
+        <Beat beat={beat} sec={sec} touch={touch} color={c.surface} ink={ink}>
           <T v="label" style={[s.c, { maxWidth: 170 }]}>
             {label}
           </T>

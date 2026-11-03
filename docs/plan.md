@@ -1,5 +1,38 @@
 # What is planned next
 
+## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
+
+The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic
+would make a moment feel finished. Effort: medium (screens and small rules; nothing touches what a person earned).
+
+**What the research supports.** Slow breathing near six breaths a minute calms the body well (mostly studied with a picture or a
+sound as the pacer). Pacing it by touch is promising but early: the Stanford PIV studies found a pacer with a plain, strong
+breath out helped under stress (a small effect, d = .33), and Apple Watch Breathe guides with taps. No app publishes its exact
+pattern, so the spacing below is our own design. It is offered as a way to breathe with eyes closed, never as a treatment.
+
+**The pattern** (core `breath-touch.ts`). A breath in: a run of taps that come a little closer and a little firmer as the lungs
+fill (calm's 4 seconds: six taps, soft to firm, gaps 770 down to 560 ms). A hold: still. A breath out: one firm tap so the turn
+is plain, then fewer taps, wider apart and softer (calm's 6 seconds: five taps, gaps 950 up to 1,750 ms). The sigh's second
+sip keeps rising. Taps are never closer than 250 ms, and each step ends a third of a second before the next one starts, so it
+never feels like a buzz. `useBreathTouch` (lib/breath) plans each round from the real clock the shape uses, so they stay together.
+
+**Where it plays:** the Breathe tool (every pattern, for its whole time), the SOS sun's three breaths (in place of the one
+tap a breath), and setup's thirty seconds of breathing. Not on the 10-minute pause's beat: that is a wait, often with the phone
+put down, and ten minutes of taps would be a buzz in the pocket.
+
+**The phone's own setting wins.** iOS gives no haptics when System Haptics is off. On Android every buzz now goes through the
+system's haptic feedback (`performAndroidHapticsAsync`) instead of the vibrator, so it stays silent when touch feedback is off
+and feels like the phone's own clicks. Nothing plays on the web. There is no separate switch in the app: the phone's switch is it.
+
+**The rest of the app, mapped.** Almost every moment already has one: lesson answers, a lesson's end, the flame leveling up
+(celebrate), Rekindle's hold, saving a log, the setup picks, the sliders, the day and time wheels, each SOS tool's end. Built:
+a faint tick on the day stepper (Settings, Mode), like a wheel passing a day. Left alone on purpose: What is new (a page to read;
+a buzz on arrival would be noise), navigation, links and sheets opening (Apple's own advice: haptics for results, not for every
+tap).
+
+**Checked:** typecheck, tests (core `breath-touch.test.ts`), and the screens on the iOS simulator. The simulator cannot vibrate,
+so the feel itself (strength, spacing, Android) is checked only in the code until the owner feels it on a phone in TestFlight.
+
 ## Every switch in Change shows on Your day (the owner, November 2, 2026; merged November 2, 2026, after the simulator look)
 
 The owner: "it asks if i want calm move on or off but when i switch it nothing happens", and for the journal: "it should be a toggle

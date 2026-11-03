@@ -1,7 +1,9 @@
 /* The pictures on the step-down card (Today): the stretch on a ruler, and the plan's week as dots (core: view.ts,
    stepRuler and stepWeek). They say at a glance what the old card said in sentences: how far this stretch has come
-   against your usual and your best, and which days this week had slips. */
+   against your usual and your best, and which days this week had slips. Both are colored the way the month on Days is:
+   warm light for the stretch and for a day with no slip, a calm violet for a day with slips. */
 import { type stepRuler, type stepWeek } from '@daybook/core';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
@@ -12,6 +14,10 @@ import { Icon } from '@/components/ui';
 import { font, useTheme } from '@/lib/theme';
 
 const LW = 84;
+/* the light of a run and the violet of a slip, as on the month (calendar-card.tsx) */
+const RUN: [string, string, string] = ['#E8661C', '#FFB53A', '#FFC94D'];
+const ON_RUN = '#4A1E05';
+const SLIP = '#4C3C96';
 /** the stretch so far, moving along a track, with your usual and your best marked on it */
 export function StretchRuler({ r }: { r: ReturnType<typeof stepRuler> }) {
   const c = useTheme();
@@ -50,7 +56,11 @@ export function StretchRuler({ r }: { r: ReturnType<typeof stepRuler> }) {
       <View style={s.lRow}>{w ? above.map(label) : null}</View>
       <View style={s.trackBox}>
         <View style={[s.track, { backgroundColor: c.surface2 }]}>
-          {w ? <Animated.View style={[s.fill, { backgroundColor: c.sun, width: v.interpolate({ inputRange: [0, 1], outputRange: [0, at] }) }]} /> : null}
+          {w ? (
+            <Animated.View style={[s.fill, { width: v.interpolate({ inputRange: [0, 1], outputRange: [0, at] }) }]}>
+              <LinearGradient colors={RUN} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+            </Animated.View>
+          ) : null}
         </View>
         {w
           ? r.marks.map((m) => (
@@ -67,10 +77,10 @@ export function StretchRuler({ r }: { r: ReturnType<typeof stepRuler> }) {
           <Animated.View
             style={[
               s.dot,
-              { backgroundColor: c.sun, borderColor: c.surface },
+              { backgroundColor: RUN[2], borderColor: c.bg },
               { transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [-14, at - 14] }) }] },
             ]}>
-            <Icon name="flame" size={15} color={c.onSun} />
+            <Icon name="flame" size={15} color={ON_RUN} />
           </Animated.View>
         ) : null}
       </View>
@@ -94,13 +104,16 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
           .join(', ')
       }>
       {week.map((d) => {
+        /* a day with no slip is lit, a day with slips is violet with its count, today so far is a warm ring, and the days
+           to come are left open */
+        const warm = !d.ahead && !d.slips && !d.today;
         const look = d.ahead
           ? { bg: 'transparent', bd: c.line, dash: true }
           : d.slips
-            ? { bg: c.slip, bd: c.slip, dash: false }
+            ? { bg: SLIP, bd: SLIP, dash: false }
             : d.today
-              ? { bg: c.mintSoft, bd: c.mint, dash: false }
-              : { bg: c.mint, bd: c.mint, dash: false };
+              ? { bg: 'transparent', bd: RUN[1], dash: false }
+              : { bg: 'transparent', bd: 'transparent', dash: false };
         return (
           <Pressable
             key={d.k}
@@ -118,11 +131,8 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
                 { backgroundColor: look.bg, borderColor: look.bd, borderStyle: look.dash ? 'dashed' : 'solid' },
                 d.today && { borderWidth: 2.5 },
               ]}>
-              {d.slips ? (
-                <Text style={[s.dayN, { color: '#FFFFFF' }]}>{d.slips}</Text>
-              ) : !d.ahead && !d.today ? (
-                <Icon name="check" size={14} color="#FFFFFF" />
-              ) : null}
+              {warm ? <LinearGradient colors={RUN} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[StyleSheet.absoluteFill, s.lit]} /> : null}
+              {d.slips ? <Text style={[s.dayN, { color: '#E9E3FF' }]}>{d.slips}</Text> : null}
             </View>
           </Pressable>
         );
@@ -136,7 +146,7 @@ const s = StyleSheet.create({
   mLabel: { position: 'absolute', top: 0, width: LW, fontSize: 13 },
   trackBox: { height: 30, justifyContent: 'center' },
   track: { height: 12, borderRadius: 6, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 6 },
+  fill: { height: '100%', borderRadius: 6, overflow: 'hidden' },
   tick: { position: 'absolute', top: 4, width: 3, height: 22, borderRadius: 2, alignItems: 'center' },
   flag: { position: 'absolute', top: -14, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   dot: {
@@ -153,6 +163,7 @@ const s = StyleSheet.create({
   week: { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch' },
   day: { alignItems: 'center', gap: 5, width: 34 },
   dayL: { fontSize: 12 },
-  dayDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  dayDot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  lit: { borderRadius: 14 },
   dayN: { fontFamily: font.bodyBold, fontSize: 13 },
 });

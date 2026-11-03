@@ -54,7 +54,7 @@ left with each day's number big, how it went, and each entry with its time. Toda
 ## Built (the owner picked F, with no torch on the calendar)
 
 On branch days-redesign: `calendar-card.tsx` (the month), `today.tsx` (the count, as a section), `sunday-card.tsx` (the goal,
-as a section), `day-log.tsx` (the log, with today's entries in today's row; TodaySoFar is gone). The built-* pictures are the
+as a section), `day-log.tsx` (the log, with today's entries in today's row; TodaySoFar is gone). The built-\* pictures are the
 iPhone release build and the web. Not merged until the owner says yes.
 
 ## Round four: how a slip shows (November 3, 2026)
@@ -69,3 +69,13 @@ and 15) with a matching log:
   once the person came back). The log drops per-day marks and opens each week with a strip of its seven days.
 - **J, one band, dusk on slips** (j-slips-dusk-band.png): every logged day stays in one band, gold on no-slip days and dusk
   on slips, so the band never breaks. The log's date becomes a small tile in the day's color.
+
+## Round four, built (November 3, 2026)
+
+The owner picked H (warm and cool) with I's week strip on the log. Built: slip runs join into a violet band, a slip the
+person came back from has a short gold line under its number, today is only its colors (its number bolder), and each log
+week opens with a strip of its seven days; the rows lost their thread and marks, and a slip's words are violet. The owner
+also asked that the step-down picture (the stretch ruler and the week's days) stay and look better: the ruler fills with
+the run's warm light, a day with no slip is a warm dot, a day with slips is violet with its count, today is a warm ring.
+`?demo=hard` in the shots build shows a step-down person whose days are about half slips.
+Pictures: k-built-hard-month-light.png, k-built-log-light.png, k-built-step-down-dark.png.

@@ -16,6 +16,8 @@ const day = (s: string, n: number) => {
     theme: the app's theme choice */
 export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'light'): Record<string, string> {
   const start = '2026-09-08';
+  /* ?demo=hard: a person on step down whose days are about half slips, to see how a hard month looks */
+  const hard = typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).get('demo') === 'hard';
   const st = {
     ...defaultSettings(start),
     day1: '2026-09-08',
@@ -23,6 +25,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     reasons: ['Being fully present with the people I love', 'Clear mornings and steady energy'],
     menu: ['A brisk two-minute walk', 'Cold water on my face', 'Text a friend', 'Ten pushups'],
     u: 1792194562327,
+    ...(hard ? { cleanMode: 'step', stepAt: start } : {}),
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
@@ -46,6 +49,10 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
     /* the one slip, with what was going on before it and how it felt after (the studio opens its comeback pages on it) */
     if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
+    else if (hard && (i * 37) % 11 < 5) {
+      events.push({ ...ev('22:40', 'slipped', 'tired'), id: 'slip' + i });
+      if (i % 9 === 4) events.push({ ...ev('23:55', 'slipped', 'tired'), id: 'slip' + i + 'b' });
+    }
     o['daybook:days/' + d] = {
       d,
       events,

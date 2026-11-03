@@ -25,6 +25,18 @@ export interface NewItem {
     live before it, so it leads with what 1.3.0 changed (the owner, November 2, 2026). */
 export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
   {
+    v: '1.3.2',
+    items: [
+      {
+        t: 'Breathe with your eyes closed',
+        line: 'The phone taps softly as you breathe in, stays still on a hold, and fades as you breathe out.',
+        art: 'flame',
+      },
+      { t: 'Your weeks, as one line', line: 'Each week is a dot for its no-slip days, and every week opens to show its days.', art: 'week' },
+      { t: 'How your days felt, clearer', line: 'The feelings chart starts at your first answer and holds steady when answers are few.', art: 'chart' },
+    ],
+  },
+  {
     v: '1.3.1',
     items: [
       { t: 'Today, built around your flame', line: 'Your flame is bigger, in a clear sky, with your next step right under it.', art: 'flame' },

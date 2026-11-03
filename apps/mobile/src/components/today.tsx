@@ -161,9 +161,9 @@ export function LinkText({ label, onPress }: { label: string; onPress: () => voi
 }
 
 /* ---------- step down ----------
-   Built to be read at a glance: the stretch so far, big; a ruler with your usual and your best on it; the plan's week as
-   dots, with the aim and how often you waited first as two short chips; and one line for the hard hours. Anything else
-   (ready to count days, more help) is one slim row, only when it applies. */
+   Built to be read at a glance: the stretch so far, big; a ruler with your usual and your best on it; and the plan's week
+   as dots under one line of its slips and aim. The hard hours are on Tonight and on Pattern, and the waits on the Sunday
+   review, so they are not repeated here. Anything else (ready to count days, more help) shows only when it applies. */
 function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now: number; size: 'sm' | 'lg'; v: CleanView }) {
   const c = useTheme();
   const { apply } = useStore();
@@ -174,16 +174,6 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
   const kv = k.v;
   const onAim = kv.target != null && kv.thisW <= kv.target;
   const how = () => router.push({ pathname: '/settings', params: { open: 's-count' } });
-  const hh = k.hh;
-  const hhLook = !hh
-    ? null
-    : hh.state === 'won'
-      ? { ink: c.mintText, ic: 'check' }
-      : hh.state === 'during'
-        ? { ink: c.coralText, ic: 'life' }
-        : hh.state === 'lost'
-          ? { ink: c.muted, ic: 'leaf' }
-          : { ink: c.violetText, ic: hh.day ? 'sun' : 'moon' };
   return (
     <View style={s.count}>
       <View style={s.between}>
@@ -217,34 +207,17 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
       ) : null}
       <StretchRuler r={r} />
 
-      {/* the plan's week */}
-      <WeekDots week={week} />
-      <View style={s.wrap}>
-        <View style={s.stepChip}>
-          <Icon name="flag" size={14} color={onAim ? c.mintText : c.muted} />
-          <Text style={[s.stepChipT, { color: onAim ? c.mintText : c.ink }]}>
-            {kv.target == null ? 'First week: no aim yet' : kv.target === 0 ? 'Aim: no slips' : 'Aim: ' + kv.target + ' or fewer'}
+      {/* the plan's week: how many slips so far against its aim, over a dot for each day */}
+      <View style={{ gap: 10 }}>
+        <View style={s.between}>
+          <T v="label">This week</T>
+          <Text style={[s.stepChipT, { color: onAim ? c.mintText : c.muted }]}>
+            {(kv.thisW === 1 ? '1 slip' : kv.thisW + ' slips') +
+              (kv.target == null ? ' · no aim yet' : kv.target === 0 ? ' · aim 0' : ' · aim ' + kv.target + ' or fewer')}
           </Text>
         </View>
-        {kv.wSl ? (
-          <View style={s.stepChip}>
-            <Icon name="timer" size={14} color={kv.wWait ? c.skyText : c.muted} />
-            <Text style={[s.stepChipT, { color: kv.wWait ? c.skyText : c.ink }]}>
-              Waited first {kv.wWait} of {kv.wSl}
-            </Text>
-          </View>
-        ) : null}
+        <WeekDots week={week} />
       </View>
-
-      {hh && hhLook ? (
-        <View style={s.slim}>
-          <Icon name={hhLook.ic} size={17} color={hhLook.ink} />
-          <View style={{ flex: 1 }}>
-            <Text style={[s.slimT, { color: hhLook.ink }]}>{hh.short}</Text>
-            <Text style={[s.slimSub, { color: hhLook.ink }]}>{hh.sub}</Text>
-          </View>
-        </View>
-      ) : null}
 
       {k.ready ? (
         <View style={s.flat}>
@@ -370,7 +343,6 @@ const s = StyleSheet.create({
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   baseline: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },
   pts: { fontFamily: font.display, fontSize: 34, lineHeight: 36 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   win: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   cell: { width: 26, height: 26, borderRadius: 13 },
   cellSm: { width: 12, height: 12, borderRadius: 6 },
@@ -385,12 +357,10 @@ const s = StyleSheet.create({
   stepBig: { fontFamily: font.displayBold, fontSize: 46, lineHeight: 50 },
   newBest: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
   newBestT: { fontFamily: font.bodyBold, fontSize: 13 },
-  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   stepChipT: { fontFamily: font.bodySemi, fontSize: 13 },
   slim: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   slimRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   slimT: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 19 },
-  slimSub: { fontFamily: font.body, fontSize: 13, lineHeight: 17, opacity: 0.9 },
   slimLink: { fontFamily: font.bodyBold, fontSize: 15, textDecorationLine: 'underline' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 });

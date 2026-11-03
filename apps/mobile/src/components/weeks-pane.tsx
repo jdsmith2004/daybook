@@ -1,12 +1,12 @@
 /* Pattern > Weeks: seeing, week after week, that you are changing. The weeks are the Sunday review's, Monday to Sunday (core
-   sunday.ts), so both always say the same thing. On top, every week as a bar of its days: mint for a day with no slip, amber
-   for a day with a slip (the Days calendar's colors), the no-slip count over it. A tap picks a week, and under the bars that
-   week is told in full: the review's own sentence for it (weekRead), its seven days, the counts, the average ratings, what it
-   shows, its Sunday review, and an older review's answers. A hard week is said plainly and held: nothing here drops to zero. */
+   sunday.ts), so both always say the same thing. On top, the days with no slip in each finished week as one line, with what
+   changed since the first week (or, when that is not up, the no-slip days kept, which never drop); under it every week newest
+   first, its days as a strip (mint no slip, amber a slip: the Days calendar's colors). A tap opens the week on its own page
+   (app/weekly/[sun].tsx, WeekDetail below): the review's own sentence for it (weekRead), its seven days, the counts, the
+   average ratings, what it shows, its Sunday review, and an older review's answers. A hard week is said plainly and held. */
 import {
   addDays,
   fmtDate,
-  gameCompute,
   REVIEW_QS,
   setDay1,
   storyDays,
@@ -28,85 +28,201 @@ import {
   type StoryWeek,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { BigFlame } from '@/components/big-flame';
 import { Spark } from '@/components/charts';
 import { Text } from '@/components/text';
-import { Button, Card, Chip, T } from '@/components/ui';
-import { buzz } from '@/lib/feel';
+import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-/** a bar's height for a whole week of seven days */
-const BAR_H = 112;
-const BAR_W = 22;
-
-export function WeeksPane() {
-  const c = useTheme();
-  const { snap, tk, apply } = useStore();
+/** the weeks so far, oldest first, and what to call one: "This week", "Last week" or its dates */
+export function useWeeks() {
+  const { snap, tk } = useStore();
   const st = snap.settings!;
   const cur = sunOf(tk);
   const weeks = storyWeeks(snap.days, st, cur, tk, 52);
-  const [pick, setPick] = useState<string | null>(null);
-  /* it opens on this week, or on last week while this one is only a day or two old */
-  const last = weeks[weeks.length - 1];
-  const sel = weeks.find((w) => w.sun === pick) ?? (last && last.sun === cur && last.days < 3 && weeks.length > 1 ? weeks[weeks.length - 2] : last);
-  const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
+  const name = (sun: string) => (sun === cur ? 'This week' : sun === addDays(cur, -7) ? 'Last week' : sunRange(sun));
+  return { weeks, cur, name };
+}
+
+export function WeeksPane() {
+  const c = useTheme();
+  const { snap, tk } = useStore();
+  const st = snap.settings!;
+  const { weeks, cur, name } = useWeeks();
   const due = sunDue(snap.reviews, st, tk);
-  const open = (sun: string) => router.push({ pathname: '/review', params: { s: sun } });
-  if (!sel)
+  if (!weeks.length)
     return (
       <T tone="muted" style={{ paddingTop: 8 }}>
         Your weeks show here from your first day.
       </T>
     );
-  const name = (sun: string) => (sun === cur ? 'This week' : sun === addDays(cur, -7) ? 'Last week' : '');
-  const i = weeks.indexOf(sel);
+  /* the line holds finished weeks only: a week one day old would look like a fall */
+  const done = weeks.filter((w) => w.sun < cur);
+  const first = done.find((w) => w.days === 7) ?? done[0];
+  const last = done[done.length - 1];
+  const kept = weeks.reduce((a, w) => a + w.noSlip, 0);
+  const up = first && last && first !== last && last.noSlip > first.noSlip;
+  return (
+    <View style={{ gap: 24 }}>
+      {due ? (
+        <Button
+          label={due.late ? 'Look back on last week' : 'Look back on my week'}
+          onPress={() => router.push({ pathname: '/review', params: { s: due.sun } })}
+        />
+      ) : null}
+      <View style={{ gap: 4 }}>
+        <T v="small" tone="muted">
+          Days with no slip, each week
+        </T>
+        {up ? (
+          <>
+            <Text style={[s.head, { color: c.ink }]} accessibilityLabel={`${first.noSlip} to ${last.noSlip}`}>
+              {first.noSlip} → {last.noSlip}
+            </Text>
+            <T tone="muted">From your first week to last week.</T>
+          </>
+        ) : (
+          <>
+            <Text style={[s.head, { color: c.ink }]}>{kept}</Text>
+            <T tone="muted">
+              {kept === 1 ? 'day' : 'days'} with no slip, in {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}. They stay yours.
+            </T>
+          </>
+        )}
+      </View>
+      {done.length > 1 ? <WeeksLine weeks={done} /> : null}
+      <View>
+        {[...weeks].reverse().map((w, i) => (
+          <Pressable
+            key={w.sun}
+            accessibilityRole="button"
+            accessibilityLabel={`${name(w.sun)}: ${w.noSlip} of ${w.days} days with no slip. Open the week.`}
+            onPress={() => router.push({ pathname: '/weekly/[sun]', params: { sun: w.sun } })}
+            style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }, { opacity: pressed ? 0.6 : 1 }]}>
+            <View style={{ flex: 1, gap: 8 }}>
+              <View style={s.between}>
+                <T v="label">{name(w.sun)}</T>
+                <T v="small" tone="muted">
+                  {w.sun === cur ? `${w.noSlip} of ${w.days} so far` : `${w.noSlip} of ${w.days} days`}
+                </T>
+              </View>
+              <Strip ds={storyDays(snap.days, st, w.sun, tk)} />
+            </View>
+            <Icon name="next" size={16} color={c.muted} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/* ---------- the finished weeks as one line, soft mint under it, the dates at its two ends ---------- */
+const LINE_H = 150;
+function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
+  const c = useTheme();
+  const [w, setW] = useState(0);
+  const pad = 8;
+  const pts = weeks.map((x, i): [number, number] => [pad + (i / (weeks.length - 1)) * (w - pad * 2), pad + (1 - x.noSlip / 7) * (LINE_H - pad * 2)]);
+  let d = '';
+  pts.forEach(([x, y], i) => {
+    if (!i) d = `M${x} ${y}`;
+    else {
+      const [px, py] = pts[i - 1];
+      const mx = (px + x) / 2;
+      d += ` C${mx} ${py} ${mx} ${y} ${x} ${y}`;
+    }
+  });
+  const area = d + ` L${pts[pts.length - 1][0]} ${LINE_H} L${pts[0][0]} ${LINE_H} Z`;
+  return (
+    <View style={{ gap: 4 }} accessible accessibilityRole="image" accessibilityLabel={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}>
+      <View style={{ height: LINE_H }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+        {w ? (
+          <Svg width={w} height={LINE_H}>
+            <Defs>
+              <LinearGradient id="weeksFill" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={c.mint} stopOpacity={0.32} />
+                <Stop offset="1" stopColor={c.mint} stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+            <Path d={area} fill="url(#weeksFill)" />
+            <Path d={d} stroke={c.mint} strokeWidth={3} fill="none" strokeLinecap="round" />
+            {pts.map(([x, y], i) => (
+              <Circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 6 : 4} fill={c.bg} stroke={c.mint} strokeWidth={2.5} />
+            ))}
+          </Svg>
+        ) : null}
+      </View>
+      <View style={s.between}>
+        <T v="small" tone="muted">
+          {fmtDate(addDays(weeks[0].sun, -6), { month: 'short', day: 'numeric' })}
+        </T>
+        <T v="small" tone="muted">
+          Last week
+        </T>
+      </View>
+    </View>
+  );
+}
+
+/* a week's seven days as a thin strip: mint no slip, amber a slip, an outline for a day still to come */
+function Strip({ ds }: { ds: StoryDay[] }) {
+  const c = useTheme();
+  return (
+    <View style={s.strip}>
+      {ds.map((d) => (
+        <View
+          key={d.k}
+          style={[
+            s.seg,
+            d.state === 'clean' ? { backgroundColor: c.mint } : d.state === 'slip' ? { backgroundColor: c.slip } : null,
+            d.state === 'ahead' ? { borderWidth: 1.5, borderColor: c.line } : null,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+/* ---------- one week told in full, on its own page ---------- */
+export function WeekDetail({ sun }: { sun: string }) {
+  const c = useTheme();
+  const { snap, tk, apply } = useStore();
+  const st = snap.settings!;
+  const { weeks, name } = useWeeks();
+  const i = weeks.findIndex((w) => w.sun === sun);
+  const open = (x: string) => router.push({ pathname: '/review', params: { s: x } });
   const read = weekRead(
     snap.days,
     st,
-    sel.sun,
+    sun,
     tk,
-    sunWeek(snap.days, st, sel.sun, tk),
-    weeks.slice(Math.max(0, i - 7), i + 1),
-    storyWhen(snap.days, st, sel.sun, tk),
+    sunWeek(snap.days, st, sun, tk),
+    i < 0 ? [] : weeks.slice(Math.max(0, i - 7), i + 1),
+    storyWhen(snap.days, st, sun, tk),
   );
-  const v = sunView(snap.days, st, tk, sel.sun);
-  const ds = storyDays(snap.days, st, sel.sun, tk);
-  const rv = snap.reviews[sunKey(sel.sun)]?.sun;
+  const v = sunView(snap.days, st, tk, sun);
+  const ds = storyDays(snap.days, st, sun, tk);
+  const rv = snap.reviews[sunKey(sun)]?.sun;
   /* an answer to the older weekly review, kept by the start-date week that holds this Sunday */
-  const old = snap.reviews['w' + weekOf(sel.sun, st)]?.a;
+  const old = snap.reviews['w' + weekOf(sun, st)]?.a;
   const rated = v.avgs.some((x) => x.vals.some((y) => y != null));
   const shows = v.shows.filter(([, dd]) => dd !== '–' && !dd.startsWith('Needs'));
-  const first = sel.sun === sunOf(st.start) && !(st.day1 && st.day1 <= tk);
+  const first = sun === sunOf(st.start) && !(st.day1 && st.day1 <= tk);
+  const cur = sunOf(tk);
+  const due = sunDue(snap.reviews, st, tk);
   return (
     <View style={{ gap: 24 }}>
-      {due ? <Button label={due.late ? 'Look back on last week' : 'Look back on my week'} onPress={() => open(due.sun)} /> : null}
-      <View style={{ alignItems: 'center' }}>
-        <BigFlame level={level} size={132} />
-      </View>
-      <View style={{ gap: 12 }}>
-        <View style={{ gap: 2 }}>
-          <T v="h2" accessibilityRole="header">
-            Days with no slip, each week
-          </T>
-          <T v="small" tone="muted">
-            Tap a week to see it.
-          </T>
-        </View>
-        <Bars weeks={weeks} sel={sel.sun} cur={cur} onPick={setPick} />
-        <View style={s.legend}>
-          <Key color={c.mint} label="No slip" />
-          <Key color={c.slip} label="Slip" />
-        </View>
-      </View>
-
       <View style={{ gap: 4 }}>
-        <T v="small" tone="muted">
-          {[name(sel.sun), sunRange(sel.sun)].filter(Boolean).join(' · ')}
-        </T>
+        {/* the page's title is the week's name; its dates go under a name like "Last week" */}
+        {name(sun) !== sunRange(sun) ? (
+          <T v="small" tone="muted">
+            {sunRange(sun)}
+          </T>
+        ) : null}
         <T v="title" accessibilityRole="header">
           {read.says}
         </T>
@@ -162,19 +278,19 @@ export function WeeksPane() {
             <T v="h2">Your Sunday review</T>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={'Change the review for ' + sunRange(sel.sun)}
-              onPress={() => open(sel.sun)}
+              accessibilityLabel={'Change the review for ' + sunRange(sun)}
+              onPress={() => open(sun)}
               style={({ pressed }) => [s.change, { opacity: pressed ? 0.6 : 1 }]}>
               <Text style={[s.link, { color: c.accentText }]}>Change</Text>
             </Pressable>
           </View>
           {rv.w.length ? <Line label="What worked" text={rv.w.join(' · ')} /> : null}
           {rv.c.length ? <Line label="What to change" text={rv.c.join(' · ')} /> : null}
-          {rv.g ? <Goal sun={sel.sun} /> : null}
+          {rv.g ? <Goal sun={sun} /> : null}
           {rv.it ? <Line label="If-then plan" text={storyIfLine(rv.it)} /> : null}
           {rv.nt ? <Line label="A note to myself" text={'“' + rv.nt + '”'} /> : null}
         </View>
-      ) : sel.sun === cur && !due ? (
+      ) : sun === cur && !due ? (
         <Button kind="ghost" label="Look back on this week so far" onPress={() => open(cur)} />
       ) : null}
 
@@ -221,65 +337,6 @@ export function WeeksPane() {
           </Text>
         </Card>
       ) : null}
-    </View>
-  );
-}
-
-/* ---------- every week as a bar: mint days with no slip at the bottom, amber slip days on them, the rest of the seven empty ---------- */
-function Bars({ weeks, sel, cur, onPick }: { weeks: StoryWeek[]; sel: string; cur: string; onPick: (sun: string) => void }) {
-  const c = useTheme();
-  const ref = useRef<ScrollViewInstance>(null);
-  const [w, setW] = useState(0);
-  /* the newest weeks are where the eye starts: a long log opens scrolled to its end */
-  useEffect(() => {
-    ref.current?.scrollToEnd({ animated: false });
-  }, [w, weeks.length]);
-  const day = BAR_H / 7;
-  return (
-    <ScrollView
-      ref={ref}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      onLayout={(e) => setW(e.nativeEvent.layout.width)}
-      contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', gap: 2, minWidth: w }}>
-      {weeks.map((x, i) => {
-        const on = x.sun === sel;
-        const slipDays = x.days - x.noSlip;
-        const mon = addDays(x.sun, -6);
-        const prev = i > 0 ? addDays(weeks[i - 1].sun, -6) : '';
-        const month = !prev || prev.slice(5, 7) !== mon.slice(5, 7);
-        return (
-          <Pressable
-            key={x.sun}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={`${sunRange(x.sun)}: ${x.noSlip} of ${x.days} days with no slip${x.sun === cur ? ', so far' : ''}`}
-            onPress={() => {
-              buzz('tap');
-              onPick(x.sun);
-            }}
-            style={({ pressed }) => [s.col, on && { backgroundColor: c.accentSoft }, { opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={[s.count, { color: on ? c.ink : c.muted }]}>{x.noSlip}</Text>
-            <View style={[s.bar, { height: BAR_H, backgroundColor: c.accentSoft }]}>
-              {slipDays ? <View style={{ height: slipDays * day, backgroundColor: c.slip }} /> : null}
-              {x.noSlip ? <View style={{ height: x.noSlip * day, backgroundColor: c.mint }} /> : null}
-            </View>
-            <Text style={[s.mon, { color: c.muted }]}>{month ? fmtDate(mon, { month: 'short' }) : ' '}</Text>
-            <Text style={[s.dnum, { color: on ? c.ink : c.muted }]}>{Number(mon.slice(8))}</Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
-function Key({ color, label }: { color: string; label: string }) {
-  return (
-    <View style={s.key}>
-      <View style={[s.keyDot, { backgroundColor: color }]} />
-      <T v="small" tone="muted">
-        {label}
-      </T>
     </View>
   );
 }
@@ -373,14 +430,10 @@ function Line({ label, text, strong }: { label: string; text: string; strong?: b
 }
 
 const s = StyleSheet.create({
-  col: { width: BAR_W + 12, alignItems: 'center', paddingVertical: 8, borderRadius: 12, gap: 4 },
-  count: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
-  bar: { width: BAR_W, borderRadius: 8, overflow: 'hidden', justifyContent: 'flex-end' },
-  mon: { fontFamily: font.body, fontSize: 11, lineHeight: 13 },
-  dnum: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 16, marginTop: -4 },
-  legend: { flexDirection: 'row', gap: 16 },
-  key: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  keyDot: { width: 12, height: 12, borderRadius: 4 },
+  head: { fontFamily: font.display, fontSize: 34, lineHeight: 41 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, minHeight: 44 },
+  strip: { flexDirection: 'row', gap: 4 },
+  seg: { flex: 1, height: 10, borderRadius: 5 },
   week: { flexDirection: 'row' },
   dayBox: { flex: 1, alignItems: 'center', gap: 6 },
   dow: { fontFamily: font.bodySemi, fontSize: 13 },

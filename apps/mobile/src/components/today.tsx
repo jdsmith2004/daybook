@@ -1,5 +1,6 @@
 /* The cards on Today. Every number and sentence comes from @daybook/core, which is checked against the legacy app. */
 import {
+  GRAD_DAYS,
   gradInfo,
   gradLine,
   cleanKeep,
@@ -19,6 +20,7 @@ import {
   type CleanView,
   type Snapshot,
 } from '@daybook/core';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
@@ -28,28 +30,39 @@ import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
-/* ---------- the Days card: the mode's one count, as Today shows it, and what stays on the record ---------- */
-function Chips({ v }: { v: CleanView }) {
-  const ch = runChips(v);
-  const row = (small: string, text: string) => (
-    <View key={small} style={s.kept}>
-      <T tone="muted" style={{ flex: 1 }}>
+/* ---------- the count on Days: the mode's one count, as Today shows it, and what stays on the record ----------
+   It sits on the page under the month, with no card: the number big, then what stays earned side by side. */
+function Figure({ big, small, first }: { big: string | number; small: string; first?: boolean }) {
+  const c = useTheme();
+  return (
+    <View style={[s.figure, { borderLeftColor: c.line }, first && s.figFirst]}>
+      <Text style={[s.figBig, { color: c.ink }]}>{big}</Text>
+      <T v="small" tone="muted">
         {small}
       </T>
-      <T v="label">{text}</T>
-    </View>
-  );
-  return (
-    <View style={{ gap: 4 }}>
-      {ch.hours ? row('Since your last slip', ch.hours) : null}
-      {ch.longest ? row('Longest run', ch.longest) : null}
-      {ch.noSlip ? row('No-slip days in all', ch.noSlip) : null}
-      {ch.next ? row('Next goal', ch.next) : null}
     </View>
   );
 }
 
-/** in the Journal, under the month calendar (size 'lg'); step down's card takes the size too */
+function Chips({ v }: { v: CleanView }) {
+  const ch = runChips(v);
+  const all = [
+    ch.hours ? (['Since your last slip', ch.hours] as const) : null,
+    ch.longest ? (['Longest run', ch.longest] as const) : null,
+    ch.noSlip ? (['No-slip days in all', ch.noSlip] as const) : null,
+    ch.next ? (['Next goal', ch.next] as const) : null,
+  ].filter((x) => x != null);
+  if (!all.length) return null;
+  return (
+    <View style={s.figures}>
+      {all.map(([small, big], i) => (
+        <Figure key={small} big={big} small={small} first={i % 3 === 0} />
+      ))}
+    </View>
+  );
+}
+
+/** on Days, under the month calendar (size 'lg'); step down's count takes the size too */
 export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: string; now: number; size?: 'sm' | 'lg' }) {
   const st = snap.settings!;
   const v = cleanView(snap.days, st, tk, now);
@@ -62,25 +75,17 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
         : st.day1
           ? `Counting starts ${fmtDate(st.day1, { weekday: 'long', month: 'short', day: 'numeric' })}. Until then you only log, so nothing can be failed.`
           : 'No days are being counted. Log, check in, learn and use the tools. Start a Day 1 whenever you want.';
-    const fact = (n: number, one: string, many: string) => (
-      <View style={s.fact}>
-        <T style={s.factBig}>{n}</T>
-        <T v="small" tone="muted">
-          {n === 1 ? one : many}
-        </T>
-      </View>
-    );
     return (
-      <Card>
-        <T v="eyebrow" tone="muted">
+      <View style={s.count}>
+        <T v="small" tone="muted">
           {t.eyebrow}
         </T>
         {/* day 0: one warm line, not three zeros */}
         {f.dl || f.rode || f.slips ? (
-          <View style={s.facts}>
-            {fact(f.dl, 'day logged', 'days logged')}
-            {fact(f.rode, 'urge ridden out', 'urges ridden out')}
-            {fact(f.slips, 'slip logged', 'slips logged')}
+          <View style={s.figures}>
+            <Figure first big={f.dl} small={f.dl === 1 ? 'day logged' : 'days logged'} />
+            <Figure big={f.rode} small={f.rode === 1 ? 'urge ridden out' : 'urges ridden out'} />
+            <Figure big={f.slips} small={f.slips === 1 ? 'slip logged' : 'slips logged'} />
           </View>
         ) : (
           <T style={{ fontSize: 17, lineHeight: 24 }}>Nothing logged yet. Your first entry starts the log.</T>
@@ -88,30 +93,30 @@ export function DaysCard({ snap, tk, now, size = 'lg' }: { snap: Snapshot; tk: s
         <T v="small" tone="muted">
           {sub} <LinkText label="How this works" onPress={() => router.push('/mode')} />
         </T>
-      </Card>
+      </View>
     );
   }
   if (t.step) return <StepCard snap={snap} tk={tk} now={now} size={size} v={v} />;
   return (
-    <Card>
-      <T v="eyebrow" tone="muted">
-        {t.eyebrow}
-      </T>
-      <View style={s.baseline}>
-        <T v="big">{t.big}</T>
-        <T tone="muted">{t.of}</T>
+    <View style={s.count}>
+      <View>
+        <T v="small" tone="muted">
+          {t.eyebrow}
+        </T>
+        <View style={s.baseline}>
+          <T v="big">{t.big}</T>
+          <T v="h2">{t.of}</T>
+        </View>
+        <T tone="muted">{t.sub}</T>
       </View>
-      <T v="small" tone="muted">
-        {t.sub}
-      </T>
       <Chips v={v} />
       <GradRow snap={snap} tk={tk} />
       <LinkText label="How I count days" onPress={() => router.push({ pathname: '/settings', params: { open: 's-count' } })} />
-    </Card>
+    </View>
   );
 }
 
-/** the way to graduation, once the first week is behind the person (graduate.ts); quiet before that */
+/** the way to graduation, once the first week is behind the person (graduate.ts): the line and how far along it is; quiet before that */
 function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
   const c = useTheme();
   const g = gradInfo(snap.days, snap.settings!, tk);
@@ -122,13 +127,25 @@ function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
       accessibilityRole="button"
       accessibilityHint="Opens Milestones"
       onPress={() => router.push('/miles')}
-      style={({ pressed }) => [s.grad, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name={g.at ? 'crown' : 'trophy'} size={22} color={g.at ? c.sunText : c.accentText} />
-      <T v="small" style={{ flex: 1 }}>
-        {g.at ? 'Graduated. ' : ''}
-        {line}
-      </T>
-      <Icon name="next" size={16} color={c.muted} />
+      style={({ pressed }) => [s.grad, { opacity: pressed ? 0.7 : 1 }]}>
+      <View style={s.gradTop}>
+        {g.at ? <Icon name="crown" size={20} color={c.sunText} /> : null}
+        <T v="small" style={{ flex: 1 }}>
+          {g.at ? 'Graduated. ' : ''}
+          {line}
+        </T>
+        <Icon name="next" size={16} color={c.muted} />
+      </View>
+      {g.at ? null : (
+        <View style={[s.gradBar, { backgroundColor: c.surface2 }]}>
+          <LinearGradient
+            colors={['#FFC43D', '#F27A1C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[s.gradFill, { width: `${Math.min(100, (g.count / GRAD_DAYS) * 100)}%` }]}
+          />
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -168,7 +185,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
           ? { ink: c.muted, ic: 'leaf' }
           : { ink: c.violetText, ic: hh.day ? 'sun' : 'moon' };
   return (
-    <Card>
+    <View style={s.count}>
       <View style={s.between}>
         <Pressable accessibilityRole="button" accessibilityLabel="Step down. How it works" onPress={how} hitSlop={8} style={s.stepHead}>
           <T v="eyebrow" tone="muted">
@@ -255,7 +272,7 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
           </Pressable>
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
@@ -339,8 +356,15 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 const s = StyleSheet.create({
-  grad: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, minHeight: 44, borderTopWidth: 1 },
-  kept: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  count: { gap: 16 },
+  figures: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
+  figure: { flexGrow: 1, flexBasis: '30%', gap: 2, paddingHorizontal: 12, borderLeftWidth: 1 },
+  figFirst: { paddingLeft: 0, borderLeftWidth: 0 },
+  figBig: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  grad: { gap: 8, minHeight: 44, justifyContent: 'center' },
+  gradTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  gradBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  gradFill: { height: 6, borderRadius: 3 },
   flat: { gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
@@ -352,9 +376,6 @@ const s = StyleSheet.create({
   cellSm: { width: 12, height: 12, borderRadius: 6 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chip: { flexDirection: 'row', alignItems: 'baseline', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-  facts: { flexDirection: 'row', gap: 10 },
-  fact: { flex: 1, gap: 2 },
-  factBig: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16 },
   box: { gap: 10, padding: 14, borderRadius: 18 },
   stepHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },

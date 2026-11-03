@@ -13,7 +13,6 @@ Fixed, as clear seams (medium):
   The day's page now uses the Days colors.
 - Weeks said "with no slip" in its label and again in the sentence under the number. The sentence is now "21 days in 4 weeks. They stay yours."
 - Days' "No-slip days in all" broke onto two lines under SOS; it is "No-slip days".
-- In one look's starting line ("Log urges and slips...") read as if nothing was logged, for a person with three weeks logged. It starts "As you log".
 
 Open questions for the owner (not changed):
 

@@ -515,7 +515,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           </View>
         ) : (
           <T>
-            As you log urges and slips with a time and a reason, this page starts to answer: when, what sets it off, and whether slips are getting further
+            Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further
             apart.
           </T>
         )}

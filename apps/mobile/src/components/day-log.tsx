@@ -1,7 +1,6 @@
 /* The log on Days, under the month and the count (core journal.ts, daysList): a week at a time, newest first, each week's
-   name and its check-ins and entries over its days, then the week as one strip of seven, each day colored the way the month
-   colors it (warm for no slip, violet for a slip, oldest on the left). Each day under it is its date big, how it went (a slip
-   in violet) and what was logged at what time. Today is lit, and holds today's entries themselves (it was the Today so far card).
+   name and its check-ins and entries over its days. Each day has a bar at its left colored the way the month colors it
+   (warm for no slip, violet for a slip), its date big, how it went (a slip in violet) and what was logged at what time. Today is lit, and holds today's entries themselves (it was the Today so far card).
    A tap on a day opens it (app/day/[date].tsx). */
 import { countText, daysList, sumDay, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,9 +34,8 @@ export function DayLog({ snap, tk }: { snap: Snapshot; tk: string }) {
               {w.count}
             </T>
           </View>
-          <Strip rows={w.rows} current={w.rows[0]?.key === tk} dark={dark} />
           {w.rows.map((r, i) => (
-            <DayRow key={r.key} r={r} snap={snap} today={r.key === tk} violet={violet} first={i === 0} />
+            <DayRow key={r.key} r={r} snap={snap} today={r.key === tk} violet={violet} dark={dark} first={i === 0} />
           ))}
         </View>
       ))}
@@ -46,28 +44,16 @@ export function DayLog({ snap, tk }: { snap: Snapshot; tk: string }) {
   );
 }
 
-/* the week in seven pieces, oldest first; days not in the log yet (still to come, or before it) stay faint */
-function Strip({ rows, current, dark }: { rows: Row[]; current: boolean; dark: boolean }) {
+/* the day's bar, at the left of its date */
+function Bar({ r, dark }: { r: Row; dark: boolean }) {
   const c = useTheme();
-  const faint = dark ? 'rgba(255,255,255,0.08)' : c.line;
-  const days: (Row | null)[] = rows.slice().reverse();
-  while (days.length < 7) current ? days.push(null) : days.unshift(null);
-  const fill = (r: Row | null) =>
-    !r ? faint : r.status === 'slip' ? (dark ? '#4C3C96' : '#D9D2F7') : r.status === 'tracked' || r.status === 'events' ? c.sky : faint;
-  return (
-    <View style={s.strip} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {days.map((r, i) =>
-        r?.status === 'clean' ? (
-          <LinearGradient key={i} colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.piece} />
-        ) : (
-          <View key={i} style={[s.piece, { backgroundColor: fill(r) }]} />
-        ),
-      )}
-    </View>
-  );
+  if (r.status === 'clean') return <LinearGradient colors={RUN} start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }} style={s.bar} />;
+  const fill =
+    r.status === 'slip' ? (dark ? '#7A68D8' : '#4C3C96') : r.status === 'tracked' || r.status === 'events' ? c.sky : dark ? 'rgba(255,255,255,0.12)' : c.line;
+  return <View style={[s.bar, { backgroundColor: fill }]} />;
 }
 
-function DayRow({ r, snap, today, violet, first }: { r: Row; snap: Snapshot; today: boolean; violet: string; first: boolean }) {
+function DayRow({ r, snap, today, violet, dark, first }: { r: Row; snap: Snapshot; today: boolean; violet: string; dark: boolean; first: boolean }) {
   const c = useTheme();
   const sum = today ? sumDay(snap.days[r.key]) : null;
   const ct = sum && sum.n ? countText(sum) : null;
@@ -84,6 +70,7 @@ function DayRow({ r, snap, today, violet, first }: { r: Row; snap: Snapshot; tod
         accessibilityLabel={`${r.weekday} ${r.date}. ${r.phase}. ${r.pill}. ${r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) : ''}${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
         onPress={() => router.push({ pathname: '/day/[date]', params: { date: r.key } })}
         style={({ pressed }) => [s.row, { opacity: pressed ? 0.7 : 1 }]}>
+        <Bar r={r} dark={dark} />
         <View style={s.date}>
           <Text style={[s.dateBig, { color: c.ink }]}>{Number(r.key.slice(8))}</Text>
           <T v="small" tone="muted">
@@ -116,8 +103,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 8 },
   date: { width: 36, alignItems: 'center' },
   dateBig: { fontFamily: font.display, fontSize: 22, lineHeight: 26 },
-  strip: { flexDirection: 'row', gap: 4, marginTop: 8, marginBottom: 6 },
-  piece: { flex: 1, height: 10, borderRadius: 5 },
+  bar: { width: 4, alignSelf: 'stretch', marginVertical: 2, borderRadius: 2 },
   pill: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  entries: { paddingLeft: 48, paddingBottom: 8 },
+  entries: { paddingLeft: 64, paddingBottom: 8 },
 });

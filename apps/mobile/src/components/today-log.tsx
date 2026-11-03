@@ -1,13 +1,11 @@
-/* Today and Journal, after logging: today's entries (TodaySoFar, in
-   Journal), SOS with Already happened and Planning a slip? (LogLink), the plan talked through that waits under them
+/* Today, after logging: SOS with Already happened and Planning a slip? (LogLink), the plan talked through that waits under them
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
-import { changeDay, clockOf, fmtClock, countText, sumDay, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
+import { changeDay, clockOf, fmtClock, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
-import { EntryRows } from '@/components/entry-rows';
-import { Card, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { openCare } from '@/lib/nav';
 import { useNow } from '@/lib/now';
@@ -126,30 +124,6 @@ export function PauseBanner() {
   );
 }
 
-/* today's entries */
-export function TodaySoFar({ snap, tk }: { snap: Snapshot; tk: string }) {
-  const c = useTheme();
-  const st = snap.settings!;
-  const day = snap.days[tk];
-  const sum = sumDay(day);
-  if (!sum.n) return null;
-  const ct = countText(sum);
-  return (
-    <Card>
-      <View style={s.between}>
-        <T v="h2">Today so far</T>
-        <T v="small" tone="muted">
-          {ct.n}
-        </T>
-      </View>
-      <T v="small" tone="muted">
-        {ct.detail}
-      </T>
-      <EntryRows date={tk} />
-    </Card>
-  );
-}
-
 const s = StyleSheet.create({
   card: { borderRadius: 24, borderWidth: 2, padding: 16, gap: 12, overflow: 'hidden' },
   top: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
@@ -165,7 +139,6 @@ const s = StyleSheet.create({
   planT: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, borderRadius: 16 },
   bannerBtn: { minHeight: 40, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
-  between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1 },
   mark: { width: 12, height: 12, borderRadius: 6 },
 });

@@ -9,7 +9,6 @@ import {
   FEELS_MIN,
   bpsRow,
   bpsScores,
-  daysList,
   fmtDate,
   fmtHour,
   myNumbers,
@@ -62,10 +61,10 @@ import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { CalendarCard } from '@/components/calendar-card';
 import { DaysCard } from '@/components/today';
-import { TodaySoFar } from '@/components/today-log';
+import { DayLog } from '@/components/day-log';
 import { SundayCard } from '@/components/sunday-card';
 import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
-import { Button, Card, Icon, T } from '@/components/ui';
+import { Card, Icon, T } from '@/components/ui';
 import { SundayList } from '@/components/sunday-list';
 import { WeekView } from '@/components/week-view';
 import { useStore } from '@/lib/store';
@@ -124,61 +123,18 @@ export default function Pattern() {
   );
 }
 
-/* ---------- days ---------- */
+/* ---------- days ----------
+   The month on its night card, then the count and what stays earned, the week's goal from Sunday, and the log, today first
+   (components/calendar-card, today, sunday-card, day-log). Today keeps one line for today's entries and the goal, under the next step. */
 function DaysPane() {
-  const c = useTheme();
   const { snap, tk, now } = useStore();
-  const st = snap.settings!;
-  const [all, setAll] = useState(false);
-  const list = daysList(snap.days, st, tk, all);
-  const tone = (status: string) => (status === 'slip' ? c.slipText : status === 'clean' ? c.mintText : status === 'tracked' ? c.skyText : c.muted);
   return (
-    <>
-      {/* today's entries and the week's goal from Sunday live here; Today keeps one line for both, under the next step */}
-      <TodaySoFar snap={snap} tk={tk} />
+    <View style={{ gap: 32 }}>
       <CalendarCard snap={snap} tk={tk} />
       <DaysCard snap={snap} tk={tk} now={now} size="lg" />
       <SundayCard snap={snap} tk={tk} />
-      {list.weeks.map((w) => (
-        <Card key={w.wk + w.title}>
-          <View style={{ gap: 2 }}>
-            <T v="h2" accessibilityRole="header">
-              {w.title}
-            </T>
-            <T v="small" tone="muted">
-              {w.count}
-            </T>
-          </View>
-          {/* a day is two lines: how it went and what was logged. The ratings and the day's phase wait on the day's own page */}
-          <View>
-            {w.rows.map((r) => (
-              <Pressable
-                key={r.key}
-                accessibilityRole="button"
-                accessibilityLabel={`${r.weekday} ${r.date}. ${r.phase}. ${r.pill}. ${r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) : ''}${r.times}${r.rate ? '. ' + r.rate : ''}${r.pts ? '. ' + r.pts + ' points' : ''}`}
-                onPress={() => router.push({ pathname: '/day/[date]', params: { date: r.key } })}
-                style={({ pressed }) => [s.day, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
-                <View style={{ width: 56 }}>
-                  <T v="label">{r.weekday}</T>
-                  <T v="small" tone="muted">
-                    {r.date}
-                  </T>
-                </View>
-                <View style={{ flex: 1 }}>
-                  {/* "No entry" over "Nothing logged" would say it twice */}
-                  {r.pill && r.pill !== 'No entry' ? <T style={{ fontFamily: font.bodySemi, color: tone(r.status) }}>{r.pill}</T> : null}
-                  <T v="small" tone="muted">
-                    {r.n ? (r.n === 1 ? 'Logged at ' : `${r.n} logged: `) + r.times : r.times}
-                  </T>
-                </View>
-                <Icon name="next" size={16} color={c.muted} />
-              </Pressable>
-            ))}
-          </View>
-        </Card>
-      ))}
-      {list.more > 0 ? <Button kind="ghost" label={`Show ${list.more} earlier days`} onPress={() => setAll(true)} /> : null}
-    </>
+      <DayLog snap={snap} tk={tk} />
+    </View>
   );
 }
 
@@ -570,7 +526,6 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
 }
 
 const s = StyleSheet.create({
-  day: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderTopWidth: 1, minHeight: 56 },
   ins: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: 44 },
   insT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },

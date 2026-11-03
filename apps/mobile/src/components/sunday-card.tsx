@@ -1,4 +1,4 @@
-/* The week's goal from Sunday, in Pattern, Days (core: sunday.ts). The review itself is Today's card on Sunday and Monday
+/* The week's goal from Sunday, in Pattern, Days, on the page under the count with no card around it (core: sunday.ts). The review itself is Today's card on Sunday and Monday
    (core moment.ts), and Today's standing row keeps one line of the goal ("2 of 5 nights this week"). Here: on Sunday the
    goal for the week ahead, and through the week how it is going when the log can count it. With it, whatever extras the
    person chose on Sunday: their if-then plan, a word on one of the harder days, and their note to themselves from
@@ -6,7 +6,7 @@
 import { isSunday, storyIfLine, SUN_GOALS, sunGoalLine, sunGoalNow, sunKey, sunPlanNow, type Snapshot } from '@daybook/core';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { toneOf, useTheme } from '@/lib/theme';
 
 export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
@@ -17,7 +17,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const ahead = isSunday(tk) ? snap.reviews[sunKey(tk)]?.sun?.g : null;
   if (ahead)
     return (
-      <Card>
+      <View style={s.sec}>
         <View style={s.head}>
           <Icon name="flag" size={22} color={c.sunText} />
           <View style={{ flex: 1, gap: 2 }}>
@@ -30,7 +30,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
             </T>
           </View>
         </View>
-      </Card>
+      </View>
     );
   const now = sunGoalNow(snap.days, snap.reviews, tk);
   const plan = sunPlanNow(snap.reviews, tk);
@@ -49,11 +49,11 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       {plan.nt ? <Extra icon="pencil" tone="sun" title="From you, on Sunday" text={'“' + plan.nt + '”'} /> : null}
     </>
   ) : null;
-  if (!now) return plan && (plan.hard || plan.it || plan.nt) ? <Card>{extras}</Card> : null;
+  if (!now) return plan && (plan.hard || plan.it || plan.nt) ? <View style={s.sec}>{extras}</View> : null;
   const k = now.g.k ? SUN_GOALS[now.g.k] : null;
   const frac = now.done != null && now.g.n ? Math.min(1, now.done / now.g.n) : null;
   return (
-    <Card>
+    <View style={s.sec}>
       <View style={s.head}>
         <Icon name="flag" size={22} color={c.sunText} />
         <View style={{ flex: 1, gap: 2 }}>
@@ -80,7 +80,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
         </View>
       ) : null}
       {extras}
-    </Card>
+    </View>
   );
 }
 
@@ -102,6 +102,7 @@ function Extra({ icon, tone, title, text }: { icon: string; tone: string; title:
 }
 
 const s = StyleSheet.create({
+  sec: { gap: 12 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   dots: { flexDirection: 'row', gap: 6, paddingLeft: 34 },
   dot: { flex: 1, maxWidth: 40, height: 8, borderRadius: 4 },

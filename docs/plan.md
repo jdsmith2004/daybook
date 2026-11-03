@@ -4435,3 +4435,24 @@ showed the app icon on both sides.
 - **The icon calendar** (`docs/icon-calendar.md`). Duolingo's seasonal and melting icons ship as the app's own icon in
   an update, for everyone (the melting look was tried and dropped). An app switching its own icon shows a pop-up each time, cannot do it while closed, and has
   been turned down in review, so Daybook does it Duolingo's way: `npm run icons -- --look <look>` before an update.
+
+## Weeks, rebuilt from its purpose (November 2, 2026, waits for the owner's pick)
+
+Weeks is for seeing, week after week, that you are changing: hope after a hard week, and nothing all or nothing. Today it is a
+stack of Sunday review cards and one week of four bare numbers. Research (How We Feel's weekly story, Apple's ring history and
+Screen Time's one sentence, Oura and Whoop comparing you to your own range, the fresh start effect, the abstinence violation
+effect) points to: one shape per week that reads before any number, newest first, a hard week drawn as embers and never red,
+and one plain sentence per week. Each week's words come from the Sunday review's own read (`weekRead`, core sunday-read.ts),
+so Weeks and the review always say the same thing. Weeks move to Monday to Sunday, the same weeks as the review.
+
+Three directions, drawn with the real parts on a made-up nine-week log (pictures in docs/weeks-redesign):
+
+- **A. Lit weeks (recommended).** The flame in its sky with the no-slip days kept ("48 days with no slip, in 9 weeks. They stay
+  yours."), one sentence of change since the first week, then every week as a row of seven: a lit flame for a day with no
+  slip, a small ember for a slip day. The week's sentence from `weekRead` under it, and its Sunday review as one line to open.
+- **B. One week, big.** The flame over one week's seven flames, the week's sentence large, its Sunday review, and a strip of
+  every week to pick from.
+- **C. The climb.** Weeks as stops on a path, each a flame sized by its no-slip days. Rejected as drawn: a hard week becomes a
+  small flame, which reads as loss, and the path echoes the lessons map.
+
+Effort: medium (a screen and words; no data changes).

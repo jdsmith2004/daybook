@@ -1,7 +1,7 @@
 /* Pattern > Weeks: seeing, week after week, that you are changing. The weeks are the Sunday review's, Monday to Sunday (core
    sunday.ts), so both always say the same thing. On top, the days with no slip in each finished week as one line, with what
    changed since the first week (or, when that is not up, the no-slip days kept, which never drop); under it every week newest
-   first, its days as a strip (mint no slip, amber a slip: the Days calendar's colors). A tap opens the week on its own page
+   first, its days as a strip (warm light no slip, calm violet a slip: the Days colors). A tap opens the week on its own page
    (app/weekly/[sun].tsx, WeekDetail below): the review's own sentence for it (weekRead), its seven days, the counts, the
    average ratings, what it shows, its Sunday review, and an older review's answers. A hard week is said plainly and held. */
 import {
@@ -27,12 +27,12 @@ import {
   type StoryDay,
   type StoryWeek,
 } from '@daybook/core';
+import { LinearGradient as Glow } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
-import { Spark } from '@/components/charts';
 import { Text } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -156,22 +156,22 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
             <Svg width={w} height={LINE_H} style={StyleSheet.absoluteFill}>
               <Defs>
                 <LinearGradient id="weeksFill" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={c.mint} stopOpacity={0.28} />
-                  <Stop offset="1" stopColor={c.mint} stopOpacity={0} />
+                  <Stop offset="0" stopColor={RUN[0]} stopOpacity={0.28} />
+                  <Stop offset="1" stopColor={RUN[0]} stopOpacity={0} />
                 </LinearGradient>
               </Defs>
               <Path d={`M${x0} ${y7} L${x1} ${y7}`} stroke={c.line} strokeWidth={1} strokeDasharray="4 5" />
               <Path d={`M${x0} ${y0} L${x1} ${y0}`} stroke={c.line} strokeWidth={1} />
               <Path d={area} fill="url(#weeksFill)" />
-              <Path d={d} stroke={c.mint} strokeWidth={3} fill="none" strokeLinecap="round" />
+              <Path d={d} stroke={RUN[0]} strokeWidth={3} fill="none" strokeLinecap="round" />
               {pts.map(([x, y], i) => (
                 <Circle
                   key={i}
                   cx={x}
                   cy={y}
                   r={i === pick ? 7 : i === pts.length - 1 ? 6 : 4}
-                  fill={i === pick ? c.mint : c.bg}
-                  stroke={c.mint}
+                  fill={i === pick ? RUN[0] : c.bg}
+                  stroke={RUN[0]}
                   strokeWidth={2.5}
                 />
               ))}
@@ -222,24 +222,34 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
   );
 }
 
-/* a week's seven days as a thin strip: mint no slip, amber a slip, an outline for a day still to come */
+/* a week's seven days as a thin strip: warm light no slip, calm violet a slip, an outline for a day still to come */
 function Strip({ ds }: { ds: StoryDay[] }) {
   const c = useTheme();
+  const k = kit(c.scheme === 'dark', c.line);
   return (
     <View style={s.strip}>
-      {ds.map((d) => (
-        <View
-          key={d.k}
-          style={[
-            s.seg,
-            d.state === 'clean' ? { backgroundColor: c.mint } : d.state === 'slip' ? { backgroundColor: c.slip } : null,
-            d.state === 'ahead' ? { borderWidth: 1.5, borderColor: c.line } : null,
-          ]}
-        />
-      ))}
+      {ds.map((d) =>
+        d.state === 'clean' ? (
+          <Glow key={d.k} colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.seg} />
+        ) : (
+          <View
+            key={d.k}
+            style={[s.seg, { backgroundColor: d.state === 'slip' ? k.slip : 'transparent' }, d.state !== 'slip' && { borderWidth: 1.5, borderColor: k.faint }]}
+          />
+        ),
+      )}
     </View>
   );
 }
+
+/* the Days colors (calendar-card.tsx, day-log.tsx): warm light for a day with no slip, calm violet for a slip */
+const RUN: [string, string] = ['#F27A1C', '#FFC43D'];
+const ON_RUN = '#4A1E05';
+const kit = (dark: boolean, line: string) => ({
+  slip: dark ? '#4C3C96' : '#D9D2F7',
+  onSlip: dark ? '#D9D0FF' : '#3B2F7A',
+  faint: dark ? 'rgba(255,255,255,0.12)' : line,
+});
 
 /* ---------- one week told in full, on its own page ---------- */
 export function WeekDetail({ sun }: { sun: string }) {
@@ -310,7 +320,6 @@ export function WeekDetail({ sun }: { sun: string }) {
                   </T>
                 ) : null}
               </View>
-              {x.vals.some((y) => y != null) ? <Spark vals={x.vals} label={x.l + ' each day this week'} /> : null}
               <Text style={[s.numB, s.avgV, { color: c.ink }]}>{x.v}</Text>
             </View>
           ))}
@@ -398,35 +407,53 @@ export function WeekDetail({ sun }: { sun: string }) {
 /* ---------- the picked week's seven days, as the Days calendar draws them; a tap opens the day ---------- */
 function WeekDays({ ds }: { ds: StoryDay[] }) {
   const c = useTheme();
-  const on = c.scheme === 'dark' ? '#10163A' : '#FFFFFF';
+  const k = kit(c.scheme === 'dark', c.line);
+  /* days in a row of one kind join into one band, the way the month draws them */
+  const bands: [number, number, 'clean' | 'slip'][] = [];
+  ds.forEach((d, i) => {
+    if (d.state !== 'clean' && d.state !== 'slip') return;
+    const last = bands[bands.length - 1];
+    if (last && last[2] === d.state && last[1] === i - 1) last[1] = i;
+    else bands.push([i, i, d.state]);
+  });
   return (
-    <View style={s.week}>
-      {ds.map((d) => {
-        const bg = d.state === 'clean' ? c.mint : d.state === 'slip' ? c.slip : 'transparent';
-        const bd = d.state === 'ahead' ? c.line : bg;
-        const live = d.state === 'clean' || d.state === 'slip';
-        const cell = (
-          <View style={[s.cell, { backgroundColor: bg, borderColor: bd, borderStyle: d.state === 'ahead' ? 'dashed' : 'solid' }]}>
-            <Text style={[s.cellN, { color: live ? on : c.muted }]}>{Number(d.k.slice(8))}</Text>
-          </View>
-        );
-        return (
-          <View key={d.k} style={s.dayBox}>
-            <Text style={[s.dow, { color: c.muted }]}>{d.l}</Text>
-            {live ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${d.name} ${fmtDate(d.k, { month: 'long', day: 'numeric' })}: ${d.state === 'slip' ? 'a slip' : 'no slip'}`}
-                onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-                {cell}
-              </Pressable>
+    <View>
+      <View style={s.week}>
+        {ds.map((d) => (
+          <Text key={d.k} style={[s.dow, s.dayBox, { color: c.muted }]}>
+            {d.l}
+          </Text>
+        ))}
+      </View>
+      <View style={[s.week, { height: 48 }]}>
+        {bands.map(([x, y, kind]) => (
+          <View key={x} pointerEvents="none" style={[s.bandBox, { left: `${(x / 7) * 100}%`, width: `${((y - x + 1) / 7) * 100}%` }]}>
+            {kind === 'clean' ? (
+              <Glow colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.band} />
             ) : (
-              cell
+              <View style={[s.band, { backgroundColor: k.slip }]} />
             )}
           </View>
-        );
-      })}
+        ))}
+        {ds.map((d) => {
+          const live = d.state === 'clean' || d.state === 'slip';
+          const n = <Text style={[s.cellN, { color: d.state === 'clean' ? ON_RUN : d.state === 'slip' ? k.onSlip : c.muted }]}>{Number(d.k.slice(8))}</Text>;
+          return live ? (
+            <Pressable
+              key={d.k}
+              accessibilityRole="button"
+              accessibilityLabel={`${d.name} ${fmtDate(d.k, { month: 'long', day: 'numeric' })}: ${d.state === 'slip' ? 'a slip' : 'no slip'}`}
+              onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+              style={({ pressed }) => [s.dayBox, s.dayCell, { opacity: pressed ? 0.7 : 1 }]}>
+              {n}
+            </Pressable>
+          ) : (
+            <View key={d.k} style={[s.dayBox, s.dayCell]}>
+              {d.state === 'ahead' ? <View style={[s.ring, { borderColor: k.faint }]}>{n}</View> : n}
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -493,9 +520,12 @@ const s = StyleSheet.create({
   strip: { flexDirection: 'row', gap: 4 },
   seg: { flex: 1, height: 10, borderRadius: 5 },
   week: { flexDirection: 'row' },
-  dayBox: { flex: 1, alignItems: 'center', gap: 6 },
-  dow: { fontFamily: font.bodySemi, fontSize: 13 },
-  cell: { width: 40, height: 40, borderRadius: 12, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  dayBox: { flex: 1, alignItems: 'center' },
+  dow: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center', paddingBottom: 6 },
+  dayCell: { height: 48, justifyContent: 'center' },
+  bandBox: { position: 'absolute', top: 4, bottom: 4, paddingHorizontal: 3 },
+  band: { flex: 1, borderRadius: 20 },
+  ring: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   cellN: { fontFamily: font.bodyBold, fontSize: 15 },
   nums: { flexDirection: 'row', gap: 8 },
   numB: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },

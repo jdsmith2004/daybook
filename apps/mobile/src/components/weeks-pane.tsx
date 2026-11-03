@@ -120,13 +120,20 @@ export function WeeksPane() {
   );
 }
 
-/* ---------- the finished weeks as one line, soft mint under it, the dates at its two ends ---------- */
-const LINE_H = 150;
+/* ---------- the finished weeks as one line, read without a key: each dot is a week with its number over it, the scale
+   from 0 to 7 days at the side, the dates under its two ends ---------- */
+const LINE_H = 168;
+const GUTTER = 22;
 function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
   const c = useTheme();
   const [w, setW] = useState(0);
-  const pad = 8;
-  const pts = weeks.map((x, i): [number, number] => [pad + (i / (weeks.length - 1)) * (w - pad * 2), pad + (1 - x.noSlip / 7) * (LINE_H - pad * 2)]);
+  const top = 26; /* room for the numbers over the dots */
+  const bot = 8;
+  const y7 = top;
+  const y0 = LINE_H - bot;
+  const x0 = GUTTER + 8;
+  const x1 = w - 8;
+  const pts = weeks.map((x, i): [number, number] => [x0 + (i / (weeks.length - 1)) * (x1 - x0), y0 - (x.noSlip / 7) * (y0 - y7)]);
   let d = '';
   pts.forEach(([x, y], i) => {
     if (!i) d = `M${x} ${y}`;
@@ -136,27 +143,57 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
       d += ` C${mx} ${py} ${mx} ${y} ${x} ${y}`;
     }
   });
-  const area = d + ` L${pts[pts.length - 1][0]} ${LINE_H} L${pts[0][0]} ${LINE_H} Z`;
+  const area = d + ` L${pts[pts.length - 1][0]} ${y0} L${pts[0][0]} ${y0} Z`;
+  /* every week's number when they fit; past twelve weeks, the first, the last and the best */
+  const best = weeks.reduce((b, x, i) => (x.noSlip > weeks[b].noSlip ? i : b), 0);
+  const shown = (i: number) => weeks.length <= 12 || i === 0 || i === weeks.length - 1 || i === best;
   return (
     <View style={{ gap: 4 }} accessible accessibilityRole="image" accessibilityLabel={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}>
       <View style={{ height: LINE_H }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
         {w ? (
-          <Svg width={w} height={LINE_H}>
-            <Defs>
-              <LinearGradient id="weeksFill" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={c.mint} stopOpacity={0.32} />
-                <Stop offset="1" stopColor={c.mint} stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
-            <Path d={area} fill="url(#weeksFill)" />
-            <Path d={d} stroke={c.mint} strokeWidth={3} fill="none" strokeLinecap="round" />
-            {pts.map(([x, y], i) => (
-              <Circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 6 : 4} fill={c.bg} stroke={c.mint} strokeWidth={2.5} />
-            ))}
-          </Svg>
+          <>
+            <Svg width={w} height={LINE_H} style={StyleSheet.absoluteFill}>
+              <Defs>
+                <LinearGradient id="weeksFill" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={c.mint} stopOpacity={0.28} />
+                  <Stop offset="1" stopColor={c.mint} stopOpacity={0} />
+                </LinearGradient>
+              </Defs>
+              <Path d={`M${x0} ${y7} L${x1} ${y7}`} stroke={c.line} strokeWidth={1} strokeDasharray="4 5" />
+              <Path d={`M${x0} ${y0} L${x1} ${y0}`} stroke={c.line} strokeWidth={1} />
+              <Path d={area} fill="url(#weeksFill)" />
+              <Path d={d} stroke={c.mint} strokeWidth={3} fill="none" strokeLinecap="round" />
+              {pts.map(([x, y], i) => (
+                <Circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 6 : 4} fill={c.bg} stroke={c.mint} strokeWidth={2.5} />
+              ))}
+            </Svg>
+            <T v="small" tone="muted" style={[s.axis, { top: y7 - 9 }]}>
+              7
+            </T>
+            <T v="small" tone="muted" style={[s.axis, { top: y0 - 9 }]}>
+              0
+            </T>
+            {pts.map(([x, y], i) =>
+              shown(i) ? (
+                <Text
+                  key={i}
+                  style={[
+                    s.dotNum,
+                    {
+                      left: x - 16,
+                      top: y - 26,
+                      color: i === pts.length - 1 ? c.mint : c.ink,
+                      fontFamily: i === pts.length - 1 ? font.displayBold : font.display,
+                    },
+                  ]}>
+                  {weeks[i].noSlip}
+                </Text>
+              ) : null,
+            )}
+          </>
         ) : null}
       </View>
-      <View style={s.between}>
+      <View style={[s.between, { paddingLeft: GUTTER }]}>
         <T v="small" tone="muted">
           {fmtDate(addDays(weeks[0].sun, -6), { month: 'short', day: 'numeric' })}
         </T>
@@ -431,6 +468,8 @@ function Line({ label, text, strong }: { label: string; text: string; strong?: b
 
 const s = StyleSheet.create({
   head: { fontFamily: font.display, fontSize: 34, lineHeight: 41 },
+  axis: { position: 'absolute', left: 0, width: GUTTER - 4, textAlign: 'right', lineHeight: 18 },
+  dotNum: { position: 'absolute', width: 32, textAlign: 'center', fontSize: 15, lineHeight: 20 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, minHeight: 44 },
   strip: { flexDirection: 'row', gap: 4 },
   seg: { flex: 1, height: 10, borderRadius: 5 },

@@ -35,7 +35,7 @@ import { rkComebackCount } from './rekindle';
 import { urStats } from './sos';
 import { phaseLabel } from './view';
 import { TOOLS } from './legacy/core.js';
-import type { DayKey, Days, Settings } from './types';
+import type { DayEvent, DayKey, Days, Settings } from './types';
 
 /** one day in the list (legacy dayRow) */
 export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: RunLedger) {
@@ -214,6 +214,50 @@ export function weekView(days: Days, st: Settings, tk: DayKey, k: number) {
       ...avgTile(rateAvg(days, w.lo, w.hi, f), pw && rateAvg(days, pw.lo, pw.hi, f)),
       vals: keys.map((x) => {
         const c = days[x] && days[x].checkin;
+        return c && typeof c[f] === 'number' ? (c[f] as number) : null;
+      }),
+    })),
+    shows: [
+      ['Most common trigger', tt ? tt.t + ' (' + tt.n + ')' : '–'],
+      ['Busiest stretch', bw ? bw.label : 'Needs 3 or more entries with a time'],
+    ] as [string, string][],
+  };
+}
+
+/** One week as the Sunday review counts it, Monday to the Sunday `sun` (Pattern > Weeks): the counts, the average ratings
+    against the week before, and what the week shows. The same parts as weekView, which counts weeks from the start date. */
+export function sunView(days: Days, st: Settings, tk: DayKey, sun: DayKey) {
+  const lo = addDays(sun, -6);
+  const keys: DayKey[] = [];
+  for (let x = lo; x <= sun; x = addDays(x, 1)) keys.push(x);
+  const w = { checkins: 0, events: 0, rode: 0, slipped: 0, slipDays: 0 };
+  const evs: (DayEvent & { key: DayKey })[] = [];
+  for (const k of keys) {
+    const d = days[k];
+    if (!d || k > tk) continue;
+    const s = sumDay(d);
+    if (s.checked) w.checkins++;
+    w.events += s.n;
+    w.rode += s.rode;
+    w.slipped += s.slipped;
+    if (s.slipped) w.slipDays++;
+    for (const e of d.events || []) evs.push({ key: k, ...e });
+  }
+  const tt = topTrigger(evs, st.opts);
+  const bw = busiestWindow(evs, st.rollover);
+  const pLo = addDays(lo, -7);
+  const pHi = addDays(lo, -1);
+  return {
+    sun,
+    keys,
+    w,
+    range: rangeLabel(lo, sun),
+    avgs: logRateKeys(days).map((f) => ({
+      l: ratingOf(f).name,
+      f,
+      ...avgTile(rateAvg(days, lo, sun, f), rateAvg(days, pLo, pHi, f)),
+      vals: keys.map((x) => {
+        const c = x <= tk ? days[x]?.checkin : null;
         return c && typeof c[f] === 'number' ? (c[f] as number) : null;
       }),
     })),

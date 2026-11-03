@@ -4456,3 +4456,11 @@ Three directions, drawn with the real parts on a made-up nine-week log (pictures
   small flame, which reads as loss, and the path echoes the lessons map.
 
 Effort: medium (a screen and words; no data changes).
+
+**The owner's word (November 2, 2026):** the little flames did not look good; the graph idea was liked but was hard to read;
+keep all the same information. **Built (D):** a graph of every week, "Days with no slip, each week": one bar per week of seven
+days, mint for no-slip days and amber for slip days (the Days calendar's colors), the count over each bar, the Monday's date
+under it, a key. A tap picks a week, and under it that week is told in full: the review's sentence, its seven days as the
+calendar draws them (a tap opens the day), the four counts, the average ratings, what the week shows, its Sunday review with
+Change, an older review's answers, and the first week's Day 1 choice. Weeks are Monday to Sunday, like the review (core
+`sunView`). Pictures: docs/weeks-redesign/d\*.jpg.

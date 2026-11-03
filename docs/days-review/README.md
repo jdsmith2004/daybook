@@ -56,3 +56,16 @@ left with each day's number big, how it went, and each entry with its time. Toda
 On branch days-redesign: `calendar-card.tsx` (the month), `today.tsx` (the count, as a section), `sunday-card.tsx` (the goal,
 as a section), `day-log.tsx` (the log, with today's entries in today's row; TodaySoFar is gone). The built-* pictures are the
 iPhone release build and the web. Not merged until the owner says yes.
+
+## Round four: how a slip shows (November 3, 2026)
+
+The owner on F as built: no flame on today, just the colors; the orange balls for slips and the dots on the log's thread do
+not work; the calendar itself is good. Three ways to show a slip, each drawn on a month that is half slips (September, 15
+and 15) with a matching log:
+
+- **H, warm and cool** (h-slips-warm-and-cool.png): slips join into their own cool violet band, as runs join into a warm one.
+  The log carries a thin warm or violet bar beside each date.
+- **I, the light is simply off** (i-slips-light-off.png): a slip is only its number with a small violet dash under it (gold
+  once the person came back). The log drops per-day marks and opens each week with a strip of its seven days.
+- **J, one band, dusk on slips** (j-slips-dusk-band.png): every logged day stays in one band, gold on no-slip days and dusk
+  on slips, so the band never breaks. The log's date becomes a small tile in the day's color.

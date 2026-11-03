@@ -242,13 +242,19 @@ export interface PatFelt extends PatSay {
   by: [number, number, number, number, number];
   /** days with an answer in the range */
   n: number;
-  /** how the days felt as a flow across the range: for each point along it, the share at each step, Rough first. Empty with no answers */
+  /** how the days felt as a flow, from the first answer in the range to today: for each point along it, the share at each step, Rough first. Empty with no answers */
   flow: number[][];
+  /** where the flow starts, for its label ("Oct 24"), or empty when it starts with the range */
+  flowFrom: string;
 }
 /** how many points a flow is drawn from */
 const FLOW_POINTS = 48;
-/** The days as a flow: each point along the range is what the days around it felt like, the nearest counting most, so a band of color widens as
-    days like it come more often. A day with no answer adds nothing and leaves no hole, because not answering is not a bad day. */
+/** how much the whole range's mix counts at every point, in answers: enough that the end of the flow is never one day alone */
+const FLOW_HOLD = 1.5;
+/** The days as a flow, from the first answer to the last day: each point along it is what the days around it felt like, the nearest counting most,
+    so a band of color widens as days like it come more often. Days before the first answer are not drawn: nothing was said about them. A day with no
+    answer adds nothing and leaves no hole, because not answering is not a bad day. Every point leans a little on the range's whole mix, so where answers
+    are few (the ends, a quiet stretch) the bands hold their level instead of running to one answer's color. */
 export function patFlow(days: Days, keys: DayKey[]): number[][] {
   const at: [number, DayFeelStep][] = [];
   keys.forEach((k, i) => {
@@ -256,16 +262,18 @@ export function patFlow(days: Days, keys: DayKey[]): number[][] {
     if (n) at.push([i, n]);
   });
   if (!at.length) return [];
-  const last = Math.max(1, keys.length - 1);
-  const wide = Math.max(1, keys.length / 12);
-  const points = Math.min(FLOW_POINTS, Math.max(2, keys.length));
+  const from = at[0][0];
+  const span = keys.length - 1 - from;
+  const all = [0, 0, 0, 0, 0];
+  for (const [, n] of at) all[n - 1] += 1 / at.length;
+  /* the kernel is as wide as the answers are far apart, so a few answers make a few soft waves, not a spike at each */
+  const wide = Math.max(1, span / 12, (1.5 * (span + 1)) / at.length);
+  const points = Math.min(FLOW_POINTS, Math.max(2, span + 1));
   return Array.from({ length: points }, (_, p) => {
-    const here = (p / (points - 1)) * last;
-    const near = [0, 0, 0, 0, 0];
-    /* a long way from any answer the weights all but vanish, so the nearest answer is what counts there */
-    const closest = Math.min(...at.map(([i]) => Math.abs(i - here)));
+    const here = from + (p / (points - 1)) * span;
+    const near = all.map((v) => v * FLOW_HOLD);
     for (const [i, n] of at) {
-      const d = (Math.abs(i - here) - closest) / wide;
+      const d = (i - here) / wide;
       near[n - 1] += Math.exp((-d * d) / 2);
     }
     const sum = near.reduce((a, v) => a + v, 0);
@@ -289,7 +297,9 @@ export function patFelt(days: Days, per: PatPeriod, tk: DayKey): PatFelt {
   const n = cols.reduce((a, c) => a + c.n, 0);
   const by: PatFelt['by'] = [0, 0, 0, 0, 0];
   for (const c of cols) c.steps.forEach((v, i) => (by[i] += v));
-  return { cols, by, n, flow: patFlow(days, per.keys), ...feltSay(days, per, n) };
+  const at = per.keys.find((k) => dayStep(days[k]));
+  const flowFrom = !at || at === per.keys[0] ? '' : fmtDate(at, { month: 'short', day: 'numeric' });
+  return { cols, by, n, flow: patFlow(days, per.keys), flowFrom, ...feltSay(days, per, n) };
 }
 function feltSay(days: Days, per: PatPeriod, n: number): PatSay {
   if (!n) return { head: 'Nothing answered', line: 'A day with no answer stays blank here.' };

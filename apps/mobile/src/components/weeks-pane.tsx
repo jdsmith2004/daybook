@@ -90,7 +90,7 @@ export function WeeksPane() {
           <>
             <Text style={[s.head, { color: c.ink }]}>{kept}</Text>
             <T tone="muted">
-              {kept === 1 ? 'day' : 'days'} with no slip, in {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}. They stay yours.
+              {kept === 1 ? 'day' : 'days'} in {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}. They stay yours.
             </T>
           </>
         )}

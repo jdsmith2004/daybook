@@ -35,8 +35,9 @@ import { font, useTheme, type Palette } from '@/lib/theme';
 /* how the day went: its fill, its words, and a plain icon */
 const HEAD: Record<CalKind, { ic: string; tone: (c: Palette) => [string, string] }> = {
   ok: { ic: 'check', tone: (c) => [c.mintSoft, c.mintText] },
-  saved: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
-  slip: { ic: 'leaf', tone: (c) => [c.slipSoft, c.slipText] },
+  /* a slip in the Days colors (calm violet), as the month and the log show it */
+  saved: { ic: 'leaf', tone: (c) => [c.violetSoft, c.violetText] },
+  slip: { ic: 'leaf', tone: (c) => [c.violetSoft, c.violetText] },
   logged: { ic: 'pencil', tone: (c) => [c.skySoft, c.skyText] },
   none: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
   away: { ic: 'leaf', tone: (c) => [c.surface2, c.muted] },
@@ -103,7 +104,7 @@ export default function DaySheet() {
               <T v="small" style={s.evTime}>
                 {e.time}
               </T>
-              <View style={[s.evMark, { backgroundColor: e.outcome === 'rode' ? c.mint : c.slip }, e.outcome !== 'rode' && { borderRadius: 3 }]} />
+              <View style={[s.evMark, { backgroundColor: e.outcome === 'rode' ? c.mint : c.violet }, e.outcome !== 'rode' && { borderRadius: 3 }]} />
               <View style={{ flex: 1, gap: 2 }}>
                 <T v="label">{e.what}</T>
                 {e.meta ? (

@@ -226,7 +226,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         <Room>
           {(w, h) => (
             <Hillside
-              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (longest >= 2 ? ' Longest stretch: ' + longest + ' days.' : '') : undefined}
+              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (longest >= 2 ? ' Longest run: ' + longest + ' days.' : '') : undefined}
               ridge={ridge}
               than={doing.than}
               first={doing.first}
@@ -515,7 +515,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           </View>
         ) : (
           <T>
-            Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further apart.
+            As you log urges and slips with a time and a reason, this page starts to answer: when, what sets it off, and whether slips are getting further
+            apart.
           </T>
         )}
       </Card>

@@ -4470,3 +4470,8 @@ page of its own with everything D shows under the graph, so Weeks itself only ha
 E. Chapters (the flame's sky, then each week as a thin strip of its days, its sentence and the person's own words from its
 review); F. A week per card (one tall card per week, swiped like Pattern); G. Line and list (no-slip days per week as one line,
 then each week as a row with its strip). Pictures: docs/weeks-redesign/e, f, g.
+
+**Built (G), the owner's pick (November 2, 2026):** Weeks is "Days with no slip, each week": what changed from the first week to
+last week (or, when that is not up, the no-slip days kept), the finished weeks as one line, and every week newest first as a
+row with its days as a strip. A tap opens the week's own page (app/weekly/[sun].tsx) with everything the old Weeks had. Checked
+on the web (dark and light) and on an iPhone 17 Pro simulator, release build. Pictures: docs/weeks-redesign/g-ios-\*.png.

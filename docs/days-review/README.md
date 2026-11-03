@@ -12,3 +12,15 @@ Three directions, all on the demo person with one October slip added to show how
 - **C, every day held**: the night sky with every day since the start in rows of weeks, under "39 days held".
 
 What all three drop: the second count card (Today has the count), the week cards, and the rows that only say "No slip".
+
+## Round two (the owner: none of them; use the Pattern charts for inspiration, C is the best)
+
+Both are drawn in the Pattern cards' language: a night card, a small question, a big answer, and a picture that runs to the
+card's edges with glowing, glossy shapes.
+
+- **D, every day a light** (recommended): C on a night card. The flame stands big on a hill, and below the hill every day
+  since the start is a warm glowing light in rows of weeks, newest on top. A slip is a small dim ember, today a dashed ring.
+- **E, the month alight**: one month per card, each day a glowing numbered sphere like the feelings bubbles, swiped sideways
+  to earlier months like the Pattern deck, with the same small ruler under it.
+
+Both keep the plain list of days below, with quiet stretches folded.

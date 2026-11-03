@@ -1,5 +1,40 @@
 # What is planned next
 
+## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
+
+Today, Pattern, Days, Weeks and the lessons were each redesigned alone this week. This pass looked at them together. The tool for it stays:
+`npm run journey` takes a picture of every main screen of a seeded three-week person, light and dark, and docs/craft-checklist.md
+section 10 says how Sonnet critics try to prove each screen generic or out of step (six ran here, in parallel).
+
+Fixed, as clear seams (medium):
+
+- Pattern spoke of "clean days" and "Longest stretch"; Days, Today and My numbers say "days in a row with no slip" and "Longest run". Pattern now does too.
+- A day's page showed a slip in amber and orange, while the month, the log and Weeks show it in calm violet (and orange means no slip there).
+  The day's page now uses the Days colors.
+- Weeks said "with no slip" in its label and again in the sentence under the number. The sentence is now "21 days in 4 weeks. They stay yours."
+- Days' "No-slip days in all" broke onto two lines under SOS; it is "No-slip days".
+- In one look's starting line ("Log urges and slips...") read as if nothing was logged, for a person with three weeks logged. It starts "As you log".
+
+Open questions for the owner (not changed):
+
+1. **The days before Day 1 count differently on one tab.** Pattern's first card ("21 of 22 days had no slip") and Weeks ("21 days") count the
+   logged days before Day 1 as no-slip days; Days, Today, My numbers and Milestones count from Day 1 (14). The same person sees 21 and 14 on
+   one tab. Recommendation: count from Day 1 everywhere (core `patDoing` and `patWeeks`), and show the days before as Logged, as Days does.
+2. **Slip color across the app.** Days and Weeks chose calm violet for a slip; the rest still uses amber for it (Pattern's charts, the
+   Sunday review's slip number, the "I slipped" choices in SOS and Already happened). On Pattern, orange means no slip in Days and a slip in
+   the charts. Recommendation: violet for a slip on every record and chart; the amber leaf on the "I slipped" buttons can stay, as the act.
+3. **Three kinds of week.** Days' log groups by weeks counted from Day 1 ("Week 4 · Oct 29 to Nov 4", Thursday to Wednesday); Weeks and the
+   Sunday review use Monday to Sunday; the month starts on Sunday. Recommendation: the log groups by the same Monday to Sunday weeks as
+   Weeks, named the same way ("This week", "Oct 12 to 18").
+4. **A lesson beat that reads as a fact about the reader.** Lesson 4 opens "You slipped once this month, and the guilt will not let up."
+   To someone with no slip, or many, it is not true. Recommendation: "Say you slipped once this month..." (lesson words are the owner's, so not touched).
+5. **"Paused 10 min 0% of the time"** in My numbers reads as a failure. It comes from the frozen legacy rules (the golden fixtures hold it).
+   Recommendation: leave the number out when it is 0, with the fixtures updated in the same change.
+
+What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
+a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS
+pill and urge row (care in reach before setup); points on a slip day for logging it honestly.
+
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 
 The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic

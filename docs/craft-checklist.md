@@ -146,7 +146,7 @@ The prompt (paste it with the paths filled in):
 > where it is), (b) what is wrong, (c) the rule it breaks (quote the line) or the other picture it disagrees with (name both, and say how:
 > heading size, left edge, gap, card shape, button style, how the tab opens, the voice of the words). Count type sizes, pills, filled
 > buttons and boxes inside boxes; check the thumb rule (answers and the main button low, a text box and its button together near the
-> top). Words: no contractions, no hedging, no shame, no line that explains what the screen already shows. No vague taste ("feels
+> top). Words: no contractions, no hedging, no shame, no line that explains what the screen already shows. Show it, do not say it: name every sentence a shape could carry, every empty state that asks the person to log something instead of drawing its chart empty, and every count told in a sentence instead of its marks. No vague taste ("feels
 > cluttered", "could be cleaner") and no praise. Do not ask for the flame to be smaller, a sky removed or a care tool hidden: those are
 > the app's soul and the rules protect them. If a picture is clean, say "nothing concrete". End with up to 3 seams across the pictures:
 > the same job done two different ways.

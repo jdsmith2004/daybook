@@ -24,3 +24,29 @@ card's edges with glowing, glossy shapes.
   to earlier months like the Pattern deck, with the same small ruler under it.
 
 Both keep the plain list of days below, with quiet stretches folded.
+
+## Round three: what Days must keep (the owner: all the same information, and it has to be a normal calendar)
+
+- **Today so far** (only when something is logged today): the count, the detail line, and today's entries.
+- **The month**: title, earlier and later month, the month's line (no-slip days, urges ridden out, slips logged), the
+  weekdays, each day by how it went (no slip, came back after a slip, slip, logged, nothing logged, away, still to come),
+  today marked, ×N on a day with more than one slip, the key for the kinds in the month, each gap away with Fill in, and a
+  tap on a day opens it.
+- **The count**: the mode's name, the big number and its words, the line on how it counts, longest run, no-slip days in
+  all (and hours since a slip and comebacks when they apply), the graduation line, and How I count days. Tracking and
+  step-down show their own versions.
+- **The week's goal** from Sunday, its progress dots, and the extras (the if-then plan, the harder day, the note).
+- **The log**: every week with its title and its check-ins and entries, each day with weekday, date, how it went and
+  what was logged at what time, opening the day, and Show earlier days.
+
+Two calendars, from the research (Flo draws real days solid and days to come as dotted outlines; Apple Fitness and
+habit apps make the cell itself carry the day; date-range pickers join days into one band):
+
+- **F, runs of light** (recommended): a normal month on the night card. Days in a row with no slip join into one glowing
+  band across the week, the flame stands in today's square at the end of it, a slip is a small ember ringed in gold
+  (you came back), and days to come are dotted circles.
+- **G, glowing days**: each day its own glowing sphere with its number, the flame in today's square, months swiped sideways
+  like the Pattern deck.
+
+Under either: the count with all its figures, the graduation line, the week's goal, then the log as a warm thread down the
+left with each day's number big, how it went, and each entry with its time. Today is lit. Nothing is left out.

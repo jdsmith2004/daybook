@@ -12,7 +12,7 @@ import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { WavyRing } from '@/components/shapes';
 
-import { breathAt, useBreathClock, webDeps, type Steps } from '@/lib/breath';
+import { breathAt, useBreathClock, useBreathTouch, webDeps, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
@@ -252,8 +252,9 @@ const WORDS = 96;
 /** the first SOS screen: a round sun in the middle that grows while you breathe in and shrinks while you breathe out, the
     words for each step above it, and around it Android's wavy progress line (the one squiggle, components/shapes), which
     goes a third of the way round with each of three breaths and closes with one small swell when they are done. It
-    measures the room it has and fills it. It ticks only while on. It counts `breaths` breaths, with a soft buzz as each
-    one starts, and tells onBreaths how many are done; after that it keeps breathing. */
+    measures the room it has and fills it. It ticks only while on. It counts `breaths` breaths, guided by touch (the taps
+    rise through each breath in and fall away through each breath out, lib/breath useBreathTouch), and tells onBreaths
+    how many are done; when they are, one success buzz, and after that it keeps breathing, still. */
 export function BreathSun({ on, breaths, onBreaths }: { on: boolean; breaths: number; onBreaths?: (n: number) => void }) {
   const c = useTheme();
   const [r0] = useState(() => Date.now());
@@ -264,12 +265,12 @@ export function BreathSun({ on, breaths, onBreaths }: { on: boolean; breaths: nu
   const over = done >= breaths;
   useEffect(() => {
     onBreaths?.(done);
-    if (done < breaths) buzz('tap');
-    else if (done === breaths) buzz('lit');
+    if (done === breaths) buzz('lit');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
   const still = useReducedMotion();
   const clock = useBreathClock(sec, on);
+  useBreathTouch(CALM, r0, on, breaths * CALM_SEC);
   /* a screen reader hears each turn of the breath: the words are a live region (Android and the web), and iOS, which has
      no live regions, is told each one */
   const say = over ? 'Well done. Three slow breaths' : PH_TXT[ph.k] + '. Breath ' + (done + 1) + ' of ' + breaths;

@@ -1304,6 +1304,7 @@ function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
           left={(BREATHE_SECS - gone) * 1000}
           sec={sec}
           beat={done ? BEAT_BREATH : BREATHE_BEAT}
+          touch={done ? undefined : BREATHE_SECS}
           label={done ? 'Well done' : 'Breathing'}
           color={c.scheme === 'dark' ? c.sun : c.accent}
           ink={c.accentText}

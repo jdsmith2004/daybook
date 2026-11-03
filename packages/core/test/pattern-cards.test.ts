@@ -515,8 +515,40 @@ describe('patFlow', () => {
     d = withMood(d, addDays(TK, -2), 3);
     const f = patFlow(d, patPeriod('30', d, st, TK).keys);
     for (const p of f) expect(p.reduce((a, v) => a + v, 0)).toBeCloseTo(1);
-    expect(f[f.length - 1][moodStep(3) - 1]).toBeGreaterThan(0.9);
-    expect(f[0][moodStep(9) - 1]).toBeGreaterThan(0.9);
+    expect(f[f.length - 1][moodStep(3) - 1]).toBeGreaterThan(0.55);
+    expect(f[0][moodStep(9) - 1]).toBeGreaterThan(0.55);
+  });
+  it('starts at the first answer, so nothing is drawn for days nobody said anything about', () => {
+    let d = base();
+    d = withMood(d, addDays(TK, -9), 9);
+    d = withMood(d, addDays(TK, -4), 1);
+    const per = patPeriod('30', d, st, TK);
+    expect(patFlow(d, per.keys)).toHaveLength(10);
+    expect(patFelt(d, per, TK).flowFrom).toBe('Oct 23');
+    expect(patFelt(withMood(d, per.keys[0], 5), per, TK).flowFrom).toBe('');
+  });
+  it('holds its level to the end: a last good day does not wash out the hard days before it', () => {
+    /* the owner's month: 8 answered, the last few good, today not answered yet */
+    let d = base();
+    const moods: [number, number][] = [
+      [-12, 1],
+      [-11, 3],
+      [-10, 7],
+      [-9, 1],
+      [-7, 3],
+      [-5, 7],
+      [-3, 7],
+      [-1, 7],
+    ];
+    for (const [ago, md] of moods) d = withMood(d, addDays(TK, ago), md);
+    const f = patFlow(d, patPeriod('30', d, st, TK).keys);
+    const end = f[f.length - 1];
+    expect(end[moodStep(7) - 1]).toBeGreaterThan(0.5);
+    expect(end[moodStep(1) - 1]).toBeGreaterThan(0.1);
+    expect(end[moodStep(3) - 1]).toBeGreaterThan(0.1);
+    /* and the last steps do not dive: the end is near the point before it */
+    const prev = f[f.length - 2];
+    for (let i = 0; i < 5; i++) expect(Math.abs(end[i] - prev[i])).toBeLessThan(0.05);
   });
   it('a stretch with no answer leaves no hole, and no answers at all is nothing', () => {
     const d = withMood(base(), addDays(TK, -1), 5);

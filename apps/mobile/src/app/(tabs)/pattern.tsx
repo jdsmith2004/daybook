@@ -300,7 +300,16 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       chart: (
         <Room>
           {(w, h) => (
-            <DayFlow flow={felt.flow} by={felt.by} first={doing.first} sky={CARD_SKY.felt[1]} w={w} h={h} look={look} label={felt.head + '. ' + felt.line} />
+            <DayFlow
+              flow={felt.flow}
+              by={felt.by}
+              first={felt.flowFrom || doing.first}
+              sky={CARD_SKY.felt[1]}
+              w={w}
+              h={h}
+              look={look}
+              label={felt.head + '. ' + felt.line}
+            />
           )}
         </Room>
       ),

@@ -9,6 +9,7 @@ import { MorphShape, type ShapeKind } from '@/components/shapes';
 import { fmtMS, Orb, useSeconds } from '@/components/orb';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { Dock, Finish, Middle, Stage } from '@/components/scene';
+import { useBreathTouch } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { getBreathePref, setBreathePref, setSoundPref, useSoundPref } from '@/lib/prefs';
 import { play } from '@/lib/sound';
@@ -52,6 +53,8 @@ export function Breathe({ finish, exit, sos, level }: ToolProps) {
   /* a breath counts once its breath out is done */
   const cycle = P.ph.reduce((a, b) => a + b[1], 0);
   const breaths = Math.floor(Math.min(sec, total) / cycle);
+  /* the breath by touch, so it can be followed with eyes closed; it ends with the time */
+  useBreathTouch(P.ph, startedAt, !done, total);
   if (done)
     return (
       <Stage key="done" dir={0}>

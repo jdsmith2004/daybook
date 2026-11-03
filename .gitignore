@@ -57,3 +57,4 @@ npm-debug.log*
 
 # Claude in Chrome outreach log: names people, so never in git
 .outreach/
+journey-shots/

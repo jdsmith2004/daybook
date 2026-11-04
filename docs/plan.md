@@ -64,14 +64,39 @@ mind; it reads the few traces the person leaves, and makes each one count for th
   the stretch for the day. It does not end when that screen closes.
 - **Today asks, once.** While it is on, the top of Today says so plainly and offers one tap: "It keeps coming" or "It eased".
   Anyone who opens the app during a hard day is met by it without looking for it.
-- **The app comes to the person.** Every hour or so, a note with two buttons on the note itself ("Still here" and "Easier"),
-  answered without opening the app. "Still here" counts an hour held; three of them in a row open the steps (close the door,
-  say it out loud). This is the one channel that works for someone fighting it out on their own.
+- **The app comes to the person**, with notes that each carry one move (below). This is the one channel that works for someone
+  fighting it out on their own.
 - **It learns when.** Once a person has had a stretch or two, the app sees what came before them (days since the last slip,
   the day of the week, a missed wind-down, a run of short nights) and starts the watch earlier the next time, with the closed
   door asked ahead.
 - **Later, maybe:** a racing heart with no workout, read from Apple Health with the person's yes. Unproven and private by
   nature; not in the first build.
+
+**The notes carry the help, and they follow the person's energy (the owner, November 3, 2026).** "Knowing if it's still there
+or easier won't really make much of a difference. I'm very worried about flooding with notifications. It comes in waves: you work
+really hard, then you lose, then it's hard to get motivated, and notifications just piss you off, and then you start trying
+again." So:
+
+- _A note is a move, not a question._ Each note carries one step from the research, readable on the lock screen without opening
+  the app, and its buttons do it:
+  - the door: "Where does your phone sit until 4? The kitchen counter works." Button: Done.
+  - the voice: "That 'it would be amazing' is a preview, not a promise. Run it to the end." Button: Show me.
+  - the picture: one line of the person's own freedom scene, in their words.
+  - the person: "Text Sam: rough day, can you call?" Button: Send (opens Messages with it ready).
+  - the link: "Not yet." Button: Not before 3:40 (or 4:40). The person sets the next note. This is the smoker's "first this
+    chore, then I will go", and choosing it is the active part, not a report.
+    "Still here" and "Easier" are gone as buttons. Hours held are counted from the links chosen, as a side effect.
+- _The person sets the pace._ The next note comes at the time the person picked with Not yet. With no pick, at most one an hour
+  and five a day, none at night after bed, and every other Daybook note (lessons, check-ins) is held while a stretch is on, so
+  they never stack.
+- _Silence means stop._ Two notes in a row with no answer and the notes stop for the day, without a word. Each note has "Leave me
+  be today", which is honored with no follow-up.
+- _After a loss, rest._ A slip ends the stretch, and the app goes quiet: no stretch notes, no asks, nothing about the fight. The
+  existing gentle come-back note stays as it is.
+- _The person starts it again, never the app._ When they come back on their own (open Today, take a lesson, log), the app
+  comes back with them. A stretch is never started by a note.
+- _It learns the person's dose._ If notes in past stretches were mostly ignored, the next stretch sends fewer; if Not yet was
+  used, it keeps offering it. What it learns stays on the phone.
 
 **The design: close the door, change the picture, say it out loud.** It is not a list of tools. It is a short
 sequence, the same every time, that works on the mind first and the body second.

@@ -38,6 +38,8 @@ describe('the places', () => {
     for (const id of core.TRAIL_PLACES) {
       expect(core.TRAIL[id].means.length).toBeGreaterThan(5);
       expect(core.TRAIL[id].hear.length).toBeGreaterThan(3);
+      expect(core.TRAIL[id].turn.length).toBeGreaterThan(30);
+      expect(core.TRAIL[id].turn.length).toBeLessThan(130);
     }
   });
 

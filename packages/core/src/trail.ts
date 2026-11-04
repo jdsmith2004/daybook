@@ -42,6 +42,8 @@ export interface TrailStop {
   means: string;
   /** what the mind says here, so a person knows the place by the thought they hear */
   hear: string;
+  /** what that thought really is: the one thing this place teaches, in one or two short sentences */
+  turn: string;
   /** the one line to say, once, out loud */
   say: string;
   /** what the picture shows, for a screen reader */
@@ -57,6 +59,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     name: 'Drift',
     means: 'Worn down: tired, alone, upset or hungry',
     hear: 'I am fine. I am just tired.',
+    turn: 'Tired, lonely, angry or hungry can feel like wanting this. Fill the real need, and most of the pull goes with it.',
     say: 'I am running low.',
     see: 'A post with four lights: hungry, angry, lonely and tired. One is low.',
     did: 'halt',
@@ -71,6 +74,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     name: 'Spark',
     means: 'Something caught your eye',
     hear: 'Huh.',
+    turn: 'That was a cue: a picture, a mood, an empty room. It fades fast once you leave the place where it found you.',
     say: 'That is a cue, not a need.',
     see: 'A spark in a dark room, and a bright doorway out of it. The phone stays behind.',
     did: 'left',
@@ -85,6 +89,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     name: 'Preview',
     means: 'Picturing it',
     hear: 'This would be so good.',
+    turn: 'The preview shows the best ten seconds. It never shows the hour after.',
     say: 'That is the preview. It always promises more.',
     see: 'A frame that glows too bright, and your own picture sliding over it.',
     did: 'forward',
@@ -99,6 +104,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     name: 'Case',
     means: 'Talking yourself into it',
     hear: 'Just once. I deserve it.',
+    turn: 'That is a permission thought. It sounds like a decision, but it is only a thought, and you do not have to argue with it.',
     say: 'Not today.',
     see: 'A door with a knock at it. Holding the button closes it, and the key turns.',
     did: 'thought',
@@ -113,6 +119,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     name: 'Steps',
     means: 'Moving toward it',
     hear: 'I am only looking.',
+    turn: 'Each step feels like nothing. Each one is also a way off, and the earlier one is the easier one.',
     say: 'This is a step. I can step off.',
     see: 'Stairs going down to the edge, and a green side path off them.',
     did: 'else',

@@ -1,7 +1,8 @@
 /* The trail (core trail.ts): for a craving that keeps coming, for hours or days. One picture, learned once: five places a
    craving walks a person down, and an exit at every one. It opens on "Where is it now?": touch the place it has reached
    (the flame walks there) and how much time there is (10 seconds, 2 minutes, or 10 or more, remembered). Then that place:
-   the one line to say once, its picture, and the one thing to do, at that length. Done is an exit, and every exit leads
+   three beats, like a lesson (the owner, November 3, 2026): what the craving whispers there, what that thought really is,
+   then the one line to say once and the one thing to do, at that length (10 seconds goes straight to the move). Done is an exit, and every exit leads
    home: the house with the lit window, how long this battle has been held, and an urge ridden out saved to the log. "It is
    back" starts again at the map. Nothing on the trail asks the person to reach out to anyone (the owner, November 3, 2026).
 
@@ -33,7 +34,7 @@ import {
   type UrState,
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 
@@ -42,21 +43,20 @@ import { useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Text } from '@/components/text';
 import {
-  DoCard,
   DoorArt,
   DrillClock,
   DriftArt,
   HomeArt,
-  MiniTrail,
-  NextLine,
   PictureSlider,
   PreviewArt,
+  Rise,
   SparkArt,
   StepsArt,
   TimeChoice,
   TrailMap,
   TW,
   WaveLine,
+  Whisper,
 } from '@/components/trail-art';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -88,6 +88,8 @@ export default function Trail() {
   const [step, setStep] = useState<Step>(atP ?? 'where');
   const [pick, setPick] = useState<TrailPlace | null>(atP ?? stretch0?.at ?? null);
   const [len, setLen] = useState<TrailLen>(() => trailLenOf(sos.mem));
+  /* the beat inside a place: 0 what it says, 1 what it really is, 2 the move */
+  const [beat, setBeat] = useState(() => (trailLenOf(sos.mem) === 's' ? 2 : 0));
   const [home, setHome] = useState<{ at: TrailPlace | null; line: string } | null>(null);
   /* how many times the door was reached, so the line it may say next is a new one each time */
   const visits = useRef(stretch0?.visits ?? 1);
@@ -193,6 +195,7 @@ export default function Trail() {
               onPress={() => {
                 if (!pick) return;
                 buzz('tap');
+                setBeat(len === 's' ? 2 : 0);
                 setStep(pick);
               }}
             />
@@ -202,58 +205,105 @@ export default function Trail() {
     );
   }
 
-  /* ---------- a place ---------- */
+  /* ---------- a place: what it says, what it really is, then the move (10 seconds goes straight to the move) ---------- */
   if (step === 'home') return null;
   const at = step;
   const P = TRAIL[at];
   const drill = P.drills[len];
-  const lenShort = TRAIL_LENS.find((x) => x.id === len)!.short;
-  const head = (
-    <>
-      <View style={s.mini}>
-        <MiniTrail at={at} onPress={() => setStep('where')} />
-      </View>
-      <View style={s.row}>
-        <T v="title" accessibilityRole="header">
-          {P.name}
-        </T>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={'Time: ' + lenShort + '. Change it.'}
-          onPress={() => setStep('where')}
-          hitSlop={8}
-          style={s.time}>
-          <Text style={s.timeT}>{lenShort}</Text>
-        </Pressable>
-      </View>
-      <Text style={s.say}>
-        {P.means + '. It sounds like: '}
-        <Text style={s.hear}>{'“' + P.hear + '”'}</Text>
-      </Text>
-      <Text style={s.say}>
-        {'Say it once: '}
-        <Text style={s.sayB}>{'“' + P.say + '”'}</Text>
-      </Text>
-    </>
-  );
+  const first = len === 's' ? 2 : 0;
   const Place = { drift: Drift, spark: Spark, preview: Preview, case: Case, steps: Steps }[at];
   return (
-    <SceneFrame title="The trail" sky="night" onClose={close} topRight={passed}>
+    <SceneFrame
+      title={P.name}
+      sky="night"
+      onBack={() => (beat > first ? setBeat(beat - 1) : setStep('where'))}
+      onClose={close}
+      topRight={passed}
+      dots={first ? null : { n: 3, i: beat, label: 'Part ' + (beat + 1) + ' of 3' }}>
       <Stage key={at + len} dir={1}>
-        {head}
-        <Place len={len} drill={drill} level={level} onExit={() => reach(at)} visits={visits.current} night={night} />
+        <Place
+          at={at}
+          beat={beat}
+          onNext={() => {
+            buzz('tap');
+            setBeat(beat + 1);
+          }}
+          len={len}
+          drill={drill}
+          level={level}
+          onExit={() => reach(at)}
+          visits={visits.current}
+          night={night}
+        />
       </Stage>
     </SceneFrame>
   );
 }
 
 interface PlaceProps {
+  at: TrailPlace;
+  beat: number;
+  onNext: () => void;
   len: TrailLen;
   drill: { do: string; done: string; secs?: number };
   level: number;
   visits: number;
   night: boolean;
   onExit: () => void;
+}
+
+/** one place, in three beats, like a lesson: the thought it whispers, what that thought really is, then the line to say once
+    and the move. The picture stays put while the words change above it, so it reads as one place getting clearer. */
+function Beats({
+  at,
+  beat,
+  onNext,
+  hear,
+  under,
+  lead,
+  art,
+  dock,
+}: {
+  at: TrailPlace;
+  beat: number;
+  onNext: () => void;
+  hear?: string;
+  under?: ReactNode;
+  lead?: ReactNode;
+  art: ReactNode;
+  dock: ReactNode;
+}) {
+  const P = TRAIL[at];
+  return (
+    <>
+      <View key={beat} style={s.words}>
+        {beat === 0 ? (
+          <>
+            <Text style={s.over}>{'At ' + P.name + ', it says'}</Text>
+            <Whisper text={hear ?? P.hear} />
+          </>
+        ) : beat === 1 ? (
+          <Rise>
+            <Text style={s.over}>What it really is</Text>
+            <Text style={s.turn} accessibilityRole="header">
+              {P.turn}
+            </Text>
+            {under}
+          </Rise>
+        ) : (
+          <Rise>
+            <Text style={s.over}>Say it once</Text>
+            <Text style={s.sayL} accessibilityRole="header">
+              {'“' + P.say + '”'}
+            </Text>
+            {lead}
+          </Rise>
+        )}
+      </View>
+      <Middle>{art}</Middle>
+      <Dock>{beat < 2 ? <Button label={beat === 0 ? 'See what it really is' : 'Show me the move'} onPress={onNext} /> : dock}</Dock>
+    </>
+  );
 }
 
 /** a beat, then home: long enough to see the move land (the light fill, the flame walk) */
@@ -268,108 +318,115 @@ function useExitAfter(onExit: () => void, ms: number) {
 }
 
 /* ---------- Drift: find the low light, fill it ---------- */
-function Drift({ len, drill, onExit }: PlaceProps) {
+function Drift({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
   const [low, setLow] = useState<(typeof TRAIL_LIGHTS)[number]['id'] | null>(null);
   const [going, go] = useExitAfter(onExit, 900);
   const L = TRAIL_LIGHTS.find((x) => x.id === low);
   return (
-    <>
-      <T tone="muted" style={s.lead}>
-        {low ? drill.do : 'Which light is low?'}
-      </T>
-      <Middle>
-        <DriftArt low={low} filled={going} onPick={(l) => !going && setLow(l)} />
-      </Middle>
-      <Dock>
-        {L ? <DoCard over={len === 's' ? undefined : L.label + ' is low. Fill it now:'}>{L.fill[len]}</DoCard> : null}
-        {L && drill.secs ? <DrillClock secs={drill.secs} onEnd={() => undefined} /> : null}
-        <Button
-          label={L ? drill.done : 'Touch the low light'}
-          disabled={!L || going}
-          onPress={() => {
-            buzz('save');
-            go();
-          }}
-        />
-      </Dock>
-    </>
+    <Beats
+      at={at}
+      beat={beat}
+      onNext={onNext}
+      lead={<Text style={s.lead}>{L ? L.label + ' is low. ' + L.fill[len] : 'Which light is low? Touch it.'}</Text>}
+      art={<DriftArt low={low} filled={going} onPick={(l) => beat === 2 && !going && setLow(l)} />}
+      dock={
+        <>
+          {L && drill.secs ? <DrillClock secs={drill.secs} onEnd={() => undefined} /> : null}
+          <Button
+            label={L ? drill.done : 'Touch the low light'}
+            disabled={!L || going}
+            onPress={() => {
+              buzz('save');
+              go();
+            }}
+          />
+        </>
+      }
+    />
   );
 }
 
 /* ---------- Spark: stand up, walk out, the phone stays ---------- */
-function Spark({ drill, level, onExit }: PlaceProps) {
+function Spark({ at, beat, onNext, drill, level, onExit }: PlaceProps) {
   const [going, go] = useExitAfter(onExit, 1100);
   const [timing, setTiming] = useState(false);
   return (
-    <>
-      <Middle>
-        <SparkArt out={going || timing} level={level} />
-      </Middle>
-      <Dock>
-        <Text style={s.big}>{drill.do}</Text>
-        {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
-        <Button
-          label={timing ? 'I am back, and it eased' : drill.done}
-          disabled={going}
-          onPress={() => {
-            buzz('save');
-            /* the long one: out the door first, then the time away */
-            if (drill.secs && !timing) return setTiming(true);
-            go();
-          }}
-        />
-      </Dock>
-    </>
+    <Beats
+      at={at}
+      beat={beat}
+      onNext={onNext}
+      lead={<Text style={s.lead}>{drill.do}</Text>}
+      art={<SparkArt out={going || timing} level={level} />}
+      dock={
+        <>
+          {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
+          <Button
+            label={timing ? 'I am back, and it eased' : drill.done}
+            disabled={going}
+            onPress={() => {
+              buzz('save');
+              /* the long one: out the door first, then the time away */
+              if (drill.secs && !timing) return setTiming(true);
+              go();
+            }}
+          />
+        </>
+      }
+    />
   );
 }
 
 /* ---------- Preview: your picture over the glow, while the wave passes ---------- */
-function Preview({ len, drill, onExit }: PlaceProps) {
+function Preview({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
   const mem = useSos().mem;
   const pic = useMemo(() => trailPicture(mem), [mem]);
   const p = useRef(new Animated.Value(len === 's' ? 1 : 0)).current;
   const [slid, setSlid] = useState(len === 's');
-  const [t0] = useState(() => Date.now());
-  const [now, setNow] = useState(t0);
+  /* the wave starts when the move does */
+  const [t0, setT0] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!drill.secs) return;
+    if (beat === 2 && t0 === null) setT0(Date.now());
+  }, [beat, t0]);
+  useEffect(() => {
+    if (!drill.secs || t0 === null) return;
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
-  }, [drill.secs]);
-  const waveP = drill.secs ? Math.min(1, (now - t0) / (drill.secs * 1000)) : 1;
+  }, [drill.secs, t0]);
+  const waveP = drill.secs && t0 !== null ? Math.min(1, Math.max(0, now - t0) / (drill.secs * 1000)) : len === 's' ? 1 : 0;
   return (
-    <>
-      <View style={s.art}>
-        <PreviewArt p={p} caption={pic.own ? 'Your picture: ' + pic.t : pic.t} />
-      </View>
-      <Dock>
-        {len === 's' ? (
-          <DoCard>{drill.do}</DoCard>
-        ) : (
-          <>
-            <WaveLine p={waveP} />
-            <T v="small" tone="muted" style={s.c}>
-              {waveP >= 0.45 ? 'Past its top. One long breath out.' : 'It is rising. Stay in your picture.'}
-            </T>
-            {slid ? null : <PictureSlider p={p} onDone={() => setSlid(true)} />}
-          </>
-        )}
-        {slid ? (
-          <Button
-            label={drill.done}
-            onPress={() => {
-              buzz('save');
-              onExit();
-            }}
-          />
-        ) : null}
-      </Dock>
-    </>
+    <Beats
+      at={at}
+      beat={beat}
+      onNext={onNext}
+      lead={
+        <Text style={s.lead}>
+          {len === 's' ? drill.do : waveP >= 0.45 ? 'Past its top. One long breath out.' : 'Slide your picture over it, and stay in it while the wave rises.'}
+        </Text>
+      }
+      art={<PreviewArt p={p} caption={pic.own ? 'Your picture: ' + pic.t : pic.t} />}
+      dock={
+        <>
+          {len === 's' ? null : <WaveLine p={waveP} />}
+          {slid ? (
+            <Button
+              label={drill.done}
+              onPress={() => {
+                buzz('save');
+                onExit();
+              }}
+            />
+          ) : (
+            <PictureSlider p={p} onDone={() => setSlid(true)} />
+          )}
+        </>
+      }
+    />
   );
 }
 
-/* ---------- Case: what it will say and your answer; hold the door shut; the key is your reason ---------- */
-function Case({ len, drill, visits, night, onExit }: PlaceProps) {
+/* ---------- Case: what it will say and an answer; hold the door shut; the key is your reason ---------- */
+function Case({ at, beat, onNext, len, drill, visits, night, onExit }: PlaceProps) {
   const st = useCareSettings();
   const key = useMemo(() => trailKey(st), [st]);
   const next = useMemo(() => trailLine(visits - 1, night), [visits, night]);
@@ -378,13 +435,21 @@ function Case({ len, drill, visits, night, onExit }: PlaceProps) {
   const fill = useAnimatedStyle(() => ({ transform: [{ scaleX: hold.h.value }] }));
   const [timing, setTiming] = useState(false);
   return (
-    <>
-      {len !== 's' && !locked ? <NextLine line={next.line} answer={next.answer} own={false} /> : null}
-      <Middle>
-        <DoorArt h={hold.h} locked={locked} small={len !== 's' && !locked} />
-      </Middle>
-      <Dock>
-        {locked ? (
+    <Beats
+      at={at}
+      beat={beat}
+      onNext={onNext}
+      hear={next.line}
+      under={
+        <Text style={s.answer}>
+          {'An answer: '}
+          <Text style={s.answerB}>{next.answer}</Text>
+        </Text>
+      }
+      lead={<Text style={s.lead}>{locked ? 'Closed. Now the key: your reason.' : drill.do}</Text>}
+      art={<DoorArt h={hold.h} locked={locked} />}
+      dock={
+        locked ? (
           <>
             <View style={s.key}>
               <Text style={[s.keyOver]}>{key.own ? 'The key: your reason' : 'The key'}</Text>
@@ -415,43 +480,40 @@ function Case({ len, drill, visits, night, onExit }: PlaceProps) {
             <Reanimated.View style={[s.holdFill, fill]} />
             <Text style={s.holdT}>{hold.label.startsWith('Press') ? 'Hold to close the door' : hold.label}</Text>
           </Pressable>
-        )}
-      </Dock>
-    </>
+        )
+      }
+    />
   );
 }
 
 /* ---------- Steps: the side path off the stairs ---------- */
-function Steps({ len, drill, level, onExit }: PlaceProps) {
+function Steps({ at, beat, onNext, len, drill, level, onExit }: PlaceProps) {
   const st = useCareSettings();
   const side = useMemo(() => trailSide(st), [st]);
   const [going, go] = useExitAfter(onExit, 1100);
   const [timing, setTiming] = useState(false);
   return (
-    <>
-      <Middle>
-        <StepsArt level={level} off={going || timing} />
-      </Middle>
-      <Dock>
-        {len === 's' ? (
-          <DoCard>{drill.do}</DoCard>
-        ) : (
-          <DoCard over={side.own ? 'Your side path' : 'A side path'} tone="mint">
-            {side.t}
-          </DoCard>
-        )}
-        {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
-        <Button
-          label={len === 'l' && !timing ? 'Start ten minutes' : drill.done}
-          disabled={going}
-          onPress={() => {
-            buzz('save');
-            if (drill.secs && !timing) return setTiming(true);
-            go();
-          }}
-        />
-      </Dock>
-    </>
+    <Beats
+      at={at}
+      beat={beat}
+      onNext={onNext}
+      lead={<Text style={s.lead}>{len === 's' ? drill.do : (side.own ? 'Your side path: ' : 'A side path: ') + side.t}</Text>}
+      art={<StepsArt level={level} off={going || timing} />}
+      dock={
+        <>
+          {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
+          <Button
+            label={len === 'l' && !timing ? 'Start ten minutes' : drill.done}
+            disabled={going}
+            onPress={() => {
+              buzz('save');
+              if (drill.secs && !timing) return setTiming(true);
+              go();
+            }}
+          />
+        </>
+      }
+    />
   );
 }
 
@@ -459,16 +521,13 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   center: { alignItems: 'center' },
   map: { marginTop: 12 },
-  mini: { alignItems: 'center', marginTop: -4, marginBottom: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  time: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: TW.bubble },
-  timeT: { fontFamily: font.bodySemi, fontSize: 13, color: TW.mint },
-  say: { fontFamily: font.body, fontSize: 17, lineHeight: 23, color: TW.muted, marginTop: 4 },
-  hear: { fontFamily: font.body, fontStyle: 'italic', color: TW.ink },
-  sayB: { fontFamily: font.bodySemi, color: TW.sun },
-  lead: { marginTop: 8 },
-  art: { marginTop: 20 },
-  big: { fontFamily: font.display, fontSize: 22, lineHeight: 28, color: TW.ink, textAlign: 'center' },
+  words: { minHeight: 212, marginTop: 8 },
+  over: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted, marginBottom: 8 },
+  turn: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
+  sayL: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.sun },
+  lead: { fontFamily: font.body, fontSize: 17, lineHeight: 24, color: TW.ink, marginTop: 10 },
+  answer: { fontFamily: font.body, fontSize: 17, lineHeight: 24, color: TW.muted, marginTop: 12 },
+  answerB: { fontFamily: font.bodySemi, color: TW.cream },
   passed: { height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
   passedT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.ink },
   key: { backgroundColor: TW.cream, borderRadius: 20, padding: 16, gap: 2 },

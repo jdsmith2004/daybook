@@ -800,6 +800,7 @@ const s = StyleSheet.create({
   abs: { position: 'absolute' },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   mapHit: { position: 'absolute', alignItems: 'center', gap: 6 },
+  whisper: { fontFamily: font.display, fontStyle: 'italic', fontSize: 34, lineHeight: 42, color: TW.muted },
   mapWords: { flex: 1 },
   mapName: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   mapMeans: { fontFamily: font.body, fontSize: 15, lineHeight: 19, color: TW.muted },
@@ -847,3 +848,41 @@ const s = StyleSheet.create({
   clock: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
   clockT: { fontFamily: font.displayBold, fontSize: 28, fontVariant: ['tabular-nums'] },
 });
+
+/* ---------- the words at the top of a place: what it says, what it really is, the move ---------- */
+/** what the craving says, as a whisper: the words come one at a time, soft and slanted, the way a thought arrives */
+export function Whisper({ text }: { text: string }) {
+  const reduce = useReducedMotion();
+  const words = text.split(' ');
+  const vs = useRef(words.map(() => new Animated.Value(reduce ? 1 : 0))).current;
+  useEffect(() => {
+    if (reduce) return vs.forEach((v) => v.setValue(1));
+    Animated.stagger(
+      170,
+      vs.map((v) => Animated.timing(v, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE })),
+    ).start();
+  }, [reduce, vs]);
+  return (
+    <Text style={s.whisper} accessibilityLabel={text}>
+      {'“'}
+      {words.map((w, j) => (
+        <Animated.Text key={j} style={{ opacity: vs[j] }}>
+          {w + (j < words.length - 1 ? ' ' : '')}
+        </Animated.Text>
+      ))}
+      {'”'}
+    </Text>
+  );
+}
+
+/** a block of words that rises into place when it changes */
+export function Rise({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(1);
+    Animated.timing(v, { toValue: 1, duration: 480, delay, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
+  }, [reduce, v, delay]);
+  const y = v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+  return <Animated.View style={{ opacity: v, transform: [{ translateY: y }] }}>{children}</Animated.View>;
+}

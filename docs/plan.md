@@ -1,5 +1,40 @@
 # What is planned next
 
+## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; built on `claude/sweet-shirley-cb6ada`, waiting on the privacy choices)
+
+**The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we
+can see how the app's getting used and what to improve." Built on the anonymous counts, with no analytics SDK and no device id.
+Helps the person: it shows which parts help (SOS, reminders, lessons) so those get better. Helps Daybook: it shows where setup
+loses people, who comes back, and whether the tip and account asks land.
+
+**The questions, and the counts that answer them** (all fixed names, small numbers, totals per day; core `pulse.ts`):
+
+- Do reminders work? Per kind (lesson, check-in, wind-down, Sunday, hard hours, come-back, plan): `nt_<kind>` arrived,
+  `nt_<kind>_tap` opened from it, `nt_<kind>_did` what it was for done that day (core `nudgeCounts`, `nudgeTapKind`), and `rem_on`
+  (reminders allowed) once a day. Arrivals are known only on a later open, so the come-back note's rate reads high.
+- Where does setup lose people? `setup_<page>` as before, now sent the same day (below).
+- Who comes back? `act_*` as before, and `ret_7`, `ret_30` once for each phone (opened again 7 or 30 or more days after the first).
+- What is used and finished? `tool_<id>_open` beside `tool_<id>`; `lesson_open` beside `lesson_done`, and `ld_<id>` for which
+  lesson (never the faith lessons); `tab_learn`, `tab_pattern`, `tab_more` once a day.
+- Does SOS help? `sos_rode`, `sos_slip` beside `sos`.
+- Comebacks after a slip: `back_*` as before.
+- Do the asks land? `ask_tip` (once a day), `tip_open`, `acct_open`, `acct_made`. A tip itself is never counted (Apple and Stripe
+  report it, and counting it would add Purchases data).
+
+**One-time openers are counted now.** As the app goes to the background, today's counts so far go once a day (core
+`pulseBatch` early), so someone who opens Daybook once still shows, setup included. What comes later that day goes after it is
+over. A batch now takes off only what it carried, so nothing counted while it is on its way is lost.
+
+**The report.** `scripts/stats-pulse.mjs` (the Stats workflow) shows phones by day, coming back, the setup funnel with its
+biggest drop, reminders per kind, SOS, tools and lessons opened against finished, slips and comebacks, the asks, and a short
+"What this suggests" list, said only once the numbers behind a line reach 10.
+
+**Waiting on the owner (privacy, asked November 4):** stay anonymous with no device id (recommended yes); send every count without
+asking, with Off still in More (recommended yes; until then only the basic counts go before a yes, which now include `ret_*`);
+the App Store label keeps the same category. The app side reaches people only with the next App Store build.
+
+Effort: high (data and privacy) for the counts and the send; medium for the report and the words.
+
 ## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, being built on `keeps-coming`)
 
 **The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's

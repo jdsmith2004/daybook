@@ -5,10 +5,23 @@
    count('sos') anywhere in the app adds to today's count; it does nothing while the counts are off, and nothing at all in
    a build with no PULSE_URL. usePulse() is for the screens that show or change the choice. PulseKeeper (in the root
    layout) counts the day the app was opened and sends what is due. */
-import { logicalKey, pulseAdd, pulseAnswer, pulseBatch, pulseNorm, pulseOpened, pulseSent, pulseSetup, type Days, type PulseState } from '@daybook/core';
+import {
+  logicalKey,
+  pulseAdd,
+  pulseAnswer,
+  pulseBatch,
+  pulseNorm,
+  pulseOnce,
+  pulseOpened,
+  pulseSent,
+  pulseSetup,
+  type Days,
+  type PulseState,
+} from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { PULSE_URL } from '@/lib/config';
@@ -65,6 +78,12 @@ function apply(f: (s: PulseState) => PulseState) {
 
 /** add one to a count today (core PULSE_KEYS names only; anything else is dropped) */
 export const count = (k: string) => apply((s) => pulseAdd(s, k, today()));
+/** add one to a count that goes at most once a day (a tab opened, the tip ask shown) */
+export const countOnce = (k: string) => apply((s) => pulseOnce(s, k, today()));
+/** a tab counted once a day, each time it comes into view */
+export function useCountFocus(k: string) {
+  useFocusEffect(useCallback(() => countOnce(k), [k]));
+}
 /** setup reached page i of OB_PAGES, or was finished */
 export const countSetup = (i: number, done = false) => apply((s) => pulseSetup(s, i, done));
 /** the person's answer: yes sends from the days that are over, no deletes what was kept and counts nothing */
@@ -74,18 +93,20 @@ export const answerPulse = (on: boolean) => {
 };
 
 let sending = false;
-/** send the days that are over (what core pulseBatch allows). A failure keeps them for the next try. */
-export async function send() {
+/** send the days that are over (what core pulseBatch allows), and with early, today's so far, once a day. A failure keeps
+    them for the next try. */
+export async function send(early = false) {
   if (!pulseOffered || sending) return;
   await load();
-  const b = state ? pulseBatch(state, today(), platform(), version()) : null;
+  const tk = today();
+  const b = state ? pulseBatch(state, tk, platform(), version(), early) : null;
   if (!b) return;
   sending = true;
   try {
     const r = await fetch(PULSE_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) });
     /* only the pulse answers with ok: a page that is not the pulse (it is off) is not a send */
     const j = (await r.json().catch(() => null)) as { ok?: boolean } | null;
-    if (r.ok && j && j.ok === true) apply((s) => pulseSent(s, b));
+    if (r.ok && j && j.ok === true) apply((s) => pulseSent(s, b, tk));
   } catch {
     /* offline: try again next time */
   } finally {
@@ -126,7 +147,8 @@ export function usePulse(): PulseState | null {
 }
 
 /** in the root layout: the day the app was opened (and a comeback after a slip), then what is due goes out; again each
-    time the app comes back to the front */
+    time the app comes back to the front. As it goes to the background, today's counts go too, once a day, so a person
+    who opens Daybook once is still counted. */
 export function useKeepPulse(ready: boolean, days: Days) {
   const log = useRef(days);
   log.current = days;
@@ -137,7 +159,7 @@ export function useKeepPulse(ready: boolean, days: Days) {
       send();
     };
     go();
-    const sub = AppState.addEventListener('change', (a) => a === 'active' && go());
+    const sub = AppState.addEventListener('change', (a) => (a === 'active' ? go() : a === 'background' ? send(true) : undefined));
     return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);

@@ -14,7 +14,7 @@ import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 
 const BASIC = ['act_0', 'act_7_13', 'setup_done'];
-const MORE = ['back_1', 'sos', 'tool_breathe', 'lesson_done', 'checkin', 'slip_logged'];
+const MORE = ['back_1', 'sos', 'sos_rode', 'tool_breathe', 'lesson_done', 'checkin', 'nt_checkin_tap', 'slip_logged'];
 const NEVER = [
   'Anything you write: notes, plans, reasons, messages',
   'What led to an urge or a slip, or when it happened',
@@ -44,8 +44,8 @@ export default function Counts() {
   return (
     <SheetFrame title="Anonymous counts" sub={on ? PULSE_WORDS.all : off ? PULSE_WORDS.off : PULSE_WORDS.basic}>
       <T>
-        Daybook is built by one person. Your phone sends a few numbers once a day, for days that are over. The server adds them to totals for everyone and keeps
-        nothing else, so no count can be traced back to you.
+        Daybook is built by one person. Your phone sends a few numbers once a day, for days that are over, and once for the day so far as you leave the app. The
+        server adds them to totals for everyone and keeps nothing else, so no count can be traced back to you.
       </T>
       <SheetH title="Basic counts" />
       <T v="small" tone="muted">

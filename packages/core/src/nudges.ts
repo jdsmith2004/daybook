@@ -153,6 +153,7 @@ export interface NudgeWordRec {
   last: DayKey | null;
 }
 const KINDS: NudgeKind[] = ['lesson', 'checkin', 'wind', 'sunday', 'risk', 'back', 'plan'];
+export const NUDGE_KINDS: readonly NudgeKind[] = KINDS;
 export const nudgeLogNew = (): NudgeLog => ({ plan: [], wait: [], lv: {}, miss: {}, taps: [], opens: [], w: {} });
 /** a stored log, made safe to read */
 export function normNudgeLog(x: unknown): NudgeLog {
@@ -694,6 +695,11 @@ export function nudgePlan(
 function helped(days: Days, st: Settings, reviews: Reviews, log: NudgeLog, n: NudgeLog['wait'][number]): boolean {
   if (log.taps.includes(n.id)) return true;
   if (log.opens.some((t) => t >= n.at && t <= n.at + NUDGE_OPEN_MIN * 60000)) return true;
+  return didIt(days, st, reviews, n);
+}
+/** what a notification was for was done on its day: the lesson, the check-in, the wind-down, the review; for the hard hours, an
+    urge ridden out or the hard-hours answer */
+function didIt(days: Days, st: Settings, reviews: Reviews, n: NudgeLog['wait'][number]): boolean {
   if (n.k === 'risk') {
     const day = days[n.d];
     return !!(day && (day.p?.hw != null || day.events.some((e) => e.outcome === 'rode')));
@@ -734,6 +740,25 @@ export function nudgeLearn(log: NudgeLog, days: Days, st: Settings | null, revie
   x.opens = log.opens.filter((t) => t > now - NUDGE_OPENS_DAYS * 86400000).slice(-200);
   return x;
 }
+/** the anonymous counts (core pulse.ts) for one nudgeLearn, called with the same log and moment just before it: each
+    notification delivered since the last open, by kind (nt_lesson), and, for each one judged now, whether what it was for was
+    done that day (nt_lesson_did). A tap is counted when it happens (nudgeTapKind). Nothing when the phone does not let Daybook
+    notify, since then nothing was delivered. */
+export function nudgeCounts(log: NudgeLog, days: Days, st: Settings | null, reviews: Reviews, now: number, allowed: boolean): string[] {
+  if (!allowed || !st) return [];
+  const due = log.plan.filter((n) => n.at <= now);
+  const out = due.map((n) => 'nt_' + n.k);
+  const left = new Set(nudgeLearn(log, days, st, reviews, now, allowed).wait.map((n) => n.id + '@' + n.at));
+  for (const n of [...log.wait, ...due])
+    if (n.k !== 'back' && n.k !== 'plan' && !left.has(n.id + '@' + n.at) && didIt(days, st, reviews, n)) out.push('nt_' + n.k + '_did');
+  return out;
+}
+/** the kind of a tapped notification, from its id ("lesson-2026-11-04", "back-7"); null for anything else */
+export function nudgeTapKind(id: string): NudgeKind | null {
+  const k = id.split('-')[0] as NudgeKind;
+  return KINDS.includes(k) ? k : null;
+}
+
 /** the new plan, remembered in the log. What was due by now stays in it until nudgeLearn judges it. */
 export function nudgeKeep(log: NudgeLog, plan: Nudge[], now: number): NudgeLog {
   const ids = new Set(plan.map((n) => n.id));

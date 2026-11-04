@@ -21,7 +21,8 @@
 
    PULSE_KEYS is the whole list; anything else is dropped on the device and refused by the server (pulseClean). The
    privacy page lists the same names. Pure: the app keeps the state on the device (never synced, never in a backup). */
-import { addDays, TOOLS } from './legacy/core.js';
+import { addDays, LESSONS, TOOLS } from './legacy/core.js';
+import { NUDGE_KINDS, NUDGE_LEARNED } from './nudges';
 import { OB_PAGES } from './setup';
 import type { DayKey, Days } from './types';
 
@@ -43,15 +44,53 @@ export const PULSE_USE = [
   'urge_logged',
   'slip_logged',
   'feedback',
+  /* SOS: how it ended (sos minus these: closed with no answer) */
+  'sos_rode',
+  'sos_slip',
+  /* a lesson opened (lesson_done says it was finished; ld_<id> which one) */
+  'lesson_open',
+  /* once a day: the tabs opened, and whether the phone lets Daybook send reminders */
+  'tab_learn',
+  'tab_pattern',
+  'tab_more',
+  'rem_on',
+  /* the asks: the tip ask shown (once a day), the tip page opened; the account page opened, an account made. A tip itself is
+     never counted: Apple and Stripe report those. */
+  'ask_tip',
+  'tip_open',
+  'acct_open',
+  'acct_made',
 ] as const;
-/** the counts sent without asking: the app was opened that day, and how far setup got */
-export const pulseBasic = (k: string): boolean => (PULSE_ACTIVE as readonly string[]).includes(k) || k.startsWith('setup_');
+/** once for each phone: opened again 7 or more days, and 30 or more days, after it was first opened */
+export const PULSE_RET = ['ret_7', 'ret_30'] as const;
+/** the counts that go at most once a day */
+const ONCE = new Set<string>([...PULSE_ACTIVE, 'tab_learn', 'tab_pattern', 'tab_more', 'rem_on', 'ask_tip']);
+/** the counts sent without asking: the app was opened that day (and, once, a week and a month after the first day), and how
+    far setup got */
+export const pulseBasic = (k: string): boolean => (PULSE_ACTIVE as readonly string[]).includes(k) || k.startsWith('ret_') || k.startsWith('setup_');
 const toolKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id);
+const toolOpenKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id + '_open');
 const setupKeys = () => OB_PAGES.map((p) => 'setup_' + p.id).concat('setup_done');
+/** a lesson finished, by its id (ld_l14). Not the faith lessons (g1 and on): faith is never counted by name. */
+const lessonKeys = () => (LESSONS as { id: string }[]).filter((l) => /^l\d+$/.test(l.id)).map((l) => 'ld_' + l.id);
+/** each kind of reminder: delivered (nt_lesson), opened from it (nt_lesson_tap), and, for the kinds that learn, what it was
+    for done that day (nt_lesson_did) (core nudgeCounts, nudgeTapKind) */
+const nudgeKeys = () => NUDGE_KINDS.flatMap((k) => ['nt_' + k, 'nt_' + k + '_tap', ...((NUDGE_LEARNED as string[]).includes(k) ? ['nt_' + k + '_did'] : [])]);
 let all: Set<string> | null = null;
 /** every name a count may have */
 export function pulseKeys(): Set<string> {
-  if (!all) all = new Set<string>([...PULSE_ACTIVE, ...PULSE_BACK, ...PULSE_USE, ...toolKeys(), ...setupKeys()]);
+  if (!all)
+    all = new Set<string>([
+      ...PULSE_ACTIVE,
+      ...PULSE_BACK,
+      ...PULSE_RET,
+      ...PULSE_USE,
+      ...toolKeys(),
+      ...toolOpenKeys(),
+      ...setupKeys(),
+      ...lessonKeys(),
+      ...nudgeKeys(),
+    ]);
   return all;
 }
 /** what a count means, for the privacy page and "See exactly what is sent" */
@@ -68,7 +107,15 @@ export function pulseMeaning(k: string): string {
     const b = k.slice(5).split('_');
     return 'Came back ' + (b.length > 1 ? b[0] + ' to ' + b[1] + ' days' : b[0] === '8' ? '8 or more days' : 'the next day') + ' after a slip';
   }
+  if (k.startsWith('ret_')) return 'Opened Daybook again ' + k.slice(4) + ' or more days after first opening it (once for each phone)';
+  if (k.startsWith('tool_') && k.endsWith('_open')) return 'Opened the ' + k.slice(5, -5) + ' tool';
   if (k.startsWith('tool_')) return 'Used the ' + k.slice(5) + ' tool';
+  if (k.startsWith('ld_')) return 'Finished lesson ' + k.slice(4);
+  if (k.startsWith('nt_')) {
+    const [, kind, what] = k.split('_');
+    const name = NUDGE_NAMES[kind] || kind;
+    return what === 'tap' ? 'Opened Daybook from the ' + name : what === 'did' ? 'Did what the ' + name + ' was for, that day' : 'Got the ' + name;
+  }
   if (k === 'setup_done') return 'Finished setup';
   if (k.startsWith('setup_')) return 'Reached the setup page "' + k.slice(6) + '"';
   const w: Record<string, string> = {
@@ -83,9 +130,30 @@ export function pulseMeaning(k: string): string {
     urge_logged: 'Logged an urge',
     slip_logged: 'Logged a slip',
     feedback: 'Sent feedback',
+    sos_rode: 'Said "It passed" in SOS',
+    sos_slip: 'Said "I slipped" in SOS',
+    lesson_open: 'Opened a lesson',
+    tab_learn: 'Opened Learn',
+    tab_pattern: 'Opened Pattern',
+    tab_more: 'Opened More',
+    rem_on: 'Reminders are allowed on this phone',
+    ask_tip: 'Was shown the ask for a tip',
+    tip_open: 'Opened the tip page',
+    acct_open: 'Opened the account page',
+    acct_made: 'Made an account',
   };
   return w[k] || k;
 }
+
+const NUDGE_NAMES: Record<string, string> = {
+  lesson: 'lesson reminder',
+  checkin: 'check-in reminder',
+  wind: 'wind-down reminder',
+  sunday: 'Sunday review reminder',
+  risk: 'hard-hours heads-up',
+  back: 'come-back note',
+  plan: 'plan reminder',
+};
 
 /* ---------- on the device ---------- */
 export type PulseCounts = Record<string, number>;
@@ -104,6 +172,10 @@ export interface PulseState {
   back: DayKey | null;
   /** the last batch sent, so the person can see exactly what went */
   last: PulseBatch | null;
+  /** the once-only counts already made (ret_7, ret_30) */
+  ret: string[];
+  /** today's counts already sent early (pulseBatch early), so the once-a-day ones are not counted again: the day and the names */
+  early: { d: DayKey; ks: string[] } | null;
 }
 export interface PulseBatch {
   /** platform and app version, so a bug in one build shows */
@@ -127,6 +199,8 @@ export const pulseNew = (today: DayKey): PulseState => ({
   setup: { max: -1, done: false, sent: -1, sentDone: false },
   back: null,
   last: null,
+  ret: [],
+  early: null,
 });
 
 /** a state read back from the device, made safe (anything odd becomes a fresh state) */
@@ -155,6 +229,8 @@ export function pulseNorm(x: unknown, today: DayKey): PulseState {
     },
     back: typeof s.back === 'string' ? s.back : null,
     last: s.last && Array.isArray(s.last.days) ? s.last : null,
+    ret: Array.isArray(s.ret) ? s.ret.filter((k) => (PULSE_RET as readonly string[]).includes(k)) : [],
+    early: s.early && typeof s.early.d === 'string' && Array.isArray(s.early.ks) ? { d: s.early.d, ks: s.early.ks.filter((k) => typeof k === 'string') } : null,
   };
 }
 
@@ -164,6 +240,12 @@ export function pulseAdd(s: PulseState, k: string, today: DayKey, n = 1): PulseS
   const day = { ...(s.days[today] || {}) };
   day[k] = Math.min(PULSE_MAX, (day[k] || 0) + n);
   return { ...s, days: { ...s.days, [today]: day } };
+}
+
+/** add a once-a-day count, unless it was already counted today (kept here, or already sent early) */
+export function pulseOnce(s: PulseState, k: string, today: DayKey): PulseState {
+  if (s.days[today]?.[k] || (s.early?.d === today && s.early.ks.includes(k))) return s;
+  return pulseAdd(s, k, today);
 }
 
 /** the band of days since first opened */
@@ -179,9 +261,14 @@ function daysBetween(a: DayKey, b: DayKey): number {
 /** the app was opened today: the day's active count (once), and the comeback after the latest slip before today, once */
 export function pulseOpened(s: PulseState, log: Days, today: DayKey): PulseState {
   if (s.on === false) return s;
-  let out = s;
-  const band = pulseBand(s.first, today);
-  if (!(s.days[today] && s.days[today][band])) out = pulseAdd(out, band, today);
+  let out = pulseOnce(s, pulseBand(s.first, today), today);
+  /* once for each phone: back a week or more, and a month or more, after the first open */
+  const n0 = daysBetween(s.first, today);
+  for (const [k, n] of [
+    ['ret_7', 7],
+    ['ret_30', 30],
+  ] as const)
+    if (n0 >= n && !out.ret.includes(k)) out = { ...pulseAdd(out, k, today), ret: [...out.ret, k] };
   let slip: DayKey | null = null;
   for (const k of Object.keys(log))
     if (k < today && k >= s.first && (log[k]?.events || []).some((e) => e.outcome === 'slipped') && (!slip || k > slip)) slip = k;
@@ -213,13 +300,16 @@ export function pulseAnswer(s: PulseState, on: boolean, today: DayKey): PulseSta
 }
 
 /** what to send now: the days that are over, and the setup pages reached since the last batch. Before the person says
-    yes, only the basic counts (pulseBasic). Null when there is nothing, or while it is off. */
-export function pulseBatch(s: PulseState, today: DayKey, p: PulseBatch['p'], v: string): PulseBatch | null {
+    yes, only the basic counts (pulseBasic). Null when there is nothing, or while it is off.
+    early: today's counts so far go too, once a day (the app calls it as it goes to the background), so someone who opens
+    Daybook once and never again is still counted, setup included. What comes later today goes after the day is over. */
+export function pulseBatch(s: PulseState, today: DayKey, p: PulseBatch['p'], v: string, early = false): PulseBatch | null {
   if (s.on === false) return null;
+  const upTo = early && s.early?.d !== today ? addDays(today, 1) : today;
   const all = s.on === true;
   const pick = (c: PulseCounts): PulseCounts => (all ? { ...c } : Object.fromEntries(Object.entries(c).filter(([k]) => pulseBasic(k))));
   const ds = Object.keys(s.days)
-    .filter((d) => d < today && Object.keys(pick(s.days[d])).length)
+    .filter((d) => d < upTo && Object.keys(pick(s.days[d])).length)
     .sort()
     .slice(-PULSE_DAYS);
   const days = ds.map((d) => ({ d, c: pick(s.days[d]) }));
@@ -233,22 +323,29 @@ export function pulseBatch(s: PulseState, today: DayKey, p: PulseBatch['p'], v: 
   return days.length ? { p, v, days } : null;
 }
 
-/** the batch went: those days are let go, setup is marked sent, and the batch is kept to show */
-export function pulseSent(s: PulseState, b: PulseBatch): PulseState {
+/** the batch went: what it carried is taken off those days (anything counted while it was on its way stays, to go next
+    time), setup is marked sent, and the batch is kept to show. today: the day it went, so counts of today sent early are
+    remembered (pulseOnce). */
+export function pulseSent(s: PulseState, b: PulseBatch, today?: DayKey): PulseState {
   const days = { ...s.days };
+  /* before the person says yes, only the basic counts went: the rest stays on this device, in case they do (pulseNorm lets
+     it go after PULSE_KEEP days) */
+  for (const x of b.days) {
+    const left = Object.fromEntries(
+      Object.entries(days[x.d] || {})
+        .map(([k, n]) => [k, n - (x.c[k] || 0)] as const)
+        .filter(([, n]) => n > 0),
+    );
+    if (Object.keys(left).length) days[x.d] = left;
+    else delete days[x.d];
+  }
   if (s.on === true) {
-    for (const x of b.days) delete days[x.d];
     /* days older than any batch can carry are let go too */
     const sent = b.days.map((x) => x.d).sort();
     if (sent.length) for (const d of Object.keys(days)) if (d < sent[0]) delete days[d];
-  } else
-    /* only the basic counts went: the rest stays on this device, in case the person says yes (pulseNorm lets it go
-       after PULSE_KEEP days) */
-    for (const x of b.days) {
-      const left = Object.fromEntries(Object.entries(days[x.d] || {}).filter(([k]) => !(k in x.c)));
-      if (Object.keys(left).length) days[x.d] = left;
-      else delete days[x.d];
-    }
+  }
+  const now = today && b.days.find((x) => x.d === today);
+  const early = now ? { d: today!, ks: [...(s.early?.d === today ? s.early.ks : []), ...Object.keys(now.c).filter((k) => ONCE.has(k))] } : s.early;
   const sentSetup = b.days.some((x) => Object.keys(x.c).some((k) => k.startsWith('setup_') && k !== 'setup_done'));
   const sentDone = b.days.some((x) => x.c.setup_done);
   return {
@@ -256,6 +353,7 @@ export function pulseSent(s: PulseState, b: PulseBatch): PulseState {
     days,
     setup: { ...s.setup, sent: sentSetup ? s.setup.max : s.setup.sent, sentDone: s.setup.sentDone || sentDone },
     last: b,
+    early,
   };
 }
 
@@ -315,7 +413,7 @@ export const PULSE_WORDS = {
 export interface PulseSummary {
   from: DayKey;
   to: DayKey;
-  /** batches (one a device a day) by platform */
+  /** batches by platform (one or two a device a day: the early one as the app goes to the background, then the rest) */
   platforms: [string, number][];
   versions: [string, number][];
   /** opened, by band of days since first opened */
@@ -345,9 +443,9 @@ export function pulseSummary(rows: { k: string; n: Record<string, number> }[], f
   }
   const list = (ks: readonly string[]): [string, number][] => ks.map((k) => [k, sum[k] || 0]);
   const desc = (o: Record<string, number>): [string, number][] => Object.entries(o).sort((x, y) => y[1] - x[1]);
-  const skip = new Set<string>([...PULSE_ACTIVE, ...PULSE_BACK, 'slip_logged']);
+  const skip = new Set<string>([...PULSE_ACTIVE, ...PULSE_BACK, ...PULSE_RET, 'slip_logged', 'rem_on']);
   const used: Record<string, number> = {};
-  for (const [k, n] of Object.entries(sum)) if (!skip.has(k) && !k.startsWith('setup_') && n > 0) used[k] = n;
+  for (const [k, n] of Object.entries(sum)) if (!skip.has(k) && !/^(setup|nt|ld)_/.test(k) && n > 0) used[k] = n;
   return {
     from,
     to,

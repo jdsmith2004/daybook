@@ -88,9 +88,10 @@
           <li>Voice notes. They stay on your phone, with or without an account.</li>
           <li>Your scores when Daybook asks the five questions again each month. They stay on your phone, with or without an account.</li>
           <li>
-            Anything about your reminders. Daybook's reminders are made on your phone, and the count of which ones help stays on your phone and is never sent.
-            To time them, the phone keeps the times the app was opened for 28 days; those times stay on your phone too. The lesson reminder comes at about the
-            time you finished your last lesson, read from your own records on the phone.
+            Anything about your reminders beyond the anonymous counts below (how many of each kind arrived, were opened, or were followed by what they were
+            for). Daybook's reminders are made on your phone, and which wordings help, and when, stays on your phone and is never sent. To time them, the phone
+            keeps the times the app was opened for 28 days; those times stay on your phone too. The lesson reminder comes at about the time you finished your
+            last lesson, read from your own records on the phone.
           </li>
         </ul>
 
@@ -102,14 +103,19 @@
           sent last.
         </p>
         <p>
-          Once a day your phone sends, for days that are over, a short list of names and small numbers (each from 1 to 50), plus whether it is an iPhone,
-          Android or the web and the app's version. The server adds them to totals for everyone, per day, and keeps nothing else: not who sent them, not your
-          internet address, not the request. No count can be traced back to you, even by Daybook. These are every name that can be sent:
+          Once a day your phone sends, for days that are over (and, as you leave the app, once for the day so far), a short list of names and small numbers
+          (each from 1 to 50), plus whether it is an iPhone, Android or the web and the app's version. The server adds them to totals for everyone, per day, and
+          keeps nothing else: not who sent them, not your internet address, not the request. No count can be traced back to you, even by Daybook. These are
+          every name that can be sent:
         </p>
         <ul>
           <li>
             <code>act_0</code>, <code>act_1</code>, <code>act_2_6</code>, <code>act_7_13</code>, <code>act_14_29</code>, <code>act_30</code>: Daybook was opened
             that day, and how many days after it was first opened on this device.
+          </li>
+          <li>
+            <code>ret_7</code>, <code>ret_30</code>: Daybook was opened again 7 or more, or 30 or more, days after it was first opened on this device. Each is
+            sent once.
           </li>
           <li>
             <code>back_1</code>, <code>back_2_3</code>, <code>back_4_7</code>, <code>back_8</code>: Daybook was opened again after a slip, and how many days
@@ -121,9 +127,26 @@
             <code>rk_phone</code>, <code>goodnight</code>, <code>feedback</code>: SOS was opened, Talk it through finished, a lesson finished, a check-in saved,
             the sunrise check done, a Rekindle step done, Goodnight said in the wind-down, feedback sent.
           </li>
+          <li><code>sos_rode</code>, <code>sos_slip</code>: SOS ended with It passed, or with I slipped.</li>
+          <li>
+            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l49; never the faith lessons): which lesson was
+            finished.
+          </li>
+          <li>
+            <code>tab_learn</code>, <code>tab_pattern</code>, <code>tab_more</code>: that tab was opened that day. <code>rem_on</code>: the phone lets Daybook
+            send reminders.
+          </li>
+          <li>
+            <code>nt_</code> and a kind of reminder (lesson, checkin, wind, sunday, risk, back, plan): a reminder of that kind arrived; with <code>_tap</code>,
+            Daybook was opened from it; with <code>_did</code>, what it was for (the lesson, the check-in, and so on) was done that day.
+          </li>
+          <li>
+            <code>ask_tip</code>, <code>tip_open</code>, <code>acct_open</code>, <code>acct_made</code>: the ask for a tip was shown, the tip page was opened,
+            the account page was opened, an account was made. A tip itself is never counted.
+          </li>
           <li>
             <code>tool_</code> and the tool's name (breathe, ground, stack, curious, pause, thought, feel, forward, move, bed, surprise, halt, message,
-            reasons): that tool was used.
+            reasons): that tool was used. With <code>_open</code> after it, the tool was opened.
           </li>
           <li>
             <code>setup_</code> and a setup page's name (hello, how, aim, years, freq, mins, faith, creed, b0, b1, b2, b3, b4, heard, costs, guess, hours, when,

@@ -173,6 +173,7 @@ export default function Sos() {
     });
     sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+    if (!practice) count(v === 'rode' ? 'sos_rode' : 'sos_slip');
     setMore(false);
     if (v === 'slipped') {
       sos.end();

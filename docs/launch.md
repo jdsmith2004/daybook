@@ -179,7 +179,10 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     analytics only, **not** used for tracking. Since October 28, 2026 the basic counts (the app was opened that day,
     how far setup got) are sent without asking; the rest only after the person says yes in More, and More turns all
     of it off. So it is collected from everyone who has not turned it off: do not mark it optional. Add this before a
-    build with `EXPO_PUBLIC_PULSE_URL` goes to review.
+    build with `EXPO_PUBLIC_PULSE_URL` goes to review. Since November 4, 2026 the counts also cover each kind of
+    reminder (arrived, opened from it, what it was for done that day), how SOS ended, tools and lessons opened and
+    finished, the tabs, and the tip and account asks (shown, opened, an account made). Still product interaction, still
+    not linked: no new category. A tip itself is never counted, so Purchases stays only the supporter record above.
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
   - Tracking: **no**. Data used to track you: **none**.

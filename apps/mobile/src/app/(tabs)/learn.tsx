@@ -54,6 +54,7 @@ import { ToolGrid } from '@/components/tool-grid';
 import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { useCountFocus } from '@/lib/pulse';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -68,6 +69,7 @@ const AIM = 0.45;
 const CLEAR = TAB_TOP + 8;
 
 export default function Learn() {
+  useCountFocus('tab_learn');
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'tools' ? 'tools' : 'lessons');
   /* Today's Calm move opens the tools, also when Learn is already open on the lessons */

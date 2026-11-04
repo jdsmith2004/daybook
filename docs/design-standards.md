@@ -28,6 +28,11 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
   the round SOS. Nothing else has one.
 - **Few words.** A subtitle that says what the screen already shows goes. Paragraphs become sentences, sentences become labels.
   "My Daybook" and the like are gone for good.
+- **Show it, do not say it (the owner, November 3, 2026).** If a shape can carry the message, the words go. Good design is understood
+  with nothing explained: the owner's example is an app whose empty stats cards are their own charts drawn empty in gray, titled and
+  wordless, and you know at once what will fill them. So an empty state is the chart with nothing in it, never a line asking the
+  person to log something; a thing that is coming shows its shape; a count is its marks, not a sentence about them. Before adding a
+  sentence, ask whether the picture already says it. Look for these on every screen without being asked; this is part of the bar.
 - **Radii:** 12 small, 20 cards, 28 sheets, capsule for buttons and pills; an inner radius nests inside the outer.
 - **Space:** 4, 8, 12, 16, 24, 32. Related things 4 to 8 apart, sections 24 or more, one left edge 16 from the screen.
 - **Sameness is a smell.** Three screens side by side should not look like one template with new words: a screen's layout comes

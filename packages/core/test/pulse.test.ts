@@ -1,4 +1,4 @@
-/* Anonymous counts: basic ones without asking, the rest after yes, nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
+/* Anonymous counts: all without asking, nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { OB_PAGES } from '../src/setup';
@@ -7,7 +7,6 @@ import {
   pulseAdd,
   pulseAnswer,
   pulseBand,
-  pulseBasic,
   pulseBatch,
   pulseClean,
   pulseKeys,
@@ -48,20 +47,14 @@ describe('counting', () => {
     expect(pulseOpened(s, {}, D0).days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
   });
-  it('before the person says yes, only the basic counts are sent, and the rest waits on the device', () => {
+  it('with nothing asked, every count is sent (the owner, November 4, 2026), and nothing is left behind', () => {
     let s = pulseAdd(pulseNew(D0), 'sos', D0);
-    expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
     s = pulseSetup(pulseOpened(s, {}, D0), 2, true);
     const b = pulseBatch(s, '2026-10-25', 'ios', '1.0.0')!;
-    expect(b.days[0].c).toEqual({ act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1, setup_done: 1 });
-    for (const k of Object.keys(b.days[0].c)) expect(pulseBasic(k), k).toBe(true);
+    expect(b.days[0].c).toEqual({ sos: 1, act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1, setup_done: 1 });
     s = pulseSent(s, b);
-    expect(s.days[D0]).toEqual({ sos: 1 });
+    expect(s.days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
-    expect(pulseBatch(pulseAnswer(s, true, '2026-10-25'), '2026-10-25', 'ios', '1.0.0')!.days[0].c).toEqual({ sos: 1 });
-  });
-  it('the basic counts are only the day opened (and the week and month it was opened again) and setup', () => {
-    for (const k of pulseKeys()) expect(pulseBasic(k), k).toBe(k.startsWith('act_') || k.startsWith('ret_') || k.startsWith('setup_'));
   });
   it('every name has plain words for the privacy page', () => {
     for (const k of pulseKeys()) expect(pulseMeaning(k), k).not.toBe(k);
@@ -142,17 +135,16 @@ describe('sending', () => {
   it('as the app goes to the background, today so far goes once, and nothing is counted twice', () => {
     let s = pulseOpened(pulseSetup(pulseNew(D0), 2), {}, D0);
     s = pulseOnce(pulseAdd(s, 'sos', D0), 'tab_more', D0);
-    /* not answered yet: only the basic counts, and setup, go the same day */
+    /* today so far, setup included, goes the same day */
     let b = pulseBatch(s, D0, 'ios', '1', true)!;
-    expect(b.days).toEqual([{ d: D0, c: { act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1 } }]);
+    expect(b.days).toEqual([{ d: D0, c: { act_0: 1, sos: 1, tab_more: 1, setup_hello: 1, setup_how: 1, setup_aim: 1 } }]);
     s = pulseSent(s, b, D0);
     expect(pulseBatch(s, D0, 'ios', '1', true)).toBeNull();
     expect(pulseOpened(s, {}, D0)).toEqual(s);
-    /* said yes: the rest goes after the day is over, the once-a-day ones are not added again */
-    s = pulseAnswer(s, true, D0);
+    /* later today: the rest goes after the day is over, the once-a-day ones are not added again */
     s = pulseOnce(pulseAdd(s, 'sos', D0), 'tab_more', D0);
     b = pulseBatch(s, '2026-10-23', 'ios', '1')!;
-    expect(b.days).toEqual([{ d: D0, c: { sos: 2, tab_more: 1 } }]);
+    expect(b.days).toEqual([{ d: D0, c: { sos: 1 } }]);
   });
   it('a count made while a batch is on its way stays, to go next time', () => {
     let s = pulseAdd(on(), 'sos', D0);
@@ -168,6 +160,12 @@ describe('sending', () => {
     s = pulseOpened(s, {}, '2026-11-25');
     expect(s.days['2026-11-25']).toEqual({ act_30: 1, ret_30: 1 });
     expect(pulseNorm(JSON.parse(JSON.stringify(s)), '2026-11-25').ret).toEqual(['ret_7', 'ret_30']);
+  });
+  it('counts kept before November 4, 2026 without a yes stay unsent, except the day opened', () => {
+    const s = pulseNorm({ on: null, first: D0, days: { [D0]: { act_0: 1, sos: 2 } } }, D0);
+    expect(s.days).toEqual({ [D0]: { act_0: 1 } });
+    expect(pulseNorm({ on: true, first: D0, days: { [D0]: { act_0: 1, sos: 2 } } }, D0).days).toEqual({ [D0]: { act_0: 1, sos: 2 } });
+    expect(pulseNorm(JSON.parse(JSON.stringify(pulseAdd(pulseNew(D0), 'sos', D0))), D0).days).toEqual({ [D0]: { sos: 1 } });
   });
   it('reading back a broken state starts fresh', () => {
     expect(pulseNorm(null, D0)).toEqual(pulseNew(D0));

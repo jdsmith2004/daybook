@@ -1,6 +1,6 @@
 # What is planned next
 
-## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; built on `claude/sweet-shirley-cb6ada`, waiting on the privacy choices)
+## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we
 can see how the app's getting used and what to improve." Built on the anonymous counts, with no analytics SDK and no device id.
@@ -29,9 +29,9 @@ over. A batch now takes off only what it carried, so nothing counted while it is
 biggest drop, reminders per kind, SOS, tools and lessons opened against finished, slips and comebacks, the asks, and a short
 "What this suggests" list, said only once the numbers behind a line reach 10.
 
-**Waiting on the owner (privacy, asked November 4):** stay anonymous with no device id (recommended yes); send every count without
-asking, with Off still in More (recommended yes; until then only the basic counts go before a yes, which now include `ret_*`);
-the App Store label keeps the same category. The app side reaches people only with the next App Store build.
+**The owner's privacy choices (November 4, "Yes, all three"):** no device id; every count goes without asking, with Off kept
+in More; the App Store label keeps the same category (Usage Data, Product Interaction, not linked). The app side reaches people
+only with the next App Store build.
 
 Effort: high (data and privacy) for the counts and the send; medium for the report and the words.
 

@@ -1,6 +1,6 @@
 /* The anonymous counts on this device (core pulse.ts): kept in AsyncStorage under its own key (not "daybook:", so it is
-   never part of the log, never synced and never in a backup), and sent once a day: the basic counts unless the person
-   turned counts off, the rest only once they said yes (core pulseBatch decides).
+   never part of the log, never synced and never in a backup), and sent once a day (and once for the day so far as the app
+   leaves), unless the person turned counts off in More (core pulseBatch decides).
 
    count('sos') anywhere in the app adds to today's count; it does nothing while the counts are off, and nothing at all in
    a build with no PULSE_URL. usePulse() is for the screens that show or change the choice. PulseKeeper (in the root

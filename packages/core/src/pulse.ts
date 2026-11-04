@@ -1,20 +1,20 @@
-/* Anonymous counts (the owner, October 22, 2026; changed October 28, 2026): how Daybook learns whether it helps,
-   without ever knowing who anyone is.
+/* Anonymous counts (the owner, October 22, 2026; changed October 28 and November 4, 2026): how Daybook learns whether it
+   helps, without ever knowing who anyone is.
 
-   - Basic counts are on without asking (the owner, October 28, 2026: "I just want to track it, I don't want to ask
-     them"): only whether the app was opened that day (PULSE_ACTIVE) and how far setup got (setup_*). Nothing is asked;
-     More, Anonymous counts, shows them and turns them off.
-   - Everything else (SOS, tools, lessons, slips, urges, comebacks) is sent only after the person says yes there. Until
-     then it is kept on this device only. "Off" deletes everything, and with "Off" nothing is counted at all.
-   - Once a day, the counts of the days already over are sent: a short list of fixed names and small numbers
+   - Every count is on without asking (the owner, October 28, 2026, for the basic ones: "I just want to track it, I don't
+     want to ask them"; and November 4, 2026, for all of them: "Yes, all three"). More, Anonymous counts, shows them and
+     turns them off. "Off" deletes everything kept here, and with "Off" nothing is counted at all.
+   - There is no device id, so no one's path through the app can be followed: only totals over everyone.
+   - Once a day, the counts of the days already over are sent (and once, today's so far, as the app leaves): a short list of fixed names and small numbers
      ("sos: 2", "back_1: 1", "act_7_13: 1"). Never a word the person wrote, a time, a trigger, an id or the log.
    - The server adds them to totals per day and keeps nothing else (services/api/src/pulse.ts), so one person's counts
      cannot be told apart from anyone else's.
 
    What the counts answer:
    - Do people stay: one "active" count for each day the app was opened, in a band of days since it was first opened.
-   - Where setup loses people: the furthest setup page reached, and setup finished (kept from the first page and sent
-     once the person says yes, so someone who closed setup and came back later still counts).
+   - Where setup loses people: each setup page reached, once, and setup finished.
+   - Do reminders work: per kind, arrived, opened from it, and what it was for done that day.
+   - Does SOS help, are tools and lessons finished, do the tip and account asks land.
    - Which features are used: SOS, each tool, Talk it through, lessons, the check-in, the sunrise check, the Rekindle
      steps. (The morning questions had a count until they were retired on October 23, 2026.)
    - Do people come back after a slip: the next time the app is opened on a later day, how soon, as a band.
@@ -65,9 +65,6 @@ export const PULSE_USE = [
 export const PULSE_RET = ['ret_7', 'ret_30'] as const;
 /** the counts that go at most once a day */
 const ONCE = new Set<string>([...PULSE_ACTIVE, 'tab_learn', 'tab_pattern', 'tab_more', 'rem_on', 'ask_tip']);
-/** the counts sent without asking: the app was opened that day (and, once, a week and a month after the first day), and how
-    far setup got */
-export const pulseBasic = (k: string): boolean => (PULSE_ACTIVE as readonly string[]).includes(k) || k.startsWith('ret_') || k.startsWith('setup_');
 const toolKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id);
 const toolOpenKeys = () => (TOOLS as { id: string }[]).map((t) => 'tool_' + t.id + '_open');
 const setupKeys = () => OB_PAGES.map((p) => 'setup_' + p.id).concat('setup_done');
@@ -158,7 +155,7 @@ const NUDGE_NAMES: Record<string, string> = {
 /* ---------- on the device ---------- */
 export type PulseCounts = Record<string, number>;
 export interface PulseState {
-  /** null: not answered (the basic counts are sent, the rest kept here); true: all sent; false: off, nothing counted */
+  /** null: never changed (all sent, the default); true: turned back on; false: off, nothing counted */
   on: boolean | null;
   /** when the person was asked (the Today card shows once) */
   asked: DayKey | null;
@@ -208,11 +205,15 @@ export function pulseNorm(x: unknown, today: DayKey): PulseState {
   const s = x as Partial<PulseState> | null;
   if (!s || typeof s !== 'object' || typeof s.first !== 'string') return pulseNew(today);
   const keys = pulseKeys();
+  /* a state from before November 4, 2026 (no ret yet) whose person never said yes: the counts kept then were promised to
+     stay on the phone, so only the basic ones (the day opened) go; the rest is let go */
+  const old = !Array.isArray(s.ret) && s.on !== true;
   const days: Record<DayKey, PulseCounts> = {};
   for (const [d, c] of Object.entries(s.days || {})) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < addDays(today, -PULSE_KEEP) || !c || typeof c !== 'object') continue;
     const out: PulseCounts = {};
-    for (const [k, n] of Object.entries(c)) if (keys.has(k) && Number.isFinite(n) && n > 0) out[k] = Math.min(PULSE_MAX, Math.floor(n));
+    for (const [k, n] of Object.entries(c))
+      if (keys.has(k) && (!old || k.startsWith('act_')) && Number.isFinite(n) && n > 0) out[k] = Math.min(PULSE_MAX, Math.floor(n));
     if (Object.keys(out).length) days[d] = out;
   }
   const st = s.setup || ({} as PulseState['setup']);
@@ -299,20 +300,18 @@ export function pulseAnswer(s: PulseState, on: boolean, today: DayKey): PulseSta
   return on ? { ...s, on: true, asked: s.asked || today } : { ...pulseNew(s.first), on: false, asked: s.asked || today, first: s.first };
 }
 
-/** what to send now: the days that are over, and the setup pages reached since the last batch. Before the person says
-    yes, only the basic counts (pulseBasic). Null when there is nothing, or while it is off.
+/** what to send now: the days that are over, and the setup pages reached since the last batch. Null when there is
+    nothing, or while it is off.
     early: today's counts so far go too, once a day (the app calls it as it goes to the background), so someone who opens
     Daybook once and never again is still counted, setup included. What comes later today goes after the day is over. */
 export function pulseBatch(s: PulseState, today: DayKey, p: PulseBatch['p'], v: string, early = false): PulseBatch | null {
   if (s.on === false) return null;
   const upTo = early && s.early?.d !== today ? addDays(today, 1) : today;
-  const all = s.on === true;
-  const pick = (c: PulseCounts): PulseCounts => (all ? { ...c } : Object.fromEntries(Object.entries(c).filter(([k]) => pulseBasic(k))));
   const ds = Object.keys(s.days)
-    .filter((d) => d < upTo && Object.keys(pick(s.days[d])).length)
+    .filter((d) => d < upTo && Object.keys(s.days[d]).length)
     .sort()
     .slice(-PULSE_DAYS);
-  const days = ds.map((d) => ({ d, c: pick(s.days[d]) }));
+  const days = ds.map((d) => ({ d, c: { ...s.days[d] } }));
   /* setup: each page reached once (so the totals are a funnel: how many people reached each page), on the newest day
      that is over, so it is counted once */
   if (ds.length) {
@@ -328,8 +327,6 @@ export function pulseBatch(s: PulseState, today: DayKey, p: PulseBatch['p'], v: 
     remembered (pulseOnce). */
 export function pulseSent(s: PulseState, b: PulseBatch, today?: DayKey): PulseState {
   const days = { ...s.days };
-  /* before the person says yes, only the basic counts went: the rest stays on this device, in case they do (pulseNorm lets
-     it go after PULSE_KEEP days) */
   for (const x of b.days) {
     const left = Object.fromEntries(
       Object.entries(days[x.d] || {})
@@ -339,11 +336,9 @@ export function pulseSent(s: PulseState, b: PulseBatch, today?: DayKey): PulseSt
     if (Object.keys(left).length) days[x.d] = left;
     else delete days[x.d];
   }
-  if (s.on === true) {
-    /* days older than any batch can carry are let go too */
-    const sent = b.days.map((x) => x.d).sort();
-    if (sent.length) for (const d of Object.keys(days)) if (d < sent[0]) delete days[d];
-  }
+  /* days older than any batch can carry are let go too */
+  const sent = b.days.map((x) => x.d).sort();
+  if (sent.length) for (const d of Object.keys(days)) if (d < sent[0]) delete days[d];
   const now = today && b.days.find((x) => x.d === today);
   const early = now ? { d: today!, ks: [...(s.early?.d === today ? s.early.ks : []), ...Object.keys(now.c).filter((k) => ONCE.has(k))] } : s.early;
   const sentSetup = b.days.some((x) => Object.keys(x.c).some((k) => k.startsWith('setup_') && k !== 'setup_done'));
@@ -401,11 +396,10 @@ export function feedbackClean(x: unknown): { t: string; r: string | null; p: Pul
 }
 
 /* ---------- the words ---------- */
-/** the words, in one place. There is no ask on Today (the owner, October 28, 2026): the basic counts are sent without
-    one, and More, Anonymous counts, is where the person sees them, adds the rest or turns them off. */
+/** the words, in one place. There is no ask (the owner, October 28 and November 4, 2026): the counts are sent without
+    one, and More, Anonymous counts, is where the person sees them or turns them off. */
 export const PULSE_WORDS = {
-  basic: 'Basic counts are on: only whether Daybook was opened that day and how far setup got. Never your words, never your log, and never who you are.',
-  all: 'All counts are on: the basic ones, and which parts of Daybook were used. Thank you for helping the next person.',
+  on: 'Counts are on: which parts of Daybook were used, as numbers added to everyone else. Never your words, never your log, and never who you are.',
   off: 'Counts are off. Nothing is sent.',
 };
 

@@ -300,7 +300,7 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
   written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
 
-## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; designed, not built)
+## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; Walk it through built on `keeps-coming`, not merged)
 
 The ask: "I want it to actually teach, walk me through the steps, the science, what's going on … interactive, challenge me to
 write and think and explain"; a blend of a faith-based attack analysis (God, the attack has a pattern and science behind it,
@@ -337,8 +337,24 @@ which place they are at.
 first small yes and what they told themselves; after a slip, what it gave them for a minute; the chain said back; where to
 cut it next time, and the if-then in their words, saved to the log and the plan. Ends on hope; nothing earned is lost.
 
-Effort: the script and its tests in core (medium), the screens reusing the lesson parts and the trail art (medium), Look
-back saving to the log, linking from Already happened and feeding the pattern pages (high).
+**It takes the place of Planning a slip (the owner, November 4, 2026: "Planning a slip just doesn't work that well so we're
+switching to this; you can pull the best parts from planning a slip into this").** The owner also kept the trail: "the issue is in
+delivery". So the trail now opens on the walk, and "I know where I am" opens the map as before. Today's second button, the
+check-in's door, SOS's More and a lesson's link now say Walk it through and open the trail. Kept from Planning a slip: its
+permission thoughts and their research (now the lines, each with a true answer and a fact), the need underneath with Daybook's
+own moves and "Held 3 of 4 times" tags, the person's own reasons ("why a 6, not a 9?"), the body words, and the plan: a walk
+is saved as a talk-through (p.tt, so it syncs) with a change plan, so Today's "Your plan" and the next morning's "Did your plan
+hold?" work as they did. What only a walk keeps is `wk` (strength before and after, the line, their answer, their explanation,
+the need, the place), checked by `normWalk`. Left out on my judgment: the eyes-open go-ahead and decide-later paths (they
+plan around a slip rather than through the urge); old talk-throughs still open at /talk, so nothing earned or written is lost.
+
+**Built (core `walk.ts`, test/walk.test.ts; app `components/walk.tsx`):** all ten parts, faith lines only for people of faith,
+SOS first at 8 and up, never bed by day, nothing that reaches out to anyone, the two minutes saying back the line and the
+person's answer at every place. Checked on the web end to end, and on a release build on the simulator.
+
+**Steps (Opus effort):** the script and its tests (medium, done); the screens (medium, done); the walk saved as a plan with the
+morning look back (high, done); Look back after a slip, linked from Already happened, writing the chain and the next if-then
+(high, next); the owner's look on the simulator before merging.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

@@ -1,159 +1,174 @@
 # What is planned next
 
-## When it keeps coming: an urge that lasts hours or days, and a mind that has already decided (the owner, November 3, 2026; planned, not built)
+## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; planned, not built)
 
-The ask, in the owner's words after a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's like
-we need dopamine, we need to do this right now. I lasted about 3 hours and then I broke." And after the first plan (cold water,
-walks, a person, food): "Cold water and walking. I did go on walks. But while I was walking, I was like, I can't wait to break.
-This is something no one's ever been able to do. Research it." Free, like all care. It answers the moment where people give up on
-apps, which is what earns ratings, word of mouth and tips.
+**The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's
+like we need dopamine. I lasted about 3 hours and then I broke. That's my main problem with apps: at the end of the day, they
+can't help you." On walks: "While I was walking, I was like, I can't wait to break." On time: "This happens anytime. It can happen
+for days. It surges, but it's still coming." On SOS: "Most of the time I really fight it out. I might grab SOS once, but it's just a
+never-ending battle." On notifications: "You work really hard, then you lose, then it's hard to get motivated, and notifications
+just piss you off." And the goal: "Look through all of the other programs and take what's working. A lot of it can be learning,
+education, visuals, assistance. If you can read my mind, describe what I'm thinking, help me think it out loud and say it out
+loud, and understand what is going on with my brain and how I can beat this." Free, like all care: this is the moment people
+give up on apps, so it is also what earns ratings, word of mouth and tips.
 
-**What SOS does today (origin/main, November 3).** SOS is built for one wave. The ride cycles eight short moves and nothing
-changes with time; "Still strong" only swaps a line and reopens the tools; SOS schedules no notification; Move is 2 minutes. A slip
-after three hours is credited like one after twenty minutes, and Rekindle never says how long the person held. Lesson 2 promises
-the wave passes in about ten minutes. Nothing in the app speaks to the mind that has already decided.
+### What the research found (eleven passes, November 3)
 
-**What the walk shows.** The body moved; the mind kept the slip on the table and kept picturing it. Body tools leave both alone.
+Almost nothing tests a porn craving that lasts hours or days. Most of this comes from smoking, alcohol and food, and each finding
+carries its strength.
 
-**What the research supports** (eight research passes, November 3: craving science, the mind side, recovery programs, mutual
-help, other apps, teaching ahead, and 31 firsthand accounts; almost nothing tests porn directly, so most of this is from smoking,
-alcohol and food, and is labeled that way):
+- **Why the walk did not help.** Craving follows whether use is still possible (moderate to strong). Craving rose step by step as
+  the chance of smoking went from 0 to 100 percent; flight attendants craved most near landing whatever the flight's length;
+  Sabbath-keeping smokers craved less on the Sabbath than on a workday without cigarettes (Dar 2005, 2010; Wertz and Sayette 2001).
+  "I can't wait to break" is the expectation itself. And a walk spent rehearsing the payoff is desire thinking, which feeds the
+  craving (Caselli and Spada, moderate). Movement helps only when attention goes somewhere else.
+- **What the brain is doing** (strong unless marked). Dopamine fires at the cue and the expectation, not the act (Schultz).
+  Wanting and liking are separate systems, and wanting can grow while liking stays flat (Berridge and Robinson), so "this would be
+  amazing" is a forecast, and it oversells. Porn users with a problem show this at the cue, not the image (Gola 2017, moderate).
+  Stress takes the planning brain offline (Arnsten). Craving lives on vivid pictures of the payoff, and a competing picture or a
+  visual task takes their place (Kavanagh, Andrade and May; Tetris, Skorka-Brown). Background urges fade over months (Ussher,
+  smokers), but cue surges can grow for weeks 3 to 5 before they fade (Bedi 2011, moderate). Each urge ridden out lays new learning
+  over the old; the old can wake on a hard day (Bouton). A slip does not erase it; what happens next decides (Witkiewitz).
+- **What changes the moment.** Defusion and urge surfing: the only porn trial, ACT, cut viewing 93 percent against 21 (Crosby and
+  Twohig 2016, 28 men). Smokers taught urge surfing had urges as strong but smoked less: the goal is not fewer urges, it is that an
+  urge stops being an order (Bowen and Marlatt). Talking to yourself by name calms fast, without effort (Kross, moderate; temptation
+  preliminary). Thinking of the long run cut craving a third (Kober 2010). Calm people underestimate how strong a craving will be,
+  so the answers must be written on a calm day (Sayette, the empathy gap). A thought you expected and already answered lands softer
+  (inoculation, strong elsewhere, untested here). If-then plans made ahead (d = .65). Contact with a person before acting
+  (Cochrane 2020 for 12-step, alcohol; Venniro 2018, social reward beat heroin in rats).
+- **The line on saying it out loud.** Say it once, about the craving, then turn to a move ("this is the wanting system firing").
+  Saying it from inside the craving, over and over, in its own words ("it would be so good") feeds it. Pushing the thought away
+  backfires too (Erskine 2010).
+- **The fight, lose, low, restart cycle.** Blaming a slip on something fixed and total predicts a full relapse (the abstinence
+  violation effect); self-compassion after a failure raises the drive to improve (Breines and Chen 2012).
+- **What the programs teach** (their best parts, compiled):
+  - the slide: the fight starts rungs before the edge (Pure Desire's FASTER scale; Candeo's BLAST: bored, lonely, anxious,
+    stressed, tired; Carnes's ritual chain; the ladder used by an LDS men's program, whose founder Daybook must never name, credit or
+    link: charged in 2023, no-contest pleas in 2026, and the Church told leaders to stop referring to him);
+  - name the voice and refuse it (ACT, SMART's DISARM, Rational Recovery's "it, not I", Candeo's responder and director);
+  - allow the wave, do not fight it (ACT, Sara Brewer, MBRP);
+  - play the movie to the end (Candeo, Allen Carr, SMART's cost-benefit);
+  - call before, not after (SA, SAA, ARP step 1, Candeo's two lifelines rehearsed weekly);
+  - your own voice: truth statements recorded in your own voice and played back (Candeo); your own reasons said aloud (motivational
+    interviewing; arguing for the habit is what predicts worse outcomes);
+  - fire drills: rehearse the hard moment on a calm day (Kevin Skinner's emergency drills, Candeo, SMART role-play);
+  - the student chair, not the convict chair: study the game film after a loss (Brewer's Learn and Move On; Candeo's assess,
+    adjust, keep going; ARP's daily accountability);
+  - physiology, not morality: the urge is a body signal, values decide the act (Brewer; moral incongruence research, Grubbs).
+- **Not used:** "dopamine detox", reboot timelines, brain-damage claims, "never, no allowance for a slip" (it breaks hope the first
+  time someone slips), open chat feeds, partner surveillance.
 
-1. _Craving follows whether use is possible, not how long it has been_ (moderate to strong, many substances). Craving rose step
-   by step as the stated chance of smoking went from 0 to 100 percent; flight attendants craved most near landing whatever the
-   flight's length; Sabbath-keeping smokers craved less on the Sabbath, when smoking was unthinkable, than on a workday without
-   cigarettes (Dar 2005, 2010; Wertz and Sayette 2001). "I can't wait to break" is the expectation itself, and it keeps the
-   craving at full strength. A phone in the pocket keeps the door open.
-2. _Craving lives on pictures_ (moderate to strong mechanism). Elaborated Intrusion theory: the mind elaborates vivid images of
-   the payoff, which feeds the want (Kavanagh, Andrade and May 2005). Tasks that load visual working memory weaken it: 3 minutes of
-   Tetris cut real-life cravings (Skorka-Brown 2014, 2015). Functional Imagery Training, where a person builds and rehearses a vivid
-   picture of their own goal and switches to it when the craving starts, beat motivational interviewing for weight loss at 12
-   months (6.4 kg against 0.7; Solbrig 2019); weaker for alcohol. It works through rehearsal ahead, not one cold use.
-3. _Name the voice and let the urge be there without obeying it_ (the best porn-specific evidence). ACT for porn: 12 sessions cut
-   viewing 93 percent against 21 on the waitlist (Crosby and Twohig 2016, 28 men, small). Urge surfing left smokers' urges as
-   strong but cut smoking (Bowen and Marlatt 2009). Rational Recovery's "it, not I", SMART's "personify the urge", Candeo's
-   responder and director, and Sara Brewer's "allow, do not resist or distract" are the same move. Fighting the thought makes it
-   stronger.
-4. _Say it to a person before acting_ (strong for alcohol, weak but consistent for sexual behavior). Twelve-step facilitation beat
-   other treatments for continuous abstinence (Cochrane 2020), mostly through changed social networks. Every 12-step program puts
-   the call in the gap between deciding and doing ("call before, not after"; a call, not a text). Rats chose a social partner over
-   heroin, and that chosen abstinence prevented the later rise in craving; delay weakened it (Venniro 2018).
-5. _Postpone, in links_ (firsthand and SMART's "delay", untested). A smoker got through a couple of hours with "first this chore,
-   then I will go", over and over. Several turnaround accounts are a small "not yet", not a win by effort.
-6. _Catch it earlier_ (good as relapse prevention). Sons of Helaman's ladder and Pure Desire's FASTER scale both say the last rung
-   is mostly lost and the fight starts hours earlier; Sons of Helaman's answer is a plan chosen and rehearsed in advance.
-7. _Change what the urge means, over weeks_ (the most common theme in the firsthand accounts, 7 of 31). People stopped fighting
-   once they saw porn as relief from a craving it made, not a pleasure they were giving up. Allen Carr and EasyPeasy are built on
-   it (smoking trial: no clear difference from the NHS service). Lessons 33 and 34 already teach part of it.
-8. _Prayer and surrender, for those with faith_ (weak to moderate). SA's "third option" between acting out and white knuckles;
-   an AA prayer lowered cue-induced craving (Galanter, small).
-   Not supported: "willpower runs out" (two large replications found no ego depletion). Not used: "never, no allowance for a slip"
-   (Rational Recovery, Easyway), which breaks hope the first time someone slips.
+### What Daybook already has, and the real gap
 
-**Not a night, and not one name (the owner, November 3, 2026).** "This happens anytime. It can happen for days. You can be
-fighting a wave for days, and it surges, but it is still coming." So this is not "the long night": it is any time of day, and a
-stretch can last days, with surges. Nothing on screen calls it a mode; SOS simply changes when an urge keeps coming, and the
-words are "for now" and "today", never "tonight". Night colors only when it is night. In the code it is the long wave
-(`longWave`).
+Daybook already teaches much of this: urges are waves (l2), thoughts are not orders (l16), permission thoughts (l18), wanting is
+not liking (l33), the cue comes first (l34), crowd out the picture (l42), play it forward (l44), words from a calm day (l45);
+Talk it through names the replay, the permission thought, the all-or-nothing cliff; SOS has Later, Say it fast, Your words and the
+calm-day note with a voice note. Step 3 of the path is even called Close the door.
 
-**How it is found (the owner, November 3, 2026).** "Most of the time I really fight it out. It's not like, oh, I need SOS. I
-might grab SOS once, but it's just a never-ending battle." So the stretch cannot depend on SOS staying open. The app cannot read a
-mind; it reads the few traces the person leaves, and makes each one count for the whole stretch:
+So the gap is not content. It is that:
 
-- **One touch starts it.** A single SOS, a strong urge logged, Planning a slip?, or a check-in that says the pull is strong starts
-  the stretch for the day. It does not end when that screen closes.
-- **Today asks, once.** While it is on, the top of Today says so plainly and offers one tap: "It keeps coming" or "It eased".
-  Anyone who opens the app during a hard day is met by it without looking for it.
-- **The app comes to the person**, with notes that each carry one move (below). This is the one channel that works for someone
-  fighting it out on their own.
-- **It learns when.** Once a person has had a stretch or two, the app sees what came before them (days since the last slip,
-  the day of the week, a missed wind-down, a run of short nights) and starts the watch earlier the next time, with the closed
-  door asked ahead.
-- **Later, maybe:** a racing heart with no workout, read from Apple Health with the person's yes. Unproven and private by
-  nature; not in the first build.
+1. the teaching sits in lessons read weeks ago, and nothing hands the right piece back at the right minute of a battle;
+2. everything works for one SOS of a few minutes; nothing walks with a person through hours or days;
+3. nothing predicts the next thought, so each one lands as a surprise;
+4. nothing closes the door, which is the strongest lever there is;
+5. nothing shows a person where they are on the slide, so the fight starts at the edge;
+6. the notes cannot do anything (no action buttons exist), and nothing counts a battle fought outside SOS.
 
-**The notes carry the help, and they follow the person's energy (the owner, November 3, 2026).** "Knowing if it's still there
-or easier won't really make much of a difference. I'm very worried about flooding with notifications. It comes in waves: you work
-really hard, then you lose, then it's hard to get motivated, and notifications just piss you off, and then you start trying
-again." So:
+### The design: a map of the battle, and a companion that walks it
 
-- _A note is a move, not a question._ Each note carries one step from the research, readable on the lock screen without opening
-  the app, and its buttons do it:
-  - the door: "Where does your phone sit until 4? The kitchen counter works." Button: Done.
-  - the voice: "That 'it would be amazing' is a preview, not a promise. Run it to the end." Button: Show me.
-  - the picture: one line of the person's own freedom scene, in their words.
-  - the person: "Text Sam: rough day, can you call?" Button: Send (opens Messages with it ready).
-  - the link: "Not yet." Button: Not before 3:40 (or 4:40). The person sets the next note. This is the smoker's "first this
-    chore, then I will go", and choosing it is the active part, not a report.
-    "Still here" and "Easier" are gone as buttons. Hours held are counted from the links chosen, as a side effect.
-- _The person sets the pace._ The next note comes at the time the person picked with Not yet. With no pick, at most one an hour
-  and five a day, none at night after bed, and every other Daybook note (lessons, check-ins) is held while a stretch is on, so
-  they never stack.
-- _Silence means stop._ Two notes in a row with no answer and the notes stop for the day, without a word. Each note has "Leave me
-  be today", which is honored with no follow-up.
-- _After a loss, rest._ A slip ends the stretch, and the app goes quiet: no stretch notes, no asks, nothing about the fight. The
-  existing gentle come-back note stays as it is.
-- _The person starts it again, never the app._ When they come back on their own (open Today, take a lesson, log), the app
-  comes back with them. A stretch is never started by a note.
-- _It learns the person's dose._ If notes in past stretches were mostly ignored, the next stretch sends fewer; if Not yet was
-  used, it keeps offering it. What it learns stays on the phone.
+**1. The slide: one picture of the battle.** Five stops, from the programs and the science, each with what the mind says there,
+what the brain is doing in one plain sentence, what to say out loud, and one move. Shown as a short line with a dot, "you are
+here", readable in two seconds.
 
-**The design: close the door, change the picture, say it out loud.** It is not a list of tools. It is a short
-sequence, the same every time, that works on the mind first and the body second.
+| Stop    | What the mind says                                                                    | What the brain is doing                            | Say it once                                             | The move                               |
+| ------- | ------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- | -------------------------------------- |
+| Drift   | "I'm fine." (tired, lonely, stressed, bored, rushing)                                 | Stress turns the planner down                      | "I am running low."                                     | Meet the need; close the door early    |
+| Spark   | "Huh." (a picture, a mood, being alone)                                               | The wanting system fires at a signal               | "That is a cue, not a need."                            | Change the setting                     |
+| Preview | "This would be amazing."                                                              | A forecast, and it oversells; the picture feeds it | "[Name], that is the preview. It always promises more." | Change the picture; play it to the end |
+| Case    | "I deserve it." "Just once." "It is going to happen anyway." "I can't wait to break." | Permission thoughts, while the door is open        | "That is the permission voice. It is not a decision."   | Close the door; call before, not after |
+| Steps   | Small moves toward it: alone, phone in bed, just browsing                             | The ritual: each step is an exit                   | "This is a step. I can step off."                       | One exit, now                          |
 
-_During, in SOS, at any hour_ (effort: medium for screens and words; high for check-ins and anything stored).
+A battle of days moves up and down these stops, with surges. The app keeps the dot where the person last put it.
 
-1. _It notices._ At 20 minutes with no "It passed", "Still strong" twice, or the person's own "It has been going for hours", SOS
-   changes to the steps below. So does a new SOS within a few days of one that went long: the stretch carries over.
-2. _Name it._ One question: "Has part of you already decided?" Yes is met without shame: "That is the craving talking. It is
-   not a decision. The choice is still yours." The craving's voice can carry a name the person gave it on a calm day.
-3. _Close the door for now._ The center of the design. "Craving burns while the door is open. Close it for today." The
-   person picks how: the phone sleeps in another room, the phone goes to someone, go somewhere people are (without the phone in
-   hand), or lock the phone into Daybook for a while (iPhone's Guided Access, which the person turns on themselves; to be
-   checked). Then the person says it: "Not today" ("Not tonight" at night). This is the Sabbath, not a vow forever: it is about today only.
-4. _Say it out loud._ One tap calls the person from their plan (a call first, a ready text second). Below it, live meetings
-   that run at most hours (links to each group's own schedule, never copied times), and for people who said faith plays a part, a
-   short prayer of surrender in their faith's voice.
-5. _Change the picture._ The person's own freedom scene, built in their own words on a calm day and practiced, is played to them;
-   Stack (the block puzzle) is there for a busy mind; Play it forward runs the tape to the end.
-6. _If the door cannot close, postpone in links._ "Not before 10:40." SOS holds the time and checks in then; each link held
-   feeds the flame.
-7. _Check-ins._ While it is on, a note every 25 minutes opens SOS on the next step. They stop on It passed, I
-   slipped, bed, or after 4 hours. When the phone has gone to another room, Daybook has done its best work.
-8. _A stretch of days._ When strong urges keep coming back over days (several SOS or strong urges in a day or two), Today
-   holds a quiet line for the stretch: each morning it asks how the door closes today, and it counts the hours and days held
-   as they grow, so a stretch of days reads as days won, not a siege being lost. It ends on its own after a calm day.
+**2. Reading the mind: "next it will say".** At each stop the app shows the line the craving will most likely use next, from the
+person's own past (the thoughts they named in Talk it through, Say it fast, the slip comeback) and the common ones, with the
+person's own answer under it, written on a calm day: "Next it will probably say: 'You fought all day. You earned it.' You said:
+'Earning it is the oldest trick it has.'" A thought expected and already answered loses its surprise. This is the mind-reading
+the owner asked for, and it is honest: it is the person's own pattern, read back.
 
-Body tools (hard movement, cold water, breath) stay, as a way to take the edge off while the steps above do the work, never as
-the answer.
+**3. Saying it out loud.** One line, once, by the person's name, said aloud ("Say it out loud. Tap when you have."), then straight
+to a move. Never an open "tell me about your craving", which would feed it. Their recorded calm-day voice can say it with them.
 
-_Before_ (effort: medium for lessons; high for plan fields, since settings sync).
+**4. The kit, made on calm days.** The battle uses what the person built when calm, because calm people underestimate cravings:
 
-9. A lesson, "When it keeps coming": a long craving is real, for hours or days, it is the body and the mind, it keeps burning
-   while the door is open, and here is the plan. Its practice builds the plan below.
-10. The plan gains three things, made on a calm day: how the door closes ("my phone sleeps in the kitchen"), who gets the call,
-    and the freedom scene (a few lines in their own words, practiced for a minute with a lesson now and then).
-11. A closed door, ahead: in the hours the person's pattern says are hard, Today's heads-up asks an hour or two before where the phone
-    will be, so the door is closed before the craving starts.
-12. Lesson 2 stops promising ten minutes ("most waves pass in minutes; some last for hours, and there is a plan for those").
+- their signs at each stop (the slide, made personal);
+- the voice's lines and their answers (three to start, more as they learn);
+- how the door closes ("my phone sleeps in the kitchen"; a person to hand it to; a place to go);
+- their person, for a call before, not after;
+- their freedom scene, a few lines in their own words, practiced a minute now and then;
+- a name for the craving's voice, if they want one.
+  Most of it is built by lesson practices (below); the rest lives in My plan as a chapter, "When it keeps coming". The fire drill: a
+  60-second run of the battle on a calm day, so the first real use is not the first use.
 
-_After_ (effort: high, since it touches points).
+**5. In the battle, at any hour.** One touch starts a stretch (an SOS, a strong urge logged, Planning a slip?, a strong check-in),
+and it carries over days until a calm day ends it. Inside SOS, the ride gives way to the slide: the person taps where they are,
+and gets that stop's line, its next thought with their answer, the say-it-once, and the move. The Case stop leads with closing the
+door ("Not today": a Sabbath for today, not a vow forever) and the call. If the door cannot close, postpone in links ("Not before
+3:40"). Body tools stay as a way to take the edge off, never as the answer. Planning a slip? opens on the Case stop; its existing
+paths stay, with closing the door first.
 
-13. A slip after a long hold says so on Rekindle: "You held three hours. That is real." "Waited first" credit grows with time
-    held. Points only go up; nothing earned before changes.
-14. The slip's next-time plan asks one thing: where the door was open. That is the line the next long stretch starts from.
+**6. The notes carry the help, and follow the person's energy.** Each note is a move readable on the lock screen, with a button
+that does it: Done (the door), Show me (the next thought and your answer), one line of your freedom scene, Send (your person, the
+text ready), Not before 3:40 (the person sets the next note). No "still there?" buttons. At most one an hour and five a day unless
+the person set a time; none after bed; every other Daybook note held during a stretch. Two unanswered and they stop for the day;
+"Leave me be today" on every note. A slip ends the stretch and the app rests: no notes about the fight. The person restarts it,
+never the app. It learns each person's dose, on the phone. (Needs notification categories, which Daybook does not use yet.)
 
-**Honest limit.** Nothing has been tested against a porn craving that lasts hours or days. The design rests on the strongest findings nearby:
-availability, imagery, defusion and people. It says "this can help", never "this will stop it".
+**7. The brain, taught with pictures.** New lessons, short, each with one moving picture and one practice that builds the kit:
 
-**Open questions for the owner.**
+- _The slide_ (the five stops; catch it at Drift; practice: your signs at each stop);
+- _Close the door_ (craving follows the open door: the flight, the Sabbath; practice: how your door closes) — the lesson Step 3
+  is named after;
+- _The preview_ (the forecast that oversells; why the walk did not help; practice: your freedom scene);
+- _Its next line_ (predict the voice and answer it ahead; practice: three lines and your answers);
+- _When it keeps coming_ (surges for hours or days; weeks 3 to 5 can be louder and that is a known pattern; each one ridden out
+  stacks new learning; a slip does not erase it).
+  Lesson 2 stops promising that every wave passes in ten minutes. The week 3 to 5 heads-up also comes as one quiet line on Today.
 
-- The name: none on screen (SOS changes); the lesson and the plan chapter say "When it keeps coming".
-- Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls
-  permission, which Apple must approve. Worth asking Apple for?
-- Pointing to 12-step meetings, whose "addict" language fights the identity goal: a neutral list (12-step, SMART, and the
-  Church's Addiction Recovery Program for those who said faith plays a part), or leave meetings out.
-- Check-ins every 25 minutes.
+**8. Watching it work.** The app shows the person their own evidence over weeks, in a chart that reads in two seconds: battles
+fought, hours held, and how high the dot got before it turned. Urges may stay; what changes is how far down the slide they get.
+That is the truthful kind of progress (urges same, behavior different).
+
+**9. After a loss: the student chair.** Rekindle stays first. Then, not as a duty: "You held three hours. That is real." Credit
+for time held grows with the time ("Waited first" no longer stops at 20 minutes; points only go up). Then three taps to rewind the
+film: the stop where it turned, what the voice said there, and one if-then for next time, which becomes a new answer in the kit.
+The next battle starts smarter than the last.
+
+### How it helps, in one paragraph for the owner
+
+A craving wins by surprise, by an open door, by a picture, and by being alone inside your head. This answers each one: the voice
+is predicted and answered by your calm self before it speaks; the door is closed for today so the forecast loses its fuel; another
+picture takes the payoff's seat; you say once, out loud, what is happening, and call a person before, not after; and the app walks
+with you for hours or days, quietly, at your pace. It will not make urges vanish. It makes them predictable, smaller, and not
+orders, and every battle teaches the next one.
+
+### The build, in parts (each on its own branch, shown on the simulator before it merges)
+
+1. _The stretch_: detection, carrying over days, the notes with action buttons, pace and quiet rules, SOS on the slide with the
+   Case stop and the door (high: runs while the app is closed and stores state).
+2. _The mind_: the slide picture, "next it will say" with the person's answers, say it once by name, the kit chapter in My plan
+   and the fire drill (medium for screens and words; high for the plan fields, since settings sync).
+3. _The lessons_: the five lessons with their pictures and practices, the lesson 2 change, the week 3 to 5 line (medium).
+4. _After_: credit for time held, the rewind, the evidence chart (high: touches points).
+
+### Open questions for the owner
+
+- Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls permission.
+  Worth applying for?
+- Meetings in the Case stop: a neutral list (SMART, 12-step, and the Church's Addiction Recovery Program for those who said faith
+  plays a part), linking to each group's own schedule, or leave them out.
+- The person's name in "say it once": ask for a first name in setup (stays on the phone), or use "you".
+- The five stops' names: Drift, Spark, Preview, Case, Steps.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

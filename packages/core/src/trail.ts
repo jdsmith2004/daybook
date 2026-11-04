@@ -73,7 +73,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     id: 'spark',
     name: 'Spark',
     means: 'Something caught your eye',
-    hear: 'Huh.',
+    hear: 'I want it.',
     turn: 'That was a cue: a picture, a mood, an empty room. It fades fast once you leave the place where it found you.',
     say: 'That is a cue, not a need.',
     see: 'A spark in a dark room, and a bright doorway out of it. The phone stays behind.',
@@ -117,10 +117,10 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   steps: {
     id: 'steps',
     name: 'Steps',
-    means: 'Moving toward it',
-    hear: 'I am only looking.',
-    turn: 'Each step feels like nothing. Each one is also a way off, and the earlier one is the easier one.',
-    say: 'This is a step. I can step off.',
+    means: 'Already on the way: alone, phone in hand',
+    hear: 'I know where this is going, and I am going anyway.',
+    turn: 'Knowing where it goes is not the same as having to go. Until the very end, every step still has a way off.',
+    say: 'I can still step off.',
     see: 'Stairs going down to the edge, and a green side path off them.',
     did: 'else',
     drills: {

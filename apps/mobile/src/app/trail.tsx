@@ -279,7 +279,7 @@ function Beats({
       <View key={beat} style={s.words}>
         {beat === 0 ? (
           <>
-            <Text style={s.over}>{'At ' + P.name + ', it says'}</Text>
+            <Text style={s.over}>The thought here</Text>
             <Whisper text={hear ?? P.hear} />
           </>
         ) : beat === 1 ? (

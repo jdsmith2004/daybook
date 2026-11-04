@@ -1,87 +1,100 @@
 # What is planned next
 
-## The long night: when an urge lasts for hours (the owner, November 3, 2026; planned, not built)
+## The long night: when the mind has already decided (the owner, November 3, 2026; planned, not built)
 
 The ask, in the owner's words after a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's like
-we need dopamine, we need to do this right now. I lasted about 3 hours and then I broke. That's my main problem with apps:
-at the end of the day, they can't help you." The owner wants Daybook to teach people how to deal with this state and actually
-help in it, not be a gimmick. Free, like all care. It helps the person most where other apps fail them, and that is what
-earns ratings, word of mouth and tips.
+we need dopamine, we need to do this right now. I lasted about 3 hours and then I broke." And after the first plan (cold water,
+walks, a person, food): "Cold water and walking. I did go on walks. But while I was walking, I was like, I can't wait to break.
+This is something no one's ever been able to do. Research it." Free, like all care. It answers the moment where people give up on
+apps, which is what earns ratings, word of mouth and tips.
 
-**What SOS does today (origin/main, November 3).** SOS is built for one wave. The ride cycles eight short moves (breathe, move,
-stack, ground, feel, forward, thought, reasons) and nothing changes with time: no step depends on how long the urge has lasted,
-"Still strong" only swaps the line ("Strong is not stuck. Try something different.") and reopens the tools, and SOS schedules no
-notification, so once the phone is put down the app is gone. Move is 2 minutes. A slip after three hours is credited like a slip
-after twenty minutes (`rkWaitOf` tops out at 20; "Waited first" gives at most 10 points), and the Rekindle screen never says how
-long the person held. Lesson 2 teaches "rises, peaks, and passes; give it ten minutes", and lesson 46 says a week off porn showed
-no withdrawal effects. Nothing teaches what to do when the wave does not pass.
+**What SOS does today (origin/main, November 3).** SOS is built for one wave. The ride cycles eight short moves and nothing
+changes with time; "Still strong" only swaps a line and reopens the tools; SOS schedules no notification; Move is 2 minutes. A slip
+after three hours is credited like one after twenty minutes, and Rekindle never says how long the person held. Lesson 2 promises
+the wave passes in about ten minutes. Nothing in the app speaks to the mind that has already decided.
 
-**What the research supports** (four research passes, November 3; mostly smoking, alcohol and food research, since almost
-nothing tests a porn craving that lasts hours):
+**What the walk shows.** The body moved; the mind kept the slip on the table and kept picturing it. Body tools leave both alone.
 
-- The "peaks and passes in 20 to 30 minutes" rule is a rule of thumb, not a finding. Hours-long states are real: episodes
-  recur, and stress, fatigue and cues set them off again. A 2023 scoping review of withdrawal-like symptoms in problematic
-  porn use (14 studies) found intense craving in most and named it a frequent reason for relapse; severity tracks how heavy
-  the use was. No reliable timeline exists.
-- Every in-the-moment tool was measured over 5 to 30 minutes, and none was shown to work at hour three. So the answer for a
-  long night is to repeat and combine tools, not to find one that ends it.
-- Moving the body has the strongest evidence: moderate or vigorous movement for 5 to 15 minutes cut craving about four times
-  more than light movement (Haasova 2013, 2014). It works fast and wears off, so it is repeated.
-- A visuospatial game (Tetris, 3 minutes) lowered real-life cravings, sex among them, by about a fifth (Skorka-Brown 2014).
-  Stack is that tool.
-- Slow breathing helps a little (g = .30). Cold water on the face slows the heart fast (DBT's TIPP skill); there is no craving
-  trial, but it fits a body that is revved up.
-- If-then plans made while calm work (d = .65, Gollwitzer and Sheeran 2006), best with a precise cue and one small action.
-- Repeated, risk-timed check-ins during a high-risk stretch are the best-supported idea from the app research (a 2025 JAMA
-  Network Open trial of a risk-timed program beat the standard quit guide at 26 weeks).
-- Knowing what the state is helps: reappraising craving lowers it (Kober 2010), and naming a feeling dampens it.
-- Being alone, late, with a phone is the common setting for a slip; people who got through a bad night most often say they
-  left the room or the house, took a cold shower or exercised.
-- "Willpower runs out" is not supported (two large replications found no ego depletion), so the app never says the person was
-  drained. Guilt after a lapse turns it into a relapse, so the after is shame-free.
-  Daybook never promises a tool will stop the craving: "this can help", "people use this".
+**What the research supports** (eight research passes, November 3: craving science, the mind side, recovery programs, mutual
+help, other apps, teaching ahead, and 31 firsthand accounts; almost nothing tests porn directly, so most of this is from smoking,
+alcohol and food, and is labeled that way):
 
-**The design: before, during, after.**
+1. _Craving follows whether use is possible, not how long it has been_ (moderate to strong, many substances). Craving rose step
+   by step as the stated chance of smoking went from 0 to 100 percent; flight attendants craved most near landing whatever the
+   flight's length; Sabbath-keeping smokers craved less on the Sabbath, when smoking was unthinkable, than on a workday without
+   cigarettes (Dar 2005, 2010; Wertz and Sayette 2001). "I can't wait to break" is the expectation itself, and it keeps the
+   craving at full strength. A phone in the pocket keeps the door open.
+2. _Craving lives on pictures_ (moderate to strong mechanism). Elaborated Intrusion theory: the mind elaborates vivid images of
+   the payoff, which feeds the want (Kavanagh, Andrade and May 2005). Tasks that load visual working memory weaken it: 3 minutes of
+   Tetris cut real-life cravings (Skorka-Brown 2014, 2015). Functional Imagery Training, where a person builds and rehearses a vivid
+   picture of their own goal and switches to it when the craving starts, beat motivational interviewing for weight loss at 12
+   months (6.4 kg against 0.7; Solbrig 2019); weaker for alcohol. It works through rehearsal ahead, not one cold use.
+3. _Name the voice and let the urge be there without obeying it_ (the best porn-specific evidence). ACT for porn: 12 sessions cut
+   viewing 93 percent against 21 on the waitlist (Crosby and Twohig 2016, 28 men, small). Urge surfing left smokers' urges as
+   strong but cut smoking (Bowen and Marlatt 2009). Rational Recovery's "it, not I", SMART's "personify the urge", Candeo's
+   responder and director, and Sara Brewer's "allow, do not resist or distract" are the same move. Fighting the thought makes it
+   stronger.
+4. _Say it to a person before acting_ (strong for alcohol, weak but consistent for sexual behavior). Twelve-step facilitation beat
+   other treatments for continuous abstinence (Cochrane 2020), mostly through changed social networks. Every 12-step program puts
+   the call in the gap between deciding and doing ("call before, not after"; a call, not a text). Rats chose a social partner over
+   heroin, and that chosen abstinence prevented the later rise in craving; delay weakened it (Venniro 2018).
+5. _Postpone, in links_ (firsthand and SMART's "delay", untested). A smoker got through a couple of hours with "first this chore,
+   then I will go", over and over. Several turnaround accounts are a small "not yet", not a win by effort.
+6. _Catch it earlier_ (good as relapse prevention). Sons of Helaman's ladder and Pure Desire's FASTER scale both say the last rung
+   is mostly lost and the fight starts hours earlier; Sons of Helaman's answer is a plan chosen and rehearsed in advance.
+7. _Change what the urge means, over weeks_ (the most common theme in the firsthand accounts, 7 of 31). People stopped fighting
+   once they saw porn as relief from a craving it made, not a pleasure they were giving up. Allen Carr and EasyPeasy are built on
+   it (smoking trial: no clear difference from the NHS service). Lessons 33 and 34 already teach part of it.
+8. _Prayer and surrender, for those with faith_ (weak to moderate). SA's "third option" between acting out and white knuckles;
+   an AA prayer lowered cue-induced craving (Galanter, small).
+   Not supported: "willpower runs out" (two large replications found no ego depletion). Not used: "never, no allowance for a slip"
+   (Rational Recovery, Easyway), which breaks hope the first time someone slips.
 
-_During: the long night in SOS._ (Effort: medium for the screens and words; high for the check-ins, since they run while the
-app is closed.)
+**The design: close the door, change the picture, say it out loud.** The long night is not a list of tools. It is a short
+sequence, the same every time, that works on the mind first and the body second.
 
-1. SOS notices a long one: 20 minutes in with no "It passed", or "Still strong" twice, or the person taps "It has been going
-   for hours" (a quiet choice on the ride). Then the ride changes from tools to a night plan, said once, plainly: this is the
-   body in high gear, it comes in waves, it is not an order, and the job tonight is the next twenty minutes.
-2. The rounds lead with the body and the place, not the screen. In order of evidence:
-   - Change place: leave the room, go where people are (the person's own place from the plan, below).
-   - Burn it: 10 minutes of hard movement (a real run, stairs, push-ups), a longer Move than the 2-minute one.
-   - Cold: cold water on the face or a cold shower.
-   - Then a person (one tap, the text ready), food if they are hungry, Stack, the breath, and bed when it is late.
-     Each round is short and ends with "Put the phone down. I will check in."
-3. Check-ins: while the long night is on, the phone sends a note every 25 minutes ("50 minutes held. Still with you."), which
-   opens SOS on the next round. It stops on It passed, I slipped, closing SOS, bed, or after 4 hours. This uses its own
-   notification id, kept out of `replaceSchedule`.
-4. The flame takes each round held, live, so the time held is visibly worth something while it is happening.
+_During, in SOS_ (effort: medium for screens and words; high for check-ins and anything stored).
 
-_Before: teach it and plan it._ (Effort: medium for the lesson; high for the plan fields, since settings sync.) 5. A new lesson, "When it does not pass": the state is real and it is the body, it comes in waves for hours, it is not an
-order, the body moves come first, and a long night you get through teaches your brain the pull can be outlasted. It ends
-with the plan below as its practice. 6. The plan gets one long-night line, an if-then: "When it lasts, I go to **_ and text _**." The place is new (the plan has a
-safe person and a number already). SOS's long night offers that place and that person first. 7. Lesson 2 says what the long night is for ("most waves pass in minutes; some come in sets for hours, and there is a plan for
-that"), so it no longer promises ten minutes.
+1. _It notices._ At 20 minutes with no "It passed", "Still strong" twice, or the person's own "It has been going for hours", SOS
+   becomes the long night.
+2. _Name it._ One question: "Has part of you already decided?" Yes is met without shame: "That is the craving talking. It is
+   not a decision. The choice is still yours." The craving's voice can carry a name the person gave it on a calm day.
+3. _Close the door for tonight._ The center of the design. "Craving burns while the door is open. Close it for tonight." The
+   person picks how: the phone sleeps in another room, the phone goes to someone, go somewhere people are (without the phone in
+   hand), or lock the phone into Daybook for the night (iPhone's Guided Access, which the person turns on themselves; to be
+   checked). Then the person says it: "Not tonight." This is the Sabbath, not a vow forever: it is about tonight only.
+4. _Say it out loud._ One tap calls the person from their plan (a call first, a ready text second). Below it, live meetings
+   that run at most hours (links to each group's own schedule, never copied times), and for people who said faith plays a part, a
+   short prayer of surrender in their faith's voice.
+5. _Change the picture._ The person's own freedom scene, built in their own words on a calm day and practiced, is played to them;
+   Stack (the block puzzle) is there for a busy mind; Play it forward runs the tape to the end.
+6. _If the door cannot close, postpone in links._ "Not before 10:40." SOS holds the time and checks in then; each link held
+   feeds the flame.
+7. _Check-ins._ While the long night is on, a note every 25 minutes opens SOS on the next step. They stop on It passed, I
+   slipped, bed, or after 4 hours. When the phone has gone to another room, Daybook has done its best work, and the check-in waits
+   for the morning.
+   Body tools (hard movement, cold water, breath) stay, as a way to take the edge off while the steps above do the work, never as
+   the answer.
 
-_After: the hours count._ (Effort: high, since it touches points.) 8. A slip after a long hold says so on Rekindle: "You held three hours. That is real." The time is stored (it already is, up to
-4 hours) and shown; "Waited first" credit grows with time held instead of stopping at 20 minutes. Points only ever go up;
-nothing earned before changes. 9. The slip's "next time" plan is filled from the long-night line, so the next hard night starts with a plan already made. 10. When long nights cluster at one time (late evening, say), the hard-hours heads-up already in Today starts that evening with
-the long-night plan.
+_Before_ (effort: medium for lessons; high for plan fields, since settings sync). 8. A lesson, "When it does not pass": a long craving is real, it is the body and the mind, it keeps burning while the door is
+open, and here is the long-night plan. Its practice builds the plan below. 9. The plan gains three things, made on a calm day: how the door closes ("my phone sleeps in the kitchen"), who gets the call,
+and the freedom scene (a few lines in their own words, practiced for a minute with a lesson now and then). 10. A "closed night": on the evenings the person's pattern says are hard, Today's heads-up asks in the afternoon where the phone
+sleeps tonight, so the door is closed before the craving starts. 11. Lesson 2 stops promising ten minutes ("most waves pass in minutes; some last for hours, and there is a plan for those").
+
+_After_ (effort: high, since it touches points). 12. A slip after a long hold says so on Rekindle: "You held three hours. That is real." "Waited first" credit grows with time
+held. Points only go up; nothing earned before changes. 13. The slip's next-time plan asks one thing: where the door was open. That is the line the next long night starts from.
+
+**Honest limit.** Nothing has been tested against a three-hour porn craving. The design rests on the strongest findings nearby:
+availability, imagery, defusion and people. It says "this can help", never "this will stop it".
 
 **Open questions for the owner.**
 
-- The name on screen: "The long night", or something else.
-- When SOS switches: at 20 minutes, after "Still strong" twice, or only when the person says it has gone on for hours.
-  Recommended: any of the three.
-- How often the check-ins come: every 25 minutes recommended.
-- Lesson 46 says a week off showed no withdrawal effects (a study of students). The scoping review says heavier users do report
-  withdrawal-like symptoms. Recommended: the new lesson says both plainly (most people feel little; some feel a lot, and it
-  passes), and lesson 46 stays as it is.
-- The owner's own night: whether they opened the app during the three hours, where they were, and whether it eased and came
-  back. The answers decide which part is built first.
+- The name on screen.
+- Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls
+  permission, which Apple must approve. Worth asking Apple for?
+- Pointing to 12-step meetings, whose "addict" language fights the identity goal: a neutral list (12-step, SMART, and the
+  Church's Addiction Recovery Program for those who said faith plays a part), or leave meetings out.
+- Check-ins every 25 minutes.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

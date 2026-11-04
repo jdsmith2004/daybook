@@ -1,5 +1,88 @@
 # What is planned next
 
+## The long night: when an urge lasts for hours (the owner, November 3, 2026; planned, not built)
+
+The ask, in the owner's words after a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's like
+we need dopamine, we need to do this right now. I lasted about 3 hours and then I broke. That's my main problem with apps:
+at the end of the day, they can't help you." The owner wants Daybook to teach people how to deal with this state and actually
+help in it, not be a gimmick. Free, like all care. It helps the person most where other apps fail them, and that is what
+earns ratings, word of mouth and tips.
+
+**What SOS does today (origin/main, November 3).** SOS is built for one wave. The ride cycles eight short moves (breathe, move,
+stack, ground, feel, forward, thought, reasons) and nothing changes with time: no step depends on how long the urge has lasted,
+"Still strong" only swaps the line ("Strong is not stuck. Try something different.") and reopens the tools, and SOS schedules no
+notification, so once the phone is put down the app is gone. Move is 2 minutes. A slip after three hours is credited like a slip
+after twenty minutes (`rkWaitOf` tops out at 20; "Waited first" gives at most 10 points), and the Rekindle screen never says how
+long the person held. Lesson 2 teaches "rises, peaks, and passes; give it ten minutes", and lesson 46 says a week off porn showed
+no withdrawal effects. Nothing teaches what to do when the wave does not pass.
+
+**What the research supports** (four research passes, November 3; mostly smoking, alcohol and food research, since almost
+nothing tests a porn craving that lasts hours):
+
+- The "peaks and passes in 20 to 30 minutes" rule is a rule of thumb, not a finding. Hours-long states are real: episodes
+  recur, and stress, fatigue and cues set them off again. A 2023 scoping review of withdrawal-like symptoms in problematic
+  porn use (14 studies) found intense craving in most and named it a frequent reason for relapse; severity tracks how heavy
+  the use was. No reliable timeline exists.
+- Every in-the-moment tool was measured over 5 to 30 minutes, and none was shown to work at hour three. So the answer for a
+  long night is to repeat and combine tools, not to find one that ends it.
+- Moving the body has the strongest evidence: moderate or vigorous movement for 5 to 15 minutes cut craving about four times
+  more than light movement (Haasova 2013, 2014). It works fast and wears off, so it is repeated.
+- A visuospatial game (Tetris, 3 minutes) lowered real-life cravings, sex among them, by about a fifth (Skorka-Brown 2014).
+  Stack is that tool.
+- Slow breathing helps a little (g = .30). Cold water on the face slows the heart fast (DBT's TIPP skill); there is no craving
+  trial, but it fits a body that is revved up.
+- If-then plans made while calm work (d = .65, Gollwitzer and Sheeran 2006), best with a precise cue and one small action.
+- Repeated, risk-timed check-ins during a high-risk stretch are the best-supported idea from the app research (a 2025 JAMA
+  Network Open trial of a risk-timed program beat the standard quit guide at 26 weeks).
+- Knowing what the state is helps: reappraising craving lowers it (Kober 2010), and naming a feeling dampens it.
+- Being alone, late, with a phone is the common setting for a slip; people who got through a bad night most often say they
+  left the room or the house, took a cold shower or exercised.
+- "Willpower runs out" is not supported (two large replications found no ego depletion), so the app never says the person was
+  drained. Guilt after a lapse turns it into a relapse, so the after is shame-free.
+  Daybook never promises a tool will stop the craving: "this can help", "people use this".
+
+**The design: before, during, after.**
+
+_During: the long night in SOS._ (Effort: medium for the screens and words; high for the check-ins, since they run while the
+app is closed.)
+
+1. SOS notices a long one: 20 minutes in with no "It passed", or "Still strong" twice, or the person taps "It has been going
+   for hours" (a quiet choice on the ride). Then the ride changes from tools to a night plan, said once, plainly: this is the
+   body in high gear, it comes in waves, it is not an order, and the job tonight is the next twenty minutes.
+2. The rounds lead with the body and the place, not the screen. In order of evidence:
+   - Change place: leave the room, go where people are (the person's own place from the plan, below).
+   - Burn it: 10 minutes of hard movement (a real run, stairs, push-ups), a longer Move than the 2-minute one.
+   - Cold: cold water on the face or a cold shower.
+   - Then a person (one tap, the text ready), food if they are hungry, Stack, the breath, and bed when it is late.
+     Each round is short and ends with "Put the phone down. I will check in."
+3. Check-ins: while the long night is on, the phone sends a note every 25 minutes ("50 minutes held. Still with you."), which
+   opens SOS on the next round. It stops on It passed, I slipped, closing SOS, bed, or after 4 hours. This uses its own
+   notification id, kept out of `replaceSchedule`.
+4. The flame takes each round held, live, so the time held is visibly worth something while it is happening.
+
+_Before: teach it and plan it._ (Effort: medium for the lesson; high for the plan fields, since settings sync.) 5. A new lesson, "When it does not pass": the state is real and it is the body, it comes in waves for hours, it is not an
+order, the body moves come first, and a long night you get through teaches your brain the pull can be outlasted. It ends
+with the plan below as its practice. 6. The plan gets one long-night line, an if-then: "When it lasts, I go to **_ and text _**." The place is new (the plan has a
+safe person and a number already). SOS's long night offers that place and that person first. 7. Lesson 2 says what the long night is for ("most waves pass in minutes; some come in sets for hours, and there is a plan for
+that"), so it no longer promises ten minutes.
+
+_After: the hours count._ (Effort: high, since it touches points.) 8. A slip after a long hold says so on Rekindle: "You held three hours. That is real." The time is stored (it already is, up to
+4 hours) and shown; "Waited first" credit grows with time held instead of stopping at 20 minutes. Points only ever go up;
+nothing earned before changes. 9. The slip's "next time" plan is filled from the long-night line, so the next hard night starts with a plan already made. 10. When long nights cluster at one time (late evening, say), the hard-hours heads-up already in Today starts that evening with
+the long-night plan.
+
+**Open questions for the owner.**
+
+- The name on screen: "The long night", or something else.
+- When SOS switches: at 20 minutes, after "Still strong" twice, or only when the person says it has gone on for hours.
+  Recommended: any of the three.
+- How often the check-ins come: every 25 minutes recommended.
+- Lesson 46 says a week off showed no withdrawal effects (a study of students). The scoping review says heavier users do report
+  withdrawal-like symptoms. Recommended: the new lesson says both plainly (most people feel little; some feel a lot, and it
+  passes), and lesson 46 stays as it is.
+- The owner's own night: whether they opened the app during the three hours, where they were, and whether it eased and came
+  back. The answers decide which part is built first.
+
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 
 The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic

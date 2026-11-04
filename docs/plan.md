@@ -246,6 +246,9 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   plays a part), linking to each group's own schedule, or leave them out.
 - The person's name in "say it once": ask for a first name in setup (stays on the phone), or use "you".
 - The five stops' names: Drift, Spark, Preview, Case, Steps.
+  Kept by the owner (November 3, 2026), after being told they are a compilation of proven programs (FASTER, BLAST, Carnes's
+  ritual chain, the therapy model's permission-giving thoughts) with names of our own. Each place shows what it means in plain
+  words on the map, and the thought heard there on its screen, because the pictures alone did not say where a person was.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

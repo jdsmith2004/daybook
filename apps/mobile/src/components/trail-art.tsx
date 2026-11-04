@@ -168,7 +168,7 @@ export function TrailMap({ at, level, onPick }: { at: TrailPlace | null; level: 
       Animated.spring(y, { toValue: home[1], ...SPRING.slow, useNativeDriver: NATIVE }),
     ]).start();
   }, [home[0], home[1], reduce, x, y]); // eslint-disable-line react-hooks/exhaustive-deps
-  const FL = 58;
+  const FL = 72;
   return (
     <View style={{ width: w, height: MAP_H * k, alignSelf: 'center' }}>
       <Svg width={w} height={MAP_H * k} viewBox={`0 0 ${MAP_W} ${MAP_H}`}>
@@ -693,7 +693,7 @@ export function HomeArt({ level }: { level: number }) {
           </LinearGradient>
         </Defs>
         <Path d="M0 250 C110 232 240 240 358 222 L358 300 L0 300Z" fill="url(#trGround)" />
-        <Path d="M350 40 C300 120 250 180 236 246" stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" opacity={0.8} />
+        <Path d="M352 30 C336 110 322 180 318 236" stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" opacity={0.8} />
         <G transform="translate(150,250) scale(1.9)">
           <Path d="M-40 0 L-40 -44 L0 -74 L40 -44 L40 0Z" fill={TW.box} stroke={TW.frame} strokeWidth={3} strokeLinejoin="round" />
           <Rect x={-14} y={-42} width={28} height={24} rx={4} fill={TW.warm} />
@@ -703,7 +703,7 @@ export function HomeArt({ level }: { level: number }) {
       {FLIES.map(([x, y, d], j) => (
         <Firefly key={j} x={x * k} y={y * k} delay={d} />
       ))}
-      <View pointerEvents="none" style={[s.abs, { left: 268 * k - 50, top: 252 * k - 100, width: 100, height: 100 }]}>
+      <View pointerEvents="none" style={[s.abs, { left: 262 * k - 50, top: 252 * k - 100, width: 100, height: 100 }]}>
         <BigFlame level={level} size={100} />
       </View>
     </View>

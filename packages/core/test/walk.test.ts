@@ -171,3 +171,52 @@ describe('the two minutes of a walk', () => {
     expect(core.trailGuide('spark', {})[0]).not.toContain('It says');
   });
 });
+
+describe('the coach', () => {
+  const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
+  it('says little at a time: a bubble is short enough to read in a craving', () => {
+    for (const c of Object.values(core.WALK_COACH)) expect(words(c.say)).toBeLessThanOrEqual(22);
+    for (const l of core.WALK_LINES) expect(words(l.short)).toBeLessThanOrEqual(20);
+    for (const n of core.WALK_NEEDS) expect(words(n.short)).toBeLessThanOrEqual(16);
+    for (const b of core.WALK_BAD) expect(words(b[2])).toBeLessThanOrEqual(14);
+  });
+  it('backs every teaching with a paper it can open', () => {
+    const keys = Object.values(core.WALK_COACH)
+      .flatMap((c) => c.src)
+      .concat(core.WALK_LINES.flatMap((l) => l.src));
+    for (const k of keys) expect(core.WALK_SRC[k]?.[1]).toMatch(/^https:\/\//);
+    for (const c of Object.values(core.WALK_COACH)) expect(c.src.length).toBeGreaterThan(0);
+  });
+});
+
+describe('fixes from walking every route', () => {
+  it('reads "all over" and a question mark in the person’s words right', () => {
+    expect(core.walkAlarm('All over', 'Buzzy')).toMatch(/^That buzzy feeling all over is an alarm\./);
+    expect(core.walkChain({ n0: 3, where: 'All over', feel: '', line: 'why not?', need: null, at: null })).toEqual([
+      'An urge at 3 out of 10',
+      'All over',
+      'It said: “why not?”',
+    ]);
+    expect(core.walkDefuse('why not?')).toBe('I am having the thought that “why not?”');
+  });
+  it('asks "why not higher" only between 1 and 9', () => {
+    expect(core.walkWhyNot(0)).toBe(null);
+    expect(core.walkWhyNot(10)).toBe(null);
+  });
+  it('says plainly when it went up, or stayed at 0', () => {
+    expect(core.walkAfter(2, 5).line).toMatch(/^Up to 5, and quiet/);
+    expect(core.walkAfter(4, 7)).toMatchObject({ again: true });
+    expect(core.walkAfter(4, 7).line).toMatch(/^Up to 7\./);
+    expect(core.walkAfter(0, 0).line).toBe('Still 0. A calm moment is the best time to plan.');
+  });
+  it('offers plan moves for when it may come back, not for the hour now', () => {
+    const tired = core.walkNeed('tired')!;
+    expect(core.walkPlanMoves(tired, 'late', false)).toContain('bed');
+    expect(core.walkPlanMoves(tired, 'evening', false)).not.toContain('light');
+    expect(core.walkPlanMoves(tired, 'soon', false)).not.toContain('bed');
+  });
+  it('keeps the move for now to a minute or two, never sending the phone away mid-walk', () => {
+    for (const n of core.WALK_NEEDS)
+      for (const night of [true, false]) expect(core.walkNeedMove(n, night)).not.toMatch(/ten minutes|across the room, out of reach|phone charging/i);
+  });
+});

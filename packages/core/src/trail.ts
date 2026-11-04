@@ -121,7 +121,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     hear: 'I know where this is going, and I am going anyway.',
     turn: 'Knowing where it goes is not the same as having to go. Until the very end, every step still has a way off.',
     say: 'I can still step off.',
-    see: 'Stairs going down to the edge, and a green side path off them.',
+    see: 'Stairs going down to the edge, and from every stair a lit path to a house with a lit window.',
     did: 'else',
     drills: {
       s: { do: 'Put the phone face down, out of reach.', done: 'It is away' },

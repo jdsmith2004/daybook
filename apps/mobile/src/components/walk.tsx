@@ -20,6 +20,8 @@ import {
   TALK_WHERE,
   TALK_MOVES,
   WALK_BAD,
+  WALK_COACH,
+  WALK_SRC,
   WALK_LINES,
   WALK_NEEDS,
   WALK_SOS,
@@ -44,7 +46,8 @@ import {
   walkLine,
   walkNeed,
   walkNeedMove,
-  walkNeedMoves,
+  walkPlanMoves,
+  walkBodyAt,
   walkOpen,
   walkPlace,
   walkPlanLine,
@@ -55,21 +58,24 @@ import {
   type TrailGuideOwn,
   type TrailPlace,
   type WalkBad,
+  type WalkBeat,
   type WalkLine,
   type WalkNeed,
   type WalkStage,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Animated, Easing, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { BigFlame } from '@/components/big-flame';
 import { Link } from '@/components/choices';
+import { Bubble } from '@/components/lesson-flame';
 import { Mirror, useMirror } from '@/components/mirror';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider } from '@/components/slider';
 import { Text } from '@/components/text';
-import { DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine, Whisper } from '@/components/trail-art';
+import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine } from '@/components/trail-art';
 import { Button } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
@@ -78,7 +84,7 @@ import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
 
 /** the parts, in order (the dots count ten: a part can have a second beat) */
-type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'truth' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan';
+type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan';
 const DOT: Record<Part, number> = {
   open: 0,
   strength: 1,
@@ -86,7 +92,6 @@ const DOT: Record<Part, number> = {
   body: 2,
   bad: 2,
   line: 3,
-  truth: 3,
   answer: 3,
   need: 4,
   stage: 5,
@@ -96,24 +101,27 @@ const DOT: Record<Part, number> = {
   after: 8,
   plan: 9,
 };
-const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'truth', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan'];
+const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan'];
 const CUE_MS = (TRAIL_GUIDE_SECS * 1000) / 8;
 
 export function Walk({
   level,
   night,
   passed,
+  fromSos,
   onMap,
   onHome,
 }: {
   level: number;
   night: boolean;
   /** "It passed", top right: home from anywhere */
-  passed: (at: TrailPlace | null) => ReactNode;
+  passed: (at: TrailPlace | null, first?: () => void) => ReactNode;
+  /** opened from SOS: going to SOS goes back to it, instead of opening a second one */
+  fromSos?: boolean;
   /** "I know where I am": the map, as the trail was */
   onMap: () => void;
   /** the end: an urge ridden out at this place, and home */
-  onHome: (at: TrailPlace | null) => void;
+  onHome: (at: TrailPlace | null, n0: number | null) => void;
 }) {
   const { snap, tk, update } = useStore();
   const st = useCareSettings();
@@ -132,7 +140,6 @@ export function Walk({
   /* the answers */
   const [n0, setN0] = useState<number | null>(null);
   const [holds, setHolds] = useState<string[]>([]);
-  const [holdOwn, setHoldOwn] = useState('');
   /* the person's own reasons (from setup and More) are offered first, as Planning a slip did */
   const reasons = useMemo(
     () =>
@@ -143,7 +150,9 @@ export function Walk({
     [st.reasons],
   );
   const [mine, setMine] = useState<string[]>([]);
-  const holdWords = mine.concat(holdOwn.trim() ? [holdOwn.trim()] : []);
+  const holdWords = mine;
+  /* the first number of the walk: a second round starts from the number after the first, and the record keeps both ends */
+  const [first, setFirst] = useState<number | null>(null);
   const [where, setWhere] = useState<string | null>(null);
   const [feel, setFeel] = useState<string | null>(null);
   const [bad, setBad] = useState<WalkBad | null>(null);
@@ -157,7 +166,7 @@ export function Walk({
   const [explain, setExplain] = useState('');
   const [n1, setN1] = useState<number | null>(null);
   const [moves, setMoves] = useState<TalkMove[]>([]);
-  const [moveOwn, setMoveOwn] = useState('');
+  const moveOwn = '';
   const [mo, setMo] = useState<string | null>(null);
 
   const L = walkLine(line);
@@ -170,11 +179,12 @@ export function Walk({
   const now = Date.now();
   const moments = useMemo(() => talkMomentsNow(now).filter((m) => m[0] !== 'now'), [now]);
 
-  /* the end: the walk saved as a talk-through (a change plan when one was made), then home with an urge ridden out */
-  const finish = (withPlan: boolean) => {
+  /* the walk saved as a talk-through (a change plan when one was made). "It passed" saves it too, without a plan, once
+     there is something to keep. */
+  const save = (withPlan: boolean) => {
     const t = Date.now();
     const talk = walkTalk(newTalk(t), {
-      n0,
+      n0: first ?? n0,
       n1,
       holds,
       holdOwn: holdWords,
@@ -193,10 +203,29 @@ export function Walk({
     });
     if (!withPlan) talk.p = null;
     update((s) => ({ ...s, days: saveTalk(s.days, tk, talk, t) }));
+  };
+  /* the end: saved, then home with an urge ridden out */
+  const finish = (withPlan: boolean) => {
+    save(withPlan);
     buzz('save');
-    onHome(at);
+    onHome(at, first ?? n0);
+  };
+  const passedNow = (p: TrailPlace | null) => passed(p, n0 != null ? () => save(false) : undefined);
+  const toSos = () => {
+    buzz('tap');
+    if (fromSos && router.canGoBack()) router.back();
+    else router.replace('/sos');
   };
 
+  /* on from the number: the first number is kept; at 0 or 10 there is no "why not higher", and nothing from it is kept */
+  const toBody = () => {
+    if (round === 1) setFirst(n0);
+    if (whyNot == null) {
+      setHolds([]);
+      setMine([]);
+      go('body');
+    } else go('hold');
+  };
   const back = () => {
     const i = ORDER.indexOf(part);
     if (i <= 0) return;
@@ -204,7 +233,8 @@ export function Walk({
     let p = ORDER[i - 1];
     if (p === 'guide') p = 'ride';
     if (p === 'hold' && whyNot == null) p = 'strength';
-    if (p === 'truth' && !L) p = 'line';
+    /* a second round starts at the line: back from it is the number that started the round */
+    if (part === 'line' && round > 1) p = 'after';
     setDir(-1);
     setPart(p);
   };
@@ -221,11 +251,9 @@ export function Walk({
         <Text style={s.big} accessibilityRole="header">
           {open.title}
         </Text>
-        <Text style={s.body}>{open.body}</Text>
-        {open.faith ? <Text style={s.faith}>{open.faith}</Text> : null}
       </Rise>
     );
-    middle = <StepsArt level={level} off lit />;
+    middle = <Coach level={level} big say={WALK_COACH.open.say + (open.faith ? '\n\n' + open.faith : '')} beat="open" />;
     dock = (
       <>
         <Button label="Walk me through it" onPress={() => go('strength')} />
@@ -241,11 +269,9 @@ export function Walk({
     const sos = n0 != null && n0 >= WALK_SOS;
     words = (
       <Rise>
-        <Text style={s.over}>Notice it first</Text>
         <Text style={s.title} accessibilityRole="header">
           How strong is it right now?
         </Text>
-        <Text style={s.body}>0 is nothing, 10 is the strongest it has ever been.</Text>
       </Rise>
     );
     middle = <Num n={n0} />;
@@ -255,19 +281,13 @@ export function Walk({
         {sos ? (
           <>
             <Text style={s.note}>At {n0}, start with SOS. It is built for this.</Text>
-            <Button
-              label="Open SOS"
-              onPress={() => {
-                buzz('tap');
-                router.replace('/sos');
-              }}
-            />
+            <Button label="Open SOS" onPress={toSos} />
             <View style={s.center}>
-              <Link label="Walk it here instead" tone="muted" onPress={() => go(whyNot == null ? 'body' : 'hold')} />
+              <Link label="Walk it here instead" tone="muted" onPress={() => toBody()} />
             </View>
           </>
         ) : (
-          <Button label="Next" disabled={n0 == null} onPress={() => go(whyNot == null ? 'body' : 'hold')} />
+          <Button label="Next" disabled={n0 == null} onPress={() => toBody()} />
         )}
       </>
     );
@@ -277,15 +297,13 @@ export function Walk({
   if (part === 'hold' && n0 != null && whyNot != null) {
     const any = holds.length > 0 || holdWords.length > 0;
     words = (
-      <Rise key={any ? 'b' : 'q'}>
-        <Text style={s.over}>{'You said ' + n0}</Text>
+      <Rise>
         <Text style={s.title} accessibilityRole="header">
-          {any ? walkHoldBack(n0, holds, holdWords) : 'Why a ' + n0 + ', and not a ' + whyNot + '?'}
+          {'Why a ' + n0 + ', and not a ' + whyNot + '?'}
         </Text>
-        {any ? null : <Text style={s.body}>Something is already holding it down. What is it?</Text>}
       </Rise>
     );
-    middle = <Num n={n0} small />;
+    middle = <Coach level={level} say={any ? walkHoldBack(n0, holds, holdWords) : WALK_COACH.hold.say} beat="hold" pulse={holds.length + mine.length} />;
     dock = (
       <>
         {reasons.length ? (
@@ -306,7 +324,6 @@ export function Walk({
           on={holds}
           onPick={(id) => setHolds((h) => (h.indexOf(id) >= 0 ? h.filter((x) => x !== id) : h.concat(id)))}
         />
-        <OwnBox value={holdOwn} onChange={setHoldOwn} placeholder="Or in your words" />
         <Button label="Next" onPress={() => go('body')} />
       </>
     );
@@ -314,14 +331,21 @@ export function Walk({
 
   /* ---------- 3. notice it in the body ---------- */
   if (part === 'body') {
+    const named = [feelW, walkBodyAt(whereW)].filter(Boolean).join(' ');
     words = (
       <Rise>
-        <Text style={s.over}>Notice it</Text>
         <Text style={s.title} accessibilityRole="header">
-          Where do you feel it, and what is it like?
+          Where is it, and what is it like?
         </Text>
-        <Text style={s.body}>Look at it the way you would look at weather. Curious, not scared.</Text>
       </Rise>
+    );
+    middle = (
+      <Coach
+        level={level}
+        say={named ? cap(named) + '. Just notice it. You do not have to do anything about it.' : WALK_COACH.body.say}
+        beat="body"
+        pulse={(where ? 1 : 0) + (feel ? 1 : 0)}
+      />
     );
     dock = (
       <>
@@ -344,39 +368,39 @@ export function Walk({
     );
   }
 
-  /* ---------- 3b. what is so bad about that? and what an alarm is ---------- */
+  /* ---------- 3b. what is so bad about that? It is an alarm, and it unlearns ---------- */
   if (part === 'bad') {
     const B = WALK_BAD.find((x) => x[0] === bad);
-    words = B ? (
-      <Rise key="a">
-        <Text style={s.over}>What it really is</Text>
-        <Text style={s.title} accessibilityRole="header">
-          {B[2]}
-        </Text>
-        <Text style={s.body}>{walkAlarm(whereW, feelW)}</Text>
-      </Rise>
-    ) : (
-      <Rise key="q">
-        <Text style={s.over}>{[feelW, whereW && 'in your ' + whereW.toLowerCase()].filter(Boolean).join(' ') || 'That feeling'}</Text>
+    words = (
+      <Rise>
         <Text style={s.title} accessibilityRole="header">
           What is so bad about that feeling?
         </Text>
-        <Text style={s.body}>Not the urge. Just the feeling, right now.</Text>
       </Rise>
     );
-    middle = B ? <WaveOnce /> : null;
-    dock = B ? (
-      <Button label="Next" onPress={() => go('line')} />
-    ) : (
-      <Chips label="What is so bad about it" opts={WALK_BAD.map(([id, w]) => ({ id, label: w }))} on={[]} onPick={(x) => setBad(x)} />
+    middle = (
+      <Coach
+        level={level}
+        say={B ? B[2] + ' ' + WALK_COACH.alarm.say : 'Not the urge. Just the feeling, right now.'}
+        beat="alarm"
+        why={walkAlarm(whereW, feelW)}
+        pulse={B ? 1 : 0}>
+        {B ? <WaveOnce /> : null}
+      </Coach>
+    );
+    dock = (
+      <>
+        <Chips label="What is so bad about it" opts={WALK_BAD.map(([id, w]) => ({ id, label: w }))} on={bad ? [bad] : []} onPick={(x) => setBad(x)} />
+        <Button label="Next" disabled={!B} onPress={() => go('line')} />
+      </>
     );
   }
 
-  /* ---------- 4. the line it says ---------- */
+  /* ---------- 4. the line it says, and what it really is ---------- */
   if (part === 'line') {
     words = (
       <Rise key={ownLine ? 'o' : 'l'}>
-        <Text style={s.over}>{round > 1 ? 'What brought it back?' : 'Listen to it'}</Text>
+        {round > 1 ? <Text style={s.over}>Again, slower</Text> : null}
         <Text style={s.title} accessibilityRole="header">
           What is it telling you?
         </Text>
@@ -395,12 +419,23 @@ export function Walk({
             />
             <View style={s.write}>
               <Button label="Next" disabled={!lineOwn.trim()} onPress={() => go('answer')} />
+              <View style={s.center}>
+                <Link label="Pick from the list" tone="muted" onPress={() => setOwnLine(false)} />
+              </View>
             </View>
           </>
-        ) : (
-          <Text style={s.body}>Every urge has a line. Pick the one closest to what you hear.</Text>
-        )}
+        ) : null}
       </Rise>
+    );
+    middle = ownLine ? null : (
+      <Coach
+        level={level}
+        say={L ? L.short : 'Every urge has a line. Which one is closest?'}
+        beat={L ? undefined : 'defuse'}
+        why={L?.fact}
+        src={L?.src}
+        pulse={line ? 1 : 0}
+      />
     );
     dock = ownLine ? null : (
       <>
@@ -411,9 +446,9 @@ export function Walk({
           onPick={(x) => {
             setLine(x);
             setLineOwn('');
-            go('truth');
           }}
         />
+        <Button label="Now answer it" disabled={!L} onPress={() => go('answer')} />
         <View style={s.center}>
           <Link
             label="It says something else"
@@ -428,26 +463,15 @@ export function Walk({
     );
   }
 
-  /* ---------- 4b. what that line really is ---------- */
-  if (part === 'truth' && L) {
-    words = (
-      <Rise>
-        <Whisper text={L.line} />
-        <Text style={[s.body, s.gapT]}>{L.fact}</Text>
-        <Text style={s.over2}>Say it this way, once</Text>
-        <Text style={s.say}>{walkDefuse(L.line)}</Text>
-      </Rise>
-    );
-    dock = <Button label="Now answer it" onPress={() => go('answer')} />;
-  }
-
-  /* ---------- 4c. their own answer, written ---------- */
+  /* ---------- 4b. say it the loose way, then answer it in their own words ---------- */
   if (part === 'answer') {
     words = (
       <Rise>
-        <Text style={s.over}>{'It says: “' + (heard || 'I want it').replace(/[.!]+$/, '') + '.”'}</Text>
-        <Text style={s.title} accessibilityRole="header">
-          What is true instead? Answer it in your words.
+        <Text style={s.over2}>Say it once, like this</Text>
+        <Text style={s.say}>{walkDefuse(heard)}</Text>
+        <WhyLine beat="defuse" />
+        <Text style={[s.title, s.gapT]} accessibilityRole="header">
+          Now answer it, in your words.
         </Text>
         <TextInput
           accessibilityLabel="Your answer to it"
@@ -479,33 +503,32 @@ export function Walk({
     );
   }
 
-  /* ---------- 5. what it is trying to fix ---------- */
+  /* ---------- 5. what it is trying to fix, and the move for it now ---------- */
   if (part === 'need') {
-    words = N ? (
-      <Rise key="a">
-        <Text style={s.over}>{N.label === 'Nothing, just habit' ? 'Just habit' : N.label + ', underneath'}</Text>
-        <Text style={s.body2}>{N.fact}</Text>
-        <Text style={s.over2}>Do this now</Text>
-        <Text style={s.say}>{walkNeedMove(N, night)}</Text>
-      </Rise>
-    ) : (
-      <Rise key="q">
-        <Text style={s.over}>Underneath</Text>
+    words = (
+      <Rise>
         <Text style={s.title} accessibilityRole="header">
           What is it trying to fix?
         </Text>
-        <Text style={s.body}>An urge is usually a fast fix for something else. What were you feeling before it came?</Text>
       </Rise>
     );
-    dock = N ? (
+    middle = (
+      <Coach level={level} say={N ? N.short : 'An urge is usually a fast fix for something else. What came before it?'} why={N?.fact} pulse={need ? 1 : 0} />
+    );
+    dock = (
       <>
-        <Button label="I did it" onPress={() => go('stage')} />
-        <View style={s.center}>
-          <Link label="Pick something else" tone="muted" onPress={() => setNeed(null)} />
-        </View>
+        <Chips
+          label="What it is trying to fix"
+          opts={WALK_NEEDS.map((x) => ({ id: x.id, label: x.label }))}
+          on={need ? [need] : []}
+          onPick={(x) => {
+            setNeed(x);
+            if (stage) setAt(walkPlace(stage, x));
+          }}
+        />
+        {N ? <DoCard over="Do this now">{walkNeedMove(N, night)}</DoCard> : null}
+        <Button label={N ? 'I did it' : 'Next'} disabled={!N} onPress={() => go('stage')} />
       </>
-    ) : (
-      <Chips label="What it is trying to fix" opts={WALK_NEEDS.map((x) => ({ id: x.id, label: x.label }))} on={[]} onPick={(x) => setNeed(x)} />
     );
   }
 
@@ -532,7 +555,9 @@ export function Walk({
       <View style={s.mapBox}>
         <TrailMap at={at} level={level} onPick={setAt} />
       </View>
-    ) : null;
+    ) : (
+      <Coach level={level} say="Each answer is a place on the trail. Pick the one closest to now." />
+    );
     dock = at ? (
       <>
         <Button label="Ride it out" onPress={() => go('ride')} />
@@ -573,7 +598,7 @@ export function Walk({
           fill: N ? walkNeedMove(N, night) : undefined,
         }}
         picture={trailPicture(mem)}
-        passed={passed(at)}
+        passed={passedNow(at)}
         dot={DOT[part]}
         onBack={back}
         onStart={() => go('guide')}
@@ -614,6 +639,7 @@ export function Walk({
                 <View style={[s.linkDot, i === chain.length - 1 && { backgroundColor: TW.mint }]} />
                 <View style={[s.linkLine, i === chain.length - 1 && s.linkNone]} />
               </View>
+              <WhyLine beat="chain" />
               <Text style={s.linkT}>{c}</Text>
             </View>
           ))}
@@ -648,18 +674,13 @@ export function Walk({
                 setLine(null);
                 setOwnLine(false);
                 setAnswer('');
+                setExplain('');
                 go('line');
               }}
             />
-            <View style={s.center}>
-              <Link
-                label="Open SOS"
-                tone="muted"
-                onPress={() => {
-                  buzz('tap');
-                  router.replace('/sos');
-                }}
-              />
+            <View style={s.pair}>
+              <Link label="Make a plan and stop" tone="muted" onPress={() => go('plan')} />
+              <Link label="Open SOS" tone="muted" onPress={toSos} />
             </View>
           </>
         ) : (
@@ -671,18 +692,23 @@ export function Walk({
 
   /* ---------- 10. it may come back: the plan ---------- */
   if (part === 'plan') {
-    const offered = walkNeedMoves(N, night);
+    const offered = walkPlanMoves(N, mo, night);
     const ready = !!mo && (moves.length > 0 || !!moveOwn.trim());
     words = (
       <Rise>
         <Text style={s.over}>It may come back</Text>
         <Text style={s.title} accessibilityRole="header">
-          {ready
-            ? walkPlanLine({ n: N?.need ?? null, m: moves, mo, mx: moveOwn.trim() ? [moveOwn.trim()] : undefined })
-            : 'When is it most likely, and what will you do?'}
+          When is it most likely, and what will you do?
         </Text>
-        {ready ? <Text style={s.body}>Daybook keeps it on Today, and asks in the morning if it held.</Text> : null}
       </Rise>
+    );
+    middle = (
+      <Coach
+        level={level}
+        say={ready ? walkPlanLine({ n: N?.need ?? null, m: moves, mo }) + ' It waits on Today.' : WALK_COACH.plan.say}
+        beat="plan"
+        pulse={moves.length + (mo ? 1 : 0)}
+      />
     );
     dock = (
       <>
@@ -691,7 +717,12 @@ export function Walk({
           label="When it may come back"
           opts={moments.map(([id, w]) => ({ id, label: w }))}
           on={mo ? [mo] : []}
-          onPick={(x) => setMo(x === mo ? null : x)}
+          onPick={(x) => {
+            const nx = x === mo ? null : x;
+            setMo(nx);
+            const ok = walkPlanMoves(N, nx, night);
+            setMoves((l) => l.filter((m) => ok.indexOf(m) >= 0));
+          }}
         />
         <Text style={s.ask}>Then I will</Text>
         <Chips
@@ -701,7 +732,6 @@ export function Walk({
           on={moves}
           onPick={(m) => setMoves((l) => (l.indexOf(m) >= 0 ? l.filter((x) => x !== m) : l.concat(m)))}
         />
-        <OwnBox value={moveOwn} onChange={setMoveOwn} placeholder="Or in your words" />
         <Button label="Save my plan" disabled={!ready} onPress={() => finish(true)} />
         <View style={s.center}>
           <Link label="No plan this time" tone="muted" onPress={() => finish(false)} />
@@ -716,7 +746,7 @@ export function Walk({
       sky="night"
       onBack={part === 'open' ? null : back}
       onClose={close}
-      topRight={part === 'open' ? null : passed(at)}
+      topRight={part === 'open' ? null : passedNow(at)}
       dots={{ n: 10, i: DOT[part], label: 'Part ' + (DOT[part] + 1) + ' of 10' }}>
       <Stage key={part + round} dir={dir}>
         <View style={s.words}>{words}</View>
@@ -803,7 +833,8 @@ function Ride({
               <Text style={s.sayL} accessibilityRole="header">
                 {'“' + P.say + '”'}
               </Text>
-              <Text style={s.body}>Then two minutes. Each line goes on by itself. Just do what it says.</Text>
+              <Text style={s.body}>{WALK_COACH.ride.say}</Text>
+              <WhyLine beat="ride" />
             </Rise>
           )}
         </View>
@@ -935,23 +966,119 @@ function Chips<K extends string>({
   );
 }
 
-/** a short answer in their own words, under the choices */
-function OwnBox({ value, onChange, placeholder }: { value: string; onChange: (t: string) => void; placeholder: string }) {
+/** the coach: the person's own flame in the middle, saying one short line in a bubble, as in a lesson. It leaps when an
+    answer is picked (pulse). "Why this works" turns the bubble to the reason, with the papers under it, a tap away. */
+function Coach({
+  level,
+  say,
+  beat,
+  why,
+  src,
+  pulse = 0,
+  big,
+  children,
+}: {
+  level: number;
+  say: string;
+  /** the teaching beat whose reason and papers "Why this works" opens (WALK_COACH) */
+  beat?: WalkBeat;
+  /** a reason in place of the beat's own (a line's fact, a need's) */
+  why?: string;
+  src?: string[];
+  pulse?: number;
+  big?: boolean;
+  children?: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const c = beat ? WALK_COACH[beat] : null;
+  const reason = why || c?.why || '';
+  const papers = src || (why ? [] : c?.src || []);
+  useEffect(() => setOpen(false), [say]);
   return (
-    <TextInput
-      accessibilityLabel={placeholder}
-      maxLength={60}
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={TW.muted}
-      style={s.own}
-    />
+    <View style={s.coach}>
+      <Rise key={open ? 'why' : say}>
+        <Bubble text={open ? reason : say} />
+      </Rise>
+      <BigFlame level={level} size={big ? 132 : 84} pulse={pulse} />
+      {reason ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          hitSlop={8}
+          onPress={() => {
+            buzz('tap');
+            setOpen(!open);
+          }}
+          style={({ pressed }) => [s.whyB, { opacity: pressed ? 0.7 : 1 }]}>
+          <Text style={s.whyT}>{open ? 'Back' : 'Why this works'}</Text>
+        </Pressable>
+      ) : null}
+      {open && papers.length ? <Papers keys={papers} /> : null}
+      {children}
+    </View>
   );
 }
 
+/** a quiet "Why this works" under words that have no coach: opens the beat's reason and its papers in place */
+function WhyLine({ beat }: { beat: WalkBeat }) {
+  const [open, setOpen] = useState(false);
+  const c = WALK_COACH[beat];
+  return (
+    <View style={s.whyLine}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        hitSlop={8}
+        onPress={() => {
+          buzz('tap');
+          setOpen(!open);
+        }}>
+        <Text style={s.whyT}>Why this works</Text>
+      </Pressable>
+      {open ? (
+        <Rise>
+          <Text style={s.whyBody}>{c.why}</Text>
+          <Papers keys={c.src} />
+        </Rise>
+      ) : null}
+    </View>
+  );
+}
+
+/** the papers, as one small line of names, each opening its paper */
+function Papers({ keys }: { keys: string[] }) {
+  const ks = keys.filter((k) => WALK_SRC[k]);
+  return (
+    <View style={s.papers}>
+      {ks.map((k) => (
+        <Pressable
+          key={k}
+          accessibilityRole="link"
+          accessibilityLabel={'Source: ' + WALK_SRC[k][0]}
+          hitSlop={6}
+          onPress={() => Linking.openURL(WALK_SRC[k][1]).catch(() => undefined)}
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+          <Text style={s.paperT} numberOfLines={1}>
+            {WALK_SRC[k][0].split(':')[0]}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
 const s = StyleSheet.create({
   center: { alignItems: 'center' },
+  pair: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
+  coach: { alignSelf: 'stretch', alignItems: 'center', gap: 8 },
+  whyB: { paddingVertical: 2 },
+  whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },
+  whyLine: { marginTop: 8, gap: 6 },
+  whyBody: { fontFamily: font.body, fontSize: 15, lineHeight: 21, color: TW.muted },
+  papers: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 10, rowGap: 2 },
+  paperT: { fontFamily: font.body, fontSize: 13, color: TW.muted, textDecorationLine: 'underline' },
   words: { alignSelf: 'stretch', marginTop: 8 },
   grow: { flex: 1 },
   over: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted, marginBottom: 8 },

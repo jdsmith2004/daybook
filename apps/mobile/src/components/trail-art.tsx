@@ -1,7 +1,7 @@
 /* The trail's pictures (core trail.ts): one night landscape a craving walks a person down, the same everywhere it shows, so
    it is learned once. Five places, each an object a person can see with their eyes closed: Drift's post of four lights,
    Spark's spark and the bright doorway out, Preview's frame that glows too bright, Case's door with a knock at it, and
-   Steps' stairs with a green side path off them. Every exit leads home: a small house with a lit window. The person's own
+   Steps' stairs with a lit path home off every stair. Every exit leads home: a small house with a lit window. The person's own
    flame is the "you are here", and it walks where they touch.
 
    The colors are the world's own and do not change with the theme: the trail is always at night. Everything that moves
@@ -620,10 +620,20 @@ export function NextLine({ line, answer, own }: { line: string; answer: string; 
   );
 }
 
-/* ---------- Steps: the stairs down to the edge, and a way off every stair ---------- */
-const STAIR = (j: number): [number, number] => [118 + j * 40, 38 + j * 34];
+/* ---------- Steps: the stairs down to the edge, and a way off every stair ----------
+   A solid staircase going down to the right, from a ledge with a small house on it (home, its window lit) to the edge (a drop
+   with a coral glow). From every stair a lit path climbs back up to the ledge: the way off is up and away from the edge. The
+   flame stands on the second stair; its path is the bright one, and taking it, the flame climbs home. */
+const STEP_W = 38;
+const STEP_H = 30;
+const STAIR = (j: number): [number, number] => [132 + j * STEP_W, 70 + j * STEP_H];
+const HOUSE: [number, number] = [62, 70];
 /** the flame stands on the second stair: already on the way, and still with a way off */
 const ON = 1;
+const exitPath = (j: number) => {
+  const [x, y] = STAIR(j);
+  return `M${x + STEP_W / 2} ${y - 6} C${x + 4} ${y - 44 - j * 6} ${HOUSE[0] + 80} ${HOUSE[1] - 30 - j * 6} ${HOUSE[0] + 34} ${HOUSE[1] - 8}`;
+};
 export function StepsArt({ level, off, lit }: { level: number; off: boolean; lit?: boolean }) {
   const w = Math.min(useArtWidth(), 400);
   const k = w / 358;
@@ -632,44 +642,81 @@ export function StepsArt({ level, off, lit }: { level: number; off: boolean; lit
   const glow = useRef(new Animated.Value(lit ? 1 : 0)).current;
   useEffect(() => {
     if (reduce) go.setValue(off ? 1 : 0);
-    else Animated.timing(go, { toValue: off ? 1 : 0, duration: 1400, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
+    else Animated.timing(go, { toValue: off ? 1 : 0, duration: 1800, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
   }, [off, reduce, go]);
   useEffect(() => {
     if (reduce) glow.setValue(lit ? 1 : 0);
     else Animated.timing(glow, { toValue: lit ? 1 : 0, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
   }, [lit, reduce, glow]);
-  const exit = (j: number) => {
-    const [x, y] = STAIR(j);
-    return `M${x + 8} ${y + 12} C${x - 6} ${y + 40} ${x - 40} ${y + 50} ${x - 70} ${y + 56}`;
-  };
-  const [fx, fy] = STAIR(ON);
-  const FL = 56;
   const H = 250;
+  const last = STAIR(4);
+  const body =
+    'M0 ' +
+    H +
+    ' V' +
+    HOUSE[1] +
+    ' H132 ' +
+    [0, 1, 2, 3, 4]
+      .map((j) => {
+        const [x, y] = STAIR(j);
+        return 'V' + y + ' H' + (x + STEP_W);
+      })
+      .join(' ') +
+    ' V' +
+    H +
+    ' Z';
+  const [fx, fy] = STAIR(ON);
+  const FL = 52;
+  /* the flame's walk home, along its path: three points of the curve */
+  const xs = [fx + STEP_W / 2, fx - 6, HOUSE[0] + 40];
+  const ys = [fy - 2, fy - 46, HOUSE[1] - 2];
   return (
     <View style={{ width: w, height: H * k, alignSelf: 'center' }} accessible accessibilityLabel={TRAIL.steps.see}>
       <Svg width={w} height={H * k} viewBox={`0 0 358 ${H}`} style={StyleSheet.absoluteFill}>
         <AdDefs />
-        {/* the edge, at the bottom of the stairs */}
-        <Circle cx={322} cy={226} r={34} fill={TW.coral} opacity={0.18} />
-        <Path d="M20 38 L120 38" stroke={TW.path} strokeWidth={12} strokeLinecap="round" />
+        {/* the edge: past the last stair, a drop that glows */}
+        <Rect x={last[0] + STEP_W} y={last[1] + 6} width={358 - last[0] - STEP_W} height={H - last[1]} fill={TW.coral} opacity={0.12} />
+        <Line
+          x1={last[0] + STEP_W + 2}
+          y1={last[1] + 2}
+          x2={last[0] + STEP_W + 2}
+          y2={H}
+          stroke={TW.coral}
+          strokeWidth={3}
+          strokeDasharray="6 7"
+          opacity={0.7}
+        />
+        {/* the stairs, one solid shape, with a lit lip on every tread */}
+        <Path d={body} fill={TW.panel} />
         {[0, 1, 2, 3, 4].map((j) => {
           const [x, y] = STAIR(j);
-          return <Rect key={j} x={x} y={y} width={46} height={12} rx={4} fill={TW.post} opacity={1 - j * 0.14} />;
+          return <Rect key={j} x={x} y={y - 3} width={STEP_W} height={6} rx={3} fill={j === ON ? TW.frame : TW.post} />;
         })}
-        {/* the way off the flame's stair, always there */}
-        <Circle cx={STAIR(ON)[0] - 70} cy={STAIR(ON)[1] + 56} r={40} fill="url(#trMint)" />
-        <Path d={exit(ON)} stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
+        {/* home, on the ledge at the top, at the end of every way off */}
+        <Circle cx={HOUSE[0]} cy={HOUSE[1] - 18} r={44} fill="url(#trMint)" opacity={0.6} />
+        <Path
+          d={`M${HOUSE[0] - 26} ${HOUSE[1]} V${HOUSE[1] - 26} L${HOUSE[0]} ${HOUSE[1] - 46} L${HOUSE[0] + 26} ${HOUSE[1] - 26} V${HOUSE[1]} Z`}
+          fill={TW.room}
+          stroke={TW.frame}
+          strokeWidth={3}
+          strokeLinejoin="round"
+        />
+        <Rect x={HOUSE[0] - 8} y={HOUSE[1] - 24} width={16} height={14} rx={3} fill={TW.warm} />
+        {/* the flame's way off, always lit */}
+        <Path d={exitPath(ON)} stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
       </Svg>
       {/* every other stair's way off, lit when the place says what it really is */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: glow }]}>
         <Svg width={w} height={H * k} viewBox={`0 0 358 ${H}`}>
           {[0, 2, 3, 4].map((j) => (
-            <Path key={j} d={exit(j)} stroke={TW.mint} strokeWidth={4} fill="none" strokeLinecap="round" opacity={0.7} />
+            <Path key={j} d={exitPath(j)} stroke={TW.mint} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray="2 8" opacity={0.75} />
           ))}
         </Svg>
       </Animated.View>
-      <Text style={[s.stepsTag, { left: 268 * k, top: 236 * k - 8, color: TW.coral }]}>the edge</Text>
-      <Animated.Text style={[s.stepsTag, { left: 8 * k, top: 178 * k, color: TW.mint, opacity: glow }]}>a way off{'\n'}every step</Animated.Text>
+      <Text style={[s.stepsTag, { right: 4 * k, top: (last[1] - 30) * k, color: TW.coral }]}>the edge</Text>
+      <Animated.Text style={[s.stepsTag, { left: 6 * k, top: (HOUSE[1] + 14) * k, color: TW.mint, opacity: glow }]}>
+        a way home{'\n'}from every step
+      </Animated.Text>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -677,8 +724,8 @@ export function StepsArt({ level, off, lit }: { level: number; off: boolean; lit
           { left: -FL / 2, top: -FL, width: FL, height: FL },
           {
             transform: [
-              { translateX: go.interpolate({ inputRange: [0, 1], outputRange: [(fx + 23) * k, (fx - 70) * k] }) },
-              { translateY: go.interpolate({ inputRange: [0, 1], outputRange: [(fy + 4) * k, (fy + 60) * k] }) },
+              { translateX: go.interpolate({ inputRange: [0, 0.5, 1], outputRange: xs.map((x) => x * k) }) },
+              { translateY: go.interpolate({ inputRange: [0, 0.5, 1], outputRange: ys.map((y) => y * k) }) },
             ],
           },
         ]}>

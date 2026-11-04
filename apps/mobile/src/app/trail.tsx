@@ -98,7 +98,7 @@ export default function Trail() {
   }, []);
   const [ur, setUr] = useState<UrState>(() => newUrge(Date.now(), g.pts));
   /* a note's Not today opens the trail at the door (?at=case) */
-  const { at: atQ } = useLocalSearchParams<{ at?: string }>();
+  const { at: atQ, from: fromQ } = useLocalSearchParams<{ at?: string; from?: string }>();
   const atP = TRAIL_PLACES.find((x) => x === atQ) ?? null;
   const [step, setStep] = useState<Step>(atP ?? 'walk');
   const [pick, setPick] = useState<TrailPlace | null>(atP ?? stretch0?.at ?? null);
@@ -120,9 +120,11 @@ export default function Trail() {
 
   /* an exit: the drill done (or "It passed"), saved as an urge ridden out, and home */
   const reach = useCallback(
-    (at: TrailPlace | null) => {
+    (at: TrailPlace | null, n0?: number | null) => {
       const now = Date.now();
-      const done: UrState = at ? { ...ur, used: ur.used.concat(TRAIL[at].did) } : ur;
+      /* a walk knows how strong it was (0 to 10): the log keeps it as a little, strong or very strong */
+      const u: UrState = n0 == null || ur.strength ? ur : { ...ur, strength: n0 >= 8 ? 'high' : n0 >= 4 ? 'mid' : 'low' };
+      const done: UrState = at ? { ...u, used: u.used.concat(TRAIL[at].did) } : u;
       const a = urMark(done, 'p');
       const e = urEntry(a, 'rode', st, now);
       update((s) => ({ ...s, days: addEvent(s.days, e.key, 'rode', e.time, e.fields).days }));
@@ -141,11 +143,14 @@ export default function Trail() {
   );
 
   const night = urNight(new Date().getHours());
-  const passedAt = (at: TrailPlace | null) => (
+  const passedAt = (at: TrailPlace | null, first?: () => void) => (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="It passed. Go home."
-      onPress={() => reach(at)}
+      onPress={() => {
+        first?.();
+        reach(at);
+      }}
       hitSlop={6}
       style={({ pressed }) => [s.passed, { opacity: pressed ? 0.85 : 1 }]}>
       <Text style={s.passedT}>It passed</Text>
@@ -161,13 +166,14 @@ export default function Trail() {
         level={level}
         night={night}
         passed={passedAt}
+        fromSos={fromQ === 'sos'}
         onMap={() => {
           buzz('tap');
           setStep('where');
         }}
-        onHome={(at) => {
+        onHome={(at, n0) => {
           if (at) sos.setMem((m) => trailTouch(m, at, Date.now()));
-          reach(at);
+          reach(at, n0);
         }}
       />
     );

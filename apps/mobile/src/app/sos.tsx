@@ -401,7 +401,7 @@ export default function Sos() {
                 if (bid !== 'talk' && bid !== 'trail') return pickTool(bid);
                 setMore(false);
                 buzz('tap');
-                router.push(bid === 'talk' ? '/talk' : '/trail');
+                router.push('/trail?from=sos' as '/trail');
               }}
               style={({ pressed }) => [s.bigB, big.length > 3 && s.bigB2, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={ic} size={20} color={c.accentText} />

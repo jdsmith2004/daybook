@@ -1,5 +1,5 @@
 /* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with nothing written over
-   it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app"). Under it, Already happened and Planning a slip? (care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
+   it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app"). Under it, Already happened and Walk it through (the trail, which took the place of Planning a slip; care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
    do is plain at a glance. When a bigger moment has the next step (a pause, the day of a slip, a talk-through, days
    away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
    SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS

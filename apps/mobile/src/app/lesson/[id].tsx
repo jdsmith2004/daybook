@@ -750,7 +750,7 @@ export default function LessonScreen() {
     reached or not. */
 function goTo(g: Go) {
   if (g.a === 'scene') router.push({ pathname: '/tool/[id]', params: { id: g.v!, lr: '1' } });
-  else if (g.a === 'talk') router.push('/talk');
+  else if (g.a === 'talk') router.push('/trail');
   else if (g.a === 'help') router.push({ pathname: '/help/[id]', params: { id: g.v!, sub: g.sub || '' } });
   else if (g.a === 'growth') router.push('/growth');
   else if (g.a === 'week') router.push('/review');

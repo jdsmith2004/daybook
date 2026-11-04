@@ -158,3 +158,16 @@ describe('the walk is saved', () => {
     expect(core.talkPlanLine(t)).toBe('This evening, when I want it, I will get out of the house.');
   });
 });
+
+describe('the two minutes of a walk', () => {
+  it('say back the line and the person’s answer at every place, keeping eight cues and the mirror', () => {
+    for (const at of core.TRAIL_PLACES) {
+      const g = core.trailGuide(at, { said: 'I deserve it.', mine: 'A run after work is what I earned.', line: 'I deserve it.', answer: 'A run after work.' });
+      expect(g).toHaveLength(8);
+      expect(g.join(' ')).toContain('I deserve it');
+      expect(g[core.TRAIL_MIRROR]).toContain('Is this who you want to be?');
+      if (at !== 'case') expect(g.join(' ')).toContain('Your answer: “A run after work is what I earned.”');
+    }
+    expect(core.trailGuide('spark', {})[0]).not.toContain('It says');
+  });
+});

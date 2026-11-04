@@ -433,7 +433,13 @@ export interface TrailGuideOwn {
   night?: boolean;
   /** the front camera is on, so the mirror cue shows their face */
   mirror?: boolean;
+  /** Walk it through (walk.ts): the line it said and the person's own answer, said back at every place */
+  said?: string;
+  mine?: string;
 }
+
+/** where a walk's line and answer are said back, at each place but Case (whose door already speaks them) */
+const TRAIL_SAID: Partial<Record<TrailPlace, number>> = { drift: 1, spark: 0, preview: 2, steps: 0 };
 
 /** the cue where the person looks at themselves (the owner, November 4, 2026: "show me what you look like and be like, is
     this who you want to be?"). The live front camera, nothing recorded; with no camera, they picture their own face. The
@@ -454,6 +460,21 @@ function quote(x: string): string {
     the guide is on it: the phone keeps only this open. What they just wrote is said back to them, plainly: naming a craving
     in words takes some of its pull (affect labeling, Lieberman 2007). */
 export function trailGuide(at: TrailPlace, own: TrailGuideOwn = {}): string[] {
+  const cues = trailCues(at, own);
+  const i = TRAIL_SAID[at];
+  if (i != null && own.said?.trim()) {
+    const lead = {
+      drift: 'It says ',
+      spark: 'It says ',
+      preview: 'The preview stops at ten seconds. It says ',
+      steps: 'Stop on the step you are on. It says ',
+    }[at as 'drift'];
+    cues[i] = lead + quote(own.said) + (own.mine?.trim() ? ' Your answer: ' + quote(own.mine) : ' It is a thought, not an order.');
+  }
+  return cues;
+}
+
+function trailCues(at: TrailPlace, own: TrailGuideOwn): string[] {
   const end = (x: string) => x.trim().replace(/[.!]?$/, '.');
   const d = own.doing?.trim() ? quote(own.doing) : '';
   const pic = own.picture?.trim() ? quote(own.picture) : '';

@@ -60,10 +60,9 @@ export const WALK_HOLDS: [WalkHold, string, string][] = [
 ];
 export const walkHolds = (faith: WalkFaith) => WALK_HOLDS.filter((h) => h[0] !== 'god' || !!faith);
 /** said back: what is holding it down is theirs to use */
-export function walkHoldBack(n: number, holds: string[], own?: string): string {
+export function walkHoldBack(n: number, holds: string[], own?: string | string[]): string {
   const words = holds.map((h) => WALK_HOLDS.find((x) => x[0] === h)?.[2]).filter(Boolean) as string[];
-  const o = clean(own);
-  if (o) words.push('“' + o.replace(/[.!]+$/, '') + '”');
+  for (const o of (Array.isArray(own) ? own : [own]).map(clean).filter(Boolean)) words.push('“' + o.replace(/[.!]+$/, '') + '”');
   const what = list(words);
   return what
     ? 'So ' + what + (words.length > 1 ? ' are' : ' is') + ' already holding it at ' + n + '. That is yours, and it is working.'
@@ -326,7 +325,8 @@ export function walkTalk(
     n0: number | null;
     n1: number | null;
     holds: string[];
-    holdOwn: string;
+    /** what holds it down in their own words: their reasons picked, and anything typed */
+    holdOwn: string | string[];
     where: string | null;
     feel: string | null;
     line: WalkLine | null;
@@ -344,7 +344,7 @@ export function walkTalk(
   const need = walkNeed(w.need);
   const line = walkLine(w.line);
   const why = w.holds.map((h) => WALK_HOLDS.find((x) => x[0] === h)?.[1]).filter(Boolean) as string[];
-  if (clean(w.holdOwn)) why.push(clean(w.holdOwn).slice(0, 80));
+  for (const o of (Array.isArray(w.holdOwn) ? w.holdOwn : [w.holdOwn]).map(clean).filter(Boolean)) why.push(o.slice(0, 80));
   const t: Talk = {
     ...base,
     s: line ? [line.sign] : [],

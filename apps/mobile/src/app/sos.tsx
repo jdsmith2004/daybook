@@ -335,12 +335,11 @@ export default function Sos() {
       </Pressable>
     </View>
   );
-  /* Talk it through at every hour (a slip that feels planned is most often planned at night), and Go to bed too at night */
+  /* the trail opens on Walk it through, which took the place of Talk it through (the owner, November 4, 2026); Go to bed at night */
   const big: [string, string, string][] = [
     ['trail', 'compass', 'The trail'],
     ['pause', 'timer', 'Step away 10 min'],
     ['message', 'chat', 'Text someone'],
-    ['talk', 'ask', 'Talk it through'],
     ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
   ];
   return (

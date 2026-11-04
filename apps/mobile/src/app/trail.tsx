@@ -1,5 +1,7 @@
 /* The trail (core trail.ts): for a craving that keeps coming, for hours or days. One picture, learned once: five places a
-   craving walks a person down, and an exit at every one. It opens on "Where is it now?": touch the place it has reached
+   craving walks a person down, and an exit at every one. It opens on Walk it through (components/walk.tsx, the owner,
+   November 4, 2026), which finds the place for the person and took the place of Planning a slip; "I know where I am" opens
+   the map as before. The map asks "Where is it now?": touch the place it has reached
    (the flame walks there) and how much time there is (10 seconds, 2 minutes, or 10 or more, remembered). Then that place:
    three beats, like a lesson (the owner, November 3, 2026): what the craving whispers there, what that thought really is,
    then the one line to say once and the one thing to do, at that length (10 seconds goes straight to the move). Done is an exit, and every exit leads
@@ -53,6 +55,7 @@ import { useHearthHold } from '@/components/hearth';
 import { Mirror, useMirror } from '@/components/mirror';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Text } from '@/components/text';
+import { Walk } from '@/components/walk';
 import {
   DoorArt,
   DrillClock,
@@ -78,7 +81,7 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
 
-type Step = 'where' | TrailPlace | 'home';
+type Step = 'walk' | 'where' | TrailPlace | 'home';
 
 export default function Trail() {
   const { snap, tk, update } = useStore();
@@ -97,7 +100,7 @@ export default function Trail() {
   /* a note's Not today opens the trail at the door (?at=case) */
   const { at: atQ } = useLocalSearchParams<{ at?: string }>();
   const atP = TRAIL_PLACES.find((x) => x === atQ) ?? null;
-  const [step, setStep] = useState<Step>(atP ?? 'where');
+  const [step, setStep] = useState<Step>(atP ?? 'walk');
   const [pick, setPick] = useState<TrailPlace | null>(atP ?? stretch0?.at ?? null);
   const [len, setLen] = useState<TrailLen>(() => trailLenOf(sos.mem));
   /* the beat inside a place: 0 what it says, 1 what it really is, 2 the move */
@@ -138,17 +141,37 @@ export default function Trail() {
   );
 
   const night = urNight(new Date().getHours());
-  const passed =
-    step === 'home' ? undefined : (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="It passed. Go home."
-        onPress={() => reach(step === 'where' ? pick : step)}
-        hitSlop={6}
-        style={({ pressed }) => [s.passed, { opacity: pressed ? 0.85 : 1 }]}>
-        <Text style={s.passedT}>It passed</Text>
-      </Pressable>
+  const passedAt = (at: TrailPlace | null) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="It passed. Go home."
+      onPress={() => reach(at)}
+      hitSlop={6}
+      style={({ pressed }) => [s.passed, { opacity: pressed ? 0.85 : 1 }]}>
+      <Text style={s.passedT}>It passed</Text>
+    </Pressable>
+  );
+  const passed = step === 'home' || step === 'walk' ? undefined : passedAt(step === 'where' ? pick : step);
+
+  /* ---------- Walk it through: the way in (components/walk.tsx) ---------- */
+  if (step === 'walk') {
+    return (
+      <Walk
+        key={'walk' + visits.current}
+        level={level}
+        night={night}
+        passed={passedAt}
+        onMap={() => {
+          buzz('tap');
+          setStep('where');
+        }}
+        onHome={(at) => {
+          if (at) sos.setMem((m) => trailTouch(m, at, Date.now()));
+          reach(at);
+        }}
+      />
     );
+  }
 
   /* ---------- home ---------- */
   if (step === 'home' && home) {
@@ -174,7 +197,7 @@ export default function Trail() {
                   setUr(newUrge(Date.now(), g.pts));
                   sos.setMem((m) => trailBegin(m, Date.now()));
                   setHome(null);
-                  setStep('where');
+                  setStep('walk');
                 }}
               />
             </View>
@@ -187,7 +210,7 @@ export default function Trail() {
   /* ---------- where is it now, and how long ---------- */
   if (step === 'where') {
     return (
-      <SceneFrame title="The trail" sky="night" onClose={close} topRight={passed}>
+      <SceneFrame title="The trail" sky="night" onBack={atP ? null : () => setStep('walk')} onClose={close} topRight={passed}>
         <Stage key="where" dir={0}>
           <T v="title" accessibilityRole="header">
             Where is it now?

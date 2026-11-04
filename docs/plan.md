@@ -256,6 +256,14 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   ("From strong to a little. That was you."; if not lower, "Two more minutes"). Basis: a picture held in the mind's eye
   crowds out a craving's picture (elaborated intrusion theory; Skorka-Brown 2015). Steps' thought is the one a person who
   knows the habit has: "I know where this is going, and I am going anyway", and its picture shows a way off every stair.
+- The 2 minutes work on what the person writes (the owner, November 4, 2026: "have me write down what I'm thinking"; "it's
+  in the right direction, but … not good enough"). After how strong it is, two short questions, each skippable: "What is it
+  pushing you to do?" and "What is it showing you?" The cues say those words back and work on them (naming a craving in
+  words takes some of its pull: affect labeling, Lieberman 2007). Cue 7 is a mirror, by the owner's choice over a warning
+  about escape theory: the front camera shows their face, nothing recorded, "Is this who you want to be?", and the last cue
+  answers with hope. Very strong opens SOS first, with "Walk it here instead"; still strong after walks it through again,
+  SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
+  written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

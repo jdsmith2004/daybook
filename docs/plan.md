@@ -265,6 +265,46 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
   written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
 
+## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; designed, not built)
+
+The ask: "I want it to actually teach, walk me through the steps, the science, what's going on … interactive, challenge me to
+write and think and explain"; a blend of a faith-based attack analysis (God, the attack has a pattern and science behind it,
+you are not evil) and a calm coach's "this is not overwhelming, notice it and handle it"; "both" during and after; "a mix"
+of taps and writing, the way a therapist would talk someone through it. Research: side-session notes trail-research-programs,
+-science, -therapists (four agents). The best evidence: ACT for porn (Crosby and Twohig 2016: 93% less viewing, nearly all
+participants Latter-day Saints), DBT chain analysis (Rizvi), urge surfing, defusion, implementation intentions, and MI
+scaling questions.
+
+Rules that came out of it: never ask what does not vary (the act is always the same; ask the line, the body, the feeling
+underneath, the place, the time); tap first, write at two moments; say their words back, then add one fact; every brain
+fact ends with what changes it (biology alone raises hopelessness); no "15 minutes" promise, show their own numbers; day
+and night versions of every action; no war or chemistry pseudo-science; faith lines only with faith on, in their voice.
+
+**Walk it through (during, about four minutes).** The map becomes a result, not a question: the person never has to know
+which place they are at.
+
+1. Nothing has gone wrong: urges come back, this one has a pattern, notice it and handle it. (Faith: an urge is not a sin.)
+2. How strong, 0 to 10. 8 and up: SOS first. Then "Why a 6, and not a 9?" (what is already holding it down), said back.
+3. Notice it: where in the body, what it is like, "What is so bad about that?"; then the alarm, and how alarms unlearn.
+4. The line: "What is it telling you?" (just once, I deserve it, nobody will know, I already blew it, I cannot focus until
+   I do, too tired to fight, own words); the true answer to that line; "I am having the thought that …"; then they write
+   their own answer.
+5. Underneath: what it is trying to fix (bored, lonely, stressed, tired, angry, sad, just habit); the fact for that need and
+   the move for it, by the time of day.
+6. "Where are you with it?" (just noticed, picturing it, arguing with it, already reaching): the flame lands on the place,
+   and the map shows how far from the edge.
+7. Ride it: two minutes of room, guided with their own words, while the place's picture acts.
+8. Explain it back: one line in their words, then the chain built from their taps.
+9. How strong now; down is "That was you", still loud walks it through again from "What brought it back?"
+10. It may come back: when, and "then I will …", saved. An urge ridden out feeds the flame.
+
+**Look back (after the trail, or after a slip; the LBA idea).** No verdict; where it started on the trail; why today; the
+first small yes and what they told themselves; after a slip, what it gave them for a minute; the chain said back; where to
+cut it next time, and the if-then in their words, saved to the log and the plan. Ends on hope; nothing earned is lost.
+
+Effort: the script and its tests in core (medium), the screens reusing the lesson parts and the trail art (medium), Look
+back saving to the log, linking from Already happened and feeding the pattern pages (high).
+
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 
 The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic

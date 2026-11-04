@@ -56,6 +56,23 @@ stretch can last days, with surges. Nothing on screen calls it a mode; SOS simpl
 words are "for now" and "today", never "tonight". Night colors only when it is night. In the code it is the long wave
 (`longWave`).
 
+**How it is found (the owner, November 3, 2026).** "Most of the time I really fight it out. It's not like, oh, I need SOS. I
+might grab SOS once, but it's just a never-ending battle." So the stretch cannot depend on SOS staying open. The app cannot read a
+mind; it reads the few traces the person leaves, and makes each one count for the whole stretch:
+
+- **One touch starts it.** A single SOS, a strong urge logged, Planning a slip?, or a check-in that says the pull is strong starts
+  the stretch for the day. It does not end when that screen closes.
+- **Today asks, once.** While it is on, the top of Today says so plainly and offers one tap: "It keeps coming" or "It eased".
+  Anyone who opens the app during a hard day is met by it without looking for it.
+- **The app comes to the person.** Every hour or so, a note with two buttons on the note itself ("Still here" and "Easier"),
+  answered without opening the app. "Still here" counts an hour held; three of them in a row open the steps (close the door,
+  say it out loud). This is the one channel that works for someone fighting it out on their own.
+- **It learns when.** Once a person has had a stretch or two, the app sees what came before them (days since the last slip,
+  the day of the week, a missed wind-down, a run of short nights) and starts the watch earlier the next time, with the closed
+  door asked ahead.
+- **Later, maybe:** a racing heart with no workout, read from Apple Health with the person's yes. Unproven and private by
+  nature; not in the first build.
+
 **The design: close the door, change the picture, say it out loud.** It is not a list of tools. It is a short
 sequence, the same every time, that works on the mind first and the body second.
 

@@ -9,10 +9,12 @@
    (core tipMoment), but never on the day the person came back, nor in the hours after an SOS or a slip
    (lib/quiet-asks.ts). A mistaken log taken back with Undo takes its waiting celebration with it (lib/store.tsx). A level
    reached on the day of a slip waits for the next day (core checkNew), and then says it was earned then. */
-import { addDays, celSplit, celTitle, gameCompute, nextLine, type CelItem } from '@daybook/core';
+import { addDays, celSplit, celTitle, formWord, gameCompute, nextLine, type CelItem } from '@daybook/core';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
+
 import { Text } from '@/components/text';
 
 import { SHORT } from '@/components/fit';
@@ -22,11 +24,11 @@ import { Medal } from '@/components/medal';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
-const NATIVE = Platform.OS !== 'web';
 /* the flame on a sheet: big, and a little less on a short phone, so the sheet and its button still fit */
 const ART = SHORT ? 150 : 190;
 const SCENES = /^\/(sos|tool|log|checkin|talk|review|wind|night|lesson|lwrite|setup)(\/|$)/;
@@ -136,7 +138,10 @@ export function CelebrateHost() {
     setCur(group);
     const quiet = group.some((it) => !!it.quiet || (it.type === 'badge' && it.b.id === 'honest'));
     const big = group.some((it) => it.type === 'level');
-    if (!quiet) {
+    /* a new form knocks and lifts its embers itself, at the moment it changes (Evolve), not when the sheet opens */
+    const grows = group[0].type === 'level' && group[0].evolve;
+    if (grows) setBoom(null);
+    else if (!quiet) {
       setBoom({ n: Date.now(), big });
       buzz(big ? 'lit' : 'save');
     } else setBoom(null);
@@ -187,11 +192,16 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
   let eyebrow = '';
   let title = '';
   let sub = '';
+  /* a new form: its words come once the flame has changed */
+  const grows = it.type === 'level' && it.evolve;
+  const still = useReducedMotion();
+  const words = useRef(new Animated.Value(grows && !still ? 0 : 1)).current;
+  const turn = () => Animated.timing(words, { toValue: 1, duration: 520, delay: 280, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
   if (it.type === 'level') {
     const L = it.level;
-    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} /> : <FlameMedallion level={L.n} size={ART} />;
-    eyebrow = it.evolve ? 'New form' : 'Level up';
-    title = 'Level ' + L.n + ': ' + L.name;
+    art = it.evolve ? <Evolve from={it.from || Math.max(1, L.n - 1)} to={L.n} quiet={!!it.quiet} onTurn={turn} /> : <FlameMedallion level={L.n} size={ART} />;
+    eyebrow = it.evolve ? 'Level ' + L.n : 'Level up';
+    title = it.evolve ? 'Your flame grew into ' + formWord(L.name) : 'Level ' + L.n + ': ' + L.name;
     /* a level reached on the day of a slip waits for the next day (core checkNew): it says it was earned then */
     const held =
       !!snap.settings &&
@@ -199,9 +209,10 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
       gameCompute(snap.days, snap.settings, snap.reviews, addDays(tk, -1)).level.n >= L.n;
     sub =
       (held ? 'Earned yesterday. Every honest log feeds the flame. ' : '') +
-      (it.evolve ? L.meaning : L.step) +
-      ' ' +
-      (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
+      /* the moment it grows is about what it became, so no count to the next one here */
+      (it.evolve
+        ? L.meaning + ' You built it, one day at a time.'
+        : L.step + ' ' + (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L)));
   } else if (it.type === 'badge') {
     art = <Medal id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={132} earned />;
     eyebrow = it.b.id === 'honest' ? 'Honesty' : rest.length ? 'New badges' : 'New badge';
@@ -229,42 +240,45 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
           : null
       : null;
   const ask = useTipMoment(why || 'level', !why);
-  const scale = useRef(new Animated.Value(0.85)).current;
+  const scale = useRef(new Animated.Value(still ? 1 : 0.85)).current;
   useEffect(() => {
-    Animated.spring(scale, { toValue: 1, friction: 6, tension: 120, useNativeDriver: NATIVE }).start();
-  }, [scale]);
+    if (!still) Animated.spring(scale, { toValue: 1, friction: 6, tension: 120, useNativeDriver: NATIVE }).start();
+  }, [scale, still]);
+  const fade = { opacity: words, transform: [{ translateY: words.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] };
   return (
     <Animated.View accessibilityViewIsModal accessibilityLiveRegion="assertive" style={[s.card, { backgroundColor: c.surface, transform: [{ scale }] }]}>
       {art}
-      {eyebrow ? (
-        <T v="eyebrow" tone="accentText" style={{ marginTop: 6 }}>
-          {eyebrow}
-        </T>
-      ) : null}
-      <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
-        {title}
-      </Text>
-      {sub ? (
-        <T tone="muted" style={{ textAlign: 'center' }}>
-          {sub}
-        </T>
-      ) : null}
-      {rest.length ? (
-        <View style={[s.rows, { borderColor: c.line }]} accessibilityLabel={'And: ' + rest.map(celTitle).join(', ')}>
-          {rest.slice(0, ROWS).map((x, i) => (
-            <Row key={i} it={x} />
-          ))}
-        </View>
-      ) : null}
-      {extra > 0 ? (
-        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-          {'And ' + extra + ' more in Milestones.'}
-        </T>
-      ) : null}
-      {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : null}
-      <View style={{ alignSelf: 'stretch', marginTop: 4 }}>
-        <Button label={more ? 'Next' : 'Nice'} onPress={onClose} />
-      </View>
+      <Animated.View style={[s.words, fade]}>
+        {eyebrow ? (
+          <T v="eyebrow" tone="accentText" style={{ marginTop: 6 }}>
+            {eyebrow}
+          </T>
+        ) : null}
+        <Text style={[s.h, { color: c.ink }]} accessibilityRole="header">
+          {title}
+        </Text>
+        {sub ? (
+          <T tone="muted" style={{ textAlign: 'center' }}>
+            {sub}
+          </T>
+        ) : null}
+        {rest.length ? (
+          <View style={[s.rows, { borderColor: c.line }]} accessibilityLabel={'And: ' + rest.map(celTitle).join(', ')}>
+            {rest.slice(0, ROWS).map((x, i) => (
+              <Row key={i} it={x} />
+            ))}
+          </View>
+        ) : null}
+        {extra > 0 ? (
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+            {'And ' + extra + ' more in Milestones.'}
+          </T>
+        ) : null}
+        {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : null}
+      </Animated.View>
+      <Animated.View style={{ alignSelf: 'stretch', marginTop: 4, opacity: words }}>
+        <Button label={more ? 'Next' : grows ? 'Keep going' : 'Nice'} onPress={onClose} />
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -297,39 +311,172 @@ function Row({ it }: { it: CelItem }) {
   );
 }
 
-/* a new form: the old one flares up, bursts into light, and gives way to the new one */
-function Evolve({ from, to }: { from: number; to: number }) {
-  const v = useRef(new Animated.Value(0)).current;
+/* a new form. The old flame is seen first, alive, so the person knows what it was; it gathers its light (the fire leaps,
+   a soft knock, a lighter one), the light blooms out from its heart past the edge of its sky, and as it clears the new
+   form is standing there, with the firm knock of a finished thing. A few embers lift off it. The words wait for it, so
+   the change is seen first and read second. Under Reduce Motion the new form is there at once. */
+const SEE = 650;
+const GATHER = 1000;
+const FLASH = 320;
+/** the heart of the figure, as a share of the picture from the top: where the light gathers and the embers lift from */
+const HEART = 0.56;
+const GLOW_WARM =
+  '<svg viewBox="0 0 100 100"><defs><radialGradient id="evWarm" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
+  '<stop offset="0" stop-color="#FFD36B" stop-opacity="1"/><stop offset=".3" stop-color="#FFA24A" stop-opacity=".8"/>' +
+  '<stop offset=".65" stop-color="#D2557E" stop-opacity=".3"/><stop offset="1" stop-color="#8A3F9E" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#evWarm)"/></svg>';
+const LIGHT =
+  '<svg viewBox="0 0 100 100"><defs><radialGradient id="evLight" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
+  '<stop offset="0" stop-color="#FFFBEA" stop-opacity="1"/><stop offset=".3" stop-color="#FFF1BF" stop-opacity=".95"/>' +
+  '<stop offset=".62" stop-color="#FFDD8A" stop-opacity=".45"/><stop offset="1" stop-color="#FFC861" stop-opacity="0"/>' +
+  '</radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#evLight)"/></svg>';
+/* the embers that lift off the new form: [x from the middle, rise, size, delay] as shares of the picture, placed by hand */
+const EMBERS: [number, number, number, number][] = [
+  [-0.16, 0.78, 0.04, 0],
+  [0.12, 0.92, 0.032, 0.05],
+  [-0.04, 1.05, 0.046, 0.09],
+  [0.21, 0.7, 0.028, 0.15],
+  [-0.24, 0.86, 0.026, 0.21],
+  [0.05, 0.8, 0.034, 0.28],
+  [0.17, 1.0, 0.026, 0.34],
+  [-0.11, 0.95, 0.03, 0.42],
+];
+const EMBER_COL = ['#FFE27A', '#FFB547', '#FFF3B0', '#FF9F43'];
+
+function Evolve({ from, to, quiet, onTurn }: { from: number; to: number; quiet?: boolean; onTurn: () => void }) {
+  const still = useReducedMotion();
+  const gather = useRef(new Animated.Value(0)).current;
+  const light = useRef(new Animated.Value(0)).current;
+  const land = useRef(new Animated.Value(still ? 1 : 0)).current;
+  const rise = useRef(new Animated.Value(0)).current;
+  const [turned, setTurned] = useState(false);
+  /* the time starts once the sheet is on screen: its first drawing can take a moment, and the old form must be seen */
+  const [shown, setShown] = useState(false);
+  const turnRef = useRef(onTurn);
+  turnRef.current = onTurn;
   useEffect(() => {
-    Animated.timing(v, { toValue: 1, duration: 1100, delay: 250, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
-  }, [v]);
+    if (!shown) return;
+    if (still) {
+      setTurned(true);
+      land.setValue(1);
+      turnRef.current();
+      if (!quiet) buzz('lit');
+      return;
+    }
+    const ts = [
+      setTimeout(() => {
+        if (!quiet) buzz('roll');
+        Animated.timing(gather, { toValue: 1, duration: GATHER, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }).start();
+      }, SEE),
+      setTimeout(() => !quiet && buzz('tap'), SEE + GATHER * 0.6),
+      setTimeout(
+        () => {
+          Animated.timing(light, { toValue: 1, duration: FLASH, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }).start(() => {
+            setTurned(true);
+            if (!quiet) buzz('lit');
+            turnRef.current();
+            Animated.parallel([
+              Animated.timing(light, { toValue: 0, duration: 850, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+              Animated.timing(gather, { toValue: 0, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+              Animated.timing(land, { toValue: 1, duration: 160, useNativeDriver: NATIVE }),
+              Animated.timing(rise, { toValue: 1, duration: 2200, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+            ]).start();
+          });
+        },
+        SEE + GATHER - FLASH / 2,
+      ),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, [shown, still, quiet, gather, light, land, rise]);
+  const L = ART * 1.7;
   return (
-    <View style={{ width: ART, height: ART }}>
+    <View style={{ width: ART, height: ART }} onLayout={() => requestAnimationFrame(() => setShown(true))}>
+      {/* both are drawn from the start, so nothing has to be made at the moment of the change */}
+      {still ? null : (
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: land.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: 'clamp' }),
+              transform: [{ scale: gather.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }],
+            },
+          ]}>
+          <FlameMedallion
+            level={from}
+            size={ART}
+            under={
+              /* a warm light gathering behind the fire: on the sky, under the flame, so the night warms around it instead of a veil going over it */
+              <Animated.View
+                style={[
+                  s.light,
+                  {
+                    left: (ART - L) / 2,
+                    top: ART * HEART - L / 2,
+                    width: L,
+                    height: L,
+                    opacity: gather.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.85, 1] }),
+                    transform: [{ scale: gather.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.95] }) }],
+                  },
+                ]}>
+                <SvgXml xml={GLOW_WARM} width={L} height={L} />
+              </Animated.View>
+            }
+          />
+        </Animated.View>
+      )}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
           {
-            opacity: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.4, 0] }),
-            transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.15, 0.8] }) }],
+            opacity: land.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
           },
         ]}>
-        <FlameMedallion level={from} size={ART} />
-      </Animated.View>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            borderRadius: ART / 2,
-            backgroundColor: '#FFF3B0',
-            opacity: v.interpolate({ inputRange: [0, 0.45, 0.6, 1], outputRange: [0, 0, 0.85, 0] }),
-            transform: [{ scale: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.1, 1.7] }) }],
-          },
-        ]}
-      />
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }]}>
         <FlameMedallion level={to} size={ART} />
       </Animated.View>
+      {still ? null : (
+        /* the light stays inside its own sky: spilled onto the card it reads as a smudge */
+        <View pointerEvents="none" style={[s.clip, { borderRadius: ART / 2 }]}>
+          {/* and the burst: white light from the heart that fills the sky for a moment */}
+          <Animated.View
+            style={[
+              s.light,
+              {
+                left: (ART - L) / 2,
+                top: ART * HEART - L / 2,
+                width: L,
+                height: L,
+                opacity: light.interpolate({ inputRange: [0, 1], outputRange: [0, 0.92] }),
+                transform: [{ scale: light.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.85] }) }],
+              },
+            ]}>
+            <SvgXml xml={LIGHT} width={L} height={L} />
+          </Animated.View>
+        </View>
+      )}
+      {turned && !still && !quiet
+        ? EMBERS.map(([x, up, r, d], i) => {
+            const a = Math.min(0.9, d + 0.05);
+            return (
+              <Animated.View
+                key={i}
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  left: ART * (0.5 + x) - (ART * r) / 2,
+                  top: ART * HEART,
+                  width: ART * r,
+                  height: ART * r,
+                  borderRadius: ART * r,
+                  backgroundColor: EMBER_COL[i % EMBER_COL.length],
+                  opacity: rise.interpolate({ inputRange: [0, d, a, 1], outputRange: [0, 0, 1, 0] }),
+                  transform: [
+                    { translateY: rise.interpolate({ inputRange: [0, d, 1], outputRange: [0, 0, -ART * up] }) },
+                    { translateX: rise.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, ART * x * 0.15, ART * x * 0.4] }) },
+                  ],
+                }}
+              />
+            );
+          })
+        : null}
     </View>
   );
 }
@@ -442,6 +589,10 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 18 },
     elevation: 12,
   },
+  light: { position: 'absolute' },
+  /* a hair inside the sky's edge, so the light never rims it */
+  clip: { position: 'absolute', left: 1, top: 1, right: 1, bottom: 1, overflow: 'hidden' },
+  words: { alignSelf: 'stretch', alignItems: 'center', gap: 8 },
   rows: { alignSelf: 'stretch', gap: 10, marginTop: 6, paddingTop: 12, borderTopWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

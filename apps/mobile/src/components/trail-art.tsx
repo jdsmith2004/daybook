@@ -208,7 +208,7 @@ export function TrailMap({ at, level, onPick }: { at: TrailPlace | null; level: 
             key={id}
             accessibilityRole="button"
             accessibilityState={{ selected: j === i }}
-            accessibilityLabel={TRAIL[id].name + '. ' + TRAIL[id].see}
+            accessibilityLabel={TRAIL[id].name + '. ' + TRAIL[id].means + '. It sounds like: ' + TRAIL[id].hear}
             onPress={() => {
               buzz('tick');
               onPick(id);
@@ -217,15 +217,18 @@ export function TrailMap({ at, level, onPick }: { at: TrailPlace | null; level: 
             style={[
               s.mapHit,
               {
-                left: (right ? px - 44 : px - 150) * k,
+                left: (right ? px - 44 : 4) * k,
                 top: (py - 40) * k,
-                width: 194 * k,
+                width: (right ? MAP_W - 4 - (px - 44) : px + 44 - 4) * k,
                 height: 80 * k,
                 flexDirection: right ? 'row' : 'row-reverse',
               },
             ]}>
             <View style={{ width: 88 * k }} />
-            <Text style={[s.mapName, { color: j === i ? TW.sun : TW.ink, textAlign: right ? 'left' : 'right' }]}>{TRAIL[id].name}</Text>
+            <View style={s.mapWords}>
+              <Text style={[s.mapName, { color: j === i ? TW.sun : TW.ink, textAlign: right ? 'left' : 'right' }]}>{TRAIL[id].name}</Text>
+              <Text style={[s.mapMeans, { textAlign: right ? 'left' : 'right' }]}>{TRAIL[id].means}</Text>
+            </View>
           </Pressable>
         );
       })}
@@ -797,7 +800,9 @@ const s = StyleSheet.create({
   abs: { position: 'absolute' },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   mapHit: { position: 'absolute', alignItems: 'center', gap: 6 },
-  mapName: { flex: 1, fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  mapWords: { flex: 1 },
+  mapName: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
+  mapMeans: { fontFamily: font.body, fontSize: 15, lineHeight: 19, color: TW.muted },
   lamp: { position: 'absolute', alignItems: 'center', gap: 10 },
   lampLow: { borderWidth: 3, borderStyle: 'dashed', borderColor: TW.sun, backgroundColor: TW.dim },
   lampT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

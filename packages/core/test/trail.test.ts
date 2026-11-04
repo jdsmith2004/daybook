@@ -34,6 +34,13 @@ describe('the places', () => {
     expect(words).not.toMatch(/\b\w+’(t|re|ll|ve|m)\b/);
   });
 
+  it('says what each place is and the thought heard there, so a person can tell where they are (the owner, November 3, 2026)', () => {
+    for (const id of core.TRAIL_PLACES) {
+      expect(core.TRAIL[id].means.length).toBeGreaterThan(5);
+      expect(core.TRAIL[id].hear.length).toBeGreaterThan(3);
+    }
+  });
+
   it('has a fill for every light at every length', () => {
     expect(core.TRAIL_LIGHTS.map((x) => x.id)).toEqual(['hungry', 'angry', 'lonely', 'tired']);
     for (const x of core.TRAIL_LIGHTS) for (const l of ['s', 'm', 'l'] as const) expect(x.fill[l].length).toBeGreaterThan(10);

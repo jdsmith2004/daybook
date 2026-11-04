@@ -38,6 +38,10 @@ export interface TrailDrill {
 export interface TrailStop {
   id: TrailPlace;
   name: string;
+  /** what this place is, in a few plain words, so a person can tell where they are */
+  means: string;
+  /** what the mind says here, so a person knows the place by the thought they hear */
+  hear: string;
   /** the one line to say, once, out loud */
   say: string;
   /** what the picture shows, for a screen reader */
@@ -51,6 +55,8 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   drift: {
     id: 'drift',
     name: 'Drift',
+    means: 'Worn down: tired, alone, upset or hungry',
+    hear: 'I am fine. I am just tired.',
     say: 'I am running low.',
     see: 'A post with four lights: hungry, angry, lonely and tired. One is low.',
     did: 'halt',
@@ -63,6 +69,8 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   spark: {
     id: 'spark',
     name: 'Spark',
+    means: 'Something caught your eye',
+    hear: 'Huh.',
     say: 'That is a cue, not a need.',
     see: 'A spark in a dark room, and a bright doorway out of it. The phone stays behind.',
     did: 'left',
@@ -75,6 +83,8 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   preview: {
     id: 'preview',
     name: 'Preview',
+    means: 'Picturing it',
+    hear: 'This would be so good.',
     say: 'That is the preview. It always promises more.',
     see: 'A frame that glows too bright, and your own picture sliding over it.',
     did: 'forward',
@@ -87,6 +97,8 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   case: {
     id: 'case',
     name: 'Case',
+    means: 'Talking yourself into it',
+    hear: 'Just once. I deserve it.',
     say: 'Not today.',
     see: 'A door with a knock at it. Holding the button closes it, and the key turns.',
     did: 'thought',
@@ -99,6 +111,8 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
   steps: {
     id: 'steps',
     name: 'Steps',
+    means: 'Moving toward it',
+    hear: 'I am only looking.',
     say: 'This is a step. I can step off.',
     see: 'Stairs going down to the edge, and a green side path off them.',
     did: 'else',

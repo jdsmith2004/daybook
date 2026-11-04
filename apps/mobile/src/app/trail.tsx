@@ -178,7 +178,7 @@ export default function Trail() {
           <T v="title" accessibilityRole="header">
             Where is it now?
           </T>
-          <T tone="muted">Touch the place it has reached.</T>
+          <T tone="muted">It slides down, top to bottom. Touch the one that sounds like you now.</T>
           <View style={s.map}>
             <TrailMap at={pick} level={level} onPick={choose} />
           </View>
@@ -226,6 +226,10 @@ export default function Trail() {
           <Text style={s.timeT}>{lenShort}</Text>
         </Pressable>
       </View>
+      <Text style={s.say}>
+        {P.means + '. It sounds like: '}
+        <Text style={s.hear}>{'“' + P.hear + '”'}</Text>
+      </Text>
       <Text style={s.say}>
         {'Say it once: '}
         <Text style={s.sayB}>{'“' + P.say + '”'}</Text>
@@ -460,6 +464,7 @@ const s = StyleSheet.create({
   time: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: TW.bubble },
   timeT: { fontFamily: font.bodySemi, fontSize: 13, color: TW.mint },
   say: { fontFamily: font.body, fontSize: 17, lineHeight: 23, color: TW.muted, marginTop: 4 },
+  hear: { fontFamily: font.body, fontStyle: 'italic', color: TW.ink },
   sayB: { fontFamily: font.bodySemi, color: TW.sun },
   lead: { marginTop: 8 },
   art: { marginTop: 20 },

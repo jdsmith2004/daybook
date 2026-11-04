@@ -186,16 +186,41 @@ an if-then plan resists derailing (d = .77), and picturing the steps beats pictu
 - _One drill per place, the same every time:_ a line said once, and one thing done with the body. Drift: "I am running low";
   find the low light and fill it. Spark: "That is a cue, not a need"; stand up, walk out, leave the phone. Preview: "That is the
   preview; it promises more"; slide your own picture over it, one long breath out. Case: "Not today"; hold to close the door,
-  then text your person. Steps: "This is a step; I can step off"; take the side path for ten minutes. If it surges again, go to
+  then turn the key. Steps: "This is a step; I can step off"; take the side path for ten minutes. If it surges again, go to
   the place it has reached; nothing is relearned mid-urge.
 - _Screens_ (docs/keeps-review/2-screens.png): Where is it now? (touch the place), At the door (next it will say, your calm-day
-  answer, hold to close, text), Change the picture (slide your scene over the glow, the wave past its top), and a note on the lock
+  answer, hold to close, turn the key), Change the picture (slide your scene over the glow, the wave past its top), and a note on the lock
   screen whose buttons do the move.
 - _Motion_ (for the build): the flame walks the trail to the place touched; the door's light narrows as the hold fills, then a
   soft heavy haptic as it shuts; the glow blurs and slides away under the person's picture; the light in Drift brightens when
   filled. Reduce Motion shows each end state. Night colors in either theme.
 - _Avoid_ (from the research): brains, shields, rank badges, a wave that only says "it passes", red or broken motion at Case and
   Steps, any picture of the act, and arguing with the thought.
+
+### The owner's changes to the trail (November 3, 2026)
+
+The owner liked the look ("excellent, keep going, you are on the right track") and changed three things:
+
+- _No reaching out in the drill._ "For me I do not want it to have reaching out as part of it." The trail asks nothing of another
+  person: Case is now close the door, then turn the key (your own reason, in your words). The safe person stays where it already is
+  in the app, but no move, note button or screen of the trail sends or suggests a message.
+- _The exits lead somewhere._ The first picture felt unfinished ("I only see a couple dots"). Now every exit is a solid mint path
+  down to a valley path, and the valley leads home: a small house with a lit window, trees and fireflies. Stepping off ends at Home
+  (screen 7): "You stepped off at Preview. Two hours and forty minutes held today", with Done, and "It is back" to start again.
+- _It fits the time you have._ Each drill comes in three lengths, chosen once on Where is it now? (10 seconds, 2 minutes, 10 or
+  more) and remembered:
+
+| Place   | 10 seconds                    | 2 minutes                                                    | 10 or more                                                 |
+| ------- | ----------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Drift   | Name the low light            | Fill it the fast way (water, food, rest)                     | Fill it properly (a meal, a shower, a nap)                 |
+| Spark   | Stand up                      | Walk out of the room; the phone stays                        | Change the place: go outside with somewhere to go          |
+| Preview | Say it, one long breath out   | Slide your picture over the glow; ride the wave past its top | Play your picture forward: the next hour, tomorrow morning |
+| Case    | "Not today": close the door   | Read its next line and your answer; turn the key             | Write its case and your answer into the kit                |
+| Steps   | Put the phone face down, away | Take the side path, one planned thing                        | The side path for ten minutes, with a timer                |
+
+Screens: docs/keeps-review/1-trail.png (the world), 2-screens.png (Where is it now with the time, Drift's four lights, Spark's
+walk out, Preview's picture), 3-screens.png (Case's door and key, Steps' side path with the timer, Home, the lock-screen note,
+whose buttons are now Not today, Show me where I am, Not before, and Leave me be today).
 
 ### Open questions for the owner
 

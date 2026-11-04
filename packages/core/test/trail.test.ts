@@ -73,12 +73,25 @@ describe('the person own words', () => {
   });
 
   it('takes the side path from their urge plan, never a blank starting line', () => {
-    expect(core.trailSide(null).own).toBe(false);
-    expect(core.trailSide({ ...st, plan: [{ when: 'bored', then: 'Something else: ______' }] }).own).toBe(false);
-    expect(core.trailSide({ ...st, plan: [{ when: 'in bed', then: 'Get up and read in the kitchen' }] })).toEqual({
+    expect(core.trailSide(null, true).own).toBe(false);
+    expect(core.trailSide({ ...st, plan: [{ when: 'bored', then: 'Something else: ______' }] }, false).own).toBe(false);
+    expect(core.trailSide({ ...st, plan: [{ when: 'in bed', then: 'Get up and read in the kitchen' }] }, true)).toEqual({
       t: 'Get up and read in the kitchen',
       own: true,
     });
+  });
+
+  it('never sends a person to bed by day, even when their plan starts with the bed line (the owner, November 4, 2026)', () => {
+    const plan = [
+      { when: 'I am in bed late at night', then: 'Get up and leave the room for 10 minutes. Then back to bed without my phone.' },
+      { when: 'I am bored or idle', then: 'Go for a walk.' },
+    ];
+    expect(core.trailSide({ ...st, plan }, false).t).toBe('Go for a walk.');
+    expect(core.trailSide({ ...st, plan }, true).t).toContain('back to bed');
+    expect(core.trailSide({ ...st, plan: plan.slice(0, 1) }, false)).toMatchObject({ own: false });
+    expect(core.trailSide({ ...st, plan: plan.slice(0, 1) }, false).t).not.toMatch(/bed|sleep/i);
+    const day = core.TRAIL_PLACES.map((x) => core.trailGuide(x, { side: core.trailSide({ ...st, plan }, false).t, fill: core.trailFill('tired', 'm', false) }));
+    expect(JSON.stringify(day)).not.toMatch(/\bbed\b|sleep/i);
   });
 });
 

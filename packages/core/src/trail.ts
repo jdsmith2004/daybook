@@ -229,10 +229,14 @@ export function trailKey(st: Settings | null): { t: string; own: boolean } {
   return { t: 'I want to wake up tomorrow with nothing to hide.', own: false };
 }
 
-/** the side path off the stairs: the "then" of the person's urge plan, when it has one; else a walk */
-export function trailSide(st: Settings | null): { t: string; own: boolean } {
-  const then = (st?.plan || []).map((p) => clean(p?.then)).find((t) => t && !/_{3,}/.test(t));
-  return then ? { t: then, own: true } : { t: 'Walk to the corner and back. Music on, the phone in your pocket.', own: false };
+/** the side path off the stairs: the "then" of the person's urge plan that fits the time of day; else a walk. A line for bed
+    or late at night (the first starting line ends "back to bed without my phone") is only ever used at night, and by day the
+    side path never says bed or sleep (the owner, November 4, 2026: "it's 10:27 am and i'm at work"). */
+export function trailSide(st: Settings | null, night: boolean): { t: string; own: boolean } {
+  const lines = (st?.plan || []).filter((p) => clean(p?.then) && !/_{3,}/.test(clean(p?.then)) && !/_{3,}/.test(clean(p?.when)));
+  const late = (p: { when?: string; then?: string }) => /\b(bed|night|late|sleep)\b/i.test(clean(p.when) + ' ' + clean(p.then));
+  const fit = night ? (lines.find(late) ?? lines[0]) : lines.find((p) => !late(p));
+  return fit ? { t: clean(fit.then), own: true } : { t: 'Walk to the corner and back. Music on, the phone in your pocket.', own: false };
 }
 
 /* ---------- the stretch: one battle, however long it lasts ---------- */

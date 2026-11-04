@@ -743,7 +743,7 @@ function Case(p: PlaceProps) {
 function Steps(p: PlaceProps) {
   const { beat, len, drill, level, onExit } = p;
   const st = useCareSettings();
-  const side = useMemo(() => trailSide(st), [st]);
+  const side = useMemo(() => trailSide(st, p.night), [st, p.night]);
   const [going, go] = useExitAfter(onExit, 1100);
   const [timing, setTiming] = useState(false);
   const [cue, setCue] = useCue();

@@ -330,7 +330,12 @@ function Lamp({ x, k, label, state, onPress }: { x: number; k: number; label: st
         <View style={[StyleSheet.absoluteFill, s.lampLow, { borderRadius: 16 * k }]} />
         {/* lit: the light and its glow, which fade out when it is the low one and pop back when it is filled */}
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }] }]}>
-          <View style={[s.lampGlow, { width: W * 2.2, height: W * 2.2, borderRadius: W * 1.1, left: -W * 0.6, top: H / 2 - W * 1.1 }]} />
+          <View pointerEvents="none" style={[s.abs, { left: W / 2 - W * 1.3, top: H / 2 - W * 1.3 }]}>
+            <Svg width={W * 2.6} height={W * 2.6} viewBox="-50 -50 100 100">
+              <AdDefs />
+              <Circle r={50} fill="url(#trGlow)" />
+            </Svg>
+          </View>
           <View style={[StyleSheet.absoluteFill, { backgroundColor: TW.sun, borderRadius: 16 * k }]} />
         </Animated.View>
       </View>
@@ -795,7 +800,6 @@ const s = StyleSheet.create({
   mapName: { flex: 1, fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   lamp: { position: 'absolute', alignItems: 'center', gap: 10 },
   lampLow: { borderWidth: 3, borderStyle: 'dashed', borderColor: TW.sun, backgroundColor: TW.dim },
-  lampGlow: { position: 'absolute', backgroundColor: TW.sun, opacity: 0.18 },
   lampT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   frame: { backgroundColor: TW.box, borderWidth: 6, borderColor: TW.frame },
   edge: { top: 0, width: 5, backgroundColor: TW.ink },
@@ -836,5 +840,5 @@ const s = StyleSheet.create({
   card: { backgroundColor: TW.bubble, borderRadius: 20, padding: 16, gap: 4 },
   cardT: { fontFamily: font.body, fontSize: 17, lineHeight: 23 },
   clock: { width: 112, height: 112, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
-  clockT: { fontFamily: font.displayBold, fontSize: 26, fontVariant: ['tabular-nums'] },
+  clockT: { fontFamily: font.displayBold, fontSize: 28, fontVariant: ['tabular-nums'] },
 });

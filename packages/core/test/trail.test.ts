@@ -124,3 +124,55 @@ describe('home', () => {
     expect(core.trailHomeLine(null, null, t0)).toBe('You stepped off.');
   });
 });
+
+describe('the notes', () => {
+  const at = (h: number, m = 0) => new Date(2026, 10, 3, h, m).getTime();
+  const open = (t: number) => core.trailBegin({}, t);
+
+  it('sends two at a time, an hour apart, only while a stretch is open', () => {
+    const n = core.trailNotes(open(at(14)), {}, at(14));
+    expect(n.map((x) => x.at)).toEqual([at(15), at(16)]);
+    expect(core.trailNotes({}, {}, at(14))).toEqual([]);
+    expect(core.trailNotes(open(at(1)), {}, at(14))).toEqual([]);
+  });
+
+  it('never comes at night', () => {
+    expect(core.trailNotes(open(at(20, 30)), {}, at(20, 30)).map((x) => x.at)).toEqual([at(21, 30)]);
+    expect(core.trailNotes(open(at(21, 30)), {}, at(21, 30))).toEqual([]);
+  });
+
+  it('rests after a slip, until the person starts again', () => {
+    const days = core.addEvent({}, '2026-11-03', 'slipped', '14:30', {}).days;
+    expect(core.trailNotes(open(at(14)), days, at(15))).toEqual([]);
+    expect(core.trailNotes(open(at(16)), days, at(16)).length).toBe(2);
+  });
+
+  it('keeps to five a day, counting the ones already come', () => {
+    let m = open(at(8));
+    for (let h = 8; h < 18; h += 2) {
+      const n = core.trailNotes(core.trailBegin(m, at(h)), {}, at(h));
+      m = core.trailNoteKeep(core.trailBegin(m, at(h)), n, at(h));
+    }
+    const sent = (m.trailSent as number[]).concat((m.trailPlan as number[]).filter((t) => t <= at(18)));
+    expect(sent.length).toBeLessThanOrEqual(5);
+    expect(core.trailNotes(core.trailBegin(m, at(19)), {}, at(19))).toEqual([]);
+  });
+
+  it('gives the same plan when made again, so scheduling settles', () => {
+    const m = open(at(14));
+    const n = core.trailNotes(m, {}, at(14));
+    expect(core.trailNotes(core.trailNoteKeep(m, n, at(14)), {}, at(14))).toEqual(n);
+  });
+
+  it('leaves the person be until morning, or for an hour', () => {
+    const m = open(at(14));
+    expect(core.trailNotes(core.trailLeave(m, at(14)), {}, at(15))).toEqual([]);
+    expect(core.trailNotes(core.trailLater(m, at(14, 30)), {}, at(14, 30))[0].at).toBe(at(15, 30));
+  });
+
+  it('says nothing about what Daybook is for, and counts the hours held', () => {
+    expect(core.trailNoteWords(0, 2 * H + 40 * 60000)).toBe('2 hours held. If it knocks again, the door is right here.');
+    expect(core.trailNoteWords(1, 20 * 60000)).toBe('Where is it now? You know the way home.');
+    for (let i = 0; i < 3; i++) expect(core.trailNoteWords(i, 3 * H)).not.toMatch(/porn|urge|craving|slip|habit/i);
+  });
+});

@@ -13,8 +13,9 @@
 
    The stretch (one battle, however long) and the length a person picked are kept on this device only, in the SOS memory
    (UrMem), never synced and never part of the log. Reaching home saves an urge ridden out, like SOS does. */
-import type { Settings } from './types';
-import type { UrMem } from './sos';
+import { eventsOf } from './legacy/core.js';
+import { urNight, type UrMem } from './sos';
+import type { Days, Settings } from './types';
 
 export type TrailPlace = 'drift' | 'spark' | 'preview' | 'case' | 'steps';
 /** how much time there is: 10 seconds, 2 minutes, or 10 or more */
@@ -278,3 +279,89 @@ export function trailHomeLine(at: TrailPlace | null, s: TrailStretch | null, now
 }
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/* ---------- the notes: a quiet companion while a stretch is open ---------- */
+/* While a battle goes on, the phone checks in, gently: two notes at a time, an hour apart, and only two ahead, so two left
+   unanswered are the last until the person opens Daybook again. None at night, none after a slip (the app rests; the
+   person starts it again, never the app), no more than five in a day, and each one has "Leave me be today". The words
+   say nothing about what Daybook is for, since a note can show on a locked screen. Each note's buttons do the move:
+   Not today (the door), Show me where I am (the map), Not for an hour, and Leave me be today. */
+
+export interface TrailNote {
+  id: string;
+  at: number;
+  title: string;
+  body: string;
+}
+
+/** at least this long between two notes */
+export const TRAIL_NOTE_GAP = 60 * 60000;
+/** notes scheduled ahead at once: two unanswered, and they stop */
+export const TRAIL_NOTE_AHEAD = 2;
+/** notes in one day, at most */
+export const TRAIL_NOTE_DAY = 5;
+
+/** a slip logged since the stretch began: the notes rest */
+export function trailSlipSince(days: Days, t0: number): boolean {
+  return eventsOf(days).some((e) => {
+    if (e.outcome !== 'slipped') return false;
+    const t = new Date(e.key + 'T' + (e.time || '23:59') + ':00').getTime();
+    return t >= t0 - 60000;
+  });
+}
+
+const nums = (x: unknown): number[] => (Array.isArray(x) ? x.filter((n): n is number => typeof n === 'number' && isFinite(n)) : []);
+const dayOf = (t: number) => {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+};
+
+/** the notes to schedule now for the open stretch, or none */
+export function trailNotes(mem: UrMem, days: Days, now: number): TrailNote[] {
+  const s = trailStretchOf(mem);
+  if (!trailOpen(s, now) || trailSlipSince(days, s.t0)) return [];
+  const off = typeof mem.trailOff === 'number' ? mem.trailOff : 0;
+  if (off > now) return [];
+  const later = typeof mem.trailLater === 'number' ? mem.trailLater : 0;
+  /* the notes already delivered, for the day's limit: the ones kept, and the last plan's that have come */
+  const sent = nums(mem.trailSent).concat(nums(mem.trailPlan).filter((t) => t <= now));
+  const out: TrailNote[] = [];
+  let at = Math.max(now, s.last, later - TRAIL_NOTE_GAP, sent.length ? Math.max(...sent) : 0) + TRAIL_NOTE_GAP;
+  while (out.length < TRAIL_NOTE_AHEAD) {
+    const h = new Date(at).getHours();
+    if (urNight(h) || at - s.last >= TRAIL_GAP || at < off) break;
+    if (sent.filter((t) => dayOf(t) === dayOf(at)).length + out.filter((n) => dayOf(n.at) === dayOf(at)).length >= TRAIL_NOTE_DAY) break;
+    out.push({ id: 'trail-' + out.length, at, title: 'Daybook', body: trailNoteWords(sent.length + out.length, at - s.t0) });
+    at += TRAIL_NOTE_GAP;
+  }
+  return out;
+}
+
+/** a note's words: how long it has been held, then a line that leaves the door open; never what Daybook is for */
+export function trailNoteWords(n: number, held: number): string {
+  const h = Math.floor(held / 3600_000);
+  const lines = ['If it knocks again, the door is right here.', 'Where is it now? You know the way home.', 'Still with you, at your pace.'];
+  const line = lines[((n % lines.length) + lines.length) % lines.length];
+  return h >= 1 ? cap(trailHeld(held).replace(/ and .*/, '')) + ' held. ' + line : line;
+}
+
+/** after scheduling: the plan is kept, and the notes of the last plan that have come move to the ones sent (a day of them) */
+export function trailNoteKeep(mem: UrMem, notes: TrailNote[], now: number): UrMem {
+  const sent = nums(mem.trailSent)
+    .concat(nums(mem.trailPlan).filter((t) => t <= now))
+    .filter((t, i, l) => t > now - 24 * 3600_000 && l.indexOf(t) === i);
+  return { ...mem, trailSent: sent, trailPlan: notes.map((n) => n.at) };
+}
+
+/** Leave me be today: no notes until 4 in the morning */
+export function trailLeave(mem: UrMem, now: number): UrMem {
+  const d = new Date(now);
+  d.setHours(4, 0, 0, 0);
+  if (d.getTime() <= now) d.setDate(d.getDate() + 1);
+  return { ...trailNoteKeep(mem, [], now), trailOff: d.getTime() };
+}
+
+/** Not for an hour: the next note no sooner than an hour from now */
+export function trailLater(mem: UrMem, now: number): UrMem {
+  return { ...trailNoteKeep(mem, [], now), trailLater: now + TRAIL_NOTE_GAP };
+}

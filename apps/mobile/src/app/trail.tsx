@@ -14,6 +14,7 @@ import {
   TRAIL,
   TRAIL_LENS,
   TRAIL_LIGHTS,
+  TRAIL_PLACES,
   trailBegin,
   trailHomeLine,
   trailKey,
@@ -31,6 +32,7 @@ import {
   type TrailPlace,
   type UrState,
 } from '@daybook/core';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
@@ -80,8 +82,11 @@ export default function Trail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [ur, setUr] = useState<UrState>(() => newUrge(Date.now(), g.pts));
-  const [step, setStep] = useState<Step>('where');
-  const [pick, setPick] = useState<TrailPlace | null>(stretch0?.at ?? null);
+  /* a note's Not today opens the trail at the door (?at=case) */
+  const { at: atQ } = useLocalSearchParams<{ at?: string }>();
+  const atP = TRAIL_PLACES.find((x) => x === atQ) ?? null;
+  const [step, setStep] = useState<Step>(atP ?? 'where');
+  const [pick, setPick] = useState<TrailPlace | null>(atP ?? stretch0?.at ?? null);
   const [len, setLen] = useState<TrailLen>(() => trailLenOf(sos.mem));
   const [home, setHome] = useState<{ at: TrailPlace | null; line: string } | null>(null);
   /* how many times the door was reached, so the line it may say next is a new one each time */

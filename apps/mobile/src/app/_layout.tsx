@@ -5,7 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
-import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan } from '@daybook/core';
+import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, trailLater, trailLeave, trailNoteKeep, trailNotes } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,7 +23,7 @@ import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { NoteCopy } from '@/lib/notes';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
-import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
+import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges, scheduleTrail } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { useKeepPulse } from '@/lib/pulse';
@@ -73,9 +73,44 @@ function Reminders() {
     setNudgeLog((l) => nudgeKeep(l, plan, Date.now()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  useEffect(() => listenForTaps((id) => setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }))), []);
+  const sos = useSos();
+  useEffect(
+    () =>
+      listenForTaps(
+        (id) => setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] })),
+        /* a trail note's quiet buttons: the next note an hour on, or none until morning */
+        (a) => {
+          if (a === 'later') sos.setMem((m) => trailLater(m, Date.now()));
+          if (a === 'off') sos.setMem((m) => trailLeave(m, Date.now()));
+        },
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   /* turned on from the ask on Today or Settings: the come-back notes join the plan at once */
   useEffect(() => onPermission(() => remindersAllowed().then(setAllowed, () => undefined)), []);
+  return null;
+}
+
+/* The trail's notes while a battle goes on (core trailNotes): two at a time, an hour apart, never at night, resting after a
+   slip. They are made again when the stretch changes (the trail opened or left), the log changes, a note is answered, or
+   the app opens, so two left unanswered are the last until the person comes back. */
+function TrailNotes() {
+  const { ready, snap } = useStore();
+  const sos = useSos();
+  const [openAt, setOpenAt] = useState(() => Date.now());
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (a) => a === 'active' && setOpenAt(Date.now()));
+    return () => sub.remove();
+  }, []);
+  const notes = useMemo(() => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)) : []), [ready, sos.mem, snap.days, openAt]);
+  const key = notes.map((n) => n.at).join(',');
+  useEffect(() => {
+    if (!ready || !remindersOffered) return;
+    scheduleTrail(notes).catch(() => undefined);
+    sos.setMem((m) => trailNoteKeep(m, notes, Date.now()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, ready]);
   return null;
 }
 
@@ -179,6 +214,7 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <WebChrome bg={c.bg} />
       <Reminders />
+      <TrailNotes />
       <NoteCopy />
       <NavKeeper />
       <SetupGate />

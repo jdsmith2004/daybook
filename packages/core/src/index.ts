@@ -10,6 +10,7 @@ export * from './rekindle';
 export * from './sos';
 export * from './breath-touch';
 export * from './ride';
+export * from './trail';
 export * from './talk';
 export * from './talk-log';
 export * from './feelings';

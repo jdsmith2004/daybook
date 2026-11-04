@@ -1,6 +1,6 @@
 # What is planned next
 
-## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; planned, not built)
+## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, being built on `keeps-coming`)
 
 **The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's
 like we need dopamine. I lasted about 3 hours and then I broke. That's my main problem with apps: at the end of the day, they
@@ -160,6 +160,16 @@ orders, and every battle teaches the next one.
    and the fire drill (medium for screens and words; high for the plan fields, since settings sync).
 3. _The lessons_: the five lessons with their pictures and practices, the lesson 2 change, the week 3 to 5 line (medium).
 4. _After_: credit for time held, the rewind, the evidence chart (high: touches points).
+
+### Approved (the owner, November 3, 2026), and the visuals come first
+
+The owner approved the design and asked for one thing above all: "I want it to be a repeatable set of actions, mental processes
+that I can visualize, so it is more worldly. I get lost in my head. We need to spend a lot of time on how this looks; this has to be
+one of the best parts of the app." So the order changes: before part 1 is built, the visual language is researched (other apps,
+Daybook's own pictures, the science of drills a person can picture and repeat under stress) and shown to the owner as pictures.
+Every stop becomes a place you can see and a drill you can do with your body, the same way every time. On the program flag: the
+owner cares whether it works, not about legal risk. The app still names no program's founder; the ideas are credited to the
+research behind them.
 
 ### Open questions for the owner
 

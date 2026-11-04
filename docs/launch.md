@@ -409,3 +409,31 @@ they would be Play in-app products, and that is a separate piece of work.
 7. **Production.** When the closed test is done, apply for production access in the Play Console's dashboard, then release
    the newest build to production (start at a staged rollout if it offers one). Review usually takes a few days; paste any
    message from Google to Claude Code.
+
+## 9. Stats (you, once, about 10 minutes; then never sign in for stats again)
+
+`gh workflow run Stats`, or Actions > Stats > Run workflow, prints Apple's daily downloads and Daybook's own anonymous daily
+totals in the run's summary; Claude runs it and reads the result. Each half says "not set up yet" until its part is done.
+
+1. **Apple's numbers.** In App Store Connect: Users and Access > Integrations > App Store Connect API > Team Keys > the plus
+   button. Name it "Daybook stats", access **Sales**. Download the .p8 file (Apple lets you download it once). Note the Key ID and
+   the Issuer ID on that page, and the vendor number (Payments and Financial Reports, top left). Then, in Terminal, in the
+   repository (the key file never goes in the repository):
+
+   ```sh
+   gh secret set ASC_KEY_ID          # paste the Key ID
+   gh secret set ASC_ISSUER_ID       # paste the Issuer ID
+   gh secret set ASC_VENDOR          # paste the vendor number
+   gh secret set ASC_KEY < ~/Downloads/AuthKey_XXXXXXXXXX.p8
+   ```
+
+   Then delete the .p8 from Downloads.
+
+2. **Daybook's own counts.** Run the bootstrap once more (it adds the read-only `daybook-stats` role, which can read the
+   anonymous totals and nothing else), and give the workflow its name:
+
+   ```sh
+   aws login --profile daybook --region us-east-2 --remote
+   cd infra/bootstrap && AWS_PROFILE=daybook terraform apply
+   gh secret set AWS_STATS_ROLE_ARN --body "$(AWS_PROFILE=daybook terraform output -raw AWS_STATS_ROLE_ARN)"
+   ```

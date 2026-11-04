@@ -122,6 +122,29 @@ resource "aws_iam_role" "deploy" {
   })
 }
 
+/* the Stats workflow reads the anonymous daily totals with this role, and nothing else: only the totals' partition ("c") of
+   the pulse table, never the feedback, never a record (the owner, November 4, 2026: stats without signing in every time) */
+resource "aws_iam_role" "stats" {
+  name                 = "daybook-stats"
+  description          = "GitHub Actions reads the anonymous daily totals with this role (only from the main branch of ${var.github_repo})."
+  max_session_duration = 3600
+  assume_role_policy   = aws_iam_role.deploy.assume_role_policy
+}
+
+resource "aws_iam_role_policy" "stats" {
+  name = "daybook-stats"
+  role = aws_iam_role.stats.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Action    = ["dynamodb:Query"]
+      Resource  = ["arn:${local.arn}:dynamodb:${var.region}:${local.account}:table/daybook-pulse"]
+      Condition = { "ForAllValues:StringEquals" = { "dynamodb:LeadingKeys" = ["c"] } }
+    }]
+  })
+}
+
 /* ---------- 3. the sync function's role ---------- */
 resource "aws_iam_role" "sync" {
   name                 = "daybook-app-sync"

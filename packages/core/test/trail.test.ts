@@ -206,10 +206,46 @@ describe('the notes', () => {
   });
 
   it('says what the 2 minutes did, and never calls a loud craving a failure', () => {
-    expect(core.trailAfter('high', 'low')).toEqual({ down: true, line: 'From very strong to a little. That was you.' });
+    expect(core.trailAfter('high', 'low')).toEqual({ down: true, again: false, line: 'From very strong to a little. That was you.' });
     expect(core.trailAfter('mid', 'gone').down).toBe(true);
     const still = core.trailAfter('mid', 'high');
     expect(still.down).toBe(false);
     expect(still.line).not.toMatch(/fail|wrong|bad/i);
+  });
+
+  it('walks it through again while it is still strong, and puts SOS first when it is very strong (the owner, November 4, 2026)', () => {
+    expect(core.trailAfter('high', 'mid')).toMatchObject({ down: true, again: true });
+    expect(core.trailAfter('mid', 'mid')).toMatchObject({ down: false, again: true });
+    expect(core.trailAfter('mid', 'mid').line).toContain('again');
+    expect(core.trailAfter('low', 'low').again).toBe(false);
+    expect(core.trailSosFirst('high')).toBe(true);
+    expect(core.trailSosFirst('mid')).toBe(false);
+  });
+
+  it('says back what the person just wrote, short enough to read, and asks the mirror question with hope after it', () => {
+    const own = { doing: 'Look at porn on my phone in bed', picture: 'the same videos as last time' };
+    for (const id of core.TRAIL_PLACES) {
+      const g = core.trailGuide(id, own).join(' ');
+      expect(g).toMatch(/Look at porn on my phone in bed|the same videos as last time/);
+      expect(core.trailGuide(id, { mirror: true })[core.TRAIL_MIRROR]).toBe('Look at yourself. Is this who you want to be?');
+      expect(core.trailGuide(id)[core.TRAIL_MIRROR]).toContain('Picture your own face');
+      expect(core.TRAIL_ACT[id].every((a) => a !== core.TRAIL_MIRROR)).toBe(true);
+    }
+    const long = core.trailGuide('steps', { doing: 'word '.repeat(40) })[0];
+    expect(long).toContain('…');
+    expect(long.length).toBeLessThan(140);
+  });
+
+  it('never tells a person to put the phone away while the guide is on it, and never sends them to bed in the morning', () => {
+    for (const night of [false, true]) {
+      const words = core.TRAIL_PLACES.map((x) => core.trailGuide(x, { night }).join(' '))
+        .join(' ')
+        .toLowerCase();
+      expect(words).not.toMatch(/leave the phone|phone stays|phone goes|phone in another room|distance between you and the phone/);
+    }
+    expect(core.trailFill('tired', 'm', false)).not.toMatch(/bed|lie down/i);
+    expect(core.trailFill('tired', 'l', false)).not.toMatch(/bed/i);
+    expect(core.trailFill('tired', 'm', true)).toMatch(/bed/i);
+    expect(core.trailFill('hungry', 'm', false)).toBe(core.trailFill('hungry', 'm', true));
   });
 });

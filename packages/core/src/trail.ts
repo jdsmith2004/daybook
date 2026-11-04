@@ -80,7 +80,7 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
     did: 'left',
     drills: {
       s: { do: 'Stand up.', done: 'I am up' },
-      m: { do: 'Stand up. Walk out of this room. The phone stays.', done: 'I am out' },
+      m: { do: 'Stand up and walk out of this room.', done: 'I am out' },
       l: { do: 'Change the place: go outside, with somewhere to go.', done: 'I am out', secs: 600 },
     },
   },
@@ -133,7 +133,13 @@ export const TRAIL: Record<TrailPlace, TrailStop> = {
 
 /** Drift's four lights, and how to fill each one at each length. Lonely is filled by going where people are, never by
     asking anyone for anything. */
-export const TRAIL_LIGHTS: { id: 'hungry' | 'angry' | 'lonely' | 'tired'; label: string; fill: Record<TrailLen, string> }[] = [
+export const TRAIL_LIGHTS: {
+  id: 'hungry' | 'angry' | 'lonely' | 'tired';
+  label: string;
+  fill: Record<TrailLen, string>;
+  /** in the day, when it is not the same as at night (tired at 8 in the morning is not a time to go back to bed) */
+  day?: Record<TrailLen, string>;
+}[] = [
   {
     id: 'hungry',
     label: 'Hungry',
@@ -166,11 +172,22 @@ export const TRAIL_LIGHTS: { id: 'hungry' | 'angry' | 'lonely' | 'tired'; label:
     label: 'Tired',
     fill: {
       s: 'Tired is low. Say it. Tired makes every pull louder.',
-      m: 'Lie down for two minutes, eyes closed. The phone goes in another room.',
-      l: 'Go to bed, or rest for twenty minutes with the phone in another room.',
+      m: 'Get into bed with only this open. When the two minutes end, the phone goes across the room.',
+      l: 'Go to bed. The phone charges across the room, out of reach.',
+    },
+    day: {
+      s: 'Tired is low. Say it. Tired makes every pull louder.',
+      m: 'Wake your body up: cold water on your face, then open a blind or step outside.',
+      l: 'Get light and movement: ten minutes outside, then eat something.',
     },
   },
 ];
+
+/** how to fill a light at this length, by the time of day */
+export function trailFill(id: (typeof TRAIL_LIGHTS)[number]['id'], len: TrailLen, night: boolean): string {
+  const l = TRAIL_LIGHTS.find((x) => x.id === id)!;
+  return (!night && l.day ? l.day : l.fill)[len];
+}
 
 /** what the permission voice usually says next, with an answer written on a calm day. A person's own lines come later
     (their kit); until then these are the common ones, shown as "It may say". */
@@ -395,7 +412,7 @@ export function trailLater(mem: UrMem, now: number): UrMem {
    acts it out and the wave rises and falls under it. It is rated before and after, so the person sees what it did. */
 export const TRAIL_GUIDE_SECS = 120;
 
-/** the words a cue can carry from the person's own plan */
+/** the words a cue can carry: the person's own plan, what they just wrote, and the moment */
 export interface TrailGuideOwn {
   /** Drift: how to fill the low light */
   fill?: string;
@@ -405,43 +422,74 @@ export interface TrailGuideOwn {
   line?: string;
   answer?: string;
   key?: string;
+  /** written just before the guide: what it wants them to do, and what it is showing them */
+  doing?: string;
+  picture?: string;
+  /** late at night (urNight) */
+  night?: boolean;
+  /** the front camera is on, so the mirror cue shows their face */
+  mirror?: boolean;
 }
 
-/** the eight cues for a place, with the person's own words where the place has them */
+/** the cue where the person looks at themselves (the owner, November 4, 2026: "show me what you look like and be like, is
+    this who you want to be?"). The live front camera, nothing recorded; with no camera, they picture their own face. The
+    next cue always answers it with hope. */
+export const TRAIL_MIRROR = 6;
+
+/** a person's own words inside a cue: trimmed, in quotes, and short enough to read at a glance */
+function quote(x: string): string {
+  let t = x
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?]+$/, '');
+  if (t.length > 70) t = t.slice(0, 70).replace(/\s+\S*$/, '') + '…';
+  return '“' + t + '.”';
+}
+
+/** the eight cues for a place. Every cue is a thing to picture or to do now, and none asks them to put the phone away, since
+    the guide is on it: the phone keeps only this open. What they just wrote is said back to them, plainly: naming a craving
+    in words takes some of its pull (affect labeling, Lieberman 2007). */
 export function trailGuide(at: TrailPlace, own: TrailGuideOwn = {}): string[] {
   const end = (x: string) => x.trim().replace(/[.!]?$/, '.');
+  const d = own.doing?.trim() ? quote(own.doing) : '';
+  const pic = own.picture?.trim() ? quote(own.picture) : '';
+  const mirror = own.mirror ? 'Look at yourself. Is this who you want to be?' : 'Picture your own face right now. Is this who you want to be?';
   switch (at) {
     case 'drift':
       return [
         'Say it to yourself: I am running low, and that is all this is.',
-        'Notice where the pull sits in your body: your chest, your stomach, your hands.',
+        d
+          ? 'You wrote what it wants: ' + d + ' Read it once. Written down, it is a plan, not a must.'
+          : 'Notice where the pull sits in your body: your chest, your stomach, your hands.',
         'Breathe out slowly, longer than you breathe in. Twice more.',
-        own.fill ? 'Now get up and fill it: ' + end(own.fill) : 'Now get up and meet the need, the simplest way you can.',
+        own.fill ? 'Now fill it: ' + end(own.fill) : 'Now meet the need, the simplest way you can.',
         'As you do it, watch the light on the post fill back up.',
-        'The pull was riding on that need. Feel it get a little quieter.',
-        'Picture yourself an hour from now: rested, fed, still free.',
-        'Stay with that picture. The wave is already on its way down.',
+        pic ? 'It showed you ' + pic + ' That was the need talking, not you.' : 'The pull was riding on that need. Feel it get a little quieter.',
+        mirror,
+        'You are someone who notices when they run low. That is how this ends.',
       ];
     case 'spark':
       return [
-        'Stand up now. Leave the phone where it is.',
-        'Walk out of this room. The spark stays behind in it.',
-        'Go somewhere with more light: another room, the porch, outside.',
+        d ? 'You wrote what it wants: ' + d + ' Read it once. That is its whole plan.' : 'That spark wants one thing. Name it to yourself, plainly.',
+        own.night ? 'Stand up and turn on a light. Take only this screen with you.' : 'Stand up and walk out of this room. Take only this screen with you.',
+        own.night ? 'Go to another room, with the lights on.' : 'Go somewhere with more light: another room, the porch, outside.',
         'Name five things you can see from where you are now.',
         'Name three things you can hear.',
-        'Press your feet into the floor. Feel how solid it is.',
-        'Picture that room behind you, and the spark in it going grey.',
-        'A cue fades with distance and time. Stay here a little longer.',
+        pic ? 'It showed you ' + pic + ' Picture that going grey, back in the room you left.' : 'Picture the room behind you, and the spark in it going grey.',
+        mirror,
+        'You walked away from it. A cue fades with distance. Stay here a little longer.',
       ];
     case 'preview':
       return [
-        'Let the picture come. Do not fight it. Just name it: a preview.',
+        pic
+          ? 'You wrote what it shows you: ' + pic + ' Let it be there. Name it: a preview.'
+          : 'Let the picture come. Do not fight it. Just name it: a preview.',
         'Now put your own picture over it, and look at yours instead.',
         'The preview stops at ten seconds. Keep the movie playing.',
-        'Picture one minute after: the screen, the quiet room, you.',
+        d ? 'Picture doing it: ' + d + ' Then one minute after: the quiet room, you.' : 'Picture one minute after: the screen, the quiet room, you.',
         'Picture one hour after. What you feel. What you tell yourself.',
-        'Picture waking up tomorrow after that.',
-        'Now picture waking up tomorrow after stepping off tonight.',
+        'Now picture tomorrow, after stepping off right now.',
+        mirror,
         'That is the whole movie. The preview never shows you that part.',
       ];
     case 'case':
@@ -450,21 +498,21 @@ export function trailGuide(at: TrailPlace, own: TrailGuideOwn = {}): string[] {
         own.answer ? 'You do not need to argue. Your answer: ' + end(own.answer) : 'You do not need to argue. A thought is not a decision.',
         'Close the door. Picture your hand pushing it shut.',
         own.key ? 'Turn the key: ' + end(own.key) : 'Turn the key: the reason you started this.',
-        'It knocks again. Let it. Knocking is not opening.',
+        d ? 'It wants you to do this: ' + d + ' It can knock. Knocking is not opening.' : 'It knocks again. Let it. Knocking is not opening.',
         'Breathe out slowly. Feel your back against the door.',
-        'Listen: each knock is a little softer than the one before.',
-        'You are on this side of the door. You can stay here.',
+        mirror,
+        'Each knock is softer than the one before. You are on this side, and you can stay.',
       ];
     case 'steps':
       return [
-        'Stop where you are. Notice the step you are on.',
+        d ? 'You wrote where this goes: ' + d + ' Stop on the step you are on.' : 'Stop where you are. Notice the step you are on.',
         'Picture the way off this step. Your flame takes it.',
         own.side ? 'Now do it for real: ' + end(own.side) : 'Now do it for real: get up and go to another room.',
-        'Put distance between you and the phone. Another room is enough.',
+        'Close every other app. Only this stays open.',
         'With every step you take, the stairs are further behind you.',
-        'Picture the stairs back there, getting dimmer.',
-        'You knew where it was going, and you chose another way.',
-        'Stay on this side path. The wave is going down.',
+        pic ? 'It showed you ' + pic + ' Picture it at the bottom of the stairs, getting dimmer.' : 'Picture the stairs back there, getting dimmer.',
+        mirror,
+        'You knew where it was going, and you chose another way. That is who you are.',
       ];
   }
 }
@@ -487,10 +535,16 @@ export const TRAIL_STRENGTH: { id: TrailStrength; label: string }[] = [
   { id: 'high', label: 'Very strong' },
 ];
 
-/** what the 2 minutes did, said plainly. It never calls a still-strong craving a failure: loud is not a decision. */
-export function trailAfter(before: TrailStrength, after: TrailStrength | 'gone'): { down: boolean; line: string } {
+/** very strong before the 2 minutes: SOS is offered first, and the trail second (the owner, November 4, 2026) */
+export const trailSosFirst = (before: TrailStrength | null) => before === 'high';
+
+/** what the 2 minutes did, said plainly. It never calls a still-strong craving a failure: loud is not a decision. Still
+    strong or very strong after: walk it through again (`again`), with SOS right there. */
+export function trailAfter(before: TrailStrength, after: TrailStrength | 'gone'): { down: boolean; again: boolean; line: string } {
   const rank = { gone: 0, low: 1, mid: 2, high: 3 } as const;
   const name = (x: TrailStrength | 'gone') => (x === 'gone' ? 'gone' : TRAIL_STRENGTH.find((y) => y.id === x)!.label.toLowerCase());
-  if (rank[after] < rank[before]) return { down: true, line: 'From ' + name(before) + ' to ' + name(after) + '. That was you.' };
-  return { down: false, line: 'It is still loud. That is all right: loud is not a decision, and it cannot stay at the top.' };
+  const again = rank[after] >= 2;
+  if (rank[after] < rank[before]) return { down: true, again, line: 'From ' + name(before) + ' to ' + name(after) + '. That was you.' };
+  if (again) return { down: false, again, line: 'It is still loud. That is all right. Let us walk it through again, slower this time.' };
+  return { down: false, again, line: 'It is still there, and it is quiet. Loud is not a decision, and it cannot stay at the top.' };
 }

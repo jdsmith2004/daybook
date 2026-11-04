@@ -521,7 +521,7 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   center: { alignItems: 'center' },
   map: { marginTop: 12 },
-  words: { minHeight: 212, marginTop: 8 },
+  words: { alignSelf: 'stretch', minHeight: 212, marginTop: 8 },
   over: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted, marginBottom: 8 },
   turn: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
   sayL: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.sun },

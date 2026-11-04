@@ -249,6 +249,13 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   Kept by the owner (November 3, 2026), after being told they are a compilation of proven programs (FASTER, BLAST, Carnes's
   ritual chain, the therapy model's permission-giving thoughts) with names of our own. Each place shows what it means in plain
   words on the map, and the thought heard there on its screen, because the pictures alone did not say where a person was.
+- The places teach in beats, like a lesson, without the lessons' campfire or flip card (the owner, November 3, 2026: "it got
+  my attention, and then it did nothing with it"): the thought it whispers, what it really is, then the line to say once and
+  the move. At 2 minutes the move is a real two minutes: how strong it is, eight cues of fifteen seconds that go on by
+  themselves while the place's picture acts them out and the wave rises and falls, then how strong it is now, said back
+  ("From strong to a little. That was you."; if not lower, "Two more minutes"). Basis: a picture held in the mind's eye
+  crowds out a craving's picture (elaborated intrusion theory; Skorka-Brown 2015). Steps' thought is the one a person who
+  knows the habit has: "I know where this is going, and I am going anyway", and its picture shows a way off every stair.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

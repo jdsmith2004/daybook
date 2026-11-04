@@ -1,6 +1,6 @@
 # What is planned next
 
-## The long night: when the mind has already decided (the owner, November 3, 2026; planned, not built)
+## When it keeps coming: an urge that lasts hours or days, and a mind that has already decided (the owner, November 3, 2026; planned, not built)
 
 The ask, in the owner's words after a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's like
 we need dopamine, we need to do this right now. I lasted about 3 hours and then I broke." And after the first plan (cold water,
@@ -50,19 +50,42 @@ alcohol and food, and is labeled that way):
    Not supported: "willpower runs out" (two large replications found no ego depletion). Not used: "never, no allowance for a slip"
    (Rational Recovery, Easyway), which breaks hope the first time someone slips.
 
-**The design: close the door, change the picture, say it out loud.** The long night is not a list of tools. It is a short
+**Not a night, and not one name (the owner, November 3, 2026).** "This happens anytime. It can happen for days. You can be
+fighting a wave for days, and it surges, but it is still coming." So this is not "the long night": it is any time of day, and a
+stretch can last days, with surges. Nothing on screen calls it a mode; SOS simply changes when an urge keeps coming, and the
+words are "for now" and "today", never "tonight". Night colors only when it is night. In the code it is the long wave
+(`longWave`).
+
+**How it is found (the owner, November 3, 2026).** "Most of the time I really fight it out. It's not like, oh, I need SOS. I
+might grab SOS once, but it's just a never-ending battle." So the stretch cannot depend on SOS staying open. The app cannot read a
+mind; it reads the few traces the person leaves, and makes each one count for the whole stretch:
+
+- **One touch starts it.** A single SOS, a strong urge logged, Planning a slip?, or a check-in that says the pull is strong starts
+  the stretch for the day. It does not end when that screen closes.
+- **Today asks, once.** While it is on, the top of Today says so plainly and offers one tap: "It keeps coming" or "It eased".
+  Anyone who opens the app during a hard day is met by it without looking for it.
+- **The app comes to the person.** Every hour or so, a note with two buttons on the note itself ("Still here" and "Easier"),
+  answered without opening the app. "Still here" counts an hour held; three of them in a row open the steps (close the door,
+  say it out loud). This is the one channel that works for someone fighting it out on their own.
+- **It learns when.** Once a person has had a stretch or two, the app sees what came before them (days since the last slip,
+  the day of the week, a missed wind-down, a run of short nights) and starts the watch earlier the next time, with the closed
+  door asked ahead.
+- **Later, maybe:** a racing heart with no workout, read from Apple Health with the person's yes. Unproven and private by
+  nature; not in the first build.
+
+**The design: close the door, change the picture, say it out loud.** It is not a list of tools. It is a short
 sequence, the same every time, that works on the mind first and the body second.
 
-_During, in SOS_ (effort: medium for screens and words; high for check-ins and anything stored).
+_During, in SOS, at any hour_ (effort: medium for screens and words; high for check-ins and anything stored).
 
 1. _It notices._ At 20 minutes with no "It passed", "Still strong" twice, or the person's own "It has been going for hours", SOS
-   becomes the long night.
+   changes to the steps below. So does a new SOS within a few days of one that went long: the stretch carries over.
 2. _Name it._ One question: "Has part of you already decided?" Yes is met without shame: "That is the craving talking. It is
    not a decision. The choice is still yours." The craving's voice can carry a name the person gave it on a calm day.
-3. _Close the door for tonight._ The center of the design. "Craving burns while the door is open. Close it for tonight." The
+3. _Close the door for now._ The center of the design. "Craving burns while the door is open. Close it for today." The
    person picks how: the phone sleeps in another room, the phone goes to someone, go somewhere people are (without the phone in
-   hand), or lock the phone into Daybook for the night (iPhone's Guided Access, which the person turns on themselves; to be
-   checked). Then the person says it: "Not tonight." This is the Sabbath, not a vow forever: it is about tonight only.
+   hand), or lock the phone into Daybook for a while (iPhone's Guided Access, which the person turns on themselves; to be
+   checked). Then the person says it: "Not today" ("Not tonight" at night). This is the Sabbath, not a vow forever: it is about today only.
 4. _Say it out loud._ One tap calls the person from their plan (a call first, a ready text second). Below it, live meetings
    that run at most hours (links to each group's own schedule, never copied times), and for people who said faith plays a part, a
    short prayer of surrender in their faith's voice.
@@ -70,26 +93,37 @@ _During, in SOS_ (effort: medium for screens and words; high for check-ins and a
    Stack (the block puzzle) is there for a busy mind; Play it forward runs the tape to the end.
 6. _If the door cannot close, postpone in links._ "Not before 10:40." SOS holds the time and checks in then; each link held
    feeds the flame.
-7. _Check-ins._ While the long night is on, a note every 25 minutes opens SOS on the next step. They stop on It passed, I
-   slipped, bed, or after 4 hours. When the phone has gone to another room, Daybook has done its best work, and the check-in waits
-   for the morning.
-   Body tools (hard movement, cold water, breath) stay, as a way to take the edge off while the steps above do the work, never as
-   the answer.
+7. _Check-ins._ While it is on, a note every 25 minutes opens SOS on the next step. They stop on It passed, I
+   slipped, bed, or after 4 hours. When the phone has gone to another room, Daybook has done its best work.
+8. _A stretch of days._ When strong urges keep coming back over days (several SOS or strong urges in a day or two), Today
+   holds a quiet line for the stretch: each morning it asks how the door closes today, and it counts the hours and days held
+   as they grow, so a stretch of days reads as days won, not a siege being lost. It ends on its own after a calm day.
 
-_Before_ (effort: medium for lessons; high for plan fields, since settings sync). 8. A lesson, "When it does not pass": a long craving is real, it is the body and the mind, it keeps burning while the door is
-open, and here is the long-night plan. Its practice builds the plan below. 9. The plan gains three things, made on a calm day: how the door closes ("my phone sleeps in the kitchen"), who gets the call,
-and the freedom scene (a few lines in their own words, practiced for a minute with a lesson now and then). 10. A "closed night": on the evenings the person's pattern says are hard, Today's heads-up asks in the afternoon where the phone
-sleeps tonight, so the door is closed before the craving starts. 11. Lesson 2 stops promising ten minutes ("most waves pass in minutes; some last for hours, and there is a plan for those").
+Body tools (hard movement, cold water, breath) stay, as a way to take the edge off while the steps above do the work, never as
+the answer.
 
-_After_ (effort: high, since it touches points). 12. A slip after a long hold says so on Rekindle: "You held three hours. That is real." "Waited first" credit grows with time
-held. Points only go up; nothing earned before changes. 13. The slip's next-time plan asks one thing: where the door was open. That is the line the next long night starts from.
+_Before_ (effort: medium for lessons; high for plan fields, since settings sync).
 
-**Honest limit.** Nothing has been tested against a three-hour porn craving. The design rests on the strongest findings nearby:
+9. A lesson, "When it keeps coming": a long craving is real, for hours or days, it is the body and the mind, it keeps burning
+   while the door is open, and here is the plan. Its practice builds the plan below.
+10. The plan gains three things, made on a calm day: how the door closes ("my phone sleeps in the kitchen"), who gets the call,
+    and the freedom scene (a few lines in their own words, practiced for a minute with a lesson now and then).
+11. A closed door, ahead: in the hours the person's pattern says are hard, Today's heads-up asks an hour or two before where the phone
+    will be, so the door is closed before the craving starts.
+12. Lesson 2 stops promising ten minutes ("most waves pass in minutes; some last for hours, and there is a plan for those").
+
+_After_ (effort: high, since it touches points).
+
+13. A slip after a long hold says so on Rekindle: "You held three hours. That is real." "Waited first" credit grows with time
+    held. Points only go up; nothing earned before changes.
+14. The slip's next-time plan asks one thing: where the door was open. That is the line the next long stretch starts from.
+
+**Honest limit.** Nothing has been tested against a porn craving that lasts hours or days. The design rests on the strongest findings nearby:
 availability, imagery, defusion and people. It says "this can help", never "this will stop it".
 
 **Open questions for the owner.**
 
-- The name on screen.
+- The name: none on screen (SOS changes); the lesson and the plan chapter say "When it keeps coming".
 - Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls
   permission, which Apple must approve. Worth asking Apple for?
 - Pointing to 12-step meetings, whose "addict" language fights the identity goal: a neutral list (12-step, SMART, and the

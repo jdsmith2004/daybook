@@ -171,6 +171,32 @@ Every stop becomes a place you can see and a drill you can do with your body, th
 owner cares whether it works, not about legal risk. The app still names no program's founder; the ideas are credited to the
 research behind them.
 
+### The look: the trail (mockups in docs/keeps-review, November 3, 2026)
+
+Three research passes (other apps, Daybook's own pictures, the science of drills) agreed on one shape. No quit app shows what is
+happening inside a craving; they count days and offer a panic button, so this is where Daybook can be the best. A fixed routine
+holds under pressure (sport routines, g = .70 under pressure, Rupprecht 2021; the content mattered less than having a fixed order),
+an if-then plan resists derailing (d = .77), and picturing the steps beats picturing the outcome (Pham and Taylor 1999).
+
+- _One world, the same everywhere._ The slide becomes **the trail**: one night landscape that runs downhill, with five places on
+  it, each an object you can see with your eyes closed. Drift is a post of four lights with one low (hungry, angry, lonely, tired).
+  Spark is a spark landing in dry grass. Preview is a frame that glows too bright. Case is a door with a knock at it. Steps is a
+  stair down to the edge. Every place has a mint side path off the trail: the exit. The flame is the "you are here" dot.
+  The same trail is the lessons' picture, SOS, the notes, the kit and the evidence chart, so it is learned once.
+- _One drill per place, the same every time:_ a line said once, and one thing done with the body. Drift: "I am running low";
+  find the low light and fill it. Spark: "That is a cue, not a need"; stand up, walk out, leave the phone. Preview: "That is the
+  preview; it promises more"; slide your own picture over it, one long breath out. Case: "Not today"; hold to close the door,
+  then text your person. Steps: "This is a step; I can step off"; take the side path for ten minutes. If it surges again, go to
+  the place it has reached; nothing is relearned mid-urge.
+- _Screens_ (docs/keeps-review/2-screens.png): Where is it now? (touch the place), At the door (next it will say, your calm-day
+  answer, hold to close, text), Change the picture (slide your scene over the glow, the wave past its top), and a note on the lock
+  screen whose buttons do the move.
+- _Motion_ (for the build): the flame walks the trail to the place touched; the door's light narrows as the hold fills, then a
+  soft heavy haptic as it shuts; the glow blurs and slides away under the person's picture; the light in Drift brightens when
+  filled. Reduce Motion shows each end state. Night colors in either theme.
+- _Avoid_ (from the research): brains, shields, rank badges, a wave that only says "it passes", red or broken motion at Case and
+  Steps, any picture of the act, and arguing with the thought.
+
 ### Open questions for the owner
 
 - Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls permission.

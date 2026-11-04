@@ -222,6 +222,22 @@ Screens: docs/keeps-review/1-trail.png (the world), 2-screens.png (Where is it n
 walk out, Preview's picture), 3-screens.png (Case's door and key, Steps' side path with the timer, Home, the lock-screen note,
 whose buttons are now Not today, Show me where I am, Not before, and Leave me be today).
 
+### Part 1, built on `keeps-coming` (November 3, 2026; not merged until the owner has seen it on the simulator)
+
+- Core `trail.ts`: the five places, each drill in three lengths, Drift's four lights and how to fill each, the lines the
+  permission voice may say next with an answer, the person's own picture (Play it forward), key (note, reason, or who
+  they are becoming) and side path (their urge plan), and the stretch kept in the SOS memory on the device, carried over
+  hours and days and ended by half a day of quiet. Reaching home saves an urge ridden out, like SOS.
+- The app: `app/trail.tsx` and `components/trail-art.tsx`. Where is it now (the map; the person's own flame walks to the
+  place touched; the length chosen once and remembered), the five places with their pictures (the lights fill, the flame
+  walks out the door, the picture slides over the glow while the wave passes, the door is held shut and the key turns, the
+  flame takes the side path), and Home. Opened from SOS, More, "The trail".
+- The notes: two at a time, an hour apart, never at night (10 PM to 5 AM), no more than five a day, resting after a slip,
+  with the buttons Not today (opens the door), Show me where I am, Not for an hour, and Leave me be today. Two unanswered
+  are the last until the app is opened. The privacy page says what the trail keeps on the phone.
+- Not yet: the person's own lines and answers (the kit, part 2), the lessons (part 3), credit and the rewind (part 4), a
+  way in from Today, and holding other reminders while a stretch is open.
+
 ### Open questions for the owner
 
 - Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls permission.

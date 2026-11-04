@@ -620,29 +620,56 @@ export function NextLine({ line, answer, own }: { line: string; answer: string; 
   );
 }
 
-/* ---------- Steps: the stairs down, and the green side path off them ---------- */
-export function StepsArt({ level, off }: { level: number; off: boolean }) {
+/* ---------- Steps: the stairs down to the edge, and a way off every stair ---------- */
+const STAIR = (j: number): [number, number] => [118 + j * 40, 38 + j * 34];
+/** the flame stands on the second stair: already on the way, and still with a way off */
+const ON = 1;
+export function StepsArt({ level, off, lit }: { level: number; off: boolean; lit?: boolean }) {
   const w = Math.min(useArtWidth(), 400);
   const k = w / 358;
   const reduce = useReducedMotion();
   const go = useRef(new Animated.Value(off ? 1 : 0)).current;
+  const glow = useRef(new Animated.Value(lit ? 1 : 0)).current;
   useEffect(() => {
     if (reduce) go.setValue(off ? 1 : 0);
-    else Animated.timing(go, { toValue: off ? 1 : 0, duration: 1000, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
+    else Animated.timing(go, { toValue: off ? 1 : 0, duration: 1400, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
   }, [off, reduce, go]);
-  const FL = 60;
+  useEffect(() => {
+    if (reduce) glow.setValue(lit ? 1 : 0);
+    else Animated.timing(glow, { toValue: lit ? 1 : 0, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
+  }, [lit, reduce, glow]);
+  const exit = (j: number) => {
+    const [x, y] = STAIR(j);
+    return `M${x + 8} ${y + 12} C${x - 6} ${y + 40} ${x - 40} ${y + 50} ${x - 70} ${y + 56}`;
+  };
+  const [fx, fy] = STAIR(ON);
+  const FL = 56;
+  const H = 250;
   return (
-    <View style={{ width: w, height: 240 * k, alignSelf: 'center' }} accessible accessibilityLabel={TRAIL.steps.see}>
-      <Svg width={w} height={240 * k} viewBox="0 0 358 240">
+    <View style={{ width: w, height: H * k, alignSelf: 'center' }} accessible accessibilityLabel={TRAIL.steps.see}>
+      <Svg width={w} height={H * k} viewBox={`0 0 358 ${H}`} style={StyleSheet.absoluteFill}>
         <AdDefs />
-        <Path d="M20 40 L200 40" stroke={TW.path} strokeWidth={12} strokeLinecap="round" />
-        {[0, 1, 2, 3, 4].map((j) => (
-          <Rect key={j} x={190 + j * 30} y={40 + j * 26} width={42} height={12} rx={4} fill={TW.post} opacity={1 - j * 0.17} />
-        ))}
-        <Circle cx={90} cy={196} r={60} fill="url(#trMint)" />
-        <Path d="M184 46 C176 120 110 130 92 196" stroke={TW.mint} strokeWidth={14} opacity={0.2} fill="none" strokeLinecap="round" />
-        <Path d="M184 46 C176 120 110 130 92 196" stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
+        {/* the edge, at the bottom of the stairs */}
+        <Circle cx={322} cy={226} r={34} fill={TW.coral} opacity={0.18} />
+        <Path d="M20 38 L120 38" stroke={TW.path} strokeWidth={12} strokeLinecap="round" />
+        {[0, 1, 2, 3, 4].map((j) => {
+          const [x, y] = STAIR(j);
+          return <Rect key={j} x={x} y={y} width={46} height={12} rx={4} fill={TW.post} opacity={1 - j * 0.14} />;
+        })}
+        {/* the way off the flame's stair, always there */}
+        <Circle cx={STAIR(ON)[0] - 70} cy={STAIR(ON)[1] + 56} r={40} fill="url(#trMint)" />
+        <Path d={exit(ON)} stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
       </Svg>
+      {/* every other stair's way off, lit when the place says what it really is */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: glow }]}>
+        <Svg width={w} height={H * k} viewBox={`0 0 358 ${H}`}>
+          {[0, 2, 3, 4].map((j) => (
+            <Path key={j} d={exit(j)} stroke={TW.mint} strokeWidth={4} fill="none" strokeLinecap="round" opacity={0.7} />
+          ))}
+        </Svg>
+      </Animated.View>
+      <Text style={[s.stepsTag, { left: 268 * k, top: 236 * k - 8, color: TW.coral }]}>the edge</Text>
+      <Animated.Text style={[s.stepsTag, { left: 8 * k, top: 178 * k, color: TW.mint, opacity: glow }]}>a way off{'\n'}every step</Animated.Text>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -650,8 +677,8 @@ export function StepsArt({ level, off }: { level: number; off: boolean }) {
           { left: -FL / 2, top: -FL, width: FL, height: FL },
           {
             transform: [
-              { translateX: go.interpolate({ inputRange: [0, 1], outputRange: [190 * k, 92 * k] }) },
-              { translateY: go.interpolate({ inputRange: [0, 1], outputRange: [46 * k, 200 * k] }) },
+              { translateX: go.interpolate({ inputRange: [0, 1], outputRange: [(fx + 23) * k, (fx - 70) * k] }) },
+              { translateY: go.interpolate({ inputRange: [0, 1], outputRange: [(fy + 4) * k, (fy + 60) * k] }) },
             ],
           },
         ]}>
@@ -719,11 +746,22 @@ function Firefly({ x, y, delay }: { x: number; y: number; delay: number }) {
 }
 
 /* ---------- how much time: three choices, picked once and remembered ---------- */
-export function TimeChoice({ len, lens, onPick }: { len: TrailLen; lens: { id: TrailLen; label: string }[]; onPick: (l: TrailLen) => void }) {
+/** a row of two to four choices, one picked: how much time there is, how strong it is */
+export function Seg<T extends string>({
+  label,
+  val,
+  opts,
+  onPick,
+}: {
+  label: string;
+  val: T | null;
+  opts: { id: T; label: string }[];
+  onPick: (x: T) => void;
+}) {
   return (
-    <View style={s.seg} accessibilityRole="radiogroup" accessibilityLabel="How much time do you have?">
-      {lens.map((x) => {
-        const on = x.id === len;
+    <View style={s.seg} accessibilityRole="radiogroup" accessibilityLabel={label}>
+      {opts.map((x) => {
+        const on = x.id === val;
         return (
           <Pressable
             key={x.id}
@@ -740,6 +778,10 @@ export function TimeChoice({ len, lens, onPick }: { len: TrailLen; lens: { id: T
       })}
     </View>
   );
+}
+
+export function TimeChoice({ len, lens, onPick }: { len: TrailLen; lens: { id: TrailLen; label: string }[]; onPick: (l: TrailLen) => void }) {
+  return <Seg label="How much time do you have?" val={len} opts={lens} onPick={onPick} />;
 }
 
 /** a card of words in the dock: what to do now, with a small line over it */
@@ -801,6 +843,7 @@ const s = StyleSheet.create({
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   mapHit: { position: 'absolute', alignItems: 'center', gap: 6 },
   whisper: { fontFamily: font.display, fontStyle: 'italic', fontSize: 34, lineHeight: 42, color: TW.muted },
+  stepsTag: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 13, lineHeight: 17 },
   mapWords: { flex: 1 },
   mapName: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   mapMeans: { fontFamily: font.body, fontSize: 15, lineHeight: 19, color: TW.muted },

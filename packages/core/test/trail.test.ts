@@ -184,4 +184,32 @@ describe('the notes', () => {
     expect(core.trailNoteWords(1, 20 * 60000)).toBe('Where is it now? You know the way home.');
     for (let i = 0; i < 3; i++) expect(core.trailNoteWords(i, 3 * H)).not.toMatch(/porn|urge|craving|slip|habit/i);
   });
+  it('fills the 2 minutes: eight cues of about fifteen seconds for every place, each short enough to read at a glance', () => {
+    for (const id of core.TRAIL_PLACES) {
+      const g = core.trailGuide(id);
+      expect(g).toHaveLength(8);
+      expect(core.TRAIL_GUIDE_SECS / g.length).toBe(15);
+      for (const t of g) expect(t.length).toBeLessThan(100);
+      for (const a of core.TRAIL_ACT[id]) expect(a).toBeLessThan(g.length);
+    }
+  });
+
+  it('carries the person own words into the cues, and never asks them to reach out', () => {
+    const g = core.trailGuide('case', { line: 'Just once', answer: 'Once is how it starts', key: 'My kids' });
+    expect(g[0]).toContain('Just once');
+    expect(g[1]).toContain('Once is how it starts.');
+    expect(g[3]).toContain('My kids.');
+    expect(core.trailGuide('steps', { side: 'Go for a walk' })[2]).toContain('Go for a walk.');
+    const words = JSON.stringify(core.TRAIL_PLACES.map((x) => core.trailGuide(x))).toLowerCase();
+    for (const w of ['text ', 'call ', 'message', 'reach out', 'tell someone']) expect(words).not.toContain(w);
+    expect(words).not.toMatch(/\b\w+'(t|s|re|ll|ve|d|m)\b/);
+  });
+
+  it('says what the 2 minutes did, and never calls a loud craving a failure', () => {
+    expect(core.trailAfter('high', 'low')).toEqual({ down: true, line: 'From very strong to a little. That was you.' });
+    expect(core.trailAfter('mid', 'gone').down).toBe(true);
+    const still = core.trailAfter('mid', 'high');
+    expect(still.down).toBe(false);
+    expect(still.line).not.toMatch(/fail|wrong|bad/i);
+  });
 });

@@ -386,3 +386,111 @@ export function trailLeave(mem: UrMem, now: number): UrMem {
 export function trailLater(mem: UrMem, now: number): UrMem {
   return { ...trailNoteKeep(mem, [], now), trailLater: now + TRAIL_NOTE_GAP };
 }
+
+/* ---------- the guided 2 minutes (the owner, November 3, 2026: "2 minutes should be longer"; "it got my attention, and
+   then it did nothing with it") ----------
+   A craving is mostly a picture in the mind, and a picture held in the mind's eye crowds it out: a few minutes of a visual
+   task lowers craving (Kavanagh's elaborated intrusion theory; Skorka-Brown 2015, Tetris for three minutes). So the 2-minute
+   move is eight short cues, about fifteen seconds each, every one a thing to picture or to do now, while the place's picture
+   acts it out and the wave rises and falls under it. It is rated before and after, so the person sees what it did. */
+export const TRAIL_GUIDE_SECS = 120;
+
+/** the words a cue can carry from the person's own plan */
+export interface TrailGuideOwn {
+  /** Drift: how to fill the low light */
+  fill?: string;
+  /** Steps: the side path */
+  side?: string;
+  /** Case: the line it says, the answer, and the key */
+  line?: string;
+  answer?: string;
+  key?: string;
+}
+
+/** the eight cues for a place, with the person's own words where the place has them */
+export function trailGuide(at: TrailPlace, own: TrailGuideOwn = {}): string[] {
+  const end = (x: string) => x.trim().replace(/[.!]?$/, '.');
+  switch (at) {
+    case 'drift':
+      return [
+        'Say it to yourself: I am running low, and that is all this is.',
+        'Notice where the pull sits in your body: your chest, your stomach, your hands.',
+        'Breathe out slowly, longer than you breathe in. Twice more.',
+        own.fill ? 'Now get up and fill it: ' + end(own.fill) : 'Now get up and meet the need, the simplest way you can.',
+        'As you do it, watch the light on the post fill back up.',
+        'The pull was riding on that need. Feel it get a little quieter.',
+        'Picture yourself an hour from now: rested, fed, still free.',
+        'Stay with that picture. The wave is already on its way down.',
+      ];
+    case 'spark':
+      return [
+        'Stand up now. Leave the phone where it is.',
+        'Walk out of this room. The spark stays behind in it.',
+        'Go somewhere with more light: another room, the porch, outside.',
+        'Name five things you can see from where you are now.',
+        'Name three things you can hear.',
+        'Press your feet into the floor. Feel how solid it is.',
+        'Picture that room behind you, and the spark in it going grey.',
+        'A cue fades with distance and time. Stay here a little longer.',
+      ];
+    case 'preview':
+      return [
+        'Let the picture come. Do not fight it. Just name it: a preview.',
+        'Now put your own picture over it, and look at yours instead.',
+        'The preview stops at ten seconds. Keep the movie playing.',
+        'Picture one minute after: the screen, the quiet room, you.',
+        'Picture one hour after. What you feel. What you tell yourself.',
+        'Picture waking up tomorrow after that.',
+        'Now picture waking up tomorrow after stepping off tonight.',
+        'That is the whole movie. The preview never shows you that part.',
+      ];
+    case 'case':
+      return [
+        own.line ? 'It is knocking: “' + own.line + '”' : 'It is knocking, with its best reason.',
+        own.answer ? 'You do not need to argue. Your answer: ' + end(own.answer) : 'You do not need to argue. A thought is not a decision.',
+        'Close the door. Picture your hand pushing it shut.',
+        own.key ? 'Turn the key: ' + end(own.key) : 'Turn the key: the reason you started this.',
+        'It knocks again. Let it. Knocking is not opening.',
+        'Breathe out slowly. Feel your back against the door.',
+        'Listen: each knock is a little softer than the one before.',
+        'You are on this side of the door. You can stay here.',
+      ];
+    case 'steps':
+      return [
+        'Stop where you are. Notice the step you are on.',
+        'Picture the way off this step. Your flame takes it.',
+        own.side ? 'Now do it for real: ' + end(own.side) : 'Now do it for real: get up and go to another room.',
+        'Put distance between you and the phone. Another room is enough.',
+        'With every step you take, the stairs are further behind you.',
+        'Picture the stairs back there, getting dimmer.',
+        'You knew where it was going, and you chose another way.',
+        'Stay on this side path. The wave is going down.',
+      ];
+  }
+}
+
+/** the cue where each place's picture acts: Drift's light fills, Spark's flame walks out, the person's picture slides over
+    the glow, Case's door shuts and then locks, Steps' flame takes the side path */
+export const TRAIL_ACT: Record<TrailPlace, number[]> = {
+  drift: [4],
+  spark: [1],
+  preview: [1],
+  case: [2, 3],
+  steps: [1],
+};
+
+/** how strong it is, before and after the 2 minutes (the log's urge strength) */
+export type TrailStrength = 'low' | 'mid' | 'high';
+export const TRAIL_STRENGTH: { id: TrailStrength; label: string }[] = [
+  { id: 'low', label: 'A little' },
+  { id: 'mid', label: 'Strong' },
+  { id: 'high', label: 'Very strong' },
+];
+
+/** what the 2 minutes did, said plainly. It never calls a still-strong craving a failure: loud is not a decision. */
+export function trailAfter(before: TrailStrength, after: TrailStrength | 'gone'): { down: boolean; line: string } {
+  const rank = { gone: 0, low: 1, mid: 2, high: 3 } as const;
+  const name = (x: TrailStrength | 'gone') => (x === 'gone' ? 'gone' : TRAIL_STRENGTH.find((y) => y.id === x)!.label.toLowerCase());
+  if (rank[after] < rank[before]) return { down: true, line: 'From ' + name(before) + ' to ' + name(after) + '. That was you.' };
+  return { down: false, line: 'It is still loud. That is all right: loud is not a decision, and it cannot stay at the top.' };
+}

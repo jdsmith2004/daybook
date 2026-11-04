@@ -13,10 +13,15 @@ import {
   gameCompute,
   newUrge,
   TRAIL,
+  TRAIL_ACT,
+  TRAIL_GUIDE_SECS,
   TRAIL_LENS,
   TRAIL_LIGHTS,
   TRAIL_PLACES,
+  TRAIL_STRENGTH,
+  trailAfter,
   trailBegin,
+  trailGuide,
   trailHomeLine,
   trailKey,
   trailLenOf,
@@ -31,12 +36,13 @@ import {
   urNight,
   type TrailLen,
   type TrailPlace,
+  type TrailStrength,
   type UrState,
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
-import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { Link } from '@/components/choices';
 import { useHearthHold } from '@/components/hearth';
@@ -50,6 +56,7 @@ import {
   PictureSlider,
   PreviewArt,
   Rise,
+  Seg,
   SparkArt,
   StepsArt,
   TimeChoice,
@@ -205,33 +212,36 @@ export default function Trail() {
     );
   }
 
-  /* ---------- a place: what it says, what it really is, then the move (10 seconds goes straight to the move) ---------- */
+  /* ---------- a place: what it says, what it really is, then the move (10 seconds goes straight to the move). At 2 minutes the
+     move is guided: how strong it is, eight cues while the picture acts them out, and how strong it is after. ---------- */
   if (step === 'home') return null;
   const at = step;
   const P = TRAIL[at];
   const drill = P.drills[len];
   const first = len === 's' ? 2 : 0;
+  const parts = len === 'm' ? 5 : 3;
   const Place = { drift: Drift, spark: Spark, preview: Preview, case: Case, steps: Steps }[at];
   return (
     <SceneFrame
       title={P.name}
       sky="night"
-      onBack={() => (beat > first ? setBeat(beat - 1) : setStep('where'))}
+      onBack={() => (beat > first ? setBeat(beat === 4 ? 2 : beat - 1) : setStep('where'))}
       onClose={close}
       topRight={passed}
-      dots={first ? null : { n: 3, i: beat, label: 'Part ' + (beat + 1) + ' of 3' }}>
+      dots={first ? null : { n: parts, i: beat, label: 'Part ' + (beat + 1) + ' of ' + parts }}>
       <Stage key={at + len} dir={1}>
         <Place
           at={at}
           beat={beat}
-          onNext={() => {
+          go={(b) => {
             buzz('tap');
-            setBeat(beat + 1);
+            setBeat(b);
           }}
           len={len}
           drill={drill}
           level={level}
           onExit={() => reach(at)}
+          onStrength={(x) => setUr((u) => ({ ...u, strength: x }))}
           visits={visits.current}
           night={night}
         />
@@ -243,67 +253,193 @@ export default function Trail() {
 interface PlaceProps {
   at: TrailPlace;
   beat: number;
-  onNext: () => void;
+  go: (beat: number) => void;
   len: TrailLen;
   drill: { do: string; done: string; secs?: number };
   level: number;
   visits: number;
   night: boolean;
   onExit: () => void;
+  onStrength: (x: TrailStrength) => void;
 }
 
-/** one place, in three beats, like a lesson: the thought it whispers, what that thought really is, then the line to say once
-    and the move. The picture stays put while the words change above it, so it reads as one place getting clearer. */
+const CUE_MS = (TRAIL_GUIDE_SECS * 1000) / 8;
+
+/** one place, in beats, like a lesson: the thought it whispers, what that thought really is, then the line to say once and
+    the move. The picture stays put while the words change above it, so it reads as one place getting clearer.
+    At 2 minutes the move is guided (beats 3 and 4): eight cues, each about fifteen seconds, that go on by themselves with a
+    tick, while the wave under them rises and falls; Next goes on sooner. `onCue` tells the place which cue is showing, so
+    its picture acts it out. Then how strong it is now, said back plainly. */
 function Beats({
-  at,
-  beat,
-  onNext,
+  p,
   hear,
   under,
   lead,
   art,
   dock,
+  ready = true,
+  guide,
+  onCue,
 }: {
-  at: TrailPlace;
-  beat: number;
-  onNext: () => void;
+  p: PlaceProps;
   hear?: string;
   under?: ReactNode;
   lead?: ReactNode;
   art: ReactNode;
   dock: ReactNode;
+  /** the 2-minute start waits for this (Drift: a light picked) */
+  ready?: boolean;
+  guide: string[];
+  onCue: (i: number) => void;
 }) {
+  const { at, beat, go, len } = p;
   const P = TRAIL[at];
+  const [before, setBefore] = useState<TrailStrength | null>(null);
+  const [after, setAfter] = useState<TrailStrength | 'gone' | null>(null);
+  const [cue, setCue] = useState(0);
+  const [t0, setT0] = useState(0);
+  const [now, setNow] = useState(0);
+  /* the guide's clock: a cue goes on by itself after its time, and the last one ends in "How is it now?" */
+  useEffect(() => {
+    if (beat !== 3) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [beat]);
+  const next = useCallback(() => {
+    if (cue >= guide.length - 1) {
+      onCue(guide.length);
+      return go(4);
+    }
+    buzz('tick');
+    setCue(cue + 1);
+    onCue(cue + 1);
+    setT0(Date.now());
+  }, [cue, guide.length, go, onCue]);
+  useEffect(() => {
+    if (beat === 3 && t0 && now - t0 >= CUE_MS) next();
+  }, [beat, now, t0, next]);
+  const start = () => {
+    setCue(0);
+    onCue(0);
+    setAfter(null);
+    setT0(Date.now());
+    setNow(Date.now());
+    go(3);
+  };
+  const res = before && after ? trailAfter(before, after) : null;
+  const waveP = beat === 4 ? 1 : Math.min(1, (cue * CUE_MS + Math.max(0, now - t0)) / (TRAIL_GUIDE_SECS * 1000));
+  const left = Math.max(0, Math.ceil(TRAIL_GUIDE_SECS - waveP * TRAIL_GUIDE_SECS));
+
+  let words: ReactNode;
+  let bottom: ReactNode;
+  if (beat === 0) {
+    words = (
+      <>
+        <Text style={s.over}>The thought here</Text>
+        <Whisper text={hear ?? P.hear} />
+      </>
+    );
+    bottom = <Button label="See what it really is" onPress={() => go(1)} />;
+  } else if (beat === 1) {
+    words = (
+      <Rise>
+        <Text style={s.over}>What it really is</Text>
+        <Text style={s.turn} accessibilityRole="header">
+          {P.turn}
+        </Text>
+        {under}
+      </Rise>
+    );
+    bottom = <Button label="Show me the move" onPress={() => go(2)} />;
+  } else if (beat === 2 || len !== 'm') {
+    words = (
+      <Rise>
+        <Text style={s.over}>Say it once</Text>
+        <Text style={s.sayL} accessibilityRole="header">
+          {'“' + P.say + '”'}
+        </Text>
+        {lead}
+      </Rise>
+    );
+    bottom =
+      len === 'm' ? (
+        <>
+          <Text style={s.ask}>How strong is it right now?</Text>
+          <Seg
+            label="How strong is it right now?"
+            val={before}
+            opts={TRAIL_STRENGTH}
+            onPick={(x) => {
+              setBefore(x);
+              p.onStrength(x);
+            }}
+          />
+          <Button label={ready ? 'Start the 2 minutes' : 'Touch the low light first'} disabled={!before || !ready} onPress={start} />
+        </>
+      ) : (
+        dock
+      );
+  } else if (beat === 3) {
+    words = (
+      <Rise key={cue}>
+        <Text style={s.over}>{Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0')}</Text>
+        <Text style={s.cue} accessibilityRole="header" accessibilityLiveRegion="polite">
+          {guide[cue]}
+        </Text>
+      </Rise>
+    );
+    bottom = (
+      <>
+        <WaveLine p={waveP} />
+        <Button label={cue >= guide.length - 1 ? 'Done' : 'Next'} onPress={next} />
+      </>
+    );
+  } else {
+    words = (
+      <Rise key={res ? 'r' : 'q'}>
+        <Text style={s.over}>Two minutes</Text>
+        <Text style={s.turn} accessibilityRole="header">
+          {res ? res.line : 'How is it now?'}
+        </Text>
+      </Rise>
+    );
+    bottom = (
+      <>
+        <Seg label="How is it now?" val={after} opts={[{ id: 'gone' as const, label: 'Gone' }, ...TRAIL_STRENGTH]} onPick={setAfter} />
+        {res && !res.down ? (
+          <>
+            <Button label="Two more minutes" onPress={start} />
+            <View style={s.center}>
+              <Link label="Home" tone="muted" onPress={p.onExit} />
+            </View>
+          </>
+        ) : (
+          <Button
+            label="Home"
+            disabled={!res}
+            onPress={() => {
+              buzz('save');
+              p.onExit();
+            }}
+          />
+        )}
+      </>
+    );
+  }
   return (
     <>
-      <View key={beat} style={s.words}>
-        {beat === 0 ? (
-          <>
-            <Text style={s.over}>The thought here</Text>
-            <Whisper text={hear ?? P.hear} />
-          </>
-        ) : beat === 1 ? (
-          <Rise>
-            <Text style={s.over}>What it really is</Text>
-            <Text style={s.turn} accessibilityRole="header">
-              {P.turn}
-            </Text>
-            {under}
-          </Rise>
-        ) : (
-          <Rise>
-            <Text style={s.over}>Say it once</Text>
-            <Text style={s.sayL} accessibilityRole="header">
-              {'“' + P.say + '”'}
-            </Text>
-            {lead}
-          </Rise>
-        )}
+      <View key={beat === 3 ? 'g' : beat} style={s.words}>
+        {words}
       </View>
       <Middle>{art}</Middle>
-      <Dock>{beat < 2 ? <Button label={beat === 0 ? 'See what it really is' : 'Show me the move'} onPress={onNext} /> : dock}</Dock>
+      <Dock>{bottom}</Dock>
     </>
   );
+}
+
+/** the cue a guided place is on: -1 before the guide starts, then 0 to 8 (8 is the end, and the picture stays acted) */
+function useCue() {
+  return useState(-1);
 }
 
 /** a beat, then home: long enough to see the move land (the light fill, the flame walk) */
@@ -318,17 +454,21 @@ function useExitAfter(onExit: () => void, ms: number) {
 }
 
 /* ---------- Drift: find the low light, fill it ---------- */
-function Drift({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
+function Drift(p: PlaceProps) {
+  const { beat, len, drill, onExit } = p;
   const [low, setLow] = useState<(typeof TRAIL_LIGHTS)[number]['id'] | null>(null);
   const [going, go] = useExitAfter(onExit, 900);
+  const [cue, setCue] = useCue();
   const L = TRAIL_LIGHTS.find((x) => x.id === low);
+  const guide = useMemo(() => trailGuide('drift', { fill: L?.fill.m }), [L]);
   return (
     <Beats
-      at={at}
-      beat={beat}
-      onNext={onNext}
-      lead={<Text style={s.lead}>{L ? L.label + ' is low. ' + L.fill[len] : 'Which light is low? Touch it.'}</Text>}
-      art={<DriftArt low={low} filled={going} onPick={(l) => beat === 2 && !going && setLow(l)} />}
+      p={p}
+      guide={guide}
+      onCue={setCue}
+      ready={!!L}
+      lead={<Text style={s.lead}>{L ? L.label + ' is low.' + (len === 'm' ? '' : ' ' + L.fill[len]) : 'Which light is low? Touch it.'}</Text>}
+      art={<DriftArt low={low} filled={going || cue >= TRAIL_ACT.drift[0]} onPick={(l) => beat === 2 && !going && setLow(l)} />}
       dock={
         <>
           {L && drill.secs ? <DrillClock secs={drill.secs} onEnd={() => undefined} /> : null}
@@ -347,16 +487,19 @@ function Drift({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
 }
 
 /* ---------- Spark: stand up, walk out, the phone stays ---------- */
-function Spark({ at, beat, onNext, drill, level, onExit }: PlaceProps) {
+function Spark(p: PlaceProps) {
+  const { drill, level, onExit } = p;
   const [going, go] = useExitAfter(onExit, 1100);
   const [timing, setTiming] = useState(false);
+  const [cue, setCue] = useCue();
+  const guide = useMemo(() => trailGuide('spark'), []);
   return (
     <Beats
-      at={at}
-      beat={beat}
-      onNext={onNext}
+      p={p}
+      guide={guide}
+      onCue={setCue}
       lead={<Text style={s.lead}>{drill.do}</Text>}
-      art={<SparkArt out={going || timing} level={level} />}
+      art={<SparkArt out={going || timing || cue >= TRAIL_ACT.spark[0]} level={level} />}
       dock={
         <>
           {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
@@ -377,12 +520,21 @@ function Spark({ at, beat, onNext, drill, level, onExit }: PlaceProps) {
 }
 
 /* ---------- Preview: your picture over the glow, while the wave passes ---------- */
-function Preview({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
+function Preview(p: PlaceProps) {
+  const { beat, len, drill, onExit } = p;
   const mem = useSos().mem;
   const pic = useMemo(() => trailPicture(mem), [mem]);
-  const p = useRef(new Animated.Value(len === 's' ? 1 : 0)).current;
+  const slide = useRef(new Animated.Value(len === 's' ? 1 : 0)).current;
   const [slid, setSlid] = useState(len === 's');
-  /* the wave starts when the move does */
+  const [cue, setCue] = useCue();
+  const guide = useMemo(() => trailGuide('preview'), []);
+  /* guided: the person's picture slides over the glow on its cue, and back off when the guide starts again */
+  const over = cue >= TRAIL_ACT.preview[0];
+  useEffect(() => {
+    if (len !== 'm') return;
+    Animated.timing(slide, { toValue: over ? 1 : 0, duration: 1400, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
+  }, [over, len, slide]);
+  /* 10 minutes: the wave starts when the move does */
   const [t0, setT0] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -396,15 +548,17 @@ function Preview({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
   const waveP = drill.secs && t0 !== null ? Math.min(1, Math.max(0, now - t0) / (drill.secs * 1000)) : len === 's' ? 1 : 0;
   return (
     <Beats
-      at={at}
-      beat={beat}
-      onNext={onNext}
+      p={p}
+      guide={guide}
+      onCue={setCue}
       lead={
-        <Text style={s.lead}>
-          {len === 's' ? drill.do : waveP >= 0.45 ? 'Past its top. One long breath out.' : 'Slide your picture over it, and stay in it while the wave rises.'}
-        </Text>
+        len === 'm' ? null : (
+          <Text style={s.lead}>
+            {len === 's' ? drill.do : waveP >= 0.45 ? 'Past its top. One long breath out.' : 'Slide your picture over it, and stay in it while the wave rises.'}
+          </Text>
+        )
       }
-      art={<PreviewArt p={p} caption={pic.own ? 'Your picture: ' + pic.t : pic.t} />}
+      art={<PreviewArt p={slide} caption={pic.own ? 'Your picture: ' + pic.t : pic.t} />}
       dock={
         <>
           {len === 's' ? null : <WaveLine p={waveP} />}
@@ -417,7 +571,7 @@ function Preview({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
               }}
             />
           ) : (
-            <PictureSlider p={p} onDone={() => setSlid(true)} />
+            <PictureSlider p={slide} onDone={() => setSlid(true)} />
           )}
         </>
       }
@@ -425,8 +579,9 @@ function Preview({ at, beat, onNext, len, drill, onExit }: PlaceProps) {
   );
 }
 
-/* ---------- Case: what it will say and an answer; hold the door shut; the key is your reason ---------- */
-function Case({ at, beat, onNext, len, drill, visits, night, onExit }: PlaceProps) {
+/* ---------- Case: what it will say and an answer; close the door; the key is your reason ---------- */
+function Case(p: PlaceProps) {
+  const { len, drill, visits, night, onExit } = p;
   const st = useCareSettings();
   const key = useMemo(() => trailKey(st), [st]);
   const next = useMemo(() => trailLine(visits - 1, night), [visits, night]);
@@ -434,11 +589,21 @@ function Case({ at, beat, onNext, len, drill, visits, night, onExit }: PlaceProp
   const hold = useHearthHold(false, () => setLocked(true));
   const fill = useAnimatedStyle(() => ({ transform: [{ scaleX: hold.h.value }] }));
   const [timing, setTiming] = useState(false);
+  const [cue, setCue] = useCue();
+  const guide = useMemo(() => trailGuide('case', { line: next.line, answer: next.answer, key: key.t }), [next, key]);
+  /* guided: the door swings shut on its cue and locks on the next; a new round opens it again */
+  const shut = cue >= TRAIL_ACT.case[0];
+  const lockNow = cue >= TRAIL_ACT.case[1];
+  useEffect(() => {
+    if (len !== 'm' || cue < 0) return;
+    hold.h.value = withTiming(shut ? 1 : 0, { duration: shut ? 1600 : 400 });
+    setLocked(lockNow);
+  }, [len, cue, shut, lockNow, hold.h]);
   return (
     <Beats
-      at={at}
-      beat={beat}
-      onNext={onNext}
+      p={p}
+      guide={guide}
+      onCue={setCue}
       hear={next.line}
       under={
         <Text style={s.answer}>
@@ -446,7 +611,7 @@ function Case({ at, beat, onNext, len, drill, visits, night, onExit }: PlaceProp
           <Text style={s.answerB}>{next.answer}</Text>
         </Text>
       }
-      lead={<Text style={s.lead}>{locked ? 'Closed. Now the key: your reason.' : drill.do}</Text>}
+      lead={len === 'm' ? null : <Text style={s.lead}>{locked ? 'Closed. Now the key: your reason.' : drill.do}</Text>}
       art={<DoorArt h={hold.h} locked={locked} />}
       dock={
         locked ? (
@@ -486,19 +651,22 @@ function Case({ at, beat, onNext, len, drill, visits, night, onExit }: PlaceProp
   );
 }
 
-/* ---------- Steps: the side path off the stairs ---------- */
-function Steps({ at, beat, onNext, len, drill, level, onExit }: PlaceProps) {
+/* ---------- Steps: every stair has a way off; the flame takes the one from its stair ---------- */
+function Steps(p: PlaceProps) {
+  const { beat, len, drill, level, onExit } = p;
   const st = useCareSettings();
   const side = useMemo(() => trailSide(st), [st]);
   const [going, go] = useExitAfter(onExit, 1100);
   const [timing, setTiming] = useState(false);
+  const [cue, setCue] = useCue();
+  const guide = useMemo(() => trailGuide('steps', { side: side.own ? side.t : undefined }), [side]);
   return (
     <Beats
-      at={at}
-      beat={beat}
-      onNext={onNext}
-      lead={<Text style={s.lead}>{len === 's' ? drill.do : (side.own ? 'Your side path: ' : 'A side path: ') + side.t}</Text>}
-      art={<StepsArt level={level} off={going || timing} />}
+      p={p}
+      guide={guide}
+      onCue={setCue}
+      lead={len === 'm' ? null : <Text style={s.lead}>{len === 's' ? drill.do : (side.own ? 'Your side path: ' : 'A side path: ') + side.t}</Text>}
+      art={<StepsArt level={level} lit={beat >= 1} off={going || timing || cue >= TRAIL_ACT.steps[0]} />}
       dock={
         <>
           {timing && drill.secs ? <DrillClock secs={drill.secs} onEnd={go} /> : null}
@@ -522,6 +690,8 @@ const s = StyleSheet.create({
   center: { alignItems: 'center' },
   map: { marginTop: 12 },
   words: { alignSelf: 'stretch', minHeight: 212, marginTop: 8 },
+  cue: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
+  ask: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted, textAlign: 'center' },
   over: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted, marginBottom: 8 },
   turn: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
   sayL: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.sun },

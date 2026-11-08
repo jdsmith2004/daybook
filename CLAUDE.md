@@ -26,6 +26,12 @@ need, without letting the screen turn into a list of features.
 
 - **Hope first, always.** People lose when they give up hope, not when they slip. A slip after a long stretch is a huge win
   compared with where the person started, and the app says so. Never make a long run feel like something that can be lost.
+- **Hope is not softness: there are stakes (the owner, November 8, 2026).** Not everything is light and happy. The person
+  has to know that not doing the work gives something up, and the app says so plainly and firmly: "you are dimming your
+  fire", a flame that burns lower when the person drifts or keeps feeding the habit, a push to get off the app that is
+  pulling them in. Do not soften a nudge into something cheerful and toothless, and do not push back on stakes as "shame".
+  The line is this: stakes are about the next choice and what it costs, never about who the person is, and never piled on
+  in the hours after a slip, when the job is to bring them back. Earned things (points, level, badges) still stay earned.
 - **No big goals pushed early.** Long goals (like 90 days) can be known about, but the app does not build excitement around
   them until the person has gone at least a week with no slip. Early on, the goals are small and close.
 - **Progress is never all or nothing.** Avoid any count that drops to zero and makes day 89 feel like a disaster. Prefer

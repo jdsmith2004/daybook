@@ -1,5 +1,109 @@
 # What is planned next
 
+## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026; planned, waiting on the owner's answers)
+
+The bishop's note said "Matthew 1-11": Matthew 4:1-11, where Jesus is tempted three times in the wilderness and answers each
+time with "It is written" (Deuteronomy 8:3, 6:16 and 6:13). The owner's sketch: "Are you facing a temptation?", then "No,
+Satan can't get me" (standing firm), then the three scriptures. Mockups: `docs/written-review/1-the-move.png` (the move,
+Latter-day Saint voice, day and night) and `docs/written-review/2-swipe-and-plain.png` (the swipe question and the plain voice).
+
+### Why it helps
+
+It turns a temptation from a verdict into a pattern. Jesus was tempted too, so being tempted is not sin and says nothing
+about who the person is (Hebrews 4:15). The three temptations are the three things an urge still says: _you need this, you
+have earned it_ (the bread), _just a look, nothing bad will happen_ (the temple top: testing it), and _this will make it all
+better_ (the kingdoms: the promise of everything). Seeing the pull as one of three known moves is the calm noticing of the
+craving-help blend: the attack has a pattern, you are not evil, notice it and answer it. Saying the answer out loud is the
+same skill the ride already teaches (naming takes charge; a practiced response cuts craving, Lopez, Ochsner and Kober 2022),
+and the end is Matthew 4:11: then it left, and help came. That is the ride's own promise (urges rise, peak and pass) in His
+words, and for someone of faith it is the identity the app is for: a child of God who stands, not an addict who fights.
+No program is named anywhere.
+
+For Daybook: faith people are a large share of those who quit this habit for good, the owner's own church is the place
+Daybook can spread by word of mouth (a bishop handing it on), and a move that feels made for them is a reason to tell others.
+It stays free, like every care tool.
+
+### The design
+
+- **A move in the ride, not a separate tool.** SOS is already one stream of moves (core `ride.ts`), so "It is written" is a
+  ninth move (`written`, kind `mind`), shown only to people who answered Yes or Somewhat to faith (lessons `godOn`). It is
+  also in Every tool under More, for them only. For faith people it comes second, right after the breath, in their first
+  SOS rides; after that it takes its turn like the others (the heart brings it sooner, Next later). This changes the rule in
+  `faith.ts` that every care tool is the same for everyone: the tools stay the same, and faith people get one more.
+- **Four pages, each running by itself** (the move's own steps bar, Next and the heart underneath as on every move):
+  1. **Name it.** "Are you facing a temptation?" "Jesus was tempted too, three times. Being tempted is not sin." One big
+     answer low: _Yes, I am_ (Stand like He did). Next under it is the way past, as always.
+  2. **Stand firm.** "Say no to it" / "Press and hold. Mean it." A big sun with _No_ in it; holding fills the squiggle ring
+     (about two seconds, a haptic that builds, one firm buzz at the end). When it fills, the line appears: _No. You cannot
+     have me. I am a child of God._ James 4:7 sits quietly under it: "Resist the devil, and he will flee from you."
+  3. **The three.** One page each: the pull on top, struck through (_"You need this. You have earned it."_), one line on what
+     He faced, then His answer big on the sun card, starting _It is written_, with its reference (Matthew 4:4, 4:7, 4:10).
+     "Read it out loud, slowly." A squiggle line fills as it is read (like Your words, about 14 seconds), then the next.
+  4. **Then it left.** Matthew 4:11 on the card: "Then the devil leaveth him, and, behold, angels came and ministered unto
+     him." "It leaves, and help comes. It did for Him, and it will for you." A quiet link reads the whole chapter in the
+     person's own scripture app. Then the ride goes on.
+- **The three voices** (faith.ts `faithVoice`):
+  - `lds`: the King James words (the Church's Bible), "child of God", and the link opens Gospel Library. "Why it works" adds
+    Helaman 5:12 in plain words (built on the rock of the Redeemer, the devil's storm has no power to drag you down), as the
+    God lessons put the Book of Mormon in plain words.
+  - `christian`: the same Bible words and pages, with the link to the Bible app (bible.com, which opens YouVersion when it
+    is there) and 1 Corinthians 10:13 in Why it works (a way to escape).
+  - `plain` (another faith): the same three pulls and the same shape, named _Stand firm_, with plain answers that speak of
+    God and quote no Scripture: "I am fed by more than this." / "I do not need to test it. I already know where it goes, and
+    God is with me here." / "God is enough for me, and what this promises it never gives." No link.
+  - No to faith: the move is not there.
+- **The scripture app link.** Gospel Library takes a universal link that opens the app when it is installed and the page
+  otherwise: `https://www.churchofjesuschrist.org/study/scriptures/nt/matt/4?lang=eng&id=p1-p11#p1` (the Church's deep
+  linking page; the app claims `/study/*` on iOS and is an App Link on Android). For other Christians,
+  `https://www.bible.com/bible/1/MAT.4.1-11.KJV` (KJV is version 1; bible.com opens YouVersion when it is there). Neither needs
+  an Info.plist entry. The catch: with no app installed, both open a browser, and a browser in the middle of an urge is the
+  riskiest place Daybook could send someone. So the words are always shown in Daybook in full, the link is a quiet one on
+  the last page only (never the way through), and it also sits in Why it works for a calm moment.
+- **Words in the app.** All quoted Scripture is the King James Bible (public domain, and the Church's English Bible). Book of
+  Mormon lines are put in plain words, as the God lessons do. The words follow the app's rules: no contractions, so the
+  owner's line becomes "cannot".
+
+### Swiping between moves (the owner's reels idea)
+
+SOS today: each move fills the screen and flows into the next by itself; under it sit the heart, the move's name with dots,
+and a round Next. So the stream is already there; what is missing is that it does not _look_ like there is more, and Next
+is a small button. The proposal (recommended, option A in `2-swipe-and-plain.png`): a swipe up anywhere outside a move's own
+drag area goes to the next move, the page sliding up with the next rising under it, and a swipe down goes back one (new: today
+a passed-over move cannot be brought back). The first time, the page lifts a little on its own to show the next move's name
+peeking at the bottom. Next, the dots and the heart stay for anyone who does not swipe and for screen readers. Fit the shapes
+and the feelings field take drags of their own, so on those two the swipe works only on the controls strip. The other
+choices were sideways like stories (B: its bars at the top would read as a set to finish, and the ride has no end) and
+leaving it as it is.
+
+### The steps, with the effort each needs (on a feature branch, shown on the simulator before any merge)
+
+1. **Core (medium).** `written` in `RIDE_MOVES`, `RIDE_KIND` and the tools list (`urTool`), shown only when `godOn` (a `faith`
+   flag in `RideCan`, and the tool grid filtered the same way), and its early place for faith people in `rideNext`. The words
+   for the three voices in a new `written.ts` (pulls, answers, references, links), the Scripture checked word for word against
+   the King James text. faith.ts's comment says the new rule. Unit tests: never shown on No or a skipped answer, second after
+   the breath in the first rides, its words for each voice.
+2. **The move (medium).** `WrittenMove` in `components/ride/moves.tsx`: the four pages, the hold ring with `WavyRing` and
+   `SQUIGGLE`, haptics, Reduce Motion (the ring fills as a plain line; the words keep the beat), night colors, screen reader
+   lines, and the quiet link through `Linking.openURL`. Its science sheet and its lesson link (a God lesson on temptation if one
+   fits, or a new one later).
+3. **The swipe (medium),** only if the owner says yes: a pan gesture on the ride's Stage (react-native-gesture-handler, with
+   Reanimated), the peek, the one-time lift, swipe down to go back, and the two moves that keep their own drags.
+4. **Check (medium).** format, typecheck, tests, `npx expo export --platform web`, the craft checklist on pictures, and the
+   iPhone release build on the simulator for the owner, light, dark and Reduce Motion.
+
+### Questions for the owner
+
+1. **Who gets it?** (a) Yes or Somewhat to faith, in the three voices, with no Scripture in the plain one (recommended);
+   (b) Latter-day Saints and other Christians only; (c) everyone, with God left out for No. This is the first care tool that
+   is not the same for everyone.
+2. **The words for standing firm.** (a) "No. You cannot have me. I am a child of God." (recommended: it keeps your line and
+   ends on who the person is, and if a slip comes later it does not read as a promise that failed); (b) your words as they
+   are, "No. Satan cannot get me."; (c) His own words, "Get thee hence, Satan."
+3. **Swipe like reels?** (a) Swipe up with a peek, Next kept (recommended); (b) sideways like stories; (c) leave the ride
+   as it is.
+4. **The scripture app.** (a) A quiet link on the last page and in Why it works (recommended); (b) only in Why it works,
+   never in the middle of an urge; (c) a button through the move that opens the app.
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

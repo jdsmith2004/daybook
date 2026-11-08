@@ -103,7 +103,7 @@ export function CheckinBlock({
     return (
       <View style={{ gap: 10 }}>
         <T v="small" tone="muted">
-          Three quick numbers about today, then Goodnight when the phone goes down. Under a minute.
+          Three quick numbers about today and your sleep, then Goodnight when the phone goes down. Under a minute.
         </T>
         <Button label={drafted ? 'Finish my check-in' : 'Check in'} icon="pencil" onPress={() => router.push({ pathname: '/checkin', params: { k: dkey } })} />
       </View>

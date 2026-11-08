@@ -9,6 +9,7 @@
    the sheet here goes in that same change. */
 import { fmtDate, gameCompute, isSupporter, keyOfDate, patOpen, PATTERN_FROM, supPaid, supPerks, TIP_WORDS } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
+import { count } from '@/lib/pulse';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
@@ -24,6 +25,8 @@ import { useStore } from '@/lib/store';
 import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, tipWords, type TipTier, type TipVia } from '@/lib/tip';
 
 export default function Tip() {
+  /* the anonymous counts: the tip page was opened (a tip itself is never counted) */
+  useEffect(() => count('tip_open'), []);
   return PATTERN_FROM != null ? <PatternSheet /> : <TipSheet />;
 }
 

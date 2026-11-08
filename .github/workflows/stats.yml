@@ -1,0 +1,66 @@
+# How Daybook is doing, with no sign-in (the owner, November 4, 2026): Apple's daily downloads and Daybook's own anonymous
+# daily totals, printed in the run's summary. Run it with: gh workflow run Stats (or Actions > Stats > Run workflow).
+#
+# Safe by design:
+# - Reading only. AWS trusts this only on main (OpenID Connect, no stored keys), with a role that can read the totals'
+#   partition of the pulse table and nothing else: never the feedback, never anyone's records (infra/bootstrap, daybook-stats).
+# - Apple's key is a repository secret, masked in the logs. Each part says "not set up yet" until its secret is there.
+# - Neither job runs npm.
+name: Stats
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Days to show
+        default: '14'
+
+permissions:
+  contents: read
+
+jobs:
+  stats:
+    name: Stats
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DAYS: ${{ inputs.days || '14' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Apple
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.ASC_KEY }}
+          ASC_VENDOR: ${{ secrets.ASC_VENDOR }}
+        run: |
+          node scripts/stats-apple.mjs "$DAYS" | tee apple.txt
+          { echo '## Apple'; echo '```'; cat apple.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - id: aws
+        name: Daybook's own counts set up?
+        env:
+          ROLE: ${{ secrets.AWS_STATS_ROLE_ARN }}
+        run: |
+          if [ -n "$ROLE" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else
+            echo 'Daybook: not set up yet (run infra/bootstrap once, then add AWS_STATS_ROLE_ARN; see docs/launch.md, "Stats").' | tee -a "$GITHUB_STEP_SUMMARY"; fi
+
+      - if: steps.aws.outputs.go == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_STATS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - if: steps.aws.outputs.go == 'true'
+        name: Daybook's own counts
+        run: |
+          FROM=$(date -u -d "$DAYS days ago" +%F)
+          aws dynamodb query --table-name daybook-pulse --key-condition-expression 'pk = :c AND sk >= :f' \
+            --expression-attribute-values "{\":c\":{\"S\":\"c\"},\":f\":{\"S\":\"$FROM\"}}" --output json > pulse.json
+          node scripts/stats-pulse.mjs pulse.json | tee pulse.txt
+          { echo "## Daybook's own counts"; echo '```'; cat pulse.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

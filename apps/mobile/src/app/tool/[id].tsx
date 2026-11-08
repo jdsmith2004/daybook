@@ -2,7 +2,7 @@
    now?"; on its own, it closes. An urge ridden out here (the pause's It passed) ends on the one celebration (rode-out.tsx). */
 import { gameCompute, TOOLS } from '@daybook/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { hasScience, ScienceButton, ScienceSheet } from '@/components/ride/science';
 import { RodeOut, type Rode } from '@/components/rode-out';
@@ -18,6 +18,7 @@ import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { urNight } from '@daybook/core';
 import { close } from '@/lib/nav';
+import { count } from '@/lib/pulse';
 import { useFinishTool, useToolExit } from '@/lib/tools';
 import type { Sky } from '@/lib/theme';
 
@@ -44,6 +45,10 @@ export default function Tool() {
   const sos = useSos();
   const finish = useFinishTool(lr === '1');
   const exit = useToolExit(lr === '1');
+  /* the anonymous counts: the tool was opened (tool_<id> says it was finished) */
+  useEffect(() => {
+    if (id) count('tool_' + id + '_open');
+  }, [id]);
   const [step, setStep0] = useState(0);
   /* which way a step slides: on with Next, back with Back */
   const [dir, setDir] = useState<-1 | 0 | 1>(0);

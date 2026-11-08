@@ -616,3 +616,26 @@ describe('the lesson reminder (Lessons first, C2)', () => {
     expect(core.normDay({ d: tk, events: [], p: { ls: ['l1'], lt: -5 } }, tk).p!.lt).toBeUndefined();
   });
 });
+
+describe('the anonymous counts of reminders', () => {
+  const n = (k: string, kind: core.NudgeKind = 'checkin') => ({ id: kind + '-' + k, k: kind, d: k, at: at(k + 'T18:00') });
+  it('counts each delivered reminder once, by kind, and what it was for done that day once judged', () => {
+    const log = { ...log0, plan: [n('2026-10-05'), n('2026-10-05', 'back')] };
+    const did = checkedIn({}, '2026-10-05', '2026-10-05T23:00');
+    /* 20:30: delivered, not judged yet (nothing done, no open soon after) */
+    expect(core.nudgeCounts(log, {}, st, {}, at('2026-10-05T20:30'), true)).toEqual(['nt_checkin', 'nt_back']);
+    const waiting = core.nudgeLearn(log, {}, st, {}, at('2026-10-05T20:30'), true);
+    /* the next day: judged now, and the check-in was done, so it is not counted as delivered twice */
+    expect(core.nudgeCounts(waiting, did, st, {}, at('2026-10-06T12:00'), true)).toEqual(['nt_checkin_did']);
+    expect(core.nudgeCounts(waiting, {}, st, {}, at('2026-10-06T12:00'), true)).toEqual([]);
+  });
+  it('counts nothing the phone did not deliver', () => {
+    expect(core.nudgeCounts({ ...log0, plan: [n('2026-10-05')] }, {}, st, {}, at('2026-10-06T12:00'), false)).toEqual([]);
+  });
+  it('a tap names its kind from the id, and nothing else', () => {
+    expect(core.nudgeTapKind('lesson-2026-10-05')).toBe('lesson');
+    expect(core.nudgeTapKind('back-7')).toBe('back');
+    expect(core.nudgeTapKind('talk')).toBeNull();
+    for (const k of core.NUDGE_KINDS) expect(core.pulseKeys().has('nt_' + k + '_tap')).toBe(true);
+  });
+});

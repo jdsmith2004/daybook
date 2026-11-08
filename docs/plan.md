@@ -33,6 +33,361 @@ Open questions for the owner (not changed):
 What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
 a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS
 pill and urge row (care in reach before setup); points on a slip day for logging it honestly.
+## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
+
+**The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we
+can see how the app's getting used and what to improve." Built on the anonymous counts, with no analytics SDK and no device id.
+Helps the person: it shows which parts help (SOS, reminders, lessons) so those get better. Helps Daybook: it shows where setup
+loses people, who comes back, and whether the tip and account asks land.
+
+**The questions, and the counts that answer them** (all fixed names, small numbers, totals per day; core `pulse.ts`):
+
+- Do reminders work? Per kind (lesson, check-in, wind-down, Sunday, hard hours, come-back, plan): `nt_<kind>` arrived,
+  `nt_<kind>_tap` opened from it, `nt_<kind>_did` what it was for done that day (core `nudgeCounts`, `nudgeTapKind`), and `rem_on`
+  (reminders allowed) once a day. Arrivals are known only on a later open, so the come-back note's rate reads high.
+- Where does setup lose people? `setup_<page>` as before, now sent the same day (below).
+- Who comes back? `act_*` as before, and `ret_7`, `ret_30` once for each phone (opened again 7 or 30 or more days after the first).
+- What is used and finished? `tool_<id>_open` beside `tool_<id>`; `lesson_open` beside `lesson_done`, and `ld_<id>` for which
+  lesson (never the faith lessons); `tab_learn`, `tab_pattern`, `tab_more` once a day.
+- Does SOS help? `sos_rode`, `sos_slip` beside `sos`.
+- Comebacks after a slip: `back_*` as before.
+- Do the asks land? `ask_tip` (once a day), `tip_open`, `acct_open`, `acct_made`. A tip itself is never counted (Apple and Stripe
+  report it, and counting it would add Purchases data).
+
+**One-time openers are counted now.** As the app goes to the background, today's counts so far go once a day (core
+`pulseBatch` early), so someone who opens Daybook once still shows, setup included. What comes later that day goes after it is
+over. A batch now takes off only what it carried, so nothing counted while it is on its way is lost.
+
+**The report.** `scripts/stats-pulse.mjs` (the Stats workflow) shows phones by day, coming back, the setup funnel with its
+biggest drop, reminders per kind, SOS, tools and lessons opened against finished, slips and comebacks, the asks, and a short
+"What this suggests" list, said only once the numbers behind a line reach 10.
+
+**The owner's privacy choices (November 4, "Yes, all three"):** no device id; every count goes without asking, with Off kept
+in More; the App Store label keeps the same category (Usage Data, Product Interaction, not linked). The app side reaches people
+only with the next App Store build.
+
+Effort: high (data and privacy) for the counts and the send; medium for the report and the words.
+
+## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, being built on `keeps-coming`)
+
+**The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's
+like we need dopamine. I lasted about 3 hours and then I broke. That's my main problem with apps: at the end of the day, they
+can't help you." On walks: "While I was walking, I was like, I can't wait to break." On time: "This happens anytime. It can happen
+for days. It surges, but it's still coming." On SOS: "Most of the time I really fight it out. I might grab SOS once, but it's just a
+never-ending battle." On notifications: "You work really hard, then you lose, then it's hard to get motivated, and notifications
+just piss you off." And the goal: "Look through all of the other programs and take what's working. A lot of it can be learning,
+education, visuals, assistance. If you can read my mind, describe what I'm thinking, help me think it out loud and say it out
+loud, and understand what is going on with my brain and how I can beat this." Free, like all care: this is the moment people
+give up on apps, so it is also what earns ratings, word of mouth and tips.
+
+### What the research found (eleven passes, November 3)
+
+Almost nothing tests a porn craving that lasts hours or days. Most of this comes from smoking, alcohol and food, and each finding
+carries its strength.
+
+- **Why the walk did not help.** Craving follows whether use is still possible (moderate to strong). Craving rose step by step as
+  the chance of smoking went from 0 to 100 percent; flight attendants craved most near landing whatever the flight's length;
+  Sabbath-keeping smokers craved less on the Sabbath than on a workday without cigarettes (Dar 2005, 2010; Wertz and Sayette 2001).
+  "I can't wait to break" is the expectation itself. And a walk spent rehearsing the payoff is desire thinking, which feeds the
+  craving (Caselli and Spada, moderate). Movement helps only when attention goes somewhere else.
+- **What the brain is doing** (strong unless marked). Dopamine fires at the cue and the expectation, not the act (Schultz).
+  Wanting and liking are separate systems, and wanting can grow while liking stays flat (Berridge and Robinson), so "this would be
+  amazing" is a forecast, and it oversells. Porn users with a problem show this at the cue, not the image (Gola 2017, moderate).
+  Stress takes the planning brain offline (Arnsten). Craving lives on vivid pictures of the payoff, and a competing picture or a
+  visual task takes their place (Kavanagh, Andrade and May; Tetris, Skorka-Brown). Background urges fade over months (Ussher,
+  smokers), but cue surges can grow for weeks 3 to 5 before they fade (Bedi 2011, moderate). Each urge ridden out lays new learning
+  over the old; the old can wake on a hard day (Bouton). A slip does not erase it; what happens next decides (Witkiewitz).
+- **What changes the moment.** Defusion and urge surfing: the only porn trial, ACT, cut viewing 93 percent against 21 (Crosby and
+  Twohig 2016, 28 men). Smokers taught urge surfing had urges as strong but smoked less: the goal is not fewer urges, it is that an
+  urge stops being an order (Bowen and Marlatt). Talking to yourself by name calms fast, without effort (Kross, moderate; temptation
+  preliminary). Thinking of the long run cut craving a third (Kober 2010). Calm people underestimate how strong a craving will be,
+  so the answers must be written on a calm day (Sayette, the empathy gap). A thought you expected and already answered lands softer
+  (inoculation, strong elsewhere, untested here). If-then plans made ahead (d = .65). Contact with a person before acting
+  (Cochrane 2020 for 12-step, alcohol; Venniro 2018, social reward beat heroin in rats).
+- **The line on saying it out loud.** Say it once, about the craving, then turn to a move ("this is the wanting system firing").
+  Saying it from inside the craving, over and over, in its own words ("it would be so good") feeds it. Pushing the thought away
+  backfires too (Erskine 2010).
+- **The fight, lose, low, restart cycle.** Blaming a slip on something fixed and total predicts a full relapse (the abstinence
+  violation effect); self-compassion after a failure raises the drive to improve (Breines and Chen 2012).
+- **What the programs teach** (their best parts, compiled):
+  - the slide: the fight starts rungs before the edge (Pure Desire's FASTER scale; Candeo's BLAST: bored, lonely, anxious,
+    stressed, tired; Carnes's ritual chain; the ladder used by an LDS men's program, whose founder Daybook must never name, credit or
+    link: charged in 2023, no-contest pleas in 2026, and the Church told leaders to stop referring to him);
+  - name the voice and refuse it (ACT, SMART's DISARM, Rational Recovery's "it, not I", Candeo's responder and director);
+  - allow the wave, do not fight it (ACT, Sara Brewer, MBRP);
+  - play the movie to the end (Candeo, Allen Carr, SMART's cost-benefit);
+  - call before, not after (SA, SAA, ARP step 1, Candeo's two lifelines rehearsed weekly);
+  - your own voice: truth statements recorded in your own voice and played back (Candeo); your own reasons said aloud (motivational
+    interviewing; arguing for the habit is what predicts worse outcomes);
+  - fire drills: rehearse the hard moment on a calm day (Kevin Skinner's emergency drills, Candeo, SMART role-play);
+  - the student chair, not the convict chair: study the game film after a loss (Brewer's Learn and Move On; Candeo's assess,
+    adjust, keep going; ARP's daily accountability);
+  - physiology, not morality: the urge is a body signal, values decide the act (Brewer; moral incongruence research, Grubbs).
+- **Not used:** "dopamine detox", reboot timelines, brain-damage claims, "never, no allowance for a slip" (it breaks hope the first
+  time someone slips), open chat feeds, partner surveillance.
+
+### What Daybook already has, and the real gap
+
+Daybook already teaches much of this: urges are waves (l2), thoughts are not orders (l16), permission thoughts (l18), wanting is
+not liking (l33), the cue comes first (l34), crowd out the picture (l42), play it forward (l44), words from a calm day (l45);
+Talk it through names the replay, the permission thought, the all-or-nothing cliff; SOS has Later, Say it fast, Your words and the
+calm-day note with a voice note. Step 3 of the path is even called Close the door.
+
+So the gap is not content. It is that:
+
+1. the teaching sits in lessons read weeks ago, and nothing hands the right piece back at the right minute of a battle;
+2. everything works for one SOS of a few minutes; nothing walks with a person through hours or days;
+3. nothing predicts the next thought, so each one lands as a surprise;
+4. nothing closes the door, which is the strongest lever there is;
+5. nothing shows a person where they are on the slide, so the fight starts at the edge;
+6. the notes cannot do anything (no action buttons exist), and nothing counts a battle fought outside SOS.
+
+### The design: a map of the battle, and a companion that walks it
+
+**1. The slide: one picture of the battle.** Five stops, from the programs and the science, each with what the mind says there,
+what the brain is doing in one plain sentence, what to say out loud, and one move. Shown as a short line with a dot, "you are
+here", readable in two seconds.
+
+| Stop    | What the mind says                                                                    | What the brain is doing                            | Say it once                                             | The move                               |
+| ------- | ------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- | -------------------------------------- |
+| Drift   | "I'm fine." (tired, lonely, stressed, bored, rushing)                                 | Stress turns the planner down                      | "I am running low."                                     | Meet the need; close the door early    |
+| Spark   | "Huh." (a picture, a mood, being alone)                                               | The wanting system fires at a signal               | "That is a cue, not a need."                            | Change the setting                     |
+| Preview | "This would be amazing."                                                              | A forecast, and it oversells; the picture feeds it | "[Name], that is the preview. It always promises more." | Change the picture; play it to the end |
+| Case    | "I deserve it." "Just once." "It is going to happen anyway." "I can't wait to break." | Permission thoughts, while the door is open        | "That is the permission voice. It is not a decision."   | Close the door; call before, not after |
+| Steps   | Small moves toward it: alone, phone in bed, just browsing                             | The ritual: each step is an exit                   | "This is a step. I can step off."                       | One exit, now                          |
+
+A battle of days moves up and down these stops, with surges. The app keeps the dot where the person last put it.
+
+**2. Reading the mind: "next it will say".** At each stop the app shows the line the craving will most likely use next, from the
+person's own past (the thoughts they named in Talk it through, Say it fast, the slip comeback) and the common ones, with the
+person's own answer under it, written on a calm day: "Next it will probably say: 'You fought all day. You earned it.' You said:
+'Earning it is the oldest trick it has.'" A thought expected and already answered loses its surprise. This is the mind-reading
+the owner asked for, and it is honest: it is the person's own pattern, read back.
+
+**3. Saying it out loud.** One line, once, by the person's name, said aloud ("Say it out loud. Tap when you have."), then straight
+to a move. Never an open "tell me about your craving", which would feed it. Their recorded calm-day voice can say it with them.
+
+**4. The kit, made on calm days.** The battle uses what the person built when calm, because calm people underestimate cravings:
+
+- their signs at each stop (the slide, made personal);
+- the voice's lines and their answers (three to start, more as they learn);
+- how the door closes ("my phone sleeps in the kitchen"; a person to hand it to; a place to go);
+- their person, for a call before, not after;
+- their freedom scene, a few lines in their own words, practiced a minute now and then;
+- a name for the craving's voice, if they want one.
+  Most of it is built by lesson practices (below); the rest lives in My plan as a chapter, "When it keeps coming". The fire drill: a
+  60-second run of the battle on a calm day, so the first real use is not the first use.
+
+**5. In the battle, at any hour.** One touch starts a stretch (an SOS, a strong urge logged, Planning a slip?, a strong check-in),
+and it carries over days until a calm day ends it. Inside SOS, the ride gives way to the slide: the person taps where they are,
+and gets that stop's line, its next thought with their answer, the say-it-once, and the move. The Case stop leads with closing the
+door ("Not today": a Sabbath for today, not a vow forever) and the call. If the door cannot close, postpone in links ("Not before
+3:40"). Body tools stay as a way to take the edge off, never as the answer. Planning a slip? opens on the Case stop; its existing
+paths stay, with closing the door first.
+
+**6. The notes carry the help, and follow the person's energy.** Each note is a move readable on the lock screen, with a button
+that does it: Done (the door), Show me (the next thought and your answer), one line of your freedom scene, Send (your person, the
+text ready), Not before 3:40 (the person sets the next note). No "still there?" buttons. At most one an hour and five a day unless
+the person set a time; none after bed; every other Daybook note held during a stretch. Two unanswered and they stop for the day;
+"Leave me be today" on every note. A slip ends the stretch and the app rests: no notes about the fight. The person restarts it,
+never the app. It learns each person's dose, on the phone. (Needs notification categories, which Daybook does not use yet.)
+
+**7. The brain, taught with pictures.** New lessons, short, each with one moving picture and one practice that builds the kit:
+
+- _The slide_ (the five stops; catch it at Drift; practice: your signs at each stop);
+- _Close the door_ (craving follows the open door: the flight, the Sabbath; practice: how your door closes) — the lesson Step 3
+  is named after;
+- _The preview_ (the forecast that oversells; why the walk did not help; practice: your freedom scene);
+- _Its next line_ (predict the voice and answer it ahead; practice: three lines and your answers);
+- _When it keeps coming_ (surges for hours or days; weeks 3 to 5 can be louder and that is a known pattern; each one ridden out
+  stacks new learning; a slip does not erase it).
+  Lesson 2 stops promising that every wave passes in ten minutes. The week 3 to 5 heads-up also comes as one quiet line on Today.
+
+**8. Watching it work.** The app shows the person their own evidence over weeks, in a chart that reads in two seconds: battles
+fought, hours held, and how high the dot got before it turned. Urges may stay; what changes is how far down the slide they get.
+That is the truthful kind of progress (urges same, behavior different).
+
+**9. After a loss: the student chair.** Rekindle stays first. Then, not as a duty: "You held three hours. That is real." Credit
+for time held grows with the time ("Waited first" no longer stops at 20 minutes; points only go up). Then three taps to rewind the
+film: the stop where it turned, what the voice said there, and one if-then for next time, which becomes a new answer in the kit.
+The next battle starts smarter than the last.
+
+### How it helps, in one paragraph for the owner
+
+A craving wins by surprise, by an open door, by a picture, and by being alone inside your head. This answers each one: the voice
+is predicted and answered by your calm self before it speaks; the door is closed for today so the forecast loses its fuel; another
+picture takes the payoff's seat; you say once, out loud, what is happening, and call a person before, not after; and the app walks
+with you for hours or days, quietly, at your pace. It will not make urges vanish. It makes them predictable, smaller, and not
+orders, and every battle teaches the next one.
+
+### The build, in parts (each on its own branch, shown on the simulator before it merges)
+
+1. _The stretch_: detection, carrying over days, the notes with action buttons, pace and quiet rules, SOS on the slide with the
+   Case stop and the door (high: runs while the app is closed and stores state).
+2. _The mind_: the slide picture, "next it will say" with the person's answers, say it once by name, the kit chapter in My plan
+   and the fire drill (medium for screens and words; high for the plan fields, since settings sync).
+3. _The lessons_: the five lessons with their pictures and practices, the lesson 2 change, the week 3 to 5 line (medium).
+4. _After_: credit for time held, the rewind, the evidence chart (high: touches points).
+
+### Approved (the owner, November 3, 2026), and the visuals come first
+
+The owner approved the design and asked for one thing above all: "I want it to be a repeatable set of actions, mental processes
+that I can visualize, so it is more worldly. I get lost in my head. We need to spend a lot of time on how this looks; this has to be
+one of the best parts of the app." So the order changes: before part 1 is built, the visual language is researched (other apps,
+Daybook's own pictures, the science of drills a person can picture and repeat under stress) and shown to the owner as pictures.
+Every stop becomes a place you can see and a drill you can do with your body, the same way every time. On the program flag: the
+owner cares whether it works, not about legal risk. The app still names no program's founder; the ideas are credited to the
+research behind them.
+
+### The look: the trail (mockups in docs/keeps-review, November 3, 2026)
+
+Three research passes (other apps, Daybook's own pictures, the science of drills) agreed on one shape. No quit app shows what is
+happening inside a craving; they count days and offer a panic button, so this is where Daybook can be the best. A fixed routine
+holds under pressure (sport routines, g = .70 under pressure, Rupprecht 2021; the content mattered less than having a fixed order),
+an if-then plan resists derailing (d = .77), and picturing the steps beats picturing the outcome (Pham and Taylor 1999).
+
+- _One world, the same everywhere._ The slide becomes **the trail**: one night landscape that runs downhill, with five places on
+  it, each an object you can see with your eyes closed. Drift is a post of four lights with one low (hungry, angry, lonely, tired).
+  Spark is a spark landing in dry grass. Preview is a frame that glows too bright. Case is a door with a knock at it. Steps is a
+  stair down to the edge. Every place has a mint side path off the trail: the exit. The flame is the "you are here" dot.
+  The same trail is the lessons' picture, SOS, the notes, the kit and the evidence chart, so it is learned once.
+- _One drill per place, the same every time:_ a line said once, and one thing done with the body. Drift: "I am running low";
+  find the low light and fill it. Spark: "That is a cue, not a need"; stand up, walk out, leave the phone. Preview: "That is the
+  preview; it promises more"; slide your own picture over it, one long breath out. Case: "Not today"; hold to close the door,
+  then turn the key. Steps: "This is a step; I can step off"; take the side path for ten minutes. If it surges again, go to
+  the place it has reached; nothing is relearned mid-urge.
+- _Screens_ (docs/keeps-review/2-screens.png): Where is it now? (touch the place), At the door (next it will say, your calm-day
+  answer, hold to close, turn the key), Change the picture (slide your scene over the glow, the wave past its top), and a note on the lock
+  screen whose buttons do the move.
+- _Motion_ (for the build): the flame walks the trail to the place touched; the door's light narrows as the hold fills, then a
+  soft heavy haptic as it shuts; the glow blurs and slides away under the person's picture; the light in Drift brightens when
+  filled. Reduce Motion shows each end state. Night colors in either theme.
+- _Avoid_ (from the research): brains, shields, rank badges, a wave that only says "it passes", red or broken motion at Case and
+  Steps, any picture of the act, and arguing with the thought.
+
+### The owner's changes to the trail (November 3, 2026)
+
+The owner liked the look ("excellent, keep going, you are on the right track") and changed three things:
+
+- _No reaching out in the drill._ "For me I do not want it to have reaching out as part of it." The trail asks nothing of another
+  person: Case is now close the door, then turn the key (your own reason, in your words). The safe person stays where it already is
+  in the app, but no move, note button or screen of the trail sends or suggests a message.
+- _The exits lead somewhere._ The first picture felt unfinished ("I only see a couple dots"). Now every exit is a solid mint path
+  down to a valley path, and the valley leads home: a small house with a lit window, trees and fireflies. Stepping off ends at Home
+  (screen 7): "You stepped off at Preview. Two hours and forty minutes held today", with Done, and "It is back" to start again.
+- _It fits the time you have._ Each drill comes in three lengths, chosen once on Where is it now? (10 seconds, 2 minutes, 10 or
+  more) and remembered:
+
+| Place   | 10 seconds                    | 2 minutes                                                    | 10 or more                                                 |
+| ------- | ----------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Drift   | Name the low light            | Fill it the fast way (water, food, rest)                     | Fill it properly (a meal, a shower, a nap)                 |
+| Spark   | Stand up                      | Walk out of the room; the phone stays                        | Change the place: go outside with somewhere to go          |
+| Preview | Say it, one long breath out   | Slide your picture over the glow; ride the wave past its top | Play your picture forward: the next hour, tomorrow morning |
+| Case    | "Not today": close the door   | Read its next line and your answer; turn the key             | Write its case and your answer into the kit                |
+| Steps   | Put the phone face down, away | Take the side path, one planned thing                        | The side path for ten minutes, with a timer                |
+
+Screens: docs/keeps-review/1-trail.png (the world), 2-screens.png (Where is it now with the time, Drift's four lights, Spark's
+walk out, Preview's picture), 3-screens.png (Case's door and key, Steps' side path with the timer, Home, the lock-screen note,
+whose buttons are now Not today, Show me where I am, Not before, and Leave me be today).
+
+### Part 1, built on `keeps-coming` (November 3, 2026; not merged until the owner has seen it on the simulator)
+
+- Core `trail.ts`: the five places, each drill in three lengths, Drift's four lights and how to fill each, the lines the
+  permission voice may say next with an answer, the person's own picture (Play it forward), key (note, reason, or who
+  they are becoming) and side path (their urge plan), and the stretch kept in the SOS memory on the device, carried over
+  hours and days and ended by half a day of quiet. Reaching home saves an urge ridden out, like SOS.
+- The app: `app/trail.tsx` and `components/trail-art.tsx`. Where is it now (the map; the person's own flame walks to the
+  place touched; the length chosen once and remembered), the five places with their pictures (the lights fill, the flame
+  walks out the door, the picture slides over the glow while the wave passes, the door is held shut and the key turns, the
+  flame takes the side path), and Home. Opened from SOS, More, "The trail".
+- The notes: two at a time, an hour apart, never at night (10 PM to 5 AM), no more than five a day, resting after a slip,
+  with the buttons Not today (opens the door), Show me where I am, Not for an hour, and Leave me be today. Two unanswered
+  are the last until the app is opened. The privacy page says what the trail keeps on the phone.
+- Not yet: the person's own lines and answers (the kit, part 2), the lessons (part 3), credit and the rewind (part 4), a
+  way in from Today, and holding other reminders while a stretch is open.
+
+### Open questions for the owner
+
+- Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls permission.
+  Worth applying for?
+- Meetings in the Case stop: a neutral list (SMART, 12-step, and the Church's Addiction Recovery Program for those who said faith
+  plays a part), linking to each group's own schedule, or leave them out.
+- The person's name in "say it once": ask for a first name in setup (stays on the phone), or use "you".
+- The five stops' names: Drift, Spark, Preview, Case, Steps.
+  Kept by the owner (November 3, 2026), after being told they are a compilation of proven programs (FASTER, BLAST, Carnes's
+  ritual chain, the therapy model's permission-giving thoughts) with names of our own. Each place shows what it means in plain
+  words on the map, and the thought heard there on its screen, because the pictures alone did not say where a person was.
+- The places teach in beats, like a lesson, without the lessons' campfire or flip card (the owner, November 3, 2026: "it got
+  my attention, and then it did nothing with it"): the thought it whispers, what it really is, then the line to say once and
+  the move. At 2 minutes the move is a real two minutes: how strong it is, eight cues of fifteen seconds that go on by
+  themselves while the place's picture acts them out and the wave rises and falls, then how strong it is now, said back
+  ("From strong to a little. That was you."; if not lower, "Two more minutes"). Basis: a picture held in the mind's eye
+  crowds out a craving's picture (elaborated intrusion theory; Skorka-Brown 2015). Steps' thought is the one a person who
+  knows the habit has: "I know where this is going, and I am going anyway", and its picture shows a way off every stair.
+- The 2 minutes work on what the person writes (the owner, November 4, 2026: "have me write down what I'm thinking"; "it's
+  in the right direction, but … not good enough"). After how strong it is, two short questions, each skippable: "What is it
+  pushing you to do?" and "What is it showing you?" The cues say those words back and work on them (naming a craving in
+  words takes some of its pull: affect labeling, Lieberman 2007). Cue 7 is a mirror, by the owner's choice over a warning
+  about escape theory: the front camera shows their face, nothing recorded, "Is this who you want to be?", and the last cue
+  answers with hope. Very strong opens SOS first, with "Walk it here instead"; still strong after walks it through again,
+  SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
+  written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
+
+## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; Walk it through built on `keeps-coming`, not merged)
+
+The ask: "I want it to actually teach, walk me through the steps, the science, what's going on … interactive, challenge me to
+write and think and explain"; a blend of a faith-based attack analysis (God, the attack has a pattern and science behind it,
+you are not evil) and a calm coach's "this is not overwhelming, notice it and handle it"; "both" during and after; "a mix"
+of taps and writing, the way a therapist would talk someone through it. Research: side-session notes trail-research-programs,
+-science, -therapists (four agents). The best evidence: ACT for porn (Crosby and Twohig 2016: 93% less viewing, nearly all
+participants Latter-day Saints), DBT chain analysis (Rizvi), urge surfing, defusion, implementation intentions, and MI
+scaling questions.
+
+Rules that came out of it: never ask what does not vary (the act is always the same; ask the line, the body, the feeling
+underneath, the place, the time); tap first, write at two moments; say their words back, then add one fact; every brain
+fact ends with what changes it (biology alone raises hopelessness); no "15 minutes" promise, show their own numbers; day
+and night versions of every action; no war or chemistry pseudo-science; faith lines only with faith on, in their voice.
+
+**Walk it through (during, about four minutes).** The map becomes a result, not a question: the person never has to know
+which place they are at.
+
+1. Nothing has gone wrong: urges come back, this one has a pattern, notice it and handle it. (Faith: an urge is not a sin.)
+2. How strong, 0 to 10. 8 and up: SOS first. Then "Why a 6, and not a 9?" (what is already holding it down), said back.
+3. Notice it: where in the body, what it is like, "What is so bad about that?"; then the alarm, and how alarms unlearn.
+4. The line: "What is it telling you?" (just once, I deserve it, nobody will know, I already blew it, I cannot focus until
+   I do, too tired to fight, own words); the true answer to that line; "I am having the thought that …"; then they write
+   their own answer.
+5. Underneath: what it is trying to fix (bored, lonely, stressed, tired, angry, sad, just habit); the fact for that need and
+   the move for it, by the time of day.
+6. "Where are you with it?" (just noticed, picturing it, arguing with it, already reaching): the flame lands on the place,
+   and the map shows how far from the edge.
+7. Ride it: two minutes of room, guided with their own words, while the place's picture acts.
+8. Explain it back: one line in their words, then the chain built from their taps.
+9. How strong now; down is "That was you", still loud walks it through again from "What brought it back?"
+10. It may come back: when, and "then I will …", saved. An urge ridden out feeds the flame.
+
+**Look back (after the trail, or after a slip; the LBA idea).** No verdict; where it started on the trail; why today; the
+first small yes and what they told themselves; after a slip, what it gave them for a minute; the chain said back; where to
+cut it next time, and the if-then in their words, saved to the log and the plan. Ends on hope; nothing earned is lost.
+
+**It takes the place of Planning a slip (the owner, November 4, 2026: "Planning a slip just doesn't work that well so we're
+switching to this; you can pull the best parts from planning a slip into this").** The owner also kept the trail: "the issue is in
+delivery". So the trail now opens on the walk, and "I know where I am" opens the map as before. Today's second button, the
+check-in's door, SOS's More and a lesson's link now say Walk it through and open the trail. Kept from Planning a slip: its
+permission thoughts and their research (now the lines, each with a true answer and a fact), the need underneath with Daybook's
+own moves and "Held 3 of 4 times" tags, the person's own reasons ("why a 6, not a 9?"), the body words, and the plan: a walk
+is saved as a talk-through (p.tt, so it syncs) with a change plan, so Today's "Your plan" and the next morning's "Did your plan
+hold?" work as they did. What only a walk keeps is `wk` (strength before and after, the line, their answer, their explanation,
+the need, the place), checked by `normWalk`. Left out on my judgment: the eyes-open go-ahead and decide-later paths (they
+plan around a slip rather than through the urge); old talk-throughs still open at /talk, so nothing earned or written is lost.
+
+**Built (core `walk.ts`, test/walk.test.ts; app `components/walk.tsx`):** all ten parts, faith lines only for people of faith,
+SOS first at 8 and up, never bed by day, nothing that reaches out to anyone, the two minutes saying back the line and the
+person's answer at every place. Checked on the web end to end, and on a release build on the simulator.
+
+**Steps (Opus effort):** the script and its tests (medium, done); the screens (medium, done); the walk saved as a plan with the
+morning look back (high, done); Look back after a slip, linked from Already happened, writing the chain and the next if-then
+(high, next); the owner's look on the simulator before merging.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

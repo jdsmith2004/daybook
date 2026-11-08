@@ -285,7 +285,7 @@ export const setUrOff = (st: Settings, id: string, on: boolean): Settings =>
 /** "Would you use this again?": d is +1 for Yes and -1 for Not really (or the change, when the answer is changed) */
 export const rateUrTool = (st: Settings, id: string, d: number): Settings =>
   changeSettings(st, (s) => {
-    if (!(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
+    if (id !== 'written' && !(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
     s.urLike = { ...(s.urLike && typeof s.urLike === 'object' ? s.urLike : {}), [id]: Math.max(-3, Math.min(3, urLikeOf(s, id) + d)) };
   });
 export const setCelebrate = (st: Settings, on: boolean): Settings => changeSettings(st, (s) => void (s.celebrate = on));

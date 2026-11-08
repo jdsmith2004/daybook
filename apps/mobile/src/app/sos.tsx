@@ -16,9 +16,11 @@ import {
   addEvent,
   blankP,
   changeDay,
+  faithVoice,
   famOfWord,
   feelTrigOf,
   gameCompute,
+  godOn,
   newUrge,
   rateUrTool,
   RIDE_MOVES,
@@ -36,6 +38,7 @@ import {
   urTool,
   urWon,
   withDay,
+  writtenWords,
   type UrState,
 } from '@daybook/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -125,7 +128,10 @@ export default function Sos() {
 
   /* My reasons is a move only when there are words of your own (a note, a reason or a voice note) */
   const words = !!(snap.settings && urFromYou(st, 0)) || !!voice.uri;
-  const can = useMemo(() => ({ words }), [words]);
+  /* It is written, for people who said faith plays a part (core written.ts) */
+  const faith = godOn(st);
+  const can = useMemo(() => ({ words, faith }), [words, faith]);
+  const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {
     if (!ur || seq.length) return;
@@ -447,8 +453,6 @@ function More({ open, night, onClose, children }: { open: boolean; night: boolea
     </Modal>
   );
 }
-
-const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
 
 /* ---------- the end of a practice ride ---------- */
 function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }) {

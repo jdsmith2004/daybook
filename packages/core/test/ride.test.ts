@@ -116,3 +116,33 @@ describe('after the ride', () => {
     expect(core.ridePracticeAsk({}, {})).toBe(false);
   });
 });
+
+describe('It is written', () => {
+  const faith = { words: true, faith: true };
+  it('is never in the ride without faith', () => {
+    expect(ride(30)).not.toContain('written');
+  });
+  it('comes right after the sun for faith people, and comes round again', () => {
+    const r = ride(30, {}, st, faith);
+    expect(r[1]).toBe('written');
+    expect(r.filter((x) => x === 'written').length).toBeGreaterThan(1);
+  });
+  it('waits its turn once Next has passed it twice', () => {
+    const sc = core.newUrge(now, 0);
+    expect(core.rideNext(sc, {}, st, tk, now, { pass: { written: 2 } }, faith, ['breathe'])).not.toBe('written');
+  });
+  it('the heart counts for it', () => {
+    expect(core.urLikeOf(core.rateUrTool(st, 'written', 1), 'written')).toBe(1);
+  });
+  it('speaks in each voice: Scripture and the app link for the two Christian voices, none in the plain one', () => {
+    const lds = core.writtenWords('lds');
+    const chr = core.writtenWords('christian');
+    const plain = core.writtenWords('plain');
+    expect(lds.link?.url).toBe(core.WRITTEN_GL);
+    expect(chr.link?.url).toBe(core.WRITTEN_BIBLE);
+    expect(plain.link).toBeNull();
+    expect(lds.pulls.map((p) => p.ref)).toEqual(['Matthew 4:4', 'Matthew 4:7', 'Matthew 4:10']);
+    expect(plain.pulls.every((p) => p.ref === null) && plain.stand.ref === null && plain.end.ref === null).toBe(true);
+    [lds, chr, plain].forEach((w) => expect(JSON.stringify(w)).not.toMatch(/n't|'re|'ll|'ve|can't/i));
+  });
+});

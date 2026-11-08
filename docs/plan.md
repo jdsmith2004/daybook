@@ -1,5 +1,116 @@
 # What is planned next
 
+## Your nights from Apple Health (the owner, November 8, 2026; planned, not built)
+
+**The ask.** Read Apple Health (Apple Watch) and maybe Oura, so body signals can show how the person was doing before a slip
+and in their hard hours, and later help notice when they are struggling. Helps the person: it shows them one true thing about
+their own slips without their typing it. Helps Daybook: it gives Pattern a real reason to pay, and the store page a line
+("works with Apple Health") that people search for.
+
+### What the evidence supports (four research passes, November 8)
+
+- **Short sleep makes craving a little stronger the next day. Moderate.** Within-person diary studies find it: Graupensperger
+  2022 (409 young adults, alcohol and cannabis, about 1 percent more craving per hour of sleep lost) and Freeman and
+  Gottfredson 2018 (122 people in treatment, poorer sleep, more craving next day; craving also worsened sleep). Neither found
+  that one short night predicts use that day. No study tests porn and sleep this way; the few that exist are cross-sectional or
+  found nothing.
+- **Heart rate or HRV predicting an urge in real time. Weak, and not for a consumer app.** The best wrist study (Carreiro 2020,
+  30 people, 4 days) reached about 80 percent accuracy in a lab-style analysis that was not tested on new people or live. Heart
+  rate rises with arousal itself, a walk, coffee, alcohol and a hot room, so a raised pulse in the hard hours cannot be read as
+  an urge. What a person says predicts use better than sensors do (Preston 2018: self-rated craving rose over the five hours
+  before use).
+- **Slow breathing lowers craving. Moderate, and Daybook already has it.** HRV biofeedback cut craving and use days in early
+  recovery (Eddie 2025, JAMA Psychiatry, 115 people, no placebo arm). It works as a tool for everyone, with or without a watch.
+- **Watches measure sleep time well and sleep stages and "stress" poorly.** Total sleep is reasonably good; stage agreement is
+  mediocre (Robbins 2024, Oura 0.65, Apple Watch 0.60 kappa). Consumer stress scores have no strong validation.
+- **One person's log is small.** With 5 to 10 slips, any link is fragile, and checking several signals at once will find one by
+  chance. Late-night scrolling can cause both the short night and the slip.
+
+So Daybook can honestly say: "Your slips so far came more often after short nights", and show the nights. It must never say a
+heart reading means an urge, that a bad night means a slip is coming, or that sleep caused anything.
+
+### What Apple Health and Oura give
+
+- **Apple Health.** `@kingstinct/react-native-healthkit` (16.2, October 2026, Nitro modules, its own config plugin, fits
+  SDK 58 and RN 0.88). Expo has no health module of its own; `react-native-health` is no longer kept up. Read only: pass
+  `NSHealthUpdateUsageDescription: false` and `background: false`. It needs a new native build and HealthKit on the App ID.
+  Apple never says whether reading was denied: no data and "no" look the same, so the words say "nothing from Health yet", never
+  "you said no". Watch data arrives through the phone's Health store; no watch app is needed.
+- **Oura (and Whoop, Garmin) already write sleep and heart rate into Apple Health,** but not HRV, resting heart rate or their
+  scores. So reading Apple Health covers most ring and band owners on iPhone.
+- **Oura directly** can be done with no server (its short-lived client-side login, a fresh sign-in every 30 days), but it needs
+  an Oura membership, its new terms need Oura's written consent to charge for anything built on its data, and it gives only HRV
+  and readiness beyond what Apple Health already has. Not worth it now.
+- **Android** (Health Connect) is a separate library and a Play review of about two weeks. Later, if Android users ask.
+- **App Review:** guideline 5.1.3 forbids ads, data mining and keeping health data in iCloud, and wants the privacy policy to
+  name it. Using it to show the person their own pattern is allowed.
+
+### How others show "you against your own range"
+
+Apple Vitals, Oura and Whoop share the patterns that work: a soft band for "your usual" with one mark for the night, a
+"still learning" state until there are enough nights (Apple 7, Oura 15), saying nothing about one odd night, and never red and
+green. Bearable compares days with a factor against days without it, from 3 days each, and states uncertainty only in words.
+Avoid a single 0 to 100 score (it is chased, and sleep trackers already cause sleep worry in some people: "orthosomnia").
+
+### The design: sleep only, on the card that already exists
+
+Daybook already has nearly all of it. The check-in has an optional "sleep last night" row (`checkin.h`, folded under More),
+the Sunday sleep goal reads it, and Pattern's "What is different on hard days?" card (core `patLeads`, `Pairs` chart) already
+compares sleep before slip days with other nights, once there are 5 check-in days on each side. Few people open More to type
+hours, so the card is mostly empty. Apple Health fills it.
+
+1. **One ask, at a good moment.** On Pattern, where the hard-days card would be, a quiet row: "Add your nights from Apple
+   Health" (iPhone only, never on web or Android). One tap brings Apple's own sheet, asking for sleep only. Never in setup,
+   never after a slip or an SOS. Also in More.
+2. **Read on open, on the phone.** Asleep minutes per night (asleep, core, deep and REM; never in bed or awake; overlaps from
+   phone and watch merged), keyed to the day it ends on, for the last 90 nights. No background delivery.
+3. **Kept on this phone only.** Nights from Health live in their own store on the device, never in `Day`, so they are never
+   synced, backed up to the safe copy, counted in the anonymous counts, or sent anywhere. What the person types in the check-in
+   still wins over Health for that night. The privacy page says this in the same change.
+4. **The picture.** The hard-days card draws the nights as a field of small moons, one per night, its fill the hours slept;
+   the nights before a slip are the ones with a small flame under them. Two moons side by side lead the card, the usual night
+   and the night before a slip, sized by hours: the picture reads in two seconds, and the line under it is the existing one
+   ("You slept less before slip days: 5.9 hours, against 7.1"). It speaks only with 5 slips that have a night on record and a
+   difference of 45 minutes or more (today's rules); until then the card says nothing about sleep. The thresholds stay as they
+   are. Sleep less before slips is the only direction it names as useful: if the person slept more, the line says so plainly
+   and leaves it.
+5. **Turned into hope, not a warning.** The card ends on what to do with it, in Daybook's voice: a short night is a night to go
+   easy and keep the plan close. Nothing on Today changes, no heads-up fires from a short night, and the word "risk" is never
+   used about sleep.
+
+**Left out, and why:** heart rate in the hard hours (the pulse cannot tell an urge from a walk, and showing it invites reading
+meaning into noise); HRV and resting heart rate (weak evidence, and rings and bands do not write them to Apple Health); sleep
+stages and stress scores (poorly measured); any alert that the person is struggling (no study supports it, and a wrong one
+would cost hope). Revisit "noticing when struggling" only if a later study shows it works for the individual.
+
+### Free or Pattern
+
+Reading Health and filling the nights is free: it makes the check-in and the Sunday sleep goal easier, and taking typing away is
+care. The sleep line on the hard-days card goes with the rest of "the deeper pattern" in Daybook Pattern, once `PATTERN_FROM` is
+set (until then it shows to everyone, like the other cards). It sells honestly: a true line from the person's own log, the kind
+`patPreview` leads with. The Hard hours card and every care tool stay free; nothing here moves them. Never Oura-derived data
+behind the paywall without Oura's consent.
+
+### Should it be built now
+
+Not yet, in my view. With about 7 people, we do not know how many wear a watch or a ring, and the card needs 5 slips with nights
+on record before it says anything, so a new person sees nothing from it for weeks. It also means a new App Store build with a
+new permission and a health-data review in a porn-recovery app, which is worth doing once, carefully. Build it when there are
+enough people that some have a watch (say 50), or sooner if the owner wants "works with Apple Health" for the store page.
+Meanwhile, one cheap step helps everyone now: move "sleep last night" out of the folded More row into the check-in itself, as
+one quick choice, so the card fills for people with no watch too.
+
+### The steps, with the effort each needs
+
+1. Sleep as a quick choice in the check-in, out of More (medium: a screen and its words). Can be done now, alone.
+2. Core: a device-only `nights` store, the rule that a typed night wins, and `patLeads` reading both (high: data, and it must
+   never reach sync or the safe copy). Unit tests, including that `Day` and the sync payload never hold a Health night.
+3. The library, the config plugin (read only, no background), a `health.ts` with a web and Android stub, and reading 90 nights
+   on open (high: native build, permissions).
+4. The ask on Pattern and in More, and the moons on the hard-days card (medium: screens), shown on the simulator before it
+   merges.
+5. The privacy page, the App Store privacy label (Health and Fitness, not linked, not tracking) and the review notes (medium).
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

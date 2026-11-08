@@ -1,5 +1,134 @@
 # What is planned next
 
+## Screen Time: the app that pulls you in (the owner, November 8, 2026; planned, not built, waits on the owner's yes and Apple's entitlement)
+
+**The ask** (from the owner's talk with their bishop): notice long use of an app the person picks ("you have been on Instagram
+for two hours and have not opened Daybook today, come do a lesson"); in the person's hard hours, a firmer push to get up and move,
+in the flame's voice ("you are dimming your fire"); if the nudges are ignored, pause the app with a Screen Time shield, only by
+the person's own choice and always undoable. The bad-photos part (Sensitive Content Warning, the adult-website filter) is dropped
+by the owner's choice (November 8, 2026: not worth it). iPhone only. Helps the person: the moment the habit starts is often a
+scroll in the hard hours, and this is the first thing in Daybook that reaches into that moment instead of waiting to be opened.
+Helps Daybook: a real reason to keep it on the phone and to open it daily, and something rivals charge for. Research notes (with
+sources) are in the side-session notes: screen-time-apple-research, -expo-research, -rivals-research.
+
+### What Apple allows (FamilyControls, DeviceActivity, ManagedSettings)
+
+- **The ask.** `AuthorizationCenter.requestAuthorization(for: .individual)` (iOS 16+): the person confirms with Face ID or the
+  passcode. They can take it back at any time in Settings, Screen Time, which lifts every shield at once. The app is not told
+  while it is closed, so it checks on every open.
+- **Picking apps.** Apple's own `FamilyActivityPicker`. Daybook gets opaque tokens only: it never learns which apps, and only
+  Apple's views can draw their names (Settings can show them; a notification cannot). Over about 50 apps, shielding fails
+  silently; categories count as one.
+- **Watching use.** A `DeviceActivityMonitor` extension gets callbacks when a schedule starts or ends and when use of the picked
+  apps passes a threshold inside it (for example 2 hours today, or 10 minutes inside 10 PM to midnight). It cannot read usage
+  numbers. It can read and write a shared App Group, set shields and post a local notification (works for most developers, not
+  promised by Apple). About 6 MB of memory; no network. Schedules must be at least 15 minutes. **Thresholds are known to fire
+  early or twice** on iOS 16 to 26, so the words never claim an exact time ("two hours", not "2:00:00").
+- **Pausing.** `ManagedSettingsStore.shield.applications` covers the picked apps with Apple's shield screen. A
+  `ShieldConfiguration` extension sets its look (background, icon, title, subtitle, two buttons); a `ShieldAction` extension
+  handles the buttons: close, defer, nothing. A shield cannot open Daybook (Apple DTS), so "Open Daybook" closes and posts a note
+  to tap. iOS 26.5 lists `openParentalControlsApp`, untested with individual use: the spike tries it. The main app lifts a shield
+  by clearing the store. Shields have been seen to outlive an uninstall, so "Lift every pause now" is always in More.
+- **Not possible:** an "app opened" signal (one sec relies on a Shortcuts automation the person builds; Apple says apps may not
+  do this for them), the usage numbers, and the app names in anything but Apple's views.
+- **The license (3.3.3(P)):** Screen Time data may not leave the device. So **no anonymous counts at all** come from these nudges
+  or the pause (not even `nt_` arrivals); only the setup page's own `setup_pull` count, which is about setup, not use. Nothing goes
+  in sync or the safe copy. The privacy page says so in one line.
+
+### The design
+
+**Setup, one page after reminders (iPhone only, `ObEnv.screenTime`).** "Which app pulls you in?" The flame big, saying "When it
+has you too long, I will say so. In your hard hours, I will say it louder." Two choices low: **Nudge me** (default) and **Nudge
+me, then pause it**. Main button **Choose the apps** (Apple's ask, then Apple's list); quiet **Skip this one**. A redo of setup
+shows it again only if it was skipped. The flame's line is in `OB_SAY`.
+
+**Long use.** One daily schedule, threshold 2 hours (1, 2 or 3 in More). At most one note a day. The monitor reads the App Group:
+if Daybook has not been opened today, or today's lesson is not done, the note points to the lesson (`/lesson/<id>`, or `/` before
+setup is done); otherwise it says to put the phone down.
+
+**Hard hours.** Core `riskWindow` (risk.ts) already finds the person's two-hour window from the log (weekdays and weekends apart,
+once two slips or six urges cluster). The app turns it into DeviceActivity schedules (one per weekday, under the limit of 20) and
+redoes them when the window moves. Thresholds at 10 and 20 minutes of picked-app use inside the window: two notes. If the pause is
+on, a third threshold at 30 minutes shields the apps until the window ends (`intervalDidEnd` lifts it). Before the window exists,
+only long use runs, and More says "Your hard hours show here once your log finds them."
+
+**The words** (core, `screen-time.ts`, written in the flame's voice under the stakes rule: firm and plain, about the next choice,
+never about who the person is; no app name and nothing about the habit on a locked screen):
+
+- Long use, no lesson yet: "🔥 Two hours in" / "Two hours there today, and no lesson yet. You are dimming your fire. Three minutes
+  with me puts it back."
+- Long use, lesson done: "🔥 Two hours in" / "Two hours there today. Every minute more is a minute your fire does not get. Put it
+  down."
+- Hard hours, first: "🔥 Your hard hours" / "This is when it gets you, and you are on it again. You are dimming your fire. Stand
+  up and walk to another room, now."
+- Hard hours, second: "🔥 Still here" / "This is the choice that counts tonight. Put the phone in another room. If it pulls, open
+  me." With the pause on: "... In ten minutes I rest it, as you asked."
+- **After a slip** (the rest of the slip's day and until the next morning; the main app writes `quietUntil` to the App Group when a
+  slip is logged): no stakes. Long use stays silent; the hard-hours note becomes "🔥 Your hard hours" / "You do not have to fight
+  it alone tonight. SOS is one tap away." and opens `/sos`. The pause still runs if they chose it (it is their own protection),
+  with the same plain shield words.
+- The shield: "Resting until 11 PM" / "You asked me to hold this in your hard hours." then the person's own if-then line from
+  setup when there is one ("When I feel the pull, I will open SOS."). Buttons: **Open Daybook** (closes, posts a note that opens
+  SOS) and **Five minutes** (lifts the shield for five minutes, once per window; then it comes back).
+
+**Where the settings live.** More, a section "Apps that pull you in" (iPhone only, device-only prefs in `prefs.ts`, never in synced
+`Settings`): the picked apps (Apple's labels) opening the picker; After long use (Off, 1, 2, 3 hours); In my hard hours (on, with
+the window under it); Pause it if I keep going (off by default); **Lift every pause now**; one line: "Nothing about your apps
+leaves this phone. You can also turn this off in Settings, Screen Time." Every switch undoes at once, with no lock and no wait.
+If access was taken back in Settings, the section shows one quiet row to turn it on again; Daybook never sends a note about it.
+
+**Free.** It is care that reaches the person at the hard moment, so it is free like SOS (never lock care). It earns by keeping
+Daybook on the phone and opened daily, which is where the tip asks and Pattern sell.
+
+**Mockups:** `docs/screen-time/mockups.png` (setup, the notes on a locked screen, the shield, More).
+
+### How it is built
+
+- **Native side.** First try `react-native-device-activity` (Kingstinct, 0.6.1; picker views, monitoring, shields, App Group,
+  an Expo plugin that adds the three extensions). It is untested on SDK 58 and its plugin pins an old fork of expo-apple-targets.
+  If it breaks, the fallback is a small local Expo module (the `modules/note-folder` pattern) for the ask, the picker and the
+  store, plus `@bacons/apple-targets` 5 for the three extension targets. Either way the build stays CNG on EAS.
+- **Identifiers.** App Group `group.com.jdsmith2004.daybook`; extensions `com.jdsmith2004.daybook.ActivityMonitor`,
+  `.ShieldAction`, `.ShieldConfiguration`, each with Family Controls and the App Group. EAS makes their profiles once Apple
+  approves.
+- **The bridge.** The main app writes to the App Group on every open and change: opened-today day key, lesson done, today's
+  lesson id, the flame level, the if-then line, `quietUntil`, the words. The extensions only read and decide; the rules and words
+  live in core and are tested there.
+- **Testing.** The simulator cannot run monitoring or shields, so this is checked on the owner's iPhone in a development build
+  (no approval needed for that). That breaks the usual "show it on the simulator" step: the owner sees it on their own phone.
+
+### Steps (Opus effort)
+
+0. **The owner: ask Apple for the entitlement now** (below). It takes 2 to 6 weeks or more and nothing ships without it.
+1. Spike on a branch: the native package or module, the three extensions, a development build on the owner's iPhone. Prove: the
+   ask, the picker, a threshold note from the extension, a window crossing midnight, a shield with our words, Five minutes, the
+   lift, `openParentalControlsApp`. (high: native, unknown platform behaviour)
+2. Core `screen-time.ts`: schedules from `riskWindow`, the quiet after a slip, the caps, the words, with tests. (medium)
+3. The bridge and the extensions' logic reading it. (high: if it is wrong, a shield can stay stuck)
+4. Setup page, the More section, Lift every pause, the privacy page line, `setup_pull`. (medium)
+5. App Review notes and a short video for the reviewer (the reviewer's simulator cannot run it). (low)
+6. The owner tries it for a few days on their phone; then 1.4 with the entitlement.
+
+**Cost:** no money (the Apple account is already paid; nothing on AWS). Time: about steps 1 to 4, a few sessions.
+
+**Android and the web.** Later, and smaller: Android can read usage with Usage Access (`UsageStatsManager`) for the same nudges,
+but blocking needs an Accessibility service, which Google Play restricts; so nudges only, when Android has people. The web cannot
+see other apps: the section is hidden there.
+
+### The entitlement: what the owner does (Account Holder, signed in to developer.apple.com)
+
+1. Certificates, Identifiers and Profiles: create the App Group `group.com.jdsmith2004.daybook`, and App IDs for
+   `com.jdsmith2004.daybook.ActivityMonitor`, `.ShieldAction` and `.ShieldConfiguration` (the main app's ID exists).
+2. Open developer.apple.com/contact/request/family-controls-distribution and send one request for each of the four bundle IDs
+   (or one listing all four, if the form allows). Suggested text: "Daybook is a private app that helps an adult change a personal
+   habit. With Family Controls individual authorization, the person, on their own device, picks apps to watch; Daybook sends a
+   reminder after long use or during hours they choose, and, only if they turn it on, shields those apps until those hours end.
+   They can turn it off at any time in the app or in Settings. We use FamilyActivityPicker, DeviceActivity (a monitor extension),
+   and ManagedSettings with ShieldConfiguration and ShieldAction extensions. Everything stays on the device: we do not collect,
+   send, sell or analyze Screen Time data. Primary purpose: personal device usage management for an individual."
+3. Keep the confirmation. No answer in about two weeks: open a Developer Support case (Entitlements) with the request details.
+4. When approved, tell Claude: it turns on Family Controls (Distribution) for each ID, and EAS rebuilds the profiles.
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

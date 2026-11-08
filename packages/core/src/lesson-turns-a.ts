@@ -87,7 +87,7 @@ export const TURNS_A: Record<string, Turn> = {
     key: 'Not by itself. The hurt can measure how much you care about what you hold. Name which ache is loudest.',
     np: 'What bothers me most, in one sentence',
     hook: {
-      h: 'You slipped once this month, and the guilt will not let up.',
+      h: 'Say you slipped once this month, and the guilt will not let up.',
       say: 'Does a hurt this big mean you are out of control?',
       more: 'Many people read their guilt like a gauge: the worse it feels, the worse the habit must be. This lesson is about what the gauge is measuring.',
     },

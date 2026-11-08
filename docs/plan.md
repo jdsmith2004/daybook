@@ -33,6 +33,7 @@ Open questions for the owner (not changed):
 What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
 a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS
 pill and urge row (care in reach before setup); points on a slip day for logging it honestly.
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

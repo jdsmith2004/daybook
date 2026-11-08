@@ -1,6 +1,6 @@
 # What is planned next
 
-## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026; planned, waiting on the owner's answers)
+## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026: "Let's do the Matthew 4 through 11"; built on `written-sos` with the recommended answers, not merged until the owner has seen it on the simulator)
 
 The bishop's note said "Matthew 1-11": Matthew 4:1-11, where Jesus is tempted three times in the wilderness and answers each
 time with "It is written" (Deuteronomy 8:3, 6:16 and 6:13). The owner's sketch: "Are you facing a temptation?", then "No,
@@ -90,6 +90,23 @@ leaving it as it is.
    Reanimated), the peek, the one-time lift, swipe down to go back, and the two moves that keep their own drags.
 4. **Check (medium).** format, typecheck, tests, `npx expo export --platform web`, the craft checklist on pictures, and the
    iPhone release build on the simulator for the owner, light, dark and Reduce Motion.
+
+### Built on `written-sos` (November 8, 2026), with the recommended answers
+
+The owner said go ahead before answering the questions, so the build takes each recommendation; every one is a small change
+if the owner chooses another. Steps 1, 2 and 4 are done; step 3 (the swipe) waits for the owner's answer.
+
+- Core: `written.ts` holds the words for the three voices and the two links. `ride.ts` has `RIDE_FAITH` (kept out of
+  `RIDE_MOVES`), a `faith` flag in `RideCan`, its weight (the heart raises it, Next lowers it), its place right after the
+  breath while fewer than five urges have been ridden out (unless Next passed it twice), and its Why it works, which opens the
+  God lesson Tempted is not fallen (g8). `rateUrTool` takes it, so the heart works. Tests in `ride.test.ts`.
+- It is a ride move only, not one of the legacy `TOOLS`. So it is not in Every tool under More, and the tool lists,
+  the anonymous counts (no new `PULSE_KEYS`, so the privacy page does not change) and the golden records stay as they were.
+  Being in Every tool would mean adding it to `TOOLS`, with a new count on the privacy page. That can come later if wanted.
+- The move: `WrittenMove` in `components/ride/moves.tsx`, the four pages as planned. The hold uses `WavyRing` (still while
+  holding, crawling once it fills), ticks as it fills and a firm buzz at the end. A screen reader's tap says no at once.
+- Not done yet: the link in the Why it works sheet (it is only on the last page), and the swipe.
+- Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
 
 ### Questions for the owner
 

@@ -12,20 +12,16 @@ Fixed, as clear seams (medium):
 - Weeks said "with no slip" in its label and again in the sentence under the number. The sentence is now "21 days in 4 weeks. They stay yours."
 - Days' "No-slip days in all" broke onto two lines under SOS; it is "No-slip days".
 
-Open questions for the owner (not changed):
+The owner's answers (November 8, 2026):
 
-1. **The days before Day 1 count differently on one tab.** Pattern's first card ("21 of 22 days had no slip") and Weeks ("21 days") count the
-   logged days before Day 1 as no-slip days; Days, Today, My numbers and Milestones count from Day 1 (14). The same person sees 21 and 14 on
-   one tab. Recommendation: count from Day 1 everywhere (core `patDoing` and `patWeeks`), and show the days before as Logged, as Days does.
+1. **The days before Day 1.** Decided and built (the owner, November 8, 2026): once Day 1 has come, Pattern's first card, Weeks and the
+   Sunday review's week strip count no-slip days from Day 1, as Days and Today do; a week all before Day 1 leaves Weeks.
 2. **Slip color across the app.** Decided (the owner, November 8, 2026): amber everywhere, violet only where orange means a no-slip day
    (the Days month, the Days log, Weeks). Recorded in docs/design-standards.md.
-3. **Three kinds of week.** Days' log groups by weeks counted from Day 1 ("Week 4 · Oct 29 to Nov 4", Thursday to Wednesday); Weeks and the
-   Sunday review use Monday to Sunday; the month starts on Sunday. Recommendation: the log groups by the same Monday to Sunday weeks as
-   Weeks, named the same way ("This week", "Oct 12 to 18").
-4. **A lesson beat that reads as a fact about the reader.** Lesson 4 opens "You slipped once this month, and the guilt will not let up."
-   To someone with no slip, or many, it is not true. Recommendation: "Say you slipped once this month..." (lesson words are the owner's, so not touched).
-5. **"Paused 10 min 0% of the time"** in My numbers reads as a failure. It comes from the frozen legacy rules (the golden fixtures hold it).
-   Recommendation: leave the number out when it is 0, with the fixtures updated in the same change.
+3. **Three kinds of week.** Built: the Days log groups by the Monday to Sunday weeks of Weeks and the Sunday review.
+4. **A lesson beat that read as a fact about the reader.** Built: lesson 4 opens "Say you slipped once this month...". Other openings
+   still state a slip as fact ("You slipped last night...", "You slipped again, the same week you prayed..."); they can follow if wanted.
+5. **"Paused 10 min 0% of the time".** Built: the pause share shows only once a pause has been used (golden fixtures updated by hand).
 
 What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
 a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS

@@ -38,11 +38,14 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { OB_CREED } from './faith';
+import { HABIT_MEDICAL, habitIn, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
     then, thenT, thenOwn, rs, own, person), and be (who I am becoming). */
 export interface SetupAnswers {
+  /** what the person is quitting (habit.ts); none means porn */
+  habit?: string;
   aim?: string;
   freq?: string;
   mins?: string;
@@ -98,22 +101,27 @@ export const obCount = (m: CountMode | string) =>
 /** counting has started: Day 1 is today or earlier */
 export const obStarted = (st: Settings | null, tk: DayKey) => !!(st && st.day1 && st.day1 <= tk);
 /** the goals on offer. Once counting has started they keep the Day 1 the person has, and the tracking week is behind them. */
-export function obGoals(st: Settings | null, tk: DayKey): Goal[] {
-  if (!obStarted(st, tk)) return SETUP_GOALS;
+export function obGoals(st: Settings | null, tk: DayKey, h: Habit = habitOf(st)): Goal[] {
+  const say = (g: Goal): Goal => (h === 'porn' ? g : { ...g, goal: habitSay(g.goal, h) });
+  if (!obStarted(st, tk)) return SETUP_GOALS.map(say);
   const d = obDate(st!.day1);
-  return SETUP_GOALS.filter((g) => g.id !== 'week').map((g) => ({
-    ...g,
-    ...(g.id === 'now'
-      ? { t: 'Quit, keep counting', s: 'Day 1 stays ' + d + '.', goal: 'Quit porn. Log honestly, slips included.' }
-      : { s: 'Screens off first. Day 1 stays ' + d + '.' }),
-  }));
+  return SETUP_GOALS.filter((g) => g.id !== 'week').map((g) =>
+    say({
+      ...g,
+      ...(g.id === 'now'
+        ? { t: 'Quit, keep counting', s: 'Day 1 stays ' + d + '.', goal: 'Quit porn. Log honestly, slips included.' }
+        : { s: 'Screens off first. Day 1 stays ' + d + '.' }),
+    }),
+  );
 }
+/** the habit of a setup in progress: the answer given, or the one kept */
+export const obHabit = (a: SetupAnswers, st: Settings | null): Habit => normHabit(a.habit) || habitOf(st);
 export const obSug = (a: SetupAnswers, st: Settings | null, tk: DayKey) => {
   const g = obSuggest(a);
   return g === 'week' && obStarted(st, tk) ? 'now' : g;
 };
 export const obGoal = (a: SetupAnswers, st: Settings | null, tk: DayKey): Goal =>
-  obGoals(st, tk).find((g) => g.id === a.goal) || obGoals(st, tk).find((g) => g.id === obSug(a, st, tk))!;
+  obGoals(st, tk, obHabit(a, st)).find((g) => g.id === a.goal) || obGoals(st, tk, obHabit(a, st)).find((g) => g.id === obSug(a, st, tk))!;
 /** the Day 1 a goal sets. Once counting has started, a walk-through never moves it (undefined). */
 export function obDay1(g: Goal, st: Settings | null, tk: DayKey): DayKey | undefined {
   if (st && st.day1 && st.day1 <= tk) return undefined;
@@ -223,10 +231,26 @@ export const OB_SECS: [string, string, string, string][] = [
   ['hour', 'Your hardest hour', 'mint', 'life'],
   ['plan', 'Your plan', 'sun', 'shield'],
 ];
+/** the five statements (the Brief Pornography Screen) and the page after them are for porn only */
+const forPorn = (a: SetupAnswers) => habitIn(a) === 'porn';
 /* The order is a story in three acts (the owner, October 22, 2026): you, your hardest hour, your plan. */
 export const OB_PAGES: ObPage[] = [
   { id: 'hello', s: 'you', k: 'hello' },
   { id: 'how', s: 'you', k: 'how' },
+  /* what the person is quitting (habit.ts, the owner, November 8, 2026): first, so every question after it uses its words */
+  {
+    id: 'habit',
+    s: 'you',
+    k: 'tiles',
+    key: 'habit',
+    list: OB_HABIT,
+    h: 'What do you want to quit?',
+    sub: 'Every tool works the same for each one.',
+    cols: 1,
+    auto: 1,
+    keep: 1,
+    art: 'flame',
+  },
   {
     id: 'aim',
     s: 'you',
@@ -304,12 +328,12 @@ export const OB_PAGES: ObPage[] = [
     art: 'star',
     need: (a) => a.faith === 'big' || a.faith === 'some',
   },
-  { id: 'b0', s: 'you', k: 'bps', n: 0 },
-  { id: 'b1', s: 'you', k: 'bps', n: 1 },
-  { id: 'b2', s: 'you', k: 'bps', n: 2 },
-  { id: 'b3', s: 'you', k: 'bps', n: 3 },
-  { id: 'b4', s: 'you', k: 'bps', n: 4 },
-  { id: 'heard', s: 'you', k: 'heard' },
+  { id: 'b0', s: 'you', k: 'bps', n: 0, need: forPorn },
+  { id: 'b1', s: 'you', k: 'bps', n: 1, need: forPorn },
+  { id: 'b2', s: 'you', k: 'bps', n: 2, need: forPorn },
+  { id: 'b3', s: 'you', k: 'bps', n: 3, need: forPorn },
+  { id: 'b4', s: 'you', k: 'bps', n: 4, need: forPorn },
+  { id: 'heard', s: 'you', k: 'heard', need: forPorn },
   {
     id: 'costs',
     s: 'you',
@@ -371,7 +395,15 @@ export const OB_PAGES: ObPage[] = [
   { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
   { id: 'done', s: 'plan', k: 'done' },
 ];
-export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env));
+export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env)).map((pg) => obPageIn(pg, habitIn(a)));
+/** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
+    doctor line (habit.ts HABIT_MEDICAL) */
+function obPageIn(pg: ObPage, h: Habit): ObPage {
+  if (h === 'porn' || !pg.h) return pg;
+  const out = { ...pg, h: habitSay(pg.h, h) };
+  if (pg.id === 'years' && h === 'other') out.sub = HABIT_MEDICAL;
+  return out;
+}
 
 /** a walk-through starts from the last answers and the plan as it is now */
 export function obPrefill(st: Settings | null): SetupAnswers {
@@ -741,6 +773,11 @@ export const obSay = (id: string, redo = false): string | null => (redo && OB_SA
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {
+  habit: {
+    porn: 'Many people fight this one. You are in the right place.',
+    gambling: 'Then we work on gambling. Every tool here is ready for it.',
+    other: 'Then we work on it together. Every tool here is ready for it.',
+  },
   aim: {
     quit: 'Quit for good. Then that is what we build toward, one day at a time.',
     less: 'Less is a real start. Every hour you take back counts.',
@@ -785,6 +822,19 @@ export function setFaith(st: Settings, faith: 'big' | 'some' | 'no', creed?: str
       const a = (s.onb!.a || (s.onb!.a = {})) as SetupAnswers;
       a.faith = faith;
       if (creed && OB_CREED.some((x) => x[0] === creed)) a.creed = creed;
+    },
+    now,
+  );
+}
+/** what the person is quitting, changed in Settings (habit.ts). The lessons written for porn leave or join the path; nothing
+    finished, earned or logged changes. */
+export function setHabit(st: Settings, habit: Habit, now = Date.now()): Settings {
+  if (!st.onb || !normHabit(habit)) return st;
+  return changeSettings(
+    st,
+    (s) => {
+      const a = (s.onb!.a || (s.onb!.a = {})) as SetupAnswers;
+      a.habit = habit;
     },
     now,
   );

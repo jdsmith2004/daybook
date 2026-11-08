@@ -9,6 +9,7 @@ import { lessonById, slipSteps, type Block, type Go, type Lesson } from './lesso
 import { listAdd, listRemove, LISTS, planAdd, planFind, planRemove, PLAN_THEN_LEN, PLAN_WHEN_LEN, removeReason, saveReason, saveSlip } from './plan';
 import { BE_LEN } from './setup';
 import type { Settings } from './types';
+import { habitOf, habitSay } from './habit';
 
 /** where a ready-made line goes: the urge plan (when + text), reasons, calm moves, the wind-down, words that steady me,
     the slip plan, who I am becoming, the note for hard moments. A copy line is copied, to send to someone. */
@@ -740,7 +741,13 @@ export const PRACTICE: Record<string, PStep> = {
 };
 
 /** the practice step at the end of a lesson */
-export const lessonPractice = (L: Lesson | null): PStep | null => (L && PRACTICE[L.id]) || null;
+export const lessonPractice = (L: Lesson | null, st?: Settings | null): PStep | null => {
+  const P = (L && PRACTICE[L.id]) || null;
+  const h = habitOf(st);
+  if (!P || h === 'porn') return P;
+  /* another habit: the lines to copy say its words (habit.ts habitSay) */
+  return { ...P, items: P.items && P.items.map((it) => ({ ...it, text: habitSay(it.text, h) })) };
+};
 export const practiceOf = (id: string) => lessonPractice(lessonById(id));
 
 /* ---------- one ready-made line ---------- */

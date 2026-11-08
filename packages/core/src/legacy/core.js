@@ -6,6 +6,7 @@ import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { normCreed } from '../faith';
+import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
 import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
@@ -2789,6 +2790,8 @@ function normOnb(o){
  one('aim',OB_AIM);one('freq',OB_FREQ);one('mins',OB_MINS);one('years',OB_YEARS);one('tried',OB_TRIED);one('faith',OB_FAITH);
  /* which faith, after a Yes or a Somewhat (faith.ts) */
  if(normCreed(src.creed))a.creed=src.creed;
+ /* what the person is quitting (habit.ts); none kept means porn */
+ if(normHabit(src.habit))a.habit=src.habit;
  [0,1,2,3,4].forEach(i=>{const v=src['b'+i];if(v==='0'||v==='1'||v==='2')a['b'+i]=v});
  const many=(k,list)=>{if(Array.isArray(src[k]))a[k]=src[k].filter(v=>list.some(x=>x[0]===v)).slice(0,list.length)};
  many('costs',OB_COST);many('when',OB_WHEN);
@@ -3090,7 +3093,7 @@ const HELP_SUBS={
 };
 function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
 const HELP_SRC=[['https://988lifeline.org/','988 Suicide & Crisis Lifeline'],['https://www.crisistextline.org/text-us/','Crisis Text Line'],['https://www.samhsa.gov/find-help/helplines/national-helpline','SAMHSA National Helpline'],['https://www.stopitnow.org/helpnow','Stop It Now helpline'],['https://www.nami.org/','NAMI'],['https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory','NAMI: warmline directory'],['https://openpathcollective.org/','Open Path Collective: prices and membership'],['https://findahealthcenter.hrsa.gov/','HRSA: find a health center'],['https://findtreatment.gov/','SAMHSA: findtreatment.gov'],['https://www.cms.gov/medical-bill-rights/know-your-rights/no-insurance','CMS: Good Faith Estimate'],['https://meetings.smartrecovery.org/','SMART Recovery meetings'],['https://saa-recovery.org/meetings/','Sex Addicts Anonymous'],['https://slaafws.org/meetings','Sex and Love Addicts Anonymous'],['https://sa.org/meetings/','Sexaholics Anonymous'],['https://www.celebraterecovery.com/','Celebrate Recovery'],['https://support.apple.com/guide/iphone/block-apps-app-downloads-websites-purchases-iph3ff83f3b1/ios','Apple: restrict websites'],['https://support.apple.com/en-us/126533','Apple: Screen Time passcode'],['https://cleanbrowsing.org/','CleanBrowsing'],['https://www.cdc.gov/sleep/about/','CDC: sleep']];
-const OB_KEYS=['aim','freq','mins','years','tried','faith','b0','b1','b2','b3','b4','costs','ownCost','when','goal','so','then','thenT'];
+const OB_KEYS=['habit','aim','freq','mins','years','tried','faith','creed','b0','b1','b2','b3','b4','costs','ownCost','when','goal','so','then','thenT'];
 const obLab=(list,v)=>{const x=list.find(o=>o[0]===v);return x?x[1]:''};
 const obCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):'';
 function obTool(t){

@@ -9,8 +9,6 @@ section 10 says how Sonnet critics try to prove each screen generic or out of st
 Fixed, as clear seams (medium):
 
 - Pattern spoke of "clean days" and "Longest stretch"; Days, Today and My numbers say "days in a row with no slip" and "Longest run". Pattern now does too.
-- A day's page showed a slip in amber and orange, while the month, the log and Weeks show it in calm violet (and orange means no slip there).
-  The day's page now uses the Days colors.
 - Weeks said "with no slip" in its label and again in the sentence under the number. The sentence is now "21 days in 4 weeks. They stay yours."
 - Days' "No-slip days in all" broke onto two lines under SOS; it is "No-slip days".
 
@@ -19,9 +17,8 @@ Open questions for the owner (not changed):
 1. **The days before Day 1 count differently on one tab.** Pattern's first card ("21 of 22 days had no slip") and Weeks ("21 days") count the
    logged days before Day 1 as no-slip days; Days, Today, My numbers and Milestones count from Day 1 (14). The same person sees 21 and 14 on
    one tab. Recommendation: count from Day 1 everywhere (core `patDoing` and `patWeeks`), and show the days before as Logged, as Days does.
-2. **Slip color across the app.** Days and Weeks chose calm violet for a slip; the rest still uses amber for it (Pattern's charts, the
-   Sunday review's slip number, the "I slipped" choices in SOS and Already happened). On Pattern, orange means no slip in Days and a slip in
-   the charts. Recommendation: violet for a slip on every record and chart; the amber leaf on the "I slipped" buttons can stay, as the act.
+2. **Slip color across the app.** Decided (the owner, November 8, 2026): amber everywhere, violet only where orange means a no-slip day
+   (the Days month, the Days log, Weeks). Recorded in docs/design-standards.md.
 3. **Three kinds of week.** Days' log groups by weeks counted from Day 1 ("Week 4 · Oct 29 to Nov 4", Thursday to Wednesday); Weeks and the
    Sunday review use Monday to Sunday; the month starts on Sunday. Recommendation: the log groups by the same Monday to Sunday weeks as
    Weeks, named the same way ("This week", "Oct 12 to 18").

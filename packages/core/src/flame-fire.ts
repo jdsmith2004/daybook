@@ -30,6 +30,8 @@ export interface FireOp {
   line?: { width: number; color: string };
   /** a small flame beside the figure, not the figure */
   side: boolean;
+  /** where its held points gather (their middle, or the shape's when nothing holds): a fire burning low pulls its tips back toward it */
+  anchor?: [number, number];
 }
 export interface FireEmber {
   x: number;
@@ -43,6 +45,9 @@ export interface Fire {
   embers: FireEmber[];
   /** the area the fire can reach, in the drawing's units, however high it leaps */
   box: { x: number; y: number; w: number; h: number };
+  /** the top of the main flame (smoke rises from here when it burns low) and its heart (where its last ember glows) */
+  tip: { x: number; y: number };
+  heart: { x: number; y: number };
 }
 
 /** how far a tap makes the fire leap, as a multiple of its idle motion */
@@ -429,8 +434,12 @@ const W3 = 11.9;
 const W4 = 4.3;
 const W5 = 9.7;
 
-/** an outline's control points at a moment (t in seconds). amp: how hard the fire is burning, 1 at rest and FIRE_LEAP at the top of a tap. */
-export function fireMove(op: FireOp, t: number, amp: number): number[] {
+/** how far a fire burning as low as it goes pulls its tips back toward where it holds, as a share of the way */
+export const FIRE_PULL = 0.5;
+
+/** an outline's control points at a moment (t in seconds). amp: how hard the fire is burning, 1 at rest and FIRE_LEAP at the top of a tap.
+    low: how low it burns (flame-low.ts), 0 burning fully and 1 down to embers: the tips draw back toward the body. */
+export function fireMove(op: FireOp, t: number, amp: number, low = 0): number[] {
   'worklet';
   const pts = op.pts;
   const move = op.move;
@@ -452,8 +461,16 @@ export function fireMove(op: FireOp, t: number, amp: number): number[] {
     const l = op.along * lick * w * w * amp;
     const ax = move[j + 2];
     const ay = move[j + 3];
-    out[i] = pts[i] - ay * c + ax * l;
-    out[i + 1] = pts[i + 1] + ax * c + ay * l;
+    let x = pts[i] - ay * c + ax * l;
+    let y = pts[i + 1] + ax * c + ay * l;
+    const an = op.anchor;
+    if (low > 0 && an) {
+      const k = low * FIRE_PULL * w;
+      x += (an[0] - x) * k;
+      y += (an[1] - y) * k;
+    }
+    out[i] = x;
+    out[i + 1] = y;
   }
   return out;
 }
@@ -502,5 +519,44 @@ export function fireOf(level: number, sides = true): Fire {
   }
   x0 = Math.floor(x0 - 1);
   y0 = Math.floor(y0 - 1);
-  return { ops, embers, box: { x: x0, y: y0, w: Math.ceil(x1 + 1) - x0, h: Math.ceil(y1 + 1) - y0 } };
+  /* where each shape holds, and the main flame's top and heart */
+  let tip = { x: (x0 + x1) / 2, y: y0 + 4 };
+  let heart = { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
+  let main = -1;
+  for (const o of ops) {
+    let sx = 0,
+      sy = 0,
+      n = 0;
+    for (let i = 0; i < o.pts.length; i += 2)
+      if (!o.move || o.move[i * 2] === 0) {
+        sx += o.pts[i];
+        sy += o.pts[i + 1];
+        n++;
+      }
+    if (!n) {
+      for (let i = 0; i < o.pts.length; i += 2) {
+        sx += o.pts[i];
+        sy += o.pts[i + 1];
+      }
+      n = o.pts.length / 2;
+    }
+    o.anchor = [sx / n, sy / n];
+    /* the main flame: the biggest moving shape that is not beside the figure */
+    if (o.move && !o.side && o.clip < 0) {
+      const b = boxOf(o.pts);
+      if (b.w * b.h > main) {
+        main = b.w * b.h;
+        let ty = Infinity,
+          tx = 0;
+        for (let i = 0; i < o.pts.length; i += 2)
+          if (o.pts[i + 1] < ty) {
+            ty = o.pts[i + 1];
+            tx = o.pts[i];
+          }
+        tip = { x: tx, y: ty };
+        heart = { x: b.x + b.w / 2, y: b.y + b.h * 0.62 };
+      }
+    }
+  }
+  return { ops, embers, box: { x: x0, y: y0, w: Math.ceil(x1 + 1) - x0, h: Math.ceil(y1 + 1) - y0 }, tip, heart };
 }

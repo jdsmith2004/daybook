@@ -36,6 +36,7 @@ export * from './data';
 export * from './setup';
 export * from './emblem';
 export * from './flame-fire';
+export * from './flame-low';
 export { flameFigureSvg } from './flame-art';
 export * from './sync';
 export * from './graduate';

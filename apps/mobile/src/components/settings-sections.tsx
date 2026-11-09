@@ -665,7 +665,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
           {healthOffered()
             ? sec(
                 'health',
-                'moon',
+                'heart',
                 'Apple Health',
                 health.on ? (nightsN ? 'On · ' + nightsN + ' nights of sleep' : 'On · No nights yet') : 'Off',
                 <>

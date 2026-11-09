@@ -134,11 +134,12 @@ one quick choice, so the card fills for people with no watch too.
 
 ### The steps, with the effort each needs
 
-**Status (November 9, 2026):** steps 2 and 3 are built on `claude/health-sync-710277`, not merged, because nothing in the app
-asks for Health yet and the privacy page has not changed; they merge with steps 4 and 5. On the simulator, Apple's sheet asks
-for Sleep only, read only, with Daybook's words, and the read runs; it was not checked against real recorded nights (the night
-arithmetic is covered by core tests). Left for step 4: the hard-days card's foot still counts check-in days (`patLeads` now
-returns `sleep` counts for it), and the Sunday sleep goal still reads typed sleep only.
+**Status (November 9, 2026):** every step is built on `claude/health-sync-710277`, not merged until the owner has seen it.
+Seen on the simulator (a release build with a made-up log): Apple's sheet asks for Sleep only, read only, with Daybook's
+words; Settings shows "Apple Health · On · 61 nights of sleep"; the hard-days card draws two moons (7.4 h before days with no
+slip, 5.7 h before slip days) with the nights counted under them. Not checked against nights a real watch recorded, and the
+check-in leaving out its sleep step was checked only by its rule, not tapped through. The App Store label does not change (the
+nights never leave the phone); docs/launch.md has the review note.
 
 1. Sleep as a quick choice in the check-in, out of More (medium: a screen and its words). Can be done now, alone.
 2. Core: a device-only `nights` store, the rule that a typed night wins, and `patLeads` reading both (high: data, and it must

@@ -7,6 +7,7 @@ import {
   normPull,
   PULL_DEFAULTS,
   pullBridge,
+  pullDrift,
   pullNoteFor,
   pullNudges,
   pullPauseWords,
@@ -15,6 +16,7 @@ import {
   pullShield,
   pullWindows,
 } from '../src/pull';
+import { lowWords } from '../src/flame-low';
 import type { Days, Settings } from '../src/types';
 
 const st = { ...defaultSettings('2026-10-01'), rollover: 4 } as Settings;
@@ -127,5 +129,27 @@ describe('which note goes', () => {
     expect(pullNoteFor(q, 2, now, true)).toBeNull();
     expect(pullNoteFor(q, 'long', now, true)).toBeNull();
     expect(q.notes.quiet.url).toBe('/sos');
+  });
+});
+
+describe('the notes ignored', () => {
+  const k = '2026-10-12';
+  const night = at('2026-10-12T23:40:00');
+  const f0 = { step: 0, low: 0, idle: 0, was: 0, warn: false } as const;
+  it('burns one step lower that night and the next day, until the part is done', () => {
+    expect(pullDrift(f0, night, {}, st, k, night + 60_000)).toMatchObject({ step: 1, pull: true });
+    expect(pullDrift(f0, night, {}, st, '2026-10-13', at('2026-10-13T12:00:00'))).toMatchObject({ step: 1 });
+    expect(pullDrift(f0, night, {}, st, '2026-10-14', at('2026-10-14T12:00:00'))).toEqual(f0);
+    const done: Days = { '2026-10-13': { p: { ls: ['l1'] } } } as unknown as Days;
+    expect(pullDrift(f0, night, done, st, '2026-10-13', at('2026-10-13T12:00:00'))).toEqual(f0);
+  });
+  it('never in the hours after a slip, and never deeper than it already burns', () => {
+    expect(pullDrift(f0, night, slip({}, k, '22:00'), st, k, night + 60_000)).toEqual(f0);
+    const lower = { step: 3, low: 1, idle: 4, was: 3, warn: false } as const;
+    expect(pullDrift(lower, night, {}, st, k, night + 60_000)).toEqual(lower);
+    expect(pullDrift(f0, null, {}, st, k, night)).toEqual(f0);
+  });
+  it('says why in plain words', () => {
+    expect(lowWords(pullDrift(f0, night, {}, st, k, night + 60_000))?.p).toBe('You stayed on it through your hard hours.');
   });
 });

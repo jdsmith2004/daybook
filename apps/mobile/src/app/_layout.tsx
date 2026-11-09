@@ -27,6 +27,7 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
+import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -197,6 +198,7 @@ function Shell() {
       <NoteCopy />
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
+      <PullKeeper />
       <SetupGate />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>

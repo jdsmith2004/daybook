@@ -167,9 +167,46 @@ of setup the same day); Apps that pull you in in More (long use Off, 1, 2 or 3 h
 wait 10, 30 or 60 seconds; open for 3, 5 or 10 minutes; Lift every pause now; Turn it all off); the wait screen `/pause`; and
 the privacy page line. The phone side talks to a native module `DaybookPull` (`lib/pull.ts`) that is not written yet; until it
 is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIEW=1`, and a store build shows nothing of this.
-**Left, at high effort:** step 1 (the native module and the three extensions, on the owner's iPhone) and step 3 (the bridge:
-writing `pullBridge` on every open, the monitor posting `pullNoteFor`'s note, the pause and its open time, an ignored note
-reported as drift to the flame). Not merged: it waits on those and on the owner's look.
+**The high steps, built November 9, 2026 (steps 1 and 3), not yet run on an iPhone:**
+
+- **Only in a build made with `DAYBOOK_PULL=1`** (`app.config.js`): the Family Controls entitlement, the App Group
+  `group.com.jdsmith2004.daybook`, the three extensions and `DaybookPull` in Info.plist. Store builds are unchanged, so EAS never
+  asks Apple for an entitlement it has not granted. When Apple approves, the store build turns it on (step 6).
+- **The module** `modules/daybook-pull` (Swift): Apple's ask (`.individual`), Apple's app list in a sheet (Done and Cancel; the
+  picked apps kept as opaque tokens in the App Group), `write` (core `pullBridge` for the extensions, and Apple's schedules set to
+  match, only when they change, since restarting a schedule ends it), `lift`, `openFor`, `stop`, `ignoredAt`, `takeWant`. Its `on`
+  is false in any other build, and `lib/pull.ts` then uses the stand-in or nothing.
+- **The schedules:** `pull.long` every day with one event at the person's hours; `pull.hard.<weekday>` for each hard-hours window
+  (two hours, across midnight when it must) with events at 10, 20 and 30 minutes; `pull.open` for the minutes open after the wait
+  (Apple's 15-minute shortest schedule, with the event at those minutes of use).
+- **The extensions** (`targets/`, `@bacons/apple-targets` 5.0.0, sharing `targets/_shared/PullShared.swift`):
+  - **The monitor** posts the bridge's note (core `pullNoteFor`, the same rule in Swift), one of each per day or window. A threshold
+    that comes sooner than it could have is ignored. At 30 minutes it marks the notes ignored, outside the quiet after a slip, and
+    starts the pause if the person chose it, until the window ends. The window's end lifts it. When the minutes open are used, or
+    15 minutes pass, the pause comes back while the window lasts.
+  - **The shield** shows core `pullShield`'s words on the night sky with the flame by its fire.
+  - **The shield's buttons:** Open Daybook uses `openParentalControlsApp` on iOS 26.5 and later; before that it posts a note that
+    opens the wait screen. Either way it leaves `pull.want`, so Daybook opens on `/pause`. Close goes to the Home Screen.
+  - **Notes carry only the screen to open**, never an id, so none is counted (Apple's license).
+- **The bridge** (`PullKeeper` in the root layout) is written on every open, return to the front, change of the log or the choices,
+  and every 15 minutes. It notices access taken back in Settings, and turns it off in More. Choosing the apps also asks for
+  notifications, the same ask the reminders use.
+- **Drift:** core `pullDrift`. The notes ignored burn the fire one step lower that night and the next log day, until the person
+  does their part ("You stayed on it through your hard hours."). Never in the 72 hours after a slip. On this phone only, on Today's
+  flame; the other places that read `fireLow` (the "This lights your fire again" label, the reminders) do not see it yet.
+- **Checked:** core tests, typecheck, and a simulator compile of the app with all three extensions. Apple runs none of Screen Time
+  on a simulator, so the real test is the owner's iPhone.
+
+**To run it on the owner's iPhone (no approval from Apple needed for this):**
+
+1. In Xcode: Settings, Accounts, add the Apple ID of the developer account. Note the Team ID (developer.apple.com, Membership).
+2. On the iPhone: Settings, Privacy and Security, Developer Mode on. Plug it in and trust the Mac.
+3. In `apps/mobile`: `DAYBOOK_PULL=1 APPLE_TEAM_ID=<team id> npx expo run:ios --device --configuration Release`. Xcode's
+   automatic signing makes the four IDs and the App Group, with Family Controls (Development).
+4. In Daybook: More, Apps that pull you in, Choose the apps. Pick one app, set long use to 1 hour, and try it. To see the hard
+   hours at once, the log needs its hard hours (two slips or six urges at the same time of day).
+
+Not merged: it waits on the owner's look on the iPhone.
 
 **The flame dims on the wait screen too (the owner, November 9, 2026, via the flame session).** Once `claude/flame-dims`
 merges, `/pause` uses its pieces (core `flame-low.ts`, `lowXml`, the smoke, the douse and re-light in `big-flame.tsx` and the

@@ -15,6 +15,8 @@
 
    Everything here stays on the phone. Apple's license forbids Screen Time data leaving the device, so no anonymous count comes
    from any of it (pulse.ts), and none of it is in synced Settings: the choices are each phone's own. */
+import { lastSlipMs, LOW_OF, partDone, type FireLow } from './flame-low';
+import { SLIP_HOURS } from './hero';
 import { addDays, eventsOf, isTime, logicalKey } from './legacy/core.js';
 import { lessonDue } from './nudges';
 import { riskAt, riskStartLabel, riskWindow } from './risk';
@@ -203,6 +205,8 @@ export function pullPauseWords(o: { quiet: boolean; open: number; plan: string |
 export interface PullBridge {
   /** the log day it was written for: the extension treats anything older as "not opened today" */
   day: DayKey;
+  /** the hour a log day starts (settings.rollover), so the extension can tell which log day it is now */
+  rollover: number;
   lessonDone: boolean;
   quietUntil: number | null;
   prefs: PullPrefs;
@@ -220,6 +224,7 @@ export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: numb
   const plan = pullPlanLine(st);
   return {
     day,
+    rollover: st.rollover,
     lessonDone: !lid,
     quietUntil: pullQuietUntil(days, st, now),
     prefs,
@@ -243,4 +248,21 @@ export function pullNoteFor(b: PullBridge, kind: 'long' | 1 | 2 | 3, now: number
   if (kind === 1) return 'hard1';
   if (kind === 2) return b.prefs.pause ? 'hard2Pause' : 'hard2';
   return null;
+}
+
+/* ---------- the stakes: the notes ignored ---------- */
+
+/** the fire burns one step lower when the hard hours' notes were ignored (the owner, November 9, 2026: "yes, the flame burns lower
+    for real"). The monitor keeps when Apple saw the full PULL_HARD_AT[2] minutes of use inside the hard hours after both notes
+    (`ignoredAt`, on this phone only). On that log day and the next, while nothing of their part is done that day, the fire burns at
+    LOW_OF[1]; the first thing done lights it again in front of them (Today's re-light, hero.tsx). Never in the hours after a slip (SLIP_HOURS, as fireLow), and it
+    never goes lower than one step on its own: days with nothing done still do that. */
+export function pullDrift(f: FireLow, ignoredAt: number | null, days: Days, st: Settings | null, tk: DayKey, now: number): FireLow {
+  if (!st || ignoredAt == null || ignoredAt > now || f.step > 0) return f;
+  const k = logicalKey(ignoredAt, st.rollover);
+  if (k !== tk && k !== addDays(tk, -1)) return f;
+  const slip = lastSlipMs(days, st, tk);
+  if (slip != null && now - Math.min(slip, now) < SLIP_HOURS * 36e5) return f;
+  if (partDone(days, st, tk)) return f;
+  return { ...f, step: 1, low: LOW_OF[1], was: 1, warn: false, pull: true };
 }

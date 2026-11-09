@@ -176,6 +176,7 @@ merges, `/pause` uses its pieces (core `flame-low.ts`, `lowXml`, the smoke, the 
 fire layers), so it looks the same as Today: the flame opens dimmed with smoke (low about 0.6), since reaching this screen means
 the notes were ignored; Put it down plays the re-light; Open it for a few minutes leaves it dim. The way in: `/pause` draws `BigFlame` with its `low` prop (raising plays the douse, 0 plays the re-light and its sparks) and copies
 the haptics from `hero.tsx`. Never dimmed in the quiet after a slip. Only the glow changes, never the level or form. (medium, after that merge)
+**Built November 9, 2026, after the fire burning low merged (b7eaaa75):** `/pause` draws `BigFlame` with `low` (0.6, `PAUSE_LOW`) and `douse`, the same ticks as Today as it goes down, and Put it down lights it again with Today's knocks before going home. Never dims in the quiet after a slip. Pictures: `docs/screen-time/wait-dimmed.png`, `wait-relit.png`.
 
 **Cost:** no money (the Apple account is already paid; nothing on AWS). Time: about steps 1 to 4, a few sessions.
 
@@ -240,8 +241,7 @@ knock.
 
 Does it help Daybook earn or grow: it gives a reason to come back daily, which is what every ask and every rating rides on; nothing is locked.
 
-Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget, and the dimming on the Screen Time wait screen
-(the Screen Time session).
+Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget. The dimming on the Screen Time wait screen is built on `claude/screen-time-f8b40b`.
 
 ## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
 

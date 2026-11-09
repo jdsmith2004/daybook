@@ -129,7 +129,7 @@ describe('the order', () => {
   });
   it('the Sunday review on Sunday, and still on Monday while it is open', () => {
     /* the first one is a part unlocked: its card opens its own page first (unlock.ts) */
-    expect(pickMoment({}, st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', eb: 'Unlocked', go: 'unlock', v: '2026-10-18' });
+    expect(pickMoment({}, st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your first Sunday review', go: 'unlock', v: '2026-10-18' });
     const done = { '2026-10-11': { sun: {} } } as unknown as Reviews;
     expect(pickMoment({}, st, done, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your Sunday review', v: '2026-10-18' });
     expect(pickMoment({}, st, {}, '2026-10-19', at(19, 10)).card).toMatchObject({ k: 'sunday', h: 'Last week’s review is still open' });

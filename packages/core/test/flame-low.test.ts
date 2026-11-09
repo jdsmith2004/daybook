@@ -47,9 +47,9 @@ describe('what counts as drifting', () => {
 
   it('today does not count against anyone until it is over, and doing something today lights it again', () => {
     const d = lessons(['2026-10-12']);
-    expect(core.fireLow(d, st, tk, now)).toMatchObject({ step: 3, was: 3 });
+    expect(core.fireLow(d, st, tk, now)).toMatchObject({ step: 3, was: 3, warn: false });
     const lit = { ...d, [tk]: core.normDay({ p: { ls: ['l9'] } }, tk) };
-    expect(core.fireLow(lit, st, tk, now)).toMatchObject({ step: 0, low: 0, was: 3 });
+    expect(core.fireLow(lit, st, tk, now)).toMatchObject({ step: 0, low: 0, was: 3, warn: false });
   });
 
   it('a new person is never dimmed for the days before they started', () => {
@@ -68,11 +68,11 @@ describe('what counts as drifting', () => {
 
 describe('the words', () => {
   it('are firm and plain, about the next choice', () => {
-    expect(core.lowWords({ step: 0, low: 0, idle: 1, was: 0 })).toBeNull();
-    expect(core.lowWords({ step: 1, low: 0.4, idle: 2, was: 1 })!.h).toBe('You are dimming your fire');
-    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3 })!.p).toBe('6 days with nothing done. One ember still glows.');
+    expect(core.lowWords({ step: 0, low: 0, idle: 1, was: 0, warn: false })).toBeNull();
+    expect(core.lowWords({ step: 1, low: 0.4, idle: 2, was: 1, warn: false })!.h).toBe('You are dimming your fire');
+    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3, warn: false })!.p).toBe('6 days with nothing done. One ember still glows.');
     for (const step of [1, 2, 3] as const) {
-      const w = core.lowWords({ step, low: 1, idle: 5, was: step })!;
+      const w = core.lowWords({ step, low: 1, idle: 5, was: step, warn: false })!;
       expect(w.h + w.p).not.toMatch(/n't|addict|failure|weak|lazy/i);
     }
   });

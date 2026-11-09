@@ -20,7 +20,7 @@ export class DynamoPulseStore implements PulseStore {
     this.db = DynamoDBDocumentClient.from(client);
   }
 
-  async allow(what: 'batch' | 'feedback' | 'mail', day: string, max: number) {
+  async allow(what: 'batch' | 'feedback' | 'mail' | 'events', day: string, max: number) {
     try {
       await this.db.send(
         new UpdateCommand({

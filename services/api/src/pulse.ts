@@ -37,7 +37,7 @@ export interface Feedback {
 }
 export interface PulseStore {
   /** adds to today's count of `what`; false when it would pass `max` */
-  allow(what: 'batch' | 'feedback' | 'mail', day: string, max: number): Promise<boolean>;
+  allow(what: 'batch' | 'feedback' | 'mail' | 'events', day: string, max: number): Promise<boolean>;
   /** adds counts to the totals of one day and platform, and one to its batches, and one to the version's batches */
   add(day: string, p: string, v: string, c: Record<string, number>): Promise<void>;
   keepFeedback(f: Feedback, ttl: number): Promise<void>;

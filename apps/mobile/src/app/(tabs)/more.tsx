@@ -14,10 +14,12 @@ import { Screen } from '@/components/screen';
 import { SettingsSections } from '@/components/settings-sections';
 import { TipRow } from '@/components/support';
 import { Icon, T } from '@/components/ui';
+import { useCountFocus } from '@/lib/pulse';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 
 export default function More() {
+  useCountFocus('tab_more');
   const { snap, tk } = useStore();
   const params = useLocalSearchParams<{ open?: string }>();
   const scroll = useRef<ScrollViewInstance>(null);

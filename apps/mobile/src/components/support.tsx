@@ -29,6 +29,7 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { countOnce } from '@/lib/pulse';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -70,6 +71,7 @@ export function useLocked(extra: Extra, signedIn?: boolean): boolean {
 /** the card on Today, at a good moment (core tipAsk) */
 export function TipCard() {
   const c = useTheme();
+  useEffect(() => countOnce('ask_tip'), []);
   const { snap, tk, apply } = useStore();
   const done = () => apply(tipAnswered(snap.settings!, tk));
   return (
@@ -139,6 +141,7 @@ export function useTipMoment(why: TipMoment, quiet = false): boolean {
     () => TIP_ON && !!snap.settings && tipMoment(snap.days, snap.settings, tk, new Date(now).getHours(), TIP_URL, { now, sos: urLastAt(sos.mem) }, quiet),
   );
   useEffect(() => {
+    if (ask) countOnce('ask_tip');
     if (ask && snap.settings) apply(tipMomentShown(snap.settings, tk));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ask]);

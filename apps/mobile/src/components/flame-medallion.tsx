@@ -20,7 +20,20 @@ const STARS: [number, number, number][] = [
   [64, 8, 1.5],
 ];
 
-export function FlameMedallion({ level, size, pulse, label }: { level: number; size: number; pulse?: number; label?: string }) {
+export function FlameMedallion({
+  level,
+  size,
+  pulse,
+  label,
+  under,
+}: {
+  level: number;
+  size: number;
+  pulse?: number;
+  label?: string;
+  /** drawn on the sky, behind the flame: the light that gathers when it grows into a new form (celebrate.tsx) */
+  under?: React.ReactNode;
+}) {
   const sc = useMemo(() => emblemScene(level), [level]);
   return (
     <View style={[s.round, { width: size, height: size, borderRadius: size / 2 }]}>
@@ -30,6 +43,7 @@ export function FlameMedallion({ level, size, pulse, label }: { level: number; s
             <View key={i} style={[s.star, { left: `${x}%`, top: `${y}%`, width: r, height: r, borderRadius: r / 2 }]} pointerEvents="none" />
           ))
         : null}
+      {under}
       <BigFlame level={level} size={size} pulse={pulse} label={label} />
     </View>
   );

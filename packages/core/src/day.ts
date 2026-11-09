@@ -60,8 +60,8 @@ export function windWhen(st: Settings, leftToOff: number): string {
 }
 
 /* ---------- the evening check-in ---------- */
-/* Three quick numbers since October 24, 2026: mood (md), urges (u) and stress (s), then Goodnight (sayGoodnight). Sleep,
-   reached out and the one line wait under "More". Motivation (m), connection (c) and energy (e) were asked before: a day
+/* Three quick numbers since October 24, 2026: mood (md), urges (u) and stress (s), then sleep last night (since November 8, 2026), then Goodnight (sayGoodnight).
+   Reached out and the one line wait under "More". Motivation (m), connection (c) and energy (e) were asked before: a day
    that holds them keeps them through an edit, and still shows them (rateKeys). */
 export type RateKey = 'md' | 'u' | 'm' | 'c' | 'e' | 's';
 export interface Rating {
@@ -370,9 +370,9 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
         sky: 'violet',
         ic: 'pencil',
         title: 'Check-in',
-        line: s.done ? said || 'Saved' : 'Three quick numbers, then good night',
+        line: s.done ? said || 'Saved' : 'Three quick numbers and your sleep, then good night',
         head: 'How was today?',
-        body: 'Three quick numbers, then good night. The day is logged.',
+        body: 'Three quick numbers and your sleep, then good night. The day is logged.',
         chips: [HX_NEXT.evening.s || '', pts('evening')],
         btn: 'Check in',
         go: 'checkin',

@@ -163,6 +163,10 @@ export default function LessonScreen() {
     if (ringLit) sos.setMem((m) => ({ ...m, ringNote: tk }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ringLit]);
+  /* the anonymous counts: a lesson was opened (lesson_done and ld_<id> say it was finished, and which) */
+  useEffect(() => {
+    if (L) count('lesson_open');
+  }, [L?.id]);
 
   if (!st) return <Redirect href="/" />;
   if (!L)
@@ -242,6 +246,7 @@ export default function LessonScreen() {
     setGain(g);
     setAgain(a);
     count('lesson_done');
+    count('ld_' + L.id);
     buzz(a ? 'save' : 'lit');
   };
   const step = (d: number) => {

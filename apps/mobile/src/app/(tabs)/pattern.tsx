@@ -45,6 +45,7 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
+import { useCountFocus } from '@/lib/pulse';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -87,6 +88,7 @@ type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
 
 export default function Pattern() {
+  useCountFocus('tab_pattern');
   const sos = useSos();
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'patterns' || params.pane === 'weeks' ? params.pane : 'days');

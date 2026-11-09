@@ -17,6 +17,8 @@ describe('the hard hours', () => {
     expect(core.livePlan(hard, st, tk, at(17))).toBeNull();
     const p = core.livePlan(hard, st, tk, at(18, 40))!;
     expect(p).toMatchObject({ kind: 'hard', url: '/sos', sub: 'Till 10 PM', to: at(22) });
+    /* the bar is the hard hours themselves */
+    expect(p.bar).toEqual({ a: at(20), b: at(22), left: '8 PM', right: '10 PM' });
     expect(core.livePlan(hard, st, tk, at(21, 30))?.kind).toBe('hard');
   });
 });
@@ -28,6 +30,8 @@ describe('the night', () => {
     expect(core.livePlan({}, st, tk, at(0, 30, 21))).toBeNull();
     const bed = { [tk]: core.normDay({ p: { po: '22:50' } }, tk) };
     expect(core.livePlan(bed, st, tk, at(22, 55))).toMatchObject({ kind: 'night', asleep: true, to: at(4, 0, 21) });
+    expect(core.livePlan(bed, st, tk, at(22, 55))!.bar).toMatchObject({ left: '10:50 PM', right: '4 AM' });
+    expect(core.livePlan({}, st, tk, at(21, 40))!.bar).toMatchObject({ left: '9:30 PM', right: '11 PM' });
   });
 
   it('gives way to the hard hours when both fall at once', () => {

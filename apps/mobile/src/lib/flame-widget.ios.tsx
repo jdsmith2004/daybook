@@ -76,7 +76,8 @@ function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: s
   );
 }
 
-type LiveWant = { key: string; img: string; line: string; sub: string; short: string };
+type LiveWant = { key: string; img: string; line: string; sub: string; short: string; a: number; b: number; left: string; right: string };
+const LIVE_FIELDS = ['img', 'line', 'sub', 'short', 'a', 'b', 'left', 'right'] as const;
 /** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none */
 async function syncLive(want: LiveWant | null, url: string, to: number) {
   const note = liveNote();
@@ -88,9 +89,11 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
   }
   const all = FlameLive.getInstances();
   const mine = was && all.find((a) => a.getId() === was!.id);
-  const props = want ? { img: new File(folder(), want.img).uri, line: want.line, sub: want.sub, short: want.short } : null;
+  const props = want
+    ? { img: new File(folder(), want.img).uri, line: want.line, sub: want.sub, short: want.short, a: want.a, b: want.b, left: want.left, right: want.right }
+    : null;
   if (want && props && mine && was!.key === want.key) {
-    if (was!.img !== want.img || was!.line !== want.line || was!.sub !== want.sub || was!.short !== want.short) await mine.update(props, new Date(to));
+    if (LIVE_FIELDS.some((f) => was![f] !== want[f])) await mine.update(props, new Date(to));
     note.write(JSON.stringify({ ...want, id: was!.id }));
     return;
   }
@@ -151,7 +154,14 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
   const plan = ready ? livePlan(snap.days, snap.settings, tk, now) : null;
   const want =
     plan && job
-      ? { key: plan.key, img: nameOf(job.level, plan.asleep ? ASLEEP : job.entries[0].low, true), line: plan.line, sub: plan.sub, short: plan.short }
+      ? {
+          key: plan.key,
+          img: nameOf(job.level, plan.asleep ? ASLEEP : job.entries[0].low, true),
+          line: plan.line,
+          sub: plan.sub,
+          short: plan.short,
+          ...plan.bar,
+        }
       : null;
   const wantKey = want ? JSON.stringify(want) : '';
   useEffect(() => {

@@ -36,6 +36,14 @@ export interface LivePlan {
   short: string;
   /** the screen a tap opens */
   url: string;
+  /** the progress bar: it fills from a to b on its own, with the times at its ends */
+  bar: LiveBar;
+}
+export interface LiveBar {
+  a: number;
+  b: number;
+  left: string;
+  right: string;
 }
 
 /** the words, kept short and plain: nothing says what Daybook is for */
@@ -48,6 +56,14 @@ export const LIVE_WORDS = {
 };
 
 const minOf = (t: string) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+/** a time as it is said on the bar: "8 PM", "11:30 PM" */
+export function liveClock(ms: number): string {
+  const d = new Date(ms);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  return (h % 12 || 12) + (m ? ':' + String(m).padStart(2, '0') : '') + (h < 12 ? ' AM' : ' PM');
+}
+const barOf = (a: number, b: number): LiveBar => ({ a, b, left: liveClock(a), right: liveClock(b) });
 
 /** the Live Activity that should be showing now, or null */
 export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: number): LivePlan | null {
@@ -63,15 +79,19 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
       sub: LIVE_WORDS.hardSub((r.win.start + 2) % 24),
       short: riskStartLabel((r.win.start + 2) % 24),
       url: '/sos',
+      /* the hard hours themselves: empty until they start, full when they are through */
+      bar: barOf(r.a, r.b),
     };
   }
   if (!isTime(st.screensOff)) return null;
   const m = minOf(st.screensOff);
   const off = riskAt(tk, Math.floor(m / 60), st.rollover, m % 60);
   const morning = riskAt(addDays(tk, 1), st.rollover, st.rollover);
-  if (days[tk]?.p?.po) {
+  const po = days[tk]?.p?.po;
+  if (po) {
     /* Goodnight is done: the flame sleeps till the day turns over, or 8 hours */
     if (now >= morning) return null;
+    const down = isTime(po) ? riskAt(tk, Math.floor(minOf(po) / 60), st.rollover, minOf(po) % 60) : now;
     return {
       kind: 'night',
       key: 'night-' + tk,
@@ -81,6 +101,8 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
       sub: '',
       short: '',
       url: '/wind',
+      /* the night, from the phone going down to morning */
+      bar: barOf(Math.min(down, now), morning),
     };
   }
   if (now < off - LIVE_NIGHT_BEFORE || now >= off + LIVE_NIGHT_AFTER) return null;
@@ -93,5 +115,7 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
     sub: LIVE_WORDS.windSub(st.screensOff),
     short: fmtClock(st.screensOff),
     url: '/wind',
+    /* the wind-down, filling up to screens off */
+    bar: barOf(off - LIVE_NIGHT_BEFORE, off),
   };
 }

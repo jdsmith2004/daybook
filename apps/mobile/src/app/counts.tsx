@@ -1,5 +1,6 @@
-/* Anonymous counts: what is sent and what never is, the last batch exactly as it went, and the switch (core pulse.ts).
-   The counts go without asking (the owner, October 28 and November 4, 2026); here the person sees them, or turns them off.
+/* Anonymous data: what Daybook learns (core events.ts) and the counts (core pulse.ts), what never leaves the phone, the last
+   batch of counts exactly as it went, and the one switch for both. Both go without asking (the owner, October 28, November 4
+   and November 9, 2026); here the person sees them, or turns them off.
    Named "counts", not "pulse": on the web, /pulse is the server's own address. */
 import { PULSE_WORDS, pulseMeaning, SITE_PAGES } from '@daybook/core';
 import { Linking, View } from 'react-native';
@@ -15,10 +16,10 @@ import { WORDS } from '@/lib/words';
 
 const SENT = ['act_7_13', 'setup_done', 'sos', 'sos_rode', 'tool_breathe', 'lesson_done', 'nt_checkin_tap', 'back_1'];
 const NEVER = [
-  'Anything you write: notes, plans, reasons, messages',
-  'What led to an urge or a slip, or when it happened',
-  'Your log, your check-ins or your plan',
-  'Your name, your email, your account or anything that tells this phone apart',
+  'Your journal, your notes, your voice notes, or anything else you write',
+  'Your name, your email, your account or your Apple ID',
+  'What Apple Health holds',
+  'The time or date of anything, or where you are',
 ];
 
 export default function Counts() {
@@ -40,14 +41,15 @@ export default function Counts() {
     </View>
   );
   return (
-    <SheetFrame title="Anonymous counts" sub={off ? PULSE_WORDS.off : PULSE_WORDS.on}>
+    <SheetFrame title="Anonymous data" sub={off ? PULSE_WORDS.off : PULSE_WORDS.on}>
       <T>
-        Daybook is built by one person. Your phone sends a few numbers once a day, for days that are over, and once for the day so far as you leave the app. The
-        server adds them to totals for everyone and keeps nothing else, so no count can be traced back to you.
+        Daybook is built by one person, who uses this to learn which parts help people quit, and to make them better. It is never tied to who you are, never
+        sold and never shared.
       </T>
       <SheetH title="What is sent" />
       <T v="small" tone="muted">
-        {off ? 'Off.' : 'On.'} Which parts of Daybook were used, like these:
+        {off ? 'Off.' : 'On.'} What you open, finish and choose, and how many urges and slips you log, as fixed names and numbers. Once a day, counts like
+        these:
       </T>
       {list(SENT)}
       <SheetH title="What is never sent" />
@@ -75,10 +77,10 @@ export default function Counts() {
         <Link label="Read the privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
       </View>
       <Dock>
-        {off ? <Button label="Send anonymous counts" onPress={() => set(true)} /> : <Button label="Done" onPress={closeSheet} />}
+        {off ? <Button label="Turn anonymous data on" onPress={() => set(true)} /> : <Button label="Done" onPress={closeSheet} />}
         {!off ? (
           <View style={{ alignItems: 'center' }}>
-            <Link label="Turn all counts off" tone="muted" onPress={() => set(false)} />
+            <Link label="Turn it all off" tone="muted" onPress={() => set(false)} />
           </View>
         ) : null}
       </Dock>

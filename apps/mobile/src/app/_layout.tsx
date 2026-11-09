@@ -27,6 +27,7 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
+import { useKeepEvents } from '@/lib/events';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -159,6 +160,7 @@ function Shell() {
   const c = useTheme();
   const { ready, snap, loadFailed, retryLoad } = useStore();
   useKeepPulse(ready, snap.days);
+  useKeepEvents(ready);
   /* the day's first open, for "How are you feeling today?" on Today (lib/day-open.ts) */
   useWatchOpens(ready, snap.settings?.rollover ?? 4, !!snap.settings);
   const [fonts, fontError] = useFonts({

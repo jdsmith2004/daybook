@@ -10,10 +10,10 @@ export function PulseRows() {
   const s = usePulse();
   const stats = useStatsSeen();
   if (!pulseOffered) return null;
-  const sub = s?.on === false ? 'Off. Nothing is sent.' : 'On. Never your words or your log.';
+  const sub = s?.on === false ? 'Off. Nothing is sent.' : 'On. Never your journal, notes or words.';
   return (
     <>
-      <LinkCard icon="chart" title="Anonymous counts" sub={sub} onPress={() => router.push('/counts')} />
+      <LinkCard icon="chart" title="Anonymous data" sub={sub} onPress={() => router.push('/counts')} />
       <LinkCard
         icon="chat"
         title="Ideas and feedback"

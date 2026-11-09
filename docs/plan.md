@@ -1,6 +1,6 @@
 # What is planned next
 
-## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; planned, waiting on the owner's answers, to be built on `claude/analytics`)
+## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; the high-effort part built on `claude/analytics`, not merged)
 
 **The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of
 analytics so we can use that data to improve the app so we need to switch that rule completely and just let them know it's
@@ -101,6 +101,49 @@ as now. The check is in code: anything not on the list is dropped on the phone a
 - **A plain notice to people who were promised the opposite.** Once, after the update, on Today, never in the hours after an
   SOS or a slip: what changed, in a few lines, with the choice. They were told "no device ID", so they are asked, not told.
 - **The off switch in More stays.** It stops the events and the counts, deletes what is waiting, and drops the install id.
+
+### The owner's answers (November 9, 2026)
+
+- **Who:** on for everyone, with the notice as unobtrusive as possible ("we only have like 6 users and they didn't join for
+  the privacy"). The owner takes the legal risk named above (GDPR, Washington's health data act) knowingly.
+- **The words:** "anonymous", said honestly: never tied to your name, email or account, never your words. The random number is
+  not in the notice or the short version; it is said once, plainly, in the privacy page's own section, because that page
+  must be true (it used to promise "no device ID").
+- **Sensitive values:** everything, including the faith setting and the faith lessons, the habit, tips bought and the five
+  questions. "Privacy is important and we will never sell your data or information ever, it's just for app improvement."
+- **Kept:** 2 years, then the bucket deletes it.
+
+### What is built (high effort, November 9, 2026)
+
+- Core `events.ts`: the list (`EV_NAMES`, `EV_PROPS`), the install id's queue (`evAdd`, `evBatch`, `evSent`, which takes off
+  only what a batch carried even when old ones were let go), and `eventsClean` for the server. Strings come only from fixed
+  lists, so no typed word fits. Tests, including one that the privacy page names every event and key.
+- `services/api` `events.ts`: `POST /events`, one line per event onto Firehose, a daily ceiling; nothing about the request kept.
+- `infra/bootstrap/events.tf`: the bucket (2 years), Firehose, the Glue table (days from the folder names, no crawler), the
+  Athena workgroup (1 GB a query at most), the events function's role, Firehose's role, and the Stats role widened to Athena.
+  The deploy role only gets to hand the function its role: it can never read the events. `infra/app/events.tf`: the function
+  and its route behind `var.events` (repository variable `EVENTS`), off until the owner applies.
+- The app: `lib/events.ts` (the queue in its own key, sent every few hours and as the app leaves; nothing kept or sent until the
+  off switch is read), opens and leaves tracked, one switch in More for both, Delete everything drops the id. More's row and
+  sheet are now "Anonymous data", and their words are true again.
+- CLAUDE.md's privacy rule, the privacy page ("What Daybook learns") and the App Store label in docs/launch.md.
+
+### For the owner, to turn it on
+
+1. `cd infra/bootstrap && terraform apply` with your own sign-in (it adds the bucket, the stream, the table and three role
+   changes; nothing is removed).
+2. GitHub, Settings, Variables: `EVENTS` = `true`. The next deploy makes the function, and the web app starts sending.
+3. Phone builds: add `"EXPO_PUBLIC_EVENTS_URL": "https://d3c9g6kent5bsr.cloudfront.net/events"` to both profiles in
+   `apps/mobile/eas.json` (I can do this once step 2 is live), and the App Store label in docs/launch.md before that build.
+
+### Still to do (medium effort)
+
+- Each event at its place in the app (setup, lessons, SOS and tools, the log, check-in, the flame, reminders, asks), and the
+  once-a-day `day` snapshot.
+- The quiet notice: one line on Today for people who had Daybook before, once, never in the hours after an SOS or a slip, with
+  a link to More, Anonymous data; and one line on setup's last page for new people.
+- `scripts/stats-events.mjs` in the Stats workflow (Athena: the funnel, retention by install week, lessons against slips the
+  next week, SOS by tool, reminders, the days to a first tip, the five questions over the weeks).
 
 ### The steps, with the effort each needs
 

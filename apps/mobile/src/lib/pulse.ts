@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { PULSE_URL } from '@/lib/config';
+import { setEventsOff } from '@/lib/events';
 
 const KEY = 'pulse:v1';
 export const pulseOffered = !!PULSE_URL;
@@ -49,6 +50,8 @@ function load(): Promise<void> {
           parsed = null;
         }
         state = pulseNorm(parsed, today());
+        /* one switch for both: off here is off for what Daybook learns too (lib/events.ts) */
+        setEventsOff(state.on === false);
       })
       .catch(() => {
         state = pulseNorm(null, today());
@@ -86,9 +89,11 @@ export function useCountFocus(k: string) {
 }
 /** setup reached page i of OB_PAGES, or was finished */
 export const countSetup = (i: number, done = false) => apply((s) => pulseSetup(s, i, done));
-/** the person's answer: yes sends from the days that are over, no deletes what was kept and counts nothing */
+/** the person's answer: yes sends from the days that are over, no deletes what was kept and counts nothing, for the counts
+    and for what Daybook learns alike */
 export const answerPulse = (on: boolean) => {
   apply((s) => pulseAnswer(s, on, today()));
+  setEventsOff(!on);
   if (on) send();
 };
 

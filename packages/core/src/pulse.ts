@@ -399,8 +399,8 @@ export function feedbackClean(x: unknown): { t: string; r: string | null; p: Pul
 /** the words, in one place. There is no ask (the owner, October 28 and November 4, 2026): the counts are sent without
     one, and More, Anonymous counts, is where the person sees them or turns them off. */
 export const PULSE_WORDS = {
-  on: 'Counts are on: which parts of Daybook were used, as numbers added to everyone else. Never your words, never your log, and never who you are.',
-  off: 'Counts are off. Nothing is sent.',
+  on: 'On: how Daybook is used, to make it better. Never your journal, notes or words, and never who you are.',
+  off: 'Off. Nothing is sent.',
 };
 
 /* ---------- the owner's Stats page ---------- */

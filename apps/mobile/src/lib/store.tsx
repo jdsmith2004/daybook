@@ -2,6 +2,7 @@
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { forgetHealth } from './health';
+import { forgetEvents } from '@/lib/events';
 import {
   allDirty,
   checkNew,
@@ -440,6 +441,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.multiRemove(keys);
     /* the nights read from Apple Health live outside the log, so they go here too */
     await forgetHealth();
+    /* what Daybook learns waits outside the log too: it goes, and the next event has a new install id */
+    forgetEvents();
     snapRef.current = empty();
     setSnap(empty());
     dirtyRef.current = {};

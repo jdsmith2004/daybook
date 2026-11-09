@@ -24,7 +24,6 @@ import {
   newUrge,
   rateUrTool,
   RIDE_MOVES,
-  rideMark,
   rideNext,
   slipFeltLine,
   urEntry,
@@ -47,10 +46,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigOption, Link } from '@/components/choices';
-import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
 import { ScienceSheet } from '@/components/ride/science';
-import { RideSwipe } from '@/components/ride/swipe';
+import { RidePager } from '@/components/ride/pager';
 import { RodeOut, type Rode } from '@/components/rode-out';
 import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
@@ -93,9 +91,8 @@ export default function Sos() {
 
   /* the ride: every move shown in this SOS, oldest first; the last one is showing */
   const [seq, setSeq] = useState<string[]>([]);
-  /* swiped down: how many moves back from the newest one the ride is showing, and where the page came in from */
+  /* swiped down: how many moves back from the newest one the ride is showing */
   const [back, setBack] = useState(0);
-  const [from, setFrom] = useState<-1 | 0 | 1>(0);
   const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
@@ -142,6 +139,15 @@ export default function Sos() {
     setSeq([rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, [])]);
   }, [ur, seq.length, snap.days, st, tk, sos.mem, can]);
 
+  /* the move waiting below the newest one, picked once per page so it holds still while it is swiped up into view (a
+     practice ride ends after its few moves) */
+  const peek = useMemo(
+    () =>
+      !ur || !seq.length ? null : practice && seq.length >= PRACTICE_N ? 'end' : rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seq, can],
+  );
+
   /* back from a tool's X: the tools open again, to pick another (docs/design-standards.md, "The X goes one step back") */
   useEffect(() => {
     if (!front || !ur || ur.step !== 'tools') return;
@@ -154,7 +160,6 @@ export default function Sos() {
   /* how it felt after the last slips, in their own record (core slipFeltLine), for the hour after: never in a practice
      ride, and never in the first 30 seconds */
   const feltLine = useMemo(() => (practice ? null : slipFeltLine(snap.days)), [practice, snap.days]);
-  const mark = useMemo(() => rideMark(snap.days), [snap.days]);
 
   const level = Math.max(1, g.level.n);
   const title = practice ? 'Practice' : 'SOS';
@@ -221,7 +226,6 @@ export default function Sos() {
     const rec = urEvidence(snap.days);
     return (
       <SceneFrame title={title} sky={sky} onClose={close}>
-        <RideBar t0={ur.t0} mark={mark} on={front && !more} color={c.mint} />
         <Stage key={better ? 'better' : 'ask'} dir={better ? 1 : 0}>
           {better ? (
             <>
@@ -313,31 +317,31 @@ export default function Sos() {
     if (done) setUr(u);
     else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
     buzz('tap');
-    setFrom(1);
     if (back) return setBack(back - 1);
     if (practice && n >= PRACTICE_N) return setSeq(seq.concat('end'));
-    const nx = rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
+    const nx = peek && peek !== 'end' && !lead.current ? peek : rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
     lead.current = null;
     setSeq(seq.concat(nx));
-  };
-  /* swiped down: the move before, as it was */
-  const prev = () => {
-    if (at < 1) return;
-    setFrom(-1);
-    setBack(back + 1);
   };
   /* swiped up: the next move, and one more swipe learned (until then the page shows how, core UrMem.swiped) */
   const swiped = Number(sos.mem.swiped) || 0;
   const hint = swiped < 3 && at >= 1;
-  const swipeNext = () => {
+  /* landed on page i by a swipe: down to one before, or up to the next (one more swipe learned) */
+  const landed = (i: number) => {
+    if (i < at) {
+      buzz('tap');
+      return setBack(n - 1 - i);
+    }
     if (swiped < 3) sos.setMem((m) => ({ ...m, swiped: Math.min(3, (Number(m.swiped) || 0) + 1) }));
     next(false);
   };
+  /* the pages: every move shown so far, and the one waiting below */
+  const pages = peek ? seq.concat(peek) : seq;
+  const live = front && !more && !sci;
   /* a ride move picked from More (It is written): it comes next, now */
   const jump = (mv: string) => {
     setMore(false);
     buzz('tap');
-    setFrom(1);
     setBack(0);
     if (seq[seq.length - 1] !== mv) setSeq(seq.concat(mv));
   };
@@ -380,57 +384,59 @@ export default function Sos() {
   ];
   return (
     <SceneFrame title={title} sky={sky} onClose={close} topRight={top} fixed>
-      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more && !sci} color={moveTint(c, id)} />
-      <RideSwipe key={at + '-' + id} from={from} canBack={at > 0} hint={hint} on={front && !more && !sci} onNext={swipeNext} onBack={prev}>
-        <Move
-          on={front && !more && !sci}
-          onDone={() => next(true)}
-          onFeel={(f) => {
-            /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
-            const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
-            if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
-            lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
-          }}
-          onTool={pickTool}
-          felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
-          level={level}
+      <View style={s.ride}>
+        <RidePager
+          count={pages.length}
+          at={at}
+          hint={hint}
+          on={live}
+          onLand={landed}
+          render={(i) =>
+            i === at ? (
+              <View key={'live' + i} style={s.page}>
+                <Move
+                  on={live}
+                  onDone={() => next(true)}
+                  onFeel={(f) => {
+                    /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
+                    const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
+                    if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
+                    lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
+                  }}
+                  onTool={pickTool}
+                  felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
+                  level={level}
+                />
+              </View>
+            ) : (
+              <Cover key={'cover' + i} id={pages[i]} name={pages[i] === 'end' ? '' : moveName(pages[i])} />
+            )
+          }
         />
-      </RideSwipe>
-      <Dock>
-        <View style={s.ctl}>
-          <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+        {/* the name and Why it works low on the left, like a caption; the heart and Next in a rail on the right */}
+        <View style={s.foot} pointerEvents="box-none">
           <Pressable
-            style={s.mid}
+            style={s.cap}
             accessibilityRole="button"
             accessibilityLabel={'Move ' + (at + 1) + ': ' + moveName(id) + '. Why it works.'}
             onPress={() => {
               buzz('tap');
               setSci(true);
             }}>
-            <View style={s.dots}>
-              {seq.slice(Math.max(0, n - 7)).map((x, j, l) => {
-                const k = n - l.length + j;
-                return <View key={k} style={[s.dot, k === at ? { width: 22, backgroundColor: moveTint(c, x) } : { backgroundColor: c.ink + '40' }]} />;
-              })}
-            </View>
             <Text style={[s.segT, { color: c.ink }]} numberOfLines={1}>
               {moveName(id)}
             </Text>
-            {hint ? (
-              <View style={s.why}>
-                <Icon name="up" size={13} color={c.muted} />
-                <Text style={[s.whyT, { color: c.muted }]}>Swipe up for the next one</Text>
-              </View>
-            ) : (
-              <View style={s.why}>
-                <Icon name="book" size={13} color={c.muted} />
-                <Text style={[s.whyT, { color: c.muted }]}>Why it works</Text>
-              </View>
-            )}
+            <View style={s.why}>
+              <Icon name={hint ? 'up' : 'book'} size={13} color={c.muted} />
+              <Text style={[s.whyT, { color: c.muted }]}>{hint ? 'Swipe up for the next one' : 'Why it works'}</Text>
+            </View>
           </Pressable>
-          <Round icon="next" label="Next move" onPress={() => next(false)} />
+          <View style={s.rail}>
+            <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+            <Round icon="down" label="Next move" onPress={() => next(false)} />
+          </View>
         </View>
-      </Dock>
+      </View>
       <ScienceSheet id={id} name={moveName(id)} open={sci} night={night} onClose={() => setSci(false)} />
       <More open={more} night={night} onClose={() => setMore(false)}>
         <Text style={[s.moreH, { color: c.ink }]}>Something bigger</Text>
@@ -538,6 +544,24 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
   );
 }
 
+/** a move waiting above or below the one in view: its shape and name, still, until it is landed on (nothing in it runs) */
+function Cover({ id, name }: { id: string; name: string }) {
+  const c = useTheme();
+  if (!name) return null;
+  return (
+    <View style={[s.page, s.cover]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <T v="title" style={s.c}>
+        {name}
+      </T>
+      <Shape kind="cookie9" size={180} color={moveTint(c, id) + '33'}>
+        <View>
+          <Icon name={MOVE_ICON[id] || urTool(id)?.ic || 'check'} size={64} color={c.ink} />
+        </View>
+      </Shape>
+    </View>
+  );
+}
+
 /** a round button at the side of the ride's controls; `on` fills it (the heart, once this move helps) */
 function Round({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
   const c = useTheme();
@@ -558,16 +582,21 @@ function Round({ icon, label, onPress, on }: { icon: string; label: string; onPr
 const PRACTICE_N = 3;
 /** the record of how it felt after slips is never shown before this far into an SOS */
 const FELT_AFTER = 30000;
+/** the room under each ride page for the rail (two round buttons) */
+const FOOT = 124;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
   passedT: { fontFamily: font.bodyBold, fontSize: 15 },
-  ctl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  mid: { flex: 1, gap: 7, alignItems: 'center' },
-  dots: { flexDirection: 'row', gap: 5, alignItems: 'center', height: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
+  round: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  ride: { flex: 1, alignSelf: 'stretch' },
+  /* each page leaves room at the bottom for the caption and the rail, so its own answers sit just above them */
+  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: FOOT },
+  cover: { justifyContent: 'center', gap: 28 },
+  foot: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  cap: { flex: 1, gap: 3, paddingBottom: 6, minHeight: 44, justifyContent: 'flex-end' },
+  rail: { gap: 10, alignItems: 'center', marginRight: -4 },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },

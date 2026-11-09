@@ -124,6 +124,17 @@ accidentally left it and could not get it back; I want the tools to be more like
   next one" in place of Why it works. Reduced motion skips the lifts. Next, the dots and the heart stay as they were.
 - Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
 
+**Like Reels (the owner, November 9, 2026, with a picture of Instagram's Reels: "the arrow and heart should be on the right
+like Insta, and it blocks off the whole bottom bar; remove the timer bar on the top, you keep adding it back; the swipe sucks,
+it does not let me swipe up").**
+
+- The ride is a native paging scroll view (`components/ride/pager.tsx`), not a hand-made drag: the next move is already
+  waiting under the page as a still cover (its name and its shape), so a swipe shows it rising, with the phone's own momentum,
+  and a trackpad scroll in the simulator works too. Nothing in a cover runs until it is landed on. The first lesson lifts the
+  page to show the cover below.
+- No timer bar at the top of the ride or of How is it now (never put it back). No bottom bar: the move's name and Why it works
+  sit low on the left like a caption, and the heart and Next (a down arrow) stand in a rail on the right.
+
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 
 After "Then it left", three pages from the Sermon on the Mount, which He taught soon after, in mint so the two chapters read

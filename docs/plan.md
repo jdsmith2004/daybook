@@ -94,7 +94,9 @@ leaving it as it is.
 ### Built on `written-sos` (November 8, 2026), with the recommended answers
 
 The owner said go ahead before answering the questions, so the build takes each recommendation; every one is a small change
-if the owner chooses another. Steps 1, 2 and 4 are done; step 3 (the swipe) waits for the owner's answer.
+if the owner chooses another. Steps 1 and 2 are done, and step 4 on the web. A release build is installed on its own simulator ("Daybook Written") with a
+made-up Latter-day Saint person, ready for the owner to try; it was not yet walked through there. Step 3 (the swipe) waits for
+the owner's answer.
 
 - Core: `written.ts` holds the words for the three voices and the two links. `ride.ts` has `RIDE_FAITH` (kept out of
   `RIDE_MOVES`), a `faith` flag in `RideCan`, its weight (the heart raises it, Next lowers it), its place right after the

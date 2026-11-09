@@ -32,6 +32,8 @@ export interface LivePlan {
   line: string;
   /** the time under it */
   sub: string;
+  /** the same, short, for the Dynamic Island ("10 PM") */
+  short: string;
   /** the screen a tap opens */
   url: string;
 }
@@ -52,7 +54,16 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
   if (!st) return null;
   const r = riskDay(days, st, tk, now);
   if (r && (r.phase === 'soon' || r.phase === 'during')) {
-    return { kind: 'hard', key: 'hard-' + tk, to: r.b, asleep: false, line: LIVE_WORDS.hard, sub: LIVE_WORDS.hardSub((r.win.start + 2) % 24), url: '/sos' };
+    return {
+      kind: 'hard',
+      key: 'hard-' + tk,
+      to: r.b,
+      asleep: false,
+      line: LIVE_WORDS.hard,
+      sub: LIVE_WORDS.hardSub((r.win.start + 2) % 24),
+      short: riskStartLabel((r.win.start + 2) % 24),
+      url: '/sos',
+    };
   }
   if (!isTime(st.screensOff)) return null;
   const m = minOf(st.screensOff);
@@ -61,7 +72,16 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
   if (days[tk]?.p?.po) {
     /* Goodnight is done: the flame sleeps till the day turns over, or 8 hours */
     if (now >= morning) return null;
-    return { kind: 'night', key: 'night-' + tk, to: Math.min(morning, now + LIVE_MAX), asleep: true, line: LIVE_WORDS.asleep, sub: '', url: '/wind' };
+    return {
+      kind: 'night',
+      key: 'night-' + tk,
+      to: Math.min(morning, now + LIVE_MAX),
+      asleep: true,
+      line: LIVE_WORDS.asleep,
+      sub: '',
+      short: '',
+      url: '/wind',
+    };
   }
   if (now < off - LIVE_NIGHT_BEFORE || now >= off + LIVE_NIGHT_AFTER) return null;
   return {
@@ -71,6 +91,7 @@ export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: numbe
     asleep: false,
     line: LIVE_WORDS.wind,
     sub: LIVE_WORDS.windSub(st.screensOff),
+    short: fmtClock(st.screensOff),
     url: '/wind',
   };
 }

@@ -28,10 +28,16 @@ const SKY = '#1E1846';
 const ASLEEP = -1;
 const xmlOf = (level: number, low: number) =>
   low === ASLEEP ? figAsleep(emblemXml(level)) : low > 0 ? lowXml(sadXml(emblemXml(level)), low) : emblemXml(level);
-/** the picture's name carries the level and how low, so the widget never shows one it kept from before */
-const nameOf = (level: number, low: number) => `flame-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}.png`;
-/** the pictures a timeline needs: each way it burns, and the flame asleep */
-const lowsOf = (entries: WidgetEntry[]) => [...new Set([...entries.map((e) => e.low), ASLEEP])];
+/** the small size the Live Activity's pictures are drawn at: iPhone shows a gray box in place of a picture too big for one */
+const LIVE_PX = 60;
+/** the picture's name carries the level and how low, so the widget never shows one it kept from before; small ones end in -s */
+const nameOf = (level: number, low: number, small = false) => `flame-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
+type Pic = { name: string; xml: string; px: number };
+/** the pictures a timeline needs: each way it burns for the widget, and the flame as it burns now and asleep, small, for the Live Activity */
+const picsOf = (level: number, entries: WidgetEntry[]): Pic[] => [
+  ...[...new Set(entries.map((e) => e.low))].map((low) => ({ name: nameOf(level, low), xml: xmlOf(level, low), px: PX })),
+  ...[entries[0].low, ASLEEP].map((low) => ({ name: nameOf(level, low, true), xml: xmlOf(level, low), px: LIVE_PX })),
+];
 /** the Live Activity showing now, and which plan it is for (kept across launches) */
 const liveNote = () => new File(folder(), 'live.json');
 const folder = () => {
@@ -41,7 +47,7 @@ const folder = () => {
 };
 
 /** draws one picture off the screen and gives it back as a PNG in base64 */
-function Painter({ xml, onDone }: { xml: string; onDone: (png: string) => void }) {
+function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: string) => void }) {
   const ref = useRef<Svg>(null);
   const done = useRef(onDone);
   done.current = onDone;
@@ -53,16 +59,16 @@ function Painter({ xml, onDone }: { xml: string; onDone: (png: string) => void }
     let tries = 0;
     let t: ReturnType<typeof setTimeout>;
     const go = () => {
-      if (ref.current) ref.current.toDataURL((png) => done.current(png), { width: PX, height: PX });
+      if (ref.current) ref.current.toDataURL((png) => done.current(png), { width: px, height: px });
       else if (++tries < 20) t = setTimeout(go, 150);
     };
     t = setTimeout(go, 100);
     return () => clearTimeout(t);
-  }, [laid, xml]);
+  }, [laid, xml, px]);
   return (
-    <View style={{ position: 'absolute', left: -2 * PX, top: 0, width: PX, height: PX }} pointerEvents="none" onLayout={() => setLaid(true)}>
+    <View style={{ position: 'absolute', left: -2 * PX, top: 0, width: px, height: px }} pointerEvents="none" onLayout={() => setLaid(true)}>
       {ast ? (
-        <Svg ref={ref} {...ast.props} width={PX} height={PX}>
+        <Svg ref={ref} {...ast.props} width={px} height={px}>
           {ast.children}
         </Svg>
       ) : null}
@@ -70,7 +76,7 @@ function Painter({ xml, onDone }: { xml: string; onDone: (png: string) => void }
   );
 }
 
-type LiveWant = { key: string; img: string; line: string; sub: string };
+type LiveWant = { key: string; img: string; line: string; sub: string; short: string };
 /** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none */
 async function syncLive(want: LiveWant | null, url: string, to: number) {
   const note = liveNote();
@@ -82,9 +88,9 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
   }
   const all = FlameLive.getInstances();
   const mine = was && all.find((a) => a.getId() === was!.id);
-  const props = want ? { img: new File(folder(), want.img).uri, line: want.line, sub: want.sub } : null;
+  const props = want ? { img: new File(folder(), want.img).uri, line: want.line, sub: want.sub, short: want.short } : null;
   if (want && props && mine && was!.key === want.key) {
-    if (was!.img !== want.img || was!.line !== want.line || was!.sub !== want.sub) await mine.update(props, new Date(to));
+    if (was!.img !== want.img || was!.line !== want.line || was!.sub !== want.sub || was!.short !== want.short) await mine.update(props, new Date(to));
     note.write(JSON.stringify({ ...want, id: was!.id }));
     return;
   }
@@ -119,7 +125,7 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
     if (!job) return [];
     try {
       const dir = folder();
-      return lowsOf(job.entries).filter((low) => !new File(dir, nameOf(job.level, low)).exists);
+      return picsOf(job.level, job.entries).filter((p) => !new File(dir, p.name).exists);
     } catch {
       return [];
     }
@@ -130,7 +136,7 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
     if (!job || missing.length || sent.current === job.key) return;
     try {
       const dir = folder();
-      const keep = new Set(lowsOf(job.entries).map((low) => nameOf(job.level, low)));
+      const keep = new Set(picsOf(job.level, job.entries).map((p) => p.name));
       for (const x of dir.list()) if (x instanceof File && x.name.startsWith('flame-') && !keep.has(x.name)) x.delete();
       FlameWidget.updateTimeline(
         job.entries.map((e) => ({ date: new Date(e.at), props: { img: new File(dir, nameOf(job.level, e.low)).uri, line: e.line, next: e.next, sky: SKY } })),
@@ -143,7 +149,10 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
   /* the Live Activity: the plan for now, against what is showing */
   const drawnAll = !!job && !missing.length;
   const plan = ready ? livePlan(snap.days, snap.settings, tk, now) : null;
-  const want = plan && job ? { key: plan.key, img: nameOf(job.level, plan.asleep ? ASLEEP : job.entries[0].low), line: plan.line, sub: plan.sub } : null;
+  const want =
+    plan && job
+      ? { key: plan.key, img: nameOf(job.level, plan.asleep ? ASLEEP : job.entries[0].low, true), line: plan.line, sub: plan.sub, short: plan.short }
+      : null;
   const wantKey = want ? JSON.stringify(want) : '';
   useEffect(() => {
     if (!ready || (want && !drawnAll)) return;
@@ -163,15 +172,15 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
     return () => sub.remove();
   }, [ready, earned]);
   if (!job || !missing.length) return null;
-  const low = missing[0];
-  const level = job.level;
+  const pic = missing[0];
   return (
     <Painter
-      key={nameOf(level, low)}
-      xml={xmlOf(level, low)}
+      key={pic.name}
+      xml={pic.xml}
+      px={pic.px}
       onDone={(png) => {
         try {
-          const f = new File(folder(), nameOf(level, low));
+          const f = new File(folder(), pic.name);
           f.create({ overwrite: true });
           f.write(png, { encoding: 'base64' });
         } catch {

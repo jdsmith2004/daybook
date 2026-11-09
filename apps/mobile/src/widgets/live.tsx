@@ -12,6 +12,8 @@ export type FlameLiveProps = {
   line: string;
   /** the time under it ("Till 10 PM"), or empty */
   sub: string;
+  /** the same, short, for the Dynamic Island ("10 PM"), or empty */
+  short: string;
 };
 
 const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) => {
@@ -39,7 +41,11 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
       </HStack>
     ),
     compactLeading: flame(24),
-    compactTrailing: props.sub ? sub(13) : null,
+    compactTrailing: props.short ? (
+      <Text modifiers={[font({ size: 14, weight: 'semibold', design: 'rounded' }), foregroundStyle('#FFB347'), lineLimit(1)]}>{props.short}</Text>
+    ) : (
+      <Image systemName="moon.zzz.fill" size={14} color="#FFB347" />
+    ),
     minimal: flame(22),
     expandedLeading: flame(52),
     expandedCenter: (

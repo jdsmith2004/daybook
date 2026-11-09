@@ -142,8 +142,8 @@ reported as drift to the flame). Not merged: it waits on those and on the owner'
 **The flame dims on the wait screen too (the owner, November 9, 2026, via the flame session).** Once `claude/flame-dims`
 merges, `/pause` uses its pieces (core `flame-low.ts`, `lowXml`, the smoke, the douse and re-light in `big-flame.tsx` and the
 fire layers), so it looks the same as Today: the flame opens dimmed with smoke (low about 0.6), since reaching this screen means
-the notes were ignored; Put it down plays the re-light; Open it for a few minutes leaves it dim. Never dimmed in the quiet after
-a slip. Only the glow changes, never the level or form. (medium, after that merge)
+the notes were ignored; Put it down plays the re-light; Open it for a few minutes leaves it dim. The way in: `/pause` draws `BigFlame` with its `low` prop (raising plays the douse, 0 plays the re-light and its sparks) and copies
+the haptics from `hero.tsx`. Never dimmed in the quiet after a slip. Only the glow changes, never the level or form. (medium, after that merge)
 
 **Cost:** no money (the Apple account is already paid; nothing on AWS). Time: about steps 1 to 4, a few sessions.
 

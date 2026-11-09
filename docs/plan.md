@@ -13,8 +13,20 @@ The owner's calls, November 8 (each the recommended option):
 - **Never fully out.** Two whole days with nothing done: "You are dimming your fire". Three or four: "Your fire is smouldering ... It goes lower
   each day." Five or more: "Your fire is down to embers ... One ember still glows." Today does not count until it is over.
 - **One action, full re-light,** with the big moment.
-- **The words are on Today only:** one firm line at the top of the sky, and the step open now on Your day says "This lights your fire again".
-  The reminders are unchanged.
+- **The words:** one firm line at the top of the sky, and the step open now on Your day says "This lights your fire again".
+
+The owner's second round, the same day, after "most of the time when they're logging into the app ... they're doing something", so the stakes
+have to reach people before they act (each the recommended option):
+
+- **A warning the day before it dims** (nothing done yesterday, nothing yet today): one quieter line on Today, "Nothing done yesterday. Do one
+  thing today, or your fire burns lower tomorrow.", while the flame still burns fully, and the day's lesson note (or its first note) says "Your
+  fire burns lower tomorrow".
+- **The come-back notes:** the first (2 days after the app was last open) says how low the fire burns by then, and a new one comes on the day it is
+  down to embers (day 5). The 7 and 30 day notes keep their words ("Everything is kept"). Words only, no picture (the owner, October 25). Never
+  after a slip or a heavy week (the tender words stay), and nothing on the lock screen says what Daybook is for.
+- **Pace by the day:** 2, 3 and 5 days, as built.
+- **A widget later,** as its own piece: a home-screen and lock-screen widget showing the flame as it burns now (a native widget extension and a
+  new App Store build).
 
 Hard lines kept: only the glow changes (level, form, points, badges and the count never move; core `fireLow` reads the log and writes nothing),
 never in the 72 hours after a slip, and the words are about the next choice, never about who the person is.

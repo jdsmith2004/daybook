@@ -70,6 +70,7 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
     case 'calm':
       return <Band m={m} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
     case 'sunday':
+      if (m.go === 'unlock') return <UnlockBand m={m} id="sunday" />;
       return <Band m={m} onPress={() => router.push({ pathname: '/review', params: { s: m.v! } })} />;
     case 'first-week':
       return <Band m={m} onPress={() => router.push('/week')} />;
@@ -80,21 +81,21 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
     case 'recheck':
       return <Band m={m} onPress={() => router.push('/recheck')} />;
     case 'unlock':
-      return <UnlockBand m={m} />;
+      return <UnlockBand m={m} id={m.v as UnlockId} />;
     default:
       return null;
   }
 }
 
 /* a part unlocked: the first day it is the card is kept, so the next one waits its days (core unlock.ts) */
-function UnlockBand({ m }: { m: Moment }) {
+function UnlockBand({ m, id }: { m: Moment; id: UnlockId }) {
   const mark = useUnlockMark();
-  const id = m.v as UnlockId;
   useEffect(() => {
     mark.shown(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-  return <Band m={m} onPress={() => router.push({ pathname: '/unlock', params: { id } })} />;
+  /* the first Sunday review carries its Sunday along, for the review it opens */
+  return <Band m={m} onPress={() => router.push({ pathname: '/unlock', params: id === 'sunday' ? { id, s: m.v! } : { id } })} />;
 }
 
 /* the band's button stays short; the longer action is said in its label for screen readers */

@@ -15,6 +15,9 @@ const base = (): Days =>
     '2026-10-02': { p: { ls: ['l2'] } },
   }) as unknown as Days;
 const slip = (days: Days, k: string) => addEvent(days, k, 'slipped', '23:00', {}, 1).days;
+const rode = (days: Days, k: string) => addEvent(days, k, 'rode', '23:00', {}, 1).days;
+/* someone with a safe person and Reached out on the day already, so only the part under test is ready */
+const named = { ...st, safePerson: 'Sam', routine: { ...st.routine, reach: true } } as Settings;
 
 describe('when a part unlocks', () => {
   it('opens the journal on day 3 with two lessons done, not before', () => {
@@ -27,15 +30,38 @@ describe('when a part unlocks', () => {
   });
   it('opens the apps that pull you in from day 7, only on a phone that has it', () => {
     const mem: UnlockMem = { journal: { d: '2026-10-03', o: 1 } };
-    expect(unlockNow(base(), st, '2026-10-07', mem, {})).toBeNull();
-    expect(unlockNow(base(), st, '2026-10-06', mem, { pull: true })).toBeNull();
-    expect(unlockNow(base(), st, '2026-10-07', mem, { pull: true })).toBe('pull');
+    expect(unlockNow(base(), named, '2026-10-07', mem, {})).toBeNull();
+    expect(unlockNow(base(), named, '2026-10-06', mem, { pull: true })).toBeNull();
+    expect(unlockNow(base(), named, '2026-10-07', mem, { pull: true })).toBe('pull');
   });
   it('one at a time, with days between', () => {
     /* the journal came late (day 6): the next waits UNLOCK_GAP days after it */
     const mem: UnlockMem = { journal: { d: '2026-10-06', o: 1 } };
-    expect(unlockNow(base(), st, '2026-10-08', mem, { pull: true })).toBeNull();
-    expect(unlockNow(base(), st, '2026-10-0' + (6 + UNLOCK_GAP), mem, { pull: true })).toBe('pull');
+    expect(unlockNow(base(), named, '2026-10-08', mem, { pull: true })).toBeNull();
+    expect(unlockNow(base(), named, '2026-10-0' + (6 + UNLOCK_GAP), mem, { pull: true })).toBe('pull');
+    /* with no safe person, that comes first, and the apps wait their days after it */
+    expect(unlockNow(base(), st, '2026-10-09', mem, { pull: true })).toBe('person');
+    expect(unlockNow(base(), st, '2026-10-11', { ...mem, person: { d: '2026-10-09', o: 1 } }, { pull: true })).toBeNull();
+    expect(unlockNow(base(), st, '2026-10-12', { ...mem, person: { d: '2026-10-09', o: 1 } }, { pull: true })).toBe('pull');
+  });
+  it('shows Planning a slip? the day after the first urge ridden out', () => {
+    const used = { journal: { d: '2026-10-01', o: 1 } } as UnlockMem;
+    expect(unlockNow(rode(base(), '2026-10-05'), named, '2026-10-05', used, {})).toBeNull();
+    expect(unlockNow(rode(base(), '2026-10-05'), named, '2026-10-06', used, {})).toBe('plan');
+    expect(unlockNow(base(), named, '2026-10-06', used, {})).toBeNull();
+  });
+  it('offers the safe person a week in, only to someone with none', () => {
+    const used = { journal: { d: '2026-10-01', o: 1 } } as UnlockMem;
+    expect(unlockNow(base(), st, '2026-10-06', used, {})).toBeNull();
+    expect(unlockNow(base(), st, '2026-10-07', used, {})).toBe('person');
+    expect(unlockNow(base(), named, '2026-10-07', used, {})).toBeNull();
+  });
+  it('offers Reached out from day 10, unless it is on the day already', () => {
+    const used = { journal: { d: '2026-10-01', o: 1 } } as UnlockMem;
+    const off = { ...named, routine: { ...named.routine, reach: false } } as Settings;
+    expect(unlockNow(base(), off, '2026-10-09', used, {})).toBeNull();
+    expect(unlockNow(base(), off, '2026-10-10', used, {})).toBe('reach');
+    expect(unlockNow(base(), named, '2026-10-10', used, {})).toBeNull();
   });
   it('stays the card on its day until opened, then is gone', () => {
     const mem: UnlockMem = { journal: { d: '2026-10-03' } };
@@ -63,5 +89,7 @@ describe('on Today', () => {
   });
   it('speaks plainly, with no contractions', () => {
     for (const w of Object.values(UNLOCK_WORDS)) for (const t of Object.values(w)) expect(t).not.toMatch(/[a-z]['’][a-z]/i);
+    /* care is never locked: Planning a slip? is shown, not unlocked */
+    expect(UNLOCK_WORDS.plan.eb).not.toMatch(/unlock/i);
   });
 });

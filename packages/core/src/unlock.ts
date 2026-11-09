@@ -1,26 +1,35 @@
 /* Unlocked (the owner, November 9, 2026: "we don't waterboard them with features"). Setup stays short: a part that is not
    needed on the first night opens later, one at a time, as the person uses the app. Each comes as one card on Today, "Unlocked",
    that opens its own page with the flame big, and then lives where it always lives (the journal on Today's pull-down and in
-   Change, the apps that pull you in under More).
+   Change, the safe person in My plan, Reached out in Change, the apps that pull you in under More).
+
+   The parts, and when each is ready:
+   - the journal: day UNLOCK_JOURNAL_DAY (3), two lessons done, and no entry written yet;
+   - Planning a slip?: the day after the first urge ridden out, from day 3. It was never locked (care never is): its page only
+     shows what the button on Today is for, so its small word is "A tool for you", not "Unlocked";
+   - the safe person: day 7 (the first week), when none was named (it left the setup the same day);
+   - the apps that pull you in: day 7, on an iPhone that has it, none picked yet (Screen Time, pull.ts);
+   - Reached out: day 10, when it is not on the day already;
+   - the Sunday review: the first one due is its own card (moment.ts), marked "Unlocked" and opening this page first, so it
+     is kept here too, to keep the days between.
 
    The rules, so it never crowds the day:
-   - in order, one at a time, and each only once (kept on this device, like the first pattern);
-   - each waits for its day: the journal from day UNLOCK_JOURNAL_DAY with two lessons done, the apps that pull you in from
-     day UNLOCK_PULL_DAY (the first week, when the hard hours are starting to be known);
+   - one at a time, in UNLOCK_ORDER when two are ready, and each only once (kept on this device, like the first pattern);
    - UNLOCK_GAP days at least between two, so a new part is never the third thing in a week;
    - low on Today, like the five questions: it waits behind the day's next stop as "After this", and is the card once the
      day's stops are done, so it never pushes the lesson off the flame;
    - never on the day of a slip or the day after, and never in the hours after an SOS (the caller passes `quiet`);
-   - a part already in use (a journal entry written, the journal on the day, apps already picked) is never offered.
+   - a part already in use is never offered.
    Once shown as the card it stays the card for that day until opened, and is gone the next day. Checked by test/unlock.test.ts. */
 import { addDays, diffDays, sumDay } from './legacy/core.js';
 import { lessonsDone } from './lessons';
+import { safeName } from './rekindle';
 import type { DayKey, Days, Settings } from './types';
 
-export type UnlockId = 'journal' | 'pull';
-export const UNLOCK_ORDER: UnlockId[] = ['journal', 'pull'];
-export const UNLOCK_JOURNAL_DAY = 3;
-export const UNLOCK_PULL_DAY = 7;
+export type UnlockId = 'journal' | 'plan' | 'person' | 'pull' | 'reach' | 'sunday';
+export const UNLOCK_ORDER: UnlockId[] = ['journal', 'plan', 'person', 'pull', 'reach', 'sunday'];
+/** the day each is ready from (the first day is 1); the Sunday review comes on its own Sunday */
+export const UNLOCK_DAY: Record<UnlockId, number> = { journal: 3, plan: 3, person: 7, pull: 7, reach: 10, sunday: 1 };
 export const UNLOCK_GAP = 3;
 
 /** what this device remembers: the day each was first the card, and whether its page was opened */
@@ -49,9 +58,27 @@ export function normUnlockMem(v: unknown): UnlockMem {
 /** the day number of `tk` in the person's own count: the first day is 1 */
 const dayN = (st: Settings, tk: DayKey) => diffDays(tk, st.start) + 1;
 
+/** an urge ridden out on a day before today */
+function rodeBefore(days: Days, tk: DayKey): boolean {
+  return Object.keys(days).some((k) => k < tk && (days[k]?.events || []).some((e) => e.outcome === 'rode'));
+}
+
 function ready(id: UnlockId, days: Days, st: Settings, tk: DayKey, env: UnlockEnv): boolean {
-  if (id === 'journal') return !env.journalUsed && dayN(st, tk) >= UNLOCK_JOURNAL_DAY && lessonsDone(days).size >= 2;
-  return !!env.pull && dayN(st, tk) >= UNLOCK_PULL_DAY;
+  if (dayN(st, tk) < UNLOCK_DAY[id]) return false;
+  switch (id) {
+    case 'journal':
+      return !env.journalUsed && lessonsDone(days).size >= 2;
+    case 'plan':
+      return rodeBefore(days, tk);
+    case 'person':
+      return !safeName(st);
+    case 'pull':
+      return !!env.pull;
+    case 'reach':
+      return !st.routine?.reach;
+    default:
+      return false;
+  }
 }
 
 /** the part that is unlocked now, or null */
@@ -92,6 +119,22 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     say: 'Name how the day felt, in one word or a few lines. Naming it takes some of its weight. Pull down on Today any time to write.',
     btn: 'Write the first one',
   },
+  plan: {
+    eb: 'A tool for you',
+    h: 'When you catch yourself planning it',
+    title: 'Planning a slip?',
+    line: 'You rode an urge out. Here is the tool for the night it starts earlier.',
+    say: 'A slip is often planned long before it happens: a late night, a closed door. When you notice that, tap Planning a slip? on Today. We talk it through, and you choose with your eyes open.',
+    btn: 'See how it works',
+  },
+  person: {
+    eb: 'Unlocked',
+    h: 'Your safe person',
+    title: 'Who could be your safe person?',
+    line: 'Only you see the name. Daybook never contacts anyone.',
+    say: 'A week in, you know this is real. One person you could text on a hard night makes the next one easier.',
+    btn: 'Save',
+  },
   pull: {
     eb: 'Unlocked',
     h: 'The app that pulls you in',
@@ -99,5 +142,21 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     line: 'Nothing about your apps ever leaves this phone.',
     say: 'When it has you too long, I will say so. In your hard hours, I will say it louder.',
     btn: 'Choose the apps',
+  },
+  reach: {
+    eb: 'Unlocked',
+    h: 'Reach out to someone',
+    title: 'Reach out to someone',
+    line: 'A text, a call, or a talk with a person. Any person counts.',
+    say: 'This habit grows in secret, and it shrinks when you are known. One real word with someone each day is part of getting free.',
+    btn: 'Put it on my day',
+  },
+  sunday: {
+    eb: 'Unlocked',
+    h: 'Your first Sunday review',
+    title: 'Your first Sunday review',
+    line: 'A few minutes, once a week.',
+    say: 'Your week, one thing at a time: what helped, what got you, and one small goal for the next. This is where you start to see your pattern.',
+    btn: 'Start my review',
   },
 };

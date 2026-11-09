@@ -187,7 +187,6 @@ export type PageKind =
   | 'goal'
   | 'reasons'
   | 'then'
-  | 'person'
   | 'becoming'
   | 'review'
   | 'remind'
@@ -339,7 +338,7 @@ export const OB_PAGES: ObPage[] = [
   /* thirty seconds of slow breathing, the way SOS starts (a placeholder until the real breath is built) */
   { id: 'breathe', s: 'hour', k: 'breathe' },
   { id: 'loop', s: 'hour', k: 'loop' },
-  { id: 'person', s: 'hour', k: 'person', key: 'person' },
+  /* the safe person left the setup on November 9, 2026: it is asked a week in (unlock.ts) */
   /* one page in place of the five tour pages: SOS, lessons, your day, the pattern, the flame */
   { id: 'tour', s: 'hour', k: 'tour' },
   { id: 'curve', s: 'plan', k: 'curve' },
@@ -721,7 +720,6 @@ const OB_SAY: Record<string, string> = {
   guess: 'Guess first. Then see your number.',
   when: 'Tap all that apply. I will get ready for these.',
   breathe: 'Breathe with me. This is what SOS starts with.',
-  person: 'Someone calm you could tell when you slip. A first name is enough.',
   tried: 'There is no wrong answer here.',
   goal: 'I picked the one that fits your answers. Any of them works.',
   reasons: 'Pick what matters most. I will show them to you on hard nights.',

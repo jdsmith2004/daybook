@@ -119,7 +119,7 @@ describe('the goal it suggests', () => {
 
 it('tells the setup as three acts, in one order', () => {
   expect(core.obPages({}).map((p) => p.id)).toEqual([
-    ...'hello how aim years freq mins faith b0 b1 b2 b3 b4 heard costs when wave breathe loop person tour curve tried tries slip goal reasons ifthen so becoming review'.split(
+    ...'hello how aim years freq mins faith b0 b1 b2 b3 b4 heard costs when wave breathe loop tour curve tried tries slip goal reasons ifthen so becoming review'.split(
       ' ',
     ),
     'done',

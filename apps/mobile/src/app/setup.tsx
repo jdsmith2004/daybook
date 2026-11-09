@@ -814,22 +814,6 @@ export default function Setup() {
       foot = nextBtn(cur ? 'Next' : 'Skip', !cur);
       break;
     }
-    case 'person': {
-      const has = !!String(a.person || '').trim();
-      /* the text box stays near the top, where the keyboard leaves it in sight */
-      body = (
-        <>
-          <Head h="Who could be your safe person?" />
-          <Field label="Their name" maxLength={80} placeholder="A first name" defaultValue={a.person || ''} onChangeText={(v) => setA({ person: v })} />
-          <T v="small" tone="muted" style={s.c}>
-            Only you see the name. Daybook never contacts anyone. You can skip this.
-          </T>
-          <Talk text={voice} want={want * 0.75} />
-        </>
-      );
-      foot = nextBtn(has ? 'Next' : 'Skip', !has);
-      break;
-    }
     case 'becoming': {
       const cur = obBecoming(a);
       const own = OB_BE.indexOf(cur) < 0 ? cur : '';
@@ -910,7 +894,7 @@ export default function Setup() {
                       l="Screens off"
                       v={isTime(a.so) ? fmtClock(a.so as string) : fmtClock(SO_USUAL) + ' (the usual; change it any time)'}
                     />
-                    <PlanBit icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
+                    {String(a.person || '').trim() ? <PlanBit icon="chat" l="Safe person" v={String(a.person).trim()} /> : null}
                   </View>,
                   th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
                   <PlanRow key="w" icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />,

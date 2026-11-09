@@ -156,7 +156,10 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 
   /* 8. the Sunday review */
   const sd = sunDue(reviews, st, tk);
-  if (sd)
+  /* the first one is a part unlocked (unlock.ts): its own page says what it is, then opens it */
+  if (sd && !sd.late && !Object.keys(reviews || {}).length)
+    m('sunday', UNLOCK_WORDS.sunday.eb, UNLOCK_WORDS.sunday.h, '', 'Start', 'unlock', 'your Sunday review', sd.sun);
+  else if (sd)
     m(
       'sunday',
       sd.late ? 'Last week' : 'Sunday',

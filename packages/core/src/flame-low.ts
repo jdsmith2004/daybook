@@ -30,6 +30,8 @@ export interface FireLow {
   idle: number;
   /** how low it was burning before what was done today: above 0 when today lit it again */
   was: LowStep;
+  /** the day before it burns lower: nothing done yesterday and nothing yet today. Today warns, and so does the day's reminder. */
+  warn: boolean;
 }
 
 /** whether the person did their part on a day: anything that earns points, a tool, a talk-through or a feeling named */
@@ -55,7 +57,7 @@ function lastSlipMs(days: Days, st: Settings, tk: DayKey): number | null {
 
 /** how low the fire burns today */
 export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: number): FireLow {
-  const none: FireLow = { step: 0, low: 0, idle: 0, was: 0 };
+  const none: FireLow = { step: 0, low: 0, idle: 0, was: 0, warn: false };
   if (!st || !st.start || tk <= st.start) return none;
   /* the days before today with nothing done, back to the start */
   const back = Math.min(LOOK_BACK, diffDays(tk, st.start));
@@ -64,8 +66,8 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
   const at = lastSlipMs(days, st, tk);
   const fresh = at != null && nowMs - Math.min(at, nowMs) < SLIP_HOURS * 36e5;
   const before = fresh ? 0 : stepOf(idle);
-  if (partDone(days, st, tk)) return { step: 0, low: 0, idle: 0, was: before };
-  return { step: before, low: LOW_OF[before], idle, was: before };
+  if (partDone(days, st, tk)) return { step: 0, low: 0, idle: 0, was: before, warn: false };
+  return { step: before, low: LOW_OF[before], idle, was: before, warn: !fresh && idle === LOW_AT[0] - 1 };
 }
 
 /** the words on Today while it burns low: firm and plain, about the next choice */
@@ -76,6 +78,17 @@ export function lowWords(f: FireLow): { h: string; p: string } | null {
   if (f.step === 2) return { h: 'Your fire is smouldering', p: days + '. It goes lower each day.' };
   return { h: 'Your fire is down to embers', p: days + '. One ember still glows.' };
 }
+/** the quieter line on Today the day before it burns lower */
+export const LOW_WARN = 'Nothing done yesterday. Do one thing today, or your fire burns lower tomorrow.';
+/** the day's reminder, the day before it burns lower */
+export const LOW_WARN_NOTE = { t: 'Your fire burns lower tomorrow 🔥', b: 'Do one thing today to keep it burning. Today’s lesson takes a few minutes.' };
+/** the come-back notes while it burns low, by how low (never after a slip, never saying what Daybook is for) */
+export const LOW_NOTES: Record<1 | 2 | 3, { t: string; b: string }> = {
+  1: { t: 'Your fire is burning lower 🔥', b: 'You are dimming it. A few minutes today keeps it burning.' },
+  2: { t: 'Your fire is smouldering', b: 'It goes lower every day you leave it. One thing today lights it again.' },
+  3: { t: 'Your fire is down to embers', b: 'One ember still glows. One thing today lights it again.' },
+};
+
 /** the small words over the next step while it burns low */
 export const LOW_LEAD = 'This lights your fire again';
 /** said when today lit it again */

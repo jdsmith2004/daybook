@@ -65,6 +65,7 @@ export * from './health';
 export * from './back';
 export * from './night-win';
 export * from './pulse';
+export * from './events';
 export * from './moment';
 export * from './slip';
 export * from './recheck';

@@ -306,7 +306,14 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   const remOn = [rem.lesson && 'lesson', rem.checkin && 'check-in', rem.wind && 'wind-down', rem.review && 'Sunday review', rem.risk && 'heads-ups'].filter(
     Boolean,
   ) as string[];
-  const remLine = remOn.length ? andList(remOn) : 'Off';
+  const remWords = andList(remOn);
+  /* the phone's own permission comes first: reminders chosen here send nothing while it is off */
+  const remLine =
+    notifyEnv && notifyEnv.offered && !notifyEnv.granted
+      ? 'Off · notifications are off on this phone'
+      : remOn.length
+        ? remWords.charAt(0).toUpperCase() + remWords.slice(1)
+        : 'Off';
   const wipeWhat = `every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}`;
 
   return {
@@ -862,7 +869,7 @@ export function SettingsPart({ id }: { id: PartId }) {
   if (!p || !p.body) return <Redirect href="/settings" />;
   /* a short page sits low, where the thumb is: the title at the top, what is changed just above the bottom edge */
   return (
-    <Screen title={p.title} back>
+    <Screen title={p.title} back="Settings">
       <View style={[s.page, { minHeight: height - inset.top - inset.bottom - 200 }]}>{p.body}</View>
     </Screen>
   );
@@ -882,7 +889,7 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
           Pick the apps that pull you in. When one has you too long, I will say so, and in your hard hours I will say it louder. Nothing about your apps leaves
           this phone.
         </T>
-        <Link label="Choose the apps" onPress={start} />
+        <Button label="Choose the apps" onPress={start} />
       </>
     );
   const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');

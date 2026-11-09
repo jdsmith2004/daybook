@@ -78,6 +78,8 @@ function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: s
 
 type LiveWant = { key: string; img: string; line: string; sub: string; short: string; a: number; b: number; left: string; right: string };
 const LIVE_FIELDS = ['img', 'line', 'sub', 'short', 'a', 'b', 'left', 'right'] as const;
+/** one change at a time, so two quick changes never cross */
+let liveQueue: Promise<unknown> = Promise.resolve();
 /** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none */
 async function syncLive(want: LiveWant | null, url: string, to: number) {
   const note = liveNote();
@@ -165,8 +167,12 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
       : null;
   const wantKey = want ? JSON.stringify(want) : '';
   useEffect(() => {
-    if (!ready || (want && !drawnAll)) return;
-    syncLive(want, plan?.url ?? '/', plan?.to ?? 0).catch(() => undefined);
+    /* only once the log is read and the pictures are drawn: before that, nothing is known, and ending it then made it flicker away
+       each time the app opened (a tap on it opens the app) */
+    if (!ready || !drawnAll) return;
+    const url = plan?.url ?? '/';
+    const to = plan?.to ?? 0;
+    liveQueue = liveQueue.then(() => syncLive(want, url, to)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, wantKey, drawnAll]);
   /* on a screen yet? asked each time the app comes back, until it is */

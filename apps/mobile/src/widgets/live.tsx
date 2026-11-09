@@ -1,19 +1,20 @@
 /* The Live Activity on iPhone (core live-activity.ts): the flame on the Lock Screen and in the Dynamic Island, in the hard hours and
-   at night. The flame picture is the one the app drew (lib/flame-widget), or the flame asleep after Goodnight.
-   The look follows the best of them (the owner, November 9, 2026: "research prominent live activities"; Apple's guidelines, Uber,
-   Swiggy): one hero line, then a progress bar that iPhone fills on its own as the time passes (no app needed), with the times at its
-   ends; 14 point margins, a dark sky that holds over any wallpaper, the flame with no frame around it, and in the Dynamic Island the
-   flame and one time, read as one piece.
+   at night. The look follows the flight, ride and delivery cards the owner held up (November 9, 2026): the start and end times big at
+   the two ends, a thick bar between them that iPhone fills on its own as the time passes, the flame waiting at its end, and a live
+   countdown under it. In the Dynamic Island, a ring that fills around the flame and the live time left beside it, read as one thing.
+   One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
    This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
    what Daybook is for. */
-import { HStack, Image, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { HStack, Image, ProgressView, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
   activityBackgroundTint,
   aspectRatio,
   font,
   foregroundStyle,
   frame,
+  labelsHidden,
   lineLimit,
+  monospacedDigit,
   padding,
   progressViewStyle,
   resizable,
@@ -25,12 +26,11 @@ import { createLiveActivity, type LiveActivityEnvironment } from 'expo-widgets';
 export type FlameLiveProps = {
   /** the picture of the flame, a file:// path in the shared folder */
   img: string;
+  /** the one line at the top ("Wind down") */
   line: string;
-  /** the time under it ("Till 10 PM"), or empty */
   sub: string;
-  /** the same, short, for the Dynamic Island ("10 PM"), or empty */
   short: string;
-  /** the progress bar fills from a to b (ms), with left and right at its ends */
+  /** the bar fills from a to b (ms), with left and right said at its ends */
   a: number;
   b: number;
   left: string;
@@ -40,6 +40,8 @@ export type FlameLiveProps = {
 const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) => {
   'widget';
   const WARM = '#FFB347';
+  const SOFT = '#B9B2E0';
+  const span = { lower: new Date(props.a), upper: new Date(props.b) };
   const flame = (size: number) =>
     props.img ? (
       <Image uiImage={props.img} modifiers={[resizable(), aspectRatio({ contentMode: 'fit' }), frame({ width: size, height: size })]} />
@@ -49,48 +51,66 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   const text = (s: string, size: number, color: string, weight: 'bold' | 'semibold' = 'semibold') => (
     <Text modifiers={[font({ size, weight, design: 'rounded' }), foregroundStyle(color), lineLimit(1)]}>{s}</Text>
   );
-  /* the bar: filled by iPhone as the time passes, thick, in the warm color, with the times at its ends */
-  const bar =
-    props.b > props.a ? (
-      <VStack spacing={5}>
-        <ProgressView
-          timerInterval={{ lower: new Date(props.a), upper: new Date(props.b) }}
-          countsDown={false}
-          modifiers={[progressViewStyle('linear'), tint(WARM), scaleEffect({ x: 1, y: 1.6 })]}>
-          {null}
-        </ProgressView>
-        <HStack>
-          {text(props.left, 13, '#B9B2E0')}
-          <Spacer />
-          {text(props.right, 13, '#B9B2E0')}
-        </HStack>
-      </VStack>
-    ) : null;
-  const dim = environment.isLuminanceReduced;
+  /* the time left, counted down by iPhone */
+  const left = (size: number, color: string) => (
+    <Text
+      timerInterval={span}
+      countsDown
+      modifiers={[font({ size, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(color), lineLimit(1)]}
+    />
+  );
+  /* the thick bar, with the flame waiting at its end */
+  const bar = (
+    <HStack spacing={8}>
+      <ProgressView
+        timerInterval={span}
+        countsDown={false}
+        modifiers={[progressViewStyle('linear'), labelsHidden(), tint(WARM), scaleEffect({ x: 1, y: 2.2 })]}
+      />
+      {flame(26)}
+    </HStack>
+  );
+  /* the ring that fills around the flame, for the Dynamic Island */
+  const ring = (size: number) => (
+    <ZStack modifiers={[frame({ width: size, height: size })]}>
+      <ProgressView timerInterval={span} countsDown={false} modifiers={[progressViewStyle('circular'), labelsHidden(), tint(WARM)]} />
+      {flame(size * 0.62)}
+    </ZStack>
+  );
+  const ends = (size: number) => (
+    <HStack>
+      {text(props.left, size, '#FFFFFF', 'bold')}
+      <Spacer />
+      {text(props.right, size, WARM, 'bold')}
+    </HStack>
+  );
   return {
     banner: (
-      <VStack spacing={12} modifiers={[activityBackgroundTint(dim ? '#000000' : '#1E1846'), padding({ all: 14 })]}>
-        <HStack spacing={12}>
-          {flame(52)}
-          <VStack alignment="leading" spacing={2} modifiers={[frame({ maxWidth: 1000, alignment: 'leading' })]}>
-            {text(props.line, 20, '#FFFFFF', 'bold')}
-            {props.sub ? text(props.sub, 15, WARM) : null}
-          </VStack>
+      <VStack spacing={10} modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : '#16123A'), padding({ all: 16 })]}>
+        <HStack>
+          {text(props.line, 15, SOFT)}
+          <Spacer />
         </HStack>
+        {ends(26)}
+        {bar}
+        <HStack spacing={5}>
+          {left(17, '#FFFFFF')}
+          {text('left', 15, SOFT)}
+        </HStack>
+      </VStack>
+    ),
+    compactLeading: ring(26),
+    compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{left(15, WARM)}</VStack>,
+    minimal: ring(24),
+    expandedLeading: <VStack modifiers={[padding({ leading: 4 })]}>{ring(34)}</VStack>,
+    expandedCenter: text(props.line, 15, SOFT),
+    expandedTrailing: <VStack modifiers={[padding({ trailing: 4 })]}>{left(18, WARM)}</VStack>,
+    expandedBottom: (
+      <VStack spacing={10} modifiers={[padding({ horizontal: 4, top: 6, bottom: 4 })]}>
+        {ends(20)}
         {bar}
       </VStack>
     ),
-    compactLeading: flame(24),
-    compactTrailing: props.short ? text(props.short, 14, WARM) : <Image systemName="moon.zzz.fill" size={14} color={WARM} />,
-    minimal: flame(22),
-    expandedLeading: flame(48),
-    expandedCenter: (
-      <VStack alignment="leading" spacing={2}>
-        {text(props.line, 17, '#FFFFFF', 'bold')}
-        {props.sub ? text(props.sub, 14, WARM) : null}
-      </VStack>
-    ),
-    expandedBottom: bar,
   };
 };
 

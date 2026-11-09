@@ -176,9 +176,14 @@ is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIE
   picked apps kept as opaque tokens in the App Group), `write` (core `pullBridge` for the extensions, and Apple's schedules set to
   match, only when they change, since restarting a schedule ends it), `lift`, `openFor`, `stop`, `ignoredAt`, `takeWant`. Its `on`
   is false in any other build, and `lib/pull.ts` then uses the stand-in or nothing.
-- **The schedules:** `pull.long` every day with one event at the person's hours; `pull.hard.<weekday>` for each hard-hours window
-  (two hours, across midnight when it must) with events at 10, 20 and 30 minutes; `pull.open` for the minutes open after the wait
-  (Apple's 15-minute shortest schedule, with the event at those minutes of use).
+- **The schedules:** `pull.long` every day with one event at the person's hours; `pull.hard.<weekday>.<hour>` for each hard-hours
+  window (two hours, across midnight when it must) with events at 10, 20 and 30 minutes; `pull.open` for the minutes open after
+  the wait (20 minutes from now, with the event at those minutes of use). Each is restarted only when what it is set from changes,
+  and a window is never stopped while it runs.
+- **Review fixes before the first real iPhone (November 9, 2026),** for what only a device shows: Apple's access status loads late,
+  so only a plain no turns it off (and then everything stops); thresholds that fire early after a start are ignored, by a start
+  stamp per schedule; stopping `pull.open` ends its interval, so a second Open is not paused again at once; the app lifts a pause
+  whose end has passed; a window's end is read from the clock (the spring-forward night); the shield's flame is 60 points.
 - **The extensions** (`targets/`, `@bacons/apple-targets` 5.0.0, sharing `targets/_shared/PullShared.swift`):
   - **The monitor** posts the bridge's note (core `pullNoteFor`, the same rule in Swift), one of each per day or window. A threshold
     that comes sooner than it could have is ignored. At 30 minutes it marks the notes ignored, outside the quiet after a slip, and

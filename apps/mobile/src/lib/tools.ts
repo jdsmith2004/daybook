@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { close } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -33,6 +34,7 @@ export function useFinishTool(lr = false) {
     });
     buzz('save');
     count('tool_' + id);
+    track('tool_done', { tool: id });
     const gain = after - before;
     if (sos.ur) {
       const ur = sos.ur;

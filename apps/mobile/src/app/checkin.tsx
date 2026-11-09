@@ -47,6 +47,7 @@ import { Slider, SliderValue } from '@/components/slider';
 import { Button, Chip, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
@@ -160,6 +161,7 @@ export default function Checkin() {
     });
     saveDraft(k, null, tk);
     count('checkin');
+    track('checkin', { mood: form.md, str: form.u, sleep: form.h });
     buzz('lit');
     setMsg(text);
     setHist([]);
@@ -170,7 +172,11 @@ export default function Checkin() {
   const sayGoodnight = () => {
     const b = goodnight(any ? form : null);
     saveDraft(k, null, tk);
-    if (any) count('checkin');
+    if (any) {
+      count('checkin');
+      track('checkin', { mood: form.md, str: form.u, sleep: form.h });
+    }
+    track('wind');
     setBed(b);
   };
 

@@ -716,7 +716,7 @@ const OB_SAY: Record<string, string> = {
   freq: 'Rough is fine. Only you see this.',
   mins: 'Count from when you start until you stop.',
   faith: 'It only changes which lessons come up.',
-  b0: 'Only you see your answers. A quick, tested check.',
+  b0: 'Your answers stay private. A quick, tested check.',
   costs: 'Tap all that apply.',
   guess: 'Guess first. Then see your number.',
   when: 'Tap all that apply. I will get ready for these.',

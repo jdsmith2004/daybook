@@ -31,6 +31,7 @@ import { Button, Card, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { play } from '@/lib/sound';
 import { close } from '@/lib/nav';
 import { useSos, type PauseTimer } from '@/lib/sos';
@@ -130,6 +131,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
       });
       sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
       count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+      track(v === 'rode' ? 'urge' : 'slip', v === 'rode' ? { outcome: 'rode' } : {});
       sos.end();
       if (v === 'rode' && won) {
         won({ key: e.key, id, mins: e.mins, moves: a.used.filter((x, i, l) => l.indexOf(x) === i), gain: Math.max(0, gain) + (t.gain || 0), sos: true });
@@ -165,6 +167,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
     });
     sos.setTimer(null);
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
+    track(v === 'rode' ? 'urge' : 'slip', v === 'rode' ? { outcome: 'rode' } : {});
     if (v === 'rode' && won) {
       won({ key, id, mins: Math.max(0, waited), moves: [], gain: Math.max(0, pts1 - pts0) + (t.gain || 0) });
       return;

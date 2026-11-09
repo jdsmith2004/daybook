@@ -10,6 +10,7 @@
 import { fmtDate, gameCompute, isSupporter, keyOfDate, patOpen, PATTERN_FROM, supPaid, supPerks, TIP_WORDS } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
@@ -26,7 +27,10 @@ import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipPrice, tipW
 
 export default function Tip() {
   /* the anonymous counts: the tip page was opened (a tip itself is never counted) */
-  useEffect(() => count('tip_open'), []);
+  useEffect(() => {
+    count('tip_open');
+    track('ask_tap', { what: 'tip' });
+  }, []);
   return PATTERN_FROM != null ? <PatternSheet /> : <TipSheet />;
 }
 

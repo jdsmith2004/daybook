@@ -19,6 +19,7 @@ import { useCareSettings, useStore } from '@/lib/store';
 import { urNight } from '@daybook/core';
 import { close } from '@/lib/nav';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { useFinishTool, useToolExit } from '@/lib/tools';
 import type { Sky } from '@/lib/theme';
 
@@ -47,7 +48,9 @@ export default function Tool() {
   const exit = useToolExit(lr === '1');
   /* the anonymous counts: the tool was opened (tool_<id> says it was finished) */
   useEffect(() => {
-    if (id) count('tool_' + id + '_open');
+    if (!id) return;
+    count('tool_' + id + '_open');
+    track('tool_open', { tool: id });
   }, [id]);
   const [step, setStep0] = useState(0);
   /* which way a step slides: on with Next, back with Back */

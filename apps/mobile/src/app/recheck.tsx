@@ -9,6 +9,7 @@ import { closeSheet, SheetFrame } from '@/components/sheet';
 import { ChoiceRows } from '@/components/slip';
 import { Text } from '@/components/text';
 import { Button, T } from '@/components/ui';
+import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -45,6 +46,8 @@ export default function Recheck() {
     setAnswers(next);
     if (next.length === OB_BPS.length) {
       finished.current = true;
+      /* what Daybook learns: the five answers as numbers, the closest thing it has to "is it working" */
+      track('recheck', { q1: next[0], q2: next[1], q3: next[2], q4: next[3], q5: next[4] });
       sos.setMem((m) => {
         const { bpsNo: _no, ...rest } = m;
         return bpsKeep(rest, tk, bpsScore(next));

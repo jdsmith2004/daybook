@@ -5,7 +5,7 @@
    track('lesson_done', { lesson: 'l14', secs: 300 }) anywhere in the app adds an event; anything not on core's list is
    dropped. It does nothing while the person has turned it off in More (lib/pulse.ts tells this file, with setEventsOff),
    and nothing at all in a build with no EVENTS_URL. Turning it off, or Delete everything, drops what waits and the id. */
-import { evAdd, evBatch, evNew, evNorm, evSent, logicalKey, type EvName, type EvState } from '@daybook/core';
+import { EV_ROUTES, evAdd, evBatch, evNew, evNorm, evSent, logicalKey, type EvName, type EvState } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
@@ -147,10 +147,51 @@ export function useKeepEvents(ready: boolean) {
         track('open', { cold: false });
         if (Date.now() - lastSend > EVERY) sendEvents();
       } else if (a === 'background') {
-        track('leave', { secs: Math.round((Date.now() - since) / 1000) });
+        track('leave', { secs: Math.round((Date.now() - since) / 1000), route });
         sendEvents();
       }
     });
     return () => sub.remove();
   }, [ready]);
+}
+
+/* ---------- screens ---------- */
+let route = 'today';
+let routeSince = Date.now();
+/** the route name for a path: its first part ("/lesson/l14" is "lesson", "/" is Today), "other" when it is not on the list */
+export function routeOf(path: string): string {
+  const first =
+    (path || '/')
+      .split('?')[0]
+      .split('/')
+      .filter((x) => x && !x.startsWith('('))[0] || 'today';
+  const name = first === 'sos-door' ? 'sos' : first === 'lwrite' ? 'lesson' : first;
+  return (EV_ROUTES as readonly string[]).includes(name) ? name : 'other';
+}
+/** in the root layout: each screen opened, and the one before it left with how long it was on */
+export function useTrackScreens(path: string) {
+  useEffect(() => {
+    const r = routeOf(path);
+    if (r === route && Date.now() - routeSince < 1000) return;
+    track('screen_left', { route, secs: Math.round((Date.now() - routeSince) / 1000) });
+    route = r;
+    routeSince = Date.now();
+    track('screen', { route: r });
+  }, [path]);
+}
+/** the screen the person is on, for "left Daybook from" */
+export const currentRoute = () => route;
+
+/** a reminder count (core nudgeCounts: nt_lesson, nt_lesson_did) as its event */
+export function trackNudge(k: string) {
+  const m = /^nt_([a-z]+)(?:_(tap|did))?$/.exec(k);
+  if (m) track(m[2] === 'tap' ? 'nudge_tap' : m[2] === 'did' ? 'nudge_did' : 'nudge', { kind: m[1] });
+}
+
+/** SOS ended: how, how long, how strong it was, the trigger picked, and each tool tried with what came after it (core urEntry) */
+export function trackSos(v: 'rode' | 'slipped', f: { trigger?: string | null; st?: 'low' | 'mid' | 'high'; m?: number; tr?: [string, 'p' | 's' | 'x'][] }) {
+  const str = f.st === 'low' ? 3 : f.st === 'mid' ? 6 : f.st === 'high' ? 9 : undefined;
+  for (const [tool, r] of f.tr || []) track('sos_tool', { tool, outcome: r === 'p' ? 'rode' : r === 'x' ? 'slipped' : 'strong' });
+  track('sos_end', { outcome: v, secs: (f.m || 0) * 60, str });
+  track(v === 'rode' ? 'urge' : 'slip', { str, trigger: f.trigger || undefined, outcome: v === 'rode' ? 'rode' : undefined });
 }

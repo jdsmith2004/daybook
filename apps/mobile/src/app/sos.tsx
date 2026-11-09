@@ -56,6 +56,7 @@ import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close, closeAll } from '@/lib/nav';
 import { count } from '@/lib/pulse';
+import { track, trackSos } from '@/lib/events';
 import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -79,7 +80,9 @@ export default function Sos() {
   const [practice] = useState(() => pq === '1');
   /* a practice ride is not counted as an SOS */
   useEffect(() => {
-    if (!practice) count('sos');
+    if (practice) return;
+    count('sos');
+    track('sos_open', { from: 'other' });
   }, [practice]);
   const g = useMemo(() => gameCompute(snap.days, st, snap.reviews, tk), [snap, st, tk]);
   /* before setup, help comes first and the setup comes right after (components/welcome.tsx) */
@@ -174,6 +177,7 @@ export default function Sos() {
     sos.setMem((m) => ({ ...(v === 'rode' ? urWon(m, a) : m), last: e.last }));
     count(v === 'rode' ? 'urge_logged' : 'slip_logged');
     if (!practice) count(v === 'rode' ? 'sos_rode' : 'sos_slip');
+    if (!practice) trackSos(v, e.fields);
     setMore(false);
     if (v === 'slipped') {
       sos.end();

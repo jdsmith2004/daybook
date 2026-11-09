@@ -30,6 +30,7 @@ import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
 
@@ -59,7 +60,10 @@ export function useGoodnight() {
       first = !s0.days[tk]?.p?.po && !!days[tk]?.p?.po;
       return { ...s0, days };
     });
-    if (first) count('goodnight');
+    if (first) {
+      count('goodnight');
+      track('wind');
+    }
     buzz('save');
     return { at, gain, msg };
   };

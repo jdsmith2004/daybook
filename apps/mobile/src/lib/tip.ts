@@ -38,6 +38,8 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
+import { track } from '@/lib/events';
+
 import {
   appleTipError,
   appleTipQuiet,
@@ -329,6 +331,12 @@ function waitForWebTip(): Promise<Supporter | null> {
     (tipError says why, when there is something to say). `pattern`: the sheet is selling Daybook Pattern, so what goes wrong is
     said in its words. */
 export async function buyTip(tier: TipTier, via: TipVia, pattern = false): Promise<Supporter | null> {
+  const r = await buyTip0(tier, via, pattern);
+  /* what Daybook learns: which product, never an amount, a card or a receipt */
+  if (r) track('bought', { tier: via === 'apple' ? String(tier) : 'web' });
+  return r;
+}
+async function buyTip0(tier: TipTier, via: TipVia, pattern: boolean): Promise<Supporter | null> {
   lastError = '';
   lastWords = '';
   const w = pattern ? PAT_WORDS.sheet : TIP_WORDS.sheet;
@@ -399,6 +407,11 @@ async function webPay(link: string, w: { webClosed: string; unconfirmed: string 
 /** starts the monthly plan, on Apple only. Resolves to the record once the payment is confirmed, or null when it was cancelled
     or failed (tipWords says why). */
 export async function buyMonthly(): Promise<PatRec | null> {
+  const r = await buyMonthly0();
+  if (r) track('bought', { tier: 'pattern_month' });
+  return r;
+}
+async function buyMonthly0(): Promise<PatRec | null> {
   lastError = '';
   lastWords = '';
   const w = PAT_WORDS.sheet;

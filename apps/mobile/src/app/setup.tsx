@@ -98,6 +98,7 @@ import { askStoreReview } from '@/lib/review';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
+import { track } from '@/lib/events';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
@@ -210,7 +211,9 @@ export default function Setup() {
   }, [f, i, pg.k]);
   /* the anonymous counts: how far a new person got (core pulse.ts), a basic count sent without asking */
   useEffect(() => {
-    if (!f.redo) countSetup(OB_PAGES.indexOf(pg), pg.k === 'done');
+    if (f.redo) return;
+    countSetup(OB_PAGES.indexOf(pg), pg.k === 'done');
+    track(pg.k === 'done' ? 'setup_done' : 'setup_page', { page: pg.id });
   }, [f.redo, pg]);
 
   const busy = () => Date.now() < until.current;
@@ -306,7 +309,14 @@ export default function Setup() {
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
       <View key="s" style={s.footOne}>
-        <Ghost label={label} onPress={() => !busy() && go(1)} />
+        <Ghost
+          label={label}
+          onPress={() => {
+            if (busy()) return;
+            if (!f.redo) track('setup_skip', { page: pg.id });
+            go(1);
+          }}
+        />
       </View>
     ) : (
       <View key="n" style={s.footOne}>
@@ -317,6 +327,7 @@ export default function Setup() {
     if (busy()) return;
     setA({ [key]: v });
     buzz('tap');
+    if (!f.redo) track('setup_pick', { page: pg.id });
     if (auto) later();
   };
   /* a one-tap question the flame answers: the pick stays, the flame leaps and says its piece, and Next goes on */
@@ -324,6 +335,7 @@ export default function Setup() {
     if (busy()) return;
     if (a[key] !== v) setPulse((x) => x + 1);
     setA({ [key]: v });
+    if (!f.redo) track('setup_pick', { page: pg.id });
     buzz('tap');
   };
 
@@ -382,7 +394,7 @@ export default function Setup() {
     case 'how': {
       body = (
         <>
-          <Head h="Three parts, about 8 minutes." sub="Only you see your answers. You can skip any question." />
+          <Head h="Three parts, about 8 minutes." sub="Your answers stay private, never tied to who you are. You can skip any question." />
           <Middle>
             <View style={s.acts}>
               {OB_SECS.map((x) => {

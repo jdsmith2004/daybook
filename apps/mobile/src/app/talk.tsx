@@ -90,6 +90,7 @@ import { TalkArtView } from '@/components/talk-art';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { close, closeAll, openCare } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -276,6 +277,7 @@ export default function TalkIt() {
     setTalk(t);
     persist(t);
     count('talk_done');
+    track('talk_done');
     const at = t.p === 'open' ? now + 3600000 : t.at;
     if (remind && remindersOffered && at) {
       const body = t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan is ready. One tap away.';

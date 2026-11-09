@@ -7,7 +7,17 @@ import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bo
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
 import { nudgeCounts, nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, nudgeTapKind } from '@daybook/core';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  router,
+  Stack,
+  ThemeProvider,
+  useNavigationContainerRef,
+  usePathname,
+  useSegments,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -27,7 +37,8 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
-import { useKeepEvents } from '@/lib/events';
+import { trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
+import { DayEvents } from '@/lib/events-day';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -61,7 +72,10 @@ function Reminders() {
       const s = live.current;
       if (ok) countOnce('rem_on');
       const l0 = nlog.current;
-      nudgeCounts({ ...l0, opens: [...l0.opens, t] }, s.days, s.settings, s.reviews, t, ok).forEach(count);
+      nudgeCounts({ ...l0, opens: [...l0.opens, t] }, s.days, s.settings, s.reviews, t, ok).forEach((k) => {
+        count(k);
+        trackNudge(k);
+      });
       setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
       setAllowed(ok);
       setOpenAt(t);
@@ -85,7 +99,10 @@ function Reminders() {
     () =>
       listenForTaps((id) => {
         const k = nudgeTapKind(id);
-        if (k) count('nt_' + k + '_tap');
+        if (k) {
+          count('nt_' + k + '_tap');
+          trackNudge('nt_' + k + '_tap');
+        }
         setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
       }),
     [],
@@ -161,6 +178,7 @@ function Shell() {
   const { ready, snap, loadFailed, retryLoad } = useStore();
   useKeepPulse(ready, snap.days);
   useKeepEvents(ready);
+  useTrackScreens(usePathname());
   /* the day's first open, for "How are you feeling today?" on Today (lib/day-open.ts) */
   useWatchOpens(ready, snap.settings?.rollover ?? 4, !!snap.settings);
   const [fonts, fontError] = useFonts({
@@ -196,6 +214,7 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <WebChrome bg={c.bg} />
       <Reminders />
+      <DayEvents />
       <NoteCopy />
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />

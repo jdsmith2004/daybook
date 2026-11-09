@@ -91,6 +91,7 @@ import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { lessonLook, PAPER, PAPER_INK, SUN_CARD, SUN_INK, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
@@ -129,6 +130,21 @@ export default function LessonScreen() {
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
   const [i, setI] = useState(0);
+  /* what Daybook learns: when it opened, each part reached, and a lesson left before its end (lib/events.ts) */
+  const opened = useRef(Date.now());
+  const finished = useRef(false);
+  const beatAt = useRef(0);
+  useEffect(() => {
+    beatAt.current = i;
+    if (L && i > 0) track('lesson_beat', { lesson: L.id, beat: i });
+  }, [i, L?.id]);
+  useEffect(
+    () => () => {
+      if (L && !finished.current) track('lesson_left', { lesson: L.id, beat: beatAt.current });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [L?.id],
+  );
   const [len, setLen] = useState<'q' | 'f'>('f');
   const [pick, setPick] = useState<Record<number, number>>({});
   const [tried, setTried] = useState<Record<number, number[]>>({});
@@ -167,7 +183,10 @@ export default function LessonScreen() {
   }, [ringLit]);
   /* the anonymous counts: a lesson was opened (lesson_done and ld_<id> say it was finished, and which) */
   useEffect(() => {
-    if (L) count('lesson_open');
+    if (!L) return;
+    count('lesson_open');
+    track('lesson_open', { lesson: L.id });
+    opened.current = Date.now();
   }, [L?.id]);
 
   if (!st) return <Redirect href="/" />;
@@ -249,6 +268,8 @@ export default function LessonScreen() {
     setAgain(a);
     count('lesson_done');
     count('ld_' + L.id);
+    track('lesson_done', { lesson: L.id, secs: Math.round((Date.now() - opened.current) / 1000) });
+    finished.current = true;
     buzz(a ? 'save' : 'lit');
   };
   const step = (d: number) => {

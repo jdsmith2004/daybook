@@ -108,6 +108,7 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { close, closeAll, openCare } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
@@ -269,7 +270,10 @@ export default function Log() {
       setDate(at.key);
     }
     setOutcome(v);
-    if (made) count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
+    if (made) {
+      count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
+      track(v === 'slipped' ? 'slip' : 'urge', v === 'slipped' ? {} : { outcome: 'rode' });
+    }
     buzz('save');
     go(v === 'slipped' ? 'slHold' : 'won');
   };
@@ -400,7 +404,10 @@ export default function Log() {
       at: null,
       ft: slWhen,
     };
-    if (!plan) count('talk_done');
+    if (!plan) {
+      count('talk_done');
+      track('talk_done');
+    }
     setPlan(t);
     update((s0) => ({ ...s0, days: saveTalk(s0.days, tk, t) }));
     buzz('lit');
@@ -799,6 +806,7 @@ export default function Log() {
                 onPress={() => {
                   patch({ recovered: true });
                   count('rk_small');
+                  track('rekindle', { step: 'small' });
                   openCare(door);
                 }}
               />

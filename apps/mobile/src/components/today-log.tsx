@@ -11,6 +11,7 @@ import { openCare } from '@/lib/nav';
 import { useNow } from '@/lib/now';
 import { useSos } from '@/lib/sos';
 import { count } from '@/lib/pulse';
+import { track } from '@/lib/events';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -24,6 +25,7 @@ export function useLogActions() {
     });
     buzz('save');
     count('rk_small');
+    track('rekindle', { step: 'small' });
     if (!quiet) say('Good. That is the move.');
   };
   return { didSmall };

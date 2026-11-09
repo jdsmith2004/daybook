@@ -4,11 +4,13 @@
    person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title and its own picture
    drawn empty (Ghost, components/pattern-charts.tsx), with no words, no ask and no numbers, until the log fills it. */
 import { LinearGradient } from 'expo-linear-gradient';
-import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChartOn } from '@/components/charts';
+import { track } from '@/lib/events';
 import { CARD_SKY } from '@/components/pattern-charts';
 import { LockAsk } from '@/components/support';
 import { Text } from '@/components/text';
@@ -73,6 +75,31 @@ export function Deck({
   const [seen, setSeen] = useState(0);
   const sv = useRef<ScrollViewInstance>(null);
   const x = useRef(new Animated.Value(0)).current;
+  /* what Daybook learns: each chart shown while Pattern is in front, for how long, and whether it was locked */
+  const shown = useRef<{ id: string; locked: boolean; t: number } | null>(null);
+  const focused = useRef(false);
+  const flush = () => {
+    const s0 = shown.current;
+    shown.current = null;
+    if (s0) track('chart_seen', { chart: s0.id, locked: s0.locked, secs: Math.round((Date.now() - s0.t) / 1000) });
+  };
+  const show = () => {
+    flush();
+    const d = cards[index];
+    if (d && focused.current) shown.current = { id: d.id, locked: !d.ghost && locked(d.id), t: Date.now() };
+  };
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      show();
+      return () => {
+        flush();
+        focused.current = false;
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
+  useEffect(show, [index, cards[index]?.id]);
   const step = W + GAP;
   const n = cards.length;
   const H = Math.max(420, Math.min(640, win.height - inset.top - tabRoom(inset.bottom) - BAR - ABOVE));

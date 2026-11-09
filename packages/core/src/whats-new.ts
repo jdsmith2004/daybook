@@ -25,6 +25,18 @@ export interface NewItem {
     live before it, so it leads with what 1.3.0 changed (the owner, November 2, 2026). */
 export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
   {
+    /* the quiet notice for people who had Daybook before what it learns (the owner, November 9, 2026: "as unobtrusively as
+       possible"); the next build's other news goes above it */
+    v: '1.3.3',
+    items: [
+      {
+        t: 'Helping Daybook get better',
+        line: 'Daybook now learns how the app is used, anonymously. Never your journal, notes or words. More, Anonymous data, turns it off.',
+        art: 'chart',
+      },
+    ],
+  },
+  {
     v: '1.3.2',
     items: [
       {

@@ -1,7 +1,7 @@
 /* Unlocked (the owner, November 9, 2026: "we don't waterboard them with features"). Setup stays short: a part that is not
    needed on the first night opens later, one at a time, as the person uses the app. Each comes as one card on Today, "Unlocked",
    that opens its own page with the flame big, and then lives where it always lives (the journal on Today's pull-down and in
-   Change, the safe person in My plan, Reached out in Change, the apps that pull you in under More).
+   Change, the safe person in My plan, Reached out in Change, Screen Time in Settings).
 
    The parts, and when each is ready:
    - the journal: day UNLOCK_JOURNAL_DAY (3), two lessons done, and no entry written yet;
@@ -137,7 +137,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
   },
   pull: {
     eb: 'Unlocked',
-    h: 'The app that pulls you in',
+    h: 'Screen Time',
     title: 'Which app pulls you in?',
     say: 'When it has you too long, I will say so. In your hard hours, I will say it louder.',
     btn: 'Choose the apps',

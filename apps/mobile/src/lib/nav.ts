@@ -131,6 +131,7 @@ const NAMES: Record<string, string> = {
   'plan/index': 'My plan',
   learned: 'Back',
   settings: 'Settings',
+  'settings/index': 'Settings',
   miles: 'Milestones',
   reasons: 'My reasons',
   'help/index': 'Get help',

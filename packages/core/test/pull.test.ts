@@ -8,6 +8,7 @@ import {
   PULL_DEFAULTS,
   pullBridge,
   pullDrift,
+  pullLine,
   pullNoteFor,
   pullNudges,
   pullPauseWords,
@@ -34,6 +35,16 @@ describe('the choices', () => {
     expect(normPull(null)).toEqual(PULL_DEFAULTS);
     expect(normPull({ on: true, long: 7, wait: 30, open: 4, pause: 'yes', asked: 'x' })).toEqual({ ...PULL_DEFAULTS, on: true, wait: 30 });
     expect(PULL_DEFAULTS.pause).toBe(false);
+  });
+});
+
+describe('the line in Settings', () => {
+  it('says what it does now, plainly', () => {
+    expect(pullLine(PULL_DEFAULTS)).toBe('Off · a note when an app has you too long');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true })).toBe('A note after 2 hours · notes in hard hours');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, long: 1, pause: true })).toBe('A note after 1 hour · a pause in hard hours');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, long: 0, hard: true })).toBe('Notes in hard hours');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, long: 0, hard: false })).toBe('On · every note off');
   });
 });
 

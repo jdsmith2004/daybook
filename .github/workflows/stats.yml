@@ -25,8 +25,7 @@ jobs:
   stats:
     name: Stats
     runs-on: ubuntu-latest
-    # the stats role trusts only this environment (infra/bootstrap): make it in GitHub, Settings, Environments, "stats",
-    # with deployment branches limited to main
+    # the stats role trusts only this environment (infra/bootstrap), which GitHub limits to main
     environment: stats
     permissions:
       contents: read

@@ -223,6 +223,65 @@ a sign-in and a server read path), but a report in GitHub keeps the data off any
 
 Not merged before the owner has seen it.
 
+## Settings, rebuilt from the ground up (the owner, November 9, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+The owner: "settings need an overhaul it's getting way to many different things and it's becoming long and chaotic and we need it to
+feel smooth and polished and be clearly descriptive", and "Apps that pull you in" "isn't descriptive at all".
+
+**The purpose.** A person opens Settings to change one thing. They should find it in two seconds by its name, see how it stands now
+without opening it, change it on a page that holds only that, and leave. Nothing else is Settings' job.
+
+**What the research says** (Apple's HIG on settings, Android's settings guidelines, NN/g on labels and accordions, Day One, Headspace,
+one sec and Opal):
+
+- Few settings, plain names: the key word first, a noun for the thing, never a clever or problem-named label ("Apps that pull you in").
+- Under each name, one line with the value now, never a line that repeats the name.
+- Group with a short heading; about 10 to 15 rows on a screen at most.
+- Accordions hide what is in them and get long when several are open; a row that opens its own page scans better on a phone.
+- Apps with a screen-time feature name the mechanism (Apple: Screen Time, App Limits, Downtime; one sec: interventions and blocks;
+  Opal: Sessions, App Limits). The person already knows "Screen Time" from the iPhone's own prompt.
+- Destructive things last, on their own.
+
+**The design (proposed).** The accordion goes. Settings is grouped lists (`Rows`, `LinkCard`) under short headings, and each row
+opens its own page (`app/settings/[part].tsx`, pushed, Back returns to where the person came from). Each row's line is the value now.
+
+- **Your days:** Daily routine ("4 of 5 parts on Today"), Bedtime ("Screens off at 10:30 PM · a new day at 3 AM"; screens off and when
+  a new day starts), Reminders ("Lesson and check-in on").
+- **Your quit:** What I am quitting ("Porn"), Counting days ("Gentle: a slip takes one day off"; the mode, switching, Day 1 and
+  tracking start, which move here from Schedule), Faith in the lessons ("Christian" or "Off"), Check-in answers ("3 you added").
+- **When it hits:** SOS ("The best fit first · breath sound on"), Screen Time (was "Apps that pull you in"; "Off" or "A note after 2
+  hours · a pause in hard hours").
+- **This phone:** Appearance ("Auto · celebrations on"), Face ID lock ("On"), Apple Health ("Reading sleep · 12 nights"), Obsidian.
+- **Your log:** Sync and account (as now), Save a copy ("Spreadsheet or backup file"), and Delete everything on its own, last, in red.
+
+Every deep link that opens a section today (`open: 's-count'` and the rest, in practice.ts, today.tsx, your-day.tsx, help, privacy,
+lessons) opens that page instead; old ids map to the new pages so no saved lesson link breaks. Words elsewhere that name a section
+(the help pages, the privacy and support pages, "Remove one in Settings, under My own answers") follow the new names.
+
+**Helps the person:** finding a setting stops being a hunt, and a stressed person who needs SOS or Screen Time finds it by its name.
+**Helps Daybook:** a polished Settings is part of the "made by someone who cares" feel that earns ratings and tips; nothing is locked or
+moved behind the tip.
+
+Steps, each with its effort level:
+
+1. (medium) This plan, the research, and the owner's answers to the open questions.
+2. (medium) The page for one part (`settings/[part].tsx`) and the grouped list, with every section's body moved over unchanged.
+3. (medium) The new names and the value lines, Screen Time renamed, in core where the words live.
+4. (low) Deep links and old ids mapped to the new pages; the Back label in lib/nav.ts.
+5. (low) Words outside Settings that name a section: the app, privacy.html, support.html, docs/launch.md.
+6. (medium) Craft checklist on pictures, web export, a release build on the simulator for the owner, then merge on the owner's word.
+
+**Where it stands (merged November 9, 2026):** the owner turned down two looks first: the plain accordion list ("doesn't look
+great") and colored chapter cards like My plan ("it DOES NOT MATCH SETTINGS"). What shipped is the grammar of the best settings
+pages (iOS 26 Settings was the reference): rounded white groups with a heading in the display face, one-line rows with the value in
+gray on the right, round checks for a choice, the phone's own switch for on and off, a short gray note under a group
+(components/settings-ui.tsx). More is one list in that grammar, with no Settings heading in the middle: Milestones, then the
+journal, the plan, the tip and help, then every setting, Delete everything, and the 988 line. The Milestones flame stands whole.
+Pages read from the top, like every settings app, so they do not follow the low-for-the-thumb rule; the owner saw it that way.
+
+Left (low): words outside Settings that name a section by its old name: "under My own answers" in entry.tsx and log.tsx (now
+Check-in answers), the help pages, privacy.html, support.html and docs/launch.md.
+
 ## Unlocked: parts that open as the person uses the app (the owner, November 9, 2026; built on `claude/screen-time-f8b40b`)
 
 "We don't waterboard them with features." Setup stays short and ends with the account ask; a part that is not needed on the first

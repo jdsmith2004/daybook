@@ -1075,7 +1075,7 @@ function Coach({
         <Bubble text={open ? reason : say} />
       </Rise>
       <View style={s.flameRoom} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
-        <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 170 : 150, room || 0)))} pulse={pulse} />
+        <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 280 : 230, room || 0)))} pulse={pulse} />
       </View>
       {reason ? (
         <Pressable
@@ -1217,7 +1217,7 @@ const s = StyleSheet.create({
   center: { alignItems: 'center' },
   pair: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   coach: { alignSelf: 'stretch', alignItems: 'center', gap: 8, flexGrow: 1 },
-  flameRoom: { flexGrow: 1, minHeight: 84, maxHeight: 180, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  flameRoom: { flexGrow: 1, minHeight: 84, maxHeight: 300, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   whyB: { paddingVertical: 2 },
   whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },

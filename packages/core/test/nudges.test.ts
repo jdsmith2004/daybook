@@ -24,6 +24,70 @@ const checkedIn = (days: Days, k: string, when: string): Days => ({
   },
 });
 const slip = (days: Days, k: string, time: string) => core.addEvent(days, k, 'slipped', time, {}, 1).days;
+/** a tool used today: the person did their part, so the fire burns fully over the next days (flame-low.ts) */
+const here: Days = { [tk]: core.normDay({ p: { tl: ['breathe'] } }, tk) };
+
+describe('the fire burning low (flame-low.ts)', () => {
+  const lesson = { ...core.NUDGE_DEFAULTS, lesson: true, checkin: false, risk: false };
+  const did = (k: string): Days => ({ [k]: core.normDay({ p: { tl: ['breathe'] } }, k) });
+  it("the day before it burns lower, the day's note says so", () => {
+    /* something done two days ago, nothing yesterday: today is the day before it dims */
+    const p = routine(plan(did(core.addDays(tk, -2)), ci, at('2026-10-14T09:00')));
+    expect(p.find((n) => n.d === tk)).toMatchObject({ title: core.LOW_WARN_NOTE.t, body: core.LOW_WARN_NOTE.b });
+    expect(p.find((n) => n.d === tk)!.w).toBeUndefined();
+    /* the lesson note carries it when there is one */
+    const l = routine(core.nudgePlan(did(core.addDays(tk, -2)), st, {}, lesson, log0, tk, at('2026-10-14T09:00'), true)).filter((n) => n.d === tk);
+    if (l.some((n) => n.k === 'lesson')) expect(l.find((n) => n.k === 'lesson')!.title).toBe(core.LOW_WARN_NOTE.t);
+    /* done yesterday: no warning today, but tomorrow's note warns, since nothing is done yet today (the plan is made again when something is) */
+    const y = routine(plan(did(core.addDays(tk, -1)), ci, at('2026-10-14T09:00')));
+    expect(y.find((n) => n.d === tk)!.title).not.toBe(core.LOW_WARN_NOTE.t);
+    expect(y.find((n) => n.d === core.addDays(tk, 1))!.title).toBe(core.LOW_WARN_NOTE.t);
+  });
+  it('never in the hours after a slip', () => {
+    const p = routine(plan(slip(did(core.addDays(tk, -3)), core.addDays(tk, -2), '23:00'), ci, at('2026-10-14T09:00')));
+    expect(p.some((n) => n.title === core.LOW_WARN_NOTE.t)).toBe(false);
+  });
+  it('while it burns low, the come-back notes run like Duolingo’s: often at first, then spaced out, and the last says it goes quiet', () => {
+    const back = (d: Days) => plan(d, ci, at('2026-10-14T21:40')).filter((n) => n.k === 'back' && n.id.startsWith('back-'));
+    /* left a day after the last thing done: lower on day 2, embers on day 3, then 5, 7, 14 and the last on 30 */
+    const q = back(did(core.addDays(tk, -1)));
+    expect(q.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-17', '2026-10-19', '2026-10-21', '2026-10-28', '2026-11-13']);
+    expect(q.map((n) => n.title)).toEqual([
+      'Your fire is burning lower 🔥',
+      'Down to embers 🔥',
+      'One ember left 🕯️',
+      'A week of embers 🕯️',
+      'Your flame here 👋',
+      'I will stop these for now 🌙',
+    ]);
+    expect(q[0].body).toBe('2 days with nothing done. One lesson today keeps it burning.');
+    /* something done today: day 2 is the warm note, and the run starts once it burns low */
+    const p = back(did(tk));
+    expect(p[0]).toMatchObject({ d: '2026-10-16', title: core.NUDGE_WORDS.back[0].t });
+    expect(p[1]).toMatchObject({ d: '2026-10-17', title: 'Your fire is burning lower 🔥' });
+    /* already down to embers when the app was left: it says so, and then that it still is */
+    const r = back(did(core.addDays(tk, -6)));
+    expect(r.slice(0, 2).map((n) => n.title)).toEqual(['Down to embers 🔥', 'Still down to embers 🔥']);
+    /* left on the day of a slip: only the tender words, no stakes */
+    expect(back(slip({}, tk, '21:30')).map((n) => n.title)).toEqual(core.NUDGE_WORDS.tender.map((x) => x.t));
+    for (const n of [...q, ...p, ...r]) expect(n.title + n.body).not.toMatch(/n't|addict|failure|weak|lazy|let .* down|sad/i);
+  });
+  it('the last call comes in the evening of the day before it burns lower, and of the day before it is down to embers', () => {
+    const saves = (d: Days, when: string) => plan(d, ci, at(when)).filter((n) => n.title === core.LOW_SAVE.warn.t || n.title === core.LOW_SAVE.dim.t);
+    /* nothing done yesterday: tonight's last call */
+    const w = saves(did(core.addDays(tk, -2)), '2026-10-14T09:00');
+    expect(w.find((n) => n.d === tk)).toMatchObject({ title: core.LOW_SAVE.warn.t, at: at('2026-10-14T20:00') });
+    /* and tomorrow evening, if nothing is done today, it is already dimming */
+    expect(w.find((n) => n.d === core.addDays(tk, 1))).toMatchObject({ title: core.LOW_SAVE.dim.t });
+    /* never more than two notes on a day */
+    const all = plan(did(core.addDays(tk, -2)), ci, at('2026-10-14T09:00')).filter((n) => n.d === tk && n.k !== 'risk' && n.k !== 'plan');
+    expect(all.length).toBeLessThanOrEqual(core.NUDGE_MAX);
+    /* done today: no last call */
+    expect(saves(here, '2026-10-14T09:00')).toEqual([]);
+    /* in the 72 hours after a slip: none */
+    expect(saves(slip(did(core.addDays(tk, -3)), core.addDays(tk, -2), '23:00'), '2026-10-14T09:00')).toEqual([]);
+  });
+});
 
 describe('the plan', () => {
   it('is empty with nothing turned on, or before setup', () => {
@@ -46,23 +110,24 @@ describe('the plan', () => {
     expect(routine(plan({}, ci, at('2026-10-14T18:30'))).map((n) => n.d)).toEqual(['2026-10-15']);
   });
 
-  it('when the app goes quiet, fades: three come-back notes over a month, each with something in it, then nothing', () => {
-    const p = plan({}, ci, at('2026-10-14T21:40')).filter((n) => n.k === 'back');
-    expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-21', '2026-11-13']);
+  it('when the app goes quiet, fades: a run of come-back notes over a month, each with something in it, the last saying so, then nothing', () => {
+    const p = plan(here, ci, at('2026-10-14T21:40')).filter((n) => n.k === 'back');
+    expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-17', '2026-10-19', '2026-10-21', '2026-10-28', '2026-11-13']);
     /* with no opens known, at the hour the app is open now when that is daytime, else 6 PM */
     expect(new Date(p[0].at).getHours()).toBe(18);
-    expect(new Date(plan({}, ci, at('2026-10-14T13:20')).filter((n) => n.k === 'back')[2].at).toTimeString().slice(0, 5)).toBe('13:00');
-    expect(p.map((n) => ({ t: n.title, b: n.body }))).toEqual(core.NUDGE_WORDS.back);
-    expect(p[2].title).toBe('Quiet from here 🌙');
-    expect(plan({}, { ...ci, back: false }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
+    expect(new Date(plan(here, ci, at('2026-10-14T13:20')).filter((n) => n.k === 'back')[5].at).toTimeString().slice(0, 5)).toBe('13:00');
+    /* the first is warm (the fire still burns fully then); from the day it burns low, the flame's own run (flame-low.ts) */
+    expect({ t: p[0].title, b: p[0].body }).toEqual(core.NUDGE_WORDS.back[0]);
+    expect(p[5].title).toBe('I will stop these for now 🌙');
+    expect(plan(here, { ...ci, back: false }, at('2026-10-14T09:00')).some((n) => n.k === 'back')).toBe(false);
     /* nothing past the last note */
-    expect(Math.max(...plan({}, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-11-13T09:00'));
+    expect(Math.max(...plan(here, ci, at('2026-10-14T09:00')).map((n) => n.at))).toBe(at('2026-11-13T09:00'));
   });
 
   it('the come-back notes are for anyone the phone lets Daybook notify, even with only the heads-up on', () => {
-    expect(plan({}, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(3);
-    expect(plan({}, { ...core.NUDGE_DEFAULTS, lesson: false, risk: false }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(3);
-    expect(plan({}, ci, at('2026-10-14T09:00'), log0, tk, false).some((n) => n.k === 'back')).toBe(false);
+    expect(plan(here, { ...core.NUDGE_DEFAULTS }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(6);
+    expect(plan(here, { ...core.NUDGE_DEFAULTS, lesson: false, risk: false }, at('2026-10-14T09:00')).filter((n) => n.k === 'back').length).toBe(6);
+    expect(plan(here, ci, at('2026-10-14T09:00'), log0, tk, false).some((n) => n.k === 'back')).toBe(false);
   });
 
   it('the ladder comes at the hour the app is usually open, from a month of opens', () => {
@@ -74,8 +139,8 @@ describe('the plan', () => {
     opens.push(at('2026-08-01T15:00'), at('2026-08-02T15:00'));
     const log = { ...log0, opens };
     expect(core.usualHour(log, at('2026-10-14T09:00'))).toBe(20);
-    const back = plan({}, ci, at('2026-10-14T09:00'), log).filter((n) => n.k === 'back');
-    expect(back.map((n) => new Date(n.at).toTimeString().slice(0, 5))).toEqual(['20:00', '20:00', '20:00']);
+    const back = plan(here, ci, at('2026-10-14T09:00'), log).filter((n) => n.k === 'back');
+    expect(back.map((n) => new Date(n.at).toTimeString().slice(0, 5))).toEqual(Array(6).fill('20:00'));
     /* recent days weigh more: a week of lunchtimes beats three weeks back of evenings */
     const shift = [...opens.filter((t) => t < at('2026-10-04T00:00')), ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => at(core.addDays(tk, -i) + 'T12:30'))];
     expect(core.usualHour({ opens: shift }, at('2026-10-14T09:00'))).toBe(12);
@@ -89,9 +154,10 @@ describe('the plan', () => {
       plan(d, ci, at('2026-10-14T22:00'))
         .filter((n) => n.k === 'back')
         .map((n) => ({ t: n.title, b: n.body }));
-    expect(words(slip({}, tk, '21:30'))).toEqual(core.NUDGE_WORDS.tender);
-    expect(words(slip({}, core.addDays(tk, -1), '23:30'))).toEqual(core.NUDGE_WORDS.tender);
-    expect(words(slip({}, core.addDays(tk, -3), '21:30'))).toEqual(core.NUDGE_WORDS.back);
+    expect(words(slip(here, tk, '21:30'))).toEqual(core.NUDGE_WORDS.tender);
+    expect(words(slip(here, core.addDays(tk, -1), '23:30'))).toEqual(core.NUDGE_WORDS.tender);
+    /* past the 72 hours, the usual run: warm first, then the fire's */
+    expect(words(slip(here, core.addDays(tk, -3), '21:30'))[0]).toEqual(core.NUDGE_WORDS.back[0]);
     expect(JSON.stringify(core.NUDGE_WORDS.tender)).not.toMatch(/lesson/i);
   });
 
@@ -273,9 +339,9 @@ describe('learning from what happened', () => {
 
   it('a new plan keeps what was due until it is judged', () => {
     const due = { id: 'checkin-2026-10-13', k: 'checkin' as const, d: '2026-10-13', at: at('2026-10-13T18:00') };
-    const kept = core.nudgeKeep({ ...log0, plan: [due] }, plan({}, ci, at('2026-10-14T09:00')), at('2026-10-14T09:00'));
+    const kept = core.nudgeKeep({ ...log0, plan: [due] }, plan(here, ci, at('2026-10-14T09:00')), at('2026-10-14T09:00'));
     expect(kept.plan[0]).toEqual(due);
-    expect(kept.plan.length).toBe(1 + 2 + core.NUDGE_BACK.length);
+    expect(kept.plan.length).toBe(1 + 2 + core.LOW_BACK_DAYS.length);
   });
 
   it('keeps 28 days of open times, at most 200', () => {

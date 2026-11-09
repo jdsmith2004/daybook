@@ -14,6 +14,11 @@
      allows notifications, and is made again each time the app opens. So when the app goes quiet, the reminders stop on
      their own, the notes say Daybook is still here (each with something in it, never only "we miss you"), and then
      nothing comes until the person opens it. They come at the hour the app is usually open (the second pass).
+     While the fire burns low (flame-low.ts) the run is the flame's own, after Duolingo's (the owner, November 9, 2026): days 2, 3, 5, 7,
+     14 and 30, each saying how low the fire is and the one lesson that lights it, the last saying it goes quiet ("I will stop these for
+     now"). And on the evening before it burns lower, a last call at 8 PM, Duolingo's streak saver, within the two a day. Never after a
+     slip or a hard week: those get the tender notes only. Copied from Duolingo: the run, the save, the person's own numbers, the
+     back-off. Not copied: "you let Duo down"; the stakes are about the fire and the next choice.
    - After a heavy few days (low mood or high stress in the check-ins), the routine notes offer and do not ask.
    - Words that learn: each routine kind has five to eleven wordings, each with a title, and the phone keeps how often each
      one helped. The pick is a small version of Duolingo's bandit: the one that helps most wins among those not sent in the
@@ -33,6 +38,7 @@
    day still has at most two notes, or three with one heads-up. The words say only the move (the person's own words are
    not put on a locked screen), never what the plan is about. */
 import { moodOf } from './day';
+import { fireLow, LOW_BACK_DAYS, LOW_SAVE, LOW_WARN_NOTE, lowBack, type LowStep } from './flame-low';
 import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
 import { formWord } from './levels';
@@ -85,6 +91,8 @@ export const NUDGE_GAP = 60;
 export const NUDGE_FOLD = 120;
 /** the come-back notes, in days after the last time the app was open */
 export const NUDGE_BACK = [2, 7, 30];
+/** the hour of the last call on a day the fire is about to burn lower (flame-low.ts LOW_SAVE), before the night */
+export const NUDGE_SAVE_AT = '20:00';
 /** how long the open times are kept, to learn the hour the app is usually open */
 export const NUDGE_OPENS_DAYS = 28;
 /** misses in a row before a kind steps down */
@@ -626,6 +634,15 @@ function dayList(
     delete first.also;
     delete first.quiet;
   }
+  /* the day before the fire burns lower (flame-low.ts): the lesson note, or else the day's first routine note, says so plainly.
+     Never on the morning after a slip, and fireLow keeps it out of the 72 hours after one. */
+  const warnOn = !kind && (out.find((n) => n.k === 'lesson') || first);
+  if (warnOn && fireLow(days, st, k, warnOn.at).warn) {
+    warnOn.title = LOW_WARN_NOTE.t;
+    warnOn.body = LOW_WARN_NOTE.b;
+    delete warnOn.w;
+    delete warnOn.quiet;
+  }
   return out;
 }
 
@@ -682,11 +699,47 @@ export function nudgePlan(
     /* at the hour the app is usually open; tender words when the person left on a hard day */
     const t = clockOf(usualHour(log, now) * 60);
     const tender = slipOn(days, tk) || slipOn(days, addDays(tk, -1)) || weekFeel(days, tk) === 'heavy';
-    NUDGE_BACK.forEach((n, i) => {
-      const d = addDays(tk, n);
-      const x = (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
-      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), title: x.t, body: x.b, url: '/' });
-    });
+    if (tender)
+      NUDGE_BACK.forEach((n, i) => {
+        const d = addDays(tk, n);
+        out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), title: NUDGE_WORDS.tender[i].t, body: NUDGE_WORDS.tender[i].b, url: '/' });
+      });
+    else {
+      /* while the fire burns low (flame-low.ts), the flame's own run of notes, more often at first and then spaced out, after
+         Duolingo's; on a day it is not low, only the warm notes on their days */
+      let before: LowStep = 0;
+      const days2 = [...new Set([...LOW_BACK_DAYS, ...NUDGE_BACK])].sort((a, b) => a - b);
+      for (const n of days2) {
+        const d = addDays(tk, n);
+        const at = atOf(d, t, st.rollover);
+        const f = fireLow(days, st, d, at);
+        const warm = NUDGE_BACK.indexOf(n);
+        const x = f.step ? lowBack(n, f, before) : warm >= 0 ? NUDGE_WORDS.back[warm] : null;
+        before = f.step;
+        if (x) out.push({ id: 'back-' + n, k: 'back', d, at, title: x.t, body: x.b, url: '/' });
+      }
+      /* the last call, in the evening of a day the fire is about to burn lower with nothing done yet (Duolingo's streak saver). It takes
+         the day's last routine note's place when the day is full, or one that comes about then. */
+      for (const k of [tk, addDays(tk, 1)]) {
+        const at = atOf(k, NUDGE_SAVE_AT, st.rollover);
+        if (at <= now) continue;
+        const f = fireLow(days, st, k, at);
+        const x = f.warn ? LOW_SAVE.warn : f.step === 1 ? LOW_SAVE.dim : null;
+        if (!x) continue;
+        const mine = out.filter((n) => n.d === k && n.k !== 'risk' && n.k !== 'plan').sort((a, b) => a.at - b.at);
+        const near = mine.find((n) => Math.abs(n.at - at) < NUDGE_GAP * 60000);
+        const last = mine[mine.length - 1];
+        const take = near ?? (mine.length >= NUDGE_MAX && last && last.at > at - 3 * 3600000 ? last : null);
+        if (take) {
+          take.title = x.t;
+          take.body = x.b;
+          take.url = '/';
+          delete take.w;
+          delete take.also;
+          delete take.quiet;
+        } else if (mine.length < NUDGE_MAX) out.push({ id: 'save-' + k, k: 'back', d: k, at, title: x.t, body: x.b, url: '/' });
+      }
+    }
   }
   return out.sort((a, b) => a.at - b.at);
 }

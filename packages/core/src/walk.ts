@@ -16,7 +16,22 @@
 
    A walk is saved as a talk-through (p.tt, so it syncs with the log) with a change plan and `wk`, what only a walk has. */
 import { trailFill, type TrailPlace } from './trail';
-import { TALK_SRC, talkPlanLine, type Talk, type TalkMove, type TalkNeed, type TalkSign, type WalkLine, type WalkNeed, type WalkRec } from './talk';
+import {
+  TALK_HARD_MOMENT,
+  TALK_MOMENTS,
+  TALK_MOVES,
+  TALK_SRC,
+  talkClock,
+  talkPlanLine,
+  type Talk,
+  type TalkHeld,
+  type TalkMove,
+  type TalkNeed,
+  type TalkSign,
+  type WalkLine,
+  type WalkNeed,
+  type WalkRec,
+} from './talk';
 
 export type { WalkLine, WalkNeed, WalkRec } from './talk';
 
@@ -50,7 +65,7 @@ export const WALK_SRC: Record<string, [string, string]> = {
     'https://doi.org/10.1016/S0065-2601(06)38002-1',
   ],
 };
-export type WalkBeat = 'open' | 'hold' | 'body' | 'alarm' | 'defuse' | 'ride' | 'chain' | 'plan';
+export type WalkBeat = 'open' | 'hold' | 'body' | 'alarm' | 'defuse' | 'ride' | 'chain' | 'plan' | 'seal';
 /** for each teaching beat: what the flame says first (short, for a person in a craving), and why it works, with the papers */
 export const WALK_COACH: Record<WalkBeat, { say: string; why: string; src: string[] }> = {
   open: {
@@ -89,8 +104,13 @@ export const WALK_COACH: Record<WalkBeat, { say: string; why: string; src: strin
     src: ['rizvi'],
   },
   plan: {
-    say: 'A plan made now, in your words, is there when it comes back.',
-    why: 'An if-then plan (“when this comes, I will …”) made people much more likely to follow through, across 94 studies.',
+    say: 'Plans that work name one moment and one move. Pick what has held for you.',
+    why: 'An if-then plan (“when this comes, I will …”) made people much more likely to follow through, across 94 studies. The more exact the moment, the better it works.',
+    src: ['gollwitzer'],
+  },
+  seal: {
+    say: 'Picture that moment once, then picture yourself doing this.',
+    why: 'Picturing the moment and the move ties them together, so the moment itself starts the plan. Plans for a thought work too: “when it says this, I answer that.”',
     src: ['gollwitzer'],
   },
 };
@@ -381,10 +401,32 @@ export const walkNeedMoves = (n: WalkNeedDef | null, night: boolean): TalkMove[]
 
 /** the moves a plan offers, by when it may come back: late tonight is night; this evening has no daylight, nap or bed; in
     an hour or after work goes by the hour now */
-export function walkPlanMoves(n: WalkNeedDef | null, mo: string | null, nightNow: boolean): TalkMove[] {
-  if (mo === 'late') return walkNeedMoves(n, true);
-  if (mo === 'evening') return walkNeedMoves(n, false).filter((m) => m !== 'light');
-  return walkNeedMoves(n, nightNow);
+export function walkPlanMoves(n: WalkNeedDef | null, mo: string | null, nightNow: boolean, held: TalkHeld = {}): TalkMove[] {
+  const base = mo === 'late' ? walkNeedMoves(n, true) : mo === 'evening' ? walkNeedMoves(n, false).filter((m) => m !== 'light') : walkNeedMoves(n, nightNow);
+  /* the earliest link is always offered: the device out of reach before the moment */
+  const all = base.indexOf('away') >= 0 ? base : base.concat('away');
+  /* what has held for this person comes first, the most held first (talkHeld) */
+  const h = (m: TalkMove) => held[m]?.held || 0;
+  return all
+    .filter((m) => h(m) > 0)
+    .sort((a, b) => h(b) - h(a))
+    .concat(all.filter((m) => h(m) === 0));
+}
+
+/** the plan as the last page writes it out: when (with its time), the moves, and the line with their own answer, an
+    if-then for the thought too */
+export function walkPlanCard(w: { mo: string | null; at: number | null; moves: TalkMove[]; own: string; line: string; answer: string }): {
+  when: string;
+  then: string[];
+  says: string | null;
+  answer: string | null;
+} {
+  const mo = TALK_MOMENTS.find((x) => x[0] === w.mo);
+  const name = w.mo === TALK_HARD_MOMENT ? 'When my hard hours start' : mo ? mo[1] : 'When it comes back';
+  const then = w.moves.map((m) => TALK_MOVES[m][0]).concat(clean(w.own) ? [clean(w.own)] : []);
+  const says = clean(w.line) || null;
+  const answer = says && clean(w.answer) ? clean(w.answer) : null;
+  return { when: w.at ? name + ' · ' + talkClock(w.at) : name, then, says, answer };
 }
 
 /* ---------- 6. where it is: the place, as a result ---------- */

@@ -26,7 +26,11 @@ import {
   WALK_NEEDS,
   WALK_SOS,
   WALK_STAGES,
+  TALK_HARD_MOMENT,
   newTalk,
+  riskDay,
+  talkHardMoment,
+  talkClock,
   saveTalk,
   talkHeld,
   talkHeldTag,
@@ -47,6 +51,7 @@ import {
   walkNeed,
   walkNeedMove,
   walkPlanMoves,
+  walkPlanCard,
   walkBodyAt,
   walkOpen,
   walkPlace,
@@ -79,12 +84,13 @@ import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailM
 import { Button } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
 
 /** the parts, in order (the dots count ten: a part can have a second beat) */
-type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan';
+type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan' | 'seal';
 const DOT: Record<Part, number> = {
   open: 0,
   strength: 1,
@@ -100,8 +106,9 @@ const DOT: Record<Part, number> = {
   explain: 7,
   after: 8,
   plan: 9,
+  seal: 9,
 };
-const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan'];
+const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan', 'seal'];
 const CUE_MS = (TRAIL_GUIDE_SECS * 1000) / 8;
 
 export function Walk({
@@ -166,7 +173,9 @@ export function Walk({
   const [explain, setExplain] = useState('');
   const [n1, setN1] = useState<number | null>(null);
   const [moves, setMoves] = useState<TalkMove[]>([]);
-  const moveOwn = '';
+  const [moveOwn, setMoveOwn] = useState('');
+  const [ownMove, setOwnMove] = useState(false);
+  const [remind, setRemind] = useState(remindersOffered);
   const [mo, setMo] = useState<string | null>(null);
 
   const L = walkLine(line);
@@ -178,6 +187,13 @@ export function Walk({
   const held = useMemo(() => talkHeld(snap.days), [snap.days]);
   const now = Date.now();
   const moments = useMemo(() => talkMomentsNow(now).filter((m) => m[0] !== 'now'), [now]);
+  /* the person's own hard hours, from the log, while their start is still ahead: the most exact moment there is */
+  const hard = useMemo(() => {
+    const r = snap.settings ? riskDay(snap.days, snap.settings, tk, now) : null;
+    return r ? talkHardMoment(r.a, now) : null;
+  }, [snap.days, snap.settings, tk, now]);
+  const moAt = mo === TALK_HARD_MOMENT ? hard : mo ? talkMomentTime(mo, now) : null;
+  const moNight = mo === TALK_HARD_MOMENT && hard ? new Date(hard).getHours() >= 21 || new Date(hard).getHours() < 5 : night;
 
   /* the walk saved as a talk-through (a change plan when one was made). "It passed" saves it too, without a plan, once
      there is something to keep. */
@@ -199,7 +215,7 @@ export function Walk({
       moves: withPlan ? moves : [],
       moveOwn: withPlan ? moveOwn : '',
       mo: withPlan ? mo : null,
-      moAt: withPlan && mo ? talkMomentTime(mo, t) : null,
+      moAt: withPlan ? moAt : null,
     });
     if (!withPlan) talk.p = null;
     update((s) => ({ ...s, days: saveTalk(s.days, tk, talk, t) }));
@@ -207,6 +223,8 @@ export function Walk({
   /* the end: saved, then home with an urge ridden out */
   const finish = (withPlan: boolean) => {
     save(withPlan);
+    /* the reminder comes at the moment and opens Today, where the plan waits */
+    if (withPlan && remind && remindersOffered && moAt) scheduleTalk(moAt, 'Your plan is ready. One tap away.', '/').catch(() => undefined);
     buzz('save');
     onHome(at, first ?? n0);
   };
@@ -690,52 +708,140 @@ export function Walk({
     );
   }
 
-  /* ---------- 10. it may come back: the plan ---------- */
+  /* ---------- 10. it may come back: when, and what they will do. What has held for them comes first ---------- */
   if (part === 'plan') {
-    const offered = walkPlanMoves(N, mo, night);
+    const offered = walkPlanMoves(N, mo === TALK_HARD_MOMENT ? null : mo, moNight, held);
     const ready = !!mo && (moves.length > 0 || !!moveOwn.trim());
+    type Opt = { id: string; label: string; tag?: string };
+    const mine: Opt[] = hard ? [{ id: TALK_HARD_MOMENT, label: 'My hard hours', tag: talkClock(hard) }] : [];
+    const when: Opt[] = mine.concat(
+      moments.map(([id, w]): Opt => {
+        const t = talkMomentTime(id, now);
+        return { id, label: w, tag: t ? talkClock(t) : undefined };
+      }),
+    );
+    if (ownMove) {
+      /* their own move: the box and its button stay at the top, above the keyboard */
+      words = (
+        <Rise>
+          <Text style={s.over}>Then I will</Text>
+          <Text style={s.title} accessibilityRole="header">
+            What works for you?
+          </Text>
+          <TextInput
+            accessibilityLabel="Your own move"
+            autoFocus
+            maxLength={60}
+            defaultValue={moveOwn}
+            onChangeText={setMoveOwn}
+            placeholder="Like: play guitar for twenty minutes"
+            placeholderTextColor={TW.muted}
+            style={s.box}
+          />
+          <View style={s.write}>
+            <Button label="Add it" disabled={!moveOwn.trim()} onPress={() => setOwnMove(false)} />
+          </View>
+        </Rise>
+      );
+    } else {
+      words = (
+        <Rise>
+          <Text style={s.over}>It may come back</Text>
+          <Text style={s.title} accessibilityRole="header">
+            When, and what will you do?
+          </Text>
+        </Rise>
+      );
+      middle = <Coach level={level} say={WALK_COACH.plan.say} beat="plan" pulse={moves.length + (mo ? 1 : 0) + (moveOwn.trim() ? 1 : 0)} />;
+      dock = (
+        <>
+          <Text style={s.ask}>When</Text>
+          <Chips
+            label="When it may come back"
+            opts={when}
+            on={mo ? [mo] : []}
+            onPick={(x) => {
+              const nx = x === mo ? null : x;
+              setMo(nx);
+              const nn = nx === TALK_HARD_MOMENT && hard ? new Date(hard).getHours() >= 21 || new Date(hard).getHours() < 5 : night;
+              const ok = walkPlanMoves(N, nx === TALK_HARD_MOMENT ? null : nx, nn, held);
+              setMoves((l) => l.filter((m) => ok.indexOf(m) >= 0));
+            }}
+          />
+          <Text style={s.ask}>Then I will</Text>
+          <Chips
+            label="What you will do"
+            multi
+            opts={offered
+              .map((m) => ({ id: m as string, label: TALK_MOVES[m][0], tag: talkHeldTag(held, m) || undefined }))
+              .concat([{ id: 'own', label: moveOwn.trim() || 'My own idea', tag: undefined }])}
+            on={(moves as string[]).concat(moveOwn.trim() ? ['own'] : [])}
+            onPick={(m) => {
+              if (m === 'own') {
+                if (moveOwn.trim()) setMoveOwn('');
+                else setOwnMove(true);
+                return;
+              }
+              const k = m as TalkMove;
+              setMoves((l) => (l.indexOf(k) >= 0 ? l.filter((x) => x !== k) : l.concat(k)));
+            }}
+          />
+          <Button label="Next" disabled={!ready} onPress={() => go('seal')} />
+          <View style={s.center}>
+            <Link label="No plan this time" tone="muted" onPress={() => finish(false)} />
+          </View>
+        </>
+      );
+    }
+  }
+
+  /* ---------- 10b. the plan written out: the moment, the moves, and their answer to the line, pictured once ---------- */
+  if (part === 'seal') {
+    const card = walkPlanCard({ mo, at: moAt, moves, own: moveOwn, line: heard, answer });
     words = (
       <Rise>
-        <Text style={s.over}>It may come back</Text>
+        <Text style={s.over}>Your plan</Text>
         <Text style={s.title} accessibilityRole="header">
-          When is it most likely, and what will you do?
+          {card.when}
         </Text>
       </Rise>
     );
     middle = (
-      <Coach
-        level={level}
-        say={ready ? walkPlanLine({ n: N?.need ?? null, m: moves, mo }) + ' It waits on Today.' : WALK_COACH.plan.say}
-        beat="plan"
-        pulse={moves.length + (mo ? 1 : 0)}
-      />
+      <>
+        <Coach level={level} say={WALK_COACH.seal.say} beat="seal" />
+        <View
+          style={s.plan}
+          accessible
+          accessibilityLabel={
+            'Then I will ' + card.then.join(', ') + (card.says ? '. If it says ' + card.says + ', I answer ' + (card.answer || 'that it is a thought') : '')
+          }>
+          <Text style={s.planK}>Then I will</Text>
+          {card.then.map((t, i) => (
+            <Text key={i} style={s.planT}>
+              {t}
+            </Text>
+          ))}
+          {card.says ? (
+            <>
+              <Text style={[s.planK, { marginTop: 12 }]}>{'If it says “' + card.says.replace(/[.!?]$/, '') + '”'}</Text>
+              <Text style={s.planT}>{card.answer ? 'I answer: “' + card.answer + '”' : 'I know it is a thought, not a fact.'}</Text>
+            </>
+          ) : null}
+        </View>
+      </>
     );
     dock = (
       <>
-        <Text style={s.ask}>When</Text>
-        <Chips
-          label="When it may come back"
-          opts={moments.map(([id, w]) => ({ id, label: w }))}
-          on={mo ? [mo] : []}
-          onPick={(x) => {
-            const nx = x === mo ? null : x;
-            setMo(nx);
-            const ok = walkPlanMoves(N, nx, night);
-            setMoves((l) => l.filter((m) => ok.indexOf(m) >= 0));
-          }}
-        />
-        <Text style={s.ask}>Then I will</Text>
-        <Chips
-          label="What you will do"
-          multi
-          opts={offered.map((m) => ({ id: m, label: TALK_MOVES[m][0], tag: talkHeldTag(held, m) }))}
-          on={moves}
-          onPick={(m) => setMoves((l) => (l.indexOf(m) >= 0 ? l.filter((x) => x !== m) : l.concat(m)))}
-        />
-        <Button label="Save my plan" disabled={!ready} onPress={() => finish(true)} />
-        <View style={s.center}>
-          <Link label="No plan this time" tone="muted" onPress={() => finish(false)} />
-        </View>
+        {remindersOffered && moAt ? (
+          <Chips
+            label="Reminder"
+            multi
+            opts={[{ id: 'r', label: 'Remind me at ' + talkClock(moAt) }]}
+            on={remind ? ['r'] : []}
+            onPick={() => setRemind(!remind)}
+          />
+        ) : null}
+        <Button label="Save my plan" onPress={() => finish(true)} />
       </>
     );
   }
@@ -1094,6 +1200,9 @@ const s = StyleSheet.create({
   cue: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
   note: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21, color: TW.warm, textAlign: 'center' },
   ask: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted },
+  plan: { alignSelf: 'stretch', marginTop: 14, padding: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)' },
+  planK: { fontFamily: font.bodySemi, fontSize: 13, color: TW.muted },
+  planT: { fontFamily: font.bodySemi, fontSize: 17, color: TW.ink, marginTop: 4 },
   box: {
     marginTop: 16,
     minHeight: 88,

@@ -152,7 +152,7 @@ export function TonightCard({
             <Bubble key={i} i={i} when={whenOf(p.when)} then={p.then} label={whenOf(p.when) + ', ' + p.then + ' Opens My plan.'} onPress={() => go('/plan')} />
           ))
         ) : (
-          <Bubble i={0} then="Make a plan, while it is calm" label="Make a plan for your hard moments" onPress={() => go('/talk')} />
+          <Bubble i={0} then="Make a plan, while it is calm" label="Make a plan for your hard moments" onPress={() => go('/trail')} />
         )}
       </View>
       {prep || (more && lines.length) ? (

@@ -215,6 +215,24 @@ describe('fixes from walking every route', () => {
     expect(core.walkPlanMoves(tired, 'evening', false)).not.toContain('light');
     expect(core.walkPlanMoves(tired, 'soon', false)).not.toContain('bed');
   });
+  it('always offers the device out of reach, and puts what held for the person first', () => {
+    const bored = core.walkNeed('bored')!;
+    expect(core.walkPlanMoves(bored, 'soon', false)).toContain('away');
+    const held = { hands: { held: 2, n: 3 } };
+    expect(core.walkPlanMoves(bored, 'soon', false, held)[0]).toBe('hands');
+  });
+  it('writes the plan out with its time, the moves, and the answer to the line', () => {
+    const at = new Date(2026, 10, 9, 23, 0).getTime();
+    const c = core.walkPlanCard({ mo: 'late', at, moves: ['away'], own: ' play guitar ', line: 'I deserve it.', answer: 'I deserve to be free.' });
+    expect(c.when).toBe('Late tonight · 11:00 PM');
+    expect(c.then).toEqual(['Put the device out of reach', 'play guitar']);
+    expect(c).toMatchObject({ says: 'I deserve it.', answer: 'I deserve to be free.' });
+    expect(core.walkPlanCard({ mo: 'hard', at, moves: [], own: '', line: '', answer: 'x' })).toMatchObject({
+      when: 'When my hard hours start · 11:00 PM',
+      says: null,
+      answer: null,
+    });
+  });
   it('keeps the move for now to a minute or two, never sending the phone away mid-walk', () => {
     for (const n of core.WALK_NEEDS)
       for (const night of [true, false]) expect(core.walkNeedMove(n, night)).not.toMatch(/ten minutes|across the room, out of reach|phone charging/i);

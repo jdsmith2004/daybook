@@ -15,13 +15,13 @@ import { Link } from '@/components/choices';
 import { Answer, AnswerText } from '@/components/lesson-parts';
 import { Bubble } from '@/components/lesson-flame';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
-import { Button, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { pullStart, setPullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { PAPER_INK } from '@/lib/lesson-look';
-import { font, nightInk } from '@/lib/theme';
+import { font, nightInk, useTheme } from '@/lib/theme';
 import { useUnlockMark } from '@/lib/unlock';
 
 const WAYS: [boolean, string, string][] = [
@@ -35,6 +35,7 @@ export default function Unlocked() {
   const w = UNLOCK_WORDS[id];
   const { snap, tk, apply, say } = useStore();
   const mark = useUnlockMark();
+  const c = useTheme();
   const st = snap.settings;
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
   const night = id === 'journal';
@@ -69,6 +70,10 @@ export default function Unlocked() {
 
   return (
     <SceneFrame title="" sky={night ? 'night' : 'sky'} onClose={() => close()}>
+      <View style={s.eb}>
+        <Icon name="sparkle" size={16} color={night ? '#FFE27A' : c.accent} />
+        <Text style={[s.ebT, { color: night ? '#FFE27A' : c.accent }]}>{w.eb}</Text>
+      </View>
       <T v="title" style={ink ? { color: ink } : undefined} accessibilityRole="header">
         {w.title}
       </T>
@@ -104,6 +109,8 @@ export default function Unlocked() {
 }
 
 const s = StyleSheet.create({
+  eb: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 },
+  ebT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
   mid: { flex: 1, justifyContent: 'center', gap: 4 },
   c: { alignItems: 'center' },
   opt: { paddingVertical: 12 },

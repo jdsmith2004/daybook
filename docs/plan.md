@@ -1,5 +1,24 @@
 # What is planned next
 
+## Unlocked: parts that open as the person uses the app (the owner, November 9, 2026; built on `claude/screen-time-f8b40b`)
+
+"We don't waterboard them with features." Setup stays short and ends with the account ask; a part that is not needed on the first
+night opens later, one at a time, as a card on Today ("Unlocked") that opens its own page with the flame popping in on its burst.
+Core `unlock.ts` decides, `app/unlock.tsx` shows it, and the memory is on this device (with the SOS memory, like the first pattern).
+
+- **The rules:** in order, each once; at least `UNLOCK_GAP` (3) days apart; never on the day of a slip or the day after, or in the
+  quiet hours after an SOS; as low on Today as the five questions, so the lesson stays the next step; once it is the card it stays
+  that day until opened, then lives where it always lives. A part already in use is never offered.
+- **The journal, day 3 with two lessons done.** "Your journal", on the night sky like the journal: "A page only for you. Nothing in
+  it is ever shared." The flame: "Name how the day felt, in one word or a few lines. Naming it takes some of its weight. Pull down
+  on Today any time to write." **Write the first one** opens a new entry; quiet **Put it on my day** makes it an any-time stop.
+  Picture: `docs/screen-time/unlock-journal.png`.
+- **The app that pulls you in, day 7, iPhone only** (Screen Time, below).
+- **Ideas for more, for the owner to pick (medium each):** the Sunday review explained on the first Saturday instead of in setup
+  (the `review` page); Reached out as a stop after the first week; Talk it through (Planning a slip?) shown after the first hard
+  night that was ridden out; the safe person asked after the first week instead of in setup (the `person` page). Moving a setup
+  page out is the owner's call: setup is where the plan is built, and a shorter setup may lose some of that.
+
 ## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; being built on `claude/screen-time-f8b40b`)
 
 **The owner's answers (November 9, 2026).**
@@ -51,15 +70,18 @@ sources) are in the side-session notes: screen-time-apple-research, -expo-resear
 - **Not possible:** an "app opened" signal (one sec relies on a Shortcuts automation the person builds; Apple says apps may not
   do this for them), the usage numbers, and the app names in anything but Apple's views.
 - **The license (3.3.3(P)):** Screen Time data may not leave the device. So **no anonymous counts at all** come from these nudges
-  or the pause (not even `nt_` arrivals); only the setup page's own `setup_pull` count, which is about setup, not use. Nothing goes
+  or the pause (not even `nt_` arrivals); no setup count either, since it is no longer in setup. Nothing goes
   in sync or the safe copy. The privacy page says so in one line.
 
 ### The design
 
-**Setup, one page after reminders (iPhone only, `ObEnv.screenTime`).** "Which app pulls you in?" The flame big, saying "When it
-has you too long, I will say so. In your hard hours, I will say it louder." Two choices low: **Nudge me** (default) and **Nudge
-me, then pause it**. Main button **Choose the apps** (Apple's ask, then Apple's list); quiet **Skip this one**. A redo of setup
-shows it again only if it was skipped. The flame's line is in `OB_SAY`.
+**Not in setup: unlocked a week in (the owner, November 9, 2026: "we don't waterboard them with features").** Setup stays as it
+was. After the first week (`UNLOCK_PULL_DAY`, core `unlock.ts`), on an iPhone that has it, Today shows one card, "Unlocked: The app
+that pulls you in", as low as the five questions (it waits behind the lesson as "After this"). It opens `/unlock?id=pull`: a small
+"Unlocked" over "Which app pulls you in?", "Nothing about your apps ever leaves this phone.", the flame popping in on its burst and
+saying "When it has you too long, I will say so. In your hard hours, I will say it louder." Two choices low: **Nudge me** (default)
+and **Nudge me, then pause it**, and **Choose the apps** (Apple's ask, then Apple's list). The X closes it; it is always in More.
+Pictures: `docs/screen-time/unlock-pull.png`.
 
 **Long use.** One daily schedule, threshold 2 hours (1, 2 or 3 in More). At most one note a day. The monitor reads the App Group:
 if Daybook has not been opened today, or today's lesson is not done, the note points to the lesson (`/lesson/<id>`, or `/` before
@@ -124,14 +146,14 @@ Daybook on the phone and opened daily, which is where the tip asks and Pattern s
    lift, `openParentalControlsApp`. (high: native, unknown platform behaviour)
 2. Core `screen-time.ts`: schedules from `riskWindow`, the quiet after a slip, the caps, the words, with tests. (medium)
 3. The bridge and the extensions' logic reading it. (high: if it is wrong, a shield can stay stuck)
-4. Setup page, the More section, Lift every pause, the privacy page line, `setup_pull`. (medium)
+4. The unlock page, the More section, Lift every pause, the privacy page line. (medium)
 5. App Review notes and a short video for the reviewer (the reviewer's simulator cannot run it). (low)
 6. The owner tries it for a few days on their phone; then 1.4 with the entitlement.
 
 **Built on `claude/screen-time-f8b40b` (November 9, 2026, the medium steps):** core `pull.ts` and its tests (the hard hours as
 Apple schedules, one a weekday; the quiet after a slip until the next 8 AM at least three hours on; the notes, the shield and
-the wait screen's words; which note goes for which threshold; the person's own plan quoted); the setup page after reminders
-(`setup_pull`); Apps that pull you in in More (long use Off, 1, 2 or 3 hours; the hard hours; the pause, off by default; the
+the wait screen's words; which note goes for which threshold; the person's own plan quoted); the unlock page a week in (moved out
+of setup the same day); Apps that pull you in in More (long use Off, 1, 2 or 3 hours; the hard hours; the pause, off by default; the
 wait 10, 30 or 60 seconds; open for 3, 5 or 10 minutes; Lift every pause now; Turn it all off); the wait screen `/pause`; and
 the privacy page line. The phone side talks to a native module `DaybookPull` (`lib/pull.ts`) that is not written yet; until it
 is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIEW=1`, and a store build shows nothing of this.

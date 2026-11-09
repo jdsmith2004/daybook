@@ -87,7 +87,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
   journal: {
     eb: 'Unlocked',
     h: 'Your journal',
-    title: 'You unlocked your journal',
+    title: 'Your journal',
     line: 'A page only for you. Nothing in it is ever shared.',
     say: 'Name how the day felt, in one word or a few lines. Naming it takes some of its weight. Pull down on Today any time to write.',
     btn: 'Write the first one',

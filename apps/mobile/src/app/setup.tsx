@@ -60,11 +60,15 @@ import {
   type RecordId,
   type Settings,
   type SetupAnswers,
+  type Habit,
   LIKE_WORDS,
   likeAnswer,
   likeAskDue,
   urLastAt,
   type LikeAnswer,
+  HABIT_NOUN,
+  habitSay,
+  obHabit,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -179,7 +183,8 @@ export default function Setup() {
   const t = toneOf(c, sec[2]);
   /* the flame grows a little as the setup goes on */
   const want = (SHORT ? 200 : 240) + (SHORT ? 40 : 70) * p;
-  const voice = obSay(pg.id, f.redo);
+  const habit = obHabit(a, st);
+  const voice = obSay(pg.id, f.redo, habit);
   /* the flame as it is now: a spark for a new person, the grown form on a walk-through */
   const flameLevel = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
 
@@ -560,7 +565,7 @@ export default function Setup() {
     case 'guess': {
       body = (
         <>
-          <Head h="How many hours a year do you think you spend on porn?" />
+          <Head h={habitSay('How many hours a year do you think you spend on porn?', habit)} />
           <Middle>
             <Text style={[s.huge, { color: c.ink }]}>{f.hg && f.hg !== 'skip' ? (f.hg === 800 ? '800+' : f.hg) : '?'}</Text>
             <T tone="muted">hours a year</T>
@@ -826,22 +831,6 @@ export default function Setup() {
       foot = nextBtn(cur ? 'Next' : 'Skip', !cur);
       break;
     }
-    case 'person': {
-      const has = !!String(a.person || '').trim();
-      /* the text box stays near the top, where the keyboard leaves it in sight */
-      body = (
-        <>
-          <Head h="Who could be your safe person?" />
-          <Field label="Their name" maxLength={80} placeholder="A first name" defaultValue={a.person || ''} onChangeText={(v) => setA({ person: v })} />
-          <T v="small" tone="muted" style={s.c}>
-            Only you see the name. Daybook never contacts anyone. You can skip this.
-          </T>
-          <Talk text={voice} want={want * 0.75} />
-        </>
-      );
-      foot = nextBtn(has ? 'Next' : 'Skip', !has);
-      break;
-    }
     case 'becoming': {
       const cur = obBecoming(a);
       const own = OB_BE.indexOf(cur) < 0 ? cur : '';
@@ -922,7 +911,7 @@ export default function Setup() {
                       l="Screens off"
                       v={isTime(a.so) ? fmtClock(a.so as string) : fmtClock(SO_USUAL) + ' (the usual; change it any time)'}
                     />
-                    <PlanBit icon="chat" l="Safe person" v={String(a.person || '').trim() || 'Add one later'} />
+                    {String(a.person || '').trim() ? <PlanBit icon="chat" l="Safe person" v={String(a.person).trim()} /> : null}
                   </View>,
                   th ? <PlanRow key="t" icon={whenIcon(tp)} l={'If ' + T0[1]} v={th} /> : null,
                   <PlanRow key="w" icon="heart" l="Why" v={(rs.length ? rs : REASON_DEFAULT).slice(0, 2).join(' · ')} />,
@@ -1148,7 +1137,7 @@ export default function Setup() {
       break;
     }
     default:
-      body = <ShowPage k={pg.k} t={t} st={st} a={a} W={W} />;
+      body = <ShowPage k={pg.k} t={t} st={st} a={a} W={W} habit={habit} />;
       foot = nextBtn('Next');
   }
 
@@ -1217,7 +1206,8 @@ function Say({ text }: { text: string | null }) {
 }
 
 /* the pages that only show something */
-function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null; a: SetupAnswers; W: number }) {
+function ShowPage({ k, t, st, a, W, habit }: { k: string; t: Tone; st: Settings | null; a: SetupAnswers; W: number; habit: Habit }) {
+  const porn = habit === 'porn';
   switch (k) {
     case 'loop':
       return (
@@ -1228,7 +1218,7 @@ function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null;
               art={[
                 'loop',
                 {
-                  n: ['Feel low', 'Use porn', 'Feel worse', 'Pull away'],
+                  n: ['Feel low', porn ? 'Use porn' : habit === 'gambling' ? 'Gamble' : habit === 'alcohol' ? 'Drink' : 'Give in', 'Feel worse', 'Pull away'],
                   c: 'THE LOOP',
                 },
               ]}
@@ -1237,17 +1227,33 @@ function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null;
               st={st}
             />
           }
-          h="Low mood and porn feed each other."
+          h={
+            porn
+              ? 'Low mood and porn feed each other.'
+              : habit === 'other'
+                ? 'Low mood and a habit feed each other.'
+                : 'Low mood and ' + HABIT_NOUN[habit] + ' feed each other.'
+          }
           line="The way out is people. **One text to a friend** breaks the loop."
-          more={{
-            label: 'Behind this',
-            paras: [
-              'In a survey of 1,247 adults, the lonelier people were, the more porn they tended to use. The researchers think it runs both ways.',
-              'A review of about 25 years of research on recovery groups found that a change in who people spend time with was one of the main ways the groups helped.',
-              '**Relationships.** A review of 50 studies, about 50,000 people, found men who used more porn were less satisfied with their sex lives and relationships. In a national US survey, married people who started watching porn were about twice as likely to be divorced by the next survey: 11% against 6%. These are links, not proof of cause.',
-            ],
-            keys: ['butler', 'kelly17', 'wright', 'perry'],
-          }}
+          more={
+            porn
+              ? {
+                  label: 'Behind this',
+                  paras: [
+                    'In a survey of 1,247 adults, the lonelier people were, the more porn they tended to use. The researchers think it runs both ways.',
+                    'A review of about 25 years of research on recovery groups found that a change in who people spend time with was one of the main ways the groups helped.',
+                    '**Relationships.** A review of 50 studies, about 50,000 people, found men who used more porn were less satisfied with their sex lives and relationships. In a national US survey, married people who started watching porn were about twice as likely to be divorced by the next survey: 11% against 6%. These are links, not proof of cause.',
+                  ],
+                  keys: ['butler', 'kelly17', 'wright', 'perry'],
+                }
+              : {
+                  label: 'Behind this',
+                  paras: [
+                    'A review of about 25 years of research on recovery groups found that a change in who people spend time with was one of the main ways the groups helped.',
+                  ],
+                  keys: ['kelly17'],
+                }
+          }
         />
       );
     case 'waves':
@@ -1277,9 +1283,10 @@ function ShowPage({ k, t, st, a, W }: { k: string; t: Tone; st: Settings | null;
             label: 'Behind this',
             paras: [
               'In a study of 96 people building a new daily habit, the typical person took 66 days before it felt automatic. Some took much longer, and missing a single day made little difference.',
-              'In a trial where regular porn users stopped for a week, stopping did not bring on withdrawal symptoms on average.',
+              /* porn only: stopping alcohol or a daily drug can bring dangerous withdrawal (habit.ts HABIT_MEDICAL) */
+              ...(porn ? ['In a trial where regular porn users stopped for a week, stopping did not bring on withdrawal symptoms on average.'] : []),
             ],
-            keys: ['lally', 'fernandez'],
+            keys: porn ? ['lally', 'fernandez'] : ['lally'],
           }}
         />
       );

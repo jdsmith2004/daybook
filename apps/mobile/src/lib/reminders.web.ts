@@ -1,5 +1,5 @@
 /* Reminders in a browser: a web page cannot remind you once it is closed, so the app suggests phone alarms instead. */
-import type { Nudge } from '@daybook/core';
+import type { Nudge, TrailNote } from '@daybook/core';
 
 export const remindersOffered = false;
 export function onPermission(_f: () => void): () => void {
@@ -26,6 +26,8 @@ export async function scheduleTalk(_t: number, _body: string, _url: string): Pro
   return false;
 }
 export async function cancelTalk(): Promise<void> {}
-export function listenForTaps(_onTap?: (id: string) => void): () => void {
+export type TrailAnswer = 'open' | 'door' | 'where' | 'later' | 'off';
+export async function scheduleTrail(_notes: TrailNote[]): Promise<void> {}
+export function listenForTaps(_onTap?: (id: string) => void, _onTrail?: (a: TrailAnswer) => void): () => void {
   return () => undefined;
 }

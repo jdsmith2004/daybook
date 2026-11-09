@@ -25,6 +25,13 @@
         "EXPO_PUBLIC_CLIENT_ID": "8r1b7795qak2dkgs5741caj36",
         "EXPO_PUBLIC_APPLE": "on"
       }
+    },
+    "production-pull": {
+      "extends": "production",
+      "env": {
+        "DAYBOOK_PULL": "1",
+        "APPLE_TEAM_ID": "2G4K7PN999"
+      }
     }
   },
   "submit": {

@@ -277,7 +277,7 @@ export default function Checkin() {
         {/* the flame in the open middle, as big as the room the rows leave it */}
         <NightMiddle level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} asleep={false} />
         <Dock>
-          {form.md != null && form.md <= 3 ? <TalkDoor line="A heavy day is a state, not who you are. Talk it through before tonight." /> : null}
+          {form.md != null && form.md <= 3 ? <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." /> : null}
           {more}
           <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
           <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
@@ -333,7 +333,7 @@ export default function Checkin() {
         </View>
         {form.md != null && form.md <= 3 ? (
           <Appear delay={640} style={{ alignSelf: 'stretch' }}>
-            <TalkDoor line="A heavy day is a state, not who you are. Talk it through before tonight." />
+            <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." />
           </Appear>
         ) : null}
         {wind && r ? (

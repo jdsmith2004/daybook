@@ -37,6 +37,16 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  PULL_LONG,
+  PULL_OPEN,
+  PULL_WAIT,
+  riskWindow,
+  type PullPrefs,
+  setHabit,
+  habitOf,
+  HABIT_NAME,
+  habitMedical,
+  OB_HABIT,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -78,6 +88,7 @@ import {
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
+import { Pull, PULL_DENIED, pullOffered, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -87,7 +98,7 @@ import { useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
-type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'health' | 'answers' | 'data';
+type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'habit' | 'faith' | 'look' | 'sos' | 'remind' | 'pull' | 'lock' | 'health' | 'answers' | 'data';
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -218,6 +229,7 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
     exactAlarmsOk().then(setExact, () => undefined);
   }, []);
   const lock = useLockPref();
+  const pull = usePullPrefs();
   const health = useNights();
   const nightsN = Object.keys(health.nights).length;
   /* turning a reminder on asks the phone for permission first */
@@ -309,6 +321,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
     fmtClock(la.at) +
     (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.') +
     ' Never once today’s is done.';
+  /* the hard hours the log has found, for the Screen Time section */
+  const hw = riskWindow(snap.days, st, tk);
+  const pullHard = hw ? (hw.scope === 'weekdays' ? 'Weekdays, ' : hw.scope === 'weekends' ? 'Weekends, ' : 'Every day, ') + hw.label : null;
 
   const ownN = st.opts.trig.filter((o) => !o.off).length + st.opts.did.filter((o) => !o.off).length;
   const ownSub = ownN ? ownN + (ownN === 1 ? ' answer' : ' answers') + ' added on check-ins' : 'Words you add on a check-in';
@@ -433,6 +448,32 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               </Field>
             </>,
           )}
+
+          {/* what the person is quitting (core habit.ts): the words and the lessons follow it; nothing earned changes */}
+          {st.onb
+            ? sec(
+                'habit',
+                'flame',
+                'What I am quitting',
+                HABIT_NAME[habitOf(st)],
+                <>
+                  <Field
+                    label="What do you want to quit?"
+                    hint="Lessons written for porn stay out for another habit. Everything you finished, earned and logged stays.">
+                    <Chips label="What I am quitting">
+                      {OB_HABIT.map(([v, l]) => (
+                        <Chip key={v} label={l} on={habitOf(st) === v} onPress={() => apply({ st: setHabit(st, v) })} />
+                      ))}
+                    </Chips>
+                  </Field>
+                  {habitMedical(habitOf(st)) ? (
+                    <T v="small" tone="muted">
+                      {habitMedical(habitOf(st))}
+                    </T>
+                  ) : null}
+                </>,
+              )
+            : null}
 
           {/* the setup's faith answers (core faith.ts): whether lessons speak of God, and in which faith's words */}
           {st.onb
@@ -639,6 +680,16 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
             ),
           )}
 
+          {pullOffered
+            ? sec(
+                'pull',
+                'phone',
+                'Apps that pull you in',
+                pull.on ? (pull.pause ? 'On · nudges, then a pause' : 'On · nudges') : 'Off',
+                <PullBody pull={pull} hard={pullHard} say={say} />,
+              )
+            : null}
+
           {lockOffered
             ? sec(
                 'lock',
@@ -777,6 +828,82 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
       <T v="small" tone="muted" style={{ textAlign: 'center' }}>
         Daybook {Constants.expoConfig?.version ?? ''}
         {signedIn && unsynced ? ` · ${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
+      </T>
+    </>
+  );
+}
+
+/* Apps that pull you in (Screen Time, iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which;
+   every choice here undoes at once, with no wait and no lock. */
+function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; say: (m: string) => void }) {
+  const start = async () => {
+    const r = await pullStart().catch(() => 'closed' as const);
+    if (r === 'denied') say(PULL_DENIED);
+    else if (r === 'closed') say('Nothing was picked, so nothing changed.');
+  };
+  if (!pull.on)
+    return (
+      <>
+        <T v="small" tone="muted">
+          Pick the apps that pull you in. When one has you too long, I will say so, and in your hard hours I will say it louder. Nothing about your apps leaves
+          this phone.
+        </T>
+        <Link label="Choose the apps" onPress={start} />
+      </>
+    );
+  const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');
+  return (
+    <>
+      <Act icon="phone" label="Change the apps" onPress={() => Pull?.pick()} />
+      <Field label="After long use" hint="One note a day, to today’s lesson when it is not done.">
+        <Chips label="After long use">
+          {PULL_LONG.map((n) => (
+            <Chip key={n} role="radio" label={hours(n)} on={pull.long === n} onPress={() => setPullPrefs({ long: n })} />
+          ))}
+        </Chips>
+      </Field>
+      <OnOff
+        name="In my hard hours"
+        sub={hard ? hard + ': a note at 10 minutes, and at 20.' : 'Your hard hours show here once your log finds them.'}
+        on={pull.hard}
+        onPick={(on) => setPullPrefs({ hard: on })}
+      />
+      {pull.hard ? (
+        <OnOff
+          name="Pause it if I keep going"
+          sub="After the two notes, the apps rest until your hard hours end. A short wait opens them for a few minutes."
+          on={pull.pause}
+          onPick={(on) => setPullPrefs({ pause: on })}
+        />
+      ) : null}
+      {pull.hard && pull.pause ? (
+        <>
+          <Field label="The wait">
+            <Chips label="The wait">
+              {PULL_WAIT.map((n) => (
+                <Chip key={n} role="radio" label={n === 60 ? '1 minute' : n + ' seconds'} on={pull.wait === n} onPress={() => setPullPrefs({ wait: n })} />
+              ))}
+            </Chips>
+          </Field>
+          <Field label="Then open for">
+            <Chips label="Then open for">
+              {PULL_OPEN.map((n) => (
+                <Chip key={n} role="radio" label={n + ' minutes'} on={pull.open === n} onPress={() => setPullPrefs({ open: n })} />
+              ))}
+            </Chips>
+          </Field>
+        </>
+      ) : null}
+      <Act
+        label="Lift every pause now"
+        onPress={() => {
+          Pull?.lift();
+          say('Every pause is lifted.');
+        }}
+      />
+      <Act label="Turn it all off" onPress={() => pullStop()} />
+      <T v="small" tone="muted">
+        Apple keeps the list of apps, and nothing about them leaves this phone. You can also turn this off in Settings, Screen Time.
       </T>
     </>
   );

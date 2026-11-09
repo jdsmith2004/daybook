@@ -1,7 +1,8 @@
 /* God in the lessons, for those who choose it (the owner, November 2, 2026: deep, by choice, from the owner's own faith as a
    Latter-day Saint, with a Bible-only version for other Christians and a plain one for another faith). The setup asks "Does
    faith play a part in this for you?"; a Yes or a Somewhat then asks which faith, and Settings can change both later. No
-   leaves the God lessons out (lessons.ts faithOut). Every care tool is the same for everyone.
+   leaves the God lessons out (lessons.ts faithOut). Every care tool is there for everyone; Yes or Somewhat adds one more
+   move to the SOS ride, It is written (written.ts; the owner, November 8, 2026).
 
    The voice a God lesson speaks in: 'lds' (Heavenly Father, Jesus Christ, the Book of Mormon and the Bible, the bishop, the
    sacrament, the Church's recovery meetings), 'christian' (the same, with the Bible only), 'plain' (God, no Scripture).

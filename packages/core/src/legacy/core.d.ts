@@ -111,6 +111,7 @@ export function busiestWindow(
 
 /* ---------- points, levels, wins, quests, badges ---------- */
 export const SETUP_PTS: number;
+export const WIDGET_PTS: number;
 export const WINS: { k: WinKey; name: string; tip: string; ic: string }[];
 export type WinKey = 'morning' | 'lesson' | 'calm' | 'reach' | 'checkin' | 'wind';
 export type Wins = Record<WinKey, boolean> & { na: Record<WinKey, boolean> };
@@ -206,7 +207,7 @@ export function trigFits(id: string, time: string | null): boolean;
 export function optList(
   kind: 'trig' | 'did',
   opts: Settings['opts'] | null | undefined,
-  o: { time?: string | null; sel?: string | string[] | null; all?: boolean; notSure?: boolean },
+  o: { time?: string | null; sel?: string | string[] | null; all?: boolean; notSure?: boolean; habit?: string },
 ): { list: [string, string][]; hidden: number };
 export const URGE_PLAN: [string, string][];
 export const SLIP_STEPS: string[];

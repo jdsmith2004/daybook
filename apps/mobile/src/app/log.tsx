@@ -38,6 +38,7 @@ import {
   lookBackGave,
   lookUndo,
   moveEvent,
+  habitOf,
   optList,
   OPT_MAX,
   patchEvent,
@@ -84,6 +85,7 @@ import {
   type Talk,
   type TalkMove,
   type When,
+  lessonFor,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -646,7 +648,7 @@ export default function Log() {
     footer = <Link label="Skip" tone="muted" onPress={() => go('slBefore')} />;
   } else if (step === 'slBefore') {
     /* 3. just before: the situation, one tap (the same answers as after an urge, so they are counted together) */
-    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
+    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true, habit: habitOf(st) });
     const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';
@@ -716,13 +718,14 @@ export default function Log() {
         </Dock>
       </>
     );
-    footer = repeat ? (
-      <Link
-        label="What therapy is like"
-        tone="muted"
-        onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
-      />
-    ) : null;
+    footer =
+      repeat && lessonFor(SLIP_THERAPY_LESSON, st) ? (
+        <Link
+          label="What therapy is like"
+          tone="muted"
+          onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
+        />
+      ) : null;
   } else if (step === 'slOther') {
     /* Choose another: the sentence is the heading, and each answer finishes it */
     const held = talkHeld(snap.days);

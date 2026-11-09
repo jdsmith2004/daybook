@@ -6,7 +6,7 @@ import { blankP, LESSONS, normSettings } from '../src/legacy/core.js';
 import { moments, pickMoment, standRow } from '../src/moment';
 import { addEvent, changeDay, withDay } from '../src/mutate';
 import { srDone, sunriseDue } from '../src/rekindle';
-import type { Days } from '../src/types';
+import type { Days, Reviews } from '../src/types';
 
 /* started October 7, Day 1 October 14; October 18 is a Sunday */
 const st = normSettings({ start: '2026-10-07', day1: '2026-10-14', wk1: '2026-10-15' });
@@ -128,7 +128,10 @@ describe('the order', () => {
     expect(pickMoment(slip({}, '2026-10-21'), st, {}, '2026-10-22', at(22, 8), { pause: true }).card.k).toBe('pause');
   });
   it('the Sunday review on Sunday, and still on Monday while it is open', () => {
-    expect(pickMoment({}, st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your Sunday review', v: '2026-10-18' });
+    /* the first one is a part unlocked: its card opens its own page first (unlock.ts) */
+    expect(pickMoment({}, st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your first Sunday review', go: 'unlock', v: '2026-10-18' });
+    const done = { '2026-10-11': { sun: {} } } as unknown as Reviews;
+    expect(pickMoment({}, st, done, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your Sunday review', v: '2026-10-18' });
     expect(pickMoment({}, st, {}, '2026-10-19', at(19, 10)).card).toMatchObject({ k: 'sunday', h: 'Last week’s review is still open' });
     expect(kinds({}, '2026-10-20', at(20, 10))).not.toContain('sunday');
   });

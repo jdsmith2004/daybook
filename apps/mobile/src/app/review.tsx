@@ -14,7 +14,6 @@ import {
   addDays,
   gameCompute,
   isSunday,
-  LESSONS,
   saveSun,
   SRC,
   patSlipTrig,
@@ -44,6 +43,7 @@ import {
   type SunLast,
   type SunPick,
   type SunReview,
+  lessonFor,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -402,7 +402,7 @@ export default function Review() {
       );
     } else if (scr === 'deep') {
       const d = S.deep;
-      const l = (LESSONS as unknown as { id: string; title: string }[]).find((x) => x.id === d.l);
+      const l = lessonFor(d.l, st);
       main = (
         <>
           {eyebrow('One thing to know')}

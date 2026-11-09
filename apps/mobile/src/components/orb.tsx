@@ -23,6 +23,13 @@ export const fmtMS = (ms: number) => {
 };
 
 /** seconds since start, ticking ten times a second while on */
+/** when a move came into view: null while it waits still above or below in the ride, then the moment it is first on */
+export function useStartWhen(on: boolean): number | null {
+  const at = useRef<number | null>(null);
+  if (on && at.current === null) at.current = Date.now();
+  return at.current;
+}
+
 export function useSeconds(start: number | null, on = true) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

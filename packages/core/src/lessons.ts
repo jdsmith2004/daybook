@@ -5,6 +5,7 @@
    LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
 import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, LUNITS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { PATH_STEPS, stepAt } from './steps';
+import { habitOf } from './habit';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
@@ -182,12 +183,63 @@ export const godOn = (st: Settings | null | undefined) => {
 };
 /** a God lesson (g1 to g12) */
 export const isGod = (L: Lesson) => /^g\d+$/.test(L.id);
+/** the lessons written for porn only (the owner, November 8, 2026): their live words name porn or sex, or rest on a porn study.
+    For someone quitting gambling or another habit they leave the path, Learn and every link, the way the faith lessons leave
+    it for a No (faithOut). One finished before the habit changed stays finished and counted (lessonCount), with its points.
+    A new lesson is for porn only until it is checked and left off this list. */
+export const PORN_ONLY = new Set([
+  'l4',
+  'l11',
+  'l13',
+  'l16',
+  'l22',
+  'l24',
+  'l25',
+  'l33',
+  'l34',
+  'l36',
+  'l38',
+  'l42',
+  'l45',
+  'l46',
+  'l47',
+  'l48',
+  'g3',
+  'g4',
+  'g6',
+  'g7',
+  'g8',
+  'g9',
+  'g10',
+  'g11',
+  'g12',
+]);
+/** this lesson is not for this person's habit */
+export const habitOff = (L: Lesson | null | undefined, st: Settings | null | undefined) => !!L && PORN_ONLY.has(L.id) && habitOf(st) !== 'porn';
+/** a lesson to link to, or null when it is not for this person's habit: every link to a lesson goes through this */
+export const lessonFor = (id: string | null | undefined, st: Settings | null | undefined) => {
+  const L = lessonById(id);
+  return L && !habitOff(L, st) ? L : null;
+};
+/** off this person's path by choice: faith said No, or the lesson was written for another habit */
+const offFor = (st: Settings | null | undefined) => {
+  const out = faithOut(st);
+  const h = habitOf(st) !== 'porn';
+  return (L: Lesson) => (out && !!L.f) || (h && PORN_ONLY.has(L.id));
+};
 let NO_FAITH: { from: Lesson[]; list: Lesson[] } | null = null;
 let WITH_GOD: { from: Lesson[]; list: Lesson[] } | null = null;
 /** this person's path: lessonPath, in its order, without the faith lessons when they answered No, and with each step's God
     lesson last in it when they answered Yes or Somewhat. A lesson off the path keeps its id, opens in full from Learn
     (lessonGate), and stays finished and counted (lessonCount). */
 export function lessonPathFor(st: Settings | null | undefined): Lesson[] {
+  const list = lessonPathFaith(st);
+  if (habitOf(st) === 'porn') return list;
+  if (!FOR_HABIT || FOR_HABIT.from !== list) FOR_HABIT = { from: list, list: list.filter((L) => !PORN_ONLY.has(L.id)) };
+  return FOR_HABIT.list;
+}
+let FOR_HABIT: { from: Lesson[]; list: Lesson[] } | null = null;
+function lessonPathFaith(st: Settings | null | undefined): Lesson[] {
   const path = lessonPath();
   if (godOn(st)) {
     if (!WITH_GOD || WITH_GOD.from !== path)
@@ -231,8 +283,8 @@ export const firstUndone = (done: Set<string>, st?: Settings | null) => lessonPa
     path was not finished yet, in the order of today and in every order the path had before (lessonPathsBefore). Read from
     the record, in the order lessons were finished (by day, then within the day). */
 export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
-  const out = faithOut(st);
-  const befores = lessonPathsBefore().map((p) => (out ? p.filter((L) => !L.f) : p));
+  const off = offFor(st);
+  const befores = lessonPathsBefore().map((p) => p.filter((L) => !off(L)));
   const path = lessonPathFor(st);
   const fin = new Set<string>();
   const early = new Set<string>();
@@ -455,7 +507,8 @@ export function lessonTimeline(days: Days, st: Settings | null = null) {
 }
 /** once every lesson is finished, the day's lesson is a quick re-read, one a day in turn */
 export const reviewPick = (tk: DayKey, st?: Settings | null) => {
-  const list = LESSONS.filter((L: Lesson) => !(faithOut(st) && L.f) && !(isGod(L) && !godOn(st)));
+  const off = offFor(st);
+  const list = LESSONS.filter((L: Lesson) => !off(L) && !(isGod(L) && !godOn(st)));
   return list[Math.abs(diffDays(tk, '2026-01-01')) % list.length];
 };
 
@@ -508,6 +561,11 @@ export function lcheckPair(n: number): { n: number; a: Lesson; b: Lesson } | nul
   const iy = path.indexOf(y);
   return iy >= 0 && (ix < 0 || ix < iy) ? { n, a: x, b: y } : { n, a: y, b: x };
 }
+/** checkpoint n is on for someone: neither of its two lessons is off their path by choice */
+const lcheckOn = (n: number, off: (L: Lesson) => boolean) => {
+  const p = lcheckPair(n);
+  return !!p && !off(p.a) && !off(p.b);
+};
 let CHECKS: number[] | null = null;
 /** the checkpoints (by n) in the order the path reaches them */
 export function lcheckOrder(): number[] {
@@ -521,9 +579,10 @@ export function lcheckOrder(): number[] {
 }
 /** the number a person sees for checkpoint n: its place on the path */
 export const lcheckNo = (n: number, st?: Settings | null) => {
-  if (!faithOut(st)) return lcheckOrder().indexOf(n) + 1;
-  /* with the faith lessons off the path, their checkpoints are not counted, so the numbers do not skip */
-  const on = lcheckOrder().filter((x) => !lcheckPair(x)!.b.f);
+  if (!faithOut(st) && habitOf(st) === 'porn') return lcheckOrder().indexOf(n) + 1;
+  /* with lessons off the path, their checkpoints are not counted, so the numbers do not skip */
+  const off = offFor(st);
+  const on = lcheckOrder().filter((x) => lcheckOn(x, off));
   return on.indexOf(n) >= 0 ? on.indexOf(n) + 1 : lcheckOrder().indexOf(n) + 1;
 };
 /** the checkpoint that comes right after this lesson, when this is the later of its two */
@@ -540,8 +599,11 @@ export const lcheckWritten = (st: Settings, n: number) => !!(st.learn && st.lear
     is finished. */
 export function lcheckDue(days: Days, st: Settings, w: LessonWalk = lessonWalk(days, st)): number {
   const reached = (L: Lesson) => w.walked.has(L.id) || (w.path.indexOf(L) < 0 && w.done.has(L.id));
+  /* a checkpoint about a lesson written for porn never comes for another habit, even when both were finished before */
+  const forHabit = (L: Lesson) => habitOff(L, st);
   for (const n of lcheckOrder()) {
     const p = lcheckPair(n)!;
+    if (!lcheckOn(n, forHabit)) continue;
     if (reached(p.a) && reached(p.b) && !lcheckWritten(st, n)) return n;
   }
   return 0;

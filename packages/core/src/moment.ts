@@ -15,6 +15,7 @@
    10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
    11. the five questions again, every 30 days (recheck.ts): low on purpose, so they wait behind the day's next stop as "and one
        more", and are the card once the day's stops are done. They never push the lesson off the flame.
+   12. a part unlocked (unlock.ts: the journal, the apps that pull you in), just after them and as low.
 
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
@@ -33,6 +34,7 @@ import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
 import type { CareDoor } from './talk';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
+import { UNLOCK_WORDS, type UnlockId } from './unlock';
 import { firstWeekDue } from './week';
 import type { Nights } from './health';
 import type { DayKey, Days, Reviews, Settings } from './types';
@@ -51,11 +53,12 @@ export type MomentKind =
   | 'nudge'
   | 'first-pattern'
   | 'recheck'
+  | 'unlock'
   | 'calm'
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck';
+export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck' | 'unlock';
 
 export interface Moment {
   k: MomentKind;
@@ -99,6 +102,8 @@ export interface MomentDev {
   comebackSeen?: DayKey | null;
   /** the five questions are due again (core bpsDue, kept on this device) */
   recheck?: boolean;
+  /** a part unlocked now (core unlock.ts unlockNow, kept on this device) */
+  unlock?: UnlockId | null;
 }
 
 /** every moment that applies now, in order. The calm day (or done) comes last, but for the five questions. */
@@ -153,7 +158,10 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 
   /* 8. the Sunday review */
   const sd = sunDue(reviews, st, tk);
-  if (sd)
+  /* the first one is a part unlocked (unlock.ts): its own page says what it is, then opens it */
+  if (sd && !sd.late && !Object.keys(reviews || {}).length)
+    m('sunday', UNLOCK_WORDS.sunday.eb, UNLOCK_WORDS.sunday.h, '', 'Start', 'unlock', 'your Sunday review', sd.sun);
+  else if (sd)
     m(
       'sunday',
       sd.late ? 'Last week' : 'Sunday',
@@ -210,6 +218,11 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
   if (dev.recheck)
     m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
+  /* a part unlocked (unlock.ts): as low as the five questions, so it never pushes the lesson off the flame */
+  if (dev.unlock) {
+    const w = UNLOCK_WORDS[dev.unlock];
+    m('unlock', w.eb, w.h, '', 'See it', 'unlock', 'something you unlocked', dev.unlock);
+  }
   if (cur) return out;
   if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   else if (sumDay(today).slipped && d.tiles.length)

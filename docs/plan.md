@@ -178,9 +178,10 @@ Left, on purpose: no reserved concurrency for the function (a new AWS account's 
 throttle bounds it). Plain truth for the owner: with a handful of people, the owner could still match an install to a person
 from timing alone; the rule above is what stops it.
 
-**Older than this work, for the owner:** Android's Auto Backup is on by default (`android.allowBackup` not set), so on Android
-the whole log goes into the person's Google Drive backup, while the privacy page says the log never leaves the phone without
-an account. Turning it off is one line, but it also stops a new Android phone from bringing the log back.
+**Android backup, off (the owner, November 9, 2026: "Yes, turn it off"; on main):** Auto Backup was on by default, so on
+Android the whole log went into the person's Google Drive backup, while the privacy page says the log never leaves the phone
+without an account. `android.allowBackup` is now false: a new Android phone brings the log back through an account and sync.
+It takes effect with the next Android build.
 
 ### What the owner wants to learn, and the events that answer it (the owner, November 9, 2026)
 
@@ -221,6 +222,514 @@ a sign-in and a server read path), but a report in GitHub keeps the data off any
 7. The Stats report (medium).
 
 Not merged before the owner has seen it.
+
+## Unlocked: parts that open as the person uses the app (the owner, November 9, 2026; built on `claude/screen-time-f8b40b`)
+
+"We don't waterboard them with features." Setup stays short and ends with the account ask; a part that is not needed on the first
+night opens later, one at a time, as a card on Today ("Unlocked") that opens its own page with the flame popping in on its burst.
+Core `unlock.ts` decides, `app/unlock.tsx` shows it, and the memory is on this device (with the SOS memory, like the first pattern).
+
+- **The rules:** in order, each once; at least `UNLOCK_GAP` (3) days apart; never on the day of a slip or the day after, or in the
+  quiet hours after an SOS; as low on Today as the five questions, so the lesson stays the next step; once it is the card it stays
+  that day until opened, then lives where it always lives. A part already in use is never offered.
+- **The journal, day 3 with two lessons done.** "Your journal", on the night sky like the journal: "A page only for you. Nothing in
+  it is ever shared." The flame: "Name how the day felt, in one word or a few lines. Naming it takes some of its weight. Pull down
+  on Today any time to write." **Write the first one** opens a new entry; quiet **Put it on my day** makes it an any-time stop.
+  Picture: `docs/screen-time/unlock-journal.png`.
+- **Planning a slip?, the day after the first urge ridden out (from day 3).** It was never locked (care never is), so its small
+  word is "A tool for you". "You rode an urge out. Here is the tool for the night it starts earlier." The flame says a slip is often
+  planned long before it happens, and to tap Planning a slip? on Today when they notice it. **See how it works** opens it.
+- **The safe person, day 7, when none is named.** It left the setup the same day (the golden setup pages drop `person` by design;
+  the plan's summary in setup shows Safe person only when there is one). "Who could be your safe person?", the name box and
+  **Save** near the top for the keyboard, then the flame: "A week in, you know this is real. One person you could text on a hard
+  night makes the next one easier." Kept in My plan. Cost: a new person no longer gets the Day 1 "Tell them you started" card,
+  since there is no name on Day 1.
+- **The app that pulls you in, day 7, iPhone only** (Screen Time, below).
+- **Reached out, day 10, when it is not on the day already.** "This habit grows in secret, and it shrinks when you are known."
+  **Put it on my day** turns the any-time stop on.
+- **The first Sunday review.** The first one due is its own Sunday card marked "Unlocked", opening a page that says what it is
+  ("what helped, what got you, and one small goal for the next"), then **Start my review**. Later Sundays are as before.
+- Each has its own sky (the journal night, Planning a slip? violet, the safe person coral, Reached out mint, the review sun).
+  Pictures: `docs/screen-time/unlock-*.png`. Built November 9, 2026, all on `claude/screen-time-f8b40b`, not merged.
+
+## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; being built on `claude/screen-time-f8b40b`)
+
+**The owner's answers (November 9, 2026).**
+
+1. An ignored nudge makes the flame burn lower, for real, not only in words (the dimming itself is built in its own session,
+   "Flame burns lower when you drift"; Screen Time only reports an ignored nudge as drift). Level, points and badges never drop.
+2. The way past the pause is **a ten-second wait**, on a screen with the flame big that says plainly this is the hard hours and
+   to put the phone down, and it has to look good. Then the app opens for **three minutes**, then the pause comes back, with the
+   wait again, and so on. The person sets both in More (the wait: 10, 30 or 60 seconds; the open time: 3, 5 or 10 minutes).
+3. The pause still runs in the hours after a slip, with plain words and no stakes, and the same wait; the screen still looks good.
+
+**What Apple's shield allows for the wait, and what I chose.** Apple's shield is a still picture: a background, an icon, a
+title, a line and two buttons. It cannot count down. So the shield is the door (the flame as its icon, "Your hard hours", the
+person's if-then line) and the wait is a Daybook screen, `/pause`: the night sky, the flame big, "This is your hard hours" and
+one plain line, and the ten seconds as the squiggle ring (`ToolTimer`). The main button is **Put it down** (Today, and counts as a
+nudge heeded); only when the wait is over does a quiet **Open it for 3 minutes** appear, which lifts the pause; the person
+goes back to the app themselves (Daybook cannot open another app). After three minutes of use, the pause returns (a
+DeviceActivity threshold of 3 minutes in a 15-minute schedule, since schedules cannot be shorter). Today the shield's button
+reaches `/pause` by a notification to tap; if iOS 26.5's `openParentalControlsApp` works for one person's own phone, it opens
+straight there, and the spike finds out.
+
+**The ask** (from the owner's talk with their bishop): notice long use of an app the person picks ("you have been on Instagram
+for two hours and have not opened Daybook today, come do a lesson"); in the person's hard hours, a firmer push to get up and move,
+in the flame's voice ("you are dimming your fire"); if the nudges are ignored, pause the app with a Screen Time shield, only by
+the person's own choice and always undoable. The bad-photos part (Sensitive Content Warning, the adult-website filter) is dropped
+by the owner's choice (November 8, 2026: not worth it). iPhone only. Helps the person: the moment the habit starts is often a
+scroll in the hard hours, and this is the first thing in Daybook that reaches into that moment instead of waiting to be opened.
+Helps Daybook: a real reason to keep it on the phone and to open it daily, and something rivals charge for. Research notes (with
+sources) are in the side-session notes: screen-time-apple-research, -expo-research, -rivals-research.
+
+### What Apple allows (FamilyControls, DeviceActivity, ManagedSettings)
+
+- **The ask.** `AuthorizationCenter.requestAuthorization(for: .individual)` (iOS 16+): the person confirms with Face ID or the
+  passcode. They can take it back at any time in Settings, Screen Time, which lifts every shield at once. The app is not told
+  while it is closed, so it checks on every open.
+- **Picking apps.** Apple's own `FamilyActivityPicker`. Daybook gets opaque tokens only: it never learns which apps, and only
+  Apple's views can draw their names (Settings can show them; a notification cannot). Over about 50 apps, shielding fails
+  silently; categories count as one.
+- **Watching use.** A `DeviceActivityMonitor` extension gets callbacks when a schedule starts or ends and when use of the picked
+  apps passes a threshold inside it (for example 2 hours today, or 10 minutes inside 10 PM to midnight). It cannot read usage
+  numbers. It can read and write a shared App Group, set shields and post a local notification (works for most developers, not
+  promised by Apple). About 6 MB of memory; no network. Schedules must be at least 15 minutes. **Thresholds are known to fire
+  early or twice** on iOS 16 to 26, so the words never claim an exact time ("two hours", not "2:00:00").
+- **Pausing.** `ManagedSettingsStore.shield.applications` covers the picked apps with Apple's shield screen. A
+  `ShieldConfiguration` extension sets its look (background, icon, title, subtitle, two buttons); a `ShieldAction` extension
+  handles the buttons: close, defer, nothing. A shield cannot open Daybook (Apple DTS), so "Open Daybook" closes and posts a note
+  to tap. iOS 26.5 lists `openParentalControlsApp`, untested with individual use: the spike tries it. The main app lifts a shield
+  by clearing the store. Shields have been seen to outlive an uninstall, so "Lift every pause now" is always in More.
+- **Not possible:** an "app opened" signal (one sec relies on a Shortcuts automation the person builds; Apple says apps may not
+  do this for them), the usage numbers, and the app names in anything but Apple's views.
+- **The license (3.3.3(P)):** Screen Time data may not leave the device. So **no anonymous counts at all** come from these nudges
+  or the pause (not even `nt_` arrivals); no setup count either, since it is no longer in setup. Nothing goes
+  in sync or the safe copy. The privacy page says so in one line.
+
+### The design
+
+**Not in setup: unlocked a week in (the owner, November 9, 2026: "we don't waterboard them with features").** Setup stays as it
+was. After the first week (`UNLOCK_PULL_DAY`, core `unlock.ts`), on an iPhone that has it, Today shows one card, "Unlocked: The app
+that pulls you in", as low as the five questions (it waits behind the lesson as "After this"). It opens `/unlock?id=pull`: a small
+"Unlocked" over "Which app pulls you in?", "Nothing about your apps ever leaves this phone.", the flame popping in on its burst and
+saying "When it has you too long, I will say so. In your hard hours, I will say it louder." Two choices low: **Nudge me** (default)
+and **Nudge me, then pause it**, and **Choose the apps** (Apple's ask, then Apple's list). The X closes it; it is always in More.
+Pictures: `docs/screen-time/unlock-pull.png`.
+
+**Long use.** One daily schedule, threshold 2 hours (1, 2 or 3 in More). At most one note a day. The monitor reads the App Group:
+if Daybook has not been opened today, or today's lesson is not done, the note points to the lesson (`/lesson/<id>`, or `/` before
+setup is done); otherwise it says to put the phone down.
+
+**Hard hours.** Core `riskWindow` (risk.ts) already finds the person's two-hour window from the log (weekdays and weekends apart,
+once two slips or six urges cluster). The app turns it into DeviceActivity schedules (one per weekday, under the limit of 20) and
+redoes them when the window moves. Thresholds at 10 and 20 minutes of picked-app use inside the window: two notes. If the pause is
+on, a third threshold at 30 minutes shields the apps until the window ends (`intervalDidEnd` lifts it). Before the window exists,
+only long use runs, and More says "Your hard hours show here once your log finds them."
+
+**The words** (core, `screen-time.ts`, written in the flame's voice under the stakes rule: firm and plain, about the next choice,
+never about who the person is; no app name and nothing about the habit on a locked screen):
+
+- Long use, no lesson yet: "🔥 Two hours in" / "Two hours there today, and no lesson yet. You are dimming your fire. Three minutes
+  with me puts it back."
+- Long use, lesson done: "🔥 Two hours in" / "Two hours there today. Every minute more is a minute your fire does not get. Put it
+  down."
+- Hard hours, first: "🔥 Your hard hours" / "This is when it gets you, and you are on it again. You are dimming your fire. Stand
+  up and walk to another room, now."
+- Hard hours, second: "🔥 Still here" / "This is the choice that counts tonight. Put the phone in another room. If it pulls, open
+  me." With the pause on: "... In ten minutes I rest it, as you asked."
+- **After a slip** (the rest of the slip's day and until the next morning; the main app writes `quietUntil` to the App Group when a
+  slip is logged): no stakes. Long use stays silent; the hard-hours note becomes "🔥 Your hard hours" / "You do not have to fight
+  it alone tonight. SOS is one tap away." and opens `/sos`. The pause still runs if they chose it (it is their own protection),
+  with the same plain shield words.
+- The shield: "Resting until 11 PM" / "You asked me to hold this in your hard hours." then the person's own if-then line from
+  setup when there is one ("When I feel the pull, I will open SOS."). Buttons: **Open Daybook** (closes, posts a note that opens
+  SOS) and **Five minutes** (lifts the shield for five minutes, once per window; then it comes back).
+
+**Where the settings live.** More, a section "Apps that pull you in" (iPhone only, device-only prefs in `prefs.ts`, never in synced
+`Settings`): the picked apps (Apple's labels) opening the picker; After long use (Off, 1, 2, 3 hours); In my hard hours (on, with
+the window under it); Pause it if I keep going (off by default); **Lift every pause now**; one line: "Nothing about your apps
+leaves this phone. You can also turn this off in Settings, Screen Time." Every switch undoes at once, with no lock and no wait.
+If access was taken back in Settings, the section shows one quiet row to turn it on again; Daybook never sends a note about it.
+
+**Free.** It is care that reaches the person at the hard moment, so it is free like SOS (never lock care). It earns by keeping
+Daybook on the phone and opened daily, which is where the tip asks and Pattern sell.
+
+**Mockups:** `docs/screen-time/mockups.png` (setup, the notes on a locked screen, the shield, More).
+
+### How it is built
+
+- **Native side.** First try `react-native-device-activity` (Kingstinct, 0.6.1; picker views, monitoring, shields, App Group,
+  an Expo plugin that adds the three extensions). It is untested on SDK 58 and its plugin pins an old fork of expo-apple-targets.
+  If it breaks, the fallback is a small local Expo module (the `modules/note-folder` pattern) for the ask, the picker and the
+  store, plus `@bacons/apple-targets` 5 for the three extension targets. Either way the build stays CNG on EAS.
+- **Identifiers.** App Group `group.com.jdsmith2004.daybook`; extensions `com.jdsmith2004.daybook.ActivityMonitor`,
+  `.ShieldAction`, `.ShieldConfiguration`, each with Family Controls and the App Group. EAS makes their profiles once Apple
+  approves.
+- **The bridge.** The main app writes to the App Group on every open and change: opened-today day key, lesson done, today's
+  lesson id, the flame level, the if-then line, `quietUntil`, the words. The extensions only read and decide; the rules and words
+  live in core and are tested there.
+- **Testing.** The simulator cannot run monitoring or shields, so this is checked on the owner's iPhone in a development build
+  (no approval needed for that). That breaks the usual "show it on the simulator" step: the owner sees it on their own phone.
+
+### Steps (Opus effort)
+
+0. **The owner: ask Apple for the entitlement now** (below). It takes 2 to 6 weeks or more and nothing ships without it.
+1. Spike on a branch: the native package or module, the three extensions, a development build on the owner's iPhone. Prove: the
+   ask, the picker, a threshold note from the extension, a window crossing midnight, a shield with our words, Five minutes, the
+   lift, `openParentalControlsApp`. (high: native, unknown platform behaviour)
+2. Core `screen-time.ts`: schedules from `riskWindow`, the quiet after a slip, the caps, the words, with tests. (medium)
+3. The bridge and the extensions' logic reading it. (high: if it is wrong, a shield can stay stuck)
+4. The unlock page, the More section, Lift every pause, the privacy page line. (medium)
+5. App Review notes and a short video for the reviewer (the reviewer's simulator cannot run it). (low)
+6. The owner tries it for a few days on their phone; then 1.4 with the entitlement.
+
+**Built on `claude/screen-time-f8b40b` (November 9, 2026, the medium steps):** core `pull.ts` and its tests (the hard hours as
+Apple schedules, one a weekday; the quiet after a slip until the next 8 AM at least three hours on; the notes, the shield and
+the wait screen's words; which note goes for which threshold; the person's own plan quoted); the unlock page a week in (moved out
+of setup the same day); Apps that pull you in in More (long use Off, 1, 2 or 3 hours; the hard hours; the pause, off by default; the
+wait 10, 30 or 60 seconds; open for 3, 5 or 10 minutes; Lift every pause now; Turn it all off); the wait screen `/pause`; and
+the privacy page line. The phone side talks to a native module `DaybookPull` (`lib/pull.ts`) that is not written yet; until it
+is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIEW=1`, and a store build shows nothing of this.
+**The high steps, built November 9, 2026 (steps 1 and 3), not yet run on an iPhone:**
+
+- **Only in a build made with `DAYBOOK_PULL=1`** (`app.config.js`): the Family Controls entitlement, the App Group
+  `group.com.jdsmith2004.daybook`, the three extensions and `DaybookPull` in Info.plist. Store builds are unchanged, so EAS never
+  asks Apple for an entitlement it has not granted. When Apple approves, the store build turns it on (step 6).
+- **The module** `modules/daybook-pull` (Swift): Apple's ask (`.individual`), Apple's app list in a sheet (Done and Cancel; the
+  picked apps kept as opaque tokens in the App Group), `write` (core `pullBridge` for the extensions, and Apple's schedules set to
+  match, only when they change, since restarting a schedule ends it), `lift`, `openFor`, `stop`, `ignoredAt`, `takeWant`. Its `on`
+  is false in any other build, and `lib/pull.ts` then uses the stand-in or nothing.
+- **The schedules:** `pull.long` every day with one event at the person's hours; `pull.hard.<weekday>.<hour>` for each hard-hours
+  window (two hours, across midnight when it must) with events at 10, 20 and 30 minutes; `pull.open` for the minutes open after
+  the wait (20 minutes from now, with the event at those minutes of use). Each is restarted only when what it is set from changes,
+  and a window is never stopped while it runs.
+- **Review fixes before the first real iPhone (November 9, 2026),** for what only a device shows: Apple's access status loads late,
+  so only a plain no turns it off (and then everything stops); thresholds that fire early after a start are ignored, by a start
+  stamp per schedule; stopping `pull.open` ends its interval, so a second Open is not paused again at once; the app lifts a pause
+  whose end has passed; a window's end is read from the clock (the spring-forward night); the shield's flame is 60 points.
+- **The extensions** (`targets/`, `@bacons/apple-targets` 5.0.0, sharing `targets/_shared/PullShared.swift`):
+  - **The monitor** posts the bridge's note (core `pullNoteFor`, the same rule in Swift), one of each per day or window. A threshold
+    that comes sooner than it could have is ignored. At 30 minutes it marks the notes ignored, outside the quiet after a slip, and
+    starts the pause if the person chose it, until the window ends. The window's end lifts it. When the minutes open are used, or
+    15 minutes pass, the pause comes back while the window lasts.
+  - **The shield** shows core `pullShield`'s words on the night sky with the flame by its fire.
+  - **The shield's buttons:** Open Daybook uses `openParentalControlsApp` on iOS 26.5 and later; before that it posts a note that
+    opens the wait screen. Either way it leaves `pull.want`, so Daybook opens on `/pause`. Close goes to the Home Screen.
+  - **Notes carry only the screen to open**, never an id, so none is counted (Apple's license).
+- **The bridge** (`PullKeeper` in the root layout) is written on every open, return to the front, change of the log or the choices,
+  and every 15 minutes. It notices access taken back in Settings, and turns it off in More. Choosing the apps also asks for
+  notifications, the same ask the reminders use.
+- **Drift:** core `pullDrift`. The notes ignored burn the fire one step lower that night and the next log day, until the person
+  does their part ("You stayed on it through your hard hours."). Never in the 72 hours after a slip. On this phone only, on Today's
+  flame; the other places that read `fireLow` (the "This lights your fire again" label, the reminders) do not see it yet.
+- **Checked:** core tests, typecheck, and a simulator compile of the app with all three extensions. Apple runs none of Screen Time
+  on a simulator, so the real test is the owner's iPhone.
+
+**To run it on the owner's iPhone (no approval from Apple needed for this):**
+
+1. In Xcode: Settings, Accounts, add the Apple ID of the developer account. Note the Team ID (developer.apple.com, Membership).
+2. On the iPhone: Settings, Privacy and Security, Developer Mode on. Plug it in and trust the Mac.
+3. In `apps/mobile`: `DAYBOOK_PULL=1 APPLE_TEAM_ID=<team id> npx expo run:ios --device --configuration Release`. Xcode's
+   automatic signing makes the four IDs and the App Group, with Family Controls (Development).
+4. In Daybook: More, Apps that pull you in, Choose the apps. Pick one app, set long use to 1 hour, and try it. To see the hard
+   hours at once, the log needs its hard hours (two slips or six urges at the same time of day).
+
+**Merged November 9, 2026** after the owner's look on the simulator (with the stand-in; the Mac could not reach the iPhone). The first real test is TestFlight: Actions, App Store, Run workflow with **Screen Time** ticked. The owner then said the name "Apps that pull you in" is not descriptive, and that Settings needs an overhaul (long and chaotic): its own session.
+
+**The flame dims on the wait screen too (the owner, November 9, 2026, via the flame session).** Once `claude/flame-dims`
+merges, `/pause` uses its pieces (core `flame-low.ts`, `lowXml`, the smoke, the douse and re-light in `big-flame.tsx` and the
+fire layers), so it looks the same as Today: the flame opens dimmed with smoke (low about 0.6), since reaching this screen means
+the notes were ignored; Put it down plays the re-light; Open it for a few minutes leaves it dim. The way in: `/pause` draws `BigFlame` with its `low` prop (raising plays the douse, 0 plays the re-light and its sparks) and copies
+the haptics from `hero.tsx`. Never dimmed in the quiet after a slip. Only the glow changes, never the level or form. (medium, after that merge)
+**Built November 9, 2026, after the fire burning low merged (b7eaaa75):** `/pause` draws `BigFlame` with `low` (0.6, `PAUSE_LOW`) and `douse`, the same ticks as Today as it goes down, and Put it down lights it again with Today's knocks before going home. Never dims in the quiet after a slip. Pictures: `docs/screen-time/wait-dimmed.png`, `wait-relit.png`.
+
+**Cost:** no money (the Apple account is already paid; nothing on AWS). Time: about steps 1 to 4, a few sessions.
+
+**Android and the web.** Later, and smaller: Android can read usage with Usage Access (`UsageStatsManager`) for the same nudges,
+but blocking needs an Accessibility service, which Google Play restricts; so nudges only, when Android has people. The web cannot
+see other apps: the section is hidden there.
+
+### The entitlement: what the owner does (Account Holder, signed in to developer.apple.com)
+
+**Changed by Apple (found November 9, 2026):** developer.apple.com/contact/request/family-controls-distribution is now one
+button, Get Entitlement, for the whole team (2G4K7PN999), with Apple's terms for the framework above it; no app description and
+no request per bundle ID. The owner presses it (it accepts Apple's terms, so Claude does not). After that, the TestFlight build
+with Screen Time is the App Store workflow (Actions, App Store, Run workflow) with **Screen Time** ticked: it builds the EAS
+profile `production-pull` (production plus `DAYBOOK_PULL=1`), and EAS turns on Family Controls and the App Group for the four
+bundle IDs and makes their profiles. If EAS cannot make the three new profiles without asking (the workflow runs
+`--non-interactive`), run `npx eas-cli build --platform ios --profile production-pull` once in `apps/mobile` on a Mac and answer
+its questions; after that the workflow can do it. The older steps below are kept in case Apple brings the written request back.
+
+1. Certificates, Identifiers and Profiles: create the App Group `group.com.jdsmith2004.daybook`, and App IDs for
+   `com.jdsmith2004.daybook.ActivityMonitor`, `.ShieldAction` and `.ShieldConfiguration` (the main app's ID exists).
+2. Open developer.apple.com/contact/request/family-controls-distribution and send one request for each of the four bundle IDs
+   (or one listing all four, if the form allows). Suggested text: "Daybook is a private app that helps an adult change a personal
+   habit. With Family Controls individual authorization, the person, on their own device, picks apps to watch; Daybook sends a
+   reminder after long use or during hours they choose, and, only if they turn it on, shields those apps until those hours end.
+   They can turn it off at any time in the app or in Settings. We use FamilyActivityPicker, DeviceActivity (a monitor extension),
+   and ManagedSettings with ShieldConfiguration and ShieldAction extensions. Everything stays on the device: we do not collect,
+   send, sell or analyze Screen Time data. Primary purpose: personal device usage management for an individual."
+3. Keep the confirmation. No answer in about two weeks: open a Developer Support case (Entitlements) with the request details.
+4. When approved, tell Claude: it turns on Family Controls (Distribution) for each ID, and EAS rebuilds the profiles.
+
+## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026: "Let's do the Matthew 4 through 11"; built on `written-sos` with the recommended answers, not merged until the owner has seen it on the simulator)
+
+The bishop's note said "Matthew 1-11": Matthew 4:1-11, where Jesus is tempted three times in the wilderness and answers each
+time with "It is written" (Deuteronomy 8:3, 6:16 and 6:13). The owner's sketch: "Are you facing a temptation?", then "No,
+Satan can't get me" (standing firm), then the three scriptures. Mockups: `docs/written-review/1-the-move.png` (the move,
+Latter-day Saint voice, day and night) and `docs/written-review/2-swipe-and-plain.png` (the swipe question and the plain voice).
+
+### Why it helps
+
+It turns a temptation from a verdict into a pattern. Jesus was tempted too, so being tempted is not sin and says nothing
+about who the person is (Hebrews 4:15). The three temptations are the three things an urge still says: _you need this, you
+have earned it_ (the bread), _just a look, nothing bad will happen_ (the temple top: testing it), and _this will make it all
+better_ (the kingdoms: the promise of everything). Seeing the pull as one of three known moves is the calm noticing of the
+craving-help blend: the attack has a pattern, you are not evil, notice it and answer it. Saying the answer out loud is the
+same skill the ride already teaches (naming takes charge; a practiced response cuts craving, Lopez, Ochsner and Kober 2022),
+and the end is Matthew 4:11: then it left, and help came. That is the ride's own promise (urges rise, peak and pass) in His
+words, and for someone of faith it is the identity the app is for: a child of God who stands, not an addict who fights.
+No program is named anywhere.
+
+For Daybook: faith people are a large share of those who quit this habit for good, the owner's own church is the place
+Daybook can spread by word of mouth (a bishop handing it on), and a move that feels made for them is a reason to tell others.
+It stays free, like every care tool.
+
+### The design
+
+- **A move in the ride, not a separate tool.** SOS is already one stream of moves (core `ride.ts`), so "It is written" is a
+  ninth move (`written`, kind `mind`), shown only to people who answered Yes or Somewhat to faith (lessons `godOn`). It is
+  also in Every tool under More, for them only. For faith people it comes second, right after the breath, in their first
+  SOS rides; after that it takes its turn like the others (the heart brings it sooner, Next later). This changes the rule in
+  `faith.ts` that every care tool is the same for everyone: the tools stay the same, and faith people get one more.
+- **Four pages, each running by itself** (the move's own steps bar, Next and the heart underneath as on every move):
+  1. **Name it.** "Are you facing a temptation?" "Jesus was tempted too, three times. Being tempted is not sin." One big
+     answer low: _Yes, I am_ (Stand like He did). Next under it is the way past, as always.
+  2. **Stand firm.** "Say no to it" / "Press and hold. Mean it." A big sun with _No_ in it; holding fills the squiggle ring
+     (about two seconds, a haptic that builds, one firm buzz at the end). When it fills, the line appears: _No. You cannot
+     have me. I am a child of God._ James 4:7 sits quietly under it: "Resist the devil, and he will flee from you."
+  3. **The three.** One page each: the pull on top, struck through (_"You need this. You have earned it."_), one line on what
+     He faced, then His answer big on the sun card, starting _It is written_, with its reference (Matthew 4:4, 4:7, 4:10).
+     "Read it out loud, slowly." A squiggle line fills as it is read (like Your words, about 14 seconds), then the next.
+  4. **Then it left.** Matthew 4:11 on the card: "Then the devil leaveth him, and, behold, angels came and ministered unto
+     him." "It leaves, and help comes. It did for Him, and it will for you." A quiet link reads the whole chapter in the
+     person's own scripture app. Then the ride goes on.
+- **The three voices** (faith.ts `faithVoice`):
+  - `lds`: the King James words (the Church's Bible), "child of God", and the link opens Gospel Library. "Why it works" adds
+    Helaman 5:12 in plain words (built on the rock of the Redeemer, the devil's storm has no power to drag you down), as the
+    God lessons put the Book of Mormon in plain words.
+  - `christian`: the same Bible words and pages, with the link to the Bible app (bible.com, which opens YouVersion when it
+    is there) and 1 Corinthians 10:13 in Why it works (a way to escape).
+  - `plain` (another faith): the same three pulls and the same shape, named _Stand firm_, with plain answers that speak of
+    God and quote no Scripture: "I am fed by more than this." / "I do not need to test it. I already know where it goes, and
+    God is with me here." / "God is enough for me, and what this promises it never gives." No link.
+  - No to faith: the move is not there.
+- **The scripture app link.** Gospel Library takes a universal link that opens the app when it is installed and the page
+  otherwise: `https://www.churchofjesuschrist.org/study/scriptures/nt/matt/4?lang=eng&id=p1-p11#p1` (the Church's deep
+  linking page; the app claims `/study/*` on iOS and is an App Link on Android). For other Christians,
+  `https://www.bible.com/bible/1/MAT.4.1-11.KJV` (KJV is version 1; bible.com opens YouVersion when it is there). Neither needs
+  an Info.plist entry. The catch: with no app installed, both open a browser, and a browser in the middle of an urge is the
+  riskiest place Daybook could send someone. So the words are always shown in Daybook in full, the link is a quiet one on
+  the last page only (never the way through), and it also sits in Why it works for a calm moment.
+- **Words in the app.** All quoted Scripture is the King James Bible (public domain, and the Church's English Bible). Book of
+  Mormon lines are put in plain words, as the God lessons do. The words follow the app's rules: no contractions, so the
+  owner's line becomes "cannot".
+
+### Swiping between moves (the owner's reels idea)
+
+SOS today: each move fills the screen and flows into the next by itself; under it sit the heart, the move's name with dots,
+and a round Next. So the stream is already there; what is missing is that it does not _look_ like there is more, and Next
+is a small button. The proposal (recommended, option A in `2-swipe-and-plain.png`): a swipe up anywhere outside a move's own
+drag area goes to the next move, the page sliding up with the next rising under it, and a swipe down goes back one (new: today
+a passed-over move cannot be brought back). The first time, the page lifts a little on its own to show the next move's name
+peeking at the bottom. Next, the dots and the heart stay for anyone who does not swipe and for screen readers. Fit the shapes
+and the feelings field take drags of their own, so on those two the swipe works only on the controls strip. The other
+choices were sideways like stories (B: its bars at the top would read as a set to finish, and the ride has no end) and
+leaving it as it is.
+
+### The steps, with the effort each needs (on a feature branch, shown on the simulator before any merge)
+
+1. **Core (medium).** `written` in `RIDE_MOVES`, `RIDE_KIND` and the tools list (`urTool`), shown only when `godOn` (a `faith`
+   flag in `RideCan`, and the tool grid filtered the same way), and its early place for faith people in `rideNext`. The words
+   for the three voices in a new `written.ts` (pulls, answers, references, links), the Scripture checked word for word against
+   the King James text. faith.ts's comment says the new rule. Unit tests: never shown on No or a skipped answer, second after
+   the breath in the first rides, its words for each voice.
+2. **The move (medium).** `WrittenMove` in `components/ride/moves.tsx`: the four pages, the hold ring with `WavyRing` and
+   `SQUIGGLE`, haptics, Reduce Motion (the ring fills as a plain line; the words keep the beat), night colors, screen reader
+   lines, and the quiet link through `Linking.openURL`. Its science sheet and its lesson link (a God lesson on temptation if one
+   fits, or a new one later).
+3. **The swipe (medium),** only if the owner says yes: a pan gesture on the ride's Stage (react-native-gesture-handler, with
+   Reanimated), the peek, the one-time lift, swipe down to go back, and the two moves that keep their own drags.
+4. **Check (medium).** format, typecheck, tests, `npx expo export --platform web`, the craft checklist on pictures, and the
+   iPhone release build on the simulator for the owner, light, dark and Reduce Motion.
+
+### Built on `written-sos` (November 8, 2026), with the recommended answers
+
+The owner said go ahead before answering the questions, so the build takes each recommendation; every one is a small change
+if the owner chooses another. Steps 1 and 2 are done, and step 4 on the web. A release build is installed on its own simulator ("Daybook Written") with a
+made-up Latter-day Saint person, ready for the owner to try; it was not yet walked through there. Step 3 (the swipe) waits for
+the owner's answer.
+
+- Core: `written.ts` holds the words for the three voices and the two links. `ride.ts` has `RIDE_FAITH` (kept out of
+  `RIDE_MOVES`), a `faith` flag in `RideCan`, its weight (the heart raises it, Next lowers it), its place right after the
+  breath while fewer than five urges have been ridden out (unless Next passed it twice), and its Why it works, which opens the
+  God lesson Tempted is not fallen (g8). `rateUrTool` takes it, so the heart works. Tests in `ride.test.ts`.
+- It is a ride move only, not one of the legacy `TOOLS`. So it is not in Every tool under More, and the tool lists,
+  the anonymous counts (no new `PULSE_KEYS`, so the privacy page does not change) and the golden records stay as they were.
+  Being in Every tool would mean adding it to `TOOLS`, with a new count on the privacy page. That can come later if wanted.
+- The move: `WrittenMove` in `components/ride/moves.tsx`, the four pages as planned. The hold uses `WavyRing` (still while
+  holding, crawling once it fills), ticks as it fills and a firm buzz at the end. A screen reader's tap says no at once.
+- Not done yet: the link in the Why it works sheet (it is only on the last page), and the swipe.
+
+**Swipe and Every tool (the owner, November 9, 2026, after trying it on the iPhone: "needs to be added to the tools list, I
+accidentally left it and could not get it back; I want the tools to be more like swiping, and obvious it is swiping, like Insta").**
+
+- Every tool under More now opens with a group of its own, "Stand on faith", holding It is written, for people who said faith
+  plays a part. A tap puts it next in the ride at once (`jump` in `sos.tsx`, `lead` in `ToolGrid`). It stays a ride move, so
+  there is still no new count and the privacy page does not change.
+- The ride swipes like short videos (`components/ride/swipe.tsx`): up for the next move, down for the one before, as it was
+  (swiped back, Next walks forward through the moves already shown before a new one is picked). The page follows the finger;
+  a fifth of the page or a flick carries it off and the next one comes up from below. With nothing before it, a pull down gives
+  a little and springs back. The shapes board keeps its own drag (the swipe waits for 14 points of upright movement).
+- To make it obvious: until the person has swiped three times (`UrMem.swiped`), from the second move on the page lifts twice
+  by itself after two seconds, the way short-video apps teach it, and the line under the move's name says "Swipe up for the
+  next one" in place of Why it works. Reduced motion skips the lifts. Next, the dots and the heart stay as they were.
+- Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
+
+**Like Reels (the owner, November 9, 2026, with a picture of Instagram's Reels: "the arrow and heart should be on the right
+like Insta, and it blocks off the whole bottom bar; remove the timer bar on the top, you keep adding it back; the swipe sucks,
+it does not let me swipe up").**
+
+- The ride is a native paging scroll view (`components/ride/pager.tsx`), not a hand-made drag: the next move is already
+  waiting under the page as a still cover (its name and its shape), so a swipe shows it rising, with the phone's own momentum,
+  and a trackpad scroll in the simulator works too. Nothing in a cover runs until it is landed on. The first lesson lifts the
+  page to show the cover below.
+- No timer bar at the top of the ride or of How is it now (never put it back). No bottom bar: the move's name and Why it works
+  sit low on the left like a caption, and the heart and Next (a down arrow) stand in a rail on the right.
+- Then (the owner: "why is there a bar at the bottom; add a cleaner animation or visual indicator of swiping"): no band
+  is kept under the moves any more. The heart and Next are bare icons in a thin gutter on the right, the page leaving sinks
+  back, dims and drifts slower as the next one comes over it, and a column of dots down the right edge has a bright mark, in
+  the move's color, that slides with the finger (`Page` and `SideDots` in `pager.tsx`). Reduced motion keeps the pages flat.
+- Then (the owner: "it is glitching; I do not like it cutting out space to the right; find a different way for them to know
+  about the swipe"; "I swipe and it shows the same tool, then I let go and it switched; the down arrow should be more
+  noticeable at first"): the sinking page and the side dots are gone (the leaving page showed through under the header), and
+  nothing takes the right side. The heart and Next sit in the one slim row with the name. The page above and below is the
+  real move drawn still (`on` false, so nothing in it runs, speaks or buzzes), so a swipe shows exactly what comes and letting
+  go only starts it. On the phone the page is chosen by the drag itself: an eighth of a page or any flick moves on. Until the
+  person has swiped three times, Next is a filled round that bobs down, and the line under the name says "Swipe up for the
+  next one"; from the second move the page also lifts twice to show the next one below.
+- Then (the owner, with two pictures of a move stopped halfway under the next one: "really glitchy"): on the phone the
+  scroll view snaps to whole pages itself (`snapToInterval`, one page per swipe), so a swipe can never come to rest between
+  two moves; a flick or a short drag moves on, a tiny drag springs back.
+- Then (the owner: "I swipe down and it looks good, then it glitches and reloads the page"; "the down arrow easier to see"):
+  each page keeps one copy as it comes into view and leaves it, so landing never swaps in a fresh one, and going back finds a
+  move where it was left. A move's clock starts only when it is first in view (`useStartWhen`). Next is always a filled round,
+  and bobs only while the person is learning to swipe.
+- Then (the owner: "the box game does not let me swipe down"; "the down arrow should do the swipe animation"; "the bottom
+  left takes too long to update"): in Fit the shapes only a touch on a shape in the tray is the game's, so any other drag
+  swipes the ride. Next glides like a swipe (the scroll is no longer reset to the new page at the same moment), with a
+  bigger room to tap. The name at the bottom left follows the page mostly in view while it glides, not after it lands.
+
+### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
+
+After "Then it left", three pages from the Sermon on the Mount, which He taught soon after, in mint so the two chapters read
+apart (their own three marks):
+
+- **It starts in the heart.** "He taught that it begins with a look, before anything is done. So it is won there too, right
+  now." Matthew 5:8, "Blessed are the pure in heart: for they shall see God." Read out loud. 5:28 itself is not quoted: in
+  the middle of an urge it would read as "you already did it", which works against hope.
+- **Cast it from you.** Matthew 5:29, "If thy right eye offend thee, pluck it out, and cast it from thee", with "He did not
+  mean an eye. He meant: cut off what feeds it, and do it now." Then one real thing, one tap (core `WRITTEN_CAST`): close
+  what was open, leave this room, go where people are, or put the phone down after this. "Do it now", and I did it. This is
+  the practice the move was missing: an action that takes away what the urge needs.
+- **You are the light.** Matthew 5:14 and 16 with the person's own flame, big and alive (a tap makes it leap), and Matthew 5
+  in Gospel Library or the Bible app. It ends the move on who the person is.
+
+The plain voice keeps the same three pages without verses ("A clean heart sees God more clearly", "Cut off what feeds it",
+"You are a light"). Picture: `docs/written-review/6-matthew-5.png`.
+
+### Questions for the owner
+
+1. **Who gets it?** (a) Yes or Somewhat to faith, in the three voices, with no Scripture in the plain one (recommended);
+   (b) Latter-day Saints and other Christians only; (c) everyone, with God left out for No. This is the first care tool that
+   is not the same for everyone.
+2. **The words for standing firm.** (a) "No. You cannot have me. I am a child of God." (recommended: it keeps your line and
+   ends on who the person is, and if a slip comes later it does not read as a promise that failed); (b) your words as they
+   are, "No. Satan cannot get me."; (c) His own words, "Get thee hence, Satan."
+3. **Swipe like reels?** (a) Swipe up with a peek, Next kept (recommended); (b) sideways like stories; (c) leave the ride
+   as it is.
+4. **The scripture app.** (a) A quiet link on the last page and in Why it works (recommended); (b) only in Why it works,
+   never in the middle of an urge; (c) a button through the move that opens the app.
+
+## What are you quitting: porn, alcohol, gambling or another habit (the owner, November 8 and 9, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+**The ask.** Let a person pick what they are quitting in setup: porn (still the main one, and the marketing stays about porn),
+gambling, or another habit. The owner's call: build it now, kept simple. The words switch, the lessons not written for the
+habit leave, the care tools stay for everyone, and lessons for other habits come later. Helps the person: someone fighting
+gambling gets Daybook's whole toolkit instead of being turned away. Helps Daybook: a second audience with the same app, and a
+first look at whether other habits are worth lessons of their own.
+
+**How porn-specific the app is (counted November 8, 2026).** The switch is cheap; the words are the work.
+
+- Lessons (the live `Turn` text, 49 plus 12 God lessons): 18 say nothing of porn, 21 need a word or one card changed, 8 rest
+  on a porn example or study (l4, l10, l11, l22, l34, l36, l42, l46), and 2 are about porn and sex alone (l47, l48). Of the
+  God lessons, 6 are neutral and 6 name porn. The research behind them is mostly cross-habit already: about 11 alcohol or AA
+  sources and 9 smoking ones, against 16 porn or sexual ones. The old lesson text in `core.js`, `lessons-more.ts` and
+  `lesson-beats.ts` BOOK is no longer shown.
+- Setup: about 30 lines (the questions, the Brief Pornography Screen and its kind word, the loop and curve pages, the goal).
+- SOS, tools, reminders, badges: no porn words at all. About 30 lines assume a phone in bed at night, which fits gambling.
+- Get help: SAA, SLAA, SA, Stop It Now, the adult-content filter steps, two scripts and a therapist check.
+- Public pages: about 160 lines (about.html, 12 guide pages, llms.txt). The store subtitle is "Quit porn, live your potential".
+  These stay about porn, by the owner's choice.
+
+**What the science carries to (research, November 8, 2026).** The tools Daybook is built on (relapse prevention, if-then
+plans, self-monitoring, shame-free lapses, identity change) carry over to gambling well; abstinence is the clinical norm there.
+Gambling carries the highest suicide risk on the list (lifetime ideation about 32%, Kristensen 2024), so its crisis line sits
+first in Get help, and money tools matter (blocks, the bank, self-exclusion). Alcohol and daily drugs can bring dangerous
+withdrawal, so "another habit" says to see a doctor before stopping, in setup and in Get help, and the "no withdrawal" line
+from the porn trial is shown for porn only. Nicotine and cannabis fit well and are safe to stop. Phone, gaming and shopping
+need "less", not zero, and binge eating should never get an abstinence frame; none of these is named.
+
+**What was built.**
+
+- Core `habit.ts`: `habitOf` (porn when nothing is kept), the setup choices, `habitSay` for fixed phrases ("Quit porn",
+  "struggling with porn", "compulsive porn use"), the safety net's device steps per habit, and the doctor line. The answer
+  lives in `settings.onb.a.habit` like the faith answer; `normOnb` keeps only the three values, so old saves read as porn
+  and nothing needs mapping in `normSettings`.
+- Setup asks "What do you want to quit?" right after How it works. The questions after it name the habit; the five porn
+  statements and their kind word are skipped for another habit; the goal says "Quit gambling" or "Quit this habit".
+- Settings has "What I am quitting" beside Faith.
+- Lessons: `PORN_ONLY` (16 lessons and 9 God lessons whose live words name porn or sex, or rest on a porn study) leave the
+  path, Learn, the checkpoints and every lesson link for another habit, the way the faith lessons leave for a No. 33 lessons
+  stay. A lesson finished before stays finished, counted and worth its points; a test checks that points, level and badges
+  match. A test also fails if a lesson off the list names porn or sex. Two steps of the path empty out for another habit
+  (Make it right, Keep a daily practice) and are passed by.
+- Get help: the National Problem Gambling Helpline (1-800-MY-RESET, NCPG since January 2026; 1-800-GAMBLER is no longer the
+  national number), Gamblers Anonymous and Gam-Anon, BetBlocker, Gamban, a bank block, state self-exclusion; for another habit
+  AA, NA, Marijuana Anonymous, Nicotine Anonymous and the doctor line. The porn groups and filters show for porn only.
+- The five questions a month on (the Brief Pornography Screen) are for porn only; answers kept from before stay on Pattern.
+- Alcohol (the owner, November 9, 2026) is its own choice: "Quit drinking", "struggling with drinking", "Drink" in the loop.
+  Stopping heavy drinking all at once can bring seizures, so the doctor line (`ALCOHOL_MEDICAL`) is the flame's first words on
+  the years question, and it sits in Settings and in Get help beside SAMHSA. Its groups are AA and Al-Anon; its safety net and
+  phone page are about distance from a drink (none at home, the drink picked before going out, no delivery apps). It gets the
+  same 33 lessons as gambling. "Another habit" keeps its doctor line for drugs.
+- Found on the way: the faith picked in setup (`creed`) was never kept, so everyone heard the plain voice until Settings. It
+  is in `OB_KEYS` now.
+
+**Left for later.**
+
+- Alcohol lessons: drinking is mostly social, so a script for turning down a drink, a lesson on the evening routine it
+  filled, and sleep in the first weeks. The 33 kept lessons already lean on alcohol and AA research for much of their science.
+- Gambling lessons (high): chasing losses, near misses and "due" thinking, money access, debt and shame about money, a big win
+  as a risk, telling someone. Then gambling versions of the 21 one-card lessons, as a `vo`-style overlay per habit
+  (lesson-turns.ts already does this for the faith voices). Roughly 2 to 3 sessions for the first 8 gambling lessons.
+- A gambling check in place of the Brief Pornography Screen (for example the 3-question Brief Biosocial Gambling Screen).
+- An anonymous count of which habit people pick (`habit_gambling`, `habit_other`): a new count needs the owner's yes and the
+  privacy page.
+- Named habits beyond gambling (nicotine, cannabis, alcohol with its screen), once "another habit" shows who comes.
+
+Effort: medium for the setup, words, Get help and the lesson filter (a display filter on the existing faith mechanism; nothing
+earned is read or written differently). High for any later change that touches points or the record.
 
 ## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
 
@@ -294,8 +803,7 @@ knock.
 
 Does it help Daybook earn or grow: it gives a reason to come back daily, which is what every ask and every rating rides on; nothing is locked.
 
-Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget, and the dimming on the Screen Time wait screen
-(the Screen Time session).
+Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget. The dimming on the Screen Time wait screen is built on `claude/screen-time-f8b40b`.
 
 ## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
 

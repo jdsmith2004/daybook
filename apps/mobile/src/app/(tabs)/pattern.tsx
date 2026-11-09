@@ -42,6 +42,7 @@ import {
   type DayFeelStep,
   type PatGo,
   type PatRange,
+  habitOf,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
@@ -125,7 +126,10 @@ export default function Pattern() {
           ) : pane === 'patterns' ? (
             <>
               <PatternsPane onGo={(y) => scroll.current?.scrollTo({ y: Math.max(0, inset.top + 16 + paneY + y - 12), animated: true })} />
-              <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
+              {/* the five questions are the Brief Pornography Screen: for porn, or for anyone with answers kept from before */}
+              {habitOf(snap.settings) === 'porn' || bpsScores(snap.settings, sos.mem).length ? (
+                <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
+              ) : null}
             </>
           ) : (
             <WeeksPane />

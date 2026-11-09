@@ -131,6 +131,10 @@ export const EV_ROUTES = [
   'help',
   'whats-new',
   'setup',
+  'pause',
+  'trail',
+  'unlock',
+  'stats',
   'other',
 ] as const;
 

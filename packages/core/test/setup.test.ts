@@ -47,8 +47,11 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
   const tk = f.tk;
 
   it('offers the same pages, goals, reasons and plans', () => {
-    /* the pages in order: the legacy gating, with the order changed by design on October 22 (three acts) */
-    expect(core.obPages(a).map((p) => p.id)).toEqual(f.pages);
+    /* the pages in order: the legacy gating, with the order changed by design on October 22 (three acts). The habit question
+       (November 8, 2026) is new since the record: it comes right after "how" and is left out of the comparison. */
+    const ids = core.obPages(a).map((p) => p.id);
+    expect(ids[ids.indexOf('how') + 1]).toBe('habit');
+    expect(ids.filter((id) => id !== 'habit')).toEqual(f.pages);
     expect(core.obPrefill(st)).toEqual(f.prefill);
     expect(core.obGoals(st, tk).map((g) => [g.id, g.t, g.s, g.goal])).toEqual(f.goals);
     expect(core.obSug(a, st, tk)).toBe(f.sug);
@@ -119,7 +122,7 @@ describe('the goal it suggests', () => {
 
 it('tells the setup as three acts, in one order', () => {
   expect(core.obPages({}).map((p) => p.id)).toEqual([
-    ...'hello how aim years freq mins faith b0 b1 b2 b3 b4 heard costs when wave breathe loop person tour curve tried tries slip goal reasons ifthen so becoming review'.split(
+    ...'hello how habit aim years freq mins faith b0 b1 b2 b3 b4 heard costs when wave breathe loop tour curve tried tries slip goal reasons ifthen so becoming review'.split(
       ' ',
     ),
     'done',

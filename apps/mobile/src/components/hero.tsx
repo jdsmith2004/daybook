@@ -12,7 +12,20 @@
    day it burns fully and then goes down, as if water were poured on it, with a few fading ticks, and one firm line at the top of the sky says so.
    When they do something again and come back to Today, it is lit again in front of them: the heart catches, the fire climbs back with three
    rising knocks, sparks fly, and a quiet word says so. Only the glow changes; the level, the bar and the number stay as they are. */
-import { CHEERS, emblemScene, fireLow, formOfLevel, heroNumber, LOW_OF, LOW_WARN, lowWords, RELIT, type GameState, type Snapshot } from '@daybook/core';
+import {
+  CHEERS,
+  emblemScene,
+  fireLow,
+  formOfLevel,
+  heroNumber,
+  LOW_OF,
+  LOW_WARN,
+  lowWords,
+  pullDrift,
+  RELIT,
+  type GameState,
+  type Snapshot,
+} from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
@@ -29,6 +42,7 @@ import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/com
 import { useCelebrating } from '@/components/celebrate';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
+import { pullIgnoredAt } from '@/lib/pull';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -209,7 +223,11 @@ function Sky({
     return () => clearTimeout(t);
   }, [grew]);
   /* the fire burning low, and lit again */
-  const fl = useMemo(() => fireLow(snap.days, snap.settings, tk, now), [snap.days, snap.settings, tk, now]);
+  /* the hard hours' notes ignored (Screen Time, on this phone only) burn it one step lower too (core pullDrift) */
+  const fl = useMemo(
+    () => pullDrift(fireLow(snap.days, snap.settings, tk, now), pullIgnoredAt(), snap.days, snap.settings, tk, now),
+    [snap.days, snap.settings, tk, now],
+  );
   const words = lowWords(fl);
   const focused = useIsFocused();
   /* what the fire shows: it goes lower at once, but it is lit again only where the person sees it */

@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.jdsmith2004.daybook",
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#1B1550",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,6 +43,15 @@
         {
           "microphonePermission": "Daybook uses the microphone only when you record a voice note to yourself. The note stays on this phone.",
           "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "On the trail, Daybook can show you your own face for a moment during a hard craving. Nothing is recorded, saved or sent.",
+          "microphonePermission": "Daybook uses the microphone only when you record a voice note to yourself. The note stays on this phone.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
         }
       ],
       [
@@ -80,6 +90,24 @@
       ],
       "expo-web-browser",
       "expo-iap",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.jdsmith2004.daybook",
+          "widgets": [
+            {
+              "name": "Flame",
+              "displayName": "Your flame",
+              "description": "Your flame as it burns now.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "accessoryCircular"],
+                "initialLayout": "./src/widgets/flame.tsx"
+              },
+              "android": null
+            }
+          ]
+        }
+      ],
       [
         "@kingstinct/react-native-healthkit",
         {

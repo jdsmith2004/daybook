@@ -1,4 +1,4 @@
-/* Today, after logging: SOS with Already happened and Planning a slip? (LogLink), the plan talked through that waits under them
+/* Today, after logging: SOS with Already happened and Walk it through (LogLink), the plan talked through that waits under them
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
 import { changeDay, clockOf, fmtClock, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
@@ -31,7 +31,8 @@ export function useLogActions() {
   return { didSmall };
 }
 
-/* the two quiet buttons under the next step: it already happened (log it), or a slip is being planned (Talk it through). SOS
+/* the two quiet buttons under the next step: it already happened (log it), or it keeps coming back or is being planned (Walk it
+   through, on the trail: it took the place of Planning a slip, the owner, November 4, 2026). SOS
    itself is the round button by the tab bar, in reach of the thumb on every page. */
 export function LogLink() {
   const c = useTheme();
@@ -49,12 +50,12 @@ export function LogLink() {
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Planning a slip? Talk it through first."
-        onPress={() => router.push('/talk')}
+        accessibilityLabel="Walk it through: when it keeps coming back, or you are planning it."
+        onPress={() => router.push('/trail')}
         style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
         <Icon name="compass" size={16} color={c.accentText} />
         <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-          Planning a slip?
+          Walk it through
         </Text>
       </Pressable>
     </View>

@@ -33,6 +33,8 @@ export interface FireLow {
   was: LowStep;
   /** the day before it burns lower: nothing done yesterday and nothing yet today. Today warns, and so does the day's reminder. */
   warn: boolean;
+  /** it burns lower because the hard hours' notes were ignored (Screen Time, pull.ts pullDrift), not for days with nothing done */
+  pull?: boolean;
 }
 
 /** whether the person did their part on a day: anything that earns points, a tool, a talk-through or a feeling named */
@@ -47,7 +49,7 @@ export function partDone(days: Days, st: Settings, k: DayKey): boolean {
 const stepOf = (idle: number): LowStep => (idle >= LOW_AT[2] ? 3 : idle >= LOW_AT[1] ? 2 : idle >= LOW_AT[0] ? 1 : 0);
 
 /** the latest slip logged, in ms, looking back far enough for SLIP_HOURS */
-function lastSlipMs(days: Days, st: Settings, tk: DayKey): number | null {
+export function lastSlipMs(days: Days, st: Settings, tk: DayKey): number | null {
   for (let i = 0; i <= 4; i++) {
     const k = addDays(tk, -i);
     if (!sumDay(days[k]).slipped) continue;
@@ -75,7 +77,7 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
     and plain, about the next choice. Big and few, after Duolingo's lapsed screens: the flame carries the feeling, the words say why. */
 export function lowWords(f: FireLow): { h: string; p: string; fix: string } | null {
   if (!f.step) return null;
-  const p = f.idle + ' days with nothing done.';
+  const p = f.pull ? 'You stayed on it through your hard hours.' : f.idle + ' days with nothing done.';
   const fix = 'One lesson today lights it again.';
   if (f.step === 1) return { h: 'You are dimming your fire', p, fix };
   if (f.step === 2) return { h: 'Your fire is smouldering', p, fix };

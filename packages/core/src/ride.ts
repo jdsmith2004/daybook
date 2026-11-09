@@ -11,8 +11,8 @@
    comes later lowers craving (Kober and others 2010); naming a feeling takes some of its charge (Lieberman and others
    2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
-import { lessonById } from './lessons';
-import { urEvidence, urRank, urTool, type UrMem, type UrState } from './sos';
+import { lessonById, lessonFor } from './lessons';
+import { urEvidence, urLikeOf, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
 /** every move the ride can show, in the order they are tried when nothing else says which */
@@ -27,13 +27,18 @@ export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
   forward: 'mind',
   thought: 'mind',
   reasons: 'mind',
+  written: 'mind',
 };
+/** It is written (written.ts): a ride move only for people who said faith plays a part, so it is not in RIDE_MOVES */
+export const RIDE_FAITH = 'written';
 /** the first move of every SOS */
 export const RIDE_FIRST = 'breathe';
 
 /** what the ride can use: Your words only when there are words of your own to show */
 export interface RideCan {
   words: boolean;
+  /** It is written: Yes or Somewhat to faith (lessons godOn) */
+  faith?: boolean;
 }
 
 /** the moves this person can be shown, best for them first, each with how often it should come round (the best about
@@ -45,8 +50,19 @@ export function rideWeights(sc: UrState, days: Days, st: Settings | null, tk: Da
     .filter((x) => x.r && (!x.r.off || x.r.pin))
     .sort((a, b) => b.r!.score - a.r!.score || RIDE_MOVES.indexOf(a.id) - RIDE_MOVES.indexOf(b.id));
   const n = list.length;
-  return list.map((x, i) => ({ id: x.id, w: x.r!.pin ? 4 : n > 1 ? 3 - (2 * i) / (n - 1) : 3 }));
+  const out = list.map((x, i) => ({ id: x.id, w: x.r!.pin ? 4 : n > 1 ? 3 - (2 * i) / (n - 1) : 3 }));
+  if (can.faith) out.push({ id: RIDE_FAITH, w: writtenWeight(st, mem) });
+  return out;
 }
+/** how often It is written comes round: in the middle to start, sooner with the heart, later each time Next passes it */
+function writtenWeight(st: Settings | null, mem: UrMem): number {
+  const pass = mem.pass && typeof mem.pass === 'object' ? mem.pass[RIDE_FAITH] | 0 : 0;
+  return Math.max(0.5, Math.min(4, 2 + urLikeOf(st, RIDE_FAITH) * 0.5 - pass * 0.3));
+}
+/** It is written comes right after the breath for faith people in their first rides (fewer than five ridden out), unless
+    they have passed it over twice */
+const writtenEarly = (days: Days, st: Settings | null, mem: UrMem) =>
+  urEvidence(days).n < 5 && urLikeOf(st, RIDE_FAITH) >= 0 && (mem.pass && typeof mem.pass === 'object' ? mem.pass[RIDE_FAITH] | 0 : 0) < 2;
 
 /** the next move, after the ones already shown in this SOS (oldest first). The breath opens; then each move is due by
     how long ago it was shown, times how well it works for you, so every move comes round and the best come round
@@ -64,6 +80,7 @@ export function rideNext(
   lead?: string | null,
 ): string {
   if (!shown.length) return RIDE_FIRST;
+  if (can.faith && shown.length === 1 && writtenEarly(days, st, mem)) return RIDE_FAITH;
   const ws = rideWeights(sc, days, st, tk, now, mem, can);
   const last = shown[shown.length - 1];
   const due = (id: string, w: number) => {
@@ -90,6 +107,10 @@ export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.', l: 'l44' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },
   reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l45' },
+  written: {
+    t: 'A temptation is one of a few old moves, not a verdict on you. Named, it loses its surprise, and an answer said out loud is ready the next time it comes.',
+    l: 'g8',
+  },
   halt: { t: 'An urge often sits on a plain need: food, rest, a person, a break. Meet the need and the urge has less to push.', l: 'l4' },
   curious: { t: 'Watching an urge instead of obeying it is the whole skill. It rises, peaks and passes on its own.', l: 'l2' },
   pause: { t: 'Most urges fade if you wait. Ten minutes in another room gives one the time to pass.', l: 'l10' },
@@ -99,14 +120,18 @@ export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
 
 /** Why it works, for the button on every move and tool: the one line, and the lesson behind it in brief (its answer
     and its studies), with the lesson itself to open for the whole story. Null for a tool with nothing to say. */
-export function rideScience(id: string): {
+export function rideScience(
+  id: string,
+  st?: Settings | null,
+): {
   t: string;
   lesson: { id: string; title: string; mins: number; ask: string; key: string } | null;
   proofs: { h: string; s: string }[];
 } | null {
   const w = RIDE_WHY[id];
   if (!w) return null;
-  const L = w.l ? lessonById(w.l) : null;
+  /* a lesson not written for this person's habit is not offered (habit.ts) */
+  const L = w.l ? lessonFor(w.l, st) : null;
   return {
     t: w.t,
     lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,

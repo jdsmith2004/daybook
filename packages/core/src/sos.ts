@@ -58,6 +58,8 @@ export interface UrMem {
   won?: Record<string, number>;
   /** when an SOS was last open on this device (opened or closed): Today holds the one tip ask for a few hours after it */
   sosAt?: number;
+  /** how many times the ride was swiped to the next move, counted up to 3: until then SOS shows how to swipe */
+  swiped?: number;
   [bucket: string]: unknown;
 }
 

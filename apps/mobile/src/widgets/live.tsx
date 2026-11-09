@@ -17,6 +17,7 @@ import {
   labelsHidden,
   lineLimit,
   monospacedDigit,
+  multilineTextAlignment,
   padding,
   progressViewStyle,
   resizable,
@@ -83,22 +84,31 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   const foot = (size: number) => (
     <HStack>
       {text(props.left, size, SOFT)}
-      <Spacer />
-      <HStack spacing={4}>
-        {left(size, '#FFFFFF')}
-        {text('left', size, SOFT)}
-      </HStack>
-      <Spacer />
+      {/* a ticking time takes all the width it is given, so it sits alone in the middle, centered */}
+      <Text
+        timerInterval={span}
+        countsDown
+        modifiers={[
+          font({ size, weight: 'bold', design: 'rounded' }),
+          monospacedDigit(),
+          foregroundStyle('#FFFFFF'),
+          multilineTextAlignment('center'),
+          lineLimit(1),
+        ]}
+      />
       {text(props.right, size, WARM)}
     </HStack>
   );
   /* the words: whose it is (the owner: "we don't know which app it is"), what it is, and when */
-  const words = (big: number) => (
+  const brand = (
+    <HStack spacing={4}>
+      {glyph(11, SOFT)}
+      {text('Daybook', 13, SOFT)}
+    </HStack>
+  );
+  const words = (big: number, named = true) => (
     <VStack alignment="leading" spacing={2}>
-      <HStack spacing={4}>
-        {glyph(11, SOFT)}
-        {text('Daybook', 13, SOFT)}
-      </HStack>
+      {named ? brand : null}
       {text(props.line, big, '#FFFFFF', 'bold')}
       {props.sub ? text(props.sub, 15, WARM) : null}
     </VStack>
@@ -122,10 +132,16 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
     compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
     compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{left(15, WARM)}</VStack>,
     minimal: flame(22),
-    expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{words(20)}</VStack>,
-    expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 })]}>{flame(50)}</VStack>,
+    /* the sides of the open island are narrow: only the name and the time left there, and the words across the full width below */
+    expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{brand}</VStack>,
+    expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 80 })]}>{left(15, WARM)}</VStack>,
     expandedBottom: (
-      <VStack spacing={6} modifiers={[padding({ horizontal: 8, top: 6, bottom: 6 })]}>
+      <VStack spacing={8} modifiers={[padding({ horizontal: 8, top: 2, bottom: 6 })]}>
+        <HStack spacing={12}>
+          {words(22, false)}
+          <Spacer />
+          {flame(48)}
+        </HStack>
         {bar}
         {foot(13)}
       </VStack>

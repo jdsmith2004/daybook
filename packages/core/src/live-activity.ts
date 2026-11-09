@@ -2,7 +2,7 @@
    do a live activity instead"). Two of them, each the flame on the Lock Screen and in the Dynamic Island:
    - Hard hours: from the heads-up before them to their end. The flame and when they end, and a tap opens SOS. No words about help or
      the habit: the owner wants nobody who looks at the phone to know what it is for.
-   - The night: from 90 minutes before screens off. "Wind down", and a tap opens the wind-down. After Goodnight, the flame sleeps till
+   - The night: from 30 minutes before screens off (the owner, November 9, 2026: "we only need a heads up 30 minutes before"). "Wind down", and a tap opens the wind-down. After Goodnight, the flame sleeps till
      morning.
    iPhone starts one only while the app is open (no server: free, and nothing leaves the phone). So it starts when the heads-up or the
    wind-down note is tapped, or whenever the app is opened in those hours. The app ends it when its time is up, or iPhone does after
@@ -14,7 +14,7 @@ import type { DayKey, Days, Settings } from './types';
 const MIN = 60000;
 const HOUR = 60 * MIN;
 /** how long before screens off the night one starts */
-export const LIVE_NIGHT_BEFORE = 90 * MIN;
+export const LIVE_NIGHT_BEFORE = 30 * MIN;
 /** how long after screens off it stays, while Goodnight is not done */
 export const LIVE_NIGHT_AFTER = 60 * MIN;
 /** iPhone ends a Live Activity after 8 hours */

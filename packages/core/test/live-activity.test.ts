@@ -24,14 +24,14 @@ describe('the hard hours', () => {
 });
 
 describe('the night', () => {
-  it('winds down from 90 minutes before screens off, and sleeps after Goodnight till morning', () => {
-    expect(core.livePlan({}, st, tk, at(21))).toBeNull();
-    expect(core.livePlan({}, st, tk, at(21, 40))).toMatchObject({ kind: 'night', asleep: false, sub: 'Screens off at 11:00 PM', url: '/wind' });
+  it('winds down from 30 minutes before screens off, and sleeps after Goodnight till morning', () => {
+    expect(core.livePlan({}, st, tk, at(22, 20))).toBeNull();
+    expect(core.livePlan({}, st, tk, at(22, 40))).toMatchObject({ kind: 'night', asleep: false, sub: 'Screens off at 11:00 PM', url: '/wind' });
     expect(core.livePlan({}, st, tk, at(0, 30, 21))).toBeNull();
     const bed = { [tk]: core.normDay({ p: { po: '22:50' } }, tk) };
     expect(core.livePlan(bed, st, tk, at(22, 55))).toMatchObject({ kind: 'night', asleep: true, to: at(4, 0, 21) });
     expect(core.livePlan(bed, st, tk, at(22, 55))!.bar).toMatchObject({ left: '10:50 PM', right: '4 AM' });
-    expect(core.livePlan({}, st, tk, at(21, 40))!.bar).toMatchObject({ left: '9:30 PM', right: '11 PM' });
+    expect(core.livePlan({}, st, tk, at(22, 40))!.bar).toMatchObject({ left: '10:30 PM', right: '11 PM' });
   });
 
   it('gives way to the hard hours when both fall at once', () => {

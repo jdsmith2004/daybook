@@ -191,6 +191,7 @@ export type PageKind =
   | 'becoming'
   | 'review'
   | 'remind'
+  | 'pull'
   | 'done';
 export interface ObPage {
   id: string;
@@ -216,6 +217,8 @@ export interface ObEnv {
   notify?: boolean;
   /** true when this build has accounts and the person is not signed in: the account page shows once the plan is built */
   account?: boolean;
+  /** an iPhone build that can watch the apps that pull the person in (Screen Time, pull.ts), not already set up on this phone */
+  pull?: boolean;
 }
 /** the three acts of the setup: id, name, tone and icon. Every page points at its act with `s`. */
 export const OB_SECS: [string, string, string, string][] = [
@@ -366,6 +369,8 @@ export const OB_PAGES: ObPage[] = [
   { id: 'review', s: 'plan', k: 'review' },
   /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
+  /* the apps that pull the person in (Screen Time, iPhone only; pull.ts): nudges by default, the pause only by choice */
+  { id: 'pull', s: 'plan', k: 'pull', need: (_a, env) => !!env.pull },
   /* a free account, asked for at the best moment there is: the plan was just built, and nothing has gone wrong yet
      (accounts.ts). It comes last, so it is the one ask left in mind. Never required: "Keep it on this phone" goes on. */
   { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
@@ -730,6 +735,7 @@ const OB_SAY: Record<string, string> = {
   becoming: 'One sentence about who you are growing into. I will show it to you on hard days.',
   review: 'This plan is yours. Hold, and I will light up.',
   remind: 'One short reminder a day, so the check-in becomes part of your evening.',
+  pull: 'When it has you too long, I will say so. In your hard hours, I will say it louder.',
   account: 'Look at me now. You did that.',
 };
 /** a walk-through: the flame has grown, and says so */

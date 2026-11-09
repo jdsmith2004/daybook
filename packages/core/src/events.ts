@@ -28,10 +28,8 @@ export const EV_NAMES = {
   screen: 'Opened a screen (route)',
   screen_left: 'Left a screen for another (route, secs: how long it was on)',
   chart_seen: 'A chart was shown (chart, secs: how long, locked)',
-  chart_tap: 'Opened the numbers or more of a chart (chart)',
-  sheet: 'Opened a card, link or sheet on a screen (route, what: which)',
   error: 'Something went wrong (err: which part)',
-  day: 'Once a day, where things stand (mode, count, no-slip days, level, points, badges, flame form, burning low, comebacks, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
+  day: 'Once a day, where things stand (mode, count, no-slip days, level, points, badges, flame form, burning low, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
   /* setup */
   setup_page: 'Reached a setup page (page)',
   setup_pick: 'Picked a choice on a setup page (page, ix: which choice)',
@@ -45,10 +43,10 @@ export const EV_NAMES = {
   lesson_left: 'Left a lesson before the end (lesson, beat)',
   /* SOS and the tools */
   sos_open: 'Opened SOS (from: where)',
-  sos_end: 'SOS ended (outcome, secs, str: urge strength before, str2: after)',
+  sos_end: 'SOS ended (outcome, secs, str: how strong the urge was)',
   sos_tool: 'In SOS, a tool was tried, and what came after it (tool, outcome: passed, still strong, or slipped)',
   tool_open: 'Opened a tool (tool)',
-  tool_done: 'Finished a tool (tool, secs, helped: whether it helped, where asked)',
+  tool_done: 'Finished a tool (tool)',
   talk_done: 'Finished Talk it through (secs)',
   /* the log */
   urge: 'Logged an urge (str, trigger, outcome)',
@@ -63,7 +61,7 @@ export const EV_NAMES = {
   /* the flame */
   level_up: 'Reached a new level (lvl)',
   form: 'The flame reached a new form (ix)',
-  flame_low: 'The flame started burning low (ix: how low)',
+  flame_low: 'The flame started burning lower (low: how low)',
   flame_lit: 'The flame was lit again',
   badge: 'Earned a badge (ix)',
   /* reminders */
@@ -170,7 +168,6 @@ export const EV_PROPS: Record<string, Prop> = {
   from: one(() => ['today', 'door', 'nudge', 'widget', 'other']),
   outcome: one(() => ['rode', 'slipped', 'closed', 'resisted', 'strong', 'other']),
   str: int(0, 10),
-  str2: int(0, 10),
   tool: one(() => [...(TOOLS as { id: string }[]).map((t) => t.id), 'other']),
   trigger: one(() => (TRIGGERS as [string, string][]).map((t) => t[0])),
   hrs: one(() => ['h0_24', 'd1_3', 'd4_7', 'd8_30', 'd31', 'first']),
@@ -187,7 +184,6 @@ export const EV_PROPS: Record<string, Prop> = {
   what: one(() => ['tip', 'pattern', 'account', 'rate', 'sos', 'happened', 'planning', 'lesson', 'checkin', 'plan', 'journal', 'rekindle', 'idea', 'other']),
   chart: one(() => EV_CHARTS),
   locked: bool,
-  helped: bool,
   tier: one(() => [...TIP_TIER_IDS, 'pattern_month', 'pattern_life', 'pattern_life_more', 'web', 'other']),
   how: one(() => ['apple', 'email', 'other']),
   /* the day's snapshot */
@@ -197,14 +193,13 @@ export const EV_PROPS: Record<string, Prop> = {
   pts: int(0, 10000000),
   badges: int(0, 1000),
   low: int(0, 5),
-  backs: int(0, 10000),
   rem: bool,
   acct: bool,
   sync: bool,
   sup: bool,
   health: bool,
   faith: one(() => ['mix', 'first', 'after', 'unset']),
-  habit: one(() => ['porn', 'other', 'unset']),
+  habit: one(() => ['porn', 'alcohol', 'gambling', 'other', 'unset']),
   lang: one(() => LANGS),
   os: int(0, 100),
 };

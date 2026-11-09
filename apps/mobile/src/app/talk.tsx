@@ -157,6 +157,11 @@ export default function TalkIt() {
   const [now] = useState(() => Date.now());
   /* the short plan for the hard hours: their start is the moment, while it is still ahead (it can be changed) */
   const prep = params.prep === '1' && !params.look && !params.decide;
+  /* what Daybook learns: Planning a slip? was opened (not a decide-later or a look back) */
+  useEffect(() => {
+    if (!params.look && !params.decide) track('planning');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const hard = useMemo(() => {
     const r = prep && snap.settings ? riskDay(snap.days, snap.settings, tk, now) : null;
     return r ? { win: r.win, at: talkHardMoment(r.a, now) } : null;

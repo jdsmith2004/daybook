@@ -153,14 +153,14 @@
         <p>Every name that can be sent, and what it means:</p>
         <ul>
           <li>
-            <code>open</code>, <code>leave</code>, <code>screen</code>, <code>screen_left</code>, <code>sheet</code>, <code>error</code>: Daybook was opened
-            (and whether it started fresh), left (how long it was open, and from which screen), a screen was opened or left (and how long it was on), a card or
-            link on a screen was opened (which one), or something went wrong (which part).
+            <code>open</code>, <code>leave</code>, <code>screen</code>, <code>screen_left</code>, <code>error</code>: Daybook was opened (and whether it started
+            fresh), left (how long it was open, and from which screen), a screen was opened or left (and how long it was on), or something went wrong (which
+            part).
           </li>
           <li>
             <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, level, points, badges, the flame's
-            form, whether it burns low, comebacks, whether reminders are allowed, whether there is an account, sync or a tip, whether Apple Health is connected
-            (never what it holds), your faith setting, which habit, the phone's language and its system version.
+            form, whether it burns low, whether reminders are allowed, whether there is an account, sync or a tip, whether Apple Health is connected (never what
+            it holds), your faith setting, which habit, the phone's language and its system version.
           </li>
           <li>
             <code>setup_page</code>, <code>setup_pick</code>, <code>setup_skip</code>, <code>setup_done</code>: a setup page was reached, a choice picked on it
@@ -173,8 +173,8 @@
           </li>
           <li>
             <code>sos_open</code>, <code>sos_end</code>, <code>sos_tool</code>, <code>tool_open</code>, <code>tool_done</code>, <code>talk_done</code>: SOS was
-            opened (and from where), ended (how, how long, and the urge's strength before and after), a tool was tried in SOS (which, and whether the urge
-            passed after it), a tool was opened or finished, Talk it through was finished (never what was said).
+            opened (and from where), ended (how, how long, and how strong the urge was), a tool was tried in SOS (which, and whether the urge passed after it),
+            a tool was opened or finished, Talk it through was finished (never what was said).
           </li>
           <li>
             <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>: an urge was logged (its strength, which
@@ -185,9 +185,7 @@
             <code>checkin</code>, <code>recheck</code>, <code>sunday</code>, <code>wind</code>: a check-in was saved (the mood, sleep and urge numbers picked),
             the five questions were answered (the five scores), the Sunday review was finished, Goodnight was said.
           </li>
-          <li>
-            <code>chart_seen</code>, <code>chart_tap</code>: a chart was shown (which one, for how long, and whether it was locked), or its numbers were opened.
-          </li>
+          <li><code>chart_seen</code>: a chart was shown (which one, for how long, and whether it was locked).</li>
           <li>
             <code>level_up</code>, <code>form</code>, <code>flame_low</code>, <code>flame_lit</code>, <code>badge</code>: a new level, a new flame form, the
             flame burning low or lit again, a badge earned.
@@ -205,12 +203,11 @@
         <p>
           The values are only numbers, yes or no, or names from Daybook's own lists: <code>cold</code>, <code>secs</code>, <code>route</code>, <code>err</code>,
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
-          <code>str2</code>, <code>tool</code>, <code>helped</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>,
-          <code>step</code>, <code>mood</code>, <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>,
-          <code>tier</code>, <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>,
-          <code>low</code>, <code>backs</code>, <code>rem</code>, <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>,
-          <code>faith</code>, <code>habit</code>, <code>lang</code>, <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused
-          by the server.
+          <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>,
+          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>,
+          <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
+          <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
+          <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account

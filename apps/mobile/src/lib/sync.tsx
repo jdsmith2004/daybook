@@ -33,6 +33,7 @@ import { router } from 'expo-router';
 
 import { APPLE_WORDS, CognitoError } from '@daybook/core';
 
+import { track } from '@/lib/events';
 import { apple, appleOffered, appleRevoked, askApple } from './apple';
 import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
@@ -249,6 +250,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       /* too much today, or too large: stop trying until the app is opened again */
       if (what === 'pause') paused.current = true;
       setStatus({ k: 'error', msg: syncWords(e) });
+      track('error', { err: 'sync' });
     } else setStatus({ k: 'error', msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.') });
   }, []);
 

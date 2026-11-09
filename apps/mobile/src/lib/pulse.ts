@@ -25,7 +25,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { PULSE_URL } from '@/lib/config';
-import { setEventsOff } from '@/lib/events';
+import { setEventsOff, track } from '@/lib/events';
 
 const KEY = 'pulse:v1';
 export const pulseOffered = !!PULSE_URL;
@@ -131,7 +131,10 @@ export async function sendFeedback(t: string, r: string): Promise<boolean> {
     });
     const j = (await res.json().catch(() => null)) as { ok?: boolean } | null;
     const ok = res.ok && !!j && j.ok === true;
-    if (ok) count('feedback');
+    if (ok) {
+      count('feedback');
+      track('feedback');
+    }
     return ok;
   } catch {
     return false;

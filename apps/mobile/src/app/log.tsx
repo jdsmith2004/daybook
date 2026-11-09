@@ -275,6 +275,7 @@ export default function Log() {
     if (made) {
       count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
       track(v === 'slipped' ? 'slip' : 'urge', v === 'slipped' ? {} : { outcome: 'rode' });
+      if (from === 'hero') track('happened');
     }
     buzz('save');
     go(v === 'slipped' ? 'slHold' : 'won');

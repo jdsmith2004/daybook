@@ -128,6 +128,14 @@ as now. The check is in code: anything not on the list is dropped on the phone a
   sheet are now "Anonymous data", and their words are true again.
 - CLAUDE.md's privacy rule, the privacy page ("What Daybook learns") and the App Store label in docs/launch.md.
 
+### Turned on (November 9, 2026, at the owner's word)
+
+The `stats` environment is limited to `main`, the repository variable `EVENTS` is `true`, and `infra/bootstrap` is applied
+(15 added, 2 changed, nothing destroyed; the state is the owner's local file). The Stats workflow on `main` now runs in the
+`stats` environment and signs in under the new trust (checked: it ran green). The events function is made by the first deploy
+after `claude/analytics` merges; until then nothing is sent. **Careful:** running `infra/bootstrap` from a checkout of `main`
+before this branch merges would remove the events store, since `main` does not have `events.tf` yet.
+
 ### For the owner, to turn it on
 
 0. GitHub, Settings, Environments, New environment `stats`, deployment branches limited to `main`. The stats role now trusts
@@ -152,12 +160,13 @@ as now. The check is in code: anything not on the list is dropped on the phone a
 - The report: `scripts/stats-events.mjs`, a new step in the Stats workflow. It runs end to end against a stand-in; the SQL is
   proven only once the store is live and the first run is read.
 
-### Not wired yet (small, any time)
+### The rest wired in (medium, November 9, 2026)
 
-- `error`, `sheet`, `chart_tap`, `level_up`, `form`, `flame_low`, `flame_lit`, `badge`, `sync_on`, `happened`, `planning`,
-  `sunday`, an Apple sign-in in `account`, and the habit in `day` (waits for the habit choice to reach main). The list and the
-  privacy page already name them, so each is one line where it happens.
-- A high-effort review of the data and privacy parts before the merge (they were built at medium).
+Errors (a screen that broke, sync), Already happened, Planning a slip, feedback, answers picked in a lesson, and, from one watcher
+that compares with what was seen last (`FlameEvents`): a new level, a new flame form, a badge, the flame burning lower or lit
+again, and sync turned on. The daily snapshot now has the habit and whether reminders are allowed, and counts only badges
+earned. `sheet`, `chart_tap`, `str2`, `helped` and `backs` had nothing in the app to send them, so they left the list and the
+privacy page. The testers page says the new words.
 
 ### The high-effort review (November 9, 2026)
 

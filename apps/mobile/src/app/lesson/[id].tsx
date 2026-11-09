@@ -516,6 +516,7 @@ export default function LessonScreen() {
             onMore={b.c && !q.rewritten ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
             onPick={(j) => {
               setPick((p0) => ({ ...p0, [ci]: j }));
+              track('lesson_pick', { lesson: L.id, beat: i, ix: j });
               setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
               if (card.sv) apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(q.o[j]).slice(0, 200))) });
               if (!gr || j === q.a) setPulse((x) => x + 1);

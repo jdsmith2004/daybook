@@ -50,8 +50,8 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
-import { trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
-import { DayEvents } from '@/lib/events-day';
+import { track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
+import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
@@ -216,6 +216,7 @@ function WebChrome({ bg }: { bg: string }) {
 /* a screen that broke shows this instead of a blank page, wherever it happened (SOS included): the log is safe on the
    phone, and Try again draws the screen again */
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  useEffect(() => track('error', { err: 'render' }), []);
   return (
     <Oops
       title="Something broke on this screen"
@@ -271,6 +272,7 @@ function Shell() {
       <WebChrome bg={c.bg} />
       <Reminders />
       <DayEvents />
+      <FlameEvents />
       <FlameWidgetKeeper />
       <TrailNotes />
       <NoteCopy />

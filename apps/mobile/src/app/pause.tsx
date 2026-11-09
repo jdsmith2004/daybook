@@ -36,7 +36,8 @@ export default function PullPause() {
   const prefs = usePullPrefs();
   const reduce = useReducedMotion();
   const { height } = useWindowDimensions();
-  const ring = height >= 760 ? 280 : 230;
+  /* small enough that Open it for a few minutes still fits under Put it down, with the person's own plan in the bubble */
+  const ring = Math.min(280, Math.round(height * 0.26));
   const st = snap.settings;
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
   const quiet = !!st && (pullQuietUntil(snap.days, st, now) ?? 0) > now;

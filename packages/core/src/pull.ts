@@ -189,7 +189,7 @@ export interface PullPauseWords {
 }
 export function pullPauseWords(o: { quiet: boolean; open: number; plan: string | null }): PullPauseWords {
   return {
-    title: 'This is your hard hours',
+    title: 'These are your hard hours',
     line: o.quiet ? 'Tonight is not a night to be alone with your phone.' : 'Put the phone down. This is the choice that keeps your fire burning.',
     say: o.plan ?? (o.quiet ? 'Put it down, and I will stay right here.' : 'Stand up and walk to another room. I will be right here.'),
     hold: 'Breathe while it runs.',

@@ -1,7 +1,8 @@
 /* The cards on Pattern: one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under
    them that says where you are. Each is a scene of its own, in its own night sky in either theme, with its picture running out to
    the card's edges. A chart grows when its card first comes in, not while it is out of sight. A card that is locked shows the
-   person's own chart faded, with the ask under it (components/support.tsx). */
+   person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title and its own picture
+   drawn empty (Ghost, components/pattern-charts.tsx), with no words, no ask and no numbers, until the log fills it. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance, type ViewStyle } from 'react-native';
@@ -29,6 +30,8 @@ export interface DeckCard {
   foot?: ReactNode;
   /** the numbers behind it, shown under the cards while this one is showing */
   numbers?: ReactNode;
+  /** nothing in it yet: the chart is its empty shape, and there is nothing to lock */
+  ghost?: boolean;
 }
 export interface DeckHandle {
   show: (i: number) => void;
@@ -105,7 +108,7 @@ export function Deck({
           style={[s.scroll, SNAP_ROW]}
           contentContainerStyle={s.row}>
           {cards.map((d, i) => {
-            const shut = locked(d.id);
+            const shut = !d.ghost && locked(d.id);
             const sky = CARD_SKY[d.id] || CARD_SKY.what;
             return (
               <PaletteOverride.Provider key={d.id} value={NIGHT}>

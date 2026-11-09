@@ -49,7 +49,7 @@ describe('further apart', () => {
     expect(g.now).toBe(8);
     expect(g.slips).toBe(6);
     expect(g.trend).toBe('apart');
-    expect(patNowLine(g, '2026-09-20', '2026-09-12')).toBe('Now: 8 clean days since your last slip, and counting.');
+    expect(patNowLine(g, '2026-09-20', '2026-09-12')).toBe('Now: 8 days in a row with no slip, and counting.');
     expect(patNowLine({ ...g, now: 1 }, '2026-09-13', '2026-09-12')).toBe('Your last slip was yesterday. Today is day 1 of the next stretch.');
     expect(patNowLine({ ...g, now: 0 }, '2026-09-12', '2026-09-12')).toBe('Your last slip was today. The next stretch starts now.');
   });

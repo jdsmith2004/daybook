@@ -8,7 +8,7 @@
    Hope first: a hard week is never shown as a fall. The trend over the weeks says when a week was better, and on a harder
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
-import { addDays, didText, eventsOf, evMs, slipMoments, trigText } from './legacy/core.js';
+import { addDays, didText, eventsOf, evMs, slipMoments, sumDay, trigText } from './legacy/core.js';
 import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
@@ -45,7 +45,8 @@ export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): St
       k,
       l: name[0],
       name,
-      state: k > tk ? 'ahead' : k < first ? 'before' : slipped ? 'slip' : 'clean',
+      /* a day before Day 1 with no slip was logged, not yet a no-slip day (Days shows it the same way) */
+      state: k > tk ? 'ahead' : k < first ? 'before' : slipped ? 'slip' : st.day1 && st.day1 <= tk && k < st.day1 ? 'before' : 'clean',
       rode: ev.length - slipped,
       slipped,
     };
@@ -174,7 +175,12 @@ export function storyWeeks(days: Days, st: Settings, sun: DayKey, tk: DayKey, n 
   for (let i = n - 1; i >= 0; i--) {
     const s = addDays(sun, -7 * i);
     const w = sunWeek(days, st, s, tk);
-    if (w.days) out.push({ sun: s, days: w.days, noSlip: w.noSlip, slipped: w.slipped, rode: w.rode });
+    /* once Day 1 has come, the days before it are logged, not no-slip days, as Days counts them (the owner, November 8, 2026):
+       a week counts only its days from Day 1, and a week all before it is left out */
+    const pre = st.day1 && st.day1 <= tk ? weekKeys(s).filter((k) => k < st.day1! && k <= tk && k >= logStart(days, st)) : [];
+    const before = pre.length;
+    const preClean = pre.filter((k) => !sumDay(days[k]).slipped).length;
+    if (w.days - before) out.push({ sun: s, days: w.days - before, noSlip: w.noSlip - preClean, slipped: w.slipped, rode: w.rode });
   }
   return out;
 }

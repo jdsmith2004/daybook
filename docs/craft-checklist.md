@@ -122,6 +122,35 @@ direction, not proof.
 - **The flame belongs here too.** A supporter is feeding it, and the extra looks are something to see. Show the flame, big, not an icon in a circle. [Mine, from CLAUDE.md]
 - **Slop to look for on this screen:** a tinted circle above the heading, a heading that says what the page is followed by a paragraph saying it again, three identical price cards with pills on them, a gradient button, a list of ticks in tinted circles, small grey legal text that fails 4.5:1.
 
+## 10. The critic (an adversarial look at the pictures, November 3, 2026)
+
+Parts that each look good alone can feel like different apps together. After any screen change, before calling it done, a critic tries to
+prove the screen is generic, out of step with the other tabs, or against "The look". Only concrete, specific criticisms count.
+
+1. **Take the pictures.** `npm run journey` (or `-- --no-build --only <name>` for one scene) puts every main screen of a seeded three-week
+   person, light and dark, in `journey-shots/` (scenes are listed at the top of `scripts/journey.ts`; add one for a new screen).
+2. **Run the critics as Sonnet subagents, in parallel,** one per group of 3 to 5 pictures (setup; Today and the lesson; SOS and its tools;
+   Already happened and Rekindle; Pattern, Days, Weeks and a day; More, the Sunday review, What's new, the tip page). Give each the prompt
+   below with its picture paths. Each critic also gets two pictures from another group (Today and Pattern are good anchors), so it can
+   judge "one app". A changed screen alone needs one critic, with Today and one sibling tab as anchors.
+3. **The main session judges.** A criticism counts only when it names the picture, the thing on it and the rule or the other screen it
+   breaks. Fix what is clearly a seam; a design choice goes to the owner with a recommendation. Spirit outranks tidiness: a fix that
+   shrinks the flame, drains a sky or cuts a warm word is wrong, whatever a critic says.
+
+The prompt (paste it with the paths filled in):
+
+> You are a hostile design critic for Daybook, an iPhone app that helps people quit porn without shame. Your job is to prove these screens
+> are generic AI-made UI, inconsistent with each other, or breaking the app's own rules. Read `docs/design-standards.md` ("The look") and
+> `docs/craft-checklist.md` sections 1 to 7 in <repo>, then look at each picture: <paths>. The anchors <paths> are other tabs of the
+> same app. For each picture, list at most 6 criticisms, worst first. Each one must name (a) the exact thing on the picture (its words or
+> where it is), (b) what is wrong, (c) the rule it breaks (quote the line) or the other picture it disagrees with (name both, and say how:
+> heading size, left edge, gap, card shape, button style, how the tab opens, the voice of the words). Count type sizes, pills, filled
+> buttons and boxes inside boxes; check the thumb rule (answers and the main button low, a text box and its button together near the
+> top). Words: no contractions, no hedging, no shame, no line that explains what the screen already shows. Show it, do not say it: name every sentence a shape could carry, every empty state that asks the person to log something instead of drawing its chart empty, and every count told in a sentence instead of its marks. No vague taste ("feels
+> cluttered", "could be cleaner") and no praise. Do not ask for the flame to be smaller, a sky removed or a care tool hidden: those are
+> the app's soul and the rules protect them. If a picture is clean, say "nothing concrete". End with up to 3 seams across the pictures:
+> the same job done two different ways.
+
 ## Sources
 
 thefountaininstitute.com/blog/signs-vibe-coded-ui, noqta.tn/en/blog/ai-design-slop-overused-ui-patterns-fix-2026,

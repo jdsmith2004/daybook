@@ -5,7 +5,19 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
-import { nudgeCounts, nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, nudgeTapKind, trailLater, trailLeave, trailNoteKeep, trailNotes } from '@daybook/core';
+import {
+  nudgeCounts,
+  nudgeKeep,
+  nudgeKey,
+  nudgeLearn,
+  nudgePlan,
+  nudgeTapKind,
+  trailLater,
+  trailLeave,
+  trailNoteKeep,
+  trailNotes,
+  WIDGET_PTS,
+} from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -20,6 +32,7 @@ import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
 import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
+import { useFlameWidget } from '@/lib/flame-widget';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { NoteCopy } from '@/lib/notes';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
@@ -102,6 +115,17 @@ function Reminders() {
   /* turned on from the ask on Today or Settings: the come-back notes join the plan at once */
   useEffect(() => onPermission(() => remindersAllowed().then(setAllowed, () => undefined)), []);
   return null;
+}
+
+/* the flame on the Home Screen and the Lock Screen (lib/flame-widget.ios.ts): kept as it burns, and the first time it is on a screen,
+   its points (core WIDGET_PTS), once and for good */
+function FlameWidgetKeeper() {
+  const { ready, snap, tk, now, update, say } = useStore();
+  return useFlameWidget(snap, tk, ready, now, () => {
+    if (snap.settings?.widget) return;
+    update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
+    say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
+  });
 }
 
 /* The trail's notes while a battle goes on (core trailNotes): two at a time, an hour apart, never at night, resting after a
@@ -226,6 +250,7 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <WebChrome bg={c.bg} />
       <Reminders />
+      <FlameWidgetKeeper />
       <TrailNotes />
       <NoteCopy />
       <NavKeeper />

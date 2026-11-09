@@ -193,6 +193,9 @@ export interface Settings {
   urOff?: string[];
   urLike?: Record<string, number>;
   onb: { n: number; at: number; a: Record<string, unknown>; hist: { d: DayKey; s: number }[] } | null;
+  /** the day the flame was first seen on the Home Screen or the Lock Screen (flame-widget.ts): WIDGET_PTS, once, kept for good.
+      Set once and never cleared. Optional, so older records need no change. */
+  widget?: DayKey;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */

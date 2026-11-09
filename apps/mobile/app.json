@@ -90,6 +90,24 @@
       "expo-web-browser",
       "expo-iap",
       [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.jdsmith2004.daybook",
+          "widgets": [
+            {
+              "name": "Flame",
+              "displayName": "Your flame",
+              "description": "Your flame as it burns now.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "accessoryCircular"],
+                "initialLayout": "./src/widgets/flame.tsx"
+              },
+              "android": null
+            }
+          ]
+        }
+      ],
+      [
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Daybook reads how long you slept, to show you how your nights and your hard days line up. It stays on this phone and is never sent anywhere.",

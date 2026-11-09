@@ -365,6 +365,8 @@ function normSettings(s){
  o.note=typeof o.note==='string'?o.note.slice(0,600):'';
  o.urPin=TOOL_IDS.indexOf(o.urPin)>=0?o.urPin:null;
  o.onb=normOnb(o.onb);
+ /* widget: the day the flame was first seen on the Home Screen or Lock Screen (flame-widget.ts). Set once and never cleared. */
+ if(!isKey(o.widget))delete o.widget;
  return o;
 }
 function normEvent(e){
@@ -784,6 +786,7 @@ function daysCsv(days,st,today){
    Rules I keep: honesty and coping moves earn points, a slip never subtracts anything, and no level or badge is ever taken away. */
 /* The ladder (60 levels in 12 forms of the flame spirit), levelOf and nextLine are in levels.ts. */
 const SETUP_PTS=20; /* finishing the setup, once: a head start, so the first level is already close */
+const WIDGET_PTS=30; /* the flame put on the Home Screen or the Lock Screen, once (flame-widget.ts); kept for good once earned */
 
 /* the daily wins, in the order of a typical day. Each one can be switched off in Settings or for a single day (see ROUTINE). */
 const WINS=[
@@ -972,7 +975,7 @@ function totalPoints(days,st,reviews,today){
  for(let k=0;k<=cw;k++)questsFor(days,st,k).forEach(q=>{if(q.done)qd++});
  let rv=0;Object.keys(reviews||{}).forEach(id=>{const r=reviews[id];if(r&&r.a&&Object.keys(r.a).some(f=>r.a[f]&&String(r.a[f]).trim()))rv++});
  /* the steps' deeds, done in real life (steps.ts), counted like the quests and reviews */
- return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0),perDay,quests:qd,reviews:rv};
+ return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0)+(st&&st.widget?WIDGET_PTS:0),perDay,quests:qd,reviews:rv};
 }
 function gameStats(days,st,reviews,today){
  const S={entries:0,rode:0,slips:0,pauses:0,recovered:0,lateRide:0,checkins:0,reachDays:0,lightsYes:0,windDays:0,calm:0,morning:0,tools:0,
@@ -3240,6 +3243,7 @@ export {
   eventsCsv,
   daysCsv,
   SETUP_PTS,
+  WIDGET_PTS,
   WINS,
   morningInfo,
   winsOf,

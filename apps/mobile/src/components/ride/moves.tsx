@@ -11,8 +11,9 @@
    - Say it fast: the loudest thought, said fast for 20 seconds, then let go.
    - Your words: your note or a reason, read slowly, and your voice note.
    - It is written: for faith people only (core written.ts). Are you facing a temptation, hold to say no, the three pulls
-     each answered as Jesus answered them in Matthew 4, and then it left. */
-import { faithVoice, FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, urFromYou, writtenWords, type UrMem, type WrittenWords } from '@daybook/core';
+     each answered as Jesus answered them in Matthew 4, then it left; then Matthew 5: it starts in the heart, cast away
+     one real thing now, and you are the light, with your own flame. */
+import { faithVoice, FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, urFromYou, WRITTEN_CAST, writtenWords, type UrMem, type WrittenWords } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -25,6 +26,7 @@ import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
 import { FeelMove } from './feel-move';
 import { StackMove } from './stack';
+import { BigFlame } from '@/components/big-flame';
 import { Button, Icon, T } from '@/components/ui';
 import { SosVoice } from '@/components/voice-note';
 import { buzz } from '@/lib/feel';
@@ -45,6 +47,8 @@ export interface MoveProps {
   /** the hour after: how it felt after the last slips, in the person's own record (core slipFeltLine), or null. SOS gives
       it only in a real SOS, from 30 seconds on. */
   felt?: string | null;
+  /** the person's level, for the flame (It is written's last page) */
+  level?: number;
 }
 
 /** say a line to a screen reader on iOS (which has no live regions); Android and the web read the live region */
@@ -384,30 +388,37 @@ export function WordsMove({ on, onDone }: MoveProps) {
   );
 }
 
-/* ---------- it is written (Matthew 4:1-11, core written.ts) ---------- */
+/* ---------- it is written (Matthew 4:1-11, then Matthew 5; core written.ts) ---------- */
 const WR_READ = 12;
 const WR_HOLD = 1800;
-/** the pages: 0 is the question, 1 the hold, 2 to 4 the three, 5 the end */
-export function WrittenMove({ on, onDone }: MoveProps) {
+/** how long each page that runs by itself stays, in seconds: the three pulls, then it left, the heart, and the light */
+const WR_SEC: Record<number, number> = { 2: WR_READ, 3: WR_READ, 4: WR_READ, 5: 10, 6: WR_READ, 8: 16 };
+/** the pages: 0 the question, 1 the hold, 2 to 4 the three pulls, 5 then it left, 6 the heart, 7 cast it away, 8 the light */
+export function WrittenMove({ on, onDone, level }: MoveProps) {
   const c = useTheme();
   const st = useCareSettings();
   const w = writtenWords(faithVoice(st) || 'plain');
   const [pg, setPg] = useState(0);
+  const [cast, setCast] = useState<string | null>(null);
+  const [pulse, setPulse] = useState(0);
   const go = (n: number) => {
     buzz('tap');
     setPg(n);
   };
-  const sec = useClock(on && pg >= 2);
+  const timed = !!WR_SEC[pg];
+  const sec = useClock(on && timed);
   const [t0, setT0] = useState(0);
   useEffect(() => setT0(sec), [pg]); // eslint-disable-line react-hooks/exhaustive-deps
-  const read = pg >= 2 ? Math.min(1, (sec - t0) / (pg === 5 ? 10 : WR_READ)) : 0;
+  const read = timed ? Math.min(1, (sec - t0) / WR_SEC[pg]) : 0;
   useEffect(() => {
     if (read < 1) return;
-    if (pg < 5) setPg(pg + 1);
+    if (pg < 8) setPg(pg + 1);
     else onDone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [read >= 1]);
-  const head = pg === 0 ? w.ask.head : pg === 1 ? w.stand.head : pg === 5 ? w.end.head : w.pulls[pg - 2].pull.replace('\n', ' ');
+  const pull = pg >= 2 && pg <= 4 ? w.pulls[pg - 2] : null;
+  const page = pg === 5 ? w.end : pg === 6 ? w.heart : pg === 7 ? w.cast : pg === 8 ? w.light : null;
+  const head = pg === 0 ? w.ask.head : pg === 1 ? w.stand.head : pull ? pull.pull.replace('\n', ' ') : page ? page.head : '';
   useSay(head, on);
   if (pg === 0)
     return (
@@ -424,11 +435,13 @@ export function WrittenMove({ on, onDone }: MoveProps) {
       </View>
     );
   if (pg === 1) return <WrittenStand w={w} on={on} onFull={() => setTimeout(() => setPg(2), 2600)} />;
-  const card = pg === 5 ? w.end : w.pulls[pg - 2];
-  const pull = pg < 5 ? w.pulls[pg - 2] : null;
+  const card = pull || page!;
+  const link = pg === 5 ? w.link : pg === 8 ? w.link5 : null;
+  /* Matthew 4 is the first three marks, Matthew 5 the next three */
+  const four = pg <= 5;
   return (
     <View style={s.move}>
-      <Steps n={3} i={pg === 5 ? 3 : pg - 2} color={c.sun2} track={c.sun2 + '33'} />
+      <Steps n={3} i={four ? pg - 2 : pg - 6} color={four ? c.sun2 : c.mint} track={(four ? c.sun2 : c.mint) + '33'} />
       <View style={s.words} accessibilityLiveRegion="polite" aria-live="polite">
         <Appear key={pg} by={6} duration={220}>
           {pull ? (
@@ -437,40 +450,83 @@ export function WrittenMove({ on, onDone }: MoveProps) {
             </Text>
           ) : (
             <Text style={[s.head, { color: c.ink }]} accessibilityRole="header">
-              {w.end.head}
+              {page!.head}
             </Text>
           )}
         </Appear>
         <T tone="muted" style={s.c}>
-          {pull ? pull.faced : w.end.sub}
+          {pull ? pull.faced : page!.sub}
         </T>
       </View>
       <View style={s.mid}>
-        <Appear key={'v' + pg} by={10} duration={420}>
-          <View style={[s.note, { backgroundColor: c.sunSoft }]}>
-            <Text style={[s.verseT, { color: c.ink }]}>
-              <Text style={{ color: c.sunText }}>{card.lead}</Text> {card.rest}
-            </Text>
-            {card.ref ? (
-              <T v="small" tone="sunText">
-                {card.ref}
+        {pg === 8 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Your flame"
+            onPress={() => {
+              buzz('lit');
+              setPulse((x) => x + 1);
+            }}>
+            <BigFlame level={level || 1} size={170} pulse={pulse} noLand />
+          </Pressable>
+        ) : null}
+        {pg === 7 && cast ? (
+          <Appear key="did" by={10} duration={420}>
+            <View style={s.castDo}>
+              <MorphShape kind="sunny" size={150} color={c.mint}>
+                <View>
+                  <Icon name="check" size={56} color="#FFFFFF" />
+                </View>
+              </MorphShape>
+              <Text style={[s.standT, { color: c.ink }]}>{(WRITTEN_CAST.find((x) => x[0] === cast) || ['', ''])[1] + '. ' + w.cast.doIt}</Text>
+              <T tone="muted" style={s.c}>
+                {w.cast.doSub}
               </T>
-            ) : null}
-          </View>
-        </Appear>
+            </View>
+          </Appear>
+        ) : (
+          <Appear key={'v' + pg} by={10} duration={420}>
+            <View style={[s.note, { backgroundColor: four ? c.sunSoft : c.mintSoft }]}>
+              <Text style={[s.verseT, { color: c.ink }]}>
+                <Text style={{ color: four ? c.sunText : c.mintText }}>{card.lead}</Text> {card.rest}
+              </Text>
+              {card.ref ? (
+                <T v="small" tone={four ? 'sunText' : 'mintText'}>
+                  {card.ref}
+                </T>
+              ) : null}
+            </View>
+          </Appear>
+        )}
       </View>
-      {pg === 5 ? (
-        w.link ? (
-          <View style={s.quiet}>
-            <Link label={w.link.label} tone="muted" onPress={() => Linking.openURL(w.link!.url).catch(() => undefined)} />
+      {pg === 7 ? (
+        cast ? (
+          <Button label={w.cast.did} onPress={() => go(8)} />
+        ) : (
+          <View style={{ gap: 10 }}>
+            <T v="label" style={s.c}>
+              {w.cast.ask}
+            </T>
+            <Tiles
+              list={WRITTEN_CAST}
+              cur={cast}
+              onPick={(v) => {
+                buzz('save');
+                setCast(v);
+              }}
+            />
           </View>
-        ) : null
-      ) : (
+        )
+      ) : link ? (
+        <View style={s.quiet}>
+          <Link label={link.label} tone="muted" onPress={() => Linking.openURL(link.url).catch(() => undefined)} />
+        </View>
+      ) : pg === 5 || pg === 8 ? null : (
         <View style={[s.line, { gap: 8 }]}>
           <T v="label" style={s.c}>
             {w.pulls[0].ref ? 'Read it out loud, slowly.' : 'Say it out loud, slowly.'}
           </T>
-          <WavyLine width={220} p={read} color={c.sun2} track={c.sun2 + '33'} />
+          <WavyLine width={220} p={read} color={four ? c.sun2 : c.mint} track={(four ? c.sun2 : c.mint) + '33'} />
         </View>
       )}
     </View>
@@ -640,5 +696,6 @@ const s = StyleSheet.create({
   noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   pullT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center', textDecorationLine: 'line-through' },
   verseT: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
+  castDo: { alignItems: 'center', gap: 10 },
   standT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },
 });

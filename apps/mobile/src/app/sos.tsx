@@ -364,6 +364,7 @@ export default function Sos() {
           }}
           onTool={pickTool}
           felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
+          level={level}
         />
       </Stage>
       <Dock>

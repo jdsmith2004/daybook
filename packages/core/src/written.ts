@@ -3,7 +3,9 @@
    three things an urge still says: you need this, you have earned it (the bread); just a look, nothing bad will happen
    (the temple top, testing it); this will make it all better (the kingdoms, the promise of everything). Seeing the pull as
    one of three old moves, and answering it out loud, is the calm noticing the ride teaches: the attack has a pattern, you
-   are not evil, notice it and answer it. It ends on Matthew 4:11: then it left, and help came.
+   are not evil, notice it and answer it. Then Matthew 4:11: then it left, and help came. Then three pages from Matthew 5,
+   which He taught soon after (the owner, November 8, 2026: more of Matthew 5): it starts in the heart (5:8), cast away what
+   feeds it, one real thing, now (5:29), and you are the light of the world (5:14, 16), with the person's own flame.
 
    Only for people who said faith plays a part (lessons godOn); No to faith, or no answer, never sees it. The voice
    (faith.ts faithVoice): 'lds' and 'christian' quote the King James Bible (public domain, and the Church's English Bible),
@@ -30,6 +32,12 @@ export interface WrittenWords {
   stand: { head: string; sub: string; line: string; verse: string | null; ref: string | null };
   pulls: [WrittenPull, WrittenPull, WrittenPull];
   end: { head: string; sub: string; lead: string; rest: string; ref: string | null };
+  /** Matthew 5, taught soon after on the mountain: where it starts (the heart), cutting off what feeds it, and who you are */
+  heart: { head: string; sub: string; lead: string; rest: string; ref: string | null };
+  cast: { head: string; sub: string; lead: string; rest: string; ref: string | null; ask: string; doIt: string; doSub: string; did: string };
+  light: { head: string; sub: string; lead: string; rest: string; ref: string | null };
+  /** Matthew 5 in the person's own scripture app, or null */
+  link5: { label: string; url: string } | null;
   /** the whole chapter in the person's own scripture app (it opens the app when it is there, else the page), or null */
   link: { label: string; url: string } | null;
 }
@@ -38,6 +46,17 @@ export interface WrittenWords {
 export const WRITTEN_GL = 'https://www.churchofjesuschrist.org/study/scriptures/nt/matt/4?lang=eng&id=p1-p11#p1';
 /** bible.com, King James Version (1): it opens YouVersion when it is there */
 export const WRITTEN_BIBLE = 'https://www.bible.com/bible/1/MAT.4.1-11.KJV';
+/** Matthew 5:1-16, the start of the Sermon on the Mount, the same two ways */
+export const WRITTEN_GL5 = 'https://www.churchofjesuschrist.org/study/scriptures/nt/matt/5?lang=eng&id=p1-p16#p1';
+export const WRITTEN_BIBLE5 = 'https://www.bible.com/bible/1/MAT.5.1-16.KJV';
+/** what to cast away right now, one tap (the Cast it from you page) */
+export const WRITTEN_CAST: [string, string][] = [
+  ['close', 'Close what was open'],
+  ['room', 'Leave this room'],
+  ['people', 'Go where people are'],
+  ['down', 'Put the phone down after this'],
+];
+const CAST_DO = { ask: 'What will you cast away right now?', doIt: 'Do it now.', doSub: 'Then come back. The ride waits for you.', did: 'I did it' };
 
 const BIBLE_PULLS: WrittenWords['pulls'] = [
   {
@@ -63,7 +82,7 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
   },
 ];
 
-const bible = (link: WrittenWords['link']): WrittenWords => ({
+const bible = (link: WrittenWords['link'], link5: WrittenWords['link5']): WrittenWords => ({
   name: 'It is written',
   ask: {
     head: 'Are you facing a temptation?',
@@ -86,7 +105,30 @@ const bible = (link: WrittenWords['link']): WrittenWords => ({
     rest: 'and, behold, angels came and ministered unto him.',
     ref: 'Matthew 4:11',
   },
+  heart: {
+    head: 'It starts in the heart.',
+    sub: 'Soon after, on a mountain, He taught that it begins with a look, before anything is done. So it is won there too, right now.',
+    lead: 'Blessed are the pure in heart:',
+    rest: 'for they shall see God.',
+    ref: 'Matthew 5:8',
+  },
+  cast: {
+    head: 'Cast it from you.',
+    sub: 'He did not mean an eye. He meant: cut off what feeds it, and do it now.',
+    lead: 'If thy right eye offend thee,',
+    rest: 'pluck it out, and cast it from thee.',
+    ref: 'Matthew 5:29',
+    ...CAST_DO,
+  },
+  light: {
+    head: 'You are the light.',
+    sub: 'This is who He says you are.',
+    lead: 'Ye are the light of the world.',
+    rest: 'Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven.',
+    ref: 'Matthew 5:14, 16',
+  },
   link,
+  link5,
 });
 
 const PLAIN: WrittenWords = {
@@ -122,12 +164,37 @@ const PLAIN: WrittenWords = {
     },
   ],
   end: { head: 'Then it left.', sub: 'It leaves, and help comes.', lead: 'It passes.', rest: 'It always has, and God stays when it goes.', ref: null },
+  heart: {
+    head: 'It starts in the heart.',
+    sub: 'It begins with a look, before anything is done. So it is won there too, right now.',
+    lead: 'A clean heart',
+    rest: 'sees God more clearly.',
+    ref: null,
+  },
+  cast: {
+    head: 'Cut off what feeds it.',
+    sub: 'Do not argue with it. Take away what it needs, and do it now.',
+    lead: 'What feeds it,',
+    rest: 'I can put out of reach.',
+    ref: null,
+    ...CAST_DO,
+  },
+  light: {
+    head: 'You are a light.',
+    sub: 'This is who you are becoming.',
+    lead: 'What is good in you shines.',
+    rest: 'Let it. Someone near you is helped by it.',
+    ref: null,
+  },
   link: null,
+  link5: null,
 };
 
 /** the words of the move in this voice */
 export function writtenWords(v: FaithVoice): WrittenWords {
-  if (v === 'lds') return bible({ label: 'Read Matthew 4 in Gospel Library', url: WRITTEN_GL });
-  if (v === 'christian') return bible({ label: 'Read Matthew 4 in your Bible app', url: WRITTEN_BIBLE });
+  if (v === 'lds')
+    return bible({ label: 'Read Matthew 4 in Gospel Library', url: WRITTEN_GL }, { label: 'Read Matthew 5 in Gospel Library', url: WRITTEN_GL5 });
+  if (v === 'christian')
+    return bible({ label: 'Read Matthew 4 in your Bible app', url: WRITTEN_BIBLE }, { label: 'Read Matthew 5 in your Bible app', url: WRITTEN_BIBLE5 });
   return PLAIN;
 }

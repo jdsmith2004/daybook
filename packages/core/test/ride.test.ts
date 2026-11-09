@@ -142,7 +142,12 @@ describe('It is written', () => {
     expect(chr.link?.url).toBe(core.WRITTEN_BIBLE);
     expect(plain.link).toBeNull();
     expect(lds.pulls.map((p) => p.ref)).toEqual(['Matthew 4:4', 'Matthew 4:7', 'Matthew 4:10']);
+    expect([lds.heart.ref, lds.cast.ref, lds.light.ref]).toEqual(['Matthew 5:8', 'Matthew 5:29', 'Matthew 5:14, 16']);
+    expect(lds.link5?.url).toBe(core.WRITTEN_GL5);
+    expect(chr.link5?.url).toBe(core.WRITTEN_BIBLE5);
+    expect(plain.link5).toBeNull();
     expect(plain.pulls.every((p) => p.ref === null) && plain.stand.ref === null && plain.end.ref === null).toBe(true);
+    expect([plain.heart, plain.cast, plain.light].every((x) => x.ref === null)).toBe(true);
     [lds, chr, plain].forEach((w) => expect(JSON.stringify(w)).not.toMatch(/n't|'re|'ll|'ve|can't/i));
   });
 });

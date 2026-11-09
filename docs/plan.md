@@ -110,6 +110,24 @@ the owner's answer.
 - Not done yet: the link in the Why it works sheet (it is only on the last page), and the swipe.
 - Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
 
+### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
+
+After "Then it left", three pages from the Sermon on the Mount, which He taught soon after, in mint so the two chapters read
+apart (their own three marks):
+
+- **It starts in the heart.** "He taught that it begins with a look, before anything is done. So it is won there too, right
+  now." Matthew 5:8, "Blessed are the pure in heart: for they shall see God." Read out loud. 5:28 itself is not quoted: in
+  the middle of an urge it would read as "you already did it", which works against hope.
+- **Cast it from you.** Matthew 5:29, "If thy right eye offend thee, pluck it out, and cast it from thee", with "He did not
+  mean an eye. He meant: cut off what feeds it, and do it now." Then one real thing, one tap (core `WRITTEN_CAST`): close
+  what was open, leave this room, go where people are, or put the phone down after this. "Do it now", and I did it. This is
+  the practice the move was missing: an action that takes away what the urge needs.
+- **You are the light.** Matthew 5:14 and 16 with the person's own flame, big and alive (a tap makes it leap), and Matthew 5
+  in Gospel Library or the Bible app. It ends the move on who the person is.
+
+The plain voice keeps the same three pages without verses ("A clean heart sees God more clearly", "Cut off what feeds it",
+"You are a light"). Picture: `docs/written-review/6-matthew-5.png`.
+
 ### Questions for the owner
 
 1. **Who gets it?** (a) Yes or Somewhat to faith, in the three voices, with no Scripture in the plain one (recommended);

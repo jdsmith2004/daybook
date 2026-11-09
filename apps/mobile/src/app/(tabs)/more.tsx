@@ -1,9 +1,8 @@
 /* More: the flame's door to Milestones, then where everything else lives, as plain grouped lists, and every setting.
    Ported from the legacy viewMore and viewSettings. */
 import { badgeDone, gameCompute, phaseLabel, shownBadges, SITE_PAGES } from '@daybook/core';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useRef } from 'react';
-import { Linking, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { router } from 'expo-router';
+import { Linking, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { FlameSky } from '@/components/flame-sky';
 import { HelpFoot } from '@/components/help-foot';
@@ -21,8 +20,6 @@ import { useStore } from '@/lib/store';
 export default function More() {
   useCountFocus('tab_more');
   const { snap, tk } = useStore();
-  const params = useLocalSearchParams<{ open?: string }>();
-  const scroll = useRef<ScrollViewInstance>(null);
   const { width } = useWindowDimensions();
   const st = snap.settings;
   /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
@@ -34,7 +31,7 @@ export default function More() {
   const DOOR = 148;
   const FLAME = Math.min(236, Math.round(width * 0.6));
   return (
-    <Screen title="More" scrollRef={scroll}>
+    <Screen title="More">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Milestones. Level ${g.level.n}, ${g.level.name}. ${got} of ${shown.length} badges.`}
@@ -83,7 +80,7 @@ export default function More() {
       <T v="h2" accessibilityRole="header" style={{ marginTop: 8, marginBottom: -8 }}>
         Settings
       </T>
-      <SettingsSections open={params.open} onOpenLayout={(y) => setTimeout(() => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true }), 200)} />
+      <SettingsSections />
     </Screen>
   );
 }

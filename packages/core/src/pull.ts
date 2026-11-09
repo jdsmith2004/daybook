@@ -39,6 +39,19 @@ export interface PullPrefs {
   /** the setup page was seen (picked or skipped), so a redo does not ask again unless it was skipped */
   asked?: 'picked' | 'skipped';
 }
+/** the plain name of this part in Settings and on its unlock page (the owner, November 9, 2026: "Apps that pull you in" said nothing) */
+export const PULL_NAME = 'Screen Time';
+
+/** the line under Screen Time in Settings: what it does now, in a few words */
+export function pullLine(p: PullPrefs): string {
+  if (!p.on) return 'Off · a note when an app has you too long';
+  const parts: string[] = [];
+  if (p.long) parts.push('A note after ' + (p.long === 1 ? '1 hour' : p.long + ' hours'));
+  if (p.hard)
+    parts.push(parts.length ? (p.pause ? 'a pause in hard hours' : 'notes in hard hours') : p.pause ? 'A pause in hard hours' : 'Notes in hard hours');
+  return parts.length ? parts.join(' · ') : 'On · every note off';
+}
+
 export const PULL_DEFAULTS: PullPrefs = { on: false, long: 2, hard: true, pause: false, wait: 10, open: 3 };
 export const PULL_LONG = [0, 1, 2, 3] as const;
 export const PULL_WAIT = [10, 30, 60] as const;

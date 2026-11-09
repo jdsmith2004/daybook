@@ -28,16 +28,19 @@ export function LinkCard({
   sub,
   onPress,
   tone,
+  ink: own,
 }: {
   icon: string;
   title: string;
   sub?: string;
   onPress: () => void;
   tone?: 'accent' | 'coral' | 'mint' | 'sun' | 'sky' | 'violet';
+  /** the icon's color when it is none of the tones: danger, for Delete everything */
+  ink?: string;
 }) {
   const c = useTheme();
   const inRows = useContext(InRows);
-  const ink = { accent: c.accentText, coral: c.coralText, mint: c.mintText, sun: c.sunText, sky: c.skyText, violet: c.violetText }[tone || 'accent'];
+  const ink = own || { accent: c.accentText, coral: c.coralText, mint: c.mintText, sun: c.sunText, sky: c.skyText, violet: c.violetText }[tone || 'accent'];
   return (
     <Pressable
       accessibilityRole="button"

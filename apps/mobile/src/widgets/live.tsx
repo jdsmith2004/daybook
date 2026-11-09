@@ -94,7 +94,8 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
         countsDown={false}
         modifiers={[progressViewStyle('linear'), labelsHidden(), tint(WARM), scaleEffect({ x: 1, y: 2.2 })]}
       />
-      {badge(24)}
+      {/* in a column as wide as the open island's flame above it, so the two stand one over the other */}
+      <VStack modifiers={[frame({ width: 34 })]}>{badge(24)}</VStack>
     </HStack>
   );
   /* under the bar: where it started, the time left, where it ends */
@@ -205,7 +206,7 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
         <HStack spacing={10}>
           {text(props.line, 19, '#FFFFFF', 'bold')}
           <Spacer />
-          {flame(30)}
+          <VStack modifiers={[frame({ width: 34 })]}>{flame(34)}</VStack>
         </HStack>
         {bar}
         {foot(13)}

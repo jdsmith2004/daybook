@@ -48,8 +48,8 @@ const xmlOf = (level: number, low: number, small = false) => {
 };
 /** the small size the Live Activity's pictures are drawn at: iPhone shows a gray box in place of a picture too big for one */
 const LIVE_PX = 60;
-/** the picture's name carries the drawing (c2: the campfire, glow centered), the level and how low, so the widget never shows one it kept from before; small ones end in -s */
-const nameOf = (level: number, low: number, small = false) => `flame-c2-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
+/** the picture's name carries the drawing (c3: the campfire, glow and flame centered), the level and how low, so the widget never shows one it kept from before; small ones end in -s */
+const nameOf = (level: number, low: number, small = false) => `flame-c3-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
 type Pic = { name: string; xml: string; px: number };
 /** the pictures a timeline needs: each way it burns for the widget, and the flame as it burns now and asleep, small, for the Live Activity */
 const picsOf = (level: number, entries: WidgetEntry[]): Pic[] => [

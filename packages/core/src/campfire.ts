@@ -83,8 +83,8 @@ export function campfireXml(fig: string, opts: CampfireOpts = {}): string {
     const w = wd * size;
     o += `<path d="M${n1(x - w)} ${base}C${n1(x - w)} ${n1(base - h * 0.45)} ${n1(x - w * 0.2)} ${n1(base - h * 0.7)} ${n1(x + w * 0.15)} ${n1(base - h)}C${n1(x + w * 0.35)} ${n1(base - h * 0.65)} ${n1(x + w)} ${n1(base - h * 0.4)} ${n1(x + w)} ${base}Z" fill="url(#${g})" opacity=".9"/>`;
   }
-  /* the figure, a little bigger, its foot (about 62, 72 in its own drawing) standing in the fire */
-  o += `<g transform="translate(${cx} 96) scale(1.2) translate(-62 -72)">${inner(fig)}</g>`;
+  /* the figure, a little bigger, its foot (60, 72 in its own drawing, where its body is centered) standing in the fire */
+  o += `<g transform="translate(${cx} 96) scale(1.2) translate(-60 -72)">${inner(fig)}</g>`;
   /* the coals and two crossed logs in front */
   o += `<ellipse cx="${cx}" cy="${base + 3}" rx="${n1(size * 0.56)}" ry="${n1(size * 0.1)}" fill="url(#cfcoal)" opacity="${n1(0.6 + 0.4 * lit)}"/>`;
   const L = size * 0.92;

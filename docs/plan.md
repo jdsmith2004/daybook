@@ -1,6 +1,6 @@
 # What is planned next
 
-## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; the high-effort part built on `claude/analytics`, not merged)
+## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; built on `claude/analytics`, not merged)
 
 **The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of
 analytics so we can use that data to improve the app so we need to switch that rule completely and just let them know it's
@@ -136,13 +136,25 @@ as now. The check is in code: anything not on the list is dropped on the phone a
 3. Phone builds: add `"EXPO_PUBLIC_EVENTS_URL": "https://d3c9g6kent5bsr.cloudfront.net/events"` to both profiles in
    `apps/mobile/eas.json` (I can do this once step 2 is live), and the App Store label in docs/launch.md before that build.
 
-### Still to do (medium effort)
+### Wired in (medium effort, November 9, 2026)
 
-- Each event at its place in the app (every screen's open and leave through the router, setup, lessons, SOS and tools, the
-  log, check-in, Pattern's charts as each card comes into view, the flame, reminders, asks), and the once-a-day `day` snapshot.
-- The quiet notice: one line on Today for people who had Daybook before, once, never in the hours after an SOS or a slip, with
-  a link to More, Anonymous data; and one line on setup's last page for new people.
-- `scripts/stats-events.sql` and `.mjs` in the Stats workflow, one query for each question in the table above.
+- Every screen through the router (`screen`, `screen_left` with seconds, and the screen the app was left from); setup pages,
+  picks and skips; lessons opened, each part reached, left early (at which part) and finished (with the time); SOS opened and
+  ended, with each tool tried and what came after it (`sos_tool`, from SOS's own rounds); urges and slips with strength and
+  trigger; tools opened and finished; Talk it through; check-ins (mood, urges, sleep); the five questions; Pattern's charts as
+  each card comes into view, only while Pattern is in front; reminders (arrived, opened from, done); the tip and account asks;
+  purchases; and a once-a-day `day` snapshot (`lib/events-day.tsx`). Checked in the web build: the queue holds them in order.
+- The quiet notice: an item in What's new for 1.3.3 (shown once after the update, never after an SOS or a slip), and setup's
+  first page now says "Your answers stay private, never tied to who you are" (it said "Only you see your answers").
+- The report: `scripts/stats-events.mjs`, a new step in the Stats workflow. It runs end to end against a stand-in; the SQL is
+  proven only once the store is live and the first run is read.
+
+### Not wired yet (small, any time)
+
+- `error`, `sheet`, `chart_tap`, `level_up`, `form`, `flame_low`, `flame_lit`, `badge`, `sync_on`, `happened`, `planning`,
+  `sunday`, an Apple sign-in in `account`, and the habit in `day` (waits for the habit choice to reach main). The list and the
+  privacy page already name them, so each is one line where it happens.
+- A high-effort review of the data and privacy parts before the merge (they were built at medium).
 
 ### What the owner wants to learn, and the events that answer it (the owner, November 9, 2026)
 

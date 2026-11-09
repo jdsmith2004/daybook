@@ -1,5 +1,5 @@
-# How Daybook is doing, with no sign-in (the owner, November 4, 2026): Apple's daily downloads and Daybook's own anonymous
-# daily totals, printed in the run's summary. Run it with: gh workflow run Stats (or Actions > Stats > Run workflow).
+# How Daybook is doing, with no sign-in (the owner, November 4, 2026): Apple's daily downloads, Daybook's own anonymous
+# daily totals, and what Daybook learns (Athena over the events, November 9, 2026), printed in the run's summary. Run it with: gh workflow run Stats (or Actions > Stats > Run workflow).
 #
 # Safe by design:
 # - Reading only. AWS trusts this only on main (OpenID Connect, no stored keys), with a role that can read the totals'
@@ -14,6 +14,9 @@ on:
       days:
         description: Days to show
         default: '14'
+      learn_days:
+        description: Days of events to read for What Daybook learns
+        default: '90'
 
 permissions:
   contents: read
@@ -64,3 +67,11 @@ jobs:
             --expression-attribute-values "{\":c\":{\"S\":\"c\"},\":f\":{\"S\":\"$FROM\"}}" --output json > pulse.json
           node scripts/stats-pulse.mjs pulse.json | tee pulse.txt
           { echo "## Daybook's own counts"; echo '```'; cat pulse.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - if: steps.aws.outputs.go == 'true'
+        name: What Daybook learns
+        env:
+          LEARN_DAYS: ${{ inputs.learn_days || '90' }}
+        run: |
+          # a fixed set of Athena queries (scripts/stats-events.mjs); a few cents at most, each query stopped at 1 GB
+          node scripts/stats-events.mjs "$LEARN_DAYS" | tee -a "$GITHUB_STEP_SUMMARY" > /dev/null || echo 'What Daybook learns: not set up yet (the events store, infra/bootstrap).' >> "$GITHUB_STEP_SUMMARY"

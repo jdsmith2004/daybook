@@ -147,7 +147,7 @@ export function useKeepEvents(ready: boolean) {
         track('open', { cold: false });
         if (Date.now() - lastSend > EVERY) sendEvents();
       } else if (a === 'background') {
-        track('leave', { secs: Math.round((Date.now() - since) / 1000), route });
+        track('leave', { secs: Math.round((Date.now() - since) / 1000), route: route || undefined });
         sendEvents();
       }
     });
@@ -156,7 +156,8 @@ export function useKeepEvents(ready: boolean) {
 }
 
 /* ---------- screens ---------- */
-let route = 'today';
+/* null until the first screen, so nothing is said to be left before it */
+let route: string | null = null;
 let routeSince = Date.now();
 /** the route name for a path: its first part ("/lesson/l14" is "lesson", "/" is Today), "other" when it is not on the list */
 export function routeOf(path: string): string {
@@ -173,14 +174,12 @@ export function useTrackScreens(path: string) {
   useEffect(() => {
     const r = routeOf(path);
     if (r === route && Date.now() - routeSince < 1000) return;
-    track('screen_left', { route, secs: Math.round((Date.now() - routeSince) / 1000) });
+    if (route) track('screen_left', { route, secs: Math.round((Date.now() - routeSince) / 1000) });
     route = r;
     routeSince = Date.now();
     track('screen', { route: r });
   }, [path]);
 }
-/** the screen the person is on, for "left Daybook from" */
-export const currentRoute = () => route;
 
 /** a reminder count (core nudgeCounts: nt_lesson, nt_lesson_did) as its event */
 export function trackNudge(k: string) {

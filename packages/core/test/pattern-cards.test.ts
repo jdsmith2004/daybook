@@ -167,6 +167,12 @@ describe('how you are doing', () => {
     const d = addEvent({}, '2026-10-25', 'slipped', '22:00', { trigger: null }, 1).days;
     expect(patDoing(d, patPeriod('all', d, young, TK), young)).toMatchObject({ head: '12 of 13 days', line: 'had no slip.' });
   });
+  it('counts from Day 1 once it has come, as Days does, and every day before then while tracking', () => {
+    /* the log starts Oct 13 and Day 1 is Oct 20: the week before it is logged, not seven no-slip days (the owner, November 8, 2026) */
+    const later = normSettings({ start: '2026-10-13', day1: '2026-10-20' });
+    expect(patDoing({}, patPeriod('all', {}, later, TK), later)).toMatchObject({ head: 'Every day', line: 'All of your 13 days so far had no slip.' });
+    expect(patDoing({}, patPeriod('all', {}, later, '2026-10-18'), later)).toMatchObject({ line: 'All of your 6 days so far had no slip.' });
+  });
   it('All lays the latest month over the first', () => {
     const c = at(slips(range(280, 298, 1)), 'all');
     expect(c.line).toContain('in your first month');

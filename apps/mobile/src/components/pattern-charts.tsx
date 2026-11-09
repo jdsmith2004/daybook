@@ -8,7 +8,9 @@
    - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
    - Pairs: days with no slip beside slip days, a pair for each answer
-   Nothing stands in an empty track. They come in once, and with Reduce Motion on they are simply there. */
+   - Moons: sleep before days with no slip beside sleep before slip days, each moon as big as the night
+   - Ghost: any of these drawn empty, with no words, while the log has nothing for it yet
+   Nothing stands in an empty track, except in a ghost, where the empty track is the point. They come in once, and with Reduce Motion on they are simply there. */
 import {
   feelMap,
   mosaic,
@@ -1046,6 +1048,234 @@ export function Pairs({ list, w, h }: { list: PatDiff[]; w: number; h: number })
         </View>
       </View>
     </View>
+  );
+}
+
+/* ---------- sleep before slips: two moons ---------- */
+/** One moon for the nights before days with no slip, one for the nights before slip days, each as big as the hours slept: the
+    smaller moon is the shorter night, read at a glance. The hours stand under each. */
+export function Moons({ d, w, h }: { d: PatDiff; w: number; h: number }) {
+  const k = useInk();
+  const v = useGrow(80);
+  const LABEL = 64;
+  const top = Math.max(d.clean, d.slip) || 1;
+  const R = Math.max(12, Math.min(w / 4 - 16, (h - LABEL) / 2 - 8));
+  const moon = (which: 'clean' | 'slip') => {
+    const hours = which === 'clean' ? d.clean : d.slip;
+    /* the area follows the hours, so the radius follows their square root */
+    const r = R * Math.sqrt(hours / top);
+    const box = R * 2 + 16;
+    const id = 'moon-' + which;
+    return (
+      <View
+        key={which}
+        style={{ alignItems: 'center', flex: 1 }}
+        accessible
+        accessibilityLabel={(which === 'clean' ? 'Before days with no slip: ' : 'Before slip days: ') + fmtDiff(d, hours)}>
+        <View style={{ height: box, justifyContent: 'center' }}>
+          <Animated.View style={{ opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }}>
+            <Svg width={box} height={box} {...SVG_HIDE}>
+              <Defs>
+                <RadialGradient id={id + '-glow'} cx="50%" cy="50%" r="50%">
+                  <Stop offset="0.55" stopColor="#FFE9B0" stopOpacity="0.28" />
+                  <Stop offset="1" stopColor="#FFE9B0" stopOpacity="0" />
+                </RadialGradient>
+                <RadialGradient id={id} cx="40%" cy="35%" r="70%">
+                  <Stop offset="0" stopColor="#FFF8E4" />
+                  <Stop offset="1" stopColor={which === 'clean' ? '#F2D58C' : '#CFC8F2'} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={box / 2} cy={box / 2} r={Math.min(box / 2, r + 10)} fill={`url(#${id}-glow)`} />
+              <Circle cx={box / 2} cy={box / 2} r={r} fill={`url(#${id})`} />
+            </Svg>
+          </Animated.View>
+        </View>
+        <Text style={{ fontFamily: font.display, fontSize: 22, lineHeight: 30, color: k.c.ink }}>{fmtDiff(d, hours)}</Text>
+        <Text numberOfLines={2} style={[s.ax, { textAlign: 'center', color: k.c.muted }]}>
+          {which === 'clean' ? 'Before days with no slip' : 'Before slip days'}
+        </Text>
+      </View>
+    );
+  };
+  return (
+    <View style={{ width: w, height: h, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
+      {moon('clean')}
+      {moon('slip')}
+    </View>
+  );
+}
+
+/* ---------- a card with nothing in it yet ---------- */
+/** the quiet of a shape still to be filled: white through the night, never a gray that sits on the sky like a stain */
+const GHOST = 'rgba(255,255,255,0.07)';
+const GHOST_HI = 'rgba(255,255,255,0.11)';
+/** the shapes of the empty mosaic: a few blocks, biggest first, as a real one would stand */
+const GHOST_TILES = [5, 3, 2, 2, 1];
+/** where the empty field's bigger circles stand, as parts of its width and height, with their size as a part of the width */
+const GHOST_FEELS: [number, number, number][] = [
+  [0.6, 0.34, 0.24],
+  [0.27, 0.5, 0.16],
+  [0.66, 0.68, 0.13],
+  [0.33, 0.8, 0.08],
+];
+/** a card's own picture drawn empty, with no words: the shape says what will fill it, the way an empty glass says water. It comes in with a fade and then holds still */
+export function Ghost({ id, w, h }: { id: string; w: number; h: number }) {
+  const v = useGrow(60, 600);
+  return (
+    <Animated.View style={{ width: w, height: h, opacity: v }} accessible accessibilityRole="image" accessibilityLabel="Empty for now">
+      <GhostShape id={id} w={w} h={h} />
+    </Animated.View>
+  );
+}
+function GhostShape({ id, w, h }: { id: string; w: number; h: number }) {
+  if (id === 'apart') {
+    /* the hill with no days on it yet, and a row of quiet stars over where the days will be */
+    const base = h - 24;
+    const top = h * 0.58;
+    const hill =
+      'M0 ' +
+      base +
+      ' C' +
+      w * 0.3 +
+      ' ' +
+      base +
+      ' ' +
+      w * 0.45 +
+      ' ' +
+      top +
+      ' ' +
+      w * 0.72 +
+      ' ' +
+      top +
+      ' S' +
+      w +
+      ' ' +
+      (top + 12) +
+      ' ' +
+      w +
+      ' ' +
+      (top + 12) +
+      ' V' +
+      h +
+      ' H0 Z';
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Path d={hill} fill={GHOST} />
+        {Array.from({ length: 7 }, (_, i) => (
+          <Circle key={i} cx={24 + ((w - 48) * i) / 6} cy={top - 40 - Math.sin((i / 6) * Math.PI) * 24} r={3} fill={GHOST_HI} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'felt') {
+    /* five flat bands, one for each answer, all the same while no day has said which */
+    const pad = 16;
+    const gap = 8;
+    const bh = Math.min(64, (h - pad * 2 - gap * 4) / 5);
+    const y0 = h - pad - bh * 5 - gap * 4;
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        {Array.from({ length: 5 }, (_, i) => (
+          <Rect key={i} x={pad} y={y0 + i * (bh + gap)} width={w - pad * 2} height={bh} rx={12} fill={GHOST} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'ride') {
+    /* the columns the flame's wins will rise in, standing empty on the ground */
+    const n = 6;
+    const ground = h - 24;
+    const slot = (w - 32) / n;
+    const bw = Math.min(30, slot * 0.5);
+    const room = Math.min(ground - 24, h * 0.62);
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Path d={'M16 ' + (ground + 0.5) + 'H' + (w - 16)} stroke={GHOST_HI} strokeWidth={1} />
+        {Array.from({ length: n }, (_, i) => (
+          <Rect key={i} x={16 + slot * (i + 0.5) - bw / 2} y={ground - room} width={bw} height={room - 6} rx={bw / 2} fill={GHOST} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'named') {
+    /* the field of feelings with nothing named yet: its soft dots, and a few rounder places where named words will swell, the dots giving way around them */
+    const side = 10;
+    const at = feelMap([], FIELD_N, w - side * 2, h - side * 2);
+    const big = GHOST_FEELS.map(([x, y, r]) => ({ x: x * w, y: y * h, r: r * w }));
+    const clear = (x: number, y: number) => big.every((b) => Math.hypot(x - b.x, y - b.y) > b.r + 6);
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        {at.dots.map((p) => (clear(side + p.x, side + p.y) ? <Circle key={p.row + '-' + p.col} cx={side + p.x} cy={side + p.y} r={p.r} fill={GHOST} /> : null))}
+        {big.map((b, i) => (
+          <Circle key={i} cx={b.x} cy={b.y} r={b.r} fill={GHOST_HI} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'when') {
+    /* the day's sky, faint, from dawn through the night, rising off the floor, with a quiet place on the floor for every two hours and nothing standing in it yet */
+    const H = h - SKY_WORDS;
+    const slot = w / SKY_COLS;
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="ghostday" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+            {SKY_STOPS.map(([o, c]) => (
+              <Stop key={o} offset={String(o)} stopColor={c} />
+            ))}
+          </LinearGradient>
+          <LinearGradient id="ghostfade" x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={CARD_SKY.when[0]} stopOpacity={1} />
+            <Stop offset="0.6" stopColor={CARD_SKY.when[0]} stopOpacity={0.7} />
+            <Stop offset="1" stopColor={CARD_SKY.when[0]} stopOpacity={0.3} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={H} fill="url(#ghostday)" opacity={0.45} />
+        <Rect width={w} height={H} fill="url(#ghostfade)" />
+        {Array.from({ length: SKY_COLS }, (_, i) => (
+          <Rect key={i} x={slot * (i + 0.5) - slot * 0.34} y={H - 14} width={slot * 0.68} height={8} rx={4} fill={GHOST_HI} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'what' || id === 'helps') {
+    /* the blocks, empty, the biggest first */
+    const W = w - MOSAIC_SIDE * 2;
+    const blocks = mosaic(GHOST_TILES, W, h - MOSAIC_SIDE);
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        {blocks.map((b, i) => (
+          <Rect
+            key={i}
+            x={MOSAIC_SIDE + b.x + MOSAIC_GAP / 2}
+            y={b.y + MOSAIC_GAP / 2}
+            width={b.w - MOSAIC_GAP}
+            height={b.h - MOSAIC_GAP}
+            rx={12}
+            fill={i ? GHOST : GHOST_HI}
+          />
+        ))}
+      </Svg>
+    );
+  }
+  /* hard days: the pairs, side by side and level, since nothing has told them apart yet */
+  const n = 3;
+  const slot = (w - 32) / n;
+  const bw = Math.floor(Math.min((slot - 20) / 2, 56));
+  const bh = Math.min(h - 56, h * 0.42);
+  const y = h - 44 - bh;
+  return (
+    <Svg width={w} height={h} {...SVG_HIDE}>
+      {Array.from({ length: n }, (_, i) => {
+        const x = 16 + slot * i + slot / 2;
+        return (
+          <G key={i}>
+            <Rect x={x - bw - 3} y={y} width={bw} height={bh} rx={bw / 2} fill={GHOST_HI} />
+            <Rect x={x + 3} y={y} width={bw} height={bh} rx={bw / 2} fill={GHOST} />
+          </G>
+        );
+      })}
+    </Svg>
   );
 }
 

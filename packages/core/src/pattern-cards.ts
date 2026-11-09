@@ -9,11 +9,12 @@
    question (day-feel.ts). */
 import { addDays, fmtDate, sumDay } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
+import { sleepOn, type Nights } from './health';
 import { dayFeelOf, type DayFeelStep } from './day-feel';
 import { FEEL_MID } from './feelings';
 import { jnTimeline, type Journal } from './journal-entries';
 import { logStart } from './log-start';
-import { inTen, patDiffs, patKeys, type PatDiff, type PatRange } from './pattern';
+import { inTen, patDiffs, patKeys, sleepLine, type PatDiff, type PatRange } from './pattern';
 import { feelPos } from './slip';
 import { plural } from './view';
 import type { Day, DayKey, Days, Settings } from './types';
@@ -170,9 +171,13 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
     let n = 0;
     return ks.map((k) => (n += noSlipOn(days, st, tk, k) ? 1 : 0));
   };
-  const now = sum(per.recent);
+  /* the days are counted from Day 1, as Days and Today count them (the owner, November 8, 2026) */
+  const from = st.day1 && st.day1 <= tk ? st.day1 : null;
+  const counted = (ks: DayKey[]) => (from ? ks.filter((k) => k >= from) : ks);
+  const recent = counted(per.recent);
+  const now = sum(recent);
   const n = now.length;
-  const then = per.then && per.then.length === n ? sum(per.then) : null;
+  const then = per.then && counted(per.then).length === n ? sum(counted(per.then)) : null;
   const c = n ? now[n - 1] : 0;
   const t = then ? then[n - 1] : 0;
   const days_ = n === 7 || n === 30 ? 'the last ' + n + ' days' : 'your ' + n + ' days so far';
@@ -181,7 +186,7 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
   const first = !per.then ? 'Day 1' : n === 7 ? '7 days ago' : n === 30 ? (per.than === 'in your first month' ? 'Day 1' : '30 days ago') : 'Day 1';
   const base = { now, then, than: per.than, first };
   /* days away that Daybook does not know are not slips, so they never read as a fall */
-  const unknown = per.recent.filter((k) => !dayKnown(days, st, k, tk)).length;
+  const unknown = recent.filter((k) => !dayKnown(days, st, k, tk)).length;
   if (unknown) {
     const few = c * 4 < n;
     return {
@@ -203,7 +208,7 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
   if (c >= t + move) return { ...base, kind: 'better', head: 'Getting better', line: what + ', up from ' + t + ' ' + per.than + '.' };
   /* a person with few or no days like that hears what they did do: a count of nothing is not a finding, and it would take their hope for no gain */
   if (c * 4 < n) {
-    const rode = per.recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
+    const rode = recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
     return {
       ...base,
       kind: 'steady',
@@ -444,9 +449,46 @@ export function patFeels(jn: Journal | undefined, days: Days, per: PatPeriod, tk
 const LEADS: PatDiff['k'][] = ['h', 'so', 'ro'];
 /** check-in days on each side before anything is said */
 export const LEADS_MIN = 5;
-export function patLeads(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN: number; slipN: number } {
+/** what sleep is read from once Apple Health is connected: its nights, and the settings and today to know which days went well */
+export interface SleepFrom {
+  nights: Nights;
+  st: Settings;
+  tk: DayKey;
+}
+/** sleep before slip days against other days, on every day Daybook knows how it went (not only check-in days), with the night
+    typed in the check-in or else Health's. Null until there are LEADS_MIN nights on each side and the difference is big enough. */
+export function sleepLead(days: Days, keys: DayKey[], from: SleepFrom): { d: PatDiff | null; cleanN: number; slipN: number } {
+  const clean: number[] = [];
+  const slip: number[] = [];
+  for (const k of keys) {
+    const h = sleepOn(days, from.nights, k);
+    if (h == null) continue;
+    if (sumDay(days[k]).slipped || awaySlipDay(days, from.st, k, from.tk)) slip.push(h);
+    else if (k < from.tk && dayKnown(days, from.st, k, from.tk)) clean.push(h);
+  }
+  const avg = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
+  const out = { d: null as PatDiff | null, cleanN: clean.length, slipN: slip.length };
+  if (clean.length < LEADS_MIN || slip.length < LEADS_MIN) return out;
+  const a = avg(clean);
+  const b = avg(slip);
+  if (Math.abs(a - b) < SLEEP_GAP) return out;
+  out.d = { k: 'h', label: 'Sleep the night before', unit: 'h', clean: a, slip: b, line: sleepLine(a, b) };
+  return out;
+}
+/** hours of difference before sleep is worth a line (the same as for typed sleep) */
+const SLEEP_GAP = 0.75;
+export function patLeads(
+  days: Days,
+  keys: DayKey[],
+  from?: SleepFrom | null,
+): { list: PatDiff[]; cleanN: number; slipN: number; sleep?: { cleanN: number; slipN: number } } {
   const r = patDiffs(days, keys);
-  return { ...r, list: r.cleanN >= LEADS_MIN && r.slipN >= LEADS_MIN ? r.list.filter((d) => LEADS.includes(d.k)) : [] };
+  const list = r.cleanN >= LEADS_MIN && r.slipN >= LEADS_MIN ? r.list.filter((d) => LEADS.includes(d.k)) : [];
+  if (!from || !Object.keys(from.nights).length) return { ...r, list };
+  /* with Health connected, sleep is read on every known day, not only check-in days */
+  const s = sleepLead(days, keys, from);
+  const rest = list.filter((d) => d.k !== 'h');
+  return { ...r, list: s.d ? [s.d, ...rest] : rest, sleep: { cleanN: s.cleanN, slipN: s.slipN } };
 }
 
 /* ---------- the hillside ---------- */

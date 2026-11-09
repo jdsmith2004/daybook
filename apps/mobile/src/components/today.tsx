@@ -50,7 +50,7 @@ function Chips({ v }: { v: CleanView }) {
   const all = [
     ch.hours ? (['Since your last slip', ch.hours] as const) : null,
     ch.longest ? (['Longest run', ch.longest] as const) : null,
-    ch.noSlip ? (['No-slip days in all', ch.noSlip] as const) : null,
+    ch.noSlip ? (['No-slip days', ch.noSlip] as const) : null,
     ch.next ? (['Next goal', ch.next] as const) : null,
   ].filter((x) => x != null);
   if (!all.length) return null;

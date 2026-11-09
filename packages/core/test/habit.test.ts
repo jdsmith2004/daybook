@@ -94,7 +94,8 @@ describe('the habit', () => {
   it('Settings changes it, and only once setup has run', () => {
     const st = withA({ habit: 'porn' });
     expect(core.habitOf(core.setHabit(st, 'gambling'))).toBe('gambling');
-    expect(core.setHabit(core.defaultSettings(TK), 'gambling')).toEqual(core.defaultSettings(TK));
+    const fresh = core.defaultSettings(TK);
+    expect(core.setHabit(fresh, 'gambling')).toEqual(fresh);
   });
   it('the five questions a month on are for porn only', () => {
     const st = withA({ habit: 'gambling' });

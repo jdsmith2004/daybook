@@ -294,6 +294,9 @@ const DIFFS: [PatDiff['k'], string, PatDiff['unit'], number][] = [
   ['ro', 'Reached out to someone', 'pct', 0.2],
 ];
 const r1 = (v: number) => String(Math.round(v * 10) / 10);
+/** the sentence for sleep before slip days against other days */
+export const sleepLine = (clean: number, slip: number): string =>
+  'You slept ' + (slip > clean ? 'more' : 'less') + ' before slip days: ' + r1(slip) + ' hours, against ' + r1(clean) + '.';
 /** check-in answers on slip days against days with no slip: only the differences big enough to mean something, with at
     least three days on each side */
 export function patDiffs(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN: number; slipN: number } {
@@ -327,7 +330,7 @@ export function patDiffs(days: Days, keys: DayKey[]): { list: PatDiff[]; cleanN:
     const more = b > a;
     const line =
       k === 'h'
-        ? 'You slept ' + (more ? 'more' : 'less') + ' before slip days: ' + r1(b) + ' hours, against ' + r1(a) + '.'
+        ? sleepLine(a, b)
         : unit === 'pct'
           ? label + ': ' + Math.round(a * 100) + '% of days with no slip, ' + Math.round(b * 100) + '% of slip days.'
           : label + (k === 'u' ? ' were ' : ' was ') + (more ? 'higher' : 'lower') + ' on slip days: ' + r1(b) + ' out of 10, against ' + r1(a) + '.';
@@ -368,5 +371,5 @@ export function patNowLine(g: PatGaps, tk: DayKey, last: DayKey | null): string 
   const ago = last ? diffDays(tk, last) : null;
   if (ago === 0 || !g.now) return 'Your last slip was today. The next stretch starts now.';
   if (ago === 1) return 'Your last slip was yesterday. Today is day 1 of the next stretch.';
-  return 'Now: ' + plural(g.now, 'clean day') + ' since your last slip, and counting.';
+  return 'Now: ' + plural(g.now, 'day') + ' in a row with no slip, and counting.';
 }

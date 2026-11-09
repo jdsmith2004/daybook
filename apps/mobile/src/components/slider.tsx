@@ -288,9 +288,10 @@ export function SliderValue({
           {hint}
         </T>
       )}
+      {/* before the first touch the ring already points at the slider, so the line under it is the scale, not an instruction (docs/design-standards.md, "Show it, do not say it") */}
       {big ? (
         <T v="label" tone="muted">
-          {value == null ? hint : caption || ''}
+          {caption || (value == null ? hint : '')}
         </T>
       ) : null}
     </View>

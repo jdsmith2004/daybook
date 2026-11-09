@@ -1,6 +1,25 @@
 # What is planned next
 
-## Screen Time: the app that pulls you in (the owner, November 8, 2026; planned, not built, waits on the owner's yes and Apple's entitlement)
+## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; being built on `claude/screen-time-f8b40b`)
+
+**The owner's answers (November 9, 2026).**
+
+1. An ignored nudge makes the flame burn lower, for real, not only in words (the dimming itself is built in its own session,
+   "Flame burns lower when you drift"; Screen Time only reports an ignored nudge as drift). Level, points and badges never drop.
+2. The way past the pause is **a ten-second wait**, on a screen with the flame big that says plainly this is the hard hours and
+   to put the phone down, and it has to look good. Then the app opens for **three minutes**, then the pause comes back, with the
+   wait again, and so on. The person sets both in More (the wait: 10, 30 or 60 seconds; the open time: 3, 5 or 10 minutes).
+3. The pause still runs in the hours after a slip, with plain words and no stakes, and the same wait; the screen still looks good.
+
+**What Apple's shield allows for the wait, and what I chose.** Apple's shield is a still picture: a background, an icon, a
+title, a line and two buttons. It cannot count down. So the shield is the door (the flame as its icon, "Your hard hours", the
+person's if-then line) and the wait is a Daybook screen, `/pause`: the night sky, the flame big, "This is your hard hours" and
+one plain line, and the ten seconds as the squiggle ring (`ToolTimer`). The main button is **Put it down** (Today, and counts as a
+nudge heeded); only when the wait is over does a quiet **Open it for 3 minutes** appear, which lifts the pause; the person
+goes back to the app themselves (Daybook cannot open another app). After three minutes of use, the pause returns (a
+DeviceActivity threshold of 3 minutes in a 15-minute schedule, since schedules cannot be shorter). Today the shield's button
+reaches `/pause` by a notification to tap; if iOS 26.5's `openParentalControlsApp` works for one person's own phone, it opens
+straight there, and the spike finds out.
 
 **The ask** (from the owner's talk with their bishop): notice long use of an app the person picks ("you have been on Instagram
 for two hours and have not opened Daybook today, come do a lesson"); in the person's hard hours, a firmer push to get up and move,

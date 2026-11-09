@@ -213,6 +213,8 @@ export const evLang = (locale: string | null | undefined): string => {
     .toLowerCase();
   return (LANGS as readonly string[]).includes(l) ? l : 'other';
 };
+/** a big number to two figures (12,345 is 12,000), so a total cannot be matched to one person's records */
+export const evRound = (n: number): number => (!Number.isFinite(n) || n < 100 ? Math.round(n) : Number(n.toPrecision(2)));
 /** hours since the slip before, as a band (null: there was none) */
 export const evHrsBand = (hours: number | null): string =>
   hours == null ? 'first' : hours < 24 ? 'h0_24' : hours < 96 ? 'd1_3' : hours < 192 ? 'd4_7' : hours < 744 ? 'd8_30' : 'd31';

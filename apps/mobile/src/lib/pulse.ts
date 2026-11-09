@@ -50,8 +50,6 @@ function load(): Promise<void> {
           parsed = null;
         }
         state = pulseNorm(parsed, today());
-        /* one switch for both: off here is off for what Daybook learns too (lib/events.ts) */
-        setEventsOff(state.on === false);
       })
       .catch(() => {
         state = pulseNorm(null, today());
@@ -61,6 +59,9 @@ function load(): Promise<void> {
         queue = [];
         if (q.length) apply((s) => q.reduce((x, f) => f(x), s));
         else subs.forEach((f) => f(state!));
+        /* one switch for both: off here is off for what Daybook learns too (lib/events.ts). Said once the saved choice is read
+           (or could not be: then it is on, the default), after any change made while it loaded */
+        setEventsOff(state!.on === false);
       });
   return loading;
 }

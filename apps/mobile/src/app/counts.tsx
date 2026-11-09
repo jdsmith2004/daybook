@@ -19,7 +19,7 @@ const NEVER = [
   'Your journal, your notes, your voice notes, or anything else you write',
   'Your name, your email, your account or your Apple ID',
   'What Apple Health holds',
-  'The time or date of anything, or where you are',
+  'The minute anything happened, or where you are',
 ];
 
 export default function Counts() {

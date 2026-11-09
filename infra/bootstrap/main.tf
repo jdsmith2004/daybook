@@ -129,7 +129,22 @@ resource "aws_iam_role" "stats" {
   name                 = "daybook-stats"
   description          = "GitHub Actions reads the anonymous daily totals with this role (only from the main branch of ${var.github_repo})."
   max_session_duration = 3600
-  assume_role_policy   = aws_iam_role.deploy.assume_role_policy
+  # only the Stats workflow's own GitHub environment ("stats", limited to main), not any job on main: the deploy jobs
+  # cannot take it on, so nothing in a deploy can read the events (the owner, November 9, 2026)
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = local.oidc_arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          "token.actions.githubusercontent.com:sub" = "repo:${split("/", var.github_repo)[0]}@${var.github_owner_id}/${split("/", var.github_repo)[1]}@${var.github_repo_id}:environment:stats"
+        }
+      }
+    }]
+  })
 }
 
 resource "aws_iam_role_policy" "stats" {

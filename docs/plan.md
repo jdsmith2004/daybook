@@ -130,6 +130,9 @@ as now. The check is in code: anything not on the list is dropped on the phone a
 
 ### For the owner, to turn it on
 
+0. GitHub, Settings, Environments, New environment `stats`, deployment branches limited to `main`. The stats role now trusts
+   only that environment (the deploy jobs can no longer take it on), so the Stats workflow stops reading AWS until this
+   and step 1 are both done.
 1. `cd infra/bootstrap && terraform apply` with your own sign-in (it adds the bucket, the stream, the table and three role
    changes; nothing is removed).
 2. GitHub, Settings, Variables: `EVENTS` = `true`. The next deploy makes the function, and the web app starts sending.
@@ -155,6 +158,29 @@ as now. The check is in code: anything not on the list is dropped on the phone a
   `sunday`, an Apple sign-in in `account`, and the habit in `day` (waits for the habit choice to reach main). The list and the
   privacy page already name them, so each is one line where it happens.
 - A high-effort review of the data and privacy parts before the merge (they were built at medium).
+
+### The high-effort review (November 9, 2026)
+
+Two independent reviews (the AWS side, and what can leave the phone) and my own read of the queue. Fixed:
+
+- The stats role trusted any job on main, and could read every event: it now trusts only the Stats workflow's own `stats`
+  environment. The open route's throttle went down to 5 a second (a flood could have used up the day in 42 minutes and cost
+  about $90 a month), and the function stops counting once a day is full. Firehose waits for its write permission.
+- The page promised "never the date", but the server keeps the day a list arrived: the page now says so (times stay to the
+  hour, as the brief said). Points and the count go to two figures, so a snapshot cannot be matched to synced records, and
+  CLAUDE.md now says never to join the events with accounts, payments or records. The page no longer promises that a
+  reinstall gives a new number (on Android, Auto Backup can bring it back).
+- Events go only in a build that also has the counts, so the off switch in More is always there.
+- The queue: a send and Delete everything at the same moment could drop new events, two sends could start at once, a
+  switch that failed to load held events in memory without end, and turning it off before the switch loaded could be undone.
+
+Left, on purpose: no reserved concurrency for the function (a new AWS account's limit of 10 would make the apply fail; the
+throttle bounds it). Plain truth for the owner: with a handful of people, the owner could still match an install to a person
+from timing alone; the rule above is what stops it.
+
+**Older than this work, for the owner:** Android's Auto Backup is on by default (`android.allowBackup` not set), so on Android
+the whole log goes into the person's Google Drive backup, while the privacy page says the log never leaves the phone without
+an account. Turning it off is one line, but it also stops a new Android phone from bringing the log back.
 
 ### What the owner wants to learn, and the events that answer it (the owner, November 9, 2026)
 

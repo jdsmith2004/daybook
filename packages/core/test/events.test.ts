@@ -1,6 +1,6 @@
 /* What Daybook learns: only names and values on the list, never a word typed, the queue, the batch and the server's check. */
 import { describe, expect, it } from 'vitest';
-import { EV_BATCH, EV_KEEP, EV_NAMES, EV_PROPS, evAdd, evBatch, evHrsBand, evLang, evNew, evNorm, evProps, evSent, eventsClean } from '../src/events';
+import { EV_BATCH, EV_KEEP, EV_NAMES, EV_PROPS, evAdd, evRound, evBatch, evHrsBand, evLang, evNew, evNorm, evProps, evSent, eventsClean } from '../src/events';
 
 const D0 = '2026-11-09';
 const HEX = '0123456789abcdef0123456789abcdef';
@@ -108,6 +108,9 @@ it('numbers each event in order, so what came next can be read', () => {
 });
 
 describe('bands', () => {
+  it('big numbers to two figures, so a total cannot be matched to one person', () => {
+    expect([7, 99, 123, 12345, 987654].map(evRound)).toEqual([7, 99, 120, 12000, 990000]);
+  });
   it('language and hours since the last slip', () => {
     expect(evLang('es-MX')).toBe('es');
     expect(evLang('xx')).toBe('other');

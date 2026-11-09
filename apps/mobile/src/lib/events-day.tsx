@@ -1,6 +1,6 @@
 /* What Daybook learns, once a day: where things stand (core events.ts, "day"). Rendered in the root layout, inside the store
    and sync providers. Only numbers, yes or no, and the fixed settings: never a word, the log itself or Health's nights. */
-import { addDays, evLang, fireLow, gameCompute, heroNumber, isSupporter, type Days } from '@daybook/core';
+import { addDays, evLang, evRound, fireLow, gameCompute, heroNumber, isSupporter, type Days } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -47,10 +47,10 @@ export function DayEvents() {
       const os = parseInt(String(Platform.Version), 10);
       track('day', {
         mode: st.cleanMode,
-        count: Number.isFinite(count) ? count : undefined,
+        count: Number.isFinite(count) ? evRound(count!) : undefined,
         ns28: noSlip28(snap.days, tk),
         lvl: g.level.n,
-        pts: g.pts,
+        pts: evRound(g.pts),
         badges: g.badges.length,
         ix: g.level.stage,
         low: fireLow(snap.days, st, tk, now).step,

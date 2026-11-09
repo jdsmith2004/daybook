@@ -34,6 +34,8 @@ export function eventLines(day: string, b: NonNullable<ReturnType<typeof eventsC
 }
 
 export function makeEventsHandler(sink: Sink, cap: Cap, clock: () => number = Date.now) {
+  /* the day found full: the rest of it is turned away here, with no write to count it */
+  let full = '';
   return async function handler(event: APIGatewayProxyEventV2): Promise<Res> {
     if (event.requestContext.http.method !== 'POST') return json(405, { error: 'Use POST.' });
     const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : event.body || '';
@@ -47,7 +49,10 @@ export function makeEventsHandler(sink: Sink, cap: Cap, clock: () => number = Da
     const b = eventsClean(body);
     if (!b) return json(400, { error: 'Nothing to keep.' });
     const today = new Date(clock()).toISOString().slice(0, 10);
-    if (!(await cap(today, DAILY_EVENT_BATCHES))) return json(429, { error: 'Try again tomorrow.' });
+    if (full === today || !(await cap(today, DAILY_EVENT_BATCHES))) {
+      full = today;
+      return json(429, { error: 'Try again tomorrow.' });
+    }
     await sink(eventLines(today, b));
     return json(200, { ok: true, n: b.e.length });
   };

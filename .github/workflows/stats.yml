@@ -25,6 +25,9 @@ jobs:
   stats:
     name: Stats
     runs-on: ubuntu-latest
+    # the stats role trusts only this environment (infra/bootstrap): make it in GitHub, Settings, Environments, "stats",
+    # with deployment branches limited to main
+    environment: stats
     permissions:
       contents: read
       id-token: write
@@ -74,4 +77,4 @@ jobs:
           LEARN_DAYS: ${{ inputs.learn_days || '90' }}
         run: |
           # a fixed set of Athena queries (scripts/stats-events.mjs); a few cents at most, each query stopped at 1 GB
-          node scripts/stats-events.mjs "$LEARN_DAYS" | tee -a "$GITHUB_STEP_SUMMARY" > /dev/null || echo 'What Daybook learns: not set up yet (the events store, infra/bootstrap).' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/stats-events.mjs "$LEARN_DAYS" | tee -a "$GITHUB_STEP_SUMMARY" > /dev/null || echo 'What Daybook learns: the report did not run (see this step in the log).' >> "$GITHUB_STEP_SUMMARY"

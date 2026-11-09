@@ -127,9 +127,10 @@ resource "aws_apigatewayv2_stage" "default" {
   dynamic "route_settings" {
     for_each = var.events ? ["POST /events"] : []
     content {
-      route_key              = route_settings.value
-      throttling_burst_limit = 40
-      throttling_rate_limit  = 20
+      route_key = route_settings.value
+      # 10,000 people sending every few hours is about one a second; a flood stays cheap and cannot use up the day quickly
+      throttling_burst_limit = 10
+      throttling_rate_limit  = 5
     }
   }
   # the open tip door gets a low ceiling too: a person claims a tip once

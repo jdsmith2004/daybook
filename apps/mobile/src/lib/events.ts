@@ -5,7 +5,7 @@
    track('lesson_done', { lesson: 'l14', secs: 300 }) anywhere in the app adds an event; anything not on core's list is
    dropped. It does nothing while the person has turned it off in More (lib/pulse.ts tells this file, with setEventsOff),
    and nothing at all in a build with no EVENTS_URL. Turning it off, or Delete everything, drops what waits and the id. */
-import { EV_ROUTES, evAdd, evBatch, evNew, evNorm, evSent, logicalKey, type EvName, type EvState } from '@daybook/core';
+import { EV_KEEP, EV_ROUTES, evAdd, evBatch, evNew, evNorm, evSent, logicalKey, type EvName, type EvState } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
@@ -15,7 +15,8 @@ import { AppState, Platform } from 'react-native';
 import { EVENTS_URL, PULSE_URL } from '@/lib/config';
 
 const KEY = 'events:v1';
-export const eventsOffered = !!EVENTS_URL;
+/* only with the pulse too: its switch in More is the one that turns this off */
+export const eventsOffered = !!EVENTS_URL && !!PULSE_URL;
 const today = () => logicalKey(Date.now(), 4);
 const hour = () => new Date().getHours();
 const platform = (): 'ios' | 'android' | 'web' => (Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web');
@@ -28,9 +29,8 @@ const hex = () => {
 const EVERY = 3 * 3600_000;
 
 let state: EvState | null = null;
-/* null until lib/pulse.ts has read the switch: events wait in memory, nothing is saved or sent (with no pulse, there is no
-   switch to wait for) */
-let off: boolean | null = PULSE_URL ? null : false;
+/* null until lib/pulse.ts has read the switch: events wait in memory, nothing is saved or sent */
+let off: boolean | null = null;
 let pending: ((s: EvState) => EvState)[] = [];
 let loading: Promise<void> | null = null;
 /* a load that started before forgetEvents is let go */
@@ -71,7 +71,8 @@ const save = () => {
 function apply(f: (s: EvState) => EvState) {
   if (!eventsOffered || off === true) return;
   if (off === null) {
-    pending.push(f);
+    /* held in memory until the switch is read; never more than a queue's worth */
+    if (pending.length < EV_KEEP) pending.push(f);
     return;
   }
   if (!state) {
@@ -113,16 +114,19 @@ let sending = false;
 /** send what waits, one batch at a time; a failure keeps it for the next try */
 export async function sendEvents() {
   if (!eventsOffered || off !== false || sending) return;
-  await load();
   sending = true;
   try {
-    for (let i = 0; i < 5 && state; i++) {
+    await load();
+    for (let i = 0; i < 5 && state && off === false; i++) {
+      const g = gen;
       const out = evBatch(state, platform(), version());
       if (!out) break;
       const r = await fetch(EVENTS_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(out.b) });
       /* only the events API answers with ok: a page that is not it (it is off) is not a send */
       const j = (await r.json().catch(() => null)) as { ok?: boolean } | null;
       if (!(r.ok && j && j.ok === true)) break;
+      /* turned off or Delete everything while it was on its way: what waits now is a new start, and nothing comes off it */
+      if (g !== gen || !state) break;
       apply((s) => evSent(s, out.upTo));
       lastSend = Date.now();
     }

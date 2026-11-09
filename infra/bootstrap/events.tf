@@ -121,6 +121,8 @@ resource "aws_iam_role_policy" "events_firehose" {
 resource "aws_kinesis_firehose_delivery_stream" "events" {
   name        = local.events_stream
   destination = "extended_s3"
+  # its write permission first, so the first delivery does not fail
+  depends_on = [aws_iam_role_policy.events_firehose]
   server_side_encryption {
     enabled  = true
     key_type = "AWS_OWNED_CMK"

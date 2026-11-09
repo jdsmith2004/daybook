@@ -67,4 +67,15 @@ describe('events', () => {
     expect((await h(post(batch))).statusCode).toBe(429);
     expect(lines.length).toBe(1);
   });
+
+  it('once the day is full, turns the rest away without counting them', async () => {
+    let calls = 0;
+    const h = makeEventsHandler(
+      async () => undefined,
+      async () => (++calls, false),
+      () => NOW,
+    );
+    for (let i = 0; i < 5; i++) expect((await h(post(batch))).statusCode).toBe(429);
+    expect(calls).toBe(1);
+  });
 });

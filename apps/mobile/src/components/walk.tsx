@@ -1074,8 +1074,12 @@ function Coach({
       <Rise key={open ? 'why' : say}>
         <Bubble text={open ? reason : say} />
       </Rise>
+      {/* the room is only the space the page leaves; the flame is drawn over it, so it never holds the room open and never
+          pushes the buttons down when the words above grow */}
       <View style={s.flameRoom} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
-        <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 280 : 230, room || 0)))} pulse={pulse} />
+        <View style={s.flameIn} pointerEvents="none">
+          <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 280 : 230, room || 0)))} pulse={pulse} />
+        </View>
       </View>
       {reason ? (
         <Pressable
@@ -1217,7 +1221,8 @@ const s = StyleSheet.create({
   center: { alignItems: 'center' },
   pair: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   coach: { alignSelf: 'stretch', alignItems: 'center', gap: 8, flexGrow: 1 },
-  flameRoom: { flexGrow: 1, minHeight: 84, maxHeight: 300, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  flameRoom: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 84, maxHeight: 300, alignSelf: 'stretch' },
+  flameIn: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   whyB: { paddingVertical: 2 },
   whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },

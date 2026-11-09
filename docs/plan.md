@@ -1,6 +1,6 @@
 # What is planned next
 
-## Settings, rebuilt from the ground up (the owner, November 9, 2026; being built on `claude/settings-overhaul`, not merged until the owner has seen it on the simulator)
+## Settings, rebuilt from the ground up (the owner, November 9, 2026; merged November 9, 2026 after the owner looked on the simulator)
 
 The owner: "settings need an overhaul it's getting way to many different things and it's becoming long and chaotic and we need it to
 feel smooth and polished and be clearly descriptive", and "Apps that pull you in" "isn't descriptive at all".
@@ -48,11 +48,16 @@ Steps, each with its effort level:
 5. (low) Words outside Settings that name a section: the app, privacy.html, support.html, docs/launch.md.
 6. (medium) Craft checklist on pictures, web export, a release build on the simulator for the owner, then merge on the owner's word.
 
-**Where it stands (November 9, 2026, on medium):** steps 1, 2, 3 and 6 are built and on `claude/settings-overhaul`: the owner chose
-grouped rows with their own pages, "Screen Time", and Settings staying at the bottom of More. Old links (`s-sched`, `s-data`) open the
-new pages, so step 4 is done but for nothing; step 5 (low) is left: "under My own answers" in entry.tsx and log.tsx, the help pages,
-privacy.html, support.html and docs/launch.md still use the old names. A release build is on the "Daybook Settings" simulator for the
-owner's look. Not merged.
+**Where it stands (merged November 9, 2026):** the owner turned down two looks first: the plain accordion list ("doesn't look
+great") and colored chapter cards like My plan ("it DOES NOT MATCH SETTINGS"). What shipped is the grammar of the best settings
+pages (iOS 26 Settings was the reference): rounded white groups with a heading in the display face, one-line rows with the value in
+gray on the right, round checks for a choice, the phone's own switch for on and off, a short gray note under a group
+(components/settings-ui.tsx). More is one list in that grammar, with no Settings heading in the middle: Milestones, then the
+journal, the plan, the tip and help, then every setting, Delete everything, and the 988 line. The Milestones flame stands whole.
+Pages read from the top, like every settings app, so they do not follow the low-for-the-thumb rule; the owner saw it that way.
+
+Left (low): words outside Settings that name a section by its old name: "under My own answers" in entry.tsx and log.tsx (now
+Check-in answers), the help pages, privacy.html, support.html and docs/launch.md.
 
 ## Unlocked: parts that open as the person uses the app (the owner, November 9, 2026; built on `claude/screen-time-f8b40b`)
 

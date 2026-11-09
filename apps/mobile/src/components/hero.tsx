@@ -12,7 +12,7 @@
    day it burns fully and then goes down, as if water were poured on it, with a few fading ticks, and one firm line at the top of the sky says so.
    When they do something again and come back to Today, it is lit again in front of them: the heart catches, the fire climbs back with three
    rising knocks, sparks fly, and a quiet word says so. Only the glow changes; the level, the bar and the number stay as they are. */
-import { CHEERS, emblemScene, fireLow, formOfLevel, heroNumber, LOW_OF, lowWords, RELIT, type GameState, type Snapshot } from '@daybook/core';
+import { CHEERS, emblemScene, fireLow, formOfLevel, heroNumber, LOW_OF, LOW_WARN, lowWords, RELIT, type GameState, type Snapshot } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
@@ -365,6 +365,13 @@ function Sky({
             {words.p}
           </Text>
         </View>
+      ) : fl.warn && !relit ? (
+        /* the day before it burns lower: one quieter line, while the flame still burns fully */
+        <View style={[s.low, { top: inset.top + 62 }]} pointerEvents="none" accessible accessibilityLabel={LOW_WARN}>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.lowW, { color: ink }]}>
+            {LOW_WARN}
+          </Text>
+        </View>
       ) : null}
       {relit ? (
         <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
@@ -409,6 +416,7 @@ const s = StyleSheet.create({
   /* under the small buttons in the corners, over the flame's sky */
   low: { position: 'absolute', left: 16, right: 16, alignItems: 'center', gap: 2 },
   lowH: { fontFamily: font.display, fontSize: 20, lineHeight: 25, textAlign: 'center' },
+  lowW: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center' },
   lowP: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, textAlign: 'center' },
   /* just over the level it belongs to, clear of the flame's face */
   grew: {

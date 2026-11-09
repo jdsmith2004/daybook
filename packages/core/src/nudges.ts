@@ -33,6 +33,7 @@
    day still has at most two notes, or three with one heads-up. The words say only the move (the person's own words are
    not put on a locked screen), never what the plan is about. */
 import { moodOf } from './day';
+import { fireLow, LOW_NOTES, LOW_WARN_NOTE } from './flame-low';
 import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
 import { formWord } from './levels';
@@ -85,6 +86,8 @@ export const NUDGE_GAP = 60;
 export const NUDGE_FOLD = 120;
 /** the come-back notes, in days after the last time the app was open */
 export const NUDGE_BACK = [2, 7, 30];
+/** the come-back note for the day the fire is down to embers (flame-low.ts), days after the app was last open */
+export const NUDGE_EMBERS = 5;
 /** how long the open times are kept, to learn the hour the app is usually open */
 export const NUDGE_OPENS_DAYS = 28;
 /** misses in a row before a kind steps down */
@@ -626,6 +629,15 @@ function dayList(
     delete first.also;
     delete first.quiet;
   }
+  /* the day before the fire burns lower (flame-low.ts): the lesson note, or else the day's first routine note, says so plainly.
+     Never on the morning after a slip, and fireLow keeps it out of the 72 hours after one. */
+  const warnOn = !kind && (out.find((n) => n.k === 'lesson') || first);
+  if (warnOn && fireLow(days, st, k, warnOn.at).warn) {
+    warnOn.title = LOW_WARN_NOTE.t;
+    warnOn.body = LOW_WARN_NOTE.b;
+    delete warnOn.w;
+    delete warnOn.quiet;
+  }
   return out;
 }
 
@@ -684,9 +696,17 @@ export function nudgePlan(
     const tender = slipOn(days, tk) || slipOn(days, addDays(tk, -1)) || weekFeel(days, tk) === 'heavy';
     NUDGE_BACK.forEach((n, i) => {
       const d = addDays(tk, n);
-      const x = (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
-      out.push({ id: 'back-' + n, k: 'back', d, at: atOf(d, t, st.rollover), title: x.t, body: x.b, url: '/' });
+      const at = atOf(d, t, st.rollover);
+      /* the first note says how low the fire is burning by then (flame-low.ts); never after a hard day */
+      const low = !tender && i === 0 ? fireLow(days, st, d, at).step : 0;
+      const x = low ? LOW_NOTES[low] : (tender ? NUDGE_WORDS.tender : NUDGE_WORDS.back)[i];
+      out.push({ id: 'back-' + n, k: 'back', d, at, title: x.t, body: x.b, url: '/' });
     });
+    /* and one more on the day it is down to embers, between the first two */
+    const d5 = addDays(tk, NUDGE_EMBERS);
+    const at5 = atOf(d5, t, st.rollover);
+    if (!tender && fireLow(days, st, d5, at5).step === 3)
+      out.push({ id: 'back-' + NUDGE_EMBERS, k: 'back', d: d5, at: at5, title: LOW_NOTES[3].t, body: LOW_NOTES[3].b, url: '/' });
   }
   return out.sort((a, b) => a.at - b.at);
 }

@@ -6,6 +6,7 @@ import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
 import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { normCreed } from '../faith';
+import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
 import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
@@ -14,7 +15,10 @@ import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
    ------------------------------------------------------------------------------------------------ */
 /* ===== LOGIC: pure functions, no DOM, no storage ===== */
-const TRIGGERS=[['late','Late night / in bed'],['lonely','Lonely or low'],['bored','Bored or idle'],['stress','Stressed or anxious'],['tired','Tired'],['scroll','After scrolling or gaming'],['other','Other']];
+const TRIGGERS=[['late','Late night / in bed'],['lonely','Lonely or low'],['bored','Bored or idle'],['stress','Stressed or anxious'],['tired','Tired'],['scroll','After scrolling or gaming'],
+ ['social','Around people drinking'],['unwind','Winding down after work'],['money','Money on hand or payday'],['game','A game on, or a betting ad'],['other','Other']];
+/* answers for one habit only (habit.ts, November 9, 2026): shown first for that habit and left out for the others; scroll is left out for alcohol */
+const TRIG_HABIT={social:'alcohol',unwind:'alcohol',money:'gambling',game:'gambling'},TRIG_SKIP={alcohol:['scroll']};
 /* what I did: Daybook's own tools first (the pause, breathing, and the rest), then everyday things. More than one can be picked. */
 const DIDS=[['pause','10-minute pause'],['breathe','Breathed'],['move','Walked or moved'],['reach','Texted or called someone'],['hobby','Hobby or project'],['left','Left the room'],
  ['curious','Got curious about it'],['ground','Did 5-4-3-2-1'],['halt','Asked what I needed'],['reasons','Read my reasons'],['surprise','A random calm move'],['thought','Named the thought'],['forward','Played it forward'],['bed','Went to bed'],['else','Something else'],['none','Nothing']];
@@ -90,8 +94,11 @@ function trigFits(id,time){
 function optList(kind,opts,o){
  o=o||{};
  const base=kind==='did'?DIDS:TRIGGERS,tail=kind==='did'?['else','none']:['other'];
- const head=base.filter(x=>tail.indexOf(x[0])<0),end=base.filter(x=>tail.indexOf(x[0])>=0);
- const sel=Array.isArray(o.sel)?o.sel:(o.sel?[o.sel]:[]);
+ const sel=Array.isArray(o.sel)?o.sel:(o.sel?[o.sel]:[]),hb=o.habit||'porn';
+ /* the habit's own answers first; another habit's, and the ones that do not fit this habit, only when already picked */
+ const forHabit=x=>kind==='did'||sel.indexOf(x[0])>=0||(TRIG_HABIT[x[0]]?TRIG_HABIT[x[0]]===hb:((TRIG_SKIP[hb]||[]).indexOf(x[0])<0));
+ const all0=base.filter(x=>tail.indexOf(x[0])<0).filter(forHabit),end=base.filter(x=>tail.indexOf(x[0])>=0);
+ const head=all0.filter(x=>TRIG_HABIT[x[0]]===hb).concat(all0.filter(x=>TRIG_HABIT[x[0]]!==hb));
  const fits=x=>o.all||sel.indexOf(x[0])>=0||(kind==='did'?DID_MORE.indexOf(x[0])<0:trigFits(x[0],o.time));
  const shown=head.filter(fits);
  const mine=((opts&&opts[kind])||[]).filter(x=>!x.off||sel.indexOf(x.id)>=0).map(x=>[x.id,x.t]);
@@ -2792,6 +2799,8 @@ function normOnb(o){
  one('aim',OB_AIM);one('freq',OB_FREQ);one('mins',OB_MINS);one('years',OB_YEARS);one('tried',OB_TRIED);one('faith',OB_FAITH);
  /* which faith, after a Yes or a Somewhat (faith.ts) */
  if(normCreed(src.creed))a.creed=src.creed;
+ /* what the person is quitting (habit.ts); none kept means porn */
+ if(normHabit(src.habit))a.habit=src.habit;
  [0,1,2,3,4].forEach(i=>{const v=src['b'+i];if(v==='0'||v==='1'||v==='2')a['b'+i]=v});
  const many=(k,list)=>{if(Array.isArray(src[k]))a[k]=src[k].filter(v=>list.some(x=>x[0]===v)).slice(0,list.length)};
  many('costs',OB_COST);many('when',OB_WHEN);
@@ -2855,6 +2864,7 @@ const ICO={
  wind:'<path d="M3.5 9h10.5a2.7 2.7 0 10-2.7-2.7M3.5 13.5h15a2.7 2.7 0 11-2.7 2.7M3.5 18h6"/>',
  dots:'<circle cx="6" cy="9" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="9" r="1.7"/><circle cx="8.5" cy="15.5" r="1.7"/><circle cx="15.5" cy="15.5" r="1.7"/>',
  dice:'<rect x="4" y="4" width="16" height="16" rx="3.8"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>',
+ glass:'<path d="M7 3h10l-.8 6.5a4.2 4.2 0 0 1-8.4 0L7 3Z"/><path d="M7.4 6.5h9.2"/><path d="M12 14v6.5"/><path d="M8.5 20.5h7"/>',
  lock:'<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5"/>',
  copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 00-2-2h-7a2 2 0 00-2 2v7a2 2 0 002 2h2"/>',
  play:'<path d="M8 5.5v13l10.5-6.5z"/>',
@@ -3093,7 +3103,7 @@ const HELP_SUBS={
 };
 function slipClean(a){return (a||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean)}
 const HELP_SRC=[['https://988lifeline.org/','988 Suicide & Crisis Lifeline'],['https://www.crisistextline.org/text-us/','Crisis Text Line'],['https://www.samhsa.gov/find-help/helplines/national-helpline','SAMHSA National Helpline'],['https://www.stopitnow.org/helpnow','Stop It Now helpline'],['https://www.nami.org/','NAMI'],['https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory','NAMI: warmline directory'],['https://openpathcollective.org/','Open Path Collective: prices and membership'],['https://findahealthcenter.hrsa.gov/','HRSA: find a health center'],['https://findtreatment.gov/','SAMHSA: findtreatment.gov'],['https://www.cms.gov/medical-bill-rights/know-your-rights/no-insurance','CMS: Good Faith Estimate'],['https://meetings.smartrecovery.org/','SMART Recovery meetings'],['https://saa-recovery.org/meetings/','Sex Addicts Anonymous'],['https://slaafws.org/meetings','Sex and Love Addicts Anonymous'],['https://sa.org/meetings/','Sexaholics Anonymous'],['https://www.celebraterecovery.com/','Celebrate Recovery'],['https://support.apple.com/guide/iphone/block-apps-app-downloads-websites-purchases-iph3ff83f3b1/ios','Apple: restrict websites'],['https://support.apple.com/en-us/126533','Apple: Screen Time passcode'],['https://cleanbrowsing.org/','CleanBrowsing'],['https://www.cdc.gov/sleep/about/','CDC: sleep']];
-const OB_KEYS=['aim','freq','mins','years','tried','faith','b0','b1','b2','b3','b4','costs','ownCost','when','goal','so','then','thenT'];
+const OB_KEYS=['habit','aim','freq','mins','years','tried','faith','creed','b0','b1','b2','b3','b4','costs','ownCost','when','goal','so','then','thenT'];
 const obLab=(list,v)=>{const x=list.find(o=>o[0]===v);return x?x[1]:''};
 const obCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):'';
 function obTool(t){

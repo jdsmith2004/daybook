@@ -2,7 +2,7 @@
    year-in-review story: the seven days light up one by one, a wave rises and passes, bars grow, rings fill, the goal's
    dots fill in. Under each screen, one line of science with its source and the lesson to read. Reduce Motion shows
    them at rest. */
-import { LESSONS, SRC, type StoryDay, type StoryTeach, type StoryWeek } from '@daybook/core';
+import { lessonFor, SRC, type StoryDay, type StoryTeach, type StoryWeek } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
@@ -13,6 +13,7 @@ import { SourceLine } from '@/components/research';
 import { pop, useOnce } from '@/components/talk-art';
 import { Icon, T } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
 const SRCS = SRC as unknown as Record<string, [string, string]>;
@@ -49,7 +50,8 @@ export function StoryBars({ n, i }: { n: number; i: number }) {
 export function Teach({ teach, folded }: { teach: StoryTeach; folded?: boolean }) {
   const c = useTheme();
   const [open, setOpen] = useState(false);
-  const l = (LESSONS as unknown as { id: string; title: string }[]).find((x) => x.id === teach.l);
+  const { snap } = useStore();
+  const l = lessonFor(teach.l, snap.settings);
   if (folded && !open)
     return (
       <Pressable

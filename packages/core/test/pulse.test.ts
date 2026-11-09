@@ -51,7 +51,7 @@ describe('counting', () => {
     let s = pulseAdd(pulseNew(D0), 'sos', D0);
     s = pulseSetup(pulseOpened(s, {}, D0), 2, true);
     const b = pulseBatch(s, '2026-10-25', 'ios', '1.0.0')!;
-    expect(b.days[0].c).toEqual({ sos: 1, act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1, setup_done: 1 });
+    expect(b.days[0].c).toEqual({ sos: 1, act_0: 1, setup_hello: 1, setup_how: 1, setup_habit: 1, setup_done: 1 });
     s = pulseSent(s, b);
     expect(s.days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
@@ -137,7 +137,7 @@ describe('sending', () => {
     s = pulseOnce(pulseAdd(s, 'sos', D0), 'tab_more', D0);
     /* today so far, setup included, goes the same day */
     let b = pulseBatch(s, D0, 'ios', '1', true)!;
-    expect(b.days).toEqual([{ d: D0, c: { act_0: 1, sos: 1, tab_more: 1, setup_hello: 1, setup_how: 1, setup_aim: 1 } }]);
+    expect(b.days).toEqual([{ d: D0, c: { act_0: 1, sos: 1, tab_more: 1, setup_hello: 1, setup_how: 1, setup_habit: 1 } }]);
     s = pulseSent(s, b, D0);
     expect(pulseBatch(s, D0, 'ios', '1', true)).toBeNull();
     expect(pulseOpened(s, {}, D0)).toEqual(s);

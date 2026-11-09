@@ -1,6 +1,6 @@
 /* The pieces the Get help pages are made of: a card with a title, a list, a phone number with Copy, a link that leaves the app,
    a quiet note, and a lesson that goes with the page. Ported from the legacy hcard, hitem, numRow, ext, P, UL, OL, note and relLesson. */
-import { lessonById, lessonGate, lessonNo, lessonWalk, lmin } from '@daybook/core';
+import { lessonFor, lessonGate, lessonNo, lessonWalk, lmin } from '@daybook/core';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
@@ -139,7 +139,8 @@ export function NumRow({ name, num, note, copy, first }: { name: string; num: st
 /** a lesson that goes with the page you are on (legacy relLesson) */
 export function RelLesson({ id }: { id: string }) {
   const { snap } = useStore();
-  const L = lessonById(id);
+  /* a lesson not written for this person's habit is not linked (core habit.ts) */
+  const L = lessonFor(id, snap.settings);
   if (!L) return null;
   /* a lesson the path has not reached yet opens as its key idea (lesson/[id]) */
   const w = lessonWalk(snap.days, snap.settings);

@@ -19,6 +19,7 @@ import {
   stepOn,
   type CleanView,
   type Snapshot,
+  habitOf,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -265,8 +266,8 @@ export function CountNotes({ snap, tk }: { snap: Snapshot; tk: string }) {
         <View style={{ gap: 4 }}>
           <T v="label">Years of trying is not proof you cannot. It is practice.</T>
           <T v="small" tone="muted">
-            Many people who quit smoking needed 30 or more tries. And in a small trial, a skills-based therapy cut porn viewing by about 93%. This habit can
-            change.
+            Many people who quit smoking needed 30 or more tries.
+            {habitOf(snap.settings) === 'porn' ? ' And in a small trial, a skills-based therapy cut porn viewing by about 93%.' : ''} This habit can change.
           </T>
         </View>
         <View style={s.actions}>

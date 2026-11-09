@@ -390,6 +390,7 @@ export default function Sos() {
           at={at}
           hint={hint}
           on={live}
+          tint={moveTint(c, id)}
           onLand={landed}
           render={(i) =>
             i === at ? (
@@ -432,8 +433,8 @@ export default function Sos() {
             </View>
           </Pressable>
           <View style={s.rail}>
-            <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Round icon="down" label="Next move" onPress={() => next(false)} />
+            <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+            <Bare icon="down" label="Next move" onPress={() => next(false)} />
           </View>
         </View>
       </View>
@@ -562,8 +563,8 @@ function Cover({ id, name }: { id: string; name: string }) {
   );
 }
 
-/** a round button at the side of the ride's controls; `on` fills it (the heart, once this move helps) */
-function Round({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
+/** a bare icon in the ride's rail, like a feed's: no button around it; `on` colors it (the heart, once this move helps) */
+function Bare({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
   const c = useTheme();
   return (
     <Pressable
@@ -571,9 +572,9 @@ function Round({ icon, label, onPress, on }: { icon: string; label: string; onPr
       accessibilityLabel={label}
       accessibilityState={on === undefined ? undefined : { selected: on }}
       onPress={onPress}
-      hitSlop={6}
-      style={({ pressed }) => [s.round, { backgroundColor: on ? c.coral : c.scBtn, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
-      <Icon name={icon} size={22} color={on ? '#FFFFFF' : c.ink} />
+      hitSlop={8}
+      style={({ pressed }) => [s.bare, { opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] }]}>
+      <Icon name={icon} size={30} color={on ? c.coral : c.ink} />
     </Pressable>
   );
 }
@@ -582,21 +583,22 @@ function Round({ icon, label, onPress, on }: { icon: string; label: string; onPr
 const PRACTICE_N = 3;
 /** the record of how it felt after slips is never shown before this far into an SOS */
 const FELT_AFTER = 30000;
-/** the room under each ride page for the rail (two round buttons) */
-const FOOT = 124;
+/** the room each ride page leaves: under it for the caption, and down its right side for the rail and the side dots */
+const CAP = 58;
+const RAIL = 40;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
   passedT: { fontFamily: font.bodyBold, fontSize: 15 },
-  round: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   ride: { flex: 1, alignSelf: 'stretch' },
   /* each page leaves room at the bottom for the caption and the rail, so its own answers sit just above them */
-  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: FOOT },
+  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP, paddingRight: RAIL },
   cover: { justifyContent: 'center', gap: 28 },
   foot: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   cap: { flex: 1, gap: 3, paddingBottom: 6, minHeight: 44, justifyContent: 'flex-end' },
-  rail: { gap: 10, alignItems: 'center', marginRight: -4 },
+  rail: { gap: 18, alignItems: 'center', marginRight: -8 },
+  bare: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },

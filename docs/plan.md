@@ -134,6 +134,10 @@ it does not let me swipe up").**
   page to show the cover below.
 - No timer bar at the top of the ride or of How is it now (never put it back). No bottom bar: the move's name and Why it works
   sit low on the left like a caption, and the heart and Next (a down arrow) stand in a rail on the right.
+- Then (the owner: "why is there a bar at the bottom; add a cleaner animation or visual indicator of swiping"): no band
+  is kept under the moves any more. The heart and Next are bare icons in a thin gutter on the right, the page leaving sinks
+  back, dims and drifts slower as the next one comes over it, and a column of dots down the right edge has a bright mark, in
+  the move's color, that slides with the finger (`Page` and `SideDots` in `pager.tsx`). Reduced motion keeps the pages flat.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 

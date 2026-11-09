@@ -18,6 +18,7 @@ import {
   clipShape,
   labelsHidden,
   lineLimit,
+  minimumScaleFactor,
   monospacedDigit,
   multilineTextAlignment,
   padding,
@@ -134,23 +135,26 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   /* asleep after Goodnight (no short time): no bar and no clock, only the flame resting, and SOS one tap away (the owner, November 9,
      2026: "when I go to sleep I want an SOS button") */
   const asleep = !props.short;
-  /* SOS as it looks in the app (theme sos, sosLow, sosInk): a red button, deepening at its foot, with the life ring and the word in
-     white, and a shadow under it so it reads as something to press (the owner, November 9, 2026) */
+  /* SOS exactly as the app draws it (components/sos-button.tsx, theme sos, sosLow, sosDeep, sosInk): just the word, on the SOS color
+     deepening at its foot, standing on a solid ledge, so it reads as a button to press. Light or dark as the phone is, as in the app (the
+     owner, November 9, 2026: "the SOS looks different from the app") */
+  const dark = environment.colorScheme === 'dark';
+  const SOS = dark ? { top: '#FF8A7E', low: '#F2674F', deep: '#B8402F', ink: '#3A0D08' } : { top: '#D83A2E', low: '#B92B21', deep: '#8E1F17', ink: '#FFFFFF' };
   const sos = (
     <Link destination="daybook://sos">
-      <HStack
-        spacing={6}
+      <Text
         modifiers={[
-          padding({ horizontal: 16, vertical: 9 }),
+          font({ size: 17, weight: 'heavy', design: 'rounded' }),
+          foregroundStyle(SOS.ink),
+          padding({ horizontal: 18, vertical: 8 }),
           background(
-            { type: 'linearGradient' as const, colors: ['#D83A2E', '#B92B21'], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
+            { type: 'linearGradient' as const, colors: [SOS.top, SOS.low], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
             shapes.capsule(),
           ),
-          shadow({ radius: 4, y: 2, color: '#8E1F17' }),
+          shadow({ radius: 0, y: 3, color: SOS.deep }),
         ]}>
-        <Image systemName="lifepreserver.fill" size={15} color="#FFFFFF" />
-        <Text modifiers={[font({ size: 16, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF')]}>SOS</Text>
-      </HStack>
+        SOS
+      </Text>
     </Link>
   );
   const rest = (big: number, img: number) => (
@@ -172,7 +176,10 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
       expandedBottom: (
         <HStack spacing={10} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
           {flame(36)}
-          {text(props.line, 19, '#FFFFFF', 'bold')}
+          {/* the open island is narrow: the line shrinks a little to fit whole, never cut */}
+          <Text modifiers={[font({ size: 18, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF'), lineLimit(1), minimumScaleFactor(0.7)]}>
+            {props.line}
+          </Text>
           <Spacer />
           {sos}
         </HStack>

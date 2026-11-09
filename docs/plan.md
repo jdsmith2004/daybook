@@ -149,6 +149,10 @@ it does not let me swipe up").**
 - Then (the owner, with two pictures of a move stopped halfway under the next one: "really glitchy"): on the phone the
   scroll view snaps to whole pages itself (`snapToInterval`, one page per swipe), so a swipe can never come to rest between
   two moves; a flick or a short drag moves on, a tiny drag springs back.
+- Then (the owner: "I swipe down and it looks good, then it glitches and reloads the page"; "the down arrow easier to see"):
+  each page keeps one copy as it comes into view and leaves it, so landing never swaps in a fresh one, and going back finds a
+  move where it was left. A move's clock starts only when it is first in view (`useStartWhen`). Next is always a filled round,
+  and bobs only while the person is learning to swipe.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 

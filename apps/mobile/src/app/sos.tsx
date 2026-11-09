@@ -393,34 +393,39 @@ export default function Sos() {
           hint={hint && at >= 1}
           on={live}
           onLand={landed}
-          render={(i) =>
-            i === at ? (
-              <View key={'live' + i} style={s.page}>
-                <Move
-                  on={live}
-                  onDone={() => next(true)}
-                  onFeel={(f) => {
-                    /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
-                    const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
-                    if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
-                    lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
-                  }}
-                  onTool={pickTool}
-                  felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
+          render={(i) => {
+            if (pages[i] === 'end') return null;
+            /* every page keeps one copy as it comes into view and leaves it (one key), so landing never swaps it for a fresh
+               one; the page above and below is held still (nothing in it runs, speaks or buzzes) until it is landed on */
+            const here = i === at;
+            const M = here ? Move : MOVES[pages[i]] || MOVES.breathe;
+            return (
+              <View
+                key={'p' + i}
+                style={s.page}
+                pointerEvents={here ? 'auto' : 'none'}
+                importantForAccessibility={here ? 'auto' : 'no-hide-descendants'}
+                accessibilityElementsHidden={!here}>
+                <M
+                  on={here && live}
+                  onDone={here ? () => next(true) : () => undefined}
+                  onFeel={
+                    here
+                      ? (f) => {
+                          /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
+                          const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
+                          if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
+                          lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
+                        }
+                      : () => undefined
+                  }
+                  onTool={here ? pickTool : () => undefined}
+                  felt={here && feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
                   level={level}
                 />
               </View>
-            ) : pages[i] === 'end' ? null : (
-              /* the move above or below, drawn as it starts but held still, so a swipe shows the real next page and letting go
-                 only starts it (nothing in it runs, speaks or buzzes until then) */
-              <View key={'still' + i} style={s.page} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-                {(() => {
-                  const M = MOVES[pages[i]] || MOVES.breathe;
-                  return <M on={false} onDone={() => undefined} onFeel={() => undefined} onTool={() => undefined} felt={null} level={level} />;
-                })()}
-              </View>
-            )
-          }
+            );
+          }}
         />
         {/* the name and Why it works low on the left, like a caption; the heart and Next beside it on the right, in the same slim row */}
         <View style={s.foot} pointerEvents="box-none">
@@ -442,7 +447,7 @@ export default function Sos() {
           </Pressable>
           <View style={s.rail}>
             <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Bare icon="down" label="Next move" loud={hint} onPress={() => next(false)} />
+            <Bare icon="down" label="Next move" fill loud={hint} onPress={() => next(false)} />
           </View>
         </View>
       </View>
@@ -554,16 +559,31 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
 }
 
 /** a bare icon in the ride's rail, like a feed's: no button around it; `on` colors it (the heart, once this move helps) */
-function Bare({ icon, label, onPress, on, loud }: { icon: string; label: string; onPress: () => void; on?: boolean; loud?: boolean }) {
+function Bare({
+  icon,
+  label,
+  onPress,
+  on,
+  fill,
+  loud,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  on?: boolean;
+  /** a filled round, easy to see (Next) */
+  fill?: boolean;
+  /** bob down, toward the next move waiting below (while the ride is new) */
+  loud?: boolean;
+}) {
   const c = useTheme();
   const still = useReducedMotion();
-  /* while the ride is new: a filled round that bobs down, toward the next move waiting below */
   const bob = useSharedValue(0);
   useEffect(() => {
     bob.value = loud && !still ? withRepeat(withSequence(withTiming(5, { duration: 520 }), withTiming(0, { duration: 520 })), -1) : withTiming(0);
   }, [loud, still, bob]);
   const bobS = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value }] }));
-  if (loud)
+  if (fill)
     return (
       <Pressable
         accessibilityRole="button"

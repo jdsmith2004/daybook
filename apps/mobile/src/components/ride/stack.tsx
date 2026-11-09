@@ -14,6 +14,7 @@ import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 
+import { useStartWhen } from '@/components/orb';
 import { WavyLine } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { T } from '@/components/ui';
@@ -329,14 +330,14 @@ export function StackMove({ on, onDone }: MoveProps) {
   const gRef = useRef(g);
   gRef.current = g;
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  const [t0] = useState(() => Date.now());
+  const t0 = useStartWhen(on);
   const [, tick] = useReducer((x: number) => x + 1, 0);
   const [drag, setDrag] = useState<number | null>(null);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const hoverRef = useRef(hover);
   hoverRef.current = hover;
   const dragRef = useRef<number | null>(null);
-  const sec = Math.min(STACK_SEC, (Date.now() - t0) / 1000);
+  const sec = t0 === null ? 0 : Math.min(STACK_SEC, (Date.now() - t0) / 1000);
   const over = sec >= STACK_SEC && drag === null;
   const overRef = useRef(over);
   overRef.current = over;

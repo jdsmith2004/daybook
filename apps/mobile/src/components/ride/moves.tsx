@@ -20,7 +20,7 @@ import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring,
 
 import { Appear } from '@/components/appear';
 import { BigOption, Link, Tiles } from '@/components/choices';
-import { BreathSun, useSeconds } from '@/components/orb';
+import { BreathSun, useSeconds, useStartWhen } from '@/components/orb';
 import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
@@ -94,7 +94,7 @@ const ROUND = HOLD + REST;
 export function SqueezeMove({ on, onDone }: MoveProps) {
   const c = useTheme();
   const reduce = useReducedMotion();
-  const [t0] = useState(() => Date.now());
+  const t0 = useStartWhen(on);
   /* ten ticks a second is plenty for the count; the clench itself runs on the native side */
   const sec = useSeconds(t0, on);
   const i = Math.min(PARTS.length - 1, Math.floor(sec / ROUND));

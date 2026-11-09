@@ -79,7 +79,25 @@
         }
       ],
       "expo-web-browser",
-      "expo-iap"
+      "expo-iap",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.jdsmith2004.daybook",
+          "widgets": [
+            {
+              "name": "Flame",
+              "displayName": "Your flame",
+              "description": "Your flame as it burns now.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "accessoryCircular"],
+                "initialLayout": "./src/widgets/flame.tsx"
+              },
+              "android": null
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

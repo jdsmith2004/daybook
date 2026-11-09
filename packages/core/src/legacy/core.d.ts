@@ -111,6 +111,7 @@ export function busiestWindow(
 
 /* ---------- points, levels, wins, quests, badges ---------- */
 export const SETUP_PTS: number;
+export const WIDGET_PTS: number;
 export const WINS: { k: WinKey; name: string; tip: string; ic: string }[];
 export type WinKey = 'morning' | 'lesson' | 'calm' | 'reach' | 'checkin' | 'wind';
 export type Wins = Record<WinKey, boolean> & { na: Record<WinKey, boolean> };

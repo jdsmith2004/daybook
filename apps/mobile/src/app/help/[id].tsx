@@ -3,6 +3,9 @@
    pageGroups, pageFaith, pagePhone, pageSay and pageSources. */
 import {
   fmtClock,
+  HABIT_MEDICAL,
+  habitOf,
+  habitSay,
   HELP_PAGES,
   HELP_SRC,
   HELP_SUBS,
@@ -70,6 +73,7 @@ function People() {
   const c = useTheme();
   const { snap } = useStore();
   const nm = safeName(snap.settings);
+  const habit = habitOf(snap.settings);
   return (
     <>
       <P>A real voice can take the edge off, even for a few minutes. You do not have to be in a crisis to call.</P>
@@ -92,6 +96,14 @@ function People() {
             note="Call or text, or chat at 988lifeline.org. Free, 24/7. The name says suicide because it is there for that. It is also open to anyone who is struggling or needs to talk. A counselor starts by asking if you are safe. Answer honestly, then say what is going on."
             copy="988"
           />
+          {habit === 'gambling' ? (
+            <NumRow
+              name="National Problem Gambling Helpline"
+              num="1-800-MY-RESET (1-800-697-3738)"
+              note="Call, text or chat at 1800myreset.org. Free, confidential, 24/7. For anyone hurt by gambling, and for the people close to them."
+              copy="1-800-697-3738"
+            />
+          ) : null}
           <NumRow
             name="Crisis Text Line"
             num="Text HOME to 741741"
@@ -129,21 +141,28 @@ function People() {
           </View>
         </Card>
       </Sec>
-      <Sec title="If your worries involve children">
-        <P>
-          Stop It Now is a confidential helpline for adults who are worried about their own sexual thoughts or behavior toward children, or about someone
-          else’s. Reaching out before anything happens is exactly what it is for.
-        </P>
-        <Card style={s.nums}>
-          <NumRow
-            first
-            name="Stop It Now helpline"
-            num="1-888-773-8368"
-            note="Free and confidential. Weekday daytime hours (Eastern time), plus chat and email. Check the hours on their site."
-            copy="1-888-773-8368"
-          />
-        </Card>
-      </Sec>
+      {habit === 'other' ? (
+        <Sec title="Stopping safely">
+          <P>{HABIT_MEDICAL} The SAMHSA helpline above can point you to care near you.</P>
+        </Sec>
+      ) : null}
+      {habit !== 'porn' ? null : (
+        <Sec title="If your worries involve children">
+          <P>
+            Stop It Now is a confidential helpline for adults who are worried about their own sexual thoughts or behavior toward children, or about someone
+            else’s. Reaching out before anything happens is exactly what it is for.
+          </P>
+          <Card style={s.nums}>
+            <NumRow
+              first
+              name="Stop It Now helpline"
+              num="1-888-773-8368"
+              note="Free and confidential. Weekday daytime hours (Eastern time), plus chat and email. Check the hours on their site."
+              copy="1-888-773-8368"
+            />
+          </Card>
+        </Sec>
+      )}
       <T v="small" tone="muted">
         Phone numbers are shown as text on purpose. Tap Copy, then paste it into your phone app.
       </T>
@@ -151,7 +170,8 @@ function People() {
         <Ext url="https://988lifeline.org/" label="988lifeline.org" />
         <Ext url="https://www.crisistextline.org/text-us/" label="Crisis Text Line" />
         <Ext url="https://www.samhsa.gov/find-help/helplines/national-helpline" label="SAMHSA helpline" />
-        <Ext url="https://www.stopitnow.org/helpnow" label="Stop It Now" />
+        {habit === 'gambling' ? <Ext url="https://www.1800myreset.org/" label="1-800-MY-RESET" /> : null}
+        {habit === 'porn' ? <Ext url="https://www.stopitnow.org/helpnow" label="Stop It Now" /> : null}
       </Links>
       <HCard title="A person you already know">
         <P>
@@ -289,27 +309,30 @@ function FitCheck() {
           />
         ))}
       </View>
-      {THERAPIST_CRIT.map((t, r) => (
-        <View key={r} style={[s.crit, { borderColor: c.line }]}>
-          <T style={{ flex: 1 }}>{t}</T>
-          <View style={s.checks}>
-            {[0, 1, 2].map((k) => {
-              const on = !!thr.checks[r][k];
-              return (
-                <Pressable
-                  key={k}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: on }}
-                  accessibilityLabel={name(k) + ': ' + t}
-                  onPress={() => apply({ st: toggleTherapist(snap.settings!, r, k) })}
-                  style={[s.sq, { backgroundColor: on ? c.mintSoft : c.surface, borderColor: on ? c.mintText : c.line }]}>
-                  <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: on ? c.mintText : c.ink }}>{on ? '✓' : k + 1}</Text>
-                </Pressable>
-              );
-            })}
+      {THERAPIST_CRIT.map((t0, r) => {
+        const t = habitSay(t0, habitOf(snap.settings));
+        return (
+          <View key={r} style={[s.crit, { borderColor: c.line }]}>
+            <T style={{ flex: 1 }}>{t}</T>
+            <View style={s.checks}>
+              {[0, 1, 2].map((k) => {
+                const on = !!thr.checks[r][k];
+                return (
+                  <Pressable
+                    key={k}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: on }}
+                    accessibilityLabel={name(k) + ': ' + t}
+                    onPress={() => apply({ st: toggleTherapist(snap.settings!, r, k) })}
+                    style={[s.sq, { backgroundColor: on ? c.mintSoft : c.surface, borderColor: on ? c.mintText : c.line }]}>
+                    <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: on ? c.mintText : c.ink }}>{on ? '✓' : k + 1}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
       <T v="small" tone="muted">
         Checks passed:{' '}
         {[0, 1, 2].map((k) => (thr.names[k] || '#' + (k + 1)) + ' ' + thr.checks.filter((row) => row[k]).length + ' of ' + THERAPIST_CRIT.length).join(' · ')}.
@@ -320,6 +343,8 @@ function FitCheck() {
 
 /* ---------- groups ---------- */
 function Groups() {
+  const { snap } = useStore();
+  const habit = habitOf(snap.settings);
   return (
     <>
       <P>
@@ -332,36 +357,67 @@ function Groups() {
           optional. Not a 12-step program.
         </P>
       </HCard>
-      <HCard title="Sex Addicts Anonymous (SAA)" links={<Ext url="https://saa-recovery.org/meetings/" label="SAA meetings" />}>
-        <P>
-          A fellowship that uses 12 steps adapted from AA, open to anyone who suffers from sex addiction. Their office line is 1-800-477-8191 (Mon to Fri, 10 AM
-          to 6 PM Central).
-        </P>
-      </HCard>
-      <HCard
-        title="Sex and Love Addicts Anonymous (SLAA)"
-        links={
-          <>
-            <Ext url="https://slaafws.org/meetings" label="SLAA meetings" />
-            <Ext url="https://slaafws.org/onlinemeetings/" label="Online meetings" />
-          </>
-        }>
-        <P>
-          No dues or fees, first names only. The program is spiritual in nature but is not tied to any religion, and you do not have to believe in God. Online
-          and telephone meetings exist. Careful with the web address: the real site is slaafws.org. A similar-looking address belongs to something unrelated.
-        </P>
-      </HCard>
-      <HCard title="Sexaholics Anonymous (SA)" links={<Ext url="https://sa.org/meetings/" label="SA meetings" />}>
-        <P>
-          Covers lust, sex, and pornography. The only requirement is a desire to stop lusting. SA defines sobriety strictly. For unmarried members it means
-          freedom from sex of any kind. For married members it means no sex with oneself or with anyone other than the spouse. It also includes “progressive
-          victory over lust.” Read their definition first and see if it fits you. Toll-free: 866-424-8777.
-        </P>
-      </HCard>
+      {habit === 'gambling' ? (
+        <>
+          <HCard title="Gamblers Anonymous" links={<Ext url="https://gamblersanonymous.org/" label="Find a meeting" />}>
+            <P>
+              A free fellowship of people who share their experience to stop gambling, built on 12 steps. Meetings are in person, online and by phone. The only
+              requirement is a desire to stop gambling. Their hotline is 855-222-5542.
+            </P>
+          </HCard>
+          <HCard title="Gam-Anon" links={<Ext url="https://www.gam-anon.org/" label="Gam-Anon" />}>
+            <P>For the family and friends of someone who gambles. Worth passing on to a partner or a parent who is hurting too.</P>
+          </HCard>
+        </>
+      ) : habit === 'other' ? (
+        <HCard
+          title="A fellowship for your habit"
+          links={
+            <>
+              <Ext url="https://www.aa.org/find-aa" label="Alcoholics Anonymous" />
+              <Ext url="https://na.org/meetingsearch/" label="Narcotics Anonymous" />
+              <Ext url="https://marijuana-anonymous.org/" label="Marijuana Anonymous" />
+              <Ext url="https://www.nicotine-anonymous.org/" label="Nicotine Anonymous" />
+            </>
+          }>
+          <P>Most habits have a free 12-step fellowship of their own, in person and online. Al-Anon is there for the family of someone who drinks.</P>
+        </HCard>
+      ) : null}
+      {habit !== 'porn' ? null : (
+        <>
+          <HCard title="Sex Addicts Anonymous (SAA)" links={<Ext url="https://saa-recovery.org/meetings/" label="SAA meetings" />}>
+            <P>
+              A fellowship that uses 12 steps adapted from AA, open to anyone who suffers from sex addiction. Their office line is 1-800-477-8191 (Mon to Fri,
+              10 AM to 6 PM Central).
+            </P>
+          </HCard>
+          <HCard
+            title="Sex and Love Addicts Anonymous (SLAA)"
+            links={
+              <>
+                <Ext url="https://slaafws.org/meetings" label="SLAA meetings" />
+                <Ext url="https://slaafws.org/onlinemeetings/" label="Online meetings" />
+              </>
+            }>
+            <P>
+              No dues or fees, first names only. The program is spiritual in nature but is not tied to any religion, and you do not have to believe in God.
+              Online and telephone meetings exist. Careful with the web address: the real site is slaafws.org. A similar-looking address belongs to something
+              unrelated.
+            </P>
+          </HCard>
+          <HCard title="Sexaholics Anonymous (SA)" links={<Ext url="https://sa.org/meetings/" label="SA meetings" />}>
+            <P>
+              Covers lust, sex, and pornography. The only requirement is a desire to stop lusting. SA defines sobriety strictly. For unmarried members it means
+              freedom from sex of any kind. For married members it means no sex with oneself or with anyone other than the spouse. It also includes “progressive
+              victory over lust.” Read their definition first and see if it fits you. Toll-free: 866-424-8777.
+            </P>
+          </HCard>
+        </>
+      )}
       <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
         <P>
           A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
-          the local group what they run and whether it covers porn use.
+          the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'gambling' ? 'gambling' : 'your habit'}.
         </P>
       </HCard>
       <HCard title="Your first meeting">
@@ -388,7 +444,8 @@ function Groups() {
 function Faith() {
   const { snap } = useStore();
   const words = snap.settings!.words || [];
-  const copy = (i: number, label: string) => <CopyChip text={SCRIPTS[i][1]} label={label} />;
+  const habit = habitOf(snap.settings);
+  const copy = (i: number, label: string) => <CopyChip text={habitSay(SCRIPTS[i][1], habit)} label={label} />;
   return (
     <>
       <P>
@@ -448,8 +505,11 @@ function Faith() {
       </HCard>
       <HCard title="Groups with faith in them" links={<ChipBtn icon="dots" label="Free groups" onPress={() => help('groups')} />}>
         <P>
-          Celebrate Recovery is Christ-centered. Sex and Love Addicts Anonymous says its program is spiritual but not tied to any religion, and you do not have
-          to believe in God. SMART Recovery is not a 12-step program. The Free groups page has them all.
+          Celebrate Recovery is Christ-centered.{' '}
+          {habit === 'porn'
+            ? 'Sex and Love Addicts Anonymous says its program is spiritual but not tied to any religion, and you do not have to believe in God. '
+            : 'The 12-step fellowships speak of a higher power in your own understanding. '}
+          SMART Recovery is not a 12-step program. The Free groups page has them all.
         </P>
       </HCard>
       <Sec title="The faith lessons">
@@ -467,6 +527,8 @@ function Faith() {
 function Phone({ sub: want }: { sub?: string }) {
   const { snap } = useStore();
   const [sub, setSub] = useSub('phone', want);
+  const habit = habitOf(snap.settings);
+  if (habit !== 'porn') return <PhoneHabit gambling={habit === 'gambling'} />;
   return (
     <>
       <P>
@@ -564,20 +626,109 @@ function Phone({ sub: want }: { sub?: string }) {
   );
 }
 
+/* the phone page for gambling or another habit: the blocks that fit it, then the nights (core habit.ts) */
+function PhoneHabit({ gambling }: { gambling: boolean }) {
+  const { snap } = useStore();
+  return (
+    <>
+      <P>
+        A block will not remove an urge. It makes the urge take more than two taps, which buys you the time to use the pause. Do the steps once, then ask your
+        safe person to hold the passcode if you can.
+      </P>
+      {gambling ? (
+        <>
+          <HCard
+            title="Block gambling on every device"
+            links={
+              <>
+                <Ext url="https://betblocker.org/" label="BetBlocker" />
+                <Ext url="https://gamban.com/" label="Gamban" />
+              </>
+            }>
+            <OL
+              items={[
+                <>
+                  <B>BetBlocker</B> is free and blocks gambling sites and apps on iPhone, Android and computers. Set it for the longest time you can stand.
+                </>,
+                <>
+                  <B>Gamban</B> is a paid blocker. Some state gambling programs give it out free, so ask the helpline.
+                </>,
+                'Delete every betting and casino app, and close the accounts. Ask each site to close it for good, not just pause it.',
+              ]}
+            />
+          </HCard>
+          <HCard title="Block it at the bank">
+            <P>
+              Ask your bank or credit union for a gambling block or card control. Many can stop gambling payments on a card. It may not catch everything, so
+              pair it with a block on the phone.
+            </P>
+            <P>Some people hand day-to-day money to someone they trust for a while. It takes the hardest decision out of the hardest hour.</P>
+          </HCard>
+          <HCard title="Ban yourself, on purpose" links={<Ext url="https://www.ncpgambling.org/" label="NCPG" />}>
+            <P>
+              Every state runs self-exclusion: you ask to be barred from casinos, online betting or lottery apps for a set time. The National Council on Problem
+              Gambling lists the programs by state.
+            </P>
+          </HCard>
+        </>
+      ) : (
+        <HCard title="Put distance between you and it">
+          <UL
+            items={[
+              'Delete the apps and close the accounts that make it easy.',
+              'Keep none of it at home, and stop carrying the cash or card that buys it.',
+              'Use Screen Time (iPhone) or Digital Wellbeing (Android) to block the apps and sites tied to it, and let your safe person set the passcode.',
+              'Change the route that walks you past it.',
+            ]}
+          />
+        </HCard>
+      )}
+      <HCard title="Nights are the weak spot" links={<Ext url="https://www.cdc.gov/sleep/about/" label="CDC: sleep" />}>
+        <UL
+          items={[
+            'Charge the phone outside the bedroom and use a cheap alarm clock.',
+            'Set your screens-off time in Settings. Tapping Good night before it counts as screens off on time.',
+            'Look for Downtime (iPhone) or Bedtime mode (Android) to schedule quiet hours. Menu names vary.',
+            'The CDC suggests the same bedtime and wake time every day, and turning devices off at least 30 minutes before bed.',
+          ]}
+        />
+      </HCard>
+      <LinkCard
+        icon="moon"
+        title="Set my screens-off time"
+        sub={'Now ' + fmtClock(snap.settings!.screensOff) + ' · in Settings'}
+        onPress={() => router.push({ pathname: '/settings', params: { open: 'sched' } })}
+      />
+      <HCard title="Honest note">
+        <P>
+          A determined moment can get around any block. That is why this works best with a person who knows, and with the 10-minute pause. Do not feel like a
+          failure if you find a gap. Close it and move on.
+        </P>
+      </HCard>
+      <RelLesson id="l10" />
+    </>
+  );
+}
+
 /* ---------- what to say ---------- */
 function Say() {
+  const { snap } = useStore();
+  const habit = habitOf(snap.settings);
   return (
     <>
       <P>The hardest part of asking for help is the first sentence. These are ready to use. Change anything.</P>
-      {SCRIPTS.map(([title, text], i) => (
-        <Card key={i}>
-          <T v="label">{title}</T>
-          <T selectable>{text}</T>
-          <View style={{ flexDirection: 'row' }}>
-            <CopyChip text={text} label="Copy" />
-          </View>
-        </Card>
-      ))}
+      {SCRIPTS.map(([title, t0], i) => {
+        const text = habitSay(t0, habit);
+        return (
+          <Card key={i}>
+            <T v="label">{title}</T>
+            <T selectable>{text}</T>
+            <View style={{ flexDirection: 'row' }}>
+              <CopyChip text={text} label="Copy" />
+            </View>
+          </Card>
+        );
+      })}
       <RelLesson id="l7" />
     </>
   );

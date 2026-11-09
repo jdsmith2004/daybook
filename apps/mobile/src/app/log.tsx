@@ -84,6 +84,7 @@ import {
   type Talk,
   type TalkMove,
   type When,
+  lessonFor,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -709,13 +710,14 @@ export default function Log() {
         </Dock>
       </>
     );
-    footer = repeat ? (
-      <Link
-        label="What therapy is like"
-        tone="muted"
-        onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
-      />
-    ) : null;
+    footer =
+      repeat && lessonFor(SLIP_THERAPY_LESSON, st) ? (
+        <Link
+          label="What therapy is like"
+          tone="muted"
+          onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: SLIP_THERAPY_LESSON, at: 'care' } })}
+        />
+      ) : null;
   } else if (step === 'slOther') {
     /* Choose another: the sentence is the heading, and each answer finishes it */
     const held = talkHeld(snap.days);

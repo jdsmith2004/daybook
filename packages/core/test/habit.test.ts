@@ -11,7 +11,7 @@ const daysWith = (ids: string[]) => {
   const days: core.Days = {};
   ids.forEach((id, i) => {
     const k = core.addDays('2026-10-01', i);
-    days[k] = core.normDay({ p: { ...core.blankP(), ls: [id] } });
+    days[k] = core.normDay({ p: { ...core.blankP(), ls: [id] } }, k);
   });
   return days;
 };
@@ -45,6 +45,8 @@ describe('the habit', () => {
     expect(page('gambling', 'costs').h).toBe('What has gambling cost you so far?');
     /* another habit: the first question says to see a doctor before stopping alcohol or a daily drug */
     expect(page('other', 'years').sub).toBe(core.HABIT_MEDICAL);
+    expect(core.obSay('years', false, 'other')).toBe(core.HABIT_MEDICAL);
+    expect(core.obSay('years', false, 'gambling')).toBe(core.obSay('years'));
     for (const h of ['gambling', 'other']) {
       const ids = core.obPages({ habit: h }).map((p) => p.id);
       ['b0', 'b1', 'b2', 'b3', 'b4', 'heard'].forEach((id) => expect(ids).not.toContain(id));

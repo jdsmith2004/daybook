@@ -432,7 +432,7 @@ export default function LessonScreen() {
     if (ix > 0) backBtn = () => step(-1);
     const nextLabel = seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next';
     if (it.t === 'done') {
-      const pr = lessonPractice(L);
+      const pr = lessonPractice(L, st);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       const key = beats?.key || L.key;
       body = (
@@ -589,7 +589,7 @@ export default function LessonScreen() {
       }
     }
   } else if (stage === 'practice') {
-    const a = lessonPractice(L)!;
+    const a = lessonPractice(L, st)!;
     const items = a.items || [];
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
@@ -670,7 +670,7 @@ export default function LessonScreen() {
       </>
     );
   } else {
-    const a = lessonPractice(L);
+    const a = lessonPractice(L, st);
     const pair = lessonPairOf(L);
     const due = pair && (w.walked.has(pair.a.id) || (w.path.indexOf(pair.a) < 0 && done.has(pair.a.id))) && !lcheckWritten(st, pair.n);
     prog = <Prog total={1} i={0} all look={look} />;
@@ -789,7 +789,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   let body: ReactNode;
   let foot: ReactNode;
   if (gate === 'key') {
-    const go = (lessonPractice(L) || { go: [] as Go[] }).go || [];
+    const go = (lessonPractice(L, st) || { go: [] as Go[] }).go || [];
     const nx = w.next;
     body = (
       <>

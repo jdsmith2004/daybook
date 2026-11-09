@@ -743,6 +743,7 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
 const OB_SAY: Record<string, string> = {
   hello: 'I am your flame. I grow every time you show up.',
   how: 'I will be with you through all three.',
+  habit: 'Pick the closest one. I can help with each.',
   aim: 'Pick the closest one. Whatever you choose, I am with you.',
   years: 'Your best guess is fine.',
   freq: 'Rough is fine. Only you see this.',
@@ -769,7 +770,8 @@ const OB_SAY_REDO: Record<string, string> = {
   hello: 'Look how far I have come with you. Nothing changes until the last page.',
 };
 /** what the flame says first on a page, or null */
-export const obSay = (id: string, redo = false): string | null => (redo && OB_SAY_REDO[id]) || OB_SAY[id] || null;
+export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>
+  (redo && OB_SAY_REDO[id]) || (id === 'years' && h === 'other' ? HABIT_MEDICAL : null) || OB_SAY[id] || null;
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {

@@ -37,6 +37,11 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  setHabit,
+  habitOf,
+  HABIT_NAME,
+  HABIT_MEDICAL,
+  OB_HABIT,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -86,7 +91,7 @@ import { useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
-type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'answers' | 'data';
+type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'habit' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'answers' | 'data';
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -430,6 +435,32 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               </Field>
             </>,
           )}
+
+          {/* what the person is quitting (core habit.ts): the words and the lessons follow it; nothing earned changes */}
+          {st.onb
+            ? sec(
+                'habit',
+                'flame',
+                'What I am quitting',
+                HABIT_NAME[habitOf(st)],
+                <>
+                  <Field
+                    label="What do you want to quit?"
+                    hint="Lessons written for porn stay out for another habit. Everything you finished, earned and logged stays.">
+                    <Chips label="What I am quitting">
+                      {OB_HABIT.map(([v, l]) => (
+                        <Chip key={v} label={l} on={habitOf(st) === v} onPress={() => apply({ st: setHabit(st, v) })} />
+                      ))}
+                    </Chips>
+                  </Field>
+                  {habitOf(st) === 'other' ? (
+                    <T v="small" tone="muted">
+                      {HABIT_MEDICAL}
+                    </T>
+                  ) : null}
+                </>,
+              )
+            : null}
 
           {/* the setup's faith answers (core faith.ts): whether lessons speak of God, and in which faith's words */}
           {st.onb

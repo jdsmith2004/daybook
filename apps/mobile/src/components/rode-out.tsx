@@ -8,7 +8,6 @@
 import {
   didIds,
   didToggle,
-  LESSONS,
   optList,
   patchEvent,
   rateUrTool,
@@ -18,6 +17,7 @@ import {
   rideWhy,
   urTool,
   type DayKey,
+  lessonFor,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -86,7 +86,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
   }, []);
 
   const why = won.moves.length ? rideWhy(helped, won.moves) : null;
-  const lesson = why?.l ? (LESSONS as { id: string; title: string }[]).find((l) => l.id === why.l) : null;
+  const lesson = why?.l ? lessonFor(why.l, st) : null;
   const trigs = (optList('trig', st.opts, { time: ev?.time || null, sel: trig, all: false }).list as [string, string][]).slice(0, 7);
   const did = didIds(ev?.did);
   /* what you did, for one logged afterwards ("Something else" says nothing, so it is left out here) */

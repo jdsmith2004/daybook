@@ -1,5 +1,38 @@
 # What is planned next
 
+## The fire burns lower when you stop doing your part (the owner, November 8, 2026; built on `claude/flame-dims`, not merged)
+
+The owner: when the person drifts, the flame burns lower, as if water were poured on it, and when they come back it flares up again; "make the
+animation look really good". It is the first piece of "Hope is not softness: there are stakes" (CLAUDE.md). Effort: medium (screens, words, a small
+rule that never touches what was earned).
+
+The owner's calls, November 8 (each the recommended option):
+
+- **Drifting is days with no part done:** nothing that earns points (a lesson, a check-in, an urge ridden out, an honest log, a calm move...), no tool,
+  talk-through or feeling named. Opening the app is not doing your part. A slip logged honestly is, so honesty never dims the fire.
+- **Never fully out.** Two whole days with nothing done: "You are dimming your fire". Three or four: "Your fire is smouldering ... It goes lower
+  each day." Five or more: "Your fire is down to embers ... One ember still glows." Today does not count until it is over.
+- **One action, full re-light,** with the big moment.
+- **The words are on Today only:** one firm line at the top of the sky, and the step open now on Your day says "This lights your fire again".
+  The reminders are unchanged.
+
+Hard lines kept: only the glow changes (level, form, points, badges and the count never move; core `fireLow` reads the log and writes nothing),
+never in the 72 hours after a slip, and the words are about the next choice, never about who the person is.
+
+The look (core `flame-low.ts`, components `big-flame.tsx`, `fire-layer(.native).tsx`, `hero.tsx`): the fire, the body and the face sink together
+toward a deep ember (one color map, the same on the phone's Skia layer and the drawn layers); the tips draw back toward the body; it sputters (a
+slow sag with a quick drop and catch); smoke rises from the top, more and thicker the lower it burns, lighter on a night sky; one ember breathes in
+its heart; the glow fades. The first time Today is seen that day it burns fully for half a second and then goes down over two seconds, with four
+fading ticks and a soft knock. When the person does something and comes back to Today, it is lit again in front of them: a soft knock, the heart
+catches with a light one, the fire climbs back and leaps with a firm one, sparks fly out of the heart, the smoke clears, the bloom and ring go
+through it, and the success knock; "You lit your fire again" for a few seconds. Reduce Motion: drawn as low as it burns, re-lit at once with one
+knock.
+
+Does it help Daybook earn or grow: it gives a reason to come back daily, which is what every ask and every rating rides on; nothing is locked.
+
+Waits on: the owner's look on the simulator (simulator "Daybook Dims", a release build with a preview row to pick each step; the preview code is
+not in the branch).
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

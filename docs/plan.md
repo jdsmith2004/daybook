@@ -211,7 +211,7 @@ is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIE
 4. In Daybook: More, Apps that pull you in, Choose the apps. Pick one app, set long use to 1 hour, and try it. To see the hard
    hours at once, the log needs its hard hours (two slips or six urges at the same time of day).
 
-Not merged: it waits on the owner's look on the iPhone.
+**Merged November 9, 2026** after the owner's look on the simulator (with the stand-in; the Mac could not reach the iPhone). The first real test is TestFlight: Actions, App Store, Run workflow with **Screen Time** ticked. The owner then said the name "Apps that pull you in" is not descriptive, and that Settings needs an overhaul (long and chaotic): its own session.
 
 **The flame dims on the wait screen too (the owner, November 9, 2026, via the flame session).** Once `claude/flame-dims`
 merges, `/pause` uses its pieces (core `flame-low.ts`, `lowXml`, the smoke, the douse and re-light in `big-flame.tsx` and the

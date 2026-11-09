@@ -87,7 +87,7 @@ export const NUDGE_FOLD = 120;
 /** the come-back notes, in days after the last time the app was open */
 export const NUDGE_BACK = [2, 7, 30];
 /** the come-back note for the day the fire is down to embers (flame-low.ts), days after the app was last open */
-export const NUDGE_EMBERS = 5;
+export const NUDGE_EMBERS = 3;
 /** how long the open times are kept, to learn the hour the app is usually open */
 export const NUDGE_OPENS_DAYS = 28;
 /** misses in a row before a kind steps down */
@@ -703,10 +703,10 @@ export function nudgePlan(
       out.push({ id: 'back-' + n, k: 'back', d, at, title: x.t, body: x.b, url: '/' });
     });
     /* and one more on the day it is down to embers, between the first two */
-    const d5 = addDays(tk, NUDGE_EMBERS);
-    const at5 = atOf(d5, t, st.rollover);
-    if (!tender && fireLow(days, st, d5, at5).step === 3)
-      out.push({ id: 'back-' + NUDGE_EMBERS, k: 'back', d: d5, at: at5, title: LOW_NOTES[3].t, body: LOW_NOTES[3].b, url: '/' });
+    const de = addDays(tk, NUDGE_EMBERS);
+    const ae = atOf(de, t, st.rollover);
+    if (!tender && fireLow(days, st, de, ae).step === 3)
+      out.push({ id: 'back-' + NUDGE_EMBERS, k: 'back', d: de, at: ae, title: LOW_NOTES[3].t, body: LOW_NOTES[3].b, url: '/' });
   }
   return out.sort((a, b) => a.at - b.at);
 }

@@ -5,10 +5,10 @@
    Today, the round sky at the end of a lesson), whose stars stay small however close the figure is drawn. It moves like
    the flame everywhere else (components/flame.tsx: the face and the body hold still and the fire licks), each tap makes
    the fire leap and sends one bloom through it, and it is still under Reduce Motion.
-   Burning low (core flame-low.ts, `low`): the fire, the body and the face sink toward an ember together, the glow fades, it sputters and smokes.
+   Burning low (core flame-low.ts, `low`): the face turns sad, the fire, the body and the face sink toward ash together, the glow fades, it sputters and smokes.
    With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
    heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
-import { emblemLayers, fireOf, formOfLevel, gradOf, lowXml, type EmblemLayers, type Fire } from '@daybook/core';
+import { emblemLayers, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
@@ -121,7 +121,16 @@ export const BigFlame = memo(function BigFlame({
   const still = useReducedMotion();
   const { snap } = useStore();
   const grad = !!gradOf(snap.settings);
-  const b = useMemo(() => bigLayers(level, noLand), [level, noLand]);
+  const full = useMemo(() => bigLayers(level, noLand), [level, noLand]);
+  /* while it burns low the face is sad, and it smiles again when it is lit again (core sadXml) */
+  const sad = (low ?? 0) > 0;
+  const b = useMemo(
+    () =>
+      full && sad
+        ? { ...full, layers: { ...full.layers, still: sadXml(full.layers.still), fig: sadXml(full.layers.fig), front: sadXml(full.layers.front) } }
+        : full,
+    [full, sad],
+  );
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;

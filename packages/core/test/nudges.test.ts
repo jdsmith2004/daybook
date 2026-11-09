@@ -52,9 +52,9 @@ describe('the fire burning low (flame-low.ts)', () => {
     const p = back(did(tk));
     expect(p.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-21', '2026-11-13']);
     const q = back(did(core.addDays(tk, -1)));
-    expect(q.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-19', '2026-10-21', '2026-11-13']);
+    expect(q.map((n) => n.d)).toEqual(['2026-10-16', '2026-10-17', '2026-10-21', '2026-11-13']);
     expect(q[0]).toMatchObject({ title: core.LOW_NOTES[1].t });
-    expect(q[1]).toMatchObject({ id: 'back-5', title: core.LOW_NOTES[3].t });
+    expect(q[1]).toMatchObject({ id: 'back-3', title: core.LOW_NOTES[3].t });
     expect(q[2].title).toBe(core.NUDGE_WORDS.back[1].t);
     /* left on the day of a slip: the tender words, and no embers note */
     expect(back(slip({}, tk, '21:30')).map((n) => n.title)).toEqual(core.NUDGE_WORDS.tender.map((x) => x.t));

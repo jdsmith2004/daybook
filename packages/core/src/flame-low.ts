@@ -3,8 +3,9 @@
    - Drifting is days in a row with none of their part done: anything that earns points (a lesson, a check-in, an urge ridden out, an honest log,
      a calm move...), a tool, a talk-through, a feeling named. Opening the app alone is not their part. A slip logged honestly is their part, so
      honesty never dims the fire.
-   - It never goes all the way out. Two days with nothing done: it burns lower. Three or four: it smoulders and smokes. Five or more: it is down to
-     embers, smoke and sputters, with one ember always glowing.
+   - It never goes all the way out. One day with nothing done: a warning, and the fire still burns fully. Two days: it burns lower. Three or more:
+     it is down to embers, smokes and sputters, with one ember always glowing. (First 2, 3 and 5 days; the owner found that too slow, November 9,
+     2026, and wanted what showed at six days to show at three, so the smouldering step between is passed straight through.)
    - The first thing done again lights it fully, at once, with the re-light moment (components/big-flame.tsx).
    - The words are on Today only (components/hero.tsx), and they are about the next choice, never about who the person is.
    Only the fire's glow changes: level, form, points and badges never move. And never in the hours after a slip (SLIP_HOURS, the same 72 hours
@@ -15,9 +16,9 @@ import { addDays, dayPoints, diffDays, evMs, sumDay } from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
 /** days in a row with nothing done before the fire burns lower, smoulders, and is down to embers */
-export const LOW_AT: [number, number, number] = [2, 3, 5];
+export const LOW_AT: [number, number, number] = [2, 3, 3];
 /** how low each step burns, 0 burning fully and 1 as low as it goes */
-export const LOW_OF = [0, 0.4, 0.7, 1] as const;
+export const LOW_OF = [0, 0.6, 0.8, 1] as const;
 /** the farthest back it looks: past this it is as low as it goes anyway */
 const LOOK_BACK = 14;
 
@@ -73,10 +74,11 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
 /** the words on Today while it burns low: firm and plain, about the next choice */
 export function lowWords(f: FireLow): { h: string; p: string } | null {
   if (!f.step) return null;
-  const days = f.idle + ' days with nothing done';
-  if (f.step === 1) return { h: 'You are dimming your fire', p: days };
-  if (f.step === 2) return { h: 'Your fire is smouldering', p: days + '. It goes lower each day.' };
-  return { h: 'Your fire is down to embers', p: days + '. One ember still glows.' };
+  /* why it is low, and the one thing that lights it again, right above the next step */
+  const why = 'Because nothing was done for ' + f.idle + ' days. Do one thing today, like the lesson below, and it lights again.';
+  if (f.step === 1) return { h: 'You are dimming your fire', p: why };
+  if (f.step === 2) return { h: 'Your fire is smouldering', p: why };
+  return { h: 'Your fire is down to embers', p: why };
 }
 /** the quieter line on Today the day before it burns lower */
 export const LOW_WARN = 'Nothing done yesterday. Do one thing today, or your fire burns lower tomorrow.';
@@ -137,6 +139,23 @@ export function lowXml(xml: string, low: number): string {
     .replace(/#([0-9A-Fa-f]{6})\b/g, (m) => lowHex(m, low))
     .replace(/#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])\b(?![0-9A-Fa-f])/g, (_, r: string, g: string, b: string) => lowHex('#' + r + r + g + g + b + b, low))
     .replace(/(fill|stroke|stop-color)="(white|#fff)"/gi, (_, a: string) => `${a}="${lowHex('#FFFFFF', low)}"`);
+}
+
+/* ---------- the face of a fire burning low ----------
+   While it burns low the flame is sad, not smiling: its brows lift in the middle and its smile turns down (the owner, November 9, 2026). The
+   face is drawn the same way in every form (flame-art.ts, face()), so its brows and mouth are swapped where they are. When it is lit again it
+   smiles again. */
+const FACE_SAD: [string, string][] = [
+  ['M-27 63Q-20 57.5 -12 60', 'M-27 64Q-20 61.5 -12 56.5'],
+  ['M12 60Q20 57.5 27 63', 'M12 56.5Q20 61.5 27 64'],
+  ['M-6.5 101Q0 107.5 6.5 101', 'M-6.5 105Q0 99 6.5 105'],
+];
+/** a drawing with the flame's face made sad */
+export function sadXml(xml: string): string {
+  if (!xml) return xml;
+  let out = xml;
+  for (const [a, b] of FACE_SAD) out = out.split('"' + a + '"').join('"' + b + '"');
+  return out;
 }
 
 /* ---------- smoke ----------

@@ -11,20 +11,19 @@ const lessons = (keys: string[]): Days => Object.fromEntries(keys.map((k, i) => 
 const opened = (d: Days, keys: string[]): Days => ({ ...d, ...Object.fromEntries(keys.map((k) => [k, core.normDay({ p: { o: true } }, k)])) });
 
 describe('what counts as drifting', () => {
-  it('one day with nothing done is fine; two burn lower, three smoulder, five are down to embers', () => {
+  it('one day with nothing done is a warning; two burn lower, three or more are down to embers', () => {
     const at = (last: string) => core.fireLow(lessons([last]), st, tk, now);
     expect(at('2026-10-19').step).toBe(0);
     expect(at('2026-10-18')).toMatchObject({ step: 0, idle: 1 });
     expect(at('2026-10-17')).toMatchObject({ step: 1, idle: 2, low: core.LOW_OF[1] });
-    expect(at('2026-10-16')).toMatchObject({ step: 2, idle: 3 });
-    expect(at('2026-10-15')).toMatchObject({ step: 2, idle: 4 });
+    expect(at('2026-10-16')).toMatchObject({ step: 3, idle: 3, low: 1 });
     expect(at('2026-10-14')).toMatchObject({ step: 3, idle: 5, low: 1 });
     expect(at('2026-10-02')).toMatchObject({ step: 3 });
   });
 
   it('opening the app is not doing your part', () => {
-    const d = opened(lessons(['2026-10-15']), ['2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19']);
-    expect(core.fireLow(d, st, tk, now).step).toBe(2);
+    const d = opened(lessons(['2026-10-17']), ['2026-10-18', '2026-10-19']);
+    expect(core.fireLow(d, st, tk, now).step).toBe(1);
   });
 
   it('a check-in, an urge ridden out, a tool or a feeling named counts', () => {
@@ -70,7 +69,10 @@ describe('the words', () => {
   it('are firm and plain, about the next choice', () => {
     expect(core.lowWords({ step: 0, low: 0, idle: 1, was: 0, warn: false })).toBeNull();
     expect(core.lowWords({ step: 1, low: 0.4, idle: 2, was: 1, warn: false })!.h).toBe('You are dimming your fire');
-    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3, warn: false })!.p).toBe('6 days with nothing done. One ember still glows.');
+    /* it says why, and what lights it again */
+    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3, warn: false })!.p).toBe(
+      'Because nothing was done for 6 days. Do one thing today, like the lesson below, and it lights again.',
+    );
     for (const step of [1, 2, 3] as const) {
       const w = core.lowWords({ step, low: 1, idle: 5, was: step, warn: false })!;
       expect(w.h + w.p).not.toMatch(/n't|addict|failure|weak|lazy/i);
@@ -120,5 +122,22 @@ describe('the colors of a fire burning low', () => {
       expect(core.sputterAt(t, 0)).toBe(1);
     }
     expect(Math.max(...[0.5, 1, 1.5, 2].map((t) => core.smokeAt(0, t, 1, 60, 30, 1)[3]))).toBeGreaterThan(0.1);
+  });
+});
+
+describe('the face of a fire burning low', () => {
+  it('is sad in every form: the smile turns down and the brows lift in the middle', () => {
+    let seen = 0;
+    for (const level of [1, 5, 10, 19, 30, 45]) {
+      const l = core.emblemLayers(level, true);
+      if (!l) continue;
+      const xml = l.still + l.fig;
+      if (!xml.includes('M-6.5 101Q0 107.5 6.5 101')) continue;
+      seen++;
+      const sad = core.sadXml(xml);
+      expect(sad).not.toContain('M-6.5 101Q0 107.5 6.5 101');
+      expect(sad).toContain('M-6.5 105Q0 99 6.5 105');
+    }
+    expect(seen).toBeGreaterThan(3);
   });
 });

@@ -5,7 +5,7 @@
    One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
    This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
    what Daybook is for. */
-import { HStack, Image, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { HStack, Image, Link, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
 import {
   activityBackgroundTint,
   aspectRatio,
@@ -113,6 +113,48 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
       {props.sub ? text(props.sub, 15, WARM) : null}
     </VStack>
   );
+  /* asleep after Goodnight (no short time): no bar and no clock, only the flame resting, and SOS one tap away (the owner, November 9,
+     2026: "when I go to sleep I want an SOS button") */
+  const asleep = !props.short;
+  const sos = (
+    <Link destination="daybook://sos">
+      <Text
+        modifiers={[
+          font({ size: 15, weight: 'bold', design: 'rounded' }),
+          foregroundStyle(NIGHT),
+          padding({ horizontal: 18, vertical: 8 }),
+          backgroundOverlay({ color: WARM }),
+          clipShape('capsule'),
+        ]}>
+        SOS
+      </Text>
+    </Link>
+  );
+  const rest = (big: number, img: number) => (
+    <HStack spacing={12}>
+      {words(big)}
+      <Spacer />
+      <VStack spacing={8}>
+        {flame(img)}
+        {sos}
+      </VStack>
+    </HStack>
+  );
+  if (asleep)
+    return {
+      banner: <VStack modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : NIGHT), padding({ all: 16 })]}>{rest(24, 56)}</VStack>,
+      compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
+      compactTrailing: glyph(15),
+      minimal: flame(22),
+      expandedBottom: (
+        <HStack spacing={10} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
+          {flame(36)}
+          {text(props.line, 19, '#FFFFFF', 'bold')}
+          <Spacer />
+          {sos}
+        </HStack>
+      ),
+    };
   return {
     /* after the ride card: the words on the left, the mascot big on the right as the picture, then the bar and its times */
     banner: (
@@ -136,11 +178,12 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
     expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{brand}</VStack>,
     expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 80 })]}>{left(15, WARM)}</VStack>,
     expandedBottom: (
-      <VStack spacing={8} modifiers={[padding({ horizontal: 8, top: 2, bottom: 6 })]}>
-        <HStack spacing={12}>
-          {words(22, false)}
+      <VStack spacing={6} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
+        {/* the open island is short: one line and a small mascot, so the bar and its times are never cut off */}
+        <HStack spacing={10}>
+          {text(props.line, 19, '#FFFFFF', 'bold')}
           <Spacer />
-          {flame(48)}
+          {flame(30)}
         </HStack>
         {bar}
         {foot(13)}

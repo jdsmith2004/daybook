@@ -1,6 +1,6 @@
 # What is planned next
 
-## What are you quitting: porn, gambling or another habit (the owner, November 8, 2026; built on `claude/habit-choice-ac4418`, not merged)
+## What are you quitting: porn, alcohol, gambling or another habit (the owner, November 8 and 9, 2026; built on `claude/habit-choice-ac4418`, not merged)
 
 **The ask.** Let a person pick what they are quitting in setup: porn (still the main one, and the marketing stays about porn),
 gambling, or another habit. The owner's call: build it now, kept simple. The words switch, the lessons not written for the
@@ -47,11 +47,18 @@ need "less", not zero, and binge eating should never get an abstinence frame; no
   national number), Gamblers Anonymous and Gam-Anon, BetBlocker, Gamban, a bank block, state self-exclusion; for another habit
   AA, NA, Marijuana Anonymous, Nicotine Anonymous and the doctor line. The porn groups and filters show for porn only.
 - The five questions a month on (the Brief Pornography Screen) are for porn only; answers kept from before stay on Pattern.
+- Alcohol (the owner, November 9, 2026) is its own choice: "Quit drinking", "struggling with drinking", "Drink" in the loop.
+  Stopping heavy drinking all at once can bring seizures, so the doctor line (`ALCOHOL_MEDICAL`) is the flame's first words on
+  the years question, and it sits in Settings and in Get help beside SAMHSA. Its groups are AA and Al-Anon; its safety net and
+  phone page are about distance from a drink (none at home, the drink picked before going out, no delivery apps). It gets the
+  same 33 lessons as gambling. "Another habit" keeps its doctor line for drugs.
 - Found on the way: the faith picked in setup (`creed`) was never kept, so everyone heard the plain voice until Settings. It
   is in `OB_KEYS` now.
 
 **Left for later.**
 
+- Alcohol lessons: drinking is mostly social, so a script for turning down a drink, a lesson on the evening routine it
+  filled, and sleep in the first weeks. The 33 kept lessons already lean on alcohol and AA research for much of their science.
 - Gambling lessons (high): chasing losses, near misses and "due" thinking, money access, debt and shame about money, a big win
   as a risk, telling someone. Then gambling versions of the 21 one-card lessons, as a `vo`-style overlay per habit
   (lesson-turns.ts already does this for the faith voices). Roughly 2 to 3 sessions for the first 8 gambling lessons.

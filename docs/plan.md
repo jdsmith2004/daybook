@@ -94,6 +94,11 @@ hours, so the card is mostly empty. Apple Health fills it.
 3. **Kept on this phone only.** Nights from Health live in their own store on the device, never in `Day`, so they are never
    synced, backed up to the safe copy, counted in the anonymous counts, or sent anywhere. What the person types in the check-in
    still wins over Health for that night. The privacy page says this in the same change.
+   **Health answers the sleep question (the owner, November 8, 2026: "we won't ask them about it").** Since November 8 the
+   check-in asks "How long did you sleep last night?" as its own step. Once Health is connected, that step is left out
+   whenever Health has the night, so the check-in is back to three numbers; it is asked only on a night Health missed (the
+   watch was off, or charging). The night's hours from Health are not shown or copied into the check-in, so nothing from
+   Health reaches the synced log.
 4. **The picture.** The hard-days card draws the nights as a field of small moons, one per night, its fill the hours slept;
    the nights before a slip are the ones with a small flame under them. Two moons side by side lead the card, the usual night
    and the night before a slip, sized by hours: the picture reads in two seconds, and the line under it is the existing one
@@ -134,7 +139,7 @@ one quick choice, so the card fills for people with no watch too.
    never reach sync or the safe copy). Unit tests, including that `Day` and the sync payload never hold a Health night.
 3. The library, the config plugin (read only, no background), a `health.ts` with a web and Android stub, and reading 90 nights
    on open (high: native build, permissions).
-4. The ask on Pattern and in More, and the moons on the hard-days card (medium: screens), shown on the simulator before it
+4. The ask on Pattern and in More, the check-in leaving out the sleep step when Health has the night, and the moons on the hard-days card (medium: screens), shown on the simulator before it
    merges.
 5. The privacy page, the App Store privacy label (Health and Fitness, not linked, not tracking) and the review notes (medium).
 

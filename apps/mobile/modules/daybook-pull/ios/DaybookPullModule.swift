@@ -133,7 +133,7 @@ public final class DaybookPullModule: Module {
         applications: s.applicationTokens, categories: s.categoryTokens, webDomains: s.webDomainTokens,
         threshold: DateComponents(minute: max(1, minutes)))
       do {
-        try center.startMonitoring(DeviceActivityName("pull.open"), during: schedule, events: [DeviceActivityEventName("open"): event])
+        try center.startMonitoring(DeviceActivityName("pull.open"), during: schedule, events: [DeviceActivityEvent.Name("open"): event])
       } catch {
         /* Apple would not watch the minutes: the pause comes back at once rather than never */
         self.shield(s)
@@ -185,7 +185,7 @@ public final class DaybookPullModule: Module {
         intervalStart: DateComponents(hour: 0, minute: 0), intervalEnd: DateComponents(hour: 23, minute: 59), repeats: true)
       do {
         try center.startMonitoring(
-          DeviceActivityName("pull.long"), during: day, events: [DeviceActivityEventName("long"): ev(DateComponents(hour: long))])
+          DeviceActivityName("pull.long"), during: day, events: [DeviceActivityEvent.Name("long"): ev(DateComponents(hour: long))])
       } catch { ok = false }
     }
     if hard {
@@ -197,7 +197,7 @@ public final class DaybookPullModule: Module {
           intervalEnd: DateComponents(hour: endH, minute: 0, weekday: endWd),
           repeats: true)
         var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
-        for (i, m) in hardAt.enumerated() { events[DeviceActivityEventName(String(i + 1))] = ev(DateComponents(minute: m)) }
+        for (i, m) in hardAt.enumerated() { events[DeviceActivityEvent.Name(String(i + 1))] = ev(DateComponents(minute: m)) }
         do {
           try center.startMonitoring(DeviceActivityName("pull.hard.\(wd)"), during: w, events: events)
         } catch { ok = false }

@@ -83,6 +83,7 @@ import { Text } from '@/components/text';
 import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine } from '@/components/trail-art';
 import { Button } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { NATIVE } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -818,7 +819,8 @@ export function Walk({
       onBack={part === 'open' ? null : back}
       onClose={close}
       topRight={part === 'open' ? null : passedNow(at)}
-      dots={{ n: 10, i: DOT[part], label: 'Part ' + (DOT[part] + 1) + ' of 10' }}>
+      dots={{ n: 10, i: DOT[part], label: 'Part ' + (DOT[part] + 1) + ' of 10' }}
+      backdrop={<WalkStars lit={DOT[part]} />}>
       <Stage key={part + round} dir={dir}>
         <View style={s.words}>{words}</View>
         {middle ? <Middle>{middle}</Middle> : <View style={s.grow} />}
@@ -1061,6 +1063,8 @@ function Coach({
   children?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  /* the flame takes the room the page leaves it, as in a lesson, and never less than it had */
+  const [room, setRoom] = useState(0);
   const c = beat ? WALK_COACH[beat] : null;
   const reason = why || c?.why || '';
   const papers = src || (why ? [] : c?.src || []);
@@ -1070,7 +1074,9 @@ function Coach({
       <Rise key={open ? 'why' : say}>
         <Bubble text={open ? reason : say} />
       </Rise>
-      <BigFlame level={level} size={big ? 132 : 84} pulse={pulse} />
+      <View style={s.flameRoom} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
+        <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 170 : 150, room || 0)))} pulse={pulse} />
+      </View>
       {reason ? (
         <Pressable
           accessibilityRole="button"
@@ -1140,10 +1146,79 @@ function Papers({ keys }: { keys: string[] }) {
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
+/* the walk's own sky: the night of the trail, with a few faint stars, and one bright star lit for each part walked, so the
+   sky fills as the urge is walked down (the owner, November 9, 2026: the lessons for inspiration, the walk its own) */
+const FAINT: [number, number, number][] = [
+  [8, 9, 2],
+  [27, 4, 2],
+  [49, 11, 2],
+  [71, 6, 2],
+  [90, 13, 2],
+  [15, 27, 2],
+  [58, 31, 2],
+  [86, 36, 2],
+  [33, 48, 2],
+  [6, 63, 2],
+  [77, 58, 2],
+];
+const BRIGHT: [number, number][] = [
+  [20, 14],
+  [38, 8],
+  [63, 16],
+  [82, 9],
+  [11, 40],
+  [44, 30],
+  [93, 26],
+  [24, 56],
+  [67, 44],
+  [52, 60],
+];
+function WalkStars({ lit }: { lit: number }) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {FAINT.map(([x, y, r], i) => (
+        <View key={'f' + i} style={[s.star, { left: `${x}%`, top: `${y}%`, width: r, height: r, borderRadius: r / 2, opacity: 0.35 }]} />
+      ))}
+      {BRIGHT.map(([x, y], i) => (
+        <Star key={'b' + i} x={x} y={y} on={i < lit} />
+      ))}
+    </View>
+  );
+}
+function Star({ x, y, on }: { x: number; y: number; on: boolean }) {
+  const a = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: on ? 1 : 0, duration: on ? 700 : 200, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }).start();
+  }, [on, a]);
+  const scale = a.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] });
+  return (
+    <Animated.View
+      style={[
+        s.star,
+        {
+          left: `${x}%`,
+          top: `${y}%`,
+          width: 4,
+          height: 4,
+          borderRadius: 2,
+          opacity: a,
+          transform: [{ scale }],
+          shadowColor: '#FFE6A0',
+          shadowOpacity: 0.9,
+          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 0 },
+        },
+      ]}
+    />
+  );
+}
+
 const s = StyleSheet.create({
   center: { alignItems: 'center' },
   pair: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
-  coach: { alignSelf: 'stretch', alignItems: 'center', gap: 8 },
+  coach: { alignSelf: 'stretch', alignItems: 'center', gap: 8, flexGrow: 1 },
+  flameRoom: { flexGrow: 1, minHeight: 84, maxHeight: 180, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   whyB: { paddingVertical: 2 },
   whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },
   whyLine: { marginTop: 8, gap: 6 },

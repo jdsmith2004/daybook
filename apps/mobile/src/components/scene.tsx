@@ -33,6 +33,7 @@ export function SceneFrame({
   pin,
   sheet,
   pinSheet,
+  backdrop,
   children,
 }: {
   title: string;
@@ -56,6 +57,8 @@ export function SceneFrame({
   sheet?: ReactNode;
   /** the sheet stays put at the bottom while the card above it scrolls (a long list over the main button) */
   pinSheet?: boolean;
+  /** something drawn on the sky, behind the page (the walk's stars) */
+  backdrop?: ReactNode;
   children: ReactNode;
 }) {
   const c = useTheme();
@@ -77,6 +80,7 @@ export function SceneFrame({
   const body = (
     <View style={{ flex: 1 }}>
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
+      {backdrop}
       <ScrollView
         ref={scroll}
         /* it starts under the clock, so a long page scrolls away beneath it and never through it. The fire's short pages let their

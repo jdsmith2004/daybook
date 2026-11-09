@@ -40,7 +40,7 @@ import {
   setHabit,
   habitOf,
   HABIT_NAME,
-  HABIT_MEDICAL,
+  habitMedical,
   OB_HABIT,
 } from '@daybook/core';
 import Constants from 'expo-constants';
@@ -453,9 +453,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                       ))}
                     </Chips>
                   </Field>
-                  {habitOf(st) === 'other' ? (
+                  {habitMedical(habitOf(st)) ? (
                     <T v="small" tone="muted">
-                      {HABIT_MEDICAL}
+                      {habitMedical(habitOf(st))}
                     </T>
                   ) : null}
                 </>,

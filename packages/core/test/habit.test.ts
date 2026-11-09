@@ -63,6 +63,23 @@ describe('the habit', () => {
     const r = core.obSave({ habit: 'gambling', goal: 'now' }, null, null, TK, 0);
     expect(r.st.goal).toBe('Quit gambling, starting tomorrow. Log honestly, slips included.');
   });
+  it('alcohol has its own words and a doctor line before stopping', () => {
+    expect(core.habitOf(withA({ habit: 'alcohol' }))).toBe('alcohol');
+    const page = (id: string) => core.obPages({ habit: 'alcohol' }).find((p) => p.id === id)!;
+    expect(page('years').h).toBe('How long have you been struggling with drinking?');
+    expect(page('freq').h).toBe('In a typical week, how often do you drink?');
+    expect(page('years').sub).toBe(core.ALCOHOL_MEDICAL);
+    expect(core.obSay('years', false, 'alcohol')).toBe(core.ALCOHOL_MEDICAL);
+    expect(core.habitMedical('porn')).toBeNull();
+    expect(core.habitMedical('gambling')).toBeNull();
+    const ids = core.obPages({ habit: 'alcohol' }).map((p) => p.id);
+    ['b0', 'heard'].forEach((id) => expect(ids).not.toContain(id));
+    core.obPages({ habit: 'alcohol' }).forEach((p) => expect(String(p.h || '') + (p.sub || '')).not.toMatch(/porn/i));
+    expect(core.obSave({ habit: 'alcohol', goal: 'now' }, null, null, TK, 0).st.goal).toBe('Quit drinking, starting tomorrow. Log honestly, slips included.');
+    expect(core.lessonPathFor(withA({ habit: 'alcohol' })).map((L) => L.id)).toEqual(core.lessonPathFor(withA({ habit: 'gambling' })).map((L) => L.id));
+    expect(core.safetyFor(1, ['x', 'y'], 'alcohol')[0]).toBe('No alcohol in the house');
+    expect(core.OB_REPLY.habit.alcohol).toBeTruthy();
+  });
   it('Settings changes it, and only once setup has run', () => {
     const st = withA({ habit: 'porn' });
     expect(core.habitOf(core.setHabit(st, 'gambling'))).toBe('gambling');

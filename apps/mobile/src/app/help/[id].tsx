@@ -3,7 +3,9 @@
    pageGroups, pageFaith, pagePhone, pageSay and pageSources. */
 import {
   fmtClock,
-  HABIT_MEDICAL,
+  habitMedical,
+  HABIT_NOUN,
+  type Habit,
   habitOf,
   habitSay,
   HELP_PAGES,
@@ -141,9 +143,9 @@ function People() {
           </View>
         </Card>
       </Sec>
-      {habit === 'other' ? (
+      {habitMedical(habit) ? (
         <Sec title="Stopping safely">
-          <P>{HABIT_MEDICAL} The SAMHSA helpline above can point you to care near you.</P>
+          <P>{habitMedical(habit)} The SAMHSA helpline above can point you to care near you, any hour.</P>
         </Sec>
       ) : null}
       {habit !== 'porn' ? null : (
@@ -369,6 +371,18 @@ function Groups() {
             <P>For the family and friends of someone who gambles. Worth passing on to a partner or a parent who is hurting too.</P>
           </HCard>
         </>
+      ) : habit === 'alcohol' ? (
+        <>
+          <HCard title="Alcoholics Anonymous" links={<Ext url="https://www.aa.org/find-aa" label="Find a meeting" />}>
+            <P>
+              A free fellowship of people who share their experience to stop drinking, built on 12 steps. Meetings are in person and online, every day of the
+              week. The only requirement is a desire to stop drinking.
+            </P>
+          </HCard>
+          <HCard title="Al-Anon" links={<Ext url="https://al-anon.org/" label="Al-Anon" />}>
+            <P>For the family and friends of someone who drinks. Worth passing on to a partner or a parent who is hurting too.</P>
+          </HCard>
+        </>
       ) : habit === 'other' ? (
         <HCard
           title="A fellowship for your habit"
@@ -417,7 +431,7 @@ function Groups() {
       <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
         <P>
           A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
-          the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'gambling' ? 'gambling' : 'your habit'}.
+          the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'other' ? 'your habit' : HABIT_NOUN[habit]}.
         </P>
       </HCard>
       <HCard title="Your first meeting">
@@ -528,7 +542,7 @@ function Phone({ sub: want }: { sub?: string }) {
   const { snap } = useStore();
   const [sub, setSub] = useSub('phone', want);
   const habit = habitOf(snap.settings);
-  if (habit !== 'porn') return <PhoneHabit gambling={habit === 'gambling'} />;
+  if (habit !== 'porn') return <PhoneHabit habit={habit} />;
   return (
     <>
       <P>
@@ -626,16 +640,23 @@ function Phone({ sub: want }: { sub?: string }) {
   );
 }
 
-/* the phone page for gambling or another habit: the blocks that fit it, then the nights (core habit.ts) */
-function PhoneHabit({ gambling }: { gambling: boolean }) {
+/* the phone page for alcohol, gambling or another habit: the distance that fits it, then the nights (core habit.ts) */
+function PhoneHabit({ habit }: { habit: Habit }) {
   const { snap } = useStore();
   return (
     <>
-      <P>
-        A block will not remove an urge. It makes the urge take more than two taps, which buys you the time to use the pause. Do the steps once, then ask your
-        safe person to hold the passcode if you can.
-      </P>
-      {gambling ? (
+      {habit === 'alcohol' ? (
+        <P>
+          Distance will not remove an urge. It puts a drink a long walk away, which buys you the time to use the pause. Set it up on a clear day, before the
+          hard hour comes.
+        </P>
+      ) : (
+        <P>
+          A block will not remove an urge. It makes the urge take more than two taps, which buys you the time to use the pause. Do the steps once, then ask your
+          safe person to hold the passcode if you can.
+        </P>
+      )}
+      {habit === 'gambling' ? (
         <>
           <HCard
             title="Block gambling on every device"
@@ -671,6 +692,17 @@ function PhoneHabit({ gambling }: { gambling: boolean }) {
             </P>
           </HCard>
         </>
+      ) : habit === 'alcohol' ? (
+        <HCard title="Put distance between you and a drink">
+          <UL
+            items={[
+              'Pour out what is at home, or give it away. What is not in the house cannot be poured at 11 PM.',
+              'Delete the alcohol delivery apps, and change the route that walks you past the store or the bar.',
+              'Before you go out, pick the drink you will order instead: soda, tea or an alcohol-free beer.',
+              'Tell the people you drink with. Most will help, and the ones who push are worth seeing less.',
+            ]}
+          />
+        </HCard>
       ) : (
         <HCard title="Put distance between you and it">
           <UL

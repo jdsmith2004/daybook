@@ -38,7 +38,7 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { OB_CREED } from './faith';
-import { HABIT_MEDICAL, habitIn, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
+import { habitIn, habitMedical, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
 import type { CountMode, DayKey, Settings } from './types';
 
 /** the answers so far. Keys are the legacy ones (aim, freq, mins, years, tried, faith, b0..b4, costs, ownCost, when, goal, so,
@@ -397,11 +397,11 @@ export const OB_PAGES: ObPage[] = [
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env)).map((pg) => obPageIn(pg, habitIn(a)));
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
-    doctor line (habit.ts HABIT_MEDICAL) */
+    doctor line (habit.ts habitMedical) */
 function obPageIn(pg: ObPage, h: Habit): ObPage {
   if (h === 'porn' || !pg.h) return pg;
   const out = { ...pg, h: habitSay(pg.h, h) };
-  if (pg.id === 'years' && h === 'other') out.sub = HABIT_MEDICAL;
+  if (pg.id === 'years' && habitMedical(h)) out.sub = habitMedical(h)!;
   return out;
 }
 
@@ -771,12 +771,13 @@ const OB_SAY_REDO: Record<string, string> = {
 };
 /** what the flame says first on a page, or null */
 export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>
-  (redo && OB_SAY_REDO[id]) || (id === 'years' && h === 'other' ? HABIT_MEDICAL : null) || OB_SAY[id] || null;
+  (redo && OB_SAY_REDO[id]) || (id === 'years' ? habitMedical(h) : null) || OB_SAY[id] || null;
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {
   habit: {
     porn: 'Many people fight this one. You are in the right place.',
+    alcohol: 'Then we work on drinking. Every tool here is ready for it, and safety comes first.',
     gambling: 'Then we work on gambling. Every tool here is ready for it.',
     other: 'Then we work on it together. Every tool here is ready for it.',
   },

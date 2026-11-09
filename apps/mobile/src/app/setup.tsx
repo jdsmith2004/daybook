@@ -66,6 +66,7 @@ import {
   likeAskDue,
   urLastAt,
   type LikeAnswer,
+  HABIT_NOUN,
   habitSay,
   obHabit,
 } from '@daybook/core';
@@ -1221,7 +1222,7 @@ function ShowPage({ k, t, st, a, W, habit }: { k: string; t: Tone; st: Settings 
               art={[
                 'loop',
                 {
-                  n: ['Feel low', porn ? 'Use porn' : habit === 'gambling' ? 'Gamble' : 'Give in', 'Feel worse', 'Pull away'],
+                  n: ['Feel low', porn ? 'Use porn' : habit === 'gambling' ? 'Gamble' : habit === 'alcohol' ? 'Drink' : 'Give in', 'Feel worse', 'Pull away'],
                   c: 'THE LOOP',
                 },
               ]}
@@ -1233,9 +1234,9 @@ function ShowPage({ k, t, st, a, W, habit }: { k: string; t: Tone; st: Settings 
           h={
             porn
               ? 'Low mood and porn feed each other.'
-              : habit === 'gambling'
-                ? 'Low mood and gambling feed each other.'
-                : 'Low mood and a habit feed each other.'
+              : habit === 'other'
+                ? 'Low mood and a habit feed each other.'
+                : 'Low mood and ' + HABIT_NOUN[habit] + ' feed each other.'
           }
           line="The way out is people. **One text to a friend** breaks the loop."
           more={

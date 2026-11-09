@@ -2855,6 +2855,7 @@ const ICO={
  wind:'<path d="M3.5 9h10.5a2.7 2.7 0 10-2.7-2.7M3.5 13.5h15a2.7 2.7 0 11-2.7 2.7M3.5 18h6"/>',
  dots:'<circle cx="6" cy="9" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="9" r="1.7"/><circle cx="8.5" cy="15.5" r="1.7"/><circle cx="15.5" cy="15.5" r="1.7"/>',
  dice:'<rect x="4" y="4" width="16" height="16" rx="3.8"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>',
+ glass:'<path d="M7 3h10l-.8 6.5a4.2 4.2 0 0 1-8.4 0L7 3Z"/><path d="M7.4 6.5h9.2"/><path d="M12 14v6.5"/><path d="M8.5 20.5h7"/>',
  lock:'<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5"/>',
  copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 00-2-2h-7a2 2 0 00-2 2v7a2 2 0 002 2h2"/>',
  play:'<path d="M8 5.5v13l10.5-6.5z"/>',

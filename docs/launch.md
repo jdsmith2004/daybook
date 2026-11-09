@@ -193,24 +193,24 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
   > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
   > free account (email, or Sign in with Apple) opens the lessons after the first eight. Accounts can be deleted in the
-  > app: More, Settings, Sync, Delete my account (an account made with Apple asks Apple once more and revokes its token).
+  > app: More, Sync between devices, Delete my account (an account made with Apple asks Apple once more and revokes its token).
   >
   > Tips: three non-consumable in-app purchases (daybook.tip.kind $5, daybook.tip.generous $10, daybook.tip.amazing
   > $20). Any of them makes the person a supporter, which opens sync and a safe copy, and the full pattern page.
   > Restore is on the tip sheet ("I already tipped" on the sync card does the same). To try it: sign in with the demo
-  > account below, open More, Support Daybook (or Settings, Sync), and buy any tip with the sandbox account; sync then
+  > account below, open More, Support Daybook (or Sync between devices), and buy any tip with the sandbox account; sync then
   > turns on. Under the in-app tips, a second link opens the same three tips on our web page (Stripe), as allowed on the
   > United States storefront under guideline 3.1.1(a); Daybook is offered in the United States only.
   >
-  > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from Settings, Apple Health, or
+  > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from More, Apple Health, or
   > the hard-days card on Pattern. It fills the check-in's sleep question and shows how their nights compare before days
   > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
-  > for anything else. To see it, connect Apple Health in Settings with sleep data in the simulator's Health app.
+  > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
   >
   > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
-- **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Settings, then Sync), with a
+- **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Sync between devices), with a
   new email address you control, and type its email and password into App Review Information yourself. Never put that
   password in a chat, a commit or this repository. Make it new (after October 24, 2026) and do not tip with it: then
   sync shows as locked and the reviewer can buy a tip with their sandbox account and watch it open. An older account is

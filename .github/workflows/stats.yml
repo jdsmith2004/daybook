@@ -22,6 +22,8 @@ jobs:
   stats:
     name: Stats
     runs-on: ubuntu-latest
+    # the stats role trusts only this environment (infra/bootstrap), which GitHub limits to main
+    environment: stats
     permissions:
       contents: read
       id-token: write

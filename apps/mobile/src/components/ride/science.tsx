@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useCareSettings } from '@/lib/store';
 import { font, NightContext, useSkyTheme, type Sky } from '@/lib/theme';
 
 export const hasScience = (id: string) => !!rideScience(id);
@@ -34,7 +35,7 @@ export function ScienceButton({ onPress, sky }: { onPress: () => void; sky: Sky 
 export function ScienceSheet({ id, name, open, night, onClose }: { id: string; name: string; open: boolean; night: boolean; onClose: () => void }) {
   const c = useSkyTheme(night ? 'night' : 'violet');
   const inset = useSafeAreaInsets();
-  const sci = rideScience(id);
+  const sci = rideScience(id, useCareSettings());
   return (
     <Modal visible={open && !!sci} transparent animationType="slide" onRequestClose={onClose}>
       <NightContext.Provider value={night}>

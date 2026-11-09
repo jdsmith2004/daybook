@@ -1,4 +1,4 @@
-/* Anonymous counts: basic ones without asking, the rest after yes, nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
+/* Anonymous counts: all without asking, nothing while off, only the list's names, the bands, comebacks, setup, the batch and the server's check. */
 import { describe, expect, it } from 'vitest';
 import { addEvent } from '../src/mutate';
 import { OB_PAGES } from '../src/setup';
@@ -7,13 +7,13 @@ import {
   pulseAdd,
   pulseAnswer,
   pulseBand,
-  pulseBasic,
   pulseBatch,
   pulseClean,
   pulseKeys,
   pulseMeaning,
   pulseNew,
   pulseNorm,
+  pulseOnce,
   pulseOpened,
   pulseSent,
   pulseSetup,
@@ -47,20 +47,14 @@ describe('counting', () => {
     expect(pulseOpened(s, {}, D0).days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
   });
-  it('before the person says yes, only the basic counts are sent, and the rest waits on the device', () => {
+  it('with nothing asked, every count is sent (the owner, November 4, 2026), and nothing is left behind', () => {
     let s = pulseAdd(pulseNew(D0), 'sos', D0);
-    expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
     s = pulseSetup(pulseOpened(s, {}, D0), 2, true);
     const b = pulseBatch(s, '2026-10-25', 'ios', '1.0.0')!;
-    expect(b.days[0].c).toEqual({ act_0: 1, setup_hello: 1, setup_how: 1, setup_aim: 1, setup_done: 1 });
-    for (const k of Object.keys(b.days[0].c)) expect(pulseBasic(k), k).toBe(true);
+    expect(b.days[0].c).toEqual({ sos: 1, act_0: 1, setup_hello: 1, setup_how: 1, setup_habit: 1, setup_done: 1 });
     s = pulseSent(s, b);
-    expect(s.days[D0]).toEqual({ sos: 1 });
+    expect(s.days).toEqual({});
     expect(pulseBatch(s, '2026-10-25', 'ios', '1.0.0')).toBeNull();
-    expect(pulseBatch(pulseAnswer(s, true, '2026-10-25'), '2026-10-25', 'ios', '1.0.0')!.days[0].c).toEqual({ sos: 1 });
-  });
-  it('the basic counts are only the day opened and setup', () => {
-    for (const k of pulseKeys()) expect(pulseBasic(k), k).toBe(k.startsWith('act_') || k.startsWith('setup_'));
   });
   it('every name has plain words for the privacy page', () => {
     for (const k of pulseKeys()) expect(pulseMeaning(k), k).not.toBe(k);
@@ -93,7 +87,7 @@ describe('the bands', () => {
     s = pulseOpened(s, log, '2026-10-26');
     expect(s.days['2026-10-26']).toEqual({ act_2_6: 1 });
     const later = pulseOpened(on(), log, '2026-10-30');
-    expect(later.days['2026-10-30']).toEqual({ act_7_13: 1, back_4_7: 1 });
+    expect(later.days['2026-10-30']).toEqual({ act_7_13: 1, ret_7: 1, back_4_7: 1 });
   });
   it('a slip from before Daybook was opened here is not a comeback', () => {
     const log = addEvent({}, '2026-10-01', 'slipped', '23:00').days;
@@ -137,6 +131,41 @@ describe('sending', () => {
     s = pulseAdd(pulseSetup(pulseSent(s, b), 4), 'sos', '2026-10-23');
     b = pulseBatch(s, '2026-10-24', 'web', '1')!;
     expect(Object.keys(b.days[0].c).filter((k) => k.startsWith('setup_'))).toEqual(OB_PAGES.slice(3, 5).map((p) => 'setup_' + p.id));
+  });
+  it('as the app goes to the background, today so far goes once, and nothing is counted twice', () => {
+    let s = pulseOpened(pulseSetup(pulseNew(D0), 2), {}, D0);
+    s = pulseOnce(pulseAdd(s, 'sos', D0), 'tab_more', D0);
+    /* today so far, setup included, goes the same day */
+    let b = pulseBatch(s, D0, 'ios', '1', true)!;
+    expect(b.days).toEqual([{ d: D0, c: { act_0: 1, sos: 1, tab_more: 1, setup_hello: 1, setup_how: 1, setup_habit: 1 } }]);
+    s = pulseSent(s, b, D0);
+    expect(pulseBatch(s, D0, 'ios', '1', true)).toBeNull();
+    expect(pulseOpened(s, {}, D0)).toEqual(s);
+    /* later today: the rest goes after the day is over, the once-a-day ones are not added again */
+    s = pulseOnce(pulseAdd(s, 'sos', D0), 'tab_more', D0);
+    b = pulseBatch(s, '2026-10-23', 'ios', '1')!;
+    expect(b.days).toEqual([{ d: D0, c: { sos: 1 } }]);
+  });
+  it('a count made while a batch is on its way stays, to go next time', () => {
+    let s = pulseAdd(on(), 'sos', D0);
+    const b = pulseBatch(s, '2026-10-23', 'ios', '1')!;
+    s = pulseSent(pulseAdd(s, 'sos', D0), b);
+    expect(s.days[D0]).toEqual({ sos: 1 });
+  });
+  it('a week and a month after the first open are each counted once', () => {
+    let s = pulseOpened(pulseNew(D0), {}, '2026-10-29');
+    expect(s.days['2026-10-29']).toEqual({ act_7_13: 1, ret_7: 1 });
+    s = pulseOpened(s, {}, '2026-10-30');
+    expect(s.days['2026-10-30']).toEqual({ act_7_13: 1 });
+    s = pulseOpened(s, {}, '2026-11-25');
+    expect(s.days['2026-11-25']).toEqual({ act_30: 1, ret_30: 1 });
+    expect(pulseNorm(JSON.parse(JSON.stringify(s)), '2026-11-25').ret).toEqual(['ret_7', 'ret_30']);
+  });
+  it('counts kept before November 4, 2026 without a yes stay unsent, except the day opened', () => {
+    const s = pulseNorm({ on: null, first: D0, days: { [D0]: { act_0: 1, sos: 2 } } }, D0);
+    expect(s.days).toEqual({ [D0]: { act_0: 1 } });
+    expect(pulseNorm({ on: true, first: D0, days: { [D0]: { act_0: 1, sos: 2 } } }, D0).days).toEqual({ [D0]: { act_0: 1, sos: 2 } });
+    expect(pulseNorm(JSON.parse(JSON.stringify(pulseAdd(pulseNew(D0), 'sos', D0))), D0).days).toEqual({ [D0]: { sos: 1 } });
   });
   it('reading back a broken state starts fresh', () => {
     expect(pulseNorm(null, D0)).toEqual(pulseNew(D0));
@@ -212,11 +241,29 @@ describe('the summary', () => {
   });
 });
 
+it('the privacy page lists the setup pages in setup order (the Stats report reads the funnel from it)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../../../apps/mobile/public/privacy.html', import.meta.url), 'utf8');
+  const m = html.match(/<code>setup_<\/code> and a setup page's name \(([^)]*)\)/)!;
+  /* the last page, done, is setup_done, listed apart as finished */
+  expect(m[1].split(/,\s*/)).toEqual(OB_PAGES.map((p) => p.id).filter((id) => id !== 'done'));
+});
+
 it('the privacy page lists every name a count can have', async () => {
   const { readFileSync } = await import('node:fs');
   const html = readFileSync(new URL('../../../apps/mobile/public/privacy.html', import.meta.url), 'utf8');
   for (const k of pulseKeys()) {
-    const name = k.startsWith('tool_') ? k.slice(5) : k.startsWith('setup_') && k !== 'setup_done' ? k.slice(6) : k;
-    expect(html.includes(k.startsWith('tool_') || (k.startsWith('setup_') && k !== 'setup_done') ? name : '<code>' + k + '</code>'), k).toBe(true);
+    /* the names in families are listed by their parts: the prefix, and each tool, setup page, lesson or reminder kind */
+    const [, a, b] = k.split('_');
+    const parts = k.startsWith('tool_')
+      ? [k.slice(5).replace(/_open$/, ''), ...(k.endsWith('_open') ? ['<code>_open</code>'] : [])]
+      : k.startsWith('setup_') && k !== 'setup_done'
+        ? [k.slice(6)]
+        : k.startsWith('ld_')
+          ? ['<code>ld_</code>', 'l1 to l' + [...pulseKeys()].filter((x) => x.startsWith('ld_')).length]
+          : k.startsWith('nt_')
+            ? ['<code>nt_</code>', a, ...(b ? ['<code>_' + b + '</code>'] : [])]
+            : ['<code>' + k + '</code>'];
+    for (const p of parts) expect(html.includes(p), k + ': ' + p).toBe(true);
   }
 });

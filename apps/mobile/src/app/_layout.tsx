@@ -5,7 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
-import { nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, trailLater, trailLeave, trailNoteKeep, trailNotes } from '@daybook/core';
+import { nudgeCounts, nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, nudgeTapKind, trailLater, trailLeave, trailNoteKeep, trailNotes } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,7 +26,8 @@ import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges, scheduleTrail } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
-import { useKeepPulse } from '@/lib/pulse';
+import { HealthKeeper } from '@/lib/health';
+import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -36,7 +37,8 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 /* the phone's notifications (core nudges.ts): each time the app opens, what was delivered is judged (helped or missed) and the
    plan for today and tomorrow, with the come-back notes, is made again; the phone's schedule changes only when the plan does.
-   A tap on one opens its screen. All of it stays on this phone. */
+   A tap on one opens its screen. All of it stays on this phone, except the anonymous counts (core pulse.ts): each kind
+   delivered, opened from, and what it was for done that day, and whether reminders are allowed. */
 function Reminders() {
   const prefs = useReminderPrefs();
   const log = useNudgeLog();
@@ -45,6 +47,8 @@ function Reminders() {
   const account = useAccount();
   const live = useRef(snap);
   live.current = snap;
+  const nlog = useRef(log);
+  nlog.current = log;
   const [openAt, setOpenAt] = useState(() => Date.now());
   /* whether the phone lets Daybook notify: the come-back notes are for anyone it does */
   const [allowed, setAllowed] = useState(false);
@@ -54,6 +58,9 @@ function Reminders() {
       const t = Date.now();
       const ok = await remindersAllowed().catch(() => false);
       const s = live.current;
+      if (ok) countOnce('rem_on');
+      const l0 = nlog.current;
+      nudgeCounts({ ...l0, opens: [...l0.opens, t] }, s.days, s.settings, s.reviews, t, ok).forEach(count);
       setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
       setAllowed(ok);
       setOpenAt(t);
@@ -77,7 +84,11 @@ function Reminders() {
   useEffect(
     () =>
       listenForTaps(
-        (id) => setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] })),
+        (id) => {
+          const k = nudgeTapKind(id);
+          if (k) count('nt_' + k + '_tap');
+          setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
+        },
         /* a trail note's quiet buttons: the next note an hour on, or none until morning */
         (a) => {
           if (a === 'later') sos.setMem((m) => trailLater(m, Date.now()));
@@ -217,6 +228,7 @@ function Shell() {
       <TrailNotes />
       <NoteCopy />
       <NavKeeper />
+      <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <SetupGate />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>

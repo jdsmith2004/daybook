@@ -6,6 +6,7 @@
 import { CognitoError, emailOk, gameCompute, LEARN_FREE, PASSWORD_MIN, passwordOk } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { count } from '@/lib/pulse';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { TextInput } from '@/components/text';
 
@@ -64,6 +65,8 @@ export default function Account() {
     setErr('');
     setNote('');
   }, [step]);
+  /* the anonymous counts: the account page was opened */
+  useEffect(() => count('acct_open'), []);
   if (sync.status.k === 'off') return <Redirect href="/" />;
 
   const run = async (f: () => Promise<void>) => {
@@ -133,6 +136,7 @@ export default function Account() {
         let r;
         try {
           r = await cognito.signUp(email, pw);
+          count('acct_made');
         } catch (e) {
           /* signed up before but never entered the code (or it is theirs and the password is right): carry on from there */
           if (!(e instanceof CognitoError && e.code === 'UsernameExistsException')) throw e;

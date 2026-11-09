@@ -1,5 +1,335 @@
 # What is planned next
 
+## What are you quitting: porn, alcohol, gambling or another habit (the owner, November 8 and 9, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+**The ask.** Let a person pick what they are quitting in setup: porn (still the main one, and the marketing stays about porn),
+gambling, or another habit. The owner's call: build it now, kept simple. The words switch, the lessons not written for the
+habit leave, the care tools stay for everyone, and lessons for other habits come later. Helps the person: someone fighting
+gambling gets Daybook's whole toolkit instead of being turned away. Helps Daybook: a second audience with the same app, and a
+first look at whether other habits are worth lessons of their own.
+
+**How porn-specific the app is (counted November 8, 2026).** The switch is cheap; the words are the work.
+
+- Lessons (the live `Turn` text, 49 plus 12 God lessons): 18 say nothing of porn, 21 need a word or one card changed, 8 rest
+  on a porn example or study (l4, l10, l11, l22, l34, l36, l42, l46), and 2 are about porn and sex alone (l47, l48). Of the
+  God lessons, 6 are neutral and 6 name porn. The research behind them is mostly cross-habit already: about 11 alcohol or AA
+  sources and 9 smoking ones, against 16 porn or sexual ones. The old lesson text in `core.js`, `lessons-more.ts` and
+  `lesson-beats.ts` BOOK is no longer shown.
+- Setup: about 30 lines (the questions, the Brief Pornography Screen and its kind word, the loop and curve pages, the goal).
+- SOS, tools, reminders, badges: no porn words at all. About 30 lines assume a phone in bed at night, which fits gambling.
+- Get help: SAA, SLAA, SA, Stop It Now, the adult-content filter steps, two scripts and a therapist check.
+- Public pages: about 160 lines (about.html, 12 guide pages, llms.txt). The store subtitle is "Quit porn, live your potential".
+  These stay about porn, by the owner's choice.
+
+**What the science carries to (research, November 8, 2026).** The tools Daybook is built on (relapse prevention, if-then
+plans, self-monitoring, shame-free lapses, identity change) carry over to gambling well; abstinence is the clinical norm there.
+Gambling carries the highest suicide risk on the list (lifetime ideation about 32%, Kristensen 2024), so its crisis line sits
+first in Get help, and money tools matter (blocks, the bank, self-exclusion). Alcohol and daily drugs can bring dangerous
+withdrawal, so "another habit" says to see a doctor before stopping, in setup and in Get help, and the "no withdrawal" line
+from the porn trial is shown for porn only. Nicotine and cannabis fit well and are safe to stop. Phone, gaming and shopping
+need "less", not zero, and binge eating should never get an abstinence frame; none of these is named.
+
+**What was built.**
+
+- Core `habit.ts`: `habitOf` (porn when nothing is kept), the setup choices, `habitSay` for fixed phrases ("Quit porn",
+  "struggling with porn", "compulsive porn use"), the safety net's device steps per habit, and the doctor line. The answer
+  lives in `settings.onb.a.habit` like the faith answer; `normOnb` keeps only the three values, so old saves read as porn
+  and nothing needs mapping in `normSettings`.
+- Setup asks "What do you want to quit?" right after How it works. The questions after it name the habit; the five porn
+  statements and their kind word are skipped for another habit; the goal says "Quit gambling" or "Quit this habit".
+- Settings has "What I am quitting" beside Faith.
+- Lessons: `PORN_ONLY` (16 lessons and 9 God lessons whose live words name porn or sex, or rest on a porn study) leave the
+  path, Learn, the checkpoints and every lesson link for another habit, the way the faith lessons leave for a No. 33 lessons
+  stay. A lesson finished before stays finished, counted and worth its points; a test checks that points, level and badges
+  match. A test also fails if a lesson off the list names porn or sex. Two steps of the path empty out for another habit
+  (Make it right, Keep a daily practice) and are passed by.
+- Get help: the National Problem Gambling Helpline (1-800-MY-RESET, NCPG since January 2026; 1-800-GAMBLER is no longer the
+  national number), Gamblers Anonymous and Gam-Anon, BetBlocker, Gamban, a bank block, state self-exclusion; for another habit
+  AA, NA, Marijuana Anonymous, Nicotine Anonymous and the doctor line. The porn groups and filters show for porn only.
+- The five questions a month on (the Brief Pornography Screen) are for porn only; answers kept from before stay on Pattern.
+- Alcohol (the owner, November 9, 2026) is its own choice: "Quit drinking", "struggling with drinking", "Drink" in the loop.
+  Stopping heavy drinking all at once can bring seizures, so the doctor line (`ALCOHOL_MEDICAL`) is the flame's first words on
+  the years question, and it sits in Settings and in Get help beside SAMHSA. Its groups are AA and Al-Anon; its safety net and
+  phone page are about distance from a drink (none at home, the drink picked before going out, no delivery apps). It gets the
+  same 33 lessons as gambling. "Another habit" keeps its doctor line for drugs.
+- Found on the way: the faith picked in setup (`creed`) was never kept, so everyone heard the plain voice until Settings. It
+  is in `OB_KEYS` now.
+
+**Left for later.**
+
+- Alcohol lessons: drinking is mostly social, so a script for turning down a drink, a lesson on the evening routine it
+  filled, and sleep in the first weeks. The 33 kept lessons already lean on alcohol and AA research for much of their science.
+- Gambling lessons (high): chasing losses, near misses and "due" thinking, money access, debt and shame about money, a big win
+  as a risk, telling someone. Then gambling versions of the 21 one-card lessons, as a `vo`-style overlay per habit
+  (lesson-turns.ts already does this for the faith voices). Roughly 2 to 3 sessions for the first 8 gambling lessons.
+- A gambling check in place of the Brief Pornography Screen (for example the 3-question Brief Biosocial Gambling Screen).
+- An anonymous count of which habit people pick (`habit_gambling`, `habit_other`): a new count needs the owner's yes and the
+  privacy page.
+- Named habits beyond gambling (nicotine, cannabis, alcohol with its screen), once "another habit" shows who comes.
+
+Effort: medium for the setup, words, Get help and the lesson filter (a display filter on the existing faith mechanism; nothing
+earned is read or written differently). High for any later change that touches points or the record.
+
+## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
+
+Every turned lesson has one turn card (core `lesson-turns.ts`, `flip`): the old thought on the front, another way to see it on the
+back. Pictures, before and after: `docs/shots/turn-card`.
+
+**What was weak.** The person did nothing but press Turn it over, so nothing made them think. The card was a school index card: ruled
+lines that did not line up with the words, a red margin rule, a stack under it and a lip, with a small label over each side ("You may
+think", "Look again"), which "The look" does not allow. The back was a pale sticky note with a green rule, which read as "right
+answer" and so as "you were wrong". The flame sat under it and said nothing, and half the card was empty lines.
+
+**What the research says** (a subagent's search, November 9, 2026). A guess about this very item, made before the answer, helps it stay
+(pretesting; St. Hilaire and others 2023, g = 0.54 for the item guessed). Rating how much you believe a thought, before and after, is
+how a thought record in CBT works. Telling people a belief they hold is wrong invites pushback, so nothing is marked right or wrong.
+A given reframe the person weighs works better than asking them to write one from nothing.
+
+**The new card** (medium effort, built):
+
+- The front is the old thought on white paper, set a little crooked, with a big coral quote mark: something said, not a label.
+- The flame asks, in its bubble: "How true does this feel to you?" Three answers in one row at the bottom: Very true, Partly, Not
+  really (`FLIP_FEEL`). There is no Turn it over button.
+- The answer turns the card: it lifts, turns over and lands straight, sun yellow (the answer is the sun, as everywhere in a lesson),
+  with a light tap, then the success buzz and the flame's pulse as it lands. Then the flame answers what was picked (Very true: "Most
+  people start right there. Now hold it next to this.").
+- After that a tap on the card turns it back to the old thought, and again, to compare. More and Next sit at the bottom.
+- With Reduce Motion on, the back simply shows.
+
+**Asked of the owner:** whether to add the second half of the thought record later: after the turn, "And now?" with the same three
+answers, and the flame showing the move ("Very true, then Partly"). It costs one more tap; left out for now to keep the card fast.
+
+## The fire burns lower when you stop doing your part (the owner, November 8, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+The owner: when the person drifts, the flame burns lower, as if water were poured on it, and when they come back it flares up again; "make the
+animation look really good". It is the first piece of "Hope is not softness: there are stakes" (CLAUDE.md). Effort: medium (screens, words, a small
+rule that never touches what was earned).
+
+The owner's calls, November 8 (each the recommended option):
+
+- **Drifting is days with no part done:** nothing that earns points (a lesson, a check-in, an urge ridden out, an honest log, a calm move...), no tool,
+  talk-through or feeling named. Opening the app is not doing your part. A slip logged honestly is, so honesty never dims the fire.
+- **Never fully out.** Two whole days with nothing done: "You are dimming your fire". Three or four: "Your fire is smouldering ... It goes lower
+  each day." Five or more: "Your fire is down to embers ... One ember still glows." Today does not count until it is over.
+- **One action, full re-light,** with the big moment.
+- **The words:** one firm line at the top of the sky, and the step open now on Your day says "This lights your fire again".
+
+The owner's second round, the same day, after "most of the time when they're logging into the app ... they're doing something", so the stakes
+have to reach people before they act (each the recommended option):
+
+- **A warning the day before it dims** (nothing done yesterday, nothing yet today): one quieter line on Today, "Nothing done yesterday. Do one
+  thing today, or your fire burns lower tomorrow.", while the flame still burns fully, and the day's lesson note (or its first note) says "Your
+  fire burns lower tomorrow".
+- **The come-back notes:** the first (2 days after the app was last open) says how low the fire burns by then, and a new one comes on the day it is
+  down to embers (day 5). The 7 and 30 day notes keep their words ("Everything is kept"). Words only, no picture (the owner, October 25). Never
+  after a slip or a heavy week (the tender words stay), and nothing on the lock screen says what Daybook is for.
+- **Pace by the day:** first 2, 3 and 5 days. The owner found it too slow (November 9, 2026): now one day with nothing done is a warning, two burn lower, three or more are down to embers. While it burns low the face is sad; the words say why and what lights it again; the color drains to ash, not red. The screen-time animation dimming went to the screen-time session.
+- **Notes like Duolingo's (November 9, 2026):** while the fire is low the come-back notes run on days 2, 3, 5, 7, 14 and 30 in the flame's voice, the last a back-off ("I will stop these for now"); an 8 PM last call the evening before it burns lower. The words on Today are big: a 28pt line, then the cost, with the way back in the one warm color.
+- **A widget later,** as its own piece: a home-screen and lock-screen widget showing the flame as it burns now (a native widget extension and a
+  new App Store build).
+
+Hard lines kept: only the glow changes (level, form, points, badges and the count never move; core `fireLow` reads the log and writes nothing),
+never in the 72 hours after a slip, and the words are about the next choice, never about who the person is.
+
+The look (core `flame-low.ts`, components `big-flame.tsx`, `fire-layer(.native).tsx`, `hero.tsx`): the fire, the body and the face sink together
+toward a deep ember (one color map, the same on the phone's Skia layer and the drawn layers); the tips draw back toward the body; it sputters (a
+slow sag with a quick drop and catch); smoke rises from the top, more and thicker the lower it burns, lighter on a night sky; one ember breathes in
+its heart; the glow fades. The first time Today is seen that day it burns fully for half a second and then goes down over two seconds, with four
+fading ticks and a soft knock. When the person does something and comes back to Today, it is lit again in front of them: a soft knock, the heart
+catches with a light one, the fire climbs back and leaps with a firm one, sparks fly out of the heart, the smoke clears, the bloom and ring go
+through it, and the success knock; "You lit your fire again" for a few seconds. Reduce Motion: drawn as low as it burns, re-lit at once with one
+knock.
+
+Does it help Daybook earn or grow: it gives a reason to come back daily, which is what every ask and every rating rides on; nothing is locked.
+
+Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget, and the dimming on the Screen Time wait screen
+(the Screen Time session).
+
+## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
+
+Today, Pattern, Days, Weeks and the lessons were each redesigned alone this week. This pass looked at them together. The tool for it stays:
+`npm run journey` takes a picture of every main screen of a seeded three-week person, light and dark, and docs/craft-checklist.md
+section 10 says how Sonnet critics try to prove each screen generic or out of step (six ran here, in parallel).
+
+Fixed, as clear seams (medium):
+
+- Pattern spoke of "clean days" and "Longest stretch"; Days, Today and My numbers say "days in a row with no slip" and "Longest run". Pattern now does too.
+- Weeks said "with no slip" in its label and again in the sentence under the number. The sentence is now "21 days in 4 weeks. They stay yours."
+- Days' "No-slip days in all" broke onto two lines under SOS; it is "No-slip days".
+
+The owner's answers (November 8, 2026):
+
+1. **The days before Day 1.** Decided and built (the owner, November 8, 2026): once Day 1 has come, Pattern's first card, Weeks and the
+   Sunday review's week strip count no-slip days from Day 1, as Days and Today do; a week all before Day 1 leaves Weeks.
+2. **Slip color across the app.** Decided (the owner, November 8, 2026): amber everywhere, violet only where orange means a no-slip day
+   (the Days month, the Days log, Weeks). Recorded in docs/design-standards.md.
+3. **Three kinds of week.** Built: the Days log groups by the Monday to Sunday weeks of Weeks and the Sunday review.
+4. **A lesson beat that read as a fact about the reader.** Built: lesson 4 opens "Say you slipped once this month...". Other openings
+   still state a slip as fact ("You slipped last night...", "You slipped again, the same week you prayed..."); they can follow if wanted.
+5. **"Paused 10 min 0% of the time".** Built: the pause share shows only once a pause has been used (golden fixtures updated by hand).
+
+What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
+a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS
+pill and urge row (care in reach before setup); points on a slip day for logging it honestly.
+
+## Your nights from Apple Health (the owner, November 8, 2026; planned, not built)
+
+**The ask.** Read Apple Health (Apple Watch) and maybe Oura, so body signals can show how the person was doing before a slip
+and in their hard hours, and later help notice when they are struggling. Helps the person: it shows them one true thing about
+their own slips without their typing it. Helps Daybook: it gives Pattern a real reason to pay, and the store page a line
+("works with Apple Health") that people search for.
+
+### What the evidence supports (four research passes, November 8)
+
+- **Short sleep makes craving a little stronger the next day. Moderate.** Within-person diary studies find it: Graupensperger
+  2022 (409 young adults, alcohol and cannabis, about 1 percent more craving per hour of sleep lost) and Freeman and
+  Gottfredson 2018 (122 people in treatment, poorer sleep, more craving next day; craving also worsened sleep). Neither found
+  that one short night predicts use that day. No study tests porn and sleep this way; the few that exist are cross-sectional or
+  found nothing.
+- **Heart rate or HRV predicting an urge in real time. Weak, and not for a consumer app.** The best wrist study (Carreiro 2020,
+  30 people, 4 days) reached about 80 percent accuracy in a lab-style analysis that was not tested on new people or live. Heart
+  rate rises with arousal itself, a walk, coffee, alcohol and a hot room, so a raised pulse in the hard hours cannot be read as
+  an urge. What a person says predicts use better than sensors do (Preston 2018: self-rated craving rose over the five hours
+  before use).
+- **Slow breathing lowers craving. Moderate, and Daybook already has it.** HRV biofeedback cut craving and use days in early
+  recovery (Eddie 2025, JAMA Psychiatry, 115 people, no placebo arm). It works as a tool for everyone, with or without a watch.
+- **Watches measure sleep time well and sleep stages and "stress" poorly.** Total sleep is reasonably good; stage agreement is
+  mediocre (Robbins 2024, Oura 0.65, Apple Watch 0.60 kappa). Consumer stress scores have no strong validation.
+- **One person's log is small.** With 5 to 10 slips, any link is fragile, and checking several signals at once will find one by
+  chance. Late-night scrolling can cause both the short night and the slip.
+
+So Daybook can honestly say: "Your slips so far came more often after short nights", and show the nights. It must never say a
+heart reading means an urge, that a bad night means a slip is coming, or that sleep caused anything.
+
+### What Apple Health and Oura give
+
+- **Apple Health.** `@kingstinct/react-native-healthkit` (16.2, October 2026, Nitro modules, its own config plugin, fits
+  SDK 58 and RN 0.88). Expo has no health module of its own; `react-native-health` is no longer kept up. Read only: pass
+  `NSHealthUpdateUsageDescription: false` and `background: false`. It needs a new native build and HealthKit on the App ID.
+  Apple never says whether reading was denied: no data and "no" look the same, so the words say "nothing from Health yet", never
+  "you said no". Watch data arrives through the phone's Health store; no watch app is needed.
+- **Oura (and Whoop, Garmin) already write sleep and heart rate into Apple Health,** but not HRV, resting heart rate or their
+  scores. So reading Apple Health covers most ring and band owners on iPhone.
+- **Oura directly** can be done with no server (its short-lived client-side login, a fresh sign-in every 30 days), but it needs
+  an Oura membership, its new terms need Oura's written consent to charge for anything built on its data, and it gives only HRV
+  and readiness beyond what Apple Health already has. Not worth it now.
+- **Android** (Health Connect) is a separate library and a Play review of about two weeks. Later, if Android users ask.
+- **App Review:** guideline 5.1.3 forbids ads, data mining and keeping health data in iCloud, and wants the privacy policy to
+  name it. Using it to show the person their own pattern is allowed.
+
+### How others show "you against your own range"
+
+Apple Vitals, Oura and Whoop share the patterns that work: a soft band for "your usual" with one mark for the night, a
+"still learning" state until there are enough nights (Apple 7, Oura 15), saying nothing about one odd night, and never red and
+green. Bearable compares days with a factor against days without it, from 3 days each, and states uncertainty only in words.
+Avoid a single 0 to 100 score (it is chased, and sleep trackers already cause sleep worry in some people: "orthosomnia").
+
+### The design: sleep only, on the card that already exists
+
+Daybook already has nearly all of it. The check-in has an optional "sleep last night" row (`checkin.h`, folded under More),
+the Sunday sleep goal reads it, and Pattern's "What is different on hard days?" card (core `patLeads`, `Pairs` chart) already
+compares sleep before slip days with other nights, once there are 5 check-in days on each side. Few people open More to type
+hours, so the card is mostly empty. Apple Health fills it.
+
+1. **One ask, at a good moment.** On Pattern, where the hard-days card would be, a quiet row: "Add your nights from Apple
+   Health" (iPhone only, never on web or Android). One tap brings Apple's own sheet, asking for sleep only. Never in setup,
+   never after a slip or an SOS. Also in More.
+2. **Read on open, on the phone.** Asleep minutes per night (asleep, core, deep and REM; never in bed or awake; overlaps from
+   phone and watch merged), keyed to the day it ends on, for the last 90 nights. No background delivery.
+3. **Kept on this phone only.** Nights from Health live in their own store on the device, never in `Day`, so they are never
+   synced, backed up to the safe copy, counted in the anonymous counts, or sent anywhere. What the person types in the check-in
+   still wins over Health for that night. The privacy page says this in the same change.
+   **Health answers the sleep question (the owner, November 8, 2026: "we won't ask them about it").** Since November 8 the
+   check-in asks "How long did you sleep last night?" as its own step. Once Health is connected, that step is left out
+   whenever Health has the night, so the check-in is back to three numbers; it is asked only on a night Health missed (the
+   watch was off, or charging). The night's hours from Health are not shown or copied into the check-in, so nothing from
+   Health reaches the synced log.
+4. **The picture.** The hard-days card draws the nights as a field of small moons, one per night, its fill the hours slept;
+   the nights before a slip are the ones with a small flame under them. Two moons side by side lead the card, the usual night
+   and the night before a slip, sized by hours: the picture reads in two seconds, and the line under it is the existing one
+   ("You slept less before slip days: 5.9 hours, against 7.1"). It speaks only with 5 slips that have a night on record and a
+   difference of 45 minutes or more (today's rules); until then the card says nothing about sleep. The thresholds stay as they
+   are. Sleep less before slips is the only direction it names as useful: if the person slept more, the line says so plainly
+   and leaves it.
+5. **Turned into hope, not a warning.** The card ends on what to do with it, in Daybook's voice: a short night is a night to go
+   easy and keep the plan close. Nothing on Today changes, no heads-up fires from a short night, and the word "risk" is never
+   used about sleep.
+
+**Left out, and why:** heart rate in the hard hours (the pulse cannot tell an urge from a walk, and showing it invites reading
+meaning into noise); HRV and resting heart rate (weak evidence, and rings and bands do not write them to Apple Health); sleep
+stages and stress scores (poorly measured); any alert that the person is struggling (no study supports it, and a wrong one
+would cost hope). Revisit "noticing when struggling" only if a later study shows it works for the individual.
+
+### Free or Pattern
+
+Reading Health and filling the nights is free: it makes the check-in and the Sunday sleep goal easier, and taking typing away is
+care. The sleep line on the hard-days card goes with the rest of "the deeper pattern" in Daybook Pattern, once `PATTERN_FROM` is
+set (until then it shows to everyone, like the other cards). It sells honestly: a true line from the person's own log, the kind
+`patPreview` leads with. The Hard hours card and every care tool stay free; nothing here moves them. Never Oura-derived data
+behind the paywall without Oura's consent.
+
+### Should it be built now
+
+Not yet, in my view. With about 7 people, we do not know how many wear a watch or a ring, and the card needs 5 slips with nights
+on record before it says anything, so a new person sees nothing from it for weeks. It also means a new App Store build with a
+new permission and a health-data review in a porn-recovery app, which is worth doing once, carefully. Build it when there are
+enough people that some have a watch (say 50), or sooner if the owner wants "works with Apple Health" for the store page.
+Meanwhile, one cheap step helps everyone now: move "sleep last night" out of the folded More row into the check-in itself, as
+one quick choice, so the card fills for people with no watch too.
+
+### The steps, with the effort each needs
+
+**Status (November 9, 2026):** every step is built on `claude/health-sync-710277`, not merged until the owner has seen it.
+Seen on the simulator (a release build with a made-up log): Apple's sheet asks for Sleep only, read only, with Daybook's
+words; Settings shows "Apple Health · On · 61 nights of sleep"; the hard-days card draws two moons (7.4 h before days with no
+slip, 5.7 h before slip days) with the nights counted under them. Not checked against nights a real watch recorded, and the
+check-in leaving out its sleep step was checked only by its rule, not tapped through. The App Store label does not change (the
+nights never leave the phone); docs/launch.md has the review note.
+
+1. Sleep as a quick choice in the check-in, out of More (medium: a screen and its words). Can be done now, alone.
+2. Core: a device-only `nights` store, the rule that a typed night wins, and `patLeads` reading both (high: data, and it must
+   never reach sync or the safe copy). Unit tests, including that `Day` and the sync payload never hold a Health night.
+3. The library, the config plugin (read only, no background), a `health.ts` with a web and Android stub, and reading 90 nights
+   on open (high: native build, permissions).
+4. The ask on Pattern and in More, the check-in leaving out the sleep step when Health has the night, and the moons on the hard-days card (medium: screens), shown on the simulator before it
+   merges.
+5. The privacy page, the App Store privacy label (Health and Fitness, not linked, not tracking) and the review notes (medium).
+
+## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
+
+**The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we
+can see how the app's getting used and what to improve." Built on the anonymous counts, with no analytics SDK and no device id.
+Helps the person: it shows which parts help (SOS, reminders, lessons) so those get better. Helps Daybook: it shows where setup
+loses people, who comes back, and whether the tip and account asks land.
+
+**The questions, and the counts that answer them** (all fixed names, small numbers, totals per day; core `pulse.ts`):
+
+- Do reminders work? Per kind (lesson, check-in, wind-down, Sunday, hard hours, come-back, plan): `nt_<kind>` arrived,
+  `nt_<kind>_tap` opened from it, `nt_<kind>_did` what it was for done that day (core `nudgeCounts`, `nudgeTapKind`), and `rem_on`
+  (reminders allowed) once a day. Arrivals are known only on a later open, so the come-back note's rate reads high.
+- Where does setup lose people? `setup_<page>` as before, now sent the same day (below).
+- Who comes back? `act_*` as before, and `ret_7`, `ret_30` once for each phone (opened again 7 or 30 or more days after the first).
+- What is used and finished? `tool_<id>_open` beside `tool_<id>`; `lesson_open` beside `lesson_done`, and `ld_<id>` for which
+  lesson (never the faith lessons); `tab_learn`, `tab_pattern`, `tab_more` once a day.
+- Does SOS help? `sos_rode`, `sos_slip` beside `sos`.
+- Comebacks after a slip: `back_*` as before.
+- Do the asks land? `ask_tip` (once a day), `tip_open`, `acct_open`, `acct_made`. A tip itself is never counted (Apple and Stripe
+  report it, and counting it would add Purchases data).
+
+**One-time openers are counted now.** As the app goes to the background, today's counts so far go once a day (core
+`pulseBatch` early), so someone who opens Daybook once still shows, setup included. What comes later that day goes after it is
+over. A batch now takes off only what it carried, so nothing counted while it is on its way is lost.
+
+**The report.** `scripts/stats-pulse.mjs` (the Stats workflow) shows phones by day, coming back, the setup funnel with its
+biggest drop, reminders per kind, SOS, tools and lessons opened against finished, slips and comebacks, the asks, and a short
+"What this suggests" list, said only once the numbers behind a line reach 10.
+
+**The owner's privacy choices (November 4, "Yes, all three"):** no device id; every count goes without asking, with Off kept
+in More; the App Store label keeps the same category (Usage Data, Product Interaction, not linked). The app side reaches people
+only with the next App Store build.
+
+Effort: high (data and privacy) for the counts and the send; medium for the report and the words.
+
 ## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, being built on `keeps-coming`)
 
 **The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's
@@ -222,6 +552,22 @@ Screens: docs/keeps-review/1-trail.png (the world), 2-screens.png (Where is it n
 walk out, Preview's picture), 3-screens.png (Case's door and key, Steps' side path with the timer, Home, the lock-screen note,
 whose buttons are now Not today, Show me where I am, Not before, and Leave me be today).
 
+### Part 1, built on `keeps-coming` (November 3, 2026; not merged until the owner has seen it on the simulator)
+
+- Core `trail.ts`: the five places, each drill in three lengths, Drift's four lights and how to fill each, the lines the
+  permission voice may say next with an answer, the person's own picture (Play it forward), key (note, reason, or who
+  they are becoming) and side path (their urge plan), and the stretch kept in the SOS memory on the device, carried over
+  hours and days and ended by half a day of quiet. Reaching home saves an urge ridden out, like SOS.
+- The app: `app/trail.tsx` and `components/trail-art.tsx`. Where is it now (the map; the person's own flame walks to the
+  place touched; the length chosen once and remembered), the five places with their pictures (the lights fill, the flame
+  walks out the door, the picture slides over the glow while the wave passes, the door is held shut and the key turns, the
+  flame takes the side path), and Home. Opened from SOS, More, "The trail".
+- The notes: two at a time, an hour apart, never at night (10 PM to 5 AM), no more than five a day, resting after a slip,
+  with the buttons Not today (opens the door), Show me where I am, Not for an hour, and Leave me be today. Two unanswered
+  are the last until the app is opened. The privacy page says what the trail keeps on the phone.
+- Not yet: the person's own lines and answers (the kit, part 2), the lessons (part 3), credit and the rewind (part 4), a
+  way in from Today, and holding other reminders while a stretch is open.
+
 ### Open questions for the owner
 
 - Locking the phone: Guided Access is free and the person turns it on; a real web block needs Apple's Family Controls permission.
@@ -230,6 +576,80 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   plays a part), linking to each group's own schedule, or leave them out.
 - The person's name in "say it once": ask for a first name in setup (stays on the phone), or use "you".
 - The five stops' names: Drift, Spark, Preview, Case, Steps.
+  Kept by the owner (November 3, 2026), after being told they are a compilation of proven programs (FASTER, BLAST, Carnes's
+  ritual chain, the therapy model's permission-giving thoughts) with names of our own. Each place shows what it means in plain
+  words on the map, and the thought heard there on its screen, because the pictures alone did not say where a person was.
+- The places teach in beats, like a lesson, without the lessons' campfire or flip card (the owner, November 3, 2026: "it got
+  my attention, and then it did nothing with it"): the thought it whispers, what it really is, then the line to say once and
+  the move. At 2 minutes the move is a real two minutes: how strong it is, eight cues of fifteen seconds that go on by
+  themselves while the place's picture acts them out and the wave rises and falls, then how strong it is now, said back
+  ("From strong to a little. That was you."; if not lower, "Two more minutes"). Basis: a picture held in the mind's eye
+  crowds out a craving's picture (elaborated intrusion theory; Skorka-Brown 2015). Steps' thought is the one a person who
+  knows the habit has: "I know where this is going, and I am going anyway", and its picture shows a way off every stair.
+- The 2 minutes work on what the person writes (the owner, November 4, 2026: "have me write down what I'm thinking"; "it's
+  in the right direction, but … not good enough"). After how strong it is, two short questions, each skippable: "What is it
+  pushing you to do?" and "What is it showing you?" The cues say those words back and work on them (naming a craving in
+  words takes some of its pull: affect labeling, Lieberman 2007). Cue 7 is a mirror, by the owner's choice over a warning
+  about escape theory: the front camera shows their face, nothing recorded, "Is this who you want to be?", and the last cue
+  answers with hope. Very strong opens SOS first, with "Walk it here instead"; still strong after walks it through again,
+  SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
+  written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
+
+## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; Walk it through built on `keeps-coming`, not merged)
+
+The ask: "I want it to actually teach, walk me through the steps, the science, what's going on … interactive, challenge me to
+write and think and explain"; a blend of a faith-based attack analysis (God, the attack has a pattern and science behind it,
+you are not evil) and a calm coach's "this is not overwhelming, notice it and handle it"; "both" during and after; "a mix"
+of taps and writing, the way a therapist would talk someone through it. Research: side-session notes trail-research-programs,
+-science, -therapists (four agents). The best evidence: ACT for porn (Crosby and Twohig 2016: 93% less viewing, nearly all
+participants Latter-day Saints), DBT chain analysis (Rizvi), urge surfing, defusion, implementation intentions, and MI
+scaling questions.
+
+Rules that came out of it: never ask what does not vary (the act is always the same; ask the line, the body, the feeling
+underneath, the place, the time); tap first, write at two moments; say their words back, then add one fact; every brain
+fact ends with what changes it (biology alone raises hopelessness); no "15 minutes" promise, show their own numbers; day
+and night versions of every action; no war or chemistry pseudo-science; faith lines only with faith on, in their voice.
+
+**Walk it through (during, about four minutes).** The map becomes a result, not a question: the person never has to know
+which place they are at.
+
+1. Nothing has gone wrong: urges come back, this one has a pattern, notice it and handle it. (Faith: an urge is not a sin.)
+2. How strong, 0 to 10. 8 and up: SOS first. Then "Why a 6, and not a 9?" (what is already holding it down), said back.
+3. Notice it: where in the body, what it is like, "What is so bad about that?"; then the alarm, and how alarms unlearn.
+4. The line: "What is it telling you?" (just once, I deserve it, nobody will know, I already blew it, I cannot focus until
+   I do, too tired to fight, own words); the true answer to that line; "I am having the thought that …"; then they write
+   their own answer.
+5. Underneath: what it is trying to fix (bored, lonely, stressed, tired, angry, sad, just habit); the fact for that need and
+   the move for it, by the time of day.
+6. "Where are you with it?" (just noticed, picturing it, arguing with it, already reaching): the flame lands on the place,
+   and the map shows how far from the edge.
+7. Ride it: two minutes of room, guided with their own words, while the place's picture acts.
+8. Explain it back: one line in their words, then the chain built from their taps.
+9. How strong now; down is "That was you", still loud walks it through again from "What brought it back?"
+10. It may come back: when, and "then I will …", saved. An urge ridden out feeds the flame.
+
+**Look back (after the trail, or after a slip; the LBA idea).** No verdict; where it started on the trail; why today; the
+first small yes and what they told themselves; after a slip, what it gave them for a minute; the chain said back; where to
+cut it next time, and the if-then in their words, saved to the log and the plan. Ends on hope; nothing earned is lost.
+
+**It takes the place of Planning a slip (the owner, November 4, 2026: "Planning a slip just doesn't work that well so we're
+switching to this; you can pull the best parts from planning a slip into this").** The owner also kept the trail: "the issue is in
+delivery". So the trail now opens on the walk, and "I know where I am" opens the map as before. Today's second button, the
+check-in's door, SOS's More and a lesson's link now say Walk it through and open the trail. Kept from Planning a slip: its
+permission thoughts and their research (now the lines, each with a true answer and a fact), the need underneath with Daybook's
+own moves and "Held 3 of 4 times" tags, the person's own reasons ("why a 6, not a 9?"), the body words, and the plan: a walk
+is saved as a talk-through (p.tt, so it syncs) with a change plan, so Today's "Your plan" and the next morning's "Did your plan
+hold?" work as they did. What only a walk keeps is `wk` (strength before and after, the line, their answer, their explanation,
+the need, the place), checked by `normWalk`. Left out on my judgment: the eyes-open go-ahead and decide-later paths (they
+plan around a slip rather than through the urge); old talk-throughs still open at /talk, so nothing earned or written is lost.
+
+**Built (core `walk.ts`, test/walk.test.ts; app `components/walk.tsx`):** all ten parts, faith lines only for people of faith,
+SOS first at 8 and up, never bed by day, nothing that reaches out to anyone, the two minutes saying back the line and the
+person's answer at every place. Checked on the web end to end, and on a release build on the simulator.
+
+**Steps (Opus effort):** the script and its tests (medium, done); the screens (medium, done); the walk saved as a plan with the
+morning look back (high, done); Look back after a slip, linked from Already happened, writing the chain and the next if-then
+(high, next); the owner's look on the simulator before merging.
 
 ## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
 

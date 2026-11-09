@@ -22,7 +22,7 @@
 
       <main>
         <h1>Privacy policy</h1>
-        <p class="date">In effect from October 24, 2026</p>
+        <p class="date">In effect from October 24, 2026. Apple Health added November 9, 2026.</p>
 
         <div class="card short">
           <h3>The short version</h3>
@@ -31,9 +31,10 @@
             <li>With an account, your records are kept under your account and sent only to you, when you are signed in.</li>
             <li>No ads, no tracking, and nothing is ever sold or shared.</li>
             <li>
-              A few anonymous counts once a day: whether the app was opened and how far setup got, and more only if you say yes. Never your words, your log or
-              who you are, and you can turn them off.
+              A few anonymous counts once a day: which parts of the app were used, as numbers added to everyone else's. Never your words, your log or who you
+              are, and you can turn them off.
             </li>
+            <li>If you connect Apple Health, Daybook reads only how long you slept, and it stays on your phone. It is never sent, even with an account.</li>
             <li>If you leave a tip, Apple or Stripe handles the payment. Daybook keeps only a small supporter record, never your card details.</li>
             <li>You can delete everything, and your account, from inside the app.</li>
           </ul>
@@ -88,9 +89,10 @@
           <li>Voice notes. They stay on your phone, with or without an account.</li>
           <li>Your scores when Daybook asks the five questions again each month. They stay on your phone, with or without an account.</li>
           <li>
-            Anything about your reminders. Daybook's reminders are made on your phone, and the count of which ones help stays on your phone and is never sent.
-            To time them, the phone keeps the times the app was opened for 28 days; those times stay on your phone too. The lesson reminder comes at about the
-            time you finished your last lesson, read from your own records on the phone.
+            Anything about your reminders beyond the anonymous counts below (how many of each kind arrived, were opened, or were followed by what they were
+            for). Daybook's reminders are made on your phone, and which wordings help, and when, stays on your phone and is never sent. To time them, the phone
+            keeps the times the app was opened for 28 days; those times stay on your phone too. The lesson reminder comes at about the time you finished your
+            last lesson, read from your own records on the phone.
           </li>
           <li>
             The trail, for a craving that keeps coming. When it began, the last place you touched, the length you picked, and the times of its notes stay on
@@ -103,22 +105,44 @@
           </li>
         </ul>
 
-        <h2 id="counts">Anonymous counts</h2>
+        <h2 id="health">Apple Health</h2>
         <p>
-          Daybook is built by one person, who needs to know whether people use it. So, without asking, the app sends two basic counts: that it was opened on a
-          day (the <code>act_</code> names below) and how far setup got (the <code>setup_</code> names). Every other count below is kept on your phone and sent
-          only if you say yes, in More, Anonymous counts. That page also turns all counts off, after which nothing is counted at all, and shows exactly what was
-          sent last.
+          On an iPhone you can let Daybook read your sleep from Apple Health (Settings, Apple Health, or the hard-days card in Pattern). It is off until you
+          turn it on, and Apple asks you first. Daybook reads only how long you slept each night, for the last 90 nights, and nothing else from Health: no heart
+          rate, no workouts, no other data. It never writes to Health.
         </p>
         <p>
-          Once a day your phone sends, for days that are over, a short list of names and small numbers (each from 1 to 50), plus whether it is an iPhone,
-          Android or the web and the app's version. The server adds them to totals for everyone, per day, and keeps nothing else: not who sent them, not your
-          internet address, not the request. No count can be traced back to you, even by Daybook. These are every name that can be sent:
+          Those nights stay on your phone. They are kept apart from your log, so they are never synced to your account, never in a backup, never in the
+          anonymous counts, and never sent anywhere, with or without an account. Daybook uses them only to show you your own pattern: to skip the sleep question
+          in the check-in when Health already knows, to count your Sunday sleep goal, and to compare your nights before days with no slip and before slip days.
+          They are never used for ads, sold or shared. Hours you type yourself in the check-in are part of your log as before, and they win over Health's for
+          that night.
+        </p>
+        <p>
+          Turning Apple Health off in Daybook's Settings stops the reading and deletes the nights Daybook kept. Delete everything deletes them too. You can also
+          stop it in the Health app, under Sharing.
+        </p>
+
+        <h2 id="counts">Anonymous counts</h2>
+        <p>
+          Daybook is built by one person, who needs to know whether people use it and which parts help. So, without asking, the app sends the anonymous counts
+          below. There is no device ID, so no one's way through the app can be followed, only totals for everyone. More, Anonymous counts, turns them all off,
+          after which nothing is counted at all, and shows exactly what was sent last.
+        </p>
+        <p>
+          Once a day your phone sends, for days that are over (and, as you leave the app, once for the day so far), a short list of names and small numbers
+          (each from 1 to 50), plus whether it is an iPhone, Android or the web and the app's version. The server adds them to totals for everyone, per day, and
+          keeps nothing else: not who sent them, not your internet address, not the request. No count can be traced back to you, even by Daybook. These are
+          every name that can be sent:
         </p>
         <ul>
           <li>
             <code>act_0</code>, <code>act_1</code>, <code>act_2_6</code>, <code>act_7_13</code>, <code>act_14_29</code>, <code>act_30</code>: Daybook was opened
             that day, and how many days after it was first opened on this device.
+          </li>
+          <li>
+            <code>ret_7</code>, <code>ret_30</code>: Daybook was opened again 7 or more, or 30 or more, days after it was first opened on this device. Each is
+            sent once.
           </li>
           <li>
             <code>back_1</code>, <code>back_2_3</code>, <code>back_4_7</code>, <code>back_8</code>: Daybook was opened again after a slip, and how many days
@@ -130,13 +154,30 @@
             <code>rk_phone</code>, <code>goodnight</code>, <code>feedback</code>: SOS was opened, Talk it through finished, a lesson finished, a check-in saved,
             the sunrise check done, a Rekindle step done, Goodnight said in the wind-down, feedback sent.
           </li>
+          <li><code>sos_rode</code>, <code>sos_slip</code>: SOS ended with It passed, or with I slipped.</li>
           <li>
-            <code>tool_</code> and the tool's name (breathe, ground, stack, curious, pause, thought, feel, forward, move, bed, surprise, halt, message,
-            reasons): that tool was used.
+            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l49; never the faith lessons): which lesson was
+            finished.
           </li>
           <li>
-            <code>setup_</code> and a setup page's name (hello, how, aim, years, freq, mins, faith, creed, b0, b1, b2, b3, b4, heard, costs, guess, hours, when,
-            wave, breathe, loop, person, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, account), and
+            <code>tab_learn</code>, <code>tab_pattern</code>, <code>tab_more</code>: that tab was opened that day. <code>rem_on</code>: the phone lets Daybook
+            send reminders.
+          </li>
+          <li>
+            <code>nt_</code> and a kind of reminder (lesson, checkin, wind, sunday, risk, back, plan): a reminder of that kind arrived; with <code>_tap</code>,
+            Daybook was opened from it; with <code>_did</code>, what it was for (the lesson, the check-in, and so on) was done that day.
+          </li>
+          <li>
+            <code>ask_tip</code>, <code>tip_open</code>, <code>acct_open</code>, <code>acct_made</code>: the ask for a tip was shown, the tip page was opened,
+            the account page was opened, an account was made. A tip itself is never counted.
+          </li>
+          <li>
+            <code>tool_</code> and the tool's name (breathe, ground, stack, curious, pause, thought, feel, forward, move, bed, surprise, halt, message,
+            reasons): that tool was used. With <code>_open</code> after it, the tool was opened.
+          </li>
+          <li>
+            <code>setup_</code> and a setup page's name (hello, how, habit, aim, years, freq, mins, faith, creed, b0, b1, b2, b3, b4, heard, costs, guess,
+            hours, when, wave, breathe, loop, person, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, account), and
             <code>setup_done</code>: how far setup got, sent once for each page.
           </li>
         </ul>

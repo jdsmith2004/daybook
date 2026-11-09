@@ -206,7 +206,7 @@ export function trigFits(id: string, time: string | null): boolean;
 export function optList(
   kind: 'trig' | 'did',
   opts: Settings['opts'] | null | undefined,
-  o: { time?: string | null; sel?: string | string[] | null; all?: boolean; notSure?: boolean },
+  o: { time?: string | null; sel?: string | string[] | null; all?: boolean; notSure?: boolean; habit?: string },
 ): { list: [string, string][]; hidden: number };
 export const URGE_PLAN: [string, string][];
 export const SLIP_STEPS: string[];

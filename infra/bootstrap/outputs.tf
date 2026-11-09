@@ -11,6 +11,10 @@ output "AWS_DEPLOY_ROLE_ARN" {
   value = aws_iam_role.deploy.arn
 }
 
+output "AWS_STATS_ROLE_ARN" {
+  value = aws_iam_role.stats.arn
+}
+
 output "TF_STATE_BUCKET" {
   value = aws_s3_bucket.state.bucket
 }

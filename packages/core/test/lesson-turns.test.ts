@@ -67,3 +67,16 @@ describe('turned lessons', () => {
     );
   });
 });
+
+describe('the turn card gut check', () => {
+  it('has three short answers that fit one row, and a plain reply to each', () => {
+    expect(core.FLIP_FEEL).toHaveLength(3);
+    for (const f of core.FLIP_FEEL) {
+      expect(f.o.length).toBeLessThanOrEqual(10);
+      expect(f.say.length).toBeLessThanOrEqual(70);
+      /* no contractions, and nothing that calls the person wrong */
+      expect(f.say + f.o).not.toMatch(/\w’\w|\w'\w|\bwrong\b/i);
+    }
+    expect(core.FLIP_ASK).toMatch(/\?$/);
+  });
+});

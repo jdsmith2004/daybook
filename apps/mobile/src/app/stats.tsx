@@ -161,7 +161,7 @@ function Summary({ s, b, bar }: { s: PulseSummary; b: StatsBody | null; bar: str
         note="People who reached each page. The reminder, tip and account pages show only to some, so read them as at most."
       />
       <SheetH title="What gets used" />
-      {s.used.length ? <Rows rows={s.used} label={pulseMeaning} bar={bar} /> : <EmptyChart text="No counts yet. They fill in as people say yes to counts." />}
+      {s.used.length ? <Rows rows={s.used} label={pulseMeaning} bar={bar} /> : <EmptyChart text="No counts yet. They fill in as people use Daybook." />}
       <SheetH title="Feedback" aside={b ? String(b.feedback.length) : undefined} />
       {b && b.feedback.length ? (
         b.feedback.map((f) => (

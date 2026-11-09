@@ -2,8 +2,9 @@
    with a plain answer over its chart: how you are doing, how the days felt, riding it out, what was felt, when it happens, what sets it off, what is different on hard days, what helps),
    Weeks (each week as a bar of its days, and the one picked told in full: components/weeks-pane.tsx). Days is ported from the legacy viewJournal and daysBody. Without the
    pattern open, the cards that show a person changing stay open (core supporter.ts, PAT_FREE), and each of the others shows its chart faded, with
-   a way into the tip sheet, or once Daybook Pattern is on sale the sheet for that. A card with nothing behind it yet is left out: named feelings
-   above all, which many people log only now and then. Nothing here asks to be looked at. */
+   a way into the tip sheet, or once Daybook Pattern is on sale the sheet for that. Every card is always in the deck, in the same order: one with
+   nothing behind it yet in the whole log is a ghost, its own picture drawn empty with only its title (the owner, November 3, 2026), so the shape
+   says what will fill it. Nothing here asks to be looked at. */
 import {
   computeMetrics,
   FEELS_MIN,
@@ -41,9 +42,11 @@ import {
   type DayFeelStep,
   type PatGo,
   type PatRange,
+  habitOf,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
+import { useCountFocus } from '@/lib/pulse';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -54,7 +57,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { NumbersTable } from '@/components/charts';
 import { DAY_FEEL_LOOK } from '@/components/day-feel-pop';
-import { CARD_SKY, DayFlow, DaySky, FeelField, FlameCounts, Hillside, HoursKey, Mosaic, Pairs, Room, WeekRow, type Rank } from '@/components/pattern-charts';
+import {
+  CARD_SKY,
+  DayFlow,
+  DaySky,
+  FeelField,
+  FlameCounts,
+  Ghost,
+  Hillside,
+  HoursKey,
+  Mosaic,
+  Moons,
+  Pairs,
+  Room,
+  WeekRow,
+  type Rank,
+} from '@/components/pattern-charts';
 import { Deck, Say, type DeckCard, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -65,6 +83,8 @@ import { SundayCard } from '@/components/sunday-card';
 import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
 import { Card, Icon, T } from '@/components/ui';
 import { WeeksPane } from '@/components/weeks-pane';
+import { connectHealth, healthOffered, useNights } from '@/lib/health';
+import { Link } from '@/components/choices';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -72,6 +92,7 @@ type Pane = 'days' | 'patterns' | 'weeks';
 const fmtD = (k: string) => fmtDate(k, { weekday: 'short', month: 'short', day: 'numeric' });
 
 export default function Pattern() {
+  useCountFocus('tab_pattern');
   const sos = useSos();
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(params.pane === 'patterns' || params.pane === 'weeks' ? params.pane : 'days');
@@ -105,7 +126,10 @@ export default function Pattern() {
           ) : pane === 'patterns' ? (
             <>
               <PatternsPane onGo={(y) => scroll.current?.scrollTo({ y: Math.max(0, inset.top + 16 + paneY + y - 12), animated: true })} />
-              <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
+              {/* the five questions are the Brief Pornography Screen: for porn, or for anyone with answers kept from before */}
+              {habitOf(snap.settings) === 'porn' || bpsScores(snap.settings, sos.mem).length ? (
+                <LinkCard icon="chart" title="The five questions" sub={bpsRow(bpsScores(snap.settings, sos.mem))} onPress={() => router.push('/recheck')} />
+              ) : null}
             </>
           ) : (
             <WeeksPane />
@@ -145,8 +169,10 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const WEEK_ROW = 64;
 function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const c = useTheme();
-  const { snap, tk, now } = useStore();
+  const { snap, tk, now, say } = useStore();
   const st = snap.settings!;
+  /* nights from Apple Health, once connected: sleep on the hard-days card then reads every known day, not only check-ins */
+  const health = useNights();
   const [range, setRange] = useState<PatRange>('30');
   const [index, setIndex] = useState(0);
   const [deckY, setDeckY] = useState(0);
@@ -161,7 +187,9 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const felt = useMemo(() => patFelt(snap.days, per, tk), [snap.days, per, tk]);
   const feels = useMemo(() => patFeels(snap.journal, snap.days, per, tk), [snap.journal, snap.days, per, tk]);
   /* whether a card is there at all goes by the whole log, so a quiet week does not make the cards jump */
-  const feltAll = useMemo(() => patFelt(snap.days, allPer, tk).n, [snap.days, allPer, tk]);
+  /* one color is not a picture of how days felt: the bands wait for two different answers (the owner, November 3, 2026) */
+  const kinds = (by: number[]) => by.filter(Boolean).length;
+  const feltAll = useMemo(() => kinds(patFelt(snap.days, allPer, tk).by) >= 2, [snap.days, allPer, tk]);
   const namedAll = useMemo(() => patFeels(snap.journal, snap.days, allPer, tk).n, [snap.journal, snap.days, allPer, tk]);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
@@ -177,7 +205,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const slipTrig = patSlipTrig(snap.days, st, tk);
   const needs = patNeeds(snap.days, keys);
   /* slip days are few, so this one reads the whole log whatever the range */
-  const leads = patLeads(snap.days, allPer.keys);
+  const leads = patLeads(snap.days, allPer.keys, health.on ? { nights: health.nights, st, tk } : null);
   const ins = patInsights(g, ride, when, trig.list);
   const works = urWorks(snap.days, tk);
   const ev = talkEvidence(snap.days);
@@ -215,6 +243,9 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
 
   const cards: DeckCard[] = [];
+  /* a card the whole log has nothing for yet: its own shape, empty */
+  const empty = (id: string) => <Room>{(w, h) => <Ghost id={id} w={w} h={h} />}</Room>;
+  const ghost = (id: string, title: string) => cards.push({ id, title, ghost: true, chart: empty(id) });
   /* the first card, for the question this page is here to answer. It stays after a slip: one slip is a flat step, which is worth seeing then */
   if (allPer.keys.length >= DOING_MIN)
     cards.push({
@@ -226,7 +257,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         <Room>
           {(w, h) => (
             <Hillside
-              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (longest >= 2 ? ' Longest stretch: ' + longest + ' days.' : '') : undefined}
+              note={g.slips ? patNowLine(g, tk, lastSlip || null) + (longest >= 2 ? ' Longest run: ' + longest + ' days.' : '') : undefined}
               ridge={ridge}
               than={doing.than}
               first={doing.first}
@@ -247,28 +278,32 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         />
       ) : null,
     });
+  else ghost('apart', 'How you are doing');
   if (feltAll)
     cards.push({
       id: 'felt',
       title: 'How your days felt',
       head: felt.head,
       say: felt.line ? <Say>{felt.line}</Say> : null,
-      chart: (
-        <Room>
-          {(w, h) => (
-            <DayFlow
-              flow={felt.flow}
-              by={felt.by}
-              first={felt.flowFrom || doing.first}
-              sky={CARD_SKY.felt[1]}
-              w={w}
-              h={h}
-              look={look}
-              label={felt.head + '. ' + felt.line}
-            />
-          )}
-        </Room>
-      ),
+      chart:
+        kinds(felt.by) >= 2 ? (
+          <Room>
+            {(w, h) => (
+              <DayFlow
+                flow={felt.flow}
+                by={felt.by}
+                first={felt.flowFrom || doing.first}
+                sky={CARD_SKY.felt[1]}
+                w={w}
+                h={h}
+                look={look}
+                label={felt.head + '. ' + felt.line}
+              />
+            )}
+          </Room>
+        ) : (
+          empty('felt')
+        ),
       numbers: (
         <NumbersTable
           cap="How the days felt"
@@ -277,6 +312,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         />
       ),
     });
+  else ghost('felt', 'How your days felt');
   if (anyEntry)
     cards.push({
       id: 'ride',
@@ -292,6 +328,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         />
       ),
     });
+  else ghost('ride', 'Riding it out');
   if (namedAll >= FEELS_MIN)
     cards.push({
       id: 'named',
@@ -314,6 +351,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         ) : null,
       numbers: feels.n ? <NumbersTable cap="What you named" head={['Feeling', 'Times']} rows={feels.words.map((x) => [x.w, String(x.n)])} /> : null,
     });
+  else ghost('named', 'What you have felt');
   if (whenAll.timed)
     cards.push({
       id: 'when',
@@ -352,7 +390,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           )}
         </Room>
       ) : (
-        <View />
+        empty('when')
       ),
       foot: when.timed ? <HoursKey /> : null,
       numbers: (
@@ -363,6 +401,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         />
       ),
     });
+  else ghost('when', 'When does it happen?');
   if (trigAll || needsAll)
     cards.push({
       id: 'what',
@@ -376,7 +415,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             ))}
           </>
         ) : null,
-      chart: trigItems.length ? <Room>{(w, h) => <Mosaic items={trigItems} tone="warm" w={w} h={h} />}</Room> : <View />,
+      chart: trigItems.length ? <Room>{(w, h) => <Mosaic items={trigItems} tone="warm" w={w} h={h} />}</Room> : empty('what'),
       foot: trig.none ? (
         <T v="small" tone="muted">
           {trig.none === 1 ? '1 entry' : trig.none + ' entries'} had no reason picked.
@@ -390,19 +429,52 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         />
       ),
     });
+  else ghost('what', 'What sets it off?');
+  /* sleep is drawn as two moons; what else differs stands beside it as pairs */
+  const sleepLead = leads.list.find((d) => d.k === 'h');
+  const otherLeads = leads.list.filter((d) => d.k !== 'h');
+  /* the one ask for Apple Health: on this card, where sleep is read, on an iPhone, until it is connected */
+  const healthAsk =
+    healthOffered() && health.ready && !health.on ? (
+      <Link
+        label="Add your nights from Apple Health"
+        onPress={async () => {
+          if (!(await connectHealth(st.rollover))) say('Apple Health did not open. Try again in a moment.');
+        }}
+      />
+    ) : null;
   if (leads.list.length)
     cards.push({
       id: 'days',
       title: 'What is different on hard days?',
       head: widest?.label,
       say: widest ? <Say>{widest.line}</Say> : null,
-      chart: <Room>{(w, h) => <Pairs list={leads.list} w={w} h={h} />}</Room>,
-      foot: (
+      chart: (
+        <Room>
+          {(w, h) =>
+            sleepLead && otherLeads.length ? (
+              <View>
+                <Moons d={sleepLead} w={w} h={Math.round(h * 0.55)} />
+                <Pairs list={otherLeads} w={w} h={h - Math.round(h * 0.55)} />
+              </View>
+            ) : sleepLead ? (
+              <Moons d={sleepLead} w={w} h={h} />
+            ) : (
+              <Pairs list={leads.list} w={w} h={h} />
+            )
+          }
+        </Room>
+      ),
+      foot: healthAsk || (
         <T v="small" tone="muted">
-          Your whole log: {plural(leads.cleanN, 'check-in day')} with no slip and {leads.slipN} with one.
+          {leads.sleep && sleepLead
+            ? 'Your whole log: ' + plural(leads.sleep.cleanN, 'night') + ' before days with no slip, ' + leads.sleep.slipN + ' before slip days.'
+            : 'Your whole log: ' + plural(leads.cleanN, 'check-in day') + ' with no slip and ' + leads.slipN + ' with one.'}
         </T>
       ),
     });
+  else if (healthAsk) cards.push({ id: 'days', title: 'What is different on hard days?', ghost: true, chart: empty('days'), foot: healthAsk });
+  else ghost('days', 'What is different on hard days?');
   if (works.length || ev.chose + ev.went)
     cards.push({
       id: 'helps',
@@ -430,7 +502,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           )}
         </Room>
       ) : (
-        <View />
+        empty('helps')
       ),
       foot: works.length ? (
         <T v="small" tone="muted">
@@ -438,9 +510,10 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
         </T>
       ) : null,
     });
+  else ghost('helps', 'What helps you');
   const shut = (id: string) => isLocked && !FREE_CARDS.includes(id);
   /* a sentence opens the card behind it */
-  const cardOf = (go: PatGo) => cards.findIndex((x) => x.id === go);
+  const cardOf = (go: PatGo) => cards.findIndex((x) => x.id === go && !x.ghost);
   const cur = Math.min(index, Math.max(0, cards.length - 1));
   const showing = cards[cur];
   const numbers = (
@@ -463,29 +536,27 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   );
   return (
     <>
-      {cards.length ? (
-        <View onLayout={(e) => setDeckY(e.nativeEvent.layout.y)}>
-          {/* the range sits under the cards, where the thumb is */}
-          <Deck deckRef={deck} cards={cards} index={cur} onIndex={setIndex} locked={shut} quiet={quiet} from={range} />
-          <View style={s.range}>
-            <View style={s.rangeTabs} accessibilityRole="tablist" accessibilityLabel="Time range">
-              {RANGES.map(([id, l]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: range === id }}
-                  onPress={() => setRange(id)}
-                  style={({ pressed }) => [s.rangeTab, { opacity: pressed ? 0.6 : 1 }]}>
-                  <T style={{ fontFamily: range === id ? font.bodyBold : font.bodySemi, color: range === id ? c.ink : c.muted }}>{l}</T>
-                </Pressable>
-              ))}
-            </View>
-            <T v="small" tone="muted">
-              {patRangeLabel(keys, tk)}
-            </T>
+      <View onLayout={(e) => setDeckY(e.nativeEvent.layout.y)}>
+        {/* the range sits under the cards, where the thumb is */}
+        <Deck deckRef={deck} cards={cards} index={cur} onIndex={setIndex} locked={shut} quiet={quiet} from={range} />
+        <View style={s.range}>
+          <View style={s.rangeTabs} accessibilityRole="tablist" accessibilityLabel="Time range">
+            {RANGES.map(([id, l]) => (
+              <Pressable
+                key={id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: range === id }}
+                onPress={() => setRange(id)}
+                style={({ pressed }) => [s.rangeTab, { opacity: pressed ? 0.6 : 1 }]}>
+                <T style={{ fontFamily: range === id ? font.bodyBold : font.bodySemi, color: range === id ? c.ink : c.muted }}>{l}</T>
+              </Pressable>
+            ))}
           </View>
+          <T v="small" tone="muted">
+            {patRangeLabel(keys, tk)}
+          </T>
         </View>
-      ) : null}
+      </View>
       {showing?.numbers && !shut(showing.id) ? <View key={showing.id}>{showing.numbers}</View> : null}
 
       {/* what the log says, in plain sentences; each opens the card with its chart */}

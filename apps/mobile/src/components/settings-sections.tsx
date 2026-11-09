@@ -37,6 +37,11 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  setHabit,
+  habitOf,
+  HABIT_NAME,
+  habitMedical,
+  OB_HABIT,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -78,6 +83,7 @@ import {
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
+import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
@@ -86,7 +92,7 @@ import { useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
-type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'answers' | 'data';
+type SecId = 'sync' | 'routine' | 'sched' | 'count' | 'habit' | 'faith' | 'look' | 'sos' | 'remind' | 'lock' | 'health' | 'answers' | 'data';
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -217,6 +223,8 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
     exactAlarmsOk().then(setExact, () => undefined);
   }, []);
   const lock = useLockPref();
+  const health = useNights();
+  const nightsN = Object.keys(health.nights).length;
   /* turning a reminder on asks the phone for permission first */
   const setRem = async (patch: Partial<ReminderPrefs>) => {
     const turningOn = Object.entries(patch).some(
@@ -430,6 +438,32 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
               </Field>
             </>,
           )}
+
+          {/* what the person is quitting (core habit.ts): the words and the lessons follow it; nothing earned changes */}
+          {st.onb
+            ? sec(
+                'habit',
+                'flame',
+                'What I am quitting',
+                HABIT_NAME[habitOf(st)],
+                <>
+                  <Field
+                    label="What do you want to quit?"
+                    hint="Lessons written for porn stay out for another habit. Everything you finished, earned and logged stays.">
+                    <Chips label="What I am quitting">
+                      {OB_HABIT.map(([v, l]) => (
+                        <Chip key={v} label={l} on={habitOf(st) === v} onPress={() => apply({ st: setHabit(st, v) })} />
+                      ))}
+                    </Chips>
+                  </Field>
+                  {habitMedical(habitOf(st)) ? (
+                    <T v="small" tone="muted">
+                      {habitMedical(habitOf(st))}
+                    </T>
+                  ) : null}
+                </>,
+              )
+            : null}
 
           {/* the setup's faith answers (core faith.ts): whether lessons speak of God, and in which faith's words */}
           {st.onb
@@ -653,6 +687,39 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
                       const r = await confirmUnlock(on ? 'Turn on the lock' : 'Turn off the lock');
                       if (r.ok) setLockPref(on);
                       else if (r.why) say(r.why);
+                    }}
+                  />
+                </>,
+              )
+            : null}
+
+          {healthOffered()
+            ? sec(
+                'health',
+                'heart',
+                'Apple Health',
+                health.on ? (nightsN ? 'On · ' + nightsN + ' nights of sleep' : 'On · No nights yet') : 'Off',
+                <>
+                  <T v="small" tone="muted">
+                    Daybook reads how long you slept, from your watch or ring, so the check-in does not have to ask and Pattern can show how your nights and
+                    your hard days line up. Only sleep. It stays on this phone: never synced, backed up or sent.
+                  </T>
+                  {health.on && !nightsN ? (
+                    <T v="small" tone="muted">
+                      No nights yet. If you sleep with a watch or a ring, check in the Health app that Daybook can read Sleep.
+                    </T>
+                  ) : null}
+                  <OnOff
+                    name="Read my sleep"
+                    on={health.on}
+                    onPick={async (on) => {
+                      if (on === health.on) return;
+                      if (on) {
+                        if (!(await connectHealth(st.rollover))) say('Apple Health did not open. Try again in a moment.');
+                      } else {
+                        await forgetHealth();
+                        say('Daybook stopped reading your sleep and forgot the nights it had.');
+                      }
                     }}
                   />
                 </>,

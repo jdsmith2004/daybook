@@ -176,13 +176,19 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   - Purchases: purchase history (the supporter record: a tip's amount, date, where it came from, and Apple's or Stripe's
     reference, kept under the account so the tip opens sync).
   - Usage data: product interaction (the anonymous counts, core `pulse.ts`): **not linked** to the person, used for
-    analytics only, **not** used for tracking. Since October 28, 2026 the basic counts (the app was opened that day,
-    how far setup got) are sent without asking; the rest only after the person says yes in More, and More turns all
-    of it off. So it is collected from everyone who has not turned it off: do not mark it optional. Add this before a
-    build with `EXPO_PUBLIC_PULSE_URL` goes to review.
+    analytics only, **not** used for tracking. Since November 4, 2026 every count is sent without asking (the owner),
+    with no device ID, and More turns all of it off. So it is collected from everyone who has not turned it off: do not mark it optional. Add this before a
+    build with `EXPO_PUBLIC_PULSE_URL` goes to review. The counts also cover each kind of
+    reminder (arrived, opened from it, what it was for done that day), how SOS ended, tools and lessons opened and
+    finished, the tabs, and the tip and account asks (shown, opened, an account made). Still product interaction, still
+    not linked: no new category. A tip itself is never counted, so Purchases stays only the supporter record above.
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
   - Tracking: **no**. Data used to track you: **none**.
+  - Apple Health (November 9, 2026): **no change to the label.** Daybook reads only sleep, read only, and the nights stay on
+    the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the
+    device. The App ID needs the HealthKit capability (EAS turns it on from the entitlement on the next build; if the
+    build says it is missing, tick HealthKit for `com.jdsmith2004.daybook` under Identifiers in the developer account).
 - **Notes for App Review:**
 
   > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
@@ -195,6 +201,11 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > account below, open More, Support Daybook (or Settings, Sync), and buy any tip with the sandbox account; sync then
   > turns on. Under the in-app tips, a second link opens the same three tips on our web page (Stripe), as allowed on the
   > United States storefront under guideline 3.1.1(a); Daybook is offered in the United States only.
+  >
+  > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from Settings, Apple Health, or
+  > the hard-days card on Pattern. It fills the check-in's sleep question and shows how their nights compare before days
+  > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
+  > for anything else. To see it, connect Apple Health in Settings with sleep data in the simulator's Health app.
   >
   > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
@@ -405,7 +416,35 @@ they would be Play in-app products, and that is a separate piece of work.
      question), health and fitness (health info: the log), app activity (other user-generated content: notes and plans).
      Used for app functionality and account management only.
      Once the anonymous counts are in a build: app activity, app interactions (collected for analytics, not shared,
-     processed so it cannot be tied to a person; the basic counts are sent without asking, so not optional), and feedback as other user-generated content (optional).
+     processed so it cannot be tied to a person; sent without asking, so not optional), and feedback as other user-generated content (optional).
 7. **Production.** When the closed test is done, apply for production access in the Play Console's dashboard, then release
    the newest build to production (start at a staged rollout if it offers one). Review usually takes a few days; paste any
    message from Google to Claude Code.
+
+## 9. Stats (you, once, about 10 minutes; then never sign in for stats again)
+
+`gh workflow run Stats`, or Actions > Stats > Run workflow, prints Apple's daily downloads and Daybook's own anonymous daily
+totals in the run's summary; Claude runs it and reads the result. Each half says "not set up yet" until its part is done.
+
+1. **Apple's numbers.** In App Store Connect: Users and Access > Integrations > App Store Connect API > Team Keys > the plus
+   button. Name it "Daybook stats", access **Sales**. Download the .p8 file (Apple lets you download it once). Note the Key ID and
+   the Issuer ID on that page, and the vendor number (Payments and Financial Reports, top left). Then, in Terminal, in the
+   repository (the key file never goes in the repository):
+
+   ```sh
+   gh secret set ASC_KEY_ID          # paste the Key ID
+   gh secret set ASC_ISSUER_ID       # paste the Issuer ID
+   gh secret set ASC_VENDOR          # paste the vendor number
+   gh secret set ASC_KEY < ~/Downloads/AuthKey_XXXXXXXXXX.p8
+   ```
+
+   Then delete the .p8 from Downloads.
+
+2. **Daybook's own counts.** Run the bootstrap once more (it adds the read-only `daybook-stats` role, which can read the
+   anonymous totals and nothing else), and give the workflow its name:
+
+   ```sh
+   aws login --profile daybook --region us-east-2 --remote
+   cd infra/bootstrap && AWS_PROFILE=daybook terraform apply
+   gh secret set AWS_STATS_ROLE_ARN --body "$(AWS_PROFILE=daybook terraform output -raw AWS_STATS_ROLE_ARN)"
+   ```
